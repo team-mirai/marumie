@@ -11,6 +11,7 @@ import { GoogleAnalytics } from "@next/third-parties/google";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import Footer from "@/client/components/layout/footer/Footer";
 import Header from "@/client/components/layout/header/Header";
+import NextTopLoader from "nextjs-toploader";
 
 // Noto Sans JP for Japanese text with proper weights
 const notoSansJP = Noto_Sans_JP({
@@ -84,6 +85,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${notoSans.variable} ${notoSansJP.variable} ${inter.variable} antialiased pt-24 flex flex-col min-h-screen`}
       >
+        <NextTopLoader showSpinner={false} color="#2aa693" />
         <Header />
         <div className="flex-grow">{children}</div>
         <div className="mt-0 sm:mt-16">
