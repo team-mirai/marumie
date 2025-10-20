@@ -145,25 +145,87 @@ export class PrismaTransactionRepository implements ITransactionRepository {
   ): Promise<Transaction[]> {
     if (data.length === 0) return [];
 
-    // 個別updateを並列実行
-    const updatePromises = data.map(async (item) => {
-      const existingTransaction = await this.prisma.transaction.findUnique({
-        where: {
-          politicalOrganizationId_transactionNo: {
-            politicalOrganizationId: item.where.politicalOrganizationId,
-            transactionNo: item.where.transactionNo,
-          },
-        },
-      });
+    // 既存レコードを一括取得してN+1クエリを回避
+    const whereConditions = data.map((item) => ({
+      politicalOrganizationId: item.where.politicalOrganizationId,
+      transactionNo: item.where.transactionNo,
+    }));
 
-      if (!existingTransaction) {
+    const existingTransactions = await this.prisma.transaction.findMany({
+      where: {
+        OR: whereConditions.map((condition) => ({
+          AND: [
+            { politicalOrganizationId: condition.politicalOrganizationId },
+            { transactionNo: condition.transactionNo },
+          ],
+        })),
+      },
+      select: {
+        id: true,
+        politicalOrganizationId: true,
+        transactionNo: true,
+      },
+    });
+
+    // 存在しないトランザクションをチェック
+    const existingMap = new Map(
+      existingTransactions.map((t) => [
+        `${t.politicalOrganizationId}-${t.transactionNo}`,
+        t.id,
+      ]),
+    );
+
+    const updateOperations: Array<{
+      where: { id: bigint };
+      data: Prisma.TransactionUpdateInput;
+    }> = [];
+
+    for (const item of data) {
+      const key = `${item.where.politicalOrganizationId}-${item.where.transactionNo}`;
+      const existingId = existingMap.get(key);
+
+      if (!existingId) {
         throw new Error(`Transaction not found: ${item.where.transactionNo}`);
       }
 
-      return this.update(existingTransaction.id.toString(), item.update);
-    });
+      updateOperations.push({
+        where: { id: existingId },
+        data: {
+          transactionNo: item.update.transaction_no,
+          transactionDate: item.update.transaction_date,
+          financialYear: item.update.financial_year,
+          transactionType: item.update.transaction_type,
+          debitAccount: item.update.debit_account,
+          debitSubAccount: item.update.debit_sub_account || null,
+          debitDepartment: item.update.debit_department || null,
+          debitPartner: item.update.debit_partner || null,
+          debitTaxCategory: item.update.debit_tax_category || null,
+          debitAmount: item.update.debit_amount,
+          creditAccount: item.update.credit_account,
+          creditSubAccount: item.update.credit_sub_account || null,
+          creditDepartment: item.update.credit_department || null,
+          creditPartner: item.update.credit_partner || null,
+          creditTaxCategory: item.update.credit_tax_category || null,
+          creditAmount: item.update.credit_amount,
+          description: item.update.description || "",
+          label: item.update.label || "",
+          friendlyCategory: item.update.friendly_category || "",
+          memo: item.update.memo || null,
+          categoryKey: item.update.category_key,
+          hash: item.update.hash,
+          updatedAt: new Date(),
+        },
+      });
+    }
 
-    return Promise.all(updatePromises);
+    // トランザクション内でバッチ更新を実行
+    const updatedTransactions = await this.prisma.$transaction(
+      updateOperations.map((operation) =>
+        this.prisma.transaction.update(operation),
+      ),
+    );
+
+    return updatedTransactions.map((t) => this.mapToTransaction(t));
   }
 
   async deleteAll(filters?: TransactionFilters): Promise<number> {
