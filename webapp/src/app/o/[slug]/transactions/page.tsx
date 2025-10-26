@@ -34,29 +34,13 @@ export async function generateMetadata({
   const validSlug = organizations.some((org) => org.slug === slug)
     ? slug
     : defaultSlug;
-  const slugs = [validSlug];
 
-  // financialYearのデフォルト値を設定
-  const currentFinancialYear = 2025;
+  const organization = organizations.find((org) => org.slug === validSlug);
 
-  try {
-    const result = await loadTransactionsPageData({
-      slugs,
-      page: 1,
-      perPage: 1,
-      financialYear: currentFinancialYear,
-    });
-
-    return {
-      title: `${result.politicalOrganizations[0]?.displayName || "Unknown"}:全ての出入金 - みらいまる見え政治資金`,
-      description: `${result.politicalOrganizations[0]?.displayName || "Unknown"}の政治資金取引一覧を表示しています。`,
-    };
-  } catch {
-    return {
-      title: "全ての出入金 - みらいまる見え政治資金",
-      description: "政治資金取引一覧を表示しています。",
-    };
-  }
+  return {
+    title: `${organization?.displayName || "Unknown"}:全ての出入金 - みらいまる見え政治資金`,
+    description: `${organization?.displayName || "Unknown"}の政治資金取引一覧を表示しています。`,
+  };
 }
 
 export default async function TransactionsPage({
