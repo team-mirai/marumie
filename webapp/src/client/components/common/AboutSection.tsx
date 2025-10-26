@@ -10,7 +10,7 @@ const socialLinks = [
   },
   {
     name: "YouTube",
-    href: "https://www.youtube.com/@%E3%83%81%E3%83%BC%E3%83%A0%E3%81%BF%E3%82%89%E3%81%84%E5%85%AC%E5%BC%8F%E3%83%81%E3%83%A3%E3%83%B3%E3%83%8D%E3%83%AB/featured",
+    href: "https://www.youtube.com/@team_mirai_jp",
     icon: "icon-yt.svg",
   },
   {
@@ -27,12 +27,12 @@ const socialLinks = [
   },
   {
     name: "Instagram",
-    href: "https://www.instagram.com/annotakahiro2024/",
+    href: "https://www.instagram.com/team_mirai_jp/",
     icon: "icon-insta.svg",
   },
   {
     name: "Threads",
-    href: "https://www.threads.com/@annotakahiro2024",
+    href: "https://www.threads.com/@team_mirai_jp",
     icon: "icon-threads.svg",
   },
   {
