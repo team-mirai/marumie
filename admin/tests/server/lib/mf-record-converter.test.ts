@@ -116,6 +116,38 @@ describe("MfRecordConverter", () => {
       expect(result.transaction_type).toBe(null);
     });
 
+    it("should set label when description starts with デビット", () => {
+      const record = createMockRecord({
+        description: "デビット1 123456 TEST",
+      });
+
+      const result = converter.convertRow(record, "test-org-id");
+
+      expect(result.label).toBe("デビット1 123456 TEST");
+    });
+
+    it("should set label when memo contains upsider (case-insensitive)", () => {
+      const record = createMockRecord({
+        description: "通常の明細",
+        memo: "利用先: UPSIDER株式会社",
+      });
+
+      const result = converter.convertRow(record, "test-org-id");
+
+      expect(result.label).toBe("通常の明細");
+    });
+
+    it("should not set label when conditions are not met", () => {
+      const record = createMockRecord({
+        description: "通常の明細",
+        memo: "別のメモ",
+      });
+
+      const result = converter.convertRow(record, "test-org-id");
+
+      expect(result.label).toBeUndefined();
+    });
+
 
     it("should preserve all other fields from the original record", () => {
       const record = createMockRecord({
