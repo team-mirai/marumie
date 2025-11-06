@@ -129,12 +129,22 @@ describe("MfRecordConverter", () => {
     it("should set label when memo contains upsider (case-insensitive)", () => {
       const record = createMockRecord({
         description: "通常の明細",
-        memo: "利用先: UPSIDER株式会社",
+        memo: "Upsider",
       });
 
       const result = converter.convertRow(record, "test-org-id");
 
       expect(result.label).toBe("通常の明細");
+    });
+
+    it("should set label when description contains amex (case-insensitive)", () => {
+      const record = createMockRecord({
+        description: "AMEX 123456 TEST",
+      });
+
+      const result = converter.convertRow(record, "test-org-id");
+
+      expect(result.label).toBe("AMEX 123456 TEST");
     });
 
     it("should not set label when conditions are not met", () => {

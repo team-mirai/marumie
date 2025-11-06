@@ -111,13 +111,22 @@ export class MfRecordConverter {
   }
 
   private shouldDisplayDescription(record: MfCsvRecord): boolean {
-    const descriptionStartsWithDebit =
-      record.description?.startsWith("デビット");
-    const memoIncludesUpsider = record.memo
-      ? record.memo.toLowerCase().includes("upsider")
-      : false;
+    const description = record.description ?? "";
+    const memo = record.memo ?? "";
 
-    return Boolean(descriptionStartsWithDebit || memoIncludesUpsider);
+    const normalizedDescription = description.toLowerCase();
+    const normalizedMemo = memo.toLowerCase();
+
+    const descriptionStartsWithDebit = description.startsWith("デビット");
+    const containsUpsider =
+      normalizedDescription.includes("upsider") ||
+      normalizedMemo.includes("upsider");
+    const containsAmex =
+      normalizedDescription.includes("amex") || normalizedMemo.includes("amex");
+
+    return Boolean(
+      descriptionStartsWithDebit || containsUpsider || containsAmex,
+    );
   }
 
   private parseAmount(amountStr: string): number {
