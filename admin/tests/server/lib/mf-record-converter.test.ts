@@ -105,6 +105,28 @@ describe("MfRecordConverter", () => {
       expect(result.transaction_type).toBe("expense");
     });
 
+    it("should set transaction_type to expense when credit_account is 前渡金 for a GitHub expense", () => {
+      const record = createMockRecord({
+        debit_account: "備品・消耗品費",
+        credit_account: "前渡金",
+      });
+
+      const result = converter.convertRow(record, "test-org-id");
+
+      expect(result.transaction_type).toBe("expense");
+    });
+
+    it("should set transaction_type to expense when credit_account is 仮払金 for an Amazon expense", () => {
+      const record = createMockRecord({
+        debit_account: "宣伝事業費",
+        credit_account: "仮払金",
+      });
+
+      const result = converter.convertRow(record, "test-org-id");
+
+      expect(result.transaction_type).toBe("expense");
+    });
+
     it("should set transaction_type to other when neither account is 普通預金", () => {
       const record = createMockRecord({
         debit_account: "事務所費",

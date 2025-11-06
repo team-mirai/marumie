@@ -53,6 +53,28 @@ describe("TransactionValidator", () => {
       expect(result[1].errors).toHaveLength(0);
     });
 
+    it("should treat 前渡金 and 仮払金 as valid BS accounts", () => {
+      const transactions = [
+        createMockTransaction({
+          debit_account: "備品・消耗品費",
+          credit_account: "前渡金",
+          transaction_type: "expense",
+        }),
+        createMockTransaction({
+          debit_account: "宣伝事業費",
+          credit_account: "仮払金",
+          transaction_type: "expense",
+        }),
+      ];
+
+      const result = validator.validatePreviewTransactions(transactions);
+
+      expect(result[0].status).toBe("insert");
+      expect(result[0].errors).toHaveLength(0);
+      expect(result[1].status).toBe("insert");
+      expect(result[1].errors).toHaveLength(0);
+    });
+
     it("should mark transactions as skip when duplicate", () => {
       const transactions = [
         createMockTransaction({
