@@ -46,7 +46,7 @@ export class MfRecordConverter {
 
     const friendlyCategory = record.friendly_category;
 
-    const label = record.description?.startsWith("デビット")
+    const label = this.shouldDisplayDescription(record)
       ? record.description
       : undefined;
 
@@ -108,6 +108,25 @@ export class MfRecordConverter {
     } catch (_error) {
       return { date: new Date("1970-01-01"), isValid: false };
     }
+  }
+
+  private shouldDisplayDescription(record: MfCsvRecord): boolean {
+    const description = record.description ?? "";
+    const memo = record.memo ?? "";
+
+    const normalizedDescription = description.toLowerCase();
+    const normalizedMemo = memo.toLowerCase();
+
+    const descriptionStartsWithDebit = description.startsWith("デビット");
+    const containsUpsider =
+      normalizedDescription.includes("upsider") ||
+      normalizedMemo.includes("upsider");
+    const containsAmex =
+      normalizedDescription.includes("amex") || normalizedMemo.includes("amex");
+
+    return Boolean(
+      descriptionStartsWithDebit || containsUpsider || containsAmex,
+    );
   }
 
   private parseAmount(amountStr: string): number {
