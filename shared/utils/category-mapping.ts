@@ -209,6 +209,9 @@ export const BS_CATEGORIES: Record<string, { type: "asset" | "liability" | "net_
   "仮払金": {
     type: "asset"
   },
+  "預り金": {
+    type: "asset"
+  },
   "未払金/未払費用": {
     type: "liability"
   },
@@ -217,4 +220,4 @@ export const BS_CATEGORIES: Record<string, { type: "asset" | "liability" | "net_
 /**
  * 現金類の科目
  */
-export const CASH_ACCOUNTS = new Set(["普通預金", "前渡金", "仮払金"]);
+export const CASH_ACCOUNTS = new Set(["普通預金", "前渡金", "仮払金", "預り金"]);
