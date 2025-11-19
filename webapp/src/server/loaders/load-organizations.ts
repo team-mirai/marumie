@@ -3,6 +3,7 @@ import "server-only";
 import { unstable_cache } from "next/cache";
 import { prisma } from "@/server/lib/prisma";
 import type { OrganizationsResponse } from "../../types/organization";
+import { CACHE_REVALIDATE_SECONDS } from "./constants";
 
 export const loadOrganizations = unstable_cache(
   async (): Promise<OrganizationsResponse> => {
@@ -31,6 +32,6 @@ export const loadOrganizations = unstable_cache(
   },
   ["organizations"],
   {
-    revalidate: 3600, // 1時間キャッシュ
+    revalidate: CACHE_REVALIDATE_SECONDS,
   },
 );
