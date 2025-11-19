@@ -13,7 +13,7 @@ import {
   type GetTransactionsBySlugParams,
   GetTransactionsBySlugUsecase,
 } from "@/server/usecases/get-transactions-by-slug-usecase";
-const CACHE_REVALIDATE_SECONDS = 3600;
+import { CACHE_REVALIDATE_SECONDS } from "./constants";
 
 export interface TopPageDataParams
   extends Omit<GetTransactionsBySlugParams, "financialYear"> {

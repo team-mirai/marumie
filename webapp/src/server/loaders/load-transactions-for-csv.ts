@@ -8,8 +8,7 @@ import {
   type GetTransactionsForCsvParams,
   GetTransactionsForCsvUsecase,
 } from "@/server/usecases/get-transactions-for-csv-usecase";
-
-const CACHE_REVALIDATE_SECONDS = 3600;
+import { CACHE_REVALIDATE_SECONDS } from "./constants";
 
 export const loadTransactionsForCsv = unstable_cache(
   async (params: GetTransactionsForCsvParams) => {
