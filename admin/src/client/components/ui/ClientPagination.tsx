@@ -1,5 +1,7 @@
 "use client";
 
+import type { ReactNode } from "react";
+
 interface ClientPaginationProps {
   currentPage: number;
   totalPages: number;
@@ -14,7 +16,7 @@ export function ClientPagination({
   const renderPageNumbers = () => {
     if (totalPages <= 0) return null;
 
-    const pages = [];
+    const pages: ReactNode[] = [];
     const windowSize = 5;
 
     const addPageButton = (page: number) => {

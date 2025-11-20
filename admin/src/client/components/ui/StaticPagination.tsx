@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import Link from "next/link";
 
 interface StaticPaginationProps {
@@ -20,7 +21,7 @@ export function StaticPagination({
   const renderPageNumbers = () => {
     if (totalPages <= 0) return null;
 
-    const pages = [];
+    const pages: ReactNode[] = [];
     const windowSize = 5;
 
     const addPageLink = (page: number) => {
