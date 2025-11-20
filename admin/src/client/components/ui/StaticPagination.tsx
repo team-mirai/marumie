@@ -18,19 +18,15 @@ export function StaticPagination({
   };
 
   const renderPageNumbers = () => {
+    if (totalPages <= 0) return null;
+
     const pages = [];
-    const showPages = 5;
-    let startPage = Math.max(1, currentPage - Math.floor(showPages / 2));
-    const endPage = Math.min(totalPages, startPage + showPages - 1);
+    const windowSize = 5;
 
-    if (endPage - startPage + 1 < showPages) {
-      startPage = Math.max(1, endPage - showPages + 1);
-    }
-
-    for (let page = startPage; page <= endPage; page++) {
+    const addPageLink = (page: number) => {
       pages.push(
         <Link
-          key={page}
+          key={`page-${page}`}
           href={generatePageUrl(page)}
           className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
             page === currentPage
@@ -41,7 +37,49 @@ export function StaticPagination({
           {page}
         </Link>,
       );
+    };
+
+    const addEllipsis = (key: string) => {
+      pages.push(
+        <span
+          key={`ellipsis-${key}`}
+          className="px-2 text-primary-muted select-none"
+        >
+          …
+        </span>,
+      );
+    };
+
+    if (totalPages <= windowSize + 2) {
+      for (let page = 1; page <= totalPages; page++) {
+        addPageLink(page);
+      }
+      return pages;
     }
+
+    addPageLink(1);
+
+    let startPage = Math.max(2, currentPage - Math.floor(windowSize / 2));
+    let endPage = Math.min(totalPages - 1, startPage + windowSize - 1);
+
+    if (endPage >= totalPages) {
+      endPage = totalPages - 1;
+      startPage = endPage - windowSize + 1;
+    }
+
+    if (startPage > 2) {
+      addEllipsis("left");
+    }
+
+    for (let page = startPage; page <= endPage; page++) {
+      addPageLink(page);
+    }
+
+    if (endPage < totalPages - 1) {
+      addEllipsis("right");
+    }
+
+    addPageLink(totalPages);
 
     return pages;
   };
