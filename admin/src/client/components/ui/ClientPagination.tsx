@@ -1,5 +1,7 @@
 "use client";
 
+import type { ReactNode } from "react";
+
 interface ClientPaginationProps {
   currentPage: number;
   totalPages: number;
@@ -12,20 +14,16 @@ export function ClientPagination({
   onPageChange,
 }: ClientPaginationProps) {
   const renderPageNumbers = () => {
-    const pages = [];
-    const showPages = 5;
-    let startPage = Math.max(1, currentPage - Math.floor(showPages / 2));
-    const endPage = Math.min(totalPages, startPage + showPages - 1);
+    if (totalPages <= 0) return null;
 
-    if (endPage - startPage + 1 < showPages) {
-      startPage = Math.max(1, endPage - showPages + 1);
-    }
+    const pages: ReactNode[] = [];
+    const windowSize = 5;
 
-    for (let page = startPage; page <= endPage; page++) {
+    const addPageButton = (page: number) => {
       pages.push(
         <button
           type="button"
-          key={page}
+          key={`page-${page}`}
           onClick={() => onPageChange(page)}
           className={`px-3 py-2 text-sm font-medium rounded-md transition-colors cursor-pointer ${
             page === currentPage
@@ -36,7 +34,49 @@ export function ClientPagination({
           {page}
         </button>,
       );
+    };
+
+    const addEllipsis = (key: string) => {
+      pages.push(
+        <span
+          key={`ellipsis-${key}`}
+          className="px-2 text-primary-muted select-none"
+        >
+          …
+        </span>,
+      );
+    };
+
+    if (totalPages <= windowSize + 2) {
+      for (let page = 1; page <= totalPages; page++) {
+        addPageButton(page);
+      }
+      return pages;
     }
+
+    addPageButton(1);
+
+    let startPage = Math.max(2, currentPage - Math.floor(windowSize / 2));
+    let endPage = Math.min(totalPages - 1, startPage + windowSize - 1);
+
+    if (endPage >= totalPages) {
+      endPage = totalPages - 1;
+      startPage = endPage - windowSize + 1;
+    }
+
+    if (startPage > 2) {
+      addEllipsis("left");
+    }
+
+    for (let page = startPage; page <= endPage; page++) {
+      addPageButton(page);
+    }
+
+    if (endPage < totalPages - 1) {
+      addEllipsis("right");
+    }
+
+    addPageButton(totalPages);
 
     return pages;
   };

@@ -10,7 +10,7 @@ export const loadPoliticalOrganizationsData = unstable_cache(
     try {
       const organizations = await prisma.politicalOrganization.findMany({
         orderBy: {
-          createdAt: "desc",
+          id: "asc",
         },
       });
 
