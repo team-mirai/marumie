@@ -2,7 +2,7 @@ import {
   aggregateOtherIncomeFromTransactions,
   serializeOtherIncomeSection,
   type OtherIncomeSection,
-} from "@/server/xml/sections/syuushi07_06";
+} from "@/server/xml/sections/syuushi07_06__other_income";
 
 describe("aggregateOtherIncomeFromTransactions", () => {
   it("splits transactions into detailed rows and under-threshold bucket", () => {

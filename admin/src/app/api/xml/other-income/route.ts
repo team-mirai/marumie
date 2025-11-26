@@ -4,7 +4,7 @@ import { buildXmlDocument } from "@/server/xml/document-builder";
 import {
   buildOtherIncomeSection,
   serializeOtherIncomeSection,
-} from "@/server/xml/sections/syuushi07_06";
+} from "@/server/xml/sections/syuushi07_06__other_income";
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
