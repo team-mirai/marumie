@@ -84,7 +84,7 @@ export function aggregateOtherIncomeFromTransactions(
     ichirenNo: (index + 1).toString(),
     tekiyou: buildTekiyou(transaction),
     kingaku: Math.round(transaction.amount),
-    bikou: sanitizeText(transaction.memo, 200) || undefined,
+    bikou: buildBikou(transaction),
   }));
 
   return {
@@ -133,6 +133,14 @@ function buildTekiyou(transaction: SectionTransaction): string {
   );
 
   return teks;
+}
+
+function buildBikou(transaction: SectionTransaction): string {
+  const mfRowInfo = `MF行番号: ${transaction.transactionNo || "-"}`;
+  const memoText = sanitizeText(transaction.memo, 160);
+  const combined = memoText ? `${memoText} / ${mfRowInfo}` : mfRowInfo;
+
+  return sanitizeText(combined, 200) || mfRowInfo;
 }
 
 function resolveTransactionAmount(

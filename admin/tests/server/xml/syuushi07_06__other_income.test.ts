@@ -31,6 +31,7 @@ describe("aggregateOtherIncomeFromTransactions", () => {
       tekiyou: "テスト取引1",
       kingaku: 150_000,
     });
+    expect(section.rows[0].bikou).toContain("MF行番号: 1");
   });
 
   it("sets underThresholdAmount to null when not applicable", () => {
@@ -39,7 +40,7 @@ describe("aggregateOtherIncomeFromTransactions", () => {
         transactionNo: "3",
         label: "",
         description: "ラベル未設定",
-        memo: "",
+        memo: "テストメモ",
         amount: 120_000,
       },
     ]);
@@ -47,6 +48,8 @@ describe("aggregateOtherIncomeFromTransactions", () => {
     expect(section.totalAmount).toBe(120_000);
     expect(section.underThresholdAmount).toBeNull();
     expect(section.rows[0].tekiyou).toBe("ラベル未設定");
+    expect(section.rows[0].bikou).toContain("テストメモ");
+    expect(section.rows[0].bikou).toContain("MF行番号: 3");
   });
 });
 
