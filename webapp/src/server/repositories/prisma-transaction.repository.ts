@@ -33,7 +33,7 @@ export class PrismaTransactionRepository implements ITransactionRepository {
 
     const transactions = await this.prisma.transaction.findMany({
       where,
-      orderBy: { transactionDate: "desc" },
+      orderBy: [{ transactionDate: "desc" }, { transactionNo: "desc" }],
     });
 
     return transactions.map(this.mapToTransaction);
@@ -428,7 +428,7 @@ export class PrismaTransactionRepository implements ITransactionRepository {
 
     const transactions = await this.prisma.transaction.findMany({
       where,
-      orderBy: { transactionDate: "desc" },
+      orderBy: [{ transactionDate: "desc" }, { transactionNo: "desc" }],
       include: {
         politicalOrganization: {
           select: {
@@ -572,17 +572,18 @@ export class PrismaTransactionRepository implements ITransactionRepository {
   private buildOrderByClause(
     sortBy?: "date" | "amount",
     order?: "asc" | "desc",
-  ): Prisma.TransactionOrderByWithRelationInput {
+  ): Prisma.TransactionOrderByWithRelationInput[] {
     const sortOrder = order || "desc";
 
     if (sortBy === "amount") {
       // In double-entry bookkeeping, debitAmount and creditAmount are usually equal
       // We'll sort by debitAmount since it represents the transaction value
-      return { debitAmount: sortOrder };
+      // Use transaction_no as tiebreaker
+      return [{ debitAmount: sortOrder }, { transactionNo: sortOrder }];
     }
 
-    // Default to sorting by date
-    return { transactionDate: sortOrder };
+    // Default to sorting by date, with transaction_no as tiebreaker
+    return [{ transactionDate: sortOrder }, { transactionNo: sortOrder }];
   }
 
   private mapToTransaction(prismaTransaction: PrismaTransaction): Transaction {

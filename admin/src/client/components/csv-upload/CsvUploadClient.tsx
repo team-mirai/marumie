@@ -87,10 +87,12 @@ export default function CsvUploadClient({
         return;
       }
 
-      setMessage(
+      const uploadedFileName = file.name;
+      const serverMessage =
         result.message ||
-          `Successfully processed ${result.processedCount} records and saved ${result.savedCount} transactions`,
-      );
+        `Successfully processed ${result.processedCount} records and saved ${result.savedCount} transactions`;
+
+      setMessage(`"${uploadedFileName}" の取り込み結果: ${serverMessage}`);
 
       setFile(null);
       setPreviewResult(null);

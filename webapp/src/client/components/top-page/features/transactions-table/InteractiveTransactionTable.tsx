@@ -208,6 +208,10 @@ export default function InteractiveTransactionTable({
           />
         </div>
       </div>
+
+      <p className="mt-4 text-xs leading-relaxed text-gray-500 text-left">
+        ※人件費については、各月の人件費が確定した時点で当該月末の金額を表示しています
+      </p>
     </>
   );
 }
