@@ -53,9 +53,10 @@ export async function GET(request: Request) {
     }
 
     const shiftJisBuffer = iconv.encode(document, "shift_jis");
+    const shiftJisBytes = Uint8Array.from(shiftJisBuffer);
     const filename = `SYUUSHI07_06_${politicalOrganizationId}_${financialYear}.xml`;
 
-    return new NextResponse(shiftJisBuffer, {
+    return new NextResponse(shiftJisBytes, {
       headers: {
         "Content-Type": "application/xml; charset=Shift_JIS",
         "Content-Disposition": `attachment; filename="${filename}"`,
