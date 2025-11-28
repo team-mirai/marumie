@@ -82,13 +82,21 @@ export async function GET(request: Request) {
     const safeOrganizationSegment = sanitizeForFilename(
       organizationName || politicalOrganizationId,
     );
+    const asciiFallbackSegment =
+      sanitizeAsciiForHeader(safeOrganizationSegment) || "organization";
+
     const timestamp = formatTimestamp(new Date());
-    const filename = `marumie_sml_${safeOrganizationSegment}__${timestamp}.xml`;
+    const preferredFilename = `marumie_sml_${safeOrganizationSegment}__${timestamp}.xml`;
+    const fallbackFilename = `marumie_sml_${asciiFallbackSegment}__${timestamp}.xml`;
+    const contentDisposition = buildContentDispositionHeader(
+      preferredFilename,
+      fallbackFilename,
+    );
 
     return new NextResponse(shiftJisBytes, {
       headers: {
         "Content-Type": "application/xml; charset=Shift_JIS",
-        "Content-Disposition": `attachment; filename="${filename}"`,
+        "Content-Disposition": contentDisposition,
       },
     });
   } catch (error) {
@@ -120,4 +128,30 @@ function sanitizeForFilename(input: string) {
       .replace(/^_+|_+$/g, "")
       .slice(0, 50) || "organization"
   );
+}
+
+function sanitizeAsciiForHeader(input: string) {
+  return input
+    .replace(/[^A-Za-z0-9._-]+/g, "_")
+    .replace(/_+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .slice(0, 50);
+}
+
+function buildContentDispositionHeader(
+  preferredFilename: string,
+  fallbackFilename: string,
+) {
+  const encodedPreferred = encodeRFC5987Value(preferredFilename);
+
+  return `attachment; filename="${fallbackFilename}"; filename*=UTF-8''${encodedPreferred}`;
+}
+
+function encodeRFC5987Value(value: string) {
+  return encodeURIComponent(value)
+    .replace(
+      /['()]/g,
+      (char) => `%${char.charCodeAt(0).toString(16).toUpperCase()}`,
+    )
+    .replace(/\*/g, "%2A");
 }
