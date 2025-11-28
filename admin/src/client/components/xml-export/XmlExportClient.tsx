@@ -101,7 +101,12 @@ export function XmlExportClient({ organizations }: XmlExportClientProps) {
         const url = window.URL.createObjectURL(blob);
         const link = document.createElement("a");
         link.href = url;
-        link.download = `SYUUSHI07_06_${selectedOrganizationId}_${financialYear}.xml`;
+        const contentDisposition = response.headers.get("Content-Disposition");
+        const filenameFromHeader =
+          extractFilenameFromContentDisposition(contentDisposition);
+        link.download =
+          filenameFromHeader ||
+          `marumie_xml_${selectedOrganizationId}_${financialYear}.xml`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -209,4 +214,30 @@ export function XmlExportClient({ organizations }: XmlExportClientProps) {
       </Card>
     </div>
   );
+}
+
+function extractFilenameFromContentDisposition(
+  contentDisposition: string | null,
+) {
+  if (!contentDisposition) {
+    return null;
+  }
+
+  const filenameStarMatch = contentDisposition.match(
+    /filename\*\s*=\s*UTF-8''([^;]+)/i,
+  );
+  if (filenameStarMatch && filenameStarMatch[1]) {
+    try {
+      return decodeURIComponent(filenameStarMatch[1]);
+    } catch {
+      // ignore decoding errors and continue to fallback
+    }
+  }
+
+  const filenameMatch = contentDisposition.match(/filename\s*=\s*"([^"]+)"/i);
+  if (filenameMatch && filenameMatch[1]) {
+    return filenameMatch[1];
+  }
+
+  return null;
 }

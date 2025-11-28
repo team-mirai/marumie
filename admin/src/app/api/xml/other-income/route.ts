@@ -86,8 +86,8 @@ export async function GET(request: Request) {
       sanitizeAsciiForHeader(safeOrganizationSegment) || "organization";
 
     const timestamp = formatTimestamp(new Date());
-    const preferredFilename = `marumie_sml_${safeOrganizationSegment}__${timestamp}.xml`;
-    const fallbackFilename = `marumie_sml_${asciiFallbackSegment}__${timestamp}.xml`;
+    const preferredFilename = `marumie_xml_${safeOrganizationSegment}__${timestamp}.xml`;
+    const fallbackFilename = `marumie_xml_${asciiFallbackSegment}__${timestamp}.xml`;
     const contentDisposition = buildContentDispositionHeader(
       preferredFilename,
       fallbackFilename,
