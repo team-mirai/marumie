@@ -49,7 +49,7 @@ export interface XmlDocumentOptions {
   availableFormIds?: string[];
 }
 
-function buildSyushiFlagSection(availableFormIds?: string[]): string {
+export function buildSyushiFlagSection(availableFormIds?: string[]): string {
   const formSet =
     availableFormIds && availableFormIds.length > 0
       ? new Set(
