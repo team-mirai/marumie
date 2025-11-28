@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import * as iconv from "iconv-lite";
+import { prisma } from "@/server/lib/prisma";
 import { buildXmlDocument } from "@/server/xml/document-builder";
 import {
   buildOtherIncomeSection,
@@ -29,6 +30,16 @@ export async function GET(request: Request) {
   }
 
   const financialYear = Number.parseInt(financialYearRaw, 10);
+  let politicalOrganizationIdBigInt: bigint;
+
+  try {
+    politicalOrganizationIdBigInt = BigInt(politicalOrganizationId);
+  } catch {
+    return NextResponse.json(
+      { error: "politicalOrganizationId must be a valid number" },
+      { status: 400 },
+    );
+  }
 
   if (!Number.isFinite(financialYear)) {
     return NextResponse.json(
@@ -38,6 +49,18 @@ export async function GET(request: Request) {
   }
 
   try {
+    const organization = await prisma.politicalOrganization.findUnique({
+      where: { id: politicalOrganizationIdBigInt },
+      select: { displayName: true, orgName: true },
+    });
+
+    if (!organization) {
+      return NextResponse.json(
+        { error: "Political organization not found" },
+        { status: 404 },
+      );
+    }
+
     const section = await buildOtherIncomeSection({
       politicalOrganizationId,
       financialYear,
@@ -54,7 +77,13 @@ export async function GET(request: Request) {
 
     const shiftJisBuffer = iconv.encode(document, "shift_jis");
     const shiftJisBytes = Uint8Array.from(shiftJisBuffer);
-    const filename = `SYUUSHI07_06_${politicalOrganizationId}_${financialYear}.xml`;
+    const organizationName =
+      organization.orgName?.trim() || organization.displayName?.trim();
+    const safeOrganizationSegment = sanitizeForFilename(
+      organizationName || politicalOrganizationId,
+    );
+    const timestamp = formatTimestamp(new Date());
+    const filename = `marumie_sml_${safeOrganizationSegment}__${timestamp}.xml`;
 
     return new NextResponse(shiftJisBytes, {
       headers: {
@@ -69,4 +98,26 @@ export async function GET(request: Request) {
       { status: 500 },
     );
   }
+}
+
+function formatTimestamp(date: Date) {
+  const pad = (value: number) => value.toString().padStart(2, "0");
+  const year = date.getFullYear();
+  const month = pad(date.getMonth() + 1);
+  const day = pad(date.getDate());
+  const hours = pad(date.getHours());
+  const minutes = pad(date.getMinutes());
+
+  return `${year}${month}${day}_${hours}${minutes}`;
+}
+
+function sanitizeForFilename(input: string) {
+  return (
+    input
+      .normalize("NFKC")
+      .replace(/[\s\\/:"*?<>|]+/g, "_")
+      .replace(/_+/g, "_")
+      .replace(/^_+|_+$/g, "")
+      .slice(0, 50) || "organization"
+  );
 }
