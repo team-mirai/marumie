@@ -6,15 +6,6 @@ import type {
 } from "@/types/transaction";
 import type { TransactionWithOrganization } from "@/server/usecases/get-transactions-usecase";
 
-export interface OtherIncomeTransaction {
-  transactionNo: string;
-  label: string | null;
-  description: string | null;
-  memo: string | null;
-  debitAmount: number;
-  creditAmount: number;
-}
-
 export interface PaginatedResult<T> {
   items: T[];
   total: number;
@@ -26,11 +17,6 @@ export interface PaginatedResult<T> {
 export interface PaginationOptions {
   page: number;
   perPage: number;
-}
-
-export interface OtherIncomeTransactionFilters {
-  politicalOrganizationId: string;
-  financialYear: number;
 }
 
 export interface ITransactionRepository {
@@ -50,7 +36,4 @@ export interface ITransactionRepository {
     transactionNos: string[],
     politicalOrganizationIds?: string[],
   ): Promise<Transaction[]>;
-  findOtherIncomeTransactions(
-    filters: OtherIncomeTransactionFilters,
-  ): Promise<OtherIncomeTransaction[]>;
 }

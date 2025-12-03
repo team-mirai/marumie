@@ -1,22 +1,18 @@
 import { XmlExportUsecase } from "@/server/usecases/xml-export-usecase";
 import type {
-  ITransactionRepository,
+  ITransactionXmlRepository,
   OtherIncomeTransaction,
-} from "@/server/repositories/interfaces/transaction-repository.interface";
+} from "@/server/repositories/interfaces/transaction-xml-repository.interface";
 
 describe("XmlExportUsecase", () => {
   let usecase: XmlExportUsecase;
-  let mockRepository: jest.Mocked<
-    Pick<ITransactionRepository, "findOtherIncomeTransactions">
-  >;
+  let mockRepository: jest.Mocked<ITransactionXmlRepository>;
 
   beforeEach(() => {
     mockRepository = {
       findOtherIncomeTransactions: jest.fn(),
     };
-    usecase = new XmlExportUsecase(
-      mockRepository as unknown as ITransactionRepository,
-    );
+    usecase = new XmlExportUsecase(mockRepository);
     jest.clearAllMocks();
   });
 

@@ -7,23 +7,19 @@ import {
   type OtherIncomeSection,
 } from "@/server/usecases/xml/syuushi07_06__other_income-usecase";
 import type {
-  ITransactionRepository,
+  ITransactionXmlRepository,
   OtherIncomeTransaction,
-} from "@/server/repositories/interfaces/transaction-repository.interface";
+} from "@/server/repositories/interfaces/transaction-xml-repository.interface";
 
 describe("Syuushi0706OtherIncomeUsecase", () => {
   let usecase: Syuushi0706OtherIncomeUsecase;
-  let mockRepository: jest.Mocked<
-    Pick<ITransactionRepository, "findOtherIncomeTransactions">
-  >;
+  let mockRepository: jest.Mocked<ITransactionXmlRepository>;
 
   beforeEach(() => {
     mockRepository = {
       findOtherIncomeTransactions: jest.fn(),
     };
-    usecase = new Syuushi0706OtherIncomeUsecase(
-      mockRepository as unknown as ITransactionRepository,
-    );
+    usecase = new Syuushi0706OtherIncomeUsecase(mockRepository);
     jest.clearAllMocks();
   });
 

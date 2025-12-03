@@ -1,6 +1,6 @@
 import { fragment } from "xmlbuilder2";
 import type { XMLBuilder } from "xmlbuilder2/lib/interfaces";
-import type { ITransactionRepository } from "../../repositories/interfaces/transaction-repository.interface";
+import type { ITransactionXmlRepository } from "../../repositories/interfaces/transaction-xml-repository.interface";
 
 const TEN_MAN_THRESHOLD = 100_000;
 
@@ -45,7 +45,7 @@ export interface Syuushi0706Result {
 // ============================================================
 
 export class Syuushi0706OtherIncomeUsecase {
-  constructor(private repository: ITransactionRepository) {}
+  constructor(private repository: ITransactionXmlRepository) {}
 
   async execute(input: Syuushi0706Input): Promise<Syuushi0706Result> {
     const transactions = await this.repository.findOtherIncomeTransactions({

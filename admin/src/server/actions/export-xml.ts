@@ -1,7 +1,7 @@
 "use server";
 
 import { prisma } from "@/server/lib/prisma";
-import { PrismaTransactionRepository } from "../repositories/prisma-transaction.repository";
+import { PrismaTransactionXmlRepository } from "../repositories/prisma-transaction-xml.repository";
 import {
   XmlExportUsecase,
   type XmlSectionType,
@@ -31,7 +31,7 @@ export async function exportXml(
     throw new Error("報告年は有効な数値である必要があります");
   }
 
-  const repository = new PrismaTransactionRepository(prisma);
+  const repository = new PrismaTransactionXmlRepository(prisma);
   const usecase = new XmlExportUsecase(repository);
 
   const result = await usecase.execute({

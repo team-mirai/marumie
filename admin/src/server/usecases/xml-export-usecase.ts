@@ -1,7 +1,7 @@
 import * as iconv from "iconv-lite";
 import { create } from "xmlbuilder2";
 import type { XMLBuilder } from "xmlbuilder2/lib/interfaces";
-import type { ITransactionRepository } from "../repositories/interfaces/transaction-repository.interface";
+import type { ITransactionXmlRepository } from "../repositories/interfaces/transaction-xml-repository.interface";
 import {
   Syuushi0706OtherIncomeUsecase,
   type OtherIncomeSection,
@@ -47,7 +47,7 @@ export interface XmlExportResult {
 // ============================================================
 
 export class XmlExportUsecase {
-  constructor(private repository: ITransactionRepository) {}
+  constructor(private repository: ITransactionXmlRepository) {}
 
   async execute(input: XmlExportInput): Promise<XmlExportResult> {
     const { sectionXml, section, filename } = await this.buildSection(input);

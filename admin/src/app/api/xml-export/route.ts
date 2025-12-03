@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import * as iconv from "iconv-lite";
 import { prisma } from "@/server/lib/prisma";
-import { PrismaTransactionRepository } from "@/server/repositories/prisma-transaction.repository";
+import { PrismaTransactionXmlRepository } from "@/server/repositories/prisma-transaction-xml.repository";
 import {
   XmlExportUsecase,
   type XmlSectionType,
@@ -50,7 +50,7 @@ export async function GET(request: Request) {
   const section = sectionRaw as XmlSectionType;
 
   try {
-    const repository = new PrismaTransactionRepository(prisma);
+    const repository = new PrismaTransactionXmlRepository(prisma);
     const usecase = new XmlExportUsecase(repository);
 
     const result = await usecase.execute({
