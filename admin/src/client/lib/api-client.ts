@@ -29,6 +29,15 @@ export interface BalanceSnapshot {
   updated_at: Date;
 }
 
+export interface OtherIncomeXmlParams {
+  politicalOrganizationId: string;
+  financialYear: string;
+}
+
+export interface OtherIncomeXmlPreviewResponse {
+  xml: string;
+}
+
 export class ApiClient {
   private baseUrl: string;
 
@@ -82,6 +91,38 @@ export class ApiClient {
     return this.request<BalanceSnapshot[]>(
       `/api/balance-snapshots?orgId=${orgId}`,
     );
+  }
+
+  async getOtherIncomeXmlPreview(
+    params: OtherIncomeXmlParams,
+  ): Promise<OtherIncomeXmlPreviewResponse> {
+    const searchParams = new URLSearchParams({
+      politicalOrganizationId: params.politicalOrganizationId,
+      financialYear: params.financialYear,
+      mode: "preview",
+    });
+    return this.request<OtherIncomeXmlPreviewResponse>(
+      `/api/xml/other-income?${searchParams.toString()}`,
+    );
+  }
+
+  async downloadOtherIncomeXml(params: OtherIncomeXmlParams): Promise<Blob> {
+    const searchParams = new URLSearchParams({
+      politicalOrganizationId: params.politicalOrganizationId,
+      financialYear: params.financialYear,
+    });
+    const response = await fetch(
+      `${this.baseUrl}/api/xml/other-income?${searchParams.toString()}`,
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(
+        errorData.error || `HTTP error! status: ${response.status}`,
+      );
+    }
+
+    return response.blob();
   }
 }
 

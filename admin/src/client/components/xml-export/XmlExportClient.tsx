@@ -7,6 +7,7 @@ import Card from "@/client/components/ui/Card";
 import Button from "@/client/components/ui/Button";
 import Input from "@/client/components/ui/Input";
 import Selector from "@/client/components/ui/Selector";
+import { apiClient } from "@/client/lib/api-client";
 
 interface XmlExportClientProps {
   organizations: PoliticalOrganization[];
@@ -50,18 +51,10 @@ export function XmlExportClient({ organizations }: XmlExportClientProps) {
     setStatus(null);
 
     try {
-      const params = new URLSearchParams({
+      const data = await apiClient.getOtherIncomeXmlPreview({
         politicalOrganizationId: selectedOrganizationId,
         financialYear,
-        mode: "preview",
       });
-      const response = await fetch(
-        `/api/xml/other-income?${params.toString()}`,
-      );
-      if (!response.ok) {
-        throw new Error("XML取得に失敗しました");
-      }
-      const data = (await response.json()) as { xml: string };
       setPreviewXml(data.xml);
       setStatus({ type: "success", message: "プレビューを更新しました" });
     } catch (error) {
@@ -84,20 +77,11 @@ export function XmlExportClient({ organizations }: XmlExportClientProps) {
     setStatus(null);
     startDownloadTransition(async () => {
       try {
-        const params = new URLSearchParams({
+        const blob = await apiClient.downloadOtherIncomeXml({
           politicalOrganizationId: selectedOrganizationId,
           financialYear,
         });
 
-        const response = await fetch(
-          `/api/xml/other-income?${params.toString()}`,
-        );
-
-        if (!response.ok) {
-          throw new Error("XMLダウンロードに失敗しました");
-        }
-
-        const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
         const link = document.createElement("a");
         link.href = url;
