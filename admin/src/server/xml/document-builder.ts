@@ -1,4 +1,7 @@
-interface XmlHead {
+import { create, fragment } from "xmlbuilder2";
+import type { XMLBuilder } from "xmlbuilder2/lib/interfaces";
+
+export interface XmlHead {
   version: string;
   appName: string;
   fileFormatNo: string;
@@ -16,7 +19,7 @@ const DEFAULT_HEAD: XmlHead = {
 
 export interface XmlDocumentOptions {
   head?: Partial<XmlHead>;
-  sections: string[];
+  sections: XMLBuilder[];
 }
 
 export function buildXmlDocument({
@@ -28,27 +31,32 @@ export function buildXmlDocument({
     ...head,
   };
 
-  const headXml = [
-    "<HEAD>",
-    `  <VERSION>${resolvedHead.version}</VERSION>`,
-    `  <APP>${resolvedHead.appName}</APP>`,
-    `  <FILE_FORMAT_NO>${resolvedHead.fileFormatNo}</FILE_FORMAT_NO>`,
-    `  <KOKUJI_APP_FLG>${resolvedHead.kokujiAppFlag}</KOKUJI_APP_FLG>`,
-    `  <CHOUBO_APP_VER>${resolvedHead.choboAppVersion}</CHOUBO_APP_VER>`,
-    "</HEAD>",
-  ].join("\n");
+  const doc = create({ version: "1.0", encoding: "Shift_JIS" }).ele("BOOK");
 
-  const indentedSections = [headXml, ...sections].map((section) =>
-    section
-      .split("\n")
-      .map((line) => `  ${line}`)
-      .join("\n"),
-  );
+  doc
+    .ele("HEAD")
+    .ele("VERSION")
+    .txt(resolvedHead.version)
+    .up()
+    .ele("APP")
+    .txt(resolvedHead.appName)
+    .up()
+    .ele("FILE_FORMAT_NO")
+    .txt(resolvedHead.fileFormatNo)
+    .up()
+    .ele("KOKUJI_APP_FLG")
+    .txt(resolvedHead.kokujiAppFlag)
+    .up()
+    .ele("CHOUBO_APP_VER")
+    .txt(resolvedHead.choboAppVersion)
+    .up()
+    .up();
 
-  return [
-    '<?xml version="1.0" encoding="Shift_JIS" ?>',
-    "<BOOK>",
-    ...indentedSections,
-    "</BOOK>",
-  ].join("\n");
+  for (const section of sections) {
+    doc.import(section);
+  }
+
+  return doc.end({ prettyPrint: true, indent: "  " });
 }
+
+export { fragment };

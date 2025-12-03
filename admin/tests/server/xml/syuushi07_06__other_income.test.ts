@@ -68,7 +68,8 @@ describe("serializeOtherIncomeSection", () => {
       ],
     };
 
-    const xml = serializeOtherIncomeSection(section);
+    const xmlBuilder = serializeOtherIncomeSection(section);
+    const xml = xmlBuilder.toString();
 
     expect(xml).toContain("<SYUUSHI07_06>");
     expect(xml).toContain("&amp;");
@@ -76,4 +77,3 @@ describe("serializeOtherIncomeSection", () => {
     expect(xml).toContain("<MIMAN_GK/>");
   });
 });
-

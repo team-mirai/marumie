@@ -1,12 +1,3 @@
-export function escapeXml(value: string): string {
-  return value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&apos;");
-}
-
 export function formatAmount(value: number | null | undefined): string {
   if (!Number.isFinite(value ?? null)) {
     return "0";

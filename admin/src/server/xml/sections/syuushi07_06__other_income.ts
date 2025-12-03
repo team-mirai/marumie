@@ -1,6 +1,8 @@
 import { prisma } from "@/server/lib/prisma";
 import type { TransactionType } from "@/shared/models/transaction";
-import { escapeXml, formatAmount, sanitizeText } from "../utils/xml-utils";
+import { fragment } from "../document-builder";
+import { formatAmount, sanitizeText } from "../utils/xml-utils";
+import type { XMLBuilder } from "xmlbuilder2/lib/interfaces";
 
 const TEN_MAN_THRESHOLD = 100_000;
 
@@ -97,33 +99,33 @@ export function aggregateOtherIncomeFromTransactions(
 
 export function serializeOtherIncomeSection(
   section: OtherIncomeSection,
-): string {
-  const lines = [
-    "<SYUUSHI07_06>",
-    "  <SHEET>",
-    `    <KINGAKU_GK>${formatAmount(section.totalAmount)}</KINGAKU_GK>`,
-    section.underThresholdAmount !== null
-      ? `    <MIMAN_GK>${formatAmount(section.underThresholdAmount)}</MIMAN_GK>`
-      : "    <MIMAN_GK/>",
-  ];
+): XMLBuilder {
+  const frag = fragment();
+  const root = frag.ele("SYUUSHI07_06");
+  const sheet = root.ele("SHEET");
 
-  section.rows.forEach((row) => {
-    lines.push("    <ROW>");
-    lines.push(`      <ICHIREN_NO>${row.ichirenNo}</ICHIREN_NO>`);
-    lines.push(`      <TEKIYOU>${escapeXml(row.tekiyou)}</TEKIYOU>`);
-    lines.push(`      <KINGAKU>${formatAmount(row.kingaku)}</KINGAKU>`);
-    lines.push(
-      row.bikou
-        ? `      <BIKOU>${escapeXml(row.bikou)}</BIKOU>`
-        : "      <BIKOU/>",
-    );
-    lines.push("    </ROW>");
-  });
+  sheet.ele("KINGAKU_GK").txt(formatAmount(section.totalAmount));
 
-  lines.push("  </SHEET>");
-  lines.push("</SYUUSHI07_06>");
+  if (section.underThresholdAmount !== null) {
+    sheet.ele("MIMAN_GK").txt(formatAmount(section.underThresholdAmount));
+  } else {
+    sheet.ele("MIMAN_GK");
+  }
 
-  return lines.join("\n");
+  for (const row of section.rows) {
+    const rowEle = sheet.ele("ROW");
+    rowEle.ele("ICHIREN_NO").txt(row.ichirenNo);
+    rowEle.ele("TEKIYOU").txt(row.tekiyou);
+    rowEle.ele("KINGAKU").txt(formatAmount(row.kingaku));
+
+    if (row.bikou) {
+      rowEle.ele("BIKOU").txt(row.bikou);
+    } else {
+      rowEle.ele("BIKOU");
+    }
+  }
+
+  return frag;
 }
 
 function buildTekiyou(transaction: SectionTransaction): string {
