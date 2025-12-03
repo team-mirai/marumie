@@ -7,7 +7,7 @@ import Card from "@/client/components/ui/Card";
 import Button from "@/client/components/ui/Button";
 import Input from "@/client/components/ui/Input";
 import Selector from "@/client/components/ui/Selector";
-import { exportOtherIncomeXml } from "@/server/actions/export-other-income-xml";
+import { exportXml } from "@/server/actions/export-xml";
 import { apiClient } from "@/client/lib/api-client";
 
 interface XmlExportClientProps {
@@ -52,9 +52,10 @@ export function XmlExportClient({ organizations }: XmlExportClientProps) {
     setStatus(null);
 
     try {
-      const result = await exportOtherIncomeXml({
+      const result = await exportXml({
         politicalOrganizationId: selectedOrganizationId,
         financialYear: Number.parseInt(financialYear, 10),
+        section: "other-income",
       });
       setPreviewXml(result.xml);
       setStatus({ type: "success", message: "プレビューを更新しました" });

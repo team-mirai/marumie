@@ -2,7 +2,12 @@ import { NextResponse } from "next/server";
 import * as iconv from "iconv-lite";
 import { prisma } from "@/server/lib/prisma";
 import { PrismaTransactionRepository } from "@/server/repositories/prisma-transaction.repository";
-import { GenerateOtherIncomeXmlUsecase } from "@/server/usecases/generate-other-income-xml-usecase";
+import {
+  XmlExportUsecase,
+  type XmlSectionType,
+} from "@/server/usecases/xml-export-usecase";
+
+const VALID_SECTIONS: XmlSectionType[] = ["other-income"];
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
@@ -10,7 +15,7 @@ export async function GET(request: Request) {
     "politicalOrganizationId",
   );
   const financialYearRaw = url.searchParams.get("financialYear");
-  const section = url.searchParams.get("section");
+  const sectionRaw = url.searchParams.get("section") || "other-income";
 
   if (!politicalOrganizationId) {
     return NextResponse.json(
@@ -35,21 +40,23 @@ export async function GET(request: Request) {
     );
   }
 
-  try {
-    // Currently only supports "other-income" section
-    if (section && section !== "other-income") {
-      return NextResponse.json(
-        { error: `Unsupported section: ${section}` },
-        { status: 400 },
-      );
-    }
+  if (!VALID_SECTIONS.includes(sectionRaw as XmlSectionType)) {
+    return NextResponse.json(
+      { error: `Unsupported section: ${sectionRaw}` },
+      { status: 400 },
+    );
+  }
 
+  const section = sectionRaw as XmlSectionType;
+
+  try {
     const repository = new PrismaTransactionRepository(prisma);
-    const usecase = new GenerateOtherIncomeXmlUsecase(repository);
+    const usecase = new XmlExportUsecase(repository);
 
     const result = await usecase.execute({
       politicalOrganizationId,
       financialYear,
+      section,
     });
 
     const shiftJisBuffer = iconv.encode(result.xml, "shift_jis");

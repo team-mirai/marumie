@@ -2,23 +2,27 @@
 
 import { prisma } from "@/server/lib/prisma";
 import { PrismaTransactionRepository } from "../repositories/prisma-transaction.repository";
-import { GenerateOtherIncomeXmlUsecase } from "../usecases/generate-other-income-xml-usecase";
-import type { OtherIncomeSection } from "../xml/sections/syuushi07_06__other_income";
+import {
+  XmlExportUsecase,
+  type XmlSectionType,
+} from "../usecases/xml-export-usecase";
+import type { OtherIncomeSection } from "../usecases/xml/syuushi07_06__other_income-usecase";
 
-export interface ExportOtherIncomeXmlInput {
+export interface ExportXmlInput {
   politicalOrganizationId: string;
   financialYear: number;
+  section: XmlSectionType;
 }
 
-export interface ExportOtherIncomeXmlResult {
+export interface ExportXmlResult {
   xml: string;
   filename: string;
-  section: OtherIncomeSection;
+  sectionData: OtherIncomeSection; // Will be union type when more sections added
 }
 
-export async function exportOtherIncomeXml(
-  input: ExportOtherIncomeXmlInput,
-): Promise<ExportOtherIncomeXmlResult> {
+export async function exportXml(
+  input: ExportXmlInput,
+): Promise<ExportXmlResult> {
   if (!input.politicalOrganizationId?.trim()) {
     throw new Error("政治団体IDは必須です");
   }
@@ -28,16 +32,17 @@ export async function exportOtherIncomeXml(
   }
 
   const repository = new PrismaTransactionRepository(prisma);
-  const usecase = new GenerateOtherIncomeXmlUsecase(repository);
+  const usecase = new XmlExportUsecase(repository);
 
   const result = await usecase.execute({
     politicalOrganizationId: input.politicalOrganizationId,
     financialYear: input.financialYear,
+    section: input.section,
   });
 
   return {
     xml: result.xml,
     filename: result.filename,
-    section: result.section,
+    sectionData: result.sectionData,
   };
 }
