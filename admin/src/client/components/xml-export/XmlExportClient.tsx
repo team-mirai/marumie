@@ -7,6 +7,7 @@ import Card from "@/client/components/ui/Card";
 import Button from "@/client/components/ui/Button";
 import Input from "@/client/components/ui/Input";
 import Selector from "@/client/components/ui/Selector";
+import { exportOtherIncomeXml } from "@/server/actions/export-other-income-xml";
 import { apiClient } from "@/client/lib/api-client";
 
 interface XmlExportClientProps {
@@ -51,11 +52,11 @@ export function XmlExportClient({ organizations }: XmlExportClientProps) {
     setStatus(null);
 
     try {
-      const data = await apiClient.getOtherIncomeXmlPreview({
+      const result = await exportOtherIncomeXml({
         politicalOrganizationId: selectedOrganizationId,
-        financialYear,
+        financialYear: Number.parseInt(financialYear, 10),
       });
-      setPreviewXml(data.xml);
+      setPreviewXml(result.xml);
       setStatus({ type: "success", message: "プレビューを更新しました" });
     } catch (error) {
       console.error(error);
@@ -77,9 +78,10 @@ export function XmlExportClient({ organizations }: XmlExportClientProps) {
     setStatus(null);
     startDownloadTransition(async () => {
       try {
-        const blob = await apiClient.downloadOtherIncomeXml({
+        const blob = await apiClient.downloadXmlExport({
           politicalOrganizationId: selectedOrganizationId,
           financialYear,
+          section: "other-income",
         });
 
         const url = window.URL.createObjectURL(blob);

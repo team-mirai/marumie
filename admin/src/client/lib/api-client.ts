@@ -29,13 +29,10 @@ export interface BalanceSnapshot {
   updated_at: Date;
 }
 
-export interface OtherIncomeXmlParams {
+export interface XmlExportParams {
   politicalOrganizationId: string;
   financialYear: string;
-}
-
-export interface OtherIncomeXmlPreviewResponse {
-  xml: string;
+  section: string;
 }
 
 export class ApiClient {
@@ -93,26 +90,14 @@ export class ApiClient {
     );
   }
 
-  async getOtherIncomeXmlPreview(
-    params: OtherIncomeXmlParams,
-  ): Promise<OtherIncomeXmlPreviewResponse> {
+  async downloadXmlExport(params: XmlExportParams): Promise<Blob> {
     const searchParams = new URLSearchParams({
       politicalOrganizationId: params.politicalOrganizationId,
       financialYear: params.financialYear,
-      mode: "preview",
-    });
-    return this.request<OtherIncomeXmlPreviewResponse>(
-      `/api/xml/other-income?${searchParams.toString()}`,
-    );
-  }
-
-  async downloadOtherIncomeXml(params: OtherIncomeXmlParams): Promise<Blob> {
-    const searchParams = new URLSearchParams({
-      politicalOrganizationId: params.politicalOrganizationId,
-      financialYear: params.financialYear,
+      section: params.section,
     });
     const response = await fetch(
-      `${this.baseUrl}/api/xml/other-income?${searchParams.toString()}`,
+      `${this.baseUrl}/api/xml-export?${searchParams.toString()}`,
     );
 
     if (!response.ok) {

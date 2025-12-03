@@ -2,26 +2,28 @@ import {
   aggregateOtherIncomeFromTransactions,
   serializeOtherIncomeSection,
   type OtherIncomeSection,
+  type SectionTransaction,
 } from "@/server/xml/sections/syuushi07_06__other_income";
 
 describe("aggregateOtherIncomeFromTransactions", () => {
   it("splits transactions into detailed rows and under-threshold bucket", () => {
-    const section = aggregateOtherIncomeFromTransactions([
+    const transactions: SectionTransaction[] = [
       {
         transactionNo: "1",
         label: "テスト取引1",
         description: "説明1",
-        memo: "",
+        memo: null,
         amount: 150_000,
       },
       {
         transactionNo: "2",
         label: "テスト取引2",
         description: "説明2",
-        memo: "",
+        memo: null,
         amount: 90_000,
       },
-    ]);
+    ];
+    const section = aggregateOtherIncomeFromTransactions(transactions);
 
     expect(section.totalAmount).toBe(240_000);
     expect(section.underThresholdAmount).toBe(90_000);
@@ -35,15 +37,16 @@ describe("aggregateOtherIncomeFromTransactions", () => {
   });
 
   it("sets underThresholdAmount to null when not applicable", () => {
-    const section = aggregateOtherIncomeFromTransactions([
+    const transactions: SectionTransaction[] = [
       {
         transactionNo: "3",
-        label: "",
+        label: null,
         description: "ラベル未設定",
         memo: "テストメモ",
         amount: 120_000,
       },
-    ]);
+    ];
+    const section = aggregateOtherIncomeFromTransactions(transactions);
 
     expect(section.totalAmount).toBe(120_000);
     expect(section.underThresholdAmount).toBeNull();

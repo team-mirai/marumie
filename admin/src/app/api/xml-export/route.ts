@@ -1,4 +1,7 @@
 import { NextResponse } from "next/server";
+import * as iconv from "iconv-lite";
+import { prisma } from "@/server/lib/prisma";
+import { PrismaTransactionRepository } from "@/server/repositories/prisma-transaction.repository";
 import { GenerateOtherIncomeXmlUsecase } from "@/server/usecases/generate-other-income-xml-usecase";
 
 export async function GET(request: Request) {
@@ -7,7 +10,7 @@ export async function GET(request: Request) {
     "politicalOrganizationId",
   );
   const financialYearRaw = url.searchParams.get("financialYear");
-  const mode = url.searchParams.get("mode");
+  const section = url.searchParams.get("section");
 
   if (!politicalOrganizationId) {
     return NextResponse.json(
@@ -33,17 +36,25 @@ export async function GET(request: Request) {
   }
 
   try {
-    const usecase = new GenerateOtherIncomeXmlUsecase();
+    // Currently only supports "other-income" section
+    if (section && section !== "other-income") {
+      return NextResponse.json(
+        { error: `Unsupported section: ${section}` },
+        { status: 400 },
+      );
+    }
+
+    const repository = new PrismaTransactionRepository(prisma);
+    const usecase = new GenerateOtherIncomeXmlUsecase(repository);
+
     const result = await usecase.execute({
       politicalOrganizationId,
       financialYear,
     });
 
-    if (mode === "preview") {
-      return NextResponse.json({ xml: result.xml });
-    }
+    const shiftJisBuffer = iconv.encode(result.xml, "shift_jis");
 
-    return new NextResponse(Uint8Array.from(result.shiftJisBuffer), {
+    return new NextResponse(Uint8Array.from(shiftJisBuffer), {
       headers: {
         "Content-Type": "application/xml; charset=Shift_JIS",
         "Content-Disposition": `attachment; filename="${result.filename}"`,

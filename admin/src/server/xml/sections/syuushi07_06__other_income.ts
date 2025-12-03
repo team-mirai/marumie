@@ -1,16 +1,14 @@
-import { prisma } from "@/server/lib/prisma";
-import type { TransactionType } from "@/shared/models/transaction";
 import { fragment } from "../document-builder";
 import { formatAmount, sanitizeText } from "../utils/xml-utils";
 import type { XMLBuilder } from "xmlbuilder2/lib/interfaces";
 
 const TEN_MAN_THRESHOLD = 100_000;
 
-interface SectionTransaction {
+export interface SectionTransaction {
   transactionNo: string;
-  label?: string | null;
-  description?: string | null;
-  memo?: string | null;
+  label: string | null;
+  description: string | null;
+  memo: string | null;
   amount: number;
 }
 
@@ -25,41 +23,6 @@ export interface OtherIncomeSection {
   totalAmount: number;
   underThresholdAmount: number | null;
   rows: OtherIncomeRow[];
-}
-
-export interface OtherIncomeSectionParams {
-  politicalOrganizationId: string;
-  financialYear: number;
-}
-
-export async function buildOtherIncomeSection(
-  params: OtherIncomeSectionParams,
-): Promise<OtherIncomeSection> {
-  const transactions = await prisma.transaction.findMany({
-    where: {
-      politicalOrganizationId: BigInt(params.politicalOrganizationId),
-      financialYear: params.financialYear,
-      transactionType: "income" satisfies TransactionType,
-      OR: [
-        { categoryKey: "other-income" },
-        { friendlyCategory: "その他の収入" },
-      ],
-    },
-    orderBy: [{ transactionDate: "asc" }, { id: "asc" }],
-  });
-
-  const normalized: SectionTransaction[] = transactions.map((transaction) => ({
-    transactionNo: transaction.transactionNo,
-    label: transaction.label,
-    description: transaction.description,
-    memo: transaction.memo,
-    amount: resolveTransactionAmount(
-      transaction.debitAmount,
-      transaction.creditAmount,
-    ),
-  }));
-
-  return aggregateOtherIncomeFromTransactions(normalized);
 }
 
 export function aggregateOtherIncomeFromTransactions(
@@ -145,15 +108,13 @@ function buildBikou(transaction: SectionTransaction): string {
   return sanitizeText(combined, 200) || mfRowInfo;
 }
 
-function resolveTransactionAmount(
-  debitAmount: { toString: () => string },
-  creditAmount: { toString: () => string },
+export function resolveTransactionAmount(
+  debitAmount: number,
+  creditAmount: number,
 ): number {
-  const credit = Number(creditAmount.toString());
-  if (Number.isFinite(credit) && credit > 0) {
-    return credit;
+  if (Number.isFinite(creditAmount) && creditAmount > 0) {
+    return creditAmount;
   }
 
-  const debit = Number(debitAmount.toString());
-  return Number.isFinite(debit) ? debit : 0;
+  return Number.isFinite(debitAmount) ? debitAmount : 0;
 }

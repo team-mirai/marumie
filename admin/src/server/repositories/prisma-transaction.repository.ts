@@ -10,6 +10,8 @@ import type {
   ITransactionRepository,
   PaginatedResult,
   PaginationOptions,
+  OtherIncomeTransactionFilters,
+  OtherIncomeTransaction,
 } from "./interfaces/transaction-repository.interface";
 
 export class PrismaTransactionRepository implements ITransactionRepository {
@@ -300,5 +302,39 @@ export class PrismaTransactionRepository implements ITransactionRepository {
     }
 
     return base;
+  }
+
+  async findOtherIncomeTransactions(
+    filters: OtherIncomeTransactionFilters,
+  ): Promise<OtherIncomeTransaction[]> {
+    const transactions = await this.prisma.transaction.findMany({
+      where: {
+        politicalOrganizationId: BigInt(filters.politicalOrganizationId),
+        financialYear: filters.financialYear,
+        transactionType: "income",
+        OR: [
+          { categoryKey: "other-income" },
+          { friendlyCategory: "その他の収入" },
+        ],
+      },
+      orderBy: [{ transactionDate: "asc" }, { id: "asc" }],
+      select: {
+        transactionNo: true,
+        label: true,
+        description: true,
+        memo: true,
+        debitAmount: true,
+        creditAmount: true,
+      },
+    });
+
+    return transactions.map((t) => ({
+      transactionNo: t.transactionNo,
+      label: t.label,
+      description: t.description,
+      memo: t.memo,
+      debitAmount: Number(t.debitAmount),
+      creditAmount: Number(t.creditAmount),
+    }));
   }
 }

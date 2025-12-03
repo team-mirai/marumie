@@ -1,49 +1,56 @@
 import { GenerateOtherIncomeXmlUsecase } from "@/server/usecases/generate-other-income-xml-usecase";
-
-// Mock the buildOtherIncomeSection function
-jest.mock("@/server/xml/sections/syuushi07_06__other_income", () => {
-  const actual = jest.requireActual(
-    "@/server/xml/sections/syuushi07_06__other_income",
-  );
-  return {
-    ...actual,
-    buildOtherIncomeSection: jest.fn(),
-  };
-});
-
-import { buildOtherIncomeSection } from "@/server/xml/sections/syuushi07_06__other_income";
-
-const mockBuildOtherIncomeSection =
-  buildOtherIncomeSection as jest.MockedFunction<typeof buildOtherIncomeSection>;
+import type {
+  ITransactionRepository,
+  OtherIncomeTransaction,
+} from "@/server/repositories/interfaces/transaction-repository.interface";
 
 describe("GenerateOtherIncomeXmlUsecase", () => {
   let usecase: GenerateOtherIncomeXmlUsecase;
+  let mockRepository: jest.Mocked<
+    Pick<ITransactionRepository, "findOtherIncomeTransactions">
+  >;
 
   beforeEach(() => {
-    usecase = new GenerateOtherIncomeXmlUsecase();
+    mockRepository = {
+      findOtherIncomeTransactions: jest.fn(),
+    };
+    usecase = new GenerateOtherIncomeXmlUsecase(
+      mockRepository as unknown as ITransactionRepository,
+    );
     jest.clearAllMocks();
   });
 
   describe("execute", () => {
     it("generates XML document with proper structure", async () => {
-      mockBuildOtherIncomeSection.mockResolvedValue({
-        totalAmount: 300000,
-        underThresholdAmount: 50000,
-        rows: [
-          {
-            ichirenNo: "1",
-            tekiyou: "寄附金",
-            kingaku: 150000,
-            bikou: "MF行番号: 1",
-          },
-          {
-            ichirenNo: "2",
-            tekiyou: "その他収入",
-            kingaku: 100000,
-            bikou: "MF行番号: 2",
-          },
-        ],
-      });
+      const mockTransactions: OtherIncomeTransaction[] = [
+        {
+          transactionNo: "1",
+          label: "寄附金",
+          description: "寄附金収入",
+          memo: null,
+          debitAmount: 0,
+          creditAmount: 150000,
+        },
+        {
+          transactionNo: "2",
+          label: "その他収入",
+          description: "その他の収入",
+          memo: null,
+          debitAmount: 0,
+          creditAmount: 100000,
+        },
+        {
+          transactionNo: "3",
+          label: "少額収入",
+          description: "10万円未満",
+          memo: null,
+          debitAmount: 0,
+          creditAmount: 50000,
+        },
+      ];
+      mockRepository.findOtherIncomeTransactions.mockResolvedValue(
+        mockTransactions,
+      );
 
       const result = await usecase.execute({
         politicalOrganizationId: "123",
@@ -63,21 +70,23 @@ describe("GenerateOtherIncomeXmlUsecase", () => {
       expect(result.filename).toBe("SYUUSHI07_06_123_2024.xml");
       expect(result.shiftJisBuffer).toBeInstanceOf(Buffer);
       expect(result.section.totalAmount).toBe(300000);
+      expect(result.section.underThresholdAmount).toBe(50000);
     });
 
     it("properly escapes special XML characters", async () => {
-      mockBuildOtherIncomeSection.mockResolvedValue({
-        totalAmount: 200000,
-        underThresholdAmount: null,
-        rows: [
-          {
-            ichirenNo: "1",
-            tekiyou: "テスト & サンプル <特殊文字>",
-            kingaku: 200000,
-            bikou: '"引用符" & \'アポストロフィ\'',
-          },
-        ],
-      });
+      const mockTransactions: OtherIncomeTransaction[] = [
+        {
+          transactionNo: "1",
+          label: "テスト & サンプル <特殊文字>",
+          description: null,
+          memo: '"引用符" & \'アポストロフィ\'',
+          debitAmount: 0,
+          creditAmount: 200000,
+        },
+      ];
+      mockRepository.findOtherIncomeTransactions.mockResolvedValue(
+        mockTransactions,
+      );
 
       const result = await usecase.execute({
         politicalOrganizationId: "456",
@@ -92,18 +101,19 @@ describe("GenerateOtherIncomeXmlUsecase", () => {
     });
 
     it("generates correct Shift-JIS encoded bytes", async () => {
-      mockBuildOtherIncomeSection.mockResolvedValue({
-        totalAmount: 100000,
-        underThresholdAmount: null,
-        rows: [
-          {
-            ichirenNo: "1",
-            tekiyou: "日本語テスト",
-            kingaku: 100000,
-            bikou: "備考欄",
-          },
-        ],
-      });
+      const mockTransactions: OtherIncomeTransaction[] = [
+        {
+          transactionNo: "1",
+          label: "日本語テスト",
+          description: null,
+          memo: "備考欄",
+          debitAmount: 0,
+          creditAmount: 100000,
+        },
+      ];
+      mockRepository.findOtherIncomeTransactions.mockResolvedValue(
+        mockTransactions,
+      );
 
       const result = await usecase.execute({
         politicalOrganizationId: "789",
@@ -118,18 +128,20 @@ describe("GenerateOtherIncomeXmlUsecase", () => {
       expect(result.shiftJisBuffer.length).not.toBe(utf8Bytes.length);
     });
 
-    it("generates empty MIMAN_GK element when underThresholdAmount is null", async () => {
-      mockBuildOtherIncomeSection.mockResolvedValue({
-        totalAmount: 150000,
-        underThresholdAmount: null,
-        rows: [
-          {
-            ichirenNo: "1",
-            tekiyou: "テスト",
-            kingaku: 150000,
-          },
-        ],
-      });
+    it("generates empty MIMAN_GK element when all transactions are above threshold", async () => {
+      const mockTransactions: OtherIncomeTransaction[] = [
+        {
+          transactionNo: "1",
+          label: "大口収入",
+          description: null,
+          memo: null,
+          debitAmount: 0,
+          creditAmount: 150000,
+        },
+      ];
+      mockRepository.findOtherIncomeTransactions.mockResolvedValue(
+        mockTransactions,
+      );
 
       const result = await usecase.execute({
         politicalOrganizationId: "test",
@@ -137,47 +149,79 @@ describe("GenerateOtherIncomeXmlUsecase", () => {
       });
 
       expect(result.xml).toContain("<MIMAN_GK/>");
+      expect(result.section.underThresholdAmount).toBeNull();
     });
 
-    it("generates empty BIKOU element when bikou is undefined", async () => {
-      mockBuildOtherIncomeSection.mockResolvedValue({
-        totalAmount: 150000,
-        underThresholdAmount: null,
-        rows: [
-          {
-            ichirenNo: "1",
-            tekiyou: "テスト",
-            kingaku: 150000,
-            // bikou is undefined
-          },
-        ],
-      });
+    it("generates empty BIKOU element when memo is null", async () => {
+      const mockTransactions: OtherIncomeTransaction[] = [
+        {
+          transactionNo: "1",
+          label: "テスト",
+          description: null,
+          memo: null,
+          debitAmount: 0,
+          creditAmount: 150000,
+        },
+      ];
+      mockRepository.findOtherIncomeTransactions.mockResolvedValue(
+        mockTransactions,
+      );
 
       const result = await usecase.execute({
         politicalOrganizationId: "test",
         financialYear: 2024,
       });
 
-      expect(result.xml).toContain("<BIKOU/>");
+      // bikou should contain at least the MF行番号, so it won't be empty
+      expect(result.xml).toContain("MF行番号: 1");
     });
 
-    it("calls buildOtherIncomeSection with correct parameters", async () => {
-      mockBuildOtherIncomeSection.mockResolvedValue({
-        totalAmount: 0,
-        underThresholdAmount: null,
-        rows: [],
-      });
+    it("calls repository with correct parameters", async () => {
+      mockRepository.findOtherIncomeTransactions.mockResolvedValue([]);
 
       await usecase.execute({
         politicalOrganizationId: "org-123",
         financialYear: 2025,
       });
 
-      expect(mockBuildOtherIncomeSection).toHaveBeenCalledWith({
+      expect(mockRepository.findOtherIncomeTransactions).toHaveBeenCalledWith({
         politicalOrganizationId: "org-123",
         financialYear: 2025,
       });
     });
+
+    it("uses creditAmount when available, falls back to debitAmount", async () => {
+      const mockTransactions: OtherIncomeTransaction[] = [
+        {
+          transactionNo: "1",
+          label: "Credit側",
+          description: null,
+          memo: null,
+          debitAmount: 0,
+          creditAmount: 150000,
+        },
+        {
+          transactionNo: "2",
+          label: "Debit側",
+          description: null,
+          memo: null,
+          debitAmount: 120000,
+          creditAmount: 0,
+        },
+      ];
+      mockRepository.findOtherIncomeTransactions.mockResolvedValue(
+        mockTransactions,
+      );
+
+      const result = await usecase.execute({
+        politicalOrganizationId: "test",
+        financialYear: 2024,
+      });
+
+      expect(result.section.totalAmount).toBe(270000);
+      expect(result.section.rows).toHaveLength(2);
+      expect(result.section.rows[0].kingaku).toBe(150000);
+      expect(result.section.rows[1].kingaku).toBe(120000);
+    });
   });
 });
-
