@@ -10,18 +10,22 @@ import {
 } from "@/server/usecases/get-transactions-for-csv-usecase";
 import { CACHE_REVALIDATE_SECONDS } from "./constants";
 
-export const loadTransactionsForCsv = unstable_cache(
-  async (params: GetTransactionsForCsvParams) => {
-    const transactionRepository = new PrismaTransactionRepository(prisma);
-    const politicalOrganizationRepository =
-      new PrismaPoliticalOrganizationRepository(prisma);
-    const usecase = new GetTransactionsForCsvUsecase(
-      transactionRepository,
-      politicalOrganizationRepository,
-    );
+export const loadTransactionsForCsv = (params: GetTransactionsForCsvParams) => {
+  const cacheKey = `transactions-for-csv-${params.slugs.join("-")}-${params.financialYear}`;
 
-    return await usecase.execute(params);
-  },
-  ["transactions-for-csv"],
-  { revalidate: CACHE_REVALIDATE_SECONDS },
-);
+  return unstable_cache(
+    async () => {
+      const transactionRepository = new PrismaTransactionRepository(prisma);
+      const politicalOrganizationRepository =
+        new PrismaPoliticalOrganizationRepository(prisma);
+      const usecase = new GetTransactionsForCsvUsecase(
+        transactionRepository,
+        politicalOrganizationRepository,
+      );
+
+      return await usecase.execute(params);
+    },
+    [cacheKey],
+    { revalidate: CACHE_REVALIDATE_SECONDS, tags: ["transactions-for-csv"] },
+  )();
+};
