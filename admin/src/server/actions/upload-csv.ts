@@ -60,6 +60,7 @@ export async function uploadCsv(
 
     // キャッシュを無効化してトランザクション一覧を更新
     revalidateTag("transactions-data");
+    revalidateTag("transactions-for-csv");
 
     return {
       ok: true,
