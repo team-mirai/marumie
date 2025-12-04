@@ -10,6 +10,9 @@ export async function POST(request: NextRequest) {
     const refreshToken = request.headers.get("x-refresh-token");
     const expectedToken = process.env.DATA_REFRESH_TOKEN;
 
+    console.log("🔑 Received token:", refreshToken?.slice(0, 8) + "...");
+    console.log("🔑 Expected token:", expectedToken?.slice(0, 8) + "...");
+
     if (!expectedToken) {
       console.error("DATA_REFRESH_TOKEN not configured");
       return NextResponse.json(
@@ -19,6 +22,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (!refreshToken || refreshToken !== expectedToken) {
+      console.error("Token mismatch or missing token");
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
