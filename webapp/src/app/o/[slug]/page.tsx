@@ -83,7 +83,7 @@ export default async function OrgPage({ params }: OrgPageProps) {
         updatedAt={updatedAt}
         organizationName={currentOrganization?.displayName}
       />
-      <TransparencySection title="党首も毎日これを見て、お金をやりくりしています👀" />
+      <TransparencySection title="党首もこれを見て、お金をやりくりしています👀" />
       <BalanceSheetSection
         data={data?.balanceSheetData}
         updatedAt={updatedAt}

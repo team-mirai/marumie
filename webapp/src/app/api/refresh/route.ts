@@ -3,8 +3,6 @@ import { revalidatePath, revalidateTag } from "next/cache";
 import { type NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest) {
-  console.log("🔄 WEBAPP CACHE REFRESH API CALLED - Starting refresh process");
-
   try {
     // Check for refresh token
     const refreshToken = request.headers.get("x-refresh-token");
@@ -23,12 +21,12 @@ export async function POST(request: NextRequest) {
     }
 
     revalidateTag("transactions-page-data");
+    revalidateTag("transactions-for-csv");
     revalidateTag("top-page-data");
 
     revalidatePath("/transactions");
     revalidatePath("/");
 
-    console.log("✅ WEBAPP CACHE REFRESH COMPLETED SUCCESSFULLY");
     return NextResponse.json({
       success: true,
       message: "Cache refreshed successfully",

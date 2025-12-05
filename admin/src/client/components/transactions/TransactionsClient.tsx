@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { TransactionRow } from "./TransactionRow";
 import { StaticPagination } from "@/client/components/ui/StaticPagination";
 import { DeleteAllButton } from "./DeleteAllButton";
+import { ClearWebappCacheButton } from "./ClearWebappCacheButton";
 import { Selector } from "@/client/components/ui";
 import type { GetTransactionsResult } from "@/server/usecases/get-transactions-usecase";
 import type { PoliticalOrganization } from "@/shared/models/political-organization";
@@ -106,14 +107,17 @@ export function TransactionsClient({ organizations }: TransactionsClientProps) {
             全 {data.total} 件中 {(data.page - 1) * data.perPage + 1} -{" "}
             {Math.min(data.page * data.perPage, data.total)} 件を表示
           </p>
-          <DeleteAllButton
-            disabled={data.total === 0}
-            organizationId={selectedOrgId || undefined}
-            onDeleted={() => {
-              // データを再取得
-              window.location.reload();
-            }}
-          />
+          <div className="flex gap-2">
+            <ClearWebappCacheButton />
+            <DeleteAllButton
+              disabled={data.total === 0}
+              organizationId={selectedOrgId || undefined}
+              onDeleted={() => {
+                // データを再取得
+                window.location.reload();
+              }}
+            />
+          </div>
         </div>
       )}
 
