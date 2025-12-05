@@ -29,6 +29,12 @@ export interface BalanceSnapshot {
   updated_at: Date;
 }
 
+export interface XmlExportParams {
+  politicalOrganizationId: string;
+  financialYear: string;
+  section: string;
+}
+
 export class ApiClient {
   private baseUrl: string;
 
@@ -82,6 +88,26 @@ export class ApiClient {
     return this.request<BalanceSnapshot[]>(
       `/api/balance-snapshots?orgId=${orgId}`,
     );
+  }
+
+  async downloadXmlExport(params: XmlExportParams): Promise<Blob> {
+    const searchParams = new URLSearchParams({
+      politicalOrganizationId: params.politicalOrganizationId,
+      financialYear: params.financialYear,
+      section: params.section,
+    });
+    const response = await fetch(
+      `${this.baseUrl}/api/xml-export?${searchParams.toString()}`,
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(
+        errorData.error || `HTTP error! status: ${response.status}`,
+      );
+    }
+
+    return response.blob();
   }
 }
 
