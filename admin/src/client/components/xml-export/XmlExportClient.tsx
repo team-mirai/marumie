@@ -7,6 +7,8 @@ import Card from "@/client/components/ui/Card";
 import Button from "@/client/components/ui/Button";
 import Input from "@/client/components/ui/Input";
 import Selector from "@/client/components/ui/Selector";
+import { exportXml } from "@/server/actions/export-xml";
+import { apiClient } from "@/client/lib/api-client";
 
 interface XmlExportClientProps {
   organizations: PoliticalOrganization[];
@@ -50,19 +52,12 @@ export function XmlExportClient({ organizations }: XmlExportClientProps) {
     setStatus(null);
 
     try {
-      const params = new URLSearchParams({
+      const result = await exportXml({
         politicalOrganizationId: selectedOrganizationId,
-        financialYear,
-        mode: "preview",
+        financialYear: Number.parseInt(financialYear, 10),
+        section: "other-income",
       });
-      const response = await fetch(
-        `/api/xml/other-income?${params.toString()}`,
-      );
-      if (!response.ok) {
-        throw new Error("XML取得に失敗しました");
-      }
-      const data = (await response.json()) as { xml: string };
-      setPreviewXml(data.xml);
+      setPreviewXml(result.xml);
       setStatus({ type: "success", message: "プレビューを更新しました" });
     } catch (error) {
       console.error(error);
@@ -84,28 +79,17 @@ export function XmlExportClient({ organizations }: XmlExportClientProps) {
     setStatus(null);
     startDownloadTransition(async () => {
       try {
-        const params = new URLSearchParams({
+        const { blob, filename } = await apiClient.downloadXmlExport({
           politicalOrganizationId: selectedOrganizationId,
           financialYear,
+          section: "other-income",
         });
 
-        const response = await fetch(
-          `/api/xml/other-income?${params.toString()}`,
-        );
-
-        if (!response.ok) {
-          throw new Error("XMLダウンロードに失敗しました");
-        }
-
-        const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
         const link = document.createElement("a");
         link.href = url;
-        const contentDisposition = response.headers.get("Content-Disposition");
-        const filenameFromHeader =
-          extractFilenameFromContentDisposition(contentDisposition);
         link.download =
-          filenameFromHeader ||
+          filename ||
           `marumie_xml_${selectedOrganizationId}_${financialYear}.xml`;
         document.body.appendChild(link);
         link.click();
@@ -214,30 +198,4 @@ export function XmlExportClient({ organizations }: XmlExportClientProps) {
       </Card>
     </div>
   );
-}
-
-function extractFilenameFromContentDisposition(
-  contentDisposition: string | null,
-) {
-  if (!contentDisposition) {
-    return null;
-  }
-
-  const filenameStarMatch = contentDisposition.match(
-    /filename\*\s*=\s*UTF-8''([^;]+)/i,
-  );
-  if (filenameStarMatch && filenameStarMatch[1]) {
-    try {
-      return decodeURIComponent(filenameStarMatch[1]);
-    } catch {
-      // ignore decoding errors and continue to fallback
-    }
-  }
-
-  const filenameMatch = contentDisposition.match(/filename\s*=\s*"([^"]+)"/i);
-  if (filenameMatch && filenameMatch[1]) {
-    return filenameMatch[1];
-  }
-
-  return null;
 }
