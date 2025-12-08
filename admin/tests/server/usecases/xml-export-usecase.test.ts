@@ -21,6 +21,7 @@ describe("XmlExportUsecase", () => {
       const mockTransactions: OtherIncomeTransaction[] = [
         {
           transactionNo: "1",
+          friendlyCategory: "その他の収入",
           label: "寄附金",
           description: "寄附金収入",
           memo: null,
@@ -29,6 +30,7 @@ describe("XmlExportUsecase", () => {
         },
         {
           transactionNo: "2",
+          friendlyCategory: "その他の収入",
           label: "その他収入",
           description: "その他の収入",
           memo: null,
@@ -56,14 +58,48 @@ describe("XmlExportUsecase", () => {
 
       expect(result.filename).toBe("SYUUSHI07_06_123_2024.xml");
       expect(result.shiftJisBuffer).toBeInstanceOf(Buffer);
-      expect(result.sectionData.totalAmount).toBe(250000);
+      expect(result.sectionsData.SYUUSHI07_06?.totalAmount).toBe(250000);
+    });
+
+    it("includes SYUUSHI_FLG section with correct flag for SYUUSHI07_06", async () => {
+      const mockTransactions: OtherIncomeTransaction[] = [
+        {
+          transactionNo: "1",
+          friendlyCategory: "その他の収入",
+          label: "テスト",
+          description: null,
+          memo: null,
+          debitAmount: 0,
+          creditAmount: 100000,
+        },
+      ];
+      mockRepository.findOtherIncomeTransactions.mockResolvedValue(
+        mockTransactions,
+      );
+
+      const result = await usecase.execute({
+        politicalOrganizationId: "123",
+        financialYear: 2024,
+        sections: ["SYUUSHI07_06"],
+      });
+
+      // SYUUSHI_FLG should be present
+      expect(result.xml).toContain("<SYUUSHI_FLG>");
+      expect(result.xml).toContain("<SYUUSHI_UMU_FLG>");
+      expect(result.xml).toContain("<SYUUSHI_UMU>");
+
+      // SYUUSHI07_06 is at index 5 (0-based), so the flag string should have a 1 at position 5
+      // Expected: "000001" + "0".repeat(45) = 51 chars total
+      const expectedFlagStart = "000001";
+      expect(result.xml).toContain(expectedFlagStart);
     });
 
     it("properly escapes special XML characters", async () => {
       const mockTransactions: OtherIncomeTransaction[] = [
         {
           transactionNo: "1",
-          label: "テスト & サンプル <特殊文字>",
+          friendlyCategory: "テスト & サンプル <特殊文字>",
+          label: null,
           description: null,
           memo: '"引用符" & \'アポストロフィ\'',
           debitAmount: 0,
@@ -89,7 +125,8 @@ describe("XmlExportUsecase", () => {
       const mockTransactions: OtherIncomeTransaction[] = [
         {
           transactionNo: "1",
-          label: "日本語テスト",
+          friendlyCategory: "日本語テスト",
+          label: null,
           description: null,
           memo: "備考欄",
           debitAmount: 0,
