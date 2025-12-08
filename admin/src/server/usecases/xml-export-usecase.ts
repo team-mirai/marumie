@@ -60,17 +60,20 @@ const FLAG_STRING_LENGTH = 51;
 // Section type uses form IDs directly
 export type XmlSectionType = (typeof KNOWN_FORM_IDS)[number];
 
+// Union type for all section data (will grow as more sections are added)
+export type SectionData = OtherIncomeSection;
+
 export interface XmlExportInput {
   politicalOrganizationId: string;
   financialYear: number;
-  section: XmlSectionType;
+  sections: XmlSectionType[];
 }
 
 export interface XmlExportResult {
   xml: string;
   shiftJisBuffer: Buffer;
   filename: string;
-  sectionData: OtherIncomeSection; // Will be union type when more sections added
+  sectionsData: Partial<Record<XmlSectionType, SectionData>>;
 }
 
 // ============================================================
@@ -81,39 +84,55 @@ export class XmlExportUsecase {
   constructor(private repository: ITransactionXmlRepository) {}
 
   async execute(input: XmlExportInput): Promise<XmlExportResult> {
-    const { sectionXml, section, filename } = await this.buildSection(input);
+    const sectionXmls: XMLBuilder[] = [];
+    const sectionsData: Partial<Record<XmlSectionType, SectionData>> = {};
 
-    // Determine which forms are available based on the sections being exported
-    const availableFormIds = [input.section];
+    // Build each requested section
+    for (const sectionType of input.sections) {
+      const result = await this.buildSection(sectionType, input);
+      sectionXmls.push(result.sectionXml);
+      sectionsData[sectionType] = result.section;
+    }
 
-    const xml = this.buildXmlDocument([sectionXml], availableFormIds);
+    const xml = this.buildXmlDocument(sectionXmls, input.sections);
     const shiftJisBuffer = iconv.encode(xml, "shift_jis");
+
+    // Generate filename based on sections
+    const sectionsStr = input.sections.join("_");
+    const filename = `${sectionsStr}_${input.politicalOrganizationId}_${input.financialYear}.xml`;
 
     return {
       xml,
       shiftJisBuffer,
       filename,
-      sectionData: section,
+      sectionsData,
     };
   }
 
-  private async buildSection(input: XmlExportInput) {
-    switch (input.section) {
+  private async buildSection(
+    sectionType: XmlSectionType,
+    input: XmlExportInput,
+  ) {
+    switch (sectionType) {
       case "SYUUSHI07_06": {
         const usecase = new Syuushi0706OtherIncomeUsecase(this.repository);
-        return usecase.execute({
+        const result = await usecase.execute({
           politicalOrganizationId: input.politicalOrganizationId,
           financialYear: input.financialYear,
         });
+        return {
+          sectionXml: result.sectionXml,
+          section: result.section,
+        };
       }
       default:
-        throw new Error(`Unsupported section type: ${input.section}`);
+        throw new Error(`Unsupported section type: ${sectionType}`);
     }
   }
 
   private buildXmlDocument(
     sections: XMLBuilder[],
-    availableFormIds: string[],
+    availableFormIds: XmlSectionType[],
     head: Partial<XmlHead> = {},
   ): string {
     const resolvedHead: XmlHead = {

@@ -32,7 +32,7 @@ export interface BalanceSnapshot {
 export interface XmlExportParams {
   politicalOrganizationId: string;
   financialYear: string;
-  section: string;
+  sections: string[];
 }
 
 export class ApiClient {
@@ -96,7 +96,7 @@ export class ApiClient {
     const searchParams = new URLSearchParams({
       politicalOrganizationId: params.politicalOrganizationId,
       financialYear: params.financialYear,
-      section: params.section,
+      sections: params.sections.join(","),
     });
     const response = await fetch(
       `${this.baseUrl}/api/xml-export?${searchParams.toString()}`,

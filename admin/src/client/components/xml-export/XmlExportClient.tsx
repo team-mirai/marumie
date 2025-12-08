@@ -55,7 +55,7 @@ export function XmlExportClient({ organizations }: XmlExportClientProps) {
       const result = await exportXml({
         politicalOrganizationId: selectedOrganizationId,
         financialYear: Number.parseInt(financialYear, 10),
-        section: "SYUUSHI07_06",
+        sections: ["SYUUSHI07_06"],
       });
       setPreviewXml(result.xml);
       setStatus({ type: "success", message: "プレビューを更新しました" });
@@ -82,7 +82,7 @@ export function XmlExportClient({ organizations }: XmlExportClientProps) {
         const { blob, filename } = await apiClient.downloadXmlExport({
           politicalOrganizationId: selectedOrganizationId,
           financialYear,
-          section: "SYUUSHI07_06",
+          sections: ["SYUUSHI07_06"],
         });
 
         const url = window.URL.createObjectURL(blob);

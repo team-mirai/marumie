@@ -5,19 +5,19 @@ import { PrismaTransactionXmlRepository } from "../repositories/prisma-transacti
 import {
   XmlExportUsecase,
   type XmlSectionType,
+  type SectionData,
 } from "../usecases/xml-export-usecase";
-import type { OtherIncomeSection } from "../usecases/xml/syuushi07_06__other_income-usecase";
 
 export interface ExportXmlInput {
   politicalOrganizationId: string;
   financialYear: number;
-  section: XmlSectionType;
+  sections: XmlSectionType[];
 }
 
 export interface ExportXmlResult {
   xml: string;
   filename: string;
-  sectionData: OtherIncomeSection; // Will be union type when more sections added
+  sectionsData: Partial<Record<XmlSectionType, SectionData>>;
 }
 
 export async function exportXml(
@@ -31,18 +31,22 @@ export async function exportXml(
     throw new Error("報告年は有効な数値である必要があります");
   }
 
+  if (!input.sections || input.sections.length === 0) {
+    throw new Error("少なくとも1つのセクションを指定してください");
+  }
+
   const repository = new PrismaTransactionXmlRepository(prisma);
   const usecase = new XmlExportUsecase(repository);
 
   const result = await usecase.execute({
     politicalOrganizationId: input.politicalOrganizationId,
     financialYear: input.financialYear,
-    section: input.section,
+    sections: input.sections,
   });
 
   return {
     xml: result.xml,
     filename: result.filename,
-    sectionData: result.sectionData,
+    sectionsData: result.sectionsData,
   };
 }
