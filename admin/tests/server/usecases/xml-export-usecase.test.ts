@@ -25,6 +25,7 @@ describe("XmlExportUsecase", () => {
       const mockTransactions: OtherIncomeTransaction[] = [
         {
           transactionNo: "1",
+          friendlyCategory: "その他の収入",
           label: "寄附金",
           description: "寄附金収入",
           memo: null,
@@ -33,6 +34,7 @@ describe("XmlExportUsecase", () => {
         },
         {
           transactionNo: "2",
+          friendlyCategory: "その他の収入",
           label: "その他収入",
           description: "その他の収入",
           memo: null,
@@ -67,6 +69,7 @@ describe("XmlExportUsecase", () => {
       const mockTransactions: OtherIncomeTransaction[] = [
         {
           transactionNo: "1",
+          friendlyCategory: "その他の収入",
           label: "テスト",
           description: null,
           memo: null,
@@ -99,7 +102,8 @@ describe("XmlExportUsecase", () => {
       const mockTransactions: OtherIncomeTransaction[] = [
         {
           transactionNo: "1",
-          label: "テスト & サンプル <特殊文字>",
+          friendlyCategory: "テスト & サンプル <特殊文字>",
+          label: null,
           description: null,
           memo: '"引用符" & \'アポストロフィ\'',
           debitAmount: 0,
@@ -125,7 +129,8 @@ describe("XmlExportUsecase", () => {
       const mockTransactions: OtherIncomeTransaction[] = [
         {
           transactionNo: "1",
-          label: "日本語テスト",
+          friendlyCategory: "日本語テスト",
+          label: null,
           description: null,
           memo: "備考欄",
           debitAmount: 0,

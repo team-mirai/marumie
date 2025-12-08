@@ -26,6 +26,7 @@ export class PrismaTransactionXmlRepository
       orderBy: [{ transactionDate: "asc" }, { id: "asc" }],
       select: {
         transactionNo: true,
+        friendlyCategory: true,
         label: true,
         description: true,
         memo: true,
@@ -36,6 +37,7 @@ export class PrismaTransactionXmlRepository
 
     return transactions.map((t) => ({
       transactionNo: t.transactionNo,
+      friendlyCategory: t.friendlyCategory,
       label: t.label,
       description: t.description,
       memo: t.memo,

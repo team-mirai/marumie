@@ -10,6 +10,7 @@ const TEN_MAN_THRESHOLD = 100_000;
 
 interface SectionTransaction {
   transactionNo: string;
+  friendlyCategory: string | null;
   label: string | null;
   description: string | null;
   memo: string | null;
@@ -55,6 +56,7 @@ export class Syuushi0706OtherIncomeUsecase {
 
     const sectionTransactions: SectionTransaction[] = transactions.map((t) => ({
       transactionNo: t.transactionNo,
+      friendlyCategory: t.friendlyCategory,
       label: t.label,
       description: t.description,
       memo: t.memo,
@@ -142,8 +144,12 @@ function serializeOtherIncomeSection(section: OtherIncomeSection): XMLBuilder {
 }
 
 function buildTekiyou(transaction: SectionTransaction): string {
+  // タグ (friendlyCategory) を優先して使用
   return sanitizeText(
-    transaction.label || transaction.description || transaction.transactionNo,
+    transaction.friendlyCategory ||
+      transaction.label ||
+      transaction.description ||
+      transaction.transactionNo,
     200,
   );
 }
