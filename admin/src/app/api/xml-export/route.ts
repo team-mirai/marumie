@@ -7,7 +7,7 @@ import {
   type XmlSectionType,
 } from "@/server/usecases/xml-export-usecase";
 
-const VALID_SECTIONS: XmlSectionType[] = ["other-income"];
+const VALID_SECTIONS: XmlSectionType[] = ["SYUUSHI07_06"];
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
@@ -15,7 +15,7 @@ export async function GET(request: Request) {
     "politicalOrganizationId",
   );
   const financialYearRaw = url.searchParams.get("financialYear");
-  const sectionRaw = url.searchParams.get("section") || "other-income";
+  const sectionRaw = url.searchParams.get("section") || "SYUUSHI07_06";
 
   if (!politicalOrganizationId) {
     return NextResponse.json(

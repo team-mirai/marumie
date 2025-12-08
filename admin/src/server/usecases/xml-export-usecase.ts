@@ -11,8 +11,6 @@ import {
 // Types
 // ============================================================
 
-export type XmlSectionType = "other-income";
-
 interface XmlHead {
   version: string;
   appName: string;
@@ -30,38 +28,37 @@ const DEFAULT_HEAD: XmlHead = {
 };
 
 // Form IDs in the order they appear in SYUUSHI_UMU flag string
+// 第14号様式 (収支報告書)
 const KNOWN_FORM_IDS = [
-  "SYUUSHI07_01",
-  "SYUUSHI07_02",
-  "SYUUSHI07_03",
-  "SYUUSHI07_04",
-  "SYUUSHI07_05",
-  "SYUUSHI07_06",
-  "SYUUSHI07_07",
-  "SYUUSHI07_08",
-  "SYUUSHI07_09",
-  "SYUUSHI07_10",
-  "SYUUSHI07_11",
-  "SYUUSHI07_12",
-  "SYUUSHI07_13",
-  "SYUUSHI07_14",
-  "SYUUSHI07_15",
-  "SYUUSHI07_16",
-  "SYUUSHI07_17",
-  "SYUUSHI07_18",
-  "SYUUSHI07_19",
-  "SYUUSHI07_20",
-  "SYUUSHI08",
-  "SYUUSHI08_02",
-  "SYUUSHI_KIFUKOUJYO",
+  "SYUUSHI07_01", // (1) 個人からの寄附
+  "SYUUSHI07_02", // (2) 法人その他の団体からの寄附
+  "SYUUSHI07_03", // (3) 政治団体からの寄附
+  "SYUUSHI07_04", // (4) 政治資金パーティー開催事業の収入
+  "SYUUSHI07_05", // (5) 本部または支部からの交付金
+  "SYUUSHI07_06", // (6) その他の収入
+  "SYUUSHI07_07", // (7) 人件費
+  "SYUUSHI07_08", // (8) 光熱水費
+  "SYUUSHI07_09", // (9) 備品・消耗品費
+  "SYUUSHI07_10", // (10) 事務所費
+  "SYUUSHI07_11", // (11) 組織活動費
+  "SYUUSHI07_12", // (12) 選挙関係費
+  "SYUUSHI07_13", // (13) 機関紙誌の発行その他の事業費
+  "SYUUSHI07_14", // (14) 調査研究費
+  "SYUUSHI07_15", // (15) 寄附・交付金
+  "SYUUSHI07_16", // (16) その他の経常経費
+  "SYUUSHI07_17", // (17) 土地
+  "SYUUSHI07_18", // (18) 建物
+  "SYUUSHI07_19", // (19) 動産(船舶、航空機、自動車、事務機器等)
+  "SYUUSHI07_20", // (20) 預金等
+  "SYUUSHI08", // 第15号様式 (資産等の状況)
+  "SYUUSHI08_02", // 第15号様式 (負債の状況)
+  "SYUUSHI_KIFUKOUJYO", // 寄附控除
 ] as const;
 
 const FLAG_STRING_LENGTH = 51;
 
-// Map XmlSectionType to form ID
-const SECTION_TO_FORM_ID: Record<XmlSectionType, string> = {
-  "other-income": "SYUUSHI07_06",
-};
+// Section type uses form IDs directly
+export type XmlSectionType = (typeof KNOWN_FORM_IDS)[number];
 
 export interface XmlExportInput {
   politicalOrganizationId: string;
@@ -87,7 +84,7 @@ export class XmlExportUsecase {
     const { sectionXml, section, filename } = await this.buildSection(input);
 
     // Determine which forms are available based on the sections being exported
-    const availableFormIds = [SECTION_TO_FORM_ID[input.section]];
+    const availableFormIds = [input.section];
 
     const xml = this.buildXmlDocument([sectionXml], availableFormIds);
     const shiftJisBuffer = iconv.encode(xml, "shift_jis");
@@ -102,7 +99,7 @@ export class XmlExportUsecase {
 
   private async buildSection(input: XmlExportInput) {
     switch (input.section) {
-      case "other-income": {
+      case "SYUUSHI07_06": {
         const usecase = new Syuushi0706OtherIncomeUsecase(this.repository);
         return usecase.execute({
           politicalOrganizationId: input.politicalOrganizationId,
@@ -180,4 +177,4 @@ export class XmlExportUsecase {
 }
 
 // Export constants for testing
-export { KNOWN_FORM_IDS, FLAG_STRING_LENGTH, SECTION_TO_FORM_ID };
+export { KNOWN_FORM_IDS, FLAG_STRING_LENGTH };

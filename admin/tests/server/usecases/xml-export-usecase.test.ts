@@ -2,7 +2,6 @@ import {
   XmlExportUsecase,
   KNOWN_FORM_IDS,
   FLAG_STRING_LENGTH,
-  SECTION_TO_FORM_ID,
 } from "@/server/usecases/xml-export-usecase";
 import type {
   ITransactionXmlRepository,
@@ -48,7 +47,7 @@ describe("XmlExportUsecase", () => {
       const result = await usecase.execute({
         politicalOrganizationId: "123",
         financialYear: 2024,
-        section: "other-income",
+        section: "SYUUSHI07_06",
       });
 
       expect(result.xml).toContain('<?xml version="1.0" encoding="Shift_JIS"');
@@ -64,7 +63,7 @@ describe("XmlExportUsecase", () => {
       expect(result.sectionData.totalAmount).toBe(250000);
     });
 
-    it("includes SYUUSHI_FLG section with correct flag for other-income", async () => {
+    it("includes SYUUSHI_FLG section with correct flag for SYUUSHI07_06", async () => {
       const mockTransactions: OtherIncomeTransaction[] = [
         {
           transactionNo: "1",
@@ -82,7 +81,7 @@ describe("XmlExportUsecase", () => {
       const result = await usecase.execute({
         politicalOrganizationId: "123",
         financialYear: 2024,
-        section: "other-income",
+        section: "SYUUSHI07_06",
       });
 
       // SYUUSHI_FLG should be present
@@ -114,7 +113,7 @@ describe("XmlExportUsecase", () => {
       const result = await usecase.execute({
         politicalOrganizationId: "456",
         financialYear: 2024,
-        section: "other-income",
+        section: "SYUUSHI07_06",
       });
 
       expect(result.xml).toContain("&amp;");
@@ -140,7 +139,7 @@ describe("XmlExportUsecase", () => {
       const result = await usecase.execute({
         politicalOrganizationId: "789",
         financialYear: 2024,
-        section: "other-income",
+        section: "SYUUSHI07_06",
       });
 
       expect(result.shiftJisBuffer.length).toBeGreaterThan(0);
@@ -154,9 +153,9 @@ describe("XmlExportUsecase", () => {
         usecase.execute({
           politicalOrganizationId: "123",
           financialYear: 2024,
-          section: "unsupported" as any,
+          section: "SYUUSHI07_01" as any, // Not yet implemented
         }),
-      ).rejects.toThrow("Unsupported section type: unsupported");
+      ).rejects.toThrow("Unsupported section type: SYUUSHI07_01");
     });
   });
 });
@@ -168,10 +167,6 @@ describe("SYUUSHI_FLG constants", () => {
 
   it("has flag string length of 51", () => {
     expect(FLAG_STRING_LENGTH).toBe(51);
-  });
-
-  it("maps other-income to SYUUSHI07_06", () => {
-    expect(SECTION_TO_FORM_ID["other-income"]).toBe("SYUUSHI07_06");
   });
 
   it("SYUUSHI07_06 is at index 5 in known form IDs", () => {
