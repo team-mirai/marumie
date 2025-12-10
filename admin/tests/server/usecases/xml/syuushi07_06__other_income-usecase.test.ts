@@ -28,6 +28,7 @@ describe("Syuushi0706OtherIncomeUsecase", () => {
       const mockTransactions: OtherIncomeTransaction[] = [
         {
           transactionNo: "1",
+          friendlyCategory: "その他の収入",
           label: "寄附金",
           description: "寄附金収入",
           memo: null,
@@ -36,6 +37,7 @@ describe("Syuushi0706OtherIncomeUsecase", () => {
         },
         {
           transactionNo: "2",
+          friendlyCategory: "その他の収入",
           label: "その他収入",
           description: "その他の収入",
           memo: null,
@@ -44,6 +46,7 @@ describe("Syuushi0706OtherIncomeUsecase", () => {
         },
         {
           transactionNo: "3",
+          friendlyCategory: "その他の収入",
           label: "少額収入",
           description: "10万円未満",
           memo: null,
@@ -71,6 +74,34 @@ describe("Syuushi0706OtherIncomeUsecase", () => {
       expect(xml).toContain("<MIMAN_GK>50000</MIMAN_GK>");
     });
 
+    it("uses friendlyCategory (タグ) for tekiyou", async () => {
+      const mockTransactions: OtherIncomeTransaction[] = [
+        {
+          transactionNo: "1",
+          friendlyCategory: "証券類タグ",
+          label: "摘要テスト",
+          description: "説明テスト",
+          memo: null,
+          debitAmount: 0,
+          creditAmount: 150000,
+        },
+      ];
+      mockRepository.findOtherIncomeTransactions.mockResolvedValue(
+        mockTransactions,
+      );
+
+      const result = await usecase.execute({
+        politicalOrganizationId: "123",
+        financialYear: 2024,
+      });
+
+      const xml = result.sectionXml.toString();
+      // タグ (friendlyCategory) が使われる
+      expect(xml).toContain("<TEKIYOU>証券類タグ</TEKIYOU>");
+      // 摘要 (label) は使われない
+      expect(xml).not.toContain("摘要テスト");
+    });
+
     it("calls repository with correct parameters", async () => {
       mockRepository.findOtherIncomeTransactions.mockResolvedValue([]);
 
@@ -88,18 +119,52 @@ describe("Syuushi0706OtherIncomeUsecase", () => {
 });
 
 describe("aggregateOtherIncomeFromTransactions", () => {
+  it("uses friendlyCategory for tekiyou when available", () => {
+    const transactions: SectionTransaction[] = [
+      {
+        transactionNo: "1",
+        friendlyCategory: "タグ名",
+        label: "ラベル名",
+        description: "説明",
+        memo: null,
+        amount: 150_000,
+      },
+    ];
+    const section = aggregateOtherIncomeFromTransactions(transactions);
+
+    expect(section.rows[0].tekiyou).toBe("タグ名");
+  });
+
+  it("falls back to label when friendlyCategory is null", () => {
+    const transactions: SectionTransaction[] = [
+      {
+        transactionNo: "1",
+        friendlyCategory: null,
+        label: "ラベル名",
+        description: "説明",
+        memo: null,
+        amount: 150_000,
+      },
+    ];
+    const section = aggregateOtherIncomeFromTransactions(transactions);
+
+    expect(section.rows[0].tekiyou).toBe("ラベル名");
+  });
+
   it("splits transactions into detailed rows and under-threshold bucket", () => {
     const transactions: SectionTransaction[] = [
       {
         transactionNo: "1",
-        label: "テスト取引1",
+        friendlyCategory: "テスト取引1",
+        label: null,
         description: "説明1",
         memo: null,
         amount: 150_000,
       },
       {
         transactionNo: "2",
-        label: "テスト取引2",
+        friendlyCategory: "テスト取引2",
+        label: null,
         description: "説明2",
         memo: null,
         amount: 90_000,
@@ -122,8 +187,9 @@ describe("aggregateOtherIncomeFromTransactions", () => {
     const transactions: SectionTransaction[] = [
       {
         transactionNo: "3",
+        friendlyCategory: null,
         label: null,
-        description: "ラベル未設定",
+        description: "説明のみ設定",
         memo: "テストメモ",
         amount: 120_000,
       },
@@ -132,7 +198,7 @@ describe("aggregateOtherIncomeFromTransactions", () => {
 
     expect(section.totalAmount).toBe(120_000);
     expect(section.underThresholdAmount).toBeNull();
-    expect(section.rows[0].tekiyou).toBe("ラベル未設定");
+    expect(section.rows[0].tekiyou).toBe("説明のみ設定");
     expect(section.rows[0].bikou).toContain("テストメモ");
     expect(section.rows[0].bikou).toContain("MF行番号: 3");
   });
@@ -176,4 +242,3 @@ describe("resolveTransactionAmount", () => {
     expect(resolveTransactionAmount(NaN, NaN)).toBe(0);
   });
 });
-

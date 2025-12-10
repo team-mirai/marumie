@@ -1,5 +1,6 @@
 export interface OtherIncomeTransaction {
   transactionNo: string;
+  friendlyCategory: string | null;
   label: string | null;
   description: string | null;
   memo: string | null;
