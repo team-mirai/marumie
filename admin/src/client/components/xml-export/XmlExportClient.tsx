@@ -55,7 +55,7 @@ export function XmlExportClient({ organizations }: XmlExportClientProps) {
       const result = await exportXml({
         politicalOrganizationId: selectedOrganizationId,
         financialYear: Number.parseInt(financialYear, 10),
-        section: "other-income",
+        sections: ["SYUUSHI07_06"],
       });
       setPreviewXml(result.xml);
       setStatus({ type: "success", message: "プレビューを更新しました" });
@@ -79,16 +79,18 @@ export function XmlExportClient({ organizations }: XmlExportClientProps) {
     setStatus(null);
     startDownloadTransition(async () => {
       try {
-        const blob = await apiClient.downloadXmlExport({
+        const { blob, filename } = await apiClient.downloadXmlExport({
           politicalOrganizationId: selectedOrganizationId,
           financialYear,
-          section: "other-income",
+          sections: ["SYUUSHI07_06"],
         });
 
         const url = window.URL.createObjectURL(blob);
         const link = document.createElement("a");
         link.href = url;
-        link.download = `SYUUSHI07_06_${selectedOrganizationId}_${financialYear}.xml`;
+        link.download =
+          filename ||
+          `marumie_xml_${selectedOrganizationId}_${financialYear}.xml`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);

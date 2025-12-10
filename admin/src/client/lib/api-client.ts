@@ -32,7 +32,7 @@ export interface BalanceSnapshot {
 export interface XmlExportParams {
   politicalOrganizationId: string;
   financialYear: string;
-  section: string;
+  sections: string[];
 }
 
 export class ApiClient {
@@ -90,11 +90,13 @@ export class ApiClient {
     );
   }
 
-  async downloadXmlExport(params: XmlExportParams): Promise<Blob> {
+  async downloadXmlExport(
+    params: XmlExportParams,
+  ): Promise<{ blob: Blob; filename: string | null }> {
     const searchParams = new URLSearchParams({
       politicalOrganizationId: params.politicalOrganizationId,
       financialYear: params.financialYear,
-      section: params.section,
+      sections: params.sections.join(","),
     });
     const response = await fetch(
       `${this.baseUrl}/api/xml-export?${searchParams.toString()}`,
@@ -107,7 +109,38 @@ export class ApiClient {
       );
     }
 
-    return response.blob();
+    const blob = await response.blob();
+    const contentDisposition = response.headers.get("Content-Disposition");
+    const filename =
+      this.extractFilenameFromContentDisposition(contentDisposition);
+
+    return { blob, filename };
+  }
+
+  private extractFilenameFromContentDisposition(
+    contentDisposition: string | null,
+  ): string | null {
+    if (!contentDisposition) {
+      return null;
+    }
+
+    const filenameStarMatch = contentDisposition.match(
+      /filename\*\s*=\s*UTF-8''([^;]+)/i,
+    );
+    if (filenameStarMatch && filenameStarMatch[1]) {
+      try {
+        return decodeURIComponent(filenameStarMatch[1]);
+      } catch {
+        // ignore decoding errors and continue to fallback
+      }
+    }
+
+    const filenameMatch = contentDisposition.match(/filename\s*=\s*"([^"]+)"/i);
+    if (filenameMatch && filenameMatch[1]) {
+      return filenameMatch[1];
+    }
+
+    return null;
   }
 }
 

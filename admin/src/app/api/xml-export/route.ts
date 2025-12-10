@@ -7,7 +7,7 @@ import {
   type XmlSectionType,
 } from "@/server/usecases/xml-export-usecase";
 
-const VALID_SECTIONS: XmlSectionType[] = ["other-income"];
+const VALID_SECTIONS: XmlSectionType[] = ["SYUUSHI07_06"];
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
@@ -15,7 +15,8 @@ export async function GET(request: Request) {
     "politicalOrganizationId",
   );
   const financialYearRaw = url.searchParams.get("financialYear");
-  const sectionRaw = url.searchParams.get("section") || "other-income";
+  // Accept sections as comma-separated string (e.g., "SYUUSHI07_06,SYUUSHI07_07")
+  const sectionsRaw = url.searchParams.get("sections") || "SYUUSHI07_06";
 
   if (!politicalOrganizationId) {
     return NextResponse.json(
@@ -33,6 +34,16 @@ export async function GET(request: Request) {
 
   const financialYear = Number.parseInt(financialYearRaw, 10);
 
+  // Validate that politicalOrganizationId can be converted to BigInt
+  try {
+    BigInt(politicalOrganizationId);
+  } catch {
+    return NextResponse.json(
+      { error: "politicalOrganizationId must be a valid number" },
+      { status: 400 },
+    );
+  }
+
   if (!Number.isFinite(financialYear)) {
     return NextResponse.json(
       { error: "financialYear must be a valid number" },
@@ -40,14 +51,20 @@ export async function GET(request: Request) {
     );
   }
 
-  if (!VALID_SECTIONS.includes(sectionRaw as XmlSectionType)) {
+  // Parse and validate sections
+  const sections = sectionsRaw.split(",").map((s) => s.trim());
+  const invalidSections = sections.filter(
+    (s) => !VALID_SECTIONS.includes(s as XmlSectionType),
+  );
+
+  if (invalidSections.length > 0) {
     return NextResponse.json(
-      { error: `Unsupported section: ${sectionRaw}` },
+      { error: `Unsupported sections: ${invalidSections.join(", ")}` },
       { status: 400 },
     );
   }
 
-  const section = sectionRaw as XmlSectionType;
+  const validatedSections = sections as XmlSectionType[];
 
   try {
     const repository = new PrismaTransactionXmlRepository(prisma);
@@ -56,7 +73,7 @@ export async function GET(request: Request) {
     const result = await usecase.execute({
       politicalOrganizationId,
       financialYear,
-      section,
+      sections: validatedSections,
     });
 
     const shiftJisBuffer = iconv.encode(result.xml, "shift_jis");
