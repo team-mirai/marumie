@@ -3,6 +3,12 @@ import { create } from "xmlbuilder2";
 import type { XMLBuilder } from "xmlbuilder2/lib/interfaces";
 import type { ITransactionXmlRepository } from "../repositories/interfaces/transaction-xml-repository.interface";
 import {
+  DEFAULT_SECTION_XML,
+  DEFAULT_SYUUSHI_FLAG_STRING,
+  DEFAULT_XML_HEAD,
+  type XmlSectionId,
+} from "./xml/defaults";
+import {
   Syuushi0706OtherIncomeUsecase,
   type OtherIncomeSection,
 } from "./xml/syuushi07_06__other_income-usecase";
@@ -18,14 +24,6 @@ interface XmlHead {
   kokujiAppFlag: string;
   choboAppVersion: string;
 }
-
-const DEFAULT_HEAD: XmlHead = {
-  version: "20081001",
-  appName: "収支報告書作成ソフト (収支報告書作成ソフト)",
-  fileFormatNo: "1",
-  kokujiAppFlag: "0",
-  choboAppVersion: "20081001",
-};
 
 // Form IDs in the order they appear in SYUUSHI_UMU flag string
 // 第14号様式 (収支報告書)
@@ -84,17 +82,17 @@ export class XmlExportUsecase {
   constructor(private repository: ITransactionXmlRepository) {}
 
   async execute(input: XmlExportInput): Promise<XmlExportResult> {
-    const sectionXmls: XMLBuilder[] = [];
+    const dynamicSections: Partial<Record<XmlSectionId, XMLBuilder>> = {};
     const sectionsData: Partial<Record<XmlSectionType, SectionData>> = {};
 
-    // Build each requested section
+    // Build each requested section dynamically
     for (const sectionType of input.sections) {
       const result = await this.buildSection(sectionType, input);
-      sectionXmls.push(result.sectionXml);
+      dynamicSections[sectionType as XmlSectionId] = result.sectionXml;
       sectionsData[sectionType] = result.section;
     }
 
-    const xml = this.buildXmlDocument(sectionXmls, input.sections);
+    const xml = this.buildXmlDocument(dynamicSections, input.sections);
     const shiftJisBuffer = iconv.encode(xml, "shift_jis");
 
     // Generate filename based on sections
@@ -131,12 +129,12 @@ export class XmlExportUsecase {
   }
 
   private buildXmlDocument(
-    sections: XMLBuilder[],
+    dynamicSections: Partial<Record<XmlSectionId, XMLBuilder>>,
     availableFormIds: XmlSectionType[],
     head: Partial<XmlHead> = {},
   ): string {
     const resolvedHead: XmlHead = {
-      ...DEFAULT_HEAD,
+      ...DEFAULT_XML_HEAD,
       ...head,
     };
 
@@ -166,27 +164,43 @@ export class XmlExportUsecase {
     const syuushiFlgSection = this.buildSyuushiFlgSection(availableFormIds);
     doc.import(syuushiFlgSection);
 
-    // Import data sections
-    for (const section of sections) {
-      doc.import(section);
+    // Import all sections in order, using dynamic sections where available,
+    // falling back to defaults otherwise
+    for (const formId of KNOWN_FORM_IDS) {
+      const sectionId = formId as XmlSectionId;
+      if (dynamicSections[sectionId]) {
+        // Use dynamically built section
+        doc.import(dynamicSections[sectionId]);
+      } else if (DEFAULT_SECTION_XML[sectionId]) {
+        // Parse and import default section XML
+        const defaultXml = DEFAULT_SECTION_XML[sectionId];
+        const parsed = create(defaultXml);
+        doc.import(parsed);
+      }
     }
 
     return doc.end({ prettyPrint: true, indent: "  " });
   }
 
-  private buildSyuushiFlgSection(availableFormIds: string[]): XMLBuilder {
-    const formSet = new Set(
-      availableFormIds.filter((formId) =>
-        KNOWN_FORM_IDS.includes(formId as (typeof KNOWN_FORM_IDS)[number]),
-      ),
-    );
+  private buildSyuushiFlgSection(availableFormIds?: string[]): XMLBuilder {
+    // Start with default flag bits
+    const bits = DEFAULT_SYUUSHI_FLAG_STRING.padEnd(FLAG_STRING_LENGTH, "0")
+      .slice(0, FLAG_STRING_LENGTH)
+      .split("");
 
-    const flagString = KNOWN_FORM_IDS.map((formId) =>
-      formSet.has(formId) ? "1" : "0",
-    )
-      .join("")
-      .padEnd(FLAG_STRING_LENGTH, "0")
-      .slice(0, FLAG_STRING_LENGTH);
+    // Merge in any additional form IDs
+    if (availableFormIds?.length) {
+      availableFormIds.forEach((formId) => {
+        const index = KNOWN_FORM_IDS.indexOf(
+          formId as (typeof KNOWN_FORM_IDS)[number],
+        );
+        if (index >= 0) {
+          bits[index] = "1";
+        }
+      });
+    }
+
+    const flagString = bits.join("");
 
     const frag = create().ele("SYUUSHI_FLG");
     frag.ele("SYUUSHI_UMU_FLG").ele("SYUUSHI_UMU").txt(flagString);

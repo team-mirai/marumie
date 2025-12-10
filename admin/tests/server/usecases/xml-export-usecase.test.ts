@@ -7,6 +7,7 @@ import type {
   ITransactionXmlRepository,
   OtherIncomeTransaction,
 } from "@/server/repositories/interfaces/transaction-xml-repository.interface";
+import { DEFAULT_SYUUSHI_FLAG_STRING } from "@/server/usecases/xml/defaults";
 
 describe("XmlExportUsecase", () => {
   let usecase: XmlExportUsecase;
@@ -53,17 +54,22 @@ describe("XmlExportUsecase", () => {
       expect(result.xml).toContain('<?xml version="1.0" encoding="Shift_JIS"');
       expect(result.xml).toContain("<BOOK>");
       expect(result.xml).toContain("<HEAD>");
-      expect(result.xml).toContain("<VERSION>20081001</VERSION>");
+      expect(result.xml).toContain("<VERSION>20251001</VERSION>");
       expect(result.xml).toContain("<SYUUSHI07_06>");
       expect(result.xml).toContain("<KINGAKU_GK>250000</KINGAKU_GK>");
       expect(result.xml).toContain("</BOOK>");
+
+      // Should include all default sections
+      expect(result.xml).toContain("<SYUUSHI07_01>");
+      expect(result.xml).toContain("<SYUUSHI07_20>");
+      expect(result.xml).toContain("<SYUUSHI_KIFUKOUJYO>");
 
       expect(result.filename).toBe("SYUUSHI07_06_123_2024.xml");
       expect(result.shiftJisBuffer).toBeInstanceOf(Buffer);
       expect(result.sectionsData.SYUUSHI07_06?.totalAmount).toBe(250000);
     });
 
-    it("includes SYUUSHI_FLG section with correct flag for SYUUSHI07_06", async () => {
+    it("includes SYUUSHI_FLG section with default flags merged with requested sections", async () => {
       const mockTransactions: OtherIncomeTransaction[] = [
         {
           transactionNo: "1",
@@ -89,10 +95,13 @@ describe("XmlExportUsecase", () => {
       expect(result.xml).toContain("<SYUUSHI_UMU_FLG>");
       expect(result.xml).toContain("<SYUUSHI_UMU>");
 
-      // SYUUSHI07_06 is at index 5 (0-based), so the flag string should have a 1 at position 5
-      // Expected: "000001" + "0".repeat(45) = 51 chars total
-      const expectedFlagStart = "000001";
-      expect(result.xml).toContain(expectedFlagStart);
+      // The flag string should be the default merged with SYUUSHI07_06
+      // SYUUSHI07_06 is at index 5, so position 5 becomes "1"
+      // Default: "110000000000000000001000000000000010000000000000100"
+      // Merged:  "110001000000000000001000000000000010000000000000100"
+      const expectedMergedFlag =
+        "110001000000000000001000000000000010000000000000100";
+      expect(result.xml).toContain(expectedMergedFlag);
     });
 
     it("properly escapes special XML characters", async () => {
