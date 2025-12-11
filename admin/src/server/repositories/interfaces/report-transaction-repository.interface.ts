@@ -1,13 +1,4 @@
-export interface IncomeTransaction {
-  transactionNo: string;
-  categoryKey: string | null;
-  friendlyCategory: string | null;
-  label: string | null;
-  description: string | null;
-  memo: string | null;
-  debitAmount: number;
-  creditAmount: number;
-}
+import type { IncomeTransaction } from "../../domain/converters/income-converter";
 
 export interface IncomeTransactionFilters {
   politicalOrganizationId: string;
@@ -19,3 +10,6 @@ export interface IReportTransactionRepository {
     filters: IncomeTransactionFilters,
   ): Promise<IncomeTransaction[]>;
 }
+
+// Re-export for consumers
+export type { IncomeTransaction };
