@@ -7,22 +7,16 @@
 
 const TEN_MAN_THRESHOLD = 100_000;
 
+// Category keys for classification
+const BUSINESS_INCOME_CATEGORY_KEY = "publication-income";
+
 // ============================================================
 // Input Types (from DB/Repository)
 // ============================================================
 
-export interface BusinessIncomeTransaction {
+export interface IncomeTransaction {
   transactionNo: string;
-  friendlyCategory: string | null;
-  label: string | null;
-  description: string | null;
-  memo: string | null;
-  debitAmount: number;
-  creditAmount: number;
-}
-
-export interface OtherIncomeTransaction {
-  transactionNo: string;
+  categoryKey: string | null;
   friendlyCategory: string | null;
   label: string | null;
   description: string | null;
@@ -72,6 +66,14 @@ export interface OtherIncomeSection {
   rows: OtherIncomeRow[];
 }
 
+/**
+ * Combined result of income conversion
+ */
+export interface IncomeSections {
+  businessIncome: BusinessIncomeSection;
+  otherIncome: OtherIncomeSection;
+}
+
 // ============================================================
 // Internal Types
 // ============================================================
@@ -90,47 +92,47 @@ interface SectionTransaction {
 // ============================================================
 
 /**
- * Converts raw database transactions into a BusinessIncomeSection.
+ * Converts raw database transactions into both BusinessIncomeSection and OtherIncomeSection.
  *
  * Business rules:
- * - All transactions are listed individually
- * - friendlyCategory is used as the business type (事業の種類)
+ * - Transactions with categoryKey="publication-income" go to BusinessIncomeSection
+ * - Transactions with categoryKey="other-income" go to OtherIncomeSection
+ * - For OtherIncome, transactions >= 100,000 yen are listed individually
+ * - For OtherIncome, transactions < 100,000 yen are aggregated
  */
-export function convertToBusinessIncomeSection(
-  transactions: BusinessIncomeTransaction[],
-): BusinessIncomeSection {
-  const sectionTransactions: SectionTransaction[] = transactions.map((t) => ({
+export function convertToIncomeSections(
+  transactions: IncomeTransaction[],
+): IncomeSections {
+  const toSectionTransaction = (t: IncomeTransaction): SectionTransaction => ({
     transactionNo: t.transactionNo,
     friendlyCategory: t.friendlyCategory,
     label: t.label,
     description: t.description,
     memo: t.memo,
     amount: resolveTransactionAmount(t.debitAmount, t.creditAmount),
-  }));
+  });
 
-  return aggregateBusinessIncomeFromTransactions(sectionTransactions);
+  const businessTransactions = transactions
+    .filter(isBusinessIncomeTransaction)
+    .map(toSectionTransaction);
+
+  const otherTransactions = transactions
+    .filter((t) => !isBusinessIncomeTransaction(t))
+    .map(toSectionTransaction);
+
+  return {
+    businessIncome:
+      aggregateBusinessIncomeFromTransactions(businessTransactions),
+    otherIncome: aggregateOtherIncomeFromTransactions(otherTransactions),
+  };
 }
 
-/**
- * Converts raw database transactions into an OtherIncomeSection.
- *
- * Business rules:
- * - Transactions >= 100,000 yen are listed individually with details
- * - Transactions < 100,000 yen are aggregated into underThresholdAmount
- */
-export function convertToOtherIncomeSection(
-  transactions: OtherIncomeTransaction[],
-): OtherIncomeSection {
-  const sectionTransactions: SectionTransaction[] = transactions.map((t) => ({
-    transactionNo: t.transactionNo,
-    friendlyCategory: t.friendlyCategory,
-    label: t.label,
-    description: t.description,
-    memo: t.memo,
-    amount: resolveTransactionAmount(t.debitAmount, t.creditAmount),
-  }));
+// ============================================================
+// Classification Functions
+// ============================================================
 
-  return aggregateOtherIncomeFromTransactions(sectionTransactions);
+function isBusinessIncomeTransaction(t: IncomeTransaction): boolean {
+  return t.categoryKey === BUSINESS_INCOME_CATEGORY_KEY;
 }
 
 // ============================================================
@@ -159,7 +161,7 @@ function aggregateBusinessIncomeFromTransactions(
 }
 
 function buildGigyouSyurui(transaction: SectionTransaction): string {
-  // friendlyCategory を事業の種類として使用
+  // ひとまずfriendlyCategory を事業の種類として使用
   return sanitizeText(
     transaction.friendlyCategory ||
       transaction.label ||

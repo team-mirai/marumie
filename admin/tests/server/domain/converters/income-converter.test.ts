@@ -1,16 +1,27 @@
 import {
   aggregateOtherIncomeFromTransactions,
-  convertToOtherIncomeSection,
+  convertToIncomeSections,
   resolveTransactionAmount,
   type SectionTransaction,
-  type OtherIncomeTransaction,
+  type IncomeTransaction,
 } from "@/server/domain/converters/income-converter";
 
-describe("convertToOtherIncomeSection", () => {
-  it("converts raw transactions to OtherIncomeSection", () => {
-    const transactions: OtherIncomeTransaction[] = [
+describe("convertToIncomeSections", () => {
+  it("converts raw transactions to both BusinessIncomeSection and OtherIncomeSection", () => {
+    const transactions: IncomeTransaction[] = [
       {
         transactionNo: "1",
+        categoryKey: "publication-income",
+        friendlyCategory: "機関紙発行",
+        label: "機関紙",
+        description: "機関紙発行収入",
+        memo: null,
+        debitAmount: 0,
+        creditAmount: 120000,
+      },
+      {
+        transactionNo: "2",
+        categoryKey: "other-income",
         friendlyCategory: "その他の収入",
         label: "寄附金",
         description: "寄附金収入",
@@ -19,7 +30,8 @@ describe("convertToOtherIncomeSection", () => {
         creditAmount: 150000,
       },
       {
-        transactionNo: "2",
+        transactionNo: "3",
+        categoryKey: "other-income",
         friendlyCategory: "その他の収入",
         label: "少額収入",
         description: "10万円未満",
@@ -29,12 +41,40 @@ describe("convertToOtherIncomeSection", () => {
       },
     ];
 
-    const section = convertToOtherIncomeSection(transactions);
+    const { businessIncome, otherIncome } = convertToIncomeSections(transactions);
 
-    expect(section.totalAmount).toBe(200000);
-    expect(section.underThresholdAmount).toBe(50000);
-    expect(section.rows).toHaveLength(1);
-    expect(section.rows[0].kingaku).toBe(150000);
+    // BusinessIncome (publication-income)
+    expect(businessIncome.totalAmount).toBe(120000);
+    expect(businessIncome.rows).toHaveLength(1);
+    expect(businessIncome.rows[0].gigyouSyurui).toBe("機関紙発行");
+    expect(businessIncome.rows[0].kingaku).toBe(120000);
+
+    // OtherIncome (other-income)
+    expect(otherIncome.totalAmount).toBe(200000);
+    expect(otherIncome.underThresholdAmount).toBe(50000);
+    expect(otherIncome.rows).toHaveLength(1);
+    expect(otherIncome.rows[0].kingaku).toBe(150000);
+  });
+
+  it("classifies transactions without publication-income categoryKey as otherIncome", () => {
+    const transactions: IncomeTransaction[] = [
+      {
+        transactionNo: "1",
+        categoryKey: "other-income",
+        friendlyCategory: "その他の収入",
+        label: "雑収入",
+        description: "雑収入",
+        memo: null,
+        debitAmount: 0,
+        creditAmount: 80000,
+      },
+    ];
+
+    const { businessIncome, otherIncome } = convertToIncomeSections(transactions);
+
+    expect(businessIncome.totalAmount).toBe(0);
+    expect(businessIncome.rows).toHaveLength(0);
+    expect(otherIncome.totalAmount).toBe(80000);
   });
 });
 

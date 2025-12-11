@@ -7,12 +7,7 @@
 import "server-only";
 
 import type { ITransactionXmlRepository } from "../../repositories/interfaces/transaction-xml-repository.interface";
-import {
-  convertToBusinessIncomeSection,
-  convertToOtherIncomeSection,
-  type BusinessIncomeSection,
-  type OtherIncomeSection,
-} from "../../domain/converters/income-converter";
+import { convertToIncomeSections } from "../../domain/converters/income-converter";
 import type { IncomeData } from "../../domain/report-data";
 
 // ============================================================
@@ -32,36 +27,17 @@ export class IncomeAssembler {
   constructor(private repository: ITransactionXmlRepository) {}
 
   async assemble(input: IncomeAssemblerInput): Promise<IncomeData> {
-    const [businessIncome, otherIncome] = await Promise.all([
-      this.fetchBusinessIncome(input),
-      this.fetchOtherIncome(input),
-    ]);
+    const transactions = await this.repository.findIncomeTransactions({
+      politicalOrganizationId: input.politicalOrganizationId,
+      financialYear: input.financialYear,
+    });
+
+    const { businessIncome, otherIncome } =
+      convertToIncomeSections(transactions);
 
     return {
       businessIncome,
       otherIncome,
     };
-  }
-
-  private async fetchBusinessIncome(
-    input: IncomeAssemblerInput,
-  ): Promise<BusinessIncomeSection> {
-    const transactions = await this.repository.findBusinessIncomeTransactions({
-      politicalOrganizationId: input.politicalOrganizationId,
-      financialYear: input.financialYear,
-    });
-
-    return convertToBusinessIncomeSection(transactions);
-  }
-
-  private async fetchOtherIncome(
-    input: IncomeAssemblerInput,
-  ): Promise<OtherIncomeSection> {
-    const transactions = await this.repository.findOtherIncomeTransactions({
-      politicalOrganizationId: input.politicalOrganizationId,
-      financialYear: input.financialYear,
-    });
-
-    return convertToOtherIncomeSection(transactions);
   }
 }
