@@ -34,7 +34,11 @@ export function serializeBusinessIncomeSection(
     rowEle.ele("GIGYOU_SYURUI").txt(row.gigyouSyurui);
     rowEle.ele("KINGAKU").txt(formatAmount(row.kingaku));
 
-    rowEle.ele("BIKOU").txt(row.bikou ?? "");
+    if (row.bikou) {
+      rowEle.ele("BIKOU").txt(row.bikou);
+    } else {
+      rowEle.ele("BIKOU");
+    }
   }
 
   return frag;
@@ -63,7 +67,11 @@ export function serializeOtherIncomeSection(
     rowEle.ele("ICHIREN_NO").txt(row.ichirenNo);
     rowEle.ele("TEKIYOU").txt(row.tekiyou);
     rowEle.ele("KINGAKU").txt(formatAmount(row.kingaku));
-    rowEle.ele("BIKOU").txt(row.bikou ?? "");
+    if (row.bikou) {
+      rowEle.ele("BIKOU").txt(row.bikou);
+    } else {
+      rowEle.ele("BIKOU");
+    }
   }
 
   return frag;

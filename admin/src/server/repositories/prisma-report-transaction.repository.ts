@@ -1,12 +1,12 @@
 import type { PrismaClient } from "@prisma/client";
 import type {
-  ITransactionXmlRepository,
+  IReportTransactionRepository,
   IncomeTransaction,
   IncomeTransactionFilters,
-} from "./interfaces/transaction-xml-repository.interface";
+} from "./interfaces/report-transaction-repository.interface";
 
-export class PrismaTransactionXmlRepository
-  implements ITransactionXmlRepository
+export class PrismaReportTransactionRepository
+  implements IReportTransactionRepository
 {
   constructor(private prisma: PrismaClient) {}
 

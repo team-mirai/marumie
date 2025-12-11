@@ -14,7 +14,7 @@ export interface IncomeTransactionFilters {
   financialYear: number;
 }
 
-export interface ITransactionXmlRepository {
+export interface IReportTransactionRepository {
   findIncomeTransactions(
     filters: IncomeTransactionFilters,
   ): Promise<IncomeTransaction[]>;

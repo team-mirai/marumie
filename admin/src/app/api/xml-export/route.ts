@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import * as iconv from "iconv-lite";
 import { prisma } from "@/server/lib/prisma";
-import { PrismaTransactionXmlRepository } from "@/server/repositories/prisma-transaction-xml.repository";
+import { PrismaReportTransactionRepository } from "@/server/repositories/prisma-report-transaction.repository";
 import { XmlExportUsecase } from "@/server/usecases/xml-export-usecase";
 import { IncomeAssembler } from "@/server/usecases/assemblers/income-assembler";
 
@@ -46,7 +46,7 @@ export async function GET(request: Request) {
   }
 
   try {
-    const repository = new PrismaTransactionXmlRepository(prisma);
+    const repository = new PrismaReportTransactionRepository(prisma);
     const incomeAssembler = new IncomeAssembler(repository);
     const usecase = new XmlExportUsecase(incomeAssembler);
 

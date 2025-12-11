@@ -6,7 +6,7 @@
  */
 import "server-only";
 
-import type { ITransactionXmlRepository } from "../../repositories/interfaces/transaction-xml-repository.interface";
+import type { IReportTransactionRepository } from "../../repositories/interfaces/report-transaction-repository.interface";
 import { convertToIncomeSections } from "../../domain/converters/income-converter";
 import type { IncomeData } from "../../domain/report-data";
 
@@ -24,7 +24,7 @@ export interface IncomeAssemblerInput {
 // ============================================================
 
 export class IncomeAssembler {
-  constructor(private repository: ITransactionXmlRepository) {}
+  constructor(private repository: IReportTransactionRepository) {}
 
   async assemble(input: IncomeAssemblerInput): Promise<IncomeData> {
     const transactions = await this.repository.findIncomeTransactions({
