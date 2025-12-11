@@ -4,7 +4,7 @@ import type {
   TransactionFilters,
   CreateTransactionInput,
   UpdateTransactionInput,
-} from "@/types/transaction";
+} from "@/server/domain/types/transaction";
 import type { TransactionWithOrganization } from "@/server/usecases/get-transactions-usecase";
 import type {
   ITransactionRepository,
