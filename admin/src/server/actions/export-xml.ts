@@ -2,16 +2,12 @@
 
 import { prisma } from "@/server/lib/prisma";
 import { PrismaTransactionXmlRepository } from "../repositories/prisma-transaction-xml.repository";
-import {
-  XmlExportUsecase,
-  type XmlSectionType,
-} from "../usecases/xml-export-usecase";
+import { XmlExportUsecase } from "../usecases/xml-export-usecase";
 import type { ReportData } from "../domain/report-data";
 
 export interface ExportXmlInput {
   politicalOrganizationId: string;
   financialYear: number;
-  sections: XmlSectionType[];
 }
 
 export interface ExportXmlResult {
@@ -31,17 +27,12 @@ export async function exportXml(
     throw new Error("報告年は有効な数値である必要があります");
   }
 
-  if (!input.sections || input.sections.length === 0) {
-    throw new Error("少なくとも1つのセクションを指定してください");
-  }
-
   const repository = new PrismaTransactionXmlRepository(prisma);
   const usecase = new XmlExportUsecase(repository);
 
   const result = await usecase.execute({
     politicalOrganizationId: input.politicalOrganizationId,
     financialYear: input.financialYear,
-    sections: input.sections,
   });
 
   return {

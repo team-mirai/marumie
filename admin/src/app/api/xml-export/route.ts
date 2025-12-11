@@ -2,12 +2,7 @@ import { NextResponse } from "next/server";
 import * as iconv from "iconv-lite";
 import { prisma } from "@/server/lib/prisma";
 import { PrismaTransactionXmlRepository } from "@/server/repositories/prisma-transaction-xml.repository";
-import {
-  XmlExportUsecase,
-  type XmlSectionType,
-} from "@/server/usecases/xml-export-usecase";
-
-const VALID_SECTIONS: XmlSectionType[] = ["SYUUSHI07_06"];
+import { XmlExportUsecase } from "@/server/usecases/xml-export-usecase";
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
@@ -15,8 +10,6 @@ export async function GET(request: Request) {
     "politicalOrganizationId",
   );
   const financialYearRaw = url.searchParams.get("financialYear");
-  // Accept sections as comma-separated string (e.g., "SYUUSHI07_06,SYUUSHI07_07")
-  const sectionsRaw = url.searchParams.get("sections") || "SYUUSHI07_06";
 
   if (!politicalOrganizationId) {
     return NextResponse.json(
@@ -51,21 +44,6 @@ export async function GET(request: Request) {
     );
   }
 
-  // Parse and validate sections
-  const sections = sectionsRaw.split(",").map((s) => s.trim());
-  const invalidSections = sections.filter(
-    (s) => !VALID_SECTIONS.includes(s as XmlSectionType),
-  );
-
-  if (invalidSections.length > 0) {
-    return NextResponse.json(
-      { error: `Unsupported sections: ${invalidSections.join(", ")}` },
-      { status: 400 },
-    );
-  }
-
-  const validatedSections = sections as XmlSectionType[];
-
   try {
     const repository = new PrismaTransactionXmlRepository(prisma);
     const usecase = new XmlExportUsecase(repository);
@@ -73,7 +51,6 @@ export async function GET(request: Request) {
     const result = await usecase.execute({
       politicalOrganizationId,
       financialYear,
-      sections: validatedSections,
     });
 
     const shiftJisBuffer = iconv.encode(result.xml, "shift_jis");
