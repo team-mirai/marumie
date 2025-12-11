@@ -1,7 +1,7 @@
 import type {
   CreateTransactionInput,
   UpdateTransactionInput,
-} from "@/types/transaction";
+} from "@/server/domain/types/transaction";
 import type { ITransactionRepository } from "../repositories/interfaces/transaction-repository.interface";
 import {
   type PreviewTransaction,

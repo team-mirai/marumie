@@ -3,7 +3,7 @@ import type {
   GrantIncomeTransaction,
   LoanIncomeTransaction,
   OtherIncomeTransaction,
-} from "../../domain/converters/income-converter";
+} from "@/server/domain/types/income-transaction";
 
 export interface IncomeTransactionFilters {
   politicalOrganizationId: string;

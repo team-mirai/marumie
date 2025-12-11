@@ -5,52 +5,22 @@
  * This is a pure function layer that handles data transformation and business rules.
  */
 
+import type {
+  BusinessIncomeTransaction,
+  GrantIncomeTransaction,
+  LoanIncomeTransaction,
+  OtherIncomeTransaction,
+} from "@/server/domain/types/income-transaction";
+
 const TEN_MAN_THRESHOLD = 100_000;
 
-// ============================================================
-// Input Types (from DB/Repository)
-// ============================================================
-
-/**
- * 共通フィールド（全収入トランザクション共通）
- */
-interface BaseIncomeTransaction {
-  transactionNo: string;
-  friendlyCategory: string | null;
-  label: string | null;
-  description: string | null;
-  memo: string | null;
-  debitAmount: number;
-  creditAmount: number;
-}
-
-/**
- * SYUUSHI07_03: 事業による収入のトランザクション
- */
-export interface BusinessIncomeTransaction extends BaseIncomeTransaction {}
-
-/**
- * SYUUSHI07_04: 借入金のトランザクション
- */
-export interface LoanIncomeTransaction extends BaseIncomeTransaction {
-  transactionDate: Date;
-  counterpartName: string;
-  counterpartAddress: string;
-}
-
-/**
- * SYUUSHI07_05: 交付金のトランザクション
- */
-export interface GrantIncomeTransaction extends BaseIncomeTransaction {
-  transactionDate: Date;
-  counterpartName: string;
-  counterpartAddress: string;
-}
-
-/**
- * SYUUSHI07_06: その他の収入のトランザクション
- */
-export interface OtherIncomeTransaction extends BaseIncomeTransaction {}
+// Re-export input types for consumers
+export type {
+  BusinessIncomeTransaction,
+  GrantIncomeTransaction,
+  LoanIncomeTransaction,
+  OtherIncomeTransaction,
+};
 
 // ============================================================
 // Output Types (Domain Objects)
