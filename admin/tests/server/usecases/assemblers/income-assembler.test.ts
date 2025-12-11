@@ -21,6 +21,7 @@ describe("IncomeAssembler", () => {
 
   beforeEach(() => {
     mockRepository = {
+      findPersonalDonationTransactions: jest.fn(),
       findBusinessIncomeTransactions: jest.fn(),
       findLoanIncomeTransactions: jest.fn(),
       findGrantIncomeTransactions: jest.fn(),

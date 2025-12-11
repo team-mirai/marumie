@@ -3,18 +3,29 @@ import {
   KNOWN_FORM_IDS,
   FLAG_STRING_LENGTH,
 } from "@/server/usecases/xml-export-usecase";
+import type { DonationAssembler } from "@/server/usecases/assemblers/donation-assembler";
 import type { IncomeAssembler } from "@/server/usecases/assemblers/income-assembler";
 import type { IncomeData } from "@/server/domain/report-data";
 
 describe("XmlExportUsecase", () => {
   let usecase: XmlExportUsecase;
+  let mockDonationAssembler: jest.Mocked<DonationAssembler>;
   let mockIncomeAssembler: jest.Mocked<IncomeAssembler>;
 
   beforeEach(() => {
+    mockDonationAssembler = {
+      assemble: jest.fn().mockResolvedValue({
+        personalDonations: {
+          totalAmount: 0,
+          sonotaGk: 0,
+          rows: [],
+        },
+      }),
+    } as unknown as jest.Mocked<DonationAssembler>;
     mockIncomeAssembler = {
       assemble: jest.fn(),
     } as unknown as jest.Mocked<IncomeAssembler>;
-    usecase = new XmlExportUsecase(mockIncomeAssembler);
+    usecase = new XmlExportUsecase(mockDonationAssembler, mockIncomeAssembler);
     jest.clearAllMocks();
   });
 
