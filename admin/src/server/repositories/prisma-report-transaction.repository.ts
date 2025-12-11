@@ -91,7 +91,7 @@ export class PrismaReportTransactionRepository
       memo: t.memo,
       debitAmount: Number(t.debitAmount),
       creditAmount: Number(t.creditAmount),
-      transactionDate: t.transactionDate ?? new Date(),
+      transactionDate: t.transactionDate,
       // TODO: CounterPartテーブル実装後に実際の値を取得する
       counterpartName: "（仮）取引先名称",
       counterpartAddress: "（仮）東京都千代田区永田町1-1-1",
@@ -132,7 +132,7 @@ export class PrismaReportTransactionRepository
       memo: t.memo,
       debitAmount: Number(t.debitAmount),
       creditAmount: Number(t.creditAmount),
-      transactionDate: t.transactionDate ?? new Date(),
+      transactionDate: t.transactionDate,
       // TODO: CounterPartテーブル実装後に実際の値を取得する
       counterpartName: "（仮）本部名称",
       counterpartAddress: "（仮）東京都千代田区永田町1-1-1",
