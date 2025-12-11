@@ -15,6 +15,11 @@ import {
   serializeLoanIncomeSection,
   serializeOtherIncomeSection,
 } from "./income-serializer";
+import {
+  serializeRegularExpenseData,
+  serializePoliticalActivityExpenseData,
+  serializeGrantToHeadquartersSection,
+} from "./expense-serializer";
 
 // ============================================================
 // Types
@@ -136,6 +141,64 @@ export function serializeReportData(
     sections.push({
       formId: "SYUUSHI07_06",
       xml: serializeOtherIncomeSection(reportData.income.otherIncome),
+    });
+  }
+
+  // SYUUSHI07_14: 経常経費（光熱水費、備品・消耗品費、事務所費）
+  const { utilities, equipmentSupplies, officeExpenses } =
+    reportData.expenses.regularExpenses;
+  const hasRegularExpenseData =
+    utilities.totalAmount > 0 ||
+    utilities.rows.length > 0 ||
+    equipmentSupplies.totalAmount > 0 ||
+    equipmentSupplies.rows.length > 0 ||
+    officeExpenses.totalAmount > 0 ||
+    officeExpenses.rows.length > 0;
+
+  if (hasRegularExpenseData) {
+    sections.push({
+      formId: "SYUUSHI07_14",
+      xml: serializeRegularExpenseData(reportData.expenses.regularExpenses),
+    });
+  }
+
+  // SYUUSHI07_15: 政治活動費（9カテゴリ）
+  const pa = reportData.expenses.politicalActivityExpenses;
+  const hasPoliticalActivityExpenseData =
+    pa.organizationalActivities.totalAmount > 0 ||
+    pa.organizationalActivities.rows.length > 0 ||
+    pa.electionExpenses.totalAmount > 0 ||
+    pa.electionExpenses.rows.length > 0 ||
+    pa.publicationExpenses.totalAmount > 0 ||
+    pa.publicationExpenses.rows.length > 0 ||
+    pa.advertisingExpenses.totalAmount > 0 ||
+    pa.advertisingExpenses.rows.length > 0 ||
+    pa.fundraisingPartyExpenses.totalAmount > 0 ||
+    pa.fundraisingPartyExpenses.rows.length > 0 ||
+    pa.otherBusinessExpenses.totalAmount > 0 ||
+    pa.otherBusinessExpenses.rows.length > 0 ||
+    pa.researchExpenses.totalAmount > 0 ||
+    pa.researchExpenses.rows.length > 0 ||
+    pa.donationsGrantsExpenses.totalAmount > 0 ||
+    pa.donationsGrantsExpenses.rows.length > 0 ||
+    pa.otherExpenses.totalAmount > 0 ||
+    pa.otherExpenses.rows.length > 0;
+
+  if (hasPoliticalActivityExpenseData) {
+    sections.push({
+      formId: "SYUUSHI07_15",
+      xml: serializePoliticalActivityExpenseData(
+        reportData.expenses.politicalActivityExpenses,
+      ),
+    });
+  }
+
+  // SYUUSHI07_16: 本部又は支部に対する交付金
+  const gh = reportData.expenses.grantToHeadquarters;
+  if (gh.totalAmount > 0 || gh.rows.length > 0) {
+    sections.push({
+      formId: "SYUUSHI07_16",
+      xml: serializeGrantToHeadquartersSection(gh),
     });
   }
 

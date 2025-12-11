@@ -5,12 +5,75 @@ import {
 } from "@/server/usecases/xml-export-usecase";
 import type { DonationAssembler } from "@/server/usecases/assemblers/donation-assembler";
 import type { IncomeAssembler } from "@/server/usecases/assemblers/income-assembler";
+import type { ExpenseAssembler } from "@/server/usecases/assemblers/expense-assembler";
 import type { IncomeData } from "@/server/domain/report-data";
+
+// Empty expense data for tests
+const emptyExpenseData = {
+  regularExpenses: {
+    utilities: { totalAmount: 0, sonotaGk: 0, rows: [] },
+    equipmentSupplies: { totalAmount: 0, sonotaGk: 0, rows: [] },
+    officeExpenses: { totalAmount: 0, sonotaGk: 0, rows: [] },
+  },
+  politicalActivityExpenses: {
+    organizationalActivities: {
+      himoku: "組織活動費",
+      totalAmount: 0,
+      sonotaGk: 0,
+      rows: [],
+    },
+    electionExpenses: {
+      himoku: "選挙関係費",
+      totalAmount: 0,
+      sonotaGk: 0,
+      rows: [],
+    },
+    publicationExpenses: {
+      himoku: "機関紙誌の発行事業費",
+      totalAmount: 0,
+      sonotaGk: 0,
+      rows: [],
+    },
+    advertisingExpenses: {
+      himoku: "宣伝事業費",
+      totalAmount: 0,
+      sonotaGk: 0,
+      rows: [],
+    },
+    fundraisingPartyExpenses: {
+      himoku: "政治資金パーティー開催事業費",
+      totalAmount: 0,
+      sonotaGk: 0,
+      rows: [],
+    },
+    otherBusinessExpenses: {
+      himoku: "その他の事業費",
+      totalAmount: 0,
+      sonotaGk: 0,
+      rows: [],
+    },
+    researchExpenses: {
+      himoku: "調査研究費",
+      totalAmount: 0,
+      sonotaGk: 0,
+      rows: [],
+    },
+    donationsGrantsExpenses: {
+      himoku: "寄附・交付金",
+      totalAmount: 0,
+      sonotaGk: 0,
+      rows: [],
+    },
+    otherExpenses: { himoku: "その他の経費", totalAmount: 0, sonotaGk: 0, rows: [] },
+  },
+  grantToHeadquarters: { totalAmount: 0, rows: [] },
+};
 
 describe("XmlExportUsecase", () => {
   let usecase: XmlExportUsecase;
   let mockDonationAssembler: jest.Mocked<DonationAssembler>;
   let mockIncomeAssembler: jest.Mocked<IncomeAssembler>;
+  let mockExpenseAssembler: jest.Mocked<ExpenseAssembler>;
 
   beforeEach(() => {
     mockDonationAssembler = {
@@ -25,7 +88,14 @@ describe("XmlExportUsecase", () => {
     mockIncomeAssembler = {
       assemble: jest.fn(),
     } as unknown as jest.Mocked<IncomeAssembler>;
-    usecase = new XmlExportUsecase(mockDonationAssembler, mockIncomeAssembler);
+    mockExpenseAssembler = {
+      assemble: jest.fn().mockResolvedValue(emptyExpenseData),
+    } as unknown as jest.Mocked<ExpenseAssembler>;
+    usecase = new XmlExportUsecase(
+      mockDonationAssembler,
+      mockIncomeAssembler,
+      mockExpenseAssembler,
+    );
     jest.clearAllMocks();
   });
 

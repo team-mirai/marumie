@@ -26,6 +26,20 @@ describe("IncomeAssembler", () => {
       findLoanIncomeTransactions: jest.fn(),
       findGrantIncomeTransactions: jest.fn(),
       findOtherIncomeTransactions: jest.fn(),
+      // Expense methods (not used in IncomeAssembler tests)
+      findUtilityExpenseTransactions: jest.fn(),
+      findEquipmentSuppliesExpenseTransactions: jest.fn(),
+      findOfficeExpenseTransactions: jest.fn(),
+      findOrganizationalExpenseTransactions: jest.fn(),
+      findElectionExpenseTransactions: jest.fn(),
+      findPublicationExpenseTransactions: jest.fn(),
+      findAdvertisingExpenseTransactions: jest.fn(),
+      findFundraisingPartyExpenseTransactions: jest.fn(),
+      findOtherBusinessExpenseTransactions: jest.fn(),
+      findResearchExpenseTransactions: jest.fn(),
+      findDonationsGrantsExpenseTransactions: jest.fn(),
+      findOtherExpenseTransactions: jest.fn(),
+      findGrantToHeadquartersTransactions: jest.fn(),
     };
     assembler = new IncomeAssembler(mockRepository);
   });

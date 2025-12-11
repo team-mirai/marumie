@@ -5,6 +5,21 @@ import type {
   LoanIncomeTransaction,
   OtherIncomeTransaction,
 } from "@/server/domain/types/income-transaction";
+import type {
+  UtilityExpenseTransaction,
+  EquipmentSuppliesExpenseTransaction,
+  OfficeExpenseTransaction,
+  OrganizationalExpenseTransaction,
+  ElectionExpenseTransaction,
+  PublicationExpenseTransaction,
+  AdvertisingExpenseTransaction,
+  FundraisingPartyExpenseTransaction,
+  OtherBusinessExpenseTransaction,
+  ResearchExpenseTransaction,
+  DonationsGrantsExpenseTransaction,
+  OtherExpenseTransaction,
+  GrantToHeadquartersTransaction,
+} from "@/server/domain/types/expense-transaction";
 
 export interface TransactionFilters {
   politicalOrganizationId: string;
@@ -47,6 +62,101 @@ export interface IReportTransactionRepository {
   findOtherIncomeTransactions(
     filters: TransactionFilters,
   ): Promise<OtherIncomeTransaction[]>;
+
+  // ============================================================
+  // 支出トランザクション（SYUUSHI07_14, 15, 16）
+  // ============================================================
+
+  /**
+   * SYUUSHI07_14 KUBUN1: 光熱水費のトランザクションを取得
+   */
+  findUtilityExpenseTransactions(
+    filters: TransactionFilters,
+  ): Promise<UtilityExpenseTransaction[]>;
+
+  /**
+   * SYUUSHI07_14 KUBUN2: 備品・消耗品費のトランザクションを取得
+   */
+  findEquipmentSuppliesExpenseTransactions(
+    filters: TransactionFilters,
+  ): Promise<EquipmentSuppliesExpenseTransaction[]>;
+
+  /**
+   * SYUUSHI07_14 KUBUN3: 事務所費のトランザクションを取得
+   */
+  findOfficeExpenseTransactions(
+    filters: TransactionFilters,
+  ): Promise<OfficeExpenseTransaction[]>;
+
+  /**
+   * SYUUSHI07_15 KUBUN1: 組織活動費のトランザクションを取得
+   */
+  findOrganizationalExpenseTransactions(
+    filters: TransactionFilters,
+  ): Promise<OrganizationalExpenseTransaction[]>;
+
+  /**
+   * SYUUSHI07_15 KUBUN2: 選挙関係費のトランザクションを取得
+   */
+  findElectionExpenseTransactions(
+    filters: TransactionFilters,
+  ): Promise<ElectionExpenseTransaction[]>;
+
+  /**
+   * SYUUSHI07_15 KUBUN3: 機関紙誌の発行事業費のトランザクションを取得
+   */
+  findPublicationExpenseTransactions(
+    filters: TransactionFilters,
+  ): Promise<PublicationExpenseTransaction[]>;
+
+  /**
+   * SYUUSHI07_15 KUBUN4: 宣伝事業費のトランザクションを取得
+   */
+  findAdvertisingExpenseTransactions(
+    filters: TransactionFilters,
+  ): Promise<AdvertisingExpenseTransaction[]>;
+
+  /**
+   * SYUUSHI07_15 KUBUN5: 政治資金パーティー開催事業費のトランザクションを取得
+   */
+  findFundraisingPartyExpenseTransactions(
+    filters: TransactionFilters,
+  ): Promise<FundraisingPartyExpenseTransaction[]>;
+
+  /**
+   * SYUUSHI07_15 KUBUN6: その他の事業費のトランザクションを取得
+   */
+  findOtherBusinessExpenseTransactions(
+    filters: TransactionFilters,
+  ): Promise<OtherBusinessExpenseTransaction[]>;
+
+  /**
+   * SYUUSHI07_15 KUBUN7: 調査研究費のトランザクションを取得
+   */
+  findResearchExpenseTransactions(
+    filters: TransactionFilters,
+  ): Promise<ResearchExpenseTransaction[]>;
+
+  /**
+   * SYUUSHI07_15 KUBUN8: 寄附・交付金のトランザクションを取得
+   */
+  findDonationsGrantsExpenseTransactions(
+    filters: TransactionFilters,
+  ): Promise<DonationsGrantsExpenseTransaction[]>;
+
+  /**
+   * SYUUSHI07_15 KUBUN9: その他の経費のトランザクションを取得
+   */
+  findOtherExpenseTransactions(
+    filters: TransactionFilters,
+  ): Promise<OtherExpenseTransaction[]>;
+
+  /**
+   * SYUUSHI07_16: 本部又は支部に対する交付金のトランザクションを取得
+   */
+  findGrantToHeadquartersTransactions(
+    filters: TransactionFilters,
+  ): Promise<GrantToHeadquartersTransaction[]>;
 }
 
 // Re-export for consumers
@@ -56,4 +166,17 @@ export type {
   GrantIncomeTransaction,
   LoanIncomeTransaction,
   OtherIncomeTransaction,
+  UtilityExpenseTransaction,
+  EquipmentSuppliesExpenseTransaction,
+  OfficeExpenseTransaction,
+  OrganizationalExpenseTransaction,
+  ElectionExpenseTransaction,
+  PublicationExpenseTransaction,
+  AdvertisingExpenseTransaction,
+  FundraisingPartyExpenseTransaction,
+  OtherBusinessExpenseTransaction,
+  ResearchExpenseTransaction,
+  DonationsGrantsExpenseTransaction,
+  OtherExpenseTransaction,
+  GrantToHeadquartersTransaction,
 };

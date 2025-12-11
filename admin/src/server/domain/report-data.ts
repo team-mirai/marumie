@@ -12,6 +12,11 @@ import type {
   LoanIncomeSection,
   OtherIncomeSection,
 } from "./converters/income-converter";
+import type {
+  RegularExpenseData,
+  PoliticalActivityExpenseData,
+  GrantToHeadquartersSection,
+} from "./converters/expense-converter";
 
 /**
  * 寄付データ (SYUUSHI07_07)
@@ -33,20 +38,12 @@ export interface IncomeData {
 }
 
 /**
- * 支出データ (SYUUSHI07_07 ~ SYUUSHI07_16)
+ * 支出データ (SYUUSHI07_14 ~ SYUUSHI07_16)
  */
-// biome-ignore lint/suspicious/noEmptyInterface: Will be populated as sections are implemented
 export interface ExpenseData {
-  // personnelExpenses?: PersonnelExpenseSection;     // (7) 人件費
-  // utilityExpenses?: UtilityExpenseSection;         // (8) 光熱水費
-  // suppliesExpenses?: SuppliesExpenseSection;       // (9) 備品・消耗品費
-  // officeExpenses?: OfficeExpenseSection;           // (10) 事務所費
-  // organizationExpenses?: OrganizationExpenseSection; // (11) 組織活動費
-  // electionExpenses?: ElectionExpenseSection;       // (12) 選挙関係費
-  // publicationExpenses?: PublicationExpenseSection; // (13) 機関紙誌の発行その他の事業費
-  // researchExpenses?: ResearchExpenseSection;       // (14) 調査研究費
-  // donationExpenses?: DonationExpenseSection;       // (15) 寄附・交付金
-  // otherExpenses?: OtherExpenseSection;             // (16) その他の経常経費
+  regularExpenses: RegularExpenseData; // SYUUSHI07_14: 経常経費（光熱水費、備品・消耗品費、事務所費）
+  politicalActivityExpenses: PoliticalActivityExpenseData; // SYUUSHI07_15: 政治活動費（9カテゴリ）
+  grantToHeadquarters: GrantToHeadquartersSection; // SYUUSHI07_16: 本部又は支部に対する交付金
 }
 
 /**

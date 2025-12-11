@@ -7,6 +7,7 @@ import {
 import type { ReportData } from "../domain/report-data";
 import type { DonationAssembler } from "./assemblers/donation-assembler";
 import type { IncomeAssembler } from "./assemblers/income-assembler";
+import type { ExpenseAssembler } from "./assemblers/expense-assembler";
 
 // ============================================================
 // Types
@@ -35,6 +36,7 @@ export class XmlExportUsecase {
   constructor(
     private donationAssembler: DonationAssembler,
     private incomeAssembler: IncomeAssembler,
+    private expenseAssembler: ExpenseAssembler,
   ) {}
 
   async execute(input: XmlExportInput): Promise<XmlExportResult> {
@@ -68,15 +70,16 @@ export class XmlExportUsecase {
       financialYear: input.financialYear,
     };
 
-    const [donations, income] = await Promise.all([
+    const [donations, income, expenses] = await Promise.all([
       this.donationAssembler.assemble(assemblerInput),
       this.incomeAssembler.assemble(assemblerInput),
+      this.expenseAssembler.assemble(assemblerInput),
     ]);
 
     return {
       donations,
       income,
-      expenses: {},
+      expenses,
     };
   }
 }
