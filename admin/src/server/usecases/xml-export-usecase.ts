@@ -5,8 +5,8 @@ import type { ITransactionXmlRepository } from "../repositories/interfaces/trans
 import {
   convertToOtherIncomeSection,
   type OtherIncomeSection,
-} from "../domain/converters/other-income-converter";
-import { serializeOtherIncomeSection } from "../domain/serializers/other-income-serializer";
+} from "../domain/converters/income-converter";
+import { serializeOtherIncomeSection } from "../domain/serializers/income-serializer";
 import { type ReportData, createEmptyReportData } from "../domain/report-data";
 
 // ============================================================

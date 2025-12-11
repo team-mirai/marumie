@@ -1,16 +1,16 @@
 /**
- * Other Income Serializer
+ * Income Serializer
  *
- * Serializes the OtherIncomeSection domain object into XML format.
+ * Serializes income-related domain objects into XML format.
  * This layer is responsible only for XML generation, not data transformation.
  */
 
 import { fragment } from "xmlbuilder2";
 import type { XMLBuilder } from "xmlbuilder2/lib/interfaces";
-import type { OtherIncomeSection } from "../converters/other-income-converter";
+import type { OtherIncomeSection } from "../converters/income-converter";
 
 // ============================================================
-// Serializer Function
+// Serializer Functions
 // ============================================================
 
 /**

@@ -1,7 +1,7 @@
 /**
- * Other Income Converter
+ * Income Converter
  *
- * Converts raw transaction data from the database into the OtherIncomeSection domain object.
+ * Converts raw transaction data from the database into income-related domain objects.
  * This is a pure function layer that handles data transformation and business rules.
  */
 
@@ -52,7 +52,7 @@ interface SectionTransaction {
 }
 
 // ============================================================
-// Converter Function
+// Converter Functions
 // ============================================================
 
 /**

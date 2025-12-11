@@ -4,7 +4,7 @@ import {
   resolveTransactionAmount,
   type SectionTransaction,
   type OtherIncomeTransaction,
-} from "@/server/domain/converters/other-income-converter";
+} from "@/server/domain/converters/income-converter";
 
 describe("convertToOtherIncomeSection", () => {
   it("converts raw transactions to OtherIncomeSection", () => {

@@ -6,7 +6,7 @@
  * and consumed by the serializers for XML output.
  */
 
-import type { OtherIncomeSection } from "./converters/other-income-converter";
+import type { OtherIncomeSection } from "./converters/income-converter";
 
 // ============================================================
 // ReportData Interface
