@@ -55,7 +55,6 @@ export function XmlExportClient({ organizations }: XmlExportClientProps) {
       const result = await exportXml({
         politicalOrganizationId: selectedOrganizationId,
         financialYear: Number.parseInt(financialYear, 10),
-        sections: ["SYUUSHI07_06"],
       });
       setPreviewXml(result.xml);
       setStatus({ type: "success", message: "プレビューを更新しました" });

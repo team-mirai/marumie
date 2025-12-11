@@ -103,7 +103,7 @@ describe("aggregateOtherIncomeFromTransactions", () => {
     expect(section.rows[0].bikou).toContain("MF行番号: 1");
   });
 
-  it("sets underThresholdAmount to null when not applicable", () => {
+  it("sets underThresholdAmount to 0 when not applicable", () => {
     const transactions: SectionTransaction[] = [
       {
         transactionNo: "3",
@@ -117,7 +117,7 @@ describe("aggregateOtherIncomeFromTransactions", () => {
     const section = aggregateOtherIncomeFromTransactions(transactions);
 
     expect(section.totalAmount).toBe(120_000);
-    expect(section.underThresholdAmount).toBeNull();
+    expect(section.underThresholdAmount).toBe(0);
     expect(section.rows[0].tekiyou).toBe("説明のみ設定");
     expect(section.rows[0].bikou).toContain("テストメモ");
     expect(section.rows[0].bikou).toContain("MF行番号: 3");

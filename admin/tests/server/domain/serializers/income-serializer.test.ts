@@ -5,7 +5,7 @@ describe("serializeOtherIncomeSection", () => {
   it("serializes section into XML with escaping", () => {
     const section: OtherIncomeSection = {
       totalAmount: 200_000,
-      underThresholdAmount: null,
+      underThresholdAmount: 0,
       rows: [
         {
           ichirenNo: "1",
@@ -50,7 +50,7 @@ describe("serializeOtherIncomeSection", () => {
   it("serializes empty bikou as self-closing tag", () => {
     const section: OtherIncomeSection = {
       totalAmount: 100_000,
-      underThresholdAmount: null,
+      underThresholdAmount: 0,
       rows: [
         {
           ichirenNo: "1",

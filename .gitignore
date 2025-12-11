@@ -62,3 +62,7 @@ packages/db/node_modules
 logs
 
 .vscode/*
+
+# docs
+docs/report_format.md
+docs/report_format.xlsx

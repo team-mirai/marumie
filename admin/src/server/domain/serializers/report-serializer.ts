@@ -71,37 +71,25 @@ export type XmlSectionType = (typeof KNOWN_FORM_IDS)[number];
  */
 export function serializeReportData(
   reportData: ReportData,
-  sections: XmlSectionType[],
   head: Partial<XmlHead> = {},
 ): string {
-  const sectionXmls: XMLBuilder[] = [];
+  const sections: { formId: XmlSectionType; xml: XMLBuilder }[] = [];
 
-  for (const sectionType of sections) {
-    const sectionXml = serializeSection(sectionType, reportData);
-    sectionXmls.push(sectionXml);
+  if (
+    reportData.income.otherIncome.rows.length > 0 ||
+    reportData.income.otherIncome.totalAmount > 0
+  ) {
+    sections.push({
+      formId: "SYUUSHI07_06",
+      xml: serializeOtherIncomeSection(reportData.income.otherIncome),
+    });
   }
 
-  return buildXmlDocument(sectionXmls, sections, head);
-}
-
-// ============================================================
-// Section Serializers
-// ============================================================
-
-function serializeSection(
-  sectionType: XmlSectionType,
-  reportData: ReportData,
-): XMLBuilder {
-  switch (sectionType) {
-    case "SYUUSHI07_06": {
-      if (!reportData.income?.otherIncome) {
-        throw new Error("OtherIncome section data not assembled");
-      }
-      return serializeOtherIncomeSection(reportData.income.otherIncome);
-    }
-    default:
-      throw new Error(`Unsupported section type: ${sectionType}`);
-  }
+  return buildXmlDocument(
+    sections.map((s) => s.xml),
+    sections.map((s) => s.formId),
+    head,
+  );
 }
 
 // ============================================================

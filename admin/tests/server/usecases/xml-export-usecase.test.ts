@@ -49,7 +49,6 @@ describe("XmlExportUsecase", () => {
       const result = await usecase.execute({
         politicalOrganizationId: "123",
         financialYear: 2024,
-        sections: ["SYUUSHI07_06"],
       });
 
       expect(result.xml).toContain('<?xml version="1.0" encoding="Shift_JIS"');
@@ -60,9 +59,9 @@ describe("XmlExportUsecase", () => {
       expect(result.xml).toContain("<KINGAKU_GK>250000</KINGAKU_GK>");
       expect(result.xml).toContain("</BOOK>");
 
-      expect(result.filename).toBe("SYUUSHI07_06_123_2024.xml");
+      expect(result.filename).toBe("report_123_2024.xml");
       expect(result.shiftJisBuffer).toBeInstanceOf(Buffer);
-      expect(result.reportData.income?.otherIncome?.totalAmount).toBe(250000);
+      expect(result.reportData.income.otherIncome.totalAmount).toBe(250000);
     });
 
     it("includes SYUUSHI_FLG section with correct flag for SYUUSHI07_06", async () => {
@@ -84,7 +83,6 @@ describe("XmlExportUsecase", () => {
       const result = await usecase.execute({
         politicalOrganizationId: "123",
         financialYear: 2024,
-        sections: ["SYUUSHI07_06"],
       });
 
       // SYUUSHI_FLG should be present
@@ -117,7 +115,6 @@ describe("XmlExportUsecase", () => {
       const result = await usecase.execute({
         politicalOrganizationId: "456",
         financialYear: 2024,
-        sections: ["SYUUSHI07_06"],
       });
 
       expect(result.xml).toContain("&amp;");
@@ -144,7 +141,6 @@ describe("XmlExportUsecase", () => {
       const result = await usecase.execute({
         politicalOrganizationId: "789",
         financialYear: 2024,
-        sections: ["SYUUSHI07_06"],
       });
 
       expect(result.shiftJisBuffer.length).toBeGreaterThan(0);
@@ -153,31 +149,6 @@ describe("XmlExportUsecase", () => {
       expect(result.shiftJisBuffer.length).not.toBe(utf8Bytes.length);
     });
 
-    it("throws error for unsupported section type", async () => {
-      await expect(
-        usecase.execute({
-          politicalOrganizationId: "123",
-          financialYear: 2024,
-          sections: ["SYUUSHI07_01"], // Not yet implemented
-        }),
-      ).rejects.toThrow("Unsupported section type: SYUUSHI07_01");
-    });
-
-    it("generates filename with multiple sections", async () => {
-      const mockTransactions: OtherIncomeTransaction[] = [];
-      mockRepository.findOtherIncomeTransactions.mockResolvedValue(
-        mockTransactions,
-      );
-
-      const result = await usecase.execute({
-        politicalOrganizationId: "123",
-        financialYear: 2024,
-        sections: ["SYUUSHI07_06"],
-      });
-
-      // Single section filename
-      expect(result.filename).toBe("SYUUSHI07_06_123_2024.xml");
-    });
   });
 });
 

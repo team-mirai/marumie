@@ -34,7 +34,7 @@ export interface OtherIncomeRow {
 
 export interface OtherIncomeSection {
   totalAmount: number;
-  underThresholdAmount: number | null;
+  underThresholdAmount: number;
   rows: OtherIncomeRow[];
 }
 
@@ -110,8 +110,7 @@ function aggregateOtherIncomeFromTransactions(
 
   return {
     totalAmount,
-    underThresholdAmount:
-      underThresholdAmount > 0 ? underThresholdAmount : null,
+    underThresholdAmount,
     rows,
   };
 }
