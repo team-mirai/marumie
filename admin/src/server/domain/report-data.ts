@@ -20,15 +20,14 @@ import type { OtherIncomeSection } from "./converters/income-converter";
 /**
  * 寄付データ (Donation Data)
  * SYUUSHI07_01 ~ SYUUSHI07_03
+ *
+ * Future properties:
+ * - personalDonations: 個人からの寄附 (SYUUSHI07_01)
+ * - corporateDonations: 法人その他の団体からの寄附 (SYUUSHI07_02)
+ * - politicalDonations: 政治団体からの寄附 (SYUUSHI07_03)
  */
-export interface DonationData {
-  // SYUUSHI07_01: 個人からの寄附 (future)
-  // personalDonations?: PersonalDonationSection;
-  // SYUUSHI07_02: 法人その他の団体からの寄附 (future)
-  // corporateDonations?: CorporateDonationSection;
-  // SYUUSHI07_03: 政治団体からの寄附 (future)
-  // politicalDonations?: PoliticalDonationSection;
-}
+// biome-ignore lint/suspicious/noEmptyInterface: Will be populated as sections are implemented
+export interface DonationData {}
 
 /**
  * 収入データ（寄付以外）(Income Data - excluding donations)
@@ -48,29 +47,21 @@ export interface IncomeData {
 /**
  * 支出データ (Expense Data)
  * SYUUSHI07_07 ~ SYUUSHI07_16
+ *
+ * Future properties:
+ * - personnelExpenses: 人件費 (SYUUSHI07_07)
+ * - utilityExpenses: 光熱水費 (SYUUSHI07_08)
+ * - suppliesExpenses: 備品・消耗品費 (SYUUSHI07_09)
+ * - officeExpenses: 事務所費 (SYUUSHI07_10)
+ * - organizationExpenses: 組織活動費 (SYUUSHI07_11)
+ * - electionExpenses: 選挙関係費 (SYUUSHI07_12)
+ * - publicationExpenses: 機関紙誌の発行その他の事業費 (SYUUSHI07_13)
+ * - researchExpenses: 調査研究費 (SYUUSHI07_14)
+ * - donationExpenses: 寄附・交付金 (SYUUSHI07_15)
+ * - otherExpenses: その他の経常経費 (SYUUSHI07_16)
  */
-export interface ExpenseData {
-  // SYUUSHI07_07: 人件費 (future)
-  // personnelExpenses?: PersonnelExpenseSection;
-  // SYUUSHI07_08: 光熱水費 (future)
-  // utilityExpenses?: UtilityExpenseSection;
-  // SYUUSHI07_09: 備品・消耗品費 (future)
-  // suppliesExpenses?: SuppliesExpenseSection;
-  // SYUUSHI07_10: 事務所費 (future)
-  // officeExpenses?: OfficeExpenseSection;
-  // SYUUSHI07_11: 組織活動費 (future)
-  // organizationExpenses?: OrganizationExpenseSection;
-  // SYUUSHI07_12: 選挙関係費 (future)
-  // electionExpenses?: ElectionExpenseSection;
-  // SYUUSHI07_13: 機関紙誌の発行その他の事業費 (future)
-  // publicationExpenses?: PublicationExpenseSection;
-  // SYUUSHI07_14: 調査研究費 (future)
-  // researchExpenses?: ResearchExpenseSection;
-  // SYUUSHI07_15: 寄附・交付金 (future)
-  // donationExpenses?: DonationExpenseSection;
-  // SYUUSHI07_16: その他の経常経費 (future)
-  // otherExpenses?: OtherExpenseSection;
-}
+// biome-ignore lint/suspicious/noEmptyInterface: Will be populated as sections are implemented
+export interface ExpenseData {}
 
 // ============================================================
 // ReportData Interface
