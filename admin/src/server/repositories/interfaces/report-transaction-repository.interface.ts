@@ -1,6 +1,8 @@
 import type {
-  IncomeTransaction,
-  IncomeTransactionWithCounterpart,
+  BusinessIncomeTransaction,
+  GrantIncomeTransaction,
+  LoanIncomeTransaction,
+  OtherIncomeTransaction,
 } from "../../domain/converters/income-converter";
 
 export interface IncomeTransactionFilters {
@@ -10,19 +12,38 @@ export interface IncomeTransactionFilters {
 
 export interface IReportTransactionRepository {
   /**
-   * business, other 用のトランザクションを取得（counterpart なし）
+   * SYUUSHI07_03: 事業による収入のトランザクションを取得
    */
-  findIncomeTransactions(
+  findBusinessIncomeTransactions(
     filters: IncomeTransactionFilters,
-  ): Promise<IncomeTransaction[]>;
+  ): Promise<BusinessIncomeTransaction[]>;
 
   /**
-   * loan, grant 用のトランザクションを取得（counterpart あり）
+   * SYUUSHI07_04: 借入金のトランザクションを取得
    */
-  findIncomeTransactionsWithCounterpart(
+  findLoanIncomeTransactions(
     filters: IncomeTransactionFilters,
-  ): Promise<IncomeTransactionWithCounterpart[]>;
+  ): Promise<LoanIncomeTransaction[]>;
+
+  /**
+   * SYUUSHI07_05: 交付金のトランザクションを取得
+   */
+  findGrantIncomeTransactions(
+    filters: IncomeTransactionFilters,
+  ): Promise<GrantIncomeTransaction[]>;
+
+  /**
+   * SYUUSHI07_06: その他の収入のトランザクションを取得
+   */
+  findOtherIncomeTransactions(
+    filters: IncomeTransactionFilters,
+  ): Promise<OtherIncomeTransaction[]>;
 }
 
 // Re-export for consumers
-export type { IncomeTransaction, IncomeTransactionWithCounterpart };
+export type {
+  BusinessIncomeTransaction,
+  GrantIncomeTransaction,
+  LoanIncomeTransaction,
+  OtherIncomeTransaction,
+};

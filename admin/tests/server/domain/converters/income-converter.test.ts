@@ -1,18 +1,20 @@
 import {
-  aggregateOtherIncomeFromTransactions,
-  convertToIncomeSections,
+  convertToBusinessIncomeSection,
+  convertToGrantIncomeSection,
+  convertToLoanIncomeSection,
+  convertToOtherIncomeSection,
   resolveTransactionAmount,
-  type SectionTransaction,
-  type IncomeTransaction,
-  type IncomeTransactionWithCounterpart,
+  type BusinessIncomeTransaction,
+  type GrantIncomeTransaction,
+  type LoanIncomeTransaction,
+  type OtherIncomeTransaction,
 } from "@/server/domain/converters/income-converter";
 
-describe("convertToIncomeSections", () => {
-  it("converts raw transactions to all income sections", () => {
-    const transactions: IncomeTransaction[] = [
+describe("convertToBusinessIncomeSection", () => {
+  it("converts business transactions to BusinessIncomeSection", () => {
+    const transactions: BusinessIncomeTransaction[] = [
       {
         transactionNo: "1",
-        categoryKey: "publication-income",
         friendlyCategory: "機関紙発行",
         label: "機関紙",
         description: "機関紙発行収入",
@@ -20,84 +22,29 @@ describe("convertToIncomeSections", () => {
         debitAmount: 0,
         creditAmount: 120000,
       },
-      {
-        transactionNo: "2",
-        categoryKey: "other-income",
-        friendlyCategory: "その他の収入",
-        label: "寄附金",
-        description: "寄附金収入",
-        memo: null,
-        debitAmount: 0,
-        creditAmount: 150000,
-      },
-      {
-        transactionNo: "3",
-        categoryKey: "other-income",
-        friendlyCategory: "その他の収入",
-        label: "少額収入",
-        description: "10万円未満",
-        memo: null,
-        debitAmount: 0,
-        creditAmount: 50000,
-      },
     ];
 
-    const { businessIncome, loanIncome, grantIncome, otherIncome } =
-      convertToIncomeSections({
-        transactions,
-        transactionsWithCounterpart: [],
-      });
+    const section = convertToBusinessIncomeSection(transactions);
 
-    // BusinessIncome (publication-income)
-    expect(businessIncome.totalAmount).toBe(120000);
-    expect(businessIncome.rows).toHaveLength(1);
-    expect(businessIncome.rows[0].gigyouSyurui).toBe("機関紙発行");
-    expect(businessIncome.rows[0].kingaku).toBe(120000);
-
-    // LoanIncome (loan-income) - empty in this test
-    expect(loanIncome.totalAmount).toBe(0);
-    expect(loanIncome.rows).toHaveLength(0);
-
-    // GrantIncome (grant-income) - empty in this test
-    expect(grantIncome.totalAmount).toBe(0);
-    expect(grantIncome.rows).toHaveLength(0);
-
-    // OtherIncome (other-income)
-    expect(otherIncome.totalAmount).toBe(200000);
-    expect(otherIncome.underThresholdAmount).toBe(50000);
-    expect(otherIncome.rows).toHaveLength(1);
-    expect(otherIncome.rows[0].kingaku).toBe(150000);
+    expect(section.totalAmount).toBe(120000);
+    expect(section.rows).toHaveLength(1);
+    expect(section.rows[0].gigyouSyurui).toBe("機関紙発行");
+    expect(section.rows[0].kingaku).toBe(120000);
   });
 
-  it("classifies transactions without publication-income categoryKey as otherIncome", () => {
-    const transactions: IncomeTransaction[] = [
-      {
-        transactionNo: "1",
-        categoryKey: "other-income",
-        friendlyCategory: "その他の収入",
-        label: "雑収入",
-        description: "雑収入",
-        memo: null,
-        debitAmount: 0,
-        creditAmount: 80000,
-      },
-    ];
+  it("returns empty section when no transactions", () => {
+    const section = convertToBusinessIncomeSection([]);
 
-    const { businessIncome, otherIncome } = convertToIncomeSections({
-      transactions,
-      transactionsWithCounterpart: [],
-    });
-
-    expect(businessIncome.totalAmount).toBe(0);
-    expect(businessIncome.rows).toHaveLength(0);
-    expect(otherIncome.totalAmount).toBe(80000);
+    expect(section.totalAmount).toBe(0);
+    expect(section.rows).toHaveLength(0);
   });
+});
 
-  it("converts loan-income transactions to LoanIncomeSection", () => {
-    const transactionsWithCounterpart: IncomeTransactionWithCounterpart[] = [
+describe("convertToLoanIncomeSection", () => {
+  it("converts loan transactions to LoanIncomeSection", () => {
+    const transactions: LoanIncomeTransaction[] = [
       {
         transactionNo: "1",
-        categoryKey: "loan-income",
         friendlyCategory: "借入金",
         label: "銀行借入",
         description: "運転資金借入",
@@ -110,23 +57,21 @@ describe("convertToIncomeSections", () => {
       },
     ];
 
-    const { loanIncome } = convertToIncomeSections({
-      transactions: [],
-      transactionsWithCounterpart,
-    });
+    const section = convertToLoanIncomeSection(transactions);
 
-    expect(loanIncome.totalAmount).toBe(1000000);
-    expect(loanIncome.rows).toHaveLength(1);
-    expect(loanIncome.rows[0].kariiresaki).toBe("株式会社テスト銀行");
-    expect(loanIncome.rows[0].kingaku).toBe(1000000);
+    expect(section.totalAmount).toBe(1000000);
+    expect(section.rows).toHaveLength(1);
+    expect(section.rows[0].kariiresaki).toBe("株式会社テスト銀行");
+    expect(section.rows[0].kingaku).toBe(1000000);
   });
+});
 
-  it("converts grant-income transactions to GrantIncomeSection", () => {
+describe("convertToGrantIncomeSection", () => {
+  it("converts grant transactions to GrantIncomeSection", () => {
     const transactionDate = new Date("2024-05-15");
-    const transactionsWithCounterpart: IncomeTransactionWithCounterpart[] = [
+    const transactions: GrantIncomeTransaction[] = [
       {
         transactionNo: "1",
-        categoryKey: "grant-income",
         friendlyCategory: "交付金",
         label: "本部交付金",
         description: "本部からの交付金",
@@ -139,62 +84,62 @@ describe("convertToIncomeSections", () => {
       },
     ];
 
-    const { grantIncome } = convertToIncomeSections({
-      transactions: [],
-      transactionsWithCounterpart,
-    });
+    const section = convertToGrantIncomeSection(transactions);
 
-    expect(grantIncome.totalAmount).toBe(500000);
-    expect(grantIncome.rows).toHaveLength(1);
-    expect(grantIncome.rows[0].honsibuNm).toBe("〇〇党本部");
-    expect(grantIncome.rows[0].kingaku).toBe(500000);
-    expect(grantIncome.rows[0].dt).toEqual(transactionDate);
-    expect(grantIncome.rows[0].jimuAdr).toBe("東京都千代田区永田町1-1-1");
+    expect(section.totalAmount).toBe(500000);
+    expect(section.rows).toHaveLength(1);
+    expect(section.rows[0].honsibuNm).toBe("〇〇党本部");
+    expect(section.rows[0].kingaku).toBe(500000);
+    expect(section.rows[0].dt).toEqual(transactionDate);
+    expect(section.rows[0].jimuAdr).toBe("東京都千代田区永田町1-1-1");
   });
 });
 
-describe("aggregateOtherIncomeFromTransactions", () => {
+describe("convertToOtherIncomeSection", () => {
   it("uses friendlyCategory for tekiyou when available", () => {
-    const transactions: SectionTransaction[] = [
+    const transactions: OtherIncomeTransaction[] = [
       {
         transactionNo: "1",
         friendlyCategory: "タグ名",
         label: "ラベル名",
         description: "説明",
         memo: null,
-        amount: 150_000,
+        debitAmount: 0,
+        creditAmount: 150_000,
       },
     ];
-    const section = aggregateOtherIncomeFromTransactions(transactions);
+    const section = convertToOtherIncomeSection(transactions);
 
     expect(section.rows[0].tekiyou).toBe("タグ名");
   });
 
-  it("falls back to label when friendlyCategory is null", () => {
-    const transactions: SectionTransaction[] = [
+  it("returns empty string when friendlyCategory is null", () => {
+    const transactions: OtherIncomeTransaction[] = [
       {
         transactionNo: "1",
         friendlyCategory: null,
         label: "ラベル名",
         description: "説明",
         memo: null,
-        amount: 150_000,
+        debitAmount: 0,
+        creditAmount: 150_000,
       },
     ];
-    const section = aggregateOtherIncomeFromTransactions(transactions);
+    const section = convertToOtherIncomeSection(transactions);
 
-    expect(section.rows[0].tekiyou).toBe("ラベル名");
+    expect(section.rows[0].tekiyou).toBe("");
   });
 
   it("splits transactions into detailed rows and under-threshold bucket", () => {
-    const transactions: SectionTransaction[] = [
+    const transactions: OtherIncomeTransaction[] = [
       {
         transactionNo: "1",
         friendlyCategory: "テスト取引1",
         label: null,
         description: "説明1",
         memo: null,
-        amount: 150_000,
+        debitAmount: 0,
+        creditAmount: 150_000,
       },
       {
         transactionNo: "2",
@@ -202,10 +147,11 @@ describe("aggregateOtherIncomeFromTransactions", () => {
         label: null,
         description: "説明2",
         memo: null,
-        amount: 90_000,
+        debitAmount: 0,
+        creditAmount: 90_000,
       },
     ];
-    const section = aggregateOtherIncomeFromTransactions(transactions);
+    const section = convertToOtherIncomeSection(transactions);
 
     expect(section.totalAmount).toBe(240_000);
     expect(section.underThresholdAmount).toBe(90_000);
@@ -219,21 +165,22 @@ describe("aggregateOtherIncomeFromTransactions", () => {
   });
 
   it("sets underThresholdAmount to 0 when not applicable", () => {
-    const transactions: SectionTransaction[] = [
+    const transactions: OtherIncomeTransaction[] = [
       {
         transactionNo: "3",
-        friendlyCategory: null,
+        friendlyCategory: "その他収入",
         label: null,
         description: "説明のみ設定",
         memo: "テストメモ",
-        amount: 120_000,
+        debitAmount: 0,
+        creditAmount: 120_000,
       },
     ];
-    const section = aggregateOtherIncomeFromTransactions(transactions);
+    const section = convertToOtherIncomeSection(transactions);
 
     expect(section.totalAmount).toBe(120_000);
     expect(section.underThresholdAmount).toBe(0);
-    expect(section.rows[0].tekiyou).toBe("説明のみ設定");
+    expect(section.rows[0].tekiyou).toBe("その他収入");
     expect(section.rows[0].bikou).toContain("テストメモ");
     expect(section.rows[0].bikou).toContain("MF行番号: 3");
   });

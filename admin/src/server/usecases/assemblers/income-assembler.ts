@@ -7,7 +7,12 @@
 import "server-only";
 
 import type { IReportTransactionRepository } from "../../repositories/interfaces/report-transaction-repository.interface";
-import { convertToIncomeSections } from "../../domain/converters/income-converter";
+import {
+  convertToBusinessIncomeSection,
+  convertToGrantIncomeSection,
+  convertToLoanIncomeSection,
+  convertToOtherIncomeSection,
+} from "../../domain/converters/income-converter";
 import type { IncomeData } from "../../domain/report-data";
 
 // ============================================================
@@ -32,14 +37,23 @@ export class IncomeAssembler {
       financialYear: input.financialYear,
     };
 
-    const [transactions, transactionsWithCounterpart] = await Promise.all([
-      this.repository.findIncomeTransactions(filters),
-      this.repository.findIncomeTransactionsWithCounterpart(filters),
+    const [
+      businessTransactions,
+      loanTransactions,
+      grantTransactions,
+      otherTransactions,
+    ] = await Promise.all([
+      this.repository.findBusinessIncomeTransactions(filters),
+      this.repository.findLoanIncomeTransactions(filters),
+      this.repository.findGrantIncomeTransactions(filters),
+      this.repository.findOtherIncomeTransactions(filters),
     ]);
 
-    return convertToIncomeSections({
-      transactions,
-      transactionsWithCounterpart,
-    });
+    return {
+      businessIncome: convertToBusinessIncomeSection(businessTransactions),
+      loanIncome: convertToLoanIncomeSection(loanTransactions),
+      grantIncome: convertToGrantIncomeSection(grantTransactions),
+      otherIncome: convertToOtherIncomeSection(otherTransactions),
+    };
   }
 }

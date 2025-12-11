@@ -5,25 +5,17 @@
  * This is a pure function layer that handles data transformation and business rules.
  */
 
-import type { IncomeData } from "../report-data";
-
 const TEN_MAN_THRESHOLD = 100_000;
-
-// Category keys for classification
-const BUSINESS_INCOME_CATEGORY_KEY = "publication-income";
-const LOAN_INCOME_CATEGORY_KEY = "loan-income";
-const GRANT_INCOME_CATEGORY_KEY = "grant-income";
 
 // ============================================================
 // Input Types (from DB/Repository)
 // ============================================================
 
 /**
- * 基本的な収入トランザクション（business, other 用）
+ * 共通フィールド（全収入トランザクション共通）
  */
-export interface IncomeTransaction {
+interface BaseIncomeTransaction {
   transactionNo: string;
-  categoryKey: string | null;
   friendlyCategory: string | null;
   label: string | null;
   description: string | null;
@@ -33,21 +25,32 @@ export interface IncomeTransaction {
 }
 
 /**
- * 相手先情報を含む収入トランザクション（loan, grant 用）
+ * SYUUSHI07_03: 事業による収入のトランザクション
  */
-export interface IncomeTransactionWithCounterpart {
-  transactionNo: string;
-  categoryKey: string | null;
-  friendlyCategory: string | null;
-  label: string | null;
-  description: string | null;
-  memo: string | null;
-  debitAmount: number;
-  creditAmount: number;
+export interface BusinessIncomeTransaction extends BaseIncomeTransaction {}
+
+/**
+ * SYUUSHI07_04: 借入金のトランザクション
+ */
+export interface LoanIncomeTransaction extends BaseIncomeTransaction {
   transactionDate: Date;
   counterpartName: string;
   counterpartAddress: string;
 }
+
+/**
+ * SYUUSHI07_05: 交付金のトランザクション
+ */
+export interface GrantIncomeTransaction extends BaseIncomeTransaction {
+  transactionDate: Date;
+  counterpartName: string;
+  counterpartAddress: string;
+}
+
+/**
+ * SYUUSHI07_06: その他の収入のトランザクション
+ */
+export interface OtherIncomeTransaction extends BaseIncomeTransaction {}
 
 // ============================================================
 // Output Types (Domain Objects)
@@ -128,8 +131,6 @@ export interface OtherIncomeSection {
   rows: OtherIncomeRow[];
 }
 
-// IncomeSections は report-data.ts の IncomeData として定義
-
 // ============================================================
 // Internal Types
 // ============================================================
@@ -154,43 +155,74 @@ interface SectionTransactionWithCounterpart extends SectionTransaction {
 // ============================================================
 
 /**
- * Input for convertToIncomeSections
+ * SYUUSHI07_03: 事業による収入を変換
  */
-export interface ConvertToIncomeSectionsInput {
-  /** business, other 用トランザクション */
-  transactions: IncomeTransaction[];
-  /** loan, grant 用トランザクション（counterpart 情報付き） */
-  transactionsWithCounterpart: IncomeTransactionWithCounterpart[];
+export function convertToBusinessIncomeSection(
+  transactions: BusinessIncomeTransaction[],
+): BusinessIncomeSection {
+  const sectionTransactions = transactions.map(toSectionTransaction);
+  return aggregateBusinessIncome(sectionTransactions);
 }
 
 /**
- * Converts raw database transactions into income sections.
+ * SYUUSHI07_04: 借入金を変換
+ */
+export function convertToLoanIncomeSection(
+  transactions: LoanIncomeTransaction[],
+): LoanIncomeSection {
+  const sectionTransactions = transactions.map(
+    toSectionTransactionWithCounterpart,
+  );
+  return aggregateLoanIncome(sectionTransactions);
+}
+
+/**
+ * SYUUSHI07_05: 交付金を変換
+ */
+export function convertToGrantIncomeSection(
+  transactions: GrantIncomeTransaction[],
+): GrantIncomeSection {
+  const sectionTransactions = transactions.map(
+    toSectionTransactionWithCounterpart,
+  );
+  return aggregateGrantIncome(sectionTransactions);
+}
+
+/**
+ * SYUUSHI07_06: その他の収入を変換
  *
  * Business rules:
- * - Transactions with categoryKey="publication-income" go to BusinessIncomeSection (SYUUSHI07_03)
- * - Transactions with categoryKey="loan-income" go to LoanIncomeSection (SYUUSHI07_04)
- * - Transactions with categoryKey="grant-income" go to GrantIncomeSection (SYUUSHI07_05)
- * - Transactions with categoryKey="other-income" go to OtherIncomeSection (SYUUSHI07_06)
- * - For OtherIncome, transactions >= 100,000 yen are listed individually
- * - For OtherIncome, transactions < 100,000 yen are aggregated
+ * - Transactions >= 100,000 yen are listed individually
+ * - Transactions < 100,000 yen are aggregated into underThresholdAmount
  */
-export function convertToIncomeSections(
-  input: ConvertToIncomeSectionsInput,
-): IncomeData {
-  const { transactions, transactionsWithCounterpart } = input;
+export function convertToOtherIncomeSection(
+  transactions: OtherIncomeTransaction[],
+): OtherIncomeSection {
+  const sectionTransactions = transactions.map(toSectionTransaction);
+  return aggregateOtherIncome(sectionTransactions);
+}
 
-  const toSectionTransaction = (t: IncomeTransaction): SectionTransaction => ({
+// ============================================================
+// Input Mapping Functions
+// ============================================================
+
+function toSectionTransaction(
+  t: BusinessIncomeTransaction | OtherIncomeTransaction,
+): SectionTransaction {
+  return {
     transactionNo: t.transactionNo,
     friendlyCategory: t.friendlyCategory,
     label: t.label,
     description: t.description,
     memo: t.memo,
     amount: resolveTransactionAmount(t.debitAmount, t.creditAmount),
-  });
+  };
+}
 
-  const toSectionTransactionWithCounterpart = (
-    t: IncomeTransactionWithCounterpart,
-  ): SectionTransactionWithCounterpart => ({
+function toSectionTransactionWithCounterpart(
+  t: LoanIncomeTransaction | GrantIncomeTransaction,
+): SectionTransactionWithCounterpart {
+  return {
     transactionNo: t.transactionNo,
     friendlyCategory: t.friendlyCategory,
     label: t.label,
@@ -200,220 +232,114 @@ export function convertToIncomeSections(
     transactionDate: t.transactionDate,
     counterpartName: t.counterpartName,
     counterpartAddress: t.counterpartAddress,
-  });
-
-  const businessTransactions = transactions
-    .filter(isBusinessIncomeTransaction)
-    .map(toSectionTransaction);
-
-  const loanTransactions = transactionsWithCounterpart
-    .filter(isLoanIncomeTransaction)
-    .map(toSectionTransactionWithCounterpart);
-
-  const grantTransactions = transactionsWithCounterpart
-    .filter(isGrantIncomeTransaction)
-    .map(toSectionTransactionWithCounterpart);
-
-  const otherTransactions = transactions
-    .filter(isOtherIncomeTransaction)
-    .map(toSectionTransaction);
-
-  return {
-    businessIncome:
-      aggregateBusinessIncomeFromTransactions(businessTransactions),
-    loanIncome: aggregateLoanIncomeFromTransactions(loanTransactions),
-    grantIncome: aggregateGrantIncomeFromTransactions(grantTransactions),
-    otherIncome: aggregateOtherIncomeFromTransactions(otherTransactions),
   };
 }
 
 // ============================================================
-// Classification Functions
+// Aggregation Functions
 // ============================================================
 
-interface HasCategoryKey {
-  categoryKey: string | null;
-}
-
-function isBusinessIncomeTransaction(t: HasCategoryKey): boolean {
-  return t.categoryKey === BUSINESS_INCOME_CATEGORY_KEY;
-}
-
-function isLoanIncomeTransaction(t: HasCategoryKey): boolean {
-  return t.categoryKey === LOAN_INCOME_CATEGORY_KEY;
-}
-
-function isGrantIncomeTransaction(t: HasCategoryKey): boolean {
-  return t.categoryKey === GRANT_INCOME_CATEGORY_KEY;
-}
-
-function isOtherIncomeTransaction(t: HasCategoryKey): boolean {
-  return (
-    !isBusinessIncomeTransaction(t) &&
-    !isLoanIncomeTransaction(t) &&
-    !isGrantIncomeTransaction(t)
-  );
-}
-
-// ============================================================
-// Pure Functions
-// ============================================================
-
-function aggregateBusinessIncomeFromTransactions(
+function aggregateBusinessIncome(
   transactions: SectionTransaction[],
 ): BusinessIncomeSection {
-  const totalAmount = transactions.reduce(
-    (sum, transaction) => sum + transaction.amount,
-    0,
-  );
+  const totalAmount = transactions.reduce((sum, t) => sum + t.amount, 0);
 
-  const rows: BusinessIncomeRow[] = transactions.map((transaction, index) => ({
+  const rows: BusinessIncomeRow[] = transactions.map((t, index) => ({
     ichirenNo: (index + 1).toString(),
-    gigyouSyurui: buildGigyouSyurui(transaction),
-    kingaku: Math.round(transaction.amount),
-    bikou: buildBikou(transaction),
+    gigyouSyurui: buildGigyouSyurui(t),
+    kingaku: Math.round(t.amount),
+    bikou: buildBikou(t),
   }));
 
-  return {
-    totalAmount,
-    rows,
-  };
+  return { totalAmount, rows };
 }
 
-function buildGigyouSyurui(transaction: SectionTransaction): string {
-  // ひとまずfriendlyCategory を事業の種類として使用
-  return sanitizeText(
-    transaction.friendlyCategory ||
-      transaction.label ||
-      transaction.description ||
-      transaction.transactionNo,
-    200,
-  );
-}
-
-function aggregateLoanIncomeFromTransactions(
+function aggregateLoanIncome(
   transactions: SectionTransactionWithCounterpart[],
 ): LoanIncomeSection {
-  const totalAmount = transactions.reduce(
-    (sum, transaction) => sum + transaction.amount,
-    0,
-  );
+  const totalAmount = transactions.reduce((sum, t) => sum + t.amount, 0);
 
-  const rows: LoanIncomeRow[] = transactions.map((transaction, index) => ({
+  const rows: LoanIncomeRow[] = transactions.map((t, index) => ({
     ichirenNo: (index + 1).toString(),
-    kariiresaki: buildKariiresaki(transaction),
-    kingaku: Math.round(transaction.amount),
-    bikou: buildBikou(transaction),
+    kariiresaki: buildKariiresaki(t),
+    kingaku: Math.round(t.amount),
+    bikou: buildBikou(t),
   }));
 
-  return {
-    totalAmount,
-    rows,
-  };
+  return { totalAmount, rows };
 }
 
-function buildKariiresaki(
-  transaction: SectionTransactionWithCounterpart,
-): string {
-  // counterpartName を借入先として使用、なければフォールバック
-  return sanitizeText(
-    transaction.counterpartName ||
-      transaction.label ||
-      transaction.description ||
-      transaction.transactionNo,
-    200,
-  );
-}
-
-function aggregateGrantIncomeFromTransactions(
+function aggregateGrantIncome(
   transactions: SectionTransactionWithCounterpart[],
 ): GrantIncomeSection {
-  const totalAmount = transactions.reduce(
-    (sum, transaction) => sum + transaction.amount,
-    0,
-  );
+  const totalAmount = transactions.reduce((sum, t) => sum + t.amount, 0);
 
-  const rows: GrantIncomeRow[] = transactions.map((transaction, index) => ({
+  const rows: GrantIncomeRow[] = transactions.map((t, index) => ({
     ichirenNo: (index + 1).toString(),
-    honsibuNm: buildHonsibuNm(transaction),
-    kingaku: Math.round(transaction.amount),
-    dt: transaction.transactionDate ?? new Date(),
-    jimuAdr: buildJimuAdr(transaction),
-    bikou: buildBikou(transaction),
+    honsibuNm: buildHonsibuNm(t),
+    kingaku: Math.round(t.amount),
+    dt: t.transactionDate,
+    jimuAdr: buildJimuAdr(t),
+    bikou: buildBikou(t),
   }));
 
-  return {
-    totalAmount,
-    rows,
-  };
+  return { totalAmount, rows };
 }
 
-function buildHonsibuNm(
-  transaction: SectionTransactionWithCounterpart,
-): string {
-  // counterpartName を本支部名称として使用
-  return sanitizeText(
-    transaction.counterpartName ||
-      transaction.label ||
-      transaction.description ||
-      transaction.transactionNo,
-    120,
-  );
-}
-
-function buildJimuAdr(transaction: SectionTransactionWithCounterpart): string {
-  // counterpartAddress を所在地として使用
-  return sanitizeText(transaction.counterpartAddress || "", 80);
-}
-
-function aggregateOtherIncomeFromTransactions(
+function aggregateOtherIncome(
   transactions: SectionTransaction[],
 ): OtherIncomeSection {
-  const totalAmount = transactions.reduce(
-    (sum, transaction) => sum + transaction.amount,
-    0,
-  );
+  const totalAmount = transactions.reduce((sum, t) => sum + t.amount, 0);
 
   const detailedRows = transactions.filter(
-    (transaction) => transaction.amount >= TEN_MAN_THRESHOLD,
+    (t) => t.amount >= TEN_MAN_THRESHOLD,
   );
   const underThresholdRows = transactions.filter(
-    (transaction) => transaction.amount < TEN_MAN_THRESHOLD,
+    (t) => t.amount < TEN_MAN_THRESHOLD,
   );
 
   const underThresholdAmount = underThresholdRows.reduce(
-    (sum, transaction) => sum + transaction.amount,
+    (sum, t) => sum + t.amount,
     0,
   );
 
-  const rows: OtherIncomeRow[] = detailedRows.map((transaction, index) => ({
+  const rows: OtherIncomeRow[] = detailedRows.map((t, index) => ({
     ichirenNo: (index + 1).toString(),
-    tekiyou: buildTekiyou(transaction),
-    kingaku: Math.round(transaction.amount),
-    bikou: buildBikou(transaction),
+    tekiyou: buildTekiyou(t),
+    kingaku: Math.round(t.amount),
+    bikou: buildBikou(t),
   }));
 
-  return {
-    totalAmount,
-    underThresholdAmount,
-    rows,
-  };
+  return { totalAmount, underThresholdAmount, rows };
 }
 
-function buildTekiyou(transaction: SectionTransaction): string {
-  // タグ (friendlyCategory) を優先して使用
-  return sanitizeText(
-    transaction.friendlyCategory ||
-      transaction.label ||
-      transaction.description ||
-      transaction.transactionNo,
-    200,
-  );
+// ============================================================
+// Field Builder Functions
+// ============================================================
+
+function buildGigyouSyurui(t: SectionTransaction): string {
+  return sanitizeText(t.friendlyCategory, 200);
 }
 
-function buildBikou(transaction: SectionTransaction): string {
-  const mfRowInfo = `MF行番号: ${transaction.transactionNo || "-"}`;
-  const memoText = sanitizeText(transaction.memo, 160);
+function buildKariiresaki(t: SectionTransactionWithCounterpart): string {
+  return sanitizeText(t.counterpartName, 200);
+}
+
+function buildHonsibuNm(t: SectionTransactionWithCounterpart): string {
+  return sanitizeText(t.counterpartName, 120);
+}
+
+function buildJimuAdr(t: SectionTransactionWithCounterpart): string {
+  return sanitizeText(t.counterpartAddress, 80);
+}
+
+function buildTekiyou(t: SectionTransaction): string {
+  return sanitizeText(t.friendlyCategory, 200);
+}
+
+function buildBikou(t: SectionTransaction): string {
+  const mfRowInfo = `MF行番号: ${t.transactionNo || "-"}`;
+  const memoText = sanitizeText(t.memo, 160);
   const combined = memoText ? `${memoText} / ${mfRowInfo}` : mfRowInfo;
 
   return sanitizeText(combined, 200) || mfRowInfo;
@@ -447,8 +373,4 @@ function sanitizeText(
 }
 
 // Export for testing
-export {
-  aggregateOtherIncomeFromTransactions,
-  resolveTransactionAmount,
-  type SectionTransaction,
-};
+export { resolveTransactionAmount, type SectionTransaction };
