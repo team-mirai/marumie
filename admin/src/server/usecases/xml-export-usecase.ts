@@ -3,9 +3,11 @@ import { create } from "xmlbuilder2";
 import type { XMLBuilder } from "xmlbuilder2/lib/interfaces";
 import type { ITransactionXmlRepository } from "../repositories/interfaces/transaction-xml-repository.interface";
 import {
-  Syuushi0706OtherIncomeUsecase,
+  convertToOtherIncomeSection,
   type OtherIncomeSection,
-} from "./xml/syuushi07_06__other_income-usecase";
+} from "../domain/converters/other-income-converter";
+import { serializeOtherIncomeSection } from "../domain/serializers/other-income-serializer";
+import { type ReportData, createEmptyReportData } from "../domain/report-data";
 
 // ============================================================
 // Types
@@ -73,7 +75,7 @@ export interface XmlExportResult {
   xml: string;
   shiftJisBuffer: Buffer;
   filename: string;
-  sectionsData: Partial<Record<XmlSectionType, SectionData>>;
+  reportData: ReportData;
 }
 
 // ============================================================
@@ -84,17 +86,16 @@ export class XmlExportUsecase {
   constructor(private repository: ITransactionXmlRepository) {}
 
   async execute(input: XmlExportInput): Promise<XmlExportResult> {
-    const sectionXmls: XMLBuilder[] = [];
-    const sectionsData: Partial<Record<XmlSectionType, SectionData>> = {};
+    // Step 1: Assemble ReportData by gathering all requested sections
+    const reportData = await this.assembleReportData(input);
 
-    // Build each requested section
-    for (const sectionType of input.sections) {
-      const result = await this.buildSection(sectionType, input);
-      sectionXmls.push(result.sectionXml);
-      sectionsData[sectionType] = result.section;
-    }
+    // Step 2: Serialize ReportData to XML
+    const { xml, sectionXmls } = this.serializeReportData(
+      reportData,
+      input.sections,
+    );
 
-    const xml = this.buildXmlDocument(sectionXmls, input.sections);
+    // Step 3: Encode to Shift_JIS
     const shiftJisBuffer = iconv.encode(xml, "shift_jis");
 
     // Generate filename based on sections
@@ -105,25 +106,81 @@ export class XmlExportUsecase {
       xml,
       shiftJisBuffer,
       filename,
-      sectionsData,
+      reportData,
     };
   }
 
-  private async buildSection(
+  // ============================================================
+  // Assemble: Gather data from repositories and convert to domain objects
+  // ============================================================
+
+  private async assembleReportData(input: XmlExportInput): Promise<ReportData> {
+    const reportData = createEmptyReportData();
+
+    for (const sectionType of input.sections) {
+      await this.assembleSection(sectionType, input, reportData);
+    }
+
+    return reportData;
+  }
+
+  private async assembleSection(
     sectionType: XmlSectionType,
     input: XmlExportInput,
-  ) {
+    reportData: ReportData,
+  ): Promise<void> {
     switch (sectionType) {
       case "SYUUSHI07_06": {
-        const usecase = new Syuushi0706OtherIncomeUsecase(this.repository);
-        const result = await usecase.execute({
-          politicalOrganizationId: input.politicalOrganizationId,
-          financialYear: input.financialYear,
-        });
-        return {
-          sectionXml: result.sectionXml,
-          section: result.section,
-        };
+        reportData.otherIncome = await this.assembleOtherIncome(input);
+        break;
+      }
+      default:
+        throw new Error(`Unsupported section type: ${sectionType}`);
+    }
+  }
+
+  private async assembleOtherIncome(
+    input: XmlExportInput,
+  ): Promise<OtherIncomeSection> {
+    // Fetch from repository
+    const transactions = await this.repository.findOtherIncomeTransactions({
+      politicalOrganizationId: input.politicalOrganizationId,
+      financialYear: input.financialYear,
+    });
+
+    // Convert to domain object
+    return convertToOtherIncomeSection(transactions);
+  }
+
+  // ============================================================
+  // Serialize: Convert ReportData to XML
+  // ============================================================
+
+  private serializeReportData(
+    reportData: ReportData,
+    sections: XmlSectionType[],
+  ): { xml: string; sectionXmls: XMLBuilder[] } {
+    const sectionXmls: XMLBuilder[] = [];
+
+    for (const sectionType of sections) {
+      const sectionXml = this.serializeSection(sectionType, reportData);
+      sectionXmls.push(sectionXml);
+    }
+
+    const xml = this.buildXmlDocument(sectionXmls, sections);
+    return { xml, sectionXmls };
+  }
+
+  private serializeSection(
+    sectionType: XmlSectionType,
+    reportData: ReportData,
+  ): XMLBuilder {
+    switch (sectionType) {
+      case "SYUUSHI07_06": {
+        if (!reportData.otherIncome) {
+          throw new Error("OtherIncome section data not assembled");
+        }
+        return serializeOtherIncomeSection(reportData.otherIncome);
       }
       default:
         throw new Error(`Unsupported section type: ${sectionType}`);

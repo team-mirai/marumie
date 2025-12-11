@@ -62,13 +62,14 @@ describe("XmlExportUsecase", () => {
 
       expect(result.filename).toBe("SYUUSHI07_06_123_2024.xml");
       expect(result.shiftJisBuffer).toBeInstanceOf(Buffer);
-      expect(result.sectionsData.SYUUSHI07_06?.totalAmount).toBe(250000);
+      expect(result.reportData.otherIncome?.totalAmount).toBe(250000);
     });
 
     it("includes SYUUSHI_FLG section with correct flag for SYUUSHI07_06", async () => {
       const mockTransactions: OtherIncomeTransaction[] = [
         {
           transactionNo: "1",
+          friendlyCategory: null,
           label: "テスト",
           description: null,
           memo: null,
