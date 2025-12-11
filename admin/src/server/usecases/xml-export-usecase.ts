@@ -9,7 +9,7 @@ import {
   KNOWN_FORM_IDS,
   FLAG_STRING_LENGTH,
 } from "../domain/serializers/report-serializer";
-import { type ReportData, createEmptyReportData } from "../domain/report-data";
+import type { ReportData } from "../domain/report-data";
 
 // ============================================================
 // Types
@@ -66,28 +66,23 @@ export class XmlExportUsecase {
   // ============================================================
 
   private async assembleReportData(input: XmlExportInput): Promise<ReportData> {
-    const reportData = createEmptyReportData();
-
-    // Assemble all sections
-    await this.assembleOtherIncome(input, reportData);
-
-    return reportData;
+    return {
+      donations: {},
+      income: {
+        otherIncome: await this.fetchOtherIncome(input),
+      },
+      expenses: {},
+    };
   }
 
-  private async assembleOtherIncome(
+  private async fetchOtherIncome(
     input: XmlExportInput,
-    reportData: ReportData,
-  ): Promise<void> {
-    // Fetch from repository
+  ): Promise<OtherIncomeSection> {
     const transactions = await this.repository.findOtherIncomeTransactions({
       politicalOrganizationId: input.politicalOrganizationId,
       financialYear: input.financialYear,
     });
 
-    // Convert to domain object and store in appropriate group
-    if (!reportData.income) {
-      reportData.income = {};
-    }
-    reportData.income.otherIncome = convertToOtherIncomeSection(transactions);
+    return convertToOtherIncomeSection(transactions);
   }
 }

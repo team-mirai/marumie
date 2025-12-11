@@ -25,7 +25,7 @@ export function serializeOtherIncomeSection(
 
   sheet.ele("KINGAKU_GK").txt(formatAmount(section.totalAmount));
 
-  if (section.underThresholdAmount !== null) {
+  if (section.underThresholdAmount > 0) {
     sheet.ele("MIMAN_GK").txt(formatAmount(section.underThresholdAmount));
   } else {
     sheet.ele("MIMAN_GK");

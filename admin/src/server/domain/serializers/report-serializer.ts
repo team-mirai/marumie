@@ -73,18 +73,23 @@ export function serializeReportData(
   reportData: ReportData,
   head: Partial<XmlHead> = {},
 ): string {
-  const sectionXmls: XMLBuilder[] = [];
-  const includedSections: XmlSectionType[] = [];
+  const sections: { formId: XmlSectionType; xml: XMLBuilder }[] = [];
 
-  // Serialize all available sections in reportData
-  if (reportData.income?.otherIncome) {
-    sectionXmls.push(
-      serializeOtherIncomeSection(reportData.income.otherIncome),
-    );
-    includedSections.push("SYUUSHI07_06");
+  if (
+    reportData.income.otherIncome.rows.length > 0 ||
+    reportData.income.otherIncome.totalAmount > 0
+  ) {
+    sections.push({
+      formId: "SYUUSHI07_06",
+      xml: serializeOtherIncomeSection(reportData.income.otherIncome),
+    });
   }
 
-  return buildXmlDocument(sectionXmls, includedSections, head);
+  return buildXmlDocument(
+    sections.map((s) => s.xml),
+    sections.map((s) => s.formId),
+    head,
+  );
 }
 
 // ============================================================
