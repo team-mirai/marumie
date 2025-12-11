@@ -25,6 +25,14 @@ describe("XmlExportUsecase", () => {
           totalAmount: 0,
           rows: [],
         },
+        loanIncome: {
+          totalAmount: 0,
+          rows: [],
+        },
+        grantIncome: {
+          totalAmount: 0,
+          rows: [],
+        },
         otherIncome: {
           totalAmount: 250000,
           underThresholdAmount: 0,
@@ -70,6 +78,14 @@ describe("XmlExportUsecase", () => {
           totalAmount: 0,
           rows: [],
         },
+        loanIncome: {
+          totalAmount: 0,
+          rows: [],
+        },
+        grantIncome: {
+          totalAmount: 0,
+          rows: [],
+        },
         otherIncome: {
           totalAmount: 100000,
           underThresholdAmount: 0,
@@ -107,6 +123,14 @@ describe("XmlExportUsecase", () => {
           totalAmount: 0,
           rows: [],
         },
+        loanIncome: {
+          totalAmount: 0,
+          rows: [],
+        },
+        grantIncome: {
+          totalAmount: 0,
+          rows: [],
+        },
         otherIncome: {
           totalAmount: 200000,
           underThresholdAmount: 0,
@@ -135,6 +159,14 @@ describe("XmlExportUsecase", () => {
     it("generates correct Shift-JIS encoded bytes", async () => {
       const mockIncomeData: IncomeData = {
         businessIncome: {
+          totalAmount: 0,
+          rows: [],
+        },
+        loanIncome: {
+          totalAmount: 0,
+          rows: [],
+        },
+        grantIncome: {
           totalAmount: 0,
           rows: [],
         },

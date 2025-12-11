@@ -27,17 +27,19 @@ export class IncomeAssembler {
   constructor(private repository: IReportTransactionRepository) {}
 
   async assemble(input: IncomeAssemblerInput): Promise<IncomeData> {
-    const transactions = await this.repository.findIncomeTransactions({
+    const filters = {
       politicalOrganizationId: input.politicalOrganizationId,
       financialYear: input.financialYear,
-    });
-
-    const { businessIncome, otherIncome } =
-      convertToIncomeSections(transactions);
-
-    return {
-      businessIncome,
-      otherIncome,
     };
+
+    const [transactions, transactionsWithCounterpart] = await Promise.all([
+      this.repository.findIncomeTransactions(filters),
+      this.repository.findIncomeTransactionsWithCounterpart(filters),
+    ]);
+
+    return convertToIncomeSections({
+      transactions,
+      transactionsWithCounterpart,
+    });
   }
 }

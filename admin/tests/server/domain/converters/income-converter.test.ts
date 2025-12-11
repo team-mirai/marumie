@@ -4,10 +4,11 @@ import {
   resolveTransactionAmount,
   type SectionTransaction,
   type IncomeTransaction,
+  type IncomeTransactionWithCounterpart,
 } from "@/server/domain/converters/income-converter";
 
 describe("convertToIncomeSections", () => {
-  it("converts raw transactions to both BusinessIncomeSection and OtherIncomeSection", () => {
+  it("converts raw transactions to all income sections", () => {
     const transactions: IncomeTransaction[] = [
       {
         transactionNo: "1",
@@ -41,13 +42,25 @@ describe("convertToIncomeSections", () => {
       },
     ];
 
-    const { businessIncome, otherIncome } = convertToIncomeSections(transactions);
+    const { businessIncome, loanIncome, grantIncome, otherIncome } =
+      convertToIncomeSections({
+        transactions,
+        transactionsWithCounterpart: [],
+      });
 
     // BusinessIncome (publication-income)
     expect(businessIncome.totalAmount).toBe(120000);
     expect(businessIncome.rows).toHaveLength(1);
     expect(businessIncome.rows[0].gigyouSyurui).toBe("機関紙発行");
     expect(businessIncome.rows[0].kingaku).toBe(120000);
+
+    // LoanIncome (loan-income) - empty in this test
+    expect(loanIncome.totalAmount).toBe(0);
+    expect(loanIncome.rows).toHaveLength(0);
+
+    // GrantIncome (grant-income) - empty in this test
+    expect(grantIncome.totalAmount).toBe(0);
+    expect(grantIncome.rows).toHaveLength(0);
 
     // OtherIncome (other-income)
     expect(otherIncome.totalAmount).toBe(200000);
@@ -70,11 +83,73 @@ describe("convertToIncomeSections", () => {
       },
     ];
 
-    const { businessIncome, otherIncome } = convertToIncomeSections(transactions);
+    const { businessIncome, otherIncome } = convertToIncomeSections({
+      transactions,
+      transactionsWithCounterpart: [],
+    });
 
     expect(businessIncome.totalAmount).toBe(0);
     expect(businessIncome.rows).toHaveLength(0);
     expect(otherIncome.totalAmount).toBe(80000);
+  });
+
+  it("converts loan-income transactions to LoanIncomeSection", () => {
+    const transactionsWithCounterpart: IncomeTransactionWithCounterpart[] = [
+      {
+        transactionNo: "1",
+        categoryKey: "loan-income",
+        friendlyCategory: "借入金",
+        label: "銀行借入",
+        description: "運転資金借入",
+        memo: null,
+        debitAmount: 0,
+        creditAmount: 1000000,
+        transactionDate: new Date("2024-04-01"),
+        counterpartName: "株式会社テスト銀行",
+        counterpartAddress: "東京都千代田区丸の内1-1-1",
+      },
+    ];
+
+    const { loanIncome } = convertToIncomeSections({
+      transactions: [],
+      transactionsWithCounterpart,
+    });
+
+    expect(loanIncome.totalAmount).toBe(1000000);
+    expect(loanIncome.rows).toHaveLength(1);
+    expect(loanIncome.rows[0].kariiresaki).toBe("株式会社テスト銀行");
+    expect(loanIncome.rows[0].kingaku).toBe(1000000);
+  });
+
+  it("converts grant-income transactions to GrantIncomeSection", () => {
+    const transactionDate = new Date("2024-05-15");
+    const transactionsWithCounterpart: IncomeTransactionWithCounterpart[] = [
+      {
+        transactionNo: "1",
+        categoryKey: "grant-income",
+        friendlyCategory: "交付金",
+        label: "本部交付金",
+        description: "本部からの交付金",
+        memo: null,
+        debitAmount: 0,
+        creditAmount: 500000,
+        transactionDate,
+        counterpartName: "〇〇党本部",
+        counterpartAddress: "東京都千代田区永田町1-1-1",
+      },
+    ];
+
+    const { grantIncome } = convertToIncomeSections({
+      transactions: [],
+      transactionsWithCounterpart,
+    });
+
+    expect(grantIncome.totalAmount).toBe(500000);
+    expect(grantIncome.rows).toHaveLength(1);
+    expect(grantIncome.rows[0].honsibuNm).toBe("〇〇党本部");
+    expect(grantIncome.rows[0].kingaku).toBe(500000);
+    expect(grantIncome.rows[0].dt).toEqual(transactionDate);
+    expect(grantIncome.rows[0].jimuAdr).toBe("東京都千代田区永田町1-1-1");
   });
 });
 

@@ -7,6 +7,8 @@
 
 import type {
   BusinessIncomeSection,
+  GrantIncomeSection,
+  LoanIncomeSection,
   OtherIncomeSection,
 } from "./converters/income-converter";
 
@@ -25,8 +27,8 @@ export interface DonationData {
  */
 export interface IncomeData {
   businessIncome: BusinessIncomeSection; // SYUUSHI07_03: 事業による収入
-  // partyRevenue: PartyRevenueSection;          // (4) 政治資金パーティー開催事業の収入
-  // headquartersGrant: HeadquartersGrantSection; // (5) 本部または支部からの交付金
+  loanIncome: LoanIncomeSection; // SYUUSHI07_04: 借入金
+  grantIncome: GrantIncomeSection; // SYUUSHI07_05: 本部又は支部から供与された交付金
   otherIncome: OtherIncomeSection; // SYUUSHI07_06: その他の収入
 }
 
