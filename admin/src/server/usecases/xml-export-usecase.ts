@@ -1,15 +1,11 @@
 import * as iconv from "iconv-lite";
-import type { ITransactionXmlRepository } from "../repositories/interfaces/transaction-xml-repository.interface";
-import {
-  convertToOtherIncomeSection,
-  type OtherIncomeSection,
-} from "../domain/converters/income-converter";
 import {
   serializeReportData,
   KNOWN_FORM_IDS,
   FLAG_STRING_LENGTH,
 } from "../domain/serializers/report-serializer";
 import type { ReportData } from "../domain/report-data";
+import type { IncomeAssembler } from "./assemblers/income-assembler";
 
 // ============================================================
 // Types
@@ -17,9 +13,6 @@ import type { ReportData } from "../domain/report-data";
 
 // Re-export for consumers
 export { KNOWN_FORM_IDS, FLAG_STRING_LENGTH };
-
-// Union type for all section data (will grow as more sections are added)
-export type SectionData = OtherIncomeSection;
 
 export interface XmlExportInput {
   politicalOrganizationId: string;
@@ -38,7 +31,7 @@ export interface XmlExportResult {
 // ============================================================
 
 export class XmlExportUsecase {
-  constructor(private repository: ITransactionXmlRepository) {}
+  constructor(private incomeAssembler: IncomeAssembler) {}
 
   async execute(input: XmlExportInput): Promise<XmlExportResult> {
     // Step 1: Assemble ReportData by gathering all sections
@@ -66,23 +59,15 @@ export class XmlExportUsecase {
   // ============================================================
 
   private async assembleReportData(input: XmlExportInput): Promise<ReportData> {
-    return {
-      donations: {},
-      income: {
-        otherIncome: await this.fetchOtherIncome(input),
-      },
-      expenses: {},
-    };
-  }
-
-  private async fetchOtherIncome(
-    input: XmlExportInput,
-  ): Promise<OtherIncomeSection> {
-    const transactions = await this.repository.findOtherIncomeTransactions({
+    const income = await this.incomeAssembler.assemble({
       politicalOrganizationId: input.politicalOrganizationId,
       financialYear: input.financialYear,
     });
 
-    return convertToOtherIncomeSection(transactions);
+    return {
+      donations: {},
+      income,
+      expenses: {},
+    };
   }
 }

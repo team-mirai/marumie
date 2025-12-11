@@ -3,48 +3,44 @@ import {
   KNOWN_FORM_IDS,
   FLAG_STRING_LENGTH,
 } from "@/server/usecases/xml-export-usecase";
-import type {
-  ITransactionXmlRepository,
-  OtherIncomeTransaction,
-} from "@/server/repositories/interfaces/transaction-xml-repository.interface";
+import type { IncomeAssembler } from "@/server/usecases/assemblers/income-assembler";
+import type { IncomeData } from "@/server/domain/report-data";
 
 describe("XmlExportUsecase", () => {
   let usecase: XmlExportUsecase;
-  let mockRepository: jest.Mocked<ITransactionXmlRepository>;
+  let mockIncomeAssembler: jest.Mocked<IncomeAssembler>;
 
   beforeEach(() => {
-    mockRepository = {
-      findOtherIncomeTransactions: jest.fn(),
-    };
-    usecase = new XmlExportUsecase(mockRepository);
+    mockIncomeAssembler = {
+      assemble: jest.fn(),
+    } as unknown as jest.Mocked<IncomeAssembler>;
+    usecase = new XmlExportUsecase(mockIncomeAssembler);
     jest.clearAllMocks();
   });
 
   describe("execute", () => {
     it("generates complete XML document with proper structure", async () => {
-      const mockTransactions: OtherIncomeTransaction[] = [
-        {
-          transactionNo: "1",
-          friendlyCategory: "その他の収入",
-          label: "寄附金",
-          description: "寄附金収入",
-          memo: null,
-          debitAmount: 0,
-          creditAmount: 150000,
+      const mockIncomeData: IncomeData = {
+        otherIncome: {
+          totalAmount: 250000,
+          underThresholdAmount: 0,
+          rows: [
+            {
+              ichirenNo: "1",
+              tekiyou: "その他の収入",
+              kingaku: 150000,
+              bikou: "MF行番号: 1",
+            },
+            {
+              ichirenNo: "2",
+              tekiyou: "その他の収入",
+              kingaku: 100000,
+              bikou: "MF行番号: 2",
+            },
+          ],
         },
-        {
-          transactionNo: "2",
-          friendlyCategory: "その他の収入",
-          label: "その他収入",
-          description: "その他の収入",
-          memo: null,
-          debitAmount: 0,
-          creditAmount: 100000,
-        },
-      ];
-      mockRepository.findOtherIncomeTransactions.mockResolvedValue(
-        mockTransactions,
-      );
+      };
+      mockIncomeAssembler.assemble.mockResolvedValue(mockIncomeData);
 
       const result = await usecase.execute({
         politicalOrganizationId: "123",
@@ -65,20 +61,21 @@ describe("XmlExportUsecase", () => {
     });
 
     it("includes SYUUSHI_FLG section with correct flag for SYUUSHI07_06", async () => {
-      const mockTransactions: OtherIncomeTransaction[] = [
-        {
-          transactionNo: "1",
-          friendlyCategory: null,
-          label: "テスト",
-          description: null,
-          memo: null,
-          debitAmount: 0,
-          creditAmount: 100000,
+      const mockIncomeData: IncomeData = {
+        otherIncome: {
+          totalAmount: 100000,
+          underThresholdAmount: 0,
+          rows: [
+            {
+              ichirenNo: "1",
+              tekiyou: "テスト",
+              kingaku: 100000,
+              bikou: "MF行番号: 1",
+            },
+          ],
         },
-      ];
-      mockRepository.findOtherIncomeTransactions.mockResolvedValue(
-        mockTransactions,
-      );
+      };
+      mockIncomeAssembler.assemble.mockResolvedValue(mockIncomeData);
 
       const result = await usecase.execute({
         politicalOrganizationId: "123",
@@ -97,20 +94,21 @@ describe("XmlExportUsecase", () => {
     });
 
     it("properly escapes special XML characters", async () => {
-      const mockTransactions: OtherIncomeTransaction[] = [
-        {
-          transactionNo: "1",
-          friendlyCategory: "テスト & サンプル <特殊文字>",
-          label: null,
-          description: null,
-          memo: '"引用符" & \'アポストロフィ\'',
-          debitAmount: 0,
-          creditAmount: 200000,
+      const mockIncomeData: IncomeData = {
+        otherIncome: {
+          totalAmount: 200000,
+          underThresholdAmount: 0,
+          rows: [
+            {
+              ichirenNo: "1",
+              tekiyou: "テスト & サンプル <特殊文字>",
+              kingaku: 200000,
+              bikou: '"引用符" & \'アポストロフィ\'',
+            },
+          ],
         },
-      ];
-      mockRepository.findOtherIncomeTransactions.mockResolvedValue(
-        mockTransactions,
-      );
+      };
+      mockIncomeAssembler.assemble.mockResolvedValue(mockIncomeData);
 
       const result = await usecase.execute({
         politicalOrganizationId: "456",
@@ -123,20 +121,21 @@ describe("XmlExportUsecase", () => {
     });
 
     it("generates correct Shift-JIS encoded bytes", async () => {
-      const mockTransactions: OtherIncomeTransaction[] = [
-        {
-          transactionNo: "1",
-          friendlyCategory: "日本語テスト",
-          label: null,
-          description: null,
-          memo: "備考欄",
-          debitAmount: 0,
-          creditAmount: 100000,
+      const mockIncomeData: IncomeData = {
+        otherIncome: {
+          totalAmount: 100000,
+          underThresholdAmount: 0,
+          rows: [
+            {
+              ichirenNo: "1",
+              tekiyou: "日本語テスト",
+              kingaku: 100000,
+              bikou: "備考欄",
+            },
+          ],
         },
-      ];
-      mockRepository.findOtherIncomeTransactions.mockResolvedValue(
-        mockTransactions,
-      );
+      };
+      mockIncomeAssembler.assemble.mockResolvedValue(mockIncomeData);
 
       const result = await usecase.execute({
         politicalOrganizationId: "789",
