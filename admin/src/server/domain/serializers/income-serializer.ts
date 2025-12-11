@@ -7,11 +7,38 @@
 
 import { fragment } from "xmlbuilder2";
 import type { XMLBuilder } from "xmlbuilder2/lib/interfaces";
-import type { OtherIncomeSection } from "../converters/income-converter";
+import type {
+  BusinessIncomeSection,
+  OtherIncomeSection,
+} from "../converters/income-converter";
 
 // ============================================================
 // Serializer Functions
 // ============================================================
+
+/**
+ * Serializes a BusinessIncomeSection into XML format for SYUUSHI07_03.
+ */
+export function serializeBusinessIncomeSection(
+  section: BusinessIncomeSection,
+): XMLBuilder {
+  const frag = fragment();
+  const root = frag.ele("SYUUSHI07_03");
+  const sheet = root.ele("SHEET");
+
+  sheet.ele("KINGAKU_GK").txt(formatAmount(section.totalAmount));
+
+  for (const row of section.rows) {
+    const rowEle = sheet.ele("ROW");
+    rowEle.ele("ICHIREN_NO").txt(row.ichirenNo);
+    rowEle.ele("GIGYOU_SYURUI").txt(row.gigyouSyurui);
+    rowEle.ele("KINGAKU").txt(formatAmount(row.kingaku));
+
+    rowEle.ele("BIKOU").txt(row.bikou ?? "");
+  }
+
+  return frag;
+}
 
 /**
  * Serializes an OtherIncomeSection into XML format for SYUUSHI07_06.
@@ -36,12 +63,7 @@ export function serializeOtherIncomeSection(
     rowEle.ele("ICHIREN_NO").txt(row.ichirenNo);
     rowEle.ele("TEKIYOU").txt(row.tekiyou);
     rowEle.ele("KINGAKU").txt(formatAmount(row.kingaku));
-
-    if (row.bikou) {
-      rowEle.ele("BIKOU").txt(row.bikou);
-    } else {
-      rowEle.ele("BIKOU");
-    }
+    rowEle.ele("BIKOU").txt(row.bikou ?? "");
   }
 
   return frag;
