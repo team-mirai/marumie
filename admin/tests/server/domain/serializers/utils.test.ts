@@ -56,10 +56,20 @@ describe("formatWarekiDate", () => {
     });
   });
 
-  describe("Fallback (pre-Showa)", () => {
-    it("falls back to Western calendar for dates before Showa", () => {
-      expect(formatWarekiDate(new Date(1925, 5, 15))).toBe("1925/6/15");
-      expect(formatWarekiDate(new Date(1900, 0, 1))).toBe("1900/1/1");
+  describe("Pre-Showa dates (error)", () => {
+    it("throws error for dates before Showa era", () => {
+      expect(() => formatWarekiDate(new Date(1925, 5, 15))).toThrow(
+        "Unsupported date"
+      );
+      expect(() => formatWarekiDate(new Date(1900, 0, 1))).toThrow(
+        "Unsupported date"
+      );
+    });
+
+    it("throws error for 1926-12-24 (day before Showa)", () => {
+      expect(() => formatWarekiDate(new Date(1926, 11, 24))).toThrow(
+        "Unsupported date"
+      );
     });
   });
 

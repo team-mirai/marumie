@@ -47,11 +47,13 @@ export function formatWarekiDate(date: Date | null | undefined): string {
   }
 
   // 昭和: 1926-12-25 ~ 1989-01-07
-  if (year >= 1926) {
+  if (year > 1926 || (year === 1926 && month === 12 && day >= 25)) {
     const showaYear = year - 1925;
     return `S${showaYear}/${month}/${day}`;
   }
 
-  // Fallback to Western calendar
-  return `${year}/${month}/${day}`;
+  // 昭和以前の日付はサポート外
+  throw new Error(
+    `Unsupported date: ${year}/${month}/${day} (dates before 1926-12-25 are not supported)`,
+  );
 }
