@@ -21,6 +21,10 @@ describe("XmlExportUsecase", () => {
   describe("execute", () => {
     it("generates complete XML document with proper structure", async () => {
       const mockIncomeData: IncomeData = {
+        businessIncome: {
+          totalAmount: 0,
+          rows: [],
+        },
         otherIncome: {
           totalAmount: 250000,
           underThresholdAmount: 0,
@@ -62,6 +66,10 @@ describe("XmlExportUsecase", () => {
 
     it("includes SYUUSHI_FLG section with correct flag for SYUUSHI07_06", async () => {
       const mockIncomeData: IncomeData = {
+        businessIncome: {
+          totalAmount: 0,
+          rows: [],
+        },
         otherIncome: {
           totalAmount: 100000,
           underThresholdAmount: 0,
@@ -95,6 +103,10 @@ describe("XmlExportUsecase", () => {
 
     it("properly escapes special XML characters", async () => {
       const mockIncomeData: IncomeData = {
+        businessIncome: {
+          totalAmount: 0,
+          rows: [],
+        },
         otherIncome: {
           totalAmount: 200000,
           underThresholdAmount: 0,
@@ -122,6 +134,10 @@ describe("XmlExportUsecase", () => {
 
     it("generates correct Shift-JIS encoded bytes", async () => {
       const mockIncomeData: IncomeData = {
+        businessIncome: {
+          totalAmount: 0,
+          rows: [],
+        },
         otherIncome: {
           totalAmount: 100000,
           underThresholdAmount: 0,

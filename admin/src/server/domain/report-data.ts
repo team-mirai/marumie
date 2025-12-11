@@ -5,7 +5,10 @@
  * Organized by semantic groupings for assembler clarity.
  */
 
-import type { OtherIncomeSection } from "./converters/income-converter";
+import type {
+  BusinessIncomeSection,
+  OtherIncomeSection,
+} from "./converters/income-converter";
 
 /**
  * 寄付データ (SYUUSHI07_01 ~ SYUUSHI07_03)
@@ -18,12 +21,13 @@ export interface DonationData {
 }
 
 /**
- * 収入データ (SYUUSHI07_04 ~ SYUUSHI07_06)
+ * 収入データ (SYUUSHI07_03 ~ SYUUSHI07_06)
  */
 export interface IncomeData {
+  businessIncome: BusinessIncomeSection; // SYUUSHI07_03: 事業による収入
   // partyRevenue: PartyRevenueSection;          // (4) 政治資金パーティー開催事業の収入
   // headquartersGrant: HeadquartersGrantSection; // (5) 本部または支部からの交付金
-  otherIncome: OtherIncomeSection; // (6) その他の収入
+  otherIncome: OtherIncomeSection; // SYUUSHI07_06: その他の収入
 }
 
 /**

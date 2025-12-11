@@ -11,6 +11,16 @@ const TEN_MAN_THRESHOLD = 100_000;
 // Input Types (from DB/Repository)
 // ============================================================
 
+export interface BusinessIncomeTransaction {
+  transactionNo: string;
+  friendlyCategory: string | null;
+  label: string | null;
+  description: string | null;
+  memo: string | null;
+  debitAmount: number;
+  creditAmount: number;
+}
+
 export interface OtherIncomeTransaction {
   transactionNo: string;
   friendlyCategory: string | null;
@@ -25,6 +35,27 @@ export interface OtherIncomeTransaction {
 // Output Types (Domain Objects)
 // ============================================================
 
+/**
+ * SYUUSHI07_03: 事業による収入の明細行
+ */
+export interface BusinessIncomeRow {
+  ichirenNo: string;
+  gigyouSyurui: string; // 事業の種類
+  kingaku: number;
+  bikou?: string;
+}
+
+/**
+ * SYUUSHI07_03: 事業による収入
+ */
+export interface BusinessIncomeSection {
+  totalAmount: number;
+  rows: BusinessIncomeRow[];
+}
+
+/**
+ * SYUUSHI07_06: その他の収入の明細行
+ */
 export interface OtherIncomeRow {
   ichirenNo: string;
   tekiyou: string;
@@ -32,6 +63,9 @@ export interface OtherIncomeRow {
   bikou?: string;
 }
 
+/**
+ * SYUUSHI07_06: その他の収入
+ */
 export interface OtherIncomeSection {
   totalAmount: number;
   underThresholdAmount: number;
@@ -54,6 +88,28 @@ interface SectionTransaction {
 // ============================================================
 // Converter Functions
 // ============================================================
+
+/**
+ * Converts raw database transactions into a BusinessIncomeSection.
+ *
+ * Business rules:
+ * - All transactions are listed individually
+ * - friendlyCategory is used as the business type (事業の種類)
+ */
+export function convertToBusinessIncomeSection(
+  transactions: BusinessIncomeTransaction[],
+): BusinessIncomeSection {
+  const sectionTransactions: SectionTransaction[] = transactions.map((t) => ({
+    transactionNo: t.transactionNo,
+    friendlyCategory: t.friendlyCategory,
+    label: t.label,
+    description: t.description,
+    memo: t.memo,
+    amount: resolveTransactionAmount(t.debitAmount, t.creditAmount),
+  }));
+
+  return aggregateBusinessIncomeFromTransactions(sectionTransactions);
+}
 
 /**
  * Converts raw database transactions into an OtherIncomeSection.
@@ -80,6 +136,38 @@ export function convertToOtherIncomeSection(
 // ============================================================
 // Pure Functions
 // ============================================================
+
+function aggregateBusinessIncomeFromTransactions(
+  transactions: SectionTransaction[],
+): BusinessIncomeSection {
+  const totalAmount = transactions.reduce(
+    (sum, transaction) => sum + transaction.amount,
+    0,
+  );
+
+  const rows: BusinessIncomeRow[] = transactions.map((transaction, index) => ({
+    ichirenNo: (index + 1).toString(),
+    gigyouSyurui: buildGigyouSyurui(transaction),
+    kingaku: Math.round(transaction.amount),
+    bikou: buildBikou(transaction),
+  }));
+
+  return {
+    totalAmount,
+    rows,
+  };
+}
+
+function buildGigyouSyurui(transaction: SectionTransaction): string {
+  // friendlyCategory を事業の種類として使用
+  return sanitizeText(
+    transaction.friendlyCategory ||
+      transaction.label ||
+      transaction.description ||
+      transaction.transactionNo,
+    200,
+  );
+}
 
 function aggregateOtherIncomeFromTransactions(
   transactions: SectionTransaction[],
