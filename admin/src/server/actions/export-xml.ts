@@ -5,8 +5,8 @@ import { PrismaTransactionXmlRepository } from "../repositories/prisma-transacti
 import {
   XmlExportUsecase,
   type XmlSectionType,
-  type SectionData,
 } from "../usecases/xml-export-usecase";
+import type { ReportData } from "../domain/report-data";
 
 export interface ExportXmlInput {
   politicalOrganizationId: string;
@@ -17,7 +17,7 @@ export interface ExportXmlInput {
 export interface ExportXmlResult {
   xml: string;
   filename: string;
-  sectionsData: Partial<Record<XmlSectionType, SectionData>>;
+  reportData: ReportData;
 }
 
 export async function exportXml(
@@ -47,6 +47,6 @@ export async function exportXml(
   return {
     xml: result.xml,
     filename: result.filename,
-    sectionsData: result.sectionsData,
+    reportData: result.reportData,
   };
 }

@@ -1,23 +1,31 @@
-import { fragment } from "xmlbuilder2";
-import type { XMLBuilder } from "xmlbuilder2/lib/interfaces";
-import type { ITransactionXmlRepository } from "../../repositories/interfaces/transaction-xml-repository.interface";
+/**
+ * Income Converter
+ *
+ * Converts raw transaction data from the database into income-related domain objects.
+ * This is a pure function layer that handles data transformation and business rules.
+ */
 
 const TEN_MAN_THRESHOLD = 100_000;
 
 // ============================================================
-// Types
+// Input Types (from DB/Repository)
 // ============================================================
 
-interface SectionTransaction {
+export interface OtherIncomeTransaction {
   transactionNo: string;
   friendlyCategory: string | null;
   label: string | null;
   description: string | null;
   memo: string | null;
-  amount: number;
+  debitAmount: number;
+  creditAmount: number;
 }
 
-interface OtherIncomeRow {
+// ============================================================
+// Output Types (Domain Objects)
+// ============================================================
+
+export interface OtherIncomeRow {
   ichirenNo: string;
   tekiyou: string;
   kingaku: number;
@@ -30,49 +38,43 @@ export interface OtherIncomeSection {
   rows: OtherIncomeRow[];
 }
 
-export interface Syuushi0706Input {
-  politicalOrganizationId: string;
-  financialYear: number;
-}
+// ============================================================
+// Internal Types
+// ============================================================
 
-export interface Syuushi0706Result {
-  sectionXml: XMLBuilder;
-  section: OtherIncomeSection;
-  filename: string;
+interface SectionTransaction {
+  transactionNo: string;
+  friendlyCategory: string | null;
+  label: string | null;
+  description: string | null;
+  memo: string | null;
+  amount: number;
 }
 
 // ============================================================
-// Usecase
+// Converter Functions
 // ============================================================
 
-export class Syuushi0706OtherIncomeUsecase {
-  constructor(private repository: ITransactionXmlRepository) {}
+/**
+ * Converts raw database transactions into an OtherIncomeSection.
+ *
+ * Business rules:
+ * - Transactions >= 100,000 yen are listed individually with details
+ * - Transactions < 100,000 yen are aggregated into underThresholdAmount
+ */
+export function convertToOtherIncomeSection(
+  transactions: OtherIncomeTransaction[],
+): OtherIncomeSection {
+  const sectionTransactions: SectionTransaction[] = transactions.map((t) => ({
+    transactionNo: t.transactionNo,
+    friendlyCategory: t.friendlyCategory,
+    label: t.label,
+    description: t.description,
+    memo: t.memo,
+    amount: resolveTransactionAmount(t.debitAmount, t.creditAmount),
+  }));
 
-  async execute(input: Syuushi0706Input): Promise<Syuushi0706Result> {
-    const transactions = await this.repository.findOtherIncomeTransactions({
-      politicalOrganizationId: input.politicalOrganizationId,
-      financialYear: input.financialYear,
-    });
-
-    const sectionTransactions: SectionTransaction[] = transactions.map((t) => ({
-      transactionNo: t.transactionNo,
-      friendlyCategory: t.friendlyCategory,
-      label: t.label,
-      description: t.description,
-      memo: t.memo,
-      amount: resolveTransactionAmount(t.debitAmount, t.creditAmount),
-    }));
-
-    const section = aggregateOtherIncomeFromTransactions(sectionTransactions);
-    const sectionXml = serializeOtherIncomeSection(section);
-    const filename = `SYUUSHI07_06_${input.politicalOrganizationId}_${input.financialYear}.xml`;
-
-    return {
-      sectionXml,
-      section,
-      filename,
-    };
-  }
+  return aggregateOtherIncomeFromTransactions(sectionTransactions);
 }
 
 // ============================================================
@@ -114,35 +116,6 @@ function aggregateOtherIncomeFromTransactions(
   };
 }
 
-function serializeOtherIncomeSection(section: OtherIncomeSection): XMLBuilder {
-  const frag = fragment();
-  const root = frag.ele("SYUUSHI07_06");
-  const sheet = root.ele("SHEET");
-
-  sheet.ele("KINGAKU_GK").txt(formatAmount(section.totalAmount));
-
-  if (section.underThresholdAmount !== null) {
-    sheet.ele("MIMAN_GK").txt(formatAmount(section.underThresholdAmount));
-  } else {
-    sheet.ele("MIMAN_GK");
-  }
-
-  for (const row of section.rows) {
-    const rowEle = sheet.ele("ROW");
-    rowEle.ele("ICHIREN_NO").txt(row.ichirenNo);
-    rowEle.ele("TEKIYOU").txt(row.tekiyou);
-    rowEle.ele("KINGAKU").txt(formatAmount(row.kingaku));
-
-    if (row.bikou) {
-      rowEle.ele("BIKOU").txt(row.bikou);
-    } else {
-      rowEle.ele("BIKOU");
-    }
-  }
-
-  return frag;
-}
-
 function buildTekiyou(transaction: SectionTransaction): string {
   // タグ (friendlyCategory) を優先して使用
   return sanitizeText(
@@ -173,18 +146,6 @@ function resolveTransactionAmount(
   return Number.isFinite(debitAmount) ? debitAmount : 0;
 }
 
-// ============================================================
-// Utilities
-// ============================================================
-
-function formatAmount(value: number | null | undefined): string {
-  if (!Number.isFinite(value ?? null)) {
-    return "0";
-  }
-  const rounded = Math.round(Number(value));
-  return rounded.toString();
-}
-
 function sanitizeText(
   value: string | null | undefined,
   maxLength?: number,
@@ -204,7 +165,6 @@ function sanitizeText(
 // Export for testing
 export {
   aggregateOtherIncomeFromTransactions,
-  serializeOtherIncomeSection,
   resolveTransactionAmount,
   type SectionTransaction,
 };
