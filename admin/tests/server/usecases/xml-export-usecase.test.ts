@@ -62,7 +62,7 @@ describe("XmlExportUsecase", () => {
 
       expect(result.filename).toBe("SYUUSHI07_06_123_2024.xml");
       expect(result.shiftJisBuffer).toBeInstanceOf(Buffer);
-      expect(result.reportData.otherIncome?.totalAmount).toBe(250000);
+      expect(result.reportData.income?.otherIncome?.totalAmount).toBe(250000);
     });
 
     it("includes SYUUSHI_FLG section with correct flag for SYUUSHI07_06", async () => {
