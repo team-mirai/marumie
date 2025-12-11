@@ -3,14 +3,17 @@ import type {
   BusinessIncomeTransaction,
   GrantIncomeTransaction,
   IReportTransactionRepository,
-  IncomeTransactionFilters,
   LoanIncomeTransaction,
   OtherIncomeTransaction,
+  PersonalDonationTransaction,
+  TransactionFilters,
 } from "./interfaces/report-transaction-repository.interface";
 import { PL_CATEGORIES } from "@/shared/utils/category-mapping";
 
 // カテゴリキー定数（shared/utils/category-mapping.ts の日本語キー経由で取得）
 const CATEGORY_KEYS = {
+  // biome-ignore lint/complexity/useLiteralKeys: 日本語キー
+  INDIVIDUAL_DONATION: PL_CATEGORIES["個人からの寄附"].key,
   // biome-ignore lint/complexity/useLiteralKeys: 日本語キー
   BUSINESS: PL_CATEGORIES["機関紙誌の発行その他の事業による収入"].key,
   // biome-ignore lint/complexity/useLiteralKeys: 日本語キー
@@ -27,10 +30,47 @@ export class PrismaReportTransactionRepository
   constructor(private prisma: PrismaClient) {}
 
   /**
+   * SYUUSHI07_07 KUBUN1: 個人からの寄附のトランザクションを取得
+   * TODO: 寄附者テーブル作成後に寄附者情報を実際のデータに置き換える
+   */
+  async findPersonalDonationTransactions(
+    filters: TransactionFilters,
+  ): Promise<PersonalDonationTransaction[]> {
+    const transactions = await this.prisma.transaction.findMany({
+      where: {
+        politicalOrganizationId: BigInt(filters.politicalOrganizationId),
+        financialYear: filters.financialYear,
+        transactionType: "income",
+        categoryKey: CATEGORY_KEYS.INDIVIDUAL_DONATION,
+      },
+      orderBy: [{ transactionDate: "asc" }, { id: "asc" }],
+      select: {
+        transactionNo: true,
+        transactionDate: true,
+        debitAmount: true,
+        creditAmount: true,
+        memo: true,
+      },
+    });
+
+    return transactions.map((t) => ({
+      transactionNo: t.transactionNo,
+      transactionDate: t.transactionDate,
+      debitAmount: Number(t.debitAmount),
+      creditAmount: Number(t.creditAmount),
+      memo: t.memo,
+      // TODO: 寄附者テーブル作成後に実際の値を取得する
+      donorName: "（仮）寄附者氏名",
+      donorAddress: "（仮）東京都千代田区永田町1-1-1",
+      donorOccupation: "（仮）会社員",
+    }));
+  }
+
+  /**
    * SYUUSHI07_03: 事業による収入のトランザクションを取得
    */
   async findBusinessIncomeTransactions(
-    filters: IncomeTransactionFilters,
+    filters: TransactionFilters,
   ): Promise<BusinessIncomeTransaction[]> {
     const transactions = await this.prisma.transaction.findMany({
       where: {
@@ -66,7 +106,7 @@ export class PrismaReportTransactionRepository
    * SYUUSHI07_04: 借入金のトランザクションを取得
    */
   async findLoanIncomeTransactions(
-    filters: IncomeTransactionFilters,
+    filters: TransactionFilters,
   ): Promise<LoanIncomeTransaction[]> {
     const transactions = await this.prisma.transaction.findMany({
       where: {
@@ -107,7 +147,7 @@ export class PrismaReportTransactionRepository
    * SYUUSHI07_05: 交付金のトランザクションを取得
    */
   async findGrantIncomeTransactions(
-    filters: IncomeTransactionFilters,
+    filters: TransactionFilters,
   ): Promise<GrantIncomeTransaction[]> {
     const transactions = await this.prisma.transaction.findMany({
       where: {
@@ -148,7 +188,7 @@ export class PrismaReportTransactionRepository
    * SYUUSHI07_06: その他の収入のトランザクションを取得
    */
   async findOtherIncomeTransactions(
-    filters: IncomeTransactionFilters,
+    filters: TransactionFilters,
   ): Promise<OtherIncomeTransaction[]> {
     const transactions = await this.prisma.transaction.findMany({
       where: {

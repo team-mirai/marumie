@@ -5,6 +5,7 @@
  * Organized by semantic groupings for assembler clarity.
  */
 
+import type { PersonalDonationSection } from "./converters/donation-converter";
 import type {
   BusinessIncomeSection,
   GrantIncomeSection,
@@ -13,13 +14,12 @@ import type {
 } from "./converters/income-converter";
 
 /**
- * 寄付データ (SYUUSHI07_01 ~ SYUUSHI07_03)
+ * 寄付データ (SYUUSHI07_07)
  */
-// biome-ignore lint/suspicious/noEmptyInterface: Will be populated as sections are implemented
 export interface DonationData {
-  // personalDonations?: PersonalDonationSection;    // (1) 個人からの寄附
-  // corporateDonations?: CorporateDonationSection;  // (2) 法人その他の団体からの寄附
-  // politicalDonations?: PoliticalDonationSection;  // (3) 政治団体からの寄附
+  personalDonations?: PersonalDonationSection; // KUBUN1: 個人からの寄附
+  // corporateDonations?: CorporateDonationSection;  // KUBUN2: 法人その他の団体からの寄附
+  // politicalDonations?: PoliticalDonationSection;  // KUBUN3: 政治団体からの寄附
 }
 
 /**

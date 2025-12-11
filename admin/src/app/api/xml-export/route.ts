@@ -3,6 +3,7 @@ import * as iconv from "iconv-lite";
 import { prisma } from "@/server/lib/prisma";
 import { PrismaReportTransactionRepository } from "@/server/repositories/prisma-report-transaction.repository";
 import { XmlExportUsecase } from "@/server/usecases/xml-export-usecase";
+import { DonationAssembler } from "@/server/usecases/assemblers/donation-assembler";
 import { IncomeAssembler } from "@/server/usecases/assemblers/income-assembler";
 
 export async function GET(request: Request) {
@@ -47,8 +48,9 @@ export async function GET(request: Request) {
 
   try {
     const repository = new PrismaReportTransactionRepository(prisma);
+    const donationAssembler = new DonationAssembler(repository);
     const incomeAssembler = new IncomeAssembler(repository);
-    const usecase = new XmlExportUsecase(incomeAssembler);
+    const usecase = new XmlExportUsecase(donationAssembler, incomeAssembler);
 
     const result = await usecase.execute({
       politicalOrganizationId,

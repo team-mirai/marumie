@@ -8,6 +8,7 @@
 import { create } from "xmlbuilder2";
 import type { XMLBuilder } from "xmlbuilder2/lib/interfaces";
 import type { ReportData } from "../report-data";
+import { serializePersonalDonationSection } from "./donation-serializer";
 import {
   serializeBusinessIncomeSection,
   serializeGrantIncomeSection,
@@ -79,6 +80,20 @@ export function serializeReportData(
   head: Partial<XmlHead> = {},
 ): string {
   const sections: { formId: XmlSectionType; xml: XMLBuilder }[] = [];
+
+  // SYUUSHI07_07: 寄附 (個人からの寄附)
+  if (
+    reportData.donations.personalDonations &&
+    (reportData.donations.personalDonations.rows.length > 0 ||
+      reportData.donations.personalDonations.totalAmount > 0)
+  ) {
+    sections.push({
+      formId: "SYUUSHI07_07",
+      xml: serializePersonalDonationSection(
+        reportData.donations.personalDonations,
+      ),
+    });
+  }
 
   // SYUUSHI07_03: 事業による収入
   if (

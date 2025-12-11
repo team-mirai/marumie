@@ -5,6 +5,7 @@ import {
   FLAG_STRING_LENGTH,
 } from "../domain/serializers/report-serializer";
 import type { ReportData } from "../domain/report-data";
+import type { DonationAssembler } from "./assemblers/donation-assembler";
 import type { IncomeAssembler } from "./assemblers/income-assembler";
 
 // ============================================================
@@ -31,7 +32,10 @@ export interface XmlExportResult {
 // ============================================================
 
 export class XmlExportUsecase {
-  constructor(private incomeAssembler: IncomeAssembler) {}
+  constructor(
+    private donationAssembler: DonationAssembler,
+    private incomeAssembler: IncomeAssembler,
+  ) {}
 
   async execute(input: XmlExportInput): Promise<XmlExportResult> {
     // Step 1: Assemble ReportData by gathering all sections
@@ -59,13 +63,18 @@ export class XmlExportUsecase {
   // ============================================================
 
   private async assembleReportData(input: XmlExportInput): Promise<ReportData> {
-    const income = await this.incomeAssembler.assemble({
+    const assemblerInput = {
       politicalOrganizationId: input.politicalOrganizationId,
       financialYear: input.financialYear,
-    });
+    };
+
+    const [donations, income] = await Promise.all([
+      this.donationAssembler.assemble(assemblerInput),
+      this.incomeAssembler.assemble(assemblerInput),
+    ]);
 
     return {
-      donations: {},
+      donations,
       income,
       expenses: {},
     };
