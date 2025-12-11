@@ -7,13 +7,18 @@ import type {
   LoanIncomeTransaction,
   OtherIncomeTransaction,
 } from "./interfaces/report-transaction-repository.interface";
+import { PL_CATEGORIES } from "@/shared/utils/category-mapping";
 
-// カテゴリキー定数
+// カテゴリキー定数（shared/utils/category-mapping.ts の日本語キー経由で取得）
 const CATEGORY_KEYS = {
-  BUSINESS: "publication-income",
-  LOAN: "loan-income",
-  GRANT: "grant-income",
-  OTHER: "other-income",
+  // biome-ignore lint/complexity/useLiteralKeys: 日本語キー
+  BUSINESS: PL_CATEGORIES["機関紙誌の発行その他の事業による収入"].key,
+  // biome-ignore lint/complexity/useLiteralKeys: 日本語キー
+  LOAN: PL_CATEGORIES["借入金"].key,
+  // biome-ignore lint/complexity/useLiteralKeys: 日本語キー
+  GRANT: PL_CATEGORIES["本部又は支部から供与された交付金に係る収入"].key,
+  // biome-ignore lint/complexity/useLiteralKeys: 日本語キー
+  OTHER: PL_CATEGORIES["その他の収入"].key,
 } as const;
 
 export class PrismaReportTransactionRepository

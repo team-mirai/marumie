@@ -8,7 +8,12 @@
 import { create } from "xmlbuilder2";
 import type { XMLBuilder } from "xmlbuilder2/lib/interfaces";
 import type { ReportData } from "../report-data";
-import { serializeOtherIncomeSection } from "./income-serializer";
+import {
+  serializeBusinessIncomeSection,
+  serializeGrantIncomeSection,
+  serializeLoanIncomeSection,
+  serializeOtherIncomeSection,
+} from "./income-serializer";
 
 // ============================================================
 // Types
@@ -75,6 +80,40 @@ export function serializeReportData(
 ): string {
   const sections: { formId: XmlSectionType; xml: XMLBuilder }[] = [];
 
+  // SYUUSHI07_03: 事業による収入
+  if (
+    reportData.income.businessIncome.rows.length > 0 ||
+    reportData.income.businessIncome.totalAmount > 0
+  ) {
+    sections.push({
+      formId: "SYUUSHI07_03",
+      xml: serializeBusinessIncomeSection(reportData.income.businessIncome),
+    });
+  }
+
+  // SYUUSHI07_04: 借入金
+  if (
+    reportData.income.loanIncome.rows.length > 0 ||
+    reportData.income.loanIncome.totalAmount > 0
+  ) {
+    sections.push({
+      formId: "SYUUSHI07_04",
+      xml: serializeLoanIncomeSection(reportData.income.loanIncome),
+    });
+  }
+
+  // SYUUSHI07_05: 本部又は支部から供与された交付金
+  if (
+    reportData.income.grantIncome.rows.length > 0 ||
+    reportData.income.grantIncome.totalAmount > 0
+  ) {
+    sections.push({
+      formId: "SYUUSHI07_05",
+      xml: serializeGrantIncomeSection(reportData.income.grantIncome),
+    });
+  }
+
+  // SYUUSHI07_06: その他の収入
   if (
     reportData.income.otherIncome.rows.length > 0 ||
     reportData.income.otherIncome.totalAmount > 0
