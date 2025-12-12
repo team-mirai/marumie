@@ -149,7 +149,9 @@ function toSectionTransactionWithCounterpart(
     label: t.label,
     description: t.description,
     memo: t.memo,
-    amount: resolveTransactionAmount(t.debitAmount, t.creditAmount),
+    // Round amount to integer at the earliest stage for consistency
+    // This ensures totalAmount, underThresholdAmount, and kingaku all use the same rounded values
+    amount: Math.round(resolveTransactionAmount(t.debitAmount, t.creditAmount)),
     transactionDate: t.transactionDate,
     counterpartName: t.counterpartName,
     counterpartAddress: t.counterpartAddress,
@@ -180,7 +182,7 @@ function aggregateExpenseSection(
   const rows: ExpenseRow[] = detailedRows.map((t, index) => ({
     ichirenNo: (index + 1).toString(),
     mokuteki: buildMokuteki(t),
-    kingaku: Math.round(t.amount),
+    kingaku: t.amount, // Already rounded at input mapping stage
     dt: t.transactionDate,
     nm: buildNm(t),
     adr: buildAdr(t),
