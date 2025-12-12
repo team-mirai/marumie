@@ -38,19 +38,19 @@ export interface IncomeData {
 }
 
 /**
- * 支出データ (SYUUSHI07_14 ~ SYUUSHI07_16)
+ * 経常経費データ (SYUUSHI07_14)
  */
 export interface ExpenseData {
-  // personnelExpenses?: PersonnelExpenseSection;     // (7) 人件費
-  utilityExpenses: UtilityExpenseSection; // (8) 光熱水費
-  suppliesExpenses: SuppliesExpenseSection; // (9) 備品・消耗品費
-  officeExpenses: OfficeExpenseSection; // (10) 事務所費
-  // organizationExpenses?: OrganizationExpenseSection; // (11) 組織活動費
-  // electionExpenses?: ElectionExpenseSection;       // (12) 選挙関係費
-  // publicationExpenses?: PublicationExpenseSection; // (13) 機関紙誌の発行その他の事業費
-  // researchExpenses?: ResearchExpenseSection;       // (14) 調査研究費
-  // donationExpenses?: DonationExpenseSection;       // (15) 寄附・交付金
-  // otherExpenses?: OtherExpenseSection;             // (16) その他の経常経費
+  // personnelExpenses?: PersonnelExpenseSection;     // SYUUSHI07_07: 人件費
+  utilityExpenses: UtilityExpenseSection; // SYUUSHI07_14 KUBUN1: 光熱水費
+  suppliesExpenses: SuppliesExpenseSection; // SYUUSHI07_14 KUBUN2: 備品・消耗品費
+  officeExpenses: OfficeExpenseSection; // SYUUSHI07_14 KUBUN3: 事務所費
+  // organizationExpenses?: OrganizationExpenseSection; // SYUUSHI07_11: 組織活動費
+  // electionExpenses?: ElectionExpenseSection;       // SYUUSHI07_12: 選挙関係費
+  // publicationExpenses?: PublicationExpenseSection; // SYUUSHI07_13: 機関紙誌の発行その他の事業費
+  // researchExpenses?: ResearchExpenseSection;       // (調査研究費は経常経費に含まれない)
+  // donationExpenses?: DonationExpenseSection;       // SYUUSHI07_15: 寄附・交付金
+  // otherExpenses?: OtherExpenseSection;             // SYUUSHI07_16: その他の経常経費
 }
 
 /**
@@ -62,10 +62,10 @@ export interface ReportData {
   expenses: ExpenseData;
 
   // 資産の部 (SYUUSHI07_17 ~ SYUUSHI07_20)
-  // land?: LandSection;           // (17) 土地
-  // buildings?: BuildingSection;  // (18) 建物
-  // movables?: MovableSection;    // (19) 動産
-  // deposits?: DepositSection;    // (20) 預金等
+  // land?: LandSection;           // SYUUSHI07_17: 土地
+  // buildings?: BuildingSection;  // SYUUSHI07_18: 建物
+  // movables?: MovableSection;    // SYUUSHI07_19: 動産(船舶、航空機、自動車、事務機器等)
+  // deposits?: DepositSection;    // SYUUSHI07_20: 預金等
 
   // その他
   // assetStatus?: AssetStatusSection;       // SYUUSHI08: 資産等の状況
