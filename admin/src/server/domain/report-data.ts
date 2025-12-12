@@ -38,7 +38,7 @@ export interface IncomeData {
 }
 
 /**
- * 経常経費データ (SYUUSHI07_14)
+ * 支出データ (SYUUSHI07_07, SYUUSHI07_11 ~ SYUUSHI07_16)
  */
 export interface ExpenseData {
   // personnelExpenses: PersonnelExpenseSection;     // SYUUSHI07_07: 人件費
