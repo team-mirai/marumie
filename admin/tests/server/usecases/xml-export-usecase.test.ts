@@ -28,7 +28,23 @@ describe("XmlExportUsecase", () => {
       assemble: jest.fn(),
     } as unknown as jest.Mocked<IncomeAssembler>;
     mockExpenseAssembler = {
-      assemble: jest.fn().mockResolvedValue({}),
+      assemble: jest.fn().mockResolvedValue({
+        utilityExpenses: {
+          totalAmount: 0,
+          underThresholdAmount: 0,
+          rows: [],
+        },
+        suppliesExpenses: {
+          totalAmount: 0,
+          underThresholdAmount: 0,
+          rows: [],
+        },
+        officeExpenses: {
+          totalAmount: 0,
+          underThresholdAmount: 0,
+          rows: [],
+        },
+      }),
     } as unknown as jest.Mocked<ExpenseAssembler>;
     usecase = new XmlExportUsecase(
       mockDonationAssembler,
