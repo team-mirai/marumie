@@ -4,6 +4,7 @@ import { prisma } from "@/server/lib/prisma";
 import { PrismaReportTransactionRepository } from "@/server/repositories/prisma-report-transaction.repository";
 import { XmlExportUsecase } from "@/server/usecases/xml-export-usecase";
 import { DonationAssembler } from "@/server/usecases/assemblers/donation-assembler";
+import { ExpenseAssembler } from "@/server/usecases/assemblers/expense-assembler";
 import { IncomeAssembler } from "@/server/usecases/assemblers/income-assembler";
 
 export async function GET(request: Request) {
@@ -50,7 +51,12 @@ export async function GET(request: Request) {
     const repository = new PrismaReportTransactionRepository(prisma);
     const donationAssembler = new DonationAssembler(repository);
     const incomeAssembler = new IncomeAssembler(repository);
-    const usecase = new XmlExportUsecase(donationAssembler, incomeAssembler);
+    const expenseAssembler = new ExpenseAssembler(repository);
+    const usecase = new XmlExportUsecase(
+      donationAssembler,
+      incomeAssembler,
+      expenseAssembler,
+    );
 
     const result = await usecase.execute({
       politicalOrganizationId,

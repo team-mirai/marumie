@@ -4,9 +4,12 @@ import type {
   GrantIncomeTransaction,
   IReportTransactionRepository,
   LoanIncomeTransaction,
+  OfficeExpenseTransaction,
   OtherIncomeTransaction,
   PersonalDonationTransaction,
+  SuppliesExpenseTransaction,
   TransactionFilters,
+  UtilityExpenseTransaction,
 } from "./interfaces/report-transaction-repository.interface";
 import { PL_CATEGORIES } from "@/shared/utils/category-mapping";
 
@@ -22,6 +25,12 @@ const CATEGORY_KEYS = {
   GRANT: PL_CATEGORIES["本部又は支部から供与された交付金に係る収入"].key,
   // biome-ignore lint/complexity/useLiteralKeys: 日本語キー
   OTHER: PL_CATEGORIES["その他の収入"].key,
+  // biome-ignore lint/complexity/useLiteralKeys: 日本語キー
+  UTILITIES: PL_CATEGORIES["光熱水費"].key,
+  // biome-ignore lint/complexity/useLiteralKeys: 日本語キー
+  EQUIPMENT_SUPPLIES: PL_CATEGORIES["備品・消耗品費"].key,
+  // biome-ignore lint/complexity/useLiteralKeys: 日本語キー
+  OFFICE_EXPENSES: PL_CATEGORIES["事務所費"].key,
 } as const;
 
 export class PrismaReportTransactionRepository
@@ -217,6 +226,129 @@ export class PrismaReportTransactionRepository
       memo: t.memo,
       debitAmount: Number(t.debitAmount),
       creditAmount: Number(t.creditAmount),
+    }));
+  }
+
+  /**
+   * SYUUSHI07_14 KUBUN1: 光熱水費のトランザクションを取得
+   */
+  async findUtilityExpenseTransactions(
+    filters: TransactionFilters,
+  ): Promise<UtilityExpenseTransaction[]> {
+    const transactions = await this.prisma.transaction.findMany({
+      where: {
+        politicalOrganizationId: BigInt(filters.politicalOrganizationId),
+        financialYear: filters.financialYear,
+        transactionType: "expense",
+        categoryKey: CATEGORY_KEYS.UTILITIES,
+      },
+      orderBy: [{ transactionDate: "asc" }, { id: "asc" }],
+      select: {
+        transactionNo: true,
+        friendlyCategory: true,
+        label: true,
+        description: true,
+        memo: true,
+        debitAmount: true,
+        creditAmount: true,
+        transactionDate: true,
+      },
+    });
+
+    return transactions.map((t) => ({
+      transactionNo: t.transactionNo,
+      friendlyCategory: t.friendlyCategory,
+      label: t.label,
+      description: t.description,
+      memo: t.memo,
+      debitAmount: Number(t.debitAmount),
+      creditAmount: Number(t.creditAmount),
+      transactionDate: t.transactionDate,
+      // TODO: CounterPartテーブル実装後に実際の値を取得する
+      counterpartName: "（仮）取引先名称",
+      counterpartAddress: "（仮）東京都千代田区永田町1-1-1",
+    }));
+  }
+
+  /**
+   * SYUUSHI07_14 KUBUN2: 備品・消耗品費のトランザクションを取得
+   */
+  async findSuppliesExpenseTransactions(
+    filters: TransactionFilters,
+  ): Promise<SuppliesExpenseTransaction[]> {
+    const transactions = await this.prisma.transaction.findMany({
+      where: {
+        politicalOrganizationId: BigInt(filters.politicalOrganizationId),
+        financialYear: filters.financialYear,
+        transactionType: "expense",
+        categoryKey: CATEGORY_KEYS.EQUIPMENT_SUPPLIES,
+      },
+      orderBy: [{ transactionDate: "asc" }, { id: "asc" }],
+      select: {
+        transactionNo: true,
+        friendlyCategory: true,
+        label: true,
+        description: true,
+        memo: true,
+        debitAmount: true,
+        creditAmount: true,
+        transactionDate: true,
+      },
+    });
+
+    return transactions.map((t) => ({
+      transactionNo: t.transactionNo,
+      friendlyCategory: t.friendlyCategory,
+      label: t.label,
+      description: t.description,
+      memo: t.memo,
+      debitAmount: Number(t.debitAmount),
+      creditAmount: Number(t.creditAmount),
+      transactionDate: t.transactionDate,
+      // TODO: CounterPartテーブル実装後に実際の値を取得する
+      counterpartName: "（仮）取引先名称",
+      counterpartAddress: "（仮）東京都千代田区永田町1-1-1",
+    }));
+  }
+
+  /**
+   * SYUUSHI07_14 KUBUN3: 事務所費のトランザクションを取得
+   */
+  async findOfficeExpenseTransactions(
+    filters: TransactionFilters,
+  ): Promise<OfficeExpenseTransaction[]> {
+    const transactions = await this.prisma.transaction.findMany({
+      where: {
+        politicalOrganizationId: BigInt(filters.politicalOrganizationId),
+        financialYear: filters.financialYear,
+        transactionType: "expense",
+        categoryKey: CATEGORY_KEYS.OFFICE_EXPENSES,
+      },
+      orderBy: [{ transactionDate: "asc" }, { id: "asc" }],
+      select: {
+        transactionNo: true,
+        friendlyCategory: true,
+        label: true,
+        description: true,
+        memo: true,
+        debitAmount: true,
+        creditAmount: true,
+        transactionDate: true,
+      },
+    });
+
+    return transactions.map((t) => ({
+      transactionNo: t.transactionNo,
+      friendlyCategory: t.friendlyCategory,
+      label: t.label,
+      description: t.description,
+      memo: t.memo,
+      debitAmount: Number(t.debitAmount),
+      creditAmount: Number(t.creditAmount),
+      transactionDate: t.transactionDate,
+      // TODO: CounterPartテーブル実装後に実際の値を取得する
+      counterpartName: "（仮）取引先名称",
+      counterpartAddress: "（仮）東京都千代田区永田町1-1-1",
     }));
   }
 }

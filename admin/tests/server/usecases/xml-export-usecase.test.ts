@@ -4,6 +4,7 @@ import {
   FLAG_STRING_LENGTH,
 } from "@/server/usecases/xml-export-usecase";
 import type { DonationAssembler } from "@/server/usecases/assemblers/donation-assembler";
+import type { ExpenseAssembler } from "@/server/usecases/assemblers/expense-assembler";
 import type { IncomeAssembler } from "@/server/usecases/assemblers/income-assembler";
 import type { IncomeData } from "@/server/domain/report-data";
 
@@ -11,6 +12,7 @@ describe("XmlExportUsecase", () => {
   let usecase: XmlExportUsecase;
   let mockDonationAssembler: jest.Mocked<DonationAssembler>;
   let mockIncomeAssembler: jest.Mocked<IncomeAssembler>;
+  let mockExpenseAssembler: jest.Mocked<ExpenseAssembler>;
 
   beforeEach(() => {
     mockDonationAssembler = {
@@ -25,7 +27,30 @@ describe("XmlExportUsecase", () => {
     mockIncomeAssembler = {
       assemble: jest.fn(),
     } as unknown as jest.Mocked<IncomeAssembler>;
-    usecase = new XmlExportUsecase(mockDonationAssembler, mockIncomeAssembler);
+    mockExpenseAssembler = {
+      assemble: jest.fn().mockResolvedValue({
+        utilityExpenses: {
+          totalAmount: 0,
+          underThresholdAmount: 0,
+          rows: [],
+        },
+        suppliesExpenses: {
+          totalAmount: 0,
+          underThresholdAmount: 0,
+          rows: [],
+        },
+        officeExpenses: {
+          totalAmount: 0,
+          underThresholdAmount: 0,
+          rows: [],
+        },
+      }),
+    } as unknown as jest.Mocked<ExpenseAssembler>;
+    usecase = new XmlExportUsecase(
+      mockDonationAssembler,
+      mockIncomeAssembler,
+      mockExpenseAssembler,
+    );
     jest.clearAllMocks();
   });
 
