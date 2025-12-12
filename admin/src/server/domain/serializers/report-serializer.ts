@@ -9,6 +9,7 @@ import { create } from "xmlbuilder2";
 import type { XMLBuilder } from "xmlbuilder2/lib/interfaces";
 import type { ReportData } from "../report-data";
 import { serializePersonalDonationSection } from "./donation-serializer";
+import { serializeExpenseSection } from "./expense-serializer";
 import {
   serializeBusinessIncomeSection,
   serializeGrantIncomeSection,
@@ -136,6 +137,26 @@ export function serializeReportData(
     sections.push({
       formId: "SYUUSHI07_06",
       xml: serializeOtherIncomeSection(reportData.income.otherIncome),
+    });
+  }
+
+  // SYUUSHI07_14: 経常経費の支出（光熱水費・備品消耗品費・事務所費）
+  const hasExpenseData =
+    reportData.expenses.utilityExpenses.rows.length > 0 ||
+    reportData.expenses.utilityExpenses.totalAmount > 0 ||
+    reportData.expenses.suppliesExpenses.rows.length > 0 ||
+    reportData.expenses.suppliesExpenses.totalAmount > 0 ||
+    reportData.expenses.officeExpenses.rows.length > 0 ||
+    reportData.expenses.officeExpenses.totalAmount > 0;
+
+  if (hasExpenseData) {
+    sections.push({
+      formId: "SYUUSHI07_14",
+      xml: serializeExpenseSection(
+        reportData.expenses.utilityExpenses,
+        reportData.expenses.suppliesExpenses,
+        reportData.expenses.officeExpenses,
+      ),
     });
   }
 

@@ -1,5 +1,10 @@
 import type { PersonalDonationTransaction } from "@/server/domain/types/donation-transaction";
 import type {
+  OfficeExpenseTransaction,
+  SuppliesExpenseTransaction,
+  UtilityExpenseTransaction,
+} from "@/server/domain/types/expense-transaction";
+import type {
   BusinessIncomeTransaction,
   GrantIncomeTransaction,
   LoanIncomeTransaction,
@@ -47,6 +52,27 @@ export interface IReportTransactionRepository {
   findOtherIncomeTransactions(
     filters: TransactionFilters,
   ): Promise<OtherIncomeTransaction[]>;
+
+  /**
+   * SYUUSHI07_14 KUBUN1: 光熱水費のトランザクションを取得
+   */
+  findUtilityExpenseTransactions(
+    filters: TransactionFilters,
+  ): Promise<UtilityExpenseTransaction[]>;
+
+  /**
+   * SYUUSHI07_14 KUBUN2: 備品・消耗品費のトランザクションを取得
+   */
+  findSuppliesExpenseTransactions(
+    filters: TransactionFilters,
+  ): Promise<SuppliesExpenseTransaction[]>;
+
+  /**
+   * SYUUSHI07_14 KUBUN3: 事務所費のトランザクションを取得
+   */
+  findOfficeExpenseTransactions(
+    filters: TransactionFilters,
+  ): Promise<OfficeExpenseTransaction[]>;
 }
 
 // Re-export for consumers
@@ -56,4 +82,7 @@ export type {
   GrantIncomeTransaction,
   LoanIncomeTransaction,
   OtherIncomeTransaction,
+  UtilityExpenseTransaction,
+  SuppliesExpenseTransaction,
+  OfficeExpenseTransaction,
 };

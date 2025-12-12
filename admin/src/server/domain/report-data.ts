@@ -7,6 +7,11 @@
 
 import type { PersonalDonationSection } from "./converters/donation-converter";
 import type {
+  OfficeExpenseSection,
+  SuppliesExpenseSection,
+  UtilityExpenseSection,
+} from "./converters/expense-converter";
+import type {
   BusinessIncomeSection,
   GrantIncomeSection,
   LoanIncomeSection,
@@ -33,14 +38,13 @@ export interface IncomeData {
 }
 
 /**
- * 支出データ (SYUUSHI07_07 ~ SYUUSHI07_16)
+ * 支出データ (SYUUSHI07_14 ~ SYUUSHI07_16)
  */
-// biome-ignore lint/suspicious/noEmptyInterface: Will be populated as sections are implemented
 export interface ExpenseData {
   // personnelExpenses?: PersonnelExpenseSection;     // (7) 人件費
-  // utilityExpenses?: UtilityExpenseSection;         // (8) 光熱水費
-  // suppliesExpenses?: SuppliesExpenseSection;       // (9) 備品・消耗品費
-  // officeExpenses?: OfficeExpenseSection;           // (10) 事務所費
+  utilityExpenses: UtilityExpenseSection; // (8) 光熱水費
+  suppliesExpenses: SuppliesExpenseSection; // (9) 備品・消耗品費
+  officeExpenses: OfficeExpenseSection; // (10) 事務所費
   // organizationExpenses?: OrganizationExpenseSection; // (11) 組織活動費
   // electionExpenses?: ElectionExpenseSection;       // (12) 選挙関係費
   // publicationExpenses?: PublicationExpenseSection; // (13) 機関紙誌の発行その他の事業費
