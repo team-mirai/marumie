@@ -9,12 +9,14 @@ import {
   type PreviewMfCsvInput,
 } from "@/server/contexts/data-import/application/usecases/preview-mf-csv-usecase";
 import type { ITransactionRepository } from "@/server/contexts/shared/domain/repositories/transaction-repository.interface";
+import type { ICacheInvalidator } from "@/server/contexts/shared/domain/services/cache-invalidator.interface";
 import type { CreateTransactionInput } from "@/server/contexts/shared/domain/transaction";
 
 describe("SavePreviewTransactionsUsecase", () => {
   let usecase: SavePreviewTransactionsUsecase;
   let previewUsecase: PreviewMfCsvUsecase;
   let mockRepository: jest.Mocked<Pick<ITransactionRepository, 'createMany' | 'updateMany' | 'findByTransactionNos'>>;
+  let mockCacheInvalidator: jest.Mocked<ICacheInvalidator>;
 
   beforeEach(() => {
     mockRepository = {
@@ -22,7 +24,13 @@ describe("SavePreviewTransactionsUsecase", () => {
       updateMany: jest.fn(),
       findByTransactionNos: jest.fn().mockResolvedValue([]),
     };
-    usecase = new SavePreviewTransactionsUsecase(mockRepository as unknown as ITransactionRepository);
+    mockCacheInvalidator = {
+      invalidateWebappCache: jest.fn().mockResolvedValue(undefined),
+    };
+    usecase = new SavePreviewTransactionsUsecase(
+      mockRepository as unknown as ITransactionRepository,
+      mockCacheInvalidator,
+    );
     previewUsecase = new PreviewMfCsvUsecase(mockRepository as unknown as ITransactionRepository);
   });
 
@@ -278,9 +286,6 @@ TXN-001,2025/6/2,人件費,,,,,,2000,普通預金,,,,,,2000,給与支払2,,人�
           }));
         }
       );
-
-      // Mock the refreshWebappCache method to prevent HTTP requests in tests
-      jest.spyOn(usecase as any, 'refreshWebappCache').mockResolvedValue(undefined);
 
       const previewInput: PreviewMfCsvInput = {
         csvContent,

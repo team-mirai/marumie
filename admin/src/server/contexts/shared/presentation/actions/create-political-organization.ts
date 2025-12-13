@@ -2,6 +2,11 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/server/contexts/shared/infrastructure/prisma";
+import { PrismaPoliticalOrganizationRepository } from "@/server/contexts/shared/infrastructure/repositories/prisma-political-organization.repository";
+import { CreatePoliticalOrganizationUsecase } from "@/server/contexts/shared/application/usecases/create-political-organization-usecase";
+
+const repository = new PrismaPoliticalOrganizationRepository(prisma);
+const usecase = new CreatePoliticalOrganizationUsecase(repository);
 
 export interface CreatePoliticalOrganizationData {
   displayName: string;
@@ -16,22 +21,7 @@ export async function createPoliticalOrganization(
   try {
     const { displayName, orgName, slug, description } = data;
 
-    if (!displayName.trim()) {
-      throw new Error("表示名は必須です");
-    }
-
-    if (!slug.trim()) {
-      throw new Error("スラッグは必須です");
-    }
-
-    await prisma.politicalOrganization.create({
-      data: {
-        displayName: displayName.trim(),
-        orgName: orgName?.trim() || null,
-        slug: slug.trim(),
-        description: description?.trim() || null,
-      },
-    });
+    await usecase.execute(displayName, slug, orgName, description);
 
     revalidatePath("/political-organizations");
     return { success: true };
