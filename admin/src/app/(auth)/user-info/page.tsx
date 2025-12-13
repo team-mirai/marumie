@@ -1,4 +1,4 @@
-import { createClient } from "@/server/auth/client";
+import { createClient } from "@/server/contexts/auth/application/client";
 
 export const runtime = "nodejs";
 

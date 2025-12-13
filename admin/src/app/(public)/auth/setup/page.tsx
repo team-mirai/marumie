@@ -1,5 +1,5 @@
 import "server-only";
-import { createClient } from "@/server/auth/client";
+import { createClient } from "@/server/contexts/auth/application/client";
 import { redirect } from "next/navigation";
 import SetupForm from "@/client/components/auth/SetupForm";
 
