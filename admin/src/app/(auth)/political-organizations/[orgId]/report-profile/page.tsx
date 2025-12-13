@@ -4,6 +4,7 @@ import Link from "next/link";
 import { loadPoliticalOrganizationData } from "@/server/contexts/shared/presentation/loaders/load-political-organization-data";
 import { loadOrganizationProfileData } from "@/server/contexts/report/presentation/loaders/organization-profile-loader";
 import { ReportProfileForm } from "@/client/components/report-profile/ReportProfileForm";
+import { YearSelector } from "@/client/components/report-profile/YearSelector";
 
 interface ReportProfilePageProps {
   params: Promise<{ orgId: string }>;
@@ -52,22 +53,13 @@ export default async function ReportProfilePage({
         「{organization.displayName}」の報告書プロフィール
       </h1>
 
-      <label className="block mb-4 font-medium text-white">
-        報告年
-        <select
-          className="bg-primary-input text-white border border-primary-border rounded-lg px-3 py-2.5 w-32 mt-2 block font-normal"
-          defaultValue={financialYear}
-          onChange={(e) => {
-            window.location.href = `/political-organizations/${orgId}/report-profile?year=${e.target.value}`;
-          }}
-        >
-          {Array.from({ length: 10 }, (_, i) => currentYear - i).map((y) => (
-            <option key={y} value={y}>
-              {y}年
-            </option>
-          ))}
-        </select>
-      </label>
+      <div className="block mb-4">
+        <YearSelector
+          orgId={orgId}
+          financialYear={financialYear}
+          currentYear={currentYear}
+        />
+      </div>
 
       <ReportProfileForm
         politicalOrganizationId={orgId}

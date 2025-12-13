@@ -31,11 +31,10 @@ export function ContactPersonsSection({
     updates: Partial<ContactPerson>,
   ) => {
     const newContactPersons = [...contactPersons];
-    while (newContactPersons.length <= index) {
-      newContactPersons.push(emptyContactPerson());
+    if (index < newContactPersons.length) {
+      newContactPersons[index] = { ...newContactPersons[index], ...updates };
+      updateDetails({ contactPersons: newContactPersons });
     }
-    newContactPersons[index] = { ...newContactPersons[index], ...updates };
-    updateDetails({ contactPersons: newContactPersons });
   };
 
   const addContactPerson = () => {

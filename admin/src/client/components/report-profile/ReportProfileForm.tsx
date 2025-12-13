@@ -105,27 +105,27 @@ export function ReportProfileForm({
       <BasicInfoSection formData={formData} updateFormData={updateFormData} />
 
       <RepresentativeSection
-        details={formData.details ?? {}}
+        details={formData.details}
         updateDetails={updateDetails}
       />
 
       <ContactPersonsSection
-        details={formData.details ?? {}}
+        details={formData.details}
         updateDetails={updateDetails}
       />
 
       <OrganizationTypeSection
-        details={formData.details ?? {}}
+        details={formData.details}
         updateDetails={updateDetails}
       />
 
       <FundManagementSection
-        details={formData.details ?? {}}
+        details={formData.details}
         updateDetails={updateDetails}
       />
 
       <DietMemberRelationSection
-        details={formData.details ?? {}}
+        details={formData.details}
         updateDetails={updateDetails}
       />
 

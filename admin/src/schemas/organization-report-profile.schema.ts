@@ -99,7 +99,7 @@ export const organizationReportProfileFormSchema = z.object({
     .max(60, "建物名等は60文字以内で入力してください")
     .optional()
     .nullable(),
-  details: organizationReportProfileDetailsSchema.optional(),
+  details: organizationReportProfileDetailsSchema.default({}),
 });
 
 export type OrganizationReportProfileFormData = z.infer<
