@@ -3,11 +3,11 @@ import { join } from "path";
 import {
   SavePreviewTransactionsUsecase,
   type SavePreviewTransactionsInput,
-} from "@/server/usecases/save-preview-transactions-usecase";
+} from "@/server/contexts/data-import/application/usecases/save-preview-transactions-usecase";
 import {
   PreviewMfCsvUsecase,
   type PreviewMfCsvInput,
-} from "@/server/usecases/preview-mf-csv-usecase";
+} from "@/server/contexts/data-import/application/usecases/preview-mf-csv-usecase";
 import type { ITransactionRepository } from "@/server/repositories/interfaces/transaction-repository.interface";
 import type { CreateTransactionInput } from "@/server/domain/types/transaction";
 
@@ -29,7 +29,7 @@ describe("SavePreviewTransactionsUsecase", () => {
   describe("execute with sample data", () => {
     it("should process sample CSV and calculate correct expense/income/other totals", async () => {
       // テスト用サンプルデータを読み込み
-      const sampleCsvPath = join(__dirname, "../../data/sampledata.csv");
+      const sampleCsvPath = join(__dirname, "../../../../../data/sampledata.csv");
       const csvContent = readFileSync(sampleCsvPath, "utf-8");
 
       // PreviewUsecaseでvalidTransactionsを取得
@@ -110,7 +110,7 @@ describe("SavePreviewTransactionsUsecase", () => {
     });
 
     it("should handle repository errors gracefully", async () => {
-      const sampleCsvPath = join(__dirname, "../../data/sampledata.csv");
+      const sampleCsvPath = join(__dirname, "../../../../../data/sampledata.csv");
       const csvContent = readFileSync(sampleCsvPath, "utf-8");
 
       // PreviewUsecaseでvalidTransactionsを取得

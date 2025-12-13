@@ -1,8 +1,8 @@
 import "server-only";
 
 import { loadPoliticalOrganizationsData } from "@/server/loaders/load-political-organizations-data";
-import { uploadCsv } from "@/server/actions/upload-csv";
-import { previewCsv } from "@/server/actions/preview-csv";
+import { uploadCsv } from "@/server/contexts/data-import/presentation/actions/upload-csv";
+import { previewCsv } from "@/server/contexts/data-import/presentation/actions/preview-csv";
 import CsvUploadClient from "@/client/components/csv-upload/CsvUploadClient";
 
 export default async function UploadCsvPage() {

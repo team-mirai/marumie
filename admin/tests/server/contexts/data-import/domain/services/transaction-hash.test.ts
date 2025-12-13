@@ -1,5 +1,5 @@
-import { generateTransactionHash } from "../../../src/server/lib/transaction-hash";
-import type { PreviewTransaction } from "../../../src/server/lib/mf-record-converter";
+import { generateTransactionHash } from "@/server/contexts/data-import/domain/services/transaction-hash";
+import type { PreviewTransaction } from "@/server/contexts/data-import/domain/models/preview-transaction";
 
 // モックデータの作成用ヘルパー
 const createMockPreviewTransaction = (overrides: Partial<PreviewTransaction> = {}): PreviewTransaction => ({

@@ -1,12 +1,12 @@
+import "server-only";
+
 import type {
   CreateTransactionInput,
   UpdateTransactionInput,
 } from "@/server/domain/types/transaction";
-import type { ITransactionRepository } from "../repositories/interfaces/transaction-repository.interface";
-import {
-  type PreviewTransaction,
-  MfRecordConverter,
-} from "../lib/mf-record-converter";
+import type { ITransactionRepository } from "@/server/repositories/interfaces/transaction-repository.interface";
+import type { PreviewTransaction } from "@/server/contexts/data-import/domain/models/preview-transaction";
+import { MfRecordConverter } from "@/server/contexts/data-import/infrastructure/mf/mf-record-converter";
 
 export interface SavePreviewTransactionsInput {
   validTransactions: PreviewTransaction[];

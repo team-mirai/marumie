@@ -1,5 +1,5 @@
-import { MfCsvLoader } from "@/server/lib/mf-csv-loader";
-import { bufferToString } from "@/server/lib/encoding-converter";
+import { MfCsvLoader } from "@/server/contexts/data-import/infrastructure/mf/mf-csv-loader";
+import { bufferToString } from "@/server/contexts/data-import/domain/services/encoding-converter";
 import * as fs from "fs";
 import * as path from "path";
 
@@ -13,7 +13,7 @@ describe("MfCsvLoader Encoding Tests", () => {
   describe("EncodingConverter + MfCsvLoader", () => {
     it("should handle Shift-JIS encoded CSV file", async () => {
       // テスト用のサンプルファイルを使用
-      const csvPath = path.join(__dirname, "../../data/sample-shift-jis.csv");
+      const csvPath = path.join(__dirname, "../../../../../data/sample-shift-jis.csv");
 
       const buffer = fs.readFileSync(csvPath);
       const csvString = bufferToString(buffer);

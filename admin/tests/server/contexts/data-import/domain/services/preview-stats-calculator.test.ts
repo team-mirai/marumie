@@ -2,8 +2,8 @@ import {
   createEmptyPreviewStatistics,
   calculatePreviewStatistics,
   calculatePreviewSummary,
-} from "../../../src/server/lib/preview-stats-calculator";
-import type { PreviewTransaction } from "../../../src/server/lib/mf-record-converter";
+} from "@/server/contexts/data-import/domain/services/preview-stats-calculator";
+import type { PreviewTransaction } from "@/server/contexts/data-import/domain/models/preview-transaction";
 
 // モックデータの作成用ヘルパー
 const createMockTransaction = (overrides: Partial<PreviewTransaction> = {}): PreviewTransaction => ({

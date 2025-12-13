@@ -1,10 +1,10 @@
 "use server";
 
-import { bufferToString } from "@/server/lib/encoding-converter";
+import { bufferToString } from "@/server/contexts/data-import/domain/services/encoding-converter";
 import { prisma } from "@/server/lib/prisma";
 import { PrismaTransactionRepository } from "@/server/repositories/prisma-transaction.repository";
-import { PreviewMfCsvUsecase } from "@/server/usecases/preview-mf-csv-usecase";
-import type { PreviewMfCsvResult } from "@/server/usecases/preview-mf-csv-usecase";
+import { PreviewMfCsvUsecase } from "@/server/contexts/data-import/application/usecases/preview-mf-csv-usecase";
+import type { PreviewMfCsvResult } from "@/server/contexts/data-import/application/usecases/preview-mf-csv-usecase";
 const transactionRepository = new PrismaTransactionRepository(prisma);
 const previewUsecase = new PreviewMfCsvUsecase(transactionRepository);
 
