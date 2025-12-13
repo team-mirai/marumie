@@ -11,7 +11,7 @@ import type {
   OfficeExpenseSection,
   SuppliesExpenseSection,
   UtilityExpenseSection,
-} from "@/server/contexts/report/domain/models/expense-converter";
+} from "@/server/contexts/report/domain/services/expense-converter";
 import {
   formatAmount,
   formatWarekiDate,

@@ -10,7 +10,7 @@ import type {
   GrantIncomeTransaction,
   LoanIncomeTransaction,
   OtherIncomeTransaction,
-} from "@/server/contexts/report/domain/types/income-transaction";
+} from "@/server/contexts/report/domain/models/income-transaction";
 
 const TEN_MAN_THRESHOLD = 100_000;
 

@@ -1,15 +1,15 @@
-import type { PersonalDonationTransaction } from "@/server/contexts/report/domain/types/donation-transaction";
+import type { PersonalDonationTransaction } from "@/server/contexts/report/domain/models/donation-transaction";
 import type {
   OfficeExpenseTransaction,
   SuppliesExpenseTransaction,
   UtilityExpenseTransaction,
-} from "@/server/contexts/report/domain/types/expense-transaction";
+} from "@/server/contexts/report/domain/models/expense-transaction";
 import type {
   BusinessIncomeTransaction,
   GrantIncomeTransaction,
   LoanIncomeTransaction,
   OtherIncomeTransaction,
-} from "@/server/contexts/report/domain/types/income-transaction";
+} from "@/server/contexts/report/domain/models/income-transaction";
 
 export interface TransactionFilters {
   politicalOrganizationId: string;

@@ -9,7 +9,7 @@ import type {
   OfficeExpenseTransaction,
   SuppliesExpenseTransaction,
   UtilityExpenseTransaction,
-} from "@/server/contexts/report/domain/types/expense-transaction";
+} from "@/server/contexts/report/domain/models/expense-transaction";
 
 const TEN_MAN_THRESHOLD = 100_000;
 

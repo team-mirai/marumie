@@ -8,7 +8,7 @@ import type {
   GrantIncomeTransaction,
   LoanIncomeTransaction,
   OtherIncomeTransaction,
-} from "@/server/contexts/report/domain/models/income-converter";
+} from "@/server/contexts/report/domain/services/income-converter";
 
 describe("IncomeAssembler", () => {
   let assembler: IncomeAssembler;

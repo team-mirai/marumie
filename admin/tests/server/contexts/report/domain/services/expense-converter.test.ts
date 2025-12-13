@@ -7,7 +7,7 @@ import {
   type SuppliesExpenseTransaction,
   type OfficeExpenseTransaction,
   type SectionTransactionWithCounterpart,
-} from "@/server/contexts/report/domain/models/expense-converter";
+} from "@/server/contexts/report/domain/services/expense-converter";
 
 describe("Expense Converter", () => {
   describe("convertToUtilityExpenseSection", () => {

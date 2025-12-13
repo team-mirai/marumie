@@ -12,7 +12,7 @@ import {
   convertToGrantIncomeSection,
   convertToLoanIncomeSection,
   convertToOtherIncomeSection,
-} from "@/server/contexts/report/domain/models/income-converter";
+} from "@/server/contexts/report/domain/services/income-converter";
 import type { IncomeData } from "@/server/contexts/report/domain/models/report-data";
 
 // ============================================================

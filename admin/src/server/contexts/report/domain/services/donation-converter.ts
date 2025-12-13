@@ -5,7 +5,7 @@
  * This is a pure function layer that handles data transformation and business rules.
  */
 
-import type { PersonalDonationTransaction } from "@/server/contexts/report/domain/types/donation-transaction";
+import type { PersonalDonationTransaction } from "@/server/contexts/report/domain/models/donation-transaction";
 
 // Re-export input types for consumers
 export type { PersonalDonationTransaction };

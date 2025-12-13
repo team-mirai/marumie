@@ -11,7 +11,7 @@ import {
   convertToOfficeExpenseSection,
   convertToSuppliesExpenseSection,
   convertToUtilityExpenseSection,
-} from "@/server/contexts/report/domain/models/expense-converter";
+} from "@/server/contexts/report/domain/services/expense-converter";
 import type { ExpenseData } from "@/server/contexts/report/domain/models/report-data";
 
 // ============================================================

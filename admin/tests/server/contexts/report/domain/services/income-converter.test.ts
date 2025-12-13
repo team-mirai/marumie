@@ -8,7 +8,7 @@ import {
   type GrantIncomeTransaction,
   type LoanIncomeTransaction,
   type OtherIncomeTransaction,
-} from "@/server/contexts/report/domain/models/income-converter";
+} from "@/server/contexts/report/domain/services/income-converter";
 
 describe("convertToBusinessIncomeSection", () => {
   it("converts business transactions to BusinessIncomeSection", () => {
