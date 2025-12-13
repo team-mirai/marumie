@@ -127,7 +127,7 @@ export class ApiClient {
     const filenameStarMatch = contentDisposition.match(
       /filename\*\s*=\s*UTF-8''([^;]+)/i,
     );
-    if (filenameStarMatch && filenameStarMatch[1]) {
+    if (filenameStarMatch?.[1]) {
       try {
         return decodeURIComponent(filenameStarMatch[1]);
       } catch {
@@ -136,7 +136,7 @@ export class ApiClient {
     }
 
     const filenameMatch = contentDisposition.match(/filename\s*=\s*"([^"]+)"/i);
-    if (filenameMatch && filenameMatch[1]) {
+    if (filenameMatch?.[1]) {
       return filenameMatch[1];
     }
 
