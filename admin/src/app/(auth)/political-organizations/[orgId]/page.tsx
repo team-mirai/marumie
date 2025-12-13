@@ -1,9 +1,9 @@
 import "server-only";
 
 import { PoliticalOrganizationForm } from "@/client/components/political-organizations/PoliticalOrganizationForm";
-import { loadPoliticalOrganizationData } from "@/server/loaders/load-political-organization-data";
-import { updatePoliticalOrganization } from "@/server/actions/update-political-organization";
-import type { UpdatePoliticalOrganizationData } from "@/server/actions/update-political-organization";
+import { loadPoliticalOrganizationData } from "@/server/contexts/shared/presentation/loaders/load-political-organization-data";
+import { updatePoliticalOrganization } from "@/server/contexts/shared/presentation/actions/update-political-organization";
+import type { UpdatePoliticalOrganizationData } from "@/server/contexts/shared/presentation/actions/update-political-organization";
 
 interface EditPoliticalOrganizationPageProps {
   params: Promise<{ orgId: string }>;

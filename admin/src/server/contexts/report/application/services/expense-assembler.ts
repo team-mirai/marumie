@@ -6,12 +6,12 @@
  */
 import "server-only";
 
-import type { IReportTransactionRepository } from "@/server/contexts/report/infrastructure/repositories/interfaces/report-transaction-repository.interface";
+import type { IReportTransactionRepository } from "@/server/contexts/report/domain/repositories/report-transaction-repository.interface";
 import {
   convertToOfficeExpenseSection,
   convertToSuppliesExpenseSection,
   convertToUtilityExpenseSection,
-} from "@/server/contexts/report/domain/models/expense-converter";
+} from "@/server/contexts/report/domain/services/expense-converter";
 import type { ExpenseData } from "@/server/contexts/report/domain/models/report-data";
 
 // ============================================================

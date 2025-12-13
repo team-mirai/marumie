@@ -6,9 +6,9 @@
  */
 import "server-only";
 
-import type { IReportTransactionRepository } from "@/server/contexts/report/infrastructure/repositories/interfaces/report-transaction-repository.interface";
-import { convertToPersonalDonationSection } from "@/server/contexts/report/domain/models/donation-converter";
-import type { PersonalDonationSection } from "@/server/contexts/report/domain/models/donation-converter";
+import type { IReportTransactionRepository } from "@/server/contexts/report/domain/repositories/report-transaction-repository.interface";
+import { convertToPersonalDonationSection } from "@/server/contexts/report/domain/services/donation-converter";
+import type { PersonalDonationSection } from "@/server/contexts/report/domain/services/donation-converter";
 
 // ============================================================
 // Types

@@ -1,6 +1,6 @@
 import "server-only";
 
-import { loadPoliticalOrganizationsData } from "@/server/loaders/load-political-organizations-data";
+import { loadPoliticalOrganizationsData } from "@/server/contexts/shared/presentation/loaders/load-political-organizations-data";
 import BalanceSnapshotsClient from "@/client/components/balance-snapshots/BalanceSnapshotsClient";
 
 export default async function BalanceSnapshotsPage() {

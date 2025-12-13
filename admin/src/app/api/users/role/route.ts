@@ -3,8 +3,8 @@ import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { requireRole } from "@/server/contexts/auth/application/roles";
 import type { UserRole } from "@prisma/client";
-import { prisma } from "@/server/lib/prisma";
-import { PrismaUserRepository } from "@/server/repositories/prisma-user.repository";
+import { prisma } from "@/server/contexts/shared/infrastructure/prisma";
+import { PrismaUserRepository } from "@/server/contexts/shared/infrastructure/repositories/prisma-user.repository";
 const userRepository = new PrismaUserRepository(prisma);
 
 export async function PATCH(request: NextRequest) {

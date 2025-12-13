@@ -2,13 +2,13 @@ import {
   IncomeAssembler,
   type IncomeAssemblerInput,
 } from "@/server/contexts/report/application/services/income-assembler";
-import type { IReportTransactionRepository } from "@/server/contexts/report/infrastructure/repositories/interfaces/report-transaction-repository.interface";
+import type { IReportTransactionRepository } from "@/server/contexts/report/domain/repositories/report-transaction-repository.interface";
 import type {
   BusinessIncomeTransaction,
   GrantIncomeTransaction,
   LoanIncomeTransaction,
   OtherIncomeTransaction,
-} from "@/server/contexts/report/domain/models/income-converter";
+} from "@/server/contexts/report/domain/services/income-converter";
 
 describe("IncomeAssembler", () => {
   let assembler: IncomeAssembler;

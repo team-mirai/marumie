@@ -19,40 +19,60 @@
 - サーバーアクション（"use server"処理）は、データ更新やファイルアップロードなど副作用を伴う操作のためだけに使い、あわせて revalidatePath や revalidateTag などの再検証処理までを 1 セットで行う
 - クライアント側でのデータ取得は例外として、リアルタイム通信・高頻度ポーリング・ユーザー操作に即応する検索・オフライン最適化（React Query など）に限って許容する
 
-## コード構成（webapp・admin 共通）
+## コード構成
 
-以下のディレクトリ構成に従ってコードを配置する：
+### webapp
 
-- app
-- client
-- server
-- types
+```
+webapp/src/
+├── app/          # App Router に基づくルーティング、API エンドポイント
+├── client/
+│   ├── components/  # Reactコンポーネント
+│   └── lib/         # クライアントで動作するヘルパーなど
+├── server/
+│   ├── lib/         # データ加工・変換処理
+│   ├── repositories/  # データベースアクセス層
+│   ├── usecases/    # loaderやactionから呼び出されるトップレベル関数
+│   ├── loaders/     # サーバーサイドでのデータ取得処理
+│   └── actions/     # サーバーアクション（"use server"）による副作用処理
+└── types/        # 型定義
+```
 
-### 各ディレクトリの責務
+### admin（bounded context ベース）
 
-- app
-  - App Router に基づくルーティング（URL構造に対応）
-  - API エンドポイント
-- client
-  - components
-    - Reactコンポーネント
-  - lib
-    - クライアントで動作するヘルパーなど
-- server
-  - lib
-    - データ加工・変換処理
-  - repositories
-    - データベースアクセス層
-  - usecases
-    - loaderやactionなどのエントリーポイントから呼び出されるトップレベル関数
-  - loaders
-    - サーバーサイドでのデータ取得処理
-  - actions
-    - サーバーアクション（"use server"）による副作用処理
-  - auth
-    - 認証関連処理
-- types
-  - 型定義
+```
+admin/src/
+├── app/          # App Router に基づくルーティング、API エンドポイント
+├── client/
+│   ├── components/  # Reactコンポーネント
+│   └── lib/         # クライアントで動作するヘルパーなど
+├── server/contexts/
+│   ├── data-import/   # CSVデータ取り込み
+│   ├── report/        # 政治資金報告書XMLエクスポート
+│   ├── auth/          # 認証関連処理
+│   └── shared/        # コンテキスト横断で共有（prisma client、汎用リポジトリなど）
+└── types/        # 型定義
+```
+
+各コンテキストは以下の構造を持つ：
+
+```
+contexts/{コンテキスト名}/
+├── presentation/
+│   ├── loaders/     # サーバーサイドでのデータ取得処理
+│   └── actions/     # サーバーアクション（"use server"）による副作用処理
+├── application/
+│   └── usecases/    # loaderやactionから呼び出されるトップレベル関数
+├── domain/
+│   ├── services/    # ドメインロジック
+│   └── models/      # ドメインモデル
+└── infrastructure/
+    └── repositories/  # データベースアクセス層
+```
+
+### import ルール
+
+- TypeScript の import は `@/` から始まる絶対パスを使用する（相対パス禁止）
 
 # GitHub操作ルール
 - ユーザーからPRを出して、と言われたときは、現在の作業のフィーチャーブランチを切りコミットを行ってからPRを出すようにする

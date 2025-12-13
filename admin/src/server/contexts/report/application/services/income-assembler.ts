@@ -6,13 +6,13 @@
  */
 import "server-only";
 
-import type { IReportTransactionRepository } from "@/server/contexts/report/infrastructure/repositories/interfaces/report-transaction-repository.interface";
+import type { IReportTransactionRepository } from "@/server/contexts/report/domain/repositories/report-transaction-repository.interface";
 import {
   convertToBusinessIncomeSection,
   convertToGrantIncomeSection,
   convertToLoanIncomeSection,
   convertToOtherIncomeSection,
-} from "@/server/contexts/report/domain/models/income-converter";
+} from "@/server/contexts/report/domain/services/income-converter";
 import type { IncomeData } from "@/server/contexts/report/domain/models/report-data";
 
 // ============================================================
