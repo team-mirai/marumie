@@ -28,6 +28,7 @@ model PoliticalOrganization {
   slug             String            @unique @db.VarChar(255)
   orgName          String?           @map("org_name") @db.VarChar(255)
   balanceSnapshots BalanceSnapshot[]
+  reportProfiles   OrganizationReportProfile[]
   transactions     Transaction[]
 
   @@map("political_organizations")
@@ -78,6 +79,27 @@ model BalanceSnapshot {
 
   @@index([politicalOrganizationId, snapshotDate(sort: Desc), updatedAt(sort: Desc)])
   @@map("balance_snapshots")
+}
+
+model OrganizationReportProfile {
+  id                      BigInt   @id @default(autoincrement())
+  politicalOrganizationId BigInt   @map("political_organization_id")
+  financialYear           Int      @map("financial_year")
+
+  officialName            String?  @map("official_name") @db.VarChar(120)
+  officialNameKana        String?  @map("official_name_kana") @db.VarChar(120)
+  officeAddress           String?  @map("office_address") @db.VarChar(80)
+  officeAddressBuilding   String?  @map("office_address_building") @db.VarChar(60)
+
+  details                 Json?    @default("{}")
+
+  createdAt               DateTime @default(now()) @map("created_at")
+  updatedAt               DateTime @updatedAt @map("updated_at")
+
+  politicalOrganization   PoliticalOrganization @relation(fields: [politicalOrganizationId], references: [id], onDelete: Cascade)
+
+  @@unique([politicalOrganizationId, financialYear])
+  @@map("organization_report_profiles")
 }
 
 enum TransactionType {
