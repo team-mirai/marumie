@@ -1,7 +1,7 @@
 "use client";
 import "client-only";
 
-import type { PreviewTransaction } from "@/server/lib/mf-record-converter";
+import type { PreviewTransaction } from "@/server/contexts/data-import/domain/models/preview-transaction";
 import { PL_CATEGORIES } from "@/shared/utils/category-mapping";
 import type { TransactionType } from "@/shared/models/transaction";
 

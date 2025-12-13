@@ -1,5 +1,5 @@
-import { MfCsvLoader } from "@/server/lib/mf-csv-loader";
-import { bufferToString } from "@/server/lib/encoding-converter";
+import { MfCsvLoader } from "@/server/contexts/data-import/infrastructure/mf/mf-csv-loader";
+import { bufferToString } from "@/server/contexts/data-import/domain/services/encoding-converter";
 import * as fs from "fs";
 import * as path from "path";
 

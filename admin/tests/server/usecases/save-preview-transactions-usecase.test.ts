@@ -3,11 +3,11 @@ import { join } from "path";
 import {
   SavePreviewTransactionsUsecase,
   type SavePreviewTransactionsInput,
-} from "@/server/usecases/save-preview-transactions-usecase";
+} from "@/server/contexts/data-import/application/usecases/save-preview-transactions-usecase";
 import {
   PreviewMfCsvUsecase,
   type PreviewMfCsvInput,
-} from "@/server/usecases/preview-mf-csv-usecase";
+} from "@/server/contexts/data-import/application/usecases/preview-mf-csv-usecase";
 import type { ITransactionRepository } from "@/server/repositories/interfaces/transaction-repository.interface";
 import type { CreateTransactionInput } from "@/server/domain/types/transaction";
 

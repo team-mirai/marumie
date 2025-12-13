@@ -1,32 +1,12 @@
-import type { MfCsvRecord } from "./mf-csv-loader";
+import type { MfCsvRecord } from "@/server/contexts/data-import/infrastructure/mf/mf-csv-loader";
 import {
   PL_CATEGORIES,
   BS_CATEGORIES,
   CASH_ACCOUNTS,
 } from "@/shared/utils/category-mapping";
 import type { TransactionType } from "@/shared/models/transaction";
-import { generateTransactionHash } from "./transaction-hash";
-
-export interface PreviewTransaction {
-  political_organization_id: string;
-  transaction_no: string;
-  transaction_date: Date;
-  transaction_type: TransactionType | null;
-  debit_account: string;
-  debit_sub_account: string | undefined;
-  debit_amount: number;
-  credit_account: string;
-  credit_sub_account: string | undefined;
-  credit_amount: number;
-  description: string | undefined;
-  label: string | undefined;
-  friendly_category: string;
-  category_key: string;
-  hash: string;
-  status: "insert" | "update" | "invalid" | "skip";
-  errors: string[];
-  existingTransactionId?: string;
-}
+import { generateTransactionHash } from "@/server/contexts/data-import/domain/services/transaction-hash";
+import type { PreviewTransaction } from "@/server/contexts/data-import/domain/models/preview-transaction";
 
 export class MfRecordConverter {
   public convertRow(

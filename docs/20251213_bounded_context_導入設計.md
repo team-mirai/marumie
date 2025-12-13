@@ -1,5 +1,9 @@
 # Bounded Context 導入設計
 
+## ルール
+
+- TypeScript の import は `@/` から始まる絶対パスを使用する（相対パス禁止）
+
 ## 目標構成
 
 ```

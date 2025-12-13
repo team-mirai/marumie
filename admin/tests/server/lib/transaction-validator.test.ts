@@ -1,5 +1,5 @@
-import { TransactionValidator } from "@/server/lib/transaction-validator";
-import { PreviewTransaction } from "@/server/lib/mf-record-converter";
+import { TransactionValidator } from "@/server/contexts/data-import/domain/services/transaction-validator";
+import { PreviewTransaction } from "@/server/contexts/data-import/domain/models/preview-transaction";
 
 describe("TransactionValidator", () => {
   let validator: TransactionValidator;

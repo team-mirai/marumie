@@ -1,5 +1,5 @@
 import { createHash } from "crypto";
-import type { PreviewTransaction } from "./mf-record-converter";
+import type { PreviewTransaction } from "@/server/contexts/data-import/domain/models/preview-transaction";
 
 /**
  * トランザクションデータからハッシュ値を生成する

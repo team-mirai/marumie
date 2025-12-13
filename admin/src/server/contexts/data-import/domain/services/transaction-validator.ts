@@ -1,5 +1,5 @@
 import { PL_CATEGORIES, BS_CATEGORIES } from "@/shared/utils/category-mapping";
-import type { PreviewTransaction } from "./mf-record-converter";
+import type { PreviewTransaction } from "@/server/contexts/data-import/domain/models/preview-transaction";
 import type { Transaction } from "@/shared/models/transaction";
 
 const OFFSET_EXPENSE_ACCOUNT = "相殺項目（費用）";

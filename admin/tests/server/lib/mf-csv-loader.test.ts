@@ -1,4 +1,4 @@
-import { MfCsvLoader } from "../../../src/server/lib/mf-csv-loader";
+import { MfCsvLoader } from "@/server/contexts/data-import/infrastructure/mf/mf-csv-loader";
 
 describe("MfCsvLoader", () => {
   let loader: MfCsvLoader;

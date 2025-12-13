@@ -3,8 +3,8 @@ import "server-only";
 import { revalidateTag } from "next/cache";
 import { prisma } from "@/server/lib/prisma";
 import { PrismaTransactionRepository } from "@/server/repositories/prisma-transaction.repository";
-import { SavePreviewTransactionsUsecase } from "@/server/usecases/save-preview-transactions-usecase";
-import type { PreviewTransaction } from "@/server/lib/mf-record-converter";
+import { SavePreviewTransactionsUsecase } from "@/server/contexts/data-import/application/usecases/save-preview-transactions-usecase";
+import type { PreviewTransaction } from "@/server/contexts/data-import/domain/models/preview-transaction";
 const transactionRepository = new PrismaTransactionRepository(prisma);
 const uploadUsecase = new SavePreviewTransactionsUsecase(transactionRepository);
 
