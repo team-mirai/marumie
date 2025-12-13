@@ -1,10 +1,7 @@
 import "server-only";
-import { requireRole } from "@/server/contexts/auth/application/roles";
+import { requireRole, getAllUsers } from "@/server/contexts/auth";
 import { redirect } from "next/navigation";
-import { prisma } from "@/server/contexts/shared/infrastructure/prisma";
-import { PrismaUserRepository } from "@/server/contexts/shared/infrastructure/repositories/prisma-user.repository";
 import UserManagement from "@/client/components/user-management/UserManagement";
-const userRepository = new PrismaUserRepository(prisma);
 
 export default async function UsersPage() {
   const hasAccess = await requireRole("admin");
@@ -13,7 +10,7 @@ export default async function UsersPage() {
     redirect("/login");
   }
 
-  const users = await userRepository.findAll();
+  const users = await getAllUsers();
 
   return (
     <div className="bg-primary-panel rounded-xl p-4">

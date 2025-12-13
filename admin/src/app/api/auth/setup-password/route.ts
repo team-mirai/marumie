@@ -1,6 +1,6 @@
 import "server-only";
 import { NextResponse } from "next/server";
-import { createClient } from "@/server/contexts/auth/application/client";
+import { setupPassword, getCurrentUser } from "@/server/contexts/auth";
 
 export async function POST(request: Request) {
   try {
@@ -13,48 +13,22 @@ export async function POST(request: Request) {
       );
     }
 
-    if (password.length < 6) {
-      return NextResponse.json(
-        { error: "Password must be at least 6 characters long" },
-        { status: 400 },
-      );
-    }
-
-    const supabase = await createClient();
-
-    // Get the current user
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser();
-
-    if (userError || !user) {
+    const user = await getCurrentUser();
+    if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Update the user's password and mark password as set
-    const { error: updateError } = await supabase.auth.updateUser({
-      password: password,
-      data: { password_set: true },
-    });
+    const result = await setupPassword(password);
 
-    if (updateError) {
-      console.error("Password update error:", updateError);
-      return NextResponse.json(
-        {
-          error: updateError.message || "Failed to update password",
-        },
-        { status: 400 },
-      );
+    if (!result.ok) {
+      return NextResponse.json({ error: result.error }, { status: 400 });
     }
 
     return NextResponse.json({ message: "Password set successfully" });
   } catch (error) {
     console.error("Setup password error:", error);
     return NextResponse.json(
-      {
-        error: "Internal server error",
-      },
+      { error: "Internal server error" },
       { status: 500 },
     );
   }

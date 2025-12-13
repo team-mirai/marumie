@@ -1,11 +1,8 @@
 import "server-only";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
-import { requireRole } from "@/server/contexts/auth/application/roles";
+import { requireRole, updateUserRole } from "@/server/contexts/auth";
 import type { UserRole } from "@prisma/client";
-import { prisma } from "@/server/contexts/shared/infrastructure/prisma";
-import { PrismaUserRepository } from "@/server/contexts/shared/infrastructure/repositories/prisma-user.repository";
-const userRepository = new PrismaUserRepository(prisma);
 
 export async function PATCH(request: NextRequest) {
   try {
@@ -29,17 +26,13 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: "Invalid role" }, { status: 400 });
     }
 
-    // Find user by id first to get authId
-    const user = await prisma.user.findUnique({ where: { id: userId } });
-    if (!user) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    const result = await updateUserRole(userId, role as UserRole);
+
+    if (!result.ok) {
+      return NextResponse.json({ error: result.error }, { status: 404 });
     }
 
-    const updatedUser = await userRepository.updateRole(
-      user.authId,
-      role as UserRole,
-    );
-    return NextResponse.json(updatedUser);
+    return NextResponse.json({ message: "Role updated successfully" });
   } catch (error) {
     console.error("Error updating user role:", error);
     return NextResponse.json(
