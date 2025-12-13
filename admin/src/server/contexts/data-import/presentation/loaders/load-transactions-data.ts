@@ -2,12 +2,12 @@ import "server-only";
 
 import { unstable_cache } from "next/cache";
 import { prisma } from "@/server/contexts/shared/infrastructure/prisma";
-import { PrismaTransactionRepository } from "@/server/contexts/common/infrastructure/repositories/prisma-transaction.repository";
+import { PrismaTransactionRepository } from "@/server/contexts/shared/infrastructure/repositories/prisma-transaction.repository";
 import {
   GetTransactionsUsecase,
   type GetTransactionsParams,
   type GetTransactionsResult,
-} from "@/server/contexts/common/application/usecases/get-transactions-usecase";
+} from "@/server/contexts/data-import/application/usecases/get-transactions-usecase";
 const CACHE_REVALIDATE_SECONDS = 5;
 
 export const loadTransactionsData = unstable_cache(

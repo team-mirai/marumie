@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { deleteAllTransactionsAction } from "@/server/contexts/common/presentation/actions/delete-all-transactions";
+import { deleteAllTransactionsAction } from "@/server/contexts/data-import/presentation/actions/delete-all-transactions";
 
 interface DeleteAllButtonProps {
   disabled?: boolean;

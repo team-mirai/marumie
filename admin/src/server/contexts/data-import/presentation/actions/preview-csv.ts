@@ -2,7 +2,7 @@
 
 import { bufferToString } from "@/server/contexts/data-import/domain/services/encoding-converter";
 import { prisma } from "@/server/contexts/shared/infrastructure/prisma";
-import { PrismaTransactionRepository } from "@/server/contexts/common/infrastructure/repositories/prisma-transaction.repository";
+import { PrismaTransactionRepository } from "@/server/contexts/shared/infrastructure/repositories/prisma-transaction.repository";
 import { PreviewMfCsvUsecase } from "@/server/contexts/data-import/application/usecases/preview-mf-csv-usecase";
 import type { PreviewMfCsvResult } from "@/server/contexts/data-import/application/usecases/preview-mf-csv-usecase";
 const transactionRepository = new PrismaTransactionRepository(prisma);

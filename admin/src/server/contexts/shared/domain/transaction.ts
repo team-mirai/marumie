@@ -1,4 +1,8 @@
-import type { TransactionType } from "@/shared/models/transaction";
+import type { Transaction, TransactionType } from "@/shared/models/transaction";
+
+export interface TransactionWithOrganization extends Transaction {
+  political_organization_name?: string;
+}
 
 export interface TransactionFilters {
   political_organization_ids?: string[];

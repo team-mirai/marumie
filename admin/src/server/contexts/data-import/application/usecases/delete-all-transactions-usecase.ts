@@ -1,4 +1,4 @@
-import type { ITransactionRepository } from "@/server/contexts/common/infrastructure/repositories/interfaces/transaction-repository.interface";
+import type { ITransactionRepository } from "@/server/contexts/shared/infrastructure/repositories/interfaces/transaction-repository.interface";
 import type { TransactionFilters } from "@/server/contexts/shared/domain/transaction";
 
 export interface DeleteAllTransactionsResult {

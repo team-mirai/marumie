@@ -2,7 +2,7 @@ import "server-only";
 
 import { revalidateTag } from "next/cache";
 import { prisma } from "@/server/contexts/shared/infrastructure/prisma";
-import { PrismaTransactionRepository } from "@/server/contexts/common/infrastructure/repositories/prisma-transaction.repository";
+import { PrismaTransactionRepository } from "@/server/contexts/shared/infrastructure/repositories/prisma-transaction.repository";
 import { SavePreviewTransactionsUsecase } from "@/server/contexts/data-import/application/usecases/save-preview-transactions-usecase";
 import type { PreviewTransaction } from "@/server/contexts/data-import/domain/models/preview-transaction";
 const transactionRepository = new PrismaTransactionRepository(prisma);
