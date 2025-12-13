@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 import * as iconv from "iconv-lite";
 import { prisma } from "@/server/lib/prisma";
-import { PrismaReportTransactionRepository } from "@/server/repositories/prisma-report-transaction.repository";
-import { XmlExportUsecase } from "@/server/usecases/xml-export-usecase";
-import { DonationAssembler } from "@/server/usecases/assemblers/donation-assembler";
-import { ExpenseAssembler } from "@/server/usecases/assemblers/expense-assembler";
-import { IncomeAssembler } from "@/server/usecases/assemblers/income-assembler";
+import { PrismaReportTransactionRepository } from "@/server/contexts/report/infrastructure/repositories/prisma-report-transaction.repository";
+import { XmlExportUsecase } from "@/server/contexts/report/application/usecases/xml-export-usecase";
+import { DonationAssembler } from "@/server/contexts/report/application/services/donation-assembler";
+import { ExpenseAssembler } from "@/server/contexts/report/application/services/expense-assembler";
+import { IncomeAssembler } from "@/server/contexts/report/application/services/income-assembler";
 
 export async function GET(request: Request) {
   const url = new URL(request.url);

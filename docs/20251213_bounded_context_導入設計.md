@@ -81,4 +81,5 @@ admin/src/server/contexts/
 5. 各機能の動作確認
 6. 旧ディレクトリを削除
 7. CLAUDE.md を更新
-8. feature ブランチを作成してコミット・PR・マージ
+8. READMEにディレクトリ構成の説明を追加
+9. feature ブランチを作成してコミット・PR・マージ

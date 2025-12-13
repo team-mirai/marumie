@@ -7,7 +7,7 @@ import Card from "@/client/components/ui/Card";
 import Button from "@/client/components/ui/Button";
 import Input from "@/client/components/ui/Input";
 import Selector from "@/client/components/ui/Selector";
-import { exportXml } from "@/server/actions/export-xml";
+import { exportXml } from "@/server/contexts/report/presentation/actions/export-xml";
 import { apiClient } from "@/client/lib/api-client";
 
 interface XmlExportClientProps {
