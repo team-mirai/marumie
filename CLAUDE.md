@@ -50,8 +50,7 @@ admin/src/
 │   ├── data-import/   # CSVデータ取り込み
 │   ├── report/        # 政治資金報告書XMLエクスポート
 │   ├── auth/          # 認証関連処理
-│   ├── common/        # 汎用・未分類
-│   └── shared/        # コンテキスト横断で共有（prisma clientなど）
+│   └── shared/        # コンテキスト横断で共有（prisma client、汎用リポジトリなど）
 └── types/        # 型定義
 ```
 

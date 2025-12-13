@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { deletePoliticalOrganization } from "@/server/contexts/common/presentation/actions/delete-political-organization";
+import { deletePoliticalOrganization } from "@/server/contexts/shared/presentation/actions/delete-political-organization";
 
 interface DeletePoliticalOrganizationButtonProps {
   orgId: bigint;

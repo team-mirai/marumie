@@ -2,7 +2,7 @@ import "server-only";
 
 import type { BalanceSnapshot } from "@/shared/models/balance-snapshot";
 import { prisma } from "@/server/contexts/shared/infrastructure/prisma";
-import { PrismaBalanceSnapshotRepository } from "@/server/contexts/common/infrastructure/repositories/prisma-balance-snapshot.repository";
+import { PrismaBalanceSnapshotRepository } from "@/server/contexts/shared/infrastructure/repositories/prisma-balance-snapshot.repository";
 
 export async function loadBalanceSnapshotsData(
   politicalOrganizationId: string,

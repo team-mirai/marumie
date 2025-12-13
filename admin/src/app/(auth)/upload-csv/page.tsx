@@ -1,6 +1,6 @@
 import "server-only";
 
-import { loadPoliticalOrganizationsData } from "@/server/contexts/common/presentation/loaders/load-political-organizations-data";
+import { loadPoliticalOrganizationsData } from "@/server/contexts/shared/presentation/loaders/load-political-organizations-data";
 import { uploadCsv } from "@/server/contexts/data-import/presentation/actions/upload-csv";
 import { previewCsv } from "@/server/contexts/data-import/presentation/actions/preview-csv";
 import CsvUploadClient from "@/client/components/csv-upload/CsvUploadClient";

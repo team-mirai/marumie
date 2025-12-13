@@ -21,7 +21,7 @@ export default function BalanceSnapshotList({
     setDeletingId(id);
     try {
       const { deleteBalanceSnapshot } = await import(
-        "@/server/contexts/common/presentation/actions/delete-balance-snapshot"
+        "@/server/contexts/shared/presentation/actions/delete-balance-snapshot"
       );
       await deleteBalanceSnapshot(id);
 

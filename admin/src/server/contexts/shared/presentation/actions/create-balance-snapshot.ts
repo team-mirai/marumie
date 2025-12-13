@@ -1,8 +1,8 @@
 "use server";
 
 import { prisma } from "@/server/contexts/shared/infrastructure/prisma";
-import { PrismaBalanceSnapshotRepository } from "@/server/contexts/common/infrastructure/repositories/prisma-balance-snapshot.repository";
-import { CreateBalanceSnapshotUsecase } from "@/server/contexts/common/application/usecases/create-balance-snapshot-usecase";
+import { PrismaBalanceSnapshotRepository } from "@/server/contexts/shared/infrastructure/repositories/prisma-balance-snapshot.repository";
+import { CreateBalanceSnapshotUsecase } from "@/server/contexts/shared/application/usecases/create-balance-snapshot-usecase";
 
 export interface CreateBalanceSnapshotData {
   politicalOrganizationId: string;

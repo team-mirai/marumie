@@ -2,7 +2,7 @@ import "server-only";
 import { NextResponse } from "next/server";
 import { createClient } from "@/server/contexts/auth/application/client";
 import { prisma } from "@/server/contexts/shared/infrastructure/prisma";
-import { PrismaUserRepository } from "@/server/contexts/common/infrastructure/repositories/prisma-user.repository";
+import { PrismaUserRepository } from "@/server/contexts/shared/infrastructure/repositories/prisma-user.repository";
 const userRepository = new PrismaUserRepository(prisma);
 
 export async function GET(request: Request) {

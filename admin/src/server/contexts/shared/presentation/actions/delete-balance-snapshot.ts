@@ -2,8 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/server/contexts/shared/infrastructure/prisma";
-import { PrismaBalanceSnapshotRepository } from "@/server/contexts/common/infrastructure/repositories/prisma-balance-snapshot.repository";
-import { DeleteBalanceSnapshotUsecase } from "@/server/contexts/common/application/usecases/delete-balance-snapshot-usecase";
+import { PrismaBalanceSnapshotRepository } from "@/server/contexts/shared/infrastructure/repositories/prisma-balance-snapshot.repository";
+import { DeleteBalanceSnapshotUsecase } from "@/server/contexts/shared/application/usecases/delete-balance-snapshot-usecase";
 
 export async function deleteBalanceSnapshot(id: string) {
   try {

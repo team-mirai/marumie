@@ -1,5 +1,5 @@
 import type { PoliticalOrganization } from "@/shared/models/political-organization";
-import type { IPoliticalOrganizationRepository } from "@/server/contexts/common/infrastructure/repositories/interfaces/political-organization-repository.interface";
+import type { IPoliticalOrganizationRepository } from "@/server/contexts/shared/infrastructure/repositories/interfaces/political-organization-repository.interface";
 
 export class CreatePoliticalOrganizationUsecase {
   constructor(private repository: IPoliticalOrganizationRepository) {}
