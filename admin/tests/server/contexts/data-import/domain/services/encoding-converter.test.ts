@@ -3,7 +3,7 @@ import { bufferToString } from "@/server/contexts/data-import/domain/services/en
 import * as fs from "fs";
 import * as path from "path";
 
-describe("MfCsvLoader Encoding Tests", () => {
+describe("bufferToString (encoding-converter)", () => {
   let loader: MfCsvLoader;
 
   beforeEach(() => {

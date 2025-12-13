@@ -11,20 +11,30 @@ export class WebappCacheInvalidator implements ICacheInvalidator {
   ) {}
 
   async invalidateWebappCache(): Promise<void> {
-    try {
-      if (!this.refreshToken) {
-        return;
-      }
+    if (!this.refreshToken) {
+      return;
+    }
 
-      await fetch(`${this.webappUrl}/api/refresh`, {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5秒タイムアウト
+
+    try {
+      const response = await fetch(`${this.webappUrl}/api/refresh`, {
         method: "POST",
         headers: {
           "x-refresh-token": this.refreshToken,
         },
+        signal: controller.signal,
       });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
     } catch (error) {
       console.warn("Failed to refresh webapp cache:", error);
       // キャッシュ更新の失敗は usecase を失敗させない
+    } finally {
+      clearTimeout(timeoutId);
     }
   }
 }
