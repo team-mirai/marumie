@@ -40,12 +40,12 @@ export async function createUser(data: {
 export async function updateUserRole(userId: string, role: UserRole) {
   const user = await prisma.user.findUnique({ where: { id: userId } });
   if (!user) {
-    return { ok: false, error: "User not found" };
+    return { ok: false as const, error: "User not found" };
   }
 
-  await userRepository.updateRole(user.authId, role);
+  const updatedUser = await userRepository.updateRole(user.authId, role);
   revalidatePath("/users");
-  return { ok: true };
+  return { ok: true as const, user: updatedUser };
 }
 
 /**

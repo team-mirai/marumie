@@ -32,7 +32,7 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: result.error }, { status: 404 });
     }
 
-    return NextResponse.json({ message: "Role updated successfully" });
+    return NextResponse.json(result.user);
   } catch (error) {
     console.error("Error updating user role:", error);
     return NextResponse.json(
