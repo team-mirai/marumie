@@ -3,8 +3,8 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import Sidebar from "@/client/components/layout/Sidebar";
-import { logout } from "@/server/auth/login";
-import { getCurrentUserRole } from "@/server/auth/roles";
+import { logout } from "@/server/contexts/auth/application/login";
+import { getCurrentUserRole } from "@/server/contexts/auth/application/roles";
 
 export default async function AuthLayout({
   children,

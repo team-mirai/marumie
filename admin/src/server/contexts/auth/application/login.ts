@@ -1,7 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { createClient } from "@/server/auth/client";
+import { createClient } from "@/server/contexts/auth/application/client";
 import { prisma } from "@/server/lib/prisma";
 import { PrismaUserRepository } from "@/server/repositories/prisma-user.repository";
 const userRepository = new PrismaUserRepository(prisma);

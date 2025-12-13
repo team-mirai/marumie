@@ -1,5 +1,5 @@
 import "server-only";
-import { requireRole } from "@/server/auth/roles";
+import { requireRole } from "@/server/contexts/auth/application/roles";
 import { redirect } from "next/navigation";
 import { prisma } from "@/server/lib/prisma";
 import { PrismaUserRepository } from "@/server/repositories/prisma-user.repository";

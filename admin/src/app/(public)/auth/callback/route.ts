@@ -1,6 +1,6 @@
 import "server-only";
 import { NextResponse } from "next/server";
-import { createClient } from "@/server/auth/client";
+import { createClient } from "@/server/contexts/auth/application/client";
 import { prisma } from "@/server/lib/prisma";
 import { PrismaUserRepository } from "@/server/repositories/prisma-user.repository";
 const userRepository = new PrismaUserRepository(prisma);
