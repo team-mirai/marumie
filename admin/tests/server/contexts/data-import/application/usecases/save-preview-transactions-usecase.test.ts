@@ -29,7 +29,7 @@ describe("SavePreviewTransactionsUsecase", () => {
   describe("execute with sample data", () => {
     it("should process sample CSV and calculate correct expense/income/other totals", async () => {
       // テスト用サンプルデータを読み込み
-      const sampleCsvPath = join(__dirname, "../../data/sampledata.csv");
+      const sampleCsvPath = join(__dirname, "../../../../../data/sampledata.csv");
       const csvContent = readFileSync(sampleCsvPath, "utf-8");
 
       // PreviewUsecaseでvalidTransactionsを取得
@@ -110,7 +110,7 @@ describe("SavePreviewTransactionsUsecase", () => {
     });
 
     it("should handle repository errors gracefully", async () => {
-      const sampleCsvPath = join(__dirname, "../../data/sampledata.csv");
+      const sampleCsvPath = join(__dirname, "../../../../../data/sampledata.csv");
       const csvContent = readFileSync(sampleCsvPath, "utf-8");
 
       // PreviewUsecaseでvalidTransactionsを取得
