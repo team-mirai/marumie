@@ -1,4 +1,3 @@
-import "server-only";
 import { createClient } from "@/server/contexts/auth/application/client";
 import type { UserRole } from "@prisma/client";
 import { prisma } from "@/server/contexts/shared/infrastructure/prisma";

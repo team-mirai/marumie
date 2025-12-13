@@ -1,3 +1,5 @@
+import "server-only";
+
 // ============================================================
 // 型定義
 // ============================================================
@@ -24,7 +26,6 @@ export {
 export {
   loginWithPassword,
   logout,
-  completeInviteSession,
 } from "@/server/contexts/auth/application/login";
 
 // ============================================================
