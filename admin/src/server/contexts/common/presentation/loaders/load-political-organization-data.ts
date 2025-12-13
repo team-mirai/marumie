@@ -1,7 +1,7 @@
 import "server-only";
 
 import { unstable_cache } from "next/cache";
-import { prisma } from "@/server/lib/prisma";
+import { prisma } from "@/server/contexts/shared/infrastructure/prisma";
 import type { PoliticalOrganization } from "@/shared/models/political-organization";
 const CACHE_REVALIDATE_SECONDS = 60;
 

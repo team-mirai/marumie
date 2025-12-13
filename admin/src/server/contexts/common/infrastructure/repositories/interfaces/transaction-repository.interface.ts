@@ -3,8 +3,8 @@ import type {
   TransactionFilters,
   CreateTransactionInput,
   UpdateTransactionInput,
-} from "@/server/domain/types/transaction";
-import type { TransactionWithOrganization } from "@/server/usecases/get-transactions-usecase";
+} from "@/server/contexts/shared/domain/transaction";
+import type { TransactionWithOrganization } from "@/server/contexts/common/application/usecases/get-transactions-usecase";
 
 export interface PaginatedResult<T> {
   items: T[];

@@ -1,9 +1,9 @@
 import type { Transaction } from "@/shared/models/transaction";
-import type { TransactionFilters } from "@/server/domain/types/transaction";
+import type { TransactionFilters } from "@/server/contexts/shared/domain/transaction";
 import type {
   ITransactionRepository,
   PaginationOptions,
-} from "../repositories/interfaces/transaction-repository.interface";
+} from "@/server/contexts/common/infrastructure/repositories/interfaces/transaction-repository.interface";
 
 export interface TransactionWithOrganization extends Transaction {
   political_organization_name?: string;

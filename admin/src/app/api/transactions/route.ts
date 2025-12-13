@@ -1,8 +1,8 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
-import { prisma } from "@/server/lib/prisma";
-import { PrismaTransactionRepository } from "@/server/repositories/prisma-transaction.repository";
-import { GetTransactionsUsecase } from "@/server/usecases/get-transactions-usecase";
+import { prisma } from "@/server/contexts/shared/infrastructure/prisma";
+import { PrismaTransactionRepository } from "@/server/contexts/common/infrastructure/repositories/prisma-transaction.repository";
+import { GetTransactionsUsecase } from "@/server/contexts/common/application/usecases/get-transactions-usecase";
 
 export async function GET(request: NextRequest) {
   try {

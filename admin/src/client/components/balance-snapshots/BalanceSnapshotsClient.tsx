@@ -67,7 +67,7 @@ export default function BalanceSnapshotsClient({
   }) => {
     try {
       const { createBalanceSnapshot } = await import(
-        "@/server/actions/create-balance-snapshot"
+        "@/server/contexts/common/presentation/actions/create-balance-snapshot"
       );
 
       await createBalanceSnapshot(data);

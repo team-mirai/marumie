@@ -1,7 +1,7 @@
 import "server-only";
 
 import Link from "next/link";
-import { loadPoliticalOrganizationsData } from "@/server/loaders/load-political-organizations-data";
+import { loadPoliticalOrganizationsData } from "@/server/contexts/common/presentation/loaders/load-political-organizations-data";
 import { DeletePoliticalOrganizationButton } from "@/client/components/political-organizations/DeletePoliticalOrganizationButton";
 
 export default async function PoliticalOrganizationsPage() {

@@ -11,7 +11,7 @@ import {
   type PreviewStatistics,
   type PreviewSummary,
 } from "@/server/contexts/data-import/domain/services/preview-stats-calculator";
-import type { ITransactionRepository } from "@/server/repositories/interfaces/transaction-repository.interface";
+import type { ITransactionRepository } from "@/server/contexts/common/infrastructure/repositories/interfaces/transaction-repository.interface";
 
 export interface PreviewMfCsvInput {
   csvContent: string;

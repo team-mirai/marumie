@@ -8,8 +8,8 @@ import {
   PreviewMfCsvUsecase,
   type PreviewMfCsvInput,
 } from "@/server/contexts/data-import/application/usecases/preview-mf-csv-usecase";
-import type { ITransactionRepository } from "@/server/repositories/interfaces/transaction-repository.interface";
-import type { CreateTransactionInput } from "@/server/domain/types/transaction";
+import type { ITransactionRepository } from "@/server/contexts/common/infrastructure/repositories/interfaces/transaction-repository.interface";
+import type { CreateTransactionInput } from "@/server/contexts/shared/domain/transaction";
 
 describe("SavePreviewTransactionsUsecase", () => {
   let usecase: SavePreviewTransactionsUsecase;

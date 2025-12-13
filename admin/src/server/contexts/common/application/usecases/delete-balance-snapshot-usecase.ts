@@ -1,4 +1,4 @@
-import type { IBalanceSnapshotRepository } from "../repositories/interfaces/balance-snapshot-repository.interface";
+import type { IBalanceSnapshotRepository } from "@/server/contexts/common/infrastructure/repositories/interfaces/balance-snapshot-repository.interface";
 
 export class DeleteBalanceSnapshotUsecase {
   constructor(private repository: IBalanceSnapshotRepository) {}

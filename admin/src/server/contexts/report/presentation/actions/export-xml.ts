@@ -1,6 +1,6 @@
 "use server";
 
-import { prisma } from "@/server/lib/prisma";
+import { prisma } from "@/server/contexts/shared/infrastructure/prisma";
 import { PrismaReportTransactionRepository } from "@/server/contexts/report/infrastructure/repositories/prisma-report-transaction.repository";
 import { XmlExportUsecase } from "@/server/contexts/report/application/usecases/xml-export-usecase";
 import { DonationAssembler } from "@/server/contexts/report/application/services/donation-assembler";

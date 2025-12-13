@@ -2,7 +2,7 @@
 export * from "@/shared/models/political-organization";
 
 // Repository
-export * from "./repositories/prisma-political-organization.repository";
+export * from "@/server/contexts/common/infrastructure/repositories/prisma-political-organization.repository";
 
 // Usecase
-export * from "./usecases/create-political-organization-usecase";
+export * from "@/server/contexts/common/application/usecases/create-political-organization-usecase";

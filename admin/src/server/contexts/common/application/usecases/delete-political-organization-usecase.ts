@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { IPoliticalOrganizationRepository } from "@/server/repositories/interfaces/political-organization-repository.interface";
+import type { IPoliticalOrganizationRepository } from "@/server/contexts/common/infrastructure/repositories/interfaces/political-organization-repository.interface";
 
 interface DeletePoliticalOrganizationResult {
   success: boolean;

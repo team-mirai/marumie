@@ -1,7 +1,7 @@
 "use client";
 import "client-only";
 
-import type { TransactionWithOrganization } from "@/server/usecases/get-transactions-usecase";
+import type { TransactionWithOrganization } from "@/server/contexts/common/application/usecases/get-transactions-usecase";
 import { PL_CATEGORIES } from "@/shared/utils/category-mapping";
 import type { TransactionType } from "@/shared/models/transaction";
 

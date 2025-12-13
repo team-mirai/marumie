@@ -1,6 +1,6 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
-import { loadBalanceSnapshotsData } from "@/server/loaders/load-balance-snapshots-data";
+import { loadBalanceSnapshotsData } from "@/server/contexts/common/presentation/loaders/load-balance-snapshots-data";
 
 export async function GET(request: NextRequest) {
   try {

@@ -38,21 +38,30 @@
     - Reactコンポーネント
   - lib
     - クライアントで動作するヘルパーなど
-- server
-  - lib
-    - データ加工・変換処理
-  - repositories
-    - データベースアクセス層
-  - usecases
-    - loaderやactionなどのエントリーポイントから呼び出されるトップレベル関数
-  - loaders
-    - サーバーサイドでのデータ取得処理
-  - actions
-    - サーバーアクション（"use server"）による副作用処理
-  - auth
-    - 認証関連処理
+- server/contexts（admin のみ、bounded context ベース）
+  - 各コンテキストは以下の構造を持つ：
+    - presentation/
+      - loaders/ - サーバーサイドでのデータ取得処理
+      - actions/ - サーバーアクション（"use server"）による副作用処理
+    - application/
+      - usecases/ - loaderやactionなどのエントリーポイントから呼び出されるトップレベル関数
+    - domain/
+      - services/ - ドメインロジック
+      - models/ - ドメインモデル
+    - infrastructure/
+      - repositories/ - データベースアクセス層
+  - 現在のコンテキスト：
+    - data-import/ - CSVデータ取り込み
+    - report/ - 政治資金報告書XMLエクスポート
+    - auth/ - 認証関連処理
+    - common/ - 汎用・未分類
+    - shared/ - コンテキスト横断で共有（prisma clientなど）
 - types
   - 型定義
+
+### import ルール
+
+- TypeScript の import は `@/` から始まる絶対パスを使用する（相対パス禁止）
 
 # GitHub操作ルール
 - ユーザーからPRを出して、と言われたときは、現在の作業のフィーチャーブランチを切りコミットを行ってからPRを出すようにする

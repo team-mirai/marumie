@@ -1,8 +1,8 @@
 import "server-only";
 import { requireRole } from "@/server/contexts/auth/application/roles";
 import { redirect } from "next/navigation";
-import { prisma } from "@/server/lib/prisma";
-import { PrismaUserRepository } from "@/server/repositories/prisma-user.repository";
+import { prisma } from "@/server/contexts/shared/infrastructure/prisma";
+import { PrismaUserRepository } from "@/server/contexts/common/infrastructure/repositories/prisma-user.repository";
 import UserManagement from "@/client/components/user-management/UserManagement";
 const userRepository = new PrismaUserRepository(prisma);
 

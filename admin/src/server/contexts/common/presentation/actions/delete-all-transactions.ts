@@ -1,9 +1,9 @@
 "use server";
 
 import { revalidateTag } from "next/cache";
-import { prisma } from "@/server/lib/prisma";
-import { PrismaTransactionRepository } from "../repositories/prisma-transaction.repository";
-import { DeleteAllTransactionsUsecase } from "../usecases/delete-all-transactions-usecase";
+import { prisma } from "@/server/contexts/shared/infrastructure/prisma";
+import { PrismaTransactionRepository } from "@/server/contexts/common/infrastructure/repositories/prisma-transaction.repository";
+import { DeleteAllTransactionsUsecase } from "@/server/contexts/common/application/usecases/delete-all-transactions-usecase";
 
 export async function deleteAllTransactionsAction(
   organizationId?: string,
