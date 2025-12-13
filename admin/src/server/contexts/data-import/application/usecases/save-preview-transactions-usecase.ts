@@ -5,6 +5,7 @@ import type {
   UpdateTransactionInput,
 } from "@/server/contexts/shared/domain/transaction";
 import type { ITransactionRepository } from "@/server/contexts/shared/domain/repositories/transaction-repository.interface";
+import type { ICacheInvalidator } from "@/server/contexts/shared/domain/services/cache-invalidator.interface";
 import type { PreviewTransaction } from "@/server/contexts/data-import/domain/models/preview-transaction";
 import { MfRecordConverter } from "@/server/contexts/data-import/infrastructure/mf/mf-record-converter";
 
@@ -23,6 +24,7 @@ export interface SavePreviewTransactionsResult {
 export class SavePreviewTransactionsUsecase {
   constructor(
     private transactionRepository: ITransactionRepository,
+    private cacheInvalidator: ICacheInvalidator,
     private recordConverter: MfRecordConverter = new MfRecordConverter(),
   ) {}
 
@@ -98,9 +100,9 @@ export class SavePreviewTransactionsUsecase {
 
       result.savedCount = savedCount;
 
-      // Refresh webapp cache after successful save
+      // 保存成功時に webapp のキャッシュを無効化
       if (result.savedCount > 0) {
-        await this.refreshWebappCache();
+        await this.cacheInvalidator.invalidateWebappCache();
       }
     } catch (error) {
       console.error("Upload CSV error:", error);
@@ -186,24 +188,5 @@ export class SavePreviewTransactionsUsecase {
       category_key: previewTransaction.category_key,
       hash: previewTransaction.hash,
     };
-  }
-
-  private async refreshWebappCache(): Promise<void> {
-    try {
-      const webappUrl = process.env.WEBAPP_URL || "http://localhost:3000";
-      const refreshToken = process.env.DATA_REFRESH_TOKEN;
-
-      if (refreshToken) {
-        await fetch(`${webappUrl}/api/refresh`, {
-          method: "POST",
-          headers: {
-            "x-refresh-token": refreshToken,
-          },
-        });
-      }
-    } catch (refreshError) {
-      console.warn("Failed to refresh webapp cache:", refreshError);
-      // Don't fail the usecase if cache refresh fails
-    }
   }
 }
