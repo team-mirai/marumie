@@ -1,3 +1,5 @@
+import "server-only";
+
 import { MfCsvLoader } from "@/server/contexts/data-import/infrastructure/mf/mf-csv-loader";
 import { MfRecordConverter } from "@/server/contexts/data-import/infrastructure/mf/mf-record-converter";
 import type { PreviewTransaction } from "@/server/contexts/data-import/domain/models/preview-transaction";
