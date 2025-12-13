@@ -5,7 +5,7 @@ import type {
 import type {
   ITransactionRepository,
   PaginationOptions,
-} from "@/server/contexts/shared/infrastructure/repositories/interfaces/transaction-repository.interface";
+} from "@/server/contexts/shared/domain/repositories/transaction-repository.interface";
 
 export interface GetTransactionsParams {
   page?: number;

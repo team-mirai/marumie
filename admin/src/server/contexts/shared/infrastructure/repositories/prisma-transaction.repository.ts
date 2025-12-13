@@ -10,7 +10,7 @@ import type {
   ITransactionRepository,
   PaginatedResult,
   PaginationOptions,
-} from "@/server/contexts/shared/infrastructure/repositories/interfaces/transaction-repository.interface";
+} from "@/server/contexts/shared/domain/repositories/transaction-repository.interface";
 
 export class PrismaTransactionRepository implements ITransactionRepository {
   constructor(private prisma: PrismaClient) {}

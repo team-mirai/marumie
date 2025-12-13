@@ -4,7 +4,7 @@ import type {
   CreateBalanceSnapshotInput,
   BalanceSnapshotFilters,
 } from "@/shared/models/balance-snapshot";
-import type { IBalanceSnapshotRepository } from "./interfaces/balance-snapshot-repository.interface";
+import type { IBalanceSnapshotRepository } from "@/server/contexts/shared/domain/repositories/balance-snapshot-repository.interface";
 
 export class PrismaBalanceSnapshotRepository
   implements IBalanceSnapshotRepository

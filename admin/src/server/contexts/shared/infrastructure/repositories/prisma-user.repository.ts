@@ -3,7 +3,7 @@ import type { PrismaClient, UserRole } from "@prisma/client";
 import type {
   User,
   UserRepository,
-} from "./interfaces/user-repository.interface";
+} from "@/server/contexts/shared/domain/repositories/user-repository.interface";
 
 export class PrismaUserRepository implements UserRepository {
   constructor(private prisma: PrismaClient) {}

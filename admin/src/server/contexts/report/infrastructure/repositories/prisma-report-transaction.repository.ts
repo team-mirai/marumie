@@ -12,7 +12,7 @@ import type {
   SuppliesExpenseTransaction,
   TransactionFilters,
   UtilityExpenseTransaction,
-} from "@/server/contexts/report/infrastructure/repositories/interfaces/report-transaction-repository.interface";
+} from "@/server/contexts/report/domain/repositories/report-transaction-repository.interface";
 import { PL_CATEGORIES } from "@/shared/utils/category-mapping";
 
 // カテゴリキー定数（shared/utils/category-mapping.ts の日本語キー経由で取得）
