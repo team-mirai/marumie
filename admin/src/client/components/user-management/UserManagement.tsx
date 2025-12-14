@@ -7,11 +7,9 @@ import type { UserRole } from "@prisma/client";
 
 interface User {
   id: string;
-  authId: string;
   email: string;
   role: UserRole;
   createdAt: Date;
-  updatedAt: Date;
 }
 
 interface UserManagementProps {
@@ -35,9 +33,7 @@ export default function UserManagement({
       await apiClient.updateUserRole({ userId, role: newRole });
       setUsers((prev) =>
         prev.map((user) =>
-          user.id === userId
-            ? { ...user, role: newRole, updatedAt: new Date() }
-            : user,
+          user.id === userId ? { ...user, role: newRole } : user,
         ),
       );
     } catch (error) {

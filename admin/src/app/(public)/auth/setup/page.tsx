@@ -1,5 +1,5 @@
 import "server-only";
-import { createClient } from "@/server/contexts/auth/application/client";
+import { getCurrentUser } from "@/server/contexts/auth";
 import { redirect } from "next/navigation";
 import SetupForm from "@/client/components/auth/SetupForm";
 
@@ -8,15 +8,9 @@ interface SetupPageProps {
 }
 
 export default async function SetupPage({ searchParams }: SetupPageProps) {
-  const supabase = await createClient();
+  const user = await getCurrentUser();
 
-  // Check if user is authenticated
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser();
-
-  if (error || !user) {
+  if (!user) {
     redirect("/login");
   }
 
@@ -38,7 +32,7 @@ export default async function SetupPage({ searchParams }: SetupPageProps) {
               your password to continue.
             </p>
           </div>
-          <SetupForm userEmail={user.email ?? ""} />
+          <SetupForm userEmail={user.email} />
         </div>
       </div>
     );
