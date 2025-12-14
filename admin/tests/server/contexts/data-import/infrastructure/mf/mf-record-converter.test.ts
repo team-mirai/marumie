@@ -213,12 +213,4 @@ describe("MfRecordConverter", () => {
     });
   });
 
-  describe("extractFinancialYear", () => {
-    it("should return correct financial year for calendar year dates", () => {
-      expect(converter.extractFinancialYear(new Date("2025/1/1"))).toBe(2025);
-      expect(converter.extractFinancialYear(new Date("2025/3/31"))).toBe(2025);
-      expect(converter.extractFinancialYear(new Date("2025/6/15"))).toBe(2025);
-      expect(converter.extractFinancialYear(new Date("2025/12/31"))).toBe(2025);
-    });
-  });
 });

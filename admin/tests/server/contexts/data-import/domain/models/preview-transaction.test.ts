@@ -1,5 +1,4 @@
-import { generateTransactionHash } from "@/server/contexts/data-import/domain/services/transaction-hash";
-import type { PreviewTransaction } from "@/server/contexts/data-import/domain/models/preview-transaction";
+import { PreviewTransaction } from "@/server/contexts/data-import/domain/models/preview-transaction";
 
 // モックデータの作成用ヘルパー
 const createMockPreviewTransaction = (overrides: Partial<PreviewTransaction> = {}): PreviewTransaction => ({
@@ -23,7 +22,7 @@ const createMockPreviewTransaction = (overrides: Partial<PreviewTransaction> = {
   ...overrides,
 });
 
-describe("generateTransactionHash", () => {
+describe("PreviewTransaction.generateHash", () => {
   const testCases: Array<{
     description: string;
     input: Partial<PreviewTransaction>;
@@ -58,7 +57,7 @@ describe("generateTransactionHash", () => {
 
   it.each(testCases)("should generate hash for $description", ({ input }) => {
     const transaction = createMockPreviewTransaction(input);
-    const hash = generateTransactionHash(transaction);
+    const hash = PreviewTransaction.generateHash(transaction);
 
     expect(hash).toMatch(/^[a-f0-9]{64}$/);
     expect(hash.length).toBe(64);
@@ -68,8 +67,8 @@ describe("generateTransactionHash", () => {
     const transaction1 = createMockPreviewTransaction();
     const transaction2 = createMockPreviewTransaction();
 
-    const hash1 = generateTransactionHash(transaction1);
-    const hash2 = generateTransactionHash(transaction2);
+    const hash1 = PreviewTransaction.generateHash(transaction1);
+    const hash2 = PreviewTransaction.generateHash(transaction2);
 
     expect(hash1).toBe(hash2);
   });
@@ -105,8 +104,8 @@ describe("generateTransactionHash", () => {
     const transaction1 = createMockPreviewTransaction(input1);
     const transaction2 = createMockPreviewTransaction(input2);
 
-    const hash1 = generateTransactionHash(transaction1);
-    const hash2 = generateTransactionHash(transaction2);
+    const hash1 = PreviewTransaction.generateHash(transaction1);
+    const hash2 = PreviewTransaction.generateHash(transaction2);
 
     expect(hash1).not.toBe(hash2);
   });
@@ -122,8 +121,8 @@ describe("generateTransactionHash", () => {
       hash: "different-hash",
     });
 
-    const hash1 = generateTransactionHash(base);
-    const hash2 = generateTransactionHash(withDifferentFields);
+    const hash1 = PreviewTransaction.generateHash(base);
+    const hash2 = PreviewTransaction.generateHash(withDifferentFields);
 
     expect(hash1).toBe(hash2);
   });
@@ -140,8 +139,8 @@ describe("generateTransactionHash", () => {
       description: "",
     });
 
-    const hash1 = generateTransactionHash(withUndefined);
-    const hash2 = generateTransactionHash(withEmptyString);
+    const hash1 = PreviewTransaction.generateHash(withUndefined);
+    const hash2 = PreviewTransaction.generateHash(withEmptyString);
 
     expect(hash1).toBe(hash2);
   });
@@ -173,7 +172,7 @@ describe("generateTransactionHash", () => {
 
   it.each(dateTestCases.filter(tc => !tc.expectError))("should handle $description", ({ date }) => {
     const transaction = createMockPreviewTransaction({ transaction_date: date as Date });
-    const hash = generateTransactionHash(transaction);
+    const hash = PreviewTransaction.generateHash(transaction);
 
     expect(hash).toMatch(/^[a-f0-9]{64}$/);
   });
@@ -181,7 +180,7 @@ describe("generateTransactionHash", () => {
   it.each(dateTestCases.filter(tc => tc.expectError))("should throw error for $description", ({ date }) => {
     const transaction = createMockPreviewTransaction({ transaction_date: date as Date });
 
-    expect(() => generateTransactionHash(transaction)).toThrow("Invalid");
+    expect(() => PreviewTransaction.generateHash(transaction)).toThrow("Invalid");
   });
 
   it("should normalize dates to same hash regardless of time", () => {
@@ -192,9 +191,18 @@ describe("generateTransactionHash", () => {
       transaction_date: new Date("2025-08-15T20:00:00Z"),
     });
 
-    const hash1 = generateTransactionHash(morning);
-    const hash2 = generateTransactionHash(evening);
+    const hash1 = PreviewTransaction.generateHash(morning);
+    const hash2 = PreviewTransaction.generateHash(evening);
 
     expect(hash1).toBe(hash2);
+  });
+});
+
+describe("PreviewTransaction.extractFinancialYear", () => {
+  it("should return correct financial year for calendar year dates", () => {
+    expect(PreviewTransaction.extractFinancialYear(new Date("2025/1/1"))).toBe(2025);
+    expect(PreviewTransaction.extractFinancialYear(new Date("2025/3/31"))).toBe(2025);
+    expect(PreviewTransaction.extractFinancialYear(new Date("2025/6/15"))).toBe(2025);
+    expect(PreviewTransaction.extractFinancialYear(new Date("2025/12/31"))).toBe(2025);
   });
 });

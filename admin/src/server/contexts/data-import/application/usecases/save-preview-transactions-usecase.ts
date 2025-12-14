@@ -1,13 +1,8 @@
 import "server-only";
 
-import type {
-  CreateTransactionInput,
-  UpdateTransactionInput,
-} from "@/server/contexts/shared/domain/transaction";
 import type { ITransactionRepository } from "@/server/contexts/shared/domain/repositories/transaction-repository.interface";
 import type { ICacheInvalidator } from "@/server/contexts/shared/domain/services/cache-invalidator.interface";
-import type { PreviewTransaction } from "@/server/contexts/data-import/domain/models/preview-transaction";
-import { MfRecordConverter } from "@/server/contexts/data-import/infrastructure/mf/mf-record-converter";
+import { PreviewTransaction } from "@/server/contexts/data-import/domain/models/preview-transaction";
 
 export interface SavePreviewTransactionsInput {
   validTransactions: PreviewTransaction[];
@@ -25,7 +20,6 @@ export class SavePreviewTransactionsUsecase {
   constructor(
     private transactionRepository: ITransactionRepository,
     private cacheInvalidator: ICacheInvalidator,
-    private recordConverter: MfRecordConverter = new MfRecordConverter(),
   ) {}
 
   async execute(
@@ -74,7 +68,7 @@ export class SavePreviewTransactionsUsecase {
       // bulk insert
       if (insertTransactions.length > 0) {
         const createInputs = insertTransactions.map((transaction) =>
-          this.convertPreviewToCreateInput(
+          PreviewTransaction.toCreateInput(
             transaction,
             input.politicalOrganizationId,
           ),
@@ -91,7 +85,7 @@ export class SavePreviewTransactionsUsecase {
             politicalOrganizationId: BigInt(input.politicalOrganizationId),
             transactionNo: transaction.transaction_no,
           },
-          update: this.convertPreviewToUpdateInput(transaction),
+          update: PreviewTransaction.toUpdateInput(transaction),
         }));
         const updatedTransactions =
           await this.transactionRepository.updateMany(updateData);
@@ -110,83 +104,5 @@ export class SavePreviewTransactionsUsecase {
     }
 
     return result;
-  }
-
-  private convertPreviewToCreateInput(
-    previewTransaction: PreviewTransaction,
-    politicalOrganizationId: string,
-  ): CreateTransactionInput {
-    // transaction_typeがnullの場合はエラー
-    if (previewTransaction.transaction_type === null) {
-      throw new Error(
-        `Invalid transaction type: ${previewTransaction.transaction_type}`,
-      );
-    }
-
-    return {
-      political_organization_id: politicalOrganizationId,
-      transaction_no: previewTransaction.transaction_no,
-      transaction_date: previewTransaction.transaction_date,
-      financial_year: this.recordConverter.extractFinancialYear(
-        previewTransaction.transaction_date,
-      ),
-      transaction_type: previewTransaction.transaction_type,
-      debit_account: previewTransaction.debit_account,
-      debit_sub_account: previewTransaction.debit_sub_account || "",
-      debit_department: "",
-      debit_partner: "",
-      debit_tax_category: "",
-      debit_amount: previewTransaction.debit_amount,
-      credit_account: previewTransaction.credit_account,
-      credit_sub_account: previewTransaction.credit_sub_account || "",
-      credit_department: "",
-      credit_partner: "",
-      credit_tax_category: "",
-      credit_amount: previewTransaction.credit_amount,
-      description: previewTransaction.description || "",
-      label: previewTransaction.label || "",
-      friendly_category: previewTransaction.friendly_category || "",
-      memo: "",
-      category_key: previewTransaction.category_key,
-      hash: previewTransaction.hash,
-    };
-  }
-
-  private convertPreviewToUpdateInput(
-    previewTransaction: PreviewTransaction,
-  ): UpdateTransactionInput {
-    // transaction_typeがnullの場合はエラー
-    if (previewTransaction.transaction_type === null) {
-      throw new Error(
-        `Invalid transaction type: ${previewTransaction.transaction_type}`,
-      );
-    }
-
-    return {
-      transaction_no: previewTransaction.transaction_no,
-      transaction_date: previewTransaction.transaction_date,
-      financial_year: this.recordConverter.extractFinancialYear(
-        previewTransaction.transaction_date,
-      ),
-      transaction_type: previewTransaction.transaction_type,
-      debit_account: previewTransaction.debit_account,
-      debit_sub_account: previewTransaction.debit_sub_account || "",
-      debit_department: "",
-      debit_partner: "",
-      debit_tax_category: "",
-      debit_amount: previewTransaction.debit_amount,
-      credit_account: previewTransaction.credit_account,
-      credit_sub_account: previewTransaction.credit_sub_account || "",
-      credit_department: "",
-      credit_partner: "",
-      credit_tax_category: "",
-      credit_amount: previewTransaction.credit_amount,
-      description: previewTransaction.description || "",
-      label: previewTransaction.label || "",
-      friendly_category: previewTransaction.friendly_category || "",
-      memo: "",
-      category_key: previewTransaction.category_key,
-      hash: previewTransaction.hash,
-    };
   }
 }
