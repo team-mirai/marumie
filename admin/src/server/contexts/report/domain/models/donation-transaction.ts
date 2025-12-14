@@ -148,4 +148,11 @@ export const PersonalDonationSection = {
       rows,
     };
   },
+
+  /**
+   * XMLのSHEET要素を出力すべきかを判定する
+   */
+  shouldOutputSheet: (section: PersonalDonationSection): boolean => {
+    return section.rows.length > 0 || section.totalAmount > 0;
+  },
 } as const;

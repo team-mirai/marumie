@@ -277,6 +277,13 @@ export const UtilityExpenseSection = {
   ): UtilityExpenseSection => {
     return aggregateExpenseSection(transactions);
   },
+
+  /**
+   * XMLのSHEET要素を出力すべきかを判定する
+   */
+  shouldOutputSheet: (section: UtilityExpenseSection): boolean => {
+    return section.rows.length > 0 || section.totalAmount > 0;
+  },
 } as const;
 
 /**
@@ -295,6 +302,13 @@ export const SuppliesExpenseSection = {
   ): SuppliesExpenseSection => {
     return aggregateExpenseSection(transactions);
   },
+
+  /**
+   * XMLのSHEET要素を出力すべきかを判定する
+   */
+  shouldOutputSheet: (section: SuppliesExpenseSection): boolean => {
+    return section.rows.length > 0 || section.totalAmount > 0;
+  },
 } as const;
 
 /**
@@ -312,6 +326,13 @@ export const OfficeExpenseSection = {
     transactions: OfficeExpenseTransaction[],
   ): OfficeExpenseSection => {
     return aggregateExpenseSection(transactions);
+  },
+
+  /**
+   * XMLのSHEET要素を出力すべきかを判定する
+   */
+  shouldOutputSheet: (section: OfficeExpenseSection): boolean => {
+    return section.rows.length > 0 || section.totalAmount > 0;
   },
 } as const;
 
@@ -366,5 +387,12 @@ export const OrganizationExpenseSection = {
       underThresholdAmount,
       rows,
     };
+  },
+
+  /**
+   * XMLのSHEET要素を出力すべきかを判定する
+   */
+  shouldOutputSheet: (section: OrganizationExpenseSection): boolean => {
+    return section.rows.length > 0 || section.totalAmount > 0;
   },
 } as const;
