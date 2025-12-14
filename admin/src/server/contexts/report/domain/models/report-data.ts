@@ -8,6 +8,7 @@
 import type { PersonalDonationSection } from "@/server/contexts/report/domain/models/donation-transaction";
 import type {
   OfficeExpenseSection,
+  OrganizationExpenseSection,
   SuppliesExpenseSection,
   UtilityExpenseSection,
 } from "@/server/contexts/report/domain/models/expense-transaction";
@@ -39,19 +40,22 @@ export interface IncomeData {
 }
 
 /**
- * 支出データ (SYUUSHI07_07, SYUUSHI07_11 ~ SYUUSHI07_16)
+ * 支出データ (SYUUSHI07_14, SYUUSHI07_15)
  */
 export interface ExpenseData {
-  // personnelExpenses: PersonnelExpenseSection;     // SYUUSHI07_07: 人件費
+  // personnelExpenses: PersonnelExpenseSection;     // SYUUSHI07_13: 人件費
   utilityExpenses: UtilityExpenseSection; // SYUUSHI07_14 KUBUN1: 光熱水費
   suppliesExpenses: SuppliesExpenseSection; // SYUUSHI07_14 KUBUN2: 備品・消耗品費
   officeExpenses: OfficeExpenseSection; // SYUUSHI07_14 KUBUN3: 事務所費
-  // organizationExpenses: OrganizationExpenseSection; // SYUUSHI07_11: 組織活動費
-  // electionExpenses: ElectionExpenseSection;       // SYUUSHI07_12: 選挙関係費
-  // publicationExpenses: PublicationExpenseSection; // SYUUSHI07_13: 機関紙誌の発行その他の事業費
-  // researchExpenses: ResearchExpenseSection;       // (調査研究費は経常経費に含まれない)
-  // donationExpenses: DonationExpenseSection;       // SYUUSHI07_15: 寄附・交付金
-  // otherExpenses: OtherExpenseSection;             // SYUUSHI07_16: その他の経常経費
+  organizationExpenses: OrganizationExpenseSection; // SYUUSHI07_15 KUBUN1: 組織活動費
+  // electionExpenses: ElectionExpenseSection;       // SYUUSHI07_15 KUBUN2: 選挙関係費
+  // publicationExpenses: PublicationExpenseSection; // SYUUSHI07_15 KUBUN3: 機関紙誌の発行事業費
+  // advertisingExpenses: AdvertisingExpenseSection; // SYUUSHI07_15 KUBUN4: 宣伝事業費
+  // partyExpenses: PartyExpenseSection;             // SYUUSHI07_15 KUBUN5: 政治資金パーティー開催事業費
+  // otherBusinessExpenses: OtherBusinessExpenseSection; // SYUUSHI07_15 KUBUN6: その他の事業費
+  // researchExpenses: ResearchExpenseSection;       // SYUUSHI07_15 KUBUN7: 調査研究費
+  // donationExpenses: DonationExpenseSection;       // SYUUSHI07_15 KUBUN8: 寄附・交付金
+  // otherExpenses: OtherExpenseSection;             // SYUUSHI07_15 KUBUN9: その他の経費
 }
 
 /**

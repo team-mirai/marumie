@@ -18,6 +18,12 @@ describe("serializeReportData", () => {
       utilityExpenses: { totalAmount: 0, underThresholdAmount: 0, rows: [] },
       suppliesExpenses: { totalAmount: 0, underThresholdAmount: 0, rows: [] },
       officeExpenses: { totalAmount: 0, underThresholdAmount: 0, rows: [] },
+      organizationExpenses: {
+        himoku: "",
+        totalAmount: 0,
+        underThresholdAmount: 0,
+        rows: [],
+      },
     },
   });
 

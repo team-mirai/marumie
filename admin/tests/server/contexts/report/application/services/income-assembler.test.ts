@@ -29,6 +29,7 @@ describe("IncomeAssembler", () => {
       findUtilityExpenseTransactions: jest.fn(),
       findSuppliesExpenseTransactions: jest.fn(),
       findOfficeExpenseTransactions: jest.fn(),
+      findOrganizationExpenseTransactions: jest.fn(),
     };
     assembler = new IncomeAssembler(mockRepository);
   });

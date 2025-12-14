@@ -9,7 +9,10 @@ import { create } from "xmlbuilder2";
 import type { XMLBuilder } from "xmlbuilder2/lib/interfaces";
 import type { ReportData } from "@/server/contexts/report/domain/models/report-data";
 import { serializePersonalDonationSection } from "@/server/contexts/report/domain/services/donation-serializer";
-import { serializeExpenseSection } from "@/server/contexts/report/domain/services/expense-serializer";
+import {
+  serializeExpenseSection,
+  serializeOrganizationExpenseSection,
+} from "@/server/contexts/report/domain/services/expense-serializer";
 import {
   serializeBusinessIncomeSection,
   serializeGrantIncomeSection,
@@ -167,6 +170,20 @@ export function serializeReportData(
         reportData.expenses.utilityExpenses,
         reportData.expenses.suppliesExpenses,
         reportData.expenses.officeExpenses,
+      ),
+    });
+  }
+
+  // SYUUSHI07_15: 政治活動費の支出（組織活動費など）
+  const hasOrganizationExpenseData =
+    reportData.expenses.organizationExpenses.rows.length > 0 ||
+    reportData.expenses.organizationExpenses.totalAmount > 0;
+
+  if (hasOrganizationExpenseData) {
+    sections.push({
+      formId: "SYUUSHI07_15",
+      xml: serializeOrganizationExpenseSection(
+        reportData.expenses.organizationExpenses,
       ),
     });
   }

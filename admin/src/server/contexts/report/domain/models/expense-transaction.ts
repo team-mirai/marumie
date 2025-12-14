@@ -44,6 +44,12 @@ export interface SuppliesExpenseTransaction extends BaseExpenseTransaction {}
  */
 export interface OfficeExpenseTransaction extends BaseExpenseTransaction {}
 
+/**
+ * SYUUSHI07_15 KUBUN1: 組織活動費のトランザクション
+ */
+export interface OrganizationExpenseTransaction
+  extends BaseExpenseTransaction {}
+
 // ============================================================
 // Output Types (Domain Objects for XML)
 // ============================================================
@@ -87,6 +93,22 @@ export interface OfficeExpenseSection {
   totalAmount: number;
   underThresholdAmount: number; // その他の支出（10万円未満）
   rows: ExpenseRow[];
+}
+
+/**
+ * SYUUSHI07_15 KUBUN1: 組織活動費の明細行
+ * 仕様書によるとHIMOKUはSHEETレベルの項目であり、ROWレベルには含まれない
+ */
+export interface PoliticalActivityExpenseRow extends ExpenseRow {}
+
+/**
+ * SYUUSHI07_15 KUBUN1: 組織活動費
+ */
+export interface OrganizationExpenseSection {
+  himoku: string; // 費目（シート単位）
+  totalAmount: number;
+  underThresholdAmount: number; // その他の支出
+  rows: PoliticalActivityExpenseRow[];
 }
 
 // ============================================================
@@ -179,6 +201,32 @@ export const OfficeExpenseTransaction = {
   ...ExpenseTransactionBase,
 } as const;
 
+/**
+ * OrganizationExpenseTransaction に関連するドメインロジック
+ */
+export const OrganizationExpenseTransaction = {
+  ...ExpenseTransactionBase,
+
+  /**
+   * 明細行に変換する
+   * 注: HIMOKUはSHEETレベルの項目であり、ROWには含めない（仕様書準拠）
+   */
+  toRow: (
+    tx: OrganizationExpenseTransaction,
+    index: number,
+  ): PoliticalActivityExpenseRow => {
+    return {
+      ichirenNo: (index + 1).toString(),
+      mokuteki: ExpenseTransactionBase.getMokuteki(tx),
+      kingaku: ExpenseTransactionBase.resolveAmount(tx),
+      dt: tx.transactionDate,
+      nm: ExpenseTransactionBase.getNm(tx),
+      adr: ExpenseTransactionBase.getAdr(tx),
+      bikou: ExpenseTransactionBase.getBikou(tx),
+    };
+  },
+} as const;
+
 // ============================================================
 // Section Aggregation Logic
 // ============================================================
@@ -264,5 +312,59 @@ export const OfficeExpenseSection = {
     transactions: OfficeExpenseTransaction[],
   ): OfficeExpenseSection => {
     return aggregateExpenseSection(transactions);
+  },
+} as const;
+
+/**
+ * OrganizationExpenseSection に関連するドメインロジック
+ */
+export const OrganizationExpenseSection = {
+  /**
+   * トランザクションリストからセクションを構築する
+   *
+   * Business rules:
+   * - Transactions >= 50,000 yen are listed individually (政治活動費は5万円以上)
+   * - Transactions < 50,000 yen are aggregated into underThresholdAmount
+   * - 費目（HIMOKU）はシート単位で空白（明細行ごとに設定）
+   */
+  fromTransactions: (
+    transactions: OrganizationExpenseTransaction[],
+  ): OrganizationExpenseSection => {
+    const FIVE_MAN_THRESHOLD = 50000;
+
+    const totalAmount = transactions.reduce(
+      (sum, tx) => sum + ExpenseTransactionBase.resolveAmount(tx),
+      0,
+    );
+
+    const detailedTransactions = transactions.filter((tx) =>
+      isAboveThreshold(
+        ExpenseTransactionBase.resolveAmount(tx),
+        FIVE_MAN_THRESHOLD,
+      ),
+    );
+    const underThresholdTransactions = transactions.filter(
+      (tx) =>
+        !isAboveThreshold(
+          ExpenseTransactionBase.resolveAmount(tx),
+          FIVE_MAN_THRESHOLD,
+        ),
+    );
+
+    const underThresholdAmount = underThresholdTransactions.reduce(
+      (sum, tx) => sum + ExpenseTransactionBase.resolveAmount(tx),
+      0,
+    );
+
+    const rows = detailedTransactions.map((tx, index) =>
+      OrganizationExpenseTransaction.toRow(tx, index),
+    );
+
+    return {
+      himoku: "", // シート単位の費目は空白（明細行に個別設定）
+      totalAmount,
+      underThresholdAmount,
+      rows,
+    };
   },
 } as const;
