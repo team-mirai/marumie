@@ -5,8 +5,7 @@ import {
   CASH_ACCOUNTS,
 } from "@/shared/utils/category-mapping";
 import type { TransactionType } from "@/shared/models/transaction";
-import { generateTransactionHash } from "@/server/contexts/data-import/domain/services/transaction-hash";
-import type { PreviewTransaction } from "@/server/contexts/data-import/domain/models/preview-transaction";
+import { PreviewTransaction } from "@/server/contexts/data-import/domain/models/preview-transaction";
 
 export class MfRecordConverter {
   public convertRow(
@@ -70,7 +69,7 @@ export class MfRecordConverter {
     };
 
     // hash値を計算して設定
-    transaction.hash = generateTransactionHash(transaction);
+    transaction.hash = PreviewTransaction.generateHash(transaction);
 
     return transaction;
   }
@@ -172,14 +171,5 @@ export class MfRecordConverter {
 
   private isCashEquivalent(account: string): boolean {
     return CASH_ACCOUNTS.has(account);
-  }
-
-  public extractFinancialYear(date: Date): number {
-    const startOfFinancialYear = 1;
-
-    const year = date.getFullYear();
-    const month = date.getMonth() + 1;
-
-    return month >= startOfFinancialYear ? year : year - 1;
   }
 }
