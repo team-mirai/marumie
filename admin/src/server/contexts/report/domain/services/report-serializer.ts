@@ -8,19 +8,17 @@
 import { create } from "xmlbuilder2";
 import type { XMLBuilder } from "xmlbuilder2/lib/interfaces";
 import { PersonalDonationSection } from "@/server/contexts/report/domain/models/donation-transaction";
-import {
-  OfficeExpenseSection,
-  OrganizationExpenseSection,
-  SuppliesExpenseSection,
-  UtilityExpenseSection,
-} from "@/server/contexts/report/domain/models/expense-transaction";
+import { OrganizationExpenseSection } from "@/server/contexts/report/domain/models/expense-transaction";
 import {
   BusinessIncomeSection,
   GrantIncomeSection,
   LoanIncomeSection,
   OtherIncomeSection,
 } from "@/server/contexts/report/domain/models/income-transaction";
-import type { ReportData } from "@/server/contexts/report/domain/models/report-data";
+import {
+  ExpenseData,
+  type ReportData,
+} from "@/server/contexts/report/domain/models/report-data";
 import { serializePersonalDonationSection } from "@/server/contexts/report/domain/services/donation-serializer";
 import {
   serializeExpenseSection,
@@ -154,16 +152,7 @@ export function serializeReportData(
   }
 
   // SYUUSHI07_14: 経常経費の支出（光熱水費・備品消耗品費・事務所費）
-  const shouldOutputExpenseSheet =
-    UtilityExpenseSection.shouldOutputSheet(
-      reportData.expenses.utilityExpenses,
-    ) ||
-    SuppliesExpenseSection.shouldOutputSheet(
-      reportData.expenses.suppliesExpenses,
-    ) ||
-    OfficeExpenseSection.shouldOutputSheet(reportData.expenses.officeExpenses);
-
-  if (shouldOutputExpenseSheet) {
+  if (ExpenseData.shouldOutputRegularExpenseSheet(reportData.expenses)) {
     sections.push({
       formId: "SYUUSHI07_14",
       xml: serializeExpenseSection(
