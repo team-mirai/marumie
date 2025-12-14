@@ -19,7 +19,8 @@ export default async function ReportProfilePage({
   const { year } = await searchParams;
 
   const currentYear = new Date().getFullYear();
-  const financialYear = year ? parseInt(year, 10) : currentYear;
+  const parsedYear = year ? parseInt(year, 10) : currentYear;
+  const financialYear = Number.isNaN(parsedYear) ? currentYear : parsedYear;
 
   let organization;
   try {
