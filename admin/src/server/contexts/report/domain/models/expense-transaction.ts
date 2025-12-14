@@ -50,6 +50,50 @@ export interface OfficeExpenseTransaction extends BaseExpenseTransaction {}
 export interface OrganizationExpenseTransaction
   extends BaseExpenseTransaction {}
 
+/**
+ * SYUUSHI07_15 KUBUN2: 選挙関係費のトランザクション
+ */
+export interface ElectionExpenseTransaction extends BaseExpenseTransaction {}
+
+/**
+ * SYUUSHI07_15 KUBUN3: 機関紙誌の発行事業費のトランザクション
+ */
+export interface PublicationExpenseTransaction extends BaseExpenseTransaction {}
+
+/**
+ * SYUUSHI07_15 KUBUN4: 宣伝事業費のトランザクション
+ */
+export interface AdvertisingExpenseTransaction extends BaseExpenseTransaction {}
+
+/**
+ * SYUUSHI07_15 KUBUN5: 政治資金パーティー開催事業費のトランザクション
+ */
+export interface FundraisingPartyExpenseTransaction
+  extends BaseExpenseTransaction {}
+
+/**
+ * SYUUSHI07_15 KUBUN6: その他の事業費のトランザクション
+ */
+export interface OtherBusinessExpenseTransaction
+  extends BaseExpenseTransaction {}
+
+/**
+ * SYUUSHI07_15 KUBUN7: 調査研究費のトランザクション
+ */
+export interface ResearchExpenseTransaction extends BaseExpenseTransaction {}
+
+/**
+ * SYUUSHI07_15 KUBUN8: 寄附・交付金のトランザクション
+ */
+export interface DonationGrantExpenseTransaction
+  extends BaseExpenseTransaction {}
+
+/**
+ * SYUUSHI07_15 KUBUN9: その他の経費のトランザクション
+ */
+export interface OtherPoliticalExpenseTransaction
+  extends BaseExpenseTransaction {}
+
 // ============================================================
 // Output Types (Domain Objects for XML)
 // ============================================================
@@ -108,6 +152,86 @@ export interface OrganizationExpenseSection {
   himoku: string; // 費目（シート単位）
   totalAmount: number;
   underThresholdAmount: number; // その他の支出
+  rows: PoliticalActivityExpenseRow[];
+}
+
+/**
+ * SYUUSHI07_15 KUBUN2: 選挙関係費
+ */
+export interface ElectionExpenseSection {
+  himoku: string;
+  totalAmount: number;
+  underThresholdAmount: number;
+  rows: PoliticalActivityExpenseRow[];
+}
+
+/**
+ * SYUUSHI07_15 KUBUN3: 機関紙誌の発行事業費
+ */
+export interface PublicationExpenseSection {
+  himoku: string;
+  totalAmount: number;
+  underThresholdAmount: number;
+  rows: PoliticalActivityExpenseRow[];
+}
+
+/**
+ * SYUUSHI07_15 KUBUN4: 宣伝事業費
+ */
+export interface AdvertisingExpenseSection {
+  himoku: string;
+  totalAmount: number;
+  underThresholdAmount: number;
+  rows: PoliticalActivityExpenseRow[];
+}
+
+/**
+ * SYUUSHI07_15 KUBUN5: 政治資金パーティー開催事業費
+ */
+export interface FundraisingPartyExpenseSection {
+  himoku: string;
+  totalAmount: number;
+  underThresholdAmount: number;
+  rows: PoliticalActivityExpenseRow[];
+}
+
+/**
+ * SYUUSHI07_15 KUBUN6: その他の事業費
+ */
+export interface OtherBusinessExpenseSection {
+  himoku: string;
+  totalAmount: number;
+  underThresholdAmount: number;
+  rows: PoliticalActivityExpenseRow[];
+}
+
+/**
+ * SYUUSHI07_15 KUBUN7: 調査研究費
+ */
+export interface ResearchExpenseSection {
+  himoku: string;
+  totalAmount: number;
+  underThresholdAmount: number;
+  rows: PoliticalActivityExpenseRow[];
+}
+
+/**
+ * SYUUSHI07_15 KUBUN8: 寄附・交付金
+ */
+export interface DonationGrantExpenseSection {
+  himoku: string;
+  totalAmount: number;
+  underThresholdAmount: number;
+  rows: PoliticalActivityExpenseRow[];
+}
+
+/**
+ * SYUUSHI07_15 KUBUN9: その他の経費
+ */
+export interface OtherPoliticalExpenseSection {
+  himoku: string;
+  totalAmount: number;
+  underThresholdAmount: number;
   rows: PoliticalActivityExpenseRow[];
 }
 
@@ -393,6 +517,181 @@ export const OrganizationExpenseSection = {
    * XMLのSHEET要素を出力すべきかを判定する
    */
   shouldOutputSheet: (section: OrganizationExpenseSection): boolean => {
+    return section.rows.length > 0 || section.totalAmount > 0;
+  },
+} as const;
+
+/**
+ * 政治活動費セクション共通の集約ロジック（5万円閾値）
+ */
+function aggregatePoliticalActivitySection<T extends BaseExpenseTransaction>(
+  transactions: T[],
+): {
+  himoku: string;
+  totalAmount: number;
+  underThresholdAmount: number;
+  rows: PoliticalActivityExpenseRow[];
+} {
+  const FIVE_MAN_THRESHOLD = 50000;
+
+  const totalAmount = transactions.reduce(
+    (sum, tx) => sum + ExpenseTransactionBase.resolveAmount(tx),
+    0,
+  );
+
+  const detailedTransactions = transactions.filter((tx) =>
+    isAboveThreshold(
+      ExpenseTransactionBase.resolveAmount(tx),
+      FIVE_MAN_THRESHOLD,
+    ),
+  );
+  const underThresholdTransactions = transactions.filter(
+    (tx) =>
+      !isAboveThreshold(
+        ExpenseTransactionBase.resolveAmount(tx),
+        FIVE_MAN_THRESHOLD,
+      ),
+  );
+
+  const underThresholdAmount = underThresholdTransactions.reduce(
+    (sum, tx) => sum + ExpenseTransactionBase.resolveAmount(tx),
+    0,
+  );
+
+  const rows = detailedTransactions.map((tx, index) => ({
+    ichirenNo: (index + 1).toString(),
+    mokuteki: ExpenseTransactionBase.getMokuteki(tx),
+    kingaku: ExpenseTransactionBase.resolveAmount(tx),
+    dt: tx.transactionDate,
+    nm: ExpenseTransactionBase.getNm(tx),
+    adr: ExpenseTransactionBase.getAdr(tx),
+    bikou: ExpenseTransactionBase.getBikou(tx),
+  }));
+
+  return {
+    himoku: "",
+    totalAmount,
+    underThresholdAmount,
+    rows,
+  };
+}
+
+/**
+ * ElectionExpenseSection に関連するドメインロジック
+ */
+export const ElectionExpenseSection = {
+  fromTransactions: (
+    transactions: ElectionExpenseTransaction[],
+  ): ElectionExpenseSection => {
+    return aggregatePoliticalActivitySection(transactions);
+  },
+
+  shouldOutputSheet: (section: ElectionExpenseSection): boolean => {
+    return section.rows.length > 0 || section.totalAmount > 0;
+  },
+} as const;
+
+/**
+ * PublicationExpenseSection に関連するドメインロジック
+ */
+export const PublicationExpenseSection = {
+  fromTransactions: (
+    transactions: PublicationExpenseTransaction[],
+  ): PublicationExpenseSection => {
+    return aggregatePoliticalActivitySection(transactions);
+  },
+
+  shouldOutputSheet: (section: PublicationExpenseSection): boolean => {
+    return section.rows.length > 0 || section.totalAmount > 0;
+  },
+} as const;
+
+/**
+ * AdvertisingExpenseSection に関連するドメインロジック
+ */
+export const AdvertisingExpenseSection = {
+  fromTransactions: (
+    transactions: AdvertisingExpenseTransaction[],
+  ): AdvertisingExpenseSection => {
+    return aggregatePoliticalActivitySection(transactions);
+  },
+
+  shouldOutputSheet: (section: AdvertisingExpenseSection): boolean => {
+    return section.rows.length > 0 || section.totalAmount > 0;
+  },
+} as const;
+
+/**
+ * FundraisingPartyExpenseSection に関連するドメインロジック
+ */
+export const FundraisingPartyExpenseSection = {
+  fromTransactions: (
+    transactions: FundraisingPartyExpenseTransaction[],
+  ): FundraisingPartyExpenseSection => {
+    return aggregatePoliticalActivitySection(transactions);
+  },
+
+  shouldOutputSheet: (section: FundraisingPartyExpenseSection): boolean => {
+    return section.rows.length > 0 || section.totalAmount > 0;
+  },
+} as const;
+
+/**
+ * OtherBusinessExpenseSection に関連するドメインロジック
+ */
+export const OtherBusinessExpenseSection = {
+  fromTransactions: (
+    transactions: OtherBusinessExpenseTransaction[],
+  ): OtherBusinessExpenseSection => {
+    return aggregatePoliticalActivitySection(transactions);
+  },
+
+  shouldOutputSheet: (section: OtherBusinessExpenseSection): boolean => {
+    return section.rows.length > 0 || section.totalAmount > 0;
+  },
+} as const;
+
+/**
+ * ResearchExpenseSection に関連するドメインロジック
+ */
+export const ResearchExpenseSection = {
+  fromTransactions: (
+    transactions: ResearchExpenseTransaction[],
+  ): ResearchExpenseSection => {
+    return aggregatePoliticalActivitySection(transactions);
+  },
+
+  shouldOutputSheet: (section: ResearchExpenseSection): boolean => {
+    return section.rows.length > 0 || section.totalAmount > 0;
+  },
+} as const;
+
+/**
+ * DonationGrantExpenseSection に関連するドメインロジック
+ */
+export const DonationGrantExpenseSection = {
+  fromTransactions: (
+    transactions: DonationGrantExpenseTransaction[],
+  ): DonationGrantExpenseSection => {
+    return aggregatePoliticalActivitySection(transactions);
+  },
+
+  shouldOutputSheet: (section: DonationGrantExpenseSection): boolean => {
+    return section.rows.length > 0 || section.totalAmount > 0;
+  },
+} as const;
+
+/**
+ * OtherPoliticalExpenseSection に関連するドメインロジック
+ */
+export const OtherPoliticalExpenseSection = {
+  fromTransactions: (
+    transactions: OtherPoliticalExpenseTransaction[],
+  ): OtherPoliticalExpenseSection => {
+    return aggregatePoliticalActivitySection(transactions);
+  },
+
+  shouldOutputSheet: (section: OtherPoliticalExpenseSection): boolean => {
     return section.rows.length > 0 || section.totalAmount > 0;
   },
 } as const;

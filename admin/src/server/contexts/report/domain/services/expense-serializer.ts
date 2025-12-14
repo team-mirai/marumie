@@ -8,8 +8,16 @@
 import { fragment } from "xmlbuilder2";
 import type { XMLBuilder } from "xmlbuilder2/lib/interfaces";
 import type {
+  AdvertisingExpenseSection,
+  DonationGrantExpenseSection,
+  ElectionExpenseSection,
+  FundraisingPartyExpenseSection,
   OfficeExpenseSection,
   OrganizationExpenseSection,
+  OtherBusinessExpenseSection,
+  OtherPoliticalExpenseSection,
+  PublicationExpenseSection,
+  ResearchExpenseSection,
   SuppliesExpenseSection,
   UtilityExpenseSection,
 } from "@/server/contexts/report/domain/models/expense-transaction";
@@ -91,37 +99,89 @@ function serializeExpenseKubun(
 }
 
 /**
- * Serializes organization expense section into XML format for SYUUSHI07_15.
- * Currently only handles KUBUN1 (組織活動費).
+ * 政治活動費セクション（SYUUSHI07_15）のシリアライズ用入力型
  */
-export function serializeOrganizationExpenseSection(
-  organizationSection: OrganizationExpenseSection,
+export interface PoliticalActivityExpenseSections {
+  organizationExpenses: OrganizationExpenseSection; // KUBUN1: 組織活動費
+  electionExpenses: ElectionExpenseSection; // KUBUN2: 選挙関係費
+  publicationExpenses: PublicationExpenseSection; // KUBUN3: 機関紙誌の発行事業費
+  advertisingExpenses: AdvertisingExpenseSection; // KUBUN4: 宣伝事業費
+  fundraisingPartyExpenses: FundraisingPartyExpenseSection; // KUBUN5: 政治資金パーティー開催事業費
+  otherBusinessExpenses: OtherBusinessExpenseSection; // KUBUN6: その他の事業費
+  researchExpenses: ResearchExpenseSection; // KUBUN7: 調査研究費
+  donationGrantExpenses: DonationGrantExpenseSection; // KUBUN8: 寄附・交付金
+  otherPoliticalExpenses: OtherPoliticalExpenseSection; // KUBUN9: その他の経費
+}
+
+/**
+ * Serializes political activity expense sections into XML format for SYUUSHI07_15.
+ * Handles all 9 KUBUN sections (組織活動費〜その他の経費).
+ */
+export function serializePoliticalActivityExpenseSection(
+  sections: PoliticalActivityExpenseSections,
 ): XMLBuilder {
   const frag = fragment();
   const root = frag.ele("SYUUSHI07_15");
 
   // KUBUN1: 組織活動費
   const kubun1 = root.ele("KUBUN1");
-  serializePoliticalActivityKubun(kubun1, organizationSection);
+  serializePoliticalActivityKubun(kubun1, sections.organizationExpenses);
 
-  // KUBUN2〜KUBUN9 は空のSHEETを出力（将来の拡張用）
-  for (let i = 2; i <= 9; i++) {
-    const kubun = root.ele(`KUBUN${i}`);
-    const sheet = kubun.ele("SHEET");
-    sheet.ele("HIMOKU");
-    sheet.ele("KINGAKU_GK").txt("0");
-    sheet.ele("SONOTA_GK");
-  }
+  // KUBUN2: 選挙関係費
+  const kubun2 = root.ele("KUBUN2");
+  serializePoliticalActivityKubun(kubun2, sections.electionExpenses);
+
+  // KUBUN3: 機関紙誌の発行事業費
+  const kubun3 = root.ele("KUBUN3");
+  serializePoliticalActivityKubun(kubun3, sections.publicationExpenses);
+
+  // KUBUN4: 宣伝事業費
+  const kubun4 = root.ele("KUBUN4");
+  serializePoliticalActivityKubun(kubun4, sections.advertisingExpenses);
+
+  // KUBUN5: 政治資金パーティー開催事業費
+  const kubun5 = root.ele("KUBUN5");
+  serializePoliticalActivityKubun(kubun5, sections.fundraisingPartyExpenses);
+
+  // KUBUN6: その他の事業費
+  const kubun6 = root.ele("KUBUN6");
+  serializePoliticalActivityKubun(kubun6, sections.otherBusinessExpenses);
+
+  // KUBUN7: 調査研究費
+  const kubun7 = root.ele("KUBUN7");
+  serializePoliticalActivityKubun(kubun7, sections.researchExpenses);
+
+  // KUBUN8: 寄附・交付金
+  const kubun8 = root.ele("KUBUN8");
+  serializePoliticalActivityKubun(kubun8, sections.donationGrantExpenses);
+
+  // KUBUN9: その他の経費
+  const kubun9 = root.ele("KUBUN9");
+  serializePoliticalActivityKubun(kubun9, sections.otherPoliticalExpenses);
 
   return frag;
 }
+
+/**
+ * 政治活動費の各区分セクションの共通型
+ */
+type PoliticalActivitySection =
+  | OrganizationExpenseSection
+  | ElectionExpenseSection
+  | PublicationExpenseSection
+  | AdvertisingExpenseSection
+  | FundraisingPartyExpenseSection
+  | OtherBusinessExpenseSection
+  | ResearchExpenseSection
+  | DonationGrantExpenseSection
+  | OtherPoliticalExpenseSection;
 
 /**
  * Helper function to serialize a single KUBUN section for SYUUSHI07_15
  */
 function serializePoliticalActivityKubun(
   kubunElement: XMLBuilder,
-  section: OrganizationExpenseSection,
+  section: PoliticalActivitySection,
 ): void {
   const sheet = kubunElement.ele("SHEET");
 

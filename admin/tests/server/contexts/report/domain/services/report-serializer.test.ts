@@ -29,10 +29,60 @@ describe("serializeReportData", () => {
       otherIncome: { totalAmount: 0, underThresholdAmount: 0, rows: [] },
     },
     expenses: {
+      // SYUUSHI07_14: 経常経費
       utilityExpenses: { totalAmount: 0, underThresholdAmount: 0, rows: [] },
       suppliesExpenses: { totalAmount: 0, underThresholdAmount: 0, rows: [] },
       officeExpenses: { totalAmount: 0, underThresholdAmount: 0, rows: [] },
+      // SYUUSHI07_15: 政治活動費（全9区分）
       organizationExpenses: {
+        himoku: "",
+        totalAmount: 0,
+        underThresholdAmount: 0,
+        rows: [],
+      },
+      electionExpenses: {
+        himoku: "",
+        totalAmount: 0,
+        underThresholdAmount: 0,
+        rows: [],
+      },
+      publicationExpenses: {
+        himoku: "",
+        totalAmount: 0,
+        underThresholdAmount: 0,
+        rows: [],
+      },
+      advertisingExpenses: {
+        himoku: "",
+        totalAmount: 0,
+        underThresholdAmount: 0,
+        rows: [],
+      },
+      fundraisingPartyExpenses: {
+        himoku: "",
+        totalAmount: 0,
+        underThresholdAmount: 0,
+        rows: [],
+      },
+      otherBusinessExpenses: {
+        himoku: "",
+        totalAmount: 0,
+        underThresholdAmount: 0,
+        rows: [],
+      },
+      researchExpenses: {
+        himoku: "",
+        totalAmount: 0,
+        underThresholdAmount: 0,
+        rows: [],
+      },
+      donationGrantExpenses: {
+        himoku: "",
+        totalAmount: 0,
+        underThresholdAmount: 0,
+        rows: [],
+      },
+      otherPoliticalExpenses: {
         himoku: "",
         totalAmount: 0,
         underThresholdAmount: 0,

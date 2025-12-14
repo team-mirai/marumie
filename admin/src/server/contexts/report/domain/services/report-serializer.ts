@@ -8,7 +8,6 @@
 import { create } from "xmlbuilder2";
 import type { XMLBuilder } from "xmlbuilder2/lib/interfaces";
 import { PersonalDonationSection } from "@/server/contexts/report/domain/models/donation-transaction";
-import { OrganizationExpenseSection } from "@/server/contexts/report/domain/models/expense-transaction";
 import {
   BusinessIncomeSection,
   GrantIncomeSection,
@@ -22,7 +21,7 @@ import {
 import { serializePersonalDonationSection } from "@/server/contexts/report/domain/services/donation-serializer";
 import {
   serializeExpenseSection,
-  serializeOrganizationExpenseSection,
+  serializePoliticalActivityExpenseSection,
 } from "@/server/contexts/report/domain/services/expense-serializer";
 import {
   serializeBusinessIncomeSection,
@@ -164,16 +163,20 @@ export function serializeReportData(
   }
 
   // SYUUSHI07_15: 第14号様式（その15）政治活動費の支出
-  if (
-    OrganizationExpenseSection.shouldOutputSheet(
-      reportData.expenses.organizationExpenses,
-    )
-  ) {
+  if (ExpenseData.shouldOutputPoliticalActivitySheet(reportData.expenses)) {
     sections.push({
       formId: "SYUUSHI07_15",
-      xml: serializeOrganizationExpenseSection(
-        reportData.expenses.organizationExpenses,
-      ),
+      xml: serializePoliticalActivityExpenseSection({
+        organizationExpenses: reportData.expenses.organizationExpenses,
+        electionExpenses: reportData.expenses.electionExpenses,
+        publicationExpenses: reportData.expenses.publicationExpenses,
+        advertisingExpenses: reportData.expenses.advertisingExpenses,
+        fundraisingPartyExpenses: reportData.expenses.fundraisingPartyExpenses,
+        otherBusinessExpenses: reportData.expenses.otherBusinessExpenses,
+        researchExpenses: reportData.expenses.researchExpenses,
+        donationGrantExpenses: reportData.expenses.donationGrantExpenses,
+        otherPoliticalExpenses: reportData.expenses.otherPoliticalExpenses,
+      }),
     });
   }
 
