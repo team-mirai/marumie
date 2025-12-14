@@ -7,7 +7,7 @@
 
 import { fragment } from "xmlbuilder2";
 import type { XMLBuilder } from "xmlbuilder2/lib/interfaces";
-import type { PersonalDonationSection } from "@/server/contexts/report/domain/services/donation-converter";
+import type { PersonalDonationSection } from "@/server/contexts/report/domain/models/donation-transaction";
 import {
   formatAmount,
   formatWarekiDate,

@@ -8,11 +8,11 @@ import "server-only";
 
 import type { IReportTransactionRepository } from "@/server/contexts/report/domain/repositories/report-transaction-repository.interface";
 import {
-  convertToBusinessIncomeSection,
-  convertToGrantIncomeSection,
-  convertToLoanIncomeSection,
-  convertToOtherIncomeSection,
-} from "@/server/contexts/report/domain/services/income-converter";
+  BusinessIncomeSection,
+  GrantIncomeSection,
+  LoanIncomeSection,
+  OtherIncomeSection,
+} from "@/server/contexts/report/domain/models/income-transaction";
 import type { IncomeData } from "@/server/contexts/report/domain/models/report-data";
 
 // ============================================================
@@ -50,10 +50,11 @@ export class IncomeAssembler {
     ]);
 
     return {
-      businessIncome: convertToBusinessIncomeSection(businessTransactions),
-      loanIncome: convertToLoanIncomeSection(loanTransactions),
-      grantIncome: convertToGrantIncomeSection(grantTransactions),
-      otherIncome: convertToOtherIncomeSection(otherTransactions),
+      businessIncome:
+        BusinessIncomeSection.fromTransactions(businessTransactions),
+      loanIncome: LoanIncomeSection.fromTransactions(loanTransactions),
+      grantIncome: GrantIncomeSection.fromTransactions(grantTransactions),
+      otherIncome: OtherIncomeSection.fromTransactions(otherTransactions),
     };
   }
 }

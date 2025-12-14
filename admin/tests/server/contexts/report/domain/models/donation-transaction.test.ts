@@ -1,9 +1,9 @@
 import {
-  convertToPersonalDonationSection,
+  PersonalDonationSection,
   type PersonalDonationTransaction,
-} from "@/server/contexts/report/domain/services/donation-converter";
+} from "@/server/contexts/report/domain/models/donation-transaction";
 
-describe("convertToPersonalDonationSection", () => {
+describe("PersonalDonationSection.fromTransactions", () => {
   it("converts personal donation transactions to PersonalDonationSection", () => {
     const transactionDate = new Date("2024-06-15");
     const transactions: PersonalDonationTransaction[] = [
@@ -19,7 +19,7 @@ describe("convertToPersonalDonationSection", () => {
       },
     ];
 
-    const section = convertToPersonalDonationSection(transactions);
+    const section = PersonalDonationSection.fromTransactions(transactions);
 
     expect(section.totalAmount).toBe(100000);
     expect(section.sonotaGk).toBe(0);
@@ -62,7 +62,7 @@ describe("convertToPersonalDonationSection", () => {
       },
     ];
 
-    const section = convertToPersonalDonationSection(transactions);
+    const section = PersonalDonationSection.fromTransactions(transactions);
 
     expect(section.totalAmount).toBe(80000);
     expect(section.rows).toHaveLength(2);
@@ -71,7 +71,7 @@ describe("convertToPersonalDonationSection", () => {
   });
 
   it("returns empty section when no transactions", () => {
-    const section = convertToPersonalDonationSection([]);
+    const section = PersonalDonationSection.fromTransactions([]);
 
     expect(section.totalAmount).toBe(0);
     expect(section.sonotaGk).toBe(0);
@@ -92,7 +92,7 @@ describe("convertToPersonalDonationSection", () => {
       },
     ];
 
-    const section = convertToPersonalDonationSection(transactions);
+    const section = PersonalDonationSection.fromTransactions(transactions);
 
     expect(section.totalAmount).toBe(75000);
     expect(section.rows[0].kingaku).toBe(75000);
