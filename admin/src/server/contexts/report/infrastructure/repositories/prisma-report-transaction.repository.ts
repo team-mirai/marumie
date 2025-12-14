@@ -60,13 +60,72 @@ const CATEGORY_KEYS = {
   // biome-ignore lint/complexity/useLiteralKeys: 日本語キー
   DONATIONS_GRANTS_EXPENSES: PL_CATEGORIES["寄附・交付金"].key,
   // biome-ignore lint/complexity/useLiteralKeys: 日本語キー
-  OTHER_POLITICAL_EXPENSES: PL_CATEGORIES["その他の経費"].key,
+  POLITICAL_ACTIVITY_OTHER_EXPENSES: PL_CATEGORIES["その他の経費"].key,
 } as const;
+
+/**
+ * 政治活動費トランザクションの共通フィールド型
+ */
+interface PoliticalActivityExpenseTransactionRaw {
+  transactionNo: string;
+  friendlyCategory: string | null;
+  label: string | null;
+  description: string | null;
+  memo: string | null;
+  debitAmount: number;
+  creditAmount: number;
+  transactionDate: Date;
+  counterpartName: string;
+  counterpartAddress: string;
+}
 
 export class PrismaReportTransactionRepository
   implements IReportTransactionRepository
 {
   constructor(private prisma: PrismaClient) {}
+
+  /**
+   * 政治活動費トランザクション取得の共通ヘルパーメソッド
+   * TODO: CounterPartテーブル実装後に実際の値を取得する
+   */
+  private async findPoliticalActivityExpenseTransactions(
+    filters: TransactionFilters,
+    categoryKey: string,
+  ): Promise<PoliticalActivityExpenseTransactionRaw[]> {
+    const transactions = await this.prisma.transaction.findMany({
+      where: {
+        politicalOrganizationId: BigInt(filters.politicalOrganizationId),
+        financialYear: filters.financialYear,
+        transactionType: "expense",
+        categoryKey,
+      },
+      orderBy: [{ transactionDate: "asc" }, { id: "asc" }],
+      select: {
+        transactionNo: true,
+        friendlyCategory: true,
+        label: true,
+        description: true,
+        memo: true,
+        debitAmount: true,
+        creditAmount: true,
+        transactionDate: true,
+      },
+    });
+
+    return transactions.map((t) => ({
+      transactionNo: t.transactionNo,
+      friendlyCategory: t.friendlyCategory,
+      label: t.label,
+      description: t.description,
+      memo: t.memo,
+      debitAmount: Number(t.debitAmount),
+      creditAmount: Number(t.creditAmount),
+      transactionDate: t.transactionDate,
+      // TODO: CounterPartテーブル実装後に実際の値を取得する
+      counterpartName: "（仮）取引先名称",
+      counterpartAddress: "（仮）東京都千代田区永田町1-1-1",
+    }));
+  }
 
   /**
    * SYUUSHI07_07 KUBUN1: 個人からの寄附のトランザクションを取得
@@ -429,38 +488,10 @@ export class PrismaReportTransactionRepository
   async findElectionExpenseTransactions(
     filters: TransactionFilters,
   ): Promise<ElectionExpenseTransaction[]> {
-    const transactions = await this.prisma.transaction.findMany({
-      where: {
-        politicalOrganizationId: BigInt(filters.politicalOrganizationId),
-        financialYear: filters.financialYear,
-        transactionType: "expense",
-        categoryKey: CATEGORY_KEYS.ELECTION_EXPENSES,
-      },
-      orderBy: [{ transactionDate: "asc" }, { id: "asc" }],
-      select: {
-        transactionNo: true,
-        friendlyCategory: true,
-        label: true,
-        description: true,
-        memo: true,
-        debitAmount: true,
-        creditAmount: true,
-        transactionDate: true,
-      },
-    });
-
-    return transactions.map((t) => ({
-      transactionNo: t.transactionNo,
-      friendlyCategory: t.friendlyCategory,
-      label: t.label,
-      description: t.description,
-      memo: t.memo,
-      debitAmount: Number(t.debitAmount),
-      creditAmount: Number(t.creditAmount),
-      transactionDate: t.transactionDate,
-      counterpartName: "（仮）取引先名称",
-      counterpartAddress: "（仮）東京都千代田区永田町1-1-1",
-    }));
+    return this.findPoliticalActivityExpenseTransactions(
+      filters,
+      CATEGORY_KEYS.ELECTION_EXPENSES,
+    );
   }
 
   /**
@@ -469,38 +500,10 @@ export class PrismaReportTransactionRepository
   async findPublicationExpenseTransactions(
     filters: TransactionFilters,
   ): Promise<PublicationExpenseTransaction[]> {
-    const transactions = await this.prisma.transaction.findMany({
-      where: {
-        politicalOrganizationId: BigInt(filters.politicalOrganizationId),
-        financialYear: filters.financialYear,
-        transactionType: "expense",
-        categoryKey: CATEGORY_KEYS.PUBLICATION_EXPENSES,
-      },
-      orderBy: [{ transactionDate: "asc" }, { id: "asc" }],
-      select: {
-        transactionNo: true,
-        friendlyCategory: true,
-        label: true,
-        description: true,
-        memo: true,
-        debitAmount: true,
-        creditAmount: true,
-        transactionDate: true,
-      },
-    });
-
-    return transactions.map((t) => ({
-      transactionNo: t.transactionNo,
-      friendlyCategory: t.friendlyCategory,
-      label: t.label,
-      description: t.description,
-      memo: t.memo,
-      debitAmount: Number(t.debitAmount),
-      creditAmount: Number(t.creditAmount),
-      transactionDate: t.transactionDate,
-      counterpartName: "（仮）取引先名称",
-      counterpartAddress: "（仮）東京都千代田区永田町1-1-1",
-    }));
+    return this.findPoliticalActivityExpenseTransactions(
+      filters,
+      CATEGORY_KEYS.PUBLICATION_EXPENSES,
+    );
   }
 
   /**
@@ -509,38 +512,10 @@ export class PrismaReportTransactionRepository
   async findAdvertisingExpenseTransactions(
     filters: TransactionFilters,
   ): Promise<AdvertisingExpenseTransaction[]> {
-    const transactions = await this.prisma.transaction.findMany({
-      where: {
-        politicalOrganizationId: BigInt(filters.politicalOrganizationId),
-        financialYear: filters.financialYear,
-        transactionType: "expense",
-        categoryKey: CATEGORY_KEYS.ADVERTISING_EXPENSES,
-      },
-      orderBy: [{ transactionDate: "asc" }, { id: "asc" }],
-      select: {
-        transactionNo: true,
-        friendlyCategory: true,
-        label: true,
-        description: true,
-        memo: true,
-        debitAmount: true,
-        creditAmount: true,
-        transactionDate: true,
-      },
-    });
-
-    return transactions.map((t) => ({
-      transactionNo: t.transactionNo,
-      friendlyCategory: t.friendlyCategory,
-      label: t.label,
-      description: t.description,
-      memo: t.memo,
-      debitAmount: Number(t.debitAmount),
-      creditAmount: Number(t.creditAmount),
-      transactionDate: t.transactionDate,
-      counterpartName: "（仮）取引先名称",
-      counterpartAddress: "（仮）東京都千代田区永田町1-1-1",
-    }));
+    return this.findPoliticalActivityExpenseTransactions(
+      filters,
+      CATEGORY_KEYS.ADVERTISING_EXPENSES,
+    );
   }
 
   /**
@@ -549,38 +524,10 @@ export class PrismaReportTransactionRepository
   async findFundraisingPartyExpenseTransactions(
     filters: TransactionFilters,
   ): Promise<FundraisingPartyExpenseTransaction[]> {
-    const transactions = await this.prisma.transaction.findMany({
-      where: {
-        politicalOrganizationId: BigInt(filters.politicalOrganizationId),
-        financialYear: filters.financialYear,
-        transactionType: "expense",
-        categoryKey: CATEGORY_KEYS.FUNDRAISING_PARTY_EXPENSES,
-      },
-      orderBy: [{ transactionDate: "asc" }, { id: "asc" }],
-      select: {
-        transactionNo: true,
-        friendlyCategory: true,
-        label: true,
-        description: true,
-        memo: true,
-        debitAmount: true,
-        creditAmount: true,
-        transactionDate: true,
-      },
-    });
-
-    return transactions.map((t) => ({
-      transactionNo: t.transactionNo,
-      friendlyCategory: t.friendlyCategory,
-      label: t.label,
-      description: t.description,
-      memo: t.memo,
-      debitAmount: Number(t.debitAmount),
-      creditAmount: Number(t.creditAmount),
-      transactionDate: t.transactionDate,
-      counterpartName: "（仮）取引先名称",
-      counterpartAddress: "（仮）東京都千代田区永田町1-1-1",
-    }));
+    return this.findPoliticalActivityExpenseTransactions(
+      filters,
+      CATEGORY_KEYS.FUNDRAISING_PARTY_EXPENSES,
+    );
   }
 
   /**
@@ -589,38 +536,10 @@ export class PrismaReportTransactionRepository
   async findOtherBusinessExpenseTransactions(
     filters: TransactionFilters,
   ): Promise<OtherBusinessExpenseTransaction[]> {
-    const transactions = await this.prisma.transaction.findMany({
-      where: {
-        politicalOrganizationId: BigInt(filters.politicalOrganizationId),
-        financialYear: filters.financialYear,
-        transactionType: "expense",
-        categoryKey: CATEGORY_KEYS.OTHER_BUSINESS_EXPENSES,
-      },
-      orderBy: [{ transactionDate: "asc" }, { id: "asc" }],
-      select: {
-        transactionNo: true,
-        friendlyCategory: true,
-        label: true,
-        description: true,
-        memo: true,
-        debitAmount: true,
-        creditAmount: true,
-        transactionDate: true,
-      },
-    });
-
-    return transactions.map((t) => ({
-      transactionNo: t.transactionNo,
-      friendlyCategory: t.friendlyCategory,
-      label: t.label,
-      description: t.description,
-      memo: t.memo,
-      debitAmount: Number(t.debitAmount),
-      creditAmount: Number(t.creditAmount),
-      transactionDate: t.transactionDate,
-      counterpartName: "（仮）取引先名称",
-      counterpartAddress: "（仮）東京都千代田区永田町1-1-1",
-    }));
+    return this.findPoliticalActivityExpenseTransactions(
+      filters,
+      CATEGORY_KEYS.OTHER_BUSINESS_EXPENSES,
+    );
   }
 
   /**
@@ -629,38 +548,10 @@ export class PrismaReportTransactionRepository
   async findResearchExpenseTransactions(
     filters: TransactionFilters,
   ): Promise<ResearchExpenseTransaction[]> {
-    const transactions = await this.prisma.transaction.findMany({
-      where: {
-        politicalOrganizationId: BigInt(filters.politicalOrganizationId),
-        financialYear: filters.financialYear,
-        transactionType: "expense",
-        categoryKey: CATEGORY_KEYS.RESEARCH_EXPENSES,
-      },
-      orderBy: [{ transactionDate: "asc" }, { id: "asc" }],
-      select: {
-        transactionNo: true,
-        friendlyCategory: true,
-        label: true,
-        description: true,
-        memo: true,
-        debitAmount: true,
-        creditAmount: true,
-        transactionDate: true,
-      },
-    });
-
-    return transactions.map((t) => ({
-      transactionNo: t.transactionNo,
-      friendlyCategory: t.friendlyCategory,
-      label: t.label,
-      description: t.description,
-      memo: t.memo,
-      debitAmount: Number(t.debitAmount),
-      creditAmount: Number(t.creditAmount),
-      transactionDate: t.transactionDate,
-      counterpartName: "（仮）取引先名称",
-      counterpartAddress: "（仮）東京都千代田区永田町1-1-1",
-    }));
+    return this.findPoliticalActivityExpenseTransactions(
+      filters,
+      CATEGORY_KEYS.RESEARCH_EXPENSES,
+    );
   }
 
   /**
@@ -669,38 +560,10 @@ export class PrismaReportTransactionRepository
   async findDonationGrantExpenseTransactions(
     filters: TransactionFilters,
   ): Promise<DonationGrantExpenseTransaction[]> {
-    const transactions = await this.prisma.transaction.findMany({
-      where: {
-        politicalOrganizationId: BigInt(filters.politicalOrganizationId),
-        financialYear: filters.financialYear,
-        transactionType: "expense",
-        categoryKey: CATEGORY_KEYS.DONATIONS_GRANTS_EXPENSES,
-      },
-      orderBy: [{ transactionDate: "asc" }, { id: "asc" }],
-      select: {
-        transactionNo: true,
-        friendlyCategory: true,
-        label: true,
-        description: true,
-        memo: true,
-        debitAmount: true,
-        creditAmount: true,
-        transactionDate: true,
-      },
-    });
-
-    return transactions.map((t) => ({
-      transactionNo: t.transactionNo,
-      friendlyCategory: t.friendlyCategory,
-      label: t.label,
-      description: t.description,
-      memo: t.memo,
-      debitAmount: Number(t.debitAmount),
-      creditAmount: Number(t.creditAmount),
-      transactionDate: t.transactionDate,
-      counterpartName: "（仮）取引先名称",
-      counterpartAddress: "（仮）東京都千代田区永田町1-1-1",
-    }));
+    return this.findPoliticalActivityExpenseTransactions(
+      filters,
+      CATEGORY_KEYS.DONATIONS_GRANTS_EXPENSES,
+    );
   }
 
   /**
@@ -709,37 +572,9 @@ export class PrismaReportTransactionRepository
   async findOtherPoliticalExpenseTransactions(
     filters: TransactionFilters,
   ): Promise<OtherPoliticalExpenseTransaction[]> {
-    const transactions = await this.prisma.transaction.findMany({
-      where: {
-        politicalOrganizationId: BigInt(filters.politicalOrganizationId),
-        financialYear: filters.financialYear,
-        transactionType: "expense",
-        categoryKey: CATEGORY_KEYS.OTHER_POLITICAL_EXPENSES,
-      },
-      orderBy: [{ transactionDate: "asc" }, { id: "asc" }],
-      select: {
-        transactionNo: true,
-        friendlyCategory: true,
-        label: true,
-        description: true,
-        memo: true,
-        debitAmount: true,
-        creditAmount: true,
-        transactionDate: true,
-      },
-    });
-
-    return transactions.map((t) => ({
-      transactionNo: t.transactionNo,
-      friendlyCategory: t.friendlyCategory,
-      label: t.label,
-      description: t.description,
-      memo: t.memo,
-      debitAmount: Number(t.debitAmount),
-      creditAmount: Number(t.creditAmount),
-      transactionDate: t.transactionDate,
-      counterpartName: "（仮）取引先名称",
-      counterpartAddress: "（仮）東京都千代田区永田町1-1-1",
-    }));
+    return this.findPoliticalActivityExpenseTransactions(
+      filters,
+      CATEGORY_KEYS.POLITICAL_ACTIVITY_OTHER_EXPENSES,
+    );
   }
 }

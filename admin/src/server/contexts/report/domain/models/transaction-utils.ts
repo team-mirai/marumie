@@ -52,9 +52,14 @@ export function sanitizeText(
 }
 
 /**
- * 10万円の閾値（政治資金報告書における明細記載基準）
+ * 10万円の閾値（政治資金報告書における明細記載基準：経常経費用）
  */
 export const TEN_MAN_THRESHOLD = 100_000;
+
+/**
+ * 5万円の閾値（政治資金報告書における明細記載基準：政治活動費用）
+ */
+export const FIVE_MAN_THRESHOLD = 50_000;
 
 /**
  * 金額が閾値以上かどうかを判定

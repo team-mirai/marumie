@@ -11,6 +11,7 @@ import {
   buildBikou,
   isAboveThreshold,
   TEN_MAN_THRESHOLD,
+  FIVE_MAN_THRESHOLD,
 } from "@/server/contexts/report/domain/models/transaction-utils";
 
 /**
@@ -475,8 +476,6 @@ export const OrganizationExpenseSection = {
   fromTransactions: (
     transactions: OrganizationExpenseTransaction[],
   ): OrganizationExpenseSection => {
-    const FIVE_MAN_THRESHOLD = 50000;
-
     const totalAmount = transactions.reduce(
       (sum, tx) => sum + ExpenseTransactionBase.resolveAmount(tx),
       0,
@@ -532,8 +531,6 @@ function aggregatePoliticalActivitySection<T extends BaseExpenseTransaction>(
   underThresholdAmount: number;
   rows: PoliticalActivityExpenseRow[];
 } {
-  const FIVE_MAN_THRESHOLD = 50000;
-
   const totalAmount = transactions.reduce(
     (sum, tx) => sum + ExpenseTransactionBase.resolveAmount(tx),
     0,
