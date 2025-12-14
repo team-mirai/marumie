@@ -30,6 +30,14 @@ describe("IncomeAssembler", () => {
       findSuppliesExpenseTransactions: jest.fn(),
       findOfficeExpenseTransactions: jest.fn(),
       findOrganizationExpenseTransactions: jest.fn(),
+      findElectionExpenseTransactions: jest.fn(),
+      findPublicationExpenseTransactions: jest.fn(),
+      findAdvertisingExpenseTransactions: jest.fn(),
+      findFundraisingPartyExpenseTransactions: jest.fn(),
+      findOtherBusinessExpenseTransactions: jest.fn(),
+      findResearchExpenseTransactions: jest.fn(),
+      findDonationGrantExpenseTransactions: jest.fn(),
+      findOtherPoliticalExpenseTransactions: jest.fn(),
     };
     assembler = new IncomeAssembler(mockRepository);
   });

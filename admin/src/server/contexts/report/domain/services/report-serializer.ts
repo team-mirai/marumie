@@ -8,7 +8,6 @@
 import { create } from "xmlbuilder2";
 import type { XMLBuilder } from "xmlbuilder2/lib/interfaces";
 import { PersonalDonationSection } from "@/server/contexts/report/domain/models/donation-transaction";
-import { OrganizationExpenseSection } from "@/server/contexts/report/domain/models/expense-transaction";
 import {
   BusinessIncomeSection,
   GrantIncomeSection,
@@ -22,7 +21,7 @@ import {
 import { serializePersonalDonationSection } from "@/server/contexts/report/domain/services/donation-serializer";
 import {
   serializeExpenseSection,
-  serializeOrganizationExpenseSection,
+  serializePoliticalActivityExpenseSection,
 } from "@/server/contexts/report/domain/services/expense-serializer";
 import {
   serializeBusinessIncomeSection,
@@ -55,29 +54,29 @@ const DEFAULT_HEAD: XmlHead = {
 // Form IDs in the order they appear in SYUUSHI_UMU flag string
 // 第14号様式 (収支報告書)
 const KNOWN_FORM_IDS = [
-  "SYUUSHI07_01", // (1) 個人からの寄附
-  "SYUUSHI07_02", // (2) 法人その他の団体からの寄附
-  "SYUUSHI07_03", // (3) 政治団体からの寄附
-  "SYUUSHI07_04", // (4) 政治資金パーティー開催事業の収入
-  "SYUUSHI07_05", // (5) 本部または支部からの交付金
-  "SYUUSHI07_06", // (6) その他の収入
-  "SYUUSHI07_07", // (7) 人件費
-  "SYUUSHI07_08", // (8) 光熱水費
-  "SYUUSHI07_09", // (9) 備品・消耗品費
-  "SYUUSHI07_10", // (10) 事務所費
-  "SYUUSHI07_11", // (11) 組織活動費
-  "SYUUSHI07_12", // (12) 選挙関係費
-  "SYUUSHI07_13", // (13) 機関紙誌の発行その他の事業費
-  "SYUUSHI07_14", // (14) 調査研究費
-  "SYUUSHI07_15", // (15) 寄附・交付金
-  "SYUUSHI07_16", // (16) その他の経常経費
-  "SYUUSHI07_17", // (17) 土地
-  "SYUUSHI07_18", // (18) 建物
-  "SYUUSHI07_19", // (19) 動産(船舶、航空機、自動車、事務機器等)
-  "SYUUSHI07_20", // (20) 預金等
-  "SYUUSHI08", // 第15号様式 (資産等の状況)
-  "SYUUSHI08_02", // 第15号様式 (負債の状況)
-  "SYUUSHI_KIFUKOUJYO", // 寄附控除
+  "SYUUSHI07_01", // 第14号様式（その1）団体の基本情報
+  "SYUUSHI07_02", // 第14号様式（その2）収支の総括表
+  "SYUUSHI07_03", // 第14号様式（その3）事業による収入
+  "SYUUSHI07_04", // 第14号様式（その4）借入金
+  "SYUUSHI07_05", // 第14号様式（その5）本部または支部からの交付金
+  "SYUUSHI07_06", // 第14号様式（その6）その他の収入
+  "SYUUSHI07_07", // 第14号様式（その7）寄附の明細
+  "SYUUSHI07_08", // 第14号様式（その8）寄附のあっせん
+  "SYUUSHI07_09", // 第14号様式（その9）政党匿名寄附
+  "SYUUSHI07_10", // 第14号様式（その10）政治資金パーティーの対価に係る収入
+  "SYUUSHI07_11", // 第14号様式（その11）政治資金パーティー対価の支払をした者
+  "SYUUSHI07_12", // 第14号様式（その12）政治資金パーティー対価の支払のあっせんをした者
+  "SYUUSHI07_13", // 第14号様式（その13）※仕様書には存在しない
+  "SYUUSHI07_14", // 第14号様式（その14）経常経費の支出（光熱水費・備品消耗品費・事務所費）
+  "SYUUSHI07_15", // 第14号様式（その15）政治活動費の支出
+  "SYUUSHI07_16", // 第14号様式（その16）本部または支部に対する交付金の支出
+  "SYUUSHI07_17", // 第14号様式（その17）資産等の項目別内訳の有無
+  "SYUUSHI07_18", // 第14号様式（その18）資産等の項目別内訳の明細
+  "SYUUSHI07_19", // 第14号様式（その19）不動産に関する使用の状況
+  "SYUUSHI07_20", // 第14号様式（その20）宣誓書
+  "SYUUSHI08", // 第15号様式（訂正等届出書）
+  "SYUUSHI08_02", // 第16号様式（解散届出書）
+  "SYUUSHI_KIFUKOUJYO", // 寄附を受けた団体の情報（寄附金控除関連）
 ] as const;
 
 const FLAG_STRING_LENGTH = 51;
@@ -97,13 +96,13 @@ export function serializeReportData(
 ): string {
   const sections: { formId: XmlSectionType; xml: XMLBuilder }[] = [];
 
-  // SYUUSHI07_01: 団体プロフィール
+  // SYUUSHI07_01: 第14号様式（その1）団体の基本情報
   sections.push({
     formId: "SYUUSHI07_01",
     xml: serializeProfileSection(reportData.profile),
   });
 
-  // SYUUSHI07_07: 寄附 (個人からの寄附)
+  // SYUUSHI07_07: 第14号様式（その7）寄附の明細
   if (
     PersonalDonationSection.shouldOutputSheet(
       reportData.donations.personalDonations,
@@ -117,7 +116,7 @@ export function serializeReportData(
     });
   }
 
-  // SYUUSHI07_03: 事業による収入
+  // SYUUSHI07_03: 第14号様式（その3）事業による収入
   if (
     BusinessIncomeSection.shouldOutputSheet(reportData.income.businessIncome)
   ) {
@@ -127,7 +126,7 @@ export function serializeReportData(
     });
   }
 
-  // SYUUSHI07_04: 借入金
+  // SYUUSHI07_04: 第14号様式（その4）借入金
   if (LoanIncomeSection.shouldOutputSheet(reportData.income.loanIncome)) {
     sections.push({
       formId: "SYUUSHI07_04",
@@ -135,7 +134,7 @@ export function serializeReportData(
     });
   }
 
-  // SYUUSHI07_05: 本部又は支部から供与された交付金
+  // SYUUSHI07_05: 第14号様式（その5）本部または支部からの交付金
   if (GrantIncomeSection.shouldOutputSheet(reportData.income.grantIncome)) {
     sections.push({
       formId: "SYUUSHI07_05",
@@ -143,7 +142,7 @@ export function serializeReportData(
     });
   }
 
-  // SYUUSHI07_06: その他の収入
+  // SYUUSHI07_06: 第14号様式（その6）その他の収入
   if (OtherIncomeSection.shouldOutputSheet(reportData.income.otherIncome)) {
     sections.push({
       formId: "SYUUSHI07_06",
@@ -151,7 +150,7 @@ export function serializeReportData(
     });
   }
 
-  // SYUUSHI07_14: 経常経費の支出（光熱水費・備品消耗品費・事務所費）
+  // SYUUSHI07_14: 第14号様式（その14）経常経費の支出（光熱水費・備品消耗品費・事務所費）
   if (ExpenseData.shouldOutputRegularExpenseSheet(reportData.expenses)) {
     sections.push({
       formId: "SYUUSHI07_14",
@@ -163,17 +162,21 @@ export function serializeReportData(
     });
   }
 
-  // SYUUSHI07_15: 政治活動費の支出（組織活動費など）
-  if (
-    OrganizationExpenseSection.shouldOutputSheet(
-      reportData.expenses.organizationExpenses,
-    )
-  ) {
+  // SYUUSHI07_15: 第14号様式（その15）政治活動費の支出
+  if (ExpenseData.shouldOutputPoliticalActivitySheet(reportData.expenses)) {
     sections.push({
       formId: "SYUUSHI07_15",
-      xml: serializeOrganizationExpenseSection(
-        reportData.expenses.organizationExpenses,
-      ),
+      xml: serializePoliticalActivityExpenseSection({
+        organizationExpenses: reportData.expenses.organizationExpenses,
+        electionExpenses: reportData.expenses.electionExpenses,
+        publicationExpenses: reportData.expenses.publicationExpenses,
+        advertisingExpenses: reportData.expenses.advertisingExpenses,
+        fundraisingPartyExpenses: reportData.expenses.fundraisingPartyExpenses,
+        otherBusinessExpenses: reportData.expenses.otherBusinessExpenses,
+        researchExpenses: reportData.expenses.researchExpenses,
+        donationGrantExpenses: reportData.expenses.donationGrantExpenses,
+        otherPoliticalExpenses: reportData.expenses.otherPoliticalExpenses,
+      }),
     });
   }
 

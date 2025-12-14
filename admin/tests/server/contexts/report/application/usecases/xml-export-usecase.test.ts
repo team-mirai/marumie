@@ -53,6 +53,7 @@ describe("XmlExportUsecase", () => {
     } as unknown as jest.Mocked<IncomeAssembler>;
     mockExpenseAssembler = {
       assemble: jest.fn().mockResolvedValue({
+        // SYUUSHI07_14: 経常経費
         utilityExpenses: {
           totalAmount: 0,
           underThresholdAmount: 0,
@@ -68,7 +69,56 @@ describe("XmlExportUsecase", () => {
           underThresholdAmount: 0,
           rows: [],
         },
+        // SYUUSHI07_15: 政治活動費（全9区分）
         organizationExpenses: {
+          himoku: "",
+          totalAmount: 0,
+          underThresholdAmount: 0,
+          rows: [],
+        },
+        electionExpenses: {
+          himoku: "",
+          totalAmount: 0,
+          underThresholdAmount: 0,
+          rows: [],
+        },
+        publicationExpenses: {
+          himoku: "",
+          totalAmount: 0,
+          underThresholdAmount: 0,
+          rows: [],
+        },
+        advertisingExpenses: {
+          himoku: "",
+          totalAmount: 0,
+          underThresholdAmount: 0,
+          rows: [],
+        },
+        fundraisingPartyExpenses: {
+          himoku: "",
+          totalAmount: 0,
+          underThresholdAmount: 0,
+          rows: [],
+        },
+        otherBusinessExpenses: {
+          himoku: "",
+          totalAmount: 0,
+          underThresholdAmount: 0,
+          rows: [],
+        },
+        researchExpenses: {
+          himoku: "",
+          totalAmount: 0,
+          underThresholdAmount: 0,
+          rows: [],
+        },
+        donationGrantExpenses: {
+          himoku: "",
+          totalAmount: 0,
+          underThresholdAmount: 0,
+          rows: [],
+        },
+        otherPoliticalExpenses: {
           himoku: "",
           totalAmount: 0,
           underThresholdAmount: 0,

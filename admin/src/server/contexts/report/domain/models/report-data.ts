@@ -7,13 +7,30 @@
 
 import type { PersonalDonationSection } from "@/server/contexts/report/domain/models/donation-transaction";
 import type {
+  AdvertisingExpenseSection,
+  DonationGrantExpenseSection,
+  ElectionExpenseSection,
+  FundraisingPartyExpenseSection,
   OfficeExpenseSection,
   OrganizationExpenseSection,
+  OtherBusinessExpenseSection,
+  OtherPoliticalExpenseSection,
+  PublicationExpenseSection,
+  ResearchExpenseSection,
   SuppliesExpenseSection,
   UtilityExpenseSection,
 } from "@/server/contexts/report/domain/models/expense-transaction";
 import {
+  AdvertisingExpenseSection as AdvertisingExpenseSectionModel,
+  DonationGrantExpenseSection as DonationGrantExpenseSectionModel,
+  ElectionExpenseSection as ElectionExpenseSectionModel,
+  FundraisingPartyExpenseSection as FundraisingPartyExpenseSectionModel,
   OfficeExpenseSection as OfficeExpenseSectionModel,
+  OrganizationExpenseSection as OrganizationExpenseSectionModel,
+  OtherBusinessExpenseSection as OtherBusinessExpenseSectionModel,
+  OtherPoliticalExpenseSection as OtherPoliticalExpenseSectionModel,
+  PublicationExpenseSection as PublicationExpenseSectionModel,
+  ResearchExpenseSection as ResearchExpenseSectionModel,
   SuppliesExpenseSection as SuppliesExpenseSectionModel,
   UtilityExpenseSection as UtilityExpenseSectionModel,
 } from "@/server/contexts/report/domain/models/expense-transaction";
@@ -48,19 +65,21 @@ export interface IncomeData {
  * 支出データ (SYUUSHI07_14, SYUUSHI07_15)
  */
 export interface ExpenseData {
-  // personnelExpenses: PersonnelExpenseSection;     // SYUUSHI07_13: 人件費
-  utilityExpenses: UtilityExpenseSection; // SYUUSHI07_14 KUBUN1: 光熱水費
-  suppliesExpenses: SuppliesExpenseSection; // SYUUSHI07_14 KUBUN2: 備品・消耗品費
-  officeExpenses: OfficeExpenseSection; // SYUUSHI07_14 KUBUN3: 事務所費
-  organizationExpenses: OrganizationExpenseSection; // SYUUSHI07_15 KUBUN1: 組織活動費
-  // electionExpenses: ElectionExpenseSection;       // SYUUSHI07_15 KUBUN2: 選挙関係費
-  // publicationExpenses: PublicationExpenseSection; // SYUUSHI07_15 KUBUN3: 機関紙誌の発行事業費
-  // advertisingExpenses: AdvertisingExpenseSection; // SYUUSHI07_15 KUBUN4: 宣伝事業費
-  // partyExpenses: PartyExpenseSection;             // SYUUSHI07_15 KUBUN5: 政治資金パーティー開催事業費
-  // otherBusinessExpenses: OtherBusinessExpenseSection; // SYUUSHI07_15 KUBUN6: その他の事業費
-  // researchExpenses: ResearchExpenseSection;       // SYUUSHI07_15 KUBUN7: 調査研究費
-  // donationExpenses: DonationExpenseSection;       // SYUUSHI07_15 KUBUN8: 寄附・交付金
-  // otherExpenses: OtherExpenseSection;             // SYUUSHI07_15 KUBUN9: その他の経費
+  // SYUUSHI07_14: 経常経費
+  utilityExpenses: UtilityExpenseSection; // KUBUN1: 光熱水費
+  suppliesExpenses: SuppliesExpenseSection; // KUBUN2: 備品・消耗品費
+  officeExpenses: OfficeExpenseSection; // KUBUN3: 事務所費
+
+  // SYUUSHI07_15: 政治活動費（全9区分）
+  organizationExpenses: OrganizationExpenseSection; // KUBUN1: 組織活動費
+  electionExpenses: ElectionExpenseSection; // KUBUN2: 選挙関係費
+  publicationExpenses: PublicationExpenseSection; // KUBUN3: 機関紙誌の発行事業費
+  advertisingExpenses: AdvertisingExpenseSection; // KUBUN4: 宣伝事業費
+  fundraisingPartyExpenses: FundraisingPartyExpenseSection; // KUBUN5: 政治資金パーティー開催事業費
+  otherBusinessExpenses: OtherBusinessExpenseSection; // KUBUN6: その他の事業費
+  researchExpenses: ResearchExpenseSection; // KUBUN7: 調査研究費
+  donationGrantExpenses: DonationGrantExpenseSection; // KUBUN8: 寄附・交付金
+  otherPoliticalExpenses: OtherPoliticalExpenseSection; // KUBUN9: その他の経費
 }
 
 /**
@@ -76,6 +95,38 @@ export const ExpenseData = {
       UtilityExpenseSectionModel.shouldOutputSheet(data.utilityExpenses) ||
       SuppliesExpenseSectionModel.shouldOutputSheet(data.suppliesExpenses) ||
       OfficeExpenseSectionModel.shouldOutputSheet(data.officeExpenses)
+    );
+  },
+
+  /**
+   * 政治活動費シート (SYUUSHI07_15) を出力すべきかどうかを判定
+   * KUBUN1〜KUBUN9のいずれかにデータがあれば出力
+   */
+  shouldOutputPoliticalActivitySheet(data: ExpenseData): boolean {
+    return (
+      OrganizationExpenseSectionModel.shouldOutputSheet(
+        data.organizationExpenses,
+      ) ||
+      ElectionExpenseSectionModel.shouldOutputSheet(data.electionExpenses) ||
+      PublicationExpenseSectionModel.shouldOutputSheet(
+        data.publicationExpenses,
+      ) ||
+      AdvertisingExpenseSectionModel.shouldOutputSheet(
+        data.advertisingExpenses,
+      ) ||
+      FundraisingPartyExpenseSectionModel.shouldOutputSheet(
+        data.fundraisingPartyExpenses,
+      ) ||
+      OtherBusinessExpenseSectionModel.shouldOutputSheet(
+        data.otherBusinessExpenses,
+      ) ||
+      ResearchExpenseSectionModel.shouldOutputSheet(data.researchExpenses) ||
+      DonationGrantExpenseSectionModel.shouldOutputSheet(
+        data.donationGrantExpenses,
+      ) ||
+      OtherPoliticalExpenseSectionModel.shouldOutputSheet(
+        data.otherPoliticalExpenses,
+      )
     );
   },
 };
