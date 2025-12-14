@@ -17,6 +17,7 @@ import type {
   LoanIncomeSection,
   OtherIncomeSection,
 } from "@/server/contexts/report/domain/services/income-converter";
+import type { OrganizationReportProfile } from "@/server/contexts/report/domain/models/organization-report-profile";
 
 /**
  * 寄付データ (SYUUSHI07_07)
@@ -57,6 +58,7 @@ export interface ExpenseData {
  * ReportData holds all section data for generating the full XML report.
  */
 export interface ReportData {
+  profile?: OrganizationReportProfile; // SYUUSHI07_01: 団体プロフィール
   donations: DonationData;
   income: IncomeData;
   expenses: ExpenseData;
