@@ -37,7 +37,13 @@ export default async function ReportProfilePage({
     );
   }
 
-  const profile = await loadOrganizationProfileData(orgId, financialYear);
+  // プロフィールが存在しない場合は新規作成なので null で初期化
+  let profile;
+  try {
+    profile = await loadOrganizationProfileData(orgId, financialYear);
+  } catch {
+    profile = null;
+  }
 
   return (
     <div className="bg-primary-panel rounded-xl p-4">
