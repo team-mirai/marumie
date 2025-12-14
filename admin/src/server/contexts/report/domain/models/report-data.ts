@@ -62,7 +62,7 @@ export interface ExpenseData {
  * ReportData holds all section data for generating the full XML report.
  */
 export interface ReportData {
-  profile?: OrganizationReportProfile; // SYUUSHI07_01: 団体プロフィール
+  profile: OrganizationReportProfile; // SYUUSHI07_01: 団体プロフィール
   donations: DonationData;
   income: IncomeData;
   expenses: ExpenseData;

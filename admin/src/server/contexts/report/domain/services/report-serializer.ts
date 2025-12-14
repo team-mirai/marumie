@@ -96,18 +96,14 @@ export type XmlSectionType = (typeof KNOWN_FORM_IDS)[number];
 export function serializeReportData(
   reportData: ReportData,
   head: Partial<XmlHead> = {},
-  financialYear?: number,
 ): string {
   const sections: { formId: XmlSectionType; xml: XMLBuilder }[] = [];
 
   // SYUUSHI07_01: 団体プロフィール
-  if (reportData.profile) {
-    const reportYear = financialYear ?? reportData.profile.financialYear;
-    sections.push({
-      formId: "SYUUSHI07_01",
-      xml: serializeProfileSection(reportData.profile, reportYear),
-    });
-  }
+  sections.push({
+    formId: "SYUUSHI07_01",
+    xml: serializeProfileSection(reportData.profile),
+  });
 
   // SYUUSHI07_07: 寄附 (個人からの寄附)
   if (

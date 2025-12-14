@@ -17,13 +17,12 @@ import type {
  */
 export function serializeProfileSection(
   profile: OrganizationReportProfile,
-  reportYear: number,
 ): XMLBuilder {
   const frag = fragment();
   const root = frag.ele("SYUUSHI07_01");
   const details = profile.details;
 
-  root.ele("HOUKOKU_NEN").txt(reportYear.toString());
+  root.ele("HOUKOKU_NEN").txt(profile.financialYear.toString());
   root.ele("KAISAI_DT").txt(details.specificPartyDate ?? "");
   root.ele("DANTAI_NM").txt(profile.officialName ?? "");
   root.ele("DANTAI_KANA").txt(profile.officialNameKana ?? "");
