@@ -1,16 +1,16 @@
 import {
-  convertToBusinessIncomeSection,
-  convertToGrantIncomeSection,
-  convertToLoanIncomeSection,
-  convertToOtherIncomeSection,
-  resolveTransactionAmount,
+  BusinessIncomeSection,
+  GrantIncomeSection,
+  LoanIncomeSection,
+  OtherIncomeSection,
   type BusinessIncomeTransaction,
   type GrantIncomeTransaction,
   type LoanIncomeTransaction,
   type OtherIncomeTransaction,
-} from "@/server/contexts/report/domain/services/income-converter";
+} from "@/server/contexts/report/domain/models/income-transaction";
+import { resolveIncomeAmount } from "@/server/contexts/report/domain/models/transaction-utils";
 
-describe("convertToBusinessIncomeSection", () => {
+describe("BusinessIncomeSection.fromTransactions", () => {
   it("converts business transactions to BusinessIncomeSection", () => {
     const transactions: BusinessIncomeTransaction[] = [
       {
@@ -24,7 +24,7 @@ describe("convertToBusinessIncomeSection", () => {
       },
     ];
 
-    const section = convertToBusinessIncomeSection(transactions);
+    const section = BusinessIncomeSection.fromTransactions(transactions);
 
     expect(section.totalAmount).toBe(120000);
     expect(section.rows).toHaveLength(1);
@@ -33,14 +33,14 @@ describe("convertToBusinessIncomeSection", () => {
   });
 
   it("returns empty section when no transactions", () => {
-    const section = convertToBusinessIncomeSection([]);
+    const section = BusinessIncomeSection.fromTransactions([]);
 
     expect(section.totalAmount).toBe(0);
     expect(section.rows).toHaveLength(0);
   });
 });
 
-describe("convertToLoanIncomeSection", () => {
+describe("LoanIncomeSection.fromTransactions", () => {
   it("converts loan transactions to LoanIncomeSection", () => {
     const transactions: LoanIncomeTransaction[] = [
       {
@@ -57,7 +57,7 @@ describe("convertToLoanIncomeSection", () => {
       },
     ];
 
-    const section = convertToLoanIncomeSection(transactions);
+    const section = LoanIncomeSection.fromTransactions(transactions);
 
     expect(section.totalAmount).toBe(1000000);
     expect(section.rows).toHaveLength(1);
@@ -66,7 +66,7 @@ describe("convertToLoanIncomeSection", () => {
   });
 });
 
-describe("convertToGrantIncomeSection", () => {
+describe("GrantIncomeSection.fromTransactions", () => {
   it("converts grant transactions to GrantIncomeSection", () => {
     const transactionDate = new Date("2024-05-15");
     const transactions: GrantIncomeTransaction[] = [
@@ -84,7 +84,7 @@ describe("convertToGrantIncomeSection", () => {
       },
     ];
 
-    const section = convertToGrantIncomeSection(transactions);
+    const section = GrantIncomeSection.fromTransactions(transactions);
 
     expect(section.totalAmount).toBe(500000);
     expect(section.rows).toHaveLength(1);
@@ -95,7 +95,7 @@ describe("convertToGrantIncomeSection", () => {
   });
 });
 
-describe("convertToOtherIncomeSection", () => {
+describe("OtherIncomeSection.fromTransactions", () => {
   it("uses friendlyCategory for tekiyou when available", () => {
     const transactions: OtherIncomeTransaction[] = [
       {
@@ -108,7 +108,7 @@ describe("convertToOtherIncomeSection", () => {
         creditAmount: 150_000,
       },
     ];
-    const section = convertToOtherIncomeSection(transactions);
+    const section = OtherIncomeSection.fromTransactions(transactions);
 
     expect(section.rows[0].tekiyou).toBe("タグ名");
   });
@@ -125,7 +125,7 @@ describe("convertToOtherIncomeSection", () => {
         creditAmount: 150_000,
       },
     ];
-    const section = convertToOtherIncomeSection(transactions);
+    const section = OtherIncomeSection.fromTransactions(transactions);
 
     expect(section.rows[0].tekiyou).toBe("");
   });
@@ -151,7 +151,7 @@ describe("convertToOtherIncomeSection", () => {
         creditAmount: 90_000,
       },
     ];
-    const section = convertToOtherIncomeSection(transactions);
+    const section = OtherIncomeSection.fromTransactions(transactions);
 
     expect(section.totalAmount).toBe(240_000);
     expect(section.underThresholdAmount).toBe(90_000);
@@ -176,7 +176,7 @@ describe("convertToOtherIncomeSection", () => {
         creditAmount: 120_000,
       },
     ];
-    const section = convertToOtherIncomeSection(transactions);
+    const section = OtherIncomeSection.fromTransactions(transactions);
 
     expect(section.totalAmount).toBe(120_000);
     expect(section.underThresholdAmount).toBe(0);
@@ -186,17 +186,16 @@ describe("convertToOtherIncomeSection", () => {
   });
 });
 
-describe("resolveTransactionAmount", () => {
+describe("resolveIncomeAmount", () => {
   it("uses creditAmount when available", () => {
-    expect(resolveTransactionAmount(0, 150000)).toBe(150000);
+    expect(resolveIncomeAmount(0, 150000)).toBe(150000);
   });
 
   it("falls back to debitAmount when creditAmount is zero", () => {
-    expect(resolveTransactionAmount(120000, 0)).toBe(120000);
+    expect(resolveIncomeAmount(120000, 0)).toBe(120000);
   });
 
   it("returns 0 when both are invalid", () => {
-    expect(resolveTransactionAmount(NaN, NaN)).toBe(0);
+    expect(resolveIncomeAmount(NaN, NaN)).toBe(0);
   });
 });
-

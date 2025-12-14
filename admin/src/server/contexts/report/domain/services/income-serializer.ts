@@ -12,7 +12,7 @@ import type {
   GrantIncomeSection,
   LoanIncomeSection,
   OtherIncomeSection,
-} from "@/server/contexts/report/domain/services/income-converter";
+} from "@/server/contexts/report/domain/models/income-transaction";
 import {
   formatAmount,
   formatWarekiDate,

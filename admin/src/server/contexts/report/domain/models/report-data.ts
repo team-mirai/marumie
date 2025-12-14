@@ -5,18 +5,18 @@
  * Organized by semantic groupings for assembler clarity.
  */
 
-import type { PersonalDonationSection } from "@/server/contexts/report/domain/services/donation-converter";
+import type { PersonalDonationSection } from "@/server/contexts/report/domain/models/donation-transaction";
 import type {
   OfficeExpenseSection,
   SuppliesExpenseSection,
   UtilityExpenseSection,
-} from "@/server/contexts/report/domain/services/expense-converter";
+} from "@/server/contexts/report/domain/models/expense-transaction";
 import type {
   BusinessIncomeSection,
   GrantIncomeSection,
   LoanIncomeSection,
   OtherIncomeSection,
-} from "@/server/contexts/report/domain/services/income-converter";
+} from "@/server/contexts/report/domain/models/income-transaction";
 import type { OrganizationReportProfile } from "@/server/contexts/report/domain/models/organization-report-profile";
 
 /**

@@ -1,5 +1,5 @@
 import { serializeOtherIncomeSection } from "@/server/contexts/report/domain/services/income-serializer";
-import type { OtherIncomeSection } from "@/server/contexts/report/domain/services/income-converter";
+import type { OtherIncomeSection } from "@/server/contexts/report/domain/models/income-transaction";
 
 describe("serializeOtherIncomeSection", () => {
   it("serializes section into XML with escaping", () => {

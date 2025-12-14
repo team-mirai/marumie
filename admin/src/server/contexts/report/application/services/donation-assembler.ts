@@ -7,8 +7,10 @@
 import "server-only";
 
 import type { IReportTransactionRepository } from "@/server/contexts/report/domain/repositories/report-transaction-repository.interface";
-import { convertToPersonalDonationSection } from "@/server/contexts/report/domain/services/donation-converter";
-import type { PersonalDonationSection } from "@/server/contexts/report/domain/services/donation-converter";
+import {
+  PersonalDonationSection,
+  type PersonalDonationSection as PersonalDonationSectionInterface,
+} from "@/server/contexts/report/domain/models/donation-transaction";
 
 // ============================================================
 // Types
@@ -20,7 +22,7 @@ export interface DonationAssemblerInput {
 }
 
 export interface DonationData {
-  personalDonations: PersonalDonationSection;
+  personalDonations: PersonalDonationSectionInterface;
 }
 
 // ============================================================
@@ -40,7 +42,7 @@ export class DonationAssembler {
       await this.repository.findPersonalDonationTransactions(filters);
 
     return {
-      personalDonations: convertToPersonalDonationSection(
+      personalDonations: PersonalDonationSection.fromTransactions(
         personalDonationTransactions,
       ),
     };

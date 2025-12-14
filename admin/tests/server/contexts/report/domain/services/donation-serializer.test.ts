@@ -1,5 +1,5 @@
 import { serializePersonalDonationSection } from "@/server/contexts/report/domain/services/donation-serializer";
-import type { PersonalDonationSection } from "@/server/contexts/report/domain/services/donation-converter";
+import type { PersonalDonationSection } from "@/server/contexts/report/domain/models/donation-transaction";
 
 describe("serializePersonalDonationSection", () => {
   it("serializes section into XML format", () => {

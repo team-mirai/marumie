@@ -8,10 +8,10 @@ import "server-only";
 
 import type { IReportTransactionRepository } from "@/server/contexts/report/domain/repositories/report-transaction-repository.interface";
 import {
-  convertToOfficeExpenseSection,
-  convertToSuppliesExpenseSection,
-  convertToUtilityExpenseSection,
-} from "@/server/contexts/report/domain/services/expense-converter";
+  OfficeExpenseSection,
+  SuppliesExpenseSection,
+  UtilityExpenseSection,
+} from "@/server/contexts/report/domain/models/expense-transaction";
 import type { ExpenseData } from "@/server/contexts/report/domain/models/report-data";
 
 // ============================================================
@@ -44,9 +44,11 @@ export class ExpenseAssembler {
       ]);
 
     return {
-      utilityExpenses: convertToUtilityExpenseSection(utilityTransactions),
-      suppliesExpenses: convertToSuppliesExpenseSection(suppliesTransactions),
-      officeExpenses: convertToOfficeExpenseSection(officeTransactions),
+      utilityExpenses:
+        UtilityExpenseSection.fromTransactions(utilityTransactions),
+      suppliesExpenses:
+        SuppliesExpenseSection.fromTransactions(suppliesTransactions),
+      officeExpenses: OfficeExpenseSection.fromTransactions(officeTransactions),
     };
   }
 }

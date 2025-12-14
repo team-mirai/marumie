@@ -3,7 +3,7 @@ import type {
   UtilityExpenseSection,
   SuppliesExpenseSection,
   OfficeExpenseSection,
-} from "@/server/contexts/report/domain/services/expense-converter";
+} from "@/server/contexts/report/domain/models/expense-transaction";
 
 describe("serializeExpenseSection", () => {
   it("serializes three KUBUN sections into XML format", () => {
