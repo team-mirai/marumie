@@ -44,6 +44,12 @@ describe("XmlExportUsecase", () => {
           underThresholdAmount: 0,
           rows: [],
         },
+        organizationExpenses: {
+          himoku: "",
+          totalAmount: 0,
+          underThresholdAmount: 0,
+          rows: [],
+        },
       }),
     } as unknown as jest.Mocked<ExpenseAssembler>;
     usecase = new XmlExportUsecase(
