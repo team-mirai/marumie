@@ -64,11 +64,16 @@ contexts/{コンテキスト名}/
 ├── application/
 │   └── usecases/    # loaderやactionから呼び出されるトップレベル関数
 ├── domain/
-│   ├── services/    # ドメインロジック
+│   ├── services/    # ドメインサービス（後述の例外ケース用）
 │   └── models/      # ドメインモデル
 └── infrastructure/
     └── repositories/  # データベースアクセス層
 ```
+
+### ドメインロジックの実装ルール
+
+- ドメインロジックは原則としてドメインモデルに実装する
+- ドメインサービスは複数エンティティをまたぐ場合や外部連携が必要な場合のみ使用
 
 ### import ルール
 
