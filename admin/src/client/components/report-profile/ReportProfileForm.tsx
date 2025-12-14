@@ -10,7 +10,7 @@ import { ContactPersonsSection } from "./ContactPersonsSection";
 import { OrganizationTypeSection } from "./OrganizationTypeSection";
 import { FundManagementSection } from "./FundManagementSection";
 import { DietMemberRelationSection } from "./DietMemberRelationSection";
-import type { OrganizationReportProfileFormData } from "@/schemas/organization-report-profile.schema";
+import type { OrganizationReportProfileFormData } from "@/server/contexts/report/presentation/schemas/organization-report-profile.schema";
 
 interface ReportProfileFormProps {
   politicalOrganizationId: string;

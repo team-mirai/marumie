@@ -1,7 +1,7 @@
 "use client";
 import "client-only";
 
-import type { OrganizationReportProfileFormData } from "@/schemas/organization-report-profile.schema";
+import type { OrganizationReportProfileFormData } from "@/server/contexts/report/presentation/schemas/organization-report-profile.schema";
 
 interface BasicInfoSectionProps {
   formData: OrganizationReportProfileFormData;
