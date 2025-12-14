@@ -111,7 +111,6 @@ export function serializeReportData(
 
   // SYUUSHI07_07: 寄附 (個人からの寄附)
   if (
-    reportData.donations.personalDonations &&
     PersonalDonationSection.shouldOutputSheet(
       reportData.donations.personalDonations,
     )

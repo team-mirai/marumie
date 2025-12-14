@@ -7,7 +7,9 @@ import type { ReportData } from "@/server/contexts/report/domain/models/report-d
 
 describe("serializeReportData", () => {
   const createEmptyReportData = (): ReportData => ({
-    donations: {},
+    donations: {
+      personalDonations: { totalAmount: 0, sonotaGk: 0, rows: [] },
+    },
     income: {
       businessIncome: { totalAmount: 0, rows: [] },
       loanIncome: { totalAmount: 0, rows: [] },

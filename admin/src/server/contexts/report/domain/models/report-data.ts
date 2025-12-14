@@ -24,7 +24,7 @@ import type { OrganizationReportProfile } from "@/server/contexts/report/domain/
  * 寄付データ (SYUUSHI07_07)
  */
 export interface DonationData {
-  personalDonations?: PersonalDonationSection; // KUBUN1: 個人からの寄附
+  personalDonations: PersonalDonationSection; // KUBUN1: 個人からの寄附
   // corporateDonations: CorporateDonationSection;  // KUBUN2: 法人その他の団体からの寄附
   // politicalDonations: PoliticalDonationSection;  // KUBUN3: 政治団体からの寄附
 }
