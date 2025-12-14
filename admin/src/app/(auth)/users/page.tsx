@@ -10,7 +10,14 @@ export default async function UsersPage() {
     redirect("/login");
   }
 
-  const users = await getAllUsers();
+  const rawUsers = await getAllUsers();
+  // クライアントに渡すのに必要最小限のフィールドのみに絞る（authId等を漏らさない）
+  const users = rawUsers.map((u) => ({
+    id: u.id,
+    email: u.email,
+    role: u.role,
+    createdAt: u.createdAt,
+  }));
 
   return (
     <div className="bg-primary-panel rounded-xl p-4">

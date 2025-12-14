@@ -7,19 +7,23 @@ export async function GET(request: Request) {
   const code = searchParams.get("code");
 
   if (code) {
-    const result = await exchangeCodeForSession(code);
+    try {
+      const result = await exchangeCodeForSession(code);
 
-    if (result.ok) {
-      // For invited users (email confirmed but no previous sign in), redirect to setup
-      if (result.isNewUser) {
-        return NextResponse.redirect(`${origin}/auth/setup`);
+      if (result.ok) {
+        // For invited users (email confirmed but no previous sign in), redirect to setup
+        if (result.isNewUser) {
+          return NextResponse.redirect(`${origin}/auth/setup`);
+        }
+
+        // Redirect to the admin panel after successful authentication
+        return NextResponse.redirect(`${origin}/`);
       }
 
-      // Redirect to the admin panel after successful authentication
-      return NextResponse.redirect(`${origin}/`);
+      console.error("Auth callback error:", result.error);
+    } catch (e) {
+      console.error("Auth callback exception:", e);
     }
-
-    console.error("Auth callback error:", result.error);
   }
 
   // If there was an error or no code, redirect to login

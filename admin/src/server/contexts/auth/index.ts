@@ -1,5 +1,7 @@
 import "server-only";
 
+import type { UserRole } from "@prisma/client";
+
 // ============================================================
 // 型定義
 // ============================================================
@@ -9,7 +11,7 @@ export interface AuthUser {
   id: string;
   authId: string;
   email: string;
-  role: import("@prisma/client").UserRole;
+  role: UserRole;
   createdAt: Date;
   updatedAt: Date;
 }

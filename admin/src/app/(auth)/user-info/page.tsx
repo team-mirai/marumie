@@ -9,6 +9,11 @@ export default async function UserInfoPage() {
     return <div className="card">ユーザー情報が見つかりません</div>;
   }
 
+  const createdAt =
+    user.createdAt instanceof Date
+      ? user.createdAt
+      : new Date(user.createdAt ?? 0);
+
   return (
     <div className="card">
       <h1>ユーザー情報</h1>
@@ -22,7 +27,7 @@ export default async function UserInfoPage() {
         <b>ロール:</b> {user.role}
       </p>
       <p>
-        <b>作成日:</b> {user.createdAt.toLocaleString("ja-JP")}
+        <b>作成日:</b> {createdAt.toLocaleString("ja-JP")}
       </p>
     </div>
   );
