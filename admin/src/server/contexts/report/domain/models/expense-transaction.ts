@@ -97,11 +97,9 @@ export interface OfficeExpenseSection {
 
 /**
  * SYUUSHI07_15 KUBUN1: 組織活動費の明細行
- * 政治活動費は費目が必要
+ * 仕様書によるとHIMOKUはSHEETレベルの項目であり、ROWレベルには含まれない
  */
-export interface PoliticalActivityExpenseRow extends ExpenseRow {
-  himoku: string; // 費目
-}
+export interface PoliticalActivityExpenseRow extends ExpenseRow {}
 
 /**
  * SYUUSHI07_15 KUBUN1: 組織活動費
@@ -210,14 +208,8 @@ export const OrganizationExpenseTransaction = {
   ...ExpenseTransactionBase,
 
   /**
-   * 費目を取得する
-   */
-  getHimoku: (tx: OrganizationExpenseTransaction): string => {
-    return sanitizeText(tx.label, 200);
-  },
-
-  /**
-   * 明細行に変換する（費目付き）
+   * 明細行に変換する
+   * 注: HIMOKUはSHEETレベルの項目であり、ROWには含めない（仕様書準拠）
    */
   toRow: (
     tx: OrganizationExpenseTransaction,
@@ -225,7 +217,6 @@ export const OrganizationExpenseTransaction = {
   ): PoliticalActivityExpenseRow => {
     return {
       ichirenNo: (index + 1).toString(),
-      himoku: OrganizationExpenseTransaction.getHimoku(tx),
       mokuteki: ExpenseTransactionBase.getMokuteki(tx),
       kingaku: ExpenseTransactionBase.resolveAmount(tx),
       dt: tx.transactionDate,
