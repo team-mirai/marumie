@@ -23,7 +23,7 @@ describe("serializeProfileSection", () => {
       profile.officeAddress = "東京都千代田区永田町1-1-1";
       profile.officeAddressBuilding = "国会議事堂";
 
-      const xml = serializeProfileSection(profile, 2024).end();
+      const xml = serializeProfileSection(profile).end();
 
       expect(xml).toContain("<HOUKOKU_NEN>2024</HOUKOKU_NEN>");
       expect(xml).toContain("<DANTAI_NM>テスト政治団体</DANTAI_NM>");
@@ -35,7 +35,7 @@ describe("serializeProfileSection", () => {
     it("空の基本情報でも空タグを出力する", () => {
       const profile = createEmptyProfile();
 
-      const xml = serializeProfileSection(profile, 2024).end();
+      const xml = serializeProfileSection(profile).end();
 
       expect(xml).toContain("<DANTAI_NM></DANTAI_NM>");
       expect(xml).toContain("<DANTAI_KANA></DANTAI_KANA>");
@@ -50,7 +50,7 @@ describe("serializeProfileSection", () => {
         accountant: { lastName: "鈴木", firstName: "花子" },
       };
 
-      const xml = serializeProfileSection(profile, 2024).end();
+      const xml = serializeProfileSection(profile).end();
 
       expect(xml).toContain("<DAI_NM1>山田</DAI_NM1>");
       expect(xml).toContain("<DAI_NM2>太郎</DAI_NM2>");
@@ -70,7 +70,7 @@ describe("serializeProfileSection", () => {
         ],
       };
 
-      const xml = serializeProfileSection(profile, 2024).end();
+      const xml = serializeProfileSection(profile).end();
 
       // 1人目
       expect(xml).toContain("<TANTOU1_NM1>田中</TANTOU1_NM1>");
@@ -89,7 +89,7 @@ describe("serializeProfileSection", () => {
     it("事務担当者が未登録でも3名分の空タグを出力する", () => {
       const profile = createEmptyProfile();
 
-      const xml = serializeProfileSection(profile, 2024).end();
+      const xml = serializeProfileSection(profile).end();
 
       expect(xml).toContain("<TANTOU1_NM1></TANTOU1_NM1>");
       expect(xml).toContain("<TANTOU2_NM1></TANTOU2_NM1>");
@@ -105,7 +105,7 @@ describe("serializeProfileSection", () => {
         activityArea: "1",
       };
 
-      const xml = serializeProfileSection(profile, 2024).end();
+      const xml = serializeProfileSection(profile).end();
 
       expect(xml).toContain("<DANTAI_KBN>01</DANTAI_KBN>");
       expect(xml).toContain("<KATU_KUKI>1</KATU_KUKI>");
@@ -116,7 +116,7 @@ describe("serializeProfileSection", () => {
     it("資金管理団体がない場合、SIKIN_UMU=0を出力する", () => {
       const profile = createEmptyProfile();
 
-      const xml = serializeProfileSection(profile, 2024).end();
+      const xml = serializeProfileSection(profile).end();
 
       expect(xml).toContain("<SIKIN_UMU>0</SIKIN_UMU>");
       expect(xml).toContain("<SIKIN_KIKAN1/>");
@@ -135,7 +135,7 @@ describe("serializeProfileSection", () => {
         },
       };
 
-      const xml = serializeProfileSection(profile, 2024).end();
+      const xml = serializeProfileSection(profile).end();
 
       expect(xml).toContain("<SIKIN_UMU>1</SIKIN_UMU>");
       expect(xml).toContain("<KOSYOKU_NM>衆議院議員</KOSYOKU_NM>");
@@ -161,7 +161,7 @@ describe("serializeProfileSection", () => {
         },
       };
 
-      const xml = serializeProfileSection(profile, 2024).end();
+      const xml = serializeProfileSection(profile).end();
 
       // 1件目
       expect(xml).toContain("<SIKIN_KIKAN1>R5/4/1</SIKIN_KIKAN1>");
@@ -177,7 +177,7 @@ describe("serializeProfileSection", () => {
     it("国会議員関係がない場合、GIIN_DANTAI_KBN=0を出力する", () => {
       const profile = createEmptyProfile();
 
-      const xml = serializeProfileSection(profile, 2024).end();
+      const xml = serializeProfileSection(profile).end();
 
       expect(xml).toContain("<GIIN_DANTAI_KBN>0</GIIN_DANTAI_KBN>");
       expect(xml).toContain("<GIIN1_KOSYOKU_NM_1/>");
@@ -210,7 +210,7 @@ describe("serializeProfileSection", () => {
         },
       };
 
-      const xml = serializeProfileSection(profile, 2024).end();
+      const xml = serializeProfileSection(profile).end();
 
       expect(xml).toContain("<GIIN_DANTAI_KBN>1</GIIN_DANTAI_KBN>");
       // 1人目
@@ -246,7 +246,7 @@ describe("serializeProfileSection", () => {
         },
       };
 
-      const xml = serializeProfileSection(profile, 2024).end();
+      const xml = serializeProfileSection(profile).end();
 
       // 1件目
       expect(xml).toContain("<GIIN_KIKAN1>R5/4/1</GIIN_KIKAN1>");
@@ -265,7 +265,7 @@ describe("serializeProfileSection", () => {
         specificPartyDate: "R6/6/15",
       };
 
-      const xml = serializeProfileSection(profile, 2024).end();
+      const xml = serializeProfileSection(profile).end();
 
       expect(xml).toContain("<KAISAI_DT>R6/6/15</KAISAI_DT>");
     });

@@ -6,15 +6,39 @@ import {
 import type { DonationAssembler } from "@/server/contexts/report/application/services/donation-assembler";
 import type { ExpenseAssembler } from "@/server/contexts/report/application/services/expense-assembler";
 import type { IncomeAssembler } from "@/server/contexts/report/application/services/income-assembler";
+import type { IOrganizationReportProfileRepository } from "@/server/contexts/report/domain/repositories/organization-report-profile-repository.interface";
 import type { IncomeData } from "@/server/contexts/report/domain/models/report-data";
+import type { OrganizationReportProfile } from "@/server/contexts/report/domain/models/organization-report-profile";
 
 describe("XmlExportUsecase", () => {
   let usecase: XmlExportUsecase;
+  let mockProfileRepository: jest.Mocked<IOrganizationReportProfileRepository>;
   let mockDonationAssembler: jest.Mocked<DonationAssembler>;
   let mockIncomeAssembler: jest.Mocked<IncomeAssembler>;
   let mockExpenseAssembler: jest.Mocked<ExpenseAssembler>;
 
+  const createMockProfile = (
+    overrides: Partial<OrganizationReportProfile> = {},
+  ): OrganizationReportProfile => ({
+    id: "1",
+    politicalOrganizationId: "123",
+    financialYear: 2024,
+    officialName: "テスト政治団体",
+    officialNameKana: "テストセイジダンタイ",
+    officeAddress: "東京都千代田区",
+    officeAddressBuilding: null,
+    details: {},
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...overrides,
+  });
+
   beforeEach(() => {
+    mockProfileRepository = {
+      findByOrganizationIdAndYear: jest.fn().mockResolvedValue(createMockProfile()),
+      create: jest.fn(),
+      update: jest.fn(),
+    } as jest.Mocked<IOrganizationReportProfileRepository>;
     mockDonationAssembler = {
       assemble: jest.fn().mockResolvedValue({
         personalDonations: {
@@ -53,6 +77,7 @@ describe("XmlExportUsecase", () => {
       }),
     } as unknown as jest.Mocked<ExpenseAssembler>;
     usecase = new XmlExportUsecase(
+      mockProfileRepository,
       mockDonationAssembler,
       mockIncomeAssembler,
       mockExpenseAssembler,
@@ -153,9 +178,10 @@ describe("XmlExportUsecase", () => {
       expect(result.xml).toContain("<SYUUSHI_UMU_FLG>");
       expect(result.xml).toContain("<SYUUSHI_UMU>");
 
-      // SYUUSHI07_06 is at index 5 (0-based), so the flag string should have a 1 at position 5
-      // Expected: "000001" + "0".repeat(45) = 51 chars total
-      const expectedFlagStart = "000001";
+      // SYUUSHI07_01 (profile) is at index 0 and always output
+      // SYUUSHI07_06 is at index 5 (0-based), so the flag string should have a 1 at positions 0 and 5
+      // Expected: "100001" + "0".repeat(45) = 51 chars total
+      const expectedFlagStart = "100001";
       expect(result.xml).toContain(expectedFlagStart);
     });
 

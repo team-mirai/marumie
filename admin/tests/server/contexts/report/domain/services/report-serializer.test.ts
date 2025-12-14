@@ -7,7 +7,21 @@ import type { ReportData } from "@/server/contexts/report/domain/models/report-d
 
 describe("serializeReportData", () => {
   const createEmptyReportData = (): ReportData => ({
-    donations: {},
+    profile: {
+      id: "1",
+      politicalOrganizationId: "org-1",
+      financialYear: 2024,
+      officialName: "テスト政治団体",
+      officialNameKana: "テストセイジダンタイ",
+      officeAddress: "東京都千代田区",
+      officeAddressBuilding: null,
+      details: {},
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
+    donations: {
+      personalDonations: { totalAmount: 0, sonotaGk: 0, rows: [] },
+    },
     income: {
       businessIncome: { totalAmount: 0, rows: [] },
       loanIncome: { totalAmount: 0, rows: [] },
@@ -39,16 +53,16 @@ describe("serializeReportData", () => {
     expect(xml).toContain("<APP>収支報告書作成ソフト (収支報告書作成ソフト)</APP>");
   });
 
-  it("generates SYUUSHI_FLG section with all zeros when no data", () => {
+  it("generates SYUUSHI_FLG section with profile flag set", () => {
     const reportData = createEmptyReportData();
 
     const xml = serializeReportData(reportData);
 
     expect(xml).toContain("<SYUUSHI_FLG>");
     expect(xml).toContain("<SYUUSHI_UMU_FLG>");
-    // All zeros because no sections have data
-    const expectedFlags = "0".repeat(FLAG_STRING_LENGTH);
-    expect(xml).toContain(`<SYUUSHI_UMU>${expectedFlags}</SYUUSHI_UMU>`);
+    // First flag is set for profile (SYUUSHI07_01)
+    expect(xml).toContain("<SYUUSHI07_01>");
+    expect(xml).toContain("<HOUKOKU_NEN>2024</HOUKOKU_NEN>");
   });
 
   it("sets correct flag when personalDonations has data", () => {

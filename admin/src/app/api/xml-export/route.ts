@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import * as iconv from "iconv-lite";
 import { prisma } from "@/server/contexts/shared/infrastructure/prisma";
 import { PrismaReportTransactionRepository } from "@/server/contexts/report/infrastructure/repositories/prisma-report-transaction.repository";
+import { PrismaOrganizationReportProfileRepository } from "@/server/contexts/report/infrastructure/repositories/prisma-organization-report-profile.repository";
 import { XmlExportUsecase } from "@/server/contexts/report/application/usecases/xml-export-usecase";
 import { DonationAssembler } from "@/server/contexts/report/application/services/donation-assembler";
 import { ExpenseAssembler } from "@/server/contexts/report/application/services/expense-assembler";
@@ -48,11 +49,15 @@ export async function GET(request: Request) {
   }
 
   try {
-    const repository = new PrismaReportTransactionRepository(prisma);
-    const donationAssembler = new DonationAssembler(repository);
-    const incomeAssembler = new IncomeAssembler(repository);
-    const expenseAssembler = new ExpenseAssembler(repository);
+    const transactionRepository = new PrismaReportTransactionRepository(prisma);
+    const profileRepository = new PrismaOrganizationReportProfileRepository(
+      prisma,
+    );
+    const donationAssembler = new DonationAssembler(transactionRepository);
+    const incomeAssembler = new IncomeAssembler(transactionRepository);
+    const expenseAssembler = new ExpenseAssembler(transactionRepository);
     const usecase = new XmlExportUsecase(
+      profileRepository,
       donationAssembler,
       incomeAssembler,
       expenseAssembler,

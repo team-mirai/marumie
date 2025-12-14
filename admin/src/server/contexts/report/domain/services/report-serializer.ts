@@ -7,6 +7,19 @@
 
 import { create } from "xmlbuilder2";
 import type { XMLBuilder } from "xmlbuilder2/lib/interfaces";
+import { PersonalDonationSection } from "@/server/contexts/report/domain/models/donation-transaction";
+import {
+  OfficeExpenseSection,
+  OrganizationExpenseSection,
+  SuppliesExpenseSection,
+  UtilityExpenseSection,
+} from "@/server/contexts/report/domain/models/expense-transaction";
+import {
+  BusinessIncomeSection,
+  GrantIncomeSection,
+  LoanIncomeSection,
+  OtherIncomeSection,
+} from "@/server/contexts/report/domain/models/income-transaction";
 import type { ReportData } from "@/server/contexts/report/domain/models/report-data";
 import { serializePersonalDonationSection } from "@/server/contexts/report/domain/services/donation-serializer";
 import {
@@ -83,24 +96,20 @@ export type XmlSectionType = (typeof KNOWN_FORM_IDS)[number];
 export function serializeReportData(
   reportData: ReportData,
   head: Partial<XmlHead> = {},
-  financialYear?: number,
 ): string {
   const sections: { formId: XmlSectionType; xml: XMLBuilder }[] = [];
 
   // SYUUSHI07_01: 団体プロフィール
-  if (reportData.profile) {
-    const reportYear = financialYear ?? reportData.profile.financialYear;
-    sections.push({
-      formId: "SYUUSHI07_01",
-      xml: serializeProfileSection(reportData.profile, reportYear),
-    });
-  }
+  sections.push({
+    formId: "SYUUSHI07_01",
+    xml: serializeProfileSection(reportData.profile),
+  });
 
   // SYUUSHI07_07: 寄附 (個人からの寄附)
   if (
-    reportData.donations.personalDonations &&
-    (reportData.donations.personalDonations.rows.length > 0 ||
-      reportData.donations.personalDonations.totalAmount > 0)
+    PersonalDonationSection.shouldOutputSheet(
+      reportData.donations.personalDonations,
+    )
   ) {
     sections.push({
       formId: "SYUUSHI07_07",
@@ -112,8 +121,7 @@ export function serializeReportData(
 
   // SYUUSHI07_03: 事業による収入
   if (
-    reportData.income.businessIncome.rows.length > 0 ||
-    reportData.income.businessIncome.totalAmount > 0
+    BusinessIncomeSection.shouldOutputSheet(reportData.income.businessIncome)
   ) {
     sections.push({
       formId: "SYUUSHI07_03",
@@ -122,10 +130,7 @@ export function serializeReportData(
   }
 
   // SYUUSHI07_04: 借入金
-  if (
-    reportData.income.loanIncome.rows.length > 0 ||
-    reportData.income.loanIncome.totalAmount > 0
-  ) {
+  if (LoanIncomeSection.shouldOutputSheet(reportData.income.loanIncome)) {
     sections.push({
       formId: "SYUUSHI07_04",
       xml: serializeLoanIncomeSection(reportData.income.loanIncome),
@@ -133,10 +138,7 @@ export function serializeReportData(
   }
 
   // SYUUSHI07_05: 本部又は支部から供与された交付金
-  if (
-    reportData.income.grantIncome.rows.length > 0 ||
-    reportData.income.grantIncome.totalAmount > 0
-  ) {
+  if (GrantIncomeSection.shouldOutputSheet(reportData.income.grantIncome)) {
     sections.push({
       formId: "SYUUSHI07_05",
       xml: serializeGrantIncomeSection(reportData.income.grantIncome),
@@ -144,10 +146,7 @@ export function serializeReportData(
   }
 
   // SYUUSHI07_06: その他の収入
-  if (
-    reportData.income.otherIncome.rows.length > 0 ||
-    reportData.income.otherIncome.totalAmount > 0
-  ) {
+  if (OtherIncomeSection.shouldOutputSheet(reportData.income.otherIncome)) {
     sections.push({
       formId: "SYUUSHI07_06",
       xml: serializeOtherIncomeSection(reportData.income.otherIncome),
@@ -155,15 +154,16 @@ export function serializeReportData(
   }
 
   // SYUUSHI07_14: 経常経費の支出（光熱水費・備品消耗品費・事務所費）
-  const hasExpenseData =
-    reportData.expenses.utilityExpenses.rows.length > 0 ||
-    reportData.expenses.utilityExpenses.totalAmount > 0 ||
-    reportData.expenses.suppliesExpenses.rows.length > 0 ||
-    reportData.expenses.suppliesExpenses.totalAmount > 0 ||
-    reportData.expenses.officeExpenses.rows.length > 0 ||
-    reportData.expenses.officeExpenses.totalAmount > 0;
+  const shouldOutputExpenseSheet =
+    UtilityExpenseSection.shouldOutputSheet(
+      reportData.expenses.utilityExpenses,
+    ) ||
+    SuppliesExpenseSection.shouldOutputSheet(
+      reportData.expenses.suppliesExpenses,
+    ) ||
+    OfficeExpenseSection.shouldOutputSheet(reportData.expenses.officeExpenses);
 
-  if (hasExpenseData) {
+  if (shouldOutputExpenseSheet) {
     sections.push({
       formId: "SYUUSHI07_14",
       xml: serializeExpenseSection(
@@ -175,11 +175,11 @@ export function serializeReportData(
   }
 
   // SYUUSHI07_15: 政治活動費の支出（組織活動費など）
-  const hasOrganizationExpenseData =
-    reportData.expenses.organizationExpenses.rows.length > 0 ||
-    reportData.expenses.organizationExpenses.totalAmount > 0;
-
-  if (hasOrganizationExpenseData) {
+  if (
+    OrganizationExpenseSection.shouldOutputSheet(
+      reportData.expenses.organizationExpenses,
+    )
+  ) {
     sections.push({
       formId: "SYUUSHI07_15",
       xml: serializeOrganizationExpenseSection(

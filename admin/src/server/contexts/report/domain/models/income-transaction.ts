@@ -333,6 +333,13 @@ export const BusinessIncomeSection = {
 
     return { totalAmount, rows };
   },
+
+  /**
+   * XMLのSHEET要素を出力すべきかを判定する
+   */
+  shouldOutputSheet: (section: BusinessIncomeSection): boolean => {
+    return section.rows.length > 0 || section.totalAmount > 0;
+  },
 } as const;
 
 /**
@@ -356,6 +363,13 @@ export const LoanIncomeSection = {
 
     return { totalAmount, rows };
   },
+
+  /**
+   * XMLのSHEET要素を出力すべきかを判定する
+   */
+  shouldOutputSheet: (section: LoanIncomeSection): boolean => {
+    return section.rows.length > 0 || section.totalAmount > 0;
+  },
 } as const;
 
 /**
@@ -378,6 +392,13 @@ export const GrantIncomeSection = {
     );
 
     return { totalAmount, rows };
+  },
+
+  /**
+   * XMLのSHEET要素を出力すべきかを判定する
+   */
+  shouldOutputSheet: (section: GrantIncomeSection): boolean => {
+    return section.rows.length > 0 || section.totalAmount > 0;
   },
 } as const;
 
@@ -417,5 +438,12 @@ export const OtherIncomeSection = {
     );
 
     return { totalAmount, underThresholdAmount, rows };
+  },
+
+  /**
+   * XMLのSHEET要素を出力すべきかを判定する
+   */
+  shouldOutputSheet: (section: OtherIncomeSection): boolean => {
+    return section.rows.length > 0 || section.totalAmount > 0;
   },
 } as const;

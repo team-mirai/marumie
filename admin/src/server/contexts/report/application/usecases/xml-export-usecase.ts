@@ -10,6 +10,7 @@ import type { ReportData } from "@/server/contexts/report/domain/models/report-d
 import type { DonationAssembler } from "@/server/contexts/report/application/services/donation-assembler";
 import type { ExpenseAssembler } from "@/server/contexts/report/application/services/expense-assembler";
 import type { IncomeAssembler } from "@/server/contexts/report/application/services/income-assembler";
+import type { IOrganizationReportProfileRepository } from "@/server/contexts/report/domain/repositories/organization-report-profile-repository.interface";
 
 // ============================================================
 // Types
@@ -36,6 +37,7 @@ export interface XmlExportResult {
 
 export class XmlExportUsecase {
   constructor(
+    private profileRepository: IOrganizationReportProfileRepository,
     private donationAssembler: DonationAssembler,
     private incomeAssembler: IncomeAssembler,
     private expenseAssembler: ExpenseAssembler,
@@ -72,13 +74,24 @@ export class XmlExportUsecase {
       financialYear: input.financialYear,
     };
 
-    const [donations, income, expenses] = await Promise.all([
+    const [profile, donations, income, expenses] = await Promise.all([
+      this.profileRepository.findByOrganizationIdAndYear(
+        input.politicalOrganizationId,
+        input.financialYear,
+      ),
       this.donationAssembler.assemble(assemblerInput),
       this.incomeAssembler.assemble(assemblerInput),
       this.expenseAssembler.assemble(assemblerInput),
     ]);
 
+    if (!profile) {
+      throw new Error(
+        `Profile not found for organization ${input.politicalOrganizationId} and year ${input.financialYear}`,
+      );
+    }
+
     return {
+      profile,
       donations,
       income,
       expenses,
