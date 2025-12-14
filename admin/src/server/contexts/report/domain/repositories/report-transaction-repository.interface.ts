@@ -1,6 +1,7 @@
 import type { PersonalDonationTransaction } from "@/server/contexts/report/domain/models/donation-transaction";
 import type {
   OfficeExpenseTransaction,
+  OrganizationExpenseTransaction,
   SuppliesExpenseTransaction,
   UtilityExpenseTransaction,
 } from "@/server/contexts/report/domain/models/expense-transaction";
@@ -73,6 +74,13 @@ export interface IReportTransactionRepository {
   findOfficeExpenseTransactions(
     filters: TransactionFilters,
   ): Promise<OfficeExpenseTransaction[]>;
+
+  /**
+   * SYUUSHI07_15 KUBUN1: 組織活動費のトランザクションを取得
+   */
+  findOrganizationExpenseTransactions(
+    filters: TransactionFilters,
+  ): Promise<OrganizationExpenseTransaction[]>;
 }
 
 // Re-export for consumers
@@ -85,4 +93,5 @@ export type {
   UtilityExpenseTransaction,
   SuppliesExpenseTransaction,
   OfficeExpenseTransaction,
+  OrganizationExpenseTransaction,
 };

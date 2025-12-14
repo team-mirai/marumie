@@ -7,6 +7,7 @@ import type {
   IReportTransactionRepository,
   LoanIncomeTransaction,
   OfficeExpenseTransaction,
+  OrganizationExpenseTransaction,
   OtherIncomeTransaction,
   PersonalDonationTransaction,
   SuppliesExpenseTransaction,
@@ -33,6 +34,8 @@ const CATEGORY_KEYS = {
   EQUIPMENT_SUPPLIES: PL_CATEGORIES["備品・消耗品費"].key,
   // biome-ignore lint/complexity/useLiteralKeys: 日本語キー
   OFFICE_EXPENSES: PL_CATEGORIES["事務所費"].key,
+  // biome-ignore lint/complexity/useLiteralKeys: 日本語キー
+  ORGANIZATIONAL_ACTIVITIES: PL_CATEGORIES["組織活動費"].key,
 } as const;
 
 export class PrismaReportTransactionRepository
@@ -325,6 +328,47 @@ export class PrismaReportTransactionRepository
         financialYear: filters.financialYear,
         transactionType: "expense",
         categoryKey: CATEGORY_KEYS.OFFICE_EXPENSES,
+      },
+      orderBy: [{ transactionDate: "asc" }, { id: "asc" }],
+      select: {
+        transactionNo: true,
+        friendlyCategory: true,
+        label: true,
+        description: true,
+        memo: true,
+        debitAmount: true,
+        creditAmount: true,
+        transactionDate: true,
+      },
+    });
+
+    return transactions.map((t) => ({
+      transactionNo: t.transactionNo,
+      friendlyCategory: t.friendlyCategory,
+      label: t.label,
+      description: t.description,
+      memo: t.memo,
+      debitAmount: Number(t.debitAmount),
+      creditAmount: Number(t.creditAmount),
+      transactionDate: t.transactionDate,
+      // TODO: CounterPartテーブル実装後に実際の値を取得する
+      counterpartName: "（仮）取引先名称",
+      counterpartAddress: "（仮）東京都千代田区永田町1-1-1",
+    }));
+  }
+
+  /**
+   * SYUUSHI07_15 KUBUN1: 組織活動費のトランザクションを取得
+   */
+  async findOrganizationExpenseTransactions(
+    filters: TransactionFilters,
+  ): Promise<OrganizationExpenseTransaction[]> {
+    const transactions = await this.prisma.transaction.findMany({
+      where: {
+        politicalOrganizationId: BigInt(filters.politicalOrganizationId),
+        financialYear: filters.financialYear,
+        transactionType: "expense",
+        categoryKey: CATEGORY_KEYS.ORGANIZATIONAL_ACTIVITIES,
       },
       orderBy: [{ transactionDate: "asc" }, { id: "asc" }],
       select: {

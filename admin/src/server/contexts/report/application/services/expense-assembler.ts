@@ -9,6 +9,7 @@ import "server-only";
 import type { IReportTransactionRepository } from "@/server/contexts/report/domain/repositories/report-transaction-repository.interface";
 import {
   OfficeExpenseSection,
+  OrganizationExpenseSection,
   SuppliesExpenseSection,
   UtilityExpenseSection,
 } from "@/server/contexts/report/domain/models/expense-transaction";
@@ -36,12 +37,17 @@ export class ExpenseAssembler {
       financialYear: input.financialYear,
     };
 
-    const [utilityTransactions, suppliesTransactions, officeTransactions] =
-      await Promise.all([
-        this.repository.findUtilityExpenseTransactions(filters),
-        this.repository.findSuppliesExpenseTransactions(filters),
-        this.repository.findOfficeExpenseTransactions(filters),
-      ]);
+    const [
+      utilityTransactions,
+      suppliesTransactions,
+      officeTransactions,
+      organizationTransactions,
+    ] = await Promise.all([
+      this.repository.findUtilityExpenseTransactions(filters),
+      this.repository.findSuppliesExpenseTransactions(filters),
+      this.repository.findOfficeExpenseTransactions(filters),
+      this.repository.findOrganizationExpenseTransactions(filters),
+    ]);
 
     return {
       utilityExpenses:
@@ -49,6 +55,9 @@ export class ExpenseAssembler {
       suppliesExpenses:
         SuppliesExpenseSection.fromTransactions(suppliesTransactions),
       officeExpenses: OfficeExpenseSection.fromTransactions(officeTransactions),
+      organizationExpenses: OrganizationExpenseSection.fromTransactions(
+        organizationTransactions,
+      ),
     };
   }
 }
