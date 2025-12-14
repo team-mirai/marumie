@@ -12,6 +12,11 @@ import type {
   SuppliesExpenseSection,
   UtilityExpenseSection,
 } from "@/server/contexts/report/domain/models/expense-transaction";
+import {
+  OfficeExpenseSection as OfficeExpenseSectionModel,
+  SuppliesExpenseSection as SuppliesExpenseSectionModel,
+  UtilityExpenseSection as UtilityExpenseSectionModel,
+} from "@/server/contexts/report/domain/models/expense-transaction";
 import type {
   BusinessIncomeSection,
   GrantIncomeSection,
@@ -57,6 +62,23 @@ export interface ExpenseData {
   // donationExpenses: DonationExpenseSection;       // SYUUSHI07_15 KUBUN8: 寄附・交付金
   // otherExpenses: OtherExpenseSection;             // SYUUSHI07_15 KUBUN9: その他の経費
 }
+
+/**
+ * ExpenseData のドメインロジック
+ */
+export const ExpenseData = {
+  /**
+   * 経常経費シート (SYUUSHI07_14) を出力すべきかどうかを判定
+   * 光熱水費・備品消耗品費・事務所費のいずれかにデータがあれば出力
+   */
+  shouldOutputRegularExpenseSheet(data: ExpenseData): boolean {
+    return (
+      UtilityExpenseSectionModel.shouldOutputSheet(data.utilityExpenses) ||
+      SuppliesExpenseSectionModel.shouldOutputSheet(data.suppliesExpenses) ||
+      OfficeExpenseSectionModel.shouldOutputSheet(data.officeExpenses)
+    );
+  },
+};
 
 /**
  * ReportData holds all section data for generating the full XML report.
