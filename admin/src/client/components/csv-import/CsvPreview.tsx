@@ -2,9 +2,9 @@
 import "client-only";
 
 import { useEffect, useRef, useState } from "react";
-import type { PreviewMfCsvResult } from "@/server/usecases/preview-mf-csv-usecase";
-import type { PreviewTransaction } from "@/server/lib/mf-record-converter";
-import type { PreviewCsvRequest } from "@/server/actions/preview-csv";
+import type { PreviewMfCsvResult } from "@/server/contexts/data-import/application/usecases/preview-mf-csv-usecase";
+import type { PreviewTransaction } from "@/server/contexts/data-import/domain/models/preview-transaction";
+import type { PreviewCsvRequest } from "@/server/contexts/data-import/presentation/actions/preview-csv";
 import TransactionRow from "./TransactionRow";
 import { ClientPagination } from "@/client/components/ui/ClientPagination";
 import StatisticsTable from "./StatisticsTable";

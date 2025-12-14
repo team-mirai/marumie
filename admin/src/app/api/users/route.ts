@@ -1,9 +1,6 @@
 import "server-only";
 import { NextResponse } from "next/server";
-import { requireRole } from "@/server/auth/roles";
-import { prisma } from "@/server/lib/prisma";
-import { PrismaUserRepository } from "@/server/repositories/prisma-user.repository";
-const userRepository = new PrismaUserRepository(prisma);
+import { requireRole, getAllUsers } from "@/server/contexts/auth";
 
 export async function GET() {
   try {
@@ -13,7 +10,7 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const users = await userRepository.findAll();
+    const users = await getAllUsers();
     return NextResponse.json(users);
   } catch (error) {
     console.error("Error fetching users:", error);

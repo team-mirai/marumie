@@ -5,12 +5,12 @@ import { useId, useState, useEffect } from "react";
 import type { PoliticalOrganization } from "@/shared/models/political-organization";
 import { Selector } from "@/client/components/ui";
 import CsvPreview from "@/client/components/csv-import/CsvPreview";
-import type { PreviewMfCsvResult } from "@/server/usecases/preview-mf-csv-usecase";
+import type { PreviewMfCsvResult } from "@/server/contexts/data-import/application/usecases/preview-mf-csv-usecase";
 import type {
   UploadCsvRequest,
   UploadCsvResponse,
-} from "@/server/actions/upload-csv";
-import type { PreviewCsvRequest } from "@/server/actions/preview-csv";
+} from "@/server/contexts/data-import/presentation/actions/upload-csv";
+import type { PreviewCsvRequest } from "@/server/contexts/data-import/presentation/actions/preview-csv";
 
 interface CsvUploadClientProps {
   organizations: PoliticalOrganization[];

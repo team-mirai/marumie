@@ -1,58 +1,39 @@
 import "server-only";
 import { NextResponse } from "next/server";
-import { requireRole } from "@/server/auth/roles";
-import { createAdminClient } from "@/server/auth/admin";
+import { requireRole, inviteUser } from "@/server/contexts/auth";
 
 export async function POST(request: Request) {
   try {
-    // Check if user has admin role
     const hasAccess = await requireRole("admin");
     if (!hasAccess) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const { email } = await request.json();
+    const result = await inviteUser(email);
 
-    if (!email || typeof email !== "string") {
-      return NextResponse.json({ error: "Email is required" }, { status: 400 });
-    }
-
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
+    if (!result.ok) {
+      // バリデーションエラーのみクライアントに返し、それ以外は内部エラーとして隠す
+      const isValidationError =
+        result.error === "Email is required" ||
+        result.error === "Invalid email format";
+      if (isValidationError) {
+        return NextResponse.json({ error: result.error }, { status: 400 });
+      }
+      console.error("Invite user failed:", result.error);
       return NextResponse.json(
-        { error: "Invalid email format" },
-        { status: 400 },
-      );
-    }
-
-    const supabase = createAdminClient();
-
-    // Send invitation using Supabase Admin API
-    const { data, error } = await supabase.auth.admin.inviteUserByEmail(email, {
-      redirectTo: `${process.env.SITE_URL || "http://localhost:3001"}/auth/callback`,
-    });
-
-    if (error) {
-      console.error("Supabase invitation error:", error);
-      return NextResponse.json(
-        {
-          error: error.message || "Failed to send invitation",
-        },
-        { status: 400 },
+        { error: "Internal server error" },
+        { status: 500 },
       );
     }
 
     return NextResponse.json({
       message: "Invitation sent successfully",
-      user: data.user,
     });
   } catch (error) {
     console.error("Error sending invitation:", error);
     return NextResponse.json(
-      {
-        error: "Internal server error",
-      },
+      { error: "Internal server error" },
       { status: 500 },
     );
   }

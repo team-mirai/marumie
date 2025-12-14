@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { clearWebappCacheAction } from "@/server/actions/clear-webapp-cache";
+import { clearWebappCacheAction } from "@/server/contexts/shared/presentation/actions/clear-webapp-cache";
 
 export function ClearWebappCacheButton() {
   const [clearing, setClearing] = useState(false);

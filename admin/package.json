@@ -19,8 +19,9 @@
     "@vercel/speed-insights": "^1.2.0",
     "iconv-lite": "^0.6.3",
     "next": "15.4.8",
-    "react": "19.1.0",
-    "react-dom": "19.1.0"
+    "react": "19.1.2",
+    "react-dom": "19.1.2",
+    "xmlbuilder2": "^4.0.3"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.12",

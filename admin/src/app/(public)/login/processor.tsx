@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { completeInviteSession } from "@/server/auth/login";
+import { completeInviteSession } from "@/server/contexts/auth/application/login";
 
 export default function InviteProcessor() {
   const [processing, setProcessing] = useState(false);

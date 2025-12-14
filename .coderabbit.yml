@@ -1,53 +1,36 @@
-version: 1
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
 
-auto_review:
-  enabled: true
-  drafts: true 
-  request_changes_workflow: auto
-  request_review_on_new_commits: true
-  max_total_comments: 30
-  max_review_duration_minutes: 15
+language: ja-JP
+
+reviews:
+  request_changes_workflow: true
+  high_level_summary: true
+  poem: false
+  review_status: true
+  collapse_walkthrough: false
   path_filters:
-    include:
-      - "webapp/**"
-      - "admin/**"
-      - "shared/**"
-      - "prisma/**"
-      - "supabase/**"
-      - "docs/**"
-    exclude:
-      - "**/*.md"
-      - "**/*.mdx"
-      - "**/*.svg"
-      - "**/*.png"
-      - "**/*.jpg"
-      - "**/*.jpeg"
-      - "**/*.gif"
-      - "**/*.lock"
-      - "**/pnpm-lock.yaml"
-      - "**/yarn.lock"
-      - "**/package-lock.json"
-      - "**/dist/**"
-      - "**/.next/**"
-      - "**/coverage/**"
-      - "**/*.snap"
-  ignore_labels:
-    - "skip-ai-review"
-    - "no-bots"
-    - "dependencies"
-  ignore_authors:
-    - "dependabot"
-    - "renovate"
-  languages:
-    - typescript
-    - javascript
-    - sql
-  summary:
+    - "webapp/**"
+    - "admin/**"
+    - "shared/**"
+    - "prisma/**"
+    - "supabase/**"
+    - "docs/**"
+    - "!**/*.md"
+    - "!**/*.mdx"
+    - "!**/*.svg"
+    - "!**/*.png"
+    - "!**/*.jpg"
+    - "!**/*.jpeg"
+    - "!**/*.gif"
+    - "!**/*.lock"
+    - "!**/pnpm-lock.yaml"
+    - "!**/yarn.lock"
+    - "!**/package-lock.json"
+    - "!**/dist/**"
+    - "!**/.next/**"
+    - "!**/coverage/**"
+    - "!**/*.snap"
+  auto_review:
     enabled: true
-    mode: always
-
-qa_assistant:
-  enabled: false
-
-labeler:
-  enabled: false
+    drafts: true
+  labeling_instructions: []

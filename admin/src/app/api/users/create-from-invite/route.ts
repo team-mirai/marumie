@@ -1,8 +1,6 @@
 import "server-only";
 import { NextResponse } from "next/server";
-import { prisma } from "@/server/lib/prisma";
-import { PrismaUserRepository } from "@/server/repositories/prisma-user.repository";
-const userRepository = new PrismaUserRepository(prisma);
+import { getUserByAuthId, createUser } from "@/server/contexts/auth";
 
 export async function POST(request: Request) {
   try {
@@ -16,7 +14,7 @@ export async function POST(request: Request) {
     }
 
     // Check if user already exists
-    const existingUser = await userRepository.findByAuthId(authId);
+    const existingUser = await getUserByAuthId(authId);
 
     if (existingUser) {
       return NextResponse.json({
@@ -26,7 +24,7 @@ export async function POST(request: Request) {
     }
 
     // Create new user with default role
-    const newUser = await userRepository.create({
+    const newUser = await createUser({
       authId,
       email,
       role: "user",
@@ -39,9 +37,7 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error("Error creating user from invitation:", error);
     return NextResponse.json(
-      {
-        error: "Internal server error",
-      },
+      { error: "Internal server error" },
       { status: 500 },
     );
   }
