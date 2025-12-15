@@ -1,3 +1,7 @@
+# wtp: git worktree を便利に使うためのCLIツールの設定ファイル
+# ワークツリー作成時に環境変数のコピーと依存関係インストールを自動化する
+# 使い方: brew install satococoa/tap/wtp && wtp add -b feature/xxx
+
 version: "1.0"
 
 defaults:
