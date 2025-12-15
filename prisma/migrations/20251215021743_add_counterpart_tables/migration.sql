@@ -47,24 +47,24 @@ DECLARE
   v_transaction_type VARCHAR(255);
   v_category_key VARCHAR(255);
   v_allowed_income_categories TEXT[] := ARRAY[
-    'income_business',
-    'income_loan',
-    'income_grant_from_hq',
-    'income_other'
+    'publication-income',
+    'loans',
+    'grants',
+    'other-income'
   ];
   v_allowed_expense_categories TEXT[] := ARRAY[
-    'expense_utility_costs',
-    'expense_office_supplies',
-    'expense_office_expenses',
-    'expense_organizational_activity',
-    'expense_election_related',
-    'expense_publication',
-    'expense_publicity',
-    'expense_party_event',
-    'expense_other_projects',
-    'expense_research',
-    'expense_donation_grant',
-    'expense_other'
+    'utilities',
+    'equipment-supplies',
+    'office-expenses',
+    'organizational-activities',
+    'election-expenses',
+    'publication-expenses',
+    'advertising-expenses',
+    'fundraising-party-expenses',
+    'other-business-expenses',
+    'research-expenses',
+    'donations-grants-expenses',
+    'other-expenses'
   ];
 BEGIN
   -- 取引情報を取得
