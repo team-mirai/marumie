@@ -13,9 +13,7 @@ function createSankeyDataHelper(sankeyData: SankeyData) {
 
   // ノード名とタイプから金額を取得（そのノードへの流入合計）
   const getNodeValue = (nodeName: string, nodeType?: string): number => {
-    const node = nodes.find(
-      (n) => n.label === nodeName && (!nodeType || n.nodeType === nodeType),
-    );
+    const node = nodes.find((n) => n.label === nodeName && (!nodeType || n.nodeType === nodeType));
     if (!node) return 0;
 
     return links
@@ -31,23 +29,16 @@ function createSankeyDataHelper(sankeyData: SankeyData) {
     targetNodeType?: string,
   ): number => {
     const sourceNode = nodes.find(
-      (n) =>
-        n.label === sourceNodeName &&
-        (!sourceNodeType || n.nodeType === sourceNodeType),
+      (n) => n.label === sourceNodeName && (!sourceNodeType || n.nodeType === sourceNodeType),
     );
     const targetNode = nodes.find(
-      (n) =>
-        n.label === targetNodeName &&
-        (!targetNodeType || n.nodeType === targetNodeType),
+      (n) => n.label === targetNodeName && (!targetNodeType || n.nodeType === targetNodeType),
     );
 
     if (!sourceNode || !targetNode) return 0;
 
     return links
-      .filter(
-        (link) =>
-          link.source === sourceNode.id && link.target === targetNode.id,
-      )
+      .filter((link) => link.source === sourceNode.id && link.target === targetNode.id)
       .reduce((sum, link) => sum + link.value, 0);
   };
 
@@ -66,12 +57,7 @@ function calculateFinancialData(sankeyData: SankeyData | null) {
   const income = helper.getNodeValue("合計");
 
   // 現金残高の計算（「合計」から「現金残高」への流出）
-  const currentBalance = helper.getLinkValueBetween(
-    "合計",
-    "現金残高",
-    undefined,
-    "expense",
-  );
+  const currentBalance = helper.getLinkValueBetween("合計", "現金残高", undefined, "expense");
 
   // 支出の計算（収入総額から現金残高を引いた値）
   const expense = income - currentBalance;
@@ -88,20 +74,10 @@ function calculateBalanceDetailData(sankeyData: SankeyData | null) {
   const helper = createSankeyDataHelper(sankeyData);
 
   // 現金残高の合計値を取得（合計から現金残高への流入）
-  const cashBalanceTotal = helper.getLinkValueBetween(
-    "合計",
-    "現金残高",
-    undefined,
-    "expense",
-  );
+  const cashBalanceTotal = helper.getLinkValueBetween("合計", "現金残高", undefined, "expense");
 
   // 収支の値を取得（現金残高から収支への流出）
-  const balanceValue = helper.getLinkValueBetween(
-    "現金残高",
-    "収支",
-    "expense",
-    "expense-sub",
-  );
+  const balanceValue = helper.getLinkValueBetween("現金残高", "収支", "expense", "expense-sub");
 
   // 未払費用の値を取得（現金残高から未払費用への流出）
   const unpaidExpenseValue = helper.getLinkValueBetween(
@@ -118,9 +94,7 @@ function calculateBalanceDetailData(sankeyData: SankeyData | null) {
   };
 }
 
-export default function FinancialSummarySection({
-  sankeyData,
-}: FinancialSummarySectionProps) {
+export default function FinancialSummarySection({ sankeyData }: FinancialSummarySectionProps) {
   // 財務データを計算
   const financialData = calculateFinancialData(sankeyData);
   const balanceDetailData = calculateBalanceDetailData(sankeyData);

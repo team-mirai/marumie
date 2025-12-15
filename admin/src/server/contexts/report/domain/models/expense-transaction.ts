@@ -48,8 +48,7 @@ export interface OfficeExpenseTransaction extends BaseExpenseTransaction {}
 /**
  * SYUUSHI07_15 KUBUN1: 組織活動費のトランザクション
  */
-export interface OrganizationExpenseTransaction
-  extends BaseExpenseTransaction {}
+export interface OrganizationExpenseTransaction extends BaseExpenseTransaction {}
 
 /**
  * SYUUSHI07_15 KUBUN2: 選挙関係費のトランザクション
@@ -69,14 +68,12 @@ export interface AdvertisingExpenseTransaction extends BaseExpenseTransaction {}
 /**
  * SYUUSHI07_15 KUBUN5: 政治資金パーティー開催事業費のトランザクション
  */
-export interface FundraisingPartyExpenseTransaction
-  extends BaseExpenseTransaction {}
+export interface FundraisingPartyExpenseTransaction extends BaseExpenseTransaction {}
 
 /**
  * SYUUSHI07_15 KUBUN6: その他の事業費のトランザクション
  */
-export interface OtherBusinessExpenseTransaction
-  extends BaseExpenseTransaction {}
+export interface OtherBusinessExpenseTransaction extends BaseExpenseTransaction {}
 
 /**
  * SYUUSHI07_15 KUBUN7: 調査研究費のトランザクション
@@ -86,14 +83,12 @@ export interface ResearchExpenseTransaction extends BaseExpenseTransaction {}
 /**
  * SYUUSHI07_15 KUBUN8: 寄附・交付金のトランザクション
  */
-export interface DonationGrantExpenseTransaction
-  extends BaseExpenseTransaction {}
+export interface DonationGrantExpenseTransaction extends BaseExpenseTransaction {}
 
 /**
  * SYUUSHI07_15 KUBUN9: その他の経費のトランザクション
  */
-export interface OtherPoliticalExpenseTransaction
-  extends BaseExpenseTransaction {}
+export interface OtherPoliticalExpenseTransaction extends BaseExpenseTransaction {}
 
 // ============================================================
 // Output Types (Domain Objects for XML)
@@ -283,10 +278,7 @@ const ExpenseTransactionBase = {
    * 閾値（10万円）以上かどうかを判定
    */
   isAboveThreshold: (tx: BaseExpenseTransaction): boolean => {
-    return isAboveThreshold(
-      ExpenseTransactionBase.resolveAmount(tx),
-      TEN_MAN_THRESHOLD,
-    );
+    return isAboveThreshold(ExpenseTransactionBase.resolveAmount(tx), TEN_MAN_THRESHOLD);
   },
 
   /**
@@ -336,10 +328,7 @@ export const OrganizationExpenseTransaction = {
    * 明細行に変換する
    * 注: HIMOKUはSHEETレベルの項目であり、ROWには含めない（仕様書準拠）
    */
-  toRow: (
-    tx: OrganizationExpenseTransaction,
-    index: number,
-  ): PoliticalActivityExpenseRow => {
+  toRow: (tx: OrganizationExpenseTransaction, index: number): PoliticalActivityExpenseRow => {
     return {
       ichirenNo: (index + 1).toString(),
       mokuteki: ExpenseTransactionBase.getMokuteki(tx),
@@ -379,9 +368,7 @@ function aggregateExpenseSection<T extends BaseExpenseTransaction>(
     0,
   );
 
-  const rows = detailedTransactions.map((tx, index) =>
-    ExpenseTransactionBase.toRow(tx, index),
-  );
+  const rows = detailedTransactions.map((tx, index) => ExpenseTransactionBase.toRow(tx, index));
 
   return { totalAmount, underThresholdAmount, rows };
 }
@@ -397,9 +384,7 @@ export const UtilityExpenseSection = {
    * - Transactions >= 100,000 yen are listed individually
    * - Transactions < 100,000 yen are aggregated into underThresholdAmount
    */
-  fromTransactions: (
-    transactions: UtilityExpenseTransaction[],
-  ): UtilityExpenseSection => {
+  fromTransactions: (transactions: UtilityExpenseTransaction[]): UtilityExpenseSection => {
     return aggregateExpenseSection(transactions);
   },
 
@@ -422,9 +407,7 @@ export const SuppliesExpenseSection = {
    * - Transactions >= 100,000 yen are listed individually
    * - Transactions < 100,000 yen are aggregated into underThresholdAmount
    */
-  fromTransactions: (
-    transactions: SuppliesExpenseTransaction[],
-  ): SuppliesExpenseSection => {
+  fromTransactions: (transactions: SuppliesExpenseTransaction[]): SuppliesExpenseSection => {
     return aggregateExpenseSection(transactions);
   },
 
@@ -447,9 +430,7 @@ export const OfficeExpenseSection = {
    * - Transactions >= 100,000 yen are listed individually
    * - Transactions < 100,000 yen are aggregated into underThresholdAmount
    */
-  fromTransactions: (
-    transactions: OfficeExpenseTransaction[],
-  ): OfficeExpenseSection => {
+  fromTransactions: (transactions: OfficeExpenseTransaction[]): OfficeExpenseSection => {
     return aggregateExpenseSection(transactions);
   },
 
@@ -482,17 +463,10 @@ export const OrganizationExpenseSection = {
     );
 
     const detailedTransactions = transactions.filter((tx) =>
-      isAboveThreshold(
-        ExpenseTransactionBase.resolveAmount(tx),
-        FIVE_MAN_THRESHOLD,
-      ),
+      isAboveThreshold(ExpenseTransactionBase.resolveAmount(tx), FIVE_MAN_THRESHOLD),
     );
     const underThresholdTransactions = transactions.filter(
-      (tx) =>
-        !isAboveThreshold(
-          ExpenseTransactionBase.resolveAmount(tx),
-          FIVE_MAN_THRESHOLD,
-        ),
+      (tx) => !isAboveThreshold(ExpenseTransactionBase.resolveAmount(tx), FIVE_MAN_THRESHOLD),
     );
 
     const underThresholdAmount = underThresholdTransactions.reduce(
@@ -537,17 +511,10 @@ function aggregatePoliticalActivitySection<T extends BaseExpenseTransaction>(
   );
 
   const detailedTransactions = transactions.filter((tx) =>
-    isAboveThreshold(
-      ExpenseTransactionBase.resolveAmount(tx),
-      FIVE_MAN_THRESHOLD,
-    ),
+    isAboveThreshold(ExpenseTransactionBase.resolveAmount(tx), FIVE_MAN_THRESHOLD),
   );
   const underThresholdTransactions = transactions.filter(
-    (tx) =>
-      !isAboveThreshold(
-        ExpenseTransactionBase.resolveAmount(tx),
-        FIVE_MAN_THRESHOLD,
-      ),
+    (tx) => !isAboveThreshold(ExpenseTransactionBase.resolveAmount(tx), FIVE_MAN_THRESHOLD),
   );
 
   const underThresholdAmount = underThresholdTransactions.reduce(
@@ -577,9 +544,7 @@ function aggregatePoliticalActivitySection<T extends BaseExpenseTransaction>(
  * ElectionExpenseSection に関連するドメインロジック
  */
 export const ElectionExpenseSection = {
-  fromTransactions: (
-    transactions: ElectionExpenseTransaction[],
-  ): ElectionExpenseSection => {
+  fromTransactions: (transactions: ElectionExpenseTransaction[]): ElectionExpenseSection => {
     return aggregatePoliticalActivitySection(transactions);
   },
 
@@ -592,9 +557,7 @@ export const ElectionExpenseSection = {
  * PublicationExpenseSection に関連するドメインロジック
  */
 export const PublicationExpenseSection = {
-  fromTransactions: (
-    transactions: PublicationExpenseTransaction[],
-  ): PublicationExpenseSection => {
+  fromTransactions: (transactions: PublicationExpenseTransaction[]): PublicationExpenseSection => {
     return aggregatePoliticalActivitySection(transactions);
   },
 
@@ -607,9 +570,7 @@ export const PublicationExpenseSection = {
  * AdvertisingExpenseSection に関連するドメインロジック
  */
 export const AdvertisingExpenseSection = {
-  fromTransactions: (
-    transactions: AdvertisingExpenseTransaction[],
-  ): AdvertisingExpenseSection => {
+  fromTransactions: (transactions: AdvertisingExpenseTransaction[]): AdvertisingExpenseSection => {
     return aggregatePoliticalActivitySection(transactions);
   },
 
@@ -652,9 +613,7 @@ export const OtherBusinessExpenseSection = {
  * ResearchExpenseSection に関連するドメインロジック
  */
 export const ResearchExpenseSection = {
-  fromTransactions: (
-    transactions: ResearchExpenseTransaction[],
-  ): ResearchExpenseSection => {
+  fromTransactions: (transactions: ResearchExpenseTransaction[]): ResearchExpenseSection => {
     return aggregatePoliticalActivitySection(transactions);
   },
 

@@ -19,10 +19,7 @@ export function convertCategoryAggregationToSankeyData(
 ): SankeyData {
   const renamedAggregation = renameOtherCategories(aggregation);
 
-  let processedAggregation = consolidateSmallItems(
-    renamedAggregation,
-    isFriendlyCategory,
-  );
+  let processedAggregation = consolidateSmallItems(renamedAggregation, isFriendlyCategory);
 
   processedAggregation = adjustBalanceAndCategories(
     processedAggregation,
@@ -114,9 +111,7 @@ export function convertCategoryAggregationToSankeyData(
 
   for (const item of processedAggregation.expense) {
     if (item.subcategory) {
-      const nodeId = createSafariCompatibleId(
-        `expense-sub-${item.subcategory}`,
-      );
+      const nodeId = createSafariCompatibleId(`expense-sub-${item.subcategory}`);
       if (!nodeIds.has(nodeId)) {
         nodes.push({
           id: nodeId,
@@ -191,23 +186,14 @@ function consolidateSmallItems(
     return aggregation;
   }
 
-  const incomeThreshold = calculateDynamicThreshold(
-    aggregation.income,
-    SUBCATEGORY_LIMITS.INCOME,
-  );
+  const incomeThreshold = calculateDynamicThreshold(aggregation.income, SUBCATEGORY_LIMITS.INCOME);
   const expenseThreshold = calculateDynamicThreshold(
     aggregation.expense,
     SUBCATEGORY_LIMITS.EXPENSE,
   );
 
-  const consolidatedIncome = consolidateSmallItemsByType(
-    aggregation.income,
-    incomeThreshold,
-  );
-  const consolidatedExpense = consolidateSmallItemsByType(
-    aggregation.expense,
-    expenseThreshold,
-  );
+  const consolidatedIncome = consolidateSmallItemsByType(aggregation.income, incomeThreshold);
+  const consolidatedExpense = consolidateSmallItemsByType(aggregation.expense, expenseThreshold);
 
   return {
     income: consolidatedIncome,
@@ -220,27 +206,19 @@ function consolidateSmallItemsByType(
   threshold: number,
 ): TransactionCategoryAggregation[] {
   // 閾値で大きいグループと小さいグループに分離
-  const smallItems = items.filter(
-    (item) => item.subcategory && item.totalAmount < threshold,
-  );
-  const largeItems = items.filter(
-    (item) => !item.subcategory || item.totalAmount >= threshold,
-  );
+  const smallItems = items.filter((item) => item.subcategory && item.totalAmount < threshold);
+  const largeItems = items.filter((item) => !item.subcategory || item.totalAmount >= threshold);
 
   // 小さいアイテムをカテゴリごとにグループ化
-  const smallItemsByCategory = new Map<
-    string,
-    TransactionCategoryAggregation[]
-  >();
+  const smallItemsByCategory = new Map<string, TransactionCategoryAggregation[]>();
   for (const item of smallItems) {
     const categoryItems = smallItemsByCategory.get(item.category) || [];
     smallItemsByCategory.set(item.category, [...categoryItems, item]);
   }
 
   // 小さいアイテムを統合処理
-  const consolidatedSmallItems = Array.from(smallItemsByCategory).map(
-    ([category, categoryItems]) =>
-      consolidateCategoryItems(category, categoryItems),
+  const consolidatedSmallItems = Array.from(smallItemsByCategory).map(([category, categoryItems]) =>
+    consolidateCategoryItems(category, categoryItems),
   );
 
   // 大きいアイテムと統合後の小さいアイテムをマージして返す
@@ -257,10 +235,7 @@ function consolidateCategoryItems(
   }
 
   // 複数の場合は統合
-  const totalAmount = categoryItems.reduce(
-    (sum, item) => sum + item.totalAmount,
-    0,
-  );
+  const totalAmount = categoryItems.reduce((sum, item) => sum + item.totalAmount, 0);
   return {
     ...categoryItems[0],
     subcategory: `その他（${category}）`,
@@ -278,9 +253,7 @@ function calculateDynamicThreshold(
     return 0;
   }
 
-  const sortedItems = [...subcategoryItems].sort(
-    (a, b) => b.totalAmount - a.totalAmount,
-  );
+  const sortedItems = [...subcategoryItems].sort((a, b) => b.totalAmount - a.totalAmount);
 
   const totalAmount = items.reduce((sum, item) => sum + item.totalAmount, 0);
   const onePercentThreshold = totalAmount * 0.01;

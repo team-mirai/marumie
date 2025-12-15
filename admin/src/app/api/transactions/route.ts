@@ -12,18 +12,13 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get("page") || "1", 10);
     const perPage = parseInt(searchParams.get("perPage") || "50", 10);
     const orgIds = searchParams.get("orgIds");
-    const transactionType = searchParams.get("transactionType") as
-      | "income"
-      | "expense"
-      | undefined;
+    const transactionType = searchParams.get("transactionType") as "income" | "expense" | undefined;
     const dateFromParam = searchParams.get("dateFrom");
     const dateFrom = dateFromParam ? new Date(dateFromParam) : undefined;
     const dateToParam = searchParams.get("dateTo");
     const dateTo = dateToParam ? new Date(dateToParam) : undefined;
     const financialYearParam = searchParams.get("financialYear");
-    const financialYear = financialYearParam
-      ? parseInt(financialYearParam, 10)
-      : undefined;
+    const financialYear = financialYearParam ? parseInt(financialYearParam, 10) : undefined;
 
     // Parse org IDs array from comma-separated string
     const politicalOrganizationIds = orgIds
@@ -46,9 +41,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(result);
   } catch (error) {
     console.error("Error fetching transactions:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch transactions" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Failed to fetch transactions" }, { status: 500 });
   }
 }

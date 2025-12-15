@@ -31,36 +31,21 @@ export class GetBalanceSheetUsecase {
     }
   }
 
-  private async calculateBalanceSheet(
-    params: GetBalanceSheetParams,
-  ): Promise<BalanceSheetData> {
+  private async calculateBalanceSheet(params: GetBalanceSheetParams): Promise<BalanceSheetData> {
     // 1. slugから政治団体のIDを取得
-    const organizations =
-      await this.politicalOrganizationRepository.findBySlugs(params.slugs);
+    const organizations = await this.politicalOrganizationRepository.findBySlugs(params.slugs);
     const orgIds = organizations.map((org) => org.id);
 
     // 2. 各組織の最新残高の合計を取得
     const currentAssets =
-      await this.balanceSnapshotRepository.getTotalLatestBalanceByOrgIds(
-        orgIds,
-      );
+      await this.balanceSnapshotRepository.getTotalLatestBalanceByOrgIds(orgIds);
 
     // 4. 固定負債を計算（借入金の収入 - 支出）
-    const [borrowingIncome, borrowingExpense, currentLiabilities] =
-      await Promise.all([
-        this.transactionRepository.getBorrowingIncomeTotal(
-          orgIds,
-          params.financialYear,
-        ),
-        this.transactionRepository.getBorrowingExpenseTotal(
-          orgIds,
-          params.financialYear,
-        ),
-        this.transactionRepository.getLiabilityBalance(
-          orgIds,
-          params.financialYear,
-        ),
-      ]);
+    const [borrowingIncome, borrowingExpense, currentLiabilities] = await Promise.all([
+      this.transactionRepository.getBorrowingIncomeTotal(orgIds, params.financialYear),
+      this.transactionRepository.getBorrowingExpenseTotal(orgIds, params.financialYear),
+      this.transactionRepository.getLiabilityBalance(orgIds, params.financialYear),
+    ]);
     const fixedLiabilities = borrowingIncome - borrowingExpense;
 
     // 5. 固定資産は決め打ちでゼロ

@@ -24,9 +24,7 @@ interface OrgPageProps {
   }>;
 }
 
-export async function generateMetadata({
-  params,
-}: OrgPageProps): Promise<Metadata> {
+export async function generateMetadata({ params }: OrgPageProps): Promise<Metadata> {
   const { slug } = await params;
 
   const { organizations } = await loadOrganizations();
@@ -66,9 +64,7 @@ export default async function OrgPage({ params }: OrgPageProps) {
     return null;
   });
 
-  const updatedAt = formatUpdatedAt(
-    data?.transactionData?.lastUpdatedAt ?? null,
-  );
+  const updatedAt = formatUpdatedAt(data?.transactionData?.lastUpdatedAt ?? null);
 
   return (
     <MainColumn>

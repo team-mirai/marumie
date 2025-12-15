@@ -11,10 +11,7 @@ interface ReportProfilePageProps {
   searchParams: Promise<{ year?: string }>;
 }
 
-export default async function ReportProfilePage({
-  params,
-  searchParams,
-}: ReportProfilePageProps) {
+export default async function ReportProfilePage({ params, searchParams }: ReportProfilePageProps) {
   const { orgId } = await params;
   const { year } = await searchParams;
 
@@ -29,9 +26,7 @@ export default async function ReportProfilePage({
     return (
       <div className="bg-primary-panel rounded-xl p-4">
         <div className="text-red-500 text-center p-10">
-          {error instanceof Error
-            ? error.message
-            : "政治団体の取得に失敗しました"}
+          {error instanceof Error ? error.message : "政治団体の取得に失敗しました"}
         </div>
       </div>
     );
@@ -61,11 +56,7 @@ export default async function ReportProfilePage({
       </h1>
 
       <div className="block mb-4">
-        <YearSelector
-          orgId={orgId}
-          financialYear={financialYear}
-          currentYear={currentYear}
-        />
+        <YearSelector orgId={orgId} financialYear={financialYear} currentYear={currentYear} />
       </div>
 
       <ReportProfileForm

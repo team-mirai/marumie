@@ -14,9 +14,7 @@ interface PoliticalOrganizationFormData {
 
 interface PoliticalOrganizationFormProps {
   initialData?: Partial<PoliticalOrganizationFormData>;
-  onSubmit: (
-    data: PoliticalOrganizationFormData,
-  ) => Promise<{ success: boolean }>;
+  onSubmit: (data: PoliticalOrganizationFormData) => Promise<{ success: boolean }>;
   submitButtonText: string;
   title: string;
 }
@@ -55,9 +53,7 @@ export function PoliticalOrganizationForm({
     }
   };
 
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
-  ) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
@@ -86,10 +82,7 @@ export function PoliticalOrganizationForm({
 
       <form onSubmit={handleSubmit} className="mt-5 space-y-5">
         <div>
-          <label
-            htmlFor="displayName"
-            className="block mb-2 font-medium text-white"
-          >
+          <label htmlFor="displayName" className="block mb-2 font-medium text-white">
             表示名 <span className="text-red-500">*</span>
           </label>
           <input
@@ -106,10 +99,7 @@ export function PoliticalOrganizationForm({
         </div>
 
         <div>
-          <label
-            htmlFor="orgName"
-            className="block mb-2 font-medium text-white"
-          >
+          <label htmlFor="orgName" className="block mb-2 font-medium text-white">
             正式名称（任意）
           </label>
           <input
@@ -142,10 +132,7 @@ export function PoliticalOrganizationForm({
         </div>
 
         <div>
-          <label
-            htmlFor="description"
-            className="block mb-2 font-medium text-white"
-          >
+          <label htmlFor="description" className="block mb-2 font-medium text-white">
             説明（任意）
           </label>
           <textarea
@@ -162,9 +149,7 @@ export function PoliticalOrganizationForm({
         <div className="flex gap-3">
           <button
             type="submit"
-            disabled={
-              isLoading || !formData.displayName.trim() || !formData.slug.trim()
-            }
+            disabled={isLoading || !formData.displayName.trim() || !formData.slug.trim()}
             className={`bg-primary-accent text-white border-0 rounded-lg px-4 py-2.5 font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-accent ${
               isLoading || !formData.displayName.trim() || !formData.slug.trim()
                 ? "opacity-60 cursor-not-allowed"

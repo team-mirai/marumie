@@ -29,10 +29,7 @@ export const fundManagementPeriodSchema = z.object({
 });
 
 export const fundManagementSchema = z.object({
-  publicPositionName: z
-    .string()
-    .max(60, "公職の名称は60文字以内で入力してください")
-    .optional(),
+  publicPositionName: z.string().max(60, "公職の名称は60文字以内で入力してください").optional(),
   publicPositionType: z.enum(["1", "2", "3", "4"]).optional(),
   applicant: fundManagementApplicantSchema.optional(),
   periods: z.array(fundManagementPeriodSchema).max(3).optional(),
@@ -62,17 +59,11 @@ export const organizationReportProfileDetailsSchema = z.object({
   representative: representativeSchema.optional(),
   accountant: accountantSchema.optional(),
   contactPersons: z.array(contactPersonSchema).max(3).optional(),
-  organizationType: z
-    .string()
-    .max(2, "団体区分は2文字以内で入力してください")
-    .optional(),
+  organizationType: z.string().max(2, "団体区分は2文字以内で入力してください").optional(),
   activityArea: z.enum(["1", "2"]).optional(),
   fundManagement: fundManagementSchema.optional(),
   dietMemberRelation: dietMemberRelationSchema.optional(),
-  specificPartyDate: z
-    .string()
-    .max(20, "開催日は20文字以内で入力してください")
-    .optional(),
+  specificPartyDate: z.string().max(20, "開催日は20文字以内で入力してください").optional(),
 });
 
 export const organizationReportProfileFormSchema = z.object({
@@ -102,6 +93,4 @@ export const organizationReportProfileFormSchema = z.object({
   details: organizationReportProfileDetailsSchema.default({}),
 });
 
-export type OrganizationReportProfileFormData = z.infer<
-  typeof organizationReportProfileFormSchema
->;
+export type OrganizationReportProfileFormData = z.infer<typeof organizationReportProfileFormSchema>;

@@ -19,14 +19,7 @@ export default function BalanceSheetSection({
   return (
     <MainColumnCard id="balance-sheet">
       <CardHeader
-        icon={
-          <Image
-            src="/icons/balance.svg"
-            alt="Balance sheet icon"
-            width={30}
-            height={30}
-          />
-        }
+        icon={<Image src="/icons/balance.svg" alt="Balance sheet icon" width={30} height={30} />}
         organizationName={organizationName || "未登録の政治団体"}
         title="現時点での貸借対照表"
         updatedAt={updatedAt}
@@ -43,9 +36,7 @@ export default function BalanceSheetSection({
 
       {/* 更新日時 */}
       <div className="mt-4 text-right md:hidden">
-        <span className="text-xs font-normal text-[#9CA3AF] leading-[1.33]">
-          {updatedAt}
-        </span>
+        <span className="text-xs font-normal text-[#9CA3AF] leading-[1.33]">{updatedAt}</span>
       </div>
     </MainColumnCard>
   );

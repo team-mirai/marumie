@@ -101,10 +101,7 @@ export const PersonalDonationTransaction = {
   /**
    * 明細行に変換する
    */
-  toRow: (
-    tx: PersonalDonationTransaction,
-    index: number,
-  ): PersonalDonationRow => {
+  toRow: (tx: PersonalDonationTransaction, index: number): PersonalDonationRow => {
     return {
       ichirenNo: (index + 1).toString(),
       kifusyaNm: PersonalDonationTransaction.getKifusyaNm(tx),
@@ -130,17 +127,13 @@ export const PersonalDonationSection = {
   /**
    * トランザクションリストからセクションを構築する
    */
-  fromTransactions: (
-    transactions: PersonalDonationTransaction[],
-  ): PersonalDonationSection => {
+  fromTransactions: (transactions: PersonalDonationTransaction[]): PersonalDonationSection => {
     const totalAmount = transactions.reduce(
       (sum, tx) => sum + PersonalDonationTransaction.resolveAmount(tx),
       0,
     );
 
-    const rows = transactions.map((tx, index) =>
-      PersonalDonationTransaction.toRow(tx, index),
-    );
+    const rows = transactions.map((tx, index) => PersonalDonationTransaction.toRow(tx, index));
 
     return {
       totalAmount,

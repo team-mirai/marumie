@@ -32,9 +32,7 @@ export default function UserManagement({
     try {
       await apiClient.updateUserRole({ userId, role: newRole });
       setUsers((prev) =>
-        prev.map((user) =>
-          user.id === userId ? { ...user, role: newRole } : user,
-        ),
+        prev.map((user) => (user.id === userId ? { ...user, role: newRole } : user)),
       );
     } catch (error) {
       console.error("Error updating role:", error);
@@ -60,9 +58,7 @@ export default function UserManagement({
       window.location.reload();
     } catch (error) {
       console.error("Error sending invitation:", error);
-      alert(
-        `招待の送信に失敗しました: ${error instanceof Error ? error.message : "不明なエラー"}`,
-      );
+      alert(`招待の送信に失敗しました: ${error instanceof Error ? error.message : "不明なエラー"}`);
     } finally {
       setIsInviting(false);
     }
@@ -72,9 +68,7 @@ export default function UserManagement({
     <div className="space-y-4">
       {/* Invite User Form */}
       <Card>
-        <h2 className="text-lg font-medium text-white mb-4">
-          新規ユーザー招待
-        </h2>
+        <h2 className="text-lg font-medium text-white mb-4">新規ユーザー招待</h2>
         <form onSubmit={handleInviteUser} className="flex gap-4">
           <div className="flex-1">
             <Input
@@ -113,9 +107,7 @@ export default function UserManagement({
           <tbody className="bg-primary-panel divide-y divide-primary-border">
             {users.map((user) => (
               <tr key={user.id}>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-white">
-                  {user.email}
-                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-white">{user.email}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-white">
                   <span
                     className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
@@ -133,9 +125,7 @@ export default function UserManagement({
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                   <select
                     value={user.role}
-                    onChange={(e) =>
-                      handleRoleChange(user.id, e.target.value as UserRole)
-                    }
+                    onChange={(e) => handleRoleChange(user.id, e.target.value as UserRole)}
                     disabled={isLoading}
                     className="bg-primary-input text-white border border-primary-border rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-primary-accent"
                   >
@@ -152,9 +142,7 @@ export default function UserManagement({
         </table>
 
         {users.length === 0 && (
-          <div className="text-center py-8 text-primary-muted">
-            ユーザーが見つかりません
-          </div>
+          <div className="text-center py-8 text-primary-muted">ユーザーが見つかりません</div>
         )}
       </Card>
     </div>

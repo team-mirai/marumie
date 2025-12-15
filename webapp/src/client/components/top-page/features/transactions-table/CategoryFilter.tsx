@@ -3,10 +3,7 @@ import "client-only";
 
 import { useState } from "react";
 import Image from "next/image";
-import {
-  PL_CATEGORIES,
-  type CategoryMapping,
-} from "@/shared/utils/category-mapping";
+import { PL_CATEGORIES, type CategoryMapping } from "@/shared/utils/category-mapping";
 
 interface CategoryItem {
   id: string;
@@ -23,9 +20,7 @@ const INCOME_CATEGORIES: CategoryItem[] = Object.entries(PL_CATEGORIES)
   }));
 
 const EXPENSE_CATEGORIES: CategoryItem[] = Object.entries(PL_CATEGORIES)
-  .filter(
-    ([, mapping]: [string, CategoryMapping]) => mapping.type === "expense",
-  )
+  .filter(([, mapping]: [string, CategoryMapping]) => mapping.type === "expense")
   .map(([, mapping]: [string, CategoryMapping]) => ({
     id: mapping.key,
     label: mapping.shortLabel,
@@ -62,32 +57,24 @@ export default function CategoryFilter({
 
   const handleIncomeToggle = (id: string) => {
     setIncomeCategories((prev) =>
-      prev.map((cat) =>
-        cat.id === id ? { ...cat, checked: !cat.checked } : cat,
-      ),
+      prev.map((cat) => (cat.id === id ? { ...cat, checked: !cat.checked } : cat)),
     );
   };
 
   const handleExpenseToggle = (id: string) => {
     setExpenseCategories((prev) =>
-      prev.map((cat) =>
-        cat.id === id ? { ...cat, checked: !cat.checked } : cat,
-      ),
+      prev.map((cat) => (cat.id === id ? { ...cat, checked: !cat.checked } : cat)),
     );
   };
 
   const handleIncomeSelectAll = () => {
     const allChecked = incomeCategories.every((cat) => cat.checked);
-    setIncomeCategories((prev) =>
-      prev.map((cat) => ({ ...cat, checked: !allChecked })),
-    );
+    setIncomeCategories((prev) => prev.map((cat) => ({ ...cat, checked: !allChecked })));
   };
 
   const handleExpenseSelectAll = () => {
     const allChecked = expenseCategories.every((cat) => cat.checked);
-    setExpenseCategories((prev) =>
-      prev.map((cat) => ({ ...cat, checked: !allChecked })),
-    );
+    setExpenseCategories((prev) => prev.map((cat) => ({ ...cat, checked: !allChecked })));
   };
 
   const handleCancel = () => {
@@ -139,9 +126,7 @@ export default function CategoryFilter({
                   </div>
                   <span
                     className={`text-[13px] leading-[1.31] text-left flex-1 ${
-                      incomeCategories.every((cat) => cat.checked)
-                        ? "font-semibold"
-                        : "font-medium"
+                      incomeCategories.every((cat) => cat.checked) ? "font-semibold" : "font-medium"
                     } text-[#47474C]`}
                   >
                     （すべて選択）
@@ -264,18 +249,14 @@ export default function CategoryFilter({
             onClick={handleCancel}
             className="flex justify-center items-center gap-[10px] py-2 px-4 w-[120px] bg-[#F1F5F9] border-[0.5px] border-[#D1D5DB] rounded-[6px] hover:opacity-70 transition-opacity cursor-pointer"
           >
-            <span className="text-[#238778] text-sm font-medium leading-[1.29]">
-              キャンセル
-            </span>
+            <span className="text-[#238778] text-sm font-medium leading-[1.29]">キャンセル</span>
           </button>
           <button
             type="button"
             onClick={handleOk}
             className="flex justify-center items-center gap-[10px] py-2 px-4 w-[120px] bg-[#238778] rounded-[6px] hover:opacity-90 transition-opacity cursor-pointer"
           >
-            <span className="text-white text-sm font-medium leading-[1.29]">
-              OK
-            </span>
+            <span className="text-white text-sm font-medium leading-[1.29]">OK</span>
           </button>
         </div>
       </div>

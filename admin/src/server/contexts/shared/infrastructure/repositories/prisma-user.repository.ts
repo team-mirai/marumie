@@ -8,11 +8,7 @@ import type {
 export class PrismaUserRepository implements UserRepository {
   constructor(private prisma: PrismaClient) {}
 
-  async create(data: {
-    authId: string;
-    email: string;
-    role?: UserRole;
-  }): Promise<User> {
+  async create(data: { authId: string; email: string; role?: UserRole }): Promise<User> {
     return await this.prisma.user.create({
       data: {
         authId: data.authId,

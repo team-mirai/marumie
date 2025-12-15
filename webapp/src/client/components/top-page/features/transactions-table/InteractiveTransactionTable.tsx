@@ -4,9 +4,7 @@ import "client-only";
 import { useRouter, useSearchParams } from "next/navigation";
 import type { DisplayTransaction } from "@/types/display-transaction";
 import TransactionTable from "./TransactionTable";
-import TransactionTableMobileHeader, {
-  type SortOption,
-} from "./TransactionTableMobileHeader";
+import TransactionTableMobileHeader, { type SortOption } from "./TransactionTableMobileHeader";
 import PCPaginator from "./PCPaginator";
 import MobilePaginator from "./MobilePaginator";
 import CsvDownloadLink from "@/client/components/transactions/CsvDownloadLink";
@@ -51,10 +49,7 @@ export default function InteractiveTransactionTable({
   // Parse URL params once
   const currentSort = searchParams.get("sort") as "date" | "amount" | null;
   const currentOrder = searchParams.get("order") as "asc" | "desc" | null;
-  const filterType = searchParams.get("filterType") as
-    | "income"
-    | "expense"
-    | null;
+  const filterType = searchParams.get("filterType") as "income" | "expense" | null;
 
   const handlePageChange = (newPage: number) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -117,11 +112,7 @@ export default function InteractiveTransactionTable({
 
     // Find matching sort option from configuration
     for (const [sortOption, config] of Object.entries(SORT_CONFIGS)) {
-      if (
-        config.sort === sort &&
-        config.order === order &&
-        config.filterType === filterType
-      ) {
+      if (config.sort === sort && config.order === order && config.filterType === filterType) {
         return sortOption as SortOption;
       }
     }

@@ -20,16 +20,10 @@ const emptyContactPerson = (): ContactPerson => ({
   tel: "",
 });
 
-export function ContactPersonsSection({
-  details,
-  updateDetails,
-}: ContactPersonsSectionProps) {
+export function ContactPersonsSection({ details, updateDetails }: ContactPersonsSectionProps) {
   const contactPersons = details.contactPersons ?? [];
 
-  const updateContactPerson = (
-    index: number,
-    updates: Partial<ContactPerson>,
-  ) => {
+  const updateContactPerson = (index: number, updates: Partial<ContactPerson>) => {
     const newContactPersons = [...contactPersons];
     if (index < newContactPersons.length) {
       newContactPersons[index] = { ...newContactPersons[index], ...updates };
@@ -53,9 +47,7 @@ export function ContactPersonsSection({
   return (
     <div className="bg-primary-hover rounded-lg p-4">
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-lg font-semibold text-white">
-          事務担当者（最大3名）
-        </h2>
+        <h2 className="text-lg font-semibold text-white">事務担当者（最大3名）</h2>
         {contactPersons.length < 3 && (
           <button
             type="button"
@@ -70,8 +62,7 @@ export function ContactPersonsSection({
       <div className="space-y-4">
         {contactPersons.length === 0 && (
           <p className="text-primary-muted text-sm">
-            事務担当者が登録されていません。「+
-            追加」をクリックして追加してください。
+            事務担当者が登録されていません。「+ 追加」をクリックして追加してください。
           </p>
         )}
 
@@ -81,9 +72,7 @@ export function ContactPersonsSection({
             className="bg-primary-panel rounded-lg p-3 border border-primary-border"
           >
             <div className="flex justify-between items-center mb-2">
-              <span className="text-sm text-primary-muted">
-                事務担当者 {index + 1}
-              </span>
+              <span className="text-sm text-primary-muted">事務担当者 {index + 1}</span>
               <button
                 type="button"
                 onClick={() => removeContactPerson(index)}
@@ -98,9 +87,7 @@ export function ContactPersonsSection({
                 <input
                   type="text"
                   value={person.lastName}
-                  onChange={(e) =>
-                    updateContactPerson(index, { lastName: e.target.value })
-                  }
+                  onChange={(e) => updateContactPerson(index, { lastName: e.target.value })}
                   maxLength={30}
                   className="bg-primary-input text-white border border-primary-border rounded-lg px-3 py-2 w-full mt-1 block"
                   placeholder="田中"
@@ -111,9 +98,7 @@ export function ContactPersonsSection({
                 <input
                   type="text"
                   value={person.firstName}
-                  onChange={(e) =>
-                    updateContactPerson(index, { firstName: e.target.value })
-                  }
+                  onChange={(e) => updateContactPerson(index, { firstName: e.target.value })}
                   maxLength={30}
                   className="bg-primary-input text-white border border-primary-border rounded-lg px-3 py-2 w-full mt-1 block"
                   placeholder="一郎"
@@ -124,9 +109,7 @@ export function ContactPersonsSection({
                 <input
                   type="text"
                   value={person.tel}
-                  onChange={(e) =>
-                    updateContactPerson(index, { tel: e.target.value })
-                  }
+                  onChange={(e) => updateContactPerson(index, { tel: e.target.value })}
                   maxLength={20}
                   className="bg-primary-input text-white border border-primary-border rounded-lg px-3 py-2 w-full mt-1 block"
                   placeholder="03-1234-5678"

@@ -77,9 +77,7 @@ export function createEmptyPreviewStatistics(): PreviewStatistics {
   };
 }
 
-export function calculatePreviewStatistics(
-  transactions: PreviewTransaction[],
-): PreviewStatistics {
+export function calculatePreviewStatistics(transactions: PreviewTransaction[]): PreviewStatistics {
   const statistics = createEmptyPreviewStatistics();
 
   for (const transaction of transactions) {
@@ -102,9 +100,7 @@ export function calculatePreviewStatistics(
   return statistics;
 }
 
-export function calculatePreviewSummary(
-  transactions: PreviewTransaction[],
-): PreviewSummary {
+export function calculatePreviewSummary(transactions: PreviewTransaction[]): PreviewSummary {
   return {
     totalCount: transactions.length,
     insertCount: transactions.filter((t) => t.status === "insert").length,

@@ -7,9 +7,7 @@ interface SectionTitleProps {
 
 export function SectionTitle({ children }: SectionTitleProps) {
   return (
-    <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-6 font-japanese">
-      {children}
-    </h2>
+    <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-6 font-japanese">{children}</h2>
   );
 }
 
@@ -19,9 +17,7 @@ interface SubSectionTitleProps {
 
 export function SubSectionTitle({ children }: SubSectionTitleProps) {
   return (
-    <h3 className="text-base sm:text-lg font-bold text-gray-800 mb-3 font-japanese">
-      {children}
-    </h3>
+    <h3 className="text-base sm:text-lg font-bold text-gray-800 mb-3 font-japanese">{children}</h3>
   );
 }
 
@@ -59,10 +55,7 @@ interface LegalPageLayoutProps {
   children: React.ReactNode;
 }
 
-export default function LegalPageLayout({
-  title,
-  children,
-}: LegalPageLayoutProps) {
+export default function LegalPageLayout({ title, children }: LegalPageLayoutProps) {
   return (
     <MainColumn>
       <MainColumnCard>

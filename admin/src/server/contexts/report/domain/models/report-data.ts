@@ -104,29 +104,15 @@ export const ExpenseData = {
    */
   shouldOutputPoliticalActivitySheet(data: ExpenseData): boolean {
     return (
-      OrganizationExpenseSectionModel.shouldOutputSheet(
-        data.organizationExpenses,
-      ) ||
+      OrganizationExpenseSectionModel.shouldOutputSheet(data.organizationExpenses) ||
       ElectionExpenseSectionModel.shouldOutputSheet(data.electionExpenses) ||
-      PublicationExpenseSectionModel.shouldOutputSheet(
-        data.publicationExpenses,
-      ) ||
-      AdvertisingExpenseSectionModel.shouldOutputSheet(
-        data.advertisingExpenses,
-      ) ||
-      FundraisingPartyExpenseSectionModel.shouldOutputSheet(
-        data.fundraisingPartyExpenses,
-      ) ||
-      OtherBusinessExpenseSectionModel.shouldOutputSheet(
-        data.otherBusinessExpenses,
-      ) ||
+      PublicationExpenseSectionModel.shouldOutputSheet(data.publicationExpenses) ||
+      AdvertisingExpenseSectionModel.shouldOutputSheet(data.advertisingExpenses) ||
+      FundraisingPartyExpenseSectionModel.shouldOutputSheet(data.fundraisingPartyExpenses) ||
+      OtherBusinessExpenseSectionModel.shouldOutputSheet(data.otherBusinessExpenses) ||
       ResearchExpenseSectionModel.shouldOutputSheet(data.researchExpenses) ||
-      DonationGrantExpenseSectionModel.shouldOutputSheet(
-        data.donationGrantExpenses,
-      ) ||
-      OtherPoliticalExpenseSectionModel.shouldOutputSheet(
-        data.otherPoliticalExpenses,
-      )
+      DonationGrantExpenseSectionModel.shouldOutputSheet(data.donationGrantExpenses) ||
+      OtherPoliticalExpenseSectionModel.shouldOutputSheet(data.otherPoliticalExpenses)
     );
   },
 };

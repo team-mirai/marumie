@@ -21,11 +21,7 @@ export default function InviteProcessor() {
         try {
           const res = await completeInviteSession(accessToken, refreshToken);
           if (res.ok) {
-            window.history.replaceState(
-              {},
-              document.title,
-              window.location.pathname,
-            );
+            window.history.replaceState({}, document.title, window.location.pathname);
             window.location.replace("/auth/setup?from=invite");
           } else {
             const err = encodeURIComponent(res.error || "invite_error");

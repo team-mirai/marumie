@@ -34,9 +34,7 @@ export default function Sidebar({
 
   return (
     <aside className="bg-primary-panel p-4 flex flex-col h-full">
-      <h2 className="text-primary-muted text-lg font-medium mb-3 mt-0">
-        管理画面
-      </h2>
+      <h2 className="text-primary-muted text-lg font-medium mb-3 mt-0">管理画面</h2>
       <nav className="flex flex-col gap-2">
         {navItems.map(
           (item) =>
@@ -45,9 +43,7 @@ export default function Sidebar({
                 key={item.href}
                 href={item.href}
                 className={`text-white no-underline px-2.5 py-2 rounded-lg transition-colors duration-200 ${
-                  isActive(item.href)
-                    ? "bg-primary-hover"
-                    : "hover:bg-primary-hover"
+                  isActive(item.href) ? "bg-primary-hover" : "hover:bg-primary-hover"
                 }`}
               >
                 {item.label}

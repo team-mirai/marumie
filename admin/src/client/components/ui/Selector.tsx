@@ -32,10 +32,7 @@ export default function Selector({
   return (
     <div>
       {label && (
-        <label
-          htmlFor={selectId}
-          className="block text-sm font-medium text-white mb-2"
-        >
+        <label htmlFor={selectId} className="block text-sm font-medium text-white mb-2">
           {label}
         </label>
       )}

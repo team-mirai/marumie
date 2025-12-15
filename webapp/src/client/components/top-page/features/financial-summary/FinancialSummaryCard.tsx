@@ -21,10 +21,7 @@ export default function FinancialSummaryCard({
   return (
     <BaseCard className={className}>
       <div className="flex flex-row sm:flex-col justify-between sm:justify-start items-center sm:items-start gap-5 sm:gap-4">
-        <div
-          className={`font-bold text-sm sm:text-base`}
-          style={{ color: titleColor }}
-        >
+        <div className={`font-bold text-sm sm:text-base`} style={{ color: titleColor }}>
           {title}
         </div>
         <div className="flex items-baseline gap-1 translate-y-0.5">
@@ -35,10 +32,7 @@ export default function FinancialSummaryCard({
             {amount.main}
           </span>
           {amount.secondary && (
-            <span
-              className="font-bold text-xs sm:text-base"
-              style={{ color: amountColor }}
-            >
+            <span className="font-bold text-xs sm:text-base" style={{ color: amountColor }}>
               {amount.secondary}
             </span>
           )}

@@ -20,10 +20,7 @@ const emptyPeriod = (): FundManagementPeriod => ({
   to: "",
 });
 
-export function FundManagementSection({
-  details,
-  updateDetails,
-}: FundManagementSectionProps) {
+export function FundManagementSection({ details, updateDetails }: FundManagementSectionProps) {
   const fundManagement = details.fundManagement;
   const isEnabled = !!fundManagement;
 
@@ -60,17 +57,12 @@ export function FundManagementSection({
 
   const removePeriod = (index: number) => {
     if (fundManagement) {
-      const newPeriods = (fundManagement.periods ?? []).filter(
-        (_, i) => i !== index,
-      );
+      const newPeriods = (fundManagement.periods ?? []).filter((_, i) => i !== index);
       updateFundManagement({ periods: newPeriods });
     }
   };
 
-  const updatePeriod = (
-    index: number,
-    updates: Partial<FundManagementPeriod>,
-  ) => {
+  const updatePeriod = (index: number, updates: Partial<FundManagementPeriod>) => {
     if (fundManagement) {
       const newPeriods = [...(fundManagement.periods ?? [])];
       newPeriods[index] = { ...newPeriods[index], ...updates };
@@ -103,9 +95,7 @@ export function FundManagementSection({
             <input
               type="text"
               value={fundManagement.publicPositionName ?? ""}
-              onChange={(e) =>
-                updateFundManagement({ publicPositionName: e.target.value })
-              }
+              onChange={(e) => updateFundManagement({ publicPositionName: e.target.value })}
               maxLength={60}
               className="bg-primary-input text-white border border-primary-border rounded-lg px-3 py-2.5 w-full max-w-md mt-2 block font-normal"
               placeholder="衆議院議員"
@@ -118,12 +108,7 @@ export function FundManagementSection({
               value={fundManagement.publicPositionType ?? ""}
               onChange={(e) =>
                 updateFundManagement({
-                  publicPositionType: e.target.value as
-                    | "1"
-                    | "2"
-                    | "3"
-                    | "4"
-                    | undefined,
+                  publicPositionType: e.target.value as "1" | "2" | "3" | "4" | undefined,
                 })
               }
               className="bg-primary-input text-white border border-primary-border rounded-lg px-3 py-2.5 mt-2 block font-normal"
@@ -180,9 +165,7 @@ export function FundManagementSection({
 
           <div>
             <div className="flex justify-between items-center mb-2">
-              <h3 className="text-md font-medium text-white">
-                指定期間（最大3件）
-              </h3>
+              <h3 className="text-md font-medium text-white">指定期間（最大3件）</h3>
               {(fundManagement.periods?.length ?? 0) < 3 && (
                 <button
                   type="button"
@@ -199,9 +182,7 @@ export function FundManagementSection({
                   <input
                     type="text"
                     value={period.from}
-                    onChange={(e) =>
-                      updatePeriod(index, { from: e.target.value })
-                    }
+                    onChange={(e) => updatePeriod(index, { from: e.target.value })}
                     maxLength={20}
                     className="bg-primary-input text-white border border-primary-border rounded-lg px-3 py-2 w-32"
                     placeholder="R6/4/1"
@@ -210,9 +191,7 @@ export function FundManagementSection({
                   <input
                     type="text"
                     value={period.to}
-                    onChange={(e) =>
-                      updatePeriod(index, { to: e.target.value })
-                    }
+                    onChange={(e) => updatePeriod(index, { to: e.target.value })}
                     maxLength={20}
                     className="bg-primary-input text-white border border-primary-border rounded-lg px-3 py-2 w-32"
                     placeholder="R7/3/31"

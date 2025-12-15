@@ -9,10 +9,7 @@ import type { PreviewTransaction } from "@/server/contexts/data-import/domain/mo
 
 const transactionRepository = new PrismaTransactionRepository(prisma);
 const cacheInvalidator = new WebappCacheInvalidator();
-const uploadUsecase = new SavePreviewTransactionsUsecase(
-  transactionRepository,
-  cacheInvalidator,
-);
+const uploadUsecase = new SavePreviewTransactionsUsecase(transactionRepository, cacheInvalidator);
 
 export interface UploadCsvRequest {
   validTransactions: PreviewTransaction[];
@@ -28,9 +25,7 @@ export interface UploadCsvResponse {
   errors?: string[];
 }
 
-export async function uploadCsv(
-  data: UploadCsvRequest,
-): Promise<UploadCsvResponse> {
+export async function uploadCsv(data: UploadCsvRequest): Promise<UploadCsvResponse> {
   "use server";
   try {
     const { validTransactions, politicalOrganizationId } = data;
@@ -77,8 +72,6 @@ export async function uploadCsv(
     };
   } catch (error) {
     console.error("Upload CSV error:", error);
-    throw error instanceof Error
-      ? error
-      : new Error("サーバー内部エラーが発生しました");
+    throw error instanceof Error ? error : new Error("サーバー内部エラーが発生しました");
   }
 }

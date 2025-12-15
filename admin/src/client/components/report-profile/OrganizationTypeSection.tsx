@@ -8,15 +8,10 @@ interface OrganizationTypeSectionProps {
   updateDetails: (updates: Partial<OrganizationReportProfileDetails>) => void;
 }
 
-export function OrganizationTypeSection({
-  details,
-  updateDetails,
-}: OrganizationTypeSectionProps) {
+export function OrganizationTypeSection({ details, updateDetails }: OrganizationTypeSectionProps) {
   return (
     <div className="bg-primary-hover rounded-lg p-4">
-      <h2 className="text-lg font-semibold text-white mb-4">
-        団体区分・活動区域
-      </h2>
+      <h2 className="text-lg font-semibold text-white mb-4">団体区分・活動区域</h2>
 
       <div className="space-y-4">
         <div>
@@ -25,9 +20,7 @@ export function OrganizationTypeSection({
             <input
               type="text"
               value={details.organizationType ?? ""}
-              onChange={(e) =>
-                updateDetails({ organizationType: e.target.value })
-              }
+              onChange={(e) => updateDetails({ organizationType: e.target.value })}
               maxLength={2}
               className="bg-primary-input text-white border border-primary-border rounded-lg px-3 py-2.5 w-24 mt-2 block font-normal"
               placeholder="01"
@@ -61,17 +54,13 @@ export function OrganizationTypeSection({
             <input
               type="text"
               value={details.specificPartyDate ?? ""}
-              onChange={(e) =>
-                updateDetails({ specificPartyDate: e.target.value })
-              }
+              onChange={(e) => updateDetails({ specificPartyDate: e.target.value })}
               maxLength={20}
               className="bg-primary-input text-white border border-primary-border rounded-lg px-3 py-2.5 w-40 mt-2 block font-normal"
               placeholder="R6/4/1"
             />
           </label>
-          <p className="text-primary-muted text-sm mt-1">
-            該当する場合のみ入力（例: R6/4/1）
-          </p>
+          <p className="text-primary-muted text-sm mt-1">該当する場合のみ入力（例: R6/4/1）</p>
         </div>
       </div>
     </div>

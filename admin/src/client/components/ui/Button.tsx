@@ -11,22 +11,14 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   (
-    {
-      className = "",
-      variant = "primary",
-      size = "md",
-      fullWidth = false,
-      children,
-      ...props
-    },
+    { className = "", variant = "primary", size = "md", fullWidth = false, children, ...props },
     ref,
   ) => {
     const baseClasses =
       "font-medium rounded-lg border-0 cursor-pointer transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-accent";
 
     const variantClasses = {
-      primary:
-        "bg-primary-accent text-white hover:bg-blue-600 focus:ring-primary-accent",
+      primary: "bg-primary-accent text-white hover:bg-blue-600 focus:ring-primary-accent",
       secondary:
         "bg-primary-panel text-white border border-primary-border hover:bg-primary-hover focus:ring-primary-muted",
       danger: "bg-red-500 text-white hover:bg-red-600 focus:ring-red-400",

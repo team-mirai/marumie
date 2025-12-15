@@ -43,9 +43,7 @@ export default function InteractiveRect({
       height={height}
       fill={fill}
       opacity={1}
-      aria-label={`${label || id}: ¥${Math.round(value || 0).toLocaleString(
-        "ja-JP",
-      )}`}
+      aria-label={`${label || id}: ¥${Math.round(value || 0).toLocaleString("ja-JP")}`}
       onMouseEnter={(e) => onMouseEnter(e, { id, label, value })}
       onMouseLeave={onMouseLeave}
       onMouseMove={onMouseMove}

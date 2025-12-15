@@ -48,9 +48,7 @@ export default function BalanceSheetChart({ data }: BalanceSheetChartProps) {
 
     return (
       <span className="inline-flex items-baseline gap-0.5">
-        {isDebtExcess && (
-          <span className="text-sm font-bold text-red-600">▲</span>
-        )}
+        {isDebtExcess && <span className="text-sm font-bold text-red-600">▲</span>}
         {parts
           .map((part, index) => ({ part, index }))
           .filter(({ part }) => part !== "")
@@ -59,9 +57,7 @@ export default function BalanceSheetChart({ data }: BalanceSheetChartProps) {
             return (
               <span
                 key={`part-${index}-${part}`}
-                className={
-                  isNumber ? "text-lg font-bold" : "text-xs font-medium"
-                }
+                className={isNumber ? "text-lg font-bold" : "text-xs font-medium"}
                 style={{
                   fontFamily: isNumber
                     ? "'SF Pro', -apple-system, system-ui, sans-serif"
@@ -77,8 +73,7 @@ export default function BalanceSheetChart({ data }: BalanceSheetChartProps) {
   };
 
   // 左側（資産）の計算
-  const leftTotal =
-    data.left.currentAssets + data.left.fixedAssets + data.left.debtExcess;
+  const leftTotal = data.left.currentAssets + data.left.fixedAssets + data.left.debtExcess;
 
   const leftItems: BalanceSheetItem[] = [
     {
@@ -104,9 +99,7 @@ export default function BalanceSheetChart({ data }: BalanceSheetChartProps) {
 
   // 右側（負債・資本）の計算
   const rightTotal =
-    data.right.currentLiabilities +
-    data.right.fixedLiabilities +
-    data.right.netAssets;
+    data.right.currentLiabilities + data.right.fixedLiabilities + data.right.netAssets;
 
   const rightItems: BalanceSheetItem[] = [
     {
@@ -148,9 +141,7 @@ export default function BalanceSheetChart({ data }: BalanceSheetChartProps) {
       >
         {isSmall ? (
           // 小さい場合：一行表示
-          <div
-            className={`text-center ${item.isDebtExcess ? "text-red-600" : "text-black"}`}
-          >
+          <div className={`text-center ${item.isDebtExcess ? "text-red-600" : "text-black"}`}>
             <span
               className="text-sm font-bold"
               style={{ fontFamily: "'Noto Sans JP', sans-serif" }}
@@ -185,14 +176,10 @@ export default function BalanceSheetChart({ data }: BalanceSheetChartProps) {
         aria-label="貸借対照表チャート"
       >
         {/* 左側（資産） */}
-        <div className="flex-1 flex flex-col">
-          {leftItems.map((item) => renderItem(item))}
-        </div>
+        <div className="flex-1 flex flex-col">{leftItems.map((item) => renderItem(item))}</div>
 
         {/* 右側（負債・資本） */}
-        <div className="flex-1 flex flex-col">
-          {rightItems.map((item) => renderItem(item))}
-        </div>
+        <div className="flex-1 flex flex-col">{rightItems.map((item) => renderItem(item))}</div>
       </div>
     </div>
   );

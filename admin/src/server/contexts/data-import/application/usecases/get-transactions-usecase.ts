@@ -28,18 +28,13 @@ export interface GetTransactionsResult {
 export class GetTransactionsUsecase {
   constructor(private repository: ITransactionRepository) {}
 
-  async execute(
-    params: GetTransactionsParams = {},
-  ): Promise<GetTransactionsResult> {
+  async execute(params: GetTransactionsParams = {}): Promise<GetTransactionsResult> {
     try {
       const page = Math.max(params.page || 1, 1);
       const perPage = Math.min(Math.max(params.perPage || 50, 1), 100);
 
       const filters: TransactionFilters = {};
-      if (
-        params.politicalOrganizationIds &&
-        params.politicalOrganizationIds.length > 0
-      ) {
+      if (params.politicalOrganizationIds && params.politicalOrganizationIds.length > 0) {
         filters.political_organization_ids = params.politicalOrganizationIds;
       }
       if (params.transactionType) {
@@ -60,10 +55,7 @@ export class GetTransactionsUsecase {
         perPage,
       };
 
-      const result = await this.repository.findWithPagination(
-        filters,
-        pagination,
-      );
+      const result = await this.repository.findWithPagination(filters, pagination);
 
       return {
         transactions: result.items,

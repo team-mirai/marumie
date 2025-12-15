@@ -89,15 +89,9 @@ export default function BalanceSnapshotForm({
 
   return (
     <div>
-      <form
-        onSubmit={handleSubmit}
-        className="flex gap-4 items-start max-w-2xl"
-      >
+      <form onSubmit={handleSubmit} className="flex gap-4 items-start max-w-2xl">
         <div className="w-48">
-          <label
-            htmlFor={dateInputId}
-            className="block text-sm font-medium text-white mb-2"
-          >
+          <label htmlFor={dateInputId} className="block text-sm font-medium text-white mb-2">
             残高日付:
           </label>
           <input
@@ -112,16 +106,11 @@ export default function BalanceSnapshotForm({
             }`}
             required
           />
-          {dateError && (
-            <p className="text-red-400 text-sm mt-1">{dateError}</p>
-          )}
+          {dateError && <p className="text-red-400 text-sm mt-1">{dateError}</p>}
         </div>
 
         <div className="w-48">
-          <label
-            htmlFor={balanceInputId}
-            className="block text-sm font-medium text-white mb-2"
-          >
+          <label htmlFor={balanceInputId} className="block text-sm font-medium text-white mb-2">
             残高 (円):
           </label>
           <input
@@ -137,18 +126,13 @@ export default function BalanceSnapshotForm({
         </div>
 
         <div className="mt-7">
-          <Button
-            type="submit"
-            disabled={!snapshotDate || !balance || isSubmitting || !!dateError}
-          >
+          <Button type="submit" disabled={!snapshotDate || !balance || isSubmitting || !!dateError}>
             {isSubmitting ? "登録中..." : "残高を登録"}
           </Button>
         </div>
       </form>
 
-      {successMessage && (
-        <div className="mt-4 text-green-400 text-sm">{successMessage}</div>
-      )}
+      {successMessage && <div className="mt-4 text-green-400 text-sm">{successMessage}</div>}
     </div>
   );
 }

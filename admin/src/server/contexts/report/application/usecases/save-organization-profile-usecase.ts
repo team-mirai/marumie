@@ -21,9 +21,7 @@ export interface SaveOrganizationProfileInput {
 export class SaveOrganizationProfileUsecase {
   constructor(private repository: IOrganizationReportProfileRepository) {}
 
-  async execute(
-    input: SaveOrganizationProfileInput,
-  ): Promise<OrganizationReportProfile> {
+  async execute(input: SaveOrganizationProfileInput): Promise<OrganizationReportProfile> {
     if (input.id) {
       const updateInput: UpdateOrganizationReportProfileInput = {
         officialName: input.officialName,

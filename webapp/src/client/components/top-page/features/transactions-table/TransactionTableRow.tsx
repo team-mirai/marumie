@@ -8,9 +8,7 @@ interface TransactionTableRowProps {
   transaction: DisplayTransaction;
 }
 
-export default function TransactionTableRow({
-  transaction,
-}: TransactionTableRowProps) {
+export default function TransactionTableRow({ transaction }: TransactionTableRowProps) {
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("ja-JP", {
       style: "decimal",
@@ -33,9 +31,7 @@ export default function TransactionTableRow({
 
   const getDisplayTitle = (transaction: DisplayTransaction) => {
     const baseTitle = transaction.friendly_category || transaction.category;
-    return transaction.label
-      ? `${baseTitle} - ${transaction.label}`
-      : baseTitle;
+    return transaction.label ? `${baseTitle} - ${transaction.label}` : baseTitle;
   };
 
   const getCategoryColors = (transaction: DisplayTransaction) => {

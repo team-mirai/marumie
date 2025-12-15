@@ -13,9 +13,7 @@ export interface PreviewCsvRequest {
   politicalOrganizationId: string;
 }
 
-export async function previewCsv(
-  data: PreviewCsvRequest,
-): Promise<PreviewMfCsvResult> {
+export async function previewCsv(data: PreviewCsvRequest): Promise<PreviewMfCsvResult> {
   "use server";
   try {
     const { file, politicalOrganizationId } = data;
@@ -40,9 +38,7 @@ export async function previewCsv(
     return result;
   } catch (error) {
     console.error("Preview CSV error:", error);
-    throw error instanceof Error
-      ? error
-      : new Error("サーバー内部エラーが発生しました");
+    throw error instanceof Error ? error : new Error("サーバー内部エラーが発生しました");
   } finally {
     await prisma.$disconnect();
   }

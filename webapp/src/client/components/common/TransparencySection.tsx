@@ -4,9 +4,7 @@ interface TransparencySectionProps {
   title: string;
 }
 
-export default function TransparencySection({
-  title,
-}: TransparencySectionProps) {
+export default function TransparencySection({ title }: TransparencySectionProps) {
   return (
     <div className="flex items-center self-stretch bg-gradient-to-br from-[#64D8C6] to-[#BCECD3] rounded-[22px] p-8 sm:p-12">
       <div className="flex flex-col justify-center gap-2 sm:gap-[10.84px]">

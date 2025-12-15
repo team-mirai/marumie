@@ -1,8 +1,4 @@
-import {
-  Prisma,
-  type PrismaClient,
-  type Transaction as PrismaTransaction,
-} from "@prisma/client";
+import { Prisma, type PrismaClient, type Transaction as PrismaTransaction } from "@prisma/client";
 import type { Transaction, TransactionType } from "@/shared/models/transaction";
 import type { TransactionFilters } from "@/types/transaction-filters";
 import type { DisplayTransactionType } from "@/types/display-transaction";
@@ -50,10 +46,7 @@ export class PrismaTransactionRepository implements ITransactionRepository {
     const skip = (page - 1) * perPage;
 
     // Build orderBy based on sortBy and order parameters
-    const orderBy = this.buildOrderByClause(
-      pagination?.sortBy,
-      pagination?.order,
-    );
+    const orderBy = this.buildOrderByClause(pagination?.sortBy, pagination?.order);
 
     const [transactions, total] = await Promise.all([
       this.prisma.transaction.findMany({
@@ -82,10 +75,7 @@ export class PrismaTransactionRepository implements ITransactionRepository {
     categoryType?: "political-category" | "friendly-category",
   ): Promise<SankeyCategoryAggregationResult> {
     if (categoryType === "friendly-category") {
-      return this.getCategoryAggregationWithTag(
-        politicalOrganizationIds,
-        financialYear,
-      );
+      return this.getCategoryAggregationWithTag(politicalOrganizationIds, financialYear);
     }
 
     // デフォルト: politicalカテゴリーの場合は、従来通りmainCategory + subCategoryでグループ化
@@ -194,38 +184,28 @@ export class PrismaTransactionRepository implements ITransactionRepository {
     politicalOrganizationIds: string[],
     financialYear: number,
   ): Promise<MonthlyAggregation[]> {
-    const organizationIdsBigInt = politicalOrganizationIds.map((id) =>
-      BigInt(id),
-    );
+    const organizationIdsBigInt = politicalOrganizationIds.map((id) => BigInt(id));
 
     const [incomeResults, expenseResults] = await Promise.all([
-      this.prisma.$queryRaw<
-        Array<{ year: bigint; month: bigint; total_amount: number }>
-      >`
+      this.prisma.$queryRaw<Array<{ year: bigint; month: bigint; total_amount: number }>>`
         SELECT
           EXTRACT(YEAR FROM transaction_date) as year,
           EXTRACT(MONTH FROM transaction_date) as month,
           SUM(credit_amount) as total_amount
         FROM transactions
-        WHERE political_organization_id IN (${Prisma.join(
-          organizationIdsBigInt,
-        )})
+        WHERE political_organization_id IN (${Prisma.join(organizationIdsBigInt)})
           AND financial_year = ${financialYear}
           AND transaction_type = 'income'
         GROUP BY EXTRACT(YEAR FROM transaction_date), EXTRACT(MONTH FROM transaction_date)
         ORDER BY year, month
       `,
-      this.prisma.$queryRaw<
-        Array<{ year: bigint; month: bigint; total_amount: number }>
-      >`
+      this.prisma.$queryRaw<Array<{ year: bigint; month: bigint; total_amount: number }>>`
         SELECT
           EXTRACT(YEAR FROM transaction_date) as year,
           EXTRACT(MONTH FROM transaction_date) as month,
           SUM(debit_amount) as total_amount
         FROM transactions
-        WHERE political_organization_id IN (${Prisma.join(
-          organizationIdsBigInt,
-        )})
+        WHERE political_organization_id IN (${Prisma.join(organizationIdsBigInt)})
           AND financial_year = ${financialYear}
           AND transaction_type = 'expense'
         GROUP BY EXTRACT(YEAR FROM transaction_date), EXTRACT(MONTH FROM transaction_date)
@@ -234,10 +214,7 @@ export class PrismaTransactionRepository implements ITransactionRepository {
     ]);
 
     // 年月別のマップを作成
-    const monthlyMap = new Map<
-      string,
-      { yearMonth: string; income: number; expense: number }
-    >();
+    const monthlyMap = new Map<string, { yearMonth: string; income: number; expense: number }>();
 
     // 収入データを追加
     for (const item of incomeResults) {
@@ -267,9 +244,7 @@ export class PrismaTransactionRepository implements ITransactionRepository {
       }
     }
 
-    return Array.from(monthlyMap.values()).sort((a, b) =>
-      a.yearMonth.localeCompare(b.yearMonth),
-    );
+    return Array.from(monthlyMap.values()).sort((a, b) => a.yearMonth.localeCompare(b.yearMonth));
   }
 
   async getDailyDonationData(
@@ -280,9 +255,7 @@ export class PrismaTransactionRepository implements ITransactionRepository {
     const donationAccountKeys = Object.keys(PL_CATEGORIES).filter(
       (key) => PL_CATEGORIES[key].category === "寄附",
     );
-    const organizationIdsBigInt = politicalOrganizationIds.map((id) =>
-      BigInt(id),
-    );
+    const organizationIdsBigInt = politicalOrganizationIds.map((id) => BigInt(id));
 
     // 寄附に該当するアカウントからの収入データを日別に集計
     const dailyDonationResults = await this.prisma.$queryRaw<
@@ -440,8 +413,7 @@ export class PrismaTransactionRepository implements ITransactionRepository {
 
     return transactions.map((transaction) => ({
       ...this.mapToTransaction(transaction),
-      political_organization_name:
-        transaction.politicalOrganization.displayName,
+      political_organization_name: transaction.politicalOrganization.displayName,
     }));
   }
 
@@ -490,9 +462,7 @@ export class PrismaTransactionRepository implements ITransactionRepository {
       };
       // friendlyカテゴリーの場合は、subcategoryをtagに置き換える
       const subcategory = item.tag || undefined;
-      const key = subcategory
-        ? `${mapping.category}|${subcategory}`
-        : mapping.category;
+      const key = subcategory ? `${mapping.category}|${subcategory}` : mapping.category;
 
       const existing = categoryMap.get(key);
       if (existing) {
@@ -509,9 +479,7 @@ export class PrismaTransactionRepository implements ITransactionRepository {
     return Array.from(categoryMap.values());
   }
 
-  private buildWhereClause(
-    filters?: TransactionFilters,
-  ): Prisma.TransactionWhereInput {
+  private buildWhereClause(filters?: TransactionFilters): Prisma.TransactionWhereInput {
     const where: Prisma.TransactionWhereInput = {};
 
     // webapp では常に offset 系のトランザクションを除外
@@ -538,10 +506,7 @@ export class PrismaTransactionRepository implements ITransactionRepository {
       };
     }
 
-    if (
-      filters?.political_organization_ids &&
-      filters.political_organization_ids.length > 0
-    ) {
+    if (filters?.political_organization_ids && filters.political_organization_ids.length > 0) {
       where.politicalOrganizationId = {
         in: filters.political_organization_ids.map((id) => BigInt(id)),
       };
@@ -589,8 +554,7 @@ export class PrismaTransactionRepository implements ITransactionRepository {
   private mapToTransaction(prismaTransaction: PrismaTransaction): Transaction {
     return {
       id: prismaTransaction.id.toString(),
-      political_organization_id:
-        prismaTransaction.politicalOrganizationId.toString(),
+      political_organization_id: prismaTransaction.politicalOrganizationId.toString(),
       transaction_no: prismaTransaction.transactionNo || "",
       transaction_date: prismaTransaction.transactionDate,
       financial_year: prismaTransaction.financialYear,

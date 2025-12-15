@@ -5,9 +5,7 @@ import type {
   TotalBalancesByYear,
 } from "./interfaces/balance-snapshot-repository.interface";
 
-export class PrismaBalanceSnapshotRepository
-  implements IBalanceSnapshotRepository
-{
+export class PrismaBalanceSnapshotRepository implements IBalanceSnapshotRepository {
   constructor(private prisma: PrismaClient) {}
 
   async getTotalLatestBalanceByOrgIds(orgIds: string[]): Promise<number> {
@@ -67,10 +65,8 @@ export class PrismaBalanceSnapshotRepository
       ORDER BY year
     `;
 
-    const currentYearBalance =
-      result.find((r) => r.year === currentYear)?.total_balance || "0";
-    const previousYearBalance =
-      result.find((r) => r.year === previousYear)?.total_balance || "0";
+    const currentYearBalance = result.find((r) => r.year === currentYear)?.total_balance || "0";
+    const previousYearBalance = result.find((r) => r.year === previousYear)?.total_balance || "0";
 
     return {
       currentYear: Number(currentYearBalance),

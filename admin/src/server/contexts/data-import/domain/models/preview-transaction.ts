@@ -79,9 +79,7 @@ export const PreviewTransaction = {
       political_organization_id: politicalOrganizationId,
       transaction_no: tx.transaction_no,
       transaction_date: tx.transaction_date,
-      financial_year: PreviewTransaction.extractFinancialYear(
-        tx.transaction_date,
-      ),
+      financial_year: PreviewTransaction.extractFinancialYear(tx.transaction_date),
       transaction_type: tx.transaction_type,
       debit_account: tx.debit_account,
       debit_sub_account: tx.debit_sub_account || "",
@@ -115,9 +113,7 @@ export const PreviewTransaction = {
     return {
       transaction_no: tx.transaction_no,
       transaction_date: tx.transaction_date,
-      financial_year: PreviewTransaction.extractFinancialYear(
-        tx.transaction_date,
-      ),
+      financial_year: PreviewTransaction.extractFinancialYear(tx.transaction_date),
       transaction_type: tx.transaction_type,
       debit_account: tx.debit_account,
       debit_sub_account: tx.debit_sub_account || "",

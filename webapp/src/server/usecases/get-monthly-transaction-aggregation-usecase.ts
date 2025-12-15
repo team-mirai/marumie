@@ -23,8 +23,9 @@ export class GetMonthlyTransactionAggregationUsecase {
     params: GetMonthlyTransactionAggregationParams,
   ): Promise<GetMonthlyTransactionAggregationResult> {
     try {
-      const politicalOrganizations =
-        await this.politicalOrganizationRepository.findBySlugs(params.slugs);
+      const politicalOrganizations = await this.politicalOrganizationRepository.findBySlugs(
+        params.slugs,
+      );
 
       if (politicalOrganizations.length === 0) {
         throw new Error(
@@ -34,11 +35,10 @@ export class GetMonthlyTransactionAggregationUsecase {
 
       // Get monthly data for all organizations using IN clause
       const organizationIds = politicalOrganizations.map((org) => org.id);
-      const monthlyData =
-        await this.transactionRepository.getMonthlyAggregation(
-          organizationIds,
-          params.financialYear,
-        );
+      const monthlyData = await this.transactionRepository.getMonthlyAggregation(
+        organizationIds,
+        params.financialYear,
+      );
 
       return { monthlyData };
     } catch (error) {

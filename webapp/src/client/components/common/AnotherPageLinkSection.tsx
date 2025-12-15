@@ -6,17 +6,13 @@ interface AnotherPageLinkSectionProps {
   currentSlug: string;
 }
 
-export default function AnotherPageLinkSection({
-  currentSlug,
-}: AnotherPageLinkSectionProps) {
+export default function AnotherPageLinkSection({ currentSlug }: AnotherPageLinkSectionProps) {
   const getTargetSlug = () => {
     return currentSlug === "digimin" ? "team-mirai" : "digimin";
   };
 
   const getTargetOrgName = () => {
-    return currentSlug === "digimin"
-      ? "政党・チームみらい"
-      : "党首・安野貴博の政治団体";
+    return currentSlug === "digimin" ? "政党・チームみらい" : "党首・安野貴博の政治団体";
   };
   return (
     <div className="w-full md:flex md:justify-end">

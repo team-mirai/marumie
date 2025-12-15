@@ -8,14 +8,11 @@ interface DeletePoliticalOrganizationResult {
 }
 
 export class DeletePoliticalOrganizationUsecase {
-  constructor(
-    private politicalOrganizationRepository: IPoliticalOrganizationRepository,
-  ) {}
+  constructor(private politicalOrganizationRepository: IPoliticalOrganizationRepository) {}
 
   async execute(orgId: bigint): Promise<DeletePoliticalOrganizationResult> {
     try {
-      const transactionCount =
-        await this.politicalOrganizationRepository.countTransactions(orgId);
+      const transactionCount = await this.politicalOrganizationRepository.countTransactions(orgId);
 
       if (transactionCount > 0) {
         return {

@@ -28,12 +28,11 @@ export class GetDailyDonationUsecase {
     private politicalOrganizationRepository: IPoliticalOrganizationRepository,
   ) {}
 
-  async execute(
-    params: GetDailyDonationParams,
-  ): Promise<GetDailyDonationResult> {
+  async execute(params: GetDailyDonationParams): Promise<GetDailyDonationResult> {
     try {
-      const politicalOrganizations =
-        await this.politicalOrganizationRepository.findBySlugs(params.slugs);
+      const politicalOrganizations = await this.politicalOrganizationRepository.findBySlugs(
+        params.slugs,
+      );
 
       if (politicalOrganizations.length === 0) {
         throw new Error(
@@ -44,33 +43,22 @@ export class GetDailyDonationUsecase {
       const organizationIds = politicalOrganizations.map((org) => org.id);
 
       // ② 日付ごとにgroup byされた寄附をクエリで取得
-      const rawDailyData =
-        await this.transactionRepository.getDailyDonationData(
-          organizationIds,
-          params.financialYear,
-        );
-
-      // ③ 毎日寄附があるわけではないので、日付が歯抜けにならないよう日付を追加し、金額をゼロ埋めする
-      const filledDailyData = this.fillMissingDates(
-        rawDailyData,
+      const rawDailyData = await this.transactionRepository.getDailyDonationData(
+        organizationIds,
         params.financialYear,
       );
+
+      // ③ 毎日寄附があるわけではないので、日付が歯抜けにならないよう日付を追加し、金額をゼロ埋めする
+      const filledDailyData = this.fillMissingDates(rawDailyData, params.financialYear);
 
       // ④ ③に対してcumsumを追加する
       const cumulativeDailyData = this.calculateCumSum(filledDailyData);
 
       // ⑤ ④の直近N日をsliceしてdailyDonationDataとして返す
-      const recentDailyData = this.sliceRecentDays(
-        cumulativeDailyData,
-        params.days,
-        params.today,
-      );
+      const recentDailyData = this.sliceRecentDays(cumulativeDailyData, params.days, params.today);
 
       // ⑥ その他返り値の型は変更ないので埋めて返す
-      const donationSummary = this.buildDonationSummary(
-        recentDailyData,
-        params.today,
-      );
+      const donationSummary = this.buildDonationSummary(recentDailyData, params.today);
 
       return { donationSummary };
     } catch (error) {
@@ -118,9 +106,7 @@ export class GetDailyDonationUsecase {
     return filledData;
   }
 
-  private calculateCumSum(
-    filledData: DailyDonationData[],
-  ): DailyDonationData[] {
+  private calculateCumSum(filledData: DailyDonationData[]): DailyDonationData[] {
     let cumulativeAmount = 0;
     return filledData.map((item) => {
       cumulativeAmount += item.dailyAmount;
@@ -139,9 +125,7 @@ export class GetDailyDonationUsecase {
     const todayStr = today.toISOString().split("T")[0];
 
     // 今日の位置を見つける
-    const todayIndex = cumulativeData.findIndex(
-      (item) => item.date === todayStr,
-    );
+    const todayIndex = cumulativeData.findIndex((item) => item.date === todayStr);
 
     if (todayIndex === -1) {
       // 今日のデータが見つからない場合は、最後のN日を返す
@@ -158,8 +142,7 @@ export class GetDailyDonationUsecase {
     today: Date,
   ): DonationSummaryData {
     // 統計情報を計算
-    const totalAmount =
-      recentDailyData[recentDailyData.length - 1]?.cumulativeAmount || 0;
+    const totalAmount = recentDailyData[recentDailyData.length - 1]?.cumulativeAmount || 0;
 
     // 今日と昨日の日付を文字列で準備
     const todayStr = today.toISOString().split("T")[0];
@@ -169,9 +152,7 @@ export class GetDailyDonationUsecase {
 
     // 今日と昨日の寄附データを検索
     const todayData = recentDailyData.find((item) => item.date === todayStr);
-    const yesterdayData = recentDailyData.find(
-      (item) => item.date === yesterdayStr,
-    );
+    const yesterdayData = recentDailyData.find((item) => item.date === yesterdayStr);
 
     // 前日比の計算（常に差分を計算）
     const todayDonation = todayData?.dailyAmount || 0;

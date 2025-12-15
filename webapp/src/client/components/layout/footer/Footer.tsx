@@ -106,9 +106,7 @@ export default function Footer() {
   const pathname = usePathname();
 
   // 現在のslugを取得（/o/[slug]/... の形式の場合、なければdefaultを使用）
-  const currentSlug = pathname.startsWith("/o/")
-    ? pathname.split("/")[2]
-    : "team-mirai";
+  const currentSlug = pathname.startsWith("/o/") ? pathname.split("/")[2] : "team-mirai";
 
   const textLinks = getTextLinks(currentSlug);
 
@@ -153,9 +151,7 @@ export default function Footer() {
           </div>
 
           {/* PC: 2行目（残り）*/}
-          <div className="hidden lg:flex gap-8">
-            {textLinks.slice(7).map(renderTextLink)}
-          </div>
+          <div className="hidden lg:flex gap-8">{textLinks.slice(7).map(renderTextLink)}</div>
         </div>
 
         {/* SNS Icons */}
@@ -183,9 +179,7 @@ export default function Footer() {
                 <span className="hidden lg:block text-base font-bold text-black">
                   {social.mainText || social.name}
                   {social.subText && (
-                    <span className="text-xs ml-1 opacity-80">
-                      {social.subText}
-                    </span>
+                    <span className="text-xs ml-1 opacity-80">{social.subText}</span>
                   )}
                 </span>
               </a>

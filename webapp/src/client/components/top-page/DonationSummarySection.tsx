@@ -12,9 +12,7 @@ interface DonationSummarySectionProps {
   donationSummary?: DonationSummaryData;
 }
 
-export default function DonationSummarySection({
-  donationSummary,
-}: DonationSummarySectionProps) {
+export default function DonationSummarySection({ donationSummary }: DonationSummarySectionProps) {
   // サーバーサイドで計算された統計情報を使用
   const totalDonationAmount = donationSummary?.totalAmount || 0;
   const dayOverDayChange = donationSummary?.amountDayOverDay || 0;
@@ -45,11 +43,7 @@ export default function DonationSummarySection({
     return { oku, man, en };
   };
 
-  const {
-    oku: totalOku,
-    man: totalMan,
-    en: totalEn,
-  } = formatLargeAmount(totalDonationAmount);
+  const { oku: totalOku, man: totalMan, en: totalEn } = formatLargeAmount(totalDonationAmount);
 
   return (
     <MainColumnCard id="donation-summary">
@@ -83,11 +77,7 @@ export default function DonationSummarySection({
         <p className="text-gray-800 font-bold text-base leading-7 mb-6">
           チームみらいは、皆さまのご支援・ご寄附のおかげで活動を続けられております。
         </p>
-        <Link
-          href="https://team-mir.ai/support/donation"
-          target="_blank"
-          rel="noopener"
-        >
+        <Link href="https://team-mir.ai/support/donation" target="_blank" rel="noopener">
           <MainButton>ご寄附はこちら</MainButton>
         </Link>
       </div>

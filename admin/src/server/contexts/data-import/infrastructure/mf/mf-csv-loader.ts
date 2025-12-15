@@ -66,9 +66,7 @@ export class MfCsvLoader {
       throw new Error("Invalid CSV format: no headers found");
     }
 
-    const hasValidHeaders = headers.some(
-      (header) => header in this.columnMapping,
-    );
+    const hasValidHeaders = headers.some((header) => header in this.columnMapping);
     if (!hasValidHeaders) {
       throw new Error("Invalid CSV format: no recognized headers found");
     }

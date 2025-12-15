@@ -17,9 +17,7 @@ export interface SaveOrganizationProfileData {
   details?: OrganizationReportProfileDetails;
 }
 
-export async function saveOrganizationProfile(
-  data: SaveOrganizationProfileData,
-) {
+export async function saveOrganizationProfile(data: SaveOrganizationProfileData) {
   try {
     const repository = new PrismaOrganizationReportProfileRepository(prisma);
     const usecase = new SaveOrganizationProfileUsecase(repository);
@@ -35,16 +33,12 @@ export async function saveOrganizationProfile(
       details: data.details,
     });
 
-    revalidatePath(
-      `/political-organizations/${data.politicalOrganizationId}/report-profile`,
-    );
+    revalidatePath(`/political-organizations/${data.politicalOrganizationId}/report-profile`);
     return { success: true, profile };
   } catch (error) {
     console.error("Error saving organization profile:", error);
     throw new Error(
-      error instanceof Error
-        ? error.message
-        : "報告書プロフィールの保存に失敗しました",
+      error instanceof Error ? error.message : "報告書プロフィールの保存に失敗しました",
     );
   }
 }

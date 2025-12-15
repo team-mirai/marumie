@@ -14,10 +14,7 @@ import {
   LoanIncomeSection,
   OtherIncomeSection,
 } from "@/server/contexts/report/domain/models/income-transaction";
-import {
-  ExpenseData,
-  type ReportData,
-} from "@/server/contexts/report/domain/models/report-data";
+import { ExpenseData, type ReportData } from "@/server/contexts/report/domain/models/report-data";
 import { serializePersonalDonationSection } from "@/server/contexts/report/domain/services/donation-serializer";
 import {
   serializeExpenseSection,
@@ -90,10 +87,7 @@ export type XmlSectionType = (typeof KNOWN_FORM_IDS)[number];
 /**
  * Serializes ReportData into a complete XML document string.
  */
-export function serializeReportData(
-  reportData: ReportData,
-  head: Partial<XmlHead> = {},
-): string {
+export function serializeReportData(reportData: ReportData, head: Partial<XmlHead> = {}): string {
   const sections: { formId: XmlSectionType; xml: XMLBuilder }[] = [];
 
   // SYUUSHI07_01: 第14号様式（その1）団体の基本情報
@@ -103,23 +97,15 @@ export function serializeReportData(
   });
 
   // SYUUSHI07_07: 第14号様式（その7）寄附の明細
-  if (
-    PersonalDonationSection.shouldOutputSheet(
-      reportData.donations.personalDonations,
-    )
-  ) {
+  if (PersonalDonationSection.shouldOutputSheet(reportData.donations.personalDonations)) {
     sections.push({
       formId: "SYUUSHI07_07",
-      xml: serializePersonalDonationSection(
-        reportData.donations.personalDonations,
-      ),
+      xml: serializePersonalDonationSection(reportData.donations.personalDonations),
     });
   }
 
   // SYUUSHI07_03: 第14号様式（その3）事業による収入
-  if (
-    BusinessIncomeSection.shouldOutputSheet(reportData.income.businessIncome)
-  ) {
+  if (BusinessIncomeSection.shouldOutputSheet(reportData.income.businessIncome)) {
     sections.push({
       formId: "SYUUSHI07_03",
       xml: serializeBusinessIncomeSection(reportData.income.businessIncome),
@@ -242,9 +228,7 @@ function buildSyuushiFlgSection(availableFormIds: string[]): XMLBuilder {
     ),
   );
 
-  const flagString = KNOWN_FORM_IDS.map((formId) =>
-    formSet.has(formId) ? "1" : "0",
-  )
+  const flagString = KNOWN_FORM_IDS.map((formId) => (formSet.has(formId) ? "1" : "0"))
     .join("")
     .padEnd(FLAG_STRING_LENGTH, "0")
     .slice(0, FLAG_STRING_LENGTH);

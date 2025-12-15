@@ -11,9 +11,7 @@ import {
 const CACHE_REVALIDATE_SECONDS = 5;
 
 export const loadTransactionsData = unstable_cache(
-  async (
-    params: GetTransactionsParams = {},
-  ): Promise<GetTransactionsResult> => {
+  async (params: GetTransactionsParams = {}): Promise<GetTransactionsResult> => {
     const repository = new PrismaTransactionRepository(prisma);
     const usecase = new GetTransactionsUsecase(repository);
 

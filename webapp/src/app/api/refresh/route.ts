@@ -10,10 +10,7 @@ export async function POST(request: NextRequest) {
 
     if (!expectedToken) {
       console.error("DATA_REFRESH_TOKEN not configured");
-      return NextResponse.json(
-        { error: "Server configuration error" },
-        { status: 500 },
-      );
+      return NextResponse.json({ error: "Server configuration error" }, { status: 500 });
     }
 
     if (!refreshToken || refreshToken !== expectedToken) {
@@ -33,9 +30,6 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error("Cache refresh error:", error);
-    return NextResponse.json(
-      { error: "Failed to refresh cache" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Failed to refresh cache" }, { status: 500 });
   }
 }

@@ -2,9 +2,7 @@ import type { PrismaClient } from "@prisma/client";
 import type { PoliticalOrganization } from "@/shared/models/political-organization";
 import type { IPoliticalOrganizationRepository } from "@/server/contexts/shared/domain/repositories/political-organization-repository.interface";
 
-export class PrismaPoliticalOrganizationRepository
-  implements IPoliticalOrganizationRepository
-{
+export class PrismaPoliticalOrganizationRepository implements IPoliticalOrganizationRepository {
   constructor(private prisma: PrismaClient) {}
 
   async create(

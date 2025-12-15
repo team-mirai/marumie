@@ -76,9 +76,7 @@ export default function PrivacyPage() {
         </div>
 
         <div>
-          <SubSectionTitle>
-            7. プライバシーポリシーの改訂と通知について
-          </SubSectionTitle>
+          <SubSectionTitle>7. プライバシーポリシーの改訂と通知について</SubSectionTitle>
           <Paragraph>
             このプライバシーポリシーは、必要に応じて内容の見直しを行い、改訂されることがあります。その際、個別の通知は行いませんので、最新の情報については当ウェブサイトをご確認ください。
           </Paragraph>

@@ -6,9 +6,7 @@ export async function createClient() {
   const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
 
   if (!supabaseUrl || !supabaseAnonKey) {
-    throw new Error(
-      "Missing required environment variables: SUPABASE_URL and SUPABASE_ANON_KEY",
-    );
+    throw new Error("Missing required environment variables: SUPABASE_URL and SUPABASE_ANON_KEY");
   }
 
   return createServerClient(supabaseUrl, supabaseAnonKey, {

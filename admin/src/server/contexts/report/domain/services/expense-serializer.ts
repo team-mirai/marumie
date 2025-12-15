@@ -62,10 +62,7 @@ export function serializeExpenseSection(
  */
 function serializeExpenseKubun(
   kubunElement: XMLBuilder,
-  section:
-    | UtilityExpenseSection
-    | SuppliesExpenseSection
-    | OfficeExpenseSection,
+  section: UtilityExpenseSection | SuppliesExpenseSection | OfficeExpenseSection,
 ): void {
   const sheet = kubunElement.ele("SHEET");
 

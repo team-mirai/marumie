@@ -8,11 +8,7 @@ interface ClientPaginationProps {
   onPageChange: (page: number) => void;
 }
 
-export function ClientPagination({
-  currentPage,
-  totalPages,
-  onPageChange,
-}: ClientPaginationProps) {
+export function ClientPagination({ currentPage, totalPages, onPageChange }: ClientPaginationProps) {
   const renderPageNumbers = () => {
     if (totalPages <= 0) return null;
 
@@ -38,10 +34,7 @@ export function ClientPagination({
 
     const addEllipsis = (key: string) => {
       pages.push(
-        <span
-          key={`ellipsis-${key}`}
-          className="px-2 text-primary-muted select-none"
-        >
+        <span key={`ellipsis-${key}`} className="px-2 text-primary-muted select-none">
           …
         </span>,
       );

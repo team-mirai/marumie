@@ -20,9 +20,7 @@ export interface ExportXmlResult {
   reportData: ReportData;
 }
 
-export async function exportXml(
-  input: ExportXmlInput,
-): Promise<ExportXmlResult> {
+export async function exportXml(input: ExportXmlInput): Promise<ExportXmlResult> {
   if (!input.politicalOrganizationId?.trim()) {
     throw new Error("政治団体IDは必須です");
   }
@@ -32,9 +30,7 @@ export async function exportXml(
   }
 
   const transactionRepository = new PrismaReportTransactionRepository(prisma);
-  const profileRepository = new PrismaOrganizationReportProfileRepository(
-    prisma,
-  );
+  const profileRepository = new PrismaOrganizationReportProfileRepository(prisma);
   const donationAssembler = new DonationAssembler(transactionRepository);
   const incomeAssembler = new IncomeAssembler(transactionRepository);
   const expenseAssembler = new ExpenseAssembler(transactionRepository);

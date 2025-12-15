@@ -1,9 +1,6 @@
 import type { PoliticalOrganization } from "@/shared/models/political-organization";
 import type { TransactionFilters } from "@/types/transaction-filters";
-import type {
-  DisplayTransaction,
-  DisplayTransactionType,
-} from "@/types/display-transaction";
+import type { DisplayTransaction, DisplayTransactionType } from "@/types/display-transaction";
 import type { IPoliticalOrganizationRepository } from "../repositories/interfaces/political-organization-repository.interface";
 import type {
   ITransactionRepository,
@@ -40,12 +37,11 @@ export class GetTransactionsBySlugUsecase {
     private politicalOrganizationRepository: IPoliticalOrganizationRepository,
   ) {}
 
-  async execute(
-    params: GetTransactionsBySlugParams,
-  ): Promise<GetTransactionsBySlugResult> {
+  async execute(params: GetTransactionsBySlugParams): Promise<GetTransactionsBySlugResult> {
     try {
-      const politicalOrganizations =
-        await this.politicalOrganizationRepository.findBySlugs(params.slugs);
+      const politicalOrganizations = await this.politicalOrganizationRepository.findBySlugs(
+        params.slugs,
+      );
 
       if (politicalOrganizations.length === 0) {
         throw new Error(
@@ -87,9 +83,7 @@ export class GetTransactionsBySlugUsecase {
         this.transactionRepository.getLastUpdatedAt(),
       ]);
 
-      const transactions = convertToDisplayTransactions(
-        transactionResult.items,
-      );
+      const transactions = convertToDisplayTransactions(transactionResult.items);
       const total = transactionResult.total;
       const totalPages = Math.ceil(total / perPage);
 
