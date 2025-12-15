@@ -80,8 +80,11 @@ contexts/{コンテキスト名}/
 
 - TypeScript の import は `@/` から始まる絶対パスを使用する（相対パス禁止）
 
-## GitHub操作ルール
+## wtp (git worktree) の利用
 
+並行開発が必要な場合は wtp を使う。詳細は [docs/wtp-guide.md](docs/wtp-guide.md) を参照。
+
+## GitHub操作ルール
 - ユーザーからPRを出して、と言われたときは、現在の作業のフィーチャーブランチを切りコミットを行ってからPRを出すようにする
 - developやmainへの直接pushは禁止です
 - Prismaのマイグレーションを含む差分は自動デプロイで環境を壊しうるので、ユーザーに許可を取ってから実行してください
