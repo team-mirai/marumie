@@ -21,37 +21,32 @@
 marumie/
 ├── webapp/           # フロントエンド（一般ユーザー向け）
 │   ├── src/
-│   │   ├── app/      # Next.js App Router
-│   │   ├── client/   # クライアントサイドコンポーネント
-│   │   ├── server/   # サーバーサイドロジック
-│   │   └── types/    # 型定義
-│   ├── tests/        # テストファイル
+│   │   ├── app/           # Next.js App Router
+│   │   ├── client/        # クライアントサイドコンポーネント
+│   │   ├── server/        # サーバーサイドロジック
+│   │   └── types/         # 型定義
+│   ├── tests/             # テストファイル
 │   └── package.json
 ├── admin/            # 管理画面
 │   ├── src/
-│   │   ├── app/      # Next.js App Router
-│   │   ├── client/   # クライアントサイドコンポーネント
-│   │   ├── server/   # サーバーサイドロジック
-│   │   ├── types/    # 型定義
+│   │   ├── app/           # Next.js App Router
+│   │   ├── client/        # クライアントサイドコンポーネント
+│   │   ├── server/contexts/ # Bounded Context ベース構成
+│   │   │   ├── auth/      # 認証関連処理
+│   │   │   ├── data-import/  # 取引データ取り込み
+│   │   │   ├── report/    # 政治資金報告書XMLエクスポート
+│   │   │   └── shared/    # コンテキスト横断共有
+│   │   ├── types/         # 型定義
 │   │   └── middleware.ts
-│   ├── tests/        # テストファイル
+│   ├── tests/             # テストファイル
 │   └── package.json
 ├── shared/           # 共通モデル・型定義・ユーティリティ
 │   ├── models/       # 共通データモデル
 │   └── utils/        # 共通ユーティリティ関数
 ├── data/             # サンプルデータ
-│   ├── sampledata.csv
-│   └── test_current_liabilities.csv
 ├── supabase/         # Supabaseローカル開発環境設定
-│   ├── config.toml
-│   └── templates/
 ├── prisma/           # データベーススキーマ・マイグレーション
-│   ├── schema.prisma
-│   ├── migrations/
-│   └── seed.cjs
-├── logs/             # ログファイル
 └── docs/             # 設計ドキュメント（その時点での設計メモなので必ずしも正確ではないです）
-    └── images/       # ドキュメント用画像
 ```
 
 ### 各ディレクトリの役割
@@ -62,7 +57,6 @@ marumie/
 - **data/**: サンプルデータファイル
 - **supabase/**: Supabaseローカル開発環境の設定ファイルとテンプレート
 - **prisma/**: データベーススキーマ定義、マイグレーションファイル、シードデータ
-- **logs/**: ログファイルやデバッグ用データ
 - **docs/**: プロジェクトの設計ドキュメント
 
 ## 技術スタック
