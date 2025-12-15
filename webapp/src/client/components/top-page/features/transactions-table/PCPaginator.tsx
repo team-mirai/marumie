@@ -38,10 +38,7 @@ export default function PCPaginator({
     }
 
     // 中央の場合：currentPage を中心とした maxVisiblePages 個
-    return Array.from(
-      { length: maxVisiblePages },
-      (_, i) => currentPage - halfVisible + i,
-    );
+    return Array.from({ length: maxVisiblePages }, (_, i) => currentPage - halfVisible + i);
   };
 
   const pageNumbers = generatePageNumbers();
@@ -61,9 +58,7 @@ export default function PCPaginator({
           alt="前のページ"
           width={20}
           height={20}
-          className={`transform rotate-90 ${
-            currentPage === 1 ? "opacity-30" : "opacity-100"
-          }`}
+          className={`transform rotate-90 ${currentPage === 1 ? "opacity-30" : "opacity-100"}`}
         />
       </button>
 

@@ -22,9 +22,7 @@ export async function deleteBalanceSnapshot(id: string) {
     console.error("Error deleting balance snapshot:", error);
 
     throw new Error(
-      error instanceof Error
-        ? error.message
-        : "残高スナップショットの削除に失敗しました",
+      error instanceof Error ? error.message : "残高スナップショットの削除に失敗しました",
     );
   }
 }

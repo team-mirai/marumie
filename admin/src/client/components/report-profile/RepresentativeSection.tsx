@@ -8,10 +8,7 @@ interface RepresentativeSectionProps {
   updateDetails: (updates: Partial<OrganizationReportProfileDetails>) => void;
 }
 
-export function RepresentativeSection({
-  details,
-  updateDetails,
-}: RepresentativeSectionProps) {
+export function RepresentativeSection({ details, updateDetails }: RepresentativeSectionProps) {
   const representative = details.representative ?? {
     lastName: "",
     firstName: "",
@@ -20,9 +17,7 @@ export function RepresentativeSection({
 
   return (
     <div className="bg-primary-hover rounded-lg p-4">
-      <h2 className="text-lg font-semibold text-white mb-4">
-        代表者・会計責任者
-      </h2>
+      <h2 className="text-lg font-semibold text-white mb-4">代表者・会計責任者</h2>
 
       <div className="space-y-4">
         <div>

@@ -9,10 +9,7 @@ export default async function UserInfoPage() {
     return <div className="card">ユーザー情報が見つかりません</div>;
   }
 
-  const createdAt =
-    user.createdAt instanceof Date
-      ? user.createdAt
-      : new Date(user.createdAt ?? 0);
+  const createdAt = user.createdAt instanceof Date ? user.createdAt : new Date(user.createdAt ?? 0);
 
   return (
     <div className="card">

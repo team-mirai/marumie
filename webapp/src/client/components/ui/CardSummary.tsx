@@ -3,10 +3,7 @@ interface CardSummaryProps {
   className?: string;
 }
 
-export default function CardSummary({
-  children,
-  className = "",
-}: CardSummaryProps) {
+export default function CardSummary({ children, className = "" }: CardSummaryProps) {
   return (
     <div
       className={`

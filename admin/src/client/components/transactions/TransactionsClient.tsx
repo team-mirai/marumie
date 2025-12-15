@@ -144,9 +144,7 @@ export function TransactionsClient({ organizations }: TransactionsClientProps) {
         </div>
       ) : data.transactions.length === 0 ? (
         <div className="text-center py-10">
-          <p className="text-primary-muted">
-            トランザクションが登録されていません
-          </p>
+          <p className="text-primary-muted">トランザクションが登録されていません</p>
         </div>
       ) : (
         <>
@@ -154,12 +152,8 @@ export function TransactionsClient({ organizations }: TransactionsClientProps) {
             <table className="w-full border-collapse">
               <thead>
                 <tr className="border-b border-primary-border">
-                  <th className="px-2 py-3 text-left text-sm font-semibold text-white">
-                    取引日
-                  </th>
-                  <th className="px-2 py-3 text-left text-sm font-semibold text-white">
-                    政治団体
-                  </th>
+                  <th className="px-2 py-3 text-left text-sm font-semibold text-white">取引日</th>
+                  <th className="px-2 py-3 text-left text-sm font-semibold text-white">政治団体</th>
                   <th className="px-2 py-3 text-left text-sm font-semibold text-white">
                     借方勘定科目
                   </th>
@@ -172,26 +166,16 @@ export function TransactionsClient({ organizations }: TransactionsClientProps) {
                   <th className="px-2 py-3 text-right text-sm font-semibold text-white">
                     貸方金額
                   </th>
+                  <th className="px-2 py-3 text-left text-sm font-semibold text-white">種別</th>
+                  <th className="px-2 py-3 text-left text-sm font-semibold text-white">カテゴリ</th>
                   <th className="px-2 py-3 text-left text-sm font-semibold text-white">
-                    種別
-                  </th>
-                  <th className="px-2 py-3 text-left text-sm font-semibold text-white">
-                    カテゴリ
-                  </th>
-                  <th className="px-2 py-3 text-left text-sm font-semibold text-white">
-                    摘要{" "}
-                    <span className="text-xs font-normal">
-                      ※サービスには表示されません
-                    </span>
+                    摘要 <span className="text-xs font-normal">※サービスには表示されません</span>
                   </th>
                 </tr>
               </thead>
               <tbody>
                 {data.transactions.map((transaction) => (
-                  <TransactionRow
-                    key={transaction.id}
-                    transaction={transaction}
-                  />
+                  <TransactionRow key={transaction.id} transaction={transaction} />
                 ))}
               </tbody>
             </table>

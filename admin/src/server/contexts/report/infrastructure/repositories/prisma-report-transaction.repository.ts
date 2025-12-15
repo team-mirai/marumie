@@ -79,9 +79,7 @@ interface PoliticalActivityExpenseTransactionRaw {
   counterpartAddress: string;
 }
 
-export class PrismaReportTransactionRepository
-  implements IReportTransactionRepository
-{
+export class PrismaReportTransactionRepository implements IReportTransactionRepository {
   constructor(private prisma: PrismaClient) {}
 
   /**
@@ -203,9 +201,7 @@ export class PrismaReportTransactionRepository
   /**
    * SYUUSHI07_04: 借入金のトランザクションを取得
    */
-  async findLoanIncomeTransactions(
-    filters: TransactionFilters,
-  ): Promise<LoanIncomeTransaction[]> {
+  async findLoanIncomeTransactions(filters: TransactionFilters): Promise<LoanIncomeTransaction[]> {
     const transactions = await this.prisma.transaction.findMany({
       where: {
         politicalOrganizationId: BigInt(filters.politicalOrganizationId),
@@ -488,10 +484,7 @@ export class PrismaReportTransactionRepository
   async findElectionExpenseTransactions(
     filters: TransactionFilters,
   ): Promise<ElectionExpenseTransaction[]> {
-    return this.findPoliticalActivityExpenseTransactions(
-      filters,
-      CATEGORY_KEYS.ELECTION_EXPENSES,
-    );
+    return this.findPoliticalActivityExpenseTransactions(filters, CATEGORY_KEYS.ELECTION_EXPENSES);
   }
 
   /**
@@ -548,10 +541,7 @@ export class PrismaReportTransactionRepository
   async findResearchExpenseTransactions(
     filters: TransactionFilters,
   ): Promise<ResearchExpenseTransaction[]> {
-    return this.findPoliticalActivityExpenseTransactions(
-      filters,
-      CATEGORY_KEYS.RESEARCH_EXPENSES,
-    );
+    return this.findPoliticalActivityExpenseTransactions(filters, CATEGORY_KEYS.RESEARCH_EXPENSES);
   }
 
   /**

@@ -7,10 +7,7 @@ export async function POST(request: Request) {
     const { password } = await request.json();
 
     if (!password || typeof password !== "string") {
-      return NextResponse.json(
-        { error: "Password is required" },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "Password is required" }, { status: 400 });
     }
 
     const user = await getCurrentUser();
@@ -27,9 +24,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ message: "Password set successfully" });
   } catch (error) {
     console.error("Setup password error:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

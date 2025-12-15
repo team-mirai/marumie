@@ -1,11 +1,5 @@
 import type { Metadata } from "next";
-import {
-  Geist,
-  Geist_Mono,
-  Inter,
-  Noto_Sans,
-  Noto_Sans_JP,
-} from "next/font/google";
+import { Geist, Geist_Mono, Inter, Noto_Sans, Noto_Sans_JP } from "next/font/google";
 import "./globals.css";
 import { GoogleAnalytics } from "@next/third-parties/google";
 import { SpeedInsights } from "@vercel/speed-insights/next";
@@ -47,12 +41,10 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: "みらい まる見え政治資金 - チームみらいの政治資金をオープンに",
-  description:
-    "チームみらいの政治資金の流れを透明性を持って公開するプラットフォームです。",
+  description: "チームみらいの政治資金の流れを透明性を持って公開するプラットフォームです。",
   openGraph: {
     title: "みらい まる見え政治資金 - チームみらいの政治資金をオープンに",
-    description:
-      "チームみらいの政治資金の流れを透明性を持って公開するプラットフォームです。",
+    description: "チームみらいの政治資金の流れを透明性を持って公開するプラットフォームです。",
     images: [
       {
         url: "/social/og_image.png",
@@ -67,8 +59,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "みらい まる見え政治資金 - チームみらいの政治資金をオープンに",
-    description:
-      "チームみらいの政治資金の流れを透明性を持って公開するプラットフォームです。",
+    description: "チームみらいの政治資金の流れを透明性を持って公開するプラットフォームです。",
     images: ["/social/og_image.png"],
   },
 };

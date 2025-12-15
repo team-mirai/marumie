@@ -68,9 +68,7 @@ export function DietMemberRelationSection({
 
   const removeMember = (index: number) => {
     if (dietMemberRelation) {
-      const newMembers = (dietMemberRelation.members ?? []).filter(
-        (_, i) => i !== index,
-      );
+      const newMembers = (dietMemberRelation.members ?? []).filter((_, i) => i !== index);
       updateDietMemberRelation({ members: newMembers });
     }
   };
@@ -93,9 +91,7 @@ export function DietMemberRelationSection({
 
   const removePeriod = (index: number) => {
     if (dietMemberRelation) {
-      const newPeriods = (dietMemberRelation.periods ?? []).filter(
-        (_, i) => i !== index,
-      );
+      const newPeriods = (dietMemberRelation.periods ?? []).filter((_, i) => i !== index);
       updateDietMemberRelation({ periods: newPeriods });
     }
   };
@@ -147,9 +143,7 @@ export function DietMemberRelationSection({
 
           <div>
             <div className="flex justify-between items-center mb-2">
-              <h3 className="text-md font-medium text-white">
-                関係する国会議員（最大3名）
-              </h3>
+              <h3 className="text-md font-medium text-white">関係する国会議員（最大3名）</h3>
               {(dietMemberRelation.members?.length ?? 0) < 3 && (
                 <button
                   type="button"
@@ -167,9 +161,7 @@ export function DietMemberRelationSection({
                   className="bg-primary-panel rounded-lg p-3 border border-primary-border"
                 >
                   <div className="flex justify-between items-center mb-2">
-                    <span className="text-sm text-primary-muted">
-                      議員 {index + 1}
-                    </span>
+                    <span className="text-sm text-primary-muted">議員 {index + 1}</span>
                     <button
                       type="button"
                       onClick={() => removeMember(index)}
@@ -184,9 +176,7 @@ export function DietMemberRelationSection({
                       <input
                         type="text"
                         value={member.lastName}
-                        onChange={(e) =>
-                          updateMember(index, { lastName: e.target.value })
-                        }
+                        onChange={(e) => updateMember(index, { lastName: e.target.value })}
                         maxLength={30}
                         className="bg-primary-input text-white border border-primary-border rounded-lg px-3 py-2 w-full mt-1 block"
                       />
@@ -196,9 +186,7 @@ export function DietMemberRelationSection({
                       <input
                         type="text"
                         value={member.firstName}
-                        onChange={(e) =>
-                          updateMember(index, { firstName: e.target.value })
-                        }
+                        onChange={(e) => updateMember(index, { firstName: e.target.value })}
                         maxLength={30}
                         className="bg-primary-input text-white border border-primary-border rounded-lg px-3 py-2 w-full mt-1 block"
                       />
@@ -226,11 +214,7 @@ export function DietMemberRelationSection({
                         value={member.positionType}
                         onChange={(e) =>
                           updateMember(index, {
-                            positionType: e.target.value as
-                              | "1"
-                              | "2"
-                              | "3"
-                              | "4",
+                            positionType: e.target.value as "1" | "2" | "3" | "4",
                           })
                         }
                         className="bg-primary-input text-white border border-primary-border rounded-lg px-3 py-2 w-full mt-1 block"
@@ -249,9 +233,7 @@ export function DietMemberRelationSection({
 
           <div>
             <div className="flex justify-between items-center mb-2">
-              <h3 className="text-md font-medium text-white">
-                指定期間（最大3件）
-              </h3>
+              <h3 className="text-md font-medium text-white">指定期間（最大3件）</h3>
               {(dietMemberRelation.periods?.length ?? 0) < 3 && (
                 <button
                   type="button"
@@ -268,9 +250,7 @@ export function DietMemberRelationSection({
                   <input
                     type="text"
                     value={period.from}
-                    onChange={(e) =>
-                      updatePeriod(index, { from: e.target.value })
-                    }
+                    onChange={(e) => updatePeriod(index, { from: e.target.value })}
                     maxLength={20}
                     className="bg-primary-input text-white border border-primary-border rounded-lg px-3 py-2 w-32"
                     placeholder="R6/4/1"
@@ -279,9 +259,7 @@ export function DietMemberRelationSection({
                   <input
                     type="text"
                     value={period.to}
-                    onChange={(e) =>
-                      updatePeriod(index, { to: e.target.value })
-                    }
+                    onChange={(e) => updatePeriod(index, { to: e.target.value })}
                     maxLength={20}
                     className="bg-primary-input text-white border border-primary-border rounded-lg px-3 py-2 w-32"
                     placeholder="R7/3/31"

@@ -15,16 +15,12 @@ export async function POST(request: Request) {
     if (!result.ok) {
       // バリデーションエラーのみクライアントに返し、それ以外は内部エラーとして隠す
       const isValidationError =
-        result.error === "Email is required" ||
-        result.error === "Invalid email format";
+        result.error === "Email is required" || result.error === "Invalid email format";
       if (isValidationError) {
         return NextResponse.json({ error: result.error }, { status: 400 });
       }
       console.error("Invite user failed:", result.error);
-      return NextResponse.json(
-        { error: "Internal server error" },
-        { status: 500 },
-      );
+      return NextResponse.json({ error: "Internal server error" }, { status: 500 });
     }
 
     return NextResponse.json({
@@ -32,9 +28,6 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     console.error("Error sending invitation:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

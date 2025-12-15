@@ -10,23 +10,15 @@ import { IncomeAssembler } from "@/server/contexts/report/application/services/i
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
-  const politicalOrganizationId = url.searchParams.get(
-    "politicalOrganizationId",
-  );
+  const politicalOrganizationId = url.searchParams.get("politicalOrganizationId");
   const financialYearRaw = url.searchParams.get("financialYear");
 
   if (!politicalOrganizationId) {
-    return NextResponse.json(
-      { error: "politicalOrganizationId is required" },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: "politicalOrganizationId is required" }, { status: 400 });
   }
 
   if (!financialYearRaw) {
-    return NextResponse.json(
-      { error: "financialYear is required" },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: "financialYear is required" }, { status: 400 });
   }
 
   const financialYear = Number.parseInt(financialYearRaw, 10);
@@ -42,17 +34,12 @@ export async function GET(request: Request) {
   }
 
   if (!Number.isFinite(financialYear)) {
-    return NextResponse.json(
-      { error: "financialYear must be a valid number" },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: "financialYear must be a valid number" }, { status: 400 });
   }
 
   try {
     const transactionRepository = new PrismaReportTransactionRepository(prisma);
-    const profileRepository = new PrismaOrganizationReportProfileRepository(
-      prisma,
-    );
+    const profileRepository = new PrismaOrganizationReportProfileRepository(prisma);
     const donationAssembler = new DonationAssembler(transactionRepository);
     const incomeAssembler = new IncomeAssembler(transactionRepository);
     const expenseAssembler = new ExpenseAssembler(transactionRepository);
@@ -78,9 +65,6 @@ export async function GET(request: Request) {
     });
   } catch (error) {
     console.error("Failed to generate XML:", error);
-    return NextResponse.json(
-      { error: "Failed to generate XML" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Failed to generate XML" }, { status: 500 });
   }
 }

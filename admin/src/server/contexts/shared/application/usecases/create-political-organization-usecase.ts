@@ -19,12 +19,7 @@ export class CreatePoliticalOrganizationUsecase {
         throw new Error("Organization slug is required");
       }
 
-      return await this.repository.create(
-        displayName,
-        slug,
-        orgName,
-        description,
-      );
+      return await this.repository.create(displayName, slug, orgName, description);
     } catch (error) {
       throw new Error(
         `Failed to create organization: ${error instanceof Error ? error.message : "Unknown error"}`,

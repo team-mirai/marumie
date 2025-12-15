@@ -49,9 +49,7 @@ export class PrismaTransactionRepository implements ITransactionRepository {
     };
   }
 
-  private buildWhereClause(
-    filters?: TransactionFilters,
-  ): Prisma.TransactionWhereInput {
+  private buildWhereClause(filters?: TransactionFilters): Prisma.TransactionWhereInput {
     const where: Prisma.TransactionWhereInput = {};
 
     if (filters?.transaction_type) {
@@ -72,10 +70,7 @@ export class PrismaTransactionRepository implements ITransactionRepository {
       };
     }
 
-    if (
-      filters?.political_organization_ids &&
-      filters.political_organization_ids.length > 0
-    ) {
+    if (filters?.political_organization_ids && filters.political_organization_ids.length > 0) {
       where.politicalOrganizationId = {
         in: filters.political_organization_ids.map((id) => BigInt(id)),
       };
@@ -98,10 +93,7 @@ export class PrismaTransactionRepository implements ITransactionRepository {
     return where;
   }
 
-  private async update(
-    id: string,
-    input: UpdateTransactionInput,
-  ): Promise<Transaction> {
+  private async update(id: string, input: UpdateTransactionInput): Promise<Transaction> {
     const updated = await this.prisma.transaction.update({
       where: { id: BigInt(id) },
       data: {
@@ -218,9 +210,7 @@ export class PrismaTransactionRepository implements ITransactionRepository {
     const createdTransactions = await this.prisma.transaction.findMany({
       where: {
         transactionNo: {
-          in: inputs
-            .map((input) => input.transaction_no)
-            .filter((no): no is string => Boolean(no)),
+          in: inputs.map((input) => input.transaction_no).filter((no): no is string => Boolean(no)),
         },
       },
       orderBy: { createdAt: "desc" },
@@ -263,8 +253,7 @@ export class PrismaTransactionRepository implements ITransactionRepository {
   ): Transaction | TransactionWithOrganization {
     const base: Transaction = {
       id: prismaTransaction.id.toString(),
-      political_organization_id:
-        prismaTransaction.politicalOrganizationId.toString(),
+      political_organization_id: prismaTransaction.politicalOrganizationId.toString(),
       transaction_no: prismaTransaction.transactionNo,
       transaction_date: prismaTransaction.transactionDate,
       financial_year: prismaTransaction.financialYear,
@@ -294,8 +283,7 @@ export class PrismaTransactionRepository implements ITransactionRepository {
     if (includeOrganization) {
       return {
         ...base,
-        political_organization_name:
-          prismaTransaction.politicalOrganization?.displayName,
+        political_organization_name: prismaTransaction.politicalOrganization?.displayName,
       } as TransactionWithOrganization;
     }
 

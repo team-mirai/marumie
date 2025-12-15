@@ -9,11 +9,7 @@ interface YearSelectorProps {
   currentYear: number;
 }
 
-export function YearSelector({
-  orgId,
-  financialYear,
-  currentYear,
-}: YearSelectorProps) {
+export function YearSelector({ orgId, financialYear, currentYear }: YearSelectorProps) {
   const router = useRouter();
 
   return (
@@ -24,9 +20,7 @@ export function YearSelector({
         className="bg-primary-input text-white border border-primary-border rounded-lg px-3 py-2.5 w-32 mt-2 block font-normal"
         defaultValue={financialYear}
         onChange={(e) => {
-          router.push(
-            `/political-organizations/${orgId}/report-profile?year=${e.target.value}`,
-          );
+          router.push(`/political-organizations/${orgId}/report-profile?year=${e.target.value}`);
         }}
       >
         {Array.from({ length: 10 }, (_, i) => currentYear - i).map((y) => (

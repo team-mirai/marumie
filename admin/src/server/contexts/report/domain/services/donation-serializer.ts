@@ -20,9 +20,7 @@ import {
 /**
  * Serializes a PersonalDonationSection into XML format for SYUUSHI07_07 KUBUN1.
  */
-export function serializePersonalDonationSection(
-  section: PersonalDonationSection,
-): XMLBuilder {
+export function serializePersonalDonationSection(section: PersonalDonationSection): XMLBuilder {
   const frag = fragment();
   const root = frag.ele("SYUUSHI07_07");
   const kubun1 = root.ele("KUBUN1");

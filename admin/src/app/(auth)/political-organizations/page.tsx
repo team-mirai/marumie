@@ -38,17 +38,12 @@ export default async function PoliticalOrganizationsPage() {
               <div key={org.id} className="bg-primary-input rounded-xl p-4">
                 <div className="flex justify-between items-start gap-4">
                   <div className="flex-1">
-                    <h3 className="text-lg font-medium text-white mb-2 mt-0">
-                      {org.displayName}
-                    </h3>
+                    <h3 className="text-lg font-medium text-white mb-2 mt-0">{org.displayName}</h3>
                     {org.description && (
-                      <p className="text-primary-muted mb-3 mt-0">
-                        {org.description}
-                      </p>
+                      <p className="text-primary-muted mb-3 mt-0">{org.description}</p>
                     )}
                     <div className="text-primary-muted text-sm">
-                      作成日:{" "}
-                      {new Date(org.createdAt).toLocaleDateString("ja-JP")}
+                      作成日: {new Date(org.createdAt).toLocaleDateString("ja-JP")}
                     </div>
                   </div>
                   <div className="flex gap-2">

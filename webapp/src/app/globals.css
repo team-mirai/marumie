@@ -23,11 +23,7 @@
 }
 
 :root {
-  --background: linear-gradient(
-    135deg,
-    rgba(226, 246, 243, 1) 0%,
-    rgba(238, 246, 226, 1) 100%
-  );
+  --background: linear-gradient(135deg, rgba(226, 246, 243, 1) 0%, rgba(238, 246, 226, 1) 100%);
   --foreground: #171717;
 
   /* Figma Design System Colors */

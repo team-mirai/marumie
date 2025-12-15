@@ -16,9 +16,7 @@ export interface IOrganizationReportProfileRepository {
   /**
    * Create a new organization report profile.
    */
-  create(
-    input: CreateOrganizationReportProfileInput,
-  ): Promise<OrganizationReportProfile>;
+  create(input: CreateOrganizationReportProfileInput): Promise<OrganizationReportProfile>;
 
   /**
    * Update an existing organization report profile.

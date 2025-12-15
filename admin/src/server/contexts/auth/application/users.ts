@@ -26,11 +26,7 @@ export async function getUserByAuthId(authId: string) {
 /**
  * ユーザーを作成
  */
-export async function createUser(data: {
-  authId: string;
-  email: string;
-  role?: UserRole;
-}) {
+export async function createUser(data: { authId: string; email: string; role?: UserRole }) {
   return userRepository.create(data);
 }
 

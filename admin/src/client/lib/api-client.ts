@@ -53,9 +53,7 @@ export class ApiClient {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(
-        errorData.error || `HTTP error! status: ${response.status}`,
-      );
+      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
     }
 
     return response.json();
@@ -75,9 +73,7 @@ export class ApiClient {
     });
   }
 
-  async setupPassword(
-    data: SetupPasswordRequest,
-  ): Promise<SetupPasswordResponse> {
+  async setupPassword(data: SetupPasswordRequest): Promise<SetupPasswordResponse> {
     return this.request<SetupPasswordResponse>("/api/auth/setup-password", {
       method: "POST",
       body: JSON.stringify(data),
@@ -85,9 +81,7 @@ export class ApiClient {
   }
 
   async getBalanceSnapshots(orgId: string): Promise<BalanceSnapshot[]> {
-    return this.request<BalanceSnapshot[]>(
-      `/api/balance-snapshots?orgId=${orgId}`,
-    );
+    return this.request<BalanceSnapshot[]>(`/api/balance-snapshots?orgId=${orgId}`);
   }
 
   async downloadXmlExport(
@@ -98,35 +92,26 @@ export class ApiClient {
       financialYear: params.financialYear,
       sections: params.sections.join(","),
     });
-    const response = await fetch(
-      `${this.baseUrl}/api/xml-export?${searchParams.toString()}`,
-    );
+    const response = await fetch(`${this.baseUrl}/api/xml-export?${searchParams.toString()}`);
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(
-        errorData.error || `HTTP error! status: ${response.status}`,
-      );
+      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
     }
 
     const blob = await response.blob();
     const contentDisposition = response.headers.get("Content-Disposition");
-    const filename =
-      this.extractFilenameFromContentDisposition(contentDisposition);
+    const filename = this.extractFilenameFromContentDisposition(contentDisposition);
 
     return { blob, filename };
   }
 
-  private extractFilenameFromContentDisposition(
-    contentDisposition: string | null,
-  ): string | null {
+  private extractFilenameFromContentDisposition(contentDisposition: string | null): string | null {
     if (!contentDisposition) {
       return null;
     }
 
-    const filenameStarMatch = contentDisposition.match(
-      /filename\*\s*=\s*UTF-8''([^;]+)/i,
-    );
+    const filenameStarMatch = contentDisposition.match(/filename\*\s*=\s*UTF-8''([^;]+)/i);
     if (filenameStarMatch?.[1]) {
       try {
         return decodeURIComponent(filenameStarMatch[1]);

@@ -40,9 +40,7 @@ export async function createBalanceSnapshot(data: CreateBalanceSnapshotData) {
     console.error("Error creating balance snapshot:", error);
 
     throw new Error(
-      error instanceof Error
-        ? error.message
-        : "残高スナップショットの作成に失敗しました",
+      error instanceof Error ? error.message : "残高スナップショットの作成に失敗しました",
     );
   }
 }

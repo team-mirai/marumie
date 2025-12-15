@@ -2,11 +2,7 @@
 export type DisplayTransactionType = "income" | "expense";
 
 // DB用のTransactionType（全種類を含む）
-export type TransactionType =
-  | "income"
-  | "expense"
-  | "offset_income"
-  | "offset_expense";
+export type TransactionType = "income" | "expense" | "offset_income" | "offset_expense";
 
 export interface DisplayTransaction {
   id: string; // 元のTransaction IDをそのまま利用

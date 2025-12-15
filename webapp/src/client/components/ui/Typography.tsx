@@ -31,9 +31,5 @@ export const Label = ({ children, className = "" }: TypographyProps) => (
 );
 
 export const Body = ({ children, className = "" }: TypographyProps) => (
-  <p
-    className={`text-[16px] font-bold leading-[1.75] font-english ${className}`}
-  >
-    {children}
-  </p>
+  <p className={`text-[16px] font-bold leading-[1.75] font-english ${className}`}>{children}</p>
 );

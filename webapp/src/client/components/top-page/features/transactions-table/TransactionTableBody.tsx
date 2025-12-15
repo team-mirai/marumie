@@ -5,9 +5,7 @@ interface TransactionTableBodyProps {
   transactions: DisplayTransaction[];
 }
 
-export default function TransactionTableBody({
-  transactions,
-}: TransactionTableBodyProps) {
+export default function TransactionTableBody({ transactions }: TransactionTableBodyProps) {
   return (
     <tbody className="bg-white">
       {transactions.map((transaction) => (

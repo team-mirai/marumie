@@ -124,18 +124,14 @@ export function TransactionRow({ transaction }: TransactionRowProps) {
 
   return (
     <tr className="border-b border-primary-border">
-      <td className="px-2 py-3 text-sm text-white">
-        {formatDate(transaction.transaction_date)}
-      </td>
+      <td className="px-2 py-3 text-sm text-white">{formatDate(transaction.transaction_date)}</td>
       <td className="px-2 py-3 text-sm text-white">
         {transaction.political_organization_name || "-"}
       </td>
       <td className="px-2 py-3 text-sm text-white">
         {transaction.debit_account}
         {transaction.debit_sub_account && (
-          <div className="text-primary-muted text-xs">
-            {transaction.debit_sub_account}
-          </div>
+          <div className="text-primary-muted text-xs">{transaction.debit_sub_account}</div>
         )}
       </td>
       <td className="px-2 py-3 text-sm text-right text-white">
@@ -144,9 +140,7 @@ export function TransactionRow({ transaction }: TransactionRowProps) {
       <td className="px-2 py-3 text-sm text-white">
         {transaction.credit_account}
         {transaction.credit_sub_account && (
-          <div className="text-primary-muted text-xs">
-            {transaction.credit_sub_account}
-          </div>
+          <div className="text-primary-muted text-xs">{transaction.credit_sub_account}</div>
         )}
       </td>
       <td className="px-2 py-3 text-sm text-right text-white">
@@ -179,9 +173,7 @@ export function TransactionRow({ transaction }: TransactionRowProps) {
       <td className="px-2 py-3 text-sm text-white">
         {transaction.description || "-"}
         {transaction.label && (
-          <div className="text-blue-400 text-xs mt-1">
-            ラベル: {transaction.label}
-          </div>
+          <div className="text-blue-400 text-xs mt-1">ラベル: {transaction.label}</div>
         )}
       </td>
     </tr>

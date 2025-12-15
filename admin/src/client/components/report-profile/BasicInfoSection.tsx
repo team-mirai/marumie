@@ -8,10 +8,7 @@ interface BasicInfoSectionProps {
   updateFormData: (updates: Partial<OrganizationReportProfileFormData>) => void;
 }
 
-export function BasicInfoSection({
-  formData,
-  updateFormData,
-}: BasicInfoSectionProps) {
+export function BasicInfoSection({ formData, updateFormData }: BasicInfoSectionProps) {
   return (
     <div className="bg-primary-hover rounded-lg p-4">
       <h2 className="text-lg font-semibold text-white mb-4">基本情報</h2>
@@ -40,9 +37,7 @@ export function BasicInfoSection({
           <input
             type="text"
             value={formData.officialNameKana ?? ""}
-            onChange={(e) =>
-              updateFormData({ officialNameKana: e.target.value })
-            }
+            onChange={(e) => updateFormData({ officialNameKana: e.target.value })}
             maxLength={120}
             className="bg-primary-input text-white border border-primary-border rounded-lg px-3 py-2.5 w-full max-w-md mt-2 block font-normal"
             placeholder="セイジダンタイノセイシキメイショウ"
@@ -72,9 +67,7 @@ export function BasicInfoSection({
           <input
             type="text"
             value={formData.officeAddressBuilding ?? ""}
-            onChange={(e) =>
-              updateFormData({ officeAddressBuilding: e.target.value })
-            }
+            onChange={(e) => updateFormData({ officeAddressBuilding: e.target.value })}
             maxLength={60}
             className="bg-primary-input text-white border border-primary-border rounded-lg px-3 py-2.5 w-full max-w-md mt-2 block font-normal"
             placeholder="○○ビル3階"

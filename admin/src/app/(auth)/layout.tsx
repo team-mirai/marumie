@@ -1,17 +1,9 @@
 import "server-only";
 import { redirect } from "next/navigation";
 import Sidebar from "@/client/components/layout/Sidebar";
-import {
-  logout,
-  getCurrentUser,
-  getCurrentUserRole,
-} from "@/server/contexts/auth";
+import { logout, getCurrentUser, getCurrentUserRole } from "@/server/contexts/auth";
 
-export default async function AuthLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default async function AuthLayout({ children }: { children: React.ReactNode }) {
   const user = await getCurrentUser();
 
   if (!user) {

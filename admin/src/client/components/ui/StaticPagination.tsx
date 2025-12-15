@@ -9,11 +9,7 @@ interface StaticPaginationProps {
   basePath: string;
 }
 
-export function StaticPagination({
-  currentPage,
-  totalPages,
-  basePath,
-}: StaticPaginationProps) {
+export function StaticPagination({ currentPage, totalPages, basePath }: StaticPaginationProps) {
   const generatePageUrl = (page: number) => {
     return `${basePath}?page=${page}`;
   };
@@ -42,10 +38,7 @@ export function StaticPagination({
 
     const addEllipsis = (key: string) => {
       pages.push(
-        <span
-          key={`ellipsis-${key}`}
-          className="px-2 text-primary-muted select-none"
-        >
+        <span key={`ellipsis-${key}`} className="px-2 text-primary-muted select-none">
           …
         </span>,
       );

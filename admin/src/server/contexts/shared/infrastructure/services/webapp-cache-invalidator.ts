@@ -5,8 +5,7 @@ import type { ICacheInvalidator } from "@/server/contexts/shared/domain/services
  */
 export class WebappCacheInvalidator implements ICacheInvalidator {
   constructor(
-    private webappUrl: string = process.env.WEBAPP_URL ||
-      "http://localhost:3000",
+    private webappUrl: string = process.env.WEBAPP_URL || "http://localhost:3000",
     private refreshToken: string | undefined = process.env.DATA_REFRESH_TOKEN,
   ) {}
 

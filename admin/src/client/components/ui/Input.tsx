@@ -12,9 +12,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
   ({ className = "", error, label, id, ...props }, ref) => {
     const baseClasses =
       "bg-primary-input text-white border border-primary-border rounded-lg px-3 py-2.5 w-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-accent focus:border-primary-accent";
-    const errorClasses = error
-      ? "border-red-500 focus:ring-red-500 focus:border-red-500"
-      : "";
+    const errorClasses = error ? "border-red-500 focus:ring-red-500 focus:border-red-500" : "";
 
     const classes = `${baseClasses} ${errorClasses} ${className}`.trim();
 

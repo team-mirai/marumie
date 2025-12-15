@@ -46,10 +46,7 @@ export async function updatePoliticalOrganization(
   } catch (error) {
     console.error("Error updating political organization:", error);
 
-    if (
-      error instanceof Error &&
-      error.message.includes("Record to update not found")
-    ) {
+    if (error instanceof Error && error.message.includes("Record to update not found")) {
       throw new Error("政治団体が見つかりません");
     }
 
@@ -57,8 +54,6 @@ export async function updatePoliticalOrganization(
       throw new Error("このスラッグは既に使用されています");
     }
 
-    throw new Error(
-      error instanceof Error ? error.message : "政治団体の更新に失敗しました",
-    );
+    throw new Error(error instanceof Error ? error.message : "政治団体の更新に失敗しました");
   }
 }

@@ -23,10 +23,7 @@ interface ChartDataPoint {
   cumulativeAmount: number;
 }
 
-export default function DonationChart({
-  data,
-  height = 287,
-}: DonationChartProps) {
+export default function DonationChart({ data, height = 287 }: DonationChartProps) {
   // BFF側で既に90日分に絞られているので、全データを使用
   const chartData: ChartDataPoint[] = data.map((item) => ({
     date: item.date,
@@ -57,14 +54,9 @@ export default function DonationChart({
   // データが空の場合
   if (chartData.length === 0) {
     return (
-      <div
-        className="bg-gray-50 rounded-lg flex items-center justify-center"
-        style={{ height }}
-      >
+      <div className="bg-gray-50 rounded-lg flex items-center justify-center" style={{ height }}>
         <div className="text-center text-gray-500">
-          <div className="text-lg font-medium mb-2">
-            直近3ヶ月の寄附金額の推移
-          </div>
+          <div className="text-lg font-medium mb-2">直近3ヶ月の寄附金額の推移</div>
           <div className="text-sm">データがありません</div>
         </div>
       </div>

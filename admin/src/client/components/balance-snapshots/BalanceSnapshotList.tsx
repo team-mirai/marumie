@@ -8,9 +8,7 @@ interface BalanceSnapshotListProps {
   snapshots: BalanceSnapshot[];
 }
 
-export default function BalanceSnapshotList({
-  snapshots,
-}: BalanceSnapshotListProps) {
+export default function BalanceSnapshotList({ snapshots }: BalanceSnapshotListProps) {
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const handleDelete = async (id: string) => {
@@ -48,18 +46,10 @@ export default function BalanceSnapshotList({
       <table className="w-full border-collapse">
         <thead>
           <tr className="border-b border-primary-border">
-            <th className="px-2 py-3 text-left text-sm font-semibold text-white">
-              残高日付
-            </th>
-            <th className="px-2 py-3 text-right text-sm font-semibold text-white">
-              残高
-            </th>
-            <th className="px-2 py-3 text-left text-sm font-semibold text-white">
-              登録日時
-            </th>
-            <th className="px-2 py-3 text-center text-sm font-semibold text-white w-20">
-              操作
-            </th>
+            <th className="px-2 py-3 text-left text-sm font-semibold text-white">残高日付</th>
+            <th className="px-2 py-3 text-right text-sm font-semibold text-white">残高</th>
+            <th className="px-2 py-3 text-left text-sm font-semibold text-white">登録日時</th>
+            <th className="px-2 py-3 text-center text-sm font-semibold text-white w-20">操作</th>
           </tr>
         </thead>
         <tbody>

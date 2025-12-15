@@ -75,34 +75,22 @@ export class ExpenseAssembler {
 
     return {
       // SYUUSHI07_14: 経常経費
-      utilityExpenses:
-        UtilityExpenseSection.fromTransactions(utilityTransactions),
-      suppliesExpenses:
-        SuppliesExpenseSection.fromTransactions(suppliesTransactions),
+      utilityExpenses: UtilityExpenseSection.fromTransactions(utilityTransactions),
+      suppliesExpenses: SuppliesExpenseSection.fromTransactions(suppliesTransactions),
       officeExpenses: OfficeExpenseSection.fromTransactions(officeTransactions),
       // SYUUSHI07_15: 政治活動費（全9区分）
-      organizationExpenses: OrganizationExpenseSection.fromTransactions(
-        organizationTransactions,
-      ),
-      electionExpenses:
-        ElectionExpenseSection.fromTransactions(electionTransactions),
-      publicationExpenses: PublicationExpenseSection.fromTransactions(
-        publicationTransactions,
-      ),
-      advertisingExpenses: AdvertisingExpenseSection.fromTransactions(
-        advertisingTransactions,
-      ),
+      organizationExpenses: OrganizationExpenseSection.fromTransactions(organizationTransactions),
+      electionExpenses: ElectionExpenseSection.fromTransactions(electionTransactions),
+      publicationExpenses: PublicationExpenseSection.fromTransactions(publicationTransactions),
+      advertisingExpenses: AdvertisingExpenseSection.fromTransactions(advertisingTransactions),
       fundraisingPartyExpenses: FundraisingPartyExpenseSection.fromTransactions(
         fundraisingPartyTransactions,
       ),
-      otherBusinessExpenses: OtherBusinessExpenseSection.fromTransactions(
-        otherBusinessTransactions,
-      ),
-      researchExpenses:
-        ResearchExpenseSection.fromTransactions(researchTransactions),
-      donationGrantExpenses: DonationGrantExpenseSection.fromTransactions(
-        donationGrantTransactions,
-      ),
+      otherBusinessExpenses:
+        OtherBusinessExpenseSection.fromTransactions(otherBusinessTransactions),
+      researchExpenses: ResearchExpenseSection.fromTransactions(researchTransactions),
+      donationGrantExpenses:
+        DonationGrantExpenseSection.fromTransactions(donationGrantTransactions),
       otherPoliticalExpenses: OtherPoliticalExpenseSection.fromTransactions(
         otherPoliticalTransactions,
       ),

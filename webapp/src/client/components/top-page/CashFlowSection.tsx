@@ -22,23 +22,14 @@ export default function CashFlowSection({
   updatedAt,
   organizationName,
 }: CashFlowSectionProps) {
-  const [activeTab, setActiveTab] = useState<"political" | "friendly">(
-    "friendly",
-  );
+  const [activeTab, setActiveTab] = useState<"political" | "friendly">("friendly");
 
   const currentData = activeTab === "political" ? political : friendly;
 
   return (
     <MainColumnCard id="cash-flow">
       <CardHeader
-        icon={
-          <Image
-            src="/icons/icon-cashflow.svg"
-            alt="Cash flow icon"
-            width={30}
-            height={31}
-          />
-        }
+        icon={<Image src="/icons/icon-cashflow.svg" alt="Cash flow icon" width={30} height={31} />}
         organizationName={organizationName || "未登録の政治団体"}
         title="収支の流れ"
         updatedAt={updatedAt}
@@ -79,17 +70,13 @@ export default function CashFlowSection({
         {currentData ? (
           <SankeyChart data={currentData} />
         ) : (
-          <div className="text-gray-500 mx-4">
-            サンキー図データが取得できませんでした
-          </div>
+          <div className="text-gray-500 mx-4">サンキー図データが取得できませんでした</div>
         )}
       </div>
 
       {/* 更新日時 */}
       <div className="text-right md:hidden">
-        <span className="text-xs font-normal text-[#9CA3AF] leading-[1.33]">
-          {updatedAt}
-        </span>
+        <span className="text-xs font-normal text-[#9CA3AF] leading-[1.33]">{updatedAt}</span>
       </div>
     </MainColumnCard>
   );

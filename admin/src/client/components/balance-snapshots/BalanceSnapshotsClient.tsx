@@ -14,9 +14,7 @@ interface BalanceSnapshotsClientProps {
   organizations: PoliticalOrganization[];
 }
 
-export default function BalanceSnapshotsClient({
-  organizations,
-}: BalanceSnapshotsClientProps) {
+export default function BalanceSnapshotsClient({ organizations }: BalanceSnapshotsClientProps) {
   const [selectedOrgId, setSelectedOrgId] = useState<string>("");
   const [snapshots, setSnapshots] = useState<BalanceSnapshot[]>([]);
   const [loading, setLoading] = useState(false);
@@ -111,9 +109,7 @@ export default function BalanceSnapshotsClient({
           </div>
 
           <div>
-            <h3 className="text-lg font-medium mb-4">
-              残高スナップショット一覧
-            </h3>
+            <h3 className="text-lg font-medium mb-4">残高スナップショット一覧</h3>
             {loading ? (
               <div className="text-center py-4">
                 <p className="text-primary-muted">読み込み中...</p>

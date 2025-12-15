@@ -15,9 +15,7 @@ import type {
 /**
  * Serializes an OrganizationReportProfile into XML format for SYUUSHI07_01.
  */
-export function serializeProfileSection(
-  profile: OrganizationReportProfile,
-): XMLBuilder {
+export function serializeProfileSection(profile: OrganizationReportProfile): XMLBuilder {
   const frag = fragment();
   const root = frag.ele("SYUUSHI07_01");
   const details = profile.details;
@@ -47,10 +45,7 @@ function serializeRepresentative(
   root.ele("DAI_NM2").txt(details.representative?.firstName ?? "");
 }
 
-function serializeAccountant(
-  root: XMLBuilder,
-  details: OrganizationReportProfileDetails,
-): void {
+function serializeAccountant(root: XMLBuilder, details: OrganizationReportProfileDetails): void {
   root.ele("KAI_NM1").txt(details.accountant?.lastName ?? "");
   root.ele("KAI_NM2").txt(details.accountant?.firstName ?? "");
 }

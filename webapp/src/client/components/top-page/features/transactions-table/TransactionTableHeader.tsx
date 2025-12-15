@@ -33,9 +33,7 @@ export default function TransactionTableHeader({
               aria-label="日付順でソート"
               aria-describedby="sort-date-description"
             >
-              <span className="text-gray-800 text-sm font-bold leading-[1.5]">
-                日付
-              </span>
+              <span className="text-gray-800 text-sm font-bold leading-[1.5]">日付</span>
               <div className="w-5 h-5 flex items-center justify-center">
                 <Image
                   src="/icons/icon-chevron-down.svg"
@@ -43,20 +41,14 @@ export default function TransactionTableHeader({
                   width={20}
                   height={20}
                   className={`w-5 h-5 transition-transform ${
-                    currentSort === "date"
-                      ? currentOrder === "asc"
-                        ? "rotate-180"
-                        : ""
-                      : ""
+                    currentSort === "date" ? (currentOrder === "asc" ? "rotate-180" : "") : ""
                   } ${currentSort === "date" ? "opacity-100" : "opacity-50"}`}
                 />
               </div>
             </button>
           ) : (
             <div className="flex items-center gap-1 h-5">
-              <span className="text-gray-800 text-sm font-bold leading-[1.5]">
-                日付
-              </span>
+              <span className="text-gray-800 text-sm font-bold leading-[1.5]">日付</span>
             </div>
           )}
         </th>
@@ -73,9 +65,7 @@ export default function TransactionTableHeader({
               className="flex items-center gap-1 h-12 hover:opacity-70 transition-opacity cursor-pointer"
               aria-label="カテゴリーフィルター"
             >
-              <span className="text-gray-800 text-sm font-bold leading-[1.5]">
-                カテゴリー
-              </span>
+              <span className="text-gray-800 text-sm font-bold leading-[1.5]">カテゴリー</span>
               <div className="w-3 h-2 flex items-center justify-center">
                 <Image
                   src="/icons/icon-filter.svg"
@@ -88,9 +78,7 @@ export default function TransactionTableHeader({
             </button>
           ) : (
             <div className="flex items-center gap-1 h-12">
-              <span className="text-gray-800 text-sm font-bold leading-[1.5]">
-                カテゴリー
-              </span>
+              <span className="text-gray-800 text-sm font-bold leading-[1.5]">カテゴリー</span>
             </div>
           )}
           <CategoryFilter
@@ -120,9 +108,7 @@ export default function TransactionTableHeader({
               aria-label="金額順でソート"
               aria-describedby="sort-amount-description"
             >
-              <span className="text-gray-800 text-sm font-bold leading-[1.5]">
-                金額
-              </span>
+              <span className="text-gray-800 text-sm font-bold leading-[1.5]">金額</span>
               <div className="w-5 h-5 flex items-center justify-center">
                 <Image
                   src="/icons/icon-chevron-down.svg"
@@ -130,20 +116,14 @@ export default function TransactionTableHeader({
                   width={20}
                   height={20}
                   className={`w-5 h-5 transition-transform ${
-                    currentSort === "amount"
-                      ? currentOrder === "asc"
-                        ? "rotate-180"
-                        : ""
-                      : ""
+                    currentSort === "amount" ? (currentOrder === "asc" ? "rotate-180" : "") : ""
                   } ${currentSort === "amount" ? "opacity-100" : "opacity-50"}`}
                 />
               </div>
             </button>
           ) : (
             <div className="flex items-center justify-end gap-1 h-5">
-              <span className="text-gray-800 text-sm font-bold leading-[1.5]">
-                金額
-              </span>
+              <span className="text-gray-800 text-sm font-bold leading-[1.5]">金額</span>
             </div>
           )}
         </th>

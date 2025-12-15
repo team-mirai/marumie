@@ -22,14 +22,9 @@ interface StatusMessage {
 }
 
 export function XmlExportClient({ organizations }: XmlExportClientProps) {
-  const initialFinancialYear = useMemo(
-    () => new Date().getFullYear().toString(),
-    [],
-  );
+  const initialFinancialYear = useMemo(() => new Date().getFullYear().toString(), []);
 
-  const [selectedOrganizationId, setSelectedOrganizationId] = useState(
-    organizations[0]?.id ?? "",
-  );
+  const [selectedOrganizationId, setSelectedOrganizationId] = useState(organizations[0]?.id ?? "");
   const [financialYear, setFinancialYear] = useState(initialFinancialYear);
   const [previewXml, setPreviewXml] = useState("");
   const [status, setStatus] = useState<StatusMessage | null>(null);
@@ -62,8 +57,7 @@ export function XmlExportClient({ organizations }: XmlExportClientProps) {
       console.error(error);
       setStatus({
         type: "error",
-        message:
-          error instanceof Error ? error.message : "不明なエラーが発生しました",
+        message: error instanceof Error ? error.message : "不明なエラーが発生しました",
       });
     } finally {
       setIsPreviewing(false);
@@ -87,9 +81,7 @@ export function XmlExportClient({ organizations }: XmlExportClientProps) {
         const url = window.URL.createObjectURL(blob);
         const link = document.createElement("a");
         link.href = url;
-        link.download =
-          filename ||
-          `marumie_xml_${selectedOrganizationId}_${financialYear}.xml`;
+        link.download = filename || `marumie_xml_${selectedOrganizationId}_${financialYear}.xml`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -103,10 +95,7 @@ export function XmlExportClient({ organizations }: XmlExportClientProps) {
         console.error(error);
         setStatus({
           type: "error",
-          message:
-            error instanceof Error
-              ? error.message
-              : "不明なエラーが発生しました",
+          message: error instanceof Error ? error.message : "不明なエラーが発生しました",
         });
       }
     });
@@ -115,9 +104,7 @@ export function XmlExportClient({ organizations }: XmlExportClientProps) {
   if (organizations.length === 0) {
     return (
       <Card>
-        <p className="text-white">
-          政治団体が登録されていません。先に政治団体を作成してください。
-        </p>
+        <p className="text-white">政治団体が登録されていません。先に政治団体を作成してください。</p>
       </Card>
     );
   }

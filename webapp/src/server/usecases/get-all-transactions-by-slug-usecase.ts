@@ -1,9 +1,6 @@
 import type { PoliticalOrganization } from "@/shared/models/political-organization";
 import type { TransactionFilters } from "@/types/transaction-filters";
-import type {
-  DisplayTransaction,
-  DisplayTransactionType,
-} from "@/types/display-transaction";
+import type { DisplayTransaction, DisplayTransactionType } from "@/types/display-transaction";
 import type { IPoliticalOrganizationRepository } from "../repositories/interfaces/political-organization-repository.interface";
 import type { ITransactionRepository } from "../repositories/interfaces/transaction-repository.interface";
 import { convertToDisplayTransactions } from "../utils/transaction-converter";
@@ -32,12 +29,11 @@ export class GetAllTransactionsBySlugUsecase {
     private politicalOrganizationRepository: IPoliticalOrganizationRepository,
   ) {}
 
-  async execute(
-    params: GetAllTransactionsBySlugParams,
-  ): Promise<GetAllTransactionsBySlugResult> {
+  async execute(params: GetAllTransactionsBySlugParams): Promise<GetAllTransactionsBySlugResult> {
     try {
-      const politicalOrganizations =
-        await this.politicalOrganizationRepository.findBySlugs(params.slugs);
+      const politicalOrganizations = await this.politicalOrganizationRepository.findBySlugs(
+        params.slugs,
+      );
 
       if (politicalOrganizations.length === 0) {
         throw new Error(

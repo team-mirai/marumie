@@ -14,10 +14,7 @@ interface BalanceItem {
 }
 
 // FormattedAmountを表示用JSXに変換する関数
-function formatAmountDisplay(
-  amount: FormattedAmount,
-  isLarge: boolean = false,
-): ReactElement {
+function formatAmountDisplay(amount: FormattedAmount, isLarge: boolean = false): ReactElement {
   const mainClass = isLarge
     ? "text-gray-800 font-bold font-sf-pro"
     : "text-gray-600 font-bold font-sf-pro";
@@ -72,20 +69,15 @@ export default function BalanceDetailCard({
     });
   }
 
-  const getBalanceItemKey = (item: BalanceItem) =>
-    `${item.label}-${item.amount.main}`;
+  const getBalanceItemKey = (item: BalanceItem) => `${item.label}-${item.amount.main}`;
 
   return (
-    <div
-      className={`border border-gray-200 rounded-2xl py-4 px-5 sm:py-5 sm:px-6 ${className}`}
-    >
+    <div className={`border border-gray-200 rounded-2xl py-4 px-5 sm:py-5 sm:px-6 ${className}`}>
       {/* デスクトップ版レイアウト */}
       <div className="hidden sm:flex flex-row items-end gap-4">
         {/* メイン収支セクション */}
         <div className="flex flex-col justify-center gap-4">
-          <div className="text-gray-800 font-bold text-base leading-7">
-            {mainBalance.title}
-          </div>
+          <div className="text-gray-800 font-bold text-base leading-7">{mainBalance.title}</div>
           <div className="flex items-baseline gap-1 -translate-y-1 text-4xl leading-7 tracking-wide">
             {formatAmountDisplay(mainBalance.amount, true)}
           </div>
@@ -97,13 +89,8 @@ export default function BalanceDetailCard({
         {/* 詳細セクション */}
         <div className="flex flex-col justify-center gap-2">
           {balanceItems.map((item) => (
-            <div
-              key={getBalanceItemKey(item)}
-              className="flex flex-row items-baseline gap-3"
-            >
-              <div className="text-gray-600 font-bold text-sm leading-4">
-                {item.label}
-              </div>
+            <div key={getBalanceItemKey(item)} className="flex flex-row items-baseline gap-3">
+              <div className="text-gray-600 font-bold text-sm leading-4">{item.label}</div>
               <div className="flex items-end gap-1 text-sm leading-4">
                 {formatAmountDisplay(item.amount)}
               </div>
@@ -114,9 +101,7 @@ export default function BalanceDetailCard({
 
       {/* モバイル版レイアウト */}
       <div className="sm:hidden flex flex-row items-center gap-3">
-        <div className="text-gray-800 font-bold text-sm leading-6">
-          {mainBalance.title}
-        </div>
+        <div className="text-gray-800 font-bold text-sm leading-6">{mainBalance.title}</div>
 
         <div className="flex flex-col items-end gap-2 flex-1">
           {/* メイン値 */}
@@ -132,13 +117,8 @@ export default function BalanceDetailCard({
           {/* 詳細項目 */}
           <div className="flex flex-col items-end gap-1">
             {balanceItems.map((item) => (
-              <div
-                key={getBalanceItemKey(item)}
-                className="flex flex-row gap-3"
-              >
-                <div className="text-gray-600 font-bold text-xs leading-4">
-                  {item.label}
-                </div>
+              <div key={getBalanceItemKey(item)} className="flex flex-row gap-3">
+                <div className="text-gray-600 font-bold text-xs leading-4">{item.label}</div>
                 <div className="flex items-end gap-1 text-xs leading-4">
                   {formatAmountDisplay(item.amount)}
                 </div>

@@ -50,16 +50,10 @@ export default function StatisticsTable({ statistics }: StatisticsTableProps) {
                 挿入
               </td>
               <td className="border border-primary-border px-4 py-2 text-xs text-white text-center">
-                {formatCell(
-                  statistics.insert.income.count,
-                  statistics.insert.income.amount,
-                )}
+                {formatCell(statistics.insert.income.count, statistics.insert.income.amount)}
               </td>
               <td className="border border-primary-border px-4 py-2 text-xs text-white text-center">
-                {formatCell(
-                  statistics.insert.expense.count,
-                  statistics.insert.expense.amount,
-                )}
+                {formatCell(statistics.insert.expense.count, statistics.insert.expense.amount)}
               </td>
               <td className="border border-primary-border px-4 py-2 text-xs text-white text-center">
                 {formatCell(
@@ -79,16 +73,10 @@ export default function StatisticsTable({ statistics }: StatisticsTableProps) {
                 更新
               </td>
               <td className="border border-primary-border px-4 py-2 text-xs text-white text-center">
-                {formatCell(
-                  statistics.update.income.count,
-                  statistics.update.income.amount,
-                )}
+                {formatCell(statistics.update.income.count, statistics.update.income.amount)}
               </td>
               <td className="border border-primary-border px-4 py-2 text-xs text-white text-center">
-                {formatCell(
-                  statistics.update.expense.count,
-                  statistics.update.expense.amount,
-                )}
+                {formatCell(statistics.update.expense.count, statistics.update.expense.amount)}
               </td>
               <td className="border border-primary-border px-4 py-2 text-xs text-white text-center">
                 {formatCell(
@@ -108,16 +96,10 @@ export default function StatisticsTable({ statistics }: StatisticsTableProps) {
                 無効
               </td>
               <td className="border border-primary-border px-4 py-2 text-xs text-white text-center">
-                {formatCell(
-                  statistics.invalid.income.count,
-                  statistics.invalid.income.amount,
-                )}
+                {formatCell(statistics.invalid.income.count, statistics.invalid.income.amount)}
               </td>
               <td className="border border-primary-border px-4 py-2 text-xs text-white text-center">
-                {formatCell(
-                  statistics.invalid.expense.count,
-                  statistics.invalid.expense.amount,
-                )}
+                {formatCell(statistics.invalid.expense.count, statistics.invalid.expense.amount)}
               </td>
               <td className="border border-primary-border px-4 py-2 text-xs text-white text-center">
                 {formatCell(
@@ -137,16 +119,10 @@ export default function StatisticsTable({ statistics }: StatisticsTableProps) {
                 スキップ
               </td>
               <td className="border border-primary-border px-4 py-2 text-xs text-white text-center">
-                {formatCell(
-                  statistics.skip.income.count,
-                  statistics.skip.income.amount,
-                )}
+                {formatCell(statistics.skip.income.count, statistics.skip.income.amount)}
               </td>
               <td className="border border-primary-border px-4 py-2 text-xs text-white text-center">
-                {formatCell(
-                  statistics.skip.expense.count,
-                  statistics.skip.expense.amount,
-                )}
+                {formatCell(statistics.skip.expense.count, statistics.skip.expense.amount)}
               </td>
               <td className="border border-primary-border px-4 py-2 text-xs text-white text-center">
                 {formatCell(

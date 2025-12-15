@@ -17,8 +17,7 @@ const Card = forwardRef<HTMLDivElement, CardProps>(
       outlined: "bg-transparent border border-primary-border",
     };
 
-    const classes =
-      `${baseClasses} ${variantClasses[variant]} ${className}`.trim();
+    const classes = `${baseClasses} ${variantClasses[variant]} ${className}`.trim();
 
     return (
       <div ref={ref} className={classes} {...props}>

@@ -31,9 +31,7 @@ export default function Selector({
 
   const currentValue = value !== undefined ? value : selectedValue;
 
-  const selectedOption = options.find(
-    (option) => option.value === currentValue,
-  );
+  const selectedOption = options.find((option) => option.value === currentValue);
 
   const handleSelect = (newValue: string) => {
     if (value === undefined) {
@@ -99,20 +97,13 @@ export default function Selector({
                   {/* Checkbox */}
                   <div className="flex items-center justify-center w-[18px] h-[18px] mt-0.5">
                     {currentValue === option.value && (
-                      <Image
-                        src="/icons/icon-checkmark.svg"
-                        alt=""
-                        width={13}
-                        height={11}
-                      />
+                      <Image src="/icons/icon-checkmark.svg" alt="" width={13} height={11} />
                     )}
                   </div>
 
                   {/* Option Info */}
                   <div className="flex-1 min-w-0 text-left">
-                    <div className="text-sm font-bold text-gray-600 leading-5">
-                      {option.label}
-                    </div>
+                    <div className="text-sm font-bold text-gray-600 leading-5">{option.label}</div>
                     {option.subtitle && (
                       <div className="text-[9px] text-gray-600 leading-tight mt-1">
                         {option.subtitle}

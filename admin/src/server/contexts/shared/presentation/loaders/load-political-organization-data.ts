@@ -28,9 +28,7 @@ export const loadPoliticalOrganizationData = unstable_cache(
       };
     } catch (error) {
       console.error("Error fetching political organization:", error);
-      throw new Error(
-        error instanceof Error ? error.message : "政治団体の取得に失敗しました",
-      );
+      throw new Error(error instanceof Error ? error.message : "政治団体の取得に失敗しました");
     }
   },
   ["political-organization-data"],

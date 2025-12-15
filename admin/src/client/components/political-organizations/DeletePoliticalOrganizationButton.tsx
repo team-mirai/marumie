@@ -45,9 +45,7 @@ export function DeletePoliticalOrganizationButton({
       onClick={handleDelete}
       disabled={deleting}
       className={`bg-red-600 text-white border-0 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-red-400 ${
-        deleting
-          ? "opacity-50 cursor-not-allowed"
-          : "hover:bg-red-700 cursor-pointer"
+        deleting ? "opacity-50 cursor-not-allowed" : "hover:bg-red-700 cursor-pointer"
       }`}
     >
       {deleting ? "削除中..." : "削除"}

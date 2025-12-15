@@ -10,16 +10,13 @@ import {
 } from "@/server/usecases/get-transactions-by-slug-usecase";
 import { CACHE_REVALIDATE_SECONDS } from "./constants";
 
-export const loadTransactionsPageData = (
-  params: GetTransactionsBySlugParams,
-) => {
+export const loadTransactionsPageData = (params: GetTransactionsBySlugParams) => {
   const cacheKey = ["transactions-page-data", JSON.stringify(params)];
 
   return unstable_cache(
     async () => {
       const transactionRepository = new PrismaTransactionRepository(prisma);
-      const politicalOrganizationRepository =
-        new PrismaPoliticalOrganizationRepository(prisma);
+      const politicalOrganizationRepository = new PrismaPoliticalOrganizationRepository(prisma);
       const usecase = new GetTransactionsBySlugUsecase(
         transactionRepository,
         politicalOrganizationRepository,

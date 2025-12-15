@@ -31,9 +31,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const { default: defaultSlug, organizations } = await loadOrganizations();
-  const validSlug = organizations.some((org) => org.slug === slug)
-    ? slug
-    : defaultSlug;
+  const validSlug = organizations.some((org) => org.slug === slug) ? slug : defaultSlug;
 
   const organization = organizations.find((org) => org.slug === validSlug);
 
@@ -43,10 +41,7 @@ export async function generateMetadata({
   };
 }
 
-export default async function TransactionsPage({
-  params,
-  searchParams,
-}: TransactionsPageProps) {
+export default async function TransactionsPage({ params, searchParams }: TransactionsPageProps) {
   const { slug } = await params;
 
   // slugの妥当性をチェックし、必要に応じてリダイレクト
@@ -84,9 +79,7 @@ export default async function TransactionsPage({
 
   // categories: multiple category keys for filtering (comma-separated)
   const categories = searchParamsResolved.categories
-    ? decodeURIComponent(String(searchParamsResolved.categories))
-        .split(",")
-        .filter(Boolean)
+    ? decodeURIComponent(String(searchParamsResolved.categories)).split(",").filter(Boolean)
     : undefined;
 
   const financialYear = 2025; // 固定値
@@ -103,9 +96,7 @@ export default async function TransactionsPage({
       categories,
     });
 
-    const organization = data.politicalOrganizations.find(
-      (org) => org.slug === slug,
-    );
+    const organization = data.politicalOrganizations.find((org) => org.slug === slug);
     const updatedAt = formatUpdatedAt(data.lastUpdatedAt ?? null);
 
     return (
@@ -115,12 +106,7 @@ export default async function TransactionsPage({
           <MainColumnCard>
             <CardHeader
               icon={
-                <Image
-                  src="/icons/icon-cashback.svg"
-                  alt="Cash move icon"
-                  width={30}
-                  height={30}
-                />
+                <Image src="/icons/icon-cashback.svg" alt="Cash move icon" width={30} height={30} />
               }
               organizationName={organization?.displayName || "未登録の政治団体"}
               title="すべての出入金"

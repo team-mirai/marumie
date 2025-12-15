@@ -70,18 +70,14 @@ export function ReportProfileForm({
     }
   };
 
-  const updateFormData = (
-    updates: Partial<OrganizationReportProfileFormData>,
-  ) => {
+  const updateFormData = (updates: Partial<OrganizationReportProfileFormData>) => {
     setFormData((prev: OrganizationReportProfileFormData) => ({
       ...prev,
       ...updates,
     }));
   };
 
-  const updateDetails = (
-    updates: Partial<OrganizationReportProfileFormData["details"]>,
-  ) => {
+  const updateDetails = (updates: Partial<OrganizationReportProfileFormData["details"]>) => {
     setFormData((prev: OrganizationReportProfileFormData) => ({
       ...prev,
       details: { ...prev.details, ...updates },
@@ -104,39 +100,22 @@ export function ReportProfileForm({
 
       <BasicInfoSection formData={formData} updateFormData={updateFormData} />
 
-      <RepresentativeSection
-        details={formData.details}
-        updateDetails={updateDetails}
-      />
+      <RepresentativeSection details={formData.details} updateDetails={updateDetails} />
 
-      <ContactPersonsSection
-        details={formData.details}
-        updateDetails={updateDetails}
-      />
+      <ContactPersonsSection details={formData.details} updateDetails={updateDetails} />
 
-      <OrganizationTypeSection
-        details={formData.details}
-        updateDetails={updateDetails}
-      />
+      <OrganizationTypeSection details={formData.details} updateDetails={updateDetails} />
 
-      <FundManagementSection
-        details={formData.details}
-        updateDetails={updateDetails}
-      />
+      <FundManagementSection details={formData.details} updateDetails={updateDetails} />
 
-      <DietMemberRelationSection
-        details={formData.details}
-        updateDetails={updateDetails}
-      />
+      <DietMemberRelationSection details={formData.details} updateDetails={updateDetails} />
 
       <div className="flex gap-3 pt-4">
         <button
           type="submit"
           disabled={isLoading}
           className={`bg-primary-accent text-white border-0 rounded-lg px-4 py-2.5 font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-accent ${
-            isLoading
-              ? "opacity-60 cursor-not-allowed"
-              : "hover:bg-blue-600 cursor-pointer"
+            isLoading ? "opacity-60 cursor-not-allowed" : "hover:bg-blue-600 cursor-pointer"
           }`}
         >
           {isLoading ? "保存中..." : "保存"}

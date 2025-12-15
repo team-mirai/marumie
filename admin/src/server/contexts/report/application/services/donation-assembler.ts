@@ -42,9 +42,7 @@ export class DonationAssembler {
       await this.repository.findPersonalDonationTransactions(filters);
 
     return {
-      personalDonations: PersonalDonationSection.fromTransactions(
-        personalDonationTransactions,
-      ),
+      personalDonations: PersonalDonationSection.fromTransactions(personalDonationTransactions),
     };
   }
 }

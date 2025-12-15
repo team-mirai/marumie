@@ -16,10 +16,7 @@ export async function PATCH(request: NextRequest) {
     const { userId, role } = body;
 
     if (!userId || !role) {
-      return NextResponse.json(
-        { error: "Missing userId or role" },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "Missing userId or role" }, { status: 400 });
     }
 
     if (!["admin", "user"].includes(role)) {
@@ -35,9 +32,6 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json(result.user);
   } catch (error) {
     console.error("Error updating user role:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

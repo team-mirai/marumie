@@ -34,9 +34,7 @@ export class PrismaOrganizationReportProfileRepository
     return this.mapToModel(profile);
   }
 
-  async create(
-    input: CreateOrganizationReportProfileInput,
-  ): Promise<OrganizationReportProfile> {
+  async create(input: CreateOrganizationReportProfileInput): Promise<OrganizationReportProfile> {
     const profile = await this.prisma.organizationReportProfile.create({
       data: {
         politicalOrganizationId: BigInt(input.politicalOrganizationId),
@@ -63,9 +61,7 @@ export class PrismaOrganizationReportProfileRepository
         officialNameKana: input.officialNameKana,
         officeAddress: input.officeAddress,
         officeAddressBuilding: input.officeAddressBuilding,
-        details: input.details
-          ? (input.details as Prisma.InputJsonValue)
-          : undefined,
+        details: input.details ? (input.details as Prisma.InputJsonValue) : undefined,
       },
     });
 

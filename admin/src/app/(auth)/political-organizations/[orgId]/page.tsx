@@ -22,9 +22,7 @@ export default async function EditPoliticalOrganizationPage({
     return (
       <div className="bg-primary-panel rounded-xl p-4">
         <div className="text-red-500 text-center p-10">
-          {error instanceof Error
-            ? error.message
-            : "政治団体の取得に失敗しました"}
+          {error instanceof Error ? error.message : "政治団体の取得に失敗しました"}
         </div>
       </div>
     );

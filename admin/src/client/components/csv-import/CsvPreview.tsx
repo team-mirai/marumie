@@ -22,15 +22,13 @@ export default function CsvPreview({
   onPreviewComplete,
   previewAction,
 }: CsvPreviewProps) {
-  const [previewResult, setPreviewResult] = useState<PreviewMfCsvResult | null>(
-    null,
-  );
+  const [previewResult, setPreviewResult] = useState<PreviewMfCsvResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [activeTab, setActiveTab] = useState<
-    "all" | "insert" | "update" | "invalid" | "skip"
-  >("all");
+  const [activeTab, setActiveTab] = useState<"all" | "insert" | "update" | "invalid" | "skip">(
+    "all",
+  );
   const perPage = 10;
   const onPreviewCompleteRef = useRef(onPreviewComplete);
 
@@ -61,8 +59,7 @@ export default function CsvPreview({
         setPreviewResult(result);
         onPreviewCompleteRef.current?.(result);
       } catch (err) {
-        const errorMessage =
-          err instanceof Error ? err.message : "CSVのプレビューに失敗しました";
+        const errorMessage = err instanceof Error ? err.message : "CSVのプレビューに失敗しました";
         setError(errorMessage);
       } finally {
         setLoading(false);
@@ -81,9 +78,7 @@ export default function CsvPreview({
     }
   };
 
-  const handleTabChange = (
-    tab: "all" | "insert" | "update" | "invalid" | "skip",
-  ) => {
+  const handleTabChange = (tab: "all" | "insert" | "update" | "invalid" | "skip") => {
     setActiveTab(tab);
     setCurrentPage(1);
   };
@@ -97,9 +92,7 @@ export default function CsvPreview({
       return sortedTransactions;
     }
 
-    return sortedTransactions.filter(
-      (transaction) => transaction.status === activeTab,
-    );
+    return sortedTransactions.filter((transaction) => transaction.status === activeTab);
   };
 
   const getSortedTransactions = (): PreviewTransaction[] => {
@@ -120,9 +113,7 @@ export default function CsvPreview({
     return filteredTransactions.slice(startIndex, endIndex);
   };
 
-  const totalPages = previewResult
-    ? Math.ceil(getFilteredTransactions().length / perPage)
-    : 0;
+  const totalPages = previewResult ? Math.ceil(getFilteredTransactions().length / perPage) : 0;
 
   if (!file) return null;
 
@@ -149,9 +140,7 @@ export default function CsvPreview({
   const currentRecords = getCurrentPageRecords();
   const filteredTransactions = getFilteredTransactions();
 
-  const getTabCount = (
-    tab: "all" | "insert" | "update" | "invalid" | "skip",
-  ) => {
+  const getTabCount = (tab: "all" | "insert" | "update" | "invalid" | "skip") => {
     if (tab === "all") return previewResult.summary.totalCount;
     return previewResult.transactions.filter((t) => t.status === tab).length;
   };
@@ -207,13 +196,9 @@ export default function CsvPreview({
 
       <div className="mb-4">
         <p className="text-primary-muted">
-          {activeTab === "all" ? "全" : getTabLabel(activeTab)}{" "}
-          {filteredTransactions.length} 件中{" "}
-          {filteredTransactions.length > 0
-            ? (currentPage - 1) * perPage + 1
-            : 0}{" "}
-          - {Math.min(currentPage * perPage, filteredTransactions.length)}{" "}
-          件を表示
+          {activeTab === "all" ? "全" : getTabLabel(activeTab)} {filteredTransactions.length} 件中{" "}
+          {filteredTransactions.length > 0 ? (currentPage - 1) * perPage + 1 : 0} -{" "}
+          {Math.min(currentPage * perPage, filteredTransactions.length)} 件を表示
         </p>
       </div>
 
@@ -221,35 +206,16 @@ export default function CsvPreview({
         <table className="w-full border-collapse">
           <thead>
             <tr className="border-b border-primary-border">
+              <th className="px-2 py-3 text-left text-sm font-semibold text-white">状態</th>
+              <th className="px-2 py-3 text-left text-sm font-semibold text-white">取引日</th>
+              <th className="px-2 py-3 text-left text-sm font-semibold text-white">借方勘定科目</th>
+              <th className="px-2 py-3 text-right text-sm font-semibold text-white">借方金額</th>
+              <th className="px-2 py-3 text-left text-sm font-semibold text-white">貸方勘定科目</th>
+              <th className="px-2 py-3 text-right text-sm font-semibold text-white">貸方金額</th>
+              <th className="px-2 py-3 text-left text-sm font-semibold text-white">種別</th>
+              <th className="px-2 py-3 text-left text-sm font-semibold text-white">カテゴリ</th>
               <th className="px-2 py-3 text-left text-sm font-semibold text-white">
-                状態
-              </th>
-              <th className="px-2 py-3 text-left text-sm font-semibold text-white">
-                取引日
-              </th>
-              <th className="px-2 py-3 text-left text-sm font-semibold text-white">
-                借方勘定科目
-              </th>
-              <th className="px-2 py-3 text-right text-sm font-semibold text-white">
-                借方金額
-              </th>
-              <th className="px-2 py-3 text-left text-sm font-semibold text-white">
-                貸方勘定科目
-              </th>
-              <th className="px-2 py-3 text-right text-sm font-semibold text-white">
-                貸方金額
-              </th>
-              <th className="px-2 py-3 text-left text-sm font-semibold text-white">
-                種別
-              </th>
-              <th className="px-2 py-3 text-left text-sm font-semibold text-white">
-                カテゴリ
-              </th>
-              <th className="px-2 py-3 text-left text-sm font-semibold text-white">
-                摘要{" "}
-                <span className="text-xs font-normal">
-                  ※サービスには表示されません
-                </span>
+                摘要 <span className="text-xs font-normal">※サービスには表示されません</span>
               </th>
             </tr>
           </thead>

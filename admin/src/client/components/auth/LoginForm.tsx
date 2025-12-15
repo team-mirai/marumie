@@ -32,18 +32,9 @@ export default function LoginForm({ action, error }: LoginFormProps) {
         </label>
         <label className="w-full">
           <div className="muted mb-2">Password</div>
-          <input
-            className="input w-full"
-            name="password"
-            type="password"
-            required
-          />
+          <input className="input w-full" name="password" type="password" required />
         </label>
-        <button
-          className="button mt-4 w-full"
-          type="submit"
-          disabled={isLoading}
-        >
+        <button className="button mt-4 w-full" type="submit" disabled={isLoading}>
           {isLoading ? "ログイン中..." : "ログイン"}
         </button>
         {error && <div className="muted mt-2">{error}</div>}

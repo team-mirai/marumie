@@ -289,10 +289,7 @@ export const OtherIncomeTransaction = {
    * 閾値（10万円）以上かどうかを判定
    */
   isAboveThreshold: (tx: OtherIncomeTransaction): boolean => {
-    return isAboveThreshold(
-      OtherIncomeTransaction.resolveAmount(tx),
-      TEN_MAN_THRESHOLD,
-    );
+    return isAboveThreshold(OtherIncomeTransaction.resolveAmount(tx), TEN_MAN_THRESHOLD);
   },
 
   /**
@@ -319,17 +316,13 @@ export const BusinessIncomeSection = {
   /**
    * トランザクションリストからセクションを構築する
    */
-  fromTransactions: (
-    transactions: BusinessIncomeTransaction[],
-  ): BusinessIncomeSection => {
+  fromTransactions: (transactions: BusinessIncomeTransaction[]): BusinessIncomeSection => {
     const totalAmount = transactions.reduce(
       (sum, tx) => sum + BusinessIncomeTransaction.resolveAmount(tx),
       0,
     );
 
-    const rows = transactions.map((tx, index) =>
-      BusinessIncomeTransaction.toRow(tx, index),
-    );
+    const rows = transactions.map((tx, index) => BusinessIncomeTransaction.toRow(tx, index));
 
     return { totalAmount, rows };
   },
@@ -349,17 +342,13 @@ export const LoanIncomeSection = {
   /**
    * トランザクションリストからセクションを構築する
    */
-  fromTransactions: (
-    transactions: LoanIncomeTransaction[],
-  ): LoanIncomeSection => {
+  fromTransactions: (transactions: LoanIncomeTransaction[]): LoanIncomeSection => {
     const totalAmount = transactions.reduce(
       (sum, tx) => sum + LoanIncomeTransaction.resolveAmount(tx),
       0,
     );
 
-    const rows = transactions.map((tx, index) =>
-      LoanIncomeTransaction.toRow(tx, index),
-    );
+    const rows = transactions.map((tx, index) => LoanIncomeTransaction.toRow(tx, index));
 
     return { totalAmount, rows };
   },
@@ -379,17 +368,13 @@ export const GrantIncomeSection = {
   /**
    * トランザクションリストからセクションを構築する
    */
-  fromTransactions: (
-    transactions: GrantIncomeTransaction[],
-  ): GrantIncomeSection => {
+  fromTransactions: (transactions: GrantIncomeTransaction[]): GrantIncomeSection => {
     const totalAmount = transactions.reduce(
       (sum, tx) => sum + GrantIncomeTransaction.resolveAmount(tx),
       0,
     );
 
-    const rows = transactions.map((tx, index) =>
-      GrantIncomeTransaction.toRow(tx, index),
-    );
+    const rows = transactions.map((tx, index) => GrantIncomeTransaction.toRow(tx, index));
 
     return { totalAmount, rows };
   },
@@ -413,9 +398,7 @@ export const OtherIncomeSection = {
    * - Transactions >= 100,000 yen are listed individually
    * - Transactions < 100,000 yen are aggregated into underThresholdAmount
    */
-  fromTransactions: (
-    transactions: OtherIncomeTransaction[],
-  ): OtherIncomeSection => {
+  fromTransactions: (transactions: OtherIncomeTransaction[]): OtherIncomeSection => {
     const totalAmount = transactions.reduce(
       (sum, tx) => sum + OtherIncomeTransaction.resolveAmount(tx),
       0,
@@ -433,9 +416,7 @@ export const OtherIncomeSection = {
       0,
     );
 
-    const rows = detailedTransactions.map((tx, index) =>
-      OtherIncomeTransaction.toRow(tx, index),
-    );
+    const rows = detailedTransactions.map((tx, index) => OtherIncomeTransaction.toRow(tx, index));
 
     return { totalAmount, underThresholdAmount, rows };
   },

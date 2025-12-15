@@ -22,9 +22,7 @@ export class SavePreviewTransactionsUsecase {
     private cacheInvalidator: ICacheInvalidator,
   ) {}
 
-  async execute(
-    input: SavePreviewTransactionsInput,
-  ): Promise<SavePreviewTransactionsResult> {
+  async execute(input: SavePreviewTransactionsInput): Promise<SavePreviewTransactionsResult> {
     const result: SavePreviewTransactionsResult = {
       processedCount: 0,
       savedCount: 0,
@@ -45,36 +43,24 @@ export class SavePreviewTransactionsUsecase {
       }
 
       const saveableTransactions = input.validTransactions.filter(
-        (t) =>
-          (t.status === "insert" || t.status === "update") &&
-          t.transaction_type !== null,
+        (t) => (t.status === "insert" || t.status === "update") && t.transaction_type !== null,
       );
 
       result.processedCount = input.validTransactions.length;
-      result.skippedCount = input.validTransactions.filter(
-        (t) => t.status === "skip",
-      ).length;
+      result.skippedCount = input.validTransactions.filter((t) => t.status === "skip").length;
 
       // insertとupdateに分けて処理
-      const insertTransactions = saveableTransactions.filter(
-        (t) => t.status === "insert",
-      );
-      const updateTransactions = saveableTransactions.filter(
-        (t) => t.status === "update",
-      );
+      const insertTransactions = saveableTransactions.filter((t) => t.status === "insert");
+      const updateTransactions = saveableTransactions.filter((t) => t.status === "update");
 
       let savedCount = 0;
 
       // bulk insert
       if (insertTransactions.length > 0) {
         const createInputs = insertTransactions.map((transaction) =>
-          PreviewTransaction.toCreateInput(
-            transaction,
-            input.politicalOrganizationId,
-          ),
+          PreviewTransaction.toCreateInput(transaction, input.politicalOrganizationId),
         );
-        const createdTransactions =
-          await this.transactionRepository.createMany(createInputs);
+        const createdTransactions = await this.transactionRepository.createMany(createInputs);
         savedCount += createdTransactions.length;
       }
 
@@ -87,8 +73,7 @@ export class SavePreviewTransactionsUsecase {
           },
           update: PreviewTransaction.toUpdateInput(transaction),
         }));
-        const updatedTransactions =
-          await this.transactionRepository.updateMany(updateData);
+        const updatedTransactions = await this.transactionRepository.updateMany(updateData);
         savedCount += updatedTransactions.length;
       }
 
