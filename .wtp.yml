@@ -1,0 +1,29 @@
+version: "1.0"
+
+defaults:
+  base_dir: ".git/worktrees"
+
+hooks:
+  post_create:
+    # ルートの環境変数ファイルをコピー
+    - type: copy
+      from: ".env"
+      to: ".env"
+
+    # webapp の環境変数ファイルをコピー
+    - type: copy
+      from: "webapp/.env.local"
+      to: "webapp/.env.local"
+
+    # admin の環境変数ファイルをコピー
+    - type: copy
+      from: "admin/.env.local"
+      to: "admin/.env.local"
+
+    # 依存関係のインストール
+    - type: command
+      command: "pnpm install"
+
+    # Prisma クライアントの生成
+    - type: command
+      command: "pnpm db:generate"
