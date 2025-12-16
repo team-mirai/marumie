@@ -597,6 +597,7 @@ export class PrismaReportTransactionRepository implements IReportTransactionRepo
     const whereClause: Prisma.TransactionWhereInput = {
       politicalOrganizationId: BigInt(politicalOrganizationId),
       financialYear,
+      transactionType: { in: ["income", "expense"] },
     };
 
     if (categoryKey) {
