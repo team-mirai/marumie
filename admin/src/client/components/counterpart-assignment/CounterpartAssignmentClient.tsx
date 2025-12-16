@@ -4,10 +4,12 @@ import "client-only";
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import type { RowSelectionState } from "@tanstack/react-table";
 import type { PoliticalOrganization } from "@/shared/models/political-organization";
 import type { TransactionWithCounterpart } from "@/server/contexts/report/domain/models/transaction-with-counterpart";
 import type { Counterpart } from "@/server/contexts/report/domain/models/counterpart";
 import { TransactionWithCounterpartTable } from "./TransactionWithCounterpartTable";
+import { BulkAssignModal } from "./BulkAssignModal";
 import { ClientPagination } from "@/client/components/ui/ClientPagination";
 import Card from "@/client/components/ui/Card";
 import Selector from "@/client/components/ui/Selector";
@@ -57,6 +59,12 @@ export function CounterpartAssignmentClient({
   const [searchQuery, setSearchQuery] = useState(initialFilters.searchQuery);
   const [sortField, setSortField] = useState(initialFilters.sortField);
   const [sortOrder, setSortOrder] = useState(initialFilters.sortOrder);
+  const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
+  const [isBulkAssignModalOpen, setIsBulkAssignModalOpen] = useState(false);
+
+  const selectedTransactions = useMemo(() => {
+    return initialTransactions.filter((t) => rowSelection[t.id]);
+  }, [initialTransactions, rowSelection]);
 
   const organizationOptions = organizations.map((org) => ({
     value: org.id,
@@ -259,12 +267,37 @@ export function CounterpartAssignmentClient({
           {isPending && <div className="text-primary-muted text-sm">読み込み中...</div>}
         </div>
 
+        {selectedTransactions.length > 0 && (
+          <div className="flex items-center gap-4 mb-4 p-3 bg-primary-hover/30 border border-primary-border rounded-lg">
+            <span className="text-white text-sm">
+              選択中: <span className="font-medium">{selectedTransactions.length}件</span>
+            </span>
+            <button
+              type="button"
+              onClick={() => setIsBulkAssignModalOpen(true)}
+              className="bg-primary-accent text-white rounded-lg px-4 py-2 text-sm hover:bg-blue-600 transition-colors cursor-pointer"
+            >
+              一括紐付け
+            </button>
+            <button
+              type="button"
+              onClick={() => setRowSelection({})}
+              className="text-primary-muted hover:text-white text-sm transition-colors"
+            >
+              選択解除
+            </button>
+          </div>
+        )}
+
         <TransactionWithCounterpartTable
           transactions={initialTransactions}
           sortField={sortField}
           sortOrder={sortOrder}
           onSortChange={handleSortChange}
           allCounterparts={allCounterparts}
+          rowSelection={rowSelection}
+          onRowSelectionChange={setRowSelection}
+          politicalOrganizationId={selectedOrganizationId}
         />
 
         {totalPages > 1 && (
@@ -275,6 +308,17 @@ export function CounterpartAssignmentClient({
           />
         )}
       </Card>
+
+      <BulkAssignModal
+        isOpen={isBulkAssignModalOpen}
+        onClose={() => setIsBulkAssignModalOpen(false)}
+        selectedTransactions={selectedTransactions}
+        allCounterparts={allCounterparts}
+        onSuccess={() => {
+          setRowSelection({});
+          router.refresh();
+        }}
+      />
     </div>
   );
 }

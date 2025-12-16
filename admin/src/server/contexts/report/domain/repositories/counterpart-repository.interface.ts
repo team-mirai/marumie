@@ -11,6 +11,10 @@ export interface CounterpartFilters {
   offset?: number;
 }
 
+export interface CounterpartWithUsageAndLastUsed extends CounterpartWithUsage {
+  lastUsedAt: Date | null;
+}
+
 export interface ICounterpartRepository {
   findById(id: string): Promise<Counterpart | null>;
   findByNameAndAddress(name: string, address: string): Promise<Counterpart | null>;
@@ -21,4 +25,14 @@ export interface ICounterpartRepository {
   delete(id: string): Promise<void>;
   getUsageCount(id: string): Promise<number>;
   count(filters?: CounterpartFilters): Promise<number>;
+
+  findByUsageFrequency(
+    politicalOrganizationId: string,
+    limit: number,
+  ): Promise<CounterpartWithUsageAndLastUsed[]>;
+
+  findByPartnerName(
+    politicalOrganizationId: string,
+    partnerName: string,
+  ): Promise<CounterpartWithUsageAndLastUsed[]>;
 }

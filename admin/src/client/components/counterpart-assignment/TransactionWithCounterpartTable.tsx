@@ -6,7 +6,9 @@ import {
   createColumnHelper,
   flexRender,
   getCoreRowModel,
+  getFilteredRowModel,
   useReactTable,
+  type RowSelectionState,
 } from "@tanstack/react-table";
 import type { TransactionWithCounterpart } from "@/server/contexts/report/domain/models/transaction-with-counterpart";
 import type { Counterpart } from "@/server/contexts/report/domain/models/counterpart";
@@ -19,6 +21,9 @@ interface TransactionWithCounterpartTableProps {
   sortOrder: "asc" | "desc";
   onSortChange: (field: "transactionDate" | "debitAmount" | "categoryKey") => void;
   allCounterparts: Counterpart[];
+  rowSelection: RowSelectionState;
+  onRowSelectionChange: (selection: RowSelectionState) => void;
+  politicalOrganizationId: string;
 }
 
 const columnHelper = createColumnHelper<TransactionWithCounterpart>();
@@ -47,9 +52,31 @@ export function TransactionWithCounterpartTable({
   sortOrder,
   onSortChange,
   allCounterparts,
+  rowSelection,
+  onRowSelectionChange,
+  politicalOrganizationId,
 }: TransactionWithCounterpartTableProps) {
   const columns = useMemo(
     () => [
+      columnHelper.display({
+        id: "select",
+        header: ({ table }) => (
+          <input
+            type="checkbox"
+            checked={table.getIsAllRowsSelected()}
+            onChange={table.getToggleAllRowsSelectedHandler()}
+            className="w-4 h-4 rounded border-primary-border bg-primary-input text-primary-accent focus:ring-primary-accent focus:ring-offset-0 cursor-pointer"
+          />
+        ),
+        cell: ({ row }) => (
+          <input
+            type="checkbox"
+            checked={row.getIsSelected()}
+            onChange={row.getToggleSelectedHandler()}
+            className="w-4 h-4 rounded border-primary-border bg-primary-input text-primary-accent focus:ring-primary-accent focus:ring-offset-0 cursor-pointer"
+          />
+        ),
+      }),
       columnHelper.accessor("transactionDate", {
         header: () => (
           <button
@@ -112,18 +139,29 @@ export function TransactionWithCounterpartTable({
               transactionId={transaction.id}
               currentCounterpart={transaction.counterpart}
               allCounterparts={allCounterparts}
+              politicalOrganizationId={politicalOrganizationId}
             />
           );
         },
       }),
     ],
-    [sortField, sortOrder, onSortChange, allCounterparts],
+    [sortField, sortOrder, onSortChange, allCounterparts, politicalOrganizationId],
   );
 
   const table = useReactTable({
     data: transactions,
     columns,
     getCoreRowModel: getCoreRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    state: {
+      rowSelection,
+    },
+    enableRowSelection: true,
+    onRowSelectionChange: (updater) => {
+      const newSelection = typeof updater === "function" ? updater(rowSelection) : updater;
+      onRowSelectionChange(newSelection);
+    },
+    getRowId: (row) => row.id,
   });
 
   if (transactions.length === 0) {

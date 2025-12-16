@@ -8,10 +8,12 @@ import {
   unassignCounterpartAction,
 } from "@/server/contexts/report/presentation/actions/assign-counterpart";
 import { createCounterpartAction } from "@/server/contexts/report/presentation/actions/create-counterpart";
+import { suggestCounterpartAction } from "@/server/contexts/report/presentation/actions/suggest-counterpart";
 import {
   MAX_NAME_LENGTH,
   MAX_ADDRESS_LENGTH,
 } from "@/server/contexts/report/domain/models/counterpart";
+import type { CounterpartSuggestion } from "@/server/contexts/report/application/services/counterpart-suggester";
 
 interface CounterpartComboboxProps {
   transactionId: string;
@@ -22,6 +24,7 @@ interface CounterpartComboboxProps {
   } | null;
   allCounterparts: Counterpart[];
   onAssigned?: () => void;
+  politicalOrganizationId: string;
 }
 
 export function CounterpartCombobox({
@@ -29,6 +32,7 @@ export function CounterpartCombobox({
   currentCounterpart,
   allCounterparts,
   onAssigned,
+  politicalOrganizationId,
 }: CounterpartComboboxProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -37,6 +41,8 @@ export function CounterpartCombobox({
   const [newAddress, setNewAddress] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const [suggestions, setSuggestions] = useState<CounterpartSuggestion[]>([]);
+  const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -51,6 +57,9 @@ export function CounterpartCombobox({
     const query = searchQuery.toLowerCase();
     return cp.name.toLowerCase().includes(query) || cp.address.toLowerCase().includes(query);
   });
+
+  const suggestedIds = new Set(suggestions.map((s) => s.counterpart.id));
+  const nonSuggestedCounterparts = filteredCounterparts.filter((cp) => !suggestedIds.has(cp.id));
 
   const handleClickOutside = useCallback((e: MouseEvent) => {
     if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
@@ -73,6 +82,21 @@ export function CounterpartCombobox({
       inputRef.current.focus();
     }
   }, [isOpen]);
+
+  useEffect(() => {
+    if (isOpen && politicalOrganizationId) {
+      setIsLoadingSuggestions(true);
+      suggestCounterpartAction(transactionId, politicalOrganizationId, 5)
+        .then((result) => {
+          if (result.success) {
+            setSuggestions(result.suggestions);
+          }
+        })
+        .finally(() => {
+          setIsLoadingSuggestions(false);
+        });
+    }
+  }, [isOpen, transactionId, politicalOrganizationId]);
 
   const handleSelect = async (counterpart: Counterpart) => {
     setError(null);
@@ -295,10 +319,47 @@ export function CounterpartCombobox({
                   </button>
                 )}
 
-                {filteredCounterparts.length > 0 ? (
+                {isLoadingSuggestions && (
+                  <div className="px-3 py-2 text-primary-muted text-sm">提案を読み込み中...</div>
+                )}
+
+                {!isLoadingSuggestions && suggestions.length > 0 && !searchQuery.trim() && (
+                  <div className="py-1 border-b border-primary-border">
+                    <div className="px-3 py-1 text-xs text-primary-muted">
+                      提案（このTransactionに基づく）
+                    </div>
+                    {suggestions.map((suggestion) => (
+                      <button
+                        key={suggestion.counterpart.id}
+                        type="button"
+                        onClick={() => handleSelect(suggestion.counterpart)}
+                        disabled={isPending}
+                        className={`w-full text-left px-3 py-2 hover:bg-primary-hover transition-colors ${
+                          optimisticCounterpart?.id === suggestion.counterpart.id
+                            ? "bg-primary-hover"
+                            : ""
+                        }`}
+                      >
+                        <div className="flex flex-col">
+                          <span className="text-white font-medium">
+                            {suggestion.counterpart.name}
+                          </span>
+                          <span className="text-primary-muted text-xs truncate">
+                            {suggestion.counterpart.address}
+                          </span>
+                          <span className="text-primary-accent text-xs mt-0.5">
+                            {suggestion.reason}
+                          </span>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {nonSuggestedCounterparts.length > 0 ? (
                   <div className="py-1">
                     <div className="px-3 py-1 text-xs text-primary-muted">すべての取引先</div>
-                    {filteredCounterparts.map((cp) => (
+                    {nonSuggestedCounterparts.map((cp) => (
                       <button
                         key={cp.id}
                         type="button"
@@ -316,9 +377,11 @@ export function CounterpartCombobox({
                     ))}
                   </div>
                 ) : (
-                  <div className="px-3 py-4 text-center text-primary-muted text-sm">
-                    該当する取引先がありません
-                  </div>
+                  !suggestions.length && (
+                    <div className="px-3 py-4 text-center text-primary-muted text-sm">
+                      該当する取引先がありません
+                    </div>
+                  )
                 )}
               </div>
 
