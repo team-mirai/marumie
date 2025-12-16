@@ -33,11 +33,11 @@ import { serializeProfileSection } from "@/server/contexts/report/domain/service
 // ============================================================
 
 const XML_HEAD = {
-  version: "20081001",
-  appName: "収支報告書作成ソフト (収支報告書作成ソフト)",
-  fileFormatNo: "1",
-  kokujiAppFlag: "0",
-  choboAppVersion: "20081001",
+  VERSION: "20081001",
+  APP: "収支報告書作成ソフト (収支報告書作成ソフト)",
+  FILE_FORMAT_NO: "1",
+  KOKUJI_APP_FLG: "0",
+  CHOUBO_APP_VER: "20081001",
 } as const;
 
 // Form IDs in the order they appear in SYUUSHI_UMU flag string
@@ -168,28 +168,21 @@ export function serializeReportData(reportData: ReportData): string {
 // XML Document Builder
 // ============================================================
 
+function buildHeadSection(): XMLBuilder {
+  const head = create().ele("HEAD");
+  Object.entries(XML_HEAD).forEach(([key, value]) => {
+    head.ele(key).txt(value);
+  });
+
+  return head;
+}
+
 function buildXmlDocument(sections: XMLBuilder[], availableFormIds: XmlSectionType[]): string {
   const doc = create({ version: "1.0", encoding: "Shift_JIS" }).ele("BOOK");
 
   // Build HEAD section
-  doc
-    .ele("HEAD")
-    .ele("VERSION")
-    .txt(XML_HEAD.version)
-    .up()
-    .ele("APP")
-    .txt(XML_HEAD.appName)
-    .up()
-    .ele("FILE_FORMAT_NO")
-    .txt(XML_HEAD.fileFormatNo)
-    .up()
-    .ele("KOKUJI_APP_FLG")
-    .txt(XML_HEAD.kokujiAppFlag)
-    .up()
-    .ele("CHOUBO_APP_VER")
-    .txt(XML_HEAD.choboAppVersion)
-    .up()
-    .up();
+  const headSection = buildHeadSection();
+  doc.import(headSection);
 
   // Build SYUUSHI_FLG section
   const syuushiFlgSection = buildSyuushiFlgSection(availableFormIds);
