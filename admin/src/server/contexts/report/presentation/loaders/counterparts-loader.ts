@@ -28,31 +28,39 @@ export interface LoadCounterpartsResult {
   perPage: number;
 }
 
-export const loadCounterpartsData = unstable_cache(
-  async (input: LoadCounterpartsInput = {}): Promise<LoadCounterpartsResult> => {
-    const page = input.page ?? 1;
-    const perPage = input.perPage ?? 50;
-    const offset = (page - 1) * perPage;
+export async function loadCounterpartsData(
+  input: LoadCounterpartsInput = {},
+): Promise<LoadCounterpartsResult> {
+  const page = input.page ?? 1;
+  const perPage = input.perPage ?? 50;
+  const searchQuery = input.searchQuery ?? "";
 
-    const repository = new PrismaCounterpartRepository(prisma);
-    const usecase = new GetCounterpartsUsecase(repository);
+  const cachedLoader = unstable_cache(
+    async (searchQuery: string, page: number, perPage: number): Promise<LoadCounterpartsResult> => {
+      const offset = (page - 1) * perPage;
 
-    const result = await usecase.execute({
-      searchQuery: input.searchQuery,
-      limit: perPage,
-      offset,
-    });
+      const repository = new PrismaCounterpartRepository(prisma);
+      const usecase = new GetCounterpartsUsecase(repository);
 
-    return {
-      counterparts: result.counterparts,
-      total: result.total,
-      page,
-      perPage,
-    };
-  },
-  ["counterparts-data"],
-  { revalidate: CACHE_REVALIDATE_SECONDS },
-);
+      const result = await usecase.execute({
+        searchQuery: searchQuery || undefined,
+        limit: perPage,
+        offset,
+      });
+
+      return {
+        counterparts: result.counterparts,
+        total: result.total,
+        page,
+        perPage,
+      };
+    },
+    ["counterparts-data", searchQuery, String(page), String(perPage)],
+    { revalidate: CACHE_REVALIDATE_SECONDS },
+  );
+
+  return cachedLoader(searchQuery, page, perPage);
+}
 
 export const loadCounterpartByIdData = unstable_cache(
   async (id: string): Promise<Counterpart | null> => {

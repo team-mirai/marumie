@@ -1,7 +1,7 @@
 "use client";
 import "client-only";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { createCounterpartAction } from "@/server/contexts/report/presentation/actions/create-counterpart";
 import {
   MAX_NAME_LENGTH,
@@ -18,6 +18,22 @@ export function CreateCounterpartDialog({ onClose, onCreate }: CreateCounterpart
   const [address, setAddress] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const handleClose = useCallback(() => {
+    if (!isLoading) {
+      onClose();
+    }
+  }, [isLoading, onClose]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        handleClose();
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [handleClose]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

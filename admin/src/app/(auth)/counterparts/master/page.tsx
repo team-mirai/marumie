@@ -13,7 +13,8 @@ interface CounterpartMasterPageProps {
 export default async function CounterpartMasterPage({ searchParams }: CounterpartMasterPageProps) {
   const params = await searchParams;
   const searchQuery = params.q;
-  const page = params.page ? Number.parseInt(params.page, 10) : 1;
+  const parsedPage = params.page ? Number.parseInt(params.page, 10) : 1;
+  const page = Number.isNaN(parsedPage) || parsedPage < 1 ? 1 : parsedPage;
   const perPage = 50;
 
   const data = await loadCounterpartsData({

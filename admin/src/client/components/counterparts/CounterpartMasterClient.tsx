@@ -4,8 +4,8 @@ import "client-only";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { CounterpartWithUsage } from "@/server/contexts/report/domain/models/counterpart";
-import { CounterpartTable } from "./CounterpartTable";
-import { CreateCounterpartDialog } from "./CreateCounterpartDialog";
+import { CounterpartTable } from "@/client/components/counterparts/CounterpartTable";
+import { CreateCounterpartDialog } from "@/client/components/counterparts/CreateCounterpartDialog";
 
 interface CounterpartMasterClientProps {
   initialCounterparts: CounterpartWithUsage[];
@@ -71,6 +71,7 @@ export function CounterpartMasterClient({
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
             placeholder="名前または住所で検索..."
+            aria-label="取引先を名前または住所で検索"
             className="bg-primary-input text-white border border-primary-border rounded-lg px-3 py-2.5 flex-1 max-w-md transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-accent focus:border-primary-accent"
           />
           <button

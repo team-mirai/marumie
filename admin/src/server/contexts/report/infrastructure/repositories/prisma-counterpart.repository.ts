@@ -25,9 +25,25 @@ export class PrismaCounterpartRepository implements ICounterpartRepository {
     };
   }
 
+  private parseBigIntId(id: string): bigint | null {
+    if (!/^\d+$/.test(id)) {
+      return null;
+    }
+    try {
+      return BigInt(id);
+    } catch {
+      return null;
+    }
+  }
+
   async findById(id: string): Promise<Counterpart | null> {
+    const bigIntId = this.parseBigIntId(id);
+    if (bigIntId === null) {
+      return null;
+    }
+
     const counterpart = await this.prisma.counterpart.findUnique({
-      where: { id: BigInt(id) },
+      where: { id: bigIntId },
     });
 
     if (!counterpart) {
@@ -102,6 +118,11 @@ export class PrismaCounterpartRepository implements ICounterpartRepository {
   }
 
   async update(id: string, data: UpdateCounterpartInput): Promise<Counterpart> {
+    const bigIntId = this.parseBigIntId(id);
+    if (bigIntId === null) {
+      throw new Error(`無効なID形式です: ${id}`);
+    }
+
     const updateData: { name?: string; address?: string } = {};
 
     if (data.name !== undefined) {
@@ -112,7 +133,7 @@ export class PrismaCounterpartRepository implements ICounterpartRepository {
     }
 
     const counterpart = await this.prisma.counterpart.update({
-      where: { id: BigInt(id) },
+      where: { id: bigIntId },
       data: updateData,
     });
 
@@ -120,14 +141,24 @@ export class PrismaCounterpartRepository implements ICounterpartRepository {
   }
 
   async delete(id: string): Promise<void> {
+    const bigIntId = this.parseBigIntId(id);
+    if (bigIntId === null) {
+      throw new Error(`無効なID形式です: ${id}`);
+    }
+
     await this.prisma.counterpart.delete({
-      where: { id: BigInt(id) },
+      where: { id: bigIntId },
     });
   }
 
   async getUsageCount(id: string): Promise<number> {
+    const bigIntId = this.parseBigIntId(id);
+    if (bigIntId === null) {
+      return 0;
+    }
+
     const count = await this.prisma.transactionCounterpart.count({
-      where: { counterpartId: BigInt(id) },
+      where: { counterpartId: bigIntId },
     });
 
     return count;
