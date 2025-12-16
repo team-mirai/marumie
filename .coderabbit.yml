@@ -4,10 +4,12 @@ language: ja-JP
 
 reviews:
   request_changes_workflow: true
-  high_level_summary: true
   poem: false
-  review_status: true
   collapse_walkthrough: false
+
+  # レビュー強化機能
+  auto_apply_labels: true
+
   path_filters:
     - "webapp/**"
     - "admin/**"
@@ -31,6 +33,9 @@ reviews:
     - "!**/coverage/**"
     - "!**/*.snap"
   auto_review:
-    enabled: true
     drafts: true
   labeling_instructions: []
+
+  pre_merge_checks:
+    docstrings:
+      mode: "off"
