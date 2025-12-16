@@ -4,8 +4,8 @@ export { default as Card } from "./Card";
 export { default as Selector } from "./Selector";
 
 // shadcn/ui components (in shadcn/ subdirectory)
-export { Button as ShadcnButton, buttonVariants } from "./shadcn/button";
-export { Input as ShadcnInput } from "./shadcn/input";
+export { Button as ShadcnButton, buttonVariants } from "@/client/components/ui/shadcn/button";
+export { Input as ShadcnInput } from "@/client/components/ui/shadcn/input";
 export {
   Card as ShadcnCard,
   CardHeader,
@@ -13,8 +13,8 @@ export {
   CardTitle,
   CardDescription,
   CardContent,
-} from "./shadcn/card";
-export { Label } from "./shadcn/label";
+} from "@/client/components/ui/shadcn/card";
+export { Label } from "@/client/components/ui/shadcn/label";
 export {
   Select,
   SelectGroup,
@@ -26,7 +26,7 @@ export {
   SelectSeparator,
   SelectScrollUpButton,
   SelectScrollDownButton,
-} from "./shadcn/select";
+} from "@/client/components/ui/shadcn/select";
 export {
   Dialog,
   DialogPortal,
@@ -38,7 +38,7 @@ export {
   DialogFooter,
   DialogTitle,
   DialogDescription,
-} from "./shadcn/dialog";
+} from "@/client/components/ui/shadcn/dialog";
 export {
   Table,
   TableHeader,
@@ -48,7 +48,7 @@ export {
   TableRow,
   TableCell,
   TableCaption,
-} from "./shadcn/table";
+} from "@/client/components/ui/shadcn/table";
 export {
   useFormField,
   Form,
@@ -58,4 +58,4 @@ export {
   FormDescription,
   FormMessage,
   FormField,
-} from "./shadcn/form";
+} from "@/client/components/ui/shadcn/form";
