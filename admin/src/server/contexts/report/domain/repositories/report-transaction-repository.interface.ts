@@ -19,6 +19,11 @@ import type {
   LoanIncomeTransaction,
   OtherIncomeTransaction,
 } from "@/server/contexts/report/domain/models/income-transaction";
+import type {
+  TransactionWithCounterpart,
+  TransactionWithCounterpartFilters,
+  TransactionWithCounterpartResult,
+} from "@/server/contexts/report/domain/models/transaction-with-counterpart";
 
 export interface TransactionFilters {
   politicalOrganizationId: string;
@@ -133,6 +138,13 @@ export interface IReportTransactionRepository {
   findOtherPoliticalExpenseTransactions(
     filters: TransactionFilters,
   ): Promise<OtherPoliticalExpenseTransaction[]>;
+
+  /**
+   * Counterpart紐付け管理用: TransactionとCounterpartの紐付け情報を含むTransaction一覧を取得
+   */
+  findTransactionsWithCounterparts(
+    filters: TransactionWithCounterpartFilters,
+  ): Promise<TransactionWithCounterpartResult>;
 }
 
 // Re-export for consumers
@@ -154,4 +166,7 @@ export type {
   ResearchExpenseTransaction,
   DonationGrantExpenseTransaction,
   OtherPoliticalExpenseTransaction,
+  TransactionWithCounterpart,
+  TransactionWithCounterpartFilters,
+  TransactionWithCounterpartResult,
 };
