@@ -29,24 +29,16 @@ import {
 import { serializeProfileSection } from "@/server/contexts/report/domain/services/profile-serializer";
 
 // ============================================================
-// Types
+// Constants
 // ============================================================
 
-interface XmlHead {
-  version: string;
-  appName: string;
-  fileFormatNo: string;
-  kokujiAppFlag: string;
-  choboAppVersion: string;
-}
-
-const DEFAULT_HEAD: XmlHead = {
+const XML_HEAD = {
   version: "20081001",
   appName: "収支報告書作成ソフト (収支報告書作成ソフト)",
   fileFormatNo: "1",
   kokujiAppFlag: "0",
   choboAppVersion: "20081001",
-};
+} as const;
 
 // Form IDs in the order they appear in SYUUSHI_UMU flag string
 // 第14号様式 (収支報告書)
@@ -87,7 +79,7 @@ export type XmlSectionType = (typeof KNOWN_FORM_IDS)[number];
 /**
  * Serializes ReportData into a complete XML document string.
  */
-export function serializeReportData(reportData: ReportData, head: Partial<XmlHead> = {}): string {
+export function serializeReportData(reportData: ReportData): string {
   const sections: { formId: XmlSectionType; xml: XMLBuilder }[] = [];
 
   // SYUUSHI07_01: 第14号様式（その1）団体の基本情報
@@ -169,7 +161,6 @@ export function serializeReportData(reportData: ReportData, head: Partial<XmlHea
   return buildXmlDocument(
     sections.map((s) => s.xml),
     sections.map((s) => s.formId),
-    head,
   );
 }
 
@@ -177,35 +168,26 @@ export function serializeReportData(reportData: ReportData, head: Partial<XmlHea
 // XML Document Builder
 // ============================================================
 
-function buildXmlDocument(
-  sections: XMLBuilder[],
-  availableFormIds: XmlSectionType[],
-  head: Partial<XmlHead> = {},
-): string {
-  const resolvedHead: XmlHead = {
-    ...DEFAULT_HEAD,
-    ...head,
-  };
-
+function buildXmlDocument(sections: XMLBuilder[], availableFormIds: XmlSectionType[]): string {
   const doc = create({ version: "1.0", encoding: "Shift_JIS" }).ele("BOOK");
 
   // Build HEAD section
   doc
     .ele("HEAD")
     .ele("VERSION")
-    .txt(resolvedHead.version)
+    .txt(XML_HEAD.version)
     .up()
     .ele("APP")
-    .txt(resolvedHead.appName)
+    .txt(XML_HEAD.appName)
     .up()
     .ele("FILE_FORMAT_NO")
-    .txt(resolvedHead.fileFormatNo)
+    .txt(XML_HEAD.fileFormatNo)
     .up()
     .ele("KOKUJI_APP_FLG")
-    .txt(resolvedHead.kokujiAppFlag)
+    .txt(XML_HEAD.kokujiAppFlag)
     .up()
     .ele("CHOUBO_APP_VER")
-    .txt(resolvedHead.choboAppVersion)
+    .txt(XML_HEAD.choboAppVersion)
     .up()
     .up();
 
