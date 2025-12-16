@@ -594,34 +594,51 @@ export class PrismaReportTransactionRepository implements IReportTransactionRepo
       );
     }
 
-    const whereClause: Prisma.TransactionWhereInput = {
-      politicalOrganizationId: BigInt(politicalOrganizationId),
-      financialYear,
-      transactionType: { in: ["income", "expense"] },
+    // 設計ドキュメントに基づくCounterpart紐付け対象:
+    // - 支出先: すべてのexpense transaction
+    // - 借入先: loan income transaction (categoryKey: LOAN)
+    // - 本部・支部: grant income transaction (categoryKey: GRANT)
+    // ※ 寄附者（個人からの寄附）は別テーブル（Donor）で管理するため対象外
+    const counterpartTargetCondition: Prisma.TransactionWhereInput = {
+      OR: [
+        { transactionType: "expense" },
+        { transactionType: "income", categoryKey: CATEGORY_KEYS.LOAN },
+        { transactionType: "income", categoryKey: CATEGORY_KEYS.GRANT },
+      ],
     };
 
+    const conditions: Prisma.TransactionWhereInput[] = [
+      { politicalOrganizationId: BigInt(politicalOrganizationId) },
+      { financialYear },
+      counterpartTargetCondition,
+    ];
+
     if (categoryKey) {
-      whereClause.categoryKey = categoryKey;
+      conditions.push({ categoryKey });
     }
 
     if (searchQuery) {
       const searchTerm = searchQuery.trim();
       if (searchTerm) {
-        whereClause.OR = [
-          { description: { contains: searchTerm, mode: "insensitive" } },
-          { memo: { contains: searchTerm, mode: "insensitive" } },
-          { friendlyCategory: { contains: searchTerm, mode: "insensitive" } },
-          { debitPartner: { contains: searchTerm, mode: "insensitive" } },
-          { creditPartner: { contains: searchTerm, mode: "insensitive" } },
-        ];
+        conditions.push({
+          OR: [
+            { description: { contains: searchTerm, mode: "insensitive" } },
+            { memo: { contains: searchTerm, mode: "insensitive" } },
+            { friendlyCategory: { contains: searchTerm, mode: "insensitive" } },
+            { debitPartner: { contains: searchTerm, mode: "insensitive" } },
+            { creditPartner: { contains: searchTerm, mode: "insensitive" } },
+          ],
+        });
       }
     }
 
     if (unassignedOnly) {
-      whereClause.transactionCounterparts = {
-        none: {},
-      };
+      conditions.push({
+        transactionCounterparts: { none: {} },
+      });
     }
+
+    const whereClause: Prisma.TransactionWhereInput = { AND: conditions };
 
     const orderByField =
       sortField === "debitAmount"
