@@ -279,11 +279,18 @@ export function CounterpartAssignmentClient({
               className="w-4 h-4 rounded border-primary-border bg-primary-input text-primary-accent focus:ring-primary-accent focus:ring-offset-0"
             />
             <span className="text-white">明細記載が必要なもののみ</span>
-            <span
-              className="inline-flex items-center justify-center w-4 h-4 text-xs rounded-full bg-primary-border text-primary-muted cursor-help"
-              title="政治資金報告書では、支出は5万円超、その他収入は10万円以上の取引のみ明細に記載されます。借入金・交付金は全件記載が必要です。"
-            >
-              ?
+            <span className="relative group">
+              <span className="inline-flex items-center justify-center w-4 h-4 text-xs rounded-full bg-primary-border text-primary-muted cursor-help">
+                ?
+              </span>
+              <span className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 px-3 py-2 text-xs text-white bg-gray-900 rounded-lg shadow-lg whitespace-nowrap opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                政治資金報告書では、支出は5万円超、
+                <br />
+                その他収入は10万円以上の取引のみ明細に記載。
+                <br />
+                借入金・交付金は全件記載が必要です。
+                <span className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900" />
+              </span>
             </span>
           </label>
         </div>
