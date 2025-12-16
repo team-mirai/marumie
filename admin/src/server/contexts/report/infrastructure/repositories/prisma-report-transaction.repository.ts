@@ -25,6 +25,7 @@ import type {
   UtilityExpenseTransaction,
 } from "@/server/contexts/report/domain/repositories/report-transaction-repository.interface";
 import { PL_CATEGORIES } from "@/shared/utils/category-mapping";
+import { requiresCounterpart } from "@/server/contexts/report/domain/services/counterpart-requirement.service";
 
 // カテゴリキー定数（shared/utils/category-mapping.ts の日本語キー経由で取得）
 const CATEGORY_KEYS = {
@@ -571,38 +572,6 @@ export class PrismaReportTransactionRepository implements IReportTransactionRepo
   }
 
   /**
-   * 取引が報告書の明細記載（Counterpart紐付け）が必要かを判定
-   * - 借入金・交付金: 全件必要
-   * - 経常経費（光熱水費・備品消耗品費・事務所費）: 5万円超
-   * - 政治活動費: 5万円超
-   * - その他の収入: 10万円以上
-   */
-  private requiresCounterpart(
-    categoryKey: string,
-    transactionType: string,
-    amount: number,
-  ): boolean {
-    // 借入金・交付金は全件必要
-    if (categoryKey === CATEGORY_KEYS.LOAN || categoryKey === CATEGORY_KEYS.GRANT) {
-      return true;
-    }
-
-    // 支出の場合
-    if (transactionType === "expense") {
-      // 経常経費（光熱水費・備品消耗品費・事務所費）と政治活動費: 5万円超
-      return amount > 50000;
-    }
-
-    // その他の収入: 10万円以上
-    if (categoryKey === CATEGORY_KEYS.OTHER) {
-      return amount >= 100000;
-    }
-
-    // その他（事業収入など）: 閾値なし、全件必要
-    return true;
-  }
-
-  /**
    * Counterpart紐付け管理用: TransactionとCounterpartの紐付け情報を含むTransaction一覧を取得
    */
   async findTransactionsWithCounterparts(
@@ -744,7 +713,11 @@ export class PrismaReportTransactionRepository implements IReportTransactionRepo
                 address: t.transactionCounterparts[0].counterpart.address,
               }
             : null,
-        requiresCounterpart: this.requiresCounterpart(t.categoryKey, t.transactionType, amount),
+        requiresCounterpart: requiresCounterpart({
+          categoryKey: t.categoryKey,
+          transactionType: t.transactionType as "income" | "expense",
+          amount,
+        }),
       };
     });
 
