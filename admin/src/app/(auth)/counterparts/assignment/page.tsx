@@ -10,6 +10,7 @@ interface CounterpartAssignmentPageProps {
     orgId?: string;
     year?: string;
     unassigned?: string;
+    requiresCounterpart?: string;
     category?: string;
     search?: string;
     sort?: string;
@@ -38,6 +39,7 @@ export default async function CounterpartAssignmentPage({
           politicalOrganizationId: "",
           financialYear: new Date().getFullYear(),
           unassignedOnly: false,
+          requiresCounterpart: false,
           categoryKey: "",
           searchQuery: "",
           sortField: "transactionDate",
@@ -51,6 +53,7 @@ export default async function CounterpartAssignmentPage({
   const politicalOrganizationId = params.orgId || organizations[0].id;
   const financialYear = params.year ? Number.parseInt(params.year, 10) : new Date().getFullYear();
   const unassignedOnly = params.unassigned === "true";
+  const requiresCounterpart = params.requiresCounterpart === "true";
   const categoryKey = params.category || "";
   const searchQuery = params.search || "";
   const sortField =
@@ -64,6 +67,7 @@ export default async function CounterpartAssignmentPage({
     politicalOrganizationId,
     financialYear,
     unassignedOnly,
+    requiresCounterpart,
     categoryKey: categoryKey || undefined,
     searchQuery: searchQuery || undefined,
     page,
@@ -83,6 +87,7 @@ export default async function CounterpartAssignmentPage({
         politicalOrganizationId,
         financialYear,
         unassignedOnly,
+        requiresCounterpart,
         categoryKey,
         searchQuery,
         sortField,

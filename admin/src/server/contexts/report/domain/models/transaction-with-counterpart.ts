@@ -18,12 +18,16 @@ export interface TransactionWithCounterpart {
     name: string;
     address: string;
   } | null;
+  /** 報告書への明細記載が必要か（閾値超過の場合true） */
+  requiresCounterpart: boolean;
 }
 
 export interface TransactionWithCounterpartFilters {
   politicalOrganizationId: string;
   financialYear: number;
   unassignedOnly?: boolean;
+  /** true: 閾値超過のみ, false: 全件（デフォルト） */
+  requiresCounterpart?: boolean;
   categoryKey?: string;
   searchQuery?: string;
   limit?: number;

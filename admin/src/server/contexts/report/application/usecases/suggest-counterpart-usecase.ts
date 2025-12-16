@@ -78,6 +78,7 @@ export class SuggestCounterpartUsecase {
             address: firstCounterpart.counterpart.address,
           }
         : null,
+      requiresCounterpart: true, // 提案対象なので常にtrue
     };
 
     const repository = new PrismaCounterpartRepository(this.prisma);

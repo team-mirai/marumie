@@ -26,6 +26,7 @@ interface CounterpartAssignmentClientProps {
     politicalOrganizationId: string;
     financialYear: number;
     unassignedOnly: boolean;
+    requiresCounterpart: boolean;
     categoryKey: string;
     searchQuery: string;
     sortField: "transactionDate" | "debitAmount" | "categoryKey";
@@ -55,6 +56,9 @@ export function CounterpartAssignmentClient({
     initialFilters.financialYear || initialFinancialYear,
   );
   const [unassignedOnly, setUnassignedOnly] = useState(initialFilters.unassignedOnly);
+  const [requiresCounterpart, setRequiresCounterpart] = useState(
+    initialFilters.requiresCounterpart,
+  );
   const [categoryKey, setCategoryKey] = useState(initialFilters.categoryKey);
   const [searchQuery, setSearchQuery] = useState(initialFilters.searchQuery);
   const [sortField, setSortField] = useState(initialFilters.sortField);
@@ -90,6 +94,7 @@ export function CounterpartAssignmentClient({
     orgId?: string;
     year?: number;
     unassigned?: boolean;
+    requiresCounterpart?: boolean;
     category?: string;
     search?: string;
     sort?: string;
@@ -101,6 +106,9 @@ export function CounterpartAssignmentClient({
     searchParams.set("year", String(params.year ?? financialYear));
     if (params.unassigned ?? unassignedOnly) {
       searchParams.set("unassigned", "true");
+    }
+    if (params.requiresCounterpart ?? requiresCounterpart) {
+      searchParams.set("requiresCounterpart", "true");
     }
     if (params.category ?? categoryKey) {
       searchParams.set("category", params.category ?? categoryKey);
@@ -142,6 +150,14 @@ export function CounterpartAssignmentClient({
     setUnassignedOnly(checked);
     startTransition(() => {
       router.push(buildUrl({ unassigned: checked, page: 1 }));
+    });
+  };
+
+  const handleRequiresCounterpartChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const checked = e.target.checked;
+    setRequiresCounterpart(checked);
+    startTransition(() => {
+      router.push(buildUrl({ requiresCounterpart: checked, page: 1 }));
     });
   };
 
@@ -245,7 +261,7 @@ export function CounterpartAssignmentClient({
           </form>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-6">
           <label className="flex items-center gap-2 cursor-pointer">
             <input
               type="checkbox"
@@ -254,6 +270,21 @@ export function CounterpartAssignmentClient({
               className="w-4 h-4 rounded border-primary-border bg-primary-input text-primary-accent focus:ring-primary-accent focus:ring-offset-0"
             />
             <span className="text-white">未紐付けのみ表示</span>
+          </label>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={requiresCounterpart === true}
+              onChange={handleRequiresCounterpartChange}
+              className="w-4 h-4 rounded border-primary-border bg-primary-input text-primary-accent focus:ring-primary-accent focus:ring-offset-0"
+            />
+            <span className="text-white">明細記載が必要なもののみ</span>
+            <span
+              className="inline-flex items-center justify-center w-4 h-4 text-xs rounded-full bg-primary-border text-primary-muted cursor-help"
+              title="政治資金報告書では、支出は5万円超、その他収入は10万円以上の取引のみ明細に記載されます。借入金・交付金は全件記載が必要です。"
+            >
+              ?
+            </span>
           </label>
         </div>
       </Card>

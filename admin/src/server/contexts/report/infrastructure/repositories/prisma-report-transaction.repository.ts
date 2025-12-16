@@ -571,6 +571,38 @@ export class PrismaReportTransactionRepository implements IReportTransactionRepo
   }
 
   /**
+   * 取引が報告書の明細記載（Counterpart紐付け）が必要かを判定
+   * - 借入金・交付金: 全件必要
+   * - 経常経費（光熱水費・備品消耗品費・事務所費）: 5万円超
+   * - 政治活動費: 5万円超
+   * - その他の収入: 10万円以上
+   */
+  private requiresCounterpart(
+    categoryKey: string,
+    transactionType: string,
+    amount: number,
+  ): boolean {
+    // 借入金・交付金は全件必要
+    if (categoryKey === CATEGORY_KEYS.LOAN || categoryKey === CATEGORY_KEYS.GRANT) {
+      return true;
+    }
+
+    // 支出の場合
+    if (transactionType === "expense") {
+      // 経常経費（光熱水費・備品消耗品費・事務所費）と政治活動費: 5万円超
+      return amount > 50000;
+    }
+
+    // その他の収入: 10万円以上
+    if (categoryKey === CATEGORY_KEYS.OTHER) {
+      return amount >= 100000;
+    }
+
+    // その他（事業収入など）: 閾値なし、全件必要
+    return true;
+  }
+
+  /**
    * Counterpart紐付け管理用: TransactionとCounterpartの紐付け情報を含むTransaction一覧を取得
    */
   async findTransactionsWithCounterparts(
@@ -580,6 +612,7 @@ export class PrismaReportTransactionRepository implements IReportTransactionRepo
       politicalOrganizationId,
       financialYear,
       unassignedOnly,
+      requiresCounterpart: requiresCounterpartFilter,
       categoryKey,
       searchQuery,
       limit = 50,
@@ -685,8 +718,10 @@ export class PrismaReportTransactionRepository implements IReportTransactionRepo
       where: whereClause,
     });
 
-    return {
-      transactions: transactions.map((t) => ({
+    const mappedTransactions = transactions.map((t) => {
+      const amount =
+        t.transactionType === "expense" ? Number(t.debitAmount) : Number(t.creditAmount);
+      return {
         id: t.id.toString(),
         transactionNo: t.transactionNo,
         transactionDate: t.transactionDate,
@@ -709,8 +744,18 @@ export class PrismaReportTransactionRepository implements IReportTransactionRepo
                 address: t.transactionCounterparts[0].counterpart.address,
               }
             : null,
-      })),
-      total,
+        requiresCounterpart: this.requiresCounterpart(t.categoryKey, t.transactionType, amount),
+      };
+    });
+
+    // requiresCounterpartフィルタがtrueの場合のみフィルタリング（falseまたは未指定は全件）
+    const filteredTransactions = requiresCounterpartFilter
+      ? mappedTransactions.filter((t) => t.requiresCounterpart)
+      : mappedTransactions;
+
+    return {
+      transactions: filteredTransactions,
+      total: requiresCounterpartFilter ? filteredTransactions.length : total,
     };
   }
 }
