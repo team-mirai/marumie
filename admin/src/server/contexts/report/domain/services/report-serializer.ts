@@ -72,6 +72,11 @@ const FLAG_STRING_LENGTH = 51;
 
 export type XmlSectionType = (typeof KNOWN_FORM_IDS)[number];
 
+type XmlSection = {
+  formId: XmlSectionType;
+  xml: XMLBuilder;
+};
+
 // ============================================================
 // Main Serializer Function
 // ============================================================
@@ -80,7 +85,7 @@ export type XmlSectionType = (typeof KNOWN_FORM_IDS)[number];
  * Serializes ReportData into a complete XML document string.
  */
 export function serializeReportData(reportData: ReportData): string {
-  const sections: { formId: XmlSectionType; xml: XMLBuilder }[] = [];
+  const sections: XmlSection[] = [];
 
   // SYUUSHI07_01: 第14号様式（その1）団体の基本情報
   sections.push({
@@ -158,10 +163,7 @@ export function serializeReportData(reportData: ReportData): string {
     });
   }
 
-  return buildXmlDocument(
-    sections.map((s) => s.xml),
-    sections.map((s) => s.formId),
-  );
+  return buildXmlDocument(sections);
 }
 
 // ============================================================
@@ -177,7 +179,7 @@ function buildHeadSection(): XMLBuilder {
   return head;
 }
 
-function buildXmlDocument(sections: XMLBuilder[], availableFormIds: XmlSectionType[]): string {
+function buildXmlDocument(sections: XmlSection[]): string {
   const doc = create({ version: "1.0", encoding: "Shift_JIS" }).ele("BOOK");
 
   // Build HEAD section
@@ -185,12 +187,13 @@ function buildXmlDocument(sections: XMLBuilder[], availableFormIds: XmlSectionTy
   doc.import(headSection);
 
   // Build SYUUSHI_FLG section
+  const availableFormIds = sections.map((s) => s.formId);
   const syuushiFlgSection = buildSyuushiFlgSection(availableFormIds);
   doc.import(syuushiFlgSection);
 
   // Import data sections
   for (const section of sections) {
-    doc.import(section);
+    doc.import(section.xml);
   }
 
   return doc.end({ prettyPrint: true, indent: "  " });
