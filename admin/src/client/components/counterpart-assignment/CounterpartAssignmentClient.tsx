@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import type { PoliticalOrganization } from "@/shared/models/political-organization";
 import type { TransactionWithCounterpart } from "@/server/contexts/report/domain/models/transaction-with-counterpart";
+import type { Counterpart } from "@/server/contexts/report/domain/models/counterpart";
 import { TransactionWithCounterpartTable } from "./TransactionWithCounterpartTable";
 import { ClientPagination } from "@/client/components/ui/ClientPagination";
 import Card from "@/client/components/ui/Card";
@@ -28,6 +29,7 @@ interface CounterpartAssignmentClientProps {
     sortField: "transactionDate" | "debitAmount" | "categoryKey";
     sortOrder: "asc" | "desc";
   };
+  allCounterparts: Counterpart[];
 }
 
 export function CounterpartAssignmentClient({
@@ -37,6 +39,7 @@ export function CounterpartAssignmentClient({
   page,
   perPage,
   initialFilters,
+  allCounterparts,
 }: CounterpartAssignmentClientProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -261,6 +264,7 @@ export function CounterpartAssignmentClient({
           sortField={sortField}
           sortOrder={sortOrder}
           onSortChange={handleSortChange}
+          allCounterparts={allCounterparts}
         />
 
         {totalPages > 1 && (

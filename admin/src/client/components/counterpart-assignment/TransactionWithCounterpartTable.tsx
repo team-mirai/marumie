@@ -9,13 +9,16 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import type { TransactionWithCounterpart } from "@/server/contexts/report/domain/models/transaction-with-counterpart";
+import type { Counterpart } from "@/server/contexts/report/domain/models/counterpart";
 import { PL_CATEGORIES } from "@/shared/utils/category-mapping";
+import { CounterpartCombobox } from "./CounterpartCombobox";
 
 interface TransactionWithCounterpartTableProps {
   transactions: TransactionWithCounterpart[];
   sortField: "transactionDate" | "debitAmount" | "categoryKey";
   sortOrder: "asc" | "desc";
   onSortChange: (field: "transactionDate" | "debitAmount" | "categoryKey") => void;
+  allCounterparts: Counterpart[];
 }
 
 const columnHelper = createColumnHelper<TransactionWithCounterpart>();
@@ -43,6 +46,7 @@ export function TransactionWithCounterpartTable({
   sortField,
   sortOrder,
   onSortChange,
+  allCounterparts,
 }: TransactionWithCounterpartTableProps) {
   const columns = useMemo(
     () => [
@@ -102,26 +106,18 @@ export function TransactionWithCounterpartTable({
       columnHelper.accessor("counterpart", {
         header: "取引先",
         cell: (info) => {
-          const counterpart = info.getValue();
-          if (counterpart) {
-            return (
-              <div className="flex flex-col">
-                <span className="text-white font-medium">{counterpart.name}</span>
-                <span className="text-primary-muted text-xs truncate max-w-[200px]">
-                  {counterpart.address}
-                </span>
-              </div>
-            );
-          }
+          const transaction = info.row.original;
           return (
-            <span className="text-yellow-400 bg-yellow-400/10 px-2 py-1 rounded text-sm">
-              未設定
-            </span>
+            <CounterpartCombobox
+              transactionId={transaction.id}
+              currentCounterpart={transaction.counterpart}
+              allCounterparts={allCounterparts}
+            />
           );
         },
       }),
     ],
-    [sortField, sortOrder, onSortChange],
+    [sortField, sortOrder, onSortChange, allCounterparts],
   );
 
   const table = useReactTable({
