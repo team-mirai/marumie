@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { PrismaClient } from "@prisma/client";
+import type { Prisma, PrismaClient } from "@prisma/client";
 import type {
   AdvertisingExpenseTransaction,
   BusinessIncomeTransaction,
@@ -20,6 +20,8 @@ import type {
   ResearchExpenseTransaction,
   SuppliesExpenseTransaction,
   TransactionFilters,
+  TransactionWithCounterpartFilters,
+  TransactionWithCounterpartResult,
   UtilityExpenseTransaction,
 } from "@/server/contexts/report/domain/repositories/report-transaction-repository.interface";
 import { PL_CATEGORIES } from "@/shared/utils/category-mapping";
@@ -566,5 +568,132 @@ export class PrismaReportTransactionRepository implements IReportTransactionRepo
       filters,
       CATEGORY_KEYS.POLITICAL_ACTIVITY_OTHER_EXPENSES,
     );
+  }
+
+  /**
+   * Counterpart紐付け管理用: TransactionとCounterpartの紐付け情報を含むTransaction一覧を取得
+   */
+  async findTransactionsWithCounterparts(
+    filters: TransactionWithCounterpartFilters,
+  ): Promise<TransactionWithCounterpartResult> {
+    const {
+      politicalOrganizationId,
+      financialYear,
+      unassignedOnly,
+      categoryKey,
+      searchQuery,
+      limit = 50,
+      offset = 0,
+      sortField = "transactionDate",
+      sortOrder = "asc",
+    } = filters;
+
+    if (!/^\d+$/.test(politicalOrganizationId)) {
+      throw new Error(
+        `Invalid politicalOrganizationId: "${politicalOrganizationId}" is not a valid numeric string`,
+      );
+    }
+
+    const whereClause: Prisma.TransactionWhereInput = {
+      politicalOrganizationId: BigInt(politicalOrganizationId),
+      financialYear,
+      transactionType: { in: ["income", "expense"] },
+    };
+
+    if (categoryKey) {
+      whereClause.categoryKey = categoryKey;
+    }
+
+    if (searchQuery) {
+      const searchTerm = searchQuery.trim();
+      if (searchTerm) {
+        whereClause.OR = [
+          { description: { contains: searchTerm, mode: "insensitive" } },
+          { memo: { contains: searchTerm, mode: "insensitive" } },
+          { friendlyCategory: { contains: searchTerm, mode: "insensitive" } },
+          { debitPartner: { contains: searchTerm, mode: "insensitive" } },
+          { creditPartner: { contains: searchTerm, mode: "insensitive" } },
+        ];
+      }
+    }
+
+    if (unassignedOnly) {
+      whereClause.transactionCounterparts = {
+        none: {},
+      };
+    }
+
+    const orderByField =
+      sortField === "debitAmount"
+        ? "debitAmount"
+        : sortField === "categoryKey"
+          ? "categoryKey"
+          : "transactionDate";
+
+    const transactions = await this.prisma.transaction.findMany({
+      where: whereClause,
+      orderBy: [{ [orderByField]: sortOrder }, { id: "asc" }],
+      take: limit,
+      skip: offset,
+      select: {
+        id: true,
+        transactionNo: true,
+        transactionDate: true,
+        financialYear: true,
+        transactionType: true,
+        categoryKey: true,
+        friendlyCategory: true,
+        label: true,
+        description: true,
+        memo: true,
+        debitAmount: true,
+        creditAmount: true,
+        debitPartner: true,
+        creditPartner: true,
+        transactionCounterparts: {
+          select: {
+            counterpart: {
+              select: {
+                id: true,
+                name: true,
+                address: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    const total = await this.prisma.transaction.count({
+      where: whereClause,
+    });
+
+    return {
+      transactions: transactions.map((t) => ({
+        id: t.id.toString(),
+        transactionNo: t.transactionNo,
+        transactionDate: t.transactionDate,
+        financialYear: t.financialYear,
+        transactionType: t.transactionType as "income" | "expense",
+        categoryKey: t.categoryKey,
+        friendlyCategory: t.friendlyCategory,
+        label: t.label,
+        description: t.description,
+        memo: t.memo,
+        debitAmount: Number(t.debitAmount),
+        creditAmount: Number(t.creditAmount),
+        debitPartner: t.debitPartner,
+        creditPartner: t.creditPartner,
+        counterpart:
+          t.transactionCounterparts.length > 0
+            ? {
+                id: t.transactionCounterparts[0].counterpart.id.toString(),
+                name: t.transactionCounterparts[0].counterpart.name,
+                address: t.transactionCounterparts[0].counterpart.address,
+              }
+            : null,
+      })),
+      total,
+    };
   }
 }
