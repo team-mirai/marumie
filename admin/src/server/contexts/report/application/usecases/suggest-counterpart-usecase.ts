@@ -43,7 +43,7 @@ export class SuggestCounterpartUsecase {
     const transaction = await this.prisma.transaction.findUnique({
       where: { id: transactionBigIntId },
       include: {
-        transactionCounterpart: {
+        transactionCounterparts: {
           include: {
             counterpart: true,
           },
@@ -55,6 +55,7 @@ export class SuggestCounterpartUsecase {
       return { success: false, suggestions: [], errors: ["トランザクションが見つかりません"] };
     }
 
+    const firstCounterpart = transaction.transactionCounterparts[0];
     const transactionWithCounterpart: TransactionWithCounterpart = {
       id: transaction.id.toString(),
       transactionNo: transaction.transactionNo,
@@ -66,15 +67,15 @@ export class SuggestCounterpartUsecase {
       label: transaction.label,
       description: transaction.description,
       memo: transaction.memo,
-      debitAmount: transaction.debitAmount,
-      creditAmount: transaction.creditAmount,
+      debitAmount: Number(transaction.debitAmount),
+      creditAmount: Number(transaction.creditAmount),
       debitPartner: transaction.debitPartner,
       creditPartner: transaction.creditPartner,
-      counterpart: transaction.transactionCounterpart
+      counterpart: firstCounterpart
         ? {
-            id: transaction.transactionCounterpart.counterpart.id.toString(),
-            name: transaction.transactionCounterpart.counterpart.name,
-            address: transaction.transactionCounterpart.counterpart.address,
+            id: firstCounterpart.counterpart.id.toString(),
+            name: firstCounterpart.counterpart.name,
+            address: firstCounterpart.counterpart.address,
           }
         : null,
     };
