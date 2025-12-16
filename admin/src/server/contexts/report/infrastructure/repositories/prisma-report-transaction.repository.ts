@@ -588,6 +588,12 @@ export class PrismaReportTransactionRepository implements IReportTransactionRepo
       sortOrder = "asc",
     } = filters;
 
+    if (!/^\d+$/.test(politicalOrganizationId)) {
+      throw new Error(
+        `Invalid politicalOrganizationId: "${politicalOrganizationId}" is not a valid numeric string`,
+      );
+    }
+
     const whereClause: Prisma.TransactionWhereInput = {
       politicalOrganizationId: BigInt(politicalOrganizationId),
       financialYear,

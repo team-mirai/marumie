@@ -3,6 +3,7 @@ import "client-only";
 
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import type { PoliticalOrganization } from "@/shared/models/political-organization";
 import type { TransactionWithCounterpart } from "@/server/contexts/report/domain/models/transaction-with-counterpart";
 import { TransactionWithCounterpartTable } from "./TransactionWithCounterpartTable";
@@ -178,12 +179,12 @@ export function CounterpartAssignmentClient({
           <h1 className="text-2xl font-semibold text-white mb-1">取引先紐付け管理</h1>
           <p className="text-primary-muted">Transactionに対してCounterpart（取引先）を紐付けます</p>
         </div>
-        <a
+        <Link
           href="/counterparts/master"
           className="bg-primary-hover text-white border border-primary-border hover:bg-primary-border rounded-lg px-4 py-2.5 font-medium transition-colors duration-200"
         >
           マスタ管理へ
-        </a>
+        </Link>
       </div>
 
       <Card className="space-y-4">
