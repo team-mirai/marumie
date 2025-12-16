@@ -42,17 +42,19 @@ export function serializeExpenseSection(
   const frag = fragment();
   const root = frag.ele("SYUUSHI07_14");
 
-  // KUBUN1: 光熱水費
-  const kubun1 = root.ele("KUBUN1");
-  serializeExpenseKubun(kubun1, utilitySection);
+  const kubunMappings: Array<{
+    tag: string;
+    section: UtilityExpenseSection | SuppliesExpenseSection | OfficeExpenseSection;
+  }> = [
+    { tag: "KUBUN1", section: utilitySection }, // 光熱水費
+    { tag: "KUBUN2", section: suppliesSection }, // 備品・消耗品費
+    { tag: "KUBUN3", section: officeSection }, // 事務所費
+  ];
 
-  // KUBUN2: 備品・消耗品費
-  const kubun2 = root.ele("KUBUN2");
-  serializeExpenseKubun(kubun2, suppliesSection);
-
-  // KUBUN3: 事務所費
-  const kubun3 = root.ele("KUBUN3");
-  serializeExpenseKubun(kubun3, officeSection);
+  for (const { tag, section } of kubunMappings) {
+    const kubun = root.ele(tag);
+    serializeExpenseKubun(kubun, section);
+  }
 
   return frag;
 }
@@ -120,41 +122,25 @@ export function serializePoliticalActivityExpenseSection(
   const frag = fragment();
   const root = frag.ele("SYUUSHI07_15");
 
-  // KUBUN1: 組織活動費
-  const kubun1 = root.ele("KUBUN1");
-  serializePoliticalActivityKubun(kubun1, sections.organizationExpenses);
+  const kubunMappings: Array<{
+    tag: string;
+    section: PoliticalActivitySection;
+  }> = [
+    { tag: "KUBUN1", section: sections.organizationExpenses }, // 組織活動費
+    { tag: "KUBUN2", section: sections.electionExpenses }, // 選挙関係費
+    { tag: "KUBUN3", section: sections.publicationExpenses }, // 機関紙誌の発行事業費
+    { tag: "KUBUN4", section: sections.advertisingExpenses }, // 宣伝事業費
+    { tag: "KUBUN5", section: sections.fundraisingPartyExpenses }, // 政治資金パーティー開催事業費
+    { tag: "KUBUN6", section: sections.otherBusinessExpenses }, // その他の事業費
+    { tag: "KUBUN7", section: sections.researchExpenses }, // 調査研究費
+    { tag: "KUBUN8", section: sections.donationGrantExpenses }, // 寄附・交付金
+    { tag: "KUBUN9", section: sections.otherPoliticalExpenses }, // その他の経費
+  ];
 
-  // KUBUN2: 選挙関係費
-  const kubun2 = root.ele("KUBUN2");
-  serializePoliticalActivityKubun(kubun2, sections.electionExpenses);
-
-  // KUBUN3: 機関紙誌の発行事業費
-  const kubun3 = root.ele("KUBUN3");
-  serializePoliticalActivityKubun(kubun3, sections.publicationExpenses);
-
-  // KUBUN4: 宣伝事業費
-  const kubun4 = root.ele("KUBUN4");
-  serializePoliticalActivityKubun(kubun4, sections.advertisingExpenses);
-
-  // KUBUN5: 政治資金パーティー開催事業費
-  const kubun5 = root.ele("KUBUN5");
-  serializePoliticalActivityKubun(kubun5, sections.fundraisingPartyExpenses);
-
-  // KUBUN6: その他の事業費
-  const kubun6 = root.ele("KUBUN6");
-  serializePoliticalActivityKubun(kubun6, sections.otherBusinessExpenses);
-
-  // KUBUN7: 調査研究費
-  const kubun7 = root.ele("KUBUN7");
-  serializePoliticalActivityKubun(kubun7, sections.researchExpenses);
-
-  // KUBUN8: 寄附・交付金
-  const kubun8 = root.ele("KUBUN8");
-  serializePoliticalActivityKubun(kubun8, sections.donationGrantExpenses);
-
-  // KUBUN9: その他の経費
-  const kubun9 = root.ele("KUBUN9");
-  serializePoliticalActivityKubun(kubun9, sections.otherPoliticalExpenses);
+  for (const { tag, section } of kubunMappings) {
+    const kubun = root.ele(tag);
+    serializePoliticalActivityKubun(kubun, section);
+  }
 
   return frag;
 }
