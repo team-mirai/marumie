@@ -60,14 +60,19 @@ export class CreateCounterpartUsecase {
   constructor(private repository: ICounterpartRepository) {}
 
   async execute(input: CreateCounterpartInput): Promise<CreateCounterpartResult> {
-    const validationErrors = validateCounterpartInput(input);
+    const normalizedInput = {
+      name: input.name.trim(),
+      address: input.address.trim(),
+    };
+
+    const validationErrors = validateCounterpartInput(normalizedInput);
     if (validationErrors.length > 0) {
       return { success: false, errors: validationErrors };
     }
 
     const existing = await this.repository.findByNameAndAddress(
-      input.name.trim(),
-      input.address.trim(),
+      normalizedInput.name,
+      normalizedInput.address,
     );
     if (existing) {
       return {
@@ -76,7 +81,7 @@ export class CreateCounterpartUsecase {
       };
     }
 
-    const counterpart = await this.repository.create(input);
+    const counterpart = await this.repository.create(normalizedInput);
     return { success: true, counterpart };
   }
 }

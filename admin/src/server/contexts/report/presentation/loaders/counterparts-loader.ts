@@ -62,24 +62,32 @@ export async function loadCounterpartsData(
   return cachedLoader(searchQuery, page, perPage);
 }
 
-export const loadCounterpartByIdData = unstable_cache(
-  async (id: string): Promise<Counterpart | null> => {
-    const repository = new PrismaCounterpartRepository(prisma);
-    const usecase = new GetCounterpartByIdUsecase(repository);
+export async function loadCounterpartByIdData(id: string): Promise<Counterpart | null> {
+  const cachedLoader = unstable_cache(
+    async (id: string): Promise<Counterpart | null> => {
+      const repository = new PrismaCounterpartRepository(prisma);
+      const usecase = new GetCounterpartByIdUsecase(repository);
 
-    return usecase.execute(id);
-  },
-  ["counterpart-by-id-data"],
-  { revalidate: CACHE_REVALIDATE_SECONDS },
-);
+      return usecase.execute(id);
+    },
+    ["counterpart-by-id-data", id],
+    { revalidate: CACHE_REVALIDATE_SECONDS },
+  );
 
-export const loadCounterpartUsageData = unstable_cache(
-  async (id: string): Promise<number> => {
-    const repository = new PrismaCounterpartRepository(prisma);
-    const usecase = new GetCounterpartUsageUsecase(repository);
+  return cachedLoader(id);
+}
 
-    return usecase.execute(id);
-  },
-  ["counterpart-usage-data"],
-  { revalidate: CACHE_REVALIDATE_SECONDS },
-);
+export async function loadCounterpartUsageData(id: string): Promise<number> {
+  const cachedLoader = unstable_cache(
+    async (id: string): Promise<number> => {
+      const repository = new PrismaCounterpartRepository(prisma);
+      const usecase = new GetCounterpartUsageUsecase(repository);
+
+      return usecase.execute(id);
+    },
+    ["counterpart-usage-data", id],
+    { revalidate: CACHE_REVALIDATE_SECONDS },
+  );
+
+  return cachedLoader(id);
+}

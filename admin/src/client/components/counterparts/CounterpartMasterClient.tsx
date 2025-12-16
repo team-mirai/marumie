@@ -108,6 +108,7 @@ export function CounterpartMasterClient({
             type="button"
             onClick={() => handlePageChange(page - 1)}
             disabled={page <= 1}
+            aria-label="前のページへ"
             className={`bg-primary-hover text-white border border-primary-border rounded-lg px-3 py-1.5 text-sm font-medium transition-colors duration-200 ${
               page <= 1 ? "opacity-50 cursor-not-allowed" : "hover:bg-primary-border cursor-pointer"
             }`}
@@ -121,6 +122,7 @@ export function CounterpartMasterClient({
             type="button"
             onClick={() => handlePageChange(page + 1)}
             disabled={page >= totalPages}
+            aria-label="次のページへ"
             className={`bg-primary-hover text-white border border-primary-border rounded-lg px-3 py-1.5 text-sm font-medium transition-colors duration-200 ${
               page >= totalPages
                 ? "opacity-50 cursor-not-allowed"

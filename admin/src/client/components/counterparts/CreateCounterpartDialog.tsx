@@ -19,6 +19,8 @@ export function CreateCounterpartDialog({ onClose, onCreate }: CreateCounterpart
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const isFormValid = name.trim() !== "" && address.trim() !== "";
+
   const handleClose = useCallback(() => {
     if (!isLoading) {
       onClose();
@@ -37,7 +39,7 @@ export function CreateCounterpartDialog({ onClose, onCreate }: CreateCounterpart
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim() || !address.trim()) return;
+    if (!isFormValid) return;
 
     try {
       setIsLoading(true);
@@ -111,7 +113,7 @@ export function CreateCounterpartDialog({ onClose, onCreate }: CreateCounterpart
           <div className="flex gap-3 justify-end pt-2">
             <button
               type="button"
-              onClick={onClose}
+              onClick={handleClose}
               disabled={isLoading}
               className="bg-primary-hover text-white border border-primary-border hover:bg-primary-border rounded-lg px-4 py-2.5 font-medium transition-colors duration-200 cursor-pointer"
             >
@@ -119,9 +121,9 @@ export function CreateCounterpartDialog({ onClose, onCreate }: CreateCounterpart
             </button>
             <button
               type="submit"
-              disabled={isLoading || !name.trim() || !address.trim()}
+              disabled={isLoading || !isFormValid}
               className={`bg-primary-accent text-white border-0 rounded-lg px-4 py-2.5 font-medium transition-colors duration-200 ${
-                isLoading || !name.trim() || !address.trim()
+                isLoading || !isFormValid
                   ? "opacity-60 cursor-not-allowed"
                   : "hover:bg-blue-600 cursor-pointer"
               }`}
