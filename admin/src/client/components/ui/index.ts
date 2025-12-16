@@ -59,3 +59,5 @@ export {
   FormMessage,
   FormField,
 } from "@/client/components/ui/shadcn/form";
+export { Textarea } from "@/client/components/ui/shadcn/textarea";
+export { Checkbox } from "@/client/components/ui/shadcn/checkbox";

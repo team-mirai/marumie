@@ -2,6 +2,7 @@
 import "client-only";
 
 import { useRouter } from "next/navigation";
+import { Label } from "@/client/components/ui";
 
 interface YearSelectorProps {
   orgId: string;
@@ -13,11 +14,11 @@ export function YearSelector({ orgId, financialYear, currentYear }: YearSelector
   const router = useRouter();
 
   return (
-    <label className="block font-medium text-white">
-      報告年
+    <div className="space-y-2">
+      <Label>報告年</Label>
       <select
         key={financialYear}
-        className="bg-primary-input text-white border border-primary-border rounded-lg px-3 py-2.5 w-32 mt-2 block font-normal"
+        className="flex h-9 w-32 rounded-md border border-input bg-input px-3 py-1 text-base shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
         defaultValue={financialYear}
         onChange={(e) => {
           router.push(`/political-organizations/${orgId}/report-profile?year=${e.target.value}`);
@@ -29,6 +30,6 @@ export function YearSelector({ orgId, financialYear, currentYear }: YearSelector
           </option>
         ))}
       </select>
-    </label>
+    </div>
   );
 }

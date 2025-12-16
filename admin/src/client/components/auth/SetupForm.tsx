@@ -3,6 +3,16 @@ import "client-only";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { apiClient } from "@/client/lib/api-client";
+import {
+  ShadcnButton,
+  ShadcnInput,
+  ShadcnCard,
+  CardHeader,
+  CardTitle,
+  CardContent,
+  CardDescription,
+  Label,
+} from "@/client/components/ui";
 
 interface SetupFormProps {
   userEmail: string;
@@ -33,7 +43,6 @@ export default function SetupForm({ userEmail }: SetupFormProps) {
 
     try {
       await apiClient.setupPassword({ password });
-      // Redirect to main app after successful setup
       router.push("/");
     } catch (error) {
       console.error("Setup error:", error);
@@ -48,57 +57,49 @@ export default function SetupForm({ userEmail }: SetupFormProps) {
   };
 
   return (
-    <>
-      <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-md">
-        <p className="text-sm text-blue-800">
+    <ShadcnCard className="w-full max-w-md">
+      <CardHeader>
+        <CardTitle className="text-2xl">アカウント設定</CardTitle>
+        <CardDescription>
           アカウント設定中: <strong>{userEmail}</strong>
-        </p>
-      </div>
-
-      <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-        <div className="rounded-md shadow-sm -space-y-px">
-          <div>
-            <label htmlFor="password" className="sr-only">
-              Password
-            </label>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className="relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-              placeholder="パスワードを入力"
-            />
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <form className="space-y-6" onSubmit={handleSubmit}>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="password">パスワード</Label>
+              <ShadcnInput
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                className="bg-input"
+                placeholder="パスワードを入力"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="confirmPassword">パスワード（確認）</Label>
+              <ShadcnInput
+                id="confirmPassword"
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required
+                className="bg-input"
+                placeholder="パスワードを再入力"
+              />
+            </div>
           </div>
-          <div>
-            <label htmlFor="confirmPassword" className="sr-only">
-              Confirm Password
-            </label>
-            <input
-              id="confirmPassword"
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              required
-              className="relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-              placeholder="パスワードを再入力"
-            />
-          </div>
-        </div>
 
-        {error && <div className="text-red-600 text-sm text-center">{error}</div>}
+          {error && <div className="text-destructive text-sm text-center">{error}</div>}
 
-        <div>
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
-          >
+          <ShadcnButton type="submit" disabled={isLoading} className="w-full">
             {isLoading ? "設定中..." : "設定完了"}
-          </button>
-        </div>
-      </form>
-    </>
+          </ShadcnButton>
+        </form>
+      </CardContent>
+    </ShadcnCard>
   );
 }
