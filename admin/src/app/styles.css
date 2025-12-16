@@ -1,6 +1,7 @@
 @import "tailwindcss";
 
 @theme {
+  /* 既存のカラー変数（維持） */
   --color-primary-bg: #0b1020;
   --color-primary-panel: #141a2d;
   --color-primary-muted: #9aa4bf;
@@ -8,6 +9,37 @@
   --color-primary-hover: #1d2745;
   --color-primary-input: #0f1527;
   --color-primary-border: #263258;
+
+  /* shadcn/ui のカラー変数（既存のカラーにマッピング） */
+  --background: var(--color-primary-bg);
+  --foreground: #ffffff;
+
+  --card: var(--color-primary-panel);
+  --card-foreground: #ffffff;
+
+  --popover: var(--color-primary-panel);
+  --popover-foreground: #ffffff;
+
+  --primary: var(--color-primary-accent);
+  --primary-foreground: #ffffff;
+
+  --secondary: var(--color-primary-hover);
+  --secondary-foreground: #ffffff;
+
+  --muted: var(--color-primary-hover);
+  --muted-foreground: var(--color-primary-muted);
+
+  --accent: var(--color-primary-accent);
+  --accent-foreground: #ffffff;
+
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+
+  --border: var(--color-primary-border);
+  --input: var(--color-primary-input);
+  --ring: var(--color-primary-accent);
+
+  --radius: 0.5rem;
 }
 
 :root {
