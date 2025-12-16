@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { PrismaClient } from "@prisma/client";
+import type { Prisma, PrismaClient } from "@prisma/client";
 import type {
   AdvertisingExpenseTransaction,
   BusinessIncomeTransaction,
@@ -588,7 +588,7 @@ export class PrismaReportTransactionRepository implements IReportTransactionRepo
       sortOrder = "asc",
     } = filters;
 
-    const whereClause: Parameters<typeof this.prisma.transaction.findMany>[0]["where"] = {
+    const whereClause: Prisma.TransactionWhereInput = {
       politicalOrganizationId: BigInt(politicalOrganizationId),
       financialYear,
     };
