@@ -10,34 +10,34 @@
   --color-primary-input: #0f1527;
   --color-primary-border: #263258;
 
-  /* shadcn/ui のカラー変数（既存のカラーにマッピング） */
-  --background: var(--color-primary-bg);
-  --foreground: #ffffff;
+  /* shadcn/ui のカラー変数（Tailwind CSS v4 の --color-* 形式） */
+  --color-background: #0b1020;
+  --color-foreground: #ffffff;
 
-  --card: var(--color-primary-panel);
-  --card-foreground: #ffffff;
+  --color-card: #141a2d;
+  --color-card-foreground: #ffffff;
 
-  --popover: var(--color-primary-panel);
-  --popover-foreground: #ffffff;
+  --color-popover: #141a2d;
+  --color-popover-foreground: #ffffff;
 
-  --primary: var(--color-primary-accent);
-  --primary-foreground: #ffffff;
+  --color-primary: #5b8cff;
+  --color-primary-foreground: #ffffff;
 
-  --secondary: var(--color-primary-hover);
-  --secondary-foreground: #ffffff;
+  --color-secondary: #1d2745;
+  --color-secondary-foreground: #ffffff;
 
-  --muted: var(--color-primary-hover);
-  --muted-foreground: var(--color-primary-muted);
+  --color-muted: #1d2745;
+  --color-muted-foreground: #9aa4bf;
 
-  --accent: var(--color-primary-accent);
-  --accent-foreground: #ffffff;
+  --color-accent: #5b8cff;
+  --color-accent-foreground: #ffffff;
 
-  --destructive: #ef4444;
-  --destructive-foreground: #ffffff;
+  --color-destructive: #ef4444;
+  --color-destructive-foreground: #ffffff;
 
-  --border: var(--color-primary-border);
-  --input: var(--color-primary-input);
-  --ring: var(--color-primary-accent);
+  --color-border: #263258;
+  --color-input: #0f1527;
+  --color-ring: #5b8cff;
 
   --radius: 0.5rem;
 }
