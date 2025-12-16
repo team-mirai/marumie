@@ -91,3 +91,17 @@ export async function loadCounterpartUsageData(id: string): Promise<number> {
 
   return cachedLoader(id);
 }
+
+export async function loadAllCounterpartsData(): Promise<Counterpart[]> {
+  const cachedLoader = unstable_cache(
+    async (): Promise<Counterpart[]> => {
+      const repository = new PrismaCounterpartRepository(prisma);
+      const counterparts = await repository.findAll({ limit: 1000 });
+      return counterparts;
+    },
+    ["all-counterparts-data"],
+    { revalidate: CACHE_REVALIDATE_SECONDS },
+  );
+
+  return cachedLoader();
+}

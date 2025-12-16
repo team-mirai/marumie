@@ -2,6 +2,7 @@ import "server-only";
 
 import { loadPoliticalOrganizationsData } from "@/server/contexts/shared/presentation/loaders/load-political-organizations-data";
 import { loadTransactionsWithCounterpartsData } from "@/server/contexts/report/presentation/loaders/transactions-with-counterparts-loader";
+import { loadAllCounterpartsData } from "@/server/contexts/report/presentation/loaders/counterparts-loader";
 import { CounterpartAssignmentClient } from "@/client/components/counterpart-assignment/CounterpartAssignmentClient";
 
 interface CounterpartAssignmentPageProps {
@@ -23,6 +24,8 @@ export default async function CounterpartAssignmentPage({
   const params = await searchParams;
   const organizations = await loadPoliticalOrganizationsData();
 
+  const allCounterparts = await loadAllCounterpartsData();
+
   if (organizations.length === 0) {
     return (
       <CounterpartAssignmentClient
@@ -40,6 +43,7 @@ export default async function CounterpartAssignmentPage({
           sortField: "transactionDate",
           sortOrder: "asc",
         }}
+        allCounterparts={allCounterparts}
       />
     );
   }
@@ -84,6 +88,7 @@ export default async function CounterpartAssignmentPage({
         sortField,
         sortOrder,
       }}
+      allCounterparts={allCounterparts}
     />
   );
 }
