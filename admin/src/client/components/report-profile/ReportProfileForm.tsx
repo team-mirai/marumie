@@ -11,6 +11,7 @@ import { OrganizationTypeSection } from "./OrganizationTypeSection";
 import { FundManagementSection } from "./FundManagementSection";
 import { DietMemberRelationSection } from "./DietMemberRelationSection";
 import type { OrganizationReportProfileFormData } from "@/server/contexts/report/presentation/schemas/organization-report-profile.schema";
+import { ShadcnButton } from "@/client/components/ui";
 
 interface ReportProfileFormProps {
   politicalOrganizationId: string;
@@ -87,7 +88,7 @@ export function ReportProfileForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       {error && (
-        <div className="text-red-500 p-3 bg-red-900/20 rounded-lg border border-red-900/30">
+        <div className="text-destructive p-3 bg-destructive/10 rounded-lg border border-destructive/30">
           {error}
         </div>
       )}
@@ -111,15 +112,9 @@ export function ReportProfileForm({
       <DietMemberRelationSection details={formData.details} updateDetails={updateDetails} />
 
       <div className="flex gap-3 pt-4">
-        <button
-          type="submit"
-          disabled={isLoading}
-          className={`bg-primary-accent text-white border-0 rounded-lg px-4 py-2.5 font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-accent ${
-            isLoading ? "opacity-60 cursor-not-allowed" : "hover:bg-blue-600 cursor-pointer"
-          }`}
-        >
+        <ShadcnButton type="submit" disabled={isLoading}>
           {isLoading ? "保存中..." : "保存"}
-        </button>
+        </ShadcnButton>
       </div>
     </form>
   );

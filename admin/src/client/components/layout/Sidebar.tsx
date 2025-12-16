@@ -4,7 +4,7 @@ import "client-only";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { UserRole } from "@prisma/client";
-import { Button } from "@/client/components/ui";
+import { ShadcnButton } from "@/client/components/ui";
 
 export default function Sidebar({
   logoutAction,
@@ -33,8 +33,8 @@ export default function Sidebar({
   ];
 
   return (
-    <aside className="bg-primary-panel p-4 flex flex-col h-full">
-      <h2 className="text-primary-muted text-lg font-medium mb-3 mt-0">管理画面</h2>
+    <aside className="bg-card p-4 flex flex-col h-full">
+      <h2 className="text-muted-foreground text-lg font-medium mb-3 mt-0">管理画面</h2>
       <nav className="flex flex-col gap-2">
         {navItems.map(
           (item) =>
@@ -42,8 +42,8 @@ export default function Sidebar({
               <Link
                 key={item.href}
                 href={item.href}
-                className={`text-white no-underline px-2.5 py-2 rounded-lg transition-colors duration-200 ${
-                  isActive(item.href) ? "bg-primary-hover" : "hover:bg-primary-hover"
+                className={`text-foreground no-underline px-2.5 py-2 rounded-lg transition-colors duration-200 ${
+                  isActive(item.href) ? "bg-secondary" : "hover:bg-secondary"
                 }`}
               >
                 {item.label}
@@ -53,9 +53,9 @@ export default function Sidebar({
       </nav>
       <div className="mt-auto pt-4">
         <form action={logoutAction}>
-          <Button type="submit" variant="danger" fullWidth>
+          <ShadcnButton type="submit" variant="destructive" className="w-full">
             ログアウト
-          </Button>
+          </ShadcnButton>
         </form>
       </div>
     </aside>

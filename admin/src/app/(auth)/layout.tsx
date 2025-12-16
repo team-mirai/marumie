@@ -13,9 +13,9 @@ export default async function AuthLayout({ children }: { children: React.ReactNo
   const userRole = await getCurrentUserRole();
 
   return (
-    <div className="grid grid-cols-[220px_1fr] h-screen">
+    <div className="grid grid-cols-[220px_1fr] h-screen bg-background">
       <Sidebar logoutAction={logout} userRole={userRole} />
-      <main className="p-5 overflow-auto">{children}</main>
+      <main className="p-5 overflow-auto text-foreground">{children}</main>
     </div>
   );
 }
