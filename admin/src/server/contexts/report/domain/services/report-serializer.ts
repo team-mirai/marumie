@@ -5,6 +5,8 @@
  * This is the main entry point for XML generation from domain objects.
  */
 
+import "server-only";
+
 import { create } from "xmlbuilder2";
 import type { XMLBuilder } from "xmlbuilder2/lib/interfaces";
 import { PersonalDonationSection } from "@/server/contexts/report/domain/models/donation-transaction";
