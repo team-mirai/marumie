@@ -9,6 +9,7 @@ import type {
 } from "@/server/contexts/report/domain/models/counterpart";
 import type {
   CounterpartFilters,
+  CounterpartWithUsageAndLastUsed,
   ICounterpartRepository,
 } from "@/server/contexts/report/domain/repositories/counterpart-repository.interface";
 
@@ -186,5 +187,150 @@ export class PrismaCounterpartRepository implements ICounterpartRepository {
         { address: { contains: searchQuery, mode: "insensitive" as const } },
       ],
     };
+  }
+
+  async findByUsageFrequency(
+    politicalOrganizationId: string,
+    limit: number,
+  ): Promise<CounterpartWithUsageAndLastUsed[]> {
+    const orgBigIntId = this.parseBigIntId(politicalOrganizationId);
+    if (orgBigIntId === null) {
+      return [];
+    }
+
+    const counterpartsWithUsage = await this.prisma.counterpart.findMany({
+      where: {
+        transactionCounterparts: {
+          some: {
+            transaction: {
+              politicalOrganizationId: orgBigIntId,
+            },
+          },
+        },
+      },
+      include: {
+        transactionCounterparts: {
+          where: {
+            transaction: {
+              politicalOrganizationId: orgBigIntId,
+            },
+          },
+          include: {
+            transaction: {
+              select: {
+                transactionDate: true,
+              },
+            },
+          },
+          orderBy: {
+            transaction: {
+              transactionDate: "desc",
+            },
+          },
+        },
+        _count: {
+          select: {
+            transactionCounterparts: {
+              where: {
+                transaction: {
+                  politicalOrganizationId: orgBigIntId,
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    const result: CounterpartWithUsageAndLastUsed[] = counterpartsWithUsage.map((c) => ({
+      ...this.mapToCounterpart(c),
+      usageCount: c._count.transactionCounterparts,
+      lastUsedAt: c.transactionCounterparts[0]?.transaction.transactionDate ?? null,
+    }));
+
+    result.sort((a, b) => b.usageCount - a.usageCount);
+
+    return result.slice(0, limit);
+  }
+
+  async findByPartnerName(
+    politicalOrganizationId: string,
+    partnerName: string,
+  ): Promise<CounterpartWithUsageAndLastUsed[]> {
+    const orgBigIntId = this.parseBigIntId(politicalOrganizationId);
+    if (orgBigIntId === null) {
+      return [];
+    }
+
+    const trimmedPartnerName = partnerName.trim();
+    if (!trimmedPartnerName) {
+      return [];
+    }
+
+    const counterpartsWithUsage = await this.prisma.counterpart.findMany({
+      where: {
+        transactionCounterparts: {
+          some: {
+            transaction: {
+              politicalOrganizationId: orgBigIntId,
+              OR: [
+                { debitPartner: { contains: trimmedPartnerName, mode: "insensitive" } },
+                { creditPartner: { contains: trimmedPartnerName, mode: "insensitive" } },
+              ],
+            },
+          },
+        },
+      },
+      include: {
+        transactionCounterparts: {
+          where: {
+            transaction: {
+              politicalOrganizationId: orgBigIntId,
+              OR: [
+                { debitPartner: { contains: trimmedPartnerName, mode: "insensitive" } },
+                { creditPartner: { contains: trimmedPartnerName, mode: "insensitive" } },
+              ],
+            },
+          },
+          include: {
+            transaction: {
+              select: {
+                transactionDate: true,
+              },
+            },
+          },
+          orderBy: {
+            transaction: {
+              transactionDate: "desc",
+            },
+          },
+        },
+        _count: {
+          select: {
+            transactionCounterparts: {
+              where: {
+                transaction: {
+                  politicalOrganizationId: orgBigIntId,
+                  OR: [
+                    { debitPartner: { contains: trimmedPartnerName, mode: "insensitive" } },
+                    { creditPartner: { contains: trimmedPartnerName, mode: "insensitive" } },
+                  ],
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    const result: CounterpartWithUsageAndLastUsed[] = counterpartsWithUsage.map((c) => ({
+      ...this.mapToCounterpart(c),
+      usageCount: c._count.transactionCounterparts,
+      lastUsedAt: c.transactionCounterparts[0]?.transaction.transactionDate ?? null,
+    }));
+
+    result.sort((a, b) => b.usageCount - a.usageCount);
+
+    return result;
   }
 }
