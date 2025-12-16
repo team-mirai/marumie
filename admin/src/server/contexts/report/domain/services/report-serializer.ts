@@ -5,6 +5,8 @@
  * This is the main entry point for XML generation from domain objects.
  */
 
+import "server-only";
+
 import { create } from "xmlbuilder2";
 import type { XMLBuilder } from "xmlbuilder2/lib/interfaces";
 import { PersonalDonationSection } from "@/server/contexts/report/domain/models/donation-transaction";
@@ -33,11 +35,11 @@ import { serializeProfileSection } from "@/server/contexts/report/domain/service
 // ============================================================
 
 const XML_HEAD = {
-  version: "20081001",
-  appName: "収支報告書作成ソフト (収支報告書作成ソフト)",
-  fileFormatNo: "1",
-  kokujiAppFlag: "0",
-  choboAppVersion: "20081001",
+  VERSION: "20081001",
+  APP: "収支報告書作成ソフト (収支報告書作成ソフト)",
+  FILE_FORMAT_NO: "1",
+  KOKUJI_APP_FLG: "0",
+  CHOUBO_APP_VER: "20081001",
 } as const;
 
 // Form IDs in the order they appear in SYUUSHI_UMU flag string
@@ -72,6 +74,11 @@ const FLAG_STRING_LENGTH = 51;
 
 export type XmlSectionType = (typeof KNOWN_FORM_IDS)[number];
 
+type XmlSection = {
+  formId: XmlSectionType;
+  xml: XMLBuilder;
+};
+
 // ============================================================
 // Main Serializer Function
 // ============================================================
@@ -80,7 +87,7 @@ export type XmlSectionType = (typeof KNOWN_FORM_IDS)[number];
  * Serializes ReportData into a complete XML document string.
  */
 export function serializeReportData(reportData: ReportData): string {
-  const sections: { formId: XmlSectionType; xml: XMLBuilder }[] = [];
+  const sections: XmlSection[] = [];
 
   // SYUUSHI07_01: 第14号様式（その1）団体の基本情報
   sections.push({
@@ -158,46 +165,37 @@ export function serializeReportData(reportData: ReportData): string {
     });
   }
 
-  return buildXmlDocument(
-    sections.map((s) => s.xml),
-    sections.map((s) => s.formId),
-  );
+  return buildXmlDocument(sections);
 }
 
 // ============================================================
 // XML Document Builder
 // ============================================================
 
-function buildXmlDocument(sections: XMLBuilder[], availableFormIds: XmlSectionType[]): string {
+function buildHeadSection(): XMLBuilder {
+  const head = create().ele("HEAD");
+  Object.entries(XML_HEAD).forEach(([key, value]) => {
+    head.ele(key).txt(value);
+  });
+
+  return head;
+}
+
+function buildXmlDocument(sections: XmlSection[]): string {
   const doc = create({ version: "1.0", encoding: "Shift_JIS" }).ele("BOOK");
 
   // Build HEAD section
-  doc
-    .ele("HEAD")
-    .ele("VERSION")
-    .txt(XML_HEAD.version)
-    .up()
-    .ele("APP")
-    .txt(XML_HEAD.appName)
-    .up()
-    .ele("FILE_FORMAT_NO")
-    .txt(XML_HEAD.fileFormatNo)
-    .up()
-    .ele("KOKUJI_APP_FLG")
-    .txt(XML_HEAD.kokujiAppFlag)
-    .up()
-    .ele("CHOUBO_APP_VER")
-    .txt(XML_HEAD.choboAppVersion)
-    .up()
-    .up();
+  const headSection = buildHeadSection();
+  doc.import(headSection);
 
   // Build SYUUSHI_FLG section
+  const availableFormIds = sections.map((s) => s.formId);
   const syuushiFlgSection = buildSyuushiFlgSection(availableFormIds);
   doc.import(syuushiFlgSection);
 
   // Import data sections
   for (const section of sections) {
-    doc.import(section);
+    doc.import(section.xml);
   }
 
   return doc.end({ prettyPrint: true, indent: "  " });
