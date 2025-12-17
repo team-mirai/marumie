@@ -94,3 +94,7 @@ contexts/{コンテキスト名}/
 ## 設計作業ルール
 
 設計ドキュメント作成時のルールは [docs/design-document-rules.md](docs/design-document-rules.md) を参照すること。
+
+## admin UI コンポーネント
+
+admin で UI コンポーネントを使用する際は [docs/admin-ui-guidelines.md](docs/admin-ui-guidelines.md) を参照すること。
