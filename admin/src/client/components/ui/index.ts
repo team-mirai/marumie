@@ -1,9 +1,5 @@
-export { default as Button } from "./Button";
-export { default as Input } from "./Input";
-export { default as Card } from "./Card";
-export { default as Selector } from "./Selector";
-
 // shadcn/ui components (in shadcn/ subdirectory)
+// Legacy aliases for backward compatibility during migration
 export { Button as ShadcnButton, buttonVariants } from "@/client/components/ui/shadcn/button";
 export { Input as ShadcnInput } from "@/client/components/ui/shadcn/input";
 export {

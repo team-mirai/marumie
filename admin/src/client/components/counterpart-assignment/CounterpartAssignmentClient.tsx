@@ -11,9 +11,17 @@ import type { Counterpart } from "@/server/contexts/report/domain/models/counter
 import { TransactionWithCounterpartTable } from "./TransactionWithCounterpartTable";
 import { BulkAssignModal } from "./BulkAssignModal";
 import { ClientPagination } from "@/client/components/ui/ClientPagination";
-import Card from "@/client/components/ui/Card";
-import Selector from "@/client/components/ui/Selector";
-import Input from "@/client/components/ui/Input";
+import {
+  ShadcnCard,
+  ShadcnInput,
+  ShadcnButton,
+  Label,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/client/components/ui";
 import { PL_CATEGORIES } from "@/shared/utils/category-mapping";
 
 interface CounterpartAssignmentClientProps {
@@ -177,9 +185,9 @@ export function CounterpartAssignmentClient({
 
   if (organizations.length === 0) {
     return (
-      <Card>
+      <ShadcnCard className="p-4">
         <p className="text-white">政治団体が登録されていません。先に政治団体を作成してください。</p>
-      </Card>
+      </ShadcnCard>
     );
   }
 
@@ -198,49 +206,67 @@ export function CounterpartAssignmentClient({
         </Link>
       </div>
 
-      <Card className="space-y-4">
+      <ShadcnCard className="space-y-4 p-4">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Selector
-            value={selectedOrganizationId}
-            onChange={handleOrganizationChange}
-            options={organizationOptions}
-            label="政治団体"
-            required
-          />
-          <Input
-            type="number"
-            label="報告年 (西暦)"
-            value={String(financialYear)}
-            onChange={handleYearChange}
-            min="1900"
-            max="2100"
-            required
-          />
-          <Selector
-            value={categoryKey}
-            onChange={handleCategoryChange}
-            options={categoryOptions}
-            label="カテゴリ"
-          />
+          <div>
+            <Label>政治団体</Label>
+            <Select
+              value={selectedOrganizationId}
+              onValueChange={handleOrganizationChange}
+              required
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="選択してください" />
+              </SelectTrigger>
+              <SelectContent>
+                {organizationOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label>報告年 (西暦)</Label>
+            <ShadcnInput
+              type="number"
+              value={String(financialYear)}
+              onChange={handleYearChange}
+              min={1900}
+              max={2100}
+              required
+            />
+          </div>
+          <div>
+            <Label>カテゴリ</Label>
+            <Select value={categoryKey} onValueChange={handleCategoryChange}>
+              <SelectTrigger>
+                <SelectValue placeholder="選択してください" />
+              </SelectTrigger>
+              <SelectContent>
+                {categoryOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
           <form onSubmit={handleSearchSubmit} className="flex flex-col">
-            <label htmlFor="search-query" className="text-sm font-medium text-primary-muted mb-1.5">
-              検索
-            </label>
+            <Label htmlFor="search-query">検索</Label>
             <div className="flex gap-2">
-              <input
+              <ShadcnInput
                 id="search-query"
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="摘要、メモで検索..."
-                className="bg-primary-input text-white border border-primary-border rounded-lg px-3 py-2 flex-1 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-accent focus:border-primary-accent"
+                className="flex-1"
               />
-              <button
-                type="submit"
-                className="bg-primary-hover text-white border border-primary-border hover:bg-primary-border rounded-lg px-3 py-2 font-medium transition-colors duration-200 cursor-pointer"
-              >
+              <ShadcnButton type="submit" variant="secondary">
                 検索
-              </button>
+              </ShadcnButton>
             </div>
           </form>
         </div>
@@ -256,9 +282,9 @@ export function CounterpartAssignmentClient({
             <span className="text-white">未紐付けのみ表示</span>
           </label>
         </div>
-      </Card>
+      </ShadcnCard>
 
-      <Card>
+      <ShadcnCard className="p-4">
         <div className="flex justify-between items-center mb-4">
           <div className="text-primary-muted text-sm">
             {total}件のTransaction
@@ -272,20 +298,17 @@ export function CounterpartAssignmentClient({
             <span className="text-white text-sm">
               選択中: <span className="font-medium">{selectedTransactions.length}件</span>
             </span>
-            <button
-              type="button"
-              onClick={() => setIsBulkAssignModalOpen(true)}
-              className="bg-primary-accent text-white rounded-lg px-4 py-2 text-sm hover:bg-blue-600 transition-colors cursor-pointer"
-            >
+            <ShadcnButton type="button" size="sm" onClick={() => setIsBulkAssignModalOpen(true)}>
               一括紐付け
-            </button>
-            <button
+            </ShadcnButton>
+            <ShadcnButton
               type="button"
+              variant="ghost"
+              size="sm"
               onClick={() => setRowSelection({})}
-              className="text-primary-muted hover:text-white text-sm transition-colors"
             >
               選択解除
-            </button>
+            </ShadcnButton>
           </div>
         )}
 
@@ -307,7 +330,7 @@ export function CounterpartAssignmentClient({
             onPageChange={handlePageChange}
           />
         )}
-      </Card>
+      </ShadcnCard>
 
       <BulkAssignModal
         isOpen={isBulkAssignModalOpen}

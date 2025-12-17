@@ -4,7 +4,14 @@ import "client-only";
 import { useState, useEffect, useCallback } from "react";
 import type { PoliticalOrganization } from "@/shared/models/political-organization";
 import type { BalanceSnapshot } from "@/shared/models/balance-snapshot";
-import { Selector } from "@/client/components/ui";
+import {
+  Label,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/client/components/ui";
 import BalanceSnapshotForm from "./BalanceSnapshotForm";
 import BalanceSnapshotList from "./BalanceSnapshotList";
 import CurrentBalance from "./CurrentBalance";
@@ -84,14 +91,19 @@ export default function BalanceSnapshotsClient({ organizations }: BalanceSnapsho
   return (
     <div className="space-y-6">
       <div>
-        <Selector
-          options={organizationOptions}
-          value={selectedOrgId}
-          onChange={handleOrgChange}
-          label="政治団体"
-          placeholder="-- 政治団体を選択してください --"
-          required={true}
-        />
+        <Label>政治団体</Label>
+        <Select value={selectedOrgId} onValueChange={handleOrgChange} required>
+          <SelectTrigger>
+            <SelectValue placeholder="-- 政治団体を選択してください --" />
+          </SelectTrigger>
+          <SelectContent>
+            {organizationOptions.map((option) => (
+              <SelectItem key={option.value} value={option.value}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {selectedOrgId && (

@@ -3,10 +3,17 @@ import "client-only";
 
 import { useMemo, useState, useTransition } from "react";
 import type { PoliticalOrganization } from "@/shared/models/political-organization";
-import Card from "@/client/components/ui/Card";
-import Button from "@/client/components/ui/Button";
-import Input from "@/client/components/ui/Input";
-import Selector from "@/client/components/ui/Selector";
+import {
+  ShadcnCard,
+  ShadcnButton,
+  ShadcnInput,
+  Label,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/client/components/ui";
 import { exportXml } from "@/server/contexts/report/presentation/actions/export-xml";
 import { apiClient } from "@/client/lib/api-client";
 
@@ -103,9 +110,9 @@ export function XmlExportClient({ organizations }: XmlExportClientProps) {
 
   if (organizations.length === 0) {
     return (
-      <Card>
+      <ShadcnCard className="p-4">
         <p className="text-white">政治団体が登録されていません。先に政治団体を作成してください。</p>
-      </Card>
+      </ShadcnCard>
     );
   }
 
@@ -118,42 +125,56 @@ export function XmlExportClient({ organizations }: XmlExportClientProps) {
         </p>
       </div>
 
-      <Card className="space-y-4">
+      <ShadcnCard className="space-y-4 p-4">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Selector
-            value={selectedOrganizationId}
-            onChange={setSelectedOrganizationId}
-            options={organizationOptions}
-            label="政治団体"
-            required
-          />
-          <Input
-            type="number"
-            label="報告年 (西暦)"
-            value={financialYear}
-            onChange={(event) => setFinancialYear(event.target.value)}
-            min="1900"
-            max="2100"
-            required
-          />
+          <div>
+            <Label>政治団体</Label>
+            <Select
+              value={selectedOrganizationId}
+              onValueChange={setSelectedOrganizationId}
+              required
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="選択してください" />
+              </SelectTrigger>
+              <SelectContent>
+                {organizationOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label>報告年 (西暦)</Label>
+            <ShadcnInput
+              type="number"
+              value={financialYear}
+              onChange={(event) => setFinancialYear(event.target.value)}
+              min={1900}
+              max={2100}
+              required
+            />
+          </div>
         </div>
 
         <div className="flex flex-wrap gap-3">
-          <Button
+          <ShadcnButton
             type="button"
             onClick={handlePreview}
             disabled={!canSubmit || isPreviewing || isDownloading}
           >
             {isPreviewing ? "プレビュー生成中..." : "プレビュー"}
-          </Button>
-          <Button
+          </ShadcnButton>
+          <ShadcnButton
             type="button"
             variant="secondary"
             onClick={handleDownload}
             disabled={!canSubmit || isPreviewing || isDownloading}
           >
             {isDownloading ? "ダウンロード中..." : "Shift_JISでダウンロード"}
-          </Button>
+          </ShadcnButton>
         </div>
 
         {status && (
@@ -169,9 +190,9 @@ export function XmlExportClient({ organizations }: XmlExportClientProps) {
             {status.message}
           </div>
         )}
-      </Card>
+      </ShadcnCard>
 
-      <Card className="space-y-3">
+      <ShadcnCard className="space-y-3 p-4">
         <div>
           <h2 className="text-lg font-medium text-white mb-1">XMLプレビュー</h2>
           <p className="text-sm text-primary-muted">
@@ -181,7 +202,7 @@ export function XmlExportClient({ organizations }: XmlExportClientProps) {
         <pre className="bg-black/30 rounded-lg p-4 text-sm overflow-auto max-h-[420px] whitespace-pre-wrap text-primary-muted">
           {previewXml || "プレビューを生成するとここにXMLが表示されます。"}
         </pre>
-      </Card>
+      </ShadcnCard>
     </div>
   );
 }

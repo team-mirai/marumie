@@ -8,6 +8,7 @@ import type { PreviewCsvRequest } from "@/server/contexts/data-import/presentati
 import TransactionRow from "./TransactionRow";
 import { ClientPagination } from "@/client/components/ui/ClientPagination";
 import StatisticsTable from "./StatisticsTable";
+import { ShadcnButton } from "@/client/components/ui";
 
 interface CsvPreviewProps {
   file: File | null;
@@ -178,18 +179,16 @@ export default function CsvPreview({
               color: "text-yellow-500",
             },
           ].map(({ key, label, color }) => (
-            <button
+            <ShadcnButton
               type="button"
               key={key}
+              variant={activeTab === key ? "outline" : "ghost"}
+              size="sm"
               onClick={() => handleTabChange(key)}
-              className={`px-3 py-2 text-sm font-medium rounded-md border transition-all duration-200 ${
-                activeTab === key
-                  ? `${color} border-white bg-white/10`
-                  : "text-primary-muted border-primary-border hover:text-white hover:border-white/50"
-              }`}
+              className={activeTab === key ? `${color} border-white bg-white/10` : ""}
             >
               {label} ({getTabCount(key)})
-            </button>
+            </ShadcnButton>
           ))}
         </div>
       </div>

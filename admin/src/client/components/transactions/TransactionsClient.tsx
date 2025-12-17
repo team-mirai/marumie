@@ -6,7 +6,14 @@ import { TransactionRow } from "./TransactionRow";
 import { StaticPagination } from "@/client/components/ui/StaticPagination";
 import { DeleteAllButton } from "./DeleteAllButton";
 import { ClearWebappCacheButton } from "./ClearWebappCacheButton";
-import { Selector } from "@/client/components/ui";
+import {
+  Label,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/client/components/ui";
 import type { GetTransactionsResult } from "@/server/contexts/data-import/application/usecases/get-transactions-usecase";
 import type { PoliticalOrganization } from "@/shared/models/political-organization";
 
@@ -90,13 +97,19 @@ export function TransactionsClient({ organizations }: TransactionsClientProps) {
         {/* Organization Filter */}
         <div className="mb-4">
           <div className="flex-1">
-            <Selector
-              options={organizationOptions}
-              value={selectedOrgId}
-              onChange={handleOrgFilterChange}
-              label="政治団体でフィルタ"
-              placeholder=""
-            />
+            <Label>政治団体でフィルタ</Label>
+            <Select value={selectedOrgId} onValueChange={handleOrgFilterChange}>
+              <SelectTrigger>
+                <SelectValue placeholder="選択してください" />
+              </SelectTrigger>
+              <SelectContent>
+                {organizationOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
       </div>
