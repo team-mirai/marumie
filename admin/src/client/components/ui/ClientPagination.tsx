@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { ShadcnButton } from "@/client/components/ui";
 
 interface ClientPaginationProps {
   currentPage: number;
@@ -17,18 +18,15 @@ export function ClientPagination({ currentPage, totalPages, onPageChange }: Clie
 
     const addPageButton = (page: number) => {
       pages.push(
-        <button
+        <ShadcnButton
           type="button"
           key={`page-${page}`}
+          variant={page === currentPage ? "default" : "ghost"}
+          size="sm"
           onClick={() => onPageChange(page)}
-          className={`px-3 py-2 text-sm font-medium rounded-md transition-colors cursor-pointer ${
-            page === currentPage
-              ? "bg-primary-accent text-white"
-              : "text-primary-muted hover:bg-primary-border hover:text-white"
-          }`}
         >
           {page}
-        </button>,
+        </ShadcnButton>,
       );
     };
 
@@ -77,25 +75,27 @@ export function ClientPagination({ currentPage, totalPages, onPageChange }: Clie
   return (
     <div className="flex justify-center items-center gap-2 mt-6">
       {currentPage > 1 && (
-        <button
+        <ShadcnButton
           type="button"
+          variant="ghost"
+          size="sm"
           onClick={() => onPageChange(currentPage - 1)}
-          className="px-3 py-2 text-sm font-medium text-primary-muted hover:bg-primary-border hover:text-white rounded-md transition-colors cursor-pointer"
         >
           ← 前
-        </button>
+        </ShadcnButton>
       )}
 
       {renderPageNumbers()}
 
       {currentPage < totalPages && (
-        <button
+        <ShadcnButton
           type="button"
+          variant="ghost"
+          size="sm"
           onClick={() => onPageChange(currentPage + 1)}
-          className="px-3 py-2 text-sm font-medium text-primary-muted hover:bg-primary-border hover:text-white rounded-md transition-colors cursor-pointer"
         >
           次 →
-        </button>
+        </ShadcnButton>
       )}
     </div>
   );

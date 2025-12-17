@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { clearWebappCacheAction } from "@/server/contexts/shared/presentation/actions/clear-webapp-cache";
+import { ShadcnButton } from "@/client/components/ui";
 
 export function ClearWebappCacheButton() {
   const [clearing, setClearing] = useState(false);
@@ -25,15 +26,8 @@ export function ClearWebappCacheButton() {
   };
 
   return (
-    <button
-      type="button"
-      onClick={handleClearCache}
-      disabled={clearing}
-      className={`bg-blue-600 text-white border-0 rounded-lg px-4 py-2.5 font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-400 ${
-        clearing ? "opacity-50 cursor-not-allowed" : "hover:bg-blue-700 cursor-pointer"
-      }`}
-    >
+    <ShadcnButton type="button" onClick={handleClearCache} disabled={clearing}>
       {clearing ? "クリア中..." : "ウェブアプリのキャッシュをクリア"}
-    </button>
+    </ShadcnButton>
   );
 }

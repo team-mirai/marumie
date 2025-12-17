@@ -7,6 +7,7 @@ import {
   MAX_NAME_LENGTH,
   MAX_ADDRESS_LENGTH,
 } from "@/server/contexts/report/domain/models/counterpart";
+import { ShadcnButton, ShadcnInput, Label } from "@/client/components/ui";
 
 interface CreateCounterpartDialogProps {
   onClose: () => void;
@@ -75,16 +76,15 @@ export function CreateCounterpartDialog({ onClose, onCreate }: CreateCounterpart
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label htmlFor="create-name" className="block mb-2 font-medium text-white">
+            <Label htmlFor="create-name">
               名前 <span className="text-red-500">*</span>
-            </label>
-            <input
+            </Label>
+            <ShadcnInput
               type="text"
               id="create-name"
               value={name}
               onChange={(e) => setName(e.target.value)}
               maxLength={MAX_NAME_LENGTH}
-              className="bg-primary-input text-white border border-primary-border rounded-lg px-3 py-2.5 w-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-accent focus:border-primary-accent"
               placeholder="取引先名を入力"
               disabled={isLoading}
               required
@@ -92,16 +92,15 @@ export function CreateCounterpartDialog({ onClose, onCreate }: CreateCounterpart
           </div>
 
           <div>
-            <label htmlFor="create-address" className="block mb-2 font-medium text-white">
+            <Label htmlFor="create-address">
               住所 <span className="text-red-500">*</span>
-            </label>
-            <input
+            </Label>
+            <ShadcnInput
               type="text"
               id="create-address"
               value={address}
               onChange={(e) => setAddress(e.target.value)}
               maxLength={MAX_ADDRESS_LENGTH}
-              className="bg-primary-input text-white border border-primary-border rounded-lg px-3 py-2.5 w-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-accent focus:border-primary-accent"
               placeholder="住所を入力"
               disabled={isLoading}
               required
@@ -111,25 +110,17 @@ export function CreateCounterpartDialog({ onClose, onCreate }: CreateCounterpart
           <p className="text-primary-muted text-sm">※ 同じ名前・住所の組み合わせは登録できません</p>
 
           <div className="flex gap-3 justify-end pt-2">
-            <button
+            <ShadcnButton
               type="button"
+              variant="secondary"
               onClick={handleClose}
               disabled={isLoading}
-              className="bg-primary-hover text-white border border-primary-border hover:bg-primary-border rounded-lg px-4 py-2.5 font-medium transition-colors duration-200 cursor-pointer"
             >
               キャンセル
-            </button>
-            <button
-              type="submit"
-              disabled={isLoading || !isFormValid}
-              className={`bg-primary-accent text-white border-0 rounded-lg px-4 py-2.5 font-medium transition-colors duration-200 ${
-                isLoading || !isFormValid
-                  ? "opacity-60 cursor-not-allowed"
-                  : "hover:bg-blue-600 cursor-pointer"
-              }`}
-            >
+            </ShadcnButton>
+            <ShadcnButton type="submit" disabled={isLoading || !isFormValid}>
               {isLoading ? "作成中..." : "作成"}
-            </button>
+            </ShadcnButton>
           </div>
         </form>
       </div>

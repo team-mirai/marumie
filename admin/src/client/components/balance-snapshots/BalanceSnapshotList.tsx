@@ -3,6 +3,7 @@ import "client-only";
 
 import { useState } from "react";
 import type { BalanceSnapshot } from "@/shared/models/balance-snapshot";
+import { ShadcnButton } from "@/client/components/ui";
 
 interface BalanceSnapshotListProps {
   snapshots: BalanceSnapshot[];
@@ -65,19 +66,16 @@ export default function BalanceSnapshotList({ snapshots }: BalanceSnapshotListPr
                 {new Date(snapshot.created_at).toLocaleString("ja-JP")}
               </td>
               <td className="px-2 py-3 text-center">
-                <button
+                <ShadcnButton
                   type="button"
+                  variant="destructive"
+                  size="sm"
                   onClick={() => handleDelete(snapshot.id)}
                   disabled={deletingId === snapshot.id}
-                  className={`bg-red-600 text-white border-0 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-red-400 ${
-                    deletingId === snapshot.id
-                      ? "opacity-50 cursor-not-allowed"
-                      : "hover:bg-red-700 cursor-pointer"
-                  }`}
                   title="削除"
                 >
                   {deletingId === snapshot.id ? "削除中..." : "削除"}
-                </button>
+                </ShadcnButton>
               </td>
             </tr>
           ))}

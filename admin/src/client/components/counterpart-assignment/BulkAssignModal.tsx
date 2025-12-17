@@ -5,6 +5,7 @@ import { useState, useTransition } from "react";
 import type { TransactionWithCounterpart } from "@/server/contexts/report/domain/models/transaction-with-counterpart";
 import type { Counterpart } from "@/server/contexts/report/domain/models/counterpart";
 import { bulkAssignCounterpartAction } from "@/server/contexts/report/presentation/actions/bulk-assign-counterpart";
+import { ShadcnButton, ShadcnInput, Label } from "@/client/components/ui";
 
 interface BulkAssignModalProps {
   isOpen: boolean;
@@ -95,19 +96,16 @@ export function BulkAssignModal({
           </div>
 
           <div>
-            <label
-              htmlFor="bulk-assign-search"
-              className="block text-sm font-medium text-primary-muted mb-2"
-            >
+            <Label htmlFor="bulk-assign-search">
               紐付けるCounterpart <span className="text-red-500">*</span>
-            </label>
-            <input
+            </Label>
+            <ShadcnInput
               id="bulk-assign-search"
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="取引先を検索..."
-              className="bg-primary-input text-white border border-primary-border rounded-lg px-3 py-2 w-full text-sm focus:outline-none focus:ring-2 focus:ring-primary-accent mb-2"
+              className="mb-2"
             />
             <div className="border border-primary-border rounded-lg max-h-40 overflow-y-auto">
               {filteredCounterparts.length > 0 ? (
@@ -178,26 +176,21 @@ export function BulkAssignModal({
         </div>
 
         <div className="p-4 border-t border-primary-border flex justify-end gap-2">
-          <button
+          <ShadcnButton
             type="button"
+            variant="secondary"
             onClick={handleClose}
             disabled={isPending}
-            className="bg-primary-hover text-white border border-primary-border rounded-lg px-4 py-2 text-sm hover:bg-primary-border transition-colors"
           >
             キャンセル
-          </button>
-          <button
+          </ShadcnButton>
+          <ShadcnButton
             type="button"
             onClick={handleSubmit}
             disabled={isPending || !selectedCounterpartId}
-            className={`bg-primary-accent text-white rounded-lg px-4 py-2 text-sm transition-colors ${
-              isPending || !selectedCounterpartId
-                ? "opacity-60 cursor-not-allowed"
-                : "hover:bg-blue-600 cursor-pointer"
-            }`}
           >
             {isPending ? "紐付け中..." : "紐付け"}
-          </button>
+          </ShadcnButton>
         </div>
       </div>
     </div>
