@@ -8,12 +8,12 @@ import type {
   OrganizationReportProfileDetails,
 } from "@/server/contexts/report/domain/models/organization-report-profile";
 import {
-  ShadcnButton,
-  ShadcnCard,
+  Button,
+  Card,
   CardHeader,
   CardContent,
   Label,
-  ShadcnInput,
+  Input,
   Checkbox,
 } from "@/client/components/ui";
 
@@ -114,7 +114,7 @@ export function DietMemberRelationSection({
   };
 
   return (
-    <ShadcnCard>
+    <Card>
       <CardHeader>
         <div className="flex items-center gap-3">
           <Checkbox
@@ -154,9 +154,9 @@ export function DietMemberRelationSection({
             <div className="flex justify-between items-center mb-2">
               <h3 className="text-md font-medium text-foreground">関係する国会議員（最大3名）</h3>
               {(dietMemberRelation.members?.length ?? 0) < 3 && (
-                <ShadcnButton type="button" variant="ghost" size="sm" onClick={addMember}>
+                <Button type="button" variant="ghost" size="sm" onClick={addMember}>
                   + 追加
-                </ShadcnButton>
+                </Button>
               )}
             </div>
             <div className="space-y-3">
@@ -164,7 +164,7 @@ export function DietMemberRelationSection({
                 <div key={member.id} className="bg-card rounded-lg p-3 border border-border">
                   <div className="flex justify-between items-center mb-2">
                     <span className="text-sm text-muted-foreground">議員 {index + 1}</span>
-                    <ShadcnButton
+                    <Button
                       type="button"
                       variant="ghost"
                       size="sm"
@@ -172,12 +172,12 @@ export function DietMemberRelationSection({
                       className="text-destructive hover:text-destructive"
                     >
                       削除
-                    </ShadcnButton>
+                    </Button>
                   </div>
                   <div className="grid grid-cols-2 gap-3 mb-2">
                     <div className="space-y-2">
                       <Label className="text-muted-foreground">姓</Label>
-                      <ShadcnInput
+                      <Input
                         type="text"
                         value={member.lastName}
                         onChange={(e) => updateMember(index, { lastName: e.target.value })}
@@ -187,7 +187,7 @@ export function DietMemberRelationSection({
                     </div>
                     <div className="space-y-2">
                       <Label className="text-muted-foreground">名</Label>
-                      <ShadcnInput
+                      <Input
                         type="text"
                         value={member.firstName}
                         onChange={(e) => updateMember(index, { firstName: e.target.value })}
@@ -239,15 +239,15 @@ export function DietMemberRelationSection({
             <div className="flex justify-between items-center mb-2">
               <h3 className="text-md font-medium text-foreground">指定期間（最大3件）</h3>
               {(dietMemberRelation.periods?.length ?? 0) < 3 && (
-                <ShadcnButton type="button" variant="ghost" size="sm" onClick={addPeriod}>
+                <Button type="button" variant="ghost" size="sm" onClick={addPeriod}>
                   + 追加
-                </ShadcnButton>
+                </Button>
               )}
             </div>
             <div className="space-y-2">
               {(dietMemberRelation.periods ?? []).map((period, index) => (
                 <div key={period.id} className="flex gap-2 items-center">
-                  <ShadcnInput
+                  <Input
                     type="text"
                     value={period.from}
                     onChange={(e) => updatePeriod(index, { from: e.target.value })}
@@ -256,7 +256,7 @@ export function DietMemberRelationSection({
                     placeholder="R6/4/1"
                   />
                   <span className="text-foreground">〜</span>
-                  <ShadcnInput
+                  <Input
                     type="text"
                     value={period.to}
                     onChange={(e) => updatePeriod(index, { to: e.target.value })}
@@ -264,7 +264,7 @@ export function DietMemberRelationSection({
                     className="bg-input w-32"
                     placeholder="R7/3/31"
                   />
-                  <ShadcnButton
+                  <Button
                     type="button"
                     variant="ghost"
                     size="sm"
@@ -272,13 +272,13 @@ export function DietMemberRelationSection({
                     className="text-destructive hover:text-destructive"
                   >
                     削除
-                  </ShadcnButton>
+                  </Button>
                 </div>
               ))}
             </div>
           </div>
         </CardContent>
       )}
-    </ShadcnCard>
+    </Card>
   );
 }

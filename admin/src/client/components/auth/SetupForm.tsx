@@ -4,9 +4,9 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { apiClient } from "@/client/lib/api-client";
 import {
-  ShadcnButton,
-  ShadcnInput,
-  ShadcnCard,
+  Button,
+  Input,
+  Card,
   CardHeader,
   CardTitle,
   CardContent,
@@ -57,7 +57,7 @@ export default function SetupForm({ userEmail }: SetupFormProps) {
   };
 
   return (
-    <ShadcnCard className="w-full max-w-md">
+    <Card className="w-full max-w-md">
       <CardHeader>
         <CardTitle className="text-2xl">アカウント設定</CardTitle>
         <CardDescription>
@@ -69,7 +69,7 @@ export default function SetupForm({ userEmail }: SetupFormProps) {
           <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="password">パスワード</Label>
-              <ShadcnInput
+              <Input
                 id="password"
                 type="password"
                 value={password}
@@ -81,7 +81,7 @@ export default function SetupForm({ userEmail }: SetupFormProps) {
             </div>
             <div className="space-y-2">
               <Label htmlFor="confirmPassword">パスワード（確認）</Label>
-              <ShadcnInput
+              <Input
                 id="confirmPassword"
                 type="password"
                 value={confirmPassword}
@@ -95,11 +95,11 @@ export default function SetupForm({ userEmail }: SetupFormProps) {
 
           {error && <div className="text-destructive text-sm text-center">{error}</div>}
 
-          <ShadcnButton type="submit" disabled={isLoading} className="w-full">
+          <Button type="submit" disabled={isLoading} className="w-full">
             {isLoading ? "設定中..." : "設定完了"}
-          </ShadcnButton>
+          </Button>
         </form>
       </CardContent>
-    </ShadcnCard>
+    </Card>
   );
 }

@@ -4,7 +4,7 @@ import "client-only";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { UserRole } from "@prisma/client";
-import { ShadcnButton } from "@/client/components/ui";
+import { Button } from "@/client/components/ui";
 
 export default function Sidebar({
   logoutAction,
@@ -53,9 +53,9 @@ export default function Sidebar({
       </nav>
       <div className="mt-auto pt-4">
         <form action={logoutAction}>
-          <ShadcnButton type="submit" variant="destructive" className="w-full">
+          <Button type="submit" variant="destructive" className="w-full">
             ログアウト
-          </ShadcnButton>
+          </Button>
         </form>
       </div>
     </aside>

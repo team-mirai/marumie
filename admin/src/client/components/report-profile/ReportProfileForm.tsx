@@ -11,7 +11,7 @@ import { OrganizationTypeSection } from "./OrganizationTypeSection";
 import { FundManagementSection } from "./FundManagementSection";
 import { DietMemberRelationSection } from "./DietMemberRelationSection";
 import type { OrganizationReportProfileFormData } from "@/server/contexts/report/presentation/schemas/organization-report-profile.schema";
-import { ShadcnButton } from "@/client/components/ui";
+import { Button } from "@/client/components/ui";
 
 interface ReportProfileFormProps {
   politicalOrganizationId: string;
@@ -112,9 +112,9 @@ export function ReportProfileForm({
       <DietMemberRelationSection details={formData.details} updateDetails={updateDetails} />
 
       <div className="flex gap-3 pt-4">
-        <ShadcnButton type="submit" disabled={isLoading}>
+        <Button type="submit" disabled={isLoading}>
           {isLoading ? "保存中..." : "保存"}
-        </ShadcnButton>
+        </Button>
       </div>
     </form>
   );

@@ -2,7 +2,7 @@
 import "client-only";
 import { useState } from "react";
 import type { ChangeEvent, FormEvent } from "react";
-import { ShadcnButton, ShadcnInput, ShadcnCard } from "../ui";
+import { Button, Input, Card } from "../ui";
 import { apiClient } from "@/client/lib/api-client";
 import type { UserRole } from "@prisma/client";
 
@@ -68,11 +68,11 @@ export default function UserManagement({
   return (
     <div className="space-y-4">
       {/* Invite User Form */}
-      <ShadcnCard className="p-4">
+      <Card className="p-4">
         <h2 className="text-lg font-medium text-white mb-4">新規ユーザー招待</h2>
         <form onSubmit={handleInviteUser} className="flex gap-4">
           <div className="flex-1">
-            <ShadcnInput
+            <Input
               type="email"
               value={inviteEmail}
               onChange={(e: ChangeEvent<HTMLInputElement>) => setInviteEmail(e.target.value)}
@@ -81,13 +81,13 @@ export default function UserManagement({
               required
             />
           </div>
-          <ShadcnButton type="submit" disabled={isInviting || !inviteEmail.trim()}>
+          <Button type="submit" disabled={isInviting || !inviteEmail.trim()}>
             {isInviting ? "送信中..." : "招待を送信"}
-          </ShadcnButton>
+          </Button>
         </form>
-      </ShadcnCard>
+      </Card>
 
-      <ShadcnCard className="overflow-hidden p-0">
+      <Card className="overflow-hidden p-0">
         <table className="min-w-full divide-y divide-primary-border">
           <thead className="bg-primary-hover">
             <tr>
@@ -145,7 +145,7 @@ export default function UserManagement({
         {users.length === 0 && (
           <div className="text-center py-8 text-primary-muted">ユーザーが見つかりません</div>
         )}
-      </ShadcnCard>
+      </Card>
     </div>
   );
 }

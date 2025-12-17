@@ -7,12 +7,12 @@ import type {
   OrganizationReportProfileDetails,
 } from "@/server/contexts/report/domain/models/organization-report-profile";
 import {
-  ShadcnButton,
-  ShadcnCard,
+  Button,
+  Card,
   CardHeader,
   CardContent,
   Label,
-  ShadcnInput,
+  Input,
   Checkbox,
 } from "@/client/components/ui";
 
@@ -80,7 +80,7 @@ export function FundManagementSection({ details, updateDetails }: FundManagement
   };
 
   return (
-    <ShadcnCard>
+    <Card>
       <CardHeader>
         <div className="flex items-center gap-3">
           <Checkbox
@@ -101,7 +101,7 @@ export function FundManagementSection({ details, updateDetails }: FundManagement
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label>公職の名称</Label>
-            <ShadcnInput
+            <Input
               type="text"
               value={fundManagement.publicPositionName ?? ""}
               onChange={(e) => updateFundManagement({ publicPositionName: e.target.value })}
@@ -135,7 +135,7 @@ export function FundManagementSection({ details, updateDetails }: FundManagement
             <div className="flex gap-4">
               <div className="flex-1 space-y-2">
                 <Label className="text-muted-foreground">姓</Label>
-                <ShadcnInput
+                <Input
                   type="text"
                   value={fundManagement.applicant?.lastName ?? ""}
                   onChange={(e) =>
@@ -153,7 +153,7 @@ export function FundManagementSection({ details, updateDetails }: FundManagement
               </div>
               <div className="flex-1 space-y-2">
                 <Label className="text-muted-foreground">名</Label>
-                <ShadcnInput
+                <Input
                   type="text"
                   value={fundManagement.applicant?.firstName ?? ""}
                   onChange={(e) =>
@@ -176,15 +176,15 @@ export function FundManagementSection({ details, updateDetails }: FundManagement
             <div className="flex justify-between items-center mb-2">
               <h3 className="text-md font-medium text-foreground">指定期間（最大3件）</h3>
               {(fundManagement.periods?.length ?? 0) < 3 && (
-                <ShadcnButton type="button" variant="ghost" size="sm" onClick={addPeriod}>
+                <Button type="button" variant="ghost" size="sm" onClick={addPeriod}>
                   + 追加
-                </ShadcnButton>
+                </Button>
               )}
             </div>
             <div className="space-y-2">
               {(fundManagement.periods ?? []).map((period, index) => (
                 <div key={period.id} className="flex gap-2 items-center">
-                  <ShadcnInput
+                  <Input
                     type="text"
                     value={period.from}
                     onChange={(e) => updatePeriod(index, { from: e.target.value })}
@@ -193,7 +193,7 @@ export function FundManagementSection({ details, updateDetails }: FundManagement
                     placeholder="R6/4/1"
                   />
                   <span className="text-foreground">〜</span>
-                  <ShadcnInput
+                  <Input
                     type="text"
                     value={period.to}
                     onChange={(e) => updatePeriod(index, { to: e.target.value })}
@@ -201,7 +201,7 @@ export function FundManagementSection({ details, updateDetails }: FundManagement
                     className="bg-input w-32"
                     placeholder="R7/3/31"
                   />
-                  <ShadcnButton
+                  <Button
                     type="button"
                     variant="ghost"
                     size="sm"
@@ -209,13 +209,13 @@ export function FundManagementSection({ details, updateDetails }: FundManagement
                     className="text-destructive hover:text-destructive"
                   >
                     削除
-                  </ShadcnButton>
+                  </Button>
                 </div>
               ))}
             </div>
           </div>
         </CardContent>
       )}
-    </ShadcnCard>
+    </Card>
   );
 }

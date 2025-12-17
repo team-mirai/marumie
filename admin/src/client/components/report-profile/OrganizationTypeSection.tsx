@@ -2,14 +2,7 @@
 import "client-only";
 
 import type { OrganizationReportProfileDetails } from "@/server/contexts/report/domain/models/organization-report-profile";
-import {
-  ShadcnCard,
-  CardHeader,
-  CardTitle,
-  CardContent,
-  Label,
-  ShadcnInput,
-} from "@/client/components/ui";
+import { Card, CardHeader, CardTitle, CardContent, Label, Input } from "@/client/components/ui";
 
 interface OrganizationTypeSectionProps {
   details: OrganizationReportProfileDetails;
@@ -18,14 +11,14 @@ interface OrganizationTypeSectionProps {
 
 export function OrganizationTypeSection({ details, updateDetails }: OrganizationTypeSectionProps) {
   return (
-    <ShadcnCard>
+    <Card>
       <CardHeader>
         <CardTitle>団体区分・活動区域</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="space-y-2">
           <Label>団体区分（2桁コード）</Label>
-          <ShadcnInput
+          <Input
             type="text"
             value={details.organizationType ?? ""}
             onChange={(e) => updateDetails({ organizationType: e.target.value })}
@@ -55,7 +48,7 @@ export function OrganizationTypeSection({ details, updateDetails }: Organization
 
         <div className="space-y-2">
           <Label>特定パーティー開催日（和暦）</Label>
-          <ShadcnInput
+          <Input
             type="text"
             value={details.specificPartyDate ?? ""}
             onChange={(e) => updateDetails({ specificPartyDate: e.target.value })}
@@ -66,6 +59,6 @@ export function OrganizationTypeSection({ details, updateDetails }: Organization
           <p className="text-muted-foreground text-sm">該当する場合のみ入力（例: R6/4/1）</p>
         </div>
       </CardContent>
-    </ShadcnCard>
+    </Card>
   );
 }

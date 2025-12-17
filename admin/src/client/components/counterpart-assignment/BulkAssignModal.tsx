@@ -5,7 +5,7 @@ import { useState, useTransition } from "react";
 import type { TransactionWithCounterpart } from "@/server/contexts/report/domain/models/transaction-with-counterpart";
 import type { Counterpart } from "@/server/contexts/report/domain/models/counterpart";
 import { bulkAssignCounterpartAction } from "@/server/contexts/report/presentation/actions/bulk-assign-counterpart";
-import { ShadcnButton, ShadcnInput, Label } from "@/client/components/ui";
+import { Button, Input, Label } from "@/client/components/ui";
 
 interface BulkAssignModalProps {
   isOpen: boolean;
@@ -99,7 +99,7 @@ export function BulkAssignModal({
             <Label htmlFor="bulk-assign-search">
               紐付けるCounterpart <span className="text-red-500">*</span>
             </Label>
-            <ShadcnInput
+            <Input
               id="bulk-assign-search"
               type="text"
               value={searchQuery}
@@ -176,21 +176,16 @@ export function BulkAssignModal({
         </div>
 
         <div className="p-4 border-t border-primary-border flex justify-end gap-2">
-          <ShadcnButton
-            type="button"
-            variant="secondary"
-            onClick={handleClose}
-            disabled={isPending}
-          >
+          <Button type="button" variant="secondary" onClick={handleClose} disabled={isPending}>
             キャンセル
-          </ShadcnButton>
-          <ShadcnButton
+          </Button>
+          <Button
             type="button"
             onClick={handleSubmit}
             disabled={isPending || !selectedCounterpartId}
           >
             {isPending ? "紐付け中..." : "紐付け"}
-          </ShadcnButton>
+          </Button>
         </div>
       </div>
     </div>

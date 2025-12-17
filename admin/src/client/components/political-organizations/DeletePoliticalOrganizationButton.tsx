@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { deletePoliticalOrganization } from "@/server/contexts/shared/presentation/actions/delete-political-organization";
-import { ShadcnButton } from "@/client/components/ui";
+import { Button } from "@/client/components/ui";
 
 interface DeletePoliticalOrganizationButtonProps {
   orgId: bigint;
@@ -41,7 +41,7 @@ export function DeletePoliticalOrganizationButton({
   };
 
   return (
-    <ShadcnButton
+    <Button
       type="button"
       variant="destructive"
       size="sm"
@@ -49,6 +49,6 @@ export function DeletePoliticalOrganizationButton({
       disabled={deleting}
     >
       {deleting ? "削除中..." : "削除"}
-    </ShadcnButton>
+    </Button>
   );
 }

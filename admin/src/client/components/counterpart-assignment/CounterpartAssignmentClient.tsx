@@ -12,9 +12,9 @@ import { TransactionWithCounterpartTable } from "./TransactionWithCounterpartTab
 import { BulkAssignModal } from "./BulkAssignModal";
 import { ClientPagination } from "@/client/components/ui/ClientPagination";
 import {
-  ShadcnCard,
-  ShadcnInput,
-  ShadcnButton,
+  Card,
+  Input,
+  Button,
   Label,
   Select,
   SelectContent,
@@ -185,9 +185,9 @@ export function CounterpartAssignmentClient({
 
   if (organizations.length === 0) {
     return (
-      <ShadcnCard className="p-4">
+      <Card className="p-4">
         <p className="text-white">政治団体が登録されていません。先に政治団体を作成してください。</p>
-      </ShadcnCard>
+      </Card>
     );
   }
 
@@ -206,7 +206,7 @@ export function CounterpartAssignmentClient({
         </Link>
       </div>
 
-      <ShadcnCard className="space-y-4 p-4">
+      <Card className="space-y-4 p-4">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div>
             <Label>政治団体</Label>
@@ -229,7 +229,7 @@ export function CounterpartAssignmentClient({
           </div>
           <div>
             <Label>報告年 (西暦)</Label>
-            <ShadcnInput
+            <Input
               type="number"
               value={String(financialYear)}
               onChange={handleYearChange}
@@ -256,7 +256,7 @@ export function CounterpartAssignmentClient({
           <form onSubmit={handleSearchSubmit} className="flex flex-col">
             <Label htmlFor="search-query">検索</Label>
             <div className="flex gap-2">
-              <ShadcnInput
+              <Input
                 id="search-query"
                 type="text"
                 value={searchQuery}
@@ -264,9 +264,9 @@ export function CounterpartAssignmentClient({
                 placeholder="摘要、メモで検索..."
                 className="flex-1"
               />
-              <ShadcnButton type="submit" variant="secondary">
+              <Button type="submit" variant="secondary">
                 検索
-              </ShadcnButton>
+              </Button>
             </div>
           </form>
         </div>
@@ -282,9 +282,9 @@ export function CounterpartAssignmentClient({
             <span className="text-white">未紐付けのみ表示</span>
           </label>
         </div>
-      </ShadcnCard>
+      </Card>
 
-      <ShadcnCard className="p-4">
+      <Card className="p-4">
         <div className="flex justify-between items-center mb-4">
           <div className="text-primary-muted text-sm">
             {total}件のTransaction
@@ -298,17 +298,12 @@ export function CounterpartAssignmentClient({
             <span className="text-white text-sm">
               選択中: <span className="font-medium">{selectedTransactions.length}件</span>
             </span>
-            <ShadcnButton type="button" size="sm" onClick={() => setIsBulkAssignModalOpen(true)}>
+            <Button type="button" size="sm" onClick={() => setIsBulkAssignModalOpen(true)}>
               一括紐付け
-            </ShadcnButton>
-            <ShadcnButton
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => setRowSelection({})}
-            >
+            </Button>
+            <Button type="button" variant="ghost" size="sm" onClick={() => setRowSelection({})}>
               選択解除
-            </ShadcnButton>
+            </Button>
           </div>
         )}
 
@@ -330,7 +325,7 @@ export function CounterpartAssignmentClient({
             onPageChange={handlePageChange}
           />
         )}
-      </ShadcnCard>
+      </Card>
 
       <BulkAssignModal
         isOpen={isBulkAssignModalOpen}

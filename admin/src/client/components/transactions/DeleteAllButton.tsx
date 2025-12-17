@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { deleteAllTransactionsAction } from "@/server/contexts/data-import/presentation/actions/delete-all-transactions";
-import { ShadcnButton } from "@/client/components/ui";
+import { Button } from "@/client/components/ui";
 
 interface DeleteAllButtonProps {
   disabled?: boolean;
@@ -44,13 +44,13 @@ export function DeleteAllButton({
   };
 
   return (
-    <ShadcnButton
+    <Button
       type="button"
       variant="destructive"
       onClick={handleDeleteAll}
       disabled={deleting || disabled}
     >
       {deleting ? "削除中..." : organizationId ? "この政治団体の全取引を削除" : "全ての取引を削除"}
-    </ShadcnButton>
+    </Button>
   );
 }

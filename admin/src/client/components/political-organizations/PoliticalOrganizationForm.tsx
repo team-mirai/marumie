@@ -5,9 +5,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import {
-  ShadcnButton,
-  ShadcnInput,
-  ShadcnCard,
+  Button,
+  Input,
+  Card,
   CardHeader,
   CardTitle,
   CardContent,
@@ -72,7 +72,7 @@ export function PoliticalOrganizationForm({
   };
 
   return (
-    <ShadcnCard>
+    <Card>
       <CardHeader>
         <div className="mb-2">
           <Link
@@ -96,7 +96,7 @@ export function PoliticalOrganizationForm({
             <Label htmlFor="displayName">
               表示名 <span className="text-destructive">*</span>
             </Label>
-            <ShadcnInput
+            <Input
               type="text"
               id="displayName"
               name="displayName"
@@ -111,7 +111,7 @@ export function PoliticalOrganizationForm({
 
           <div className="space-y-2">
             <Label htmlFor="orgName">正式名称（任意）</Label>
-            <ShadcnInput
+            <Input
               type="text"
               id="orgName"
               name="orgName"
@@ -127,7 +127,7 @@ export function PoliticalOrganizationForm({
             <Label htmlFor="slug">
               スラッグ <span className="text-destructive">*</span>
             </Label>
-            <ShadcnInput
+            <Input
               type="text"
               id="slug"
               name="slug"
@@ -154,19 +154,19 @@ export function PoliticalOrganizationForm({
           </div>
 
           <div className="flex gap-3">
-            <ShadcnButton
+            <Button
               type="submit"
               disabled={isLoading || !formData.displayName.trim() || !formData.slug.trim()}
             >
               {isLoading ? "処理中..." : submitButtonText}
-            </ShadcnButton>
+            </Button>
 
-            <ShadcnButton variant="outline" asChild>
+            <Button variant="outline" asChild>
               <Link href="/political-organizations">キャンセル</Link>
-            </ShadcnButton>
+            </Button>
           </div>
         </form>
       </CardContent>
-    </ShadcnCard>
+    </Card>
   );
 }
