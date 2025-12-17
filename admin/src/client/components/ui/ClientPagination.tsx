@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { ShadcnButton } from "@/client/components/ui";
+import { Button } from "@/client/components/ui";
 
 interface ClientPaginationProps {
   currentPage: number;
@@ -18,7 +18,7 @@ export function ClientPagination({ currentPage, totalPages, onPageChange }: Clie
 
     const addPageButton = (page: number) => {
       pages.push(
-        <ShadcnButton
+        <Button
           type="button"
           key={`page-${page}`}
           variant={page === currentPage ? "default" : "ghost"}
@@ -26,7 +26,7 @@ export function ClientPagination({ currentPage, totalPages, onPageChange }: Clie
           onClick={() => onPageChange(page)}
         >
           {page}
-        </ShadcnButton>,
+        </Button>,
       );
     };
 
@@ -75,27 +75,27 @@ export function ClientPagination({ currentPage, totalPages, onPageChange }: Clie
   return (
     <div className="flex justify-center items-center gap-2 mt-6">
       {currentPage > 1 && (
-        <ShadcnButton
+        <Button
           type="button"
           variant="ghost"
           size="sm"
           onClick={() => onPageChange(currentPage - 1)}
         >
           ← 前
-        </ShadcnButton>
+        </Button>
       )}
 
       {renderPageNumbers()}
 
       {currentPage < totalPages && (
-        <ShadcnButton
+        <Button
           type="button"
           variant="ghost"
           size="sm"
           onClick={() => onPageChange(currentPage + 1)}
         >
           次 →
-        </ShadcnButton>
+        </Button>
       )}
     </div>
   );

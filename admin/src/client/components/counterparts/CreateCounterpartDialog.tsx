@@ -7,7 +7,7 @@ import {
   MAX_NAME_LENGTH,
   MAX_ADDRESS_LENGTH,
 } from "@/server/contexts/report/domain/models/counterpart";
-import { ShadcnButton, ShadcnInput, Label } from "@/client/components/ui";
+import { Button, Input, Label } from "@/client/components/ui";
 
 interface CreateCounterpartDialogProps {
   onClose: () => void;
@@ -79,7 +79,7 @@ export function CreateCounterpartDialog({ onClose, onCreate }: CreateCounterpart
             <Label htmlFor="create-name">
               名前 <span className="text-red-500">*</span>
             </Label>
-            <ShadcnInput
+            <Input
               type="text"
               id="create-name"
               value={name}
@@ -95,7 +95,7 @@ export function CreateCounterpartDialog({ onClose, onCreate }: CreateCounterpart
             <Label htmlFor="create-address">
               住所 <span className="text-red-500">*</span>
             </Label>
-            <ShadcnInput
+            <Input
               type="text"
               id="create-address"
               value={address}
@@ -110,17 +110,12 @@ export function CreateCounterpartDialog({ onClose, onCreate }: CreateCounterpart
           <p className="text-primary-muted text-sm">※ 同じ名前・住所の組み合わせは登録できません</p>
 
           <div className="flex gap-3 justify-end pt-2">
-            <ShadcnButton
-              type="button"
-              variant="secondary"
-              onClick={handleClose}
-              disabled={isLoading}
-            >
+            <Button type="button" variant="secondary" onClick={handleClose} disabled={isLoading}>
               キャンセル
-            </ShadcnButton>
-            <ShadcnButton type="submit" disabled={isLoading || !isFormValid}>
+            </Button>
+            <Button type="submit" disabled={isLoading || !isFormValid}>
               {isLoading ? "作成中..." : "作成"}
-            </ShadcnButton>
+            </Button>
           </div>
         </form>
       </div>

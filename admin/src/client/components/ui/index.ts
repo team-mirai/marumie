@@ -1,9 +1,8 @@
 // shadcn/ui components (in shadcn/ subdirectory)
-// Legacy aliases for backward compatibility during migration
-export { Button as ShadcnButton, buttonVariants } from "@/client/components/ui/shadcn/button";
-export { Input as ShadcnInput } from "@/client/components/ui/shadcn/input";
+export { Button, buttonVariants } from "@/client/components/ui/shadcn/button";
+export { Input } from "@/client/components/ui/shadcn/input";
 export {
-  Card as ShadcnCard,
+  Card,
   CardHeader,
   CardFooter,
   CardTitle,

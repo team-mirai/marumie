@@ -8,7 +8,7 @@ import {
   MAX_NAME_LENGTH,
   MAX_ADDRESS_LENGTH,
 } from "@/server/contexts/report/domain/models/counterpart";
-import { ShadcnButton, ShadcnInput, Label } from "@/client/components/ui";
+import { Button, Input, Label } from "@/client/components/ui";
 
 interface EditCounterpartDialogProps {
   counterpart: CounterpartWithUsage;
@@ -67,7 +67,7 @@ export function EditCounterpartDialog({
             <Label htmlFor="edit-name">
               名前 <span className="text-red-500">*</span>
             </Label>
-            <ShadcnInput
+            <Input
               type="text"
               id="edit-name"
               value={name}
@@ -83,7 +83,7 @@ export function EditCounterpartDialog({
             <Label htmlFor="edit-address">
               住所 <span className="text-red-500">*</span>
             </Label>
-            <ShadcnInput
+            <Input
               type="text"
               id="edit-address"
               value={address}
@@ -100,12 +100,12 @@ export function EditCounterpartDialog({
           </div>
 
           <div className="flex gap-3 justify-end pt-2">
-            <ShadcnButton type="button" variant="secondary" onClick={onClose} disabled={isLoading}>
+            <Button type="button" variant="secondary" onClick={onClose} disabled={isLoading}>
               キャンセル
-            </ShadcnButton>
-            <ShadcnButton type="submit" disabled={isLoading || !name.trim() || !address.trim()}>
+            </Button>
+            <Button type="submit" disabled={isLoading || !name.trim() || !address.trim()}>
               {isLoading ? "保存中..." : "保存"}
-            </ShadcnButton>
+            </Button>
           </div>
         </form>
       </div>

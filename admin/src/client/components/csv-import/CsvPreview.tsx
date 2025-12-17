@@ -8,7 +8,7 @@ import type { PreviewCsvRequest } from "@/server/contexts/data-import/presentati
 import TransactionRow from "./TransactionRow";
 import { ClientPagination } from "@/client/components/ui/ClientPagination";
 import StatisticsTable from "./StatisticsTable";
-import { ShadcnButton } from "@/client/components/ui";
+import { Button } from "@/client/components/ui";
 
 interface CsvPreviewProps {
   file: File | null;
@@ -179,7 +179,7 @@ export default function CsvPreview({
               color: "text-yellow-500",
             },
           ].map(({ key, label, color }) => (
-            <ShadcnButton
+            <Button
               type="button"
               key={key}
               variant={activeTab === key ? "outline" : "ghost"}
@@ -188,7 +188,7 @@ export default function CsvPreview({
               className={activeTab === key ? `${color} border-white bg-white/10` : ""}
             >
               {label} ({getTabCount(key)})
-            </ShadcnButton>
+            </Button>
           ))}
         </div>
       </div>

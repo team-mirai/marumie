@@ -4,9 +4,9 @@ import "client-only";
 import { useMemo, useState, useTransition } from "react";
 import type { PoliticalOrganization } from "@/shared/models/political-organization";
 import {
-  ShadcnCard,
-  ShadcnButton,
-  ShadcnInput,
+  Card,
+  Button,
+  Input,
   Label,
   Select,
   SelectContent,
@@ -110,9 +110,9 @@ export function XmlExportClient({ organizations }: XmlExportClientProps) {
 
   if (organizations.length === 0) {
     return (
-      <ShadcnCard className="p-4">
+      <Card className="p-4">
         <p className="text-white">政治団体が登録されていません。先に政治団体を作成してください。</p>
-      </ShadcnCard>
+      </Card>
     );
   }
 
@@ -125,7 +125,7 @@ export function XmlExportClient({ organizations }: XmlExportClientProps) {
         </p>
       </div>
 
-      <ShadcnCard className="space-y-4 p-4">
+      <Card className="space-y-4 p-4">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <Label>政治団体</Label>
@@ -148,7 +148,7 @@ export function XmlExportClient({ organizations }: XmlExportClientProps) {
           </div>
           <div>
             <Label>報告年 (西暦)</Label>
-            <ShadcnInput
+            <Input
               type="number"
               value={financialYear}
               onChange={(event) => setFinancialYear(event.target.value)}
@@ -160,21 +160,21 @@ export function XmlExportClient({ organizations }: XmlExportClientProps) {
         </div>
 
         <div className="flex flex-wrap gap-3">
-          <ShadcnButton
+          <Button
             type="button"
             onClick={handlePreview}
             disabled={!canSubmit || isPreviewing || isDownloading}
           >
             {isPreviewing ? "プレビュー生成中..." : "プレビュー"}
-          </ShadcnButton>
-          <ShadcnButton
+          </Button>
+          <Button
             type="button"
             variant="secondary"
             onClick={handleDownload}
             disabled={!canSubmit || isPreviewing || isDownloading}
           >
             {isDownloading ? "ダウンロード中..." : "Shift_JISでダウンロード"}
-          </ShadcnButton>
+          </Button>
         </div>
 
         {status && (
@@ -190,9 +190,9 @@ export function XmlExportClient({ organizations }: XmlExportClientProps) {
             {status.message}
           </div>
         )}
-      </ShadcnCard>
+      </Card>
 
-      <ShadcnCard className="space-y-3 p-4">
+      <Card className="space-y-3 p-4">
         <div>
           <h2 className="text-lg font-medium text-white mb-1">XMLプレビュー</h2>
           <p className="text-sm text-primary-muted">
@@ -202,7 +202,7 @@ export function XmlExportClient({ organizations }: XmlExportClientProps) {
         <pre className="bg-black/30 rounded-lg p-4 text-sm overflow-auto max-h-[420px] whitespace-pre-wrap text-primary-muted">
           {previewXml || "プレビューを生成するとここにXMLが表示されます。"}
         </pre>
-      </ShadcnCard>
+      </Card>
     </div>
   );
 }

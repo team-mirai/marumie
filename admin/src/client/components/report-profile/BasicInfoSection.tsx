@@ -2,14 +2,7 @@
 import "client-only";
 
 import type { OrganizationReportProfileFormData } from "@/server/contexts/report/presentation/schemas/organization-report-profile.schema";
-import {
-  ShadcnCard,
-  CardHeader,
-  CardTitle,
-  CardContent,
-  Label,
-  ShadcnInput,
-} from "@/client/components/ui";
+import { Card, CardHeader, CardTitle, CardContent, Label, Input } from "@/client/components/ui";
 
 interface BasicInfoSectionProps {
   formData: OrganizationReportProfileFormData;
@@ -18,7 +11,7 @@ interface BasicInfoSectionProps {
 
 export function BasicInfoSection({ formData, updateFormData }: BasicInfoSectionProps) {
   return (
-    <ShadcnCard>
+    <Card>
       <CardHeader>
         <CardTitle>基本情報</CardTitle>
       </CardHeader>
@@ -30,7 +23,7 @@ export function BasicInfoSection({ formData, updateFormData }: BasicInfoSectionP
               ({formData.officialName?.length ?? 0}/120)
             </span>
           </Label>
-          <ShadcnInput
+          <Input
             type="text"
             value={formData.officialName ?? ""}
             onChange={(e) => updateFormData({ officialName: e.target.value })}
@@ -47,7 +40,7 @@ export function BasicInfoSection({ formData, updateFormData }: BasicInfoSectionP
               ({formData.officialNameKana?.length ?? 0}/120)
             </span>
           </Label>
-          <ShadcnInput
+          <Input
             type="text"
             value={formData.officialNameKana ?? ""}
             onChange={(e) => updateFormData({ officialNameKana: e.target.value })}
@@ -64,7 +57,7 @@ export function BasicInfoSection({ formData, updateFormData }: BasicInfoSectionP
               ({formData.officeAddress?.length ?? 0}/80)
             </span>
           </Label>
-          <ShadcnInput
+          <Input
             type="text"
             value={formData.officeAddress ?? ""}
             onChange={(e) => updateFormData({ officeAddress: e.target.value })}
@@ -81,7 +74,7 @@ export function BasicInfoSection({ formData, updateFormData }: BasicInfoSectionP
               ({formData.officeAddressBuilding?.length ?? 0}/60)
             </span>
           </Label>
-          <ShadcnInput
+          <Input
             type="text"
             value={formData.officeAddressBuilding ?? ""}
             onChange={(e) => updateFormData({ officeAddressBuilding: e.target.value })}
@@ -91,6 +84,6 @@ export function BasicInfoSection({ formData, updateFormData }: BasicInfoSectionP
           />
         </div>
       </CardContent>
-    </ShadcnCard>
+    </Card>
   );
 }

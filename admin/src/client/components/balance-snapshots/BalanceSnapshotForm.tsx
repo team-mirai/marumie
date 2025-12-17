@@ -3,7 +3,7 @@ import "client-only";
 
 import { useState, useId } from "react";
 import type { ChangeEvent, FormEvent } from "react";
-import { ShadcnButton, ShadcnInput, Label } from "@/client/components/ui";
+import { Button, Input, Label } from "@/client/components/ui";
 
 interface BalanceSnapshotFormProps {
   politicalOrganizationId: string;
@@ -92,7 +92,7 @@ export default function BalanceSnapshotForm({
       <form onSubmit={handleSubmit} className="flex gap-4 items-start max-w-2xl">
         <div className="w-48">
           <Label htmlFor={dateInputId}>残高日付:</Label>
-          <ShadcnInput
+          <Input
             id={dateInputId}
             type="date"
             value={snapshotDate}
@@ -105,7 +105,7 @@ export default function BalanceSnapshotForm({
 
         <div className="w-48">
           <Label htmlFor={balanceInputId}>残高 (円):</Label>
-          <ShadcnInput
+          <Input
             id={balanceInputId}
             type="number"
             step={0.01}
@@ -117,12 +117,9 @@ export default function BalanceSnapshotForm({
         </div>
 
         <div className="mt-7">
-          <ShadcnButton
-            type="submit"
-            disabled={!snapshotDate || !balance || isSubmitting || !!dateError}
-          >
+          <Button type="submit" disabled={!snapshotDate || !balance || isSubmitting || !!dateError}>
             {isSubmitting ? "登録中..." : "残高を登録"}
-          </ShadcnButton>
+          </Button>
         </div>
       </form>
 

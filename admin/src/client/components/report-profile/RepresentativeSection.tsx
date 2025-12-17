@@ -2,14 +2,7 @@
 import "client-only";
 
 import type { OrganizationReportProfileDetails } from "@/server/contexts/report/domain/models/organization-report-profile";
-import {
-  ShadcnCard,
-  CardHeader,
-  CardTitle,
-  CardContent,
-  Label,
-  ShadcnInput,
-} from "@/client/components/ui";
+import { Card, CardHeader, CardTitle, CardContent, Label, Input } from "@/client/components/ui";
 
 interface RepresentativeSectionProps {
   details: OrganizationReportProfileDetails;
@@ -24,7 +17,7 @@ export function RepresentativeSection({ details, updateDetails }: Representative
   const accountant = details.accountant ?? { lastName: "", firstName: "" };
 
   return (
-    <ShadcnCard>
+    <Card>
       <CardHeader>
         <CardTitle>代表者・会計責任者</CardTitle>
       </CardHeader>
@@ -34,7 +27,7 @@ export function RepresentativeSection({ details, updateDetails }: Representative
           <div className="flex gap-4">
             <div className="flex-1 space-y-2">
               <Label className="text-muted-foreground">姓</Label>
-              <ShadcnInput
+              <Input
                 type="text"
                 value={representative.lastName}
                 onChange={(e) =>
@@ -52,7 +45,7 @@ export function RepresentativeSection({ details, updateDetails }: Representative
             </div>
             <div className="flex-1 space-y-2">
               <Label className="text-muted-foreground">名</Label>
-              <ShadcnInput
+              <Input
                 type="text"
                 value={representative.firstName}
                 onChange={(e) =>
@@ -76,7 +69,7 @@ export function RepresentativeSection({ details, updateDetails }: Representative
           <div className="flex gap-4">
             <div className="flex-1 space-y-2">
               <Label className="text-muted-foreground">姓</Label>
-              <ShadcnInput
+              <Input
                 type="text"
                 value={accountant.lastName}
                 onChange={(e) =>
@@ -91,7 +84,7 @@ export function RepresentativeSection({ details, updateDetails }: Representative
             </div>
             <div className="flex-1 space-y-2">
               <Label className="text-muted-foreground">名</Label>
-              <ShadcnInput
+              <Input
                 type="text"
                 value={accountant.firstName}
                 onChange={(e) =>
@@ -107,6 +100,6 @@ export function RepresentativeSection({ details, updateDetails }: Representative
           </div>
         </div>
       </CardContent>
-    </ShadcnCard>
+    </Card>
   );
 }

@@ -10,8 +10,8 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-  ShadcnButton,
-  ShadcnInput,
+  Button,
+  Input,
 } from "@/client/components/ui";
 import CsvPreview from "@/client/components/csv-import/CsvPreview";
 import type { PreviewMfCsvResult } from "@/server/contexts/data-import/application/usecases/preview-mf-csv-usecase";
@@ -139,7 +139,7 @@ export default function CsvUploadClient({
       </div>
       <div>
         <Label htmlFor={csvFileInputId}>CSV File:</Label>
-        <ShadcnInput
+        <Input
           id={csvFileInputId}
           className="file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
           type="file"
@@ -165,9 +165,9 @@ export default function CsvUploadClient({
           uploading;
 
         return (
-          <ShadcnButton disabled={isDisabled} type="submit">
+          <Button disabled={isDisabled} type="submit">
             {uploading ? "Processing…" : "このデータを保存する"}
-          </ShadcnButton>
+          </Button>
         );
       })()}
 

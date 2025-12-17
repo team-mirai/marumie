@@ -6,13 +6,13 @@ import type {
   OrganizationReportProfileDetails,
 } from "@/server/contexts/report/domain/models/organization-report-profile";
 import {
-  ShadcnButton,
-  ShadcnCard,
+  Button,
+  Card,
   CardHeader,
   CardTitle,
   CardContent,
   Label,
-  ShadcnInput,
+  Input,
 } from "@/client/components/ui";
 
 interface ContactPersonsSectionProps {
@@ -54,13 +54,13 @@ export function ContactPersonsSection({ details, updateDetails }: ContactPersons
   };
 
   return (
-    <ShadcnCard>
+    <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>事務担当者（最大3名）</CardTitle>
         {contactPersons.length < 3 && (
-          <ShadcnButton type="button" variant="ghost" size="sm" onClick={addContactPerson}>
+          <Button type="button" variant="ghost" size="sm" onClick={addContactPerson}>
             + 追加
-          </ShadcnButton>
+          </Button>
         )}
       </CardHeader>
       <CardContent className="space-y-4">
@@ -74,7 +74,7 @@ export function ContactPersonsSection({ details, updateDetails }: ContactPersons
           <div key={person.id} className="bg-card rounded-lg p-3 border border-border">
             <div className="flex justify-between items-center mb-2">
               <span className="text-sm text-muted-foreground">事務担当者 {index + 1}</span>
-              <ShadcnButton
+              <Button
                 type="button"
                 variant="ghost"
                 size="sm"
@@ -82,12 +82,12 @@ export function ContactPersonsSection({ details, updateDetails }: ContactPersons
                 className="text-destructive hover:text-destructive"
               >
                 削除
-              </ShadcnButton>
+              </Button>
             </div>
             <div className="grid grid-cols-3 gap-3">
               <div className="space-y-2">
                 <Label className="text-muted-foreground">姓</Label>
-                <ShadcnInput
+                <Input
                   type="text"
                   value={person.lastName}
                   onChange={(e) => updateContactPerson(index, { lastName: e.target.value })}
@@ -98,7 +98,7 @@ export function ContactPersonsSection({ details, updateDetails }: ContactPersons
               </div>
               <div className="space-y-2">
                 <Label className="text-muted-foreground">名</Label>
-                <ShadcnInput
+                <Input
                   type="text"
                   value={person.firstName}
                   onChange={(e) => updateContactPerson(index, { firstName: e.target.value })}
@@ -109,7 +109,7 @@ export function ContactPersonsSection({ details, updateDetails }: ContactPersons
               </div>
               <div className="space-y-2">
                 <Label className="text-muted-foreground">電話番号</Label>
-                <ShadcnInput
+                <Input
                   type="text"
                   value={person.tel}
                   onChange={(e) => updateContactPerson(index, { tel: e.target.value })}
@@ -122,6 +122,6 @@ export function ContactPersonsSection({ details, updateDetails }: ContactPersons
           </div>
         ))}
       </CardContent>
-    </ShadcnCard>
+    </Card>
   );
 }
