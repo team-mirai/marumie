@@ -1,7 +1,8 @@
 "use client";
 import "client-only";
 import { useState } from "react";
-import { Button, Input, Card } from "../ui";
+import type { ChangeEvent, FormEvent } from "react";
+import { ShadcnButton, ShadcnInput, ShadcnCard } from "../ui";
 import { apiClient } from "@/client/lib/api-client";
 import type { UserRole } from "@prisma/client";
 
@@ -44,7 +45,7 @@ export default function UserManagement({
     }
   };
 
-  const handleInviteUser = async (e: React.FormEvent) => {
+  const handleInviteUser = async (e: FormEvent) => {
     e.preventDefault();
     if (!inviteEmail.trim()) return;
 
@@ -67,26 +68,26 @@ export default function UserManagement({
   return (
     <div className="space-y-4">
       {/* Invite User Form */}
-      <Card>
+      <ShadcnCard className="p-4">
         <h2 className="text-lg font-medium text-white mb-4">新規ユーザー招待</h2>
         <form onSubmit={handleInviteUser} className="flex gap-4">
           <div className="flex-1">
-            <Input
+            <ShadcnInput
               type="email"
               value={inviteEmail}
-              onChange={(e) => setInviteEmail(e.target.value)}
+              onChange={(e: ChangeEvent<HTMLInputElement>) => setInviteEmail(e.target.value)}
               placeholder="メールアドレスを入力"
               disabled={isInviting}
               required
             />
           </div>
-          <Button type="submit" disabled={isInviting || !inviteEmail.trim()}>
+          <ShadcnButton type="submit" disabled={isInviting || !inviteEmail.trim()}>
             {isInviting ? "送信中..." : "招待を送信"}
-          </Button>
+          </ShadcnButton>
         </form>
-      </Card>
+      </ShadcnCard>
 
-      <Card className="overflow-hidden p-0">
+      <ShadcnCard className="overflow-hidden p-0">
         <table className="min-w-full divide-y divide-primary-border">
           <thead className="bg-primary-hover">
             <tr>
@@ -144,7 +145,7 @@ export default function UserManagement({
         {users.length === 0 && (
           <div className="text-center py-8 text-primary-muted">ユーザーが見つかりません</div>
         )}
-      </Card>
+      </ShadcnCard>
     </div>
   );
 }
