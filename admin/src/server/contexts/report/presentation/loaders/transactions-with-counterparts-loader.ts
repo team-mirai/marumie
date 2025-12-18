@@ -14,6 +14,7 @@ export interface LoadTransactionsWithCounterpartsInput {
   politicalOrganizationId: string;
   financialYear: number;
   unassignedOnly?: boolean;
+  aboveThresholdOnly?: boolean;
   categoryKey?: string;
   searchQuery?: string;
   page?: number;
@@ -40,6 +41,7 @@ export async function loadTransactionsWithCounterpartsData(
     input.politicalOrganizationId,
     String(input.financialYear),
     String(input.unassignedOnly ?? false),
+    String(input.aboveThresholdOnly ?? false),
     input.categoryKey ?? "",
     input.searchQuery ?? "",
     String(page),
@@ -58,6 +60,7 @@ export async function loadTransactionsWithCounterpartsData(
         politicalOrganizationId: input.politicalOrganizationId,
         financialYear: input.financialYear,
         unassignedOnly: input.unassignedOnly,
+        aboveThresholdOnly: input.aboveThresholdOnly,
         categoryKey: input.categoryKey,
         searchQuery: input.searchQuery,
         limit: perPage,

@@ -24,6 +24,11 @@ import type {
   TransactionWithCounterpartResult,
   UtilityExpenseTransaction,
 } from "@/server/contexts/report/domain/repositories/report-transaction-repository.interface";
+import {
+  COUNTERPART_REQUIRED_INCOME_CATEGORIES,
+  COUNTERPART_REQUIRED_EXPENSE_CATEGORIES,
+  COUNTERPART_DETAIL_REQUIRED_AMOUNT_THRESHOLD,
+} from "@/server/contexts/report/domain/models/counterpart-assignment-rules";
 import { PL_CATEGORIES } from "@/shared/utils/category-mapping";
 
 // カテゴリキー定数（shared/utils/category-mapping.ts の日本語キー経由で取得）
@@ -580,6 +585,7 @@ export class PrismaReportTransactionRepository implements IReportTransactionRepo
       politicalOrganizationId,
       financialYear,
       unassignedOnly,
+      aboveThresholdOnly = false,
       categoryKey,
       searchQuery,
       limit = 50,
@@ -594,16 +600,21 @@ export class PrismaReportTransactionRepository implements IReportTransactionRepo
       );
     }
 
-    // 設計ドキュメントに基づくCounterpart紐付け対象:
-    // - 支出先: すべてのexpense transaction
-    // - 借入先: loan income transaction (categoryKey: LOAN)
-    // - 本部・支部: grant income transaction (categoryKey: GRANT)
+    // ドメインルールを使用してCounterpart紐付け対象を定義
+    // - 支出先: 経常経費・政治活動費のカテゴリ
+    // - 借入先: loan income transaction
+    // - 本部・支部: grant income transaction
     // ※ 寄附者（個人からの寄附）は別テーブル（Donor）で管理するため対象外
     const counterpartTargetCondition: Prisma.TransactionWhereInput = {
       OR: [
-        { transactionType: "expense" },
-        { transactionType: "income", categoryKey: CATEGORY_KEYS.LOAN },
-        { transactionType: "income", categoryKey: CATEGORY_KEYS.GRANT },
+        {
+          transactionType: "expense",
+          categoryKey: { in: [...COUNTERPART_REQUIRED_EXPENSE_CATEGORIES] },
+        },
+        {
+          transactionType: "income",
+          categoryKey: { in: [...COUNTERPART_REQUIRED_INCOME_CATEGORIES] },
+        },
       ],
     };
 
@@ -635,6 +646,12 @@ export class PrismaReportTransactionRepository implements IReportTransactionRepo
     if (unassignedOnly) {
       conditions.push({
         transactionCounterparts: { none: {} },
+      });
+    }
+
+    if (aboveThresholdOnly) {
+      conditions.push({
+        debitAmount: { gte: COUNTERPART_DETAIL_REQUIRED_AMOUNT_THRESHOLD },
       });
     }
 
