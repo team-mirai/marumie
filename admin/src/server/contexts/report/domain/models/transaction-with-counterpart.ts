@@ -24,6 +24,7 @@ export interface TransactionWithCounterpartFilters {
   politicalOrganizationId: string;
   financialYear: number;
   unassignedOnly?: boolean;
+  aboveThresholdOnly?: boolean;
   categoryKey?: string;
   searchQuery?: string;
   limit?: number;
