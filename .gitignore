@@ -53,7 +53,7 @@ next-env.d.ts
 *.db
 *.db-journal
 prisma/dev.db*
-.claude
+.claude/settings.local.json
 
 admin/node_modules
 webapp/node_modules
