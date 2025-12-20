@@ -85,11 +85,8 @@ contexts/{コンテキスト名}/
 並行開発が必要な場合は wtp を使う。詳細は [docs/wtp-guide.md](docs/wtp-guide.md) を参照。
 
 ## GitHub操作ルール
-- ユーザーからPRを出して、と言われたときは、現在の作業のフィーチャーブランチを切りコミットを行ってからPRを出すようにする
-- developやmainへの直接pushは禁止です
-- Prismaのマイグレーションを含む差分は自動デプロイで環境を壊しうるので、ユーザーに許可を取ってから実行してください
-- ロジックにまつわる変更をしたあとのPushの前には、プロジェクトルートで　`npm run typecheck` と `npm run lint` を行ってからPushするようにしてください
-- PR作成時は `gh pr create` コマンドに `--base` オプションを付けず、デフォルトのベースブランチを使用してください
+
+PRを作成する際は [.claude/commands/pr.md](.claude/commands/pr.md) の手順に従うこと。
 
 ## 設計作業ルール
 
