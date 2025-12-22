@@ -7,5 +7,5 @@ export type {
   SetupPasswordRequest,
   SetupPasswordResponse,
   BalanceSnapshot,
-  XmlExportParams,
+  ExportReportParams,
 } from "./api-client";

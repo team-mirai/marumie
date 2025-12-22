@@ -3,12 +3,12 @@ import "client-only";
 
 import { useMemo, useState, useTransition } from "react";
 import type { PoliticalOrganization } from "@/shared/models/political-organization";
-import { Card, Button, Input, Label } from "@/client/components/ui";
+import { Button, Input, Label } from "@/client/components/ui";
 import { PoliticalOrganizationSelect } from "@/client/components/political-organizations/PoliticalOrganizationSelect";
 import { exportXml } from "@/server/contexts/report/presentation/actions/export-xml";
 import { apiClient } from "@/client/lib/api-client";
 
-interface XmlExportClientProps {
+interface ExportReportClientProps {
   organizations: PoliticalOrganization[];
 }
 
@@ -19,7 +19,7 @@ interface StatusMessage {
   message: string;
 }
 
-export function XmlExportClient({ organizations }: XmlExportClientProps) {
+export function ExportReportClient({ organizations }: ExportReportClientProps) {
   const initialFinancialYear = useMemo(() => new Date().getFullYear().toString(), []);
 
   const [selectedOrganizationId, setSelectedOrganizationId] = useState(organizations[0]?.id ?? "");
@@ -65,7 +65,7 @@ export function XmlExportClient({ organizations }: XmlExportClientProps) {
     setStatus(null);
     startDownloadTransition(async () => {
       try {
-        const { blob, filename } = await apiClient.downloadXmlExport({
+        const { blob, filename } = await apiClient.downloadReport({
           politicalOrganizationId: selectedOrganizationId,
           financialYear,
           sections: ["SYUUSHI07_06"],
@@ -96,22 +96,13 @@ export function XmlExportClient({ organizations }: XmlExportClientProps) {
 
   if (organizations.length === 0) {
     return (
-      <Card className="p-4">
-        <p className="text-white">政治団体が登録されていません。先に政治団体を作成してください。</p>
-      </Card>
+      <p className="text-white">政治団体が登録されていません。先に政治団体を作成してください。</p>
     );
   }
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold text-white mb-1">XML出力</h1>
-        <p className="text-muted-foreground">
-          14号様式(その6)「その他の収入」のみ対応。XML出力タブ第1弾としてα版です。
-        </p>
-      </div>
-
-      <Card className="space-y-4 p-4">
+      <div className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <PoliticalOrganizationSelect
             organizations={organizations}
@@ -163,9 +154,9 @@ export function XmlExportClient({ organizations }: XmlExportClientProps) {
             {status.message}
           </div>
         )}
-      </Card>
+      </div>
 
-      <Card className="space-y-3 p-4">
+      <div className="space-y-3">
         <div>
           <h2 className="text-lg font-medium text-white mb-1">XMLプレビュー</h2>
           <p className="text-sm text-muted-foreground">
@@ -175,7 +166,7 @@ export function XmlExportClient({ organizations }: XmlExportClientProps) {
         <pre className="bg-black/30 rounded-lg p-4 text-sm overflow-auto max-h-[420px] whitespace-pre-wrap text-muted-foreground">
           {previewXml || "プレビューを生成するとここにXMLが表示されます。"}
         </pre>
-      </Card>
+      </div>
     </div>
   );
 }

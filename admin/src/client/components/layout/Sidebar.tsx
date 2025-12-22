@@ -28,7 +28,7 @@ export default function Sidebar({
     { href: "/transactions", label: "取引一覧" },
     { href: "/balance-snapshots", label: "残高登録" },
     { href: "/upload-csv", label: "CSVアップロード" },
-    { href: "/xml-export", label: "XML出力" },
+    { href: "/export-report", label: "報告書エクスポート" },
     { href: "/users", label: "ユーザー管理", adminOnly: true },
   ];
 
