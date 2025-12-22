@@ -139,13 +139,13 @@ export function CounterpartCombobox({
 
   const handleCreateAndAssign = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newName.trim() || !newAddress.trim()) return;
+    if (!newName.trim()) return;
 
     setError(null);
     startTransition(async () => {
       const createResult = await createCounterpartAction({
         name: newName.trim(),
-        address: newAddress.trim(),
+        address: newAddress.trim() || null,
       });
 
       if (!createResult.success) {
@@ -157,7 +157,7 @@ export function CounterpartCombobox({
         setOptimisticCounterpart({
           id: createResult.counterpartId,
           name: newName.trim(),
-          address: newAddress.trim(),
+          address: newAddress.trim() || null,
         });
         setIsOpen(false);
         setIsCreateMode(false);
@@ -253,7 +253,7 @@ export function CounterpartCombobox({
                   htmlFor={`create-address-${transactionId}`}
                   className="block mb-1 text-sm text-muted-foreground"
                 >
-                  住所 <span className="text-red-500">*</span>
+                  住所
                 </label>
                 <input
                   type="text"
@@ -262,9 +262,8 @@ export function CounterpartCombobox({
                   onChange={(e) => setNewAddress(e.target.value)}
                   maxLength={MAX_ADDRESS_LENGTH}
                   className="bg-input text-white border border-border rounded-lg px-3 py-2 w-full text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                  placeholder="住所"
+                  placeholder="住所（任意）"
                   disabled={isPending}
-                  required
                 />
               </div>
 
@@ -283,9 +282,9 @@ export function CounterpartCombobox({
                 </button>
                 <button
                   type="submit"
-                  disabled={isPending || !newName.trim() || !newAddress.trim()}
+                  disabled={isPending || !newName.trim()}
                   className={`bg-primary text-white rounded-lg px-3 py-1.5 text-sm transition-colors ${
-                    isPending || !newName.trim() || !newAddress.trim()
+                    isPending || !newName.trim()
                       ? "opacity-60 cursor-not-allowed"
                       : "hover:bg-blue-600 cursor-pointer"
                   }`}
