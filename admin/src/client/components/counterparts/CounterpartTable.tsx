@@ -4,7 +4,7 @@ import "client-only";
 import { useState } from "react";
 import type { CounterpartWithUsage } from "@/server/contexts/report/domain/models/counterpart";
 import { Button } from "@/client/components/ui";
-import { EditCounterpartDialog } from "./EditCounterpartDialog";
+import { CounterpartFormDialog } from "./CounterpartFormDialog";
 import { DeleteCounterpartButton } from "./DeleteCounterpartButton";
 
 interface CounterpartTableProps {
@@ -69,10 +69,11 @@ export function CounterpartTable({ counterparts, onUpdate }: CounterpartTablePro
       </div>
 
       {editingCounterpart && (
-        <EditCounterpartDialog
+        <CounterpartFormDialog
+          mode="edit"
           counterpart={editingCounterpart}
           onClose={() => setEditingCounterpart(null)}
-          onUpdate={() => {
+          onSuccess={() => {
             setEditingCounterpart(null);
             onUpdate();
           }}

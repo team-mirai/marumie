@@ -7,7 +7,16 @@ import type {
   AddressCandidate,
   SearchResult,
 } from "@/server/contexts/report/infrastructure/llm/types";
-import { Button, Input, Label } from "@/client/components/ui";
+import {
+  Button,
+  Input,
+  Label,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/client/components/ui";
 
 interface AddressSearchDialogProps {
   companyName: string;
@@ -30,12 +39,6 @@ export function AddressSearchDialog({
   const [editedAddress, setEditedAddress] = useState(currentAddress);
   const [error, setError] = useState<string | null>(null);
 
-  const handleClose = useCallback(() => {
-    if (!isSearching) {
-      onClose();
-    }
-  }, [isSearching, onClose]);
-
   const doSearch = useCallback(
     async (searchHint?: string) => {
       setIsSearching(true);
@@ -54,16 +57,6 @@ export function AddressSearchDialog({
     },
     [companyName],
   );
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        handleClose();
-      }
-    };
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [handleClose]);
 
   useEffect(() => {
     doSearch();
@@ -108,20 +101,18 @@ export function AddressSearchDialog({
     window.open(`https://www.google.com/search?q=${query}`, "_blank");
   };
 
+  const handleOpenChange = (open: boolean) => {
+    if (!open && !isSearching) {
+      onClose();
+    }
+  };
+
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-card rounded-xl p-6 w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold text-white">住所検索: {companyName}</h2>
-          <button
-            type="button"
-            onClick={handleClose}
-            className="text-gray-400 hover:text-white"
-            disabled={isSearching}
-          >
-            ✕
-          </button>
-        </div>
+    <Dialog open={true} onOpenChange={handleOpenChange}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>住所検索: {companyName}</DialogTitle>
+        </DialogHeader>
 
         <div className="flex gap-2 mb-4">
           <div className="flex-1">
@@ -265,8 +256,8 @@ export function AddressSearchDialog({
           </>
         )}
 
-        <div className="flex gap-3 justify-end pt-2">
-          <Button type="button" variant="secondary" onClick={handleClose} disabled={isSearching}>
+        <DialogFooter>
+          <Button type="button" variant="secondary" onClick={onClose} disabled={isSearching}>
             キャンセル
           </Button>
           <Button
@@ -276,8 +267,8 @@ export function AddressSearchDialog({
           >
             この住所を保存
           </Button>
-        </div>
-      </div>
-    </div>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
