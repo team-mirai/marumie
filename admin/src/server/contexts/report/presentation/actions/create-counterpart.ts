@@ -25,7 +25,7 @@ export async function createCounterpartAction(
       return { success: false, errors: result.errors };
     }
 
-    revalidatePath("/counterparts/master");
+    revalidatePath("/counterparts");
     return { success: true, counterpartId: result.counterpart?.id };
   } catch (error) {
     console.error("Error creating counterpart:", error);

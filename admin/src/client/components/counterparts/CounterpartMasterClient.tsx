@@ -35,7 +35,7 @@ export function CounterpartMasterClient({
       params.set("q", searchInput.trim());
     }
     params.set("page", "1");
-    router.push(`/counterparts/master?${params.toString()}`);
+    router.push(`/counterparts?${params.toString()}`);
   };
 
   const handlePageChange = (newPage: number) => {
@@ -44,7 +44,7 @@ export function CounterpartMasterClient({
       params.set("q", searchQuery);
     }
     params.set("page", newPage.toString());
-    router.push(`/counterparts/master?${params.toString()}`);
+    router.push(`/counterparts?${params.toString()}`);
   };
 
   const handleUpdate = () => {
@@ -85,7 +85,7 @@ export function CounterpartMasterClient({
               type="button"
               onClick={() => {
                 setSearchInput("");
-                router.push("/counterparts/master");
+                router.push("/counterparts");
               }}
               className="bg-secondary text-white border border-border hover:bg-secondary/80 rounded-lg px-4 py-2.5 font-medium transition-colors duration-200 cursor-pointer"
             >

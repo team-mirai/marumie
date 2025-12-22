@@ -1,5 +1,7 @@
 "use server";
 
+import "server-only";
+
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/server/contexts/shared/infrastructure/prisma";
 import {
@@ -24,7 +26,7 @@ export async function assignCounterpartAction(
       return { success: false, errors: result.errors };
     }
 
-    revalidatePath("/counterparts/assignment");
+    revalidatePath("/assign/counterparts");
     return { success: true };
   } catch (error) {
     console.error("Error assigning counterpart:", error);
@@ -46,7 +48,7 @@ export async function unassignCounterpartAction(
       return { success: false, errors: result.errors };
     }
 
-    revalidatePath("/counterparts/assignment");
+    revalidatePath("/assign/counterparts");
     return { success: true };
   } catch (error) {
     console.error("Error unassigning counterpart:", error);

@@ -25,7 +25,7 @@ export async function updateCounterpartAction(
       return { success: false, errors: result.errors };
     }
 
-    revalidatePath("/counterparts/master");
+    revalidatePath("/counterparts");
     return { success: true };
   } catch (error) {
     console.error("Error updating counterpart:", error);

@@ -53,8 +53,8 @@ export default function Sidebar({
     {
       title: "報告書",
       items: [
-        { href: "/counterparts/master", label: "取引先マスタ" },
-        { href: "/counterparts/assignment", label: "取引先紐付け" },
+        { href: "/counterparts", label: "取引先マスタ" },
+        { href: "/assign/counterparts", label: "取引先紐付け" },
         { href: "/export-report", label: "報告書エクスポート" },
       ],
     },
