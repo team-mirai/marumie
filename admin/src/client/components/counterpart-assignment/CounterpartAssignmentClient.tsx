@@ -25,6 +25,8 @@ import {
 import { PoliticalOrganizationSelect } from "@/client/components/political-organizations/PoliticalOrganizationSelect";
 import { PL_CATEGORIES } from "@/shared/utils/category-mapping";
 
+const ALL_CATEGORIES_VALUE = "__all__";
+
 interface CounterpartAssignmentClientProps {
   organizations: PoliticalOrganization[];
   initialTransactions: TransactionWithCounterpart[];
@@ -64,7 +66,9 @@ export function CounterpartAssignmentClient({
     initialFilters.financialYear || initialFinancialYear,
   );
   const [unassignedOnly, setUnassignedOnly] = useState(initialFilters.unassignedOnly);
-  const [categoryKey, setCategoryKey] = useState(initialFilters.categoryKey);
+  const [categoryKey, setCategoryKey] = useState(
+    initialFilters.categoryKey || ALL_CATEGORIES_VALUE,
+  );
   const [searchQuery, setSearchQuery] = useState(initialFilters.searchQuery);
   const [sortField, setSortField] = useState(initialFilters.sortField);
   const [sortOrder, setSortOrder] = useState(initialFilters.sortOrder);
@@ -76,7 +80,7 @@ export function CounterpartAssignmentClient({
   }, [initialTransactions, rowSelection]);
 
   const categoryOptions = useMemo(() => {
-    const options = [{ value: "", label: "すべてのカテゴリ" }];
+    const options = [{ value: ALL_CATEGORIES_VALUE, label: "すべてのカテゴリ" }];
     for (const [, value] of Object.entries(PL_CATEGORIES)) {
       if (value.type === "expense" || value.type === "income") {
         options.push({
@@ -151,8 +155,9 @@ export function CounterpartAssignmentClient({
 
   const handleCategoryChange = (value: string) => {
     setCategoryKey(value);
+    const categoryForUrl = value === ALL_CATEGORIES_VALUE ? "" : value;
     startTransition(() => {
-      router.push(buildUrl({ category: value, page: 1 }));
+      router.push(buildUrl({ category: categoryForUrl, page: 1 }));
     });
   };
 
