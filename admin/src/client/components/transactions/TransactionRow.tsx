@@ -147,11 +147,11 @@ export function TransactionRow({ transaction }: TransactionRowProps) {
         ¥{transaction.credit_amount.toLocaleString()}
       </td>
       <td className="px-2 py-3 text-sm text-white">
-        <span
-          className={`px-2 py-1 rounded text-white text-xs font-medium ${getTypeBadgeClass(transaction.transaction_type)}`}
+        <div
+          className={`inline-block px-2 py-1 rounded text-white text-xs font-medium ${getTypeBadgeClass(transaction.transaction_type)}`}
         >
           {getTypeLabel(transaction.transaction_type)}
-        </span>
+        </div>
       </td>
       <td className="px-2 py-3 text-sm text-white">
         {(() => {
