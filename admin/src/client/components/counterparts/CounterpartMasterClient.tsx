@@ -5,7 +5,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { CounterpartWithUsage } from "@/server/contexts/report/domain/models/counterpart";
 import { CounterpartTable } from "@/client/components/counterparts/CounterpartTable";
-import { CreateCounterpartDialog } from "@/client/components/counterparts/CreateCounterpartDialog";
+import { CounterpartFormDialog } from "@/client/components/counterparts/CounterpartFormDialog";
 
 interface CounterpartMasterClientProps {
   initialCounterparts: CounterpartWithUsage[];
@@ -135,9 +135,10 @@ export function CounterpartMasterClient({
       )}
 
       {isCreateDialogOpen && (
-        <CreateCounterpartDialog
+        <CounterpartFormDialog
+          mode="create"
           onClose={() => setIsCreateDialogOpen(false)}
-          onCreate={() => {
+          onSuccess={() => {
             setIsCreateDialogOpen(false);
             handleUpdate();
           }}
