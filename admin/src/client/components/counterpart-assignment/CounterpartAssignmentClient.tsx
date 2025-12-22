@@ -101,12 +101,11 @@ export function CounterpartAssignmentClient({
     const searchParams = new URLSearchParams();
     searchParams.set("orgId", params.orgId ?? selectedOrganizationId);
     searchParams.set("year", String(params.year ?? financialYear));
-    if (params.unassigned ?? unassignedOnly) {
-      searchParams.set("unassigned", "true");
-    }
-    if (params.counterpartRequired ?? counterpartRequiredOnly) {
-      searchParams.set("counterpartRequired", "true");
-    }
+    searchParams.set("unassigned", String(params.unassigned ?? unassignedOnly));
+    searchParams.set(
+      "counterpartRequired",
+      String(params.counterpartRequired ?? counterpartRequiredOnly),
+    );
     if (params.category ?? categoryKey) {
       searchParams.set("category", params.category ?? categoryKey);
     }

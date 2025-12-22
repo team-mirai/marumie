@@ -77,8 +77,8 @@ export default async function CounterpartAssignmentPage({
 
   const politicalOrganizationId = params.orgId || organizations[0].id;
   const financialYear = params.year ? Number.parseInt(params.year, 10) : new Date().getFullYear();
-  const unassignedOnly = params.unassigned === "true";
-  const counterpartRequiredOnly = params.counterpartRequired === "true";
+  const unassignedOnly = params.unassigned !== "false";
+  const counterpartRequiredOnly = params.counterpartRequired !== "false";
   const categoryKey = params.category || "";
   const searchQuery = params.search || "";
   const sortField =
