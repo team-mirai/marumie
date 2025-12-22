@@ -33,15 +33,13 @@ export default async function PoliticalOrganizationsPage() {
 
       {organizations.length > 0 && (
         <div className="mt-5">
-          <div className="grid gap-3">
+          <div className="grid gap-4">
             {organizations.map((org) => (
-              <div key={org.id} className="bg-input rounded-xl p-4">
+              <div key={org.id} className="bg-card rounded-lg p-6 border border-border">
                 <div className="flex justify-between items-start gap-4">
-                  <div className="flex-1">
-                    <h3 className="text-lg font-medium text-white mb-2 mt-0">{org.displayName}</h3>
-                    {org.description && (
-                      <p className="text-muted-foreground mb-3 mt-0">{org.description}</p>
-                    )}
+                  <div className="flex-1 space-y-3">
+                    <h3 className="text-lg font-medium text-white">{org.displayName}</h3>
+                    {org.description && <p className="text-muted-foreground">{org.description}</p>}
                     <div className="text-muted-foreground text-sm">
                       作成日: {new Date(org.createdAt).toLocaleDateString("ja-JP")}
                     </div>
@@ -49,7 +47,7 @@ export default async function PoliticalOrganizationsPage() {
                   <div className="flex gap-2">
                     <Link
                       href={`/political-organizations/${org.id}`}
-                      className="bg-secondary text-white no-underline text-sm px-4 py-2 rounded-lg hover:bg-secondary transition-colors duration-200"
+                      className="bg-secondary text-white no-underline text-sm px-4 py-2 rounded-lg hover:bg-secondary/80 transition-colors duration-200"
                     >
                       編集
                     </Link>
