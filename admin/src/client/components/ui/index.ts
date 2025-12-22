@@ -63,3 +63,9 @@ export {
   TooltipProvider,
 } from "@/client/components/ui/tooltip";
 export { Toggle, toggleVariants } from "@/client/components/ui/toggle";
+export {
+  Tabs,
+  TabsList,
+  TabsTrigger,
+  TabsContent,
+} from "@/client/components/ui/tabs";

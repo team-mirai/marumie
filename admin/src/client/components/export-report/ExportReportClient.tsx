@@ -3,10 +3,22 @@ import "client-only";
 
 import { useMemo, useState, useTransition } from "react";
 import type { PoliticalOrganization } from "@/shared/models/political-organization";
-import { Button, Card, Input, Label } from "@/client/components/ui";
+import {
+  Button,
+  Card,
+  Input,
+  Label,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/client/components/ui";
 import { PoliticalOrganizationSelect } from "@/client/components/political-organizations/PoliticalOrganizationSelect";
 import { exportXml } from "@/server/contexts/report/presentation/actions/export-xml";
 import { apiClient } from "@/client/lib/api-client";
+import type { ReportData } from "@/server/contexts/report/domain/models/report-data";
+import { XmlPreview } from "./XmlPreview";
+import { ReportDataPreview } from "./ReportDataPreview";
 
 interface ExportReportClientProps {
   organizations: PoliticalOrganization[];
@@ -19,12 +31,17 @@ interface StatusMessage {
   message: string;
 }
 
+interface PreviewData {
+  xml: string;
+  reportData: ReportData | null;
+}
+
 export function ExportReportClient({ organizations }: ExportReportClientProps) {
   const initialFinancialYear = useMemo(() => new Date().getFullYear().toString(), []);
 
   const [selectedOrganizationId, setSelectedOrganizationId] = useState(organizations[0]?.id ?? "");
   const [financialYear, setFinancialYear] = useState(initialFinancialYear);
-  const [previewXml, setPreviewXml] = useState("");
+  const [previewData, setPreviewData] = useState<PreviewData>({ xml: "", reportData: null });
   const [status, setStatus] = useState<StatusMessage | null>(null);
   const [isDownloading, startDownloadTransition] = useTransition();
   const [isPreviewing, setIsPreviewing] = useState(false);
@@ -44,7 +61,7 @@ export function ExportReportClient({ organizations }: ExportReportClientProps) {
         politicalOrganizationId: selectedOrganizationId,
         financialYear: Number.parseInt(financialYear, 10),
       });
-      setPreviewXml(result.xml);
+      setPreviewData({ xml: result.xml, reportData: result.reportData });
       setStatus({ type: "success", message: "プレビューを更新しました" });
     } catch (error) {
       console.error(error);
@@ -161,17 +178,24 @@ export function ExportReportClient({ organizations }: ExportReportClientProps) {
         )}
       </div>
 
-      <div className="space-y-3">
-        <div>
-          <h2 className="text-lg font-medium text-white mb-1">XMLプレビュー</h2>
-          <p className="text-sm text-muted-foreground">
-            プレビューはUTF-8で表示しています。実際のファイルはShift_JISで出力されます。
-          </p>
-        </div>
-        <pre className="bg-black/30 rounded-lg p-4 text-sm overflow-auto max-h-[420px] whitespace-pre-wrap text-muted-foreground">
-          {previewXml || "プレビューを生成するとここにXMLが表示されます。"}
-        </pre>
-      </div>
+      <Tabs defaultValue="table" className="w-full">
+        <TabsList>
+          <TabsTrigger value="table">表形式プレビュー</TabsTrigger>
+          <TabsTrigger value="xml">XMLプレビュー</TabsTrigger>
+        </TabsList>
+        <TabsContent value="table">
+          {previewData.reportData ? (
+            <ReportDataPreview reportData={previewData.reportData} />
+          ) : (
+            <div className="text-muted-foreground p-4">
+              プレビューを生成すると表形式で確認できます。
+            </div>
+          )}
+        </TabsContent>
+        <TabsContent value="xml">
+          <XmlPreview xml={previewData.xml} />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
