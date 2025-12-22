@@ -22,7 +22,7 @@ export function EditCounterpartDialog({
   onUpdate,
 }: EditCounterpartDialogProps) {
   const [name, setName] = useState(counterpart.name);
-  const [address, setAddress] = useState(counterpart.address);
+  const [address, setAddress] = useState(counterpart.address ?? "");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
