@@ -12,11 +12,9 @@ export default async function LoginPage({
   const error = params?.error ?? "";
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        <LoginForm action={loginWithPassword} error={error} />
-        <InviteProcessor />
-      </div>
+    <div className="h-full flex items-center justify-center">
+      <LoginForm action={loginWithPassword} error={error} />
+      <InviteProcessor />
     </div>
   );
 }
