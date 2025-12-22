@@ -20,7 +20,7 @@ export function CreateCounterpartDialog({ onClose, onCreate }: CreateCounterpart
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const isFormValid = name.trim() !== "" && address.trim() !== "";
+  const isFormValid = name.trim() !== "";
 
   const handleClose = useCallback(() => {
     if (!isLoading) {
@@ -48,7 +48,7 @@ export function CreateCounterpartDialog({ onClose, onCreate }: CreateCounterpart
 
       const result = await createCounterpartAction({
         name: name.trim(),
-        address: address.trim(),
+        address: address.trim() || null,
       });
 
       if (result.success) {
@@ -92,18 +92,15 @@ export function CreateCounterpartDialog({ onClose, onCreate }: CreateCounterpart
           </div>
 
           <div>
-            <Label htmlFor="create-address">
-              住所 <span className="text-red-500">*</span>
-            </Label>
+            <Label htmlFor="create-address">住所</Label>
             <Input
               type="text"
               id="create-address"
               value={address}
               onChange={(e) => setAddress(e.target.value)}
               maxLength={MAX_ADDRESS_LENGTH}
-              placeholder="住所を入力"
+              placeholder="住所を入力（任意）"
               disabled={isLoading}
-              required
             />
           </div>
 

@@ -22,13 +22,13 @@ export function EditCounterpartDialog({
   onUpdate,
 }: EditCounterpartDialogProps) {
   const [name, setName] = useState(counterpart.name);
-  const [address, setAddress] = useState(counterpart.address);
+  const [address, setAddress] = useState(counterpart.address ?? "");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim() || !address.trim()) return;
+    if (!name.trim()) return;
 
     try {
       setIsLoading(true);
@@ -36,7 +36,7 @@ export function EditCounterpartDialog({
 
       const result = await updateCounterpartAction(counterpart.id, {
         name: name.trim(),
-        address: address.trim(),
+        address: address.trim() || null,
       });
 
       if (result.success) {
@@ -80,18 +80,15 @@ export function EditCounterpartDialog({
           </div>
 
           <div>
-            <Label htmlFor="edit-address">
-              住所 <span className="text-red-500">*</span>
-            </Label>
+            <Label htmlFor="edit-address">住所</Label>
             <Input
               type="text"
               id="edit-address"
               value={address}
               onChange={(e) => setAddress(e.target.value)}
               maxLength={MAX_ADDRESS_LENGTH}
-              placeholder="住所を入力"
+              placeholder="住所を入力（任意）"
               disabled={isLoading}
-              required
             />
           </div>
 
@@ -103,7 +100,7 @@ export function EditCounterpartDialog({
             <Button type="button" variant="secondary" onClick={onClose} disabled={isLoading}>
               キャンセル
             </Button>
-            <Button type="submit" disabled={isLoading || !name.trim() || !address.trim()}>
+            <Button type="submit" disabled={isLoading || !name.trim()}>
               {isLoading ? "保存中..." : "保存"}
             </Button>
           </div>

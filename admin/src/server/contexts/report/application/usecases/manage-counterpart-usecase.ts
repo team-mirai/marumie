@@ -60,9 +60,10 @@ export class CreateCounterpartUsecase {
   constructor(private repository: ICounterpartRepository) {}
 
   async execute(input: CreateCounterpartInput): Promise<CreateCounterpartResult> {
+    const trimmedAddress = input.address?.trim() || null;
     const normalizedInput = {
       name: input.name.trim(),
-      address: input.address.trim(),
+      address: trimmedAddress,
     };
 
     const validationErrors = validateCounterpartInput(normalizedInput);
@@ -102,7 +103,9 @@ export class UpdateCounterpartUsecase {
     }
 
     const newName = input.name?.trim() ?? existing.name;
-    const newAddress = input.address?.trim() ?? existing.address;
+    // undefinedなら既存値を維持、それ以外（nullや文字列）はtrim後に空文字ならnullに正規化
+    const newAddress =
+      input.address === undefined ? existing.address : input.address?.trim() || null;
 
     const validationErrors = validateCounterpartInput({
       name: newName,
