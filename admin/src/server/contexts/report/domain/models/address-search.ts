@@ -13,30 +13,19 @@ export interface CounterpartAddressSearchResult {
   searchQuery: string;
 }
 
-export type SearchErrorType = "API_ERROR" | "TIMEOUT" | "RATE_LIMIT" | "NO_RESULTS";
-
-export interface ApiError {
-  type: "API_ERROR";
-  message: string;
-  retryable: boolean;
-}
-
-export interface TimeoutError {
-  type: "TIMEOUT";
-  message: string;
-}
-
-export interface RateLimitError {
-  type: "RATE_LIMIT";
-  retryAfter: number;
-}
+export type SearchErrorType = "NO_RESULTS" | "SEARCH_FAILED";
 
 export interface NoResultsError {
   type: "NO_RESULTS";
   message: string;
 }
 
-export type SearchError = ApiError | TimeoutError | RateLimitError | NoResultsError;
+export interface SearchFailedError {
+  type: "SEARCH_FAILED";
+  message: string;
+}
+
+export type SearchError = NoResultsError | SearchFailedError;
 
 export type SearchResult =
   | { success: true; data: CounterpartAddressSearchResult }

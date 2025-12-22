@@ -58,16 +58,7 @@ function getConfidenceColor(confidence: AddressCandidate["confidence"]): string 
 }
 
 function getErrorMessage(error: SearchError): string {
-  switch (error.type) {
-    case "API_ERROR":
-      return error.message;
-    case "TIMEOUT":
-      return error.message;
-    case "RATE_LIMIT":
-      return `レート制限に達しました。${error.retryAfter}秒後に再試行してください。`;
-    case "NO_RESULTS":
-      return error.message;
-  }
+  return error.message;
 }
 
 function buildGoogleSearchUrl(companyName: string, address: string): string {
@@ -191,7 +182,7 @@ export function AddressSearchDialog({
           {searchState.status === "error" && (
             <div className="p-3 bg-red-900/20 border border-red-900/30 rounded-lg text-red-400">
               {getErrorMessage(searchState.error)}
-              {searchState.error.type === "API_ERROR" && searchState.error.retryable && (
+              {searchState.error.type === "SEARCH_FAILED" && (
                 <Button variant="outline" size="sm" className="ml-2" onClick={handleSearch}>
                   再試行
                 </Button>
