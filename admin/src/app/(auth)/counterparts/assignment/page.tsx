@@ -4,6 +4,28 @@ import { loadPoliticalOrganizationsData } from "@/server/contexts/shared/present
 import { loadTransactionsWithCounterpartsData } from "@/server/contexts/report/presentation/loaders/transactions-with-counterparts-loader";
 import { loadAllCounterpartsData } from "@/server/contexts/report/presentation/loaders/counterparts-loader";
 import { CounterpartAssignmentClient } from "@/client/components/counterpart-assignment/CounterpartAssignmentClient";
+import {
+  COUNTERPART_REQUIRED_INCOME_CATEGORIES,
+  COUNTERPART_REQUIRED_EXPENSE_CATEGORIES,
+} from "@/server/contexts/report/domain/models/counterpart-assignment-rules";
+import { PL_CATEGORIES } from "@/shared/utils/category-mapping";
+
+/**
+ * Counterpart紐付け対象カテゴリのオプションを生成
+ */
+function buildCategoryOptions(): { value: string; label: string }[] {
+  const counterpartCategories = new Set([
+    ...COUNTERPART_REQUIRED_INCOME_CATEGORIES,
+    ...COUNTERPART_REQUIRED_EXPENSE_CATEGORIES,
+  ]);
+
+  return Object.values(PL_CATEGORIES)
+    .filter((mapping) => counterpartCategories.has(mapping.key))
+    .map((mapping) => ({
+      value: mapping.key,
+      label: mapping.shortLabel || mapping.category,
+    }));
+}
 
 interface CounterpartAssignmentPageProps {
   searchParams: Promise<{
@@ -26,6 +48,8 @@ export default async function CounterpartAssignmentPage({
 
   const allCounterparts = await loadAllCounterpartsData();
 
+  const categoryOptions = buildCategoryOptions();
+
   if (organizations.length === 0) {
     return (
       <CounterpartAssignmentClient
@@ -44,6 +68,7 @@ export default async function CounterpartAssignmentPage({
           sortOrder: "asc",
         }}
         allCounterparts={allCounterparts}
+        categoryOptions={categoryOptions}
       />
     );
   }
@@ -88,6 +113,7 @@ export default async function CounterpartAssignmentPage({
         sortField,
         sortOrder,
       }}
+      categoryOptions={categoryOptions}
       allCounterparts={allCounterparts}
     />
   );

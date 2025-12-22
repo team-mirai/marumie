@@ -22,20 +22,21 @@ export const COUNTERPART_REQUIRED_INCOME_CATEGORIES = [
 ] as const;
 
 /**
- * Counterpart紐づけが必要な支出カテゴリ
- * 経常経費（SYUUSHI07_14）と政治活動費（SYUUSHI07_15）のすべて
- *
- * ※ キーは shared/utils/category-mapping.ts の PL_CATEGORIES.key と一致させる
+ * 経常経費カテゴリ（SYUUSHI07_14）- 閾値10万円
  */
-export const COUNTERPART_REQUIRED_EXPENSE_CATEGORIES = [
-  // 経常経費 (SYUUSHI07_14)
+export const ROUTINE_EXPENSE_CATEGORIES = [
   // biome-ignore lint/complexity/useLiteralKeys: 日本語キー
   PL_CATEGORIES["光熱水費"].key,
   // biome-ignore lint/complexity/useLiteralKeys: 日本語キー
   PL_CATEGORIES["備品・消耗品費"].key,
   // biome-ignore lint/complexity/useLiteralKeys: 日本語キー
   PL_CATEGORIES["事務所費"].key,
-  // 政治活動費 (SYUUSHI07_15)
+] as const;
+
+/**
+ * 政治活動費カテゴリ（SYUUSHI07_15）- 閾値5万円
+ */
+export const POLITICAL_ACTIVITY_EXPENSE_CATEGORIES = [
   // biome-ignore lint/complexity/useLiteralKeys: 日本語キー
   PL_CATEGORIES["組織活動費"].key,
   // biome-ignore lint/complexity/useLiteralKeys: 日本語キー
@@ -56,6 +57,17 @@ export const COUNTERPART_REQUIRED_EXPENSE_CATEGORIES = [
   PL_CATEGORIES["その他の経費"].key,
 ] as const;
 
+/**
+ * Counterpart紐づけが必要な支出カテゴリ
+ * 経常経費（SYUUSHI07_14）と政治活動費（SYUUSHI07_15）のすべて
+ *
+ * ※ キーは shared/utils/category-mapping.ts の PL_CATEGORIES.key と一致させる
+ */
+export const COUNTERPART_REQUIRED_EXPENSE_CATEGORIES = [
+  ...ROUTINE_EXPENSE_CATEGORIES,
+  ...POLITICAL_ACTIVITY_EXPENSE_CATEGORIES,
+] as const;
+
 export type CounterpartRequiredIncomeCategory =
   (typeof COUNTERPART_REQUIRED_INCOME_CATEGORIES)[number];
 
@@ -73,12 +85,12 @@ export type CounterpartRequiredCategory =
  * 支払先の氏名・住所を明細に記載する必要があります。
  *
  * 参考: docs/report_format.md
- * - SYUUSHI07_06（その他の収入）: 10万円以上
- * - SYUUSHI07_14（経常経費）、SYUUSHI07_15（政治活動費）:
- *   報告書には「その他の支出（SONOTA_GK）」として10万円未満を合算する項目があり、
- *   明細が必要なのは実質的に高額な支出
+ * - 経常経費（SYUUSHI07_14）: 10万円以上
+ * - 政治活動費（SYUUSHI07_15）: 5万円以上
+ * - 収入（借入金・交付金）: 閾値なし（すべて記載）
  */
-export const COUNTERPART_DETAIL_REQUIRED_AMOUNT_THRESHOLD = 100_000;
+export const ROUTINE_EXPENSE_THRESHOLD = 100_000;
+export const POLITICAL_ACTIVITY_EXPENSE_THRESHOLD = 50_000;
 
 /**
  * トランザクションがCounterpart紐づけ対象かどうかを判定
@@ -111,20 +123,45 @@ export function isCounterpartRequired(
 }
 
 /**
+ * カテゴリに応じた閾値を取得
+ *
+ * @param categoryKey - カテゴリキー
+ * @returns 閾値（円）。収入カテゴリの場合は0（すべて記載必須）
+ */
+export function getThresholdForCategory(categoryKey: string): number {
+  if (
+    ROUTINE_EXPENSE_CATEGORIES.includes(categoryKey as (typeof ROUTINE_EXPENSE_CATEGORIES)[number])
+  ) {
+    return ROUTINE_EXPENSE_THRESHOLD;
+  }
+  if (
+    POLITICAL_ACTIVITY_EXPENSE_CATEGORIES.includes(
+      categoryKey as (typeof POLITICAL_ACTIVITY_EXPENSE_CATEGORIES)[number],
+    )
+  ) {
+    return POLITICAL_ACTIVITY_EXPENSE_THRESHOLD;
+  }
+  // 収入カテゴリ（借入金・交付金）は閾値なし
+  return 0;
+}
+
+/**
  * トランザクション金額が明細記載閾値を超えているかどうかを判定
  *
+ * @param categoryKey - カテゴリキー
  * @param amount - 金額（円）
  * @returns 閾値以上の場合true
  *
  * @example
  * ```typescript
- * isAboveDetailThreshold(150_000) // true
- * isAboveDetailThreshold(50_000)  // false
- * isAboveDetailThreshold(100_000) // true（閾値ちょうども含む）
+ * isAboveDetailThreshold('expense_office_expenses', 150_000) // true（経常経費、10万円以上）
+ * isAboveDetailThreshold('expense_office_expenses', 50_000)  // false（経常経費、10万円未満）
+ * isAboveDetailThreshold('expense_organization_activities', 50_000) // true（政治活動費、5万円以上）
  * ```
  */
-export function isAboveDetailThreshold(amount: number): boolean {
-  return amount >= COUNTERPART_DETAIL_REQUIRED_AMOUNT_THRESHOLD;
+export function isAboveDetailThreshold(categoryKey: string, amount: number): boolean {
+  const threshold = getThresholdForCategory(categoryKey);
+  return amount >= threshold;
 }
 
 /**
@@ -151,5 +188,8 @@ export function requiresCounterpartDetail(
   categoryKey: string,
   amount: number,
 ): boolean {
-  return isCounterpartRequired(transactionType, categoryKey) && isAboveDetailThreshold(amount);
+  return (
+    isCounterpartRequired(transactionType, categoryKey) &&
+    isAboveDetailThreshold(categoryKey, amount)
+  );
 }

@@ -7,6 +7,7 @@ import {
   createDefaultSuggester,
 } from "@/server/contexts/report/application/services/counterpart-suggester";
 import { PrismaCounterpartRepository } from "@/server/contexts/report/infrastructure/repositories/prisma-counterpart.repository";
+import { requiresCounterpartDetail } from "@/server/contexts/report/domain/models/counterpart-assignment-rules";
 
 export interface SuggestCounterpartInput {
   transactionId: string;
@@ -56,12 +57,13 @@ export class SuggestCounterpartUsecase {
     }
 
     const firstCounterpart = transaction.transactionCounterparts[0];
+    const transactionType = transaction.transactionType as "income" | "expense";
     const transactionWithCounterpart: TransactionWithCounterpart = {
       id: transaction.id.toString(),
       transactionNo: transaction.transactionNo,
       transactionDate: transaction.transactionDate,
       financialYear: transaction.financialYear,
-      transactionType: transaction.transactionType as "income" | "expense",
+      transactionType,
       categoryKey: transaction.debitAccount,
       friendlyCategory: transaction.friendlyCategory,
       label: transaction.label,
@@ -78,6 +80,11 @@ export class SuggestCounterpartUsecase {
             address: firstCounterpart.counterpart.address,
           }
         : null,
+      requiresCounterpart: requiresCounterpartDetail(
+        transactionType,
+        transaction.debitAccount,
+        Number(transaction.debitAmount),
+      ),
     };
 
     const repository = new PrismaCounterpartRepository(this.prisma);
