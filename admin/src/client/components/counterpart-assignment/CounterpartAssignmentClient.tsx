@@ -22,6 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/client/components/ui";
+import { PoliticalOrganizationSelect } from "@/client/components/political-organizations/PoliticalOrganizationSelect";
 import { PL_CATEGORIES } from "@/shared/utils/category-mapping";
 
 interface CounterpartAssignmentClientProps {
@@ -73,11 +74,6 @@ export function CounterpartAssignmentClient({
   const selectedTransactions = useMemo(() => {
     return initialTransactions.filter((t) => rowSelection[t.id]);
   }, [initialTransactions, rowSelection]);
-
-  const organizationOptions = organizations.map((org) => ({
-    value: org.id,
-    label: org.displayName,
-  }));
 
   const categoryOptions = useMemo(() => {
     const options = [{ value: "", label: "すべてのカテゴリ" }];
@@ -210,25 +206,12 @@ export function CounterpartAssignmentClient({
 
       <Card className="space-y-4 p-4">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div>
-            <Label>政治団体</Label>
-            <Select
-              value={selectedOrganizationId}
-              onValueChange={handleOrganizationChange}
-              required
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="選択してください" />
-              </SelectTrigger>
-              <SelectContent>
-                {organizationOptions.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          <PoliticalOrganizationSelect
+            organizations={organizations}
+            value={selectedOrganizationId}
+            onValueChange={handleOrganizationChange}
+            required
+          />
           <div>
             <Label>報告年 (西暦)</Label>
             <Input

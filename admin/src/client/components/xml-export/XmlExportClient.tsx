@@ -3,17 +3,8 @@ import "client-only";
 
 import { useMemo, useState, useTransition } from "react";
 import type { PoliticalOrganization } from "@/shared/models/political-organization";
-import {
-  Card,
-  Button,
-  Input,
-  Label,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/client/components/ui";
+import { Card, Button, Input, Label } from "@/client/components/ui";
+import { PoliticalOrganizationSelect } from "@/client/components/political-organizations/PoliticalOrganizationSelect";
 import { exportXml } from "@/server/contexts/report/presentation/actions/export-xml";
 import { apiClient } from "@/client/lib/api-client";
 
@@ -37,11 +28,6 @@ export function XmlExportClient({ organizations }: XmlExportClientProps) {
   const [status, setStatus] = useState<StatusMessage | null>(null);
   const [isDownloading, startDownloadTransition] = useTransition();
   const [isPreviewing, setIsPreviewing] = useState(false);
-
-  const organizationOptions = organizations.map((organization) => ({
-    value: organization.id,
-    label: organization.displayName,
-  }));
 
   const canSubmit = Boolean(selectedOrganizationId && financialYear);
 
@@ -127,25 +113,12 @@ export function XmlExportClient({ organizations }: XmlExportClientProps) {
 
       <Card className="space-y-4 p-4">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <Label>政治団体</Label>
-            <Select
-              value={selectedOrganizationId}
-              onValueChange={setSelectedOrganizationId}
-              required
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="選択してください" />
-              </SelectTrigger>
-              <SelectContent>
-                {organizationOptions.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          <PoliticalOrganizationSelect
+            organizations={organizations}
+            value={selectedOrganizationId}
+            onValueChange={setSelectedOrganizationId}
+            required
+          />
           <div>
             <Label>報告年 (西暦)</Label>
             <Input

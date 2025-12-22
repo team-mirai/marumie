@@ -3,16 +3,8 @@ import "client-only";
 
 import { useId, useState, useEffect } from "react";
 import type { PoliticalOrganization } from "@/shared/models/political-organization";
-import {
-  Label,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-  Button,
-  Input,
-} from "@/client/components/ui";
+import { Button, Input, Label } from "@/client/components/ui";
+import { PoliticalOrganizationSelect } from "@/client/components/political-organizations/PoliticalOrganizationSelect";
 import CsvPreview from "@/client/components/csv-import/CsvPreview";
 import type { PreviewMfCsvResult } from "@/server/contexts/data-import/application/usecases/preview-mf-csv-usecase";
 import type {
@@ -40,11 +32,6 @@ export default function CsvUploadClient({
   const [hasError, setHasError] = useState<boolean>(false);
   const [uploading, setUploading] = useState(false);
   const [previewResult, setPreviewResult] = useState<PreviewMfCsvResult | null>(null);
-
-  const organizationOptions = organizations.map((org) => ({
-    value: org.id,
-    label: org.displayName,
-  }));
 
   // 最初の組織を自動選択
   useEffect(() => {
@@ -122,21 +109,12 @@ export default function CsvUploadClient({
 
   return (
     <form onSubmit={onSubmit} className="space-y-3">
-      <div>
-        <Label>Political Organization</Label>
-        <Select value={politicalOrganizationId} onValueChange={setPoliticalOrganizationId} required>
-          <SelectTrigger>
-            <SelectValue placeholder="-- 政治団体を選択してください --" />
-          </SelectTrigger>
-          <SelectContent>
-            {organizationOptions.map((option) => (
-              <SelectItem key={option.value} value={option.value}>
-                {option.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+      <PoliticalOrganizationSelect
+        organizations={organizations}
+        value={politicalOrganizationId}
+        onValueChange={setPoliticalOrganizationId}
+        required
+      />
       <div>
         <Label htmlFor={csvFileInputId}>CSV File:</Label>
         <Input

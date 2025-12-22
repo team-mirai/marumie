@@ -4,14 +4,7 @@ import "client-only";
 import { useState, useEffect, useCallback } from "react";
 import type { PoliticalOrganization } from "@/shared/models/political-organization";
 import type { BalanceSnapshot } from "@/shared/models/balance-snapshot";
-import {
-  Label,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/client/components/ui";
+import { PoliticalOrganizationSelect } from "@/client/components/political-organizations/PoliticalOrganizationSelect";
 import BalanceSnapshotForm from "./BalanceSnapshotForm";
 import BalanceSnapshotList from "./BalanceSnapshotList";
 import CurrentBalance from "./CurrentBalance";
@@ -25,11 +18,6 @@ export default function BalanceSnapshotsClient({ organizations }: BalanceSnapsho
   const [selectedOrgId, setSelectedOrgId] = useState<string>("");
   const [snapshots, setSnapshots] = useState<BalanceSnapshot[]>([]);
   const [loading, setLoading] = useState(false);
-
-  const organizationOptions = organizations.map((org) => ({
-    value: org.id,
-    label: org.displayName,
-  }));
 
   const currentBalance = snapshots.length > 0 ? snapshots[0] : null;
 
@@ -90,21 +78,12 @@ export default function BalanceSnapshotsClient({ organizations }: BalanceSnapsho
 
   return (
     <div className="space-y-6">
-      <div>
-        <Label>政治団体</Label>
-        <Select value={selectedOrgId} onValueChange={handleOrgChange} required>
-          <SelectTrigger>
-            <SelectValue placeholder="-- 政治団体を選択してください --" />
-          </SelectTrigger>
-          <SelectContent>
-            {organizationOptions.map((option) => (
-              <SelectItem key={option.value} value={option.value}>
-                {option.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+      <PoliticalOrganizationSelect
+        organizations={organizations}
+        value={selectedOrgId}
+        onValueChange={handleOrgChange}
+        required
+      />
 
       {selectedOrgId && (
         <div className="space-y-8">

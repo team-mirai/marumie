@@ -6,14 +6,7 @@ import { TransactionRow } from "./TransactionRow";
 import { StaticPagination } from "@/client/components/ui/StaticPagination";
 import { DeleteAllButton } from "./DeleteAllButton";
 import { ClearWebappCacheButton } from "./ClearWebappCacheButton";
-import {
-  Label,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/client/components/ui";
+import { PoliticalOrganizationSelect } from "@/client/components/political-organizations/PoliticalOrganizationSelect";
 import type { GetTransactionsResult } from "@/server/contexts/data-import/application/usecases/get-transactions-usecase";
 import type { PoliticalOrganization } from "@/shared/models/political-organization";
 
@@ -33,11 +26,6 @@ export function TransactionsClient({ organizations }: TransactionsClientProps) {
 
   const currentPage = parseInt(searchParams.get("page") || "1", 10);
   const perPage = 50;
-
-  const organizationOptions = organizations.map((org) => ({
-    value: org.id,
-    label: org.displayName,
-  }));
 
   useEffect(() => {
     const fetchTransactions = async (orgId: string) => {
@@ -93,21 +81,11 @@ export function TransactionsClient({ organizations }: TransactionsClientProps) {
 
         {/* Organization Filter */}
         <div className="mb-4">
-          <div className="flex-1">
-            <Label>政治団体でフィルタ</Label>
-            <Select value={selectedOrgId} onValueChange={handleOrgFilterChange}>
-              <SelectTrigger>
-                <SelectValue placeholder="選択してください" />
-              </SelectTrigger>
-              <SelectContent>
-                {organizationOptions.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          <PoliticalOrganizationSelect
+            organizations={organizations}
+            value={selectedOrgId}
+            onValueChange={handleOrgFilterChange}
+          />
         </div>
       </div>
 
