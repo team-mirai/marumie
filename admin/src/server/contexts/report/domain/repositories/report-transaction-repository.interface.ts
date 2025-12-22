@@ -30,7 +30,17 @@ export interface TransactionFilters {
   financialYear: number;
 }
 
-export interface IReportTransactionRepository {
+/**
+ * Counterpart紐付け管理用のリポジトリインターフェース
+ * Interface Segregation Principle に基づき、必要なメソッドのみを定義
+ */
+export interface ITransactionWithCounterpartRepository {
+  findTransactionsWithCounterparts(
+    filters: TransactionWithCounterpartFilters,
+  ): Promise<TransactionWithCounterpartResult>;
+}
+
+export interface IReportTransactionRepository extends ITransactionWithCounterpartRepository {
   /**
    * SYUUSHI07_07 KUBUN1: 個人からの寄附のトランザクションを取得
    * TODO: 寄附者テーブル作成後に実装。現在はダミーデータを返す。

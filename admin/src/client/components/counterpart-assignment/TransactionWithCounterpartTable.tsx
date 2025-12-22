@@ -105,7 +105,19 @@ export function TransactionWithCounterpartTable({
             )}
           </button>
         ),
-        cell: (info) => formatAmount(info.getValue()),
+        cell: (info) => {
+          const transaction = info.row.original;
+          return (
+            <div className="flex items-center gap-2">
+              <span>{formatAmount(info.getValue())}</span>
+              {transaction.requiresCounterpart && (
+                <span className="text-xs bg-amber-500/20 text-amber-400 px-1.5 py-0.5 rounded">
+                  明細必須
+                </span>
+              )}
+            </div>
+          );
+        },
       }),
       columnHelper.accessor("categoryKey", {
         header: () => (

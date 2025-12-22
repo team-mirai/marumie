@@ -27,7 +27,10 @@ import type {
 import {
   COUNTERPART_REQUIRED_INCOME_CATEGORIES,
   COUNTERPART_REQUIRED_EXPENSE_CATEGORIES,
-  COUNTERPART_DETAIL_REQUIRED_AMOUNT_THRESHOLD,
+  ROUTINE_EXPENSE_CATEGORIES,
+  ROUTINE_EXPENSE_THRESHOLD,
+  POLITICAL_ACTIVITY_EXPENSE_THRESHOLD,
+  requiresCounterpartDetail,
 } from "@/server/contexts/report/domain/models/counterpart-assignment-rules";
 import { PL_CATEGORIES } from "@/shared/utils/category-mapping";
 
@@ -585,7 +588,7 @@ export class PrismaReportTransactionRepository implements IReportTransactionRepo
       politicalOrganizationId,
       financialYear,
       unassignedOnly,
-      aboveThresholdOnly = false,
+      requiresCounterpartOnly = false,
       categoryKey,
       searchQuery,
       limit = 50,
@@ -649,9 +652,33 @@ export class PrismaReportTransactionRepository implements IReportTransactionRepo
       });
     }
 
-    if (aboveThresholdOnly) {
+    if (requiresCounterpartOnly) {
+      // 経常経費は10万円以上、政治活動費は5万円以上、収入は閾値なし（すべて記載）
       conditions.push({
-        debitAmount: { gte: COUNTERPART_DETAIL_REQUIRED_AMOUNT_THRESHOLD },
+        OR: [
+          // 経常経費: 10万円以上
+          {
+            categoryKey: { in: [...ROUTINE_EXPENSE_CATEGORIES] },
+            debitAmount: { gte: ROUTINE_EXPENSE_THRESHOLD },
+          },
+          // 政治活動費: 5万円以上（経常経費以外の支出カテゴリ）
+          {
+            categoryKey: {
+              in: COUNTERPART_REQUIRED_EXPENSE_CATEGORIES.filter(
+                (key) =>
+                  !ROUTINE_EXPENSE_CATEGORIES.includes(
+                    key as (typeof ROUTINE_EXPENSE_CATEGORIES)[number],
+                  ),
+              ),
+            },
+            debitAmount: { gte: POLITICAL_ACTIVITY_EXPENSE_THRESHOLD },
+          },
+          // 収入（借入金・交付金）: 閾値なし
+          {
+            transactionType: "income",
+            categoryKey: { in: [...COUNTERPART_REQUIRED_INCOME_CATEGORIES] },
+          },
+        ],
       });
     }
 
@@ -726,6 +753,11 @@ export class PrismaReportTransactionRepository implements IReportTransactionRepo
                 address: t.transactionCounterparts[0].counterpart.address,
               }
             : null,
+        requiresCounterpart: requiresCounterpartDetail(
+          t.transactionType as "income" | "expense",
+          t.categoryKey,
+          Number(t.debitAmount),
+        ),
       })),
       total,
     };

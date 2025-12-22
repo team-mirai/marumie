@@ -23,7 +23,6 @@ import {
   SelectValue,
 } from "@/client/components/ui";
 import { PoliticalOrganizationSelect } from "@/client/components/political-organizations/PoliticalOrganizationSelect";
-import { PL_CATEGORIES } from "@/shared/utils/category-mapping";
 
 const ALL_CATEGORIES_VALUE = "__all__";
 
@@ -43,6 +42,7 @@ interface CounterpartAssignmentClientProps {
     sortOrder: "asc" | "desc";
   };
   allCounterparts: Counterpart[];
+  categoryOptions: { value: string; label: string }[];
 }
 
 export function CounterpartAssignmentClient({
@@ -53,6 +53,7 @@ export function CounterpartAssignmentClient({
   perPage,
   initialFilters,
   allCounterparts,
+  categoryOptions: categoryOptionsFromServer,
 }: CounterpartAssignmentClientProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -80,17 +81,11 @@ export function CounterpartAssignmentClient({
   }, [initialTransactions, rowSelection]);
 
   const categoryOptions = useMemo(() => {
-    const options = [{ value: ALL_CATEGORIES_VALUE, label: "すべてのカテゴリ" }];
-    for (const [, value] of Object.entries(PL_CATEGORIES)) {
-      if (value.type === "expense" || value.type === "income") {
-        options.push({
-          value: value.key,
-          label: value.shortLabel || value.category,
-        });
-      }
-    }
-    return options;
-  }, []);
+    return [
+      { value: ALL_CATEGORIES_VALUE, label: "すべてのカテゴリ" },
+      ...categoryOptionsFromServer,
+    ];
+  }, [categoryOptionsFromServer]);
 
   const totalPages = Math.ceil(total / perPage);
 

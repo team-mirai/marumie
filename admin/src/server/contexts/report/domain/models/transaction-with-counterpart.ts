@@ -18,13 +18,15 @@ export interface TransactionWithCounterpart {
     name: string;
     address: string;
   } | null;
+  /** 取引先情報の記載が必要（閾値以上かつ対象カテゴリ）かどうか。閾値は経常経費10万円、政治活動費5万円 */
+  requiresCounterpart: boolean;
 }
 
 export interface TransactionWithCounterpartFilters {
   politicalOrganizationId: string;
   financialYear: number;
   unassignedOnly?: boolean;
-  aboveThresholdOnly?: boolean;
+  requiresCounterpartOnly?: boolean;
   categoryKey?: string;
   searchQuery?: string;
   limit?: number;
