@@ -15,7 +15,7 @@ description: フィーチャーブランチを作成してPRを出す
 
 1. **ブランチ作成**: 現在のブランチがdevelopやmainの場合、`$ARGUMENTS` という名前でフィーチャーブランチを作成してチェックアウトする。既にフィーチャーブランチにいる場合はそのまま使用する。
 
-2. **品質チェック**: プロジェクトルートで以下を実行する
+2. **品質チェック**: ソースコード（`.ts`、`.tsx`、`.js`、`.jsx`ファイル）への変更がある場合のみ、プロジェクトルートで以下を実行する。ドキュメントや設定ファイルのみの変更の場合はスキップ可。
    - `npm run typecheck`
    - `npm run lint`
    - `npm test`
@@ -23,7 +23,7 @@ description: フィーチャーブランチを作成してPRを出す
 
 3. **コミット**: 変更内容を確認し、適切なコミットメッセージでコミットする。コミットメッセージは変更内容を反映した簡潔なものにする。
 
-4. **コンフリクト確認**: `git fetch origin` して、developとのマージ可能性を確認する（`git merge-tree $(git merge-base HEAD origin/develop) HEAD origin/develop` でコンフリクトの有無を確認）。コンフリクトがある場合はユーザーに報告し、続行するか確認を取る。
+4. **コンフリクト確認**: `git fetch origin` して、developとのマージ可能性を確認する（`bash -c 'git merge-tree $(git merge-base HEAD origin/develop) HEAD origin/develop'` でコンフリクトの有無を確認）。コンフリクトがある場合はユーザーに報告し、続行するか確認を取る。
 
 5. **プッシュ**: リモートにプッシュする（`git push -u origin <branch-name>`）
 
