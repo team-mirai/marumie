@@ -95,25 +95,37 @@ function MyModal() {
 
 ## スタイリング
 
+### テーマ
+
+shadcn/ui 公式の **Dark Blue テーマ** を採用しています。
+テーマ定義は `admin/src/app/globals.css` の `@theme` ブロックにあります。
+
 ### カラー変数
 
 shadcn UI 標準の CSS 変数を使用してください。
 
 ```css
 /* 推奨: shadcn 標準変数 */
-bg-background      /* 背景色 */
-bg-card            /* カード背景 */
-text-foreground    /* テキスト色 */
-text-muted-foreground  /* 補助テキスト */
-border-border      /* ボーダー */
-bg-primary         /* プライマリ色 */
-bg-destructive     /* 危険色（赤） */
+bg-background         /* 背景色 */
+bg-card               /* カード背景 */
+text-foreground       /* テキスト色 */
+text-muted-foreground /* 補助テキスト */
+border-border         /* ボーダー */
+bg-input              /* 入力フィールド背景 */
+bg-primary            /* プライマリ色 */
+bg-secondary          /* セカンダリ色（ホバー等） */
+bg-destructive        /* 危険色（赤） */
+ring-ring             /* フォーカスリング */
 
-/* 非推奨: カスタム変数（段階的に移行予定） */
-bg-primary-bg
-bg-primary-panel
-text-primary-muted
-border-primary-border
+/* 非推奨: カスタム変数 → 以下に移行 */
+bg-primary-bg       → bg-background
+bg-primary-panel    → bg-card
+text-primary-muted  → text-muted-foreground
+border-primary-border → border-border
+bg-primary-input    → bg-input
+bg-primary-hover    → bg-secondary
+text-primary-accent → text-primary
+ring-primary-accent → ring-ring
 ```
 
 ### クラス名の合成
