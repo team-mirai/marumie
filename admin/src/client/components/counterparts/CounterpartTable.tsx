@@ -3,6 +3,7 @@ import "client-only";
 
 import { useState } from "react";
 import type { CounterpartWithUsage } from "@/server/contexts/report/domain/models/counterpart";
+import { Button } from "@/client/components/ui";
 import { EditCounterpartDialog } from "./EditCounterpartDialog";
 import { DeleteCounterpartButton } from "./DeleteCounterpartButton";
 
@@ -45,13 +46,14 @@ export function CounterpartTable({ counterparts, onUpdate }: CounterpartTablePro
                 <td className="py-3 px-4 text-white text-right">{counterpart.usageCount}件</td>
                 <td className="py-3 px-4 text-right">
                   <div className="flex gap-2 justify-end">
-                    <button
+                    <Button
                       type="button"
+                      variant="secondary"
+                      size="sm"
                       onClick={() => setEditingCounterpart(counterpart)}
-                      className="bg-secondary text-white border-0 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors duration-200 hover:bg-secondary cursor-pointer"
                     >
                       編集
-                    </button>
+                    </Button>
                     <DeleteCounterpartButton
                       counterpartId={counterpart.id}
                       counterpartName={counterpart.name}
