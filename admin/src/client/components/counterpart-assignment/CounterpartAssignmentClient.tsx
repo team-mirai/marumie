@@ -115,7 +115,7 @@ export function CounterpartAssignmentClient({
     searchParams.set("sort", params.sort ?? sortField);
     searchParams.set("order", params.order ?? sortOrder);
     searchParams.set("page", String(params.page ?? 1));
-    return `/counterparts/assignment?${searchParams.toString()}`;
+    return `/assign/counterparts?${searchParams.toString()}`;
   };
 
   const handleFilterChange = (changes: Partial<CounterpartAssignmentFilterValues>) => {
@@ -203,7 +203,7 @@ export function CounterpartAssignmentClient({
           </p>
         </div>
         <Link
-          href="/counterparts/master"
+          href="/counterparts"
           className="bg-secondary text-white border border-border hover:bg-secondary rounded-lg px-4 py-2.5 font-medium transition-colors duration-200"
         >
           マスタ管理へ

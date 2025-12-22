@@ -28,7 +28,7 @@ export async function bulkAssignCounterpartAction(
       };
     }
 
-    revalidatePath("/counterparts/assignment");
+    revalidatePath("/assign/counterparts");
     return {
       success: true,
       successCount: result.successCount,

@@ -23,7 +23,7 @@ export async function deleteCounterpartAction(id: string): Promise<DeleteCounter
       return { success: false, errors: result.errors };
     }
 
-    revalidatePath("/counterparts/master");
+    revalidatePath("/counterparts");
     return { success: true };
   } catch (error) {
     console.error("Error deleting counterpart:", error);
