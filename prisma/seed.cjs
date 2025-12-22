@@ -10,6 +10,9 @@ async function main() {
     // Create political organizations
     await seedPoliticalOrganizations();
 
+    // Create organization report profiles
+    await seedOrganizationReportProfiles();
+
     // Create admin user for local development
     await seedAdminUser();
 
@@ -60,6 +63,96 @@ async function seedPoliticalOrganizations() {
             console.log('Political organization already exists:', existing);
         }
     }
+}
+
+// Organization report profiles seeding function
+async function seedOrganizationReportProfiles() {
+    console.log('Creating organization report profiles...');
+
+    // digiminの政治団体を取得
+    const digimin = await prisma.politicalOrganization.findFirst({
+        where: { slug: 'digimin' }
+    });
+
+    if (!digimin) {
+        console.log('⚠️  Warning: digimin organization not found - skipping report profile creation');
+        return;
+    }
+
+    const financialYear = 2025;
+
+    // 既存チェック
+    const existing = await prisma.organizationReportProfile.findFirst({
+        where: {
+            politicalOrganizationId: digimin.id,
+            financialYear: financialYear
+        }
+    });
+
+    if (existing) {
+        console.log(`✅ Report profile for ${financialYear} already exists`);
+        return;
+    }
+
+    // OrganizationReportProfileDetails の構造に準拠したダミーデータ
+    const details = {
+        representative: {
+            lastName: '代表',
+            firstName: '太郎'
+        },
+        accountant: {
+            lastName: '会計',
+            firstName: '太郎'
+        },
+        contactPersons: [
+            {
+                id: 'contact-1',
+                lastName: '事務担当',
+                firstName: '一郎',
+                tel: '03-1234-5678'
+            },
+            {
+                id: 'contact-2',
+                lastName: '事務担当',
+                firstName: '二郎',
+                tel: '03-2345-6789'
+            }
+        ],
+        organizationType: '01', // 政党の支部
+        activityArea: '2', // 一つの都道府県
+        fundManagement: {
+            publicPositionName: '衆議院議員',
+            publicPositionType: '1',
+            applicant: {
+                lastName: '届出',
+                firstName: '太郎'
+            },
+            periods: [
+                {
+                    id: 'period-1',
+                    from: 'r7/1/1',
+                    to: 'r7/12/31'
+                }
+            ]
+        },
+        dietMemberRelation: {
+            type: '0' // 指定無し
+        }
+    };
+
+    await prisma.organizationReportProfile.create({
+        data: {
+            politicalOrganizationId: digimin.id,
+            financialYear: financialYear,
+            officialName: 'デジタル民主主義を考える会',
+            officialNameKana: 'デジタルミンシュシュギヲカンガエルカイ',
+            officeAddress: '東京都千代田区永田町一丁目2番3号',
+            officeAddressBuilding: 'サンプルビル4階',
+            details: details
+        }
+    });
+
+    console.log(`✅ Report profile for ${financialYear} created`);
 }
 
 // Admin user seeding function
