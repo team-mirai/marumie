@@ -162,7 +162,7 @@ export function AddressSearchDialog({
                 {searchResult.data.candidates.map((candidate, index) => {
                   const confidence = getConfidenceLabel(candidate.confidence);
                   const isSelected = selectedIndex === index && !isManualInput;
-                  const key = `${candidate.companyName}-${candidate.address}`;
+                  const key = `${index}-${candidate.companyName}-${candidate.address}`;
                   return (
                     <button
                       key={key}

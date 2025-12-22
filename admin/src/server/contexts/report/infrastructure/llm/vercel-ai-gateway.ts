@@ -36,24 +36,30 @@ export class VercelAIGateway implements LLMGateway {
       return { candidates: [], searchQuery };
     }
 
-    const parsed = JSON.parse(jsonMatch[0]);
-    const candidates: AddressCandidate[] = (parsed.candidates || [])
+    let parsed: { candidates?: unknown[]; searchQuery?: string };
+    try {
+      parsed = JSON.parse(jsonMatch[0]);
+    } catch {
+      return { candidates: [], searchQuery };
+    }
+
+    type RawCandidate = {
+      companyName?: string;
+      postalCode?: string;
+      address?: string;
+      confidence?: string;
+      source?: string;
+    };
+
+    const candidates: AddressCandidate[] = ((parsed.candidates || []) as RawCandidate[])
       .slice(0, 5)
-      .map(
-        (c: {
-          companyName?: string;
-          postalCode?: string;
-          address?: string;
-          confidence?: string;
-          source?: string;
-        }) => ({
-          companyName: c.companyName || "",
-          postalCode: c.postalCode || null,
-          address: c.address || "",
-          confidence: this.normalizeConfidence(c.confidence),
-          source: c.source || "LLM知識",
-        }),
-      );
+      .map((c) => ({
+        companyName: c.companyName || "",
+        postalCode: c.postalCode || null,
+        address: c.address || "",
+        confidence: this.normalizeConfidence(c.confidence),
+        source: c.source || "LLM知識",
+      }));
 
     return {
       candidates,
