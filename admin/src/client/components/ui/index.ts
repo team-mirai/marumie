@@ -56,3 +56,10 @@ export {
 } from "@/client/components/ui/form";
 export { Textarea } from "@/client/components/ui/textarea";
 export { Checkbox } from "@/client/components/ui/checkbox";
+export {
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+  TooltipProvider,
+} from "@/client/components/ui/tooltip";
+export { Toggle, toggleVariants } from "@/client/components/ui/toggle";
