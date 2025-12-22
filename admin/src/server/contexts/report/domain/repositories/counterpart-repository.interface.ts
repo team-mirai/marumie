@@ -17,7 +17,7 @@ export interface CounterpartWithUsageAndLastUsed extends CounterpartWithUsage {
 
 export interface ICounterpartRepository {
   findById(id: string): Promise<Counterpart | null>;
-  findByNameAndAddress(name: string, address: string | null): Promise<Counterpart | null>;
+  findByNameAndAddress(name: string, address: string): Promise<Counterpart | null>;
   findAll(filters?: CounterpartFilters): Promise<Counterpart[]>;
   findAllWithUsage(filters?: CounterpartFilters): Promise<CounterpartWithUsage[]>;
   create(data: CreateCounterpartInput): Promise<Counterpart>;

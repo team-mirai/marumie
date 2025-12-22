@@ -62,7 +62,7 @@ export class CreateCounterpartUsecase {
   async execute(input: CreateCounterpartInput): Promise<CreateCounterpartResult> {
     const normalizedInput = {
       name: input.name.trim(),
-      address: input.address?.trim() ?? null,
+      address: input.address.trim(),
     };
 
     const validationErrors = validateCounterpartInput(normalizedInput);

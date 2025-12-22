@@ -1,7 +1,7 @@
 export interface Counterpart {
   id: string;
   name: string;
-  address: string | null;
+  address: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -12,12 +12,12 @@ export interface CounterpartWithUsage extends Counterpart {
 
 export interface CreateCounterpartInput {
   name: string;
-  address: string | null;
+  address: string;
 }
 
 export interface UpdateCounterpartInput {
   name?: string;
-  address?: string | null;
+  address?: string;
 }
 
 export const MAX_NAME_LENGTH = 120;
@@ -34,7 +34,9 @@ export function validateCounterpartInput(input: CreateCounterpartInput): string[
     errors.push(`名前は${MAX_NAME_LENGTH}文字以内で入力してください`);
   }
 
-  if (trimmedAddress.length > MAX_ADDRESS_LENGTH) {
+  if (trimmedAddress.length === 0) {
+    errors.push("住所は必須です");
+  } else if (trimmedAddress.length > MAX_ADDRESS_LENGTH) {
     errors.push(`住所は${MAX_ADDRESS_LENGTH}文字以内で入力してください`);
   }
 

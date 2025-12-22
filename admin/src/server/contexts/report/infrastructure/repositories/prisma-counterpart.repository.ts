@@ -54,11 +54,13 @@ export class PrismaCounterpartRepository implements ICounterpartRepository {
     return this.mapToCounterpart(counterpart);
   }
 
-  async findByNameAndAddress(name: string, address: string | null): Promise<Counterpart | null> {
-    const counterpart = await this.prisma.counterpart.findFirst({
+  async findByNameAndAddress(name: string, address: string): Promise<Counterpart | null> {
+    const counterpart = await this.prisma.counterpart.findUnique({
       where: {
-        name,
-        address,
+        name_address: {
+          name,
+          address,
+        },
       },
     });
 
@@ -109,7 +111,7 @@ export class PrismaCounterpartRepository implements ICounterpartRepository {
     const counterpart = await this.prisma.counterpart.create({
       data: {
         name: data.name.trim(),
-        address: data.address?.trim() ?? null,
+        address: data.address.trim(),
       },
     });
 
@@ -122,13 +124,13 @@ export class PrismaCounterpartRepository implements ICounterpartRepository {
       throw new Error(`無効なID形式です: ${id}`);
     }
 
-    const updateData: { name?: string; address?: string | null } = {};
+    const updateData: { name?: string; address?: string } = {};
 
     if (data.name !== undefined) {
       updateData.name = data.name.trim();
     }
     if (data.address !== undefined) {
-      updateData.address = data.address?.trim() ?? null;
+      updateData.address = data.address.trim();
     }
 
     const counterpart = await this.prisma.counterpart.update({

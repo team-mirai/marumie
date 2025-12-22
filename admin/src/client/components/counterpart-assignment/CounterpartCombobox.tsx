@@ -20,7 +20,7 @@ interface CounterpartComboboxProps {
   currentCounterpart: {
     id: string;
     name: string;
-    address: string | null;
+    address: string;
   } | null;
   allCounterparts: Counterpart[];
   onAssigned?: () => void;
@@ -48,16 +48,14 @@ export function CounterpartCombobox({
 
   const [optimisticCounterpart, setOptimisticCounterpart] = useOptimistic(
     currentCounterpart,
-    (_state, newCounterpart: { id: string; name: string; address: string | null } | null) =>
+    (_state, newCounterpart: { id: string; name: string; address: string } | null) =>
       newCounterpart,
   );
 
   const filteredCounterparts = allCounterparts.filter((cp) => {
     if (!searchQuery.trim()) return true;
     const query = searchQuery.toLowerCase();
-    return (
-      cp.name.toLowerCase().includes(query) || (cp.address?.toLowerCase().includes(query) ?? false)
-    );
+    return cp.name.toLowerCase().includes(query) || cp.address.toLowerCase().includes(query);
   });
 
   const suggestedIds = new Set(suggestions.map((s) => s.counterpart.id));
