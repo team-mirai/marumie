@@ -9,6 +9,7 @@ import {
   MAX_ADDRESS_LENGTH,
 } from "@/server/contexts/report/domain/models/counterpart";
 import { Button, Input, Label } from "@/client/components/ui";
+import { AddressSearchDialog } from "@/client/components/counterparts/AddressSearchDialog";
 
 interface EditCounterpartDialogProps {
   counterpart: CounterpartWithUsage;
@@ -25,6 +26,7 @@ export function EditCounterpartDialog({
   const [address, setAddress] = useState(counterpart.address ?? "");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showAddressSearch, setShowAddressSearch] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -80,7 +82,18 @@ export function EditCounterpartDialog({
           </div>
 
           <div>
-            <Label htmlFor="edit-address">住所</Label>
+            <div className="flex items-center justify-between mb-1">
+              <Label htmlFor="edit-address">住所</Label>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowAddressSearch(true)}
+                disabled={isLoading}
+              >
+                住所を検索
+              </Button>
+            </div>
             <Input
               type="text"
               id="edit-address"
@@ -106,6 +119,18 @@ export function EditCounterpartDialog({
           </div>
         </form>
       </div>
+
+      {showAddressSearch && (
+        <AddressSearchDialog
+          companyName={name}
+          currentAddress={address}
+          onClose={() => setShowAddressSearch(false)}
+          onSelect={(selectedAddress) => {
+            setAddress(selectedAddress);
+            setShowAddressSearch(false);
+          }}
+        />
+      )}
     </div>
   );
 }
