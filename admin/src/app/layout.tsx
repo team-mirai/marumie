@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
-import "./styles.css";
+import "./globals.css";
 
 export const metadata: Metadata = {
   title: "政治資金ダッシュボード管理画面",

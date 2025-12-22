@@ -120,7 +120,7 @@ export function XmlExportClient({ organizations }: XmlExportClientProps) {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-semibold text-white mb-1">XML出力</h1>
-        <p className="text-primary-muted">
+        <p className="text-muted-foreground">
           14号様式(その6)「その他の収入」のみ対応。XML出力タブ第1弾としてα版です。
         </p>
       </div>
@@ -184,7 +184,7 @@ export function XmlExportClient({ organizations }: XmlExportClientProps) {
                 ? "bg-red-500/20 text-red-200"
                 : status.type === "success"
                   ? "bg-green-500/20 text-green-200"
-                  : "bg-primary-hover text-primary-muted"
+                  : "bg-secondary text-muted-foreground"
             }`}
           >
             {status.message}
@@ -195,11 +195,11 @@ export function XmlExportClient({ organizations }: XmlExportClientProps) {
       <Card className="space-y-3 p-4">
         <div>
           <h2 className="text-lg font-medium text-white mb-1">XMLプレビュー</h2>
-          <p className="text-sm text-primary-muted">
+          <p className="text-sm text-muted-foreground">
             プレビューはUTF-8で表示しています。実際のファイルはShift_JISで出力されます。
           </p>
         </div>
-        <pre className="bg-black/30 rounded-lg p-4 text-sm overflow-auto max-h-[420px] whitespace-pre-wrap text-primary-muted">
+        <pre className="bg-black/30 rounded-lg p-4 text-sm overflow-auto max-h-[420px] whitespace-pre-wrap text-muted-foreground">
           {previewXml || "プレビューを生成するとここにXMLが表示されます。"}
         </pre>
       </Card>

@@ -32,7 +32,7 @@ export function ClientPagination({ currentPage, totalPages, onPageChange }: Clie
 
     const addEllipsis = (key: string) => {
       pages.push(
-        <span key={`ellipsis-${key}`} className="px-2 text-primary-muted select-none">
+        <span key={`ellipsis-${key}`} className="px-2 text-muted-foreground select-none">
           …
         </span>,
       );

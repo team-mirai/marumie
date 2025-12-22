@@ -88,24 +88,24 @@ export default function UserManagement({
       </Card>
 
       <Card className="overflow-hidden p-0">
-        <table className="min-w-full divide-y divide-primary-border">
-          <thead className="bg-primary-hover">
+        <table className="min-w-full divide-y divide-border">
+          <thead className="bg-secondary">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-primary-muted uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                 メール
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-primary-muted uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                 ロール
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-primary-muted uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                 作成日
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-primary-muted uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                 操作
               </th>
             </tr>
           </thead>
-          <tbody className="bg-primary-panel divide-y divide-primary-border">
+          <tbody className="bg-card divide-y divide-border">
             {users.map((user) => (
               <tr key={user.id}>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-white">{user.email}</td>
@@ -120,7 +120,7 @@ export default function UserManagement({
                     {user.role}
                   </span>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-primary-muted">
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
                   {new Date(user.createdAt).toLocaleDateString()}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
@@ -128,7 +128,7 @@ export default function UserManagement({
                     value={user.role}
                     onChange={(e) => handleRoleChange(user.id, e.target.value as UserRole)}
                     disabled={isLoading}
-                    className="bg-primary-input text-white border border-primary-border rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-primary-accent"
+                    className="bg-input text-white border border-border rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                   >
                     {availableRoles.map((role) => (
                       <option key={role} value={role}>
@@ -143,7 +143,7 @@ export default function UserManagement({
         </table>
 
         {users.length === 0 && (
-          <div className="text-center py-8 text-primary-muted">ユーザーが見つかりません</div>
+          <div className="text-center py-8 text-muted-foreground">ユーザーが見つかりません</div>
         )}
       </Card>
     </div>

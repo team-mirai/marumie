@@ -120,16 +120,16 @@ export default function CsvPreview({
 
   if (loading) {
     return (
-      <div className="bg-primary-panel rounded-xl p-4 mt-4">
+      <div className="bg-card rounded-xl p-4 mt-4">
         <h3 className="text-lg font-medium text-white mb-2">CSVプレビュー</h3>
-        <p className="text-primary-muted">ファイルを処理中...</p>
+        <p className="text-muted-foreground">ファイルを処理中...</p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="bg-primary-panel rounded-xl p-4 mt-4">
+      <div className="bg-card rounded-xl p-4 mt-4">
         <h3 className="text-lg font-medium text-white mb-2">CSVプレビュー</h3>
         <div className="text-red-500 mt-2">エラー: {error}</div>
       </div>
@@ -160,7 +160,7 @@ export default function CsvPreview({
   };
 
   return (
-    <div className="bg-primary-panel rounded-xl p-4 mt-4">
+    <div className="bg-card rounded-xl p-4 mt-4">
       <h3 className="text-lg font-medium text-white mb-4">CSVプレビュー</h3>
 
       <StatisticsTable statistics={previewResult.statistics} />
@@ -194,7 +194,7 @@ export default function CsvPreview({
       </div>
 
       <div className="mb-4">
-        <p className="text-primary-muted">
+        <p className="text-muted-foreground">
           {activeTab === "all" ? "全" : getTabLabel(activeTab)} {filteredTransactions.length} 件中{" "}
           {filteredTransactions.length > 0 ? (currentPage - 1) * perPage + 1 : 0} -{" "}
           {Math.min(currentPage * perPage, filteredTransactions.length)} 件を表示
@@ -204,7 +204,7 @@ export default function CsvPreview({
       <div className="overflow-x-auto">
         <table className="w-full border-collapse">
           <thead>
-            <tr className="border-b border-primary-border">
+            <tr className="border-b border-border">
               <th className="px-2 py-3 text-left text-sm font-semibold text-white">状態</th>
               <th className="px-2 py-3 text-left text-sm font-semibold text-white">取引日</th>
               <th className="px-2 py-3 text-left text-sm font-semibold text-white">借方勘定科目</th>

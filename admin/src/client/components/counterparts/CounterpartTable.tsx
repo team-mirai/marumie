@@ -17,7 +17,7 @@ export function CounterpartTable({ counterparts, onUpdate }: CounterpartTablePro
   if (counterparts.length === 0) {
     return (
       <div className="text-center py-10">
-        <p className="text-primary-muted">取引先が登録されていません</p>
+        <p className="text-muted-foreground">取引先が登録されていません</p>
       </div>
     );
   }
@@ -27,18 +27,18 @@ export function CounterpartTable({ counterparts, onUpdate }: CounterpartTablePro
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead>
-            <tr className="border-b border-primary-border">
-              <th className="text-left py-3 px-4 text-primary-muted font-medium">名前</th>
-              <th className="text-left py-3 px-4 text-primary-muted font-medium">住所</th>
-              <th className="text-right py-3 px-4 text-primary-muted font-medium">使用数</th>
-              <th className="text-right py-3 px-4 text-primary-muted font-medium">操作</th>
+            <tr className="border-b border-border">
+              <th className="text-left py-3 px-4 text-muted-foreground font-medium">名前</th>
+              <th className="text-left py-3 px-4 text-muted-foreground font-medium">住所</th>
+              <th className="text-right py-3 px-4 text-muted-foreground font-medium">使用数</th>
+              <th className="text-right py-3 px-4 text-muted-foreground font-medium">操作</th>
             </tr>
           </thead>
           <tbody>
             {counterparts.map((counterpart) => (
               <tr
                 key={counterpart.id}
-                className="border-b border-primary-border hover:bg-primary-hover/30 transition-colors"
+                className="border-b border-border hover:bg-secondary/30 transition-colors"
               >
                 <td className="py-3 px-4 text-white">{counterpart.name}</td>
                 <td className="py-3 px-4 text-white">{counterpart.address}</td>
@@ -48,7 +48,7 @@ export function CounterpartTable({ counterparts, onUpdate }: CounterpartTablePro
                     <button
                       type="button"
                       onClick={() => setEditingCounterpart(counterpart)}
-                      className="bg-primary-hover text-white border-0 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors duration-200 hover:bg-primary-border cursor-pointer"
+                      className="bg-secondary text-white border-0 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors duration-200 hover:bg-secondary cursor-pointer"
                     >
                       編集
                     </button>

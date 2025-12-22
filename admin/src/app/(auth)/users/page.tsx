@@ -20,7 +20,7 @@ export default async function UsersPage() {
   }));
 
   return (
-    <div className="bg-primary-panel rounded-xl p-4">
+    <div className="bg-card rounded-xl p-4">
       <h1 className="text-2xl font-bold text-white mb-4">ユーザー管理</h1>
       <UserManagement users={users} availableRoles={["user", "admin"]} />
     </div>

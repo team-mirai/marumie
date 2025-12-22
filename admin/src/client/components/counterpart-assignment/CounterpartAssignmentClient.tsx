@@ -196,11 +196,13 @@ export function CounterpartAssignmentClient({
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-semibold text-white mb-1">取引先紐付け管理</h1>
-          <p className="text-primary-muted">Transactionに対してCounterpart（取引先）を紐付けます</p>
+          <p className="text-muted-foreground">
+            Transactionに対してCounterpart（取引先）を紐付けます
+          </p>
         </div>
         <Link
           href="/counterparts/master"
-          className="bg-primary-hover text-white border border-primary-border hover:bg-primary-border rounded-lg px-4 py-2.5 font-medium transition-colors duration-200"
+          className="bg-secondary text-white border border-border hover:bg-secondary rounded-lg px-4 py-2.5 font-medium transition-colors duration-200"
         >
           マスタ管理へ
         </Link>
@@ -277,7 +279,7 @@ export function CounterpartAssignmentClient({
               type="checkbox"
               checked={unassignedOnly}
               onChange={handleUnassignedOnlyChange}
-              className="w-4 h-4 rounded border-primary-border bg-primary-input text-primary-accent focus:ring-primary-accent focus:ring-offset-0"
+              className="w-4 h-4 rounded border-border bg-input text-primary focus:ring-ring focus:ring-offset-0"
             />
             <span className="text-white">未紐付けのみ表示</span>
           </label>
@@ -286,15 +288,15 @@ export function CounterpartAssignmentClient({
 
       <Card className="p-4">
         <div className="flex justify-between items-center mb-4">
-          <div className="text-primary-muted text-sm">
+          <div className="text-muted-foreground text-sm">
             {total}件のTransaction
             {unassignedOnly && " (未紐付けのみ)"}
           </div>
-          {isPending && <div className="text-primary-muted text-sm">読み込み中...</div>}
+          {isPending && <div className="text-muted-foreground text-sm">読み込み中...</div>}
         </div>
 
         {selectedTransactions.length > 0 && (
-          <div className="flex items-center gap-4 mb-4 p-3 bg-primary-hover/30 border border-primary-border rounded-lg">
+          <div className="flex items-center gap-4 mb-4 p-3 bg-secondary/30 border border-border rounded-lg">
             <span className="text-white text-sm">
               選択中: <span className="font-medium">{selectedTransactions.length}件</span>
             </span>

@@ -20,7 +20,7 @@ export default async function EditPoliticalOrganizationPage({
     organization = await loadPoliticalOrganizationData(orgId);
   } catch (error) {
     return (
-      <div className="bg-primary-panel rounded-xl p-4">
+      <div className="bg-card rounded-xl p-4">
         <div className="text-red-500 text-center p-10">
           {error instanceof Error ? error.message : "政治団体の取得に失敗しました"}
         </div>
@@ -47,12 +47,12 @@ export default async function EditPoliticalOrganizationPage({
         title={`「${organization.displayName}」を編集`}
       />
 
-      <div className="bg-primary-panel rounded-xl p-4">
+      <div className="bg-card rounded-xl p-4">
         <h2 className="text-lg font-semibold text-white mb-3">関連機能</h2>
         <div className="flex gap-3">
           <Link
             href={`/political-organizations/${orgId}/report-profile`}
-            className="bg-primary-hover text-white border border-primary-border rounded-lg px-4 py-2.5 hover:bg-primary-accent transition-colors no-underline"
+            className="bg-secondary text-white border border-border rounded-lg px-4 py-2.5 hover:bg-primary transition-colors no-underline"
           >
             報告書プロフィール
           </Link>

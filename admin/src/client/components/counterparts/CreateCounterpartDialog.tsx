@@ -65,7 +65,7 @@ export function CreateCounterpartDialog({ onClose, onCreate }: CreateCounterpart
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-primary-panel rounded-xl p-6 w-full max-w-md mx-4">
+      <div className="bg-card rounded-xl p-6 w-full max-w-md mx-4">
         <h2 className="text-xl font-bold text-white mb-4">新規取引先作成</h2>
 
         {error && (
@@ -107,7 +107,9 @@ export function CreateCounterpartDialog({ onClose, onCreate }: CreateCounterpart
             />
           </div>
 
-          <p className="text-primary-muted text-sm">※ 同じ名前・住所の組み合わせは登録できません</p>
+          <p className="text-muted-foreground text-sm">
+            ※ 同じ名前・住所の組み合わせは登録できません
+          </p>
 
           <div className="flex gap-3 justify-end pt-2">
             <Button type="button" variant="secondary" onClick={handleClose} disabled={isLoading}>
