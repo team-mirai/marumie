@@ -38,7 +38,7 @@ export default function InviteProcessor() {
   if (!processing) return null;
 
   return (
-    <div className="card mt-4">
+    <div className="bg-card rounded-xl p-4 mt-4">
       <h2>Processing Invitation...</h2>
       <p>Please wait while we set up your account.</p>
     </div>
