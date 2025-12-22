@@ -28,22 +28,19 @@ export function TransactionsClient({ organizations }: TransactionsClientProps) {
   const [loading, setLoading] = useState(true);
   const [fetching, setFetching] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [selectedOrgId, setSelectedOrgId] = useState<string>("");
+  const [selectedOrgId, setSelectedOrgId] = useState<string>(organizations[0]?.id ?? "");
   const isInitialLoad = useRef(true);
 
   const currentPage = parseInt(searchParams.get("page") || "1", 10);
   const perPage = 50;
 
-  const organizationOptions = [
-    { value: "", label: "全件" },
-    ...organizations.map((org) => ({
-      value: org.id,
-      label: org.displayName,
-    })),
-  ];
+  const organizationOptions = organizations.map((org) => ({
+    value: org.id,
+    label: org.displayName,
+  }));
 
   useEffect(() => {
-    const fetchTransactions = async (orgId: string = "") => {
+    const fetchTransactions = async (orgId: string) => {
       try {
         // 初回ロードはloading、以降はfetching
         if (isInitialLoad.current) {
