@@ -40,11 +40,11 @@ export default function LoginForm({ action, error }: LoginFormProps) {
         <form onSubmit={handleSubmit} className="grid gap-4">
           <div className="space-y-3">
             <Label htmlFor="email">Email</Label>
-            <Input id="email" name="email" type="email" required className="bg-input" />
+            <Input id="email" name="email" type="email" required />
           </div>
           <div className="space-y-3">
             <Label htmlFor="password">Password</Label>
-            <Input id="password" name="password" type="password" required className="bg-input" />
+            <Input id="password" name="password" type="password" required />
           </div>
           <Button type="submit" disabled={isLoading} className="mt-4 w-full">
             {isLoading ? "ログイン中..." : "ログイン"}

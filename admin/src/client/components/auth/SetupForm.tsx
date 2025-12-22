@@ -75,7 +75,6 @@ export default function SetupForm({ userEmail }: SetupFormProps) {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="bg-input"
                 placeholder="パスワードを入力"
               />
             </div>
@@ -87,7 +86,6 @@ export default function SetupForm({ userEmail }: SetupFormProps) {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
-                className="bg-input"
                 placeholder="パスワードを再入力"
               />
             </div>

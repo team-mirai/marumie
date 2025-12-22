@@ -142,7 +142,7 @@ importers:
         specifier: ^4.0.3
         version: 4.0.3
       zod:
-        specifier: ^4.0.15
+        specifier: ^4.1.11
         version: 4.1.11
     devDependencies:
       '@tailwindcss/postcss':

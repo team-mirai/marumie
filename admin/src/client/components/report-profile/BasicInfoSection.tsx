@@ -28,7 +28,7 @@ export function BasicInfoSection({ formData, updateFormData }: BasicInfoSectionP
             value={formData.officialName ?? ""}
             onChange={(e) => updateFormData({ officialName: e.target.value })}
             maxLength={120}
-            className="bg-input max-w-md"
+            className="max-w-md"
             placeholder="政治団体の正式名称"
           />
         </div>
@@ -45,7 +45,7 @@ export function BasicInfoSection({ formData, updateFormData }: BasicInfoSectionP
             value={formData.officialNameKana ?? ""}
             onChange={(e) => updateFormData({ officialNameKana: e.target.value })}
             maxLength={120}
-            className="bg-input max-w-md"
+            className="max-w-md"
             placeholder="セイジダンタイノセイシキメイショウ"
           />
         </div>
@@ -62,7 +62,7 @@ export function BasicInfoSection({ formData, updateFormData }: BasicInfoSectionP
             value={formData.officeAddress ?? ""}
             onChange={(e) => updateFormData({ officeAddress: e.target.value })}
             maxLength={80}
-            className="bg-input max-w-md"
+            className="max-w-md"
             placeholder="東京都千代田区永田町1-1-1"
           />
         </div>
@@ -79,7 +79,7 @@ export function BasicInfoSection({ formData, updateFormData }: BasicInfoSectionP
             value={formData.officeAddressBuilding ?? ""}
             onChange={(e) => updateFormData({ officeAddressBuilding: e.target.value })}
             maxLength={60}
-            className="bg-input max-w-md"
+            className="max-w-md"
             placeholder="○○ビル3階"
           />
         </div>

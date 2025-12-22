@@ -92,7 +92,6 @@ export function ContactPersonsSection({ details, updateDetails }: ContactPersons
                   value={person.lastName}
                   onChange={(e) => updateContactPerson(index, { lastName: e.target.value })}
                   maxLength={30}
-                  className="bg-input"
                   placeholder="田中"
                 />
               </div>
@@ -103,7 +102,6 @@ export function ContactPersonsSection({ details, updateDetails }: ContactPersons
                   value={person.firstName}
                   onChange={(e) => updateContactPerson(index, { firstName: e.target.value })}
                   maxLength={30}
-                  className="bg-input"
                   placeholder="一郎"
                 />
               </div>
@@ -114,7 +112,6 @@ export function ContactPersonsSection({ details, updateDetails }: ContactPersons
                   value={person.tel}
                   onChange={(e) => updateContactPerson(index, { tel: e.target.value })}
                   maxLength={20}
-                  className="bg-input"
                   placeholder="03-1234-5678"
                 />
               </div>

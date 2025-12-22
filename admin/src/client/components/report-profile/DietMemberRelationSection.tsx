@@ -182,7 +182,6 @@ export function DietMemberRelationSection({
                         value={member.lastName}
                         onChange={(e) => updateMember(index, { lastName: e.target.value })}
                         maxLength={30}
-                        className="bg-input"
                       />
                     </div>
                     <div className="space-y-2">
@@ -192,7 +191,6 @@ export function DietMemberRelationSection({
                         value={member.firstName}
                         onChange={(e) => updateMember(index, { firstName: e.target.value })}
                         maxLength={30}
-                        className="bg-input"
                       />
                     </div>
                   </div>
@@ -252,7 +250,7 @@ export function DietMemberRelationSection({
                     value={period.from}
                     onChange={(e) => updatePeriod(index, { from: e.target.value })}
                     maxLength={20}
-                    className="bg-input w-32"
+                    className="w-32"
                     placeholder="R6/4/1"
                   />
                   <span className="text-foreground">〜</span>
@@ -261,7 +259,7 @@ export function DietMemberRelationSection({
                     value={period.to}
                     onChange={(e) => updatePeriod(index, { to: e.target.value })}
                     maxLength={20}
-                    className="bg-input w-32"
+                    className="w-32"
                     placeholder="R7/3/31"
                   />
                   <Button

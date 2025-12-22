@@ -106,7 +106,7 @@ export function FundManagementSection({ details, updateDetails }: FundManagement
               value={fundManagement.publicPositionName ?? ""}
               onChange={(e) => updateFundManagement({ publicPositionName: e.target.value })}
               maxLength={60}
-              className="bg-input max-w-md"
+              className="max-w-md"
               placeholder="衆議院議員"
             />
           </div>
@@ -148,7 +148,6 @@ export function FundManagementSection({ details, updateDetails }: FundManagement
                     })
                   }
                   maxLength={30}
-                  className="bg-input"
                 />
               </div>
               <div className="flex-1 space-y-2">
@@ -166,7 +165,6 @@ export function FundManagementSection({ details, updateDetails }: FundManagement
                     })
                   }
                   maxLength={30}
-                  className="bg-input"
                 />
               </div>
             </div>
@@ -189,7 +187,7 @@ export function FundManagementSection({ details, updateDetails }: FundManagement
                     value={period.from}
                     onChange={(e) => updatePeriod(index, { from: e.target.value })}
                     maxLength={20}
-                    className="bg-input w-32"
+                    className="w-32"
                     placeholder="R6/4/1"
                   />
                   <span className="text-foreground">〜</span>
@@ -198,7 +196,7 @@ export function FundManagementSection({ details, updateDetails }: FundManagement
                     value={period.to}
                     onChange={(e) => updatePeriod(index, { to: e.target.value })}
                     maxLength={20}
-                    className="bg-input w-32"
+                    className="w-32"
                     placeholder="R7/3/31"
                   />
                   <Button

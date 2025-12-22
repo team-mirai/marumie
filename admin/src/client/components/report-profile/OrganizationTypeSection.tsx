@@ -23,7 +23,7 @@ export function OrganizationTypeSection({ details, updateDetails }: Organization
             value={details.organizationType ?? ""}
             onChange={(e) => updateDetails({ organizationType: e.target.value })}
             maxLength={2}
-            className="bg-input w-24"
+            className="w-24"
             placeholder="01"
           />
           <p className="text-muted-foreground text-sm">総務省の団体区分コードを入力してください</p>
@@ -53,7 +53,7 @@ export function OrganizationTypeSection({ details, updateDetails }: Organization
             value={details.specificPartyDate ?? ""}
             onChange={(e) => updateDetails({ specificPartyDate: e.target.value })}
             maxLength={20}
-            className="bg-input w-40"
+            className="w-40"
             placeholder="R6/4/1"
           />
           <p className="text-muted-foreground text-sm">該当する場合のみ入力（例: R6/4/1）</p>
