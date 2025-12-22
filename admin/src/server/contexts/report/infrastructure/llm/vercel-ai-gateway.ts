@@ -20,6 +20,11 @@ export class VercelAIGateway implements LLMGateway {
     const { text } = await generateText({
       model: anthropic(MODEL),
       prompt,
+      tools: {
+        web_search: anthropic.tools.webSearch_20250305({
+          maxUses: 3,
+        }),
+      },
     });
 
     return this.parseResponse(text, params.companyName);
