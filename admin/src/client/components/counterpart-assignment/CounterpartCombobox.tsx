@@ -208,7 +208,7 @@ export function CounterpartCombobox({
       )}
 
       {isOpen && (
-        <div className="absolute top-full left-0 mt-1 w-80 bg-card border border-border rounded-lg shadow-lg z-50 max-h-96 overflow-hidden">
+        <div className="absolute top-full right-0 mt-1 w-80 bg-card border border-border rounded-lg shadow-lg z-50 max-h-96 overflow-hidden">
           {isCreateMode ? (
             <form onSubmit={handleCreateAndAssign} className="p-3 space-y-3">
               <div className="flex justify-between items-center">

@@ -13,6 +13,7 @@ import {
 import type { TransactionWithCounterpart } from "@/server/contexts/report/domain/models/transaction-with-counterpart";
 import type { Counterpart } from "@/server/contexts/report/domain/models/counterpart";
 import { PL_CATEGORIES } from "@/shared/utils/category-mapping";
+import { cn } from "@/client/lib";
 import { CounterpartCombobox } from "./CounterpartCombobox";
 
 interface TransactionWithCounterpartTableProps {
@@ -37,13 +38,27 @@ function formatAmount(amount: number): string {
   return `¥${amount.toLocaleString()}`;
 }
 
-function getCategoryLabel(categoryKey: string): string {
+const DEFAULT_CATEGORY_COLOR = "#64748B"; // slate-500 as default fallback color
+
+function getCategoryInfo(categoryKey: string): {
+  label: string;
+  color: string;
+  type: string | undefined;
+} {
   for (const [, value] of Object.entries(PL_CATEGORIES)) {
     if (value.key === categoryKey) {
-      return value.shortLabel || value.category;
+      return {
+        label: value.shortLabel || value.category,
+        color: value.color || DEFAULT_CATEGORY_COLOR,
+        type: value.type,
+      };
     }
   }
-  return categoryKey;
+  return {
+    label: categoryKey,
+    color: DEFAULT_CATEGORY_COLOR,
+    type: undefined,
+  };
 }
 
 export function TransactionWithCounterpartTable({
@@ -132,15 +147,27 @@ export function TransactionWithCounterpartTable({
             )}
           </button>
         ),
-        cell: (info) => getCategoryLabel(info.getValue()),
+        cell: (info) => {
+          const categoryInfo = getCategoryInfo(info.getValue());
+          return (
+            <div
+              className={`inline-block px-2 py-1 rounded text-xs font-medium ${
+                categoryInfo.type === "income" ? "text-black" : "text-white"
+              }`}
+              style={{ backgroundColor: categoryInfo.color }}
+            >
+              {categoryInfo.label}
+            </div>
+          );
+        },
+      }),
+      columnHelper.accessor("friendlyCategory", {
+        header: "詳細区分",
+        cell: (info) => info.getValue() || "-",
       }),
       columnHelper.accessor("description", {
         header: "摘要",
-        cell: (info) => (
-          <span className="truncate max-w-[200px] block" title={info.getValue() ?? ""}>
-            {info.getValue() || "-"}
-          </span>
-        ),
+        cell: (info) => info.getValue() || "-",
       }),
       columnHelper.accessor("counterpart", {
         header: "取引先",
@@ -193,7 +220,7 @@ export function TransactionWithCounterpartTable({
               {headerGroup.headers.map((header) => (
                 <th
                   key={header.id}
-                  className="text-left py-2 px-3 text-muted-foreground font-medium"
+                  className="text-left py-2 px-4 text-muted-foreground font-medium whitespace-nowrap"
                 >
                   {header.isPlaceholder
                     ? null
@@ -210,7 +237,13 @@ export function TransactionWithCounterpartTable({
               className="border-b border-border hover:bg-secondary/30 transition-colors"
             >
               {row.getVisibleCells().map((cell) => (
-                <td key={cell.id} className="py-2 px-3 text-white">
+                <td
+                  key={cell.id}
+                  className={cn(
+                    "py-2 px-4 text-white",
+                    cell.column.id !== "description" && "whitespace-nowrap",
+                  )}
+                >
                   {flexRender(cell.column.columnDef.cell, cell.getContext())}
                 </td>
               ))}
