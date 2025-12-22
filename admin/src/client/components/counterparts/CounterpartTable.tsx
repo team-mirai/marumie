@@ -5,6 +5,7 @@ import { useState } from "react";
 import type { CounterpartWithUsage } from "@/server/contexts/report/domain/models/counterpart";
 import { EditCounterpartDialog } from "./EditCounterpartDialog";
 import { DeleteCounterpartButton } from "./DeleteCounterpartButton";
+import { AddressSearchDialog } from "./AddressSearchDialog";
 
 interface CounterpartTableProps {
   counterparts: CounterpartWithUsage[];
@@ -13,6 +14,9 @@ interface CounterpartTableProps {
 
 export function CounterpartTable({ counterparts, onUpdate }: CounterpartTableProps) {
   const [editingCounterpart, setEditingCounterpart] = useState<CounterpartWithUsage | null>(null);
+  const [searchingCounterpart, setSearchingCounterpart] = useState<CounterpartWithUsage | null>(
+    null,
+  );
 
   if (counterparts.length === 0) {
     return (
@@ -45,6 +49,15 @@ export function CounterpartTable({ counterparts, onUpdate }: CounterpartTablePro
                 <td className="py-3 px-4 text-white text-right">{counterpart.usageCount}件</td>
                 <td className="py-3 px-4 text-right">
                   <div className="flex gap-2 justify-end">
+                    {!counterpart.address && (
+                      <button
+                        type="button"
+                        onClick={() => setSearchingCounterpart(counterpart)}
+                        className="bg-primary text-white border-0 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors duration-200 hover:bg-primary/80 cursor-pointer"
+                      >
+                        住所を検索
+                      </button>
+                    )}
                     <button
                       type="button"
                       onClick={() => setEditingCounterpart(counterpart)}
@@ -72,6 +85,20 @@ export function CounterpartTable({ counterparts, onUpdate }: CounterpartTablePro
           onClose={() => setEditingCounterpart(null)}
           onUpdate={() => {
             setEditingCounterpart(null);
+            onUpdate();
+          }}
+        />
+      )}
+
+      {searchingCounterpart && (
+        <AddressSearchDialog
+          counterpart={searchingCounterpart}
+          open={!!searchingCounterpart}
+          onOpenChange={(open) => {
+            if (!open) setSearchingCounterpart(null);
+          }}
+          onUpdate={() => {
+            setSearchingCounterpart(null);
             onUpdate();
           }}
         />
