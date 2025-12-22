@@ -102,7 +102,7 @@ export function PoliticalOrganizationForm({
               name="displayName"
               value={formData.displayName}
               onChange={handleInputChange}
-              className="bg-input max-w-md"
+              className="max-w-md"
               placeholder="表示名を入力してください"
               disabled={isLoading}
               required
@@ -117,7 +117,7 @@ export function PoliticalOrganizationForm({
               name="orgName"
               value={formData.orgName}
               onChange={handleInputChange}
-              className="bg-input max-w-md"
+              className="max-w-md"
               placeholder="正式名称を入力してください"
               disabled={isLoading}
             />
@@ -133,7 +133,7 @@ export function PoliticalOrganizationForm({
               name="slug"
               value={formData.slug}
               onChange={handleInputChange}
-              className="bg-input max-w-md"
+              className="max-w-md"
               placeholder="team-mirai"
               disabled={isLoading}
               required
@@ -147,7 +147,7 @@ export function PoliticalOrganizationForm({
               name="description"
               value={formData.description}
               onChange={handleInputChange}
-              className="bg-input max-w-md min-h-24 resize-y"
+              className="max-w-md min-h-24 resize-y"
               placeholder="政治団体の説明を入力してください"
               disabled={isLoading}
             />

@@ -1,6 +1,6 @@
-// shadcn/ui components (in shadcn/ subdirectory)
-export { Button, buttonVariants } from "@/client/components/ui/shadcn/button";
-export { Input } from "@/client/components/ui/shadcn/input";
+// shadcn/ui components
+export { Button, buttonVariants } from "@/client/components/ui/button";
+export { Input } from "@/client/components/ui/input";
 export {
   Card,
   CardHeader,
@@ -8,8 +8,8 @@ export {
   CardTitle,
   CardDescription,
   CardContent,
-} from "@/client/components/ui/shadcn/card";
-export { Label } from "@/client/components/ui/shadcn/label";
+} from "@/client/components/ui/card";
+export { Label } from "@/client/components/ui/label";
 export {
   Select,
   SelectGroup,
@@ -21,7 +21,7 @@ export {
   SelectSeparator,
   SelectScrollUpButton,
   SelectScrollDownButton,
-} from "@/client/components/ui/shadcn/select";
+} from "@/client/components/ui/select";
 export {
   Dialog,
   DialogPortal,
@@ -33,7 +33,7 @@ export {
   DialogFooter,
   DialogTitle,
   DialogDescription,
-} from "@/client/components/ui/shadcn/dialog";
+} from "@/client/components/ui/dialog";
 export {
   Table,
   TableHeader,
@@ -43,7 +43,7 @@ export {
   TableRow,
   TableCell,
   TableCaption,
-} from "@/client/components/ui/shadcn/table";
+} from "@/client/components/ui/table";
 export {
   useFormField,
   Form,
@@ -53,6 +53,6 @@ export {
   FormDescription,
   FormMessage,
   FormField,
-} from "@/client/components/ui/shadcn/form";
-export { Textarea } from "@/client/components/ui/shadcn/textarea";
-export { Checkbox } from "@/client/components/ui/shadcn/checkbox";
+} from "@/client/components/ui/form";
+export { Textarea } from "@/client/components/ui/textarea";
+export { Checkbox } from "@/client/components/ui/checkbox";

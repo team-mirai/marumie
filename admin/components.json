@@ -4,9 +4,9 @@
   "rsc": true,
   "tsx": true,
   "tailwind": {
-    "config": "postcss.config.js",
-    "css": "src/app/styles.css",
-    "baseColor": "slate",
+    "config": "",
+    "css": "src/app/globals.css",
+    "baseColor": "zinc",
     "cssVariables": true,
     "prefix": ""
   },

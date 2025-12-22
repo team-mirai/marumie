@@ -12,12 +12,16 @@ admin アプリケーションで shadcn UI を使用する際のルールを定
 
 ```
 admin/src/client/components/ui/
-├── shadcn/          # shadcn UI コンポーネント（npx shadcn@latest add で追加）
-│   ├── button.tsx
-│   ├── input.tsx
-│   ├── card.tsx
-│   ├── dialog.tsx
-│   └── ...
+├── button.tsx       # shadcn UI コンポーネント
+├── input.tsx
+├── card.tsx
+├── dialog.tsx
+├── select.tsx
+├── textarea.tsx
+├── checkbox.tsx
+├── label.tsx
+├── table.tsx
+├── form.tsx
 ├── index.ts         # 全コンポーネントの re-export
 ├── Button.tsx       # [非推奨] カスタム実装
 ├── Input.tsx        # [非推奨] カスタム実装
@@ -29,20 +33,20 @@ admin/src/client/components/ui/
 
 ```typescript
 // 推奨: index.ts 経由で import
-import { ShadcnButton, ShadcnInput, Label, Dialog } from "@/client/components/ui";
+import { Button, Input, Label, Dialog } from "@/client/components/ui";
 
 // 非推奨: 個別ファイルから直接 import
 import Button from "@/client/components/ui/Button";
-import { Button } from "@/client/components/ui/shadcn/button";
+import { Button } from "@/client/components/ui/button";
 ```
 
 ## コンポーネント対応表
 
 | 用途 | 推奨（shadcn） | 非推奨（カスタム） |
 |------|----------------|-------------------|
-| ボタン | `ShadcnButton` | `Button` |
-| テキスト入力 | `ShadcnInput` | `Input` |
-| カード | `ShadcnCard`, `CardHeader`, `CardContent` 等 | `Card` |
+| ボタン | `Button` | カスタム `Button` |
+| テキスト入力 | `Input` | カスタム `Input` |
+| カード | `Card`, `CardHeader`, `CardContent` 等 | カスタム `Card` |
 | セレクト | `Select`, `SelectTrigger`, `SelectContent`, `SelectItem` | `Selector` |
 | ダイアログ | `Dialog`, `DialogContent`, `DialogHeader` 等 | カスタム実装のモーダル |
 | ラベル | `Label` | - |
@@ -63,6 +67,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  Button,
 } from "@/client/components/ui";
 
 function MyDialog({ open, onOpenChange }) {
@@ -74,7 +79,7 @@ function MyDialog({ open, onOpenChange }) {
         </DialogHeader>
         {/* コンテンツ */}
         <DialogFooter>
-          <ShadcnButton>確定</ShadcnButton>
+          <Button>確定</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -85,7 +90,7 @@ function MyDialog({ open, onOpenChange }) {
 function MyModal() {
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center">
-      <div className="bg-primary-panel rounded-xl p-6">
+      <div className="bg-card rounded-xl p-6">
         {/* ... */}
       </div>
     </div>
@@ -97,8 +102,22 @@ function MyModal() {
 
 ### テーマ
 
-shadcn/ui 公式の **Dark Blue テーマ** を採用しています。
+shadcn/ui 公式の **Dark Blue テーマ**（ダークモード固定）を採用しています。
 テーマ定義は `admin/src/app/globals.css` の `@theme` ブロックにあります。
+
+### ダークモード対応
+
+admin はダークモード固定のため、shadcn コンポーネントの `dark:` プレフィックス付きクラスは自動的に適用されません。
+コンポーネントを追加・更新する際は、`dark:` プレフィックスの値をデフォルトとして適用してください。
+
+例:
+```tsx
+// 公式の定義
+"bg-transparent dark:bg-input/30"
+
+// admin での適用（dark: を除去してデフォルトに）
+"bg-input/30"
+```
 
 ### カラー変数
 
@@ -142,13 +161,72 @@ import { cn } from "@/client/lib";
 <div className={`base-class ${condition ? "conditional-class" : ""} ${className}`} />
 ```
 
+## インストール済みコンポーネント
+
+現在インストールされている shadcn コンポーネント:
+
+- `button` - ボタン
+- `card` - カード
+- `checkbox` - チェックボックス
+- `dialog` - ダイアログ/モーダル
+- `form` - フォーム（react-hook-form 連携）
+- `input` - テキスト入力
+- `label` - ラベル
+- `select` - セレクトボックス
+- `table` - テーブル
+- `textarea` - テキストエリア
+
+必要なコンポーネントは必要になったタイミングで追加してください。
+
 ## 新規コンポーネント追加
 
-shadcn UI コンポーネントを追加する場合:
+### 1. コンポーネントをインストール
 
 ```bash
 cd admin
 npx shadcn@latest add [component-name]
 ```
 
-追加後、`index.ts` に re-export を追加してください。
+利用可能なコンポーネント一覧: https://ui.shadcn.com/docs/components
+
+例:
+```bash
+npx shadcn@latest add tooltip
+npx shadcn@latest add dropdown-menu
+npx shadcn@latest add tabs
+```
+
+### 2. index.ts に re-export を追加
+
+`admin/src/client/components/ui/index.ts` に追加したコンポーネントの export を追記:
+
+```typescript
+// 例: tooltip を追加した場合
+export {
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+  TooltipProvider,
+} from "@/client/components/ui/tooltip";
+```
+
+### 3. ダークモード対応を確認
+
+追加したコンポーネントに `dark:` プレフィックス付きのクラスがある場合、
+admin はダークモード固定のため、`dark:` の値をデフォルトとして適用するよう修正が必要です。
+
+### 注意: components.json の設定
+
+`admin/components.json` は Tailwind v4 用に設定されています。
+この設定が正しくないと、CLI が古いバージョンのコンポーネントを取得します。
+
+```json
+{
+  "tailwind": {
+    "config": "",
+    "css": "src/app/globals.css",
+    "baseColor": "zinc",
+    "cssVariables": true
+  }
+}
+```

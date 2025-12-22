@@ -39,7 +39,6 @@ export function RepresentativeSection({ details, updateDetails }: Representative
                   })
                 }
                 maxLength={30}
-                className="bg-input"
                 placeholder="山田"
               />
             </div>
@@ -57,7 +56,6 @@ export function RepresentativeSection({ details, updateDetails }: Representative
                   })
                 }
                 maxLength={30}
-                className="bg-input"
                 placeholder="太郎"
               />
             </div>
@@ -78,7 +76,6 @@ export function RepresentativeSection({ details, updateDetails }: Representative
                   })
                 }
                 maxLength={30}
-                className="bg-input"
                 placeholder="鈴木"
               />
             </div>
@@ -93,7 +90,6 @@ export function RepresentativeSection({ details, updateDetails }: Representative
                   })
                 }
                 maxLength={30}
-                className="bg-input"
                 placeholder="花子"
               />
             </div>

@@ -26,10 +26,8 @@
   --color-destructive: oklch(0.704 0.191 22.216);
   --color-destructive-foreground: oklch(0.985 0 0);
 
-  /* 透過色 oklch(1 0 0 / 10%) を背景に合成した実色（より明るく調整） */
-  --color-border: oklch(0.35 0.01 286);
-  /* 透過色 oklch(1 0 0 / 15%) を背景に合成した実色（border と同様に調整） */
-  --color-input: oklch(0.35 0.01 286);
+  --color-border: oklch(1 0 0 / 10%);
+  --color-input: oklch(1 0 0 / 15%);
   --color-ring: oklch(0.556 0 0);
 
   --color-chart-1: oklch(0.809 0.105 251.813);
