@@ -43,7 +43,9 @@ export function BulkAssignModal({
   const filteredCounterparts = allCounterparts.filter((cp) => {
     if (!searchQuery.trim()) return true;
     const query = searchQuery.toLowerCase();
-    return cp.name.toLowerCase().includes(query) || cp.address.toLowerCase().includes(query);
+    return (
+      cp.name.toLowerCase().includes(query) || (cp.address?.toLowerCase().includes(query) ?? false)
+    );
   });
 
   const handleSubmit = async () => {
