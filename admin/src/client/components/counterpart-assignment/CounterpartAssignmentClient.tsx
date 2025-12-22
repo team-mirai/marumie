@@ -193,10 +193,10 @@ export function CounterpartAssignmentClient({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="bg-card rounded-xl p-4 space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-semibold text-white mb-1">取引先紐付け管理</h1>
+          <h1 className="text-2xl font-bold text-white mb-1">取引先紐付け管理</h1>
           <p className="text-muted-foreground">
             Transactionに対してCounterpart（取引先）を紐付けます
           </p>
@@ -209,15 +209,17 @@ export function CounterpartAssignmentClient({
         </Link>
       </div>
 
-      <Card className="space-y-4 p-4">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <PoliticalOrganizationSelect
-            organizations={organizations}
-            value={selectedOrganizationId}
-            onValueChange={handleOrganizationChange}
-            required
-          />
-          <div>
+      <Card className="p-4">
+        <div className="flex flex-col md:flex-row md:items-end gap-4">
+          <div className="w-fit">
+            <PoliticalOrganizationSelect
+              organizations={organizations}
+              value={selectedOrganizationId}
+              onValueChange={handleOrganizationChange}
+              required
+            />
+          </div>
+          <div className="w-fit space-y-2">
             <Label>報告年 (西暦)</Label>
             <Input
               type="number"
@@ -226,12 +228,21 @@ export function CounterpartAssignmentClient({
               min={1900}
               max={2100}
               required
+              className="w-24"
             />
           </div>
-          <div>
+        </div>
+      </Card>
+
+      <hr className="border-border" />
+
+      <Card className="p-4 gap-2">
+        <h2 className="text-lg font-semibold text-white">絞り込み</h2>
+        <div className="flex flex-col md:flex-row md:items-end gap-4">
+          <div className="w-fit space-y-2">
             <Label>カテゴリ</Label>
             <Select value={categoryKey} onValueChange={handleCategoryChange}>
-              <SelectTrigger>
+              <SelectTrigger className="w-40">
                 <SelectValue placeholder="選択してください" />
               </SelectTrigger>
               <SelectContent>
@@ -243,7 +254,7 @@ export function CounterpartAssignmentClient({
               </SelectContent>
             </Select>
           </div>
-          <form onSubmit={handleSearchSubmit} className="flex flex-col">
+          <form onSubmit={handleSearchSubmit} className="w-fit space-y-2">
             <Label htmlFor="search-query">検索</Label>
             <div className="flex gap-2">
               <Input
@@ -252,17 +263,14 @@ export function CounterpartAssignmentClient({
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="摘要、メモで検索..."
-                className="flex-1"
+                className="w-48"
               />
               <Button type="submit" variant="secondary">
                 検索
               </Button>
             </div>
           </form>
-        </div>
-
-        <div className="flex items-center gap-4">
-          <label className="flex items-center gap-2 cursor-pointer">
+          <label className="flex items-center gap-2 cursor-pointer h-10">
             <input
               type="checkbox"
               checked={unassignedOnly}
