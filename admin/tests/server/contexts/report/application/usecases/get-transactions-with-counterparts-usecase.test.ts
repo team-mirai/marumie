@@ -106,6 +106,52 @@ describe("GetTransactionsWithCounterpartsUsecase", () => {
       expect(result.page).toBe(3);
       expect(result.perPage).toBe(20);
     });
+
+    it("不正なページネーションパラメータは安全な値に補正される", async () => {
+      const mockRepository = createMockRepository();
+      mockRepository.findTransactionsWithCounterparts.mockResolvedValue({
+        transactions: [],
+        total: 0,
+      });
+
+      const usecase = new GetTransactionsWithCounterpartsUsecase(mockRepository);
+
+      // page=0, perPage=-5 のような不正値
+      const result = await usecase.execute({
+        politicalOrganizationId: "123",
+        financialYear: 2024,
+        page: 0,
+        perPage: -5,
+      });
+
+      const calledFilters = mockRepository.findTransactionsWithCounterparts.mock
+        .calls[0][0] as TransactionWithCounterpartFilters;
+      expect(calledFilters.limit).toBe(1); // 最小値1に補正
+      expect(calledFilters.offset).toBe(0); // page=1に補正されるので offset=0
+
+      expect(result.page).toBe(1);
+      expect(result.perPage).toBe(1);
+    });
+
+    it("perPageが上限100を超える場合は100に制限される", async () => {
+      const mockRepository = createMockRepository();
+      mockRepository.findTransactionsWithCounterparts.mockResolvedValue({
+        transactions: [],
+        total: 0,
+      });
+
+      const usecase = new GetTransactionsWithCounterpartsUsecase(mockRepository);
+      const result = await usecase.execute({
+        politicalOrganizationId: "123",
+        financialYear: 2024,
+        perPage: 500,
+      });
+
+      const calledFilters = mockRepository.findTransactionsWithCounterparts.mock
+        .calls[0][0] as TransactionWithCounterpartFilters;
+      expect(calledFilters.limit).toBe(100);
+      expect(result.perPage).toBe(100);
+    });
   });
 
   describe("すべてのフィルタオプションの受け渡し", () => {

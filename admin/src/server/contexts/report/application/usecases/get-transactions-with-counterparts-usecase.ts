@@ -35,8 +35,8 @@ export class GetTransactionsWithCounterpartsUsecase {
   async execute(
     input: GetTransactionsWithCounterpartsInput,
   ): Promise<GetTransactionsWithCounterpartsResult> {
-    const page = input.page ?? 1;
-    const perPage = input.perPage ?? 50;
+    const page = Math.max(1, input.page ?? 1);
+    const perPage = Math.max(1, Math.min(100, input.perPage ?? 50));
     const offset = (page - 1) * perPage;
 
     const filters: TransactionWithCounterpartFilters = {
