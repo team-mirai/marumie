@@ -2,6 +2,7 @@
 import "client-only";
 
 import { useState } from "react";
+import { Button } from "@/client/components/ui";
 import { deleteCounterpartAction } from "@/server/contexts/report/presentation/actions/delete-counterpart";
 
 interface DeleteCounterpartButtonProps {
@@ -46,15 +47,14 @@ export function DeleteCounterpartButton({
   };
 
   return (
-    <button
+    <Button
       type="button"
+      variant="destructive"
+      size="sm"
       onClick={handleDelete}
       disabled={isDeleting}
-      className={`bg-red-600 text-white border-0 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-red-400 ${
-        isDeleting ? "opacity-50 cursor-not-allowed" : "hover:bg-red-700 cursor-pointer"
-      }`}
     >
       {isDeleting ? "削除中..." : "削除"}
-    </button>
+    </Button>
   );
 }
