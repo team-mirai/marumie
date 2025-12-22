@@ -184,17 +184,15 @@ export function CounterpartCombobox({
         onClick={() => setIsOpen(!isOpen)}
         disabled={isPending}
         className={`w-full text-left px-3 py-2 rounded-lg border transition-colors duration-200 ${
-          isPending ? "opacity-60" : "hover:bg-primary-hover cursor-pointer"
+          isPending ? "opacity-60" : "hover:bg-secondary cursor-pointer"
         } ${
-          optimisticCounterpart
-            ? "bg-primary-input border-primary-border"
-            : "bg-yellow-400/10 border-yellow-400/30"
+          optimisticCounterpart ? "bg-input border-border" : "bg-yellow-400/10 border-yellow-400/30"
         }`}
       >
         {optimisticCounterpart ? (
           <div className="flex flex-col">
             <span className="text-white font-medium truncate">{optimisticCounterpart.name}</span>
-            <span className="text-primary-muted text-xs truncate">
+            <span className="text-muted-foreground text-xs truncate">
               {optimisticCounterpart.address}
             </span>
           </div>
@@ -210,7 +208,7 @@ export function CounterpartCombobox({
       )}
 
       {isOpen && (
-        <div className="absolute top-full left-0 mt-1 w-80 bg-primary-panel border border-primary-border rounded-lg shadow-lg z-50 max-h-96 overflow-hidden">
+        <div className="absolute top-full left-0 mt-1 w-80 bg-card border border-border rounded-lg shadow-lg z-50 max-h-96 overflow-hidden">
           {isCreateMode ? (
             <form onSubmit={handleCreateAndAssign} className="p-3 space-y-3">
               <div className="flex justify-between items-center">
@@ -222,7 +220,7 @@ export function CounterpartCombobox({
                     setNewName("");
                     setNewAddress("");
                   }}
-                  className="text-primary-muted hover:text-white transition-colors"
+                  className="text-muted-foreground hover:text-white transition-colors"
                 >
                   戻る
                 </button>
@@ -231,7 +229,7 @@ export function CounterpartCombobox({
               <div>
                 <label
                   htmlFor={`create-name-${transactionId}`}
-                  className="block mb-1 text-sm text-primary-muted"
+                  className="block mb-1 text-sm text-muted-foreground"
                 >
                   名前 <span className="text-red-500">*</span>
                 </label>
@@ -241,7 +239,7 @@ export function CounterpartCombobox({
                   value={newName}
                   onChange={(e) => setNewName(e.target.value)}
                   maxLength={MAX_NAME_LENGTH}
-                  className="bg-primary-input text-white border border-primary-border rounded-lg px-3 py-2 w-full text-sm focus:outline-none focus:ring-2 focus:ring-primary-accent"
+                  className="bg-input text-white border border-border rounded-lg px-3 py-2 w-full text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                   placeholder="取引先名"
                   disabled={isPending}
                   required
@@ -251,7 +249,7 @@ export function CounterpartCombobox({
               <div>
                 <label
                   htmlFor={`create-address-${transactionId}`}
-                  className="block mb-1 text-sm text-primary-muted"
+                  className="block mb-1 text-sm text-muted-foreground"
                 >
                   住所 <span className="text-red-500">*</span>
                 </label>
@@ -261,7 +259,7 @@ export function CounterpartCombobox({
                   value={newAddress}
                   onChange={(e) => setNewAddress(e.target.value)}
                   maxLength={MAX_ADDRESS_LENGTH}
-                  className="bg-primary-input text-white border border-primary-border rounded-lg px-3 py-2 w-full text-sm focus:outline-none focus:ring-2 focus:ring-primary-accent"
+                  className="bg-input text-white border border-border rounded-lg px-3 py-2 w-full text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                   placeholder="住所"
                   disabled={isPending}
                   required
@@ -277,14 +275,14 @@ export function CounterpartCombobox({
                     setNewAddress("");
                   }}
                   disabled={isPending}
-                  className="bg-primary-hover text-white border border-primary-border rounded-lg px-3 py-1.5 text-sm hover:bg-primary-border transition-colors"
+                  className="bg-secondary text-white border border-border rounded-lg px-3 py-1.5 text-sm hover:bg-secondary transition-colors"
                 >
                   キャンセル
                 </button>
                 <button
                   type="submit"
                   disabled={isPending || !newName.trim() || !newAddress.trim()}
-                  className={`bg-primary-accent text-white rounded-lg px-3 py-1.5 text-sm transition-colors ${
+                  className={`bg-primary text-white rounded-lg px-3 py-1.5 text-sm transition-colors ${
                     isPending || !newName.trim() || !newAddress.trim()
                       ? "opacity-60 cursor-not-allowed"
                       : "hover:bg-blue-600 cursor-pointer"
@@ -296,14 +294,14 @@ export function CounterpartCombobox({
             </form>
           ) : (
             <>
-              <div className="p-2 border-b border-primary-border">
+              <div className="p-2 border-b border-border">
                 <input
                   ref={inputRef}
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="検索..."
-                  className="bg-primary-input text-white border border-primary-border rounded-lg px-3 py-2 w-full text-sm focus:outline-none focus:ring-2 focus:ring-primary-accent"
+                  className="bg-input text-white border border-border rounded-lg px-3 py-2 w-full text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                 />
               </div>
 
@@ -313,19 +311,19 @@ export function CounterpartCombobox({
                     type="button"
                     onClick={handleUnassign}
                     disabled={isPending}
-                    className="w-full text-left px-3 py-2 text-red-400 hover:bg-red-900/20 transition-colors border-b border-primary-border"
+                    className="w-full text-left px-3 py-2 text-red-400 hover:bg-red-900/20 transition-colors border-b border-border"
                   >
                     紐付けを解除
                   </button>
                 )}
 
                 {isLoadingSuggestions && (
-                  <div className="px-3 py-2 text-primary-muted text-sm">提案を読み込み中...</div>
+                  <div className="px-3 py-2 text-muted-foreground text-sm">提案を読み込み中...</div>
                 )}
 
                 {!isLoadingSuggestions && suggestions.length > 0 && !searchQuery.trim() && (
-                  <div className="py-1 border-b border-primary-border">
-                    <div className="px-3 py-1 text-xs text-primary-muted">
+                  <div className="py-1 border-b border-border">
+                    <div className="px-3 py-1 text-xs text-muted-foreground">
                       提案（このTransactionに基づく）
                     </div>
                     {suggestions.map((suggestion) => (
@@ -334,9 +332,9 @@ export function CounterpartCombobox({
                         type="button"
                         onClick={() => handleSelect(suggestion.counterpart)}
                         disabled={isPending}
-                        className={`w-full text-left px-3 py-2 hover:bg-primary-hover transition-colors ${
+                        className={`w-full text-left px-3 py-2 hover:bg-secondary transition-colors ${
                           optimisticCounterpart?.id === suggestion.counterpart.id
-                            ? "bg-primary-hover"
+                            ? "bg-secondary"
                             : ""
                         }`}
                       >
@@ -344,12 +342,10 @@ export function CounterpartCombobox({
                           <span className="text-white font-medium">
                             {suggestion.counterpart.name}
                           </span>
-                          <span className="text-primary-muted text-xs truncate">
+                          <span className="text-muted-foreground text-xs truncate">
                             {suggestion.counterpart.address}
                           </span>
-                          <span className="text-primary-accent text-xs mt-0.5">
-                            {suggestion.reason}
-                          </span>
+                          <span className="text-primary text-xs mt-0.5">{suggestion.reason}</span>
                         </div>
                       </button>
                     ))}
@@ -358,38 +354,40 @@ export function CounterpartCombobox({
 
                 {nonSuggestedCounterparts.length > 0 ? (
                   <div className="py-1">
-                    <div className="px-3 py-1 text-xs text-primary-muted">すべての取引先</div>
+                    <div className="px-3 py-1 text-xs text-muted-foreground">すべての取引先</div>
                     {nonSuggestedCounterparts.map((cp) => (
                       <button
                         key={cp.id}
                         type="button"
                         onClick={() => handleSelect(cp)}
                         disabled={isPending}
-                        className={`w-full text-left px-3 py-2 hover:bg-primary-hover transition-colors ${
-                          optimisticCounterpart?.id === cp.id ? "bg-primary-hover" : ""
+                        className={`w-full text-left px-3 py-2 hover:bg-secondary transition-colors ${
+                          optimisticCounterpart?.id === cp.id ? "bg-secondary" : ""
                         }`}
                       >
                         <div className="flex flex-col">
                           <span className="text-white font-medium">{cp.name}</span>
-                          <span className="text-primary-muted text-xs truncate">{cp.address}</span>
+                          <span className="text-muted-foreground text-xs truncate">
+                            {cp.address}
+                          </span>
                         </div>
                       </button>
                     ))}
                   </div>
                 ) : (
                   !suggestions.length && (
-                    <div className="px-3 py-4 text-center text-primary-muted text-sm">
+                    <div className="px-3 py-4 text-center text-muted-foreground text-sm">
                       該当する取引先がありません
                     </div>
                   )
                 )}
               </div>
 
-              <div className="p-2 border-t border-primary-border">
+              <div className="p-2 border-t border-border">
                 <button
                   type="button"
                   onClick={() => setIsCreateMode(true)}
-                  className="w-full text-left px-3 py-2 text-primary-accent hover:bg-primary-hover rounded-lg transition-colors"
+                  className="w-full text-left px-3 py-2 text-primary hover:bg-secondary rounded-lg transition-colors"
                 >
                   + 新規取引先を作成
                 </button>

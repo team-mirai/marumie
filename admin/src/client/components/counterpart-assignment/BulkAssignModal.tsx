@@ -82,14 +82,14 @@ export function BulkAssignModal({
         onClick={handleClose}
         aria-label="モーダルを閉じる"
       />
-      <div className="relative bg-primary-panel border border-primary-border rounded-lg shadow-xl w-full max-w-lg max-h-[90vh] overflow-hidden">
-        <div className="p-4 border-b border-primary-border">
+      <div className="relative bg-card border border-border rounded-lg shadow-xl w-full max-w-lg max-h-[90vh] overflow-hidden">
+        <div className="p-4 border-b border-border">
           <h2 className="text-lg font-semibold text-white">一括紐付け</h2>
         </div>
 
         <div className="p-4 space-y-4 overflow-y-auto max-h-[60vh]">
           <div>
-            <p className="text-primary-muted text-sm mb-2">
+            <p className="text-muted-foreground text-sm mb-2">
               選択したTransaction:{" "}
               <span className="text-white font-medium">{selectedTransactions.length}件</span>
             </p>
@@ -107,25 +107,25 @@ export function BulkAssignModal({
               placeholder="取引先を検索..."
               className="mb-2"
             />
-            <div className="border border-primary-border rounded-lg max-h-40 overflow-y-auto">
+            <div className="border border-border rounded-lg max-h-40 overflow-y-auto">
               {filteredCounterparts.length > 0 ? (
                 filteredCounterparts.map((cp) => (
                   <button
                     key={cp.id}
                     type="button"
                     onClick={() => setSelectedCounterpartId(cp.id)}
-                    className={`w-full text-left px-3 py-2 hover:bg-primary-hover transition-colors border-b border-primary-border last:border-b-0 ${
-                      selectedCounterpartId === cp.id ? "bg-primary-hover" : ""
+                    className={`w-full text-left px-3 py-2 hover:bg-secondary transition-colors border-b border-border last:border-b-0 ${
+                      selectedCounterpartId === cp.id ? "bg-secondary" : ""
                     }`}
                   >
                     <div className="flex flex-col">
                       <span className="text-white font-medium">{cp.name}</span>
-                      <span className="text-primary-muted text-xs truncate">{cp.address}</span>
+                      <span className="text-muted-foreground text-xs truncate">{cp.address}</span>
                     </div>
                   </button>
                 ))
               ) : (
-                <div className="px-3 py-4 text-center text-primary-muted text-sm">
+                <div className="px-3 py-4 text-center text-muted-foreground text-sm">
                   該当する取引先がありません
                 </div>
               )}
@@ -133,28 +133,28 @@ export function BulkAssignModal({
           </div>
 
           {selectedCounterpart && (
-            <div className="bg-primary-hover/30 border border-primary-border rounded-lg p-3">
-              <p className="text-sm text-primary-muted mb-1">選択中:</p>
+            <div className="bg-secondary/30 border border-border rounded-lg p-3">
+              <p className="text-sm text-muted-foreground mb-1">選択中:</p>
               <p className="text-white font-medium">{selectedCounterpart.name}</p>
-              <p className="text-primary-muted text-xs">{selectedCounterpart.address}</p>
+              <p className="text-muted-foreground text-xs">{selectedCounterpart.address}</p>
             </div>
           )}
 
           <div>
-            <p className="text-sm text-primary-muted mb-2">プレビュー</p>
-            <div className="border border-primary-border rounded-lg max-h-32 overflow-y-auto">
+            <p className="text-sm text-muted-foreground mb-2">プレビュー</p>
+            <div className="border border-border rounded-lg max-h-32 overflow-y-auto">
               {selectedTransactions.slice(0, 10).map((t) => (
                 <div
                   key={t.id}
-                  className="px-3 py-2 text-sm border-b border-primary-border last:border-b-0"
+                  className="px-3 py-2 text-sm border-b border-border last:border-b-0"
                 >
-                  <span className="text-primary-muted">{formatDate(t.transactionDate)}</span>
+                  <span className="text-muted-foreground">{formatDate(t.transactionDate)}</span>
                   <span className="text-white mx-2">{formatAmount(t.debitAmount)}</span>
-                  <span className="text-primary-muted truncate">{t.description || "-"}</span>
+                  <span className="text-muted-foreground truncate">{t.description || "-"}</span>
                 </div>
               ))}
               {selectedTransactions.length > 10 && (
-                <div className="px-3 py-2 text-sm text-primary-muted text-center">
+                <div className="px-3 py-2 text-sm text-muted-foreground text-center">
                   ...他 {selectedTransactions.length - 10}件
                 </div>
               )}
@@ -162,7 +162,7 @@ export function BulkAssignModal({
           </div>
 
           {selectedCounterpart && (
-            <p className="text-sm text-primary-muted">
+            <p className="text-sm text-muted-foreground">
               これらのTransactionに「<span className="text-white">{selectedCounterpart.name}</span>
               」を紐付けます
             </p>
@@ -175,7 +175,7 @@ export function BulkAssignModal({
           )}
         </div>
 
-        <div className="p-4 border-t border-primary-border flex justify-end gap-2">
+        <div className="p-4 border-t border-border flex justify-end gap-2">
           <Button type="button" variant="secondary" onClick={handleClose} disabled={isPending}>
             キャンセル
           </Button>

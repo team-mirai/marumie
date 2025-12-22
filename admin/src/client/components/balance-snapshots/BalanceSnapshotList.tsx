@@ -37,7 +37,7 @@ export default function BalanceSnapshotList({ snapshots }: BalanceSnapshotListPr
   if (snapshots.length === 0) {
     return (
       <div className="text-center py-10">
-        <p className="text-primary-muted">残高スナップショットはありません</p>
+        <p className="text-muted-foreground">残高スナップショットはありません</p>
       </div>
     );
   }
@@ -46,7 +46,7 @@ export default function BalanceSnapshotList({ snapshots }: BalanceSnapshotListPr
     <div className="overflow-x-auto">
       <table className="w-full border-collapse">
         <thead>
-          <tr className="border-b border-primary-border">
+          <tr className="border-b border-border">
             <th className="px-2 py-3 text-left text-sm font-semibold text-white">残高日付</th>
             <th className="px-2 py-3 text-right text-sm font-semibold text-white">残高</th>
             <th className="px-2 py-3 text-left text-sm font-semibold text-white">登録日時</th>
@@ -55,14 +55,14 @@ export default function BalanceSnapshotList({ snapshots }: BalanceSnapshotListPr
         </thead>
         <tbody>
           {snapshots.map((snapshot) => (
-            <tr key={snapshot.id} className="border-b border-primary-border">
+            <tr key={snapshot.id} className="border-b border-border">
               <td className="px-2 py-3 text-sm text-white">
                 {new Date(snapshot.snapshot_date).toLocaleDateString("ja-JP")}
               </td>
               <td className="px-2 py-3 text-sm text-right text-white">
                 ¥{snapshot.balance.toLocaleString()}
               </td>
-              <td className="px-2 py-3 text-sm text-primary-muted">
+              <td className="px-2 py-3 text-sm text-muted-foreground">
                 {new Date(snapshot.created_at).toLocaleString("ja-JP")}
               </td>
               <td className="px-2 py-3 text-center">

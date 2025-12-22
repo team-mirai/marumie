@@ -1,15 +1,6 @@
 @import "tailwindcss";
 
 @theme {
-  /* 互換性のための独自カラー変数（既存コード用、shadcn標準に合わせて更新） */
-  --color-primary-bg: oklch(0.141 0.005 285.823);
-  --color-primary-panel: oklch(0.21 0.006 285.885);
-  --color-primary-muted: oklch(0.705 0.015 286.067);
-  --color-primary-accent: oklch(0.488 0.243 264.376);
-  --color-primary-hover: oklch(0.274 0.006 286.033);
-  --color-primary-input: oklch(0.274 0.006 286.033);
-  --color-primary-border: oklch(0.225 0.004 286);
-
   /* shadcn/ui Dark Blue テーマ（公式 .dark の値を変換） */
   --color-background: oklch(0.141 0.005 285.823);
   --color-foreground: oklch(0.985 0 0);

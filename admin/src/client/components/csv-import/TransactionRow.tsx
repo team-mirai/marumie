@@ -159,7 +159,7 @@ export default function TransactionRow({
   return (
     <tr
       key={`${(currentPage - 1) * perPage + index}-${record.transaction_date}-${record.debit_account}-${record.credit_account}-${record.debit_amount || 0}`}
-      className="border-b border-primary-border"
+      className="border-b border-border"
     >
       <td className="px-2 py-3 text-sm">
         <span
@@ -185,7 +185,7 @@ export default function TransactionRow({
       <td className="px-2 py-3 text-sm text-white">
         {record.debit_account}
         {record.debit_sub_account && (
-          <div className="text-primary-muted text-xs">{record.debit_sub_account}</div>
+          <div className="text-muted-foreground text-xs">{record.debit_sub_account}</div>
         )}
       </td>
       <td className="px-2 py-3 text-sm text-right text-white">
@@ -194,7 +194,7 @@ export default function TransactionRow({
       <td className="px-2 py-3 text-sm text-white">
         {record.credit_account}
         {record.credit_sub_account && (
-          <div className="text-primary-muted text-xs">{record.credit_sub_account}</div>
+          <div className="text-muted-foreground text-xs">{record.credit_sub_account}</div>
         )}
       </td>
       <td className="px-2 py-3 text-sm text-right text-white">

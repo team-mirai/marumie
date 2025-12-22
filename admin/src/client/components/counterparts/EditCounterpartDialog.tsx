@@ -53,7 +53,7 @@ export function EditCounterpartDialog({
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-primary-panel rounded-xl p-6 w-full max-w-md mx-4">
+      <div className="bg-card rounded-xl p-6 w-full max-w-md mx-4">
         <h2 className="text-xl font-bold text-white mb-4">取引先編集</h2>
 
         {error && (
@@ -95,7 +95,7 @@ export function EditCounterpartDialog({
             />
           </div>
 
-          <div className="text-primary-muted text-sm">
+          <div className="text-muted-foreground text-sm">
             使用状況: {counterpart.usageCount}件のTransactionで使用中
           </div>
 

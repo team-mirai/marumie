@@ -110,7 +110,7 @@ export default function BalanceSnapshotsClient({ organizations }: BalanceSnapsho
         <div className="space-y-8">
           <CurrentBalance snapshot={currentBalance} />
 
-          <hr className="border-primary-border" />
+          <hr className="border-border" />
 
           <div>
             <h3 className="text-lg font-medium text-white mb-4">残高を登録</h3>
@@ -124,7 +124,7 @@ export default function BalanceSnapshotsClient({ organizations }: BalanceSnapsho
             <h3 className="text-lg font-medium mb-4">残高スナップショット一覧</h3>
             {loading ? (
               <div className="text-center py-4">
-                <p className="text-primary-muted">読み込み中...</p>
+                <p className="text-muted-foreground">読み込み中...</p>
               </div>
             ) : (
               <BalanceSnapshotList snapshots={snapshots} />

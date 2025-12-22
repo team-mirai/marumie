@@ -65,7 +65,7 @@ export function TransactionWithCounterpartTable({
             type="checkbox"
             checked={table.getIsAllRowsSelected()}
             onChange={table.getToggleAllRowsSelectedHandler()}
-            className="w-4 h-4 rounded border-primary-border bg-primary-input text-primary-accent focus:ring-primary-accent focus:ring-offset-0 cursor-pointer"
+            className="w-4 h-4 rounded border-border bg-input text-primary focus:ring-ring focus:ring-offset-0 cursor-pointer"
           />
         ),
         cell: ({ row }) => (
@@ -73,7 +73,7 @@ export function TransactionWithCounterpartTable({
             type="checkbox"
             checked={row.getIsSelected()}
             onChange={row.getToggleSelectedHandler()}
-            className="w-4 h-4 rounded border-primary-border bg-primary-input text-primary-accent focus:ring-primary-accent focus:ring-offset-0 cursor-pointer"
+            className="w-4 h-4 rounded border-border bg-input text-primary focus:ring-ring focus:ring-offset-0 cursor-pointer"
           />
         ),
       }),
@@ -86,7 +86,7 @@ export function TransactionWithCounterpartTable({
           >
             日付
             {sortField === "transactionDate" && (
-              <span className="text-primary-accent">{sortOrder === "asc" ? "↑" : "↓"}</span>
+              <span className="text-primary">{sortOrder === "asc" ? "↑" : "↓"}</span>
             )}
           </button>
         ),
@@ -101,7 +101,7 @@ export function TransactionWithCounterpartTable({
           >
             金額
             {sortField === "debitAmount" && (
-              <span className="text-primary-accent">{sortOrder === "asc" ? "↑" : "↓"}</span>
+              <span className="text-primary">{sortOrder === "asc" ? "↑" : "↓"}</span>
             )}
           </button>
         ),
@@ -116,7 +116,7 @@ export function TransactionWithCounterpartTable({
           >
             カテゴリ
             {sortField === "categoryKey" && (
-              <span className="text-primary-accent">{sortOrder === "asc" ? "↑" : "↓"}</span>
+              <span className="text-primary">{sortOrder === "asc" ? "↑" : "↓"}</span>
             )}
           </button>
         ),
@@ -167,7 +167,7 @@ export function TransactionWithCounterpartTable({
   if (transactions.length === 0) {
     return (
       <div className="text-center py-10">
-        <p className="text-primary-muted">該当するTransactionがありません</p>
+        <p className="text-muted-foreground">該当するTransactionがありません</p>
       </div>
     );
   }
@@ -177,9 +177,12 @@ export function TransactionWithCounterpartTable({
       <table className="w-full">
         <thead>
           {table.getHeaderGroups().map((headerGroup) => (
-            <tr key={headerGroup.id} className="border-b border-primary-border">
+            <tr key={headerGroup.id} className="border-b border-border">
               {headerGroup.headers.map((header) => (
-                <th key={header.id} className="text-left py-3 px-4 text-primary-muted font-medium">
+                <th
+                  key={header.id}
+                  className="text-left py-3 px-4 text-muted-foreground font-medium"
+                >
                   {header.isPlaceholder
                     ? null
                     : flexRender(header.column.columnDef.header, header.getContext())}
@@ -192,7 +195,7 @@ export function TransactionWithCounterpartTable({
           {table.getRowModel().rows.map((row) => (
             <tr
               key={row.id}
-              className="border-b border-primary-border hover:bg-primary-hover/30 transition-colors"
+              className="border-b border-border hover:bg-secondary/30 transition-colors"
             >
               {row.getVisibleCells().map((cell) => (
                 <td key={cell.id} className="py-3 px-4 text-white">
