@@ -3,7 +3,7 @@ import "client-only";
 
 import { useMemo, useState, useTransition } from "react";
 import type { PoliticalOrganization } from "@/shared/models/political-organization";
-import { Button, Input, Label } from "@/client/components/ui";
+import { Button, Card, Input, Label } from "@/client/components/ui";
 import { PoliticalOrganizationSelect } from "@/client/components/political-organizations/PoliticalOrganizationSelect";
 import { exportXml } from "@/server/contexts/report/presentation/actions/export-xml";
 import { apiClient } from "@/client/lib/api-client";
@@ -102,15 +102,17 @@ export function ExportReportClient({ organizations }: ExportReportClientProps) {
 
   return (
     <div className="space-y-6">
-      <div className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <PoliticalOrganizationSelect
-            organizations={organizations}
-            value={selectedOrganizationId}
-            onValueChange={setSelectedOrganizationId}
-            required
-          />
-          <div>
+      <Card className="p-4">
+        <div className="flex flex-col md:flex-row md:items-end gap-4">
+          <div className="w-fit">
+            <PoliticalOrganizationSelect
+              organizations={organizations}
+              value={selectedOrganizationId}
+              onValueChange={setSelectedOrganizationId}
+              required
+            />
+          </div>
+          <div className="w-fit space-y-2">
             <Label>報告年 (西暦)</Label>
             <Input
               type="number"
@@ -119,10 +121,13 @@ export function ExportReportClient({ organizations }: ExportReportClientProps) {
               min={1900}
               max={2100}
               required
+              className="w-24"
             />
           </div>
         </div>
+      </Card>
 
+      <div className="space-y-4">
         <div className="flex flex-wrap gap-3">
           <Button
             type="button"
