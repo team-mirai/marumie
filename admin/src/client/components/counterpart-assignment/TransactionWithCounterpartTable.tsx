@@ -112,7 +112,7 @@ export function TransactionWithCounterpartTable({
               <span>{formatAmount(info.getValue())}</span>
               {transaction.requiresCounterpart && (
                 <span className="text-xs bg-amber-500/20 text-amber-400 px-1.5 py-0.5 rounded">
-                  明細必須
+                  取引先必須
                 </span>
               )}
             </div>
@@ -186,14 +186,14 @@ export function TransactionWithCounterpartTable({
 
   return (
     <div className="overflow-x-auto">
-      <table className="w-full">
+      <table className="w-full text-sm">
         <thead>
           {table.getHeaderGroups().map((headerGroup) => (
             <tr key={headerGroup.id} className="border-b border-border">
               {headerGroup.headers.map((header) => (
                 <th
                   key={header.id}
-                  className="text-left py-3 px-4 text-muted-foreground font-medium"
+                  className="text-left py-2 px-3 text-muted-foreground font-medium"
                 >
                   {header.isPlaceholder
                     ? null
@@ -210,7 +210,7 @@ export function TransactionWithCounterpartTable({
               className="border-b border-border hover:bg-secondary/30 transition-colors"
             >
               {row.getVisibleCells().map((cell) => (
-                <td key={cell.id} className="py-3 px-4 text-white">
+                <td key={cell.id} className="py-2 px-3 text-white">
                   {flexRender(cell.column.columnDef.cell, cell.getContext())}
                 </td>
               ))}

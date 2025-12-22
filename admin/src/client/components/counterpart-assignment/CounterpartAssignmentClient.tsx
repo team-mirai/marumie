@@ -10,18 +10,12 @@ import type { TransactionWithCounterpart } from "@/server/contexts/report/domain
 import type { Counterpart } from "@/server/contexts/report/domain/models/counterpart";
 import { TransactionWithCounterpartTable } from "./TransactionWithCounterpartTable";
 import { BulkAssignModal } from "./BulkAssignModal";
-import { ClientPagination } from "@/client/components/ui/ClientPagination";
 import {
-  Card,
-  Input,
-  Button,
-  Label,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/client/components/ui";
+  CounterpartAssignmentFilters,
+  type CounterpartAssignmentFilterValues,
+} from "./CounterpartAssignmentFilters";
+import { ClientPagination } from "@/client/components/ui/ClientPagination";
+import { Card, Input, Button, Label } from "@/client/components/ui";
 import { PoliticalOrganizationSelect } from "@/client/components/political-organizations/PoliticalOrganizationSelect";
 
 const ALL_CATEGORIES_VALUE = "__all__";
@@ -36,6 +30,7 @@ interface CounterpartAssignmentClientProps {
     politicalOrganizationId: string;
     financialYear: number;
     unassignedOnly: boolean;
+    counterpartRequiredOnly: boolean;
     categoryKey: string;
     searchQuery: string;
     sortField: "transactionDate" | "debitAmount" | "categoryKey";
@@ -67,6 +62,9 @@ export function CounterpartAssignmentClient({
     initialFilters.financialYear || initialFinancialYear,
   );
   const [unassignedOnly, setUnassignedOnly] = useState(initialFilters.unassignedOnly);
+  const [counterpartRequiredOnly, setCounterpartRequiredOnly] = useState(
+    initialFilters.counterpartRequiredOnly,
+  );
   const [categoryKey, setCategoryKey] = useState(
     initialFilters.categoryKey || ALL_CATEGORIES_VALUE,
   );
@@ -93,6 +91,7 @@ export function CounterpartAssignmentClient({
     orgId?: string;
     year?: number;
     unassigned?: boolean;
+    counterpartRequired?: boolean;
     category?: string;
     search?: string;
     sort?: string;
@@ -104,6 +103,9 @@ export function CounterpartAssignmentClient({
     searchParams.set("year", String(params.year ?? financialYear));
     if (params.unassigned ?? unassignedOnly) {
       searchParams.set("unassigned", "true");
+    }
+    if (params.counterpartRequired ?? counterpartRequiredOnly) {
+      searchParams.set("counterpartRequired", "true");
     }
     if (params.category ?? categoryKey) {
       searchParams.set("category", params.category ?? categoryKey);
@@ -117,9 +119,35 @@ export function CounterpartAssignmentClient({
     return `/counterparts/assignment?${searchParams.toString()}`;
   };
 
-  const handleFilterChange = () => {
+  const handleFilterChange = (changes: Partial<CounterpartAssignmentFilterValues>) => {
+    if (changes.categoryKey !== undefined) {
+      setCategoryKey(changes.categoryKey);
+    }
+    if (changes.searchQuery !== undefined) {
+      setSearchQuery(changes.searchQuery);
+    }
+    if (changes.unassignedOnly !== undefined) {
+      setUnassignedOnly(changes.unassignedOnly);
+    }
+    if (changes.counterpartRequiredOnly !== undefined) {
+      setCounterpartRequiredOnly(changes.counterpartRequiredOnly);
+    }
+
+    const categoryForUrl =
+      (changes.categoryKey ?? categoryKey) === ALL_CATEGORIES_VALUE
+        ? ""
+        : (changes.categoryKey ?? categoryKey);
+
     startTransition(() => {
-      router.push(buildUrl({ page: 1 }));
+      router.push(
+        buildUrl({
+          category: categoryForUrl,
+          search: changes.searchQuery ?? searchQuery,
+          unassigned: changes.unassignedOnly ?? unassignedOnly,
+          counterpartRequired: changes.counterpartRequiredOnly ?? counterpartRequiredOnly,
+          page: 1,
+        }),
+      );
     });
   };
 
@@ -138,27 +166,6 @@ export function CounterpartAssignmentClient({
         router.push(buildUrl({ year, page: 1 }));
       });
     }
-  };
-
-  const handleUnassignedOnlyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const checked = e.target.checked;
-    setUnassignedOnly(checked);
-    startTransition(() => {
-      router.push(buildUrl({ unassigned: checked, page: 1 }));
-    });
-  };
-
-  const handleCategoryChange = (value: string) => {
-    setCategoryKey(value);
-    const categoryForUrl = value === ALL_CATEGORIES_VALUE ? "" : value;
-    startTransition(() => {
-      router.push(buildUrl({ category: categoryForUrl, page: 1 }));
-    });
-  };
-
-  const handleSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    handleFilterChange();
   };
 
   const handleSortChange = (field: "transactionDate" | "debitAmount" | "categoryKey") => {
@@ -231,51 +238,16 @@ export function CounterpartAssignmentClient({
 
       <hr className="border-border" />
 
-      <Card className="p-4 gap-2">
-        <h2 className="text-lg font-semibold text-white">絞り込み</h2>
-        <div className="flex flex-col md:flex-row md:items-end gap-4">
-          <div className="w-fit space-y-2">
-            <Label>カテゴリ</Label>
-            <Select value={categoryKey} onValueChange={handleCategoryChange}>
-              <SelectTrigger className="w-40">
-                <SelectValue placeholder="選択してください" />
-              </SelectTrigger>
-              <SelectContent>
-                {categoryOptions.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <form onSubmit={handleSearchSubmit} className="w-fit space-y-2">
-            <Label htmlFor="search-query">検索</Label>
-            <div className="flex gap-2">
-              <Input
-                id="search-query"
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="摘要、メモで検索..."
-                className="w-48"
-              />
-              <Button type="submit" variant="secondary">
-                検索
-              </Button>
-            </div>
-          </form>
-          <label className="flex items-center gap-2 cursor-pointer h-10">
-            <input
-              type="checkbox"
-              checked={unassignedOnly}
-              onChange={handleUnassignedOnlyChange}
-              className="w-4 h-4 rounded border-border bg-input text-primary focus:ring-ring focus:ring-offset-0"
-            />
-            <span className="text-white">未紐付けのみ表示</span>
-          </label>
-        </div>
-      </Card>
+      <CounterpartAssignmentFilters
+        values={{
+          categoryKey,
+          searchQuery,
+          unassignedOnly,
+          counterpartRequiredOnly,
+        }}
+        categoryOptions={categoryOptions}
+        onChange={handleFilterChange}
+      />
 
       <Card className="p-4">
         <div className="flex justify-between items-center mb-4">
