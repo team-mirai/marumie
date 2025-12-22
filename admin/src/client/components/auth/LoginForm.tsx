@@ -32,7 +32,7 @@ export default function LoginForm({ action, error }: LoginFormProps) {
   };
 
   return (
-    <Card className="w-md">
+    <Card className="w-full max-w-md">
       <CardHeader className="px-8 pt-8 pb-4">
         <CardTitle className="text-2xl">ログイン</CardTitle>
       </CardHeader>
