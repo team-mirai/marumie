@@ -76,7 +76,7 @@ export function CounterpartMasterClient({
           />
           <button
             type="submit"
-            className="bg-secondary text-white border border-border hover:bg-secondary rounded-lg px-4 py-2.5 font-medium transition-colors duration-200 cursor-pointer"
+            className="bg-secondary text-white border border-border hover:bg-secondary/80 rounded-lg px-4 py-2.5 font-medium transition-colors duration-200 cursor-pointer"
           >
             検索
           </button>
@@ -87,7 +87,7 @@ export function CounterpartMasterClient({
                 setSearchInput("");
                 router.push("/counterparts/master");
               }}
-              className="bg-secondary text-white border border-border hover:bg-secondary rounded-lg px-4 py-2.5 font-medium transition-colors duration-200 cursor-pointer"
+              className="bg-secondary text-white border border-border hover:bg-secondary/80 rounded-lg px-4 py-2.5 font-medium transition-colors duration-200 cursor-pointer"
             >
               クリア
             </button>
@@ -110,7 +110,7 @@ export function CounterpartMasterClient({
             disabled={page <= 1}
             aria-label="前のページへ"
             className={`bg-secondary text-white border border-border rounded-lg px-3 py-1.5 text-sm font-medium transition-colors duration-200 ${
-              page <= 1 ? "opacity-50 cursor-not-allowed" : "hover:bg-secondary cursor-pointer"
+              page <= 1 ? "opacity-50 cursor-not-allowed" : "hover:bg-secondary/80 cursor-pointer"
             }`}
           >
             前へ
@@ -126,7 +126,7 @@ export function CounterpartMasterClient({
             className={`bg-secondary text-white border border-border rounded-lg px-3 py-1.5 text-sm font-medium transition-colors duration-200 ${
               page >= totalPages
                 ? "opacity-50 cursor-not-allowed"
-                : "hover:bg-secondary cursor-pointer"
+                : "hover:bg-secondary/80 cursor-pointer"
             }`}
           >
             次へ

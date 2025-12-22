@@ -7,7 +7,7 @@ interface CurrentBalanceProps {
 export default function CurrentBalance({ snapshot }: CurrentBalanceProps) {
   if (!snapshot) {
     return (
-      <div className="bg-primary-card rounded-lg p-6 border border-border max-w-md">
+      <div className="bg-card rounded-lg p-6 border border-border max-w-md">
         <h3 className="text-lg font-medium text-white mb-4">現在有効な残高</h3>
         <p className="text-muted-foreground">残高スナップショットがありません</p>
       </div>
