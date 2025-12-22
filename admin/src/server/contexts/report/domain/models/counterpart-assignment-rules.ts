@@ -5,35 +5,55 @@
  * どのトランザクションがCounterpart情報を必要とするかを定義します。
  */
 
+import { PL_CATEGORIES } from "@/shared/utils/category-mapping";
+
 /**
  * Counterpart紐づけが必要な収入カテゴリ
- * - income_loan: 借入金（SYUUSHI07_04）
- * - income_grant_from_hq: 本部・支部交付金（SYUUSHI07_05）
+ * - loans: 借入金（SYUUSHI07_04）
+ * - grants: 本部・支部交付金（SYUUSHI07_05）
+ *
+ * ※ キーは shared/utils/category-mapping.ts の PL_CATEGORIES.key と一致させる
  */
 export const COUNTERPART_REQUIRED_INCOME_CATEGORIES = [
-  "income_loan",
-  "income_grant_from_hq",
+  // biome-ignore lint/complexity/useLiteralKeys: 日本語キー
+  PL_CATEGORIES["借入金"].key,
+  // biome-ignore lint/complexity/useLiteralKeys: 日本語キー
+  PL_CATEGORIES["本部又は支部から供与された交付金に係る収入"].key,
 ] as const;
 
 /**
  * Counterpart紐づけが必要な支出カテゴリ
  * 経常経費（SYUUSHI07_14）と政治活動費（SYUUSHI07_15）のすべて
+ *
+ * ※ キーは shared/utils/category-mapping.ts の PL_CATEGORIES.key と一致させる
  */
 export const COUNTERPART_REQUIRED_EXPENSE_CATEGORIES = [
   // 経常経費 (SYUUSHI07_14)
-  "expense_utility_costs",
-  "expense_office_supplies",
-  "expense_office_expenses",
+  // biome-ignore lint/complexity/useLiteralKeys: 日本語キー
+  PL_CATEGORIES["光熱水費"].key,
+  // biome-ignore lint/complexity/useLiteralKeys: 日本語キー
+  PL_CATEGORIES["備品・消耗品費"].key,
+  // biome-ignore lint/complexity/useLiteralKeys: 日本語キー
+  PL_CATEGORIES["事務所費"].key,
   // 政治活動費 (SYUUSHI07_15)
-  "expense_organizational_activity",
-  "expense_election_related",
-  "expense_publication",
-  "expense_publicity",
-  "expense_party_event",
-  "expense_other_projects",
-  "expense_research",
-  "expense_donation_grant",
-  "expense_other",
+  // biome-ignore lint/complexity/useLiteralKeys: 日本語キー
+  PL_CATEGORIES["組織活動費"].key,
+  // biome-ignore lint/complexity/useLiteralKeys: 日本語キー
+  PL_CATEGORIES["選挙関係費"].key,
+  // biome-ignore lint/complexity/useLiteralKeys: 日本語キー
+  PL_CATEGORIES["機関紙誌の発行事業費"].key,
+  // biome-ignore lint/complexity/useLiteralKeys: 日本語キー
+  PL_CATEGORIES["宣伝事業費"].key,
+  // biome-ignore lint/complexity/useLiteralKeys: 日本語キー
+  PL_CATEGORIES["政治資金パーティー開催事業費"].key,
+  // biome-ignore lint/complexity/useLiteralKeys: 日本語キー
+  PL_CATEGORIES["その他の事業費"].key,
+  // biome-ignore lint/complexity/useLiteralKeys: 日本語キー
+  PL_CATEGORIES["調査研究費"].key,
+  // biome-ignore lint/complexity/useLiteralKeys: 日本語キー
+  PL_CATEGORIES["寄附・交付金"].key,
+  // biome-ignore lint/complexity/useLiteralKeys: 日本語キー
+  PL_CATEGORIES["その他の経費"].key,
 ] as const;
 
 export type CounterpartRequiredIncomeCategory =
