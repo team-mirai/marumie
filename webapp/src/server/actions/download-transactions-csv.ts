@@ -10,8 +10,18 @@ export async function downloadTransactionsCsv(slug: string) {
       financialYear: 2025,
     });
 
-    // CSVヘッダー
-    const headers = ["日付", "政治団体名", "タイプ", "金額", "カテゴリ", "詳細区分", "ラベル"];
+    // CSVヘッダー (torihiki_no と 摘要 はデバッグ用)
+    const headers = [
+      "日付",
+      "政治団体名",
+      "タイプ",
+      "金額",
+      "カテゴリ",
+      "詳細区分",
+      "ラベル",
+      "取引No",
+      "摘要",
+    ];
 
     // CSVデータを作成
     const csvRows = [
@@ -27,6 +37,8 @@ export async function downloadTransactionsCsv(slug: string) {
           `"${(transaction.transaction_type === "income" ? transaction.credit_account : transaction.debit_account).replace(/"/g, '""')}"`,
           `"${transaction.friendly_category.replace(/"/g, '""')}"`,
           `"${transaction.label.replace(/"/g, '""')}"`,
+          `"${transaction.transaction_no.replace(/"/g, '""')}"`,
+          `"${(transaction.description ?? "").replace(/"/g, '""')}"`,
         ];
         return row.join(",");
       }),
