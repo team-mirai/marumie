@@ -85,21 +85,23 @@ export function AddressInput({
           <Label htmlFor={hintId} className="text-sm text-muted-foreground">
             業態ヒント（任意）
           </Label>
-          <Input
-            type="text"
-            id={hintId}
-            value={hint}
-            onChange={(e) => setHint(e.target.value)}
-            placeholder="例: 印刷、IT、広告"
-            disabled={disabled}
-            className="mt-1"
-          />
+          <div className="flex gap-2 mt-1">
+            <Input
+              type="text"
+              id={hintId}
+              value={hint}
+              onChange={(e) => setHint(e.target.value)}
+              placeholder="例: 印刷、IT、広告"
+              disabled={disabled}
+              className="flex-1"
+            />
+            <Button type="button" onClick={startSearch} disabled={disabled || !canSearch}>
+              🔍 AI検索
+            </Button>
+          </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          <Button type="button" onClick={startSearch} disabled={disabled || !canSearch}>
-            🔍 AI検索
-          </Button>
+        <div className="text-right">
           <button
             type="button"
             onClick={handleSwitchToManual}
@@ -141,6 +143,10 @@ export function AddressInput({
 
         <div className="border border-border rounded-lg p-4 text-center text-muted-foreground">
           検索中...
+        </div>
+
+        <div className="text-right">
+          <span className="text-sm text-muted-foreground/50">手動で入力する</span>
         </div>
       </div>
     );
