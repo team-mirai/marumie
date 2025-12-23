@@ -178,8 +178,10 @@ export function AssignWithCounterpartContent({
             <div className="flex-1 overflow-y-auto min-h-0">
               <CounterpartFormContent
                 mode="create"
+                defaultName={transactions[0]?.description ?? ""}
                 onSubmit={handleCreateAndAssign}
                 disabled={isPending}
+                submitLabel="作成して紐づける"
               />
             </div>
           </TabsContent>
