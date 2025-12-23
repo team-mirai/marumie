@@ -54,16 +54,29 @@ export function CounterpartFormContent({
     async (searchHint?: string) => {
       if (!name.trim()) return;
 
-      setIsSearching(true);
       setSelectedIndex(null);
       setIsManualInput(false);
+      setIsSearching(true);
 
-      const result = await searchCounterpartAddressAction(name.trim(), searchHint);
-      setSearchResult(result);
-      setIsSearching(false);
+      try {
+        const result = await searchCounterpartAddressAction(name.trim(), searchHint);
+        setSearchResult(result);
 
-      if (result.success && result.data.candidates.length > 0) {
-        setSelectedIndex(0);
+        if (result.success && result.data.candidates.length > 0) {
+          setSelectedIndex(0);
+        }
+      } catch (err) {
+        console.error("住所検索エラー:", err);
+        setSearchResult({
+          success: false,
+          error: {
+            type: "API_ERROR",
+            message: "検索中にエラーが発生しました",
+            retryable: true,
+          },
+        });
+      } finally {
+        setIsSearching(false);
       }
     },
     [name],
