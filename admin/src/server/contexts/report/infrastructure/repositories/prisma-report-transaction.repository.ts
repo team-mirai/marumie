@@ -94,7 +94,6 @@ export class PrismaReportTransactionRepository implements IReportTransactionRepo
 
   /**
    * 政治活動費トランザクション取得の共通ヘルパーメソッド
-   * TODO: CounterPartテーブル実装後に実際の値を取得する
    */
   private async findPoliticalActivityExpenseTransactions(
     filters: TransactionFilters,
@@ -117,6 +116,16 @@ export class PrismaReportTransactionRepository implements IReportTransactionRepo
         debitAmount: true,
         creditAmount: true,
         transactionDate: true,
+        transactionCounterparts: {
+          select: {
+            counterpart: {
+              select: {
+                name: true,
+                address: true,
+              },
+            },
+          },
+        },
       },
     });
 
@@ -129,9 +138,8 @@ export class PrismaReportTransactionRepository implements IReportTransactionRepo
       debitAmount: Number(t.debitAmount),
       creditAmount: Number(t.creditAmount),
       transactionDate: t.transactionDate,
-      // TODO: CounterPartテーブル実装後に実際の値を取得する
-      counterpartName: "（仮）取引先名称",
-      counterpartAddress: "（仮）東京都千代田区永田町1-1-1",
+      counterpartName: t.transactionCounterparts[0]?.counterpart.name ?? "",
+      counterpartAddress: t.transactionCounterparts[0]?.counterpart.address ?? "",
     }));
   }
 
@@ -229,6 +237,16 @@ export class PrismaReportTransactionRepository implements IReportTransactionRepo
         debitAmount: true,
         creditAmount: true,
         transactionDate: true,
+        transactionCounterparts: {
+          select: {
+            counterpart: {
+              select: {
+                name: true,
+                address: true,
+              },
+            },
+          },
+        },
       },
     });
 
@@ -241,9 +259,8 @@ export class PrismaReportTransactionRepository implements IReportTransactionRepo
       debitAmount: Number(t.debitAmount),
       creditAmount: Number(t.creditAmount),
       transactionDate: t.transactionDate,
-      // TODO: CounterPartテーブル実装後に実際の値を取得する
-      counterpartName: "（仮）取引先名称",
-      counterpartAddress: "（仮）東京都千代田区永田町1-1-1",
+      counterpartName: t.transactionCounterparts[0]?.counterpart.name ?? "",
+      counterpartAddress: t.transactionCounterparts[0]?.counterpart.address ?? "",
     }));
   }
 
@@ -270,6 +287,16 @@ export class PrismaReportTransactionRepository implements IReportTransactionRepo
         debitAmount: true,
         creditAmount: true,
         transactionDate: true,
+        transactionCounterparts: {
+          select: {
+            counterpart: {
+              select: {
+                name: true,
+                address: true,
+              },
+            },
+          },
+        },
       },
     });
 
@@ -282,9 +309,8 @@ export class PrismaReportTransactionRepository implements IReportTransactionRepo
       debitAmount: Number(t.debitAmount),
       creditAmount: Number(t.creditAmount),
       transactionDate: t.transactionDate,
-      // TODO: CounterPartテーブル実装後に実際の値を取得する
-      counterpartName: "（仮）本部名称",
-      counterpartAddress: "（仮）東京都千代田区永田町1-1-1",
+      counterpartName: t.transactionCounterparts[0]?.counterpart.name ?? "",
+      counterpartAddress: t.transactionCounterparts[0]?.counterpart.address ?? "",
     }));
   }
 
@@ -347,6 +373,16 @@ export class PrismaReportTransactionRepository implements IReportTransactionRepo
         debitAmount: true,
         creditAmount: true,
         transactionDate: true,
+        transactionCounterparts: {
+          select: {
+            counterpart: {
+              select: {
+                name: true,
+                address: true,
+              },
+            },
+          },
+        },
       },
     });
 
@@ -359,9 +395,8 @@ export class PrismaReportTransactionRepository implements IReportTransactionRepo
       debitAmount: Number(t.debitAmount),
       creditAmount: Number(t.creditAmount),
       transactionDate: t.transactionDate,
-      // TODO: CounterPartテーブル実装後に実際の値を取得する
-      counterpartName: "（仮）取引先名称",
-      counterpartAddress: "（仮）東京都千代田区永田町1-1-1",
+      counterpartName: t.transactionCounterparts[0]?.counterpart.name ?? "",
+      counterpartAddress: t.transactionCounterparts[0]?.counterpart.address ?? "",
     }));
   }
 
@@ -388,6 +423,16 @@ export class PrismaReportTransactionRepository implements IReportTransactionRepo
         debitAmount: true,
         creditAmount: true,
         transactionDate: true,
+        transactionCounterparts: {
+          select: {
+            counterpart: {
+              select: {
+                name: true,
+                address: true,
+              },
+            },
+          },
+        },
       },
     });
 
@@ -400,9 +445,8 @@ export class PrismaReportTransactionRepository implements IReportTransactionRepo
       debitAmount: Number(t.debitAmount),
       creditAmount: Number(t.creditAmount),
       transactionDate: t.transactionDate,
-      // TODO: CounterPartテーブル実装後に実際の値を取得する
-      counterpartName: "（仮）取引先名称",
-      counterpartAddress: "（仮）東京都千代田区永田町1-1-1",
+      counterpartName: t.transactionCounterparts[0]?.counterpart.name ?? "",
+      counterpartAddress: t.transactionCounterparts[0]?.counterpart.address ?? "",
     }));
   }
 
@@ -429,6 +473,16 @@ export class PrismaReportTransactionRepository implements IReportTransactionRepo
         debitAmount: true,
         creditAmount: true,
         transactionDate: true,
+        transactionCounterparts: {
+          select: {
+            counterpart: {
+              select: {
+                name: true,
+                address: true,
+              },
+            },
+          },
+        },
       },
     });
 
@@ -441,9 +495,8 @@ export class PrismaReportTransactionRepository implements IReportTransactionRepo
       debitAmount: Number(t.debitAmount),
       creditAmount: Number(t.creditAmount),
       transactionDate: t.transactionDate,
-      // TODO: CounterPartテーブル実装後に実際の値を取得する
-      counterpartName: "（仮）取引先名称",
-      counterpartAddress: "（仮）東京都千代田区永田町1-1-1",
+      counterpartName: t.transactionCounterparts[0]?.counterpart.name ?? "",
+      counterpartAddress: t.transactionCounterparts[0]?.counterpart.address ?? "",
     }));
   }
 
@@ -470,6 +523,16 @@ export class PrismaReportTransactionRepository implements IReportTransactionRepo
         debitAmount: true,
         creditAmount: true,
         transactionDate: true,
+        transactionCounterparts: {
+          select: {
+            counterpart: {
+              select: {
+                name: true,
+                address: true,
+              },
+            },
+          },
+        },
       },
     });
 
@@ -482,9 +545,8 @@ export class PrismaReportTransactionRepository implements IReportTransactionRepo
       debitAmount: Number(t.debitAmount),
       creditAmount: Number(t.creditAmount),
       transactionDate: t.transactionDate,
-      // TODO: CounterPartテーブル実装後に実際の値を取得する
-      counterpartName: "（仮）取引先名称",
-      counterpartAddress: "（仮）東京都千代田区永田町1-1-1",
+      counterpartName: t.transactionCounterparts[0]?.counterpart.name ?? "",
+      counterpartAddress: t.transactionCounterparts[0]?.counterpart.address ?? "",
     }));
   }
 
