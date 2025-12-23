@@ -3,7 +3,7 @@ import "client-only";
 
 import { useState, useId } from "react";
 import { Button, Input, Label } from "@/client/components/ui";
-import { AddressInput } from "./AddressInput";
+import { AddressInput } from "@/client/components/counterparts/AddressInput";
 import { MAX_NAME_LENGTH } from "@/server/contexts/report/domain/models/counterpart";
 
 interface CounterpartFormContentProps {

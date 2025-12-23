@@ -3,7 +3,7 @@ import "client-only";
 
 import { useId } from "react";
 import { Button, Input, Label } from "@/client/components/ui";
-import { useAddressSearch } from "./useAddressSearch";
+import { useAddressSearch } from "@/client/components/counterparts/useAddressSearch";
 import type { AddressCandidate } from "@/server/contexts/report/infrastructure/llm/types";
 import { MAX_ADDRESS_LENGTH } from "@/server/contexts/report/domain/models/counterpart";
 
