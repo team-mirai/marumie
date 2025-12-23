@@ -36,7 +36,7 @@ export function AssignCounterpartDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-[95vw] max-h-[95vh] w-full overflow-y-auto">
+      <DialogContent className="max-w-[85vw] w-full h-[85vh] flex flex-col overflow-hidden">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>

@@ -108,91 +108,59 @@ export function AssignWithCounterpartContent({
   };
 
   return (
-    <div className="flex flex-col lg:flex-row gap-6 h-full">
-      <div className="lg:w-1/3 flex-shrink-0">
+    <div className="flex flex-col lg:flex-row gap-6 flex-1 min-h-0 overflow-hidden">
+      <div className="lg:w-1/3 flex-shrink-0 flex flex-col min-h-0">
         <div className="text-white font-medium mb-3">
           {isBulk ? `選択中の取引 (${transactions.length}件)` : "取引情報"}
         </div>
 
-        {isBulk ? (
-          <div className="border border-border rounded-lg max-h-64 overflow-y-auto">
-            {transactions.slice(0, 10).map((t) => (
-              <div key={t.id} className="px-3 py-2 text-sm border-b border-border last:border-b-0">
-                <div className="flex items-center gap-2">
-                  <span className="text-muted-foreground">{formatDate(t.transactionDate)}</span>
-                  <span className="text-white">{formatAmount(t.debitAmount)}</span>
-                </div>
-                <div className="text-muted-foreground text-xs truncate">{t.description || "-"}</div>
+        <div className="border border-border rounded-lg flex-1 overflow-y-auto">
+          {transactions.slice(0, 10).map((t) => (
+            <div key={t.id} className="px-3 py-2 text-sm border-b border-border last:border-b-0">
+              <div className="flex items-center gap-2">
+                <span className="text-muted-foreground">{formatDate(t.transactionDate)}</span>
+                <span className="text-white">{formatAmount(t.debitAmount)}</span>
               </div>
-            ))}
-            {transactions.length > 10 && (
-              <div className="px-3 py-2 text-sm text-muted-foreground text-center">
-                ...他 {transactions.length - 10}件
-              </div>
-            )}
-          </div>
-        ) : (
-          <div className="border border-border rounded-lg p-4 space-y-2">
-            <div className="flex justify-between">
-              <span className="text-muted-foreground text-sm">日付</span>
-              <span className="text-white">{formatDate(transactions[0].transactionDate)}</span>
+              <div className="text-muted-foreground text-xs truncate">{t.description || "-"}</div>
             </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground text-sm">金額</span>
-              <span className="text-white">{formatAmount(transactions[0].debitAmount)}</span>
+          ))}
+          {transactions.length > 10 && (
+            <div className="px-3 py-2 text-sm text-muted-foreground text-center">
+              ...他 {transactions.length - 10}件
             </div>
-            {transactions[0].categoryKey && (
-              <div className="flex justify-between">
-                <span className="text-muted-foreground text-sm">カテゴリ</span>
-                <span className="text-white">{transactions[0].categoryKey}</span>
-              </div>
-            )}
-            {transactions[0].description && (
-              <div className="flex justify-between">
-                <span className="text-muted-foreground text-sm">摘要</span>
-                <span className="text-white truncate max-w-[200px]">
-                  {transactions[0].description}
-                </span>
-              </div>
-            )}
-            {transactions[0].counterpart && (
-              <div className="mt-3 pt-3 border-t border-border">
-                <span className="text-muted-foreground text-sm block mb-1">現在の取引先</span>
-                <span className="text-white">{transactions[0].counterpart.name}</span>
-                {transactions[0].counterpart.address && (
-                  <span className="text-muted-foreground text-xs block">
-                    {transactions[0].counterpart.address}
-                  </span>
-                )}
-              </div>
-            )}
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
-      <div className="lg:flex-1 flex flex-col min-w-0">
+      <div className="lg:flex-1 flex flex-col min-h-0 min-w-0">
         {error && (
-          <div className="text-red-500 p-3 bg-red-900/20 rounded-lg border border-red-900/30 mb-4">
+          <div className="text-red-500 p-3 bg-red-900/20 rounded-lg border border-red-900/30 mb-4 flex-shrink-0">
             {error}
           </div>
         )}
 
-        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "select" | "create")}>
-          <TabsList className="mb-4">
+        <Tabs
+          value={activeTab}
+          onValueChange={(v) => setActiveTab(v as "select" | "create")}
+          className="flex flex-col flex-1 min-h-0"
+        >
+          <TabsList className="mb-4 flex-shrink-0">
             <TabsTrigger value="select">既存から選択</TabsTrigger>
             <TabsTrigger value="create">新規作成</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="select" className="flex-1">
-            <CounterpartSelectorContent
-              allCounterparts={allCounterparts}
-              selectedCounterpartId={selectedCounterpartId}
-              onSelect={setSelectedCounterpartId}
-              transactions={transactions}
-              politicalOrganizationId={politicalOrganizationId}
-            />
+          <TabsContent value="select" className="flex-1 flex flex-col min-h-0 mt-0">
+            <div className="flex-1 overflow-y-auto min-h-0">
+              <CounterpartSelectorContent
+                allCounterparts={allCounterparts}
+                selectedCounterpartId={selectedCounterpartId}
+                onSelect={setSelectedCounterpartId}
+                transactions={transactions}
+                politicalOrganizationId={politicalOrganizationId}
+              />
+            </div>
 
-            <div className="flex justify-end gap-2 mt-4 pt-4 border-t border-border">
+            <div className="flex justify-end gap-2 pt-4 border-t border-border flex-shrink-0">
               <Button type="button" variant="secondary" onClick={onCancel} disabled={isPending}>
                 キャンセル
               </Button>
@@ -206,12 +174,14 @@ export function AssignWithCounterpartContent({
             </div>
           </TabsContent>
 
-          <TabsContent value="create" className="flex-1">
-            <CounterpartFormContent
-              mode="create"
-              onSubmit={handleCreateAndAssign}
-              disabled={isPending}
-            />
+          <TabsContent value="create" className="flex-1 flex flex-col min-h-0 mt-0">
+            <div className="flex-1 overflow-y-auto min-h-0">
+              <CounterpartFormContent
+                mode="create"
+                onSubmit={handleCreateAndAssign}
+                disabled={isPending}
+              />
+            </div>
           </TabsContent>
         </Tabs>
       </div>
