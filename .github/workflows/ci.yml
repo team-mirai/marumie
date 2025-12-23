@@ -33,8 +33,8 @@ jobs:
       - name: Run lint for admin
         run: pnpm --filter admin run lint
         
-      - name: Run tests for admin
-        run: pnpm --filter admin run test
+      - name: Run tests for admin with coverage
+        run: pnpm --filter admin run test:coverage
         
       - name: Run type check for admin
         run: pnpm --filter admin run type-check
@@ -42,8 +42,15 @@ jobs:
       - name: Run lint for webapp
         run: pnpm --filter webapp run lint
         
-      - name: Run tests for webapp
-        run: pnpm --filter webapp run test
+      - name: Run tests for webapp with coverage
+        run: pnpm --filter webapp run test:coverage
         
       - name: Run type check for webapp
         run: pnpm --filter webapp run type-check
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./admin/coverage/lcov.info,./webapp/coverage/lcov.info
+          fail_ci_if_error: false

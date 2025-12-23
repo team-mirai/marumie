@@ -35,6 +35,7 @@
     "type-check": "tsc --noEmit",
     "format": "biome check --write .",
     "test": "jest",
-    "test:watch": "jest --watch"
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage"
   }
 }
