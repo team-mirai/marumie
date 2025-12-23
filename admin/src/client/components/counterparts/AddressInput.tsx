@@ -118,6 +118,27 @@ export function AddressInput({
     return (
       <div className="space-y-3">
         <Label>住所</Label>
+
+        <div>
+          <Label htmlFor={hintId} className="text-sm text-muted-foreground">
+            業態ヒント（任意）
+          </Label>
+          <div className="flex gap-2 mt-1">
+            <Input
+              type="text"
+              id={hintId}
+              value={hint}
+              onChange={(e) => setHint(e.target.value)}
+              placeholder="例: 印刷、IT、広告"
+              disabled
+              className="flex-1"
+            />
+            <Button type="button" disabled>
+              🔍 AI検索
+            </Button>
+          </div>
+        </div>
+
         <div className="border border-border rounded-lg p-4 text-center text-muted-foreground">
           検索中...
         </div>
@@ -130,6 +151,30 @@ export function AddressInput({
     return (
       <div className="space-y-3">
         <Label>住所</Label>
+
+        <div>
+          <Label htmlFor={hintId} className="text-sm text-muted-foreground">
+            業態ヒント（任意）
+          </Label>
+          <div className="flex gap-2 mt-1">
+            <Input
+              type="text"
+              id={hintId}
+              value={hint}
+              onChange={(e) => setHint(e.target.value)}
+              placeholder="例: 印刷、IT、広告"
+              disabled={disabled || isSearching}
+              className="flex-1"
+            />
+            <Button
+              type="button"
+              onClick={reSearch}
+              disabled={disabled || isSearching || !canSearch}
+            >
+              🔍 再検索
+            </Button>
+          </div>
+        </div>
 
         {searchResult?.success ? (
           <div className="border border-border rounded-lg divide-y divide-border">
@@ -180,31 +225,6 @@ export function AddressInput({
                 : (searchResult?.error.message ?? "検索に失敗しました")}
           </div>
         )}
-
-        <div>
-          <Label htmlFor={hintId} className="text-sm text-muted-foreground">
-            業態ヒント（任意）
-          </Label>
-          <div className="flex gap-2 mt-1">
-            <Input
-              type="text"
-              id={hintId}
-              value={hint}
-              onChange={(e) => setHint(e.target.value)}
-              placeholder="例: 印刷、IT、広告"
-              disabled={disabled || isSearching}
-              className="flex-1"
-            />
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={reSearch}
-              disabled={disabled || isSearching || !canSearch}
-            >
-              再検索
-            </Button>
-          </div>
-        </div>
 
         <div className="text-right">
           <button
