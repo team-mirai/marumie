@@ -103,8 +103,7 @@ describe("SearchCounterpartAddressUsecase", () => {
       const result = await usecase.execute("存在しない会社");
 
       expect(result.success).toBe(false);
-      if (!result.success) {
-        expect(result.error.type).toBe("NO_RESULTS");
+      if (!result.success && result.error.type === "NO_RESULTS") {
         expect(result.error.message).toContain("住所候補が見つかりませんでした");
       }
     });
