@@ -9,7 +9,7 @@ import type { PoliticalOrganization } from "@/shared/models/political-organizati
 import type { TransactionWithCounterpart } from "@/server/contexts/report/domain/models/transaction-with-counterpart";
 import type { Counterpart } from "@/server/contexts/report/domain/models/counterpart";
 import { TransactionWithCounterpartTable } from "./TransactionWithCounterpartTable";
-import { BulkAssignModal } from "./BulkAssignModal";
+import { AssignCounterpartDialog } from "./AssignCounterpartDialog";
 import {
   CounterpartAssignmentFilters,
   type CounterpartAssignmentFilterValues,
@@ -72,11 +72,36 @@ export function CounterpartAssignmentClient({
   const [sortField, setSortField] = useState(initialFilters.sortField);
   const [sortOrder, setSortOrder] = useState(initialFilters.sortOrder);
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
-  const [isBulkAssignModalOpen, setIsBulkAssignModalOpen] = useState(false);
+  const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
+  const [assignDialogTransactions, setAssignDialogTransactions] = useState<
+    TransactionWithCounterpart[]
+  >([]);
 
   const selectedTransactions = useMemo(() => {
     return initialTransactions.filter((t) => rowSelection[t.id]);
   }, [initialTransactions, rowSelection]);
+
+  const handleAssignClick = (transaction: TransactionWithCounterpart) => {
+    setAssignDialogTransactions([transaction]);
+    setIsAssignDialogOpen(true);
+  };
+
+  const handleBulkAssignClick = () => {
+    setAssignDialogTransactions(selectedTransactions);
+    setIsAssignDialogOpen(true);
+  };
+
+  const handleAssignDialogClose = () => {
+    setIsAssignDialogOpen(false);
+    setAssignDialogTransactions([]);
+  };
+
+  const handleAssignSuccess = () => {
+    setRowSelection({});
+    setIsAssignDialogOpen(false);
+    setAssignDialogTransactions([]);
+    router.refresh();
+  };
 
   const categoryOptions = useMemo(() => {
     return [
@@ -262,7 +287,7 @@ export function CounterpartAssignmentClient({
             <span className="text-white text-sm">
               選択中: <span className="font-medium">{selectedTransactions.length}件</span>
             </span>
-            <Button type="button" size="sm" onClick={() => setIsBulkAssignModalOpen(true)}>
+            <Button type="button" size="sm" onClick={handleBulkAssignClick}>
               一括紐付け
             </Button>
             <Button type="button" variant="ghost" size="sm" onClick={() => setRowSelection({})}>
@@ -276,10 +301,9 @@ export function CounterpartAssignmentClient({
           sortField={sortField}
           sortOrder={sortOrder}
           onSortChange={handleSortChange}
-          allCounterparts={allCounterparts}
           rowSelection={rowSelection}
           onRowSelectionChange={setRowSelection}
-          politicalOrganizationId={selectedOrganizationId}
+          onAssignClick={handleAssignClick}
         />
 
         {totalPages > 1 && (
@@ -291,15 +315,13 @@ export function CounterpartAssignmentClient({
         )}
       </Card>
 
-      <BulkAssignModal
-        isOpen={isBulkAssignModalOpen}
-        onClose={() => setIsBulkAssignModalOpen(false)}
-        selectedTransactions={selectedTransactions}
+      <AssignCounterpartDialog
+        isOpen={isAssignDialogOpen}
+        transactions={assignDialogTransactions}
         allCounterparts={allCounterparts}
-        onSuccess={() => {
-          setRowSelection({});
-          router.refresh();
-        }}
+        politicalOrganizationId={selectedOrganizationId}
+        onClose={handleAssignDialogClose}
+        onSuccess={handleAssignSuccess}
       />
     </div>
   );

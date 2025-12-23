@@ -11,20 +11,17 @@ import {
   type RowSelectionState,
 } from "@tanstack/react-table";
 import type { TransactionWithCounterpart } from "@/server/contexts/report/domain/models/transaction-with-counterpart";
-import type { Counterpart } from "@/server/contexts/report/domain/models/counterpart";
 import { PL_CATEGORIES } from "@/shared/utils/category-mapping";
 import { cn } from "@/client/lib";
-import { CounterpartCombobox } from "./CounterpartCombobox";
 
 interface TransactionWithCounterpartTableProps {
   transactions: TransactionWithCounterpart[];
   sortField: "transactionDate" | "debitAmount" | "categoryKey";
   sortOrder: "asc" | "desc";
   onSortChange: (field: "transactionDate" | "debitAmount" | "categoryKey") => void;
-  allCounterparts: Counterpart[];
   rowSelection: RowSelectionState;
   onRowSelectionChange: (selection: RowSelectionState) => void;
-  politicalOrganizationId: string;
+  onAssignClick: (transaction: TransactionWithCounterpart) => void;
 }
 
 const columnHelper = createColumnHelper<TransactionWithCounterpart>();
@@ -66,10 +63,9 @@ export function TransactionWithCounterpartTable({
   sortField,
   sortOrder,
   onSortChange,
-  allCounterparts,
   rowSelection,
   onRowSelectionChange,
-  politicalOrganizationId,
+  onAssignClick,
 }: TransactionWithCounterpartTableProps) {
   const columns = useMemo(
     () => [
@@ -173,18 +169,31 @@ export function TransactionWithCounterpartTable({
         header: "取引先",
         cell: (info) => {
           const transaction = info.row.original;
+          const counterpart = transaction.counterpart;
           return (
-            <CounterpartCombobox
-              transactionId={transaction.id}
-              currentCounterpart={transaction.counterpart}
-              allCounterparts={allCounterparts}
-              politicalOrganizationId={politicalOrganizationId}
-            />
+            <button
+              type="button"
+              onClick={() => onAssignClick(transaction)}
+              className={`w-full text-left px-3 py-2 rounded-lg border transition-colors duration-200 hover:bg-secondary cursor-pointer ${
+                counterpart ? "bg-input border-border" : "bg-yellow-400/10 border-yellow-400/30"
+              }`}
+            >
+              {counterpart ? (
+                <div className="flex flex-col">
+                  <span className="text-white font-medium truncate">{counterpart.name}</span>
+                  <span className="text-muted-foreground text-xs truncate">
+                    {counterpart.address}
+                  </span>
+                </div>
+              ) : (
+                <span className="text-yellow-400">未設定</span>
+              )}
+            </button>
           );
         },
       }),
     ],
-    [sortField, sortOrder, onSortChange, allCounterparts, politicalOrganizationId],
+    [sortField, sortOrder, onSortChange, onAssignClick],
   );
 
   const table = useReactTable({
