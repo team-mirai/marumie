@@ -12,6 +12,7 @@ export async function downloadTransactionsCsv(slug: string) {
 
     // CSVヘッダー (torihiki_no と 摘要 はデバッグ用)
     const headers = [
+      "取引No",
       "日付",
       "政治団体名",
       "タイプ",
@@ -19,7 +20,6 @@ export async function downloadTransactionsCsv(slug: string) {
       "カテゴリ",
       "詳細区分",
       "ラベル",
-      "取引No",
       "摘要",
     ];
 
@@ -28,6 +28,7 @@ export async function downloadTransactionsCsv(slug: string) {
       headers.join(","),
       ...data.transactions.map((transaction) => {
         const row = [
+          `"${transaction.transaction_no.replace(/"/g, '""')}"`,
           new Date(transaction.transaction_date).toISOString().split("T")[0],
           `"${transaction.political_organization_name.replace(/"/g, '""')}"`,
           transaction.transaction_type === "income" ? "収入" : "支出",
@@ -37,7 +38,6 @@ export async function downloadTransactionsCsv(slug: string) {
           `"${(transaction.transaction_type === "income" ? transaction.credit_account : transaction.debit_account).replace(/"/g, '""')}"`,
           `"${transaction.friendly_category.replace(/"/g, '""')}"`,
           `"${transaction.label.replace(/"/g, '""')}"`,
-          `"${transaction.transaction_no.replace(/"/g, '""')}"`,
           `"${(transaction.description ?? "").replace(/"/g, '""')}"`,
         ];
         return row.join(",");
