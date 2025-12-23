@@ -131,19 +131,25 @@ describe("GetBalanceSheetUsecase", () => {
     ]);
   });
 
-  it("should handle empty organization list gracefully", async () => {
+  it("should throw error when organization is not found", async () => {
     (mockPoliticalOrganizationRepository.findBySlugs as jest.Mock).mockResolvedValue([]);
-    (mockBalanceSnapshotRepository.getTotalLatestBalanceByOrgIds as jest.Mock).mockResolvedValue(0);
-    (mockTransactionRepository.getBorrowingIncomeTotal as jest.Mock).mockResolvedValue(0);
-    (mockTransactionRepository.getBorrowingExpenseTotal as jest.Mock).mockResolvedValue(0);
-    (mockTransactionRepository.getLiabilityBalance as jest.Mock).mockResolvedValue(0);
 
-    const result = await usecase.execute({
-      slugs: ["non-existent-org"],
-      financialYear: 2025,
-    });
+    await expect(
+      usecase.execute({
+        slugs: ["non-existent-org"],
+        financialYear: 2025,
+      }),
+    ).rejects.toThrow('Political organizations with slugs "non-existent-org" not found');
+  });
 
-    expect(result.balanceSheetData.left.currentAssets).toBe(0);
-    expect(result.balanceSheetData.right.netAssets).toBe(0);
+  it("should throw error when multiple organizations are not found", async () => {
+    (mockPoliticalOrganizationRepository.findBySlugs as jest.Mock).mockResolvedValue([]);
+
+    await expect(
+      usecase.execute({
+        slugs: ["org-1", "org-2"],
+        financialYear: 2025,
+      }),
+    ).rejects.toThrow('Political organizations with slugs "org-1, org-2" not found');
   });
 });

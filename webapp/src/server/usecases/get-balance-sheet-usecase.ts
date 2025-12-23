@@ -21,7 +21,16 @@ export class GetBalanceSheetUsecase {
 
   async execute(params: GetBalanceSheetParams): Promise<GetBalanceSheetResult> {
     try {
-      const balanceSheetData = await this.calculateBalanceSheet(params);
+      // 1. slugから政治団体を取得
+      const organizations = await this.politicalOrganizationRepository.findBySlugs(params.slugs);
+
+      if (organizations.length === 0) {
+        throw new Error(
+          `Political organizations with slugs "${params.slugs.join(", ")}" not found`,
+        );
+      }
+
+      const balanceSheetData = await this.calculateBalanceSheet(params, organizations);
 
       return { balanceSheetData };
     } catch (error) {
@@ -31,9 +40,10 @@ export class GetBalanceSheetUsecase {
     }
   }
 
-  private async calculateBalanceSheet(params: GetBalanceSheetParams): Promise<BalanceSheetData> {
-    // 1. slugから政治団体のIDを取得
-    const organizations = await this.politicalOrganizationRepository.findBySlugs(params.slugs);
+  private async calculateBalanceSheet(
+    params: GetBalanceSheetParams,
+    organizations: { id: string }[],
+  ): Promise<BalanceSheetData> {
     const orgIds = organizations.map((org) => org.id);
 
     // 2. 各組織の最新残高の合計を取得
