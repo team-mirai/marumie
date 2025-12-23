@@ -51,5 +51,6 @@ jobs:
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
         with:
+          token: ${{ secrets.CODECOV_TOKEN }}
           files: ./admin/coverage/lcov.info,./webapp/coverage/lcov.info
           fail_ci_if_error: false
