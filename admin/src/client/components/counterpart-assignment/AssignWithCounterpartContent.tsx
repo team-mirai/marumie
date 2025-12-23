@@ -1,0 +1,220 @@
+"use client";
+import "client-only";
+
+import { useState, useTransition } from "react";
+import { Button, Tabs, TabsList, TabsTrigger, TabsContent } from "@/client/components/ui";
+import type { Counterpart } from "@/server/contexts/report/domain/models/counterpart";
+import type { TransactionWithCounterpart } from "@/server/contexts/report/domain/models/transaction-with-counterpart";
+import { CounterpartFormContent } from "@/client/components/counterparts/CounterpartFormContent";
+import { CounterpartSelectorContent } from "@/client/components/counterparts/CounterpartSelectorContent";
+import { createCounterpartAction } from "@/server/contexts/report/presentation/actions/create-counterpart";
+import { assignCounterpartAction } from "@/server/contexts/report/presentation/actions/assign-counterpart";
+import { bulkAssignCounterpartAction } from "@/server/contexts/report/presentation/actions/bulk-assign-counterpart";
+
+interface AssignWithCounterpartContentProps {
+  transactions: TransactionWithCounterpart[];
+  allCounterparts: Counterpart[];
+  politicalOrganizationId: string;
+  onSuccess: () => void;
+  onCancel: () => void;
+}
+
+function formatDate(date: Date): string {
+  const d = new Date(date);
+  return `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, "0")}/${String(d.getDate()).padStart(2, "0")}`;
+}
+
+function formatAmount(amount: number): string {
+  return `¥${amount.toLocaleString()}`;
+}
+
+export function AssignWithCounterpartContent({
+  transactions,
+  allCounterparts,
+  politicalOrganizationId,
+  onSuccess,
+  onCancel,
+}: AssignWithCounterpartContentProps) {
+  const [activeTab, setActiveTab] = useState<"select" | "create">("select");
+  const [selectedCounterpartId, setSelectedCounterpartId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
+
+  const isBulk = transactions.length > 1;
+
+  const handleSelectExisting = async () => {
+    if (!selectedCounterpartId) {
+      setError("取引先を選択してください");
+      return;
+    }
+
+    setError(null);
+    startTransition(async () => {
+      if (isBulk) {
+        const transactionIds = transactions.map((t) => t.id);
+        const result = await bulkAssignCounterpartAction(transactionIds, selectedCounterpartId);
+        if (!result.success) {
+          setError(result.errors?.join(", ") ?? "一括紐付けに失敗しました");
+          return;
+        }
+      } else {
+        const result = await assignCounterpartAction(transactions[0].id, selectedCounterpartId);
+        if (!result.success) {
+          setError(result.errors?.join(", ") ?? "紐付けに失敗しました");
+          return;
+        }
+      }
+      onSuccess();
+    });
+  };
+
+  const handleCreateAndAssign = async (data: { name: string; address: string | null }) => {
+    setError(null);
+
+    const createResult = await createCounterpartAction({
+      name: data.name,
+      address: data.address,
+    });
+
+    if (!createResult.success) {
+      throw new Error(createResult.errors?.join(", ") ?? "作成に失敗しました");
+    }
+
+    if (!createResult.counterpartId) {
+      throw new Error("取引先IDが取得できませんでした");
+    }
+
+    if (isBulk) {
+      const transactionIds = transactions.map((t) => t.id);
+      const result = await bulkAssignCounterpartAction(transactionIds, createResult.counterpartId);
+      if (!result.success) {
+        throw new Error(result.errors?.join(", ") ?? "一括紐付けに失敗しました");
+      }
+    } else {
+      const result = await assignCounterpartAction(transactions[0].id, createResult.counterpartId);
+      if (!result.success) {
+        throw new Error(result.errors?.join(", ") ?? "紐付けに失敗しました");
+      }
+    }
+
+    onSuccess();
+  };
+
+  const getSelectButtonLabel = () => {
+    if (isBulk) {
+      return `すべてに紐付け (${transactions.length}件)`;
+    }
+    return "この取引先を紐付け";
+  };
+
+  return (
+    <div className="flex flex-col lg:flex-row gap-6 h-full">
+      <div className="lg:w-1/3 flex-shrink-0">
+        <div className="text-white font-medium mb-3">
+          {isBulk ? `選択中の取引 (${transactions.length}件)` : "取引情報"}
+        </div>
+
+        {isBulk ? (
+          <div className="border border-border rounded-lg max-h-64 overflow-y-auto">
+            {transactions.slice(0, 10).map((t) => (
+              <div key={t.id} className="px-3 py-2 text-sm border-b border-border last:border-b-0">
+                <div className="flex items-center gap-2">
+                  <span className="text-muted-foreground">{formatDate(t.transactionDate)}</span>
+                  <span className="text-white">{formatAmount(t.debitAmount)}</span>
+                </div>
+                <div className="text-muted-foreground text-xs truncate">{t.description || "-"}</div>
+              </div>
+            ))}
+            {transactions.length > 10 && (
+              <div className="px-3 py-2 text-sm text-muted-foreground text-center">
+                ...他 {transactions.length - 10}件
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="border border-border rounded-lg p-4 space-y-2">
+            <div className="flex justify-between">
+              <span className="text-muted-foreground text-sm">日付</span>
+              <span className="text-white">{formatDate(transactions[0].transactionDate)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground text-sm">金額</span>
+              <span className="text-white">{formatAmount(transactions[0].debitAmount)}</span>
+            </div>
+            {transactions[0].categoryKey && (
+              <div className="flex justify-between">
+                <span className="text-muted-foreground text-sm">カテゴリ</span>
+                <span className="text-white">{transactions[0].categoryKey}</span>
+              </div>
+            )}
+            {transactions[0].description && (
+              <div className="flex justify-between">
+                <span className="text-muted-foreground text-sm">摘要</span>
+                <span className="text-white truncate max-w-[200px]">
+                  {transactions[0].description}
+                </span>
+              </div>
+            )}
+            {transactions[0].counterpart && (
+              <div className="mt-3 pt-3 border-t border-border">
+                <span className="text-muted-foreground text-sm block mb-1">現在の取引先</span>
+                <span className="text-white">{transactions[0].counterpart.name}</span>
+                {transactions[0].counterpart.address && (
+                  <span className="text-muted-foreground text-xs block">
+                    {transactions[0].counterpart.address}
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      <div className="lg:flex-1 flex flex-col min-w-0">
+        {error && (
+          <div className="text-red-500 p-3 bg-red-900/20 rounded-lg border border-red-900/30 mb-4">
+            {error}
+          </div>
+        )}
+
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "select" | "create")}>
+          <TabsList className="mb-4">
+            <TabsTrigger value="select">既存から選択</TabsTrigger>
+            <TabsTrigger value="create">新規作成</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="select" className="flex-1">
+            <CounterpartSelectorContent
+              allCounterparts={allCounterparts}
+              selectedCounterpartId={selectedCounterpartId}
+              onSelect={setSelectedCounterpartId}
+              transactions={transactions}
+              politicalOrganizationId={politicalOrganizationId}
+            />
+
+            <div className="flex justify-end gap-2 mt-4 pt-4 border-t border-border">
+              <Button type="button" variant="secondary" onClick={onCancel} disabled={isPending}>
+                キャンセル
+              </Button>
+              <Button
+                type="button"
+                onClick={handleSelectExisting}
+                disabled={isPending || !selectedCounterpartId}
+              >
+                {isPending ? "紐付け中..." : getSelectButtonLabel()}
+              </Button>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="create" className="flex-1">
+            <CounterpartFormContent
+              mode="create"
+              onSubmit={handleCreateAndAssign}
+              disabled={isPending}
+            />
+          </TabsContent>
+        </Tabs>
+      </div>
+    </div>
+  );
+}
