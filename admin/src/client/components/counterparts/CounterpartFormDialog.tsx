@@ -64,7 +64,7 @@ export function CounterpartFormDialog(props: CounterpartFormDialogProps) {
 
   return (
     <Dialog open={true} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-[85vw] max-h-[85vh] w-full overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
