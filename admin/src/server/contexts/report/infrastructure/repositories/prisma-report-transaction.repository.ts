@@ -22,6 +22,7 @@ import type {
   TransactionFilters,
   TransactionWithCounterpartFilters,
   TransactionWithCounterpartResult,
+  TransactionByCounterpartFilters,
   UtilityExpenseTransaction,
 } from "@/server/contexts/report/domain/repositories/report-transaction-repository.interface";
 import {
@@ -790,6 +791,129 @@ export class PrismaReportTransactionRepository implements IReportTransactionRepo
     const total = await this.prisma.transaction.count({
       where: whereClause,
     });
+
+    return {
+      transactions: transactions.map((t) => ({
+        id: t.id.toString(),
+        transactionNo: t.transactionNo,
+        transactionDate: t.transactionDate,
+        financialYear: t.financialYear,
+        transactionType: t.transactionType as "income" | "expense",
+        categoryKey: t.categoryKey,
+        friendlyCategory: t.friendlyCategory,
+        label: t.label,
+        description: t.description,
+        memo: t.memo,
+        debitAmount: Number(t.debitAmount),
+        creditAmount: Number(t.creditAmount),
+        debitPartner: t.debitPartner,
+        creditPartner: t.creditPartner,
+        counterpart:
+          t.transactionCounterparts.length > 0
+            ? {
+                id: t.transactionCounterparts[0].counterpart.id.toString(),
+                name: t.transactionCounterparts[0].counterpart.name,
+                address: t.transactionCounterparts[0].counterpart.address,
+              }
+            : null,
+        requiresCounterpart: requiresCounterpartDetail(
+          t.transactionType as "income" | "expense",
+          t.categoryKey,
+          Number(t.debitAmount),
+        ),
+      })),
+      total,
+    };
+  }
+
+  /**
+   * 特定のカウンターパートに紐づいている取引を取得
+   */
+  async findByCounterpart(
+    filters: TransactionByCounterpartFilters,
+  ): Promise<TransactionWithCounterpartResult> {
+    const {
+      counterpartId,
+      politicalOrganizationId,
+      financialYear,
+      limit = 50,
+      offset = 0,
+      sortField = "transactionDate",
+      sortOrder = "desc",
+    } = filters;
+
+    if (!/^\d+$/.test(counterpartId)) {
+      throw new Error(`Invalid counterpartId: "${counterpartId}" is not a valid numeric string`);
+    }
+
+    const conditions: Prisma.TransactionWhereInput[] = [
+      {
+        transactionCounterparts: {
+          some: {
+            counterpartId: BigInt(counterpartId),
+          },
+        },
+      },
+    ];
+
+    if (politicalOrganizationId) {
+      if (!/^\d+$/.test(politicalOrganizationId)) {
+        throw new Error(
+          `Invalid politicalOrganizationId: "${politicalOrganizationId}" is not a valid numeric string`,
+        );
+      }
+      conditions.push({ politicalOrganizationId: BigInt(politicalOrganizationId) });
+    }
+
+    if (financialYear) {
+      conditions.push({ financialYear });
+    }
+
+    const whereClause: Prisma.TransactionWhereInput = { AND: conditions };
+
+    const orderByField =
+      sortField === "debitAmount"
+        ? "debitAmount"
+        : sortField === "categoryKey"
+          ? "categoryKey"
+          : "transactionDate";
+
+    const [transactions, total] = await Promise.all([
+      this.prisma.transaction.findMany({
+        where: whereClause,
+        orderBy: [{ [orderByField]: sortOrder }, { id: "asc" }],
+        take: limit,
+        skip: offset,
+        select: {
+          id: true,
+          transactionNo: true,
+          transactionDate: true,
+          financialYear: true,
+          transactionType: true,
+          categoryKey: true,
+          friendlyCategory: true,
+          label: true,
+          description: true,
+          memo: true,
+          debitAmount: true,
+          creditAmount: true,
+          debitPartner: true,
+          creditPartner: true,
+          transactionCounterparts: {
+            select: {
+              counterpart: {
+                select: {
+                  id: true,
+                  name: true,
+                  address: true,
+                },
+              },
+            },
+          },
+        },
+      }),
+      this.prisma.transaction.count({ where: whereClause }),
+    ]);
 
     return {
       transactions: transactions.map((t) => ({
