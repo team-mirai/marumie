@@ -23,6 +23,7 @@ import type {
   TransactionWithCounterpart,
   TransactionWithCounterpartFilters,
   TransactionWithCounterpartResult,
+  TransactionByCounterpartFilters,
 } from "@/server/contexts/report/domain/models/transaction-with-counterpart";
 
 export interface TransactionFilters {
@@ -37,6 +38,13 @@ export interface TransactionFilters {
 export interface ITransactionWithCounterpartRepository {
   findTransactionsWithCounterparts(
     filters: TransactionWithCounterpartFilters,
+  ): Promise<TransactionWithCounterpartResult>;
+
+  /**
+   * 特定のカウンターパートに紐づいている取引を取得
+   */
+  findByCounterpart(
+    filters: TransactionByCounterpartFilters,
   ): Promise<TransactionWithCounterpartResult>;
 }
 
@@ -179,4 +187,5 @@ export type {
   TransactionWithCounterpart,
   TransactionWithCounterpartFilters,
   TransactionWithCounterpartResult,
+  TransactionByCounterpartFilters,
 };

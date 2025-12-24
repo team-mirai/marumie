@@ -1,14 +1,14 @@
 import {
-  GetTransactionsWithCounterpartsUsecase,
-  type GetTransactionsWithCounterpartsInput,
-} from "@/server/contexts/report/application/usecases/get-transactions-with-counterparts-usecase";
+  GetCounterpartTransactionsUsecase,
+  type GetCounterpartTransactionsInput,
+} from "@/server/contexts/report/application/usecases/get-counterpart-transactions-usecase";
 import type { ITransactionWithCounterpartRepository } from "@/server/contexts/report/domain/repositories/report-transaction-repository.interface";
 import type {
   TransactionWithCounterpart,
-  TransactionWithCounterpartFilters,
+  TransactionByCounterpartFilters,
 } from "@/server/contexts/report/domain/models/transaction-with-counterpart";
 
-describe("GetTransactionsWithCounterpartsUsecase", () => {
+describe("GetCounterpartTransactionsUsecase", () => {
   const createMockTransaction = (
     overrides?: Partial<TransactionWithCounterpart>,
   ): TransactionWithCounterpart => ({
@@ -26,15 +26,19 @@ describe("GetTransactionsWithCounterpartsUsecase", () => {
     creditAmount: 0,
     debitPartner: null,
     creditPartner: null,
-    counterpart: null,
+    counterpart: {
+      id: "cp-1",
+      name: "株式会社テスト",
+      address: "東京都千代田区1-1-1",
+    },
     requiresCounterpart: true,
     ...overrides,
   });
 
-    const createMockRepository = (): jest.Mocked<ITransactionWithCounterpartRepository> => ({
-      findTransactionsWithCounterparts: jest.fn(),
-      findByCounterpart: jest.fn(),
-    });
+  const createMockRepository = (): jest.Mocked<ITransactionWithCounterpartRepository> => ({
+    findTransactionsWithCounterparts: jest.fn(),
+    findByCounterpart: jest.fn(),
+  });
 
   describe("ページネーション・フィルタリング・結果構造", () => {
     it("デフォルト値の適用、フィルタへの変換、結果構造が正しい", async () => {
@@ -44,40 +48,34 @@ describe("GetTransactionsWithCounterpartsUsecase", () => {
         createMockTransaction({ id: "2", transactionNo: "TXN002" }),
         createMockTransaction({ id: "3", transactionNo: "TXN003" }),
       ];
-      mockRepository.findTransactionsWithCounterparts.mockResolvedValue({
+      mockRepository.findByCounterpart.mockResolvedValue({
         transactions: mockTransactions,
         total: 100,
       });
 
-      const usecase = new GetTransactionsWithCounterpartsUsecase(mockRepository);
-      const input: GetTransactionsWithCounterpartsInput = {
-        politicalOrganizationId: "123",
-        financialYear: 2024,
+      const usecase = new GetCounterpartTransactionsUsecase(mockRepository);
+      const input: GetCounterpartTransactionsInput = {
+        counterpartId: "123",
       };
       const result = await usecase.execute(input);
 
-      // リポジトリに渡されるフィルタを検証（デフォルト値が適用されている）
-      const calledFilters = mockRepository.findTransactionsWithCounterparts.mock
-        .calls[0][0] as TransactionWithCounterpartFilters;
+      const calledFilters = mockRepository.findByCounterpart.mock
+        .calls[0][0] as TransactionByCounterpartFilters;
       expect(calledFilters).toEqual({
-        politicalOrganizationId: "123",
-        financialYear: 2024,
-        unassignedOnly: undefined,
-        requiresCounterpartOnly: undefined,
-        categoryKey: undefined,
-        searchQuery: undefined,
-        limit: 50, // デフォルト perPage
-        offset: 0, // (page=1 - 1) * 50
+        counterpartId: "123",
+        politicalOrganizationId: undefined,
+        financialYear: undefined,
+        limit: 50,
+        offset: 0,
         sortField: undefined,
         sortOrder: undefined,
       });
 
-      // 結果構造を検証
       expect(result).toEqual({
         transactions: mockTransactions,
         total: 100,
-        page: 1, // デフォルト
-        perPage: 50, // デフォルト
+        page: 1,
+        perPage: 50,
       });
       expect(result.transactions).toHaveLength(3);
     });
@@ -86,23 +84,22 @@ describe("GetTransactionsWithCounterpartsUsecase", () => {
   describe("カスタムページネーションとオフセット計算", () => {
     it("page=3, perPage=20 の場合、offset=40 でリポジトリを呼び出す", async () => {
       const mockRepository = createMockRepository();
-      mockRepository.findTransactionsWithCounterparts.mockResolvedValue({
+      mockRepository.findByCounterpart.mockResolvedValue({
         transactions: [],
         total: 0,
       });
 
-      const usecase = new GetTransactionsWithCounterpartsUsecase(mockRepository);
+      const usecase = new GetCounterpartTransactionsUsecase(mockRepository);
       const result = await usecase.execute({
-        politicalOrganizationId: "123",
-        financialYear: 2024,
+        counterpartId: "123",
         page: 3,
         perPage: 20,
       });
 
-      const calledFilters = mockRepository.findTransactionsWithCounterparts.mock
-        .calls[0][0] as TransactionWithCounterpartFilters;
+      const calledFilters = mockRepository.findByCounterpart.mock
+        .calls[0][0] as TransactionByCounterpartFilters;
       expect(calledFilters.limit).toBe(20);
-      expect(calledFilters.offset).toBe(40); // (3 - 1) * 20
+      expect(calledFilters.offset).toBe(40);
 
       expect(result.page).toBe(3);
       expect(result.perPage).toBe(20);
@@ -110,25 +107,23 @@ describe("GetTransactionsWithCounterpartsUsecase", () => {
 
     it("不正なページネーションパラメータは安全な値に補正される", async () => {
       const mockRepository = createMockRepository();
-      mockRepository.findTransactionsWithCounterparts.mockResolvedValue({
+      mockRepository.findByCounterpart.mockResolvedValue({
         transactions: [],
         total: 0,
       });
 
-      const usecase = new GetTransactionsWithCounterpartsUsecase(mockRepository);
+      const usecase = new GetCounterpartTransactionsUsecase(mockRepository);
 
-      // page=0, perPage=-5 のような不正値
       const result = await usecase.execute({
-        politicalOrganizationId: "123",
-        financialYear: 2024,
+        counterpartId: "123",
         page: 0,
         perPage: -5,
       });
 
-      const calledFilters = mockRepository.findTransactionsWithCounterparts.mock
-        .calls[0][0] as TransactionWithCounterpartFilters;
-      expect(calledFilters.limit).toBe(1); // 最小値1に補正
-      expect(calledFilters.offset).toBe(0); // page=1に補正されるので offset=0
+      const calledFilters = mockRepository.findByCounterpart.mock
+        .calls[0][0] as TransactionByCounterpartFilters;
+      expect(calledFilters.limit).toBe(1);
+      expect(calledFilters.offset).toBe(0);
 
       expect(result.page).toBe(1);
       expect(result.perPage).toBe(1);
@@ -136,20 +131,19 @@ describe("GetTransactionsWithCounterpartsUsecase", () => {
 
     it("perPageが上限100を超える場合は100に制限される", async () => {
       const mockRepository = createMockRepository();
-      mockRepository.findTransactionsWithCounterparts.mockResolvedValue({
+      mockRepository.findByCounterpart.mockResolvedValue({
         transactions: [],
         total: 0,
       });
 
-      const usecase = new GetTransactionsWithCounterpartsUsecase(mockRepository);
+      const usecase = new GetCounterpartTransactionsUsecase(mockRepository);
       const result = await usecase.execute({
-        politicalOrganizationId: "123",
-        financialYear: 2024,
+        counterpartId: "123",
         perPage: 500,
       });
 
-      const calledFilters = mockRepository.findTransactionsWithCounterparts.mock
-        .calls[0][0] as TransactionWithCounterpartFilters;
+      const calledFilters = mockRepository.findByCounterpart.mock
+        .calls[0][0] as TransactionByCounterpartFilters;
       expect(calledFilters.limit).toBe(100);
       expect(result.perPage).toBe(100);
     });
@@ -158,36 +152,30 @@ describe("GetTransactionsWithCounterpartsUsecase", () => {
   describe("すべてのフィルタオプションの受け渡し", () => {
     it("すべてのオプションがリポジトリに正しく渡される", async () => {
       const mockRepository = createMockRepository();
-      mockRepository.findTransactionsWithCounterparts.mockResolvedValue({
+      mockRepository.findByCounterpart.mockResolvedValue({
         transactions: [],
         total: 0,
       });
 
-      const usecase = new GetTransactionsWithCounterpartsUsecase(mockRepository);
+      const usecase = new GetCounterpartTransactionsUsecase(mockRepository);
       await usecase.execute({
-        politicalOrganizationId: "456",
+        counterpartId: "456",
+        politicalOrganizationId: "org-123",
         financialYear: 2023,
-        unassignedOnly: true,
-        requiresCounterpartOnly: true,
-        categoryKey: "utilities",
-        searchQuery: "電気代",
         page: 2,
         perPage: 25,
         sortField: "debitAmount",
         sortOrder: "desc",
       });
 
-      const calledFilters = mockRepository.findTransactionsWithCounterparts.mock
-        .calls[0][0] as TransactionWithCounterpartFilters;
+      const calledFilters = mockRepository.findByCounterpart.mock
+        .calls[0][0] as TransactionByCounterpartFilters;
       expect(calledFilters).toEqual({
-        politicalOrganizationId: "456",
+        counterpartId: "456",
+        politicalOrganizationId: "org-123",
         financialYear: 2023,
-        unassignedOnly: true,
-        requiresCounterpartOnly: true,
-        categoryKey: "utilities",
-        searchQuery: "電気代",
         limit: 25,
-        offset: 25, // (2 - 1) * 25
+        offset: 25,
         sortField: "debitAmount",
         sortOrder: "desc",
       });
@@ -206,20 +194,14 @@ describe("GetTransactionsWithCounterpartsUsecase", () => {
         },
         requiresCounterpart: true,
       });
-      const transactionWithoutCounterpart = createMockTransaction({
-        id: "2",
-        counterpart: null,
-        requiresCounterpart: true,
-      });
-      mockRepository.findTransactionsWithCounterparts.mockResolvedValue({
-        transactions: [transactionWithCounterpart, transactionWithoutCounterpart],
-        total: 2,
+      mockRepository.findByCounterpart.mockResolvedValue({
+        transactions: [transactionWithCounterpart],
+        total: 1,
       });
 
-      const usecase = new GetTransactionsWithCounterpartsUsecase(mockRepository);
+      const usecase = new GetCounterpartTransactionsUsecase(mockRepository);
       const result = await usecase.execute({
-        politicalOrganizationId: "123",
-        financialYear: 2024,
+        counterpartId: "cp-1",
       });
 
       expect(result.transactions[0].counterpart).toEqual({
@@ -227,7 +209,6 @@ describe("GetTransactionsWithCounterpartsUsecase", () => {
         name: "株式会社テスト",
         address: "東京都千代田区1-1-1",
       });
-      expect(result.transactions[1].counterpart).toBeNull();
     });
   });
 });

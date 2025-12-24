@@ -15,26 +15,27 @@ describe("DonationAssembler", () => {
   };
 
   beforeEach(() => {
-    mockRepository = {
-      findPersonalDonationTransactions: jest.fn(),
-      findBusinessIncomeTransactions: jest.fn(),
-      findLoanIncomeTransactions: jest.fn(),
-      findGrantIncomeTransactions: jest.fn(),
-      findOtherIncomeTransactions: jest.fn(),
-      findUtilityExpenseTransactions: jest.fn(),
-      findSuppliesExpenseTransactions: jest.fn(),
-      findOfficeExpenseTransactions: jest.fn(),
-      findOrganizationExpenseTransactions: jest.fn(),
-      findElectionExpenseTransactions: jest.fn(),
-      findPublicationExpenseTransactions: jest.fn(),
-      findAdvertisingExpenseTransactions: jest.fn(),
-      findFundraisingPartyExpenseTransactions: jest.fn(),
-      findOtherBusinessExpenseTransactions: jest.fn(),
-      findResearchExpenseTransactions: jest.fn(),
-      findDonationGrantExpenseTransactions: jest.fn(),
-      findOtherPoliticalExpenseTransactions: jest.fn(),
-      findTransactionsWithCounterparts: jest.fn(),
-    };
+        mockRepository = {
+          findPersonalDonationTransactions: jest.fn(),
+          findBusinessIncomeTransactions: jest.fn(),
+          findLoanIncomeTransactions: jest.fn(),
+          findGrantIncomeTransactions: jest.fn(),
+          findOtherIncomeTransactions: jest.fn(),
+          findUtilityExpenseTransactions: jest.fn(),
+          findSuppliesExpenseTransactions: jest.fn(),
+          findOfficeExpenseTransactions: jest.fn(),
+          findOrganizationExpenseTransactions: jest.fn(),
+          findElectionExpenseTransactions: jest.fn(),
+          findPublicationExpenseTransactions: jest.fn(),
+          findAdvertisingExpenseTransactions: jest.fn(),
+          findFundraisingPartyExpenseTransactions: jest.fn(),
+          findOtherBusinessExpenseTransactions: jest.fn(),
+          findResearchExpenseTransactions: jest.fn(),
+          findDonationGrantExpenseTransactions: jest.fn(),
+          findOtherPoliticalExpenseTransactions: jest.fn(),
+          findTransactionsWithCounterparts: jest.fn(),
+          findByCounterpart: jest.fn(),
+        };
     assembler = new DonationAssembler(mockRepository);
   });
 

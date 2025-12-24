@@ -2,6 +2,7 @@
 import "client-only";
 
 import { useState } from "react";
+import Link from "next/link";
 import type { CounterpartWithUsage } from "@/server/contexts/report/domain/models/counterpart";
 import { Button } from "@/client/components/ui";
 import { CounterpartFormDialog } from "./CounterpartFormDialog";
@@ -41,7 +42,14 @@ export function CounterpartTable({ counterparts, onUpdate }: CounterpartTablePro
                 key={counterpart.id}
                 className="border-b border-border hover:bg-secondary/30 transition-colors"
               >
-                <td className="py-3 px-4 text-white">{counterpart.name}</td>
+                <td className="py-3 px-4">
+                  <Link
+                    href={`/counterparts/${counterpart.id}`}
+                    className="text-white hover:text-primary hover:underline transition-colors"
+                  >
+                    {counterpart.name}
+                  </Link>
+                </td>
                 <td className="py-3 px-4 text-white">{counterpart.address}</td>
                 <td className="py-3 px-4 text-white text-right">{counterpart.usageCount}件</td>
                 <td className="py-3 px-4 text-right">

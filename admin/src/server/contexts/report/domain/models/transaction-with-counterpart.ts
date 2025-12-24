@@ -39,3 +39,13 @@ export interface TransactionWithCounterpartResult {
   transactions: TransactionWithCounterpart[];
   total: number;
 }
+
+export interface TransactionByCounterpartFilters {
+  counterpartId: string;
+  politicalOrganizationId?: string;
+  financialYear?: number;
+  limit?: number;
+  offset?: number;
+  sortField?: "transactionDate" | "debitAmount" | "categoryKey";
+  sortOrder?: "asc" | "desc";
+}
