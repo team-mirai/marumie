@@ -15,14 +15,15 @@ const seeders: Seeder[] = [
 ];
 
 async function main() {
-  console.log('Seeding database...\n');
+  console.log('🌱 Seeding database...\n');
 
   for (const seeder of seeders) {
-    console.log(`${seeder.name}...`);
+    console.log(`📦 ${seeder.name}...`);
     await seeder.seed(prisma);
+    console.log('');
   }
 
-  console.log('\nSeeding completed!');
+  console.log('✅ Seeding completed!');
 }
 
 main()

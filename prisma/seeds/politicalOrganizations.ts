@@ -27,9 +27,9 @@ export const politicalOrganizationsSeeder: Seeder = {
 
       if (!existing) {
         const created = await prisma.politicalOrganization.create({ data: item });
-        console.log(`  Created political organization: ${created.slug}`);
+        console.log(`✅ Created: ${created.slug}`);
       } else {
-        console.log(`  Political organization already exists: ${existing.slug}`);
+        console.log(`⏭️  Already exists: ${existing.slug}`);
       }
     }
   },

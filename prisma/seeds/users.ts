@@ -1,4 +1,5 @@
 import type { PrismaClient } from '@prisma/client';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { createClient } from '@supabase/supabase-js';
 import type { Seeder } from './lib/types';
 
@@ -21,6 +22,59 @@ const data: UserSeedData[] = [
   },
 ];
 
+async function ensureSupabaseUser(
+  supabase: SupabaseClient,
+  userData: UserSeedData,
+  existingUsers: { id: string; email?: string }[]
+): Promise<string> {
+  const existing = existingUsers.find((u) => u.email === userData.email);
+  if (existing) {
+    console.log(`⏭️  Already exists: ${userData.email} (${userData.role})`);
+    return existing.id;
+  }
+
+  const { data: newUser, error } = await supabase.auth.admin.createUser({
+    email: userData.email,
+    password: userData.password,
+    email_confirm: true,
+  });
+
+  if (error) {
+    throw new Error(`Failed to create user ${userData.email}: ${error.message}`);
+  }
+
+  console.log(`✅ Created: ${userData.email} (${userData.role})`);
+  return newUser.user.id;
+}
+
+async function ensureDbUser(
+  prisma: PrismaClient,
+  authId: string,
+  userData: UserSeedData
+): Promise<void> {
+  const existing = await prisma.user.findUnique({ where: { authId } });
+  if (existing) {
+    return;
+  }
+
+  await prisma.user.create({
+    data: {
+      authId,
+      email: userData.email,
+      role: userData.role,
+    },
+  });
+  console.log(`✅ DB record created: ${userData.email}`);
+}
+
+function printLoginCredentials(): void {
+  console.log('');
+  console.log('📋 Login credentials:');
+  console.log(`   Admin: ${data[0].email} / ${data[0].password}`);
+  console.log(`   User:  ${data[1].email} / ${data[1].password}`);
+  console.log(`   URL:   http://localhost:3001/login`);
+}
+
 export const usersSeeder: Seeder = {
   name: 'Users',
   async seed(prisma: PrismaClient) {
@@ -28,74 +82,30 @@ export const usersSeeder: Seeder = {
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
     if (!serviceRoleKey) {
-      console.log('  Warning: SUPABASE_SERVICE_ROLE_KEY not found - skipping user creation');
-      console.log('  To create users, ensure SUPABASE_SERVICE_ROLE_KEY is set in .env');
+      console.log('⚠️  Warning: SUPABASE_SERVICE_ROLE_KEY not found - skipping user creation');
+      console.log('   To create users, ensure SUPABASE_SERVICE_ROLE_KEY is set in .env');
       return;
     }
 
     const supabase = createClient(supabaseUrl, serviceRoleKey, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      },
+      auth: { autoRefreshToken: false, persistSession: false },
     });
 
     try {
       const { data: existingUsers, error: listError } = await supabase.auth.admin.listUsers();
-
       if (listError) {
         throw new Error(`Failed to list users: ${listError.message}`);
       }
 
       for (const userData of data) {
-        const existingSupabaseUser = existingUsers.users?.find(
-          (user) => user.email === userData.email
-        );
-
-        let authId: string;
-
-        if (existingSupabaseUser) {
-          console.log(`  ${userData.role === 'admin' ? 'Admin' : 'Regular'} user '${userData.email}' already exists in Supabase`);
-          authId = existingSupabaseUser.id;
-        } else {
-          const { data: newUser, error: createError } = await supabase.auth.admin.createUser({
-            email: userData.email,
-            password: userData.password,
-            email_confirm: true,
-          });
-
-          if (createError) {
-            throw new Error(`Failed to create user ${userData.email}: ${createError.message}`);
-          }
-
-          authId = newUser.user.id;
-          console.log(`  ${userData.role === 'admin' ? 'Admin' : 'Regular'} user created: ${userData.email}`);
-        }
-
-        // データベースレコード作成
-        const existingDbUser = await prisma.user.findUnique({
-          where: { authId },
-        });
-
-        if (!existingDbUser) {
-          await prisma.user.create({
-            data: {
-              authId,
-              email: userData.email,
-              role: userData.role,
-            },
-          });
-          console.log(`  Database ${userData.role} record created`);
-        }
+        const authId = await ensureSupabaseUser(supabase, userData, existingUsers.users ?? []);
+        await ensureDbUser(prisma, authId, userData);
       }
 
-      console.log(`\n  User seeding completed!`);
-      console.log(`    Admin: ${data[0].email} / ${data[0].password}`);
-      console.log(`    User: ${data[1].email} / ${data[1].password}`);
-      console.log(`    You can now log in to the admin panel at http://localhost:3001/login`);
+      printLoginCredentials();
     } catch (error) {
-      console.error('  Error creating users:', (error as Error).message);
-      console.log('  User creation failed, but database seeding will continue');
+      console.error('❌ Error:', (error as Error).message);
+      console.log('   User creation failed, but database seeding will continue');
     }
   },
 };

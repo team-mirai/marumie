@@ -76,7 +76,7 @@ export const reportProfilesSeeder: Seeder = {
       });
 
       if (!organization) {
-        console.log(`  Warning: Organization '${profile.organizationSlug}' not found - skipping`);
+        console.log(`⚠️  Warning: Organization '${profile.organizationSlug}' not found - skipping`);
         continue;
       }
 
@@ -89,9 +89,7 @@ export const reportProfilesSeeder: Seeder = {
       });
 
       if (existing) {
-        console.log(
-          `  Report profile for ${profile.organizationSlug} (${profile.financialYear}) already exists`
-        );
+        console.log(`⏭️  Already exists: ${profile.organizationSlug} (${profile.financialYear})`);
         continue;
       }
 
@@ -108,7 +106,7 @@ export const reportProfilesSeeder: Seeder = {
         },
       });
 
-      console.log(`  Report profile for ${profile.organizationSlug} (${profile.financialYear}) created`);
+      console.log(`✅ Created: ${profile.organizationSlug} (${profile.financialYear})`);
     }
   },
 };
