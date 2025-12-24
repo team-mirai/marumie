@@ -242,7 +242,6 @@ export function CounterpartDetailClient({
               organizations={organizations}
               value={selectedOrganizationId}
               onValueChange={handleOrganizationChange}
-              placeholder="すべての政治団体"
             />
           </div>
           <div className="w-fit space-y-2">

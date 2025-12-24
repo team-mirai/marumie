@@ -31,9 +31,10 @@ describe("GetTransactionsWithCounterpartsUsecase", () => {
     ...overrides,
   });
 
-  const createMockRepository = (): jest.Mocked<ITransactionWithCounterpartRepository> => ({
-    findTransactionsWithCounterparts: jest.fn(),
-  });
+    const createMockRepository = (): jest.Mocked<ITransactionWithCounterpartRepository> => ({
+      findTransactionsWithCounterparts: jest.fn(),
+      findByCounterpart: jest.fn(),
+    });
 
   describe("ページネーション・フィルタリング・結果構造", () => {
     it("デフォルト値の適用、フィルタへの変換、結果構造が正しい", async () => {
