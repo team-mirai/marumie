@@ -1,8 +1,10 @@
 import { PrismaClient } from '@prisma/client';
 import 'dotenv/config';
 import type { Seeder } from './seeds/lib/types';
+import { counterpartsSeeder } from './seeds/counterparts';
 import { politicalOrganizationsSeeder } from './seeds/politicalOrganizations';
 import { reportProfilesSeeder } from './seeds/reportProfiles';
+import { transactionsSeeder } from './seeds/transactions';
 import { usersSeeder } from './seeds/users';
 
 const prisma = new PrismaClient();
@@ -12,6 +14,8 @@ const seeders: Seeder[] = [
   politicalOrganizationsSeeder,
   reportProfilesSeeder,
   usersSeeder,
+  counterpartsSeeder,
+  transactionsSeeder,
 ];
 
 async function main() {
