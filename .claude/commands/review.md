@@ -11,43 +11,21 @@ description: 現在の変更に対して設計レビューを行う
 
 現在のブランチの変更内容に対して、設計観点でレビューを行ってください。
 
-### レビュー対象の取得
+### レビュー前の確認
 
 1. 変更されたファイルの差分を `git diff` で取得する
 2. 必要に応じて関連ファイルも読み込む
+3. **以下のガイドラインを参照**:
+   - [docs/admin-architecture-guide.md](docs/admin-architecture-guide.md) - アーキテクチャ全般、レイヤー設計、DDD
+   - [docs/admin-ui-guidelines.md](docs/admin-ui-guidelines.md) - UIコンポーネント、スタイリング
 
-### サーバーサイド（DDD）のレビュー観点
+### サーバーサイド（admin DDD）のレビュー観点
 
-`admin/src/server/contexts/` 配下の変更がある場合、以下を確認：
-
-- **レイヤー構造**: 各レイヤーの責務が適切か
-  - `presentation/loaders`: データ取得のみ
-  - `presentation/actions`: 副作用を伴う操作 + revalidate
-  - `application/usecases`: ユースケースロジック
-  - `domain/models`: ドメインロジック（ビジネスルール）
-  - `domain/services`: 複数エンティティをまたぐ処理のみ
-  - `infrastructure/repositories`: データアクセス層
-- **レイヤー間の呼び出しルール（重要）**:
-  - ❌ loader/action が repository を直接呼ぶのは禁止
-  - ✅ loader/action → usecase → repository の順で呼び出す
-  - 理由: usecase をスキップするとビジネスロジックが presentation 層に漏れる
-- **ドメインモデル**: ロジックがモデルに実装されているか（貧血ドメインモデルになっていないか）
-- **依存の方向**: 外側のレイヤーが内側に依存しているか（逆依存がないか）
-- **server-only**: サーバー専用モジュールに `import "server-only"` があるか
+`admin/src/server/contexts/` 配下の変更がある場合、[docs/admin-architecture-guide.md](docs/admin-architecture-guide.md) に基づきレビューする。
 
 ### フロントエンド（React/Next.js）のレビュー観点
 
-`admin/src/client/` または `admin/src/app/` 配下の変更がある場合、以下を確認：
-
-- **コンポーネント分割**: 適切な粒度で分割されているか
-- **"use client" の使用**: 必要な場合のみ使用しているか
-- **shadcn UI の使用**: カスタムコンポーネントではなく shadcn を使っているか
-  - `Button`, `Input`, `Card` 等は `@/client/components/ui` から import
-  - カスタム実装（`Button.tsx`, `Input.tsx`, `Card.tsx`, `Selector.tsx`）は非推奨
-- **カラー変数**: shadcn 標準の CSS 変数を使用しているか
-  - 推奨: `bg-background`, `bg-card`, `text-foreground`, `text-muted-foreground` 等
-  - 非推奨: `bg-primary-bg`, `bg-primary-panel`, `text-primary-muted` 等
-- **cn() ユーティリティ**: クラス名の合成に使用しているか
+`admin/src/client/` または `admin/src/app/` 配下の変更がある場合、[docs/admin-ui-guidelines.md](docs/admin-ui-guidelines.md) に基づきレビューする。
 
 ### 共通のレビュー観点
 
