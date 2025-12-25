@@ -2,6 +2,10 @@ g See https://help.github.com/articles/ignoring-files/ for more about ignoring f
 data/*
 !data/sampledata.csv
 !data/test_current_liabilities.csv
+!data/reports/
+data/reports/*
+!data/reports/report_3_2025.xml
+!data/reports/minimum_valid.xml
 */.next/*
 .next
 prompts
