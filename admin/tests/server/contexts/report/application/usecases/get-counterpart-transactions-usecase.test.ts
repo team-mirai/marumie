@@ -38,6 +38,9 @@ describe("GetCounterpartTransactionsUsecase", () => {
   const createMockRepository = (): jest.Mocked<ITransactionWithCounterpartRepository> => ({
     findTransactionsWithCounterparts: jest.fn(),
     findByCounterpart: jest.fn(),
+    existsById: jest.fn(),
+    findExistingIds: jest.fn(),
+    findByIdWithCounterpart: jest.fn(),
   });
 
   describe("ページネーション・フィルタリング・結果構造", () => {

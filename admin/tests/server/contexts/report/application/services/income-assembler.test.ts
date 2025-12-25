@@ -40,6 +40,9 @@ describe("IncomeAssembler", () => {
           findOtherPoliticalExpenseTransactions: jest.fn(),
           findTransactionsWithCounterparts: jest.fn(),
           findByCounterpart: jest.fn(),
+          existsById: jest.fn(),
+          findExistingIds: jest.fn(),
+          findByIdWithCounterpart: jest.fn(),
         };
     assembler = new IncomeAssembler(mockRepository);
   });
