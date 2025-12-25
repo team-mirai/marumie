@@ -2,49 +2,26 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/server/contexts/shared/infrastructure/prisma";
+import { PrismaTransactionCounterpartRepository } from "@/server/contexts/report/infrastructure/repositories/prisma-transaction-counterpart.repository";
+import {
+  BulkUnassignCounterpartUsecase,
+  type BulkUnassignCounterpartInput,
+  type BulkUnassignCounterpartResult,
+} from "@/server/contexts/report/application/usecases/bulk-unassign-counterpart-usecase";
 
-export interface BulkUnassignCounterpartInput {
-  transactionIds: string[];
-}
-
-export interface BulkUnassignCounterpartResult {
-  success: boolean;
-  errors?: string[];
-}
+export type { BulkUnassignCounterpartInput, BulkUnassignCounterpartResult };
 
 export async function bulkUnassignCounterpartAction(
   input: BulkUnassignCounterpartInput,
 ): Promise<BulkUnassignCounterpartResult> {
-  try {
-    if (input.transactionIds.length === 0) {
-      return {
-        success: false,
-        errors: ["取引が選択されていません"],
-      };
-    }
+  const repository = new PrismaTransactionCounterpartRepository(prisma);
+  const usecase = new BulkUnassignCounterpartUsecase(repository);
+  const result = await usecase.execute(input);
 
-    const transactionBigIntIds = input.transactionIds.map((id) => {
-      if (!/^\d+$/.test(id)) {
-        throw new Error(`無効な取引ID: ${id}`);
-      }
-      return BigInt(id);
-    });
-
-    await prisma.transactionCounterpart.deleteMany({
-      where: {
-        transactionId: { in: transactionBigIntIds },
-      },
-    });
-
+  if (result.success) {
     revalidatePath("/counterparts/[id]", "page");
     revalidatePath("/assign/counterparts");
-
-    return { success: true };
-  } catch (error) {
-    console.error("Failed to bulk unassign counterparts:", error);
-    return {
-      success: false,
-      errors: [error instanceof Error ? error.message : "一括紐付け解除に失敗しました"],
-    };
   }
+
+  return result;
 }
