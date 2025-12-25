@@ -3,6 +3,9 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/server/contexts/shared/infrastructure/prisma";
 import { BulkAssignCounterpartUsecase } from "@/server/contexts/report/application/usecases/bulk-assign-counterpart-usecase";
+import { PrismaReportTransactionRepository } from "@/server/contexts/report/infrastructure/repositories/prisma-report-transaction.repository";
+import { PrismaCounterpartRepository } from "@/server/contexts/report/infrastructure/repositories/prisma-counterpart.repository";
+import { PrismaTransactionCounterpartRepository } from "@/server/contexts/report/infrastructure/repositories/prisma-transaction-counterpart.repository";
 
 export interface BulkAssignCounterpartActionResult {
   success: boolean;
@@ -16,7 +19,14 @@ export async function bulkAssignCounterpartAction(
   counterpartId: string,
 ): Promise<BulkAssignCounterpartActionResult> {
   try {
-    const usecase = new BulkAssignCounterpartUsecase(prisma);
+    const transactionRepository = new PrismaReportTransactionRepository(prisma);
+    const counterpartRepository = new PrismaCounterpartRepository(prisma);
+    const transactionCounterpartRepository = new PrismaTransactionCounterpartRepository(prisma);
+    const usecase = new BulkAssignCounterpartUsecase(
+      transactionRepository,
+      counterpartRepository,
+      transactionCounterpartRepository,
+    );
     const result = await usecase.execute({ transactionIds, counterpartId });
 
     if (!result.success) {

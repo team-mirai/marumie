@@ -1,13 +1,11 @@
 import "server-only";
 
-import type { PrismaClient } from "@prisma/client";
-import type { TransactionWithCounterpart } from "@/server/contexts/report/domain/models/transaction-with-counterpart";
+import type { ITransactionWithCounterpartRepository } from "@/server/contexts/report/domain/repositories/report-transaction-repository.interface";
+import type { ICounterpartRepository } from "@/server/contexts/report/domain/repositories/counterpart-repository.interface";
 import {
   type CounterpartSuggestion,
   createDefaultSuggester,
 } from "@/server/contexts/report/application/services/counterpart-suggester";
-import { PrismaCounterpartRepository } from "@/server/contexts/report/infrastructure/repositories/prisma-counterpart.repository";
-import { requiresCounterpartDetail } from "@/server/contexts/report/domain/models/counterpart-assignment-rules";
 
 export interface SuggestCounterpartInput {
   transactionId: string;
@@ -22,7 +20,10 @@ export interface SuggestCounterpartResult {
 }
 
 export class SuggestCounterpartUsecase {
-  constructor(private prisma: PrismaClient) {}
+  constructor(
+    private transactionRepository: ITransactionWithCounterpartRepository,
+    private counterpartRepository: ICounterpartRepository,
+  ) {}
 
   private parseBigIntId(id: string): bigint | null {
     if (!/^\d+$/.test(id)) {
@@ -41,54 +42,14 @@ export class SuggestCounterpartUsecase {
       return { success: false, suggestions: [], errors: ["無効なトランザクションIDです"] };
     }
 
-    const transaction = await this.prisma.transaction.findUnique({
-      where: { id: transactionBigIntId },
-      include: {
-        transactionCounterparts: {
-          include: {
-            counterpart: true,
-          },
-        },
-      },
-    });
+    const transactionWithCounterpart =
+      await this.transactionRepository.findByIdWithCounterpart(transactionBigIntId);
 
-    if (!transaction) {
+    if (!transactionWithCounterpart) {
       return { success: false, suggestions: [], errors: ["トランザクションが見つかりません"] };
     }
 
-    const firstCounterpart = transaction.transactionCounterparts[0];
-    const transactionType = transaction.transactionType as "income" | "expense";
-    const transactionWithCounterpart: TransactionWithCounterpart = {
-      id: transaction.id.toString(),
-      transactionNo: transaction.transactionNo,
-      transactionDate: transaction.transactionDate,
-      financialYear: transaction.financialYear,
-      transactionType,
-      categoryKey: transaction.debitAccount,
-      friendlyCategory: transaction.friendlyCategory,
-      label: transaction.label,
-      description: transaction.description,
-      memo: transaction.memo,
-      debitAmount: Number(transaction.debitAmount),
-      creditAmount: Number(transaction.creditAmount),
-      debitPartner: transaction.debitPartner,
-      creditPartner: transaction.creditPartner,
-      counterpart: firstCounterpart
-        ? {
-            id: firstCounterpart.counterpart.id.toString(),
-            name: firstCounterpart.counterpart.name,
-            address: firstCounterpart.counterpart.address,
-          }
-        : null,
-      requiresCounterpart: requiresCounterpartDetail(
-        transactionType,
-        transaction.debitAccount,
-        Number(transaction.debitAmount),
-      ),
-    };
-
-    const repository = new PrismaCounterpartRepository(this.prisma);
-    const suggester = createDefaultSuggester(repository);
+    const suggester = createDefaultSuggester(this.counterpartRepository);
 
     const suggestions = await suggester.suggest(
       transactionWithCounterpart,

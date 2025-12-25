@@ -8,6 +8,9 @@ import {
   AssignCounterpartUsecase,
   UnassignCounterpartUsecase,
 } from "@/server/contexts/report/application/usecases/assign-counterpart-usecase";
+import { PrismaReportTransactionRepository } from "@/server/contexts/report/infrastructure/repositories/prisma-report-transaction.repository";
+import { PrismaCounterpartRepository } from "@/server/contexts/report/infrastructure/repositories/prisma-counterpart.repository";
+import { PrismaTransactionCounterpartRepository } from "@/server/contexts/report/infrastructure/repositories/prisma-transaction-counterpart.repository";
 
 export interface AssignCounterpartActionResult {
   success: boolean;
@@ -19,7 +22,14 @@ export async function assignCounterpartAction(
   counterpartId: string,
 ): Promise<AssignCounterpartActionResult> {
   try {
-    const usecase = new AssignCounterpartUsecase(prisma);
+    const transactionRepository = new PrismaReportTransactionRepository(prisma);
+    const counterpartRepository = new PrismaCounterpartRepository(prisma);
+    const transactionCounterpartRepository = new PrismaTransactionCounterpartRepository(prisma);
+    const usecase = new AssignCounterpartUsecase(
+      transactionRepository,
+      counterpartRepository,
+      transactionCounterpartRepository,
+    );
     const result = await usecase.execute({ transactionId, counterpartId });
 
     if (!result.success) {
@@ -41,7 +51,8 @@ export async function unassignCounterpartAction(
   transactionId: string,
 ): Promise<AssignCounterpartActionResult> {
   try {
-    const usecase = new UnassignCounterpartUsecase(prisma);
+    const transactionCounterpartRepository = new PrismaTransactionCounterpartRepository(prisma);
+    const usecase = new UnassignCounterpartUsecase(transactionCounterpartRepository);
     const result = await usecase.execute({ transactionId });
 
     if (!result.success) {
