@@ -17,7 +17,8 @@ import type {
  */
 export function serializeProfileSection(profile: OrganizationReportProfile): XMLBuilder {
   const frag = fragment();
-  const root = frag.ele("SYUUSHI07_01");
+  const syuushi0701 = frag.ele("SYUUSHI07_01");
+  const root = syuushi0701.ele("SHEET");
   const details = profile.details;
 
   root.ele("HOUKOKU_NEN").txt(profile.financialYear.toString());

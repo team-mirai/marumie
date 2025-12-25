@@ -213,8 +213,8 @@ function buildSyuushiFlgSection(availableFormIds: string[]): XMLBuilder {
     .padEnd(FLAG_STRING_LENGTH, "0")
     .slice(0, FLAG_STRING_LENGTH);
 
-  const frag = create().ele("SYUUSHI_FLG");
-  frag.ele("SYUUSHI_UMU_FLG").ele("SYUUSHI_UMU").txt(flagString);
+  const frag = create().ele("SYUUSHI_UMU_FLG");
+  frag.ele("SYUUSHI_UMU").txt(flagString);
 
   return frag;
 }

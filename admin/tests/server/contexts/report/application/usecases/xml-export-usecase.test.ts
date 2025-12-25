@@ -223,8 +223,6 @@ describe("XmlExportUsecase", () => {
         financialYear: 2024,
       });
 
-      // SYUUSHI_FLG should be present
-      expect(result.xml).toContain("<SYUUSHI_FLG>");
       expect(result.xml).toContain("<SYUUSHI_UMU_FLG>");
       expect(result.xml).toContain("<SYUUSHI_UMU>");
 
