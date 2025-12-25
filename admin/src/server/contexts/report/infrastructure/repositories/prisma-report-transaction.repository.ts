@@ -996,7 +996,11 @@ export class PrismaReportTransactionRepository implements IReportTransactionRepo
     }
 
     const firstCounterpart = transaction.transactionCounterparts[0];
-    const transactionType = transaction.transactionType as "income" | "expense";
+    const rawTransactionType = transaction.transactionType;
+    if (rawTransactionType !== "income" && rawTransactionType !== "expense") {
+      throw new Error(`Unexpected transactionType: ${rawTransactionType} for transaction ${id}`);
+    }
+    const transactionType = rawTransactionType;
 
     return {
       id: transaction.id.toString(),
