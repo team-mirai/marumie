@@ -1,6 +1,8 @@
 import "server-only";
 
-import type { PrismaClient } from "@prisma/client";
+import type { ICounterpartAssignmentTransactionRepository } from "@/server/contexts/report/domain/repositories/counterpart-assignment-transaction-repository.interface";
+import type { ICounterpartRepository } from "@/server/contexts/report/domain/repositories/counterpart-repository.interface";
+import type { ITransactionCounterpartRepository } from "@/server/contexts/report/domain/repositories/transaction-counterpart-repository.interface";
 
 export interface AssignCounterpartInput {
   transactionId: string;
@@ -13,7 +15,11 @@ export interface AssignCounterpartResult {
 }
 
 export class AssignCounterpartUsecase {
-  constructor(private prisma: PrismaClient) {}
+  constructor(
+    private transactionRepository: ICounterpartAssignmentTransactionRepository,
+    private counterpartRepository: ICounterpartRepository,
+    private transactionCounterpartRepository: ITransactionCounterpartRepository,
+  ) {}
 
   private parseBigIntId(id: string): bigint | null {
     if (!/^\d+$/.test(id)) {
@@ -32,37 +38,22 @@ export class AssignCounterpartUsecase {
       return { success: false, errors: ["無効なトランザクションIDです"] };
     }
 
+    const counterpart = await this.counterpartRepository.findById(input.counterpartId);
+    if (!counterpart) {
+      return { success: false, errors: ["無効な取引先IDです"] };
+    }
+
+    const transactionExists = await this.transactionRepository.existsById(transactionBigIntId);
+    if (!transactionExists) {
+      return { success: false, errors: ["トランザクションが見つかりません"] };
+    }
+
     const counterpartBigIntId = this.parseBigIntId(input.counterpartId);
     if (counterpartBigIntId === null) {
       return { success: false, errors: ["無効な取引先IDです"] };
     }
 
-    const transaction = await this.prisma.transaction.findUnique({
-      where: { id: transactionBigIntId },
-    });
-    if (!transaction) {
-      return { success: false, errors: ["トランザクションが見つかりません"] };
-    }
-
-    const counterpart = await this.prisma.counterpart.findUnique({
-      where: { id: counterpartBigIntId },
-    });
-    if (!counterpart) {
-      return { success: false, errors: ["取引先が見つかりません"] };
-    }
-
-    await this.prisma.transactionCounterpart.upsert({
-      where: {
-        transactionId: transactionBigIntId,
-      },
-      create: {
-        transactionId: transactionBigIntId,
-        counterpartId: counterpartBigIntId,
-      },
-      update: {
-        counterpartId: counterpartBigIntId,
-      },
-    });
+    await this.transactionCounterpartRepository.upsert(transactionBigIntId, counterpartBigIntId);
 
     return { success: true };
   }
@@ -78,7 +69,7 @@ export interface UnassignCounterpartResult {
 }
 
 export class UnassignCounterpartUsecase {
-  constructor(private prisma: PrismaClient) {}
+  constructor(private transactionCounterpartRepository: ITransactionCounterpartRepository) {}
 
   private parseBigIntId(id: string): bigint | null {
     if (!/^\d+$/.test(id)) {
@@ -97,17 +88,14 @@ export class UnassignCounterpartUsecase {
       return { success: false, errors: ["無効なトランザクションIDです"] };
     }
 
-    const existing = await this.prisma.transactionCounterpart.findUnique({
-      where: { transactionId: transactionBigIntId },
-    });
+    const existing =
+      await this.transactionCounterpartRepository.findByTransactionId(transactionBigIntId);
 
     if (!existing) {
       return { success: true };
     }
 
-    await this.prisma.transactionCounterpart.delete({
-      where: { transactionId: transactionBigIntId },
-    });
+    await this.transactionCounterpartRepository.deleteByTransactionId(transactionBigIntId);
 
     return { success: true };
   }

@@ -1,6 +1,8 @@
 import "server-only";
 
-import type { PrismaClient } from "@prisma/client";
+import type { ICounterpartAssignmentTransactionRepository } from "@/server/contexts/report/domain/repositories/counterpart-assignment-transaction-repository.interface";
+import type { ICounterpartRepository } from "@/server/contexts/report/domain/repositories/counterpart-repository.interface";
+import type { ITransactionCounterpartRepository } from "@/server/contexts/report/domain/repositories/transaction-counterpart-repository.interface";
 
 export interface BulkAssignCounterpartInput {
   transactionIds: string[];
@@ -15,7 +17,11 @@ export interface BulkAssignCounterpartResult {
 }
 
 export class BulkAssignCounterpartUsecase {
-  constructor(private prisma: PrismaClient) {}
+  constructor(
+    private transactionRepository: ICounterpartAssignmentTransactionRepository,
+    private counterpartRepository: ICounterpartRepository,
+    private transactionCounterpartRepository: ITransactionCounterpartRepository,
+  ) {}
 
   private parseBigIntId(id: string): bigint | null {
     if (!/^\d+$/.test(id)) {
@@ -38,16 +44,14 @@ export class BulkAssignCounterpartUsecase {
       };
     }
 
-    const counterpartBigIntId = this.parseBigIntId(input.counterpartId);
-    if (counterpartBigIntId === null) {
+    const counterpart = await this.counterpartRepository.findById(input.counterpartId);
+    if (!counterpart) {
       return { success: false, successCount: 0, failedIds: [], errors: ["無効な取引先IDです"] };
     }
 
-    const counterpart = await this.prisma.counterpart.findUnique({
-      where: { id: counterpartBigIntId },
-    });
-    if (!counterpart) {
-      return { success: false, successCount: 0, failedIds: [], errors: ["取引先が見つかりません"] };
+    const counterpartBigIntId = this.parseBigIntId(input.counterpartId);
+    if (counterpartBigIntId === null) {
+      return { success: false, successCount: 0, failedIds: [], errors: ["無効な取引先IDです"] };
     }
 
     const validTransactionIds: bigint[] = [];
@@ -71,12 +75,10 @@ export class BulkAssignCounterpartUsecase {
       };
     }
 
-    const existingTransactions = await this.prisma.transaction.findMany({
-      where: { id: { in: validTransactionIds } },
-      select: { id: true },
-    });
+    const existingTransactionIds =
+      await this.transactionRepository.findExistingIds(validTransactionIds);
 
-    const existingTransactionIdSet = new Set(existingTransactions.map((t) => t.id));
+    const existingTransactionIdSet = new Set(existingTransactionIds);
     const validExistingIds: bigint[] = [];
 
     for (const id of validTransactionIds) {
@@ -96,18 +98,13 @@ export class BulkAssignCounterpartUsecase {
       };
     }
 
-    await this.prisma.$transaction(async (tx) => {
-      await tx.transactionCounterpart.deleteMany({
-        where: { transactionId: { in: validExistingIds } },
-      });
-
-      await tx.transactionCounterpart.createMany({
-        data: validExistingIds.map((transactionId) => ({
-          transactionId,
-          counterpartId: counterpartBigIntId,
-        })),
-      });
-    });
+    await this.transactionCounterpartRepository.deleteByTransactionIds(validExistingIds);
+    await this.transactionCounterpartRepository.createMany(
+      validExistingIds.map((transactionId) => ({
+        transactionId,
+        counterpartId: counterpartBigIntId,
+      })),
+    );
 
     return {
       success: true,
