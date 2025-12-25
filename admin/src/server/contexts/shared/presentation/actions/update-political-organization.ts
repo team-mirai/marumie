@@ -2,6 +2,11 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/server/contexts/shared/infrastructure/prisma";
+import { PrismaPoliticalOrganizationRepository } from "@/server/contexts/shared/infrastructure/repositories/prisma-political-organization.repository";
+import { UpdatePoliticalOrganizationUsecase } from "@/server/contexts/shared/application/usecases/update-political-organization-usecase";
+
+const repository = new PrismaPoliticalOrganizationRepository(prisma);
+const usecase = new UpdatePoliticalOrganizationUsecase(repository);
 
 export interface UpdatePoliticalOrganizationData {
   displayName: string;
@@ -15,31 +20,7 @@ export async function updatePoliticalOrganization(
   data: UpdatePoliticalOrganizationData,
 ) {
   try {
-    const organizationId = parseInt(id, 10);
-
-    if (Number.isNaN(organizationId)) {
-      throw new Error("Invalid organization ID");
-    }
-
-    const { displayName, orgName, slug, description } = data;
-
-    if (!displayName.trim()) {
-      throw new Error("表示名は必須です");
-    }
-
-    if (!slug.trim()) {
-      throw new Error("スラッグは必須です");
-    }
-
-    await prisma.politicalOrganization.update({
-      where: { id: organizationId },
-      data: {
-        displayName: displayName.trim(),
-        orgName: orgName?.trim() || null,
-        slug: slug.trim(),
-        description: description?.trim() || null,
-      },
-    });
+    await usecase.execute(id, data);
 
     revalidatePath("/political-organizations");
     return { success: true };
