@@ -1,9 +1,8 @@
 import {
   serializeReportData,
   KNOWN_FORM_IDS,
-  FLAG_STRING_LENGTH,
 } from "@/server/contexts/report/domain/services/report-serializer";
-import type { ReportData } from "@/server/contexts/report/domain/models/report-data";
+import { ReportData } from "@/server/contexts/report/domain/models/report-data";
 
 describe("serializeReportData", () => {
   const createEmptyReportData = (): ReportData => ({
@@ -213,11 +212,5 @@ describe("KNOWN_FORM_IDS", () => {
     expect(KNOWN_FORM_IDS).toContain("SYUUSHI07_07");
     expect(KNOWN_FORM_IDS).toContain("SYUUSHI07_14");
     expect(KNOWN_FORM_IDS).toContain("SYUUSHI07_03");
-  });
-});
-
-describe("FLAG_STRING_LENGTH", () => {
-  it("is 51 characters", () => {
-    expect(FLAG_STRING_LENGTH).toBe(51);
   });
 });
