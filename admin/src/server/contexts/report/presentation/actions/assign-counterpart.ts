@@ -8,7 +8,7 @@ import {
   AssignCounterpartUsecase,
   UnassignCounterpartUsecase,
 } from "@/server/contexts/report/application/usecases/assign-counterpart-usecase";
-import { PrismaCounterpartAssignmentTransactionRepository } from "@/server/contexts/report/infrastructure/repositories/prisma-counterpart-assignment-transaction.repository";
+import { PrismaReportTransactionRepository } from "@/server/contexts/report/infrastructure/repositories/prisma-report-transaction.repository";
 import { PrismaCounterpartRepository } from "@/server/contexts/report/infrastructure/repositories/prisma-counterpart.repository";
 import { PrismaTransactionCounterpartRepository } from "@/server/contexts/report/infrastructure/repositories/prisma-transaction-counterpart.repository";
 
@@ -22,7 +22,7 @@ export async function assignCounterpartAction(
   counterpartId: string,
 ): Promise<AssignCounterpartActionResult> {
   try {
-    const transactionRepository = new PrismaCounterpartAssignmentTransactionRepository(prisma);
+    const transactionRepository = new PrismaReportTransactionRepository(prisma);
     const counterpartRepository = new PrismaCounterpartRepository(prisma);
     const transactionCounterpartRepository = new PrismaTransactionCounterpartRepository(prisma);
     const usecase = new AssignCounterpartUsecase(

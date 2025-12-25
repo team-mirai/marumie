@@ -948,4 +948,83 @@ export class PrismaReportTransactionRepository implements IReportTransactionRepo
       total,
     };
   }
+
+  /**
+   * トランザクションIDで存在確認
+   */
+  async existsById(id: bigint): Promise<boolean> {
+    const transaction = await this.prisma.transaction.findUnique({
+      where: { id },
+      select: { id: true },
+    });
+    return transaction !== null;
+  }
+
+  /**
+   * 複数のトランザクションIDで存在するIDのリストを取得
+   */
+  async findExistingIds(ids: bigint[]): Promise<bigint[]> {
+    const transactions = await this.prisma.transaction.findMany({
+      where: { id: { in: ids } },
+      select: { id: true },
+    });
+    return transactions.map((t) => t.id);
+  }
+
+  /**
+   * トランザクションIDでCounterpart情報付きのトランザクションを取得
+   */
+  async findByIdWithCounterpart(
+    id: bigint,
+  ): Promise<
+    | import("@/server/contexts/report/domain/models/transaction-with-counterpart").TransactionWithCounterpart
+    | null
+  > {
+    const transaction = await this.prisma.transaction.findUnique({
+      where: { id },
+      include: {
+        transactionCounterparts: {
+          include: {
+            counterpart: true,
+          },
+        },
+      },
+    });
+
+    if (!transaction) {
+      return null;
+    }
+
+    const firstCounterpart = transaction.transactionCounterparts[0];
+    const transactionType = transaction.transactionType as "income" | "expense";
+
+    return {
+      id: transaction.id.toString(),
+      transactionNo: transaction.transactionNo,
+      transactionDate: transaction.transactionDate,
+      financialYear: transaction.financialYear,
+      transactionType,
+      categoryKey: transaction.debitAccount,
+      friendlyCategory: transaction.friendlyCategory,
+      label: transaction.label,
+      description: transaction.description,
+      memo: transaction.memo,
+      debitAmount: Number(transaction.debitAmount),
+      creditAmount: Number(transaction.creditAmount),
+      debitPartner: transaction.debitPartner,
+      creditPartner: transaction.creditPartner,
+      counterpart: firstCounterpart
+        ? {
+            id: firstCounterpart.counterpart.id.toString(),
+            name: firstCounterpart.counterpart.name,
+            address: firstCounterpart.counterpart.address,
+          }
+        : null,
+      requiresCounterpart: requiresCounterpartDetail(
+        transactionType,
+        transaction.debitAccount,
+        Number(transaction.debitAmount),
+      ),
+    };
+  }
 }

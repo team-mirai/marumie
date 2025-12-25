@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { ICounterpartAssignmentTransactionRepository } from "@/server/contexts/report/domain/repositories/counterpart-assignment-transaction-repository.interface";
+import type { ITransactionWithCounterpartRepository } from "@/server/contexts/report/domain/repositories/report-transaction-repository.interface";
 import type { ICounterpartRepository } from "@/server/contexts/report/domain/repositories/counterpart-repository.interface";
 import {
   type CounterpartSuggestion,
@@ -21,7 +21,7 @@ export interface SuggestCounterpartResult {
 
 export class SuggestCounterpartUsecase {
   constructor(
-    private transactionRepository: ICounterpartAssignmentTransactionRepository,
+    private transactionRepository: ITransactionWithCounterpartRepository,
     private counterpartRepository: ICounterpartRepository,
   ) {}
 

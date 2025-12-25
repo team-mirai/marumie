@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { ICounterpartAssignmentTransactionRepository } from "@/server/contexts/report/domain/repositories/counterpart-assignment-transaction-repository.interface";
+import type { ITransactionWithCounterpartRepository } from "@/server/contexts/report/domain/repositories/report-transaction-repository.interface";
 import type { ICounterpartRepository } from "@/server/contexts/report/domain/repositories/counterpart-repository.interface";
 import type { ITransactionCounterpartRepository } from "@/server/contexts/report/domain/repositories/transaction-counterpart-repository.interface";
 
@@ -18,7 +18,7 @@ export interface BulkAssignCounterpartResult {
 
 export class BulkAssignCounterpartUsecase {
   constructor(
-    private transactionRepository: ICounterpartAssignmentTransactionRepository,
+    private transactionRepository: ITransactionWithCounterpartRepository,
     private counterpartRepository: ICounterpartRepository,
     private transactionCounterpartRepository: ITransactionCounterpartRepository,
   ) {}
@@ -98,8 +98,8 @@ export class BulkAssignCounterpartUsecase {
       };
     }
 
-    await this.transactionCounterpartRepository.deleteByTransactionIds(validExistingIds);
-    await this.transactionCounterpartRepository.createMany(
+    await this.transactionCounterpartRepository.replaceMany(
+      validExistingIds,
       validExistingIds.map((transactionId) => ({
         transactionId,
         counterpartId: counterpartBigIntId,

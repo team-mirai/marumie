@@ -5,7 +5,7 @@ import {
   SuggestCounterpartUsecase,
   type SuggestCounterpartResult,
 } from "@/server/contexts/report/application/usecases/suggest-counterpart-usecase";
-import { PrismaCounterpartAssignmentTransactionRepository } from "@/server/contexts/report/infrastructure/repositories/prisma-counterpart-assignment-transaction.repository";
+import { PrismaReportTransactionRepository } from "@/server/contexts/report/infrastructure/repositories/prisma-report-transaction.repository";
 import { PrismaCounterpartRepository } from "@/server/contexts/report/infrastructure/repositories/prisma-counterpart.repository";
 
 export async function suggestCounterpartAction(
@@ -14,7 +14,7 @@ export async function suggestCounterpartAction(
   limit?: number,
 ): Promise<SuggestCounterpartResult> {
   try {
-    const transactionRepository = new PrismaCounterpartAssignmentTransactionRepository(prisma);
+    const transactionRepository = new PrismaReportTransactionRepository(prisma);
     const counterpartRepository = new PrismaCounterpartRepository(prisma);
     const usecase = new SuggestCounterpartUsecase(transactionRepository, counterpartRepository);
     return await usecase.execute({ transactionId, politicalOrganizationId, limit });

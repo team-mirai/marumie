@@ -54,4 +54,21 @@ export class PrismaTransactionCounterpartRepository implements ITransactionCount
       })),
     });
   }
+
+  async replaceMany(transactionIds: bigint[], data: TransactionCounterpartData[]): Promise<void> {
+    await this.prisma.$transaction(async (tx) => {
+      await tx.transactionCounterpart.deleteMany({
+        where: {
+          transactionId: { in: transactionIds },
+        },
+      });
+
+      await tx.transactionCounterpart.createMany({
+        data: data.map((d) => ({
+          transactionId: d.transactionId,
+          counterpartId: d.counterpartId,
+        })),
+      });
+    });
+  }
 }

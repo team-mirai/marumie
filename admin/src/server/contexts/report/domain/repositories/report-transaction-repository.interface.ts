@@ -46,6 +46,21 @@ export interface ITransactionWithCounterpartRepository {
   findByCounterpart(
     filters: TransactionByCounterpartFilters,
   ): Promise<TransactionWithCounterpartResult>;
+
+  /**
+   * トランザクションIDで存在確認
+   */
+  existsById(id: bigint): Promise<boolean>;
+
+  /**
+   * 複数のトランザクションIDで存在するIDのリストを取得
+   */
+  findExistingIds(ids: bigint[]): Promise<bigint[]>;
+
+  /**
+   * トランザクションIDでCounterpart情報付きのトランザクションを取得
+   */
+  findByIdWithCounterpart(id: bigint): Promise<TransactionWithCounterpart | null>;
 }
 
 export interface IReportTransactionRepository extends ITransactionWithCounterpartRepository {

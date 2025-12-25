@@ -28,4 +28,10 @@ export interface ITransactionCounterpartRepository {
    * 複数の取引先紐付けを一括作成
    */
   createMany(data: TransactionCounterpartData[]): Promise<void>;
+
+  /**
+   * 複数の取引先紐付けを一括置換（削除と作成をアトミックに実行）
+   * 指定されたトランザクションIDの既存紐付けを削除し、新しい紐付けを作成
+   */
+  replaceMany(transactionIds: bigint[], data: TransactionCounterpartData[]): Promise<void>;
 }
