@@ -13,12 +13,12 @@ interface ReportProfileSeedData {
 
 const data: ReportProfileSeedData[] = [
   {
-    organizationSlug: 'digimin',
+    organizationSlug: 'sample-party',
     financialYear: 2025,
-    officialName: 'デジタル民主主義を考える会',
-    officialNameKana: 'デジタルミンシュシュギヲカンガエルカイ',
-    officeAddress: '東京都千代田区永田町一丁目2番3号',
-    officeAddressBuilding: 'サンプルビル4階',
+    officialName: 'サンプル党',
+    officialNameKana: 'サンプルトウ',
+    officeAddress: '東京都千代田区永田町一丁目1番1号',
+    officeAddressBuilding: 'テストビル4階',
     details: {
       representative: {
         lastName: '代表',
@@ -34,12 +34,6 @@ const data: ReportProfileSeedData[] = [
           lastName: '事務担当',
           firstName: '一郎',
           tel: '03-1234-5678',
-        },
-        {
-          id: 'contact-2',
-          lastName: '事務担当',
-          firstName: '二郎',
-          tel: '03-2345-6789',
         },
       ],
       organizationType: '01', // 政党の支部
