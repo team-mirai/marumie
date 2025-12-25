@@ -30,6 +30,8 @@ webapp/src/
 
 ### admin（bounded context ベース）
 
+admin は Bounded Context パターンとレイヤードアーキテクチャに基づく設計を採用しています。
+
 ```
 admin/src/
 ├── app/          # App Router に基づくルーティング、API エンドポイント
@@ -54,11 +56,13 @@ contexts/{コンテキスト名}/
 ├── application/
 │   └── usecases/    # loaderやactionから呼び出されるトップレベル関数
 ├── domain/
-│   ├── services/    # ドメインサービス（後述の例外ケース用）
+│   ├── services/    # ドメインサービス（複数エンティティをまたぐ処理）
 │   └── models/      # ドメインモデル
 └── infrastructure/
     └── repositories/  # データベースアクセス層
 ```
+
+詳細は [docs/admin-architecture-guide.md](docs/admin-architecture-guide.md) を参照すること。
 
 ## 実装ルール
 
@@ -71,10 +75,15 @@ contexts/{コンテキスト名}/
 - サーバーアクション（"use server"処理）は、データ更新やファイルアップロードなど副作用を伴う操作のためだけに使い、あわせて revalidatePath や revalidateTag などの再検証処理までを 1 セットで行う
 - クライアント側でのデータ取得は例外として、リアルタイム通信・高頻度ポーリング・ユーザー操作に即応する検索・オフライン最適化（React Query など）に限って許容する
 
-### ドメインロジック
+### admin アーキテクチャ
 
-- ドメインロジックは原則としてドメインモデルに実装する
-- ドメインサービスは複数エンティティをまたぐ場合や外部連携が必要な場合のみ使用
+admin の実装に関する詳細なルールは [docs/admin-architecture-guide.md](docs/admin-architecture-guide.md) を参照すること。
+
+主要な原則：
+- **Bounded Context による分離**: 各ドメインを独立させ、共通部分は shared で管理
+- **レイヤードアーキテクチャ**: presentation → application → domain ↔ infrastructure
+- **ドメインロジック**: 原則としてドメインモデルに実装（単一エンティティ）、複数エンティティをまたぐ場合はドメインサービス
+- **依存性逆転の原則**: ドメイン層がインフラストラクチャに依存しない
 
 ### import
 

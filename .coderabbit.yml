@@ -2,6 +2,15 @@
 
 language: ja-JP
 
+# ナレッジベース: プロジェクト固有のアーキテクチャガイドとルール
+knowledge_base:
+  code_guidelines:
+    filePatterns:
+      - "docs/admin-architecture-guide.md"
+      - "docs/admin-ui-guidelines.md"
+      - "docs/design-document-rules.md"
+      - "CLAUDE.md"
+
 reviews:
   request_changes_workflow: true
   poem: false
@@ -32,6 +41,34 @@ reviews:
     - "!**/.next/**"
     - "!**/coverage/**"
     - "!**/*.snap"
+
+  # パス別のレビュー指示
+  path_instructions:
+    - path: "admin/src/server/contexts/**"
+      instructions: |
+        このコードはBounded ContextパターンとDDDに基づく設計です。
+        以下のポイントを重点的にレビューしてください：
+        - レイヤー間の依存関係（presentation→application→domain↔infrastructure）
+        - loader/actionがusecaseを経由せずにrepositoryを直接呼んでいないか
+        - ドメインロジックがドメインモデルに適切に実装されているか
+        - server-onlyインポートの有無
+        詳細は docs/admin-architecture-guide.md を参照してください。
+
+    - path: "admin/src/client/**"
+      instructions: |
+        このコードはadmin UIコンポーネントです。
+        以下のポイントを重点的にレビューしてください：
+        - shadcn/ui コンポーネントを使用しているか（カスタム実装は非推奨）
+        - CSS変数（bg-background, text-foreground等）を使用しているか
+        - cn()ユーティリティでクラス名を合成しているか
+        詳細は docs/admin-ui-guidelines.md を参照してください。
+
+    - path: "webapp/src/**"
+      instructions: |
+        webappのコードです。
+        サーバーコンポーネントを優先し、"use client"は必要最小限にしてください。
+        データ取得はloaders、副作用はactionsに分離してください。
+
   auto_review:
     drafts: true
   labeling_instructions: []
