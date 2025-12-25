@@ -19,7 +19,10 @@ describe("Political Organization Usecases", () => {
 
   beforeEach(() => {
     mockRepository = {
+      findAll: jest.fn(),
+      findById: jest.fn(),
       create: jest.fn(),
+      update: jest.fn(),
       delete: jest.fn(),
       countTransactions: jest.fn(),
     };
