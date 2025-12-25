@@ -47,6 +47,9 @@ export class PrismaTransactionCounterpartRepository implements ITransactionCount
   }
 
   async createMany(data: TransactionCounterpartData[]): Promise<void> {
+    if (data.length === 0) {
+      return;
+    }
     await this.prisma.transactionCounterpart.createMany({
       data: data.map((d) => ({
         transactionId: d.transactionId,
@@ -63,6 +66,9 @@ export class PrismaTransactionCounterpartRepository implements ITransactionCount
         },
       });
 
+      if (data.length === 0) {
+        return;
+      }
       await tx.transactionCounterpart.createMany({
         data: data.map((d) => ({
           transactionId: d.transactionId,

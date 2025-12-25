@@ -1004,7 +1004,7 @@ export class PrismaReportTransactionRepository implements IReportTransactionRepo
       transactionDate: transaction.transactionDate,
       financialYear: transaction.financialYear,
       transactionType,
-      categoryKey: transaction.debitAccount,
+      categoryKey: transaction.categoryKey,
       friendlyCategory: transaction.friendlyCategory,
       label: transaction.label,
       description: transaction.description,
@@ -1022,7 +1022,7 @@ export class PrismaReportTransactionRepository implements IReportTransactionRepo
         : null,
       requiresCounterpart: requiresCounterpartDetail(
         transactionType,
-        transaction.debitAccount,
+        transaction.categoryKey,
         Number(transaction.debitAmount),
       ),
     };
