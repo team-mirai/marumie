@@ -103,16 +103,27 @@ describe("serializeReportData", () => {
     expect(xml).toContain("<APP>収支報告書作成ソフト (収支報告書作成ソフト)</APP>");
   });
 
-  it("generates SYUUSHI_FLG section with profile flag set", () => {
+  it("generates SYUUSHI_UMU_FLG section with profile flag set", () => {
     const reportData = createEmptyReportData();
 
     const xml = serializeReportData(reportData);
 
-    expect(xml).toContain("<SYUUSHI_FLG>");
+    // SYUUSHI_UMU_FLG should be direct child of BOOK (not wrapped in SYUUSHI_FLG)
     expect(xml).toContain("<SYUUSHI_UMU_FLG>");
+    expect(xml).not.toContain("<SYUUSHI_FLG>");
     // First flag is set for profile (SYUUSHI07_01)
     expect(xml).toContain("<SYUUSHI07_01>");
     expect(xml).toContain("<HOUKOKU_NEN>2024</HOUKOKU_NEN>");
+  });
+
+  it("wraps SYUUSHI07_01 content in SHEET tag", () => {
+    const reportData = createEmptyReportData();
+
+    const xml = serializeReportData(reportData);
+
+    // SYUUSHI07_01 should contain SHEET which contains HOUKOKU_NEN
+    expect(xml).toMatch(/<SYUUSHI07_01>\s*<SHEET>/);
+    expect(xml).toMatch(/<\/SHEET>\s*<\/SYUUSHI07_01>/);
   });
 
   it("sets correct flag when personalDonations has data", () => {
