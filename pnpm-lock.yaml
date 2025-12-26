@@ -27,8 +27,8 @@ importers:
         specifier: ^16.4.5
         version: 16.6.1
       next:
-        specifier: 15.4.8
-        version: 15.4.8(@babel/core@7.28.4)(react-dom@19.1.2(react@19.1.2))(react@19.1.2)
+        specifier: 15.4.10
+        version: 15.4.10(@babel/core@7.28.4)(react-dom@19.1.2(react@19.1.2))(react@19.1.2)
       react:
         specifier: 19.1.2
         version: 19.1.2
@@ -89,13 +89,13 @@ importers:
         version: 2.58.0
       '@vercel/speed-insights':
         specifier: ^1.2.0
-        version: 1.2.0(next@15.4.8(@babel/core@7.28.4)(react-dom@19.1.2(react@19.1.2))(react@19.1.2))(react@19.1.2)
+        version: 1.2.0(next@15.4.10(@babel/core@7.28.4)(react-dom@19.1.2(react@19.1.2))(react@19.1.2))(react@19.1.2)
       iconv-lite:
         specifier: ^0.6.3
         version: 0.6.3
       next:
-        specifier: 15.4.8
-        version: 15.4.8(@babel/core@7.28.4)(react-dom@19.1.2(react@19.1.2))(react@19.1.2)
+        specifier: 15.4.10
+        version: 15.4.10(@babel/core@7.28.4)(react-dom@19.1.2(react@19.1.2))(react@19.1.2)
       react:
         specifier: 19.1.2
         version: 19.1.2
@@ -144,13 +144,13 @@ importers:
     dependencies:
       '@next/third-parties':
         specifier: ^15.5.0
-        version: 15.5.4(next@15.4.8(@babel/core@7.28.4)(react-dom@19.1.2(react@19.1.2))(react@19.1.2))(react@19.1.2)
+        version: 15.5.4(next@15.4.10(@babel/core@7.28.4)(react-dom@19.1.2(react@19.1.2))(react@19.1.2))(react@19.1.2)
       '@prisma/client':
         specifier: ^6.14.0
         version: 6.16.2(prisma@6.16.2(typescript@5.9.2))(typescript@5.9.2)
       '@vercel/speed-insights':
         specifier: ^1.2.0
-        version: 1.2.0(next@15.4.8(@babel/core@7.28.4)(react-dom@19.1.2(react@19.1.2))(react@19.1.2))(react@19.1.2)
+        version: 1.2.0(next@15.4.10(@babel/core@7.28.4)(react-dom@19.1.2(react@19.1.2))(react@19.1.2))(react@19.1.2)
       apexcharts:
         specifier: ^5.3.3
         version: 5.3.5
@@ -158,8 +158,8 @@ importers:
         specifier: ^0.0.25
         version: 0.0.25
       next:
-        specifier: 15.4.8
-        version: 15.4.8(@babel/core@7.28.4)(react-dom@19.1.2(react@19.1.2))(react@19.1.2)
+        specifier: 15.4.10
+        version: 15.4.10(@babel/core@7.28.4)(react-dom@19.1.2(react@19.1.2))(react@19.1.2)
       react:
         specifier: 19.1.2
         version: 19.1.2
@@ -658,8 +658,8 @@ packages:
   '@jridgewell/trace-mapping@0.3.31':
     resolution: {integrity: sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw==}
 
-  '@next/env@15.4.8':
-    resolution: {integrity: sha512-LydLa2MDI1NMrOFSkO54mTc8iIHSttj6R6dthITky9ylXV2gCGi0bHQjVCtLGRshdRPjyh2kXbxJukDtBWQZtQ==}
+  '@next/env@15.4.10':
+    resolution: {integrity: sha512-knhmoJ0Vv7VRf6pZEPSnciUG1S4bIhWx+qTYBW/AjxEtlzsiNORPk8sFDCEvqLfmKuey56UB9FL1UdHEV3uBrg==}
 
   '@next/swc-darwin-arm64@15.4.8':
     resolution: {integrity: sha512-Pf6zXp7yyQEn7sqMxur6+kYcywx5up1J849psyET7/8pG2gQTVMjU3NzgIt8SeEP5to3If/SaWmaA6H6ysBr1A==}
@@ -2095,8 +2095,8 @@ packages:
   neo-async@2.6.2:
     resolution: {integrity: sha512-Yd3UES5mWCSqR+qNT93S3UoYUkqAZ9lLg8a7g9rimsWmYGK8cVToA4/sF3RrshdyV3sAGMXVUmpMYOw+dLpOuw==}
 
-  next@15.4.8:
-    resolution: {integrity: sha512-jwOXTz/bo0Pvlf20FSb6VXVeWRssA2vbvq9SdrOPEg9x8E1B27C2rQtvriAn600o9hH61kjrVRexEffv3JybuA==}
+  next@15.4.10:
+    resolution: {integrity: sha512-itVlc79QjpKMFMRhP+kbGKaSG/gZM6RCvwhEbwmCNF06CdDiNaoHcbeg0PqkEa2GOcn8KJ0nnc7+yL7EjoYLHQ==}
     engines: {node: ^18.18.0 || ^19.8.0 || >= 20.0.0}
     hasBin: true
     peerDependencies:
@@ -3231,7 +3231,7 @@ snapshots:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.5
 
-  '@next/env@15.4.8': {}
+  '@next/env@15.4.10': {}
 
   '@next/swc-darwin-arm64@15.4.8':
     optional: true
@@ -3257,9 +3257,9 @@ snapshots:
   '@next/swc-win32-x64-msvc@15.4.8':
     optional: true
 
-  '@next/third-parties@15.5.4(next@15.4.8(@babel/core@7.28.4)(react-dom@19.1.2(react@19.1.2))(react@19.1.2))(react@19.1.2)':
+  '@next/third-parties@15.5.4(next@15.4.10(@babel/core@7.28.4)(react-dom@19.1.2(react@19.1.2))(react@19.1.2))(react@19.1.2)':
     dependencies:
-      next: 15.4.8(@babel/core@7.28.4)(react-dom@19.1.2(react@19.1.2))(react@19.1.2)
+      next: 15.4.10(@babel/core@7.28.4)(react-dom@19.1.2(react@19.1.2))(react@19.1.2)
       react: 19.1.2
       third-party-capital: 1.0.20
 
@@ -3707,9 +3707,9 @@ snapshots:
     dependencies:
       '@types/yargs-parser': 21.0.3
 
-  '@vercel/speed-insights@1.2.0(next@15.4.8(@babel/core@7.28.4)(react-dom@19.1.2(react@19.1.2))(react@19.1.2))(react@19.1.2)':
+  '@vercel/speed-insights@1.2.0(next@15.4.10(@babel/core@7.28.4)(react-dom@19.1.2(react@19.1.2))(react@19.1.2))(react@19.1.2)':
     optionalDependencies:
-      next: 15.4.8(@babel/core@7.28.4)(react-dom@19.1.2(react@19.1.2))(react@19.1.2)
+      next: 15.4.10(@babel/core@7.28.4)(react-dom@19.1.2(react@19.1.2))(react@19.1.2)
       react: 19.1.2
 
   '@yr/monotone-cubic-spline@1.0.3': {}
@@ -4853,9 +4853,9 @@ snapshots:
 
   neo-async@2.6.2: {}
 
-  next@15.4.8(@babel/core@7.28.4)(react-dom@19.1.2(react@19.1.2))(react@19.1.2):
+  next@15.4.10(@babel/core@7.28.4)(react-dom@19.1.2(react@19.1.2))(react@19.1.2):
     dependencies:
-      '@next/env': 15.4.8
+      '@next/env': 15.4.10
       '@swc/helpers': 0.5.15
       caniuse-lite: 1.0.30001745
       postcss: 8.4.31
