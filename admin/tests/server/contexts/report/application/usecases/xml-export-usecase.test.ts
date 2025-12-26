@@ -1,7 +1,6 @@
 import {
   XmlExportUsecase,
   KNOWN_FORM_IDS,
-  FLAG_STRING_LENGTH,
 } from "@/server/contexts/report/application/usecases/xml-export-usecase";
 import type { DonationAssembler } from "@/server/contexts/report/application/services/donation-assembler";
 import type { ExpenseAssembler } from "@/server/contexts/report/application/services/expense-assembler";
@@ -318,10 +317,6 @@ describe("XmlExportUsecase", () => {
 describe("SYUUSHI_FLG constants", () => {
   it("has 23 known form IDs", () => {
     expect(KNOWN_FORM_IDS).toHaveLength(23);
-  });
-
-  it("has flag string length of 51", () => {
-    expect(FLAG_STRING_LENGTH).toBe(51);
   });
 
   it("SYUUSHI07_06 is at index 5 in known form IDs", () => {

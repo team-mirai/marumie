@@ -16,7 +16,7 @@ import {
   LoanIncomeSection,
   OtherIncomeSection,
 } from "@/server/contexts/report/domain/models/income-transaction";
-import { ExpenseData, type ReportData } from "@/server/contexts/report/domain/models/report-data";
+import { ExpenseData, ReportData } from "@/server/contexts/report/domain/models/report-data";
 import { serializePersonalDonationSection } from "@/server/contexts/report/domain/services/donation-serializer";
 import {
   serializeExpenseSection,
@@ -42,8 +42,7 @@ const XML_HEAD = {
   CHOUBO_APP_VER: "20081001",
 } as const;
 
-// Form IDs in the order they appear in SYUUSHI_UMU flag string
-// 第14号様式 (収支報告書)
+// XMLセクションのタグ名（XmlSectionType の型定義に使用）
 const KNOWN_FORM_IDS = [
   "SYUUSHI07_01", // 第14号様式（その1）団体の基本情報
   "SYUUSHI07_02", // 第14号様式（その2）収支の総括表
@@ -69,8 +68,6 @@ const KNOWN_FORM_IDS = [
   "SYUUSHI08_02", // 第16号様式（解散届出書）
   "SYUUSHI_KIFUKOUJYO", // 寄附を受けた団体の情報（寄附金控除関連）
 ] as const;
-
-const FLAG_STRING_LENGTH = 51;
 
 export type XmlSectionType = (typeof KNOWN_FORM_IDS)[number];
 
@@ -165,7 +162,7 @@ export function serializeReportData(reportData: ReportData): string {
     });
   }
 
-  return buildXmlDocument(sections);
+  return buildXmlDocument(reportData, sections);
 }
 
 // ============================================================
@@ -181,16 +178,15 @@ function buildHeadSection(): XMLBuilder {
   return head;
 }
 
-function buildXmlDocument(sections: XmlSection[]): string {
+function buildXmlDocument(reportData: ReportData, sections: XmlSection[]): string {
   const doc = create({ version: "1.0", encoding: "Shift_JIS" }).ele("BOOK");
 
   // Build HEAD section
   const headSection = buildHeadSection();
   doc.import(headSection);
 
-  // Build SYUUSHI_FLG section
-  const availableFormIds = sections.map((s) => s.formId);
-  const syuushiFlgSection = buildSyuushiFlgSection(availableFormIds);
+  // Build SYUUSHI_UMU_FLG section
+  const syuushiFlgSection = buildSyuushiFlgSection(reportData);
   doc.import(syuushiFlgSection);
 
   // Import data sections
@@ -201,17 +197,8 @@ function buildXmlDocument(sections: XmlSection[]): string {
   return doc.end({ prettyPrint: true, indent: "  " });
 }
 
-function buildSyuushiFlgSection(availableFormIds: string[]): XMLBuilder {
-  const formSet = new Set(
-    availableFormIds.filter((formId) =>
-      KNOWN_FORM_IDS.includes(formId as (typeof KNOWN_FORM_IDS)[number]),
-    ),
-  );
-
-  const flagString = KNOWN_FORM_IDS.map((formId) => (formSet.has(formId) ? "1" : "0"))
-    .join("")
-    .padEnd(FLAG_STRING_LENGTH, "0")
-    .slice(0, FLAG_STRING_LENGTH);
+function buildSyuushiFlgSection(reportData: ReportData): XMLBuilder {
+  const flagString = ReportData.buildSyuushiUmuFlg(reportData);
 
   const frag = create().ele("SYUUSHI_UMU_FLG");
   frag.ele("SYUUSHI_UMU").txt(flagString);
@@ -220,4 +207,4 @@ function buildSyuushiFlgSection(availableFormIds: string[]): XMLBuilder {
 }
 
 // Export constants for testing
-export { KNOWN_FORM_IDS, FLAG_STRING_LENGTH };
+export { KNOWN_FORM_IDS };
