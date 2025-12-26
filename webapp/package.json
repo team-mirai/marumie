@@ -8,7 +8,7 @@
     "@vercel/speed-insights": "^1.2.0",
     "apexcharts": "^5.3.3",
     "critters": "^0.0.25",
-    "next": "15.4.8",
+    "next": "15.4.10",
     "react": "19.1.2",
     "react-apexcharts": "^1.7.0",
     "react-dom": "19.1.2",

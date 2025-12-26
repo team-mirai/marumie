@@ -18,7 +18,7 @@
     "@supabase/supabase-js": "^2.55.0",
     "@vercel/speed-insights": "^1.2.0",
     "iconv-lite": "^0.6.3",
-    "next": "15.4.8",
+    "next": "15.4.10",
     "react": "19.1.2",
     "react-dom": "19.1.2",
     "xmlbuilder2": "^4.0.3"
