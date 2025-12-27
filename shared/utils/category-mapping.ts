@@ -81,6 +81,21 @@ export const PL_CATEGORIES: Record<string, CategoryMapping> = {
     shortLabel: "交付金",
     type: "income"
   },
+  "政治資金パーティーの対価に係る収入": {
+    key: "party-income",
+    category: "パーティー収入",
+    color: "#DDD6FE",
+    shortLabel: "パーティー収入",
+    type: "income"
+  },
+  "寄附のあっせんによるもの": {
+    key: "mediated-donations",
+    category: "寄附",
+    subcategory: "あっせんによる寄附",
+    color: "#C4B5FD",
+    shortLabel: "あっせん寄附",
+    type: "income"
+  },
   "その他の収入": {
     key: "other-income",
     category: "その他",
@@ -192,6 +207,13 @@ export const PL_CATEGORIES: Record<string, CategoryMapping> = {
     subcategory: "その他の経費",
     color: "#334155",
     shortLabel: "その他経費",
+    type: "expense"
+  },
+  "本部又は支部に対する交付金": {
+    key: "branch-grants-expenses",
+    category: "本支部交付金",
+    color: "#F472B6",
+    shortLabel: "本支部交付金",
     type: "expense"
   }
 };
