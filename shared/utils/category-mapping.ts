@@ -96,6 +96,14 @@ export const PL_CATEGORIES: Record<string, CategoryMapping> = {
     shortLabel: "あっせん寄附",
     type: "income"
   },
+  "政治資金パーティー対価のあっせんによるもの": {
+    key: "mediated-party-income",
+    category: "パーティー収入",
+    subcategory: "あっせんによるパーティー対価",
+    color: "#A78BFA",
+    shortLabel: "あっせんパーティー",
+    type: "income"
+  },
   "その他の収入": {
     key: "other-income",
     category: "その他",
