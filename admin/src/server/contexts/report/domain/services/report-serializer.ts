@@ -22,6 +22,10 @@ import {
   serializeExpenseSection,
   serializePoliticalActivityExpenseSection,
 } from "@/server/contexts/report/domain/services/expense-serializer";
+import { serializeBranchGrantExpenses } from "@/server/contexts/report/domain/services/branch-grant-serializer";
+import { serializeExpenseSummary } from "@/server/contexts/report/domain/services/expense-summary-serializer";
+import { ExpenseSummaryData } from "@/server/contexts/report/domain/models/expense-summary";
+import { BranchGrantExpenseSection } from "@/server/contexts/report/domain/models/expense-transaction";
 import {
   serializeBusinessIncomeSection,
   serializeGrantIncomeSection,
@@ -153,6 +157,15 @@ export function serializeReportData(reportData: ReportData): string {
     });
   }
 
+  // SYUUSHI07_13: 第14号様式（その13）支出項目別金額の内訳（総括表）
+  const expenseSummary = ExpenseSummaryData.fromExpenseData(reportData.expenses);
+  if (ExpenseSummaryData.shouldOutputSheet(expenseSummary)) {
+    sections.push({
+      formId: "SYUUSHI07_13",
+      xml: serializeExpenseSummary(expenseSummary),
+    });
+  }
+
   // SYUUSHI07_15: 第14号様式（その15）政治活動費の支出
   if (ExpenseData.shouldOutputPoliticalActivitySheet(reportData.expenses)) {
     sections.push({
@@ -168,6 +181,14 @@ export function serializeReportData(reportData: ReportData): string {
         donationGrantExpenses: reportData.expenses.donationGrantExpenses,
         otherPoliticalExpenses: reportData.expenses.otherPoliticalExpenses,
       }),
+    });
+  }
+
+  // SYUUSHI07_16: 第14号様式（その16）本部又は支部に対する交付金の支出
+  if (BranchGrantExpenseSection.shouldOutputSheet(reportData.expenses.branchGrantExpenses)) {
+    sections.push({
+      formId: "SYUUSHI07_16",
+      xml: serializeBranchGrantExpenses(reportData.expenses.branchGrantExpenses),
     });
   }
 

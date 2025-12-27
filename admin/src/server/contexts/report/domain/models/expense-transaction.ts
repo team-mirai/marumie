@@ -90,6 +90,17 @@ export interface DonationGrantExpenseTransaction extends BaseExpenseTransaction 
  */
 export interface OtherPoliticalExpenseTransaction extends BaseExpenseTransaction {}
 
+/**
+ * SYUUSHI07_13: 人件費のトランザクション
+ * 人件費はシート14に明細を出力しないが、シート13の総括表には合計額が必要
+ */
+export interface PersonnelExpenseTransaction extends BaseExpenseTransaction {}
+
+/**
+ * SYUUSHI07_16: 本部又は支部に対する交付金のトランザクション
+ */
+export interface BranchGrantExpenseTransaction extends BaseExpenseTransaction {}
+
 // ============================================================
 // Output Types (Domain Objects for XML)
 // ============================================================
@@ -229,6 +240,35 @@ export interface OtherPoliticalExpenseSection {
   totalAmount: number;
   underThresholdAmount: number;
   rows: PoliticalActivityExpenseRow[];
+}
+
+/**
+ * SYUUSHI07_13: 人件費セクション
+ * 人件費はシート14に明細を出力しないため、合計額のみを保持
+ */
+export interface PersonnelExpenseSection {
+  totalAmount: number;
+}
+
+/**
+ * SYUUSHI07_16: 本部又は支部に対する交付金の明細行
+ */
+export interface BranchGrantExpenseRow {
+  ichirenNo: string;
+  shisyutuKmk: string; // 支出項目
+  kingaku: number;
+  dt: Date;
+  honsibuNm: string; // 本支部名称
+  jimuAdr: string; // 所在地
+  bikou?: string;
+}
+
+/**
+ * SYUUSHI07_16: 本部又は支部に対する交付金セクション
+ */
+export interface BranchGrantExpenseSection {
+  totalAmount: number;
+  rows: BranchGrantExpenseRow[];
 }
 
 // ============================================================
@@ -648,6 +688,68 @@ export const OtherPoliticalExpenseSection = {
   },
 
   shouldOutputSheet: (section: OtherPoliticalExpenseSection): boolean => {
+    return section.rows.length > 0 || section.totalAmount > 0;
+  },
+} as const;
+
+/**
+ * PersonnelExpenseSection に関連するドメインロジック
+ * 人件費はシート14に明細を出力しないため、合計額のみを計算
+ */
+export const PersonnelExpenseSection = {
+  /**
+   * トランザクションリストからセクションを構築する
+   * 人件費は明細行を持たず、合計額のみを保持
+   */
+  fromTransactions: (transactions: PersonnelExpenseTransaction[]): PersonnelExpenseSection => {
+    const totalAmount = transactions.reduce(
+      (sum, tx) => sum + ExpenseTransactionBase.resolveAmount(tx),
+      0,
+    );
+
+    return { totalAmount };
+  },
+
+  /**
+   * シート14には出力しない（常にfalse）
+   * シート13の総括表には合計額が出力される
+   */
+  shouldOutputSheet: (_section: PersonnelExpenseSection): boolean => {
+    return false;
+  },
+} as const;
+
+/**
+ * BranchGrantExpenseSection に関連するドメインロジック
+ */
+export const BranchGrantExpenseSection = {
+  /**
+   * トランザクションリストからセクションを構築する
+   * 本支部交付金は全件を明細として出力（金額閾値による省略なし）
+   */
+  fromTransactions: (transactions: BranchGrantExpenseTransaction[]): BranchGrantExpenseSection => {
+    const totalAmount = transactions.reduce(
+      (sum, tx) => sum + ExpenseTransactionBase.resolveAmount(tx),
+      0,
+    );
+
+    const rows: BranchGrantExpenseRow[] = transactions.map((tx, index) => ({
+      ichirenNo: (index + 1).toString(),
+      shisyutuKmk: sanitizeText(tx.friendlyCategory, 100),
+      kingaku: ExpenseTransactionBase.resolveAmount(tx),
+      dt: tx.transactionDate,
+      honsibuNm: sanitizeText(tx.counterpartName, 120),
+      jimuAdr: sanitizeText(tx.counterpartAddress, 120),
+      bikou: buildBikou(tx.transactionNo, tx.memo, 160, 100) || undefined,
+    }));
+
+    return { totalAmount, rows };
+  },
+
+  /**
+   * XMLのSHEET要素を出力すべきかを判定する
+   */
+  shouldOutputSheet: (section: BranchGrantExpenseSection): boolean => {
     return section.rows.length > 0 || section.totalAmount > 0;
   },
 } as const;

@@ -52,6 +52,8 @@ describe("XmlExportUsecase", () => {
     } as unknown as jest.Mocked<IncomeAssembler>;
     mockExpenseAssembler = {
       assemble: jest.fn().mockResolvedValue({
+        // SYUUSHI07_13: 人件費
+        personnelExpenses: { totalAmount: 0 },
         // SYUUSHI07_14: 経常経費
         utilityExpenses: {
           totalAmount: 0,
@@ -123,6 +125,8 @@ describe("XmlExportUsecase", () => {
           underThresholdAmount: 0,
           rows: [],
         },
+        // SYUUSHI07_16: 本部又は支部に対する交付金
+        branchGrantExpenses: { totalAmount: 0, rows: [] },
       }),
     } as unknown as jest.Mocked<ExpenseAssembler>;
     usecase = new XmlExportUsecase(

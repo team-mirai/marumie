@@ -9,6 +9,7 @@ import "server-only";
 import type { IReportTransactionRepository } from "@/server/contexts/report/domain/repositories/report-transaction-repository.interface";
 import {
   AdvertisingExpenseSection,
+  BranchGrantExpenseSection,
   DonationGrantExpenseSection,
   ElectionExpenseSection,
   FundraisingPartyExpenseSection,
@@ -16,6 +17,7 @@ import {
   OrganizationExpenseSection,
   OtherBusinessExpenseSection,
   OtherPoliticalExpenseSection,
+  PersonnelExpenseSection,
   PublicationExpenseSection,
   ResearchExpenseSection,
   SuppliesExpenseSection,
@@ -58,6 +60,8 @@ export class ExpenseAssembler {
       researchTransactions,
       donationGrantTransactions,
       otherPoliticalTransactions,
+      personnelTransactions,
+      branchGrantTransactions,
     ] = await Promise.all([
       this.repository.findUtilityExpenseTransactions(filters),
       this.repository.findSuppliesExpenseTransactions(filters),
@@ -71,9 +75,13 @@ export class ExpenseAssembler {
       this.repository.findResearchExpenseTransactions(filters),
       this.repository.findDonationGrantExpenseTransactions(filters),
       this.repository.findOtherPoliticalExpenseTransactions(filters),
+      this.repository.findPersonnelExpenseTransactions(filters),
+      this.repository.findBranchGrantExpenseTransactions(filters),
     ]);
 
     return {
+      // SYUUSHI07_13: 人件費（シート14には明細を出力しないが、シート13の総括表に必要）
+      personnelExpenses: PersonnelExpenseSection.fromTransactions(personnelTransactions),
       // SYUUSHI07_14: 経常経費
       utilityExpenses: UtilityExpenseSection.fromTransactions(utilityTransactions),
       suppliesExpenses: SuppliesExpenseSection.fromTransactions(suppliesTransactions),
@@ -94,6 +102,8 @@ export class ExpenseAssembler {
       otherPoliticalExpenses: OtherPoliticalExpenseSection.fromTransactions(
         otherPoliticalTransactions,
       ),
+      // SYUUSHI07_16: 本部又は支部に対する交付金
+      branchGrantExpenses: BranchGrantExpenseSection.fromTransactions(branchGrantTransactions),
     };
   }
 }

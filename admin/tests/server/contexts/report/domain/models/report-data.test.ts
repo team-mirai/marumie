@@ -7,6 +7,7 @@ import {
 
 describe("ExpenseData", () => {
   const createEmptyExpenseData = (): ExpenseDataType => ({
+    personnelExpenses: { totalAmount: 0 },
     utilityExpenses: { totalAmount: 0, underThresholdAmount: 0, rows: [] },
     suppliesExpenses: { totalAmount: 0, underThresholdAmount: 0, rows: [] },
     officeExpenses: { totalAmount: 0, underThresholdAmount: 0, rows: [] },
@@ -19,6 +20,7 @@ describe("ExpenseData", () => {
     researchExpenses: { himoku: "", totalAmount: 0, underThresholdAmount: 0, rows: [] },
     donationGrantExpenses: { himoku: "", totalAmount: 0, underThresholdAmount: 0, rows: [] },
     otherPoliticalExpenses: { himoku: "", totalAmount: 0, underThresholdAmount: 0, rows: [] },
+    branchGrantExpenses: { totalAmount: 0, rows: [] },
   });
 
   const createExpenseRow = () => ({
@@ -168,6 +170,7 @@ describe("ReportData", () => {
       otherIncome: { totalAmount: 0, underThresholdAmount: 0, rows: [] },
     },
     expenses: {
+      personnelExpenses: { totalAmount: 0 },
       utilityExpenses: { totalAmount: 0, underThresholdAmount: 0, rows: [] },
       suppliesExpenses: { totalAmount: 0, underThresholdAmount: 0, rows: [] },
       officeExpenses: { totalAmount: 0, underThresholdAmount: 0, rows: [] },
@@ -180,6 +183,7 @@ describe("ReportData", () => {
       researchExpenses: { himoku: "", totalAmount: 0, underThresholdAmount: 0, rows: [] },
       donationGrantExpenses: { himoku: "", totalAmount: 0, underThresholdAmount: 0, rows: [] },
       otherPoliticalExpenses: { himoku: "", totalAmount: 0, underThresholdAmount: 0, rows: [] },
+      branchGrantExpenses: { totalAmount: 0, rows: [] },
     },
   });
 

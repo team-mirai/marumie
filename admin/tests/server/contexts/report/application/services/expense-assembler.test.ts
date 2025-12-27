@@ -43,6 +43,8 @@ describe("ExpenseAssembler", () => {
           findResearchExpenseTransactions: jest.fn(),
           findDonationGrantExpenseTransactions: jest.fn(),
           findOtherPoliticalExpenseTransactions: jest.fn(),
+          findPersonnelExpenseTransactions: jest.fn(),
+          findBranchGrantExpenseTransactions: jest.fn(),
           findTransactionsWithCounterparts: jest.fn(),
           findByCounterpart: jest.fn(),
           existsById: jest.fn(),
@@ -65,6 +67,8 @@ describe("ExpenseAssembler", () => {
     mockRepository.findResearchExpenseTransactions.mockResolvedValue([]);
     mockRepository.findDonationGrantExpenseTransactions.mockResolvedValue([]);
     mockRepository.findOtherPoliticalExpenseTransactions.mockResolvedValue([]);
+    mockRepository.findPersonnelExpenseTransactions.mockResolvedValue([]);
+    mockRepository.findBranchGrantExpenseTransactions.mockResolvedValue([]);
   }
 
   describe("リポジトリへのフィルター受け渡し", () => {
@@ -148,11 +152,13 @@ describe("ExpenseAssembler", () => {
         "otherPolitical",
         60,
       );
+      mockRepository.findPersonnelExpenseTransactions = createDelayedMock("personnel", 65);
+      mockRepository.findBranchGrantExpenseTransactions = createDelayedMock("branchGrant", 70);
 
       await assembler.assemble(defaultInput);
 
-      // 全12メソッドが呼ばれたことを確認
-      expect(callOrder).toHaveLength(12);
+      // 全14メソッドが呼ばれたことを確認
+      expect(callOrder).toHaveLength(14);
 
       // 並列実行されていれば、完了順は遅延時間順になる（呼び出し順ではない）
       expect(callOrder[0]).toBe("otherBusiness"); // 5ms

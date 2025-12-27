@@ -11,6 +11,7 @@ import {
 } from "@/server/contexts/report/domain/models/donation-transaction";
 import type {
   AdvertisingExpenseSection,
+  BranchGrantExpenseSection,
   DonationGrantExpenseSection,
   ElectionExpenseSection,
   FundraisingPartyExpenseSection,
@@ -18,6 +19,7 @@ import type {
   OrganizationExpenseSection,
   OtherBusinessExpenseSection,
   OtherPoliticalExpenseSection,
+  PersonnelExpenseSection,
   PublicationExpenseSection,
   ResearchExpenseSection,
   SuppliesExpenseSection,
@@ -25,6 +27,7 @@ import type {
 } from "@/server/contexts/report/domain/models/expense-transaction";
 import {
   AdvertisingExpenseSection as AdvertisingExpenseSectionModel,
+  BranchGrantExpenseSection as BranchGrantExpenseSectionModel,
   DonationGrantExpenseSection as DonationGrantExpenseSectionModel,
   ElectionExpenseSection as ElectionExpenseSectionModel,
   FundraisingPartyExpenseSection as FundraisingPartyExpenseSectionModel,
@@ -70,9 +73,12 @@ export interface IncomeData {
 }
 
 /**
- * 支出データ (SYUUSHI07_14, SYUUSHI07_15)
+ * 支出データ (SYUUSHI07_13, SYUUSHI07_14, SYUUSHI07_15, SYUUSHI07_16)
  */
 export interface ExpenseData {
+  // SYUUSHI07_13: 人件費（シート14には明細を出力しないが、シート13の総括表に必要）
+  personnelExpenses: PersonnelExpenseSection;
+
   // SYUUSHI07_14: 経常経費
   utilityExpenses: UtilityExpenseSection; // KUBUN1: 光熱水費
   suppliesExpenses: SuppliesExpenseSection; // KUBUN2: 備品・消耗品費
@@ -88,6 +94,9 @@ export interface ExpenseData {
   researchExpenses: ResearchExpenseSection; // KUBUN7: 調査研究費
   donationGrantExpenses: DonationGrantExpenseSection; // KUBUN8: 寄附・交付金
   otherPoliticalExpenses: OtherPoliticalExpenseSection; // KUBUN9: その他の経費
+
+  // SYUUSHI07_16: 本部又は支部に対する交付金
+  branchGrantExpenses: BranchGrantExpenseSection;
 }
 
 /**
@@ -211,8 +220,11 @@ export const ReportData = {
       false,
       // 20: その12 3.政治団体（パーティー対価あっせん）- 未実装
       false,
-      // 21: その13 - 未実装
-      false,
+      // 21: その13（支出項目別金額の内訳）
+      // シート14/15にデータがあるか、人件費があれば出力
+      data.expenses.personnelExpenses.totalAmount > 0 ||
+        ExpenseData.shouldOutputRegularExpenseSheet(data.expenses) ||
+        ExpenseData.shouldOutputPoliticalActivitySheet(data.expenses),
       // 22: その14 2.光熱水費
       UtilityExpenseSectionModel.shouldOutputSheet(data.expenses.utilityExpenses),
       // 23: その14 3.備品・消耗品費
@@ -237,8 +249,8 @@ export const ReportData = {
       DonationGrantExpenseSectionModel.shouldOutputSheet(data.expenses.donationGrantExpenses),
       // 33: その15 9.その他の経費
       OtherPoliticalExpenseSectionModel.shouldOutputSheet(data.expenses.otherPoliticalExpenses),
-      // 34: その16（本部・支部への交付金支出）- 未実装
-      false,
+      // 34: その16（本部・支部への交付金支出）
+      BranchGrantExpenseSectionModel.shouldOutputSheet(data.expenses.branchGrantExpenses),
       // 35: その17（資産等の項目別内訳の有無）- 未実装
       false,
       // 36: その18 01.土地 - 未実装

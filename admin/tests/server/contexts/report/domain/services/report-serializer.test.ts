@@ -28,6 +28,8 @@ describe("serializeReportData", () => {
       otherIncome: { totalAmount: 0, underThresholdAmount: 0, rows: [] },
     },
     expenses: {
+      // SYUUSHI07_13: 人件費
+      personnelExpenses: { totalAmount: 0 },
       // SYUUSHI07_14: 経常経費
       utilityExpenses: { totalAmount: 0, underThresholdAmount: 0, rows: [] },
       suppliesExpenses: { totalAmount: 0, underThresholdAmount: 0, rows: [] },
@@ -87,6 +89,8 @@ describe("serializeReportData", () => {
         underThresholdAmount: 0,
         rows: [],
       },
+      // SYUUSHI07_16: 本部又は支部に対する交付金
+      branchGrantExpenses: { totalAmount: 0, rows: [] },
     },
   });
 
