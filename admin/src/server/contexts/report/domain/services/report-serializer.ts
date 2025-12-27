@@ -29,6 +29,7 @@ import {
   serializeOtherIncomeSection,
 } from "@/server/contexts/report/domain/services/income-serializer";
 import { serializeProfileSection } from "@/server/contexts/report/domain/services/profile-serializer";
+import { serializeSummarySection } from "@/server/contexts/report/domain/services/summary-serializer";
 
 // ============================================================
 // Constants
@@ -90,6 +91,14 @@ export function serializeReportData(reportData: ReportData): string {
   sections.push({
     formId: "SYUUSHI07_01",
     xml: serializeProfileSection(reportData.profile),
+  });
+
+  // SYUUSHI07_02: 第14号様式（その2）収支の総括表
+  // 前年繰越額は現時点では0（将来的にはOrganizationReportProfileから取得）
+  const summaryData = ReportData.getSummary(reportData, 0);
+  sections.push({
+    formId: "SYUUSHI07_02",
+    xml: serializeSummarySection(summaryData),
   });
 
   // SYUUSHI07_07: 第14号様式（その7）寄附の明細

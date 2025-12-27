@@ -196,10 +196,13 @@ describe("ReportData", () => {
       expect(flagString[0]).toBe("1");
     });
 
-    it("データがない場合、01桁目以外は全て0を返す", () => {
+    it("データがない場合、01桁目と02桁目以外は全て0を返す", () => {
       const data = createEmptyReportData();
       const flagString = ReportData.buildSyuushiUmuFlg(data);
-      expect(flagString.slice(1)).toBe("0".repeat(50));
+      // 01桁目（その1）と02桁目（その2：収支総括表）は常に1
+      expect(flagString[0]).toBe("1");
+      expect(flagString[1]).toBe("1");
+      expect(flagString.slice(2)).toBe("0".repeat(49));
     });
 
     it("03桁目: 事業による収入がある場合は1を返す", () => {
