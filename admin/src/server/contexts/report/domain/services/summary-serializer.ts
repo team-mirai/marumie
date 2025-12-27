@@ -4,6 +4,8 @@
  * Serializes the income/expense summary (SYUUSHI07_02) into XML format.
  */
 
+import "server-only";
+
 import { fragment } from "xmlbuilder2";
 import type { XMLBuilder } from "xmlbuilder2/lib/interfaces";
 import type { SummaryData } from "@/server/contexts/report/domain/models/summary-data";
