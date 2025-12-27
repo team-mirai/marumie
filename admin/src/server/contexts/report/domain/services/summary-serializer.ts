@@ -26,17 +26,9 @@ export function serializeSummarySection(summary: SummaryData): XMLBuilder {
   sheet.ele("SISYUTU_SGK").txt(formatAmount(summary.sisyutuSgk));
   sheet.ele("YOKUNEN_KKS_GK").txt(formatAmount(summary.yokunenKksGk));
 
-  // 党費（スコープ外）
-  if (summary.kojinFutanKgk !== null) {
-    sheet.ele("KOJIN_FUTAN_KGK").txt(formatAmount(summary.kojinFutanKgk));
-  } else {
-    sheet.ele("KOJIN_FUTAN_KGK");
-  }
-  if (summary.kojinFutanSu !== null) {
-    sheet.ele("KOJIN_FUTAN_SU").txt(formatAmount(summary.kojinFutanSu));
-  } else {
-    sheet.ele("KOJIN_FUTAN_SU");
-  }
+  // 党費（スコープ外: nullの場合は0を出力）
+  sheet.ele("KOJIN_FUTAN_KGK").txt(formatAmount(summary.kojinFutanKgk ?? 0));
+  sheet.ele("KOJIN_FUTAN_SU").txt(formatAmount(summary.kojinFutanSu ?? 0));
 
   // 個人寄附
   sheet.ele("KOJIN_KIFU_GK").txt(formatAmount(summary.kojinKifuGk));
@@ -46,36 +38,24 @@ export function serializeSummarySection(summary: SummaryData): XMLBuilder {
     sheet.ele("KOJIN_KIFU_BIKOU");
   }
 
-  // 特定寄附（スコープ外）
-  if (summary.tokuteiKifuGk !== null) {
-    sheet.ele("TOKUTEI_KIFU_GK").txt(formatAmount(summary.tokuteiKifuGk));
-  } else {
-    sheet.ele("TOKUTEI_KIFU_GK");
-  }
+  // 特定寄附（スコープ外: nullの場合は0を出力）
+  sheet.ele("TOKUTEI_KIFU_GK").txt(formatAmount(summary.tokuteiKifuGk ?? 0));
   if (summary.tokuteiKifuBikou) {
     sheet.ele("TOKUTEI_KIFU_BIKOU").txt(summary.tokuteiKifuBikou);
   } else {
     sheet.ele("TOKUTEI_KIFU_BIKOU");
   }
 
-  // 法人寄附
-  if (summary.hojinKifuGk !== null) {
-    sheet.ele("HOJIN_KIFU_GK").txt(formatAmount(summary.hojinKifuGk));
-  } else {
-    sheet.ele("HOJIN_KIFU_GK");
-  }
+  // 法人寄附（スコープ外: nullの場合は0を出力）
+  sheet.ele("HOJIN_KIFU_GK").txt(formatAmount(summary.hojinKifuGk ?? 0));
   if (summary.hojinKifuBikou) {
     sheet.ele("HOJIN_KIFU_BIKOU").txt(summary.hojinKifuBikou);
   } else {
     sheet.ele("HOJIN_KIFU_BIKOU");
   }
 
-  // 政治団体寄附
-  if (summary.seijiKifuGk !== null) {
-    sheet.ele("SEIJI_KIFU_GK").txt(formatAmount(summary.seijiKifuGk));
-  } else {
-    sheet.ele("SEIJI_KIFU_GK");
-  }
+  // 政治団体寄附（スコープ外: nullの場合は0を出力）
+  sheet.ele("SEIJI_KIFU_GK").txt(formatAmount(summary.seijiKifuGk ?? 0));
   if (summary.seijiKifuBikou) {
     sheet.ele("SEIJI_KIFU_BIKOU").txt(summary.seijiKifuBikou);
   } else {
@@ -90,24 +70,16 @@ export function serializeSummarySection(summary: SummaryData): XMLBuilder {
     sheet.ele("KIFU_SKEI_BIKOU");
   }
 
-  // あっせんによるもの（スコープ外）
-  if (summary.atusenGk !== null) {
-    sheet.ele("ATUSEN_GK").txt(formatAmount(summary.atusenGk));
-  } else {
-    sheet.ele("ATUSEN_GK");
-  }
+  // あっせんによるもの（スコープ外: nullの場合は0を出力）
+  sheet.ele("ATUSEN_GK").txt(formatAmount(summary.atusenGk ?? 0));
   if (summary.atusenBikou) {
     sheet.ele("ATUSEN_BIKOU").txt(summary.atusenBikou);
   } else {
     sheet.ele("ATUSEN_BIKOU");
   }
 
-  // 政党匿名寄附（スコープ外）
-  if (summary.tokumeiKifuGk !== null) {
-    sheet.ele("TOKUMEI_KIFU_GK").txt(formatAmount(summary.tokumeiKifuGk));
-  } else {
-    sheet.ele("TOKUMEI_KIFU_GK");
-  }
+  // 政党匿名寄附（スコープ外: nullの場合は0を出力）
+  sheet.ele("TOKUMEI_KIFU_GK").txt(formatAmount(summary.tokumeiKifuGk ?? 0));
   if (summary.tokumeiBikou) {
     sheet.ele("TOKUMEI_KIFU_BIKOU").txt(summary.tokumeiBikou);
   } else {

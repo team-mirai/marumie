@@ -44,7 +44,7 @@ describe("serializeSummarySection", () => {
     expect(xml).toContain("<KIFU_GKEI_GK>200000</KIFU_GKEI_GK>");
   });
 
-  it("serializes null values as empty elements", () => {
+  it("serializes null number values as 0, null string values as empty elements", () => {
     const summary: SummaryData = {
       syunyuSgk: 0,
       zennenKksGk: 0,
@@ -74,19 +74,22 @@ describe("serializeSummarySection", () => {
     const xmlBuilder = serializeSummarySection(summary);
     const xml = xmlBuilder.toString();
 
-    expect(xml).toContain("<KOJIN_FUTAN_KGK/>");
-    expect(xml).toContain("<KOJIN_FUTAN_SU/>");
+    // null の数値フィールドは 0 として出力される（総務省バリデータ対応）
+    expect(xml).toContain("<KOJIN_FUTAN_KGK>0</KOJIN_FUTAN_KGK>");
+    expect(xml).toContain("<KOJIN_FUTAN_SU>0</KOJIN_FUTAN_SU>");
+    expect(xml).toContain("<TOKUTEI_KIFU_GK>0</TOKUTEI_KIFU_GK>");
+    expect(xml).toContain("<HOJIN_KIFU_GK>0</HOJIN_KIFU_GK>");
+    expect(xml).toContain("<SEIJI_KIFU_GK>0</SEIJI_KIFU_GK>");
+    expect(xml).toContain("<ATUSEN_GK>0</ATUSEN_GK>");
+    expect(xml).toContain("<TOKUMEI_KIFU_GK>0</TOKUMEI_KIFU_GK>");
+
+    // null の備考フィールドは空要素として出力される
     expect(xml).toContain("<KOJIN_KIFU_BIKOU/>");
-    expect(xml).toContain("<TOKUTEI_KIFU_GK/>");
     expect(xml).toContain("<TOKUTEI_KIFU_BIKOU/>");
-    expect(xml).toContain("<HOJIN_KIFU_GK/>");
     expect(xml).toContain("<HOJIN_KIFU_BIKOU/>");
-    expect(xml).toContain("<SEIJI_KIFU_GK/>");
     expect(xml).toContain("<SEIJI_KIFU_BIKOU/>");
     expect(xml).toContain("<KIFU_SKEI_BIKOU/>");
-    expect(xml).toContain("<ATUSEN_GK/>");
     expect(xml).toContain("<ATUSEN_BIKOU/>");
-    expect(xml).toContain("<TOKUMEI_KIFU_GK/>");
     expect(xml).toContain("<TOKUMEI_KIFU_BIKOU/>");
     expect(xml).toContain("<KIFU_GKEI_BIKOU/>");
   });
