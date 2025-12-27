@@ -49,8 +49,9 @@ export class BulkAssignDonorUsecase {
       return { success: false, errors: ["寄付者が見つかりません"] };
     }
 
+    const uniqueTransactionIds = [...new Set(input.transactionIds)];
     const transactionBigIntIds: bigint[] = [];
-    for (const id of input.transactionIds) {
+    for (const id of uniqueTransactionIds) {
       const bigIntId = this.parseBigIntId(id);
       if (bigIntId === null) {
         return { success: false, errors: [`無効なトランザクションID: ${id}`] };
@@ -59,9 +60,9 @@ export class BulkAssignDonorUsecase {
     }
 
     const transactions = await this.transactionRepository.findByIdsWithDonor(transactionBigIntIds);
-    if (transactions.length !== input.transactionIds.length) {
+    if (transactions.length !== uniqueTransactionIds.length) {
       const foundIds = new Set(transactions.map((t) => t.id));
-      const missingIds = input.transactionIds.filter((id) => !foundIds.has(id));
+      const missingIds = uniqueTransactionIds.filter((id) => !foundIds.has(id));
       return {
         success: false,
         errors: [`以下のトランザクションが見つかりません: ${missingIds.join(", ")}`],
