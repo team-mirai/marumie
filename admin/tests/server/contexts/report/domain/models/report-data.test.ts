@@ -400,7 +400,7 @@ describe("ReportData", () => {
   describe("validate", () => {
     it("正常なデータでisValid: trueを返す", () => {
       const data = createEmptyReportData();
-      const result = ReportData.validate(data, 0);
+      const result = ReportData.validate(data);
 
       expect(result.isValid).toBe(true);
       expect(result.errors).toHaveLength(0);
@@ -410,7 +410,7 @@ describe("ReportData", () => {
       const data = createEmptyReportData();
       data.profile.financialYear = 123; // 4桁でない
 
-      const result = ReportData.validate(data, 0);
+      const result = ReportData.validate(data);
 
       expect(result.isValid).toBe(false);
       expect(result.errors.some((e) => e.path.includes("profile"))).toBe(true);
@@ -431,7 +431,7 @@ describe("ReportData", () => {
         },
       ];
 
-      const result = ReportData.validate(data, 0);
+      const result = ReportData.validate(data);
 
       expect(result.isValid).toBe(false);
       expect(result.errors.some((e) => e.code === ValidationErrorCode.REQUIRED)).toBe(true);
@@ -447,7 +447,7 @@ describe("ReportData", () => {
         },
       ];
 
-      const result = ReportData.validate(data, 0);
+      const result = ReportData.validate(data);
 
       expect(result.isValid).toBe(false);
       expect(result.errors.some((e) => e.path.includes("income"))).toBe(true);
@@ -466,7 +466,7 @@ describe("ReportData", () => {
         },
       ];
 
-      const result = ReportData.validate(data, 0);
+      const result = ReportData.validate(data);
 
       expect(result.isValid).toBe(false);
       expect(result.errors.some((e) => e.path.includes("expenses"))).toBe(true);
@@ -488,7 +488,7 @@ describe("ReportData", () => {
         },
       ];
 
-      const result = ReportData.validate(data, 0);
+      const result = ReportData.validate(data);
 
       expect(result.isValid).toBe(false);
       expect(result.errors.length).toBeGreaterThanOrEqual(2);
