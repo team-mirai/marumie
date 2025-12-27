@@ -99,22 +99,24 @@ function serializeExpenseKubun(
 
 /**
  * 政治活動費セクション（SYUUSHI07_15）のシリアライズ用入力型
+ * 各KUBUNは費目ごとに複数のSHEETを持つことができる
  */
 export interface PoliticalActivityExpenseSections {
-  organizationExpenses: OrganizationExpenseSection; // KUBUN1: 組織活動費
-  electionExpenses: ElectionExpenseSection; // KUBUN2: 選挙関係費
-  publicationExpenses: PublicationExpenseSection; // KUBUN3: 機関紙誌の発行事業費
-  advertisingExpenses: AdvertisingExpenseSection; // KUBUN4: 宣伝事業費
-  fundraisingPartyExpenses: FundraisingPartyExpenseSection; // KUBUN5: 政治資金パーティー開催事業費
-  otherBusinessExpenses: OtherBusinessExpenseSection; // KUBUN6: その他の事業費
-  researchExpenses: ResearchExpenseSection; // KUBUN7: 調査研究費
-  donationGrantExpenses: DonationGrantExpenseSection; // KUBUN8: 寄附・交付金
-  otherPoliticalExpenses: OtherPoliticalExpenseSection; // KUBUN9: その他の経費
+  organizationExpenses: OrganizationExpenseSection[]; // KUBUN1: 組織活動費
+  electionExpenses: ElectionExpenseSection[]; // KUBUN2: 選挙関係費
+  publicationExpenses: PublicationExpenseSection[]; // KUBUN3: 機関紙誌の発行事業費
+  advertisingExpenses: AdvertisingExpenseSection[]; // KUBUN4: 宣伝事業費
+  fundraisingPartyExpenses: FundraisingPartyExpenseSection[]; // KUBUN5: 政治資金パーティー開催事業費
+  otherBusinessExpenses: OtherBusinessExpenseSection[]; // KUBUN6: その他の事業費
+  researchExpenses: ResearchExpenseSection[]; // KUBUN7: 調査研究費
+  donationGrantExpenses: DonationGrantExpenseSection[]; // KUBUN8: 寄附・交付金
+  otherPoliticalExpenses: OtherPoliticalExpenseSection[]; // KUBUN9: その他の経費
 }
 
 /**
  * Serializes political activity expense sections into XML format for SYUUSHI07_15.
  * Handles all 9 KUBUN sections (組織活動費〜その他の経費).
+ * 各KUBUNは費目ごとに複数のSHEETを持つことができる。
  */
 export function serializePoliticalActivityExpenseSection(
   sections: PoliticalActivityExpenseSections,
@@ -124,22 +126,22 @@ export function serializePoliticalActivityExpenseSection(
 
   const kubunMappings: Array<{
     tag: string;
-    section: PoliticalActivitySection;
+    sectionList: PoliticalActivitySection[];
   }> = [
-    { tag: "KUBUN1", section: sections.organizationExpenses }, // 組織活動費
-    { tag: "KUBUN2", section: sections.electionExpenses }, // 選挙関係費
-    { tag: "KUBUN3", section: sections.publicationExpenses }, // 機関紙誌の発行事業費
-    { tag: "KUBUN4", section: sections.advertisingExpenses }, // 宣伝事業費
-    { tag: "KUBUN5", section: sections.fundraisingPartyExpenses }, // 政治資金パーティー開催事業費
-    { tag: "KUBUN6", section: sections.otherBusinessExpenses }, // その他の事業費
-    { tag: "KUBUN7", section: sections.researchExpenses }, // 調査研究費
-    { tag: "KUBUN8", section: sections.donationGrantExpenses }, // 寄附・交付金
-    { tag: "KUBUN9", section: sections.otherPoliticalExpenses }, // その他の経費
+    { tag: "KUBUN1", sectionList: sections.organizationExpenses }, // 組織活動費
+    { tag: "KUBUN2", sectionList: sections.electionExpenses }, // 選挙関係費
+    { tag: "KUBUN3", sectionList: sections.publicationExpenses }, // 機関紙誌の発行事業費
+    { tag: "KUBUN4", sectionList: sections.advertisingExpenses }, // 宣伝事業費
+    { tag: "KUBUN5", sectionList: sections.fundraisingPartyExpenses }, // 政治資金パーティー開催事業費
+    { tag: "KUBUN6", sectionList: sections.otherBusinessExpenses }, // その他の事業費
+    { tag: "KUBUN7", sectionList: sections.researchExpenses }, // 調査研究費
+    { tag: "KUBUN8", sectionList: sections.donationGrantExpenses }, // 寄附・交付金
+    { tag: "KUBUN9", sectionList: sections.otherPoliticalExpenses }, // その他の経費
   ];
 
-  for (const { tag, section } of kubunMappings) {
+  for (const { tag, sectionList } of kubunMappings) {
     const kubun = root.ele(tag);
-    serializePoliticalActivityKubun(kubun, section);
+    serializePoliticalActivityKubunSections(kubun, sectionList);
   }
 
   return frag;
@@ -160,9 +162,34 @@ type PoliticalActivitySection =
   | OtherPoliticalExpenseSection;
 
 /**
- * Helper function to serialize a single KUBUN section for SYUUSHI07_15
+ * Helper function to serialize multiple SHEET elements for a single KUBUN in SYUUSHI07_15
+ * 費目ごとに複数のSHEETを出力する
  */
-function serializePoliticalActivityKubun(
+function serializePoliticalActivityKubunSections(
+  kubunElement: XMLBuilder,
+  sectionList: PoliticalActivitySection[],
+): void {
+  // セクションが空の場合は空のSHEETを1つ出力
+  if (sectionList.length === 0) {
+    serializePoliticalActivitySheet(kubunElement, {
+      himoku: "",
+      totalAmount: 0,
+      underThresholdAmount: 0,
+      rows: [],
+    });
+    return;
+  }
+
+  // 各セクションに対してSHEETを出力
+  for (const section of sectionList) {
+    serializePoliticalActivitySheet(kubunElement, section);
+  }
+}
+
+/**
+ * Helper function to serialize a single SHEET element for SYUUSHI07_15
+ */
+function serializePoliticalActivitySheet(
   kubunElement: XMLBuilder,
   section: PoliticalActivitySection,
 ): void {

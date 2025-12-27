@@ -210,15 +210,15 @@ describe("serializePoliticalActivityExpenseSection", () => {
     };
 
     const sections: PoliticalActivityExpenseSections = {
-      organizationExpenses,
-      electionExpenses,
-      publicationExpenses: emptySection,
-      advertisingExpenses: emptySection,
-      fundraisingPartyExpenses: emptySection,
-      otherBusinessExpenses: emptySection,
-      researchExpenses: emptySection,
-      donationGrantExpenses: emptySection,
-      otherPoliticalExpenses: emptySection,
+      organizationExpenses: [organizationExpenses],
+      electionExpenses: [electionExpenses],
+      publicationExpenses: [],
+      advertisingExpenses: [],
+      fundraisingPartyExpenses: [],
+      otherBusinessExpenses: [],
+      researchExpenses: [],
+      donationGrantExpenses: [],
+      otherPoliticalExpenses: [],
     };
 
     const xmlBuilder = serializePoliticalActivityExpenseSection(sections);
@@ -265,15 +265,15 @@ describe("serializePoliticalActivityExpenseSection", () => {
     };
 
     const sections: PoliticalActivityExpenseSections = {
-      organizationExpenses: sectionWithHimoku,
-      electionExpenses: emptySection,
-      publicationExpenses: emptySection,
-      advertisingExpenses: emptySection,
-      fundraisingPartyExpenses: emptySection,
-      otherBusinessExpenses: emptySection,
-      researchExpenses: emptySection,
-      donationGrantExpenses: emptySection,
-      otherPoliticalExpenses: emptySection,
+      organizationExpenses: [sectionWithHimoku],
+      electionExpenses: [],
+      publicationExpenses: [],
+      advertisingExpenses: [],
+      fundraisingPartyExpenses: [],
+      otherBusinessExpenses: [],
+      researchExpenses: [],
+      donationGrantExpenses: [],
+      otherPoliticalExpenses: [],
     };
 
     const xmlBuilder = serializePoliticalActivityExpenseSection(sections);
@@ -293,15 +293,15 @@ describe("serializePoliticalActivityExpenseSection", () => {
     };
 
     const sections: PoliticalActivityExpenseSections = {
-      organizationExpenses: emptySection,
-      electionExpenses: emptySection,
-      publicationExpenses: emptySection,
-      advertisingExpenses: emptySection,
-      fundraisingPartyExpenses: emptySection,
-      otherBusinessExpenses: emptySection,
-      researchExpenses: emptySection,
-      donationGrantExpenses: emptySection,
-      otherPoliticalExpenses: emptySection,
+      organizationExpenses: [],
+      electionExpenses: [],
+      publicationExpenses: [],
+      advertisingExpenses: [],
+      fundraisingPartyExpenses: [],
+      otherBusinessExpenses: [],
+      researchExpenses: [],
+      donationGrantExpenses: [],
+      otherPoliticalExpenses: [],
     };
 
     const xmlBuilder = serializePoliticalActivityExpenseSection(sections);
@@ -339,15 +339,15 @@ describe("serializePoliticalActivityExpenseSection", () => {
     };
 
     const sections: PoliticalActivityExpenseSections = {
-      organizationExpenses: emptySection,
-      electionExpenses: emptySection,
-      publicationExpenses: emptySection,
-      advertisingExpenses: emptySection,
-      fundraisingPartyExpenses: emptySection,
-      otherBusinessExpenses: emptySection,
-      researchExpenses: section,
-      donationGrantExpenses: emptySection,
-      otherPoliticalExpenses: emptySection,
+      organizationExpenses: [],
+      electionExpenses: [],
+      publicationExpenses: [],
+      advertisingExpenses: [],
+      fundraisingPartyExpenses: [],
+      otherBusinessExpenses: [],
+      researchExpenses: [section],
+      donationGrantExpenses: [],
+      otherPoliticalExpenses: [],
     };
 
     const xmlBuilder = serializePoliticalActivityExpenseSection(sections);
