@@ -1,5 +1,3 @@
-"use client";
-
 import {
   Table,
   TableBody,
@@ -56,28 +54,32 @@ function PoliticalActivityExpenseTable({ rows }: PoliticalActivityExpenseTablePr
   }
 
   return (
-    <Table>
+    <Table className="border-collapse border border-black">
       <TableHeader>
-        <TableRow className="border-black">
-          <TableHead className="w-[50px] text-black">No.</TableHead>
-          <TableHead className="w-[200px] text-black">目的</TableHead>
-          <TableHead className="w-[100px] text-right text-black">金額</TableHead>
-          <TableHead className="w-[100px] text-black">年月日</TableHead>
-          <TableHead className="w-[150px] text-black">氏名</TableHead>
-          <TableHead className="w-[200px] text-black">住所</TableHead>
-          <TableHead className="w-[150px] text-black">備考</TableHead>
+        <TableRow className="border border-black">
+          <TableHead className="w-[50px] text-black border border-black">行番号</TableHead>
+          <TableHead className="w-[200px] text-black border border-black">目的</TableHead>
+          <TableHead className="w-[100px] text-right text-black border border-black">
+            金額
+          </TableHead>
+          <TableHead className="w-[100px] text-black border border-black">年月日</TableHead>
+          <TableHead className="w-[150px] text-black border border-black">氏名</TableHead>
+          <TableHead className="w-[200px] text-black border border-black">住所</TableHead>
+          <TableHead className="w-[150px] text-black border border-black">備考</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
         {rows.map((row) => (
-          <TableRow key={row.ichirenNo} className="border-black">
-            <TableCell className="text-black">{row.ichirenNo}</TableCell>
-            <TableCell className="text-black">{row.mokuteki}</TableCell>
-            <TableCell className="text-right text-black">{formatCurrency(row.kingaku)}</TableCell>
-            <TableCell className="text-black">{formatDate(row.dt)}</TableCell>
-            <TableCell className="text-black">{row.nm}</TableCell>
-            <TableCell className="text-black">{row.adr}</TableCell>
-            <TableCell className="text-black">{row.bikou || ""}</TableCell>
+          <TableRow key={row.ichirenNo} className="border border-black">
+            <TableCell className="text-black border border-black">{row.ichirenNo}</TableCell>
+            <TableCell className="text-black border border-black">{row.mokuteki}</TableCell>
+            <TableCell className="text-right text-black border border-black">
+              {formatCurrency(row.kingaku)}
+            </TableCell>
+            <TableCell className="text-black border border-black">{formatDate(row.dt)}</TableCell>
+            <TableCell className="text-black border border-black">{row.nm}</TableCell>
+            <TableCell className="text-black border border-black">{row.adr}</TableCell>
+            <TableCell className="text-black border border-black">{row.bikou || ""}</TableCell>
           </TableRow>
         ))}
       </TableBody>
