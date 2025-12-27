@@ -3,7 +3,15 @@ import "client-only";
 
 import { useRouter } from "next/navigation";
 import type { PoliticalOrganization } from "@/shared/models/political-organization";
-import { Card, Label } from "@/client/components/ui";
+import {
+  Card,
+  Label,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/client/components/ui";
 import { PoliticalOrganizationSelect } from "@/client/components/political-organizations/PoliticalOrganizationSelect";
 
 interface ExportReportSelectorsProps {
@@ -42,18 +50,21 @@ export function ExportReportSelectors({
         </div>
         <div className="w-fit space-y-2">
           <Label>報告年 (西暦)</Label>
-          <select
-            key={selectedYear}
-            className="flex h-9 w-32 rounded-md border border-input bg-input px-3 py-1 text-base shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
-            defaultValue={selectedYear}
-            onChange={(e) => handleYearChange(Number.parseInt(e.target.value, 10))}
+          <Select
+            value={selectedYear.toString()}
+            onValueChange={(v) => handleYearChange(Number.parseInt(v, 10))}
           >
-            {Array.from({ length: 10 }, (_, i) => currentYear - i).map((y) => (
-              <option key={y} value={y}>
-                {y}年
-              </option>
-            ))}
-          </select>
+            <SelectTrigger className="w-32">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {Array.from({ length: 10 }, (_, i) => currentYear - i).map((y) => (
+                <SelectItem key={y} value={y.toString()}>
+                  {y}年
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
     </Card>

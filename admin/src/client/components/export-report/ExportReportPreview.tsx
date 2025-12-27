@@ -3,8 +3,8 @@ import "client-only";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/client/components/ui";
 import type { ReportData } from "@/server/contexts/report/domain/models/report-data";
-import { ReportDataPreview } from "./ReportDataPreview";
-import { XmlPreview } from "./XmlPreview";
+import { ReportDataPreview } from "@/client/components/export-report/ReportDataPreview";
+import { XmlPreview } from "@/client/components/export-report/XmlPreview";
 
 interface ExportReportPreviewProps {
   xml: string;

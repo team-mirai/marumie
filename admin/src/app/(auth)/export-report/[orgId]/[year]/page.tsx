@@ -1,8 +1,10 @@
 import "server-only";
 
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { loadPoliticalOrganizationsData } from "@/server/contexts/shared/presentation/loaders/load-political-organizations-data";
 import { loadReportPreviewData } from "@/server/contexts/report/presentation/loaders/report-preview-loader";
+import type { ReportData } from "@/server/contexts/report/domain/models/report-data";
 import { ExportReportSelectors } from "@/client/components/export-report/ExportReportSelectors";
 import { ExportReportPreview } from "@/client/components/export-report/ExportReportPreview";
 import { DownloadButton } from "@/client/components/export-report/DownloadButton";
@@ -31,7 +33,7 @@ export default async function ExportReportDetailPage({ params }: ExportReportDet
 
   let previewData: {
     xml: string;
-    reportData: import("@/server/contexts/report/domain/models/report-data").ReportData;
+    reportData: ReportData;
   } | null = null;
   let errorMessage: string | null = null;
 
@@ -64,12 +66,12 @@ export default async function ExportReportDetailPage({ params }: ExportReportDet
           <div className="rounded-lg px-3 py-2 bg-red-500/20 text-red-200">
             {errorMessage}
             {errorMessage.includes("プロフィール") && (
-              <a
+              <Link
                 href={`/political-organizations/${orgId}/report-profile?year=${financialYear}`}
                 className="ml-2 underline hover:no-underline"
               >
                 プロフィール登録ページへ
-              </a>
+              </Link>
             )}
           </div>
         ) : previewData ? (
