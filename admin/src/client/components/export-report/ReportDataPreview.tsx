@@ -1,5 +1,3 @@
-"use client";
-
 import type { ReportData } from "@/server/contexts/report/domain/models/report-data";
 import { DonationSection } from "./sections/DonationSection";
 import { IncomeSection } from "./sections/IncomeSection";

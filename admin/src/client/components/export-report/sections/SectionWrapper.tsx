@@ -1,5 +1,3 @@
-"use client";
-
 import type { ReactNode } from "react";
 
 interface SectionWrapperProps {
@@ -26,9 +24,7 @@ export function SectionWrapper({
   children,
 }: SectionWrapperProps) {
   return (
-    <div
-      className={`bg-white border border-black rounded-lg overflow-hidden ${isEmpty ? "opacity-50" : ""}`}
-    >
+    <div className={`bg-white border border-black overflow-hidden ${isEmpty ? "opacity-50" : ""}`}>
       <div className="bg-gray-100 border-b border-black px-4 py-3">
         <div className="flex flex-col gap-1">
           <h3 className="text-lg font-semibold text-black">
