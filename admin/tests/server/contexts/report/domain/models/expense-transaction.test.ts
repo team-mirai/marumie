@@ -406,6 +406,66 @@ describe("UtilityExpenseSection.validate", () => {
     expect(errors.length).toBeGreaterThan(0);
     expect(errors[0].code).toBe(ValidationErrorCode.REQUIRED);
   });
+
+  it("氏名が空の場合エラーを返す", () => {
+    const section = {
+      totalAmount: 100000,
+      underThresholdAmount: 0,
+      rows: [{ ...createExpenseRow(), nm: "" }],
+    };
+    const errors = UtilityExpenseSection.validate(section);
+
+    expect(errors.length).toBeGreaterThan(0);
+    expect(errors[0].code).toBe(ValidationErrorCode.REQUIRED);
+  });
+
+  it("住所が空の場合エラーを返す", () => {
+    const section = {
+      totalAmount: 100000,
+      underThresholdAmount: 0,
+      rows: [{ ...createExpenseRow(), adr: "" }],
+    };
+    const errors = UtilityExpenseSection.validate(section);
+
+    expect(errors.length).toBeGreaterThan(0);
+    expect(errors[0].code).toBe(ValidationErrorCode.REQUIRED);
+  });
+
+  it("目的が200文字を超える場合エラーを返す", () => {
+    const section = {
+      totalAmount: 100000,
+      underThresholdAmount: 0,
+      rows: [{ ...createExpenseRow(), mokuteki: "あ".repeat(201) }],
+    };
+    const errors = UtilityExpenseSection.validate(section);
+
+    expect(errors.length).toBeGreaterThan(0);
+    expect(errors[0].code).toBe(ValidationErrorCode.MAX_LENGTH_EXCEEDED);
+  });
+
+  it("氏名が120文字を超える場合エラーを返す", () => {
+    const section = {
+      totalAmount: 100000,
+      underThresholdAmount: 0,
+      rows: [{ ...createExpenseRow(), nm: "あ".repeat(121) }],
+    };
+    const errors = UtilityExpenseSection.validate(section);
+
+    expect(errors.length).toBeGreaterThan(0);
+    expect(errors[0].code).toBe(ValidationErrorCode.MAX_LENGTH_EXCEEDED);
+  });
+
+  it("住所が120文字を超える場合エラーを返す", () => {
+    const section = {
+      totalAmount: 100000,
+      underThresholdAmount: 0,
+      rows: [{ ...createExpenseRow(), adr: "あ".repeat(121) }],
+    };
+    const errors = UtilityExpenseSection.validate(section);
+
+    expect(errors.length).toBeGreaterThan(0);
+    expect(errors[0].code).toBe(ValidationErrorCode.MAX_LENGTH_EXCEEDED);
+  });
 });
 
 describe("SuppliesExpenseSection.validate", () => {

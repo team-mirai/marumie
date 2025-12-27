@@ -258,6 +258,23 @@ describe("BusinessIncomeSection.validate", () => {
     expect(errors.length).toBeGreaterThan(0);
     expect(errors[0].code).toBe(ValidationErrorCode.NEGATIVE_VALUE);
   });
+
+  it("事業種類が200文字を超える場合エラーを返す", () => {
+    const section = {
+      totalAmount: 100000,
+      rows: [
+        {
+          ichirenNo: "1",
+          gigyouSyurui: "あ".repeat(201),
+          kingaku: 100000,
+        },
+      ],
+    };
+    const errors = BusinessIncomeSection.validate(section);
+
+    expect(errors.length).toBeGreaterThan(0);
+    expect(errors[0].code).toBe(ValidationErrorCode.MAX_LENGTH_EXCEEDED);
+  });
 });
 
 describe("LoanIncomeSection.validate", () => {
@@ -316,6 +333,23 @@ describe("LoanIncomeSection.validate", () => {
 
     expect(errors.length).toBeGreaterThan(0);
     expect(errors[0].code).toBe(ValidationErrorCode.NEGATIVE_VALUE);
+  });
+
+  it("借入先が200文字を超える場合エラーを返す", () => {
+    const section = {
+      totalAmount: 1000000,
+      rows: [
+        {
+          ichirenNo: "1",
+          kariiresaki: "あ".repeat(201),
+          kingaku: 1000000,
+        },
+      ],
+    };
+    const errors = LoanIncomeSection.validate(section);
+
+    expect(errors.length).toBeGreaterThan(0);
+    expect(errors[0].code).toBe(ValidationErrorCode.MAX_LENGTH_EXCEEDED);
   });
 });
 
@@ -382,6 +416,82 @@ describe("GrantIncomeSection.validate", () => {
     expect(errors.length).toBeGreaterThan(0);
     expect(errors[0].code).toBe(ValidationErrorCode.NEGATIVE_VALUE);
   });
+
+  it("本支部名が120文字を超える場合エラーを返す", () => {
+    const section = {
+      totalAmount: 500000,
+      rows: [
+        {
+          ichirenNo: "1",
+          honsibuNm: "あ".repeat(121),
+          kingaku: 500000,
+          dt: new Date("2024-05-15"),
+          jimuAdr: "東京都千代田区永田町1-1-1",
+        },
+      ],
+    };
+    const errors = GrantIncomeSection.validate(section);
+
+    expect(errors.length).toBeGreaterThan(0);
+    expect(errors[0].code).toBe(ValidationErrorCode.MAX_LENGTH_EXCEEDED);
+  });
+
+  it("事務所住所が80文字を超える場合エラーを返す", () => {
+    const section = {
+      totalAmount: 500000,
+      rows: [
+        {
+          ichirenNo: "1",
+          honsibuNm: "〇〇党本部",
+          kingaku: 500000,
+          dt: new Date("2024-05-15"),
+          jimuAdr: "あ".repeat(81),
+        },
+      ],
+    };
+    const errors = GrantIncomeSection.validate(section);
+
+    expect(errors.length).toBeGreaterThan(0);
+    expect(errors[0].code).toBe(ValidationErrorCode.MAX_LENGTH_EXCEEDED);
+  });
+
+  it("年月日が空の場合エラーを返す", () => {
+    const section = {
+      totalAmount: 500000,
+      rows: [
+        {
+          ichirenNo: "1",
+          honsibuNm: "〇〇党本部",
+          kingaku: 500000,
+          dt: null as unknown as Date,
+          jimuAdr: "東京都千代田区永田町1-1-1",
+        },
+      ],
+    };
+    const errors = GrantIncomeSection.validate(section);
+
+    expect(errors.length).toBeGreaterThan(0);
+    expect(errors[0].code).toBe(ValidationErrorCode.REQUIRED);
+  });
+
+  it("事務所住所が空の場合エラーを返す", () => {
+    const section = {
+      totalAmount: 500000,
+      rows: [
+        {
+          ichirenNo: "1",
+          honsibuNm: "〇〇党本部",
+          kingaku: 500000,
+          dt: new Date("2024-05-15"),
+          jimuAdr: "",
+        },
+      ],
+    };
+    const errors = GrantIncomeSection.validate(section);
+
+    expect(errors.length).toBeGreaterThan(0);
+    expect(errors[0].code).toBe(ValidationErrorCode.REQUIRED);
+  });
 });
 
 describe("OtherIncomeSection.validate", () => {
@@ -443,5 +553,23 @@ describe("OtherIncomeSection.validate", () => {
 
     expect(errors.length).toBeGreaterThan(0);
     expect(errors[0].code).toBe(ValidationErrorCode.NEGATIVE_VALUE);
+  });
+
+  it("摘要が200文字を超える場合エラーを返す", () => {
+    const section = {
+      totalAmount: 150000,
+      underThresholdAmount: 0,
+      rows: [
+        {
+          ichirenNo: "1",
+          tekiyou: "あ".repeat(201),
+          kingaku: 150000,
+        },
+      ],
+    };
+    const errors = OtherIncomeSection.validate(section);
+
+    expect(errors.length).toBeGreaterThan(0);
+    expect(errors[0].code).toBe(ValidationErrorCode.MAX_LENGTH_EXCEEDED);
   });
 });
