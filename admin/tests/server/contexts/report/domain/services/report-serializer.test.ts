@@ -209,6 +209,60 @@ describe("serializeReportData", () => {
     expect(xml).toContain("<SYUUSHI07_03>");
     expect(xml).toContain("<SYUUSHI07_06>");
   });
+
+  it("includes SYUUSHI07_13 when personnel expenses have data", () => {
+    const reportData = createEmptyReportData();
+    // 人件費を設定
+    reportData.expenses.personnelExpenses = { totalAmount: 500000 };
+    // 経常経費の他の項目も設定（シート13の総括表に反映される）
+    reportData.expenses.utilityExpenses = {
+      totalAmount: 100000,
+      underThresholdAmount: 0,
+      rows: [],
+    };
+
+    const xml = serializeReportData(reportData);
+
+    // SYUUSHI07_13（支出項目別金額の内訳・総括表）が出力されることを確認
+    expect(xml).toContain("<SYUUSHI07_13>");
+    expect(xml).toContain("<SHEET>");
+    // 人件費の金額が出力されることを確認
+    expect(xml).toContain("<JINKENHI_GK>500000</JINKENHI_GK>");
+    // 光熱水費の金額が出力されることを確認
+    expect(xml).toContain("<KOUNETU_GK>100000</KOUNETU_GK>");
+    // 経常経費小計が出力されることを確認
+    expect(xml).toContain("<KEIHI_SKEI_GK>600000</KEIHI_SKEI_GK>");
+  });
+
+  it("includes SYUUSHI07_16 when branch grant expenses have data", () => {
+    const reportData = createEmptyReportData();
+    reportData.expenses.branchGrantExpenses = {
+      totalAmount: 200000,
+      rows: [
+        {
+          ichirenNo: "1",
+          shisyutuKmk: "本支部交付金",
+          kingaku: 200000,
+          dt: new Date("2024-06-15"),
+          honsibuNm: "テスト支部",
+          jimuAdr: "東京都新宿区",
+          bikou: undefined,
+        },
+      ],
+    };
+
+    const xml = serializeReportData(reportData);
+
+    // SYUUSHI07_16（本部又は支部に対する交付金の支出）が出力されることを確認
+    expect(xml).toContain("<SYUUSHI07_16>");
+    expect(xml).toContain("<KINGAKU_GK>200000</KINGAKU_GK>");
+    expect(xml).toContain("<ROW>");
+    expect(xml).toContain("<ICHIREN_NO>1</ICHIREN_NO>");
+    expect(xml).toContain("<SHISYUTU_KMK>本支部交付金</SHISYUTU_KMK>");
+    expect(xml).toContain("<KINGAKU>200000</KINGAKU>");
+    expect(xml).toContain("<HONSIBU_NM>テスト支部</HONSIBU_NM>");
+    expect(xml).toContain("<JIMU_ADR>東京都新宿区</JIMU_ADR>");
+  });
 });
 
 describe("KNOWN_FORM_IDS", () => {
