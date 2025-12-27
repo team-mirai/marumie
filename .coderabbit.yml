@@ -31,7 +31,9 @@ reviews:
     - "prisma/**"
     - "supabase/**"
     - "docs/**"
-    - "!**/*.md"
+    # docs配下のMarkdownはレビュー対象（設計ドキュメントのアーキテクチャレビュー）
+    - "!webapp/**/*.md"
+    - "!admin/**/*.md"
     - "!**/*.mdx"
     - "!**/*.svg"
     - "!**/*.png"
@@ -60,6 +62,19 @@ reviews:
 
     - path: "admin/src/server/contexts/report/**"
       instructions: "docs/report-format.md と docs/scope-by-2026Jan.md に従ってレビューしてください。"
+
+    - path: "docs/**/*.md"
+      instructions: |
+        これは設計ドキュメントです。以下の観点でアーキテクチャレビューを行ってください：
+
+        1. **アーキテクチャ整合性**: docs/admin-architecture-guide.md のレイヤードアーキテクチャ（presentation → application → domain ↔ infrastructure）に従っているか
+        2. **Bounded Context**: 適切なコンテキスト境界が設定されているか、責務が明確か
+        3. **ドメインモデル設計**: ドメインロジックがモデルに適切に配置されているか
+        4. **依存関係**: 依存性逆転の原則に違反していないか
+        5. **実装の実現可能性**: 設計が現実的に実装可能か、技術的な問題がないか
+        6. **既存コードとの整合性**: プロジェクトの既存パターンと一貫性があるか
+
+        設計の問題点や改善提案があれば具体的に指摘してください。
 
   auto_review:
     drafts: true
