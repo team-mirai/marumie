@@ -2,11 +2,21 @@ import {
   UtilityExpenseSection,
   SuppliesExpenseSection,
   OfficeExpenseSection,
+  OrganizationExpenseSection,
+  ElectionExpenseSection,
+  PublicationExpenseSection,
+  AdvertisingExpenseSection,
+  FundraisingPartyExpenseSection,
+  OtherBusinessExpenseSection,
+  ResearchExpenseSection,
+  DonationGrantExpenseSection,
+  OtherPoliticalExpenseSection,
   type UtilityExpenseTransaction,
   type SuppliesExpenseTransaction,
   type OfficeExpenseTransaction,
 } from "@/server/contexts/report/domain/models/expense-transaction";
 import { resolveExpenseAmount } from "@/server/contexts/report/domain/models/transaction-utils";
+import { ValidationErrorCode } from "@/server/contexts/report/domain/types/validation";
 
 describe("UtilityExpenseSection.fromTransactions", () => {
   it("converts empty transactions to empty section", () => {
@@ -332,3 +342,275 @@ function createOfficeTransaction(
     ...overrides,
   };
 }
+
+const createExpenseRow = () => ({
+  ichirenNo: "1",
+  mokuteki: "テスト",
+  kingaku: 100000,
+  dt: new Date("2024-01-01"),
+  nm: "テスト取引先",
+  adr: "東京都",
+});
+
+describe("UtilityExpenseSection.validate", () => {
+  it("空のセクションでエラーを返さない", () => {
+    const section = { totalAmount: 0, underThresholdAmount: 0, rows: [] };
+    const errors = UtilityExpenseSection.validate(section);
+
+    expect(errors).toHaveLength(0);
+  });
+
+  it("正常なデータでエラーを返さない", () => {
+    const section = {
+      totalAmount: 100000,
+      underThresholdAmount: 0,
+      rows: [createExpenseRow()],
+    };
+    const errors = UtilityExpenseSection.validate(section);
+
+    expect(errors).toHaveLength(0);
+  });
+
+  it("目的が空の場合エラーを返す", () => {
+    const section = {
+      totalAmount: 100000,
+      underThresholdAmount: 0,
+      rows: [{ ...createExpenseRow(), mokuteki: "" }],
+    };
+    const errors = UtilityExpenseSection.validate(section);
+
+    expect(errors.length).toBeGreaterThan(0);
+    expect(errors[0].code).toBe(ValidationErrorCode.REQUIRED);
+  });
+
+  it("金額が0以下の場合エラーを返す", () => {
+    const section = {
+      totalAmount: 0,
+      underThresholdAmount: 0,
+      rows: [{ ...createExpenseRow(), kingaku: 0 }],
+    };
+    const errors = UtilityExpenseSection.validate(section);
+
+    expect(errors.length).toBeGreaterThan(0);
+    expect(errors[0].code).toBe(ValidationErrorCode.NEGATIVE_VALUE);
+  });
+
+  it("年月日が空の場合エラーを返す", () => {
+    const section = {
+      totalAmount: 100000,
+      underThresholdAmount: 0,
+      rows: [{ ...createExpenseRow(), dt: null as unknown as Date }],
+    };
+    const errors = UtilityExpenseSection.validate(section);
+
+    expect(errors.length).toBeGreaterThan(0);
+    expect(errors[0].code).toBe(ValidationErrorCode.REQUIRED);
+  });
+});
+
+describe("SuppliesExpenseSection.validate", () => {
+  it("空のセクションでエラーを返さない", () => {
+    const section = { totalAmount: 0, underThresholdAmount: 0, rows: [] };
+    const errors = SuppliesExpenseSection.validate(section);
+
+    expect(errors).toHaveLength(0);
+  });
+
+  it("正常なデータでエラーを返さない", () => {
+    const section = {
+      totalAmount: 100000,
+      underThresholdAmount: 0,
+      rows: [createExpenseRow()],
+    };
+    const errors = SuppliesExpenseSection.validate(section);
+
+    expect(errors).toHaveLength(0);
+  });
+
+  it("目的が空の場合エラーを返す", () => {
+    const section = {
+      totalAmount: 100000,
+      underThresholdAmount: 0,
+      rows: [{ ...createExpenseRow(), mokuteki: "" }],
+    };
+    const errors = SuppliesExpenseSection.validate(section);
+
+    expect(errors.length).toBeGreaterThan(0);
+    expect(errors[0].code).toBe(ValidationErrorCode.REQUIRED);
+  });
+});
+
+describe("OfficeExpenseSection.validate", () => {
+  it("空のセクションでエラーを返さない", () => {
+    const section = { totalAmount: 0, underThresholdAmount: 0, rows: [] };
+    const errors = OfficeExpenseSection.validate(section);
+
+    expect(errors).toHaveLength(0);
+  });
+
+  it("正常なデータでエラーを返さない", () => {
+    const section = {
+      totalAmount: 100000,
+      underThresholdAmount: 0,
+      rows: [createExpenseRow()],
+    };
+    const errors = OfficeExpenseSection.validate(section);
+
+    expect(errors).toHaveLength(0);
+  });
+
+  it("目的が空の場合エラーを返す", () => {
+    const section = {
+      totalAmount: 100000,
+      underThresholdAmount: 0,
+      rows: [{ ...createExpenseRow(), mokuteki: "" }],
+    };
+    const errors = OfficeExpenseSection.validate(section);
+
+    expect(errors.length).toBeGreaterThan(0);
+    expect(errors[0].code).toBe(ValidationErrorCode.REQUIRED);
+  });
+});
+
+describe("OrganizationExpenseSection.validate", () => {
+  it("空のセクションでエラーを返さない", () => {
+    const section = { himoku: "", totalAmount: 0, underThresholdAmount: 0, rows: [] };
+    const errors = OrganizationExpenseSection.validate(section);
+
+    expect(errors).toHaveLength(0);
+  });
+
+  it("正常なデータでエラーを返さない", () => {
+    const section = {
+      himoku: "会議費",
+      totalAmount: 100000,
+      underThresholdAmount: 0,
+      rows: [createExpenseRow()],
+    };
+    const errors = OrganizationExpenseSection.validate(section);
+
+    expect(errors).toHaveLength(0);
+  });
+
+  it("目的が空の場合エラーを返す", () => {
+    const section = {
+      himoku: "会議費",
+      totalAmount: 100000,
+      underThresholdAmount: 0,
+      rows: [{ ...createExpenseRow(), mokuteki: "" }],
+    };
+    const errors = OrganizationExpenseSection.validate(section);
+
+    expect(errors.length).toBeGreaterThan(0);
+    expect(errors[0].code).toBe(ValidationErrorCode.REQUIRED);
+  });
+});
+
+describe("ElectionExpenseSection.validate", () => {
+  it("空のセクションでエラーを返さない", () => {
+    const section = { himoku: "", totalAmount: 0, underThresholdAmount: 0, rows: [] };
+    const errors = ElectionExpenseSection.validate(section);
+
+    expect(errors).toHaveLength(0);
+  });
+
+  it("正常なデータでエラーを返さない", () => {
+    const section = {
+      himoku: "選挙ポスター",
+      totalAmount: 50000,
+      underThresholdAmount: 0,
+      rows: [{ ...createExpenseRow(), kingaku: 50000 }],
+    };
+    const errors = ElectionExpenseSection.validate(section);
+
+    expect(errors).toHaveLength(0);
+  });
+});
+
+describe("PublicationExpenseSection.validate", () => {
+  it("空のセクションでエラーを返さない", () => {
+    const section = { himoku: "", totalAmount: 0, underThresholdAmount: 0, rows: [] };
+    const errors = PublicationExpenseSection.validate(section);
+
+    expect(errors).toHaveLength(0);
+  });
+});
+
+describe("AdvertisingExpenseSection.validate", () => {
+  it("空のセクションでエラーを返さない", () => {
+    const section = { himoku: "", totalAmount: 0, underThresholdAmount: 0, rows: [] };
+    const errors = AdvertisingExpenseSection.validate(section);
+
+    expect(errors).toHaveLength(0);
+  });
+});
+
+describe("FundraisingPartyExpenseSection.validate", () => {
+  it("空のセクションでエラーを返さない", () => {
+    const section = { himoku: "", totalAmount: 0, underThresholdAmount: 0, rows: [] };
+    const errors = FundraisingPartyExpenseSection.validate(section);
+
+    expect(errors).toHaveLength(0);
+  });
+});
+
+describe("OtherBusinessExpenseSection.validate", () => {
+  it("空のセクションでエラーを返さない", () => {
+    const section = { himoku: "", totalAmount: 0, underThresholdAmount: 0, rows: [] };
+    const errors = OtherBusinessExpenseSection.validate(section);
+
+    expect(errors).toHaveLength(0);
+  });
+});
+
+describe("ResearchExpenseSection.validate", () => {
+  it("空のセクションでエラーを返さない", () => {
+    const section = { himoku: "", totalAmount: 0, underThresholdAmount: 0, rows: [] };
+    const errors = ResearchExpenseSection.validate(section);
+
+    expect(errors).toHaveLength(0);
+  });
+});
+
+describe("DonationGrantExpenseSection.validate", () => {
+  it("空のセクションでエラーを返さない", () => {
+    const section = { himoku: "", totalAmount: 0, underThresholdAmount: 0, rows: [] };
+    const errors = DonationGrantExpenseSection.validate(section);
+
+    expect(errors).toHaveLength(0);
+  });
+});
+
+describe("OtherPoliticalExpenseSection.validate", () => {
+  it("空のセクションでエラーを返さない", () => {
+    const section = { himoku: "", totalAmount: 0, underThresholdAmount: 0, rows: [] };
+    const errors = OtherPoliticalExpenseSection.validate(section);
+
+    expect(errors).toHaveLength(0);
+  });
+
+  it("正常なデータでエラーを返さない", () => {
+    const section = {
+      himoku: "その他経費",
+      totalAmount: 100000,
+      underThresholdAmount: 0,
+      rows: [createExpenseRow()],
+    };
+    const errors = OtherPoliticalExpenseSection.validate(section);
+
+    expect(errors).toHaveLength(0);
+  });
+
+  it("金額が0以下の場合エラーを返す", () => {
+    const section = {
+      himoku: "その他経費",
+      totalAmount: 0,
+      underThresholdAmount: 0,
+      rows: [{ ...createExpenseRow(), kingaku: 0 }],
+    };
+    const errors = OtherPoliticalExpenseSection.validate(section);
+
+    expect(errors.length).toBeGreaterThan(0);
+    expect(errors[0].code).toBe(ValidationErrorCode.NEGATIVE_VALUE);
+  });
+});
