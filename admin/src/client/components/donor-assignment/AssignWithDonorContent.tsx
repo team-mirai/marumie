@@ -8,7 +8,6 @@ import type { TransactionWithDonor } from "@/server/contexts/report/domain/model
 import { DonorFormContent } from "./DonorFormContent";
 import { DonorSelectorContent } from "./DonorSelectorContent";
 import { createDonorAction } from "@/server/contexts/report/presentation/actions/create-donor";
-import { assignDonorAction } from "@/server/contexts/report/presentation/actions/assign-donor";
 import { bulkAssignDonorAction } from "@/server/contexts/report/presentation/actions/bulk-assign-donor";
 import { getCommonAllowedDonorTypes } from "@/server/contexts/report/domain/models/donor-assignment-rules";
 
@@ -54,19 +53,11 @@ export function AssignWithDonorContent({
 
     setError(null);
     startTransition(async () => {
-      if (isBulk) {
-        const transactionIds = transactions.map((t) => t.id);
-        const result = await bulkAssignDonorAction(transactionIds, selectedDonorId);
-        if (!result.success) {
-          setError(result.errors?.join(", ") ?? "一括紐付けに失敗しました");
-          return;
-        }
-      } else {
-        const result = await assignDonorAction(transactions[0].id, selectedDonorId);
-        if (!result.success) {
-          setError(result.errors?.join(", ") ?? "紐付けに失敗しました");
-          return;
-        }
+      const transactionIds = transactions.map((t) => t.id);
+      const result = await bulkAssignDonorAction(transactionIds, selectedDonorId);
+      if (!result.success) {
+        setError(result.errors?.join(", ") ?? "紐付けに失敗しました");
+        return;
       }
       onSuccess();
     });
@@ -95,17 +86,10 @@ export function AssignWithDonorContent({
       throw new Error("寄付者IDが取得できませんでした");
     }
 
-    if (isBulk) {
-      const transactionIds = transactions.map((t) => t.id);
-      const result = await bulkAssignDonorAction(transactionIds, createResult.donorId);
-      if (!result.success) {
-        throw new Error(result.errors?.join(", ") ?? "一括紐付けに失敗しました");
-      }
-    } else {
-      const result = await assignDonorAction(transactions[0].id, createResult.donorId);
-      if (!result.success) {
-        throw new Error(result.errors?.join(", ") ?? "紐付けに失敗しました");
-      }
+    const transactionIds = transactions.map((t) => t.id);
+    const result = await bulkAssignDonorAction(transactionIds, createResult.donorId);
+    if (!result.success) {
+      throw new Error(result.errors?.join(", ") ?? "紐付けに失敗しました");
     }
 
     onSuccess();
