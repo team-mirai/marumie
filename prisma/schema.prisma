@@ -63,6 +63,7 @@ model Transaction {
   hash                     String                   @default("") @db.VarChar(255)
   politicalOrganization    PoliticalOrganization    @relation(fields: [politicalOrganizationId], references: [id], onDelete: Cascade)
   transactionCounterparts  TransactionCounterpart[]
+  transactionDonors        TransactionDonor[]
 
   @@unique([politicalOrganizationId, transactionNo])
   @@index([politicalOrganizationId, financialYear, transactionType, transactionDate(sort: Desc)])
@@ -111,6 +112,37 @@ model BalanceSnapshot {
   @@map("balance_snapshots")
 }
 
+model Donor {
+  id                BigInt            @id @default(autoincrement())
+  donorType         DonorType         @map("donor_type")
+  name              String            @db.VarChar(120)
+  address           String?           @db.VarChar(120)
+  occupation        String?           @db.VarChar(50)
+  createdAt         DateTime          @default(now()) @map("created_at")
+  updatedAt         DateTime          @updatedAt @map("updated_at")
+
+  transactionDonors TransactionDonor[]
+
+  @@unique([name, address, donorType])
+  @@map("donors")
+}
+
+model TransactionDonor {
+  id            BigInt      @id @default(autoincrement())
+  transactionId BigInt      @map("transaction_id")
+  donorId       BigInt      @map("donor_id")
+  createdAt     DateTime    @default(now()) @map("created_at")
+
+  transaction Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  donor       Donor       @relation(fields: [donorId], references: [id], onDelete: Cascade)
+
+  @@unique([transactionId, donorId])
+  @@unique([transactionId])
+  @@index([transactionId], name: "idx_transaction_donors_transaction")
+  @@index([donorId], name: "idx_transaction_donors_donor")
+  @@map("transaction_donors")
+}
+
 model OrganizationReportProfile {
   id                      BigInt   @id @default(autoincrement())
   politicalOrganizationId BigInt   @map("political_organization_id")
@@ -143,4 +175,10 @@ enum TransactionType {
 enum UserRole {
   admin
   user
+}
+
+enum DonorType {
+  individual
+  corporation
+  political_organization
 }
