@@ -1,6 +1,7 @@
 import type { PersonalDonationTransaction } from "@/server/contexts/report/domain/models/donation-transaction";
 import type {
   AdvertisingExpenseTransaction,
+  BranchGrantExpenseTransaction,
   DonationGrantExpenseTransaction,
   ElectionExpenseTransaction,
   FundraisingPartyExpenseTransaction,
@@ -8,6 +9,7 @@ import type {
   OrganizationExpenseTransaction,
   OtherBusinessExpenseTransaction,
   OtherPoliticalExpenseTransaction,
+  PersonnelExpenseTransaction,
   PublicationExpenseTransaction,
   ResearchExpenseTransaction,
   SuppliesExpenseTransaction,
@@ -173,6 +175,21 @@ export interface IReportTransactionRepository extends ITransactionWithCounterpar
   ): Promise<OtherPoliticalExpenseTransaction[]>;
 
   /**
+   * SYUUSHI07_13: 人件費のトランザクションを取得
+   * 人件費はシート14に明細を出力しないが、シート13の総括表には合計額が必要
+   */
+  findPersonnelExpenseTransactions(
+    filters: TransactionFilters,
+  ): Promise<PersonnelExpenseTransaction[]>;
+
+  /**
+   * SYUUSHI07_16: 本部又は支部に対する交付金のトランザクションを取得
+   */
+  findBranchGrantExpenseTransactions(
+    filters: TransactionFilters,
+  ): Promise<BranchGrantExpenseTransaction[]>;
+
+  /**
    * Counterpart紐付け管理用: TransactionとCounterpartの紐付け情報を含むTransaction一覧を取得
    */
   findTransactionsWithCounterparts(
@@ -199,6 +216,8 @@ export type {
   ResearchExpenseTransaction,
   DonationGrantExpenseTransaction,
   OtherPoliticalExpenseTransaction,
+  PersonnelExpenseTransaction,
+  BranchGrantExpenseTransaction,
   TransactionWithCounterpart,
   TransactionWithCounterpartFilters,
   TransactionWithCounterpartResult,

@@ -3,6 +3,7 @@ import "server-only";
 import type { Prisma, PrismaClient } from "@prisma/client";
 import type {
   AdvertisingExpenseTransaction,
+  BranchGrantExpenseTransaction,
   BusinessIncomeTransaction,
   DonationGrantExpenseTransaction,
   ElectionExpenseTransaction,
@@ -16,6 +17,7 @@ import type {
   OtherIncomeTransaction,
   OtherPoliticalExpenseTransaction,
   PersonalDonationTransaction,
+  PersonnelExpenseTransaction,
   PublicationExpenseTransaction,
   ResearchExpenseTransaction,
   SuppliesExpenseTransaction,
@@ -72,6 +74,12 @@ const CATEGORY_KEYS = {
   DONATIONS_GRANTS_EXPENSES: PL_CATEGORIES["寄附・交付金"].key,
   // biome-ignore lint/complexity/useLiteralKeys: 日本語キー
   POLITICAL_ACTIVITY_OTHER_EXPENSES: PL_CATEGORIES["その他の経費"].key,
+  // SYUUSHI07_13: 人件費
+  // biome-ignore lint/complexity/useLiteralKeys: 日本語キー
+  PERSONNEL_COSTS: PL_CATEGORIES["人件費"].key,
+  // SYUUSHI07_16: 本部又は支部に対する交付金
+  // biome-ignore lint/complexity/useLiteralKeys: 日本語キー
+  BRANCH_GRANTS_EXPENSES: PL_CATEGORIES["本部又は支部に対する交付金"].key,
 } as const;
 
 /**
@@ -638,6 +646,28 @@ export class PrismaReportTransactionRepository implements IReportTransactionRepo
     return this.findPoliticalActivityExpenseTransactions(
       filters,
       CATEGORY_KEYS.POLITICAL_ACTIVITY_OTHER_EXPENSES,
+    );
+  }
+
+  /**
+   * SYUUSHI07_13: 人件費のトランザクションを取得
+   * 人件費はシート14に明細を出力しないが、シート13の総括表には合計額が必要
+   */
+  async findPersonnelExpenseTransactions(
+    filters: TransactionFilters,
+  ): Promise<PersonnelExpenseTransaction[]> {
+    return this.findPoliticalActivityExpenseTransactions(filters, CATEGORY_KEYS.PERSONNEL_COSTS);
+  }
+
+  /**
+   * SYUUSHI07_16: 本部又は支部に対する交付金のトランザクションを取得
+   */
+  async findBranchGrantExpenseTransactions(
+    filters: TransactionFilters,
+  ): Promise<BranchGrantExpenseTransaction[]> {
+    return this.findPoliticalActivityExpenseTransactions(
+      filters,
+      CATEGORY_KEYS.BRANCH_GRANTS_EXPENSES,
     );
   }
 

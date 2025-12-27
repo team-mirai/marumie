@@ -33,6 +33,8 @@ describe("DonationAssembler", () => {
           findResearchExpenseTransactions: jest.fn(),
           findDonationGrantExpenseTransactions: jest.fn(),
           findOtherPoliticalExpenseTransactions: jest.fn(),
+          findPersonnelExpenseTransactions: jest.fn(),
+          findBranchGrantExpenseTransactions: jest.fn(),
           findTransactionsWithCounterparts: jest.fn(),
           findByCounterpart: jest.fn(),
           existsById: jest.fn(),
