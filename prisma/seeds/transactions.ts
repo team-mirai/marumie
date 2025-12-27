@@ -12,6 +12,7 @@ interface TransactionSeedData {
   description: string;
   categoryKey: string;
   counterpartName?: string;
+  friendlyCategory?: string;
 }
 
 const data: TransactionSeedData[] = [
@@ -26,6 +27,7 @@ const data: TransactionSeedData[] = [
     creditAmount: '120000',
     description: '機関紙発行収入',
     categoryKey: 'publication-income',
+    friendlyCategory: '機関紙発行事業',
   },
   {
     transactionNo: 'T2025-0002',
@@ -37,6 +39,7 @@ const data: TransactionSeedData[] = [
     creditAmount: '20000',
     description: '売店販売収入',
     categoryKey: 'other-income',
+    friendlyCategory: '物品販売収入',
   },
   {
     transactionNo: 'T2025-0003',
@@ -48,6 +51,7 @@ const data: TransactionSeedData[] = [
     creditAmount: '500000',
     description: 'セミナー開催収入',
     categoryKey: 'other-income',
+    friendlyCategory: 'セミナー参加費',
   },
 
   // SYUUSHI07_04: 借入金
@@ -113,6 +117,7 @@ const data: TransactionSeedData[] = [
     creditAmount: '80000',
     description: '預金利息',
     categoryKey: 'other-income',
+    friendlyCategory: '受取利息',
   },
   {
     transactionNo: 'T2025-0009',
@@ -124,6 +129,7 @@ const data: TransactionSeedData[] = [
     creditAmount: '30000',
     description: '雑収入',
     categoryKey: 'other-income',
+    friendlyCategory: '雑収入',
   },
   {
     transactionNo: 'T2025-0010',
@@ -135,6 +141,7 @@ const data: TransactionSeedData[] = [
     creditAmount: '150000',
     description: '助成金収入',
     categoryKey: 'other-income',
+    friendlyCategory: '助成金',
   },
   {
     transactionNo: 'T2025-0011',
@@ -146,6 +153,7 @@ const data: TransactionSeedData[] = [
     creditAmount: '200000',
     description: '前期繰越金の調整',
     categoryKey: 'other-income',
+    friendlyCategory: '繰越金調整',
   },
 
   // SYUUSHI07_07: 寄附の明細（KUBUN1: 個人、境界値テスト: 5万円）
@@ -277,6 +285,7 @@ const data: TransactionSeedData[] = [
     description: '事務所電気代',
     categoryKey: 'utilities',
     counterpartName: '東京電力株式会社',
+    friendlyCategory: '電気料金',
   },
   {
     transactionNo: 'T2025-0023',
@@ -289,6 +298,7 @@ const data: TransactionSeedData[] = [
     description: '事務所水道代',
     categoryKey: 'utilities',
     counterpartName: '東京都水道局',
+    friendlyCategory: '水道料金',
   },
   {
     transactionNo: 'T2025-0024',
@@ -301,6 +311,7 @@ const data: TransactionSeedData[] = [
     description: '事務所ガス代',
     categoryKey: 'utilities',
     counterpartName: '東京ガス株式会社',
+    friendlyCategory: 'ガス料金',
   },
 
   // SYUUSHI07_14: 経常経費の支出（KUBUN2: 備品・消耗品費）
@@ -315,6 +326,7 @@ const data: TransactionSeedData[] = [
     description: '文房具購入',
     categoryKey: 'equipment-supplies',
     counterpartName: '株式会社オフィスサプライ',
+    friendlyCategory: '事務用品費',
   },
   {
     transactionNo: 'T2025-0026',
@@ -327,6 +339,7 @@ const data: TransactionSeedData[] = [
     description: 'PC購入',
     categoryKey: 'equipment-supplies',
     counterpartName: '株式会社パソコンショップ',
+    friendlyCategory: 'パソコン購入',
   },
   {
     transactionNo: 'T2025-0027',
@@ -339,6 +352,7 @@ const data: TransactionSeedData[] = [
     description: 'プリンター購入',
     categoryKey: 'equipment-supplies',
     counterpartName: '株式会社事務機器販売',
+    friendlyCategory: '事務機器購入',
   },
 
   // SYUUSHI07_14: 経常経費の支出（KUBUN3: 事務所費）
@@ -353,6 +367,7 @@ const data: TransactionSeedData[] = [
     description: '事務所家賃',
     categoryKey: 'office-expenses',
     counterpartName: '不動産管理株式会社',
+    friendlyCategory: '事務所賃借料',
   },
   {
     transactionNo: 'T2025-0029',
@@ -365,6 +380,7 @@ const data: TransactionSeedData[] = [
     description: '電話代',
     categoryKey: 'office-expenses',
     counterpartName: 'NTT東日本',
+    friendlyCategory: '通信費',
   },
   {
     transactionNo: 'T2025-0030',
@@ -377,6 +393,7 @@ const data: TransactionSeedData[] = [
     description: 'インターネット回線費',
     categoryKey: 'office-expenses',
     counterpartName: '株式会社ネット通信',
+    friendlyCategory: 'インターネット接続料',
   },
 
   // SYUUSHI07_15: 政治活動費の支出（KUBUN1: 組織活動費）
@@ -391,6 +408,7 @@ const data: TransactionSeedData[] = [
     description: '会議室利用料',
     categoryKey: 'organizational-activities',
     counterpartName: '株式会社貸会議室',
+    friendlyCategory: '会議費',
   },
   {
     transactionNo: 'T2025-0032',
@@ -403,6 +421,7 @@ const data: TransactionSeedData[] = [
     description: '月例会議費用',
     categoryKey: 'organizational-activities',
     counterpartName: '株式会社会議施設',
+    friendlyCategory: '会議費',
   },
   {
     transactionNo: 'T2025-0033',
@@ -415,6 +434,7 @@ const data: TransactionSeedData[] = [
     description: '地方視察交通費',
     categoryKey: 'organizational-activities',
     counterpartName: 'JR東日本',
+    friendlyCategory: '旅費交通費',
   },
   {
     transactionNo: 'T2025-0034',
@@ -427,6 +447,7 @@ const data: TransactionSeedData[] = [
     description: '事務職員給与',
     categoryKey: 'organizational-activities',
     counterpartName: '事務　太郎',
+    friendlyCategory: '人件費',
   },
 
   // SYUUSHI07_15: 政治活動費の支出（KUBUN2: 選挙関係費）
@@ -441,6 +462,7 @@ const data: TransactionSeedData[] = [
     description: 'ポスター印刷',
     categoryKey: 'election-expenses',
     counterpartName: '株式会社印刷センター',
+    friendlyCategory: '選挙ポスター印刷',
   },
   {
     transactionNo: 'T2025-0036',
@@ -453,6 +475,7 @@ const data: TransactionSeedData[] = [
     description: 'ビラ配布費用',
     categoryKey: 'election-expenses',
     counterpartName: '株式会社配布サービス',
+    friendlyCategory: 'ビラ配布',
   },
 
   // SYUUSHI07_15: 政治活動費の支出（KUBUN3: 機関紙誌の発行事業費）
@@ -467,6 +490,7 @@ const data: TransactionSeedData[] = [
     description: '機関紙印刷',
     categoryKey: 'publication-expenses',
     counterpartName: '株式会社政治印刷',
+    friendlyCategory: '印刷費',
   },
   {
     transactionNo: 'T2025-0038',
@@ -479,6 +503,7 @@ const data: TransactionSeedData[] = [
     description: '機関紙郵送費',
     categoryKey: 'publication-expenses',
     counterpartName: '日本郵便株式会社',
+    friendlyCategory: '発送費',
   },
 
   // SYUUSHI07_15: 政治活動費の支出（KUBUN4: 宣伝事業費）
@@ -493,6 +518,7 @@ const data: TransactionSeedData[] = [
     description: 'Web広告費用',
     categoryKey: 'advertising-expenses',
     counterpartName: '株式会社デジタル広告',
+    friendlyCategory: 'インターネット広告',
   },
   {
     transactionNo: 'T2025-0040',
@@ -505,6 +531,7 @@ const data: TransactionSeedData[] = [
     description: 'チラシ印刷',
     categoryKey: 'advertising-expenses',
     counterpartName: '株式会社小規模印刷',
+    friendlyCategory: 'チラシ印刷',
   },
 
   // SYUUSHI07_15: 政治活動費の支出（KUBUN6: その他の事業費）
@@ -519,6 +546,7 @@ const data: TransactionSeedData[] = [
     description: 'セミナー会場費',
     categoryKey: 'other-business-expenses',
     counterpartName: '株式会社イベント会場',
+    friendlyCategory: '会場費',
   },
   {
     transactionNo: 'T2025-0042',
@@ -531,6 +559,7 @@ const data: TransactionSeedData[] = [
     description: '講師謝礼（境界値: ちょうど5万円）',
     categoryKey: 'other-business-expenses',
     counterpartName: '講師　太郎',
+    friendlyCategory: '講師謝礼',
   },
 
   // SYUUSHI07_15: 政治活動費の支出（KUBUN7: 調査研究費）
@@ -545,6 +574,7 @@ const data: TransactionSeedData[] = [
     description: '政策調査委託',
     categoryKey: 'research-expenses',
     counterpartName: '株式会社政策研究所',
+    friendlyCategory: '調査委託費',
   },
   {
     transactionNo: 'T2025-0044',
@@ -557,6 +587,7 @@ const data: TransactionSeedData[] = [
     description: '書籍購入',
     categoryKey: 'research-expenses',
     counterpartName: '株式会社政治書店',
+    friendlyCategory: '書籍購入費',
   },
 
   // SYUUSHI07_15: 政治活動費の支出（KUBUN8: 寄附・交付金）
@@ -571,6 +602,7 @@ const data: TransactionSeedData[] = [
     description: '政治団体への寄附',
     categoryKey: 'donations-grants-expenses',
     counterpartName: 'デジタル政策研究会',
+    friendlyCategory: '政治団体寄附',
   },
 
   // SYUUSHI07_15: 政治活動費の支出（KUBUN9: その他の経費）
@@ -585,6 +617,7 @@ const data: TransactionSeedData[] = [
     description: '会計ソフト利用料',
     categoryKey: 'other-expenses',
     counterpartName: '株式会社会計クラウド',
+    friendlyCategory: 'ソフトウェア利用料',
   },
   {
     transactionNo: 'T2025-0047',
@@ -597,6 +630,7 @@ const data: TransactionSeedData[] = [
     description: '銀行手数料',
     categoryKey: 'other-expenses',
     counterpartName: 'みずほ銀行',
+    friendlyCategory: '振込手数料',
   },
 
   // SYUUSHI07_16: 本部または支部に対する交付金の支出
@@ -611,6 +645,7 @@ const data: TransactionSeedData[] = [
     description: '支部への活動費交付',
     categoryKey: 'branch-grants-expenses',
     counterpartName: 'サンプル党渋谷支部',
+    friendlyCategory: '活動費交付金',
   },
   {
     transactionNo: 'T2025-0049',
@@ -623,6 +658,7 @@ const data: TransactionSeedData[] = [
     description: '支部への選挙応援金',
     categoryKey: 'branch-grants-expenses',
     counterpartName: 'サンプル党世田谷支部',
+    friendlyCategory: '選挙応援交付金',
   },
 ];
 
@@ -680,6 +716,7 @@ export const transactionsSeeder: Seeder = {
           creditAmount: item.creditAmount,
           description: item.description,
           categoryKey: item.categoryKey,
+          friendlyCategory: item.friendlyCategory,
         },
       });
 
