@@ -9,6 +9,11 @@ import {
   type PersonalDonationSection,
   PersonalDonationSection as PersonalDonationSectionModel,
 } from "@/server/contexts/report/domain/models/donation-transaction";
+import {
+  type ValidationError,
+  type ValidationResult,
+  ValidationErrorCode,
+} from "@/server/contexts/report/domain/types/validation";
 import type {
   AdvertisingExpenseSection,
   DonationGrantExpenseSection,
@@ -47,7 +52,10 @@ import {
   type OtherIncomeSection,
   OtherIncomeSection as OtherIncomeSectionModel,
 } from "@/server/contexts/report/domain/models/income-transaction";
-import type { OrganizationReportProfile } from "@/server/contexts/report/domain/models/organization-report-profile";
+import {
+  type OrganizationReportProfile,
+  OrganizationReportProfile as OrganizationReportProfileModel,
+} from "@/server/contexts/report/domain/models/organization-report-profile";
 import type { SummaryData } from "@/server/contexts/report/domain/models/summary-data";
 
 /**
@@ -60,6 +68,17 @@ export interface DonationData {
 }
 
 /**
+ * DonationData のドメインロジック
+ */
+export const DonationData = {
+  validate: (data: DonationData): ValidationError[] => {
+    const errors: ValidationError[] = [];
+    errors.push(...PersonalDonationSectionModel.validate(data.personalDonations));
+    return errors;
+  },
+};
+
+/**
  * 収入データ (SYUUSHI07_03 ~ SYUUSHI07_06)
  */
 export interface IncomeData {
@@ -68,6 +87,20 @@ export interface IncomeData {
   grantIncome: GrantIncomeSection; // SYUUSHI07_05: 本部又は支部から供与された交付金
   otherIncome: OtherIncomeSection; // SYUUSHI07_06: その他の収入
 }
+
+/**
+ * IncomeData のドメインロジック
+ */
+export const IncomeData = {
+  validate: (data: IncomeData): ValidationError[] => {
+    const errors: ValidationError[] = [];
+    errors.push(...BusinessIncomeSectionModel.validate(data.businessIncome));
+    errors.push(...LoanIncomeSectionModel.validate(data.loanIncome));
+    errors.push(...GrantIncomeSectionModel.validate(data.grantIncome));
+    errors.push(...OtherIncomeSectionModel.validate(data.otherIncome));
+    return errors;
+  },
+};
 
 /**
  * 支出データ (SYUUSHI07_14, SYUUSHI07_15)
@@ -122,6 +155,23 @@ export const ExpenseData = {
       DonationGrantExpenseSectionModel.shouldOutputSheet(data.donationGrantExpenses) ||
       OtherPoliticalExpenseSectionModel.shouldOutputSheet(data.otherPoliticalExpenses)
     );
+  },
+
+  validate: (data: ExpenseData): ValidationError[] => {
+    const errors: ValidationError[] = [];
+    errors.push(...UtilityExpenseSectionModel.validate(data.utilityExpenses));
+    errors.push(...SuppliesExpenseSectionModel.validate(data.suppliesExpenses));
+    errors.push(...OfficeExpenseSectionModel.validate(data.officeExpenses));
+    errors.push(...OrganizationExpenseSectionModel.validate(data.organizationExpenses));
+    errors.push(...ElectionExpenseSectionModel.validate(data.electionExpenses));
+    errors.push(...PublicationExpenseSectionModel.validate(data.publicationExpenses));
+    errors.push(...AdvertisingExpenseSectionModel.validate(data.advertisingExpenses));
+    errors.push(...FundraisingPartyExpenseSectionModel.validate(data.fundraisingPartyExpenses));
+    errors.push(...OtherBusinessExpenseSectionModel.validate(data.otherBusinessExpenses));
+    errors.push(...ResearchExpenseSectionModel.validate(data.researchExpenses));
+    errors.push(...DonationGrantExpenseSectionModel.validate(data.donationGrantExpenses));
+    errors.push(...OtherPoliticalExpenseSectionModel.validate(data.otherPoliticalExpenses));
+    return errors;
   },
 };
 
@@ -374,6 +424,80 @@ export const ReportData = {
       tokumeiBikou: null,
       kifuGkeiGk,
       kifuGkeiBikou: null,
+    };
+  },
+
+  validateSummaryConsistency(
+    data: ReportData,
+    previousYearCarryover: number = 0,
+  ): ValidationError[] {
+    const errors: ValidationError[] = [];
+    const summary = ReportData.getSummary(data, previousYearCarryover);
+
+    const expectedSyunyuSgk = summary.zennenKksGk + summary.honnenSyunyuGk;
+    if (summary.syunyuSgk !== expectedSyunyuSgk) {
+      errors.push({
+        path: "summary.syunyuSgk",
+        code: ValidationErrorCode.SUMMARY_MISMATCH,
+        message: `収入総額が一致しません。期待値: ${expectedSyunyuSgk}、実際値: ${summary.syunyuSgk}`,
+        severity: "error",
+      });
+    }
+
+    const expectedYokunenKksGk = summary.syunyuSgk - summary.sisyutuSgk;
+    if (summary.yokunenKksGk !== expectedYokunenKksGk) {
+      errors.push({
+        path: "summary.yokunenKksGk",
+        code: ValidationErrorCode.SUMMARY_MISMATCH,
+        message: `翌年繰越額が一致しません。期待値: ${expectedYokunenKksGk}、実際値: ${summary.yokunenKksGk}`,
+        severity: "error",
+      });
+    }
+
+    const expectedKifuSkeiGk =
+      summary.kojinKifuGk +
+      (summary.tokuteiKifuGk ?? 0) +
+      (summary.hojinKifuGk ?? 0) +
+      (summary.seijiKifuGk ?? 0);
+    if (summary.kifuSkeiGk !== expectedKifuSkeiGk) {
+      errors.push({
+        path: "summary.kifuSkeiGk",
+        code: ValidationErrorCode.SUMMARY_MISMATCH,
+        message: `寄附小計が一致しません。期待値: ${expectedKifuSkeiGk}、実際値: ${summary.kifuSkeiGk}`,
+        severity: "error",
+      });
+    }
+
+    const expectedKifuGkeiGk =
+      summary.kifuSkeiGk + (summary.atusenGk ?? 0) + (summary.tokumeiKifuGk ?? 0);
+    if (summary.kifuGkeiGk !== expectedKifuGkeiGk) {
+      errors.push({
+        path: "summary.kifuGkeiGk",
+        code: ValidationErrorCode.SUMMARY_MISMATCH,
+        message: `寄附合計が一致しません。期待値: ${expectedKifuGkeiGk}、実際値: ${summary.kifuGkeiGk}`,
+        severity: "error",
+      });
+    }
+
+    return errors;
+  },
+
+  validate(data: ReportData, previousYearCarryover: number = 0): ValidationResult {
+    const allErrors: ValidationError[] = [];
+
+    allErrors.push(...OrganizationReportProfileModel.validate(data.profile));
+    allErrors.push(...DonationData.validate(data.donations));
+    allErrors.push(...IncomeData.validate(data.income));
+    allErrors.push(...ExpenseData.validate(data.expenses));
+    allErrors.push(...ReportData.validateSummaryConsistency(data, previousYearCarryover));
+
+    const errors = allErrors.filter((e) => e.severity === "error");
+    const warnings = allErrors.filter((e) => e.severity === "warning");
+
+    return {
+      isValid: errors.length === 0,
+      errors,
+      warnings,
     };
   },
 };

@@ -12,6 +12,10 @@ import {
   isAboveThreshold,
   TEN_MAN_THRESHOLD,
 } from "@/server/contexts/report/domain/models/transaction-utils";
+import {
+  type ValidationError,
+  ValidationErrorCode,
+} from "@/server/contexts/report/domain/types/validation";
 
 /**
  * 共通フィールド（全収入トランザクション共通）
@@ -333,6 +337,56 @@ export const BusinessIncomeSection = {
   shouldOutputSheet: (section: BusinessIncomeSection): boolean => {
     return section.rows.length > 0 || section.totalAmount > 0;
   },
+
+  /**
+   * セクションのバリデーションを実行する
+   *
+   * SYUUSHI07_03（事業による収入）のバリデーション:
+   * - 事業の種類 (GIGYOU_SYURUI): 必須、200文字以内
+   * - 金額 (KINGAKU): 必須、正の整数
+   */
+  validate: (section: BusinessIncomeSection): ValidationError[] => {
+    const errors: ValidationError[] = [];
+
+    section.rows.forEach((row, index) => {
+      const rowNum = index + 1;
+      const basePath = `income.businessIncome.rows[${index}]`;
+
+      if (!row.gigyouSyurui) {
+        errors.push({
+          path: `${basePath}.gigyouSyurui`,
+          code: ValidationErrorCode.REQUIRED,
+          message: `事業収入の${rowNum}行目: 事業の種類が入力されていません`,
+          severity: "error",
+        });
+      } else if (row.gigyouSyurui.length > 200) {
+        errors.push({
+          path: `${basePath}.gigyouSyurui`,
+          code: ValidationErrorCode.MAX_LENGTH_EXCEEDED,
+          message: `事業収入の${rowNum}行目: 事業の種類は200文字以内で入力してください`,
+          severity: "error",
+        });
+      }
+
+      if (row.kingaku === undefined || row.kingaku === null) {
+        errors.push({
+          path: `${basePath}.kingaku`,
+          code: ValidationErrorCode.REQUIRED,
+          message: `事業収入の${rowNum}行目: 金額が入力されていません`,
+          severity: "error",
+        });
+      } else if (row.kingaku <= 0) {
+        errors.push({
+          path: `${basePath}.kingaku`,
+          code: ValidationErrorCode.NEGATIVE_VALUE,
+          message: `事業収入の${rowNum}行目: 金額は正の整数で入力してください`,
+          severity: "error",
+        });
+      }
+    });
+
+    return errors;
+  },
 } as const;
 
 /**
@@ -359,6 +413,56 @@ export const LoanIncomeSection = {
   shouldOutputSheet: (section: LoanIncomeSection): boolean => {
     return section.rows.length > 0 || section.totalAmount > 0;
   },
+
+  /**
+   * セクションのバリデーションを実行する
+   *
+   * SYUUSHI07_04（借入金）のバリデーション:
+   * - 借入先 (KARIIRESAKI): 必須、200文字以内
+   * - 金額 (KINGAKU): 必須、正の整数
+   */
+  validate: (section: LoanIncomeSection): ValidationError[] => {
+    const errors: ValidationError[] = [];
+
+    section.rows.forEach((row, index) => {
+      const rowNum = index + 1;
+      const basePath = `income.loanIncome.rows[${index}]`;
+
+      if (!row.kariiresaki) {
+        errors.push({
+          path: `${basePath}.kariiresaki`,
+          code: ValidationErrorCode.REQUIRED,
+          message: `借入金の${rowNum}行目: 借入先が入力されていません`,
+          severity: "error",
+        });
+      } else if (row.kariiresaki.length > 200) {
+        errors.push({
+          path: `${basePath}.kariiresaki`,
+          code: ValidationErrorCode.MAX_LENGTH_EXCEEDED,
+          message: `借入金の${rowNum}行目: 借入先は200文字以内で入力してください`,
+          severity: "error",
+        });
+      }
+
+      if (row.kingaku === undefined || row.kingaku === null) {
+        errors.push({
+          path: `${basePath}.kingaku`,
+          code: ValidationErrorCode.REQUIRED,
+          message: `借入金の${rowNum}行目: 金額が入力されていません`,
+          severity: "error",
+        });
+      } else if (row.kingaku <= 0) {
+        errors.push({
+          path: `${basePath}.kingaku`,
+          code: ValidationErrorCode.NEGATIVE_VALUE,
+          message: `借入金の${rowNum}行目: 金額は正の整数で入力してください`,
+          severity: "error",
+        });
+      }
+    });
+
+    return errors;
+  },
 } as const;
 
 /**
@@ -384,6 +488,83 @@ export const GrantIncomeSection = {
    */
   shouldOutputSheet: (section: GrantIncomeSection): boolean => {
     return section.rows.length > 0 || section.totalAmount > 0;
+  },
+
+  /**
+   * セクションのバリデーションを実行する
+   *
+   * SYUUSHI07_05（交付金）のバリデーション:
+   * - 本支部名称 (HONSIBU_NM): 必須、120文字以内
+   * - 金額 (KINGAKU): 必須、正の整数
+   * - 年月日 (DT): 必須
+   * - 事務所所在地 (JIMU_ADR): 必須、80文字以内
+   */
+  validate: (section: GrantIncomeSection): ValidationError[] => {
+    const errors: ValidationError[] = [];
+
+    section.rows.forEach((row, index) => {
+      const rowNum = index + 1;
+      const basePath = `income.grantIncome.rows[${index}]`;
+
+      if (!row.honsibuNm) {
+        errors.push({
+          path: `${basePath}.honsibuNm`,
+          code: ValidationErrorCode.REQUIRED,
+          message: `交付金の${rowNum}行目: 本支部名称が入力されていません`,
+          severity: "error",
+        });
+      } else if (row.honsibuNm.length > 120) {
+        errors.push({
+          path: `${basePath}.honsibuNm`,
+          code: ValidationErrorCode.MAX_LENGTH_EXCEEDED,
+          message: `交付金の${rowNum}行目: 本支部名称は120文字以内で入力してください`,
+          severity: "error",
+        });
+      }
+
+      if (row.kingaku === undefined || row.kingaku === null) {
+        errors.push({
+          path: `${basePath}.kingaku`,
+          code: ValidationErrorCode.REQUIRED,
+          message: `交付金の${rowNum}行目: 金額が入力されていません`,
+          severity: "error",
+        });
+      } else if (row.kingaku <= 0) {
+        errors.push({
+          path: `${basePath}.kingaku`,
+          code: ValidationErrorCode.NEGATIVE_VALUE,
+          message: `交付金の${rowNum}行目: 金額は正の整数で入力してください`,
+          severity: "error",
+        });
+      }
+
+      if (!row.dt) {
+        errors.push({
+          path: `${basePath}.dt`,
+          code: ValidationErrorCode.REQUIRED,
+          message: `交付金の${rowNum}行目: 年月日が入力されていません`,
+          severity: "error",
+        });
+      }
+
+      if (!row.jimuAdr) {
+        errors.push({
+          path: `${basePath}.jimuAdr`,
+          code: ValidationErrorCode.REQUIRED,
+          message: `交付金の${rowNum}行目: 事務所所在地が入力されていません`,
+          severity: "error",
+        });
+      } else if (row.jimuAdr.length > 80) {
+        errors.push({
+          path: `${basePath}.jimuAdr`,
+          code: ValidationErrorCode.MAX_LENGTH_EXCEEDED,
+          message: `交付金の${rowNum}行目: 事務所所在地は80文字以内で入力してください`,
+          severity: "error",
+        });
+      }
+    });
+
+    return errors;
   },
 } as const;
 
@@ -426,5 +607,55 @@ export const OtherIncomeSection = {
    */
   shouldOutputSheet: (section: OtherIncomeSection): boolean => {
     return section.rows.length > 0 || section.totalAmount > 0;
+  },
+
+  /**
+   * セクションのバリデーションを実行する
+   *
+   * SYUUSHI07_06（その他の収入）のバリデーション:
+   * - 摘要 (TEKIYOU): 必須、200文字以内
+   * - 金額 (KINGAKU): 必須、正の整数
+   */
+  validate: (section: OtherIncomeSection): ValidationError[] => {
+    const errors: ValidationError[] = [];
+
+    section.rows.forEach((row, index) => {
+      const rowNum = index + 1;
+      const basePath = `income.otherIncome.rows[${index}]`;
+
+      if (!row.tekiyou) {
+        errors.push({
+          path: `${basePath}.tekiyou`,
+          code: ValidationErrorCode.REQUIRED,
+          message: `その他収入の${rowNum}行目: 摘要が入力されていません`,
+          severity: "error",
+        });
+      } else if (row.tekiyou.length > 200) {
+        errors.push({
+          path: `${basePath}.tekiyou`,
+          code: ValidationErrorCode.MAX_LENGTH_EXCEEDED,
+          message: `その他収入の${rowNum}行目: 摘要は200文字以内で入力してください`,
+          severity: "error",
+        });
+      }
+
+      if (row.kingaku === undefined || row.kingaku === null) {
+        errors.push({
+          path: `${basePath}.kingaku`,
+          code: ValidationErrorCode.REQUIRED,
+          message: `その他収入の${rowNum}行目: 金額が入力されていません`,
+          severity: "error",
+        });
+      } else if (row.kingaku <= 0) {
+        errors.push({
+          path: `${basePath}.kingaku`,
+          code: ValidationErrorCode.NEGATIVE_VALUE,
+          message: `その他収入の${rowNum}行目: 金額は正の整数で入力してください`,
+          severity: "error",
+        });
+      }
+    });
+
+    return errors;
   },
 } as const;
