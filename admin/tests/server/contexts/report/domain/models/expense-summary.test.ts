@@ -37,7 +37,7 @@ function createEmptyOfficeExpenseSection(): OfficeExpenseSection {
 }
 
 function createEmptyBranchGrantExpenseSection(): BranchGrantExpenseSection {
-  return { totalAmount: 0, underThresholdAmount: 0, rows: [] };
+  return { totalAmount: 0, rows: [] };
 }
 
 function createPoliticalActivitySection(totalAmount: number): {
