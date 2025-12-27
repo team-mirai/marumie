@@ -55,6 +55,8 @@ export default function Sidebar({
       items: [
         { href: "/counterparts", label: "取引先マスタ" },
         { href: "/assign/counterparts", label: "取引先紐付け" },
+        { href: "/donors", label: "寄付者マスタ" },
+        { href: "/assign/donors", label: "寄付者紐付け" },
         { href: "/export-report", label: "報告書エクスポート" },
       ],
     },
