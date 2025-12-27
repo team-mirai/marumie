@@ -173,8 +173,9 @@ export const OrganizationReportProfile = {
    * - 代表者氏名 (DAI_NM1, DAI_NM2): 必須、各30文字以内
    * - 会計責任者氏名 (KAI_NM1, KAI_NM2): 必須、各30文字以内
    * - 活動区域 (KATU_KUKI): 必須、"1" or "2"
-   * - 資金管理団体の指定の有無 (SIKIN_UMU): 必須、"0" or "1"
    * - 国会議員関係政治団体の区分 (GIIN_DANTAI_KBN): 必須、"0"〜"3"
+   *
+   * 注: 資金管理団体の指定の有無 (SIKIN_UMU) はfundManagementの存在有無から自動導出されるためバリデーション不要
    */
   validate: (profile: OrganizationReportProfile): ValidationError[] => {
     const errors: ValidationError[] = [];
