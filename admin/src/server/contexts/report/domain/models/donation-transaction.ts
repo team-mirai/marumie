@@ -10,6 +10,10 @@ import {
   sanitizeText,
   buildBikou,
 } from "@/server/contexts/report/domain/models/transaction-utils";
+import {
+  type ValidationError,
+  ValidationErrorCode,
+} from "@/server/contexts/report/domain/types/validation";
 
 /**
  * SYUUSHI07_07 KUBUN1: 個人からの寄附のトランザクション
@@ -147,5 +151,104 @@ export const PersonalDonationSection = {
    */
   shouldOutputSheet: (section: PersonalDonationSection): boolean => {
     return section.rows.length > 0 || section.totalAmount > 0;
+  },
+
+  /**
+   * セクションのバリデーションを実行する
+   *
+   * SYUUSHI07_07（寄附の明細）のバリデーション:
+   * - 寄附者氏名 (KIFUSYA_NM): 必須、120文字以内
+   * - 金額 (KINGAKU): 必須、正の整数
+   * - 年月日 (DT): 必須
+   * - 住所 (ADR): 必須、120文字以内
+   * - 職業 (SYOKUGYO): 必須、50文字以内
+   */
+  validate: (section: PersonalDonationSection): ValidationError[] => {
+    const errors: ValidationError[] = [];
+
+    section.rows.forEach((row, index) => {
+      const rowNum = index + 1;
+      const basePath = `donations.personalDonations.rows[${index}]`;
+
+      // 寄附者氏名 (KIFUSYA_NM): 必須、120文字以内
+      if (!row.kifusyaNm) {
+        errors.push({
+          path: `${basePath}.kifusyaNm`,
+          code: ValidationErrorCode.REQUIRED,
+          message: `個人寄附の${rowNum}行目: 寄附者氏名が入力されていません`,
+          severity: "error",
+        });
+      } else if (row.kifusyaNm.length > 120) {
+        errors.push({
+          path: `${basePath}.kifusyaNm`,
+          code: ValidationErrorCode.MAX_LENGTH_EXCEEDED,
+          message: `個人寄附の${rowNum}行目: 寄附者氏名は120文字以内で入力してください`,
+          severity: "error",
+        });
+      }
+
+      // 金額 (KINGAKU): 必須、正の整数
+      if (row.kingaku === undefined || row.kingaku === null) {
+        errors.push({
+          path: `${basePath}.kingaku`,
+          code: ValidationErrorCode.REQUIRED,
+          message: `個人寄附の${rowNum}行目: 金額が入力されていません`,
+          severity: "error",
+        });
+      } else if (row.kingaku <= 0) {
+        errors.push({
+          path: `${basePath}.kingaku`,
+          code: ValidationErrorCode.NEGATIVE_VALUE,
+          message: `個人寄附の${rowNum}行目: 金額は正の整数で入力してください`,
+          severity: "error",
+        });
+      }
+
+      // 年月日 (DT): 必須
+      if (!row.dt) {
+        errors.push({
+          path: `${basePath}.dt`,
+          code: ValidationErrorCode.REQUIRED,
+          message: `個人寄附の${rowNum}行目: 年月日が入力されていません`,
+          severity: "error",
+        });
+      }
+
+      // 住所 (ADR): 必須、120文字以内
+      if (!row.adr) {
+        errors.push({
+          path: `${basePath}.adr`,
+          code: ValidationErrorCode.REQUIRED,
+          message: `個人寄附の${rowNum}行目: 住所が入力されていません`,
+          severity: "error",
+        });
+      } else if (row.adr.length > 120) {
+        errors.push({
+          path: `${basePath}.adr`,
+          code: ValidationErrorCode.MAX_LENGTH_EXCEEDED,
+          message: `個人寄附の${rowNum}行目: 住所は120文字以内で入力してください`,
+          severity: "error",
+        });
+      }
+
+      // 職業 (SYOKUGYO): 必須、50文字以内
+      if (!row.syokugyo) {
+        errors.push({
+          path: `${basePath}.syokugyo`,
+          code: ValidationErrorCode.REQUIRED,
+          message: `個人寄附の${rowNum}行目: 職業が入力されていません`,
+          severity: "error",
+        });
+      } else if (row.syokugyo.length > 50) {
+        errors.push({
+          path: `${basePath}.syokugyo`,
+          code: ValidationErrorCode.MAX_LENGTH_EXCEEDED,
+          message: `個人寄附の${rowNum}行目: 職業は50文字以内で入力してください`,
+          severity: "error",
+        });
+      }
+    });
+
+    return errors;
   },
 } as const;

@@ -13,6 +13,10 @@ import {
   TEN_MAN_THRESHOLD,
   FIVE_MAN_THRESHOLD,
 } from "@/server/contexts/report/domain/models/transaction-utils";
+import {
+  type ValidationError,
+  ValidationErrorCode,
+} from "@/server/contexts/report/domain/types/validation";
 
 /**
  * 経常経費（SYUUSHI07_14）のトランザクション基本型
@@ -374,6 +378,97 @@ function aggregateExpenseSection<T extends BaseExpenseTransaction>(
 }
 
 /**
+ * 経常経費セクションの共通バリデーションロジック
+ */
+function validateExpenseRows(
+  rows: ExpenseRow[],
+  basePath: string,
+  sectionName: string,
+): ValidationError[] {
+  const errors: ValidationError[] = [];
+
+  rows.forEach((row, index) => {
+    const rowNum = index + 1;
+    const rowPath = `${basePath}.rows[${index}]`;
+
+    if (!row.mokuteki) {
+      errors.push({
+        path: `${rowPath}.mokuteki`,
+        code: ValidationErrorCode.REQUIRED,
+        message: `${sectionName}の${rowNum}行目: 目的が入力されていません`,
+        severity: "error",
+      });
+    } else if (row.mokuteki.length > 200) {
+      errors.push({
+        path: `${rowPath}.mokuteki`,
+        code: ValidationErrorCode.MAX_LENGTH_EXCEEDED,
+        message: `${sectionName}の${rowNum}行目: 目的は200文字以内で入力してください`,
+        severity: "error",
+      });
+    }
+
+    if (row.kingaku === undefined || row.kingaku === null) {
+      errors.push({
+        path: `${rowPath}.kingaku`,
+        code: ValidationErrorCode.REQUIRED,
+        message: `${sectionName}の${rowNum}行目: 金額が入力されていません`,
+        severity: "error",
+      });
+    } else if (row.kingaku <= 0) {
+      errors.push({
+        path: `${rowPath}.kingaku`,
+        code: ValidationErrorCode.NEGATIVE_VALUE,
+        message: `${sectionName}の${rowNum}行目: 金額は正の整数で入力してください`,
+        severity: "error",
+      });
+    }
+
+    if (!row.dt) {
+      errors.push({
+        path: `${rowPath}.dt`,
+        code: ValidationErrorCode.REQUIRED,
+        message: `${sectionName}の${rowNum}行目: 年月日が入力されていません`,
+        severity: "error",
+      });
+    }
+
+    if (!row.nm) {
+      errors.push({
+        path: `${rowPath}.nm`,
+        code: ValidationErrorCode.REQUIRED,
+        message: `${sectionName}の${rowNum}行目: 氏名が入力されていません`,
+        severity: "error",
+      });
+    } else if (row.nm.length > 120) {
+      errors.push({
+        path: `${rowPath}.nm`,
+        code: ValidationErrorCode.MAX_LENGTH_EXCEEDED,
+        message: `${sectionName}の${rowNum}行目: 氏名は120文字以内で入力してください`,
+        severity: "error",
+      });
+    }
+
+    if (!row.adr) {
+      errors.push({
+        path: `${rowPath}.adr`,
+        code: ValidationErrorCode.REQUIRED,
+        message: `${sectionName}の${rowNum}行目: 住所が入力されていません`,
+        severity: "error",
+      });
+    } else if (row.adr.length > 120) {
+      errors.push({
+        path: `${rowPath}.adr`,
+        code: ValidationErrorCode.MAX_LENGTH_EXCEEDED,
+        message: `${sectionName}の${rowNum}行目: 住所は120文字以内で入力してください`,
+        severity: "error",
+      });
+    }
+  });
+
+  return errors;
+}
+
+/**
  * UtilityExpenseSection に関連するドメインロジック
  */
 export const UtilityExpenseSection = {
@@ -393,6 +488,13 @@ export const UtilityExpenseSection = {
    */
   shouldOutputSheet: (section: UtilityExpenseSection): boolean => {
     return section.rows.length > 0 || section.totalAmount > 0;
+  },
+
+  /**
+   * セクションのバリデーションを実行する
+   */
+  validate: (section: UtilityExpenseSection): ValidationError[] => {
+    return validateExpenseRows(section.rows, "expenses.utilityExpenses", "光熱水費");
   },
 } as const;
 
@@ -417,6 +519,13 @@ export const SuppliesExpenseSection = {
   shouldOutputSheet: (section: SuppliesExpenseSection): boolean => {
     return section.rows.length > 0 || section.totalAmount > 0;
   },
+
+  /**
+   * セクションのバリデーションを実行する
+   */
+  validate: (section: SuppliesExpenseSection): ValidationError[] => {
+    return validateExpenseRows(section.rows, "expenses.suppliesExpenses", "備品・消耗品費");
+  },
 } as const;
 
 /**
@@ -439,6 +548,13 @@ export const OfficeExpenseSection = {
    */
   shouldOutputSheet: (section: OfficeExpenseSection): boolean => {
     return section.rows.length > 0 || section.totalAmount > 0;
+  },
+
+  /**
+   * セクションのバリデーションを実行する
+   */
+  validate: (section: OfficeExpenseSection): ValidationError[] => {
+    return validateExpenseRows(section.rows, "expenses.officeExpenses", "事務所費");
   },
 } as const;
 
@@ -491,6 +607,13 @@ export const OrganizationExpenseSection = {
    */
   shouldOutputSheet: (section: OrganizationExpenseSection): boolean => {
     return section.rows.length > 0 || section.totalAmount > 0;
+  },
+
+  /**
+   * セクションのバリデーションを実行する
+   */
+  validate: (section: OrganizationExpenseSection): ValidationError[] => {
+    return validateExpenseRows(section.rows, "expenses.organizationExpenses", "組織活動費");
   },
 } as const;
 
@@ -551,6 +674,10 @@ export const ElectionExpenseSection = {
   shouldOutputSheet: (section: ElectionExpenseSection): boolean => {
     return section.rows.length > 0 || section.totalAmount > 0;
   },
+
+  validate: (section: ElectionExpenseSection): ValidationError[] => {
+    return validateExpenseRows(section.rows, "expenses.electionExpenses", "選挙関係費");
+  },
 } as const;
 
 /**
@@ -564,6 +691,14 @@ export const PublicationExpenseSection = {
   shouldOutputSheet: (section: PublicationExpenseSection): boolean => {
     return section.rows.length > 0 || section.totalAmount > 0;
   },
+
+  validate: (section: PublicationExpenseSection): ValidationError[] => {
+    return validateExpenseRows(
+      section.rows,
+      "expenses.publicationExpenses",
+      "機関紙誌の発行事業費",
+    );
+  },
 } as const;
 
 /**
@@ -576,6 +711,10 @@ export const AdvertisingExpenseSection = {
 
   shouldOutputSheet: (section: AdvertisingExpenseSection): boolean => {
     return section.rows.length > 0 || section.totalAmount > 0;
+  },
+
+  validate: (section: AdvertisingExpenseSection): ValidationError[] => {
+    return validateExpenseRows(section.rows, "expenses.advertisingExpenses", "宣伝事業費");
   },
 } as const;
 
@@ -592,6 +731,14 @@ export const FundraisingPartyExpenseSection = {
   shouldOutputSheet: (section: FundraisingPartyExpenseSection): boolean => {
     return section.rows.length > 0 || section.totalAmount > 0;
   },
+
+  validate: (section: FundraisingPartyExpenseSection): ValidationError[] => {
+    return validateExpenseRows(
+      section.rows,
+      "expenses.fundraisingPartyExpenses",
+      "政治資金パーティー開催事業費",
+    );
+  },
 } as const;
 
 /**
@@ -607,6 +754,10 @@ export const OtherBusinessExpenseSection = {
   shouldOutputSheet: (section: OtherBusinessExpenseSection): boolean => {
     return section.rows.length > 0 || section.totalAmount > 0;
   },
+
+  validate: (section: OtherBusinessExpenseSection): ValidationError[] => {
+    return validateExpenseRows(section.rows, "expenses.otherBusinessExpenses", "その他の事業費");
+  },
 } as const;
 
 /**
@@ -619,6 +770,10 @@ export const ResearchExpenseSection = {
 
   shouldOutputSheet: (section: ResearchExpenseSection): boolean => {
     return section.rows.length > 0 || section.totalAmount > 0;
+  },
+
+  validate: (section: ResearchExpenseSection): ValidationError[] => {
+    return validateExpenseRows(section.rows, "expenses.researchExpenses", "調査研究費");
   },
 } as const;
 
@@ -635,6 +790,10 @@ export const DonationGrantExpenseSection = {
   shouldOutputSheet: (section: DonationGrantExpenseSection): boolean => {
     return section.rows.length > 0 || section.totalAmount > 0;
   },
+
+  validate: (section: DonationGrantExpenseSection): ValidationError[] => {
+    return validateExpenseRows(section.rows, "expenses.donationGrantExpenses", "寄附・交付金");
+  },
 } as const;
 
 /**
@@ -649,5 +808,9 @@ export const OtherPoliticalExpenseSection = {
 
   shouldOutputSheet: (section: OtherPoliticalExpenseSection): boolean => {
     return section.rows.length > 0 || section.totalAmount > 0;
+  },
+
+  validate: (section: OtherPoliticalExpenseSection): ValidationError[] => {
+    return validateExpenseRows(section.rows, "expenses.otherPoliticalExpenses", "その他の経費");
   },
 } as const;

@@ -10,6 +10,10 @@ import {
   PersonalDonationSection as PersonalDonationSectionModel,
 } from "@/server/contexts/report/domain/models/donation-transaction";
 import type {
+  ValidationError,
+  ValidationResult,
+} from "@/server/contexts/report/domain/types/validation";
+import type {
   AdvertisingExpenseSection,
   DonationGrantExpenseSection,
   ElectionExpenseSection,
@@ -47,7 +51,10 @@ import {
   type OtherIncomeSection,
   OtherIncomeSection as OtherIncomeSectionModel,
 } from "@/server/contexts/report/domain/models/income-transaction";
-import type { OrganizationReportProfile } from "@/server/contexts/report/domain/models/organization-report-profile";
+import {
+  type OrganizationReportProfile,
+  OrganizationReportProfile as OrganizationReportProfileModel,
+} from "@/server/contexts/report/domain/models/organization-report-profile";
 import type { SummaryData } from "@/server/contexts/report/domain/models/summary-data";
 
 /**
@@ -60,6 +67,17 @@ export interface DonationData {
 }
 
 /**
+ * DonationData のドメインロジック
+ */
+export const DonationData = {
+  validate: (data: DonationData): ValidationError[] => {
+    const errors: ValidationError[] = [];
+    errors.push(...PersonalDonationSectionModel.validate(data.personalDonations));
+    return errors;
+  },
+};
+
+/**
  * 収入データ (SYUUSHI07_03 ~ SYUUSHI07_06)
  */
 export interface IncomeData {
@@ -68,6 +86,20 @@ export interface IncomeData {
   grantIncome: GrantIncomeSection; // SYUUSHI07_05: 本部又は支部から供与された交付金
   otherIncome: OtherIncomeSection; // SYUUSHI07_06: その他の収入
 }
+
+/**
+ * IncomeData のドメインロジック
+ */
+export const IncomeData = {
+  validate: (data: IncomeData): ValidationError[] => {
+    const errors: ValidationError[] = [];
+    errors.push(...BusinessIncomeSectionModel.validate(data.businessIncome));
+    errors.push(...LoanIncomeSectionModel.validate(data.loanIncome));
+    errors.push(...GrantIncomeSectionModel.validate(data.grantIncome));
+    errors.push(...OtherIncomeSectionModel.validate(data.otherIncome));
+    return errors;
+  },
+};
 
 /**
  * 支出データ (SYUUSHI07_14, SYUUSHI07_15)
@@ -122,6 +154,23 @@ export const ExpenseData = {
       DonationGrantExpenseSectionModel.shouldOutputSheet(data.donationGrantExpenses) ||
       OtherPoliticalExpenseSectionModel.shouldOutputSheet(data.otherPoliticalExpenses)
     );
+  },
+
+  validate: (data: ExpenseData): ValidationError[] => {
+    const errors: ValidationError[] = [];
+    errors.push(...UtilityExpenseSectionModel.validate(data.utilityExpenses));
+    errors.push(...SuppliesExpenseSectionModel.validate(data.suppliesExpenses));
+    errors.push(...OfficeExpenseSectionModel.validate(data.officeExpenses));
+    errors.push(...OrganizationExpenseSectionModel.validate(data.organizationExpenses));
+    errors.push(...ElectionExpenseSectionModel.validate(data.electionExpenses));
+    errors.push(...PublicationExpenseSectionModel.validate(data.publicationExpenses));
+    errors.push(...AdvertisingExpenseSectionModel.validate(data.advertisingExpenses));
+    errors.push(...FundraisingPartyExpenseSectionModel.validate(data.fundraisingPartyExpenses));
+    errors.push(...OtherBusinessExpenseSectionModel.validate(data.otherBusinessExpenses));
+    errors.push(...ResearchExpenseSectionModel.validate(data.researchExpenses));
+    errors.push(...DonationGrantExpenseSectionModel.validate(data.donationGrantExpenses));
+    errors.push(...OtherPoliticalExpenseSectionModel.validate(data.otherPoliticalExpenses));
+    return errors;
   },
 };
 
@@ -374,6 +423,24 @@ export const ReportData = {
       tokumeiBikou: null,
       kifuGkeiGk,
       kifuGkeiBikou: null,
+    };
+  },
+
+  validate(data: ReportData): ValidationResult {
+    const allErrors: ValidationError[] = [];
+
+    allErrors.push(...OrganizationReportProfileModel.validate(data.profile));
+    allErrors.push(...DonationData.validate(data.donations));
+    allErrors.push(...IncomeData.validate(data.income));
+    allErrors.push(...ExpenseData.validate(data.expenses));
+
+    const errors = allErrors.filter((e) => e.severity === "error");
+    const warnings = allErrors.filter((e) => e.severity === "warning");
+
+    return {
+      isValid: errors.length === 0,
+      errors,
+      warnings,
     };
   },
 };
