@@ -1,9 +1,12 @@
 import {
+  DonationData,
   ExpenseData,
+  IncomeData,
   ReportData,
   type ExpenseData as ExpenseDataType,
   type ReportData as ReportDataType,
 } from "@/server/contexts/report/domain/models/report-data";
+import { ValidationErrorCode } from "@/server/contexts/report/domain/types/validation";
 
 describe("ExpenseData", () => {
   const createEmptyExpenseData = (): ExpenseDataType => ({
@@ -156,7 +159,12 @@ describe("ReportData", () => {
       officialNameKana: "テストセイジダンタイ",
       officeAddress: "東京都千代田区",
       officeAddressBuilding: null,
-      details: {},
+      details: {
+        representative: { lastName: "山田", firstName: "太郎" },
+        accountant: { lastName: "田中", firstName: "花子" },
+        activityArea: "1",
+        dietMemberRelation: { type: "0" },
+      },
       createdAt: new Date(),
       updatedAt: new Date(),
     },
@@ -391,5 +399,357 @@ describe("ReportData", () => {
       expect(summary.atusenGk).toBeNull();
       expect(summary.tokumeiKifuGk).toBeNull();
     });
+  });
+
+  describe("validate", () => {
+    it("正常なデータでisValid: trueを返す", () => {
+      const data = createEmptyReportData();
+      const result = ReportData.validate(data);
+
+      expect(result.isValid).toBe(true);
+      expect(result.errors).toHaveLength(0);
+    });
+
+    it("プロフィールのバリデーションエラーを集約する", () => {
+      const data = createEmptyReportData();
+      data.profile.financialYear = 123; // 4桁でない
+
+      const result = ReportData.validate(data);
+
+      expect(result.isValid).toBe(false);
+      expect(result.errors.some((e) => e.path.includes("profile"))).toBe(true);
+    });
+
+    it("寄附データのバリデーションエラーを集約する", () => {
+      const data = createEmptyReportData();
+      data.donations.personalDonations.rows = [
+        {
+          ichirenNo: "1",
+          kifusyaNm: "",
+          kingaku: 100000,
+          dt: new Date("2024-01-01"),
+          adr: "東京都",
+          syokugyo: "会社員",
+          zeigakukoujyo: "0",
+          rowkbn: "0",
+        },
+      ];
+
+      const result = ReportData.validate(data);
+
+      expect(result.isValid).toBe(false);
+      expect(result.errors.some((e) => e.code === ValidationErrorCode.REQUIRED)).toBe(true);
+    });
+
+    it("収入データのバリデーションエラーを集約する", () => {
+      const data = createEmptyReportData();
+      data.income.businessIncome.rows = [
+        {
+          ichirenNo: "1",
+          gigyouSyurui: "",
+          kingaku: 100000,
+        },
+      ];
+
+      const result = ReportData.validate(data);
+
+      expect(result.isValid).toBe(false);
+      expect(result.errors.some((e) => e.path.includes("income"))).toBe(true);
+    });
+
+    it("支出データのバリデーションエラーを集約する", () => {
+      const data = createEmptyReportData();
+      data.expenses.utilityExpenses.rows = [
+        {
+          ichirenNo: "1",
+          mokuteki: "",
+          kingaku: 100000,
+          dt: new Date("2024-01-01"),
+          nm: "取引先",
+          adr: "東京都",
+        },
+      ];
+
+      const result = ReportData.validate(data);
+
+      expect(result.isValid).toBe(false);
+      expect(result.errors.some((e) => e.path.includes("expenses"))).toBe(true);
+    });
+
+    it("複数のセクションからエラーを集約する", () => {
+      const data = createEmptyReportData();
+      data.profile.financialYear = 123;
+      data.donations.personalDonations.rows = [
+        {
+          ichirenNo: "1",
+          kifusyaNm: "",
+          kingaku: 100000,
+          dt: new Date("2024-01-01"),
+          adr: "東京都",
+          syokugyo: "会社員",
+          zeigakukoujyo: "0",
+          rowkbn: "0",
+        },
+      ];
+
+      const result = ReportData.validate(data);
+
+      expect(result.isValid).toBe(false);
+      expect(result.errors.length).toBeGreaterThanOrEqual(2);
+    });
+  });
+});
+
+describe("DonationData", () => {
+  describe("validate", () => {
+    it("空のデータでエラーを返さない", () => {
+      const data = {
+        personalDonations: { totalAmount: 0, sonotaGk: 0, rows: [] },
+      };
+      const errors = DonationData.validate(data);
+
+      expect(errors).toHaveLength(0);
+    });
+
+    it("正常な寄附行でエラーを返さない", () => {
+      const data = {
+        personalDonations: {
+          totalAmount: 100000,
+          sonotaGk: 0,
+          rows: [
+            {
+              ichirenNo: "1",
+              kifusyaNm: "山田太郎",
+              kingaku: 100000,
+              dt: new Date("2024-01-01"),
+              adr: "東京都千代田区",
+              syokugyo: "会社員",
+              zeigakukoujyo: "0",
+              rowkbn: "0",
+            },
+          ],
+        },
+      };
+      const errors = DonationData.validate(data);
+
+      expect(errors).toHaveLength(0);
+    });
+
+    it("寄附者氏名が空の場合エラーを返す", () => {
+      const data = {
+        personalDonations: {
+          totalAmount: 100000,
+          sonotaGk: 0,
+          rows: [
+            {
+              ichirenNo: "1",
+              kifusyaNm: "",
+              kingaku: 100000,
+              dt: new Date("2024-01-01"),
+              adr: "東京都",
+              syokugyo: "会社員",
+              zeigakukoujyo: "0",
+              rowkbn: "0",
+            },
+          ],
+        },
+      };
+      const errors = DonationData.validate(data);
+
+      expect(errors.length).toBeGreaterThan(0);
+      expect(errors[0].code).toBe(ValidationErrorCode.REQUIRED);
+    });
+
+    it("金額が0以下の場合エラーを返す", () => {
+      const data = {
+        personalDonations: {
+          totalAmount: 0,
+          sonotaGk: 0,
+          rows: [
+            {
+              ichirenNo: "1",
+              kifusyaNm: "山田太郎",
+              kingaku: 0,
+              dt: new Date("2024-01-01"),
+              adr: "東京都",
+              syokugyo: "会社員",
+              zeigakukoujyo: "0",
+              rowkbn: "0",
+            },
+          ],
+        },
+      };
+      const errors = DonationData.validate(data);
+
+      expect(errors.length).toBeGreaterThan(0);
+      expect(errors[0].code).toBe(ValidationErrorCode.NEGATIVE_VALUE);
+    });
+  });
+});
+
+describe("IncomeData", () => {
+  describe("validate", () => {
+    it("空のデータでエラーを返さない", () => {
+      const data = {
+        businessIncome: { totalAmount: 0, rows: [] },
+        loanIncome: { totalAmount: 0, rows: [] },
+        grantIncome: { totalAmount: 0, rows: [] },
+        otherIncome: { totalAmount: 0, underThresholdAmount: 0, rows: [] },
+      };
+      const errors = IncomeData.validate(data);
+
+      expect(errors).toHaveLength(0);
+    });
+
+    it("事業収入の事業種類が空の場合エラーを返す", () => {
+      const data = {
+        businessIncome: {
+          totalAmount: 100000,
+          rows: [
+            {
+              ichirenNo: "1",
+              gigyouSyurui: "",
+              kingaku: 100000,
+            },
+          ],
+        },
+        loanIncome: { totalAmount: 0, rows: [] },
+        grantIncome: { totalAmount: 0, rows: [] },
+        otherIncome: { totalAmount: 0, underThresholdAmount: 0, rows: [] },
+      };
+      const errors = IncomeData.validate(data);
+
+      expect(errors.length).toBeGreaterThan(0);
+      expect(errors[0].code).toBe(ValidationErrorCode.REQUIRED);
+    });
+
+    it("借入金の借入先が空の場合エラーを返す", () => {
+      const data = {
+        businessIncome: { totalAmount: 0, rows: [] },
+        loanIncome: {
+          totalAmount: 100000,
+          rows: [
+            {
+              ichirenNo: "1",
+              kariiresaki: "",
+              kingaku: 100000,
+            },
+          ],
+        },
+        grantIncome: { totalAmount: 0, rows: [] },
+        otherIncome: { totalAmount: 0, underThresholdAmount: 0, rows: [] },
+      };
+      const errors = IncomeData.validate(data);
+
+      expect(errors.length).toBeGreaterThan(0);
+      expect(errors[0].code).toBe(ValidationErrorCode.REQUIRED);
+    });
+  });
+});
+
+describe("ExpenseData.validate", () => {
+  const createEmptyExpenseDataForValidation = (): ExpenseDataType => ({
+    personnelExpenses: { totalAmount: 0 },
+    utilityExpenses: { totalAmount: 0, underThresholdAmount: 0, rows: [] },
+    suppliesExpenses: { totalAmount: 0, underThresholdAmount: 0, rows: [] },
+    officeExpenses: { totalAmount: 0, underThresholdAmount: 0, rows: [] },
+    organizationExpenses: { himoku: "", totalAmount: 0, underThresholdAmount: 0, rows: [] },
+    electionExpenses: { himoku: "", totalAmount: 0, underThresholdAmount: 0, rows: [] },
+    publicationExpenses: { himoku: "", totalAmount: 0, underThresholdAmount: 0, rows: [] },
+    advertisingExpenses: { himoku: "", totalAmount: 0, underThresholdAmount: 0, rows: [] },
+    fundraisingPartyExpenses: { himoku: "", totalAmount: 0, underThresholdAmount: 0, rows: [] },
+    otherBusinessExpenses: { himoku: "", totalAmount: 0, underThresholdAmount: 0, rows: [] },
+    researchExpenses: { himoku: "", totalAmount: 0, underThresholdAmount: 0, rows: [] },
+    donationGrantExpenses: { himoku: "", totalAmount: 0, underThresholdAmount: 0, rows: [] },
+    otherPoliticalExpenses: { himoku: "", totalAmount: 0, underThresholdAmount: 0, rows: [] },
+    branchGrantExpenses: { totalAmount: 0, rows: [] },
+  });
+
+  it("空のデータでエラーを返さない", () => {
+    const data = createEmptyExpenseDataForValidation();
+    const errors = ExpenseData.validate(data);
+
+    expect(errors).toHaveLength(0);
+  });
+
+  it("光熱水費の目的が空の場合エラーを返す", () => {
+    const data = createEmptyExpenseDataForValidation();
+    data.utilityExpenses.rows = [
+      {
+        ichirenNo: "1",
+        mokuteki: "",
+        kingaku: 100000,
+        dt: new Date("2024-01-01"),
+        nm: "取引先",
+        adr: "東京都",
+      },
+    ];
+    const errors = ExpenseData.validate(data);
+
+    expect(errors.length).toBeGreaterThan(0);
+    expect(errors[0].code).toBe(ValidationErrorCode.REQUIRED);
+  });
+
+  it("組織活動費の金額が0以下の場合エラーを返す", () => {
+    const data = createEmptyExpenseDataForValidation();
+    data.organizationExpenses.rows = [
+      {
+        ichirenNo: "1",
+        mokuteki: "会議費",
+        kingaku: 0,
+        dt: new Date("2024-01-01"),
+        nm: "取引先",
+        adr: "東京都",
+      },
+    ];
+    const errors = ExpenseData.validate(data);
+
+    expect(errors.length).toBeGreaterThan(0);
+    expect(errors[0].code).toBe(ValidationErrorCode.NEGATIVE_VALUE);
+  });
+
+  it("選挙関係費の年月日が空の場合エラーを返す", () => {
+    const data = createEmptyExpenseDataForValidation();
+    data.electionExpenses.rows = [
+      {
+        ichirenNo: "1",
+        mokuteki: "選挙ポスター",
+        kingaku: 50000,
+        dt: null as unknown as Date,
+        nm: "印刷会社",
+        adr: "東京都",
+      },
+    ];
+    const errors = ExpenseData.validate(data);
+
+    expect(errors.length).toBeGreaterThan(0);
+    expect(errors[0].code).toBe(ValidationErrorCode.REQUIRED);
+  });
+
+  it("複数のセクションからエラーを集約する", () => {
+    const data = createEmptyExpenseDataForValidation();
+    data.utilityExpenses.rows = [
+      {
+        ichirenNo: "1",
+        mokuteki: "",
+        kingaku: 100000,
+        dt: new Date("2024-01-01"),
+        nm: "取引先",
+        adr: "東京都",
+      },
+    ];
+    data.organizationExpenses.rows = [
+      {
+        ichirenNo: "1",
+        mokuteki: "会議費",
+        kingaku: 0,
+        dt: new Date("2024-01-01"),
+        nm: "取引先",
+        adr: "東京都",
+      },
+    ];
+    const errors = ExpenseData.validate(data);
+
+    expect(errors.length).toBeGreaterThanOrEqual(2);
   });
 });
