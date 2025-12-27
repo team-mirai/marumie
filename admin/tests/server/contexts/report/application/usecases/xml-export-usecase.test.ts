@@ -226,9 +226,10 @@ describe("XmlExportUsecase", () => {
       expect(result.xml).toContain("<SYUUSHI_UMU>");
 
       // SYUUSHI07_01 (profile) is at index 0 and always output
-      // SYUUSHI07_06 is at index 5 (0-based), so the flag string should have a 1 at positions 0 and 5
-      // Expected: "100001" + "0".repeat(45) = 51 chars total
-      const expectedFlagStart = "100001";
+      // SYUUSHI07_02 (summary) is at index 1 and always output
+      // SYUUSHI07_06 is at index 5 (0-based), so the flag string should have a 1 at positions 0, 1, and 5
+      // Expected: "110001" + "0".repeat(45) = 51 chars total
+      const expectedFlagStart = "110001";
       expect(result.xml).toContain(expectedFlagStart);
     });
 

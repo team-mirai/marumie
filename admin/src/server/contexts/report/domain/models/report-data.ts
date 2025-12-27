@@ -48,6 +48,7 @@ import {
   OtherIncomeSection as OtherIncomeSectionModel,
 } from "@/server/contexts/report/domain/models/income-transaction";
 import type { OrganizationReportProfile } from "@/server/contexts/report/domain/models/organization-report-profile";
+import type { SummaryData } from "@/server/contexts/report/domain/models/summary-data";
 
 /**
  * 寄付データ (SYUUSHI07_07)
@@ -172,8 +173,8 @@ export const ReportData = {
     const flags: boolean[] = [
       // 01: その1（団体基本情報）- 必ず存在
       true,
-      // 02: その2（収支の総括表）- 未実装
-      false,
+      // 02: その2（収支の総括表）- 常に出力
+      true,
       // 03: その3（事業による収入）
       BusinessIncomeSectionModel.shouldOutputSheet(data.income.businessIncome),
       // 04: その4（借入金）
@@ -275,5 +276,104 @@ export const ReportData = {
     ];
 
     return flags.map((f) => (f ? "1" : "0")).join("");
+  },
+
+  /**
+   * 収支総括表データ (SYUUSHI07_02) を計算して返す
+   *
+   * 計算式:
+   * - 本年収入額 = 寄附合計 + 事業収入 + 借入金 + 交付金 + その他収入
+   * - 収入総額 = 前年繰越額 + 本年収入額
+   * - 支出総額 = 経常経費 + 政治活動費
+   * - 翌年繰越額 = 収入総額 - 支出総額
+   * - 寄附小計 = 個人 + 特定 + 法人 + 政治団体
+   * - 寄附合計 = 寄附小計 + あっせん + 政党匿名
+   */
+  getSummary(data: ReportData, previousYearCarryover: number = 0): SummaryData {
+    // 個人寄附（SYUUSHI07_07 KUBUN1）
+    const kojinKifuGk = Math.round(data.donations.personalDonations.totalAmount);
+
+    // 法人寄附・政治団体寄附（未実装のため0）
+    const hojinKifuGk: number | null = null;
+    const seijiKifuGk: number | null = null;
+
+    // 特定寄附（スコープ外のため null）
+    const tokuteiKifuGk: number | null = null;
+
+    // 寄附小計 = 個人 + 特定 + 法人 + 政治団体
+    const kifuSkeiGk = kojinKifuGk + (tokuteiKifuGk ?? 0) + (hojinKifuGk ?? 0) + (seijiKifuGk ?? 0);
+
+    // あっせん・政党匿名寄附（スコープ外のため null）
+    const atusenGk: number | null = null;
+    const tokumeiKifuGk: number | null = null;
+
+    // 寄附合計 = 寄附小計 + あっせん + 政党匿名
+    const kifuGkeiGk = kifuSkeiGk + (atusenGk ?? 0) + (tokumeiKifuGk ?? 0);
+
+    // 収入データ
+    const businessIncomeAmount = Math.round(data.income.businessIncome.totalAmount);
+    const loanIncomeAmount = Math.round(data.income.loanIncome.totalAmount);
+    const grantIncomeAmount = Math.round(data.income.grantIncome.totalAmount);
+    const otherIncomeAmount = Math.round(data.income.otherIncome.totalAmount);
+
+    // 本年収入額 = 寄附合計 + 事業収入 + 借入金 + 交付金 + その他収入
+    const honnenSyunyuGk =
+      kifuGkeiGk + businessIncomeAmount + loanIncomeAmount + grantIncomeAmount + otherIncomeAmount;
+
+    // 前年繰越額
+    const zennenKksGk = Math.round(previousYearCarryover);
+
+    // 収入総額 = 前年繰越額 + 本年収入額
+    const syunyuSgk = zennenKksGk + honnenSyunyuGk;
+
+    // 経常経費（SYUUSHI07_14）
+    const regularExpenseAmount =
+      Math.round(data.expenses.utilityExpenses.totalAmount) +
+      Math.round(data.expenses.suppliesExpenses.totalAmount) +
+      Math.round(data.expenses.officeExpenses.totalAmount);
+
+    // 政治活動費（SYUUSHI07_15）
+    const politicalActivityExpenseAmount =
+      Math.round(data.expenses.organizationExpenses.totalAmount) +
+      Math.round(data.expenses.electionExpenses.totalAmount) +
+      Math.round(data.expenses.publicationExpenses.totalAmount) +
+      Math.round(data.expenses.advertisingExpenses.totalAmount) +
+      Math.round(data.expenses.fundraisingPartyExpenses.totalAmount) +
+      Math.round(data.expenses.otherBusinessExpenses.totalAmount) +
+      Math.round(data.expenses.researchExpenses.totalAmount) +
+      Math.round(data.expenses.donationGrantExpenses.totalAmount) +
+      Math.round(data.expenses.otherPoliticalExpenses.totalAmount);
+
+    // 支出総額 = 経常経費 + 政治活動費
+    const sisyutuSgk = regularExpenseAmount + politicalActivityExpenseAmount;
+
+    // 翌年繰越額 = 収入総額 - 支出総額
+    const yokunenKksGk = syunyuSgk - sisyutuSgk;
+
+    return {
+      syunyuSgk,
+      zennenKksGk,
+      honnenSyunyuGk,
+      sisyutuSgk,
+      yokunenKksGk,
+      kojinFutanKgk: null, // スコープ外
+      kojinFutanSu: null, // スコープ外
+      kojinKifuGk,
+      kojinKifuBikou: null,
+      tokuteiKifuGk,
+      tokuteiKifuBikou: null,
+      hojinKifuGk,
+      hojinKifuBikou: null,
+      seijiKifuGk,
+      seijiKifuBikou: null,
+      kifuSkeiGk,
+      kifuSkeiBikou: null,
+      atusenGk,
+      atusenBikou: null,
+      tokumeiKifuGk,
+      tokumeiBikou: null,
+      kifuGkeiGk,
+      kifuGkeiBikou: null,
+    };
   },
 };
