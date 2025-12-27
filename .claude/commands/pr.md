@@ -1,6 +1,6 @@
 ---
 allowed-tools: Bash(git:*), Bash(gh:*), Bash(npm:*)
-argument-hint: [branch-name]
+argument-hint: [追加の指示]
 description: フィーチャーブランチを作成してPRを出す
 ---
 
@@ -8,15 +8,18 @@ description: フィーチャーブランチを作成してPRを出す
 
 - 現在のブランチ: !`git branch --show-current`
 - 変更ファイル: !`git status --short`
+- 追加の指示: $ARGUMENTS
 
 ## タスク
 
 以下の手順でPRを作成してください：
 
-1. **ブランチ作成**: 現在のブランチがdevelopやmainの場合、`$ARGUMENTS` という名前でフィーチャーブランチを作成してチェックアウトする。既にフィーチャーブランチにいる場合はそのまま使用する。
+1. **ブランチ決定**:
+   - 現在のブランチがdevelopやmainの場合: 変更内容に基づいて適切なブランチ名を自分で決定し、新しいブランチを作成してチェックアウトする（例: `feature/add-dark-mode`, `fix/login-error`, `refactor/auth-logic`）
+   - 既にフィーチャーブランチにいる場合: 変更内容がブランチ名と合致していればそのまま使用する。合致していない場合はdevelopから新しいブランチを作成して変更を持ち越す
 
 2. **品質チェック**: ソースコード（`.ts`、`.tsx`、`.js`、`.jsx`ファイル）への変更がある場合のみ、プロジェクトルートで以下を実行する。ドキュメントや設定ファイルのみの変更の場合はスキップ可。
-   - `npm run typecheck`
+   - `npm run type-check`
    - `npm run lint`
    - `npm test`
    エラーがあれば修正してから次に進む。

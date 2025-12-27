@@ -99,7 +99,7 @@ PRを作成する際は [.claude/commands/pr.md](.claude/commands/pr.md) の手�
 
 ## 設計作業ルール
 
-設計ドキュメント作成時のルールは [docs/design-document-rules.md](docs/design-document-rules.md) を参照すること。
+設計ドキュメントを作成する場合は [.claude/commands/plan.md](.claude/commands/plan.md) の手順に従うこと。
 
 ## admin UI コンポーネント
 

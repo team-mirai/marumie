@@ -1,6 +1,12 @@
-# 設計ドキュメント作成ルール
+---
+allowed-tools: Bash(TZ=Asia/Tokyo date:*), Write, Read, Glob, Grep
+argument-hint: <設計内容の説明>
+description: 設計ドキュメントを作成する (project)
+---
 
-設計作業を依頼された場合は、以下のルールに従ってファイルを作成すること：
+## タスク
+
+`$ARGUMENTS` の内容について設計ドキュメントを作成してください。
 
 ## ファイル命名規則
 
@@ -9,6 +15,13 @@
 - 保存場所: `docs/` 以下
 
 例: `docs/20250815_1430_ユーザー認証システム設計.md`
+
+## 政治資金収支報告書に関する設計
+
+政治資金収支報告書に関連する設計作業の場合は、必ず以下のドキュメントを参照すること：
+
+- [docs/report-format.md](docs/report-format.md): 政治資金収支報告書XMLの仕様
+- [docs/scope-by-2026Jan.md](docs/scope-by-2026Jan.md): 前提となる2026年1月までのスコープ
 
 ## 含めてはいけない内容
 

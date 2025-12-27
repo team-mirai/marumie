@@ -15,6 +15,11 @@ reviews:
   request_changes_workflow: true
   poem: false
   collapse_walkthrough: false
+  high_level_summary: true
+  high_level_summary_placeholder: "@coderabbitai summary"
+
+  # レビュースタイル
+  profile: assertive
 
   # レビュー強化機能
   auto_apply_labels: true
@@ -45,29 +50,16 @@ reviews:
   # パス別のレビュー指示
   path_instructions:
     - path: "admin/src/server/contexts/**"
-      instructions: |
-        このコードはBounded ContextパターンとDDDに基づく設計です。
-        以下のポイントを重点的にレビューしてください：
-        - レイヤー間の依存関係（presentation→application→domain↔infrastructure）
-        - loader/actionがusecaseを経由せずにrepositoryを直接呼んでいないか
-        - ドメインロジックがドメインモデルに適切に実装されているか
-        - server-onlyインポートの有無
-        詳細は docs/admin-architecture-guide.md を参照してください。
+      instructions: "docs/admin-architecture-guide.md に従ってレビューしてください。"
 
     - path: "admin/src/client/**"
-      instructions: |
-        このコードはadmin UIコンポーネントです。
-        以下のポイントを重点的にレビューしてください：
-        - shadcn/ui コンポーネントを使用しているか（カスタム実装は非推奨）
-        - CSS変数（bg-background, text-foreground等）を使用しているか
-        - cn()ユーティリティでクラス名を合成しているか
-        詳細は docs/admin-ui-guidelines.md を参照してください。
+      instructions: "docs/admin-ui-guidelines.md に従ってレビューしてください。"
 
     - path: "webapp/src/**"
-      instructions: |
-        webappのコードです。
-        サーバーコンポーネントを優先し、"use client"は必要最小限にしてください。
-        データ取得はloaders、副作用はactionsに分離してください。
+      instructions: "CLAUDE.md の「Next アプリケーション」セクションに従ってレビューしてください。"
+
+    - path: "admin/src/server/contexts/report/**"
+      instructions: "docs/report-format.md と docs/scope-by-2026Jan.md に従ってレビューしてください。"
 
   auto_review:
     drafts: true
