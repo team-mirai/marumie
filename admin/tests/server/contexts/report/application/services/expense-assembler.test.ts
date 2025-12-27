@@ -9,7 +9,7 @@ import type { UtilityExpenseTransaction } from "@/server/contexts/report/domain/
  * ExpenseAssembler のテスト
  *
  * アセンブラの責務:
- * 1. リポジトリから12種類の経費トランザクションを並列取得
+ * 1. リポジトリから14種類の経費トランザクションを並列取得
  * 2. 取得したトランザクションを各ドメインモデルに委譲してセクションを構築
  *
  * 注: 閾値ロジック（10万円/5万円）や金額計算はドメインモデルの責務であり、
@@ -72,7 +72,7 @@ describe("ExpenseAssembler", () => {
   }
 
   describe("リポジトリへのフィルター受け渡し", () => {
-    it("全12メソッドに正しいフィルターを渡す", async () => {
+    it("全14メソッドに正しいフィルターを渡す", async () => {
       setupEmptyMocks();
 
       const input: ExpenseAssemblerInput = {
@@ -116,11 +116,17 @@ describe("ExpenseAssembler", () => {
       expect(mockRepository.findOtherPoliticalExpenseTransactions).toHaveBeenCalledWith(
         expectedFilters,
       );
+
+      // 人件費と本支部交付金
+      expect(mockRepository.findPersonnelExpenseTransactions).toHaveBeenCalledWith(expectedFilters);
+      expect(mockRepository.findBranchGrantExpenseTransactions).toHaveBeenCalledWith(
+        expectedFilters,
+      );
     });
   });
 
   describe("並列フェッチ", () => {
-    it("12種類のトランザクションを並列で取得する", async () => {
+    it("14種類のトランザクションを並列で取得する", async () => {
       const callOrder: string[] = [];
       const createDelayedMock = (name: string, delay: number) =>
         jest.fn().mockImplementation(
@@ -211,12 +217,13 @@ describe("ExpenseAssembler", () => {
       expect(result.otherPoliticalExpenses.totalAmount).toBe(0);
     });
 
-    it("全12種類のセクションを含むExpenseDataを返す", async () => {
+    it("全14種類のセクションを含むExpenseDataを返す", async () => {
       setupEmptyMocks();
 
       const result = await assembler.assemble(defaultInput);
 
       // ExpenseDataの全プロパティが存在することを確認
+      expect(result).toHaveProperty("personnelExpenses");
       expect(result).toHaveProperty("utilityExpenses");
       expect(result).toHaveProperty("suppliesExpenses");
       expect(result).toHaveProperty("officeExpenses");
@@ -229,6 +236,7 @@ describe("ExpenseAssembler", () => {
       expect(result).toHaveProperty("researchExpenses");
       expect(result).toHaveProperty("donationGrantExpenses");
       expect(result).toHaveProperty("otherPoliticalExpenses");
+      expect(result).toHaveProperty("branchGrantExpenses");
     });
   });
 
