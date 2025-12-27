@@ -36,7 +36,6 @@ export const ValidationErrorCode = {
   INVALID_VALUE: "INVALID_VALUE",
   NEGATIVE_VALUE: "NEGATIVE_VALUE",
   CONSISTENCY_ERROR: "CONSISTENCY_ERROR",
-  SUMMARY_MISMATCH: "SUMMARY_MISMATCH",
 } as const;
 
 export type ValidationErrorCodeType =

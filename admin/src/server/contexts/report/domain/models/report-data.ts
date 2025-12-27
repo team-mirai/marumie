@@ -9,10 +9,9 @@ import {
   type PersonalDonationSection,
   PersonalDonationSection as PersonalDonationSectionModel,
 } from "@/server/contexts/report/domain/models/donation-transaction";
-import {
-  type ValidationError,
-  type ValidationResult,
-  ValidationErrorCode,
+import type {
+  ValidationError,
+  ValidationResult,
 } from "@/server/contexts/report/domain/types/validation";
 import type {
   AdvertisingExpenseSection,
@@ -427,69 +426,13 @@ export const ReportData = {
     };
   },
 
-  validateSummaryConsistency(
-    data: ReportData,
-    previousYearCarryover: number = 0,
-  ): ValidationError[] {
-    const errors: ValidationError[] = [];
-    const summary = ReportData.getSummary(data, previousYearCarryover);
-
-    const expectedSyunyuSgk = summary.zennenKksGk + summary.honnenSyunyuGk;
-    if (summary.syunyuSgk !== expectedSyunyuSgk) {
-      errors.push({
-        path: "summary.syunyuSgk",
-        code: ValidationErrorCode.SUMMARY_MISMATCH,
-        message: `収入総額が一致しません。期待値: ${expectedSyunyuSgk}、実際値: ${summary.syunyuSgk}`,
-        severity: "error",
-      });
-    }
-
-    const expectedYokunenKksGk = summary.syunyuSgk - summary.sisyutuSgk;
-    if (summary.yokunenKksGk !== expectedYokunenKksGk) {
-      errors.push({
-        path: "summary.yokunenKksGk",
-        code: ValidationErrorCode.SUMMARY_MISMATCH,
-        message: `翌年繰越額が一致しません。期待値: ${expectedYokunenKksGk}、実際値: ${summary.yokunenKksGk}`,
-        severity: "error",
-      });
-    }
-
-    const expectedKifuSkeiGk =
-      summary.kojinKifuGk +
-      (summary.tokuteiKifuGk ?? 0) +
-      (summary.hojinKifuGk ?? 0) +
-      (summary.seijiKifuGk ?? 0);
-    if (summary.kifuSkeiGk !== expectedKifuSkeiGk) {
-      errors.push({
-        path: "summary.kifuSkeiGk",
-        code: ValidationErrorCode.SUMMARY_MISMATCH,
-        message: `寄附小計が一致しません。期待値: ${expectedKifuSkeiGk}、実際値: ${summary.kifuSkeiGk}`,
-        severity: "error",
-      });
-    }
-
-    const expectedKifuGkeiGk =
-      summary.kifuSkeiGk + (summary.atusenGk ?? 0) + (summary.tokumeiKifuGk ?? 0);
-    if (summary.kifuGkeiGk !== expectedKifuGkeiGk) {
-      errors.push({
-        path: "summary.kifuGkeiGk",
-        code: ValidationErrorCode.SUMMARY_MISMATCH,
-        message: `寄附合計が一致しません。期待値: ${expectedKifuGkeiGk}、実際値: ${summary.kifuGkeiGk}`,
-        severity: "error",
-      });
-    }
-
-    return errors;
-  },
-
-  validate(data: ReportData, previousYearCarryover: number = 0): ValidationResult {
+  validate(data: ReportData): ValidationResult {
     const allErrors: ValidationError[] = [];
 
     allErrors.push(...OrganizationReportProfileModel.validate(data.profile));
     allErrors.push(...DonationData.validate(data.donations));
     allErrors.push(...IncomeData.validate(data.income));
     allErrors.push(...ExpenseData.validate(data.expenses));
-    allErrors.push(...ReportData.validateSummaryConsistency(data, previousYearCarryover));
 
     const errors = allErrors.filter((e) => e.severity === "error");
     const warnings = allErrors.filter((e) => e.severity === "warning");

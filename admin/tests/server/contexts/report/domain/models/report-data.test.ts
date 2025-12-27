@@ -494,15 +494,6 @@ describe("ReportData", () => {
       expect(result.errors.length).toBeGreaterThanOrEqual(2);
     });
   });
-
-  describe("validateSummaryConsistency", () => {
-    it("正常なデータでエラーを返さない", () => {
-      const data = createEmptyReportData();
-      const errors = ReportData.validateSummaryConsistency(data, 0);
-
-      expect(errors).toHaveLength(0);
-    });
-  });
 });
 
 describe("DonationData", () => {
