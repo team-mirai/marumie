@@ -1,5 +1,3 @@
-"use client";
-
 interface XmlPreviewProps {
   xml: string;
 }
