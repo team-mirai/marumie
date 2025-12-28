@@ -807,13 +807,20 @@ export const transactionsSeeder: Seeder = {
       }
 
       // Donorの取得（存在する場合）
+      // 注: nameのみで検索しているため、同名の異なるドナーが存在する場合は
+      // より詳細な条件（addressやdonorType）を追加する必要があります
       let donorId: bigint | undefined;
       if (item.donorName) {
-        const donor = await prisma.donor.findFirst({
+        const donors = await prisma.donor.findMany({
           where: { name: item.donorName },
         });
-        if (donor) {
-          donorId = donor.id;
+        if (donors.length > 1) {
+          console.log(
+            `⚠️  Warning: Multiple donors found for "${item.donorName}". Using first match.`,
+          );
+        }
+        if (donors.length > 0) {
+          donorId = donors[0].id;
         } else {
           console.log(`⚠️  Warning: Donor "${item.donorName}" not found`);
         }
