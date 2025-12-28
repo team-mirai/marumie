@@ -358,4 +358,175 @@ describe("serializePoliticalActivityExpenseSection", () => {
     expect(xml).toContain("&lt;調査会社&gt;");
     expect(xml).toContain("特別 &amp; 緊急");
   });
+
+  it("単一KUBUNに複数SHEETを出力する（複数費目のグループ化）", () => {
+    const meetingExpense: OrganizationExpenseSection = {
+      himoku: "会議費",
+      totalAmount: 130000,
+      underThresholdAmount: 0,
+      rows: [
+        {
+          ichirenNo: "1",
+          mokuteki: "会議室利用",
+          kingaku: 60000,
+          dt: new Date("2024-06-01"),
+          nm: "会議室A",
+          adr: "東京都千代田区",
+        },
+        {
+          ichirenNo: "2",
+          mokuteki: "会議室利用",
+          kingaku: 70000,
+          dt: new Date("2024-06-20"),
+          nm: "会議室B",
+          adr: "東京都渋谷区",
+        },
+      ],
+    };
+
+    const transportExpense: OrganizationExpenseSection = {
+      himoku: "交通費",
+      totalAmount: 80000,
+      underThresholdAmount: 0,
+      rows: [
+        {
+          ichirenNo: "1",
+          mokuteki: "タクシー代",
+          kingaku: 80000,
+          dt: new Date("2024-06-15"),
+          nm: "タクシー会社",
+          adr: "東京都港区",
+        },
+      ],
+    };
+
+    const sections: PoliticalActivityExpenseSections = {
+      organizationExpenses: [meetingExpense, transportExpense],
+      electionExpenses: [],
+      publicationExpenses: [],
+      advertisingExpenses: [],
+      fundraisingPartyExpenses: [],
+      otherBusinessExpenses: [],
+      researchExpenses: [],
+      donationGrantExpenses: [],
+      otherPoliticalExpenses: [],
+    };
+
+    const xmlBuilder = serializePoliticalActivityExpenseSection(sections);
+    const xml = xmlBuilder.toString();
+
+    expect(xml).toContain("<SYUUSHI07_15>");
+    expect(xml).toContain("<KUBUN1>");
+
+    const kubun1Match = xml.match(/<KUBUN1>([\s\S]*?)<\/KUBUN1>/);
+    expect(kubun1Match).not.toBeNull();
+    const kubun1Content = kubun1Match![1];
+
+    const sheetMatches = kubun1Content.match(/<SHEET>/g);
+    expect(sheetMatches).toHaveLength(2);
+
+    expect(kubun1Content).toContain("<HIMOKU>会議費</HIMOKU>");
+    expect(kubun1Content).toContain("<HIMOKU>交通費</HIMOKU>");
+
+    expect(kubun1Content).toContain("<KINGAKU_GK>130000</KINGAKU_GK>");
+    expect(kubun1Content).toContain("<KINGAKU_GK>80000</KINGAKU_GK>");
+
+    expect(kubun1Content).toContain("<MOKUTEKI>会議室利用</MOKUTEKI>");
+    expect(kubun1Content).toContain("<MOKUTEKI>タクシー代</MOKUTEKI>");
+  });
+
+  it("複数KUBUNにそれぞれ複数SHEETを出力する", () => {
+    const orgExpense1: OrganizationExpenseSection = {
+      himoku: "会議費",
+      totalAmount: 100000,
+      underThresholdAmount: 0,
+      rows: [
+        {
+          ichirenNo: "1",
+          mokuteki: "会議",
+          kingaku: 100000,
+          dt: new Date("2024-06-01"),
+          nm: "会議室",
+          adr: "東京都",
+        },
+      ],
+    };
+
+    const orgExpense2: OrganizationExpenseSection = {
+      himoku: "交通費",
+      totalAmount: 50000,
+      underThresholdAmount: 0,
+      rows: [
+        {
+          ichirenNo: "1",
+          mokuteki: "タクシー",
+          kingaku: 50000,
+          dt: new Date("2024-06-15"),
+          nm: "タクシー",
+          adr: "東京都",
+        },
+      ],
+    };
+
+    const electionExpense1: ElectionExpenseSection = {
+      himoku: "ポスター",
+      totalAmount: 200000,
+      underThresholdAmount: 0,
+      rows: [
+        {
+          ichirenNo: "1",
+          mokuteki: "ポスター制作",
+          kingaku: 200000,
+          dt: new Date("2024-07-01"),
+          nm: "印刷会社",
+          adr: "東京都",
+        },
+      ],
+    };
+
+    const electionExpense2: ElectionExpenseSection = {
+      himoku: "チラシ",
+      totalAmount: 150000,
+      underThresholdAmount: 0,
+      rows: [
+        {
+          ichirenNo: "1",
+          mokuteki: "チラシ制作",
+          kingaku: 150000,
+          dt: new Date("2024-07-15"),
+          nm: "印刷会社B",
+          adr: "東京都",
+        },
+      ],
+    };
+
+    const sections: PoliticalActivityExpenseSections = {
+      organizationExpenses: [orgExpense1, orgExpense2],
+      electionExpenses: [electionExpense1, electionExpense2],
+      publicationExpenses: [],
+      advertisingExpenses: [],
+      fundraisingPartyExpenses: [],
+      otherBusinessExpenses: [],
+      researchExpenses: [],
+      donationGrantExpenses: [],
+      otherPoliticalExpenses: [],
+    };
+
+    const xmlBuilder = serializePoliticalActivityExpenseSection(sections);
+    const xml = xmlBuilder.toString();
+
+    const kubun1Match = xml.match(/<KUBUN1>([\s\S]*?)<\/KUBUN1>/);
+    expect(kubun1Match).not.toBeNull();
+    const kubun1Sheets = kubun1Match![1].match(/<SHEET>/g);
+    expect(kubun1Sheets).toHaveLength(2);
+    expect(kubun1Match![1]).toContain("<HIMOKU>会議費</HIMOKU>");
+    expect(kubun1Match![1]).toContain("<HIMOKU>交通費</HIMOKU>");
+
+    const kubun2Match = xml.match(/<KUBUN2>([\s\S]*?)<\/KUBUN2>/);
+    expect(kubun2Match).not.toBeNull();
+    const kubun2Sheets = kubun2Match![1].match(/<SHEET>/g);
+    expect(kubun2Sheets).toHaveLength(2);
+    expect(kubun2Match![1]).toContain("<HIMOKU>ポスター</HIMOKU>");
+    expect(kubun2Match![1]).toContain("<HIMOKU>チラシ</HIMOKU>");
+  });
 });

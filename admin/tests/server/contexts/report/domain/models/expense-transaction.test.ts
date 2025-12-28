@@ -14,6 +14,7 @@ import {
   type UtilityExpenseTransaction,
   type SuppliesExpenseTransaction,
   type OfficeExpenseTransaction,
+  type OrganizationExpenseTransaction,
 } from "@/server/contexts/report/domain/models/expense-transaction";
 import { resolveExpenseAmount } from "@/server/contexts/report/domain/models/transaction-utils";
 import { ValidationErrorCode } from "@/server/contexts/report/domain/types/validation";
@@ -672,5 +673,205 @@ describe("OtherPoliticalExpenseSection.validate", () => {
 
     expect(errors.length).toBeGreaterThan(0);
     expect(errors[0].code).toBe(ValidationErrorCode.NEGATIVE_VALUE);
+  });
+});
+
+// ============================================================
+// 統合テスト: 複数friendlyCategoryによるグループ化
+// ============================================================
+
+function createOrganizationExpenseTransaction(
+  overrides: Partial<OrganizationExpenseTransaction> = {},
+): OrganizationExpenseTransaction {
+  return {
+    transactionNo: "1",
+    friendlyCategory: "組織活動費",
+    label: null,
+    description: null,
+    memo: null,
+    debitAmount: 50000,
+    creditAmount: 0,
+    transactionDate: new Date("2024-01-01"),
+    counterpartName: "取引先",
+    counterpartAddress: "東京都",
+    ...overrides,
+  };
+}
+
+describe("OrganizationExpenseSection.fromTransactions - 複数friendlyCategoryのグループ化", () => {
+  it("空のトランザクションで空の配列を返す", () => {
+    const sections = OrganizationExpenseSection.fromTransactions([]);
+
+    expect(sections).toHaveLength(0);
+  });
+
+  it("単一のfriendlyCategoryで1つのセクションを返す", () => {
+    const transactions: OrganizationExpenseTransaction[] = [
+      createOrganizationExpenseTransaction({
+        transactionNo: "1",
+        friendlyCategory: "会議費",
+        debitAmount: 60000,
+      }),
+      createOrganizationExpenseTransaction({
+        transactionNo: "2",
+        friendlyCategory: "会議費",
+        debitAmount: 70000,
+      }),
+    ];
+
+    const sections = OrganizationExpenseSection.fromTransactions(transactions);
+
+    expect(sections).toHaveLength(1);
+    expect(sections[0].himoku).toBe("会議費");
+    expect(sections[0].totalAmount).toBe(130000);
+  });
+
+  it("複数のfriendlyCategoryでグループ化して複数セクションを返す", () => {
+    const transactions: OrganizationExpenseTransaction[] = [
+      createOrganizationExpenseTransaction({
+        transactionNo: "1",
+        friendlyCategory: "会議費",
+        debitAmount: 60000,
+        transactionDate: new Date("2024-06-01"),
+        counterpartName: "会議室A",
+        counterpartAddress: "東京都千代田区",
+      }),
+      createOrganizationExpenseTransaction({
+        transactionNo: "2",
+        friendlyCategory: "交通費",
+        debitAmount: 80000,
+        transactionDate: new Date("2024-06-15"),
+        counterpartName: "タクシー会社",
+        counterpartAddress: "東京都港区",
+      }),
+      createOrganizationExpenseTransaction({
+        transactionNo: "3",
+        friendlyCategory: "会議費",
+        debitAmount: 70000,
+        transactionDate: new Date("2024-06-20"),
+        counterpartName: "会議室B",
+        counterpartAddress: "東京都渋谷区",
+      }),
+    ];
+
+    const sections = OrganizationExpenseSection.fromTransactions(transactions);
+
+    expect(sections).toHaveLength(2);
+
+    const meetingSection = sections.find((s) => s.himoku === "会議費");
+    const transportSection = sections.find((s) => s.himoku === "交通費");
+
+    expect(meetingSection).toBeDefined();
+    expect(meetingSection!.totalAmount).toBe(130000);
+    expect(meetingSection!.rows).toHaveLength(2);
+
+    expect(transportSection).toBeDefined();
+    expect(transportSection!.totalAmount).toBe(80000);
+    expect(transportSection!.rows).toHaveLength(1);
+  });
+
+  it("5万円閾値でrows/underThresholdAmountを正しく分離する", () => {
+    const transactions: OrganizationExpenseTransaction[] = [
+      createOrganizationExpenseTransaction({
+        transactionNo: "1",
+        friendlyCategory: "会議費",
+        debitAmount: 60000,
+      }),
+      createOrganizationExpenseTransaction({
+        transactionNo: "2",
+        friendlyCategory: "会議費",
+        debitAmount: 40000,
+      }),
+      createOrganizationExpenseTransaction({
+        transactionNo: "3",
+        friendlyCategory: "交通費",
+        debitAmount: 30000,
+      }),
+      createOrganizationExpenseTransaction({
+        transactionNo: "4",
+        friendlyCategory: "交通費",
+        debitAmount: 50000,
+      }),
+    ];
+
+    const sections = OrganizationExpenseSection.fromTransactions(transactions);
+
+    expect(sections).toHaveLength(2);
+
+    const meetingSection = sections.find((s) => s.himoku === "会議費");
+    expect(meetingSection).toBeDefined();
+    expect(meetingSection!.totalAmount).toBe(100000);
+    expect(meetingSection!.underThresholdAmount).toBe(40000);
+    expect(meetingSection!.rows).toHaveLength(1);
+    expect(meetingSection!.rows[0].kingaku).toBe(60000);
+
+    const transportSection = sections.find((s) => s.himoku === "交通費");
+    expect(transportSection).toBeDefined();
+    expect(transportSection!.totalAmount).toBe(80000);
+    expect(transportSection!.underThresholdAmount).toBe(30000);
+    expect(transportSection!.rows).toHaveLength(1);
+    expect(transportSection!.rows[0].kingaku).toBe(50000);
+  });
+
+  it("ichirenNoがカテゴリごとに1から採番される", () => {
+    const transactions: OrganizationExpenseTransaction[] = [
+      createOrganizationExpenseTransaction({
+        transactionNo: "1",
+        friendlyCategory: "会議費",
+        debitAmount: 60000,
+      }),
+      createOrganizationExpenseTransaction({
+        transactionNo: "2",
+        friendlyCategory: "会議費",
+        debitAmount: 70000,
+      }),
+      createOrganizationExpenseTransaction({
+        transactionNo: "3",
+        friendlyCategory: "交通費",
+        debitAmount: 80000,
+      }),
+      createOrganizationExpenseTransaction({
+        transactionNo: "4",
+        friendlyCategory: "交通費",
+        debitAmount: 90000,
+      }),
+    ];
+
+    const sections = OrganizationExpenseSection.fromTransactions(transactions);
+
+    const meetingSection = sections.find((s) => s.himoku === "会議費");
+    expect(meetingSection!.rows[0].ichirenNo).toBe("1");
+    expect(meetingSection!.rows[1].ichirenNo).toBe("2");
+
+    const transportSection = sections.find((s) => s.himoku === "交通費");
+    expect(transportSection!.rows[0].ichirenNo).toBe("1");
+    expect(transportSection!.rows[1].ichirenNo).toBe("2");
+  });
+
+  it("費目でソートされる（空文字は最後）", () => {
+    const transactions: OrganizationExpenseTransaction[] = [
+      createOrganizationExpenseTransaction({
+        transactionNo: "1",
+        friendlyCategory: "交通費",
+        debitAmount: 60000,
+      }),
+      createOrganizationExpenseTransaction({
+        transactionNo: "2",
+        friendlyCategory: null,
+        debitAmount: 70000,
+      }),
+      createOrganizationExpenseTransaction({
+        transactionNo: "3",
+        friendlyCategory: "会議費",
+        debitAmount: 80000,
+      }),
+    ];
+
+    const sections = OrganizationExpenseSection.fromTransactions(transactions);
+
+    expect(sections).toHaveLength(3);
+    expect(sections[0].himoku).toBe("会議費");
+    expect(sections[1].himoku).toBe("交通費");
+    expect(sections[2].himoku).toBe("");
   });
 });
