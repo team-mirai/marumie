@@ -154,7 +154,6 @@ export class PrismaReportTransactionRepository implements IReportTransactionRepo
 
   /**
    * SYUUSHI07_07 KUBUN1: 個人からの寄附のトランザクションを取得
-   * TODO: 寄附者テーブル作成後に寄附者情報を実際のデータに置き換える
    */
   async findPersonalDonationTransactions(
     filters: TransactionFilters,
@@ -173,6 +172,17 @@ export class PrismaReportTransactionRepository implements IReportTransactionRepo
         debitAmount: true,
         creditAmount: true,
         memo: true,
+        transactionDonors: {
+          select: {
+            donor: {
+              select: {
+                name: true,
+                address: true,
+                occupation: true,
+              },
+            },
+          },
+        },
       },
     });
 
@@ -182,10 +192,9 @@ export class PrismaReportTransactionRepository implements IReportTransactionRepo
       debitAmount: Number(t.debitAmount),
       creditAmount: Number(t.creditAmount),
       memo: t.memo,
-      // TODO: 寄附者テーブル作成後に実際の値を取得する
-      donorName: "（仮）寄附者氏名",
-      donorAddress: "（仮）東京都千代田区永田町1-1-1",
-      donorOccupation: "（仮）会社員",
+      donorName: t.transactionDonors[0]?.donor.name ?? "",
+      donorAddress: t.transactionDonors[0]?.donor.address ?? "",
+      donorOccupation: t.transactionDonors[0]?.donor.occupation ?? "",
     }));
   }
 
