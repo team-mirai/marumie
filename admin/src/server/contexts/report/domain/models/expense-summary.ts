@@ -82,16 +82,37 @@ export const ExpenseSummaryData = {
     // 経常経費小計
     const regularSubtotal = personnelAmount + utilityAmount + suppliesAmount + officeAmount;
 
-    // 政治活動費の各項目
-    const organizationAmount = expenseData.organizationExpenses.totalAmount;
-    const electionAmount = expenseData.electionExpenses.totalAmount;
-    const publicationAmount = expenseData.publicationExpenses.totalAmount;
-    const advertisingAmount = expenseData.advertisingExpenses.totalAmount;
-    const partyAmount = expenseData.fundraisingPartyExpenses.totalAmount;
-    const otherBusinessAmount = expenseData.otherBusinessExpenses.totalAmount;
-    const researchAmount = expenseData.researchExpenses.totalAmount;
-    const donationGrantAmount = expenseData.donationGrantExpenses.totalAmount;
-    const otherPoliticalAmount = expenseData.otherPoliticalExpenses.totalAmount;
+    // 政治活動費の各項目（配列の合計を計算）
+    const organizationAmount = expenseData.organizationExpenses.reduce(
+      (sum, s) => sum + s.totalAmount,
+      0,
+    );
+    const electionAmount = expenseData.electionExpenses.reduce((sum, s) => sum + s.totalAmount, 0);
+    const publicationAmount = expenseData.publicationExpenses.reduce(
+      (sum, s) => sum + s.totalAmount,
+      0,
+    );
+    const advertisingAmount = expenseData.advertisingExpenses.reduce(
+      (sum, s) => sum + s.totalAmount,
+      0,
+    );
+    const partyAmount = expenseData.fundraisingPartyExpenses.reduce(
+      (sum, s) => sum + s.totalAmount,
+      0,
+    );
+    const otherBusinessAmount = expenseData.otherBusinessExpenses.reduce(
+      (sum, s) => sum + s.totalAmount,
+      0,
+    );
+    const researchAmount = expenseData.researchExpenses.reduce((sum, s) => sum + s.totalAmount, 0);
+    const donationGrantAmount = expenseData.donationGrantExpenses.reduce(
+      (sum, s) => sum + s.totalAmount,
+      0,
+    );
+    const otherPoliticalAmount = expenseData.otherPoliticalExpenses.reduce(
+      (sum, s) => sum + s.totalAmount,
+      0,
+    );
 
     // 機関紙誌の発行その他の事業費（4項目の合計）
     const businessAmount =

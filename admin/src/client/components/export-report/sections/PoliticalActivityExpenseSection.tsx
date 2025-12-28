@@ -21,15 +21,15 @@ import type {
 } from "@/server/contexts/report/domain/models/expense-transaction";
 
 interface PoliticalActivityExpenseSectionProps {
-  organizationExpenses: OrganizationExpenseSection;
-  electionExpenses: ElectionExpenseSection;
-  publicationExpenses: PublicationExpenseSection;
-  advertisingExpenses: AdvertisingExpenseSection;
-  fundraisingPartyExpenses: FundraisingPartyExpenseSection;
-  otherBusinessExpenses: OtherBusinessExpenseSection;
-  researchExpenses: ResearchExpenseSection;
-  donationGrantExpenses: DonationGrantExpenseSection;
-  otherPoliticalExpenses: OtherPoliticalExpenseSection;
+  organizationExpenses: OrganizationExpenseSection[];
+  electionExpenses: ElectionExpenseSection[];
+  publicationExpenses: PublicationExpenseSection[];
+  advertisingExpenses: AdvertisingExpenseSection[];
+  fundraisingPartyExpenses: FundraisingPartyExpenseSection[];
+  otherBusinessExpenses: OtherBusinessExpenseSection[];
+  researchExpenses: ResearchExpenseSection[];
+  donationGrantExpenses: DonationGrantExpenseSection[];
+  otherPoliticalExpenses: OtherPoliticalExpenseSection[];
 }
 
 function formatCurrency(amount: number): string {
@@ -87,22 +87,22 @@ function PoliticalActivityExpenseTable({ rows }: PoliticalActivityExpenseTablePr
   );
 }
 
-interface ExpenseSubSectionProps {
+interface ExpenseArraySubSectionProps {
   title: string;
   formId: string;
-  totalAmount: number;
-  underThresholdAmount: number;
-  rows: PoliticalActivityExpenseRow[];
+  sections: {
+    himoku: string;
+    totalAmount: number;
+    underThresholdAmount: number;
+    rows: PoliticalActivityExpenseRow[];
+  }[];
 }
 
-function ExpenseSubSection({
-  title,
-  formId,
-  totalAmount,
-  underThresholdAmount,
-  rows,
-}: ExpenseSubSectionProps) {
-  const hasData = rows.length > 0 || totalAmount > 0;
+function ExpenseArraySubSection({ title, formId, sections }: ExpenseArraySubSectionProps) {
+  const totalAmount = sections.reduce((sum, s) => sum + s.totalAmount, 0);
+  const underThresholdAmount = sections.reduce((sum, s) => sum + s.underThresholdAmount, 0);
+  const allRows = sections.flatMap((s) => s.rows);
+  const hasData = allRows.length > 0 || totalAmount > 0;
 
   return (
     <SectionWrapper
@@ -114,7 +114,20 @@ function ExpenseSubSection({
       isEmpty={!hasData}
     >
       {hasData ? (
-        <PoliticalActivityExpenseTable rows={rows} />
+        sections.length > 0 ? (
+          <div className="space-y-4">
+            {sections.map((section, index) => (
+              <div key={section.himoku || index}>
+                {section.himoku && (
+                  <h4 className="text-sm font-medium text-gray-300 mb-2">費目: {section.himoku}</h4>
+                )}
+                <PoliticalActivityExpenseTable rows={section.rows} />
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-gray-500 text-sm">データなし</p>
+        )
       ) : (
         <p className="text-gray-500 text-sm">データなし</p>
       )}
@@ -137,76 +150,42 @@ export function PoliticalActivityExpenseSection({
     <div className="space-y-6">
       <h2 className="text-xl font-bold text-white">政治活動費 (SYUUSHI07_15)</h2>
 
-      <ExpenseSubSection
-        title="組織活動費"
-        formId="KUBUN1"
-        totalAmount={organizationExpenses.totalAmount}
-        underThresholdAmount={organizationExpenses.underThresholdAmount}
-        rows={organizationExpenses.rows}
-      />
+      <ExpenseArraySubSection title="組織活動費" formId="KUBUN1" sections={organizationExpenses} />
 
-      <ExpenseSubSection
-        title="選挙関係費"
-        formId="KUBUN2"
-        totalAmount={electionExpenses.totalAmount}
-        underThresholdAmount={electionExpenses.underThresholdAmount}
-        rows={electionExpenses.rows}
-      />
+      <ExpenseArraySubSection title="選挙関係費" formId="KUBUN2" sections={electionExpenses} />
 
-      <ExpenseSubSection
+      <ExpenseArraySubSection
         title="機関紙誌の発行事業費"
         formId="KUBUN3"
-        totalAmount={publicationExpenses.totalAmount}
-        underThresholdAmount={publicationExpenses.underThresholdAmount}
-        rows={publicationExpenses.rows}
+        sections={publicationExpenses}
       />
 
-      <ExpenseSubSection
-        title="宣伝事業費"
-        formId="KUBUN4"
-        totalAmount={advertisingExpenses.totalAmount}
-        underThresholdAmount={advertisingExpenses.underThresholdAmount}
-        rows={advertisingExpenses.rows}
-      />
+      <ExpenseArraySubSection title="宣伝事業費" formId="KUBUN4" sections={advertisingExpenses} />
 
-      <ExpenseSubSection
+      <ExpenseArraySubSection
         title="政治資金パーティー開催事業費"
         formId="KUBUN5"
-        totalAmount={fundraisingPartyExpenses.totalAmount}
-        underThresholdAmount={fundraisingPartyExpenses.underThresholdAmount}
-        rows={fundraisingPartyExpenses.rows}
+        sections={fundraisingPartyExpenses}
       />
 
-      <ExpenseSubSection
+      <ExpenseArraySubSection
         title="その他の事業費"
         formId="KUBUN6"
-        totalAmount={otherBusinessExpenses.totalAmount}
-        underThresholdAmount={otherBusinessExpenses.underThresholdAmount}
-        rows={otherBusinessExpenses.rows}
+        sections={otherBusinessExpenses}
       />
 
-      <ExpenseSubSection
-        title="調査研究費"
-        formId="KUBUN7"
-        totalAmount={researchExpenses.totalAmount}
-        underThresholdAmount={researchExpenses.underThresholdAmount}
-        rows={researchExpenses.rows}
-      />
+      <ExpenseArraySubSection title="調査研究費" formId="KUBUN7" sections={researchExpenses} />
 
-      <ExpenseSubSection
+      <ExpenseArraySubSection
         title="寄附・交付金"
         formId="KUBUN8"
-        totalAmount={donationGrantExpenses.totalAmount}
-        underThresholdAmount={donationGrantExpenses.underThresholdAmount}
-        rows={donationGrantExpenses.rows}
+        sections={donationGrantExpenses}
       />
 
-      <ExpenseSubSection
+      <ExpenseArraySubSection
         title="その他の経費"
         formId="KUBUN9"
-        totalAmount={otherPoliticalExpenses.totalAmount}
-        underThresholdAmount={otherPoliticalExpenses.underThresholdAmount}
-        rows={otherPoliticalExpenses.rows}
+        sections={otherPoliticalExpenses}
       />
     </div>
   );

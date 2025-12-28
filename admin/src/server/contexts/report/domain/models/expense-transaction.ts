@@ -608,38 +608,12 @@ export const OrganizationExpenseSection = {
    * Business rules:
    * - Transactions >= 50,000 yen are listed individually (政治活動費は5万円以上)
    * - Transactions < 50,000 yen are aggregated into underThresholdAmount
-   * - 費目（HIMOKU）はシート単位で空白（明細行ごとに設定）
+   * - friendlyCategoryでグループ化し、費目ごとに複数のセクションを返す
    */
   fromTransactions: (
     transactions: OrganizationExpenseTransaction[],
-  ): OrganizationExpenseSection => {
-    const totalAmount = transactions.reduce(
-      (sum, tx) => sum + ExpenseTransactionBase.resolveAmount(tx),
-      0,
-    );
-
-    const detailedTransactions = transactions.filter((tx) =>
-      isAboveThreshold(ExpenseTransactionBase.resolveAmount(tx), FIVE_MAN_THRESHOLD),
-    );
-    const underThresholdTransactions = transactions.filter(
-      (tx) => !isAboveThreshold(ExpenseTransactionBase.resolveAmount(tx), FIVE_MAN_THRESHOLD),
-    );
-
-    const underThresholdAmount = underThresholdTransactions.reduce(
-      (sum, tx) => sum + ExpenseTransactionBase.resolveAmount(tx),
-      0,
-    );
-
-    const rows = detailedTransactions.map((tx, index) =>
-      OrganizationExpenseTransaction.toRow(tx, index),
-    );
-
-    return {
-      himoku: "", // シート単位の費目は空白（明細行に個別設定）
-      totalAmount,
-      underThresholdAmount,
-      rows,
-    };
+  ): OrganizationExpenseSection[] => {
+    return aggregatePoliticalActivitySections(transactions);
   },
 
   /**
@@ -659,56 +633,85 @@ export const OrganizationExpenseSection = {
 
 /**
  * 政治活動費セクション共通の集約ロジック（5万円閾値）
+ * friendlyCategoryでグループ化し、費目ごとに複数のセクションを返す
  */
-function aggregatePoliticalActivitySection<T extends BaseExpenseTransaction>(
+function aggregatePoliticalActivitySections<T extends BaseExpenseTransaction>(
   transactions: T[],
-): {
+): Array<{
   himoku: string;
   totalAmount: number;
   underThresholdAmount: number;
   rows: PoliticalActivityExpenseRow[];
-} {
-  const totalAmount = transactions.reduce(
-    (sum, tx) => sum + ExpenseTransactionBase.resolveAmount(tx),
-    0,
-  );
+}> {
+  // friendlyCategoryでグループ化
+  const groupedByHimoku = new Map<string, T[]>();
+  for (const tx of transactions) {
+    const himoku = tx.friendlyCategory ?? "";
+    const group = groupedByHimoku.get(himoku) ?? [];
+    group.push(tx);
+    groupedByHimoku.set(himoku, group);
+  }
 
-  const detailedTransactions = transactions.filter((tx) =>
-    isAboveThreshold(ExpenseTransactionBase.resolveAmount(tx), FIVE_MAN_THRESHOLD),
-  );
-  const underThresholdTransactions = transactions.filter(
-    (tx) => !isAboveThreshold(ExpenseTransactionBase.resolveAmount(tx), FIVE_MAN_THRESHOLD),
-  );
+  // 各グループに対してセクションを作成
+  const sections: Array<{
+    himoku: string;
+    totalAmount: number;
+    underThresholdAmount: number;
+    rows: PoliticalActivityExpenseRow[];
+  }> = [];
 
-  const underThresholdAmount = underThresholdTransactions.reduce(
-    (sum, tx) => sum + ExpenseTransactionBase.resolveAmount(tx),
-    0,
-  );
+  for (const [himoku, groupTransactions] of groupedByHimoku) {
+    const totalAmount = groupTransactions.reduce(
+      (sum, tx) => sum + ExpenseTransactionBase.resolveAmount(tx),
+      0,
+    );
 
-  const rows = detailedTransactions.map((tx, index) => ({
-    ichirenNo: (index + 1).toString(),
-    mokuteki: ExpenseTransactionBase.getMokuteki(tx),
-    kingaku: ExpenseTransactionBase.resolveAmount(tx),
-    dt: tx.transactionDate,
-    nm: ExpenseTransactionBase.getNm(tx),
-    adr: ExpenseTransactionBase.getAdr(tx),
-    bikou: ExpenseTransactionBase.getBikou(tx),
-  }));
+    const detailedTransactions = groupTransactions.filter((tx) =>
+      isAboveThreshold(ExpenseTransactionBase.resolveAmount(tx), FIVE_MAN_THRESHOLD),
+    );
+    const underThresholdTransactions = groupTransactions.filter(
+      (tx) => !isAboveThreshold(ExpenseTransactionBase.resolveAmount(tx), FIVE_MAN_THRESHOLD),
+    );
 
-  return {
-    himoku: "",
-    totalAmount,
-    underThresholdAmount,
-    rows,
-  };
+    const underThresholdAmount = underThresholdTransactions.reduce(
+      (sum, tx) => sum + ExpenseTransactionBase.resolveAmount(tx),
+      0,
+    );
+
+    const rows = detailedTransactions.map((tx, index) => ({
+      ichirenNo: (index + 1).toString(),
+      mokuteki: ExpenseTransactionBase.getMokuteki(tx),
+      kingaku: ExpenseTransactionBase.resolveAmount(tx),
+      dt: tx.transactionDate,
+      nm: ExpenseTransactionBase.getNm(tx),
+      adr: ExpenseTransactionBase.getAdr(tx),
+      bikou: ExpenseTransactionBase.getBikou(tx),
+    }));
+
+    sections.push({
+      himoku,
+      totalAmount,
+      underThresholdAmount,
+      rows,
+    });
+  }
+
+  // 費目でソート（空文字は最後に）
+  sections.sort((a, b) => {
+    if (a.himoku === "" && b.himoku !== "") return 1;
+    if (a.himoku !== "" && b.himoku === "") return -1;
+    return a.himoku.localeCompare(b.himoku, "ja");
+  });
+
+  return sections;
 }
 
 /**
  * ElectionExpenseSection に関連するドメインロジック
  */
 export const ElectionExpenseSection = {
-  fromTransactions: (transactions: ElectionExpenseTransaction[]): ElectionExpenseSection => {
-    return aggregatePoliticalActivitySection(transactions);
+  fromTransactions: (transactions: ElectionExpenseTransaction[]): ElectionExpenseSection[] => {
+    return aggregatePoliticalActivitySections(transactions);
   },
 
   shouldOutputSheet: (section: ElectionExpenseSection): boolean => {
@@ -724,8 +727,10 @@ export const ElectionExpenseSection = {
  * PublicationExpenseSection に関連するドメインロジック
  */
 export const PublicationExpenseSection = {
-  fromTransactions: (transactions: PublicationExpenseTransaction[]): PublicationExpenseSection => {
-    return aggregatePoliticalActivitySection(transactions);
+  fromTransactions: (
+    transactions: PublicationExpenseTransaction[],
+  ): PublicationExpenseSection[] => {
+    return aggregatePoliticalActivitySections(transactions);
   },
 
   shouldOutputSheet: (section: PublicationExpenseSection): boolean => {
@@ -745,8 +750,10 @@ export const PublicationExpenseSection = {
  * AdvertisingExpenseSection に関連するドメインロジック
  */
 export const AdvertisingExpenseSection = {
-  fromTransactions: (transactions: AdvertisingExpenseTransaction[]): AdvertisingExpenseSection => {
-    return aggregatePoliticalActivitySection(transactions);
+  fromTransactions: (
+    transactions: AdvertisingExpenseTransaction[],
+  ): AdvertisingExpenseSection[] => {
+    return aggregatePoliticalActivitySections(transactions);
   },
 
   shouldOutputSheet: (section: AdvertisingExpenseSection): boolean => {
@@ -764,8 +771,8 @@ export const AdvertisingExpenseSection = {
 export const FundraisingPartyExpenseSection = {
   fromTransactions: (
     transactions: FundraisingPartyExpenseTransaction[],
-  ): FundraisingPartyExpenseSection => {
-    return aggregatePoliticalActivitySection(transactions);
+  ): FundraisingPartyExpenseSection[] => {
+    return aggregatePoliticalActivitySections(transactions);
   },
 
   shouldOutputSheet: (section: FundraisingPartyExpenseSection): boolean => {
@@ -787,8 +794,8 @@ export const FundraisingPartyExpenseSection = {
 export const OtherBusinessExpenseSection = {
   fromTransactions: (
     transactions: OtherBusinessExpenseTransaction[],
-  ): OtherBusinessExpenseSection => {
-    return aggregatePoliticalActivitySection(transactions);
+  ): OtherBusinessExpenseSection[] => {
+    return aggregatePoliticalActivitySections(transactions);
   },
 
   shouldOutputSheet: (section: OtherBusinessExpenseSection): boolean => {
@@ -804,8 +811,8 @@ export const OtherBusinessExpenseSection = {
  * ResearchExpenseSection に関連するドメインロジック
  */
 export const ResearchExpenseSection = {
-  fromTransactions: (transactions: ResearchExpenseTransaction[]): ResearchExpenseSection => {
-    return aggregatePoliticalActivitySection(transactions);
+  fromTransactions: (transactions: ResearchExpenseTransaction[]): ResearchExpenseSection[] => {
+    return aggregatePoliticalActivitySections(transactions);
   },
 
   shouldOutputSheet: (section: ResearchExpenseSection): boolean => {
@@ -823,8 +830,8 @@ export const ResearchExpenseSection = {
 export const DonationGrantExpenseSection = {
   fromTransactions: (
     transactions: DonationGrantExpenseTransaction[],
-  ): DonationGrantExpenseSection => {
-    return aggregatePoliticalActivitySection(transactions);
+  ): DonationGrantExpenseSection[] => {
+    return aggregatePoliticalActivitySections(transactions);
   },
 
   shouldOutputSheet: (section: DonationGrantExpenseSection): boolean => {
@@ -842,8 +849,8 @@ export const DonationGrantExpenseSection = {
 export const OtherPoliticalExpenseSection = {
   fromTransactions: (
     transactions: OtherPoliticalExpenseTransaction[],
-  ): OtherPoliticalExpenseSection => {
-    return aggregatePoliticalActivitySection(transactions);
+  ): OtherPoliticalExpenseSection[] => {
+    return aggregatePoliticalActivitySections(transactions);
   },
 
   shouldOutputSheet: (section: OtherPoliticalExpenseSection): boolean => {

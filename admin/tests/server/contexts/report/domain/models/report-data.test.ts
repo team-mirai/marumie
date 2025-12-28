@@ -14,15 +14,16 @@ describe("ExpenseData", () => {
     utilityExpenses: { totalAmount: 0, underThresholdAmount: 0, rows: [] },
     suppliesExpenses: { totalAmount: 0, underThresholdAmount: 0, rows: [] },
     officeExpenses: { totalAmount: 0, underThresholdAmount: 0, rows: [] },
-    organizationExpenses: { himoku: "", totalAmount: 0, underThresholdAmount: 0, rows: [] },
-    electionExpenses: { himoku: "", totalAmount: 0, underThresholdAmount: 0, rows: [] },
-    publicationExpenses: { himoku: "", totalAmount: 0, underThresholdAmount: 0, rows: [] },
-    advertisingExpenses: { himoku: "", totalAmount: 0, underThresholdAmount: 0, rows: [] },
-    fundraisingPartyExpenses: { himoku: "", totalAmount: 0, underThresholdAmount: 0, rows: [] },
-    otherBusinessExpenses: { himoku: "", totalAmount: 0, underThresholdAmount: 0, rows: [] },
-    researchExpenses: { himoku: "", totalAmount: 0, underThresholdAmount: 0, rows: [] },
-    donationGrantExpenses: { himoku: "", totalAmount: 0, underThresholdAmount: 0, rows: [] },
-    otherPoliticalExpenses: { himoku: "", totalAmount: 0, underThresholdAmount: 0, rows: [] },
+    // 政治活動費は配列で返される
+    organizationExpenses: [],
+    electionExpenses: [],
+    publicationExpenses: [],
+    advertisingExpenses: [],
+    fundraisingPartyExpenses: [],
+    otherBusinessExpenses: [],
+    researchExpenses: [],
+    donationGrantExpenses: [],
+    otherPoliticalExpenses: [],
     branchGrantExpenses: { totalAmount: 0, rows: [] },
   });
 
@@ -67,8 +68,12 @@ describe("ExpenseData", () => {
 
     it("政治活動費のみにデータがある場合はfalseを返す", () => {
       const data = createEmptyExpenseData();
-      data.organizationExpenses.totalAmount = 100000;
-      data.electionExpenses.totalAmount = 50000;
+      data.organizationExpenses = [
+        { himoku: "", totalAmount: 100000, underThresholdAmount: 0, rows: [] },
+      ];
+      data.electionExpenses = [
+        { himoku: "", totalAmount: 50000, underThresholdAmount: 0, rows: [] },
+      ];
       expect(ExpenseData.shouldOutputRegularExpenseSheet(data)).toBe(false);
     });
   });
@@ -81,55 +86,73 @@ describe("ExpenseData", () => {
 
     it("組織活動費にデータがある場合はtrueを返す", () => {
       const data = createEmptyExpenseData();
-      data.organizationExpenses.totalAmount = 100000;
+      data.organizationExpenses = [
+        { himoku: "", totalAmount: 100000, underThresholdAmount: 0, rows: [] },
+      ];
       expect(ExpenseData.shouldOutputPoliticalActivitySheet(data)).toBe(true);
     });
 
     it("選挙関係費にデータがある場合はtrueを返す", () => {
       const data = createEmptyExpenseData();
-      data.electionExpenses.totalAmount = 50000;
+      data.electionExpenses = [
+        { himoku: "", totalAmount: 50000, underThresholdAmount: 0, rows: [] },
+      ];
       expect(ExpenseData.shouldOutputPoliticalActivitySheet(data)).toBe(true);
     });
 
     it("機関紙誌の発行事業費にデータがある場合はtrueを返す", () => {
       const data = createEmptyExpenseData();
-      data.publicationExpenses.totalAmount = 30000;
+      data.publicationExpenses = [
+        { himoku: "", totalAmount: 30000, underThresholdAmount: 0, rows: [] },
+      ];
       expect(ExpenseData.shouldOutputPoliticalActivitySheet(data)).toBe(true);
     });
 
     it("宣伝事業費にデータがある場合はtrueを返す", () => {
       const data = createEmptyExpenseData();
-      data.advertisingExpenses.totalAmount = 20000;
+      data.advertisingExpenses = [
+        { himoku: "", totalAmount: 20000, underThresholdAmount: 0, rows: [] },
+      ];
       expect(ExpenseData.shouldOutputPoliticalActivitySheet(data)).toBe(true);
     });
 
     it("政治資金パーティー開催事業費にデータがある場合はtrueを返す", () => {
       const data = createEmptyExpenseData();
-      data.fundraisingPartyExpenses.totalAmount = 10000;
+      data.fundraisingPartyExpenses = [
+        { himoku: "", totalAmount: 10000, underThresholdAmount: 0, rows: [] },
+      ];
       expect(ExpenseData.shouldOutputPoliticalActivitySheet(data)).toBe(true);
     });
 
     it("その他の事業費にデータがある場合はtrueを返す", () => {
       const data = createEmptyExpenseData();
-      data.otherBusinessExpenses.totalAmount = 5000;
+      data.otherBusinessExpenses = [
+        { himoku: "", totalAmount: 5000, underThresholdAmount: 0, rows: [] },
+      ];
       expect(ExpenseData.shouldOutputPoliticalActivitySheet(data)).toBe(true);
     });
 
     it("調査研究費にデータがある場合はtrueを返す", () => {
       const data = createEmptyExpenseData();
-      data.researchExpenses.totalAmount = 3000;
+      data.researchExpenses = [
+        { himoku: "", totalAmount: 3000, underThresholdAmount: 0, rows: [] },
+      ];
       expect(ExpenseData.shouldOutputPoliticalActivitySheet(data)).toBe(true);
     });
 
     it("寄附・交付金にデータがある場合はtrueを返す", () => {
       const data = createEmptyExpenseData();
-      data.donationGrantExpenses.totalAmount = 2000;
+      data.donationGrantExpenses = [
+        { himoku: "", totalAmount: 2000, underThresholdAmount: 0, rows: [] },
+      ];
       expect(ExpenseData.shouldOutputPoliticalActivitySheet(data)).toBe(true);
     });
 
     it("その他の経費にデータがある場合はtrueを返す", () => {
       const data = createEmptyExpenseData();
-      data.otherPoliticalExpenses.totalAmount = 1000;
+      data.otherPoliticalExpenses = [
+        { himoku: "", totalAmount: 1000, underThresholdAmount: 0, rows: [] },
+      ];
       expect(ExpenseData.shouldOutputPoliticalActivitySheet(data)).toBe(true);
     });
 
@@ -143,7 +166,9 @@ describe("ExpenseData", () => {
 
     it("明細行のみがある場合もtrueを返す", () => {
       const data = createEmptyExpenseData();
-      data.organizationExpenses.rows = [createExpenseRow()];
+      data.organizationExpenses = [
+        { himoku: "", totalAmount: 0, underThresholdAmount: 0, rows: [createExpenseRow()] },
+      ];
       expect(ExpenseData.shouldOutputPoliticalActivitySheet(data)).toBe(true);
     });
   });
@@ -182,15 +207,16 @@ describe("ReportData", () => {
       utilityExpenses: { totalAmount: 0, underThresholdAmount: 0, rows: [] },
       suppliesExpenses: { totalAmount: 0, underThresholdAmount: 0, rows: [] },
       officeExpenses: { totalAmount: 0, underThresholdAmount: 0, rows: [] },
-      organizationExpenses: { himoku: "", totalAmount: 0, underThresholdAmount: 0, rows: [] },
-      electionExpenses: { himoku: "", totalAmount: 0, underThresholdAmount: 0, rows: [] },
-      publicationExpenses: { himoku: "", totalAmount: 0, underThresholdAmount: 0, rows: [] },
-      advertisingExpenses: { himoku: "", totalAmount: 0, underThresholdAmount: 0, rows: [] },
-      fundraisingPartyExpenses: { himoku: "", totalAmount: 0, underThresholdAmount: 0, rows: [] },
-      otherBusinessExpenses: { himoku: "", totalAmount: 0, underThresholdAmount: 0, rows: [] },
-      researchExpenses: { himoku: "", totalAmount: 0, underThresholdAmount: 0, rows: [] },
-      donationGrantExpenses: { himoku: "", totalAmount: 0, underThresholdAmount: 0, rows: [] },
-      otherPoliticalExpenses: { himoku: "", totalAmount: 0, underThresholdAmount: 0, rows: [] },
+      // 政治活動費は配列で返される
+      organizationExpenses: [],
+      electionExpenses: [],
+      publicationExpenses: [],
+      advertisingExpenses: [],
+      fundraisingPartyExpenses: [],
+      otherBusinessExpenses: [],
+      researchExpenses: [],
+      donationGrantExpenses: [],
+      otherPoliticalExpenses: [],
       branchGrantExpenses: { totalAmount: 0, rows: [] },
     },
   });
@@ -275,16 +301,83 @@ describe("ReportData", () => {
 
     it("25桁目: 組織活動費がある場合は1を返す", () => {
       const data = createEmptyReportData();
-      data.expenses.organizationExpenses.totalAmount = 100000;
+      data.expenses.organizationExpenses = [
+        { himoku: "", totalAmount: 100000, underThresholdAmount: 0, rows: [] },
+      ];
       const flagString = ReportData.buildSyuushiUmuFlg(data);
       expect(flagString[24]).toBe("1");
     });
 
     it("26桁目: 選挙関係費がある場合は1を返す", () => {
       const data = createEmptyReportData();
-      data.expenses.electionExpenses.totalAmount = 50000;
+      data.expenses.electionExpenses = [
+        { himoku: "", totalAmount: 50000, underThresholdAmount: 0, rows: [] },
+      ];
       const flagString = ReportData.buildSyuushiUmuFlg(data);
       expect(flagString[25]).toBe("1");
+    });
+
+    it("27桁目: 機関紙誌の発行事業費がある場合は1を返す", () => {
+      const data = createEmptyReportData();
+      data.expenses.publicationExpenses = [
+        { himoku: "", totalAmount: 30000, underThresholdAmount: 0, rows: [] },
+      ];
+      const flagString = ReportData.buildSyuushiUmuFlg(data);
+      expect(flagString[26]).toBe("1");
+    });
+
+    it("28桁目: 宣伝事業費がある場合は1を返す", () => {
+      const data = createEmptyReportData();
+      data.expenses.advertisingExpenses = [
+        { himoku: "", totalAmount: 20000, underThresholdAmount: 0, rows: [] },
+      ];
+      const flagString = ReportData.buildSyuushiUmuFlg(data);
+      expect(flagString[27]).toBe("1");
+    });
+
+    it("29桁目: 政治資金パーティー開催事業費がある場合は1を返す", () => {
+      const data = createEmptyReportData();
+      data.expenses.fundraisingPartyExpenses = [
+        { himoku: "", totalAmount: 10000, underThresholdAmount: 0, rows: [] },
+      ];
+      const flagString = ReportData.buildSyuushiUmuFlg(data);
+      expect(flagString[28]).toBe("1");
+    });
+
+    it("30桁目: その他の事業費がある場合は1を返す", () => {
+      const data = createEmptyReportData();
+      data.expenses.otherBusinessExpenses = [
+        { himoku: "", totalAmount: 5000, underThresholdAmount: 0, rows: [] },
+      ];
+      const flagString = ReportData.buildSyuushiUmuFlg(data);
+      expect(flagString[29]).toBe("1");
+    });
+
+    it("31桁目: 調査研究費がある場合は1を返す", () => {
+      const data = createEmptyReportData();
+      data.expenses.researchExpenses = [
+        { himoku: "", totalAmount: 3000, underThresholdAmount: 0, rows: [] },
+      ];
+      const flagString = ReportData.buildSyuushiUmuFlg(data);
+      expect(flagString[30]).toBe("1");
+    });
+
+    it("32桁目: 寄附・交付金がある場合は1を返す", () => {
+      const data = createEmptyReportData();
+      data.expenses.donationGrantExpenses = [
+        { himoku: "", totalAmount: 2000, underThresholdAmount: 0, rows: [] },
+      ];
+      const flagString = ReportData.buildSyuushiUmuFlg(data);
+      expect(flagString[31]).toBe("1");
+    });
+
+    it("33桁目: その他の経費がある場合は1を返す", () => {
+      const data = createEmptyReportData();
+      data.expenses.otherPoliticalExpenses = [
+        { himoku: "", totalAmount: 1000, underThresholdAmount: 0, rows: [] },
+      ];
+      const flagString = ReportData.buildSyuushiUmuFlg(data);
+      expect(flagString[32]).toBe("1");
     });
 
     it("複数のセクションにデータがある場合、対応する桁が全て1になる", () => {
@@ -292,7 +385,9 @@ describe("ReportData", () => {
       data.income.businessIncome.totalAmount = 100000; // 03桁目
       data.donations.personalDonations.totalAmount = 50000; // 07桁目
       data.expenses.utilityExpenses.totalAmount = 30000; // 22桁目
-      data.expenses.organizationExpenses.totalAmount = 20000; // 25桁目
+      data.expenses.organizationExpenses = [
+        { himoku: "", totalAmount: 20000, underThresholdAmount: 0, rows: [] },
+      ]; // 25桁目
 
       const flagString = ReportData.buildSyuushiUmuFlg(data);
 
@@ -354,16 +449,34 @@ describe("ReportData", () => {
       data.expenses.utilityExpenses.totalAmount = 10000;
       data.expenses.suppliesExpenses.totalAmount = 20000;
       data.expenses.officeExpenses.totalAmount = 30000;
-      // 政治活動費
-      data.expenses.organizationExpenses.totalAmount = 40000;
-      data.expenses.electionExpenses.totalAmount = 50000;
-      data.expenses.publicationExpenses.totalAmount = 60000;
-      data.expenses.advertisingExpenses.totalAmount = 70000;
-      data.expenses.fundraisingPartyExpenses.totalAmount = 80000;
-      data.expenses.otherBusinessExpenses.totalAmount = 90000;
-      data.expenses.researchExpenses.totalAmount = 100000;
-      data.expenses.donationGrantExpenses.totalAmount = 110000;
-      data.expenses.otherPoliticalExpenses.totalAmount = 120000;
+      // 政治活動費（配列で設定）
+      data.expenses.organizationExpenses = [
+        { himoku: "", totalAmount: 40000, underThresholdAmount: 0, rows: [] },
+      ];
+      data.expenses.electionExpenses = [
+        { himoku: "", totalAmount: 50000, underThresholdAmount: 0, rows: [] },
+      ];
+      data.expenses.publicationExpenses = [
+        { himoku: "", totalAmount: 60000, underThresholdAmount: 0, rows: [] },
+      ];
+      data.expenses.advertisingExpenses = [
+        { himoku: "", totalAmount: 70000, underThresholdAmount: 0, rows: [] },
+      ];
+      data.expenses.fundraisingPartyExpenses = [
+        { himoku: "", totalAmount: 80000, underThresholdAmount: 0, rows: [] },
+      ];
+      data.expenses.otherBusinessExpenses = [
+        { himoku: "", totalAmount: 90000, underThresholdAmount: 0, rows: [] },
+      ];
+      data.expenses.researchExpenses = [
+        { himoku: "", totalAmount: 100000, underThresholdAmount: 0, rows: [] },
+      ];
+      data.expenses.donationGrantExpenses = [
+        { himoku: "", totalAmount: 110000, underThresholdAmount: 0, rows: [] },
+      ];
+      data.expenses.otherPoliticalExpenses = [
+        { himoku: "", totalAmount: 120000, underThresholdAmount: 0, rows: [] },
+      ];
 
       const summary = ReportData.getSummary(data, 0);
 
@@ -375,7 +488,9 @@ describe("ReportData", () => {
       const data = createEmptyReportData();
       data.donations.personalDonations.totalAmount = 500000;
       data.expenses.utilityExpenses.totalAmount = 100000;
-      data.expenses.organizationExpenses.totalAmount = 200000;
+      data.expenses.organizationExpenses = [
+        { himoku: "", totalAmount: 200000, underThresholdAmount: 0, rows: [] },
+      ];
 
       const summary = ReportData.getSummary(data, 100000);
 
@@ -653,15 +768,16 @@ describe("ExpenseData.validate", () => {
     utilityExpenses: { totalAmount: 0, underThresholdAmount: 0, rows: [] },
     suppliesExpenses: { totalAmount: 0, underThresholdAmount: 0, rows: [] },
     officeExpenses: { totalAmount: 0, underThresholdAmount: 0, rows: [] },
-    organizationExpenses: { himoku: "", totalAmount: 0, underThresholdAmount: 0, rows: [] },
-    electionExpenses: { himoku: "", totalAmount: 0, underThresholdAmount: 0, rows: [] },
-    publicationExpenses: { himoku: "", totalAmount: 0, underThresholdAmount: 0, rows: [] },
-    advertisingExpenses: { himoku: "", totalAmount: 0, underThresholdAmount: 0, rows: [] },
-    fundraisingPartyExpenses: { himoku: "", totalAmount: 0, underThresholdAmount: 0, rows: [] },
-    otherBusinessExpenses: { himoku: "", totalAmount: 0, underThresholdAmount: 0, rows: [] },
-    researchExpenses: { himoku: "", totalAmount: 0, underThresholdAmount: 0, rows: [] },
-    donationGrantExpenses: { himoku: "", totalAmount: 0, underThresholdAmount: 0, rows: [] },
-    otherPoliticalExpenses: { himoku: "", totalAmount: 0, underThresholdAmount: 0, rows: [] },
+    // 政治活動費は配列で返される
+    organizationExpenses: [],
+    electionExpenses: [],
+    publicationExpenses: [],
+    advertisingExpenses: [],
+    fundraisingPartyExpenses: [],
+    otherBusinessExpenses: [],
+    researchExpenses: [],
+    donationGrantExpenses: [],
+    otherPoliticalExpenses: [],
     branchGrantExpenses: { totalAmount: 0, rows: [] },
   });
 
@@ -692,14 +808,21 @@ describe("ExpenseData.validate", () => {
 
   it("組織活動費の金額が0以下の場合エラーを返す", () => {
     const data = createEmptyExpenseDataForValidation();
-    data.organizationExpenses.rows = [
+    data.organizationExpenses = [
       {
-        ichirenNo: "1",
-        mokuteki: "会議費",
-        kingaku: 0,
-        dt: new Date("2024-01-01"),
-        nm: "取引先",
-        adr: "東京都",
+        himoku: "",
+        totalAmount: 0,
+        underThresholdAmount: 0,
+        rows: [
+          {
+            ichirenNo: "1",
+            mokuteki: "会議費",
+            kingaku: 0,
+            dt: new Date("2024-01-01"),
+            nm: "取引先",
+            adr: "東京都",
+          },
+        ],
       },
     ];
     const errors = ExpenseData.validate(data);
@@ -710,14 +833,21 @@ describe("ExpenseData.validate", () => {
 
   it("選挙関係費の年月日が空の場合エラーを返す", () => {
     const data = createEmptyExpenseDataForValidation();
-    data.electionExpenses.rows = [
+    data.electionExpenses = [
       {
-        ichirenNo: "1",
-        mokuteki: "選挙ポスター",
-        kingaku: 50000,
-        dt: null as unknown as Date,
-        nm: "印刷会社",
-        adr: "東京都",
+        himoku: "",
+        totalAmount: 0,
+        underThresholdAmount: 0,
+        rows: [
+          {
+            ichirenNo: "1",
+            mokuteki: "選挙ポスター",
+            kingaku: 50000,
+            dt: null as unknown as Date,
+            nm: "印刷会社",
+            adr: "東京都",
+          },
+        ],
       },
     ];
     const errors = ExpenseData.validate(data);
@@ -738,18 +868,123 @@ describe("ExpenseData.validate", () => {
         adr: "東京都",
       },
     ];
-    data.organizationExpenses.rows = [
+    data.organizationExpenses = [
       {
-        ichirenNo: "1",
-        mokuteki: "会議費",
-        kingaku: 0,
-        dt: new Date("2024-01-01"),
-        nm: "取引先",
-        adr: "東京都",
+        himoku: "",
+        totalAmount: 0,
+        underThresholdAmount: 0,
+        rows: [
+          {
+            ichirenNo: "1",
+            mokuteki: "会議費",
+            kingaku: 0,
+            dt: new Date("2024-01-01"),
+            nm: "取引先",
+            adr: "東京都",
+          },
+        ],
       },
     ];
     const errors = ExpenseData.validate(data);
 
     expect(errors.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it("機関紙誌の発行事業費の配列を検証する", () => {
+    const data = createEmptyExpenseDataForValidation();
+    data.publicationExpenses = [
+      {
+        himoku: "機関紙",
+        totalAmount: 50000,
+        underThresholdAmount: 0,
+        rows: [],
+      },
+    ];
+    const errors = ExpenseData.validate(data);
+    expect(errors).toHaveLength(0);
+  });
+
+  it("宣伝事業費の配列を検証する", () => {
+    const data = createEmptyExpenseDataForValidation();
+    data.advertisingExpenses = [
+      {
+        himoku: "広告",
+        totalAmount: 30000,
+        underThresholdAmount: 0,
+        rows: [],
+      },
+    ];
+    const errors = ExpenseData.validate(data);
+    expect(errors).toHaveLength(0);
+  });
+
+  it("政治資金パーティー開催事業費の配列を検証する", () => {
+    const data = createEmptyExpenseDataForValidation();
+    data.fundraisingPartyExpenses = [
+      {
+        himoku: "パーティー",
+        totalAmount: 100000,
+        underThresholdAmount: 0,
+        rows: [],
+      },
+    ];
+    const errors = ExpenseData.validate(data);
+    expect(errors).toHaveLength(0);
+  });
+
+  it("その他の事業費の配列を検証する", () => {
+    const data = createEmptyExpenseDataForValidation();
+    data.otherBusinessExpenses = [
+      {
+        himoku: "その他事業",
+        totalAmount: 20000,
+        underThresholdAmount: 0,
+        rows: [],
+      },
+    ];
+    const errors = ExpenseData.validate(data);
+    expect(errors).toHaveLength(0);
+  });
+
+  it("調査研究費の配列を検証する", () => {
+    const data = createEmptyExpenseDataForValidation();
+    data.researchExpenses = [
+      {
+        himoku: "調査",
+        totalAmount: 15000,
+        underThresholdAmount: 0,
+        rows: [],
+      },
+    ];
+    const errors = ExpenseData.validate(data);
+    expect(errors).toHaveLength(0);
+  });
+
+  it("寄附・交付金の配列を検証する", () => {
+    const data = createEmptyExpenseDataForValidation();
+    data.donationGrantExpenses = [
+      {
+        himoku: "寄附",
+        totalAmount: 10000,
+        underThresholdAmount: 0,
+        rows: [],
+      },
+    ];
+    const errors = ExpenseData.validate(data);
+    expect(errors).toHaveLength(0);
+  });
+
+  it("その他の経費の配列を検証する", () => {
+    const data = createEmptyExpenseDataForValidation();
+    data.otherPoliticalExpenses = [
+      {
+        himoku: "その他",
+        totalAmount: 5000,
+        underThresholdAmount: 0,
+        rows: [],
+      },
+    ];
+    const errors = ExpenseData.validate(data);
+    expect(errors).toHaveLength(0);
   });
 });

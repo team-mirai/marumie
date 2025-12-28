@@ -116,16 +116,16 @@ export interface ExpenseData {
   suppliesExpenses: SuppliesExpenseSection; // KUBUN2: 備品・消耗品費
   officeExpenses: OfficeExpenseSection; // KUBUN3: 事務所費
 
-  // SYUUSHI07_15: 政治活動費（全9区分）
-  organizationExpenses: OrganizationExpenseSection; // KUBUN1: 組織活動費
-  electionExpenses: ElectionExpenseSection; // KUBUN2: 選挙関係費
-  publicationExpenses: PublicationExpenseSection; // KUBUN3: 機関紙誌の発行事業費
-  advertisingExpenses: AdvertisingExpenseSection; // KUBUN4: 宣伝事業費
-  fundraisingPartyExpenses: FundraisingPartyExpenseSection; // KUBUN5: 政治資金パーティー開催事業費
-  otherBusinessExpenses: OtherBusinessExpenseSection; // KUBUN6: その他の事業費
-  researchExpenses: ResearchExpenseSection; // KUBUN7: 調査研究費
-  donationGrantExpenses: DonationGrantExpenseSection; // KUBUN8: 寄附・交付金
-  otherPoliticalExpenses: OtherPoliticalExpenseSection; // KUBUN9: その他の経費
+  // SYUUSHI07_15: 政治活動費（全9区分）- 費目ごとに複数のSHEETを持つことができる
+  organizationExpenses: OrganizationExpenseSection[]; // KUBUN1: 組織活動費
+  electionExpenses: ElectionExpenseSection[]; // KUBUN2: 選挙関係費
+  publicationExpenses: PublicationExpenseSection[]; // KUBUN3: 機関紙誌の発行事業費
+  advertisingExpenses: AdvertisingExpenseSection[]; // KUBUN4: 宣伝事業費
+  fundraisingPartyExpenses: FundraisingPartyExpenseSection[]; // KUBUN5: 政治資金パーティー開催事業費
+  otherBusinessExpenses: OtherBusinessExpenseSection[]; // KUBUN6: その他の事業費
+  researchExpenses: ResearchExpenseSection[]; // KUBUN7: 調査研究費
+  donationGrantExpenses: DonationGrantExpenseSection[]; // KUBUN8: 寄附・交付金
+  otherPoliticalExpenses: OtherPoliticalExpenseSection[]; // KUBUN9: その他の経費
 
   // SYUUSHI07_16: 本部又は支部に対する交付金
   branchGrantExpenses: BranchGrantExpenseSection;
@@ -153,15 +153,23 @@ export const ExpenseData = {
    */
   shouldOutputPoliticalActivitySheet(data: ExpenseData): boolean {
     return (
-      OrganizationExpenseSectionModel.shouldOutputSheet(data.organizationExpenses) ||
-      ElectionExpenseSectionModel.shouldOutputSheet(data.electionExpenses) ||
-      PublicationExpenseSectionModel.shouldOutputSheet(data.publicationExpenses) ||
-      AdvertisingExpenseSectionModel.shouldOutputSheet(data.advertisingExpenses) ||
-      FundraisingPartyExpenseSectionModel.shouldOutputSheet(data.fundraisingPartyExpenses) ||
-      OtherBusinessExpenseSectionModel.shouldOutputSheet(data.otherBusinessExpenses) ||
-      ResearchExpenseSectionModel.shouldOutputSheet(data.researchExpenses) ||
-      DonationGrantExpenseSectionModel.shouldOutputSheet(data.donationGrantExpenses) ||
-      OtherPoliticalExpenseSectionModel.shouldOutputSheet(data.otherPoliticalExpenses)
+      data.organizationExpenses.some((s) => OrganizationExpenseSectionModel.shouldOutputSheet(s)) ||
+      data.electionExpenses.some((s) => ElectionExpenseSectionModel.shouldOutputSheet(s)) ||
+      data.publicationExpenses.some((s) => PublicationExpenseSectionModel.shouldOutputSheet(s)) ||
+      data.advertisingExpenses.some((s) => AdvertisingExpenseSectionModel.shouldOutputSheet(s)) ||
+      data.fundraisingPartyExpenses.some((s) =>
+        FundraisingPartyExpenseSectionModel.shouldOutputSheet(s),
+      ) ||
+      data.otherBusinessExpenses.some((s) =>
+        OtherBusinessExpenseSectionModel.shouldOutputSheet(s),
+      ) ||
+      data.researchExpenses.some((s) => ResearchExpenseSectionModel.shouldOutputSheet(s)) ||
+      data.donationGrantExpenses.some((s) =>
+        DonationGrantExpenseSectionModel.shouldOutputSheet(s),
+      ) ||
+      data.otherPoliticalExpenses.some((s) =>
+        OtherPoliticalExpenseSectionModel.shouldOutputSheet(s),
+      )
     );
   },
 
@@ -170,15 +178,33 @@ export const ExpenseData = {
     errors.push(...UtilityExpenseSectionModel.validate(data.utilityExpenses));
     errors.push(...SuppliesExpenseSectionModel.validate(data.suppliesExpenses));
     errors.push(...OfficeExpenseSectionModel.validate(data.officeExpenses));
-    errors.push(...OrganizationExpenseSectionModel.validate(data.organizationExpenses));
-    errors.push(...ElectionExpenseSectionModel.validate(data.electionExpenses));
-    errors.push(...PublicationExpenseSectionModel.validate(data.publicationExpenses));
-    errors.push(...AdvertisingExpenseSectionModel.validate(data.advertisingExpenses));
-    errors.push(...FundraisingPartyExpenseSectionModel.validate(data.fundraisingPartyExpenses));
-    errors.push(...OtherBusinessExpenseSectionModel.validate(data.otherBusinessExpenses));
-    errors.push(...ResearchExpenseSectionModel.validate(data.researchExpenses));
-    errors.push(...DonationGrantExpenseSectionModel.validate(data.donationGrantExpenses));
-    errors.push(...OtherPoliticalExpenseSectionModel.validate(data.otherPoliticalExpenses));
+    for (const section of data.organizationExpenses) {
+      errors.push(...OrganizationExpenseSectionModel.validate(section));
+    }
+    for (const section of data.electionExpenses) {
+      errors.push(...ElectionExpenseSectionModel.validate(section));
+    }
+    for (const section of data.publicationExpenses) {
+      errors.push(...PublicationExpenseSectionModel.validate(section));
+    }
+    for (const section of data.advertisingExpenses) {
+      errors.push(...AdvertisingExpenseSectionModel.validate(section));
+    }
+    for (const section of data.fundraisingPartyExpenses) {
+      errors.push(...FundraisingPartyExpenseSectionModel.validate(section));
+    }
+    for (const section of data.otherBusinessExpenses) {
+      errors.push(...OtherBusinessExpenseSectionModel.validate(section));
+    }
+    for (const section of data.researchExpenses) {
+      errors.push(...ResearchExpenseSectionModel.validate(section));
+    }
+    for (const section of data.donationGrantExpenses) {
+      errors.push(...DonationGrantExpenseSectionModel.validate(section));
+    }
+    for (const section of data.otherPoliticalExpenses) {
+      errors.push(...OtherPoliticalExpenseSectionModel.validate(section));
+    }
     return errors;
   },
 };
@@ -281,23 +307,37 @@ export const ReportData = {
       // 24: その14 4.事務所費
       OfficeExpenseSectionModel.shouldOutputSheet(data.expenses.officeExpenses),
       // 25: その15 1.組織活動費
-      OrganizationExpenseSectionModel.shouldOutputSheet(data.expenses.organizationExpenses),
+      data.expenses.organizationExpenses.some((s) =>
+        OrganizationExpenseSectionModel.shouldOutputSheet(s),
+      ),
       // 26: その15 2.選挙関係費
-      ElectionExpenseSectionModel.shouldOutputSheet(data.expenses.electionExpenses),
+      data.expenses.electionExpenses.some((s) => ElectionExpenseSectionModel.shouldOutputSheet(s)),
       // 27: その15 3.機関紙誌の発行事業費
-      PublicationExpenseSectionModel.shouldOutputSheet(data.expenses.publicationExpenses),
+      data.expenses.publicationExpenses.some((s) =>
+        PublicationExpenseSectionModel.shouldOutputSheet(s),
+      ),
       // 28: その15 4.宣伝事業費
-      AdvertisingExpenseSectionModel.shouldOutputSheet(data.expenses.advertisingExpenses),
+      data.expenses.advertisingExpenses.some((s) =>
+        AdvertisingExpenseSectionModel.shouldOutputSheet(s),
+      ),
       // 29: その15 5.政治資金パーティー開催事業費
-      FundraisingPartyExpenseSectionModel.shouldOutputSheet(data.expenses.fundraisingPartyExpenses),
+      data.expenses.fundraisingPartyExpenses.some((s) =>
+        FundraisingPartyExpenseSectionModel.shouldOutputSheet(s),
+      ),
       // 30: その15 6.その他の事業費
-      OtherBusinessExpenseSectionModel.shouldOutputSheet(data.expenses.otherBusinessExpenses),
+      data.expenses.otherBusinessExpenses.some((s) =>
+        OtherBusinessExpenseSectionModel.shouldOutputSheet(s),
+      ),
       // 31: その15 7.調査研究費
-      ResearchExpenseSectionModel.shouldOutputSheet(data.expenses.researchExpenses),
+      data.expenses.researchExpenses.some((s) => ResearchExpenseSectionModel.shouldOutputSheet(s)),
       // 32: その15 8.寄附・交付金
-      DonationGrantExpenseSectionModel.shouldOutputSheet(data.expenses.donationGrantExpenses),
+      data.expenses.donationGrantExpenses.some((s) =>
+        DonationGrantExpenseSectionModel.shouldOutputSheet(s),
+      ),
       // 33: その15 9.その他の経費
-      OtherPoliticalExpenseSectionModel.shouldOutputSheet(data.expenses.otherPoliticalExpenses),
+      data.expenses.otherPoliticalExpenses.some((s) =>
+        OtherPoliticalExpenseSectionModel.shouldOutputSheet(s),
+      ),
       // 34: その16（本部・支部への交付金支出）
       BranchGrantExpenseSectionModel.shouldOutputSheet(data.expenses.branchGrantExpenses),
       // 35: その17（資産等の項目別内訳の有無）- 未実装
@@ -393,17 +433,20 @@ export const ReportData = {
       Math.round(data.expenses.suppliesExpenses.totalAmount) +
       Math.round(data.expenses.officeExpenses.totalAmount);
 
-    // 政治活動費（SYUUSHI07_15）
+    // 政治活動費（SYUUSHI07_15）- 各配列の合計を計算
     const politicalActivityExpenseAmount =
-      Math.round(data.expenses.organizationExpenses.totalAmount) +
-      Math.round(data.expenses.electionExpenses.totalAmount) +
-      Math.round(data.expenses.publicationExpenses.totalAmount) +
-      Math.round(data.expenses.advertisingExpenses.totalAmount) +
-      Math.round(data.expenses.fundraisingPartyExpenses.totalAmount) +
-      Math.round(data.expenses.otherBusinessExpenses.totalAmount) +
-      Math.round(data.expenses.researchExpenses.totalAmount) +
-      Math.round(data.expenses.donationGrantExpenses.totalAmount) +
-      Math.round(data.expenses.otherPoliticalExpenses.totalAmount);
+      data.expenses.organizationExpenses.reduce((sum, s) => sum + Math.round(s.totalAmount), 0) +
+      data.expenses.electionExpenses.reduce((sum, s) => sum + Math.round(s.totalAmount), 0) +
+      data.expenses.publicationExpenses.reduce((sum, s) => sum + Math.round(s.totalAmount), 0) +
+      data.expenses.advertisingExpenses.reduce((sum, s) => sum + Math.round(s.totalAmount), 0) +
+      data.expenses.fundraisingPartyExpenses.reduce(
+        (sum, s) => sum + Math.round(s.totalAmount),
+        0,
+      ) +
+      data.expenses.otherBusinessExpenses.reduce((sum, s) => sum + Math.round(s.totalAmount), 0) +
+      data.expenses.researchExpenses.reduce((sum, s) => sum + Math.round(s.totalAmount), 0) +
+      data.expenses.donationGrantExpenses.reduce((sum, s) => sum + Math.round(s.totalAmount), 0) +
+      data.expenses.otherPoliticalExpenses.reduce((sum, s) => sum + Math.round(s.totalAmount), 0);
 
     // 支出総額 = 経常経費 + 政治活動費
     const sisyutuSgk = regularExpenseAmount + politicalActivityExpenseAmount;

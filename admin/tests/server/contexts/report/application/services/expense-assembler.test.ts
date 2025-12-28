@@ -204,17 +204,16 @@ describe("ExpenseAssembler", () => {
       expect(result.suppliesExpenses.totalAmount).toBe(0);
       expect(result.officeExpenses.totalAmount).toBe(0);
 
-      // 政治活動費
-      expect(result.organizationExpenses.totalAmount).toBe(0);
-      expect(result.organizationExpenses.himoku).toBe("");
-      expect(result.electionExpenses.totalAmount).toBe(0);
-      expect(result.publicationExpenses.totalAmount).toBe(0);
-      expect(result.advertisingExpenses.totalAmount).toBe(0);
-      expect(result.fundraisingPartyExpenses.totalAmount).toBe(0);
-      expect(result.otherBusinessExpenses.totalAmount).toBe(0);
-      expect(result.researchExpenses.totalAmount).toBe(0);
-      expect(result.donationGrantExpenses.totalAmount).toBe(0);
-      expect(result.otherPoliticalExpenses.totalAmount).toBe(0);
+      // 政治活動費（配列で返される）
+      expect(result.organizationExpenses).toHaveLength(0);
+      expect(result.electionExpenses).toHaveLength(0);
+      expect(result.publicationExpenses).toHaveLength(0);
+      expect(result.advertisingExpenses).toHaveLength(0);
+      expect(result.fundraisingPartyExpenses).toHaveLength(0);
+      expect(result.otherBusinessExpenses).toHaveLength(0);
+      expect(result.researchExpenses).toHaveLength(0);
+      expect(result.donationGrantExpenses).toHaveLength(0);
+      expect(result.otherPoliticalExpenses).toHaveLength(0);
     });
 
     it("全14種類のセクションを含むExpenseDataを返す", async () => {
