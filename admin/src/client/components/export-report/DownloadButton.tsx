@@ -50,7 +50,7 @@ export function DownloadButton({ politicalOrganizationId, financialYear }: Downl
   return (
     <div className="space-y-4">
       <Button type="button" onClick={handleDownload} disabled={isDownloading}>
-        {isDownloading ? "ダウンロード中..." : "Shift_JISでダウンロード"}
+        {isDownloading ? "ダウンロード中..." : "XMLをダウンロード"}
       </Button>
 
       {status && (

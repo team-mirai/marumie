@@ -52,7 +52,7 @@ export default async function ExportReportDetailPage({ params }: ExportReportDet
   return (
     <div className="bg-card rounded-xl p-4">
       <h1 className="text-2xl font-bold text-white mb-1">報告書エクスポート</h1>
-      <p className="text-muted-foreground mb-6">政治資金報告書をXML形式で出力します。</p>
+      <p className="text-muted-foreground mb-6">政治資金報告書をエクスポートします</p>
 
       <div className="space-y-6">
         <ExportReportSelectors
