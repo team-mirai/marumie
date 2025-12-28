@@ -12,6 +12,7 @@ interface TransactionSeedData {
   description: string;
   categoryKey: string;
   counterpartName?: string;
+  donorName?: string;
   friendlyCategory?: string;
 }
 
@@ -168,6 +169,7 @@ const data: TransactionSeedData[] = [
     creditAmount: '40000',
     description: '個人寄附（寄附　太郎）',
     categoryKey: 'individual-donations',
+    donorName: '寄附　太郎',
   },
   {
     transactionNo: 'T2025-0013',
@@ -179,6 +181,7 @@ const data: TransactionSeedData[] = [
     creditAmount: '30000',
     description: '個人寄附（寄附　花子）',
     categoryKey: 'individual-donations',
+    donorName: '寄附　花子',
   },
   {
     transactionNo: 'T2025-0014',
@@ -190,6 +193,7 @@ const data: TransactionSeedData[] = [
     creditAmount: '60000',
     description: '個人寄附（寄附　次郎）',
     categoryKey: 'individual-donations',
+    donorName: '寄附　次郎',
   },
   {
     transactionNo: 'T2025-0015',
@@ -201,6 +205,7 @@ const data: TransactionSeedData[] = [
     creditAmount: '100000',
     description: '個人寄附（寄附　三郎）',
     categoryKey: 'individual-donations',
+    donorName: '寄附　三郎',
   },
   {
     transactionNo: 'T2025-0016',
@@ -212,6 +217,7 @@ const data: TransactionSeedData[] = [
     creditAmount: '50000',
     description: '個人寄附（寄附　四郎、境界値: ちょうど5万円）',
     categoryKey: 'individual-donations',
+    donorName: '寄附　四郎',
   },
 
   // SYUUSHI07_07: 寄附の明細（KUBUN2: 法人）
@@ -225,6 +231,7 @@ const data: TransactionSeedData[] = [
     creditAmount: '45000',
     description: '法人寄附（株式会社デジタル未来）',
     categoryKey: 'corporate-donations',
+    donorName: '株式会社デジタル未来',
   },
   {
     transactionNo: 'T2025-0018',
@@ -236,6 +243,7 @@ const data: TransactionSeedData[] = [
     creditAmount: '80000',
     description: '法人寄附（一般社団法人政治改革推進会）',
     categoryKey: 'corporate-donations',
+    donorName: '一般社団法人政治改革推進会',
   },
   {
     transactionNo: 'T2025-0019',
@@ -247,6 +255,7 @@ const data: TransactionSeedData[] = [
     creditAmount: '150000',
     description: '法人寄附（NPO法人民主主義研究所）',
     categoryKey: 'corporate-donations',
+    donorName: 'NPO法人民主主義研究所',
   },
 
   // SYUUSHI07_07: 寄附の明細（KUBUN3: 政治団体）
@@ -260,6 +269,7 @@ const data: TransactionSeedData[] = [
     creditAmount: '200000',
     description: '政治団体からの寄附（デジタル政策推進団体）',
     categoryKey: 'political-donations',
+    donorName: 'デジタル政策推進団体',
   },
   {
     transactionNo: 'T2025-0021',
@@ -271,6 +281,7 @@ const data: TransactionSeedData[] = [
     creditAmount: '300000',
     description: '政治団体からの寄附（若手政治家の会）',
     categoryKey: 'political-donations',
+    donorName: '若手政治家の会',
   },
 
   // SYUUSHI07_14: 経常経費の支出（KUBUN1: 光熱水費、境界値テスト: 5万円）
@@ -699,6 +710,60 @@ const data: TransactionSeedData[] = [
     counterpartName: 'サンプル党世田谷支部',
     friendlyCategory: '選挙応援交付金',
   },
+
+  // パーティー対価収入（政治資金パーティー）
+  {
+    transactionNo: 'T2025-0053',
+    transactionDate: '2025-07-20',
+    transactionType: 'income',
+    debitAccount: '普通預金',
+    debitAmount: '200000',
+    creditAccount: '政治資金パーティーの対価に係る収入',
+    creditAmount: '200000',
+    description: 'パーティー対価収入（個人）',
+    categoryKey: 'party-income',
+    donorName: 'パーティー　一郎',
+    friendlyCategory: 'パーティー対価（個人）',
+  },
+  {
+    transactionNo: 'T2025-0054',
+    transactionDate: '2025-07-20',
+    transactionType: 'income',
+    debitAccount: '普通預金',
+    debitAmount: '150000',
+    creditAccount: '政治資金パーティーの対価に係る収入',
+    creditAmount: '150000',
+    description: 'パーティー対価収入（個人）',
+    categoryKey: 'party-income',
+    donorName: 'パーティー　二郎',
+    friendlyCategory: 'パーティー対価（個人）',
+  },
+  {
+    transactionNo: 'T2025-0055',
+    transactionDate: '2025-07-20',
+    transactionType: 'income',
+    debitAccount: '普通預金',
+    debitAmount: '500000',
+    creditAccount: '政治資金パーティーの対価に係る収入',
+    creditAmount: '500000',
+    description: 'パーティー対価収入（法人）',
+    categoryKey: 'party-income',
+    donorName: '株式会社イノベーション',
+    friendlyCategory: 'パーティー対価（法人）',
+  },
+  {
+    transactionNo: 'T2025-0056',
+    transactionDate: '2025-07-20',
+    transactionType: 'income',
+    debitAccount: '普通預金',
+    debitAmount: '300000',
+    creditAccount: '政治資金パーティーの対価に係る収入',
+    creditAmount: '300000',
+    description: 'パーティー対価収入（政治団体）',
+    categoryKey: 'party-income',
+    donorName: '地方創生研究会',
+    friendlyCategory: 'パーティー対価（政治団体）',
+  },
 ];
 
 export const transactionsSeeder: Seeder = {
@@ -741,6 +806,19 @@ export const transactionsSeeder: Seeder = {
         }
       }
 
+      // Donorの取得（存在する場合）
+      let donorId: bigint | undefined;
+      if (item.donorName) {
+        const donor = await prisma.donor.findFirst({
+          where: { name: item.donorName },
+        });
+        if (donor) {
+          donorId = donor.id;
+        } else {
+          console.log(`⚠️  Warning: Donor "${item.donorName}" not found`);
+        }
+      }
+
       // Transactionの作成
       const transaction = await prisma.transaction.create({
         data: {
@@ -765,6 +843,16 @@ export const transactionsSeeder: Seeder = {
           data: {
             transactionId: transaction.id,
             counterpartId: counterpartId,
+          },
+        });
+      }
+
+      // TransactionDonorの作成（donorIdが存在する場合）
+      if (donorId) {
+        await prisma.transactionDonor.create({
+          data: {
+            transactionId: transaction.id,
+            donorId: donorId,
           },
         });
       }
