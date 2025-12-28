@@ -605,7 +605,7 @@ const data: TransactionSeedData[] = [
     friendlyCategory: '政治団体寄附',
   },
 
-  // SYUUSHI07_15: 政治活動費の支出（KUBUN9: その他の経費）
+  // SYUUSHI07_15: 政治活動費の支出（KUBUN9: その他の経費、境界値テスト: 5万円）
   {
     transactionNo: 'T2025-0046',
     transactionDate: '2025-12-31',
@@ -631,6 +631,45 @@ const data: TransactionSeedData[] = [
     categoryKey: 'other-expenses',
     counterpartName: 'みずほ銀行',
     friendlyCategory: '振込手数料',
+  },
+  {
+    transactionNo: 'T2025-0050',
+    transactionDate: '2025-10-20',
+    transactionType: 'expense',
+    debitAccount: 'その他の経費',
+    debitAmount: '80000',
+    creditAccount: '普通預金',
+    creditAmount: '80000',
+    description: '法務相談費用',
+    categoryKey: 'other-expenses',
+    counterpartName: '株式会社法務コンサルティング',
+    friendlyCategory: '法務相談料',
+  },
+  {
+    transactionNo: 'T2025-0051',
+    transactionDate: '2025-11-15',
+    transactionType: 'expense',
+    debitAccount: 'その他の経費',
+    debitAmount: '50000',
+    creditAccount: '普通預金',
+    creditAmount: '50000',
+    description: '届出書類作成代行（境界値: ちょうど5万円）',
+    categoryKey: 'other-expenses',
+    counterpartName: '行政書士事務所山田',
+    friendlyCategory: '行政書士報酬',
+  },
+  {
+    transactionNo: 'T2025-0052',
+    transactionDate: '2025-12-10',
+    transactionType: 'expense',
+    debitAccount: 'その他の経費',
+    debitAmount: '150000',
+    creditAccount: '普通預金',
+    creditAmount: '150000',
+    description: '税務顧問料',
+    categoryKey: 'other-expenses',
+    counterpartName: '税理士法人田中事務所',
+    friendlyCategory: '税理士報酬',
   },
 
   // SYUUSHI07_16: 本部または支部に対する交付金の支出
