@@ -1,3 +1,4 @@
+import "server-only";
 import { Prisma, type PrismaClient, type Transaction as PrismaTransaction } from "@prisma/client";
 import type { Transaction, TransactionType } from "@/shared/models/transaction";
 import type { TransactionFilters } from "@/types/transaction-filters";
