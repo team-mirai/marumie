@@ -5,14 +5,14 @@
  * どのトランザクションがCounterpart情報を必要とするかを定義します。
  */
 
-import { PL_CATEGORIES } from "@/shared/utils/category-mapping";
+import { PL_CATEGORIES } from "@/shared/accounting/account-category";
 
 /**
  * Counterpart紐づけが必要な収入カテゴリ
  * - loans: 借入金（SYUUSHI07_04）
  * - grants: 本部・支部交付金（SYUUSHI07_05）
  *
- * ※ キーは shared/utils/category-mapping.ts の PL_CATEGORIES.key と一致させる
+ * ※ キーは shared/accounting/account-category.ts の PL_CATEGORIES.key と一致させる
  */
 export const COUNTERPART_REQUIRED_INCOME_CATEGORIES = [
   // biome-ignore lint/complexity/useLiteralKeys: 日本語キー
@@ -61,7 +61,7 @@ export const POLITICAL_ACTIVITY_EXPENSE_CATEGORIES = [
  * Counterpart紐づけが必要な支出カテゴリ
  * 経常経費（SYUUSHI07_14）と政治活動費（SYUUSHI07_15）のすべて
  *
- * ※ キーは shared/utils/category-mapping.ts の PL_CATEGORIES.key と一致させる
+ * ※ キーは shared/accounting/account-category.ts の PL_CATEGORIES.key と一致させる
  */
 export const COUNTERPART_REQUIRED_EXPENSE_CATEGORIES = [
   ...ROUTINE_EXPENSE_CATEGORIES,

@@ -35,9 +35,9 @@ import {
   POLITICAL_ACTIVITY_EXPENSE_THRESHOLD,
   requiresCounterpartDetail,
 } from "@/server/contexts/report/domain/models/counterpart-assignment-rules";
-import { PL_CATEGORIES } from "@/shared/utils/category-mapping";
+import { PL_CATEGORIES } from "@/shared/accounting/account-category";
 
-// カテゴリキー定数（shared/utils/category-mapping.ts の日本語キー経由で取得）
+// カテゴリキー定数（shared/accounting/account-category.ts の日本語キー経由で取得）
 const CATEGORY_KEYS = {
   // biome-ignore lint/complexity/useLiteralKeys: 日本語キー
   INDIVIDUAL_DONATION: PL_CATEGORIES["個人からの寄附"].key,

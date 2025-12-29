@@ -9,7 +9,7 @@ import {
   COUNTERPART_REQUIRED_INCOME_CATEGORIES,
   COUNTERPART_REQUIRED_EXPENSE_CATEGORIES,
 } from "@/server/contexts/report/domain/models/counterpart-assignment-rules";
-import { PL_CATEGORIES } from "@/shared/utils/category-mapping";
+import { PL_CATEGORIES } from "@/shared/accounting/account-category";
 
 describe("counterpart-assignment-rules", () => {
   describe("COUNTERPART_REQUIRED_INCOME_CATEGORIES", () => {

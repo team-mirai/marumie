@@ -2,7 +2,7 @@
 import "client-only";
 
 import type { TransactionWithOrganization } from "@/server/contexts/shared/domain/transaction";
-import { PL_CATEGORIES } from "@/shared/utils/category-mapping";
+import { PL_CATEGORIES } from "@/shared/accounting/account-category";
 import type { TransactionType } from "@/shared/models/transaction";
 
 interface TransactionRowProps {

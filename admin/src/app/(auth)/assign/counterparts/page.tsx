@@ -8,7 +8,7 @@ import {
   COUNTERPART_REQUIRED_INCOME_CATEGORIES,
   COUNTERPART_REQUIRED_EXPENSE_CATEGORIES,
 } from "@/server/contexts/report/domain/models/counterpart-assignment-rules";
-import { PL_CATEGORIES } from "@/shared/utils/category-mapping";
+import { PL_CATEGORIES } from "@/shared/accounting/account-category";
 
 /**
  * Counterpart紐付け対象カテゴリのオプションを生成
