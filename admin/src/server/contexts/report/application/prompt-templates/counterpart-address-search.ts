@@ -1,7 +1,7 @@
 export const COUNTERPART_ADDRESS_SEARCH_PROMPT_ID = "counterpart-address-search-v1";
 
 export function buildCounterpartAddressSearchPrompt(companyName: string, hint?: string): string {
-  const hintPart = hint ? `業態・業種のヒント: ${hint}\n` : "";
+  const hintPart = hint ? `検索ヒント: ${hint}\n` : "";
 
   return `あなたは日本の企業・団体の住所を調査する専門家です。
 
