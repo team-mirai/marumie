@@ -15,7 +15,6 @@ export interface DonorAssignmentFilterValues {
   categoryKey: string;
   searchQuery: string;
   unassignedOnly: boolean;
-  donorRequiredOnly: boolean;
 }
 
 interface DonorAssignmentFiltersProps {
@@ -91,17 +90,6 @@ export function DonorAssignmentFilters({
           />
           <Label htmlFor="unassigned-only" className="text-white text-sm cursor-pointer">
             未紐付けのみ表示
-          </Label>
-        </div>
-
-        <div className="flex items-center gap-2 cursor-pointer">
-          <Checkbox
-            id="donor-required-only"
-            checked={values.donorRequiredOnly}
-            onCheckedChange={(checked) => onChange({ donorRequiredOnly: checked === true })}
-          />
-          <Label htmlFor="donor-required-only" className="text-white text-sm cursor-pointer">
-            寄付者紐付け対象のみ表示
           </Label>
         </div>
       </div>

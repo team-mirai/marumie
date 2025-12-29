@@ -32,7 +32,6 @@ export interface TransactionWithDonorFilters {
   politicalOrganizationId: string;
   financialYear: number;
   unassignedOnly?: boolean;
-  requiresDonorOnly?: boolean;
   categoryKey?: string;
   searchQuery?: string;
   limit?: number;

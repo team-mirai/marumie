@@ -23,7 +23,6 @@ interface DonorAssignmentPageProps {
     orgId?: string;
     year?: string;
     unassigned?: string;
-    donorRequired?: string;
     category?: string;
     search?: string;
     sort?: string;
@@ -52,7 +51,6 @@ export default async function DonorAssignmentPage({ searchParams }: DonorAssignm
           politicalOrganizationId: "",
           financialYear: new Date().getFullYear(),
           unassignedOnly: false,
-          donorRequiredOnly: false,
           categoryKey: "",
           searchQuery: "",
           sortField: "transactionDate",
@@ -67,7 +65,6 @@ export default async function DonorAssignmentPage({ searchParams }: DonorAssignm
   const politicalOrganizationId = params.orgId || organizations[0].id;
   const financialYear = params.year ? Number.parseInt(params.year, 10) : new Date().getFullYear();
   const unassignedOnly = params.unassigned !== "false";
-  const donorRequiredOnly = params.donorRequired !== "false";
   const categoryKey = params.category || "";
   const searchQuery = params.search || "";
   const sortField =
@@ -81,7 +78,6 @@ export default async function DonorAssignmentPage({ searchParams }: DonorAssignm
     politicalOrganizationId,
     financialYear,
     unassignedOnly,
-    requiresDonorOnly: donorRequiredOnly,
     categoryKey: categoryKey || undefined,
     searchQuery: searchQuery || undefined,
     page,
@@ -101,7 +97,6 @@ export default async function DonorAssignmentPage({ searchParams }: DonorAssignm
         politicalOrganizationId,
         financialYear,
         unassignedOnly,
-        donorRequiredOnly,
         categoryKey,
         searchQuery,
         sortField,

@@ -26,7 +26,6 @@ interface DonorAssignmentClientProps {
     politicalOrganizationId: string;
     financialYear: number;
     unassignedOnly: boolean;
-    donorRequiredOnly: boolean;
     categoryKey: string;
     searchQuery: string;
     sortField: "transactionDate" | "debitAmount" | "categoryKey";
@@ -58,7 +57,6 @@ export function DonorAssignmentClient({
     initialFilters.financialYear || initialFinancialYear,
   );
   const [unassignedOnly, setUnassignedOnly] = useState(initialFilters.unassignedOnly);
-  const [donorRequiredOnly, setDonorRequiredOnly] = useState(initialFilters.donorRequiredOnly);
   const [categoryKey, setCategoryKey] = useState(
     initialFilters.categoryKey || ALL_CATEGORIES_VALUE,
   );
@@ -110,7 +108,6 @@ export function DonorAssignmentClient({
     orgId?: string;
     year?: number;
     unassigned?: boolean;
-    donorRequired?: boolean;
     category?: string;
     search?: string;
     sort?: string;
@@ -121,7 +118,6 @@ export function DonorAssignmentClient({
     searchParams.set("orgId", params.orgId ?? selectedOrganizationId);
     searchParams.set("year", String(params.year ?? financialYear));
     searchParams.set("unassigned", String(params.unassigned ?? unassignedOnly));
-    searchParams.set("donorRequired", String(params.donorRequired ?? donorRequiredOnly));
     if (params.category ?? categoryKey) {
       searchParams.set("category", params.category ?? categoryKey);
     }
@@ -131,7 +127,7 @@ export function DonorAssignmentClient({
     searchParams.set("sort", params.sort ?? sortField);
     searchParams.set("order", params.order ?? sortOrder);
     searchParams.set("page", String(params.page ?? 1));
-    return `/assign/donor?${searchParams.toString()}`;
+    return `/assign/donors?${searchParams.toString()}`;
   };
 
   const handleFilterChange = (changes: Partial<DonorAssignmentFilterValues>) => {
@@ -143,9 +139,6 @@ export function DonorAssignmentClient({
     }
     if (changes.unassignedOnly !== undefined) {
       setUnassignedOnly(changes.unassignedOnly);
-    }
-    if (changes.donorRequiredOnly !== undefined) {
-      setDonorRequiredOnly(changes.donorRequiredOnly);
     }
 
     const categoryForUrl =
@@ -159,7 +152,6 @@ export function DonorAssignmentClient({
           category: categoryForUrl,
           search: changes.searchQuery ?? searchQuery,
           unassigned: changes.unassignedOnly ?? unassignedOnly,
-          donorRequired: changes.donorRequiredOnly ?? donorRequiredOnly,
           page: 1,
         }),
       );
@@ -250,7 +242,6 @@ export function DonorAssignmentClient({
           categoryKey,
           searchQuery,
           unassignedOnly,
-          donorRequiredOnly,
         }}
         categoryOptions={categoryOptions}
         onChange={handleFilterChange}

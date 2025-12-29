@@ -26,7 +26,6 @@ export async function loadTransactionsWithDonorsData(
     input.politicalOrganizationId,
     String(input.financialYear),
     String(input.unassignedOnly ?? false),
-    String(input.requiresDonorOnly ?? false),
     input.categoryKey ?? "",
     input.searchQuery ?? "",
     String(page),
