@@ -9,8 +9,6 @@ import {
   type BulkUnassignCounterpartResult,
 } from "@/server/contexts/report/application/usecases/bulk-unassign-counterpart-usecase";
 
-export type { BulkUnassignCounterpartInput, BulkUnassignCounterpartResult };
-
 export async function bulkUnassignCounterpartAction(
   input: BulkUnassignCounterpartInput,
 ): Promise<BulkUnassignCounterpartResult> {
