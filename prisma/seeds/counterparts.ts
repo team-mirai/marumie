@@ -44,6 +44,7 @@ const data: CounterpartSeedData[] = [
   { name: '株式会社事務機器販売', address: '東京都品川区東品川二丁目2番20号' },
 
   // 経常経費（事務所費）
+  { name: '不動産管理株式会社', address: '東京都渋谷区渋谷一丁目1番1号' },
   { name: 'NTT東日本', address: '東京都新宿区西新宿三丁目19番2号' },
   { name: '株式会社ネット通信', address: '東京都港区芝浦一丁目2番3号' },
 
@@ -79,6 +80,9 @@ const data: CounterpartSeedData[] = [
   // 政治活動費（その他の経費）
   { name: '株式会社会計クラウド', address: '東京都渋谷区道玄坂一丁目2番3号' },
   { name: 'みずほ銀行', address: '東京都千代田区大手町一丁目5番5号' },
+  { name: '株式会社法務コンサルティング', address: '東京都中央区銀座一丁目1番1号' },
+  { name: '行政書士事務所山田', address: '東京都港区新橋二丁目2番2号' },
+  { name: '税理士法人田中事務所', address: '東京都千代田区霞が関三丁目3番3号' },
 ];
 
 export const counterpartsSeeder: Seeder = {
