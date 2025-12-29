@@ -69,3 +69,4 @@ export {
   TabsTrigger,
   TabsContent,
 } from "@/client/components/ui/tabs";
+export { Switch } from "@/client/components/ui/switch";

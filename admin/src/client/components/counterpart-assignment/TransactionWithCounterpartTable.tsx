@@ -13,6 +13,7 @@ import {
 import type { TransactionWithCounterpart } from "@/server/contexts/report/domain/models/transaction-with-counterpart";
 import { PL_CATEGORIES } from "@/shared/accounting/account-category";
 import { cn } from "@/client/lib";
+import { Switch } from "@/client/components/ui";
 
 interface TransactionWithCounterpartTableProps {
   transactions: TransactionWithCounterpart[];
@@ -119,12 +120,31 @@ export function TransactionWithCounterpartTable({
         cell: (info) => {
           const transaction = info.row.original;
           return (
-            <div className="flex items-center gap-2">
-              <span>{formatAmount(info.getValue())}</span>
-              {transaction.requiresCounterpart && (
-                <span className="text-xs bg-amber-500/20 text-amber-400 px-1.5 py-0.5 rounded">
-                  取引先必須
-                </span>
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center gap-2">
+                <span>{formatAmount(info.getValue())}</span>
+                {transaction.requiresCounterpart && (
+                  <span className="text-xs bg-amber-500/20 text-amber-400 px-1.5 py-0.5 rounded">
+                    取引先必須
+                  </span>
+                )}
+              </div>
+              {transaction.transactionType === "expense" && (
+                <div className="flex items-center gap-1.5">
+                  <Switch
+                    checked={transaction.isGrantExpenditure}
+                    onCheckedChange={() => alert("not implemented")}
+                    className="scale-75"
+                  />
+                  <span
+                    className={cn(
+                      "text-xs",
+                      transaction.isGrantExpenditure ? "text-primary" : "text-muted-foreground",
+                    )}
+                  >
+                    交付金
+                  </span>
+                </div>
               )}
             </div>
           );

@@ -797,6 +797,7 @@ export class PrismaReportTransactionRepository implements IReportTransactionRepo
         creditAmount: true,
         debitPartner: true,
         creditPartner: true,
+        isGrantExpenditure: true,
         transactionCounterparts: {
           select: {
             counterpart: {
@@ -844,6 +845,7 @@ export class PrismaReportTransactionRepository implements IReportTransactionRepo
           t.categoryKey,
           Number(t.debitAmount),
         ),
+        isGrantExpenditure: t.isGrantExpenditure,
       })),
       total,
     };
@@ -922,6 +924,7 @@ export class PrismaReportTransactionRepository implements IReportTransactionRepo
           creditAmount: true,
           debitPartner: true,
           creditPartner: true,
+          isGrantExpenditure: true,
           transactionCounterparts: {
             select: {
               counterpart: {
@@ -967,6 +970,7 @@ export class PrismaReportTransactionRepository implements IReportTransactionRepo
           t.categoryKey,
           Number(t.debitAmount),
         ),
+        isGrantExpenditure: t.isGrantExpenditure,
       })),
       total,
     };
@@ -1052,6 +1056,7 @@ export class PrismaReportTransactionRepository implements IReportTransactionRepo
         transaction.categoryKey,
         Number(transaction.debitAmount),
       ),
+      isGrantExpenditure: transaction.isGrantExpenditure,
     };
   }
 }
