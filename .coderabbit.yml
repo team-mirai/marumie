@@ -83,3 +83,8 @@ reviews:
   pre_merge_checks:
     docstrings:
       mode: "off"
+
+  # Markdownの書式チェックを無効化
+  tools:
+    markdownlint:
+      enabled: false
