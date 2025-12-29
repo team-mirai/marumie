@@ -1,6 +1,7 @@
 export interface Counterpart {
   id: string;
   name: string;
+  postalCode: string | null;
   address: string | null;
   createdAt: Date;
   updatedAt: Date;
@@ -12,16 +13,19 @@ export interface CounterpartWithUsage extends Counterpart {
 
 export interface CreateCounterpartInput {
   name: string;
+  postalCode: string | null;
   address: string | null;
 }
 
 export interface UpdateCounterpartInput {
   name?: string;
+  postalCode?: string | null;
   address?: string | null;
 }
 
 export const MAX_NAME_LENGTH = 120;
 export const MAX_ADDRESS_LENGTH = 120;
+export const MAX_POSTAL_CODE_LENGTH = 10;
 
 export function validateCounterpartInput(input: CreateCounterpartInput): string[] {
   const errors: string[] = [];

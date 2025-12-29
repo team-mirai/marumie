@@ -61,8 +61,10 @@ export class CreateCounterpartUsecase {
 
   async execute(input: CreateCounterpartInput): Promise<CreateCounterpartResult> {
     const trimmedAddress = input.address?.trim() || null;
+    const trimmedPostalCode = input.postalCode?.trim() || null;
     const normalizedInput = {
       name: input.name.trim(),
+      postalCode: trimmedPostalCode,
       address: trimmedAddress,
     };
 
@@ -104,11 +106,14 @@ export class UpdateCounterpartUsecase {
 
     const newName = input.name?.trim() ?? existing.name;
     // undefinedなら既存値を維持、それ以外（nullや文字列）はtrim後に空文字ならnullに正規化
+    const newPostalCode =
+      input.postalCode === undefined ? existing.postalCode : input.postalCode?.trim() || null;
     const newAddress =
       input.address === undefined ? existing.address : input.address?.trim() || null;
 
     const validationErrors = validateCounterpartInput({
       name: newName,
+      postalCode: newPostalCode,
       address: newAddress,
     });
     if (validationErrors.length > 0) {
@@ -127,6 +132,7 @@ export class UpdateCounterpartUsecase {
 
     const counterpart = await this.repository.update(id, {
       name: newName,
+      postalCode: newPostalCode,
       address: newAddress,
     });
     return { success: true, counterpart };

@@ -68,11 +68,16 @@ export function AssignWithCounterpartContent({
     });
   };
 
-  const handleCreateAndAssign = async (data: { name: string; address: string | null }) => {
+  const handleCreateAndAssign = async (data: {
+    name: string;
+    postalCode: string | null;
+    address: string | null;
+  }) => {
     setError(null);
 
     const createResult = await createCounterpartAction({
       name: data.name,
+      postalCode: data.postalCode,
       address: data.address,
     });
 
@@ -178,7 +183,7 @@ export function AssignWithCounterpartContent({
             <div className="flex-1 overflow-y-auto min-h-0">
               <CounterpartFormContent
                 mode="create"
-                defaultName={transactions[0]?.description ?? ""}
+                defaultSearchQuery={transactions[0]?.description ?? ""}
                 onSubmit={handleCreateAndAssign}
                 disabled={isPending}
                 submitLabel="作成して紐づける"

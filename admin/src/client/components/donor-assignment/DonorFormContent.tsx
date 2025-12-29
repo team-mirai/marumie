@@ -10,10 +10,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/client/components/ui/select";
-import { AddressInput } from "@/client/components/counterparts/AddressInput";
 import {
   MAX_NAME_LENGTH,
   MAX_OCCUPATION_LENGTH,
+  MAX_ADDRESS_LENGTH,
   DONOR_TYPE_LABELS,
   type DonorType,
 } from "@/server/contexts/report/domain/models/donor";
@@ -146,12 +146,18 @@ export function DonorFormContent({
         />
       </div>
 
-      <AddressInput
-        companyName={name}
-        address={address}
-        onChange={setAddress}
-        disabled={isDisabled}
-      />
+      <div>
+        <Label htmlFor="address">住所</Label>
+        <Input
+          type="text"
+          id="address"
+          value={address}
+          onChange={(e) => setAddress(e.target.value)}
+          maxLength={MAX_ADDRESS_LENGTH}
+          placeholder="住所を入力"
+          disabled={isDisabled}
+        />
+      </div>
 
       {donorType === "individual" && (
         <div>

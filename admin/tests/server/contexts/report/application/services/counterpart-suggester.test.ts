@@ -14,6 +14,7 @@ describe("CounterpartSuggester", () => {
   const createMockCounterpart = (overrides: Partial<CounterpartWithUsageAndLastUsed> = {}): CounterpartWithUsageAndLastUsed => ({
     id: "cp-1",
     name: "テスト取引先",
+    postalCode: null,
     address: "東京都千代田区",
     usageCount: 5,
     lastUsedAt: new Date("2024-01-01"),

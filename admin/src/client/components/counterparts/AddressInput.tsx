@@ -1,16 +1,28 @@
 "use client";
 import "client-only";
 
-import { useId } from "react";
+import { useId, useState } from "react";
 import { Button, Input, Label } from "@/client/components/ui";
 import { useAddressSearch } from "@/client/components/counterparts/useAddressSearch";
 import type { AddressCandidate } from "@/server/contexts/report/infrastructure/llm/types";
 import { MAX_ADDRESS_LENGTH } from "@/server/contexts/report/domain/models/counterpart";
 
-interface AddressInputProps {
-  companyName: string;
+/** 候補選択時に返されるデータ */
+export interface CounterpartSearchResult {
+  name: string;
+  postalCode: string | null;
   address: string;
-  onChange: (address: string) => void;
+}
+
+interface AddressInputProps {
+  /** 検索クエリ（摘要）のデフォルト値 */
+  defaultSearchQuery?: string;
+  /** 現在の住所（確定後の表示用） */
+  address: string;
+  /** 候補を選択したときのコールバック */
+  onSelect: (result: CounterpartSearchResult) => void;
+  /** 住所を手動変更したときのコールバック */
+  onAddressChange: (address: string) => void;
   disabled?: boolean;
 }
 
@@ -31,13 +43,18 @@ function openGoogleSearch(candidate: AddressCandidate) {
 }
 
 export function AddressInput({
-  companyName,
+  defaultSearchQuery = "",
   address,
-  onChange,
+  onSelect,
+  onAddressChange,
   disabled = false,
 }: AddressInputProps) {
   const addressId = useId();
+  const searchQueryId = useId();
   const hintId = useId();
+
+  // 検索クエリ（摘要）は内部状態として管理
+  const [searchQuery, setSearchQuery] = useState(defaultSearchQuery);
 
   const {
     phase,
@@ -51,13 +68,17 @@ export function AddressInput({
     clear,
     setHint,
   } = useAddressSearch({
-    companyName,
+    companyName: searchQuery,
     initialAddress: address || undefined,
   });
 
   const handleSelectCandidate = (candidate: AddressCandidate) => {
     selectCandidate(candidate);
-    onChange(candidate.address);
+    onSelect({
+      name: candidate.companyName,
+      postalCode: candidate.postalCode,
+      address: candidate.address,
+    });
   };
 
   const handleSwitchToManual = () => {
@@ -66,26 +87,38 @@ export function AddressInput({
 
   const handleClear = () => {
     clear();
-    onChange("");
+    setSearchQuery("");
+    onAddressChange("");
   };
 
-  const handleAddressChange = (value: string) => {
-    onChange(value);
-  };
+  const canSearch = searchQuery.trim() !== "";
 
-  const canSearch = companyName.trim() !== "";
-
-  // 初期状態: AI検索ボタンと手動入力リンク
+  // 初期状態: 摘要入力欄とAI検索ボタン
   if (phase === "initial") {
     return (
       <div className="space-y-3">
-        <Label>住所</Label>
+        <div className="border border-border rounded-lg p-4 space-y-3">
+          <Label className="text-sm font-medium">AI検索で取引先を探す</Label>
 
-        <div>
-          <Label htmlFor={hintId} className="text-sm text-muted-foreground">
-            業態ヒント（任意）
-          </Label>
-          <div className="flex gap-2 mt-1">
+          <div>
+            <Label htmlFor={searchQueryId} className="text-sm text-muted-foreground">
+              摘要（検索クエリ）
+            </Label>
+            <Input
+              type="text"
+              id={searchQueryId}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="例: アクセア、株式会社ABC"
+              disabled={disabled}
+              className="mt-1"
+            />
+          </div>
+
+          <div>
+            <Label htmlFor={hintId} className="text-sm text-muted-foreground">
+              業態ヒント（任意）
+            </Label>
             <Input
               type="text"
               id={hintId}
@@ -93,12 +126,13 @@ export function AddressInput({
               onChange={(e) => setHint(e.target.value)}
               placeholder="例: 印刷、IT、広告"
               disabled={disabled}
-              className="flex-1"
+              className="mt-1"
             />
-            <Button type="button" onClick={startSearch} disabled={disabled || !canSearch}>
-              🔍 AI検索
-            </Button>
           </div>
+
+          <Button type="button" onClick={startSearch} disabled={disabled || !canSearch}>
+            AI検索
+          </Button>
         </div>
 
         <div className="text-right">
@@ -119,30 +153,26 @@ export function AddressInput({
   if (phase === "searching") {
     return (
       <div className="space-y-3">
-        <Label>住所</Label>
+        <div className="border border-border rounded-lg p-4 space-y-3">
+          <Label className="text-sm font-medium">AI検索で取引先を探す</Label>
 
-        <div>
-          <Label htmlFor={hintId} className="text-sm text-muted-foreground">
-            業態ヒント（任意）
-          </Label>
-          <div className="flex gap-2 mt-1">
-            <Input
-              type="text"
-              id={hintId}
-              value={hint}
-              onChange={(e) => setHint(e.target.value)}
-              placeholder="例: 印刷、IT、広告"
-              disabled
-              className="flex-1"
-            />
-            <Button type="button" disabled>
-              🔍 AI検索
-            </Button>
+          <div>
+            <Label htmlFor={searchQueryId} className="text-sm text-muted-foreground">
+              摘要（検索クエリ）
+            </Label>
+            <Input type="text" id={searchQueryId} value={searchQuery} disabled className="mt-1" />
           </div>
-        </div>
 
-        <div className="border border-border rounded-lg p-4 text-center text-muted-foreground">
-          検索中...
+          <div>
+            <Label htmlFor={hintId} className="text-sm text-muted-foreground">
+              業態ヒント（任意）
+            </Label>
+            <Input type="text" id={hintId} value={hint} disabled className="mt-1" />
+          </div>
+
+          <Button type="button" disabled>
+            検索中...
+          </Button>
         </div>
 
         <div className="text-right">
@@ -152,17 +182,32 @@ export function AddressInput({
     );
   }
 
-  // 検索結果表示
+  // 検索結果表示: 社名・住所・郵便番号のペアを候補として表示
   if (phase === "results") {
     return (
       <div className="space-y-3">
-        <Label>住所</Label>
+        <div className="border border-border rounded-lg p-4 space-y-3">
+          <Label className="text-sm font-medium">AI検索で取引先を探す</Label>
 
-        <div>
-          <Label htmlFor={hintId} className="text-sm text-muted-foreground">
-            業態ヒント（任意）
-          </Label>
-          <div className="flex gap-2 mt-1">
+          <div>
+            <Label htmlFor={searchQueryId} className="text-sm text-muted-foreground">
+              摘要（検索クエリ）
+            </Label>
+            <Input
+              type="text"
+              id={searchQueryId}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="例: アクセア、株式会社ABC"
+              disabled={disabled || isSearching}
+              className="mt-1"
+            />
+          </div>
+
+          <div>
+            <Label htmlFor={hintId} className="text-sm text-muted-foreground">
+              業態ヒント（任意）
+            </Label>
             <Input
               type="text"
               id={hintId}
@@ -170,20 +215,20 @@ export function AddressInput({
               onChange={(e) => setHint(e.target.value)}
               placeholder="例: 印刷、IT、広告"
               disabled={disabled || isSearching}
-              className="flex-1"
+              className="mt-1"
             />
-            <Button
-              type="button"
-              onClick={reSearch}
-              disabled={disabled || isSearching || !canSearch}
-            >
-              🔍 再検索
-            </Button>
           </div>
+
+          <Button type="button" onClick={reSearch} disabled={disabled || isSearching || !canSearch}>
+            再検索
+          </Button>
         </div>
 
         {searchResult?.success ? (
           <div className="border border-border rounded-lg divide-y divide-border">
+            <div className="p-2 bg-muted/30 text-xs text-muted-foreground">
+              候補から選択してください（社名・住所・郵便番号がセットされます）
+            </div>
             {searchResult.data.candidates.map((candidate, index) => {
               const confidence = getConfidenceLabel(candidate.confidence);
               const key = `${index}-${candidate.companyName}-${candidate.address}`;
@@ -191,10 +236,13 @@ export function AddressInput({
                 <div key={key} className="p-3">
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1 min-w-0">
-                      {candidate.postalCode && (
-                        <div className="text-muted-foreground text-xs">{candidate.postalCode}</div>
-                      )}
-                      <div className="text-white text-sm">{candidate.address}</div>
+                      <div className="text-white font-medium">{candidate.companyName}</div>
+                      <div className="text-muted-foreground text-sm mt-1">
+                        {candidate.postalCode && (
+                          <span className="mr-2">〒{candidate.postalCode.replace(/^〒/, "")}</span>
+                        )}
+                        {candidate.address}
+                      </div>
                       <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
                         <span>根拠: {candidate.source}</span>
                         <span className={confidence.className}>{confidence.text}</span>
@@ -246,7 +294,7 @@ export function AddressInput({
     );
   }
 
-  // 確定後: Input表示
+  // 確定後: 住所のInput表示（社名・郵便番号は親コンポーネントで表示）
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
@@ -256,8 +304,11 @@ export function AddressInput({
             type="button"
             variant="ghost"
             size="sm"
-            onClick={reSearch}
-            disabled={disabled || !canSearch}
+            onClick={() => {
+              setSearchQuery(defaultSearchQuery);
+              clear();
+            }}
+            disabled={disabled}
           >
             再検索
           </Button>
@@ -270,7 +321,7 @@ export function AddressInput({
         type="text"
         id={addressId}
         value={address}
-        onChange={(e) => handleAddressChange(e.target.value)}
+        onChange={(e) => onAddressChange(e.target.value)}
         maxLength={MAX_ADDRESS_LENGTH}
         placeholder="住所を入力"
         disabled={disabled}

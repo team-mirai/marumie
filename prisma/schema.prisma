@@ -71,11 +71,12 @@ model Transaction {
 }
 
 model Counterpart {
-  id        BigInt   @id @default(autoincrement())
-  name      String   @db.VarChar(120)
-  address   String?  @db.VarChar(120)
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  id         BigInt   @id @default(autoincrement())
+  name       String   @db.VarChar(120)
+  postalCode String?  @db.VarChar(10) @map("postal_code")
+  address    String?  @db.VarChar(120)
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
 
   transactionCounterparts TransactionCounterpart[]
 
