@@ -304,6 +304,7 @@ function createUtilityTransaction(
     transactionDate: new Date("2024-01-01"),
     counterpartName: "取引先",
     counterpartAddress: "東京都",
+    isGrantExpenditure: false,
     ...overrides,
   };
 }
@@ -322,6 +323,7 @@ function createSuppliesTransaction(
     transactionDate: new Date("2024-01-01"),
     counterpartName: "取引先",
     counterpartAddress: "東京都",
+    isGrantExpenditure: false,
     ...overrides,
   };
 }
@@ -340,6 +342,7 @@ function createOfficeTransaction(
     transactionDate: new Date("2024-01-01"),
     counterpartName: "取引先",
     counterpartAddress: "東京都",
+    isGrantExpenditure: false,
     ...overrides,
   };
 }
@@ -694,6 +697,7 @@ function createOrganizationExpenseTransaction(
     transactionDate: new Date("2024-01-01"),
     counterpartName: "取引先",
     counterpartAddress: "東京都",
+    isGrantExpenditure: false,
     ...overrides,
   };
 }

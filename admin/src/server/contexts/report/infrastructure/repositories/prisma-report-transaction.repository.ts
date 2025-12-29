@@ -92,6 +92,7 @@ interface PoliticalActivityExpenseTransactionRaw {
   transactionDate: Date;
   counterpartName: string;
   counterpartAddress: string;
+  isGrantExpenditure: boolean;
 }
 
 export class PrismaReportTransactionRepository implements IReportTransactionRepository {
@@ -121,6 +122,7 @@ export class PrismaReportTransactionRepository implements IReportTransactionRepo
         debitAmount: true,
         creditAmount: true,
         transactionDate: true,
+        isGrantExpenditure: true,
         transactionCounterparts: {
           select: {
             counterpart: {
@@ -145,6 +147,7 @@ export class PrismaReportTransactionRepository implements IReportTransactionRepo
       transactionDate: t.transactionDate,
       counterpartName: t.transactionCounterparts[0]?.counterpart.name ?? "",
       counterpartAddress: t.transactionCounterparts[0]?.counterpart.address ?? "",
+      isGrantExpenditure: t.isGrantExpenditure,
     }));
   }
 
@@ -387,6 +390,7 @@ export class PrismaReportTransactionRepository implements IReportTransactionRepo
         debitAmount: true,
         creditAmount: true,
         transactionDate: true,
+        isGrantExpenditure: true,
         transactionCounterparts: {
           select: {
             counterpart: {
@@ -411,6 +415,7 @@ export class PrismaReportTransactionRepository implements IReportTransactionRepo
       transactionDate: t.transactionDate,
       counterpartName: t.transactionCounterparts[0]?.counterpart.name ?? "",
       counterpartAddress: t.transactionCounterparts[0]?.counterpart.address ?? "",
+      isGrantExpenditure: t.isGrantExpenditure,
     }));
   }
 
@@ -437,6 +442,7 @@ export class PrismaReportTransactionRepository implements IReportTransactionRepo
         debitAmount: true,
         creditAmount: true,
         transactionDate: true,
+        isGrantExpenditure: true,
         transactionCounterparts: {
           select: {
             counterpart: {
@@ -461,6 +467,7 @@ export class PrismaReportTransactionRepository implements IReportTransactionRepo
       transactionDate: t.transactionDate,
       counterpartName: t.transactionCounterparts[0]?.counterpart.name ?? "",
       counterpartAddress: t.transactionCounterparts[0]?.counterpart.address ?? "",
+      isGrantExpenditure: t.isGrantExpenditure,
     }));
   }
 
@@ -487,6 +494,7 @@ export class PrismaReportTransactionRepository implements IReportTransactionRepo
         debitAmount: true,
         creditAmount: true,
         transactionDate: true,
+        isGrantExpenditure: true,
         transactionCounterparts: {
           select: {
             counterpart: {
@@ -511,6 +519,7 @@ export class PrismaReportTransactionRepository implements IReportTransactionRepo
       transactionDate: t.transactionDate,
       counterpartName: t.transactionCounterparts[0]?.counterpart.name ?? "",
       counterpartAddress: t.transactionCounterparts[0]?.counterpart.address ?? "",
+      isGrantExpenditure: t.isGrantExpenditure,
     }));
   }
 
@@ -537,6 +546,7 @@ export class PrismaReportTransactionRepository implements IReportTransactionRepo
         debitAmount: true,
         creditAmount: true,
         transactionDate: true,
+        isGrantExpenditure: true,
         transactionCounterparts: {
           select: {
             counterpart: {
@@ -561,6 +571,7 @@ export class PrismaReportTransactionRepository implements IReportTransactionRepo
       transactionDate: t.transactionDate,
       counterpartName: t.transactionCounterparts[0]?.counterpart.name ?? "",
       counterpartAddress: t.transactionCounterparts[0]?.counterpart.address ?? "",
+      isGrantExpenditure: t.isGrantExpenditure,
     }));
   }
 
