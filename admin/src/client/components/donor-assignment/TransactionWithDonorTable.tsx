@@ -117,19 +117,7 @@ export function TransactionWithDonorTable({
             )}
           </button>
         ),
-        cell: (info) => {
-          const transaction = info.row.original;
-          return (
-            <div className="flex items-center gap-2">
-              <span>{formatAmount(info.getValue())}</span>
-              {transaction.requiresDonor && (
-                <span className="text-xs bg-amber-500/20 text-amber-400 px-1.5 py-0.5 rounded">
-                  寄付者必須
-                </span>
-              )}
-            </div>
-          );
-        },
+        cell: (info) => formatAmount(info.getValue()),
       }),
       columnHelper.accessor("categoryKey", {
         header: () => (

@@ -10,7 +10,6 @@ export interface GetTransactionsWithDonorsInput {
   politicalOrganizationId: string;
   financialYear: number;
   unassignedOnly?: boolean;
-  requiresDonorOnly?: boolean;
   categoryKey?: string;
   searchQuery?: string;
   page?: number;
@@ -38,7 +37,6 @@ export class GetTransactionsWithDonorsUsecase {
       politicalOrganizationId: input.politicalOrganizationId,
       financialYear: input.financialYear,
       unassignedOnly: input.unassignedOnly,
-      requiresDonorOnly: input.requiresDonorOnly,
       categoryKey: input.categoryKey,
       searchQuery: input.searchQuery,
       limit: perPage,

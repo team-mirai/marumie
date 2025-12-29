@@ -36,7 +36,6 @@ export class PrismaTransactionWithDonorRepository implements ITransactionWithDon
       politicalOrganizationId,
       financialYear,
       unassignedOnly,
-      requiresDonorOnly = false,
       categoryKey,
       searchQuery,
       limit = 50,
@@ -84,12 +83,6 @@ export class PrismaTransactionWithDonorRepository implements ITransactionWithDon
     if (unassignedOnly) {
       conditions.push({
         transactionDonors: { none: {} },
-      });
-    }
-
-    if (requiresDonorOnly) {
-      conditions.push({
-        categoryKey: { in: [...DONOR_REQUIRED_CATEGORIES] },
       });
     }
 
