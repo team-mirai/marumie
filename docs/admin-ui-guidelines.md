@@ -80,3 +80,54 @@ shadcn コンポーネントの `dark:` プレフィックス付きクラスは�
 "bg-input/30"
 ```
 
+## Toast 通知
+
+sonner ライブラリを使用した toast 通知機能。
+
+### インポート
+
+```typescript
+import { toast } from "sonner";
+```
+
+### 基本的な使用例
+
+```typescript
+// 成功メッセージ
+toast.success("保存しました");
+
+// エラーメッセージ
+toast.error("エラーが発生しました");
+
+// 情報メッセージ
+toast("処理中...");
+```
+
+### Promise パターン
+
+非同期処理の状態を自動的に表示する。
+
+```typescript
+toast.promise(saveData(), {
+  loading: "保存中...",
+  success: "保存しました",
+  error: "保存に失敗しました",
+});
+```
+
+### Server Action からの呼び出し
+
+Server Action の結果に基づいて Client Component 側で toast を表示する。
+
+```typescript
+// Client Component
+async function handleSubmit() {
+  const result = await saveAction(data);
+  if (result.success) {
+    toast.success("保存しました");
+  } else {
+    toast.error(result.error);
+  }
+}
+```
+
