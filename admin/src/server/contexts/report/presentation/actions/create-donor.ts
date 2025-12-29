@@ -23,7 +23,7 @@ export async function createDonorAction(input: CreateDonorInput): Promise<Create
       return { success: false, errors: result.errors };
     }
 
-    revalidatePath("/assign/donor");
+    revalidatePath("/assign/donors");
     return { success: true, donorId: result.donor?.id };
   } catch (error) {
     console.error("Error creating donor:", error);

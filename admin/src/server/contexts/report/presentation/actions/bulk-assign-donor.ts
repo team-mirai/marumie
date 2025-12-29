@@ -32,7 +32,7 @@ export async function bulkAssignDonorAction(
       return { success: false, errors: result.errors };
     }
 
-    revalidatePath("/assign/donor");
+    revalidatePath("/assign/donors");
     return { success: true, assignedCount: result.assignedCount };
   } catch (error) {
     console.error("Error bulk assigning donor:", error);
