@@ -1,5 +1,5 @@
 ---
-description: 現在の変更に対して設計レビューを行う
+description: 現在の変更に対して設計レビューを行う (project)
 ---
 
 ## 現在の状況
@@ -9,33 +9,21 @@ description: 現在の変更に対して設計レビューを行う
 
 ## タスク
 
-現在のブランチの変更内容に対して、設計観点でレビューを行ってください。
+以下の手順で現在のブランチの変更内容に対して設計レビューを行ってください：
 
-### レビュー前の確認
+1. **変更内容の把握**: `git diff` で変更されたファイルの差分を取得し、変更内容を把握する。必要に応じて関連ファイルも読み込む。
 
-1. 変更されたファイルの差分を `git diff` で取得する
-2. 必要に応じて関連ファイルも読み込む
-3. **以下のガイドラインを参照**:
-   - [docs/admin-architecture-guide.md](docs/admin-architecture-guide.md) - アーキテクチャ全般、レイヤー設計、DDD
-   - [docs/admin-ui-guidelines.md](docs/admin-ui-guidelines.md) - UIコンポーネント、スタイリング
+2. **ガイドラインの参照**: 変更対象に応じて以下のガイドラインを参照する。
+   - `admin/src/server/contexts/` 配下の変更: [docs/admin-architecture-guide.md](docs/admin-architecture-guide.md)
+   - `admin/src/client/` または `admin/src/app/` 配下の変更: [docs/admin-ui-guidelines.md](docs/admin-ui-guidelines.md)
 
-### サーバーサイド（admin DDD）のレビュー観点
+3. **レビュー実施**: 以下の観点でレビューを行う。
+   - **アーキテクチャ**: ガイドラインに沿ったレイヤー構成・責務分離ができているか
+   - **import パス**: `@/` から始まる絶対パスを使用しているか（相対パス禁止）
+   - **型定義**: 適切な型が定義されているか
+   - **命名**: 変数名・関数名・ファイル名が適切か
 
-`admin/src/server/contexts/` 配下の変更がある場合、[docs/admin-architecture-guide.md](docs/admin-architecture-guide.md) に基づきレビューする。
-
-### フロントエンド（React/Next.js）のレビュー観点
-
-`admin/src/client/` または `admin/src/app/` 配下の変更がある場合、[docs/admin-ui-guidelines.md](docs/admin-ui-guidelines.md) に基づきレビューする。
-
-### 共通のレビュー観点
-
-- **import パス**: `@/` から始まる絶対パスを使用しているか（相対パス禁止）
-- **型定義**: 適切な型が定義されているか
-- **命名**: 変数名・関数名・ファイル名が適切か
-
-## 出力形式
-
-以下の形式でレビュー結果を報告してください：
+4. **結果報告**: 以下の形式でレビュー結果を報告する。重大な問題がない場合は「✅ 設計上の問題は見つかりませんでした」と報告する。
 
 ```
 ## レビュー結果
@@ -52,5 +40,3 @@ description: 現在の変更に対して設計レビューを行う
   - 理由: ...
   - 修正案: ...
 ```
-
-重大な問題がない場合は「✅ 設計上の問題は見つかりませんでした」と報告してください。
