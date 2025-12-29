@@ -1,4 +1,4 @@
-import type { PrismaClient } from '@prisma/client';
+import type { DonorType, PrismaClient } from '@prisma/client';
 import type { Seeder } from './lib/types';
 
 interface TransactionSeedData {
@@ -12,6 +12,9 @@ interface TransactionSeedData {
   description: string;
   categoryKey: string;
   counterpartName?: string;
+  donorName?: string;
+  donorAddress?: string;
+  donorType?: DonorType;
   friendlyCategory?: string;
 }
 
@@ -168,6 +171,9 @@ const data: TransactionSeedData[] = [
     creditAmount: '40000',
     description: '個人寄附（寄附　太郎）',
     categoryKey: 'individual-donations',
+    donorName: '寄附　太郎',
+    donorAddress: '東京都渋谷区神南一丁目1番1号',
+    donorType: 'individual',
   },
   {
     transactionNo: 'T2025-0013',
@@ -179,6 +185,9 @@ const data: TransactionSeedData[] = [
     creditAmount: '30000',
     description: '個人寄附（寄附　花子）',
     categoryKey: 'individual-donations',
+    donorName: '寄附　花子',
+    donorAddress: '東京都港区六本木三丁目2番1号',
+    donorType: 'individual',
   },
   {
     transactionNo: 'T2025-0014',
@@ -190,6 +199,9 @@ const data: TransactionSeedData[] = [
     creditAmount: '60000',
     description: '個人寄附（寄附　次郎）',
     categoryKey: 'individual-donations',
+    donorName: '寄附　次郎',
+    donorAddress: '東京都新宿区西新宿二丁目8番1号',
+    donorType: 'individual',
   },
   {
     transactionNo: 'T2025-0015',
@@ -201,6 +213,9 @@ const data: TransactionSeedData[] = [
     creditAmount: '100000',
     description: '個人寄附（寄附　三郎）',
     categoryKey: 'individual-donations',
+    donorName: '寄附　三郎',
+    donorAddress: '東京都千代田区丸の内一丁目9番2号',
+    donorType: 'individual',
   },
   {
     transactionNo: 'T2025-0016',
@@ -212,6 +227,9 @@ const data: TransactionSeedData[] = [
     creditAmount: '50000',
     description: '個人寄附（寄附　四郎、境界値: ちょうど5万円）',
     categoryKey: 'individual-donations',
+    donorName: '寄附　四郎',
+    donorAddress: '東京都品川区東品川二丁目2番20号',
+    donorType: 'individual',
   },
 
   // SYUUSHI07_07: 寄附の明細（KUBUN2: 法人）
@@ -225,6 +243,9 @@ const data: TransactionSeedData[] = [
     creditAmount: '45000',
     description: '法人寄附（株式会社デジタル未来）',
     categoryKey: 'corporate-donations',
+    donorName: '株式会社デジタル未来',
+    donorAddress: '東京都港区芝浦一丁目2番3号',
+    donorType: 'corporation',
   },
   {
     transactionNo: 'T2025-0018',
@@ -236,6 +257,9 @@ const data: TransactionSeedData[] = [
     creditAmount: '80000',
     description: '法人寄附（一般社団法人政治改革推進会）',
     categoryKey: 'corporate-donations',
+    donorName: '一般社団法人政治改革推進会',
+    donorAddress: '東京都中央区日本橋二丁目1番1号',
+    donorType: 'corporation',
   },
   {
     transactionNo: 'T2025-0019',
@@ -247,6 +271,9 @@ const data: TransactionSeedData[] = [
     creditAmount: '150000',
     description: '法人寄附（NPO法人民主主義研究所）',
     categoryKey: 'corporate-donations',
+    donorName: 'NPO法人民主主義研究所',
+    donorAddress: '東京都世田谷区三軒茶屋一丁目1番1号',
+    donorType: 'corporation',
   },
 
   // SYUUSHI07_07: 寄附の明細（KUBUN3: 政治団体）
@@ -260,6 +287,9 @@ const data: TransactionSeedData[] = [
     creditAmount: '200000',
     description: '政治団体からの寄附（デジタル政策推進団体）',
     categoryKey: 'political-donations',
+    donorName: 'デジタル政策推進団体',
+    donorAddress: '東京都千代田区永田町二丁目1番2号',
+    donorType: 'political_organization',
   },
   {
     transactionNo: 'T2025-0021',
@@ -271,6 +301,9 @@ const data: TransactionSeedData[] = [
     creditAmount: '300000',
     description: '政治団体からの寄附（若手政治家の会）',
     categoryKey: 'political-donations',
+    donorName: '若手政治家の会',
+    donorAddress: '東京都港区赤坂一丁目11番28号',
+    donorType: 'political_organization',
   },
 
   // SYUUSHI07_14: 経常経費の支出（KUBUN1: 光熱水費、境界値テスト: 5万円）
@@ -699,6 +732,68 @@ const data: TransactionSeedData[] = [
     counterpartName: 'サンプル党世田谷支部',
     friendlyCategory: '選挙応援交付金',
   },
+
+  // パーティー対価収入（政治資金パーティー）
+  {
+    transactionNo: 'T2025-0053',
+    transactionDate: '2025-07-20',
+    transactionType: 'income',
+    debitAccount: '普通預金',
+    debitAmount: '200000',
+    creditAccount: '政治資金パーティーの対価に係る収入',
+    creditAmount: '200000',
+    description: 'パーティー対価収入（個人）',
+    categoryKey: 'party-income',
+    donorName: 'パーティー　一郎',
+    donorAddress: '東京都文京区本郷三丁目1番1号',
+    donorType: 'individual',
+    friendlyCategory: 'パーティー対価（個人）',
+  },
+  {
+    transactionNo: 'T2025-0054',
+    transactionDate: '2025-07-20',
+    transactionType: 'income',
+    debitAccount: '普通預金',
+    debitAmount: '150000',
+    creditAccount: '政治資金パーティーの対価に係る収入',
+    creditAmount: '150000',
+    description: 'パーティー対価収入（個人）',
+    categoryKey: 'party-income',
+    donorName: 'パーティー　二郎',
+    donorAddress: '東京都台東区浅草一丁目1番1号',
+    donorType: 'individual',
+    friendlyCategory: 'パーティー対価（個人）',
+  },
+  {
+    transactionNo: 'T2025-0055',
+    transactionDate: '2025-07-20',
+    transactionType: 'income',
+    debitAccount: '普通預金',
+    debitAmount: '500000',
+    creditAccount: '政治資金パーティーの対価に係る収入',
+    creditAmount: '500000',
+    description: 'パーティー対価収入（法人）',
+    categoryKey: 'party-income',
+    donorName: '株式会社イノベーション',
+    donorAddress: '東京都港区六本木六丁目10番1号',
+    donorType: 'corporation',
+    friendlyCategory: 'パーティー対価（法人）',
+  },
+  {
+    transactionNo: 'T2025-0056',
+    transactionDate: '2025-07-20',
+    transactionType: 'income',
+    debitAccount: '普通預金',
+    debitAmount: '300000',
+    creditAccount: '政治資金パーティーの対価に係る収入',
+    creditAmount: '300000',
+    description: 'パーティー対価収入（政治団体）',
+    categoryKey: 'party-income',
+    donorName: '地方創生研究会',
+    donorAddress: '東京都新宿区四谷一丁目1番1号',
+    donorType: 'political_organization',
+    friendlyCategory: 'パーティー対価（政治団体）',
+  },
 ];
 
 export const transactionsSeeder: Seeder = {
@@ -741,6 +836,26 @@ export const transactionsSeeder: Seeder = {
         }
       }
 
+      // Donorの取得（存在する場合）
+      // name, address, donorTypeの3要素で検索
+      let donorId: bigint | undefined;
+      if (item.donorName && item.donorAddress && item.donorType) {
+        const donor = await prisma.donor.findFirst({
+          where: {
+            name: item.donorName,
+            address: item.donorAddress,
+            donorType: item.donorType,
+          },
+        });
+        if (donor) {
+          donorId = donor.id;
+        } else {
+          console.log(
+            `⚠️  Warning: Donor "${item.donorName}" (${item.donorAddress}, ${item.donorType}) not found`,
+          );
+        }
+      }
+
       // Transactionの作成
       const transaction = await prisma.transaction.create({
         data: {
@@ -765,6 +880,16 @@ export const transactionsSeeder: Seeder = {
           data: {
             transactionId: transaction.id,
             counterpartId: counterpartId,
+          },
+        });
+      }
+
+      // TransactionDonorの作成（donorIdが存在する場合）
+      if (donorId) {
+        await prisma.transactionDonor.create({
+          data: {
+            transactionId: transaction.id,
+            donorId: donorId,
           },
         });
       }
