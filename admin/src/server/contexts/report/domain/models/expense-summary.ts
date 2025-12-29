@@ -56,11 +56,46 @@ export interface ExpenseSummaryData {
 /**
  * ExpenseSummaryItem のヘルパー関数
  */
-const createSummaryItem = (amount: number | null): ExpenseSummaryItem => ({
+const createSummaryItem = (
+  amount: number | null,
+  grantAmount: number | null = null,
+): ExpenseSummaryItem => ({
   amount,
-  grantAmount: null, // 交付金は現状のスコープ外
+  grantAmount,
   bikou: null, // 備考は現状のスコープ外
 });
+
+/**
+ * 経常経費セクションから交付金金額を計算するヘルパー関数
+ */
+const calculateRegularExpenseGrantAmount = (section: {
+  rows: Array<{ kingaku: number; koufukin?: number }>;
+}): number => {
+  return section.rows
+    .filter((row) => row.koufukin === 1)
+    .reduce((sum, row) => sum + row.kingaku, 0);
+};
+
+/**
+ * 政治活動費セクション配列から交付金金額を計算するヘルパー関数
+ */
+const calculatePoliticalExpenseGrantAmount = (
+  sections: Array<{ rows: Array<{ kingaku: number; koufukin?: number }> }>,
+): number => {
+  return sections.reduce((total, section) => {
+    const sectionGrant = section.rows
+      .filter((row) => row.koufukin === 1)
+      .reduce((sum, row) => sum + row.kingaku, 0);
+    return total + sectionGrant;
+  }, 0);
+};
+
+/**
+ * 交付金金額を null または正の数値に変換するヘルパー関数
+ */
+const toGrantAmountOrNull = (amount: number): number | null => {
+  return amount > 0 ? amount : null;
+};
 
 /**
  * ExpenseSummaryData に関連するドメインロジック
@@ -79,8 +114,17 @@ export const ExpenseSummaryData = {
     const suppliesAmount = expenseData.suppliesExpenses.totalAmount;
     const officeAmount = expenseData.officeExpenses.totalAmount;
 
+    // 経常経費の交付金金額を計算
+    // 人件費は明細行を持たないため交付金金額は0
+    const personnelGrantAmount = 0;
+    const utilityGrantAmount = calculateRegularExpenseGrantAmount(expenseData.utilityExpenses);
+    const suppliesGrantAmount = calculateRegularExpenseGrantAmount(expenseData.suppliesExpenses);
+    const officeGrantAmount = calculateRegularExpenseGrantAmount(expenseData.officeExpenses);
+
     // 経常経費小計
     const regularSubtotal = personnelAmount + utilityAmount + suppliesAmount + officeAmount;
+    const regularGrantSubtotal =
+      personnelGrantAmount + utilityGrantAmount + suppliesGrantAmount + officeGrantAmount;
 
     // 政治活動費の各項目（配列の合計を計算）
     const organizationAmount = expenseData.organizationExpenses.reduce(
@@ -114,9 +158,36 @@ export const ExpenseSummaryData = {
       0,
     );
 
+    // 政治活動費の交付金金額を計算
+    const organizationGrantAmount = calculatePoliticalExpenseGrantAmount(
+      expenseData.organizationExpenses,
+    );
+    const electionGrantAmount = calculatePoliticalExpenseGrantAmount(expenseData.electionExpenses);
+    const publicationGrantAmount = calculatePoliticalExpenseGrantAmount(
+      expenseData.publicationExpenses,
+    );
+    const advertisingGrantAmount = calculatePoliticalExpenseGrantAmount(
+      expenseData.advertisingExpenses,
+    );
+    const partyGrantAmount = calculatePoliticalExpenseGrantAmount(
+      expenseData.fundraisingPartyExpenses,
+    );
+    const otherBusinessGrantAmount = calculatePoliticalExpenseGrantAmount(
+      expenseData.otherBusinessExpenses,
+    );
+    const researchGrantAmount = calculatePoliticalExpenseGrantAmount(expenseData.researchExpenses);
+    const donationGrantGrantAmount = calculatePoliticalExpenseGrantAmount(
+      expenseData.donationGrantExpenses,
+    );
+    const otherPoliticalGrantAmount = calculatePoliticalExpenseGrantAmount(
+      expenseData.otherPoliticalExpenses,
+    );
+
     // 機関紙誌の発行その他の事業費（4項目の合計）
     const businessAmount =
       publicationAmount + advertisingAmount + partyAmount + otherBusinessAmount;
+    const businessGrantAmount =
+      publicationGrantAmount + advertisingGrantAmount + partyGrantAmount + otherBusinessGrantAmount;
 
     // 政治活動費小計
     const politicalSubtotal =
@@ -126,30 +197,76 @@ export const ExpenseSummaryData = {
       researchAmount +
       donationGrantAmount +
       otherPoliticalAmount;
+    const politicalGrantSubtotal =
+      organizationGrantAmount +
+      electionGrantAmount +
+      businessGrantAmount +
+      researchGrantAmount +
+      donationGrantGrantAmount +
+      otherPoliticalGrantAmount;
 
     // 支出総額
     const totalAmount = regularSubtotal + politicalSubtotal;
 
     return {
       regularExpenses: {
-        personnelExpense: createSummaryItem(personnelAmount > 0 ? personnelAmount : null),
-        utilityExpense: createSummaryItem(utilityAmount > 0 ? utilityAmount : null),
-        suppliesExpense: createSummaryItem(suppliesAmount > 0 ? suppliesAmount : null),
-        officeExpense: createSummaryItem(officeAmount > 0 ? officeAmount : null),
-        subtotal: createSummaryItem(regularSubtotal), // 小計は0でもOK
+        personnelExpense: createSummaryItem(
+          personnelAmount > 0 ? personnelAmount : null,
+          toGrantAmountOrNull(personnelGrantAmount),
+        ),
+        utilityExpense: createSummaryItem(
+          utilityAmount > 0 ? utilityAmount : null,
+          toGrantAmountOrNull(utilityGrantAmount),
+        ),
+        suppliesExpense: createSummaryItem(
+          suppliesAmount > 0 ? suppliesAmount : null,
+          toGrantAmountOrNull(suppliesGrantAmount),
+        ),
+        officeExpense: createSummaryItem(
+          officeAmount > 0 ? officeAmount : null,
+          toGrantAmountOrNull(officeGrantAmount),
+        ),
+        subtotal: createSummaryItem(regularSubtotal, toGrantAmountOrNull(regularGrantSubtotal)),
       },
       politicalActivityExpenses: {
-        organizationExpense: createSummaryItem(organizationAmount), // 0でもOK
-        electionExpense: createSummaryItem(electionAmount),
-        businessExpense: createSummaryItem(businessAmount),
-        publicationExpense: createSummaryItem(publicationAmount),
-        advertisingExpense: createSummaryItem(advertisingAmount),
-        partyExpense: createSummaryItem(partyAmount),
-        otherBusinessExpense: createSummaryItem(otherBusinessAmount),
-        researchExpense: createSummaryItem(researchAmount),
-        donationGrantExpense: createSummaryItem(donationGrantAmount),
-        otherPoliticalExpense: createSummaryItem(otherPoliticalAmount),
-        subtotal: createSummaryItem(politicalSubtotal),
+        organizationExpense: createSummaryItem(
+          organizationAmount,
+          toGrantAmountOrNull(organizationGrantAmount),
+        ),
+        electionExpense: createSummaryItem(
+          electionAmount,
+          toGrantAmountOrNull(electionGrantAmount),
+        ),
+        businessExpense: createSummaryItem(
+          businessAmount,
+          toGrantAmountOrNull(businessGrantAmount),
+        ),
+        publicationExpense: createSummaryItem(
+          publicationAmount,
+          toGrantAmountOrNull(publicationGrantAmount),
+        ),
+        advertisingExpense: createSummaryItem(
+          advertisingAmount,
+          toGrantAmountOrNull(advertisingGrantAmount),
+        ),
+        partyExpense: createSummaryItem(partyAmount, toGrantAmountOrNull(partyGrantAmount)),
+        otherBusinessExpense: createSummaryItem(
+          otherBusinessAmount,
+          toGrantAmountOrNull(otherBusinessGrantAmount),
+        ),
+        researchExpense: createSummaryItem(
+          researchAmount,
+          toGrantAmountOrNull(researchGrantAmount),
+        ),
+        donationGrantExpense: createSummaryItem(
+          donationGrantAmount,
+          toGrantAmountOrNull(donationGrantGrantAmount),
+        ),
+        otherPoliticalExpense: createSummaryItem(
+          otherPoliticalAmount,
+          toGrantAmountOrNull(otherPoliticalGrantAmount),
+        ),
+        subtotal: createSummaryItem(politicalSubtotal, toGrantAmountOrNull(politicalGrantSubtotal)),
       },
       totalAmount,
     };

@@ -23,6 +23,8 @@ import {
   serializePoliticalActivityExpenseSection,
 } from "@/server/contexts/report/domain/services/expense-serializer";
 import { serializeExpenseSummary } from "@/server/contexts/report/domain/services/expense-summary-serializer";
+import { GrantExpenditureSection } from "@/server/contexts/report/domain/models/grant-expenditure";
+import { serializeGrantExpenditure } from "@/server/contexts/report/domain/services/grant-expenditure-serializer";
 import { ExpenseSummaryData } from "@/server/contexts/report/domain/models/expense-summary";
 import {
   serializeBusinessIncomeSection,
@@ -183,7 +185,13 @@ export function serializeReportData(reportData: ReportData): string {
   }
 
   // SYUUSHI07_16: 第14号様式（その16）本部又は支部に対する交付金の支出
-  // 廃止予定: 交付金フラグ方式に移行するため、この専用カテゴリは削除
+  // 交付金フラグ（isGrantExpenditure）が設定された明細を集約して出力
+  if (GrantExpenditureSection.shouldOutputSheet(reportData.expenses.grantExpenditures)) {
+    sections.push({
+      formId: "SYUUSHI07_16",
+      xml: serializeGrantExpenditure(reportData.expenses.grantExpenditures),
+    });
+  }
 
   return buildXmlDocument(reportData, sections);
 }

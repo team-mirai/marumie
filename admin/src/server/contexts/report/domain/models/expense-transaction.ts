@@ -32,6 +32,7 @@ interface BaseExpenseTransaction {
   transactionDate: Date;
   counterpartName: string; // 支払先の氏名
   counterpartAddress: string; // 支払先の住所
+  isGrantExpenditure: boolean; // 交付金に係る支出かどうか
 }
 
 /**
@@ -116,6 +117,7 @@ export interface ExpenseRow {
   adr: string; // 住所
   bikou?: string;
   ryousyu?: number; // 領収書区分
+  koufukin?: number; // 交付金フラグ: 0=通常, 1=交付金に係る支出
 }
 
 /**
@@ -311,6 +313,7 @@ const ExpenseTransactionBase = {
       nm: ExpenseTransactionBase.getNm(tx),
       adr: ExpenseTransactionBase.getAdr(tx),
       bikou: ExpenseTransactionBase.getBikou(tx),
+      koufukin: tx.isGrantExpenditure ? 1 : 0,
     };
   },
 };
@@ -660,6 +663,7 @@ function aggregatePoliticalActivitySections<T extends BaseExpenseTransaction>(
       nm: ExpenseTransactionBase.getNm(tx),
       adr: ExpenseTransactionBase.getAdr(tx),
       bikou: ExpenseTransactionBase.getBikou(tx),
+      koufukin: tx.isGrantExpenditure ? 1 : 0,
     }));
 
     sections.push({

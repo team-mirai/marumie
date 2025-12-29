@@ -94,6 +94,11 @@ function serializeExpenseKubun(
     if (row.ryousyu !== undefined) {
       rowEle.ele("RYOUSYU").txt(row.ryousyu.toString());
     }
+
+    // 交付金フラグ: 0=通常, 1=交付金に係る支出
+    if (row.koufukin !== undefined) {
+      rowEle.ele("KOUFUKIN").txt(row.koufukin.toString());
+    }
   }
 }
 
@@ -227,6 +232,11 @@ function serializePoliticalActivitySheet(
 
     if (row.ryousyu !== undefined) {
       rowEle.ele("RYOUSYU").txt(row.ryousyu.toString());
+    }
+
+    // 交付金フラグ: 0=通常, 1=交付金に係る支出
+    if (row.koufukin !== undefined) {
+      rowEle.ele("KOUFUKIN").txt(row.koufukin.toString());
     }
   }
 }

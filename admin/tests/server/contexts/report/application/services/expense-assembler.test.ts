@@ -262,6 +262,7 @@ function createExpenseTransaction(
     transactionDate: new Date("2024-04-01"),
     counterpartName: "テスト支払先",
     counterpartAddress: "東京都千代田区",
+    isGrantExpenditure: false,
     ...overrides,
   };
 }

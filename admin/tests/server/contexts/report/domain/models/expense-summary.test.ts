@@ -64,6 +64,7 @@ function createEmptyExpenseData(): ExpenseData {
     researchExpenses: [],
     donationGrantExpenses: [],
     otherPoliticalExpenses: [],
+    grantExpenditures: { totalAmount: 0, rows: [] },
   };
 }
 

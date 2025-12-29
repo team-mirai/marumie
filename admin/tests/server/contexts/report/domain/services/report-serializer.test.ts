@@ -44,6 +44,8 @@ describe("serializeReportData", () => {
       researchExpenses: [],
       donationGrantExpenses: [],
       otherPoliticalExpenses: [],
+      // SYUUSHI07_16: 交付金支出
+      grantExpenditures: { totalAmount: 0, rows: [] },
     },
   });
 

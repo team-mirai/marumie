@@ -24,6 +24,7 @@ describe("ExpenseData", () => {
     researchExpenses: [],
     donationGrantExpenses: [],
     otherPoliticalExpenses: [],
+    grantExpenditures: { totalAmount: 0, rows: [] },
   });
 
   const createExpenseRow = () => ({
@@ -216,6 +217,7 @@ describe("ReportData", () => {
       researchExpenses: [],
       donationGrantExpenses: [],
       otherPoliticalExpenses: [],
+      grantExpenditures: { totalAmount: 0, rows: [] },
     },
   });
 
@@ -776,6 +778,7 @@ describe("ExpenseData.validate", () => {
     researchExpenses: [],
     donationGrantExpenses: [],
     otherPoliticalExpenses: [],
+    grantExpenditures: { totalAmount: 0, rows: [] },
   });
 
   it("空のデータでエラーを返さない", () => {

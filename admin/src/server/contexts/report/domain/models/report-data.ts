@@ -29,6 +29,10 @@ import type {
   UtilityExpenseSection,
 } from "@/server/contexts/report/domain/models/expense-transaction";
 import {
+  type GrantExpenditureSection,
+  GrantExpenditureSection as GrantExpenditureSectionModel,
+} from "@/server/contexts/report/domain/models/grant-expenditure";
+import {
   AdvertisingExpenseSection as AdvertisingExpenseSectionModel,
   DonationGrantExpenseSection as DonationGrantExpenseSectionModel,
   ElectionExpenseSection as ElectionExpenseSectionModel,
@@ -124,6 +128,9 @@ export interface ExpenseData {
   researchExpenses: ResearchExpenseSection[]; // KUBUN7: 調査研究費
   donationGrantExpenses: DonationGrantExpenseSection[]; // KUBUN8: 寄附・交付金
   otherPoliticalExpenses: OtherPoliticalExpenseSection[]; // KUBUN9: その他の経費
+
+  // SYUUSHI07_16: 本部又は支部に対する交付金の支出（交付金フラグ付き明細）
+  grantExpenditures: GrantExpenditureSection;
 }
 
 /**
@@ -333,8 +340,8 @@ export const ReportData = {
       data.expenses.otherPoliticalExpenses.some((s) =>
         OtherPoliticalExpenseSectionModel.shouldOutputSheet(s),
       ),
-      // 34: その16（本部・支部への交付金支出）- 廃止予定（交付金フラグに移行）
-      false,
+      // 34: その16（本部又は支部に対する交付金の支出）
+      GrantExpenditureSectionModel.shouldOutputSheet(data.expenses.grantExpenditures),
       // 35: その17（資産等の項目別内訳の有無）- 未実装
       false,
       // 36: その18 01.土地 - 未実装
