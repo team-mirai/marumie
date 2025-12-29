@@ -26,12 +26,17 @@ export function CounterpartFormDialog(props: CounterpartFormDialogProps) {
   const counterpart = mode === "edit" ? props.counterpart : null;
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = async (data: { name: string; address: string | null }) => {
+  const handleSubmit = async (data: {
+    name: string;
+    postalCode: string | null;
+    address: string | null;
+  }) => {
     setIsLoading(true);
     try {
       if (mode === "create") {
         const result = await createCounterpartAction({
           name: data.name,
+          postalCode: data.postalCode,
           address: data.address,
         });
 
@@ -41,6 +46,7 @@ export function CounterpartFormDialog(props: CounterpartFormDialogProps) {
       } else if (counterpart) {
         const result = await updateCounterpartAction(counterpart.id, {
           name: data.name,
+          postalCode: data.postalCode,
           address: data.address,
         });
 
@@ -76,6 +82,7 @@ export function CounterpartFormDialog(props: CounterpartFormDialogProps) {
               ? {
                   id: counterpart.id,
                   name: counterpart.name,
+                  postalCode: counterpart.postalCode,
                   address: counterpart.address,
                   usageCount: counterpart.usageCount,
                 }

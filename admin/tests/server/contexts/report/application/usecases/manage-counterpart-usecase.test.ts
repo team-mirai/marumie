@@ -15,6 +15,7 @@ describe("manage-counterpart-usecase", () => {
   const createMockCounterpart = (overrides: Partial<Counterpart> = {}): Counterpart => ({
     id: "cp-1",
     name: "テスト取引先",
+    postalCode: null,
     address: "東京都千代田区",
     createdAt: new Date("2024-01-01"),
     updatedAt: new Date("2024-01-01"),
@@ -100,7 +101,7 @@ describe("manage-counterpart-usecase", () => {
       mockRepository.create.mockResolvedValue(newCounterpart);
 
       const usecase = new CreateCounterpartUsecase(mockRepository);
-      const result = await usecase.execute({ name: "新規取引先", address: "東京都" });
+      const result = await usecase.execute({ name: "新規取引先", postalCode: null, address: "東京都" });
 
       expect(result.success).toBe(true);
       expect(result.counterpart).toEqual(newCounterpart);
@@ -108,7 +109,7 @@ describe("manage-counterpart-usecase", () => {
 
     it("名前が空の場合はエラーを返す", async () => {
       const usecase = new CreateCounterpartUsecase(mockRepository);
-      const result = await usecase.execute({ name: "", address: null });
+      const result = await usecase.execute({ name: "", postalCode: null, address: null });
 
       expect(result.success).toBe(false);
       expect(result.errors).toContain("名前は必須です");
@@ -118,7 +119,7 @@ describe("manage-counterpart-usecase", () => {
       mockRepository.findByNameAndAddress.mockResolvedValue(createMockCounterpart());
 
       const usecase = new CreateCounterpartUsecase(mockRepository);
-      const result = await usecase.execute({ name: "テスト取引先", address: "東京都千代田区" });
+      const result = await usecase.execute({ name: "テスト取引先", postalCode: null, address: "東京都千代田区" });
 
       expect(result.success).toBe(false);
       expect(result.errors).toContain("同じ名前・住所の組み合わせが既に存在します");
@@ -130,10 +131,11 @@ describe("manage-counterpart-usecase", () => {
       mockRepository.create.mockResolvedValue(newCounterpart);
 
       const usecase = new CreateCounterpartUsecase(mockRepository);
-      await usecase.execute({ name: "  テスト取引先  ", address: "  東京都  " });
+      await usecase.execute({ name: "  テスト取引先  ", postalCode: "  123-4567  ", address: "  東京都  " });
 
       expect(mockRepository.create).toHaveBeenCalledWith({
         name: "テスト取引先",
+        postalCode: "123-4567",
         address: "東京都",
       });
     });

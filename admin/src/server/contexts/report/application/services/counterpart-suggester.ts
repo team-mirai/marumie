@@ -39,6 +39,7 @@ export class FrequencyStrategy implements SuggestionStrategy {
       counterpart: {
         id: cp.id,
         name: cp.name,
+        postalCode: cp.postalCode,
         address: cp.address,
         createdAt: cp.createdAt,
         updatedAt: cp.updatedAt,
@@ -70,6 +71,7 @@ export class PartnerNameStrategy implements SuggestionStrategy {
       counterpart: {
         id: cp.id,
         name: cp.name,
+        postalCode: cp.postalCode,
         address: cp.address,
         createdAt: cp.createdAt,
         updatedAt: cp.updatedAt,

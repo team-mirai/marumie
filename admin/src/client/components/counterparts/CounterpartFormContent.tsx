@@ -3,19 +3,31 @@ import "client-only";
 
 import { useState, useId } from "react";
 import { Button, Input, Label } from "@/client/components/ui";
-import { AddressInput } from "@/client/components/counterparts/AddressInput";
-import { MAX_NAME_LENGTH } from "@/server/contexts/report/domain/models/counterpart";
+import {
+  AddressInput,
+  type CounterpartSearchResult,
+} from "@/client/components/counterparts/AddressInput";
+import {
+  MAX_NAME_LENGTH,
+  MAX_POSTAL_CODE_LENGTH,
+} from "@/server/contexts/report/domain/models/counterpart";
 
 interface CounterpartFormContentProps {
   mode: "create" | "edit";
   initialData?: {
     id: string;
     name: string;
+    postalCode: string | null;
     address: string | null;
     usageCount?: number;
   };
-  defaultName?: string;
-  onSubmit: (data: { name: string; address: string | null }) => Promise<void>;
+  /** 摘要（検索クエリ）のデフォルト値 */
+  defaultSearchQuery?: string;
+  onSubmit: (data: {
+    name: string;
+    postalCode: string | null;
+    address: string | null;
+  }) => Promise<void>;
   disabled?: boolean;
   /** 送信ボタンのラベルをカスタマイズ（デフォルト: 作成/保存） */
   submitLabel?: string;
@@ -24,17 +36,19 @@ interface CounterpartFormContentProps {
 export function CounterpartFormContent({
   mode,
   initialData,
-  defaultName,
+  defaultSearchQuery,
   onSubmit,
   disabled = false,
   submitLabel,
 }: CounterpartFormContentProps) {
-  const [name, setName] = useState(initialData?.name ?? defaultName ?? "");
+  const [name, setName] = useState(initialData?.name ?? "");
+  const [postalCode, setPostalCode] = useState(initialData?.postalCode ?? "");
   const [address, setAddress] = useState(initialData?.address ?? "");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const nameId = useId();
+  const postalCodeId = useId();
 
   const isFormValid = name.trim() !== "";
 
@@ -47,6 +61,7 @@ export function CounterpartFormContent({
       setError(null);
       await onSubmit({
         name: name.trim(),
+        postalCode: postalCode.trim() || null,
         address: address.trim() || null,
       });
     } catch (err) {
@@ -54,6 +69,13 @@ export function CounterpartFormContent({
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  // AI検索で候補が選択されたときのハンドラ
+  const handleSelect = (result: CounterpartSearchResult) => {
+    setName(result.name);
+    setPostalCode(result.postalCode ?? "");
+    setAddress(result.address);
   };
 
   const isDisabled = disabled || isSubmitting;
@@ -70,6 +92,16 @@ export function CounterpartFormContent({
         </div>
       )}
 
+      {/* AI検索（初期状態でのみ表示） または 確定後の住所入力 */}
+      <AddressInput
+        defaultSearchQuery={defaultSearchQuery}
+        address={address}
+        onSelect={handleSelect}
+        onAddressChange={setAddress}
+        disabled={isDisabled}
+      />
+
+      {/* 社名入力（AI検索で自動入力 or 手動入力） */}
       <div>
         <Label htmlFor={nameId}>
           名前 <span className="text-red-500">*</span>
@@ -86,12 +118,19 @@ export function CounterpartFormContent({
         />
       </div>
 
-      <AddressInput
-        companyName={name}
-        address={address}
-        onChange={setAddress}
-        disabled={isDisabled}
-      />
+      {/* 郵便番号入力（AI検索で自動入力 or 手動入力） */}
+      <div>
+        <Label htmlFor={postalCodeId}>郵便番号</Label>
+        <Input
+          type="text"
+          id={postalCodeId}
+          value={postalCode}
+          onChange={(e) => setPostalCode(e.target.value)}
+          maxLength={MAX_POSTAL_CODE_LENGTH}
+          placeholder="例: 123-4567"
+          disabled={isDisabled}
+        />
+      </div>
 
       {mode === "edit" && initialData?.usageCount !== undefined && (
         <div className="text-muted-foreground text-sm">

@@ -20,6 +20,7 @@ export class PrismaCounterpartRepository implements ICounterpartRepository {
     return {
       id: prismaCounterpart.id.toString(),
       name: prismaCounterpart.name,
+      postalCode: prismaCounterpart.postalCode ?? null,
       address: prismaCounterpart.address,
       createdAt: prismaCounterpart.createdAt,
       updatedAt: prismaCounterpart.updatedAt,
@@ -109,6 +110,7 @@ export class PrismaCounterpartRepository implements ICounterpartRepository {
     const counterpart = await this.prisma.counterpart.create({
       data: {
         name: data.name.trim(),
+        postalCode: data.postalCode?.trim() || null,
         address: data.address?.trim() || null,
       },
     });
@@ -122,10 +124,13 @@ export class PrismaCounterpartRepository implements ICounterpartRepository {
       throw new Error(`無効なID形式です: ${id}`);
     }
 
-    const updateData: { name?: string; address?: string | null } = {};
+    const updateData: { name?: string; postalCode?: string | null; address?: string | null } = {};
 
     if (data.name !== undefined) {
       updateData.name = data.name.trim();
+    }
+    if (data.postalCode !== undefined) {
+      updateData.postalCode = data.postalCode?.trim() || null;
     }
     if (data.address !== undefined) {
       updateData.address = data.address?.trim() || null;
