@@ -5,7 +5,7 @@
  * どのトランザクションがCounterpart情報を必要とするかを定義します。
  */
 
-import { PL_CATEGORIES } from "@/shared/utils/category-mapping";
+import { PL_CATEGORIES } from "@/shared/accounting/account-category";
 
 /**
  * Counterpart紐づけが必要な収入カテゴリ

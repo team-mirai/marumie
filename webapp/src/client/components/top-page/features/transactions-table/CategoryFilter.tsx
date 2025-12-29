@@ -3,7 +3,7 @@ import "client-only";
 
 import { useState } from "react";
 import Image from "next/image";
-import { PL_CATEGORIES, type CategoryMapping } from "@/shared/utils/category-mapping";
+import { PL_CATEGORIES, type CategoryMapping } from "@/shared/accounting/account-category";
 
 interface CategoryItem {
   id: string;

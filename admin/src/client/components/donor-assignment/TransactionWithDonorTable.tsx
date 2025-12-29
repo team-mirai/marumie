@@ -12,7 +12,7 @@ import {
 } from "@tanstack/react-table";
 import type { TransactionWithDonor } from "@/server/contexts/report/domain/models/transaction-with-donor";
 import { DONOR_TYPE_LABELS } from "@/server/contexts/report/domain/models/donor";
-import { PL_CATEGORIES } from "@/shared/utils/category-mapping";
+import { PL_CATEGORIES } from "@/shared/accounting/account-category";
 import { cn } from "@/client/lib";
 
 interface TransactionWithDonorTableProps {

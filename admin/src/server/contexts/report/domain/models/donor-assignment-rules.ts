@@ -5,7 +5,7 @@
  * どのトランザクションがDonor情報を必要とするかを定義します。
  */
 
-import { PL_CATEGORIES } from "@/shared/utils/category-mapping";
+import { PL_CATEGORIES } from "@/shared/accounting/account-category";
 import type { DonorType } from "@/server/contexts/report/domain/models/donor";
 
 /**

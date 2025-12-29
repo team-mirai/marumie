@@ -35,7 +35,7 @@ import {
   POLITICAL_ACTIVITY_EXPENSE_THRESHOLD,
   requiresCounterpartDetail,
 } from "@/server/contexts/report/domain/models/counterpart-assignment-rules";
-import { PL_CATEGORIES } from "@/shared/utils/category-mapping";
+import { PL_CATEGORIES } from "@/shared/accounting/account-category";
 
 // カテゴリキー定数（shared/utils/category-mapping.ts の日本語キー経由で取得）
 const CATEGORY_KEYS = {

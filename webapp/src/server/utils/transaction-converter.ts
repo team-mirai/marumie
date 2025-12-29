@@ -1,5 +1,5 @@
 import type { Transaction } from "@/shared/models/transaction";
-import { PL_CATEGORIES, type CategoryMapping } from "@/shared/utils/category-mapping";
+import { PL_CATEGORIES, type CategoryMapping } from "@/shared/accounting/account-category";
 import type { DisplayTransaction, DisplayTransactionType } from "@/types/display-transaction";
 
 /**

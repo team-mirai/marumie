@@ -11,7 +11,7 @@ import {
   type RowSelectionState,
 } from "@tanstack/react-table";
 import type { TransactionWithCounterpart } from "@/server/contexts/report/domain/models/transaction-with-counterpart";
-import { PL_CATEGORIES } from "@/shared/utils/category-mapping";
+import { PL_CATEGORIES } from "@/shared/accounting/account-category";
 import { cn } from "@/client/lib";
 
 interface TransactionWithCounterpartTableProps {

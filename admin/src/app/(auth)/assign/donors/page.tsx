@@ -5,7 +5,7 @@ import { loadTransactionsWithDonorsData } from "@/server/contexts/report/present
 import { loadAllDonorsData } from "@/server/contexts/report/presentation/loaders/donors-loader";
 import { DonorAssignmentClient } from "@/client/components/donor-assignment/DonorAssignmentClient";
 import { DONOR_REQUIRED_CATEGORIES } from "@/server/contexts/report/domain/models/donor-assignment-rules";
-import { PL_CATEGORIES } from "@/shared/utils/category-mapping";
+import { PL_CATEGORIES } from "@/shared/accounting/account-category";
 
 function buildCategoryOptions(): { value: string; label: string }[] {
   const donorCategories = new Set([...DONOR_REQUIRED_CATEGORIES]);

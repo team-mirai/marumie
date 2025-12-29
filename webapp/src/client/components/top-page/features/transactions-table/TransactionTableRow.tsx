@@ -1,7 +1,7 @@
 "use client";
 import "client-only";
 
-import { PL_CATEGORIES } from "@/shared/utils/category-mapping";
+import { PL_CATEGORIES } from "@/shared/accounting/account-category";
 import type { DisplayTransaction } from "@/types/display-transaction";
 
 interface TransactionTableRowProps {

@@ -2,7 +2,7 @@ import { Prisma, type PrismaClient, type Transaction as PrismaTransaction } from
 import type { Transaction, TransactionType } from "@/shared/models/transaction";
 import type { TransactionFilters } from "@/types/transaction-filters";
 import type { DisplayTransactionType } from "@/types/display-transaction";
-import { PL_CATEGORIES, BS_CATEGORIES } from "@/shared/utils/category-mapping";
+import { PL_CATEGORIES, BS_CATEGORIES } from "@/shared/accounting/account-category";
 import type {
   DailyDonationData,
   ITransactionRepository,

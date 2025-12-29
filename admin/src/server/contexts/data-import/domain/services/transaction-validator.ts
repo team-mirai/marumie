@@ -1,4 +1,4 @@
-import { PL_CATEGORIES, BS_CATEGORIES } from "@/shared/utils/category-mapping";
+import { PL_CATEGORIES, BS_CATEGORIES } from "@/shared/accounting/account-category";
 import type { PreviewTransaction } from "@/server/contexts/data-import/domain/models/preview-transaction";
 import type { Transaction } from "@/shared/models/transaction";
 
