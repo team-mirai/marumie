@@ -1,7 +1,7 @@
 "use client";
 import "client-only";
 
-import { useMemo } from "react";
+import { useMemo, useState, useCallback } from "react";
 import {
   createColumnHelper,
   flexRender,
@@ -10,10 +10,12 @@ import {
   useReactTable,
   type RowSelectionState,
 } from "@tanstack/react-table";
+import { toast } from "sonner";
 import type { TransactionWithCounterpart } from "@/server/contexts/report/domain/models/transaction-with-counterpart";
 import { PL_CATEGORIES } from "@/shared/accounting/account-category";
 import { cn } from "@/client/lib";
 import { Switch, Tooltip, TooltipTrigger, TooltipContent } from "@/client/components/ui";
+import { updateGrantExpenditureFlagAction } from "@/server/contexts/report/presentation/actions/update-grant-expenditure-flag";
 
 interface TransactionWithCounterpartTableProps {
   transactions: TransactionWithCounterpart[];
@@ -68,6 +70,41 @@ export function TransactionWithCounterpartTable({
   onRowSelectionChange,
   onAssignClick,
 }: TransactionWithCounterpartTableProps) {
+  const [grantExpenditureOverrides, setGrantExpenditureOverrides] = useState<
+    Record<string, boolean>
+  >({});
+
+  const handleGrantExpenditureFlagChange = useCallback(
+    async (transactionId: string, newValue: boolean) => {
+      setGrantExpenditureOverrides((prev) => ({
+        ...prev,
+        [transactionId]: newValue,
+      }));
+
+      const result = await updateGrantExpenditureFlagAction(transactionId, newValue);
+
+      if (!result.success) {
+        setGrantExpenditureOverrides((prev) => {
+          const updated = { ...prev };
+          delete updated[transactionId];
+          return updated;
+        });
+        toast.error(result.errors?.[0] ?? "交付金フラグの更新に失敗しました");
+      }
+    },
+    [],
+  );
+
+  const getGrantExpenditureValue = useCallback(
+    (transaction: TransactionWithCounterpart): boolean => {
+      if (transaction.id in grantExpenditureOverrides) {
+        return grantExpenditureOverrides[transaction.id];
+      }
+      return transaction.isGrantExpenditure;
+    },
+    [grantExpenditureOverrides],
+  );
+
   const columns = useMemo(
     () => [
       columnHelper.display({
@@ -169,10 +206,13 @@ export function TransactionWithCounterpartTable({
           if (transaction.transactionType !== "expense") {
             return <span className="text-muted-foreground">-</span>;
           }
+          const currentValue = getGrantExpenditureValue(transaction);
           return (
             <Switch
-              checked={transaction.isGrantExpenditure}
-              onCheckedChange={() => alert("not implemented")}
+              checked={currentValue}
+              onCheckedChange={(checked) =>
+                handleGrantExpenditureFlagChange(transaction.id, checked)
+              }
               className="cursor-pointer"
             />
           );
@@ -241,7 +281,14 @@ export function TransactionWithCounterpartTable({
         },
       }),
     ],
-    [sortField, sortOrder, onSortChange, onAssignClick],
+    [
+      sortField,
+      sortOrder,
+      onSortChange,
+      onAssignClick,
+      getGrantExpenditureValue,
+      handleGrantExpenditureFlagChange,
+    ],
   );
 
   const table = useReactTable({

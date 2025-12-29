@@ -38,6 +38,7 @@ describe("GetTransactionsWithCounterpartsUsecase", () => {
       existsById: jest.fn(),
       findExistingIds: jest.fn(),
       findByIdWithCounterpart: jest.fn(),
+      updateGrantExpenditureFlag: jest.fn(),
     });
 
   describe("ページネーション・フィルタリング・結果構造", () => {

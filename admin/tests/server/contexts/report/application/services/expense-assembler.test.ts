@@ -49,6 +49,7 @@ describe("ExpenseAssembler", () => {
           existsById: jest.fn(),
           findExistingIds: jest.fn(),
           findByIdWithCounterpart: jest.fn(),
+          updateGrantExpenditureFlag: jest.fn(),
         };
     assembler = new ExpenseAssembler(mockRepository);
   });
