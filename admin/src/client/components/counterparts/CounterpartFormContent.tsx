@@ -10,6 +10,7 @@ import {
 import {
   MAX_NAME_LENGTH,
   MAX_POSTAL_CODE_LENGTH,
+  MAX_ADDRESS_LENGTH,
 } from "@/server/contexts/report/domain/models/counterpart";
 
 interface CounterpartFormContentProps {
@@ -49,6 +50,7 @@ export function CounterpartFormContent({
 
   const nameId = useId();
   const postalCodeId = useId();
+  const addressId = useId();
 
   const isFormValid = name.trim() !== "";
 
@@ -92,16 +94,14 @@ export function CounterpartFormContent({
         </div>
       )}
 
-      {/* AI検索（初期状態でのみ表示） または 確定後の住所入力 */}
+      {/* AI検索（入力補助ツール）- 最上部に配置 */}
       <AddressInput
         defaultSearchQuery={defaultSearchQuery}
-        address={address}
         onSelect={handleSelect}
-        onAddressChange={setAddress}
         disabled={isDisabled}
       />
 
-      {/* 社名入力（AI検索で自動入力 or 手動入力） */}
+      {/* 目的フィールド: 社名入力 */}
       <div>
         <Label htmlFor={nameId}>
           名前 <span className="text-red-500">*</span>
@@ -118,7 +118,7 @@ export function CounterpartFormContent({
         />
       </div>
 
-      {/* 郵便番号入力（AI検索で自動入力 or 手動入力） */}
+      {/* 目的フィールド: 郵便番号入力 */}
       <div>
         <Label htmlFor={postalCodeId}>郵便番号</Label>
         <Input
@@ -128,6 +128,20 @@ export function CounterpartFormContent({
           onChange={(e) => setPostalCode(e.target.value)}
           maxLength={MAX_POSTAL_CODE_LENGTH}
           placeholder="例: 123-4567"
+          disabled={isDisabled}
+        />
+      </div>
+
+      {/* 目的フィールド: 住所入力 */}
+      <div>
+        <Label htmlFor={addressId}>住所</Label>
+        <Input
+          type="text"
+          id={addressId}
+          value={address}
+          onChange={(e) => setAddress(e.target.value)}
+          maxLength={MAX_ADDRESS_LENGTH}
+          placeholder="住所を入力"
           disabled={isDisabled}
         />
       </div>
@@ -144,7 +158,8 @@ export function CounterpartFormContent({
         </p>
       )}
 
-      <div className="flex justify-end gap-2 pt-2">
+      {/* 送信ボタン */}
+      <div className="flex justify-end gap-2">
         <Button type="submit" disabled={isDisabled || !isFormValid}>
           {isSubmitting ? loadingLabel : buttonLabel}
         </Button>

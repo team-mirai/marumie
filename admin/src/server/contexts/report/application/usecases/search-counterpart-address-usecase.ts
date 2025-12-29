@@ -16,7 +16,7 @@ export class SearchCounterpartAddressUsecase {
         success: false,
         error: {
           type: "NO_RESULTS",
-          message: "住所候補が見つかりませんでした。業態ヒントを追加して再検索してください。",
+          message: "住所候補が見つかりませんでした。検索ヒントを追加して再検索してください。",
         },
       };
     }
