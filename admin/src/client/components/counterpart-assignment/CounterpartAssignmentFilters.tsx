@@ -101,7 +101,7 @@ export function CounterpartAssignmentFilters({
             checked={values.unassignedOnly}
             onCheckedChange={(checked) => onChange({ unassignedOnly: checked === true })}
           />
-          <Label htmlFor="unassigned-only" className="text-white text-sm cursor-pointer">
+          <Label htmlFor="unassigned-only" className="text-foreground text-sm cursor-pointer">
             未紐付けのみ表示
           </Label>
         </div>
@@ -114,7 +114,7 @@ export function CounterpartAssignmentFilters({
           />
           <Label
             htmlFor="counterpart-required-only"
-            className="text-white text-sm cursor-pointer flex items-center gap-1"
+            className="text-foreground text-sm cursor-pointer flex items-center gap-1"
           >
             取引先必須のみ表示
             <Tooltip>
