@@ -3,6 +3,7 @@ import "client-only";
 
 import { useState, useTransition } from "react";
 import { Button, Tabs, TabsList, TabsTrigger, TabsContent } from "@/client/components/ui";
+import { formatDate, formatAmount } from "@/client/lib";
 import type { Counterpart } from "@/server/contexts/report/domain/models/counterpart";
 import type { TransactionWithCounterpart } from "@/server/contexts/report/domain/models/transaction-with-counterpart";
 import { CounterpartFormContent } from "@/client/components/counterparts/CounterpartFormContent";
@@ -17,15 +18,6 @@ interface AssignWithCounterpartContentProps {
   politicalOrganizationId: string;
   onSuccess: (count: number) => void;
   onCancel: () => void;
-}
-
-function formatDate(date: Date): string {
-  const d = new Date(date);
-  return `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, "0")}/${String(d.getDate()).padStart(2, "0")}`;
-}
-
-function formatAmount(amount: number): string {
-  return `¥${amount.toLocaleString()}`;
 }
 
 export function AssignWithCounterpartContent({

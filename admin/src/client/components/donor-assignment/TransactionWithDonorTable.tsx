@@ -13,7 +13,7 @@ import {
 import type { TransactionWithDonor } from "@/server/contexts/report/domain/models/transaction-with-donor";
 import { DONOR_TYPE_LABELS } from "@/server/contexts/report/domain/models/donor";
 import { PL_CATEGORIES } from "@/shared/accounting/account-category";
-import { cn } from "@/client/lib";
+import { cn, formatDate, formatAmount } from "@/client/lib";
 
 interface TransactionWithDonorTableProps {
   transactions: TransactionWithDonor[];
@@ -26,15 +26,6 @@ interface TransactionWithDonorTableProps {
 }
 
 const columnHelper = createColumnHelper<TransactionWithDonor>();
-
-function formatDate(date: Date): string {
-  const d = new Date(date);
-  return `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, "0")}/${String(d.getDate()).padStart(2, "0")}`;
-}
-
-function formatAmount(amount: number): string {
-  return `¥${amount.toLocaleString()}`;
-}
 
 const DEFAULT_CATEGORY_COLOR = "#64748B";
 

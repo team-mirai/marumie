@@ -16,6 +16,7 @@ import { AssignCounterpartDialog } from "@/client/components/counterpart-assignm
 import { CounterpartFormDialog } from "@/client/components/counterparts/CounterpartFormDialog";
 import { ClientPagination } from "@/client/components/ui/ClientPagination";
 import { Card, Input, Button, Label } from "@/client/components/ui";
+import { formatDate } from "@/client/lib";
 import { PoliticalOrganizationSelect } from "@/client/components/political-organizations/PoliticalOrganizationSelect";
 import { bulkUnassignCounterpartAction } from "@/server/contexts/report/presentation/actions/bulk-unassign-counterpart";
 
@@ -178,11 +179,6 @@ export function CounterpartDetailClient({
   const handleEditSuccess = () => {
     setIsEditDialogOpen(false);
     router.refresh();
-  };
-
-  const formatDate = (date: Date) => {
-    const d = new Date(date);
-    return `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, "0")}/${String(d.getDate()).padStart(2, "0")}`;
   };
 
   return (

@@ -6,6 +6,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/client/components/ui";
+import { formatCurrency } from "@/client/lib";
 import { SectionWrapper } from "./SectionWrapper";
 import type {
   PersonalDonationSection,
@@ -14,10 +15,6 @@ import type {
 
 interface DonationSectionProps {
   personalDonations: PersonalDonationSection;
-}
-
-function formatCurrency(amount: number): string {
-  return `¥${amount.toLocaleString("ja-JP")}`;
 }
 
 function formatDate(date: Date): string {
