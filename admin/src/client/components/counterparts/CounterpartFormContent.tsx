@@ -7,7 +7,10 @@ import {
   AddressInput,
   type CounterpartSearchResult,
 } from "@/client/components/counterparts/AddressInput";
-import { MAX_NAME_LENGTH } from "@/server/contexts/report/domain/models/counterpart";
+import {
+  MAX_NAME_LENGTH,
+  MAX_POSTAL_CODE_LENGTH,
+} from "@/server/contexts/report/domain/models/counterpart";
 
 interface CounterpartFormContentProps {
   mode: "create" | "edit";
@@ -123,7 +126,7 @@ export function CounterpartFormContent({
           id={postalCodeId}
           value={postalCode}
           onChange={(e) => setPostalCode(e.target.value)}
-          maxLength={10}
+          maxLength={MAX_POSTAL_CODE_LENGTH}
           placeholder="例: 123-4567"
           disabled={isDisabled}
         />
