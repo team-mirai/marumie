@@ -44,8 +44,6 @@ describe("serializeReportData", () => {
       researchExpenses: [],
       donationGrantExpenses: [],
       otherPoliticalExpenses: [],
-      // SYUUSHI07_16: 本部又は支部に対する交付金
-      branchGrantExpenses: { totalAmount: 0, rows: [] },
     },
   });
 
@@ -189,35 +187,6 @@ describe("serializeReportData", () => {
     expect(xml).toContain("<KEIHI_SKEI_GK>600000</KEIHI_SKEI_GK>");
   });
 
-  it("includes SYUUSHI07_16 when branch grant expenses have data", () => {
-    const reportData = createEmptyReportData();
-    reportData.expenses.branchGrantExpenses = {
-      totalAmount: 200000,
-      rows: [
-        {
-          ichirenNo: "1",
-          shisyutuKmk: "本支部交付金",
-          kingaku: 200000,
-          dt: new Date("2024-06-15"),
-          honsibuNm: "テスト支部",
-          jimuAdr: "東京都新宿区",
-          bikou: undefined,
-        },
-      ],
-    };
-
-    const xml = serializeReportData(reportData);
-
-    // SYUUSHI07_16（本部又は支部に対する交付金の支出）が出力されることを確認
-    expect(xml).toContain("<SYUUSHI07_16>");
-    expect(xml).toContain("<KINGAKU_GK>200000</KINGAKU_GK>");
-    expect(xml).toContain("<ROW>");
-    expect(xml).toContain("<ICHIREN_NO>1</ICHIREN_NO>");
-    expect(xml).toContain("<SHISYUTU_KMK>本支部交付金</SHISYUTU_KMK>");
-    expect(xml).toContain("<KINGAKU>200000</KINGAKU>");
-    expect(xml).toContain("<HONSIBU_NM>テスト支部</HONSIBU_NM>");
-    expect(xml).toContain("<JIMU_ADR>東京都新宿区</JIMU_ADR>");
-  });
 });
 
 describe("KNOWN_FORM_IDS", () => {

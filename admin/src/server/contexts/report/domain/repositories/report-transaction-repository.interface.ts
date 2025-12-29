@@ -1,7 +1,6 @@
 import type { PersonalDonationTransaction } from "@/server/contexts/report/domain/models/donation-transaction";
 import type {
   AdvertisingExpenseTransaction,
-  BranchGrantExpenseTransaction,
   DonationGrantExpenseTransaction,
   ElectionExpenseTransaction,
   FundraisingPartyExpenseTransaction,
@@ -183,13 +182,6 @@ export interface IReportTransactionRepository extends ITransactionWithCounterpar
   ): Promise<PersonnelExpenseTransaction[]>;
 
   /**
-   * SYUUSHI07_16: 本部又は支部に対する交付金のトランザクションを取得
-   */
-  findBranchGrantExpenseTransactions(
-    filters: TransactionFilters,
-  ): Promise<BranchGrantExpenseTransaction[]>;
-
-  /**
    * Counterpart紐付け管理用: TransactionとCounterpartの紐付け情報を含むTransaction一覧を取得
    */
   findTransactionsWithCounterparts(
@@ -217,7 +209,6 @@ export type {
   DonationGrantExpenseTransaction,
   OtherPoliticalExpenseTransaction,
   PersonnelExpenseTransaction,
-  BranchGrantExpenseTransaction,
   TransactionWithCounterpart,
   TransactionWithCounterpartFilters,
   TransactionWithCounterpartResult,

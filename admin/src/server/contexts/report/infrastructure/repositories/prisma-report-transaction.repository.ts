@@ -3,7 +3,6 @@ import "server-only";
 import type { Prisma, PrismaClient } from "@prisma/client";
 import type {
   AdvertisingExpenseTransaction,
-  BranchGrantExpenseTransaction,
   BusinessIncomeTransaction,
   DonationGrantExpenseTransaction,
   ElectionExpenseTransaction,
@@ -77,9 +76,6 @@ const CATEGORY_KEYS = {
   // SYUUSHI07_13: 人件費
   // biome-ignore lint/complexity/useLiteralKeys: 日本語キー
   PERSONNEL_COSTS: PL_CATEGORIES["人件費"].key,
-  // SYUUSHI07_16: 本部又は支部に対する交付金
-  // biome-ignore lint/complexity/useLiteralKeys: 日本語キー
-  BRANCH_GRANTS_EXPENSES: PL_CATEGORIES["本部又は支部に対する交付金"].key,
 } as const;
 
 /**
@@ -666,18 +662,6 @@ export class PrismaReportTransactionRepository implements IReportTransactionRepo
     filters: TransactionFilters,
   ): Promise<PersonnelExpenseTransaction[]> {
     return this.findPoliticalActivityExpenseTransactions(filters, CATEGORY_KEYS.PERSONNEL_COSTS);
-  }
-
-  /**
-   * SYUUSHI07_16: 本部又は支部に対する交付金のトランザクションを取得
-   */
-  async findBranchGrantExpenseTransactions(
-    filters: TransactionFilters,
-  ): Promise<BranchGrantExpenseTransaction[]> {
-    return this.findPoliticalActivityExpenseTransactions(
-      filters,
-      CATEGORY_KEYS.BRANCH_GRANTS_EXPENSES,
-    );
   }
 
   /**

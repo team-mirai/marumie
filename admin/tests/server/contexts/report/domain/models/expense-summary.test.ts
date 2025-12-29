@@ -17,7 +17,6 @@ import type {
   ResearchExpenseSection,
   SuppliesExpenseSection,
   UtilityExpenseSection,
-  BranchGrantExpenseSection,
 } from "@/server/contexts/report/domain/models/expense-transaction";
 
 function createEmptyPersonnelExpenseSection(): PersonnelExpenseSection {
@@ -34,10 +33,6 @@ function createEmptySuppliesExpenseSection(): SuppliesExpenseSection {
 
 function createEmptyOfficeExpenseSection(): OfficeExpenseSection {
   return { totalAmount: 0, underThresholdAmount: 0, rows: [] };
-}
-
-function createEmptyBranchGrantExpenseSection(): BranchGrantExpenseSection {
-  return { totalAmount: 0, rows: [] };
 }
 
 function createPoliticalActivitySection(totalAmount: number): {
@@ -69,7 +64,6 @@ function createEmptyExpenseData(): ExpenseData {
     researchExpenses: [],
     donationGrantExpenses: [],
     otherPoliticalExpenses: [],
-    branchGrantExpenses: createEmptyBranchGrantExpenseSection(),
   };
 }
 
