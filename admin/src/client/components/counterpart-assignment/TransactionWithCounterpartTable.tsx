@@ -170,21 +170,11 @@ export function TransactionWithCounterpartTable({
             return <span className="text-muted-foreground">-</span>;
           }
           return (
-            <div className="flex items-center gap-1.5">
-              <Switch
-                checked={transaction.isGrantExpenditure}
-                onCheckedChange={() => alert("not implemented")}
-                className="scale-75"
-              />
-              <span
-                className={cn(
-                  "text-xs",
-                  transaction.isGrantExpenditure ? "text-primary" : "text-muted-foreground",
-                )}
-              >
-                {transaction.isGrantExpenditure ? "ON" : "OFF"}
-              </span>
-            </div>
+            <Switch
+              checked={transaction.isGrantExpenditure}
+              onCheckedChange={() => alert("not implemented")}
+              className="cursor-pointer"
+            />
           );
         },
       }),

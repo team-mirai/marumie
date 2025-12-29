@@ -70,3 +70,4 @@ export {
   TabsContent,
 } from "@/client/components/ui/tabs";
 export { Switch } from "@/client/components/ui/switch";
+export { Toaster } from "@/client/components/ui/sonner";
