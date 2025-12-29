@@ -12,7 +12,7 @@ interface AssignCounterpartDialogProps {
   allCounterparts: Counterpart[];
   politicalOrganizationId: string;
   onClose: () => void;
-  onSuccess: () => void;
+  onSuccess: (count: number) => void;
 }
 
 export function AssignCounterpartDialog({
