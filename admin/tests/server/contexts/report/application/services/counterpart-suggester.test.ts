@@ -40,6 +40,7 @@ describe("CounterpartSuggester", () => {
     creditPartner: null,
     counterpart: null,
     requiresCounterpart: true,
+    isGrantExpenditure: false,
     ...overrides,
   });
 

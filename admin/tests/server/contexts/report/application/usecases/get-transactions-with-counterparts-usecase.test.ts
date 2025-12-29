@@ -28,6 +28,7 @@ describe("GetTransactionsWithCounterpartsUsecase", () => {
     creditPartner: null,
     counterpart: null,
     requiresCounterpart: true,
+    isGrantExpenditure: false,
     ...overrides,
   });
 

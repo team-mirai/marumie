@@ -32,6 +32,7 @@ describe("GetCounterpartTransactionsUsecase", () => {
       address: "東京都千代田区1-1-1",
     },
     requiresCounterpart: true,
+    isGrantExpenditure: false,
     ...overrides,
   });
 
