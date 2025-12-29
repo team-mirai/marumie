@@ -80,8 +80,6 @@ describe("XmlExportUsecase", () => {
         researchExpenses: [],
         donationGrantExpenses: [],
         otherPoliticalExpenses: [],
-        // SYUUSHI07_16: 本部又は支部に対する交付金
-        branchGrantExpenses: { totalAmount: 0, rows: [] },
       }),
     } as unknown as jest.Mocked<ExpenseAssembler>;
     usecase = new XmlExportUsecase(

@@ -9,7 +9,6 @@ import "server-only";
 import type { IReportTransactionRepository } from "@/server/contexts/report/domain/repositories/report-transaction-repository.interface";
 import {
   AdvertisingExpenseSection,
-  BranchGrantExpenseSection,
   DonationGrantExpenseSection,
   ElectionExpenseSection,
   FundraisingPartyExpenseSection,
@@ -61,7 +60,6 @@ export class ExpenseAssembler {
       donationGrantTransactions,
       otherPoliticalTransactions,
       personnelTransactions,
-      branchGrantTransactions,
     ] = await Promise.all([
       this.repository.findUtilityExpenseTransactions(filters),
       this.repository.findSuppliesExpenseTransactions(filters),
@@ -76,7 +74,6 @@ export class ExpenseAssembler {
       this.repository.findDonationGrantExpenseTransactions(filters),
       this.repository.findOtherPoliticalExpenseTransactions(filters),
       this.repository.findPersonnelExpenseTransactions(filters),
-      this.repository.findBranchGrantExpenseTransactions(filters),
     ]);
 
     return {
@@ -102,8 +99,6 @@ export class ExpenseAssembler {
       otherPoliticalExpenses: OtherPoliticalExpenseSection.fromTransactions(
         otherPoliticalTransactions,
       ),
-      // SYUUSHI07_16: 本部又は支部に対する交付金
-      branchGrantExpenses: BranchGrantExpenseSection.fromTransactions(branchGrantTransactions),
     };
   }
 }
