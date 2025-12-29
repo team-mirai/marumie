@@ -705,34 +705,6 @@ const data: TransactionSeedData[] = [
     friendlyCategory: '税理士報酬',
   },
 
-  // SYUUSHI07_16: 本部または支部に対する交付金の支出
-  {
-    transactionNo: 'T2025-0048',
-    transactionDate: '2025-04-30',
-    transactionType: 'expense',
-    debitAccount: '本部又は支部に対する交付金',
-    debitAmount: '1000000',
-    creditAccount: '普通預金',
-    creditAmount: '1000000',
-    description: '支部への活動費交付',
-    categoryKey: 'branch-grants-expenses',
-    counterpartName: 'サンプル党渋谷支部',
-    friendlyCategory: '活動費交付金',
-  },
-  {
-    transactionNo: 'T2025-0049',
-    transactionDate: '2025-06-15',
-    transactionType: 'expense',
-    debitAccount: '本部又は支部に対する交付金',
-    debitAmount: '500000',
-    creditAccount: '普通預金',
-    creditAmount: '500000',
-    description: '支部への選挙応援金',
-    categoryKey: 'branch-grants-expenses',
-    counterpartName: 'サンプル党世田谷支部',
-    friendlyCategory: '選挙応援交付金',
-  },
-
   // パーティー対価収入（政治資金パーティー）
   {
     transactionNo: 'T2025-0053',

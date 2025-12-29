@@ -217,13 +217,6 @@ export const PL_CATEGORIES: Record<string, CategoryMapping> = {
     shortLabel: "その他経費",
     type: "expense"
   },
-  "本部又は支部に対する交付金": {
-    key: "branch-grants-expenses",
-    category: "本支部交付金",
-    color: "#F472B6",
-    shortLabel: "本支部交付金",
-    type: "expense"
-  }
 };
 
 /**
