@@ -17,14 +17,36 @@ description: 指定したPRの未解決レビューコメントに対応する
 
 2. **ブランチの切り替え**: PRのブランチが現在のブランチと異なる場合は、`gh pr checkout $ARGUMENTS` でPRのブランチに切り替える。
 
-3. **未解決レビューコメントの取得**: 以下のコマンドで未解決のレビューコメントを取得する。
+3. **未解決レビューコメントの取得**: GraphQL APIを使用して、resolvedされていないレビュースレッドのみを取得する。
    ```
-   gh api repos/{owner}/{repo}/pulls/$ARGUMENTS/comments --jq '.[] | select(.in_reply_to_id == null) | {id: .id, path: .path, line: .line, body: .body, user: .user.login}'
+   gh api graphql -f query='
+     query($owner: String!, $repo: String!, $pr: Int!) {
+       repository(owner: $owner, name: $repo) {
+         pullRequest(number: $pr) {
+           reviewThreads(first: 100) {
+             nodes {
+               isResolved
+               comments(first: 10) {
+                 nodes {
+                   id
+                   path
+                   line
+                   body
+                   author { login }
+                 }
+               }
+             }
+           }
+         }
+       }
+     }
+   ' -f owner='{owner}' -f repo='{repo}' -F pr=$ARGUMENTS --jq '.data.repository.pullRequest.reviewThreads.nodes[] | select(.isResolved == false) | .comments.nodes[]'
    ```
-   また、PRレビュー自体のコメントも取得する。
+   また、PRレビュー自体のコメント（CHANGES_REQUESTED や COMMENTED）も取得する。
    ```
    gh api repos/{owner}/{repo}/pulls/$ARGUMENTS/reviews --jq '.[] | select(.state == "CHANGES_REQUESTED" or .state == "COMMENTED") | {id: .id, body: .body, user: .user.login, state: .state}'
    ```
+   **注意**: `isResolved == true` のスレッドは既に解決済みのため、対応不要として無視する。
 
 4. **コメントの分析**: 取得したレビューコメントを分析し、対応が必要な項目をリストアップする。以下を考慮する。
    - 具体的なコード修正の指摘
@@ -58,6 +80,7 @@ description: 指定したPRの未解決レビューコメントに対応する
 
 ## 注意事項
 
+- **Resolvedされたコメントは無視する**: GitHub上でresolvedとしてマークされたレビュースレッドは対応済みとみなし、処理対象から除外する
 - レビューコメントの意図が不明な場合は、勝手に解釈せずユーザーに確認を取る
 - 大きな設計変更が必要な場合は、修正前にユーザーの承認を得る
 - 修正後は `npm run typecheck` と `npm run lint` を実行し、エラーがないことを確認する
