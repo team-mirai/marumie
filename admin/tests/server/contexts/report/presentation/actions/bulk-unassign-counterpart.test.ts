@@ -1,4 +1,4 @@
-import type { BulkUnassignCounterpartInput } from "@/server/contexts/report/presentation/actions/bulk-unassign-counterpart";
+import type { BulkUnassignCounterpartInput } from "@/server/contexts/report/application/usecases/bulk-unassign-counterpart-usecase";
 
 describe("BulkUnassignCounterpartInput", () => {
   describe("入力バリデーション", () => {
