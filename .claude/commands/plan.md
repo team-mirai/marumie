@@ -4,26 +4,35 @@ argument-hint: <設計内容の説明>
 description: 設計ドキュメントを作成する (project)
 ---
 
+## 現在の状況
+
+- 設計対象: $ARGUMENTS
+
 ## タスク
 
-`$ARGUMENTS` の内容について設計ドキュメントを作成してください。
+以下の手順で設計ドキュメントを作成してください：
 
-## ファイル命名規則
+1. **設計対象の確認**: `$ARGUMENTS` の内容を確認し、設計すべきスコープを把握する。設計対象が不明確な場合はユーザーに確認を取る。
 
-- ファイル名: `YYYYMMDD_HHMM_{日本語の作業内容}.md`
-  - 日時は `TZ=Asia/Tokyo date +%Y%m%d_%H%M` で取得する
-- 保存場所: `docs/` 以下
+2. **関連コード・ドキュメントの調査**: 設計に必要な既存コードやドキュメントを読み込み、現状を理解する。設計対象に応じて以下を参照する。
+   - admin関連の場合:
+     - [docs/admin-architecture-guide.md](docs/admin-architecture-guide.md): adminのアーキテクチャルール
+     - [docs/admin-ui-guidelines.md](docs/admin-ui-guidelines.md): UIコンポーネントのガイドライン
+   - 政治資金収支報告書関連の場合:
+     - [docs/report-format.md](docs/report-format.md): 政治資金収支報告書XMLの仕様
+     - [docs/scope-by-2026Jan.md](docs/scope-by-2026Jan.md): 前提となる2026年1月までのスコープ
 
-例: `docs/20250815_1430_ユーザー認証システム設計.md`
+3. **ファイル作成**: 設計ドキュメントを作成する。
+   - 保存場所: `docs/` 以下
+   - ファイル名: `YYYYMMDD_HHMM_{日本語の作業内容}.md`
+   - 日時は `TZ=Asia/Tokyo date +%Y%m%d_%H%M` で取得する
+   - 例: `docs/20250815_1430_ユーザー認証システム設計.md`
 
-## 政治資金収支報告書に関する設計
+4. **整合性チェック**: admin関連の設計の場合、作成したドキュメントが [docs/admin-architecture-guide.md](docs/admin-architecture-guide.md) のアーキテクチャルールと矛盾していないかダブルチェックする。矛盾があれば修正する。
 
-政治資金収支報告書に関連する設計作業の場合は、必ず以下のドキュメントを参照すること：
+5. **完了報告**: 作成した設計ドキュメントのパスを報告し、ユーザーのレビューを待つ。そのまま実装に進んではならない。
 
-- [docs/report-format.md](docs/report-format.md): 政治資金収支報告書XMLの仕様
-- [docs/scope-by-2026Jan.md](docs/scope-by-2026Jan.md): 前提となる2026年1月までのスコープ
-
-## 含めてはいけない内容
+## 注意事項
 
 設計ドキュメントには以下の内容を含めないこと：
 

@@ -75,16 +75,6 @@ contexts/{コンテキスト名}/
 - サーバーアクション（"use server"処理）は、データ更新やファイルアップロードなど副作用を伴う操作のためだけに使い、あわせて revalidatePath や revalidateTag などの再検証処理までを 1 セットで行う
 - クライアント側でのデータ取得は例外として、リアルタイム通信・高頻度ポーリング・ユーザー操作に即応する検索・オフライン最適化（React Query など）に限って許容する
 
-### admin アーキテクチャ
-
-admin の実装に関する詳細なルールは [docs/admin-architecture-guide.md](docs/admin-architecture-guide.md) を参照すること。
-
-主要な原則：
-- **Bounded Context による分離**: 各ドメインを独立させ、共通部分は shared で管理
-- **レイヤードアーキテクチャ**: presentation → application → domain ↔ infrastructure
-- **ドメインロジック**: 原則としてドメインモデルに実装（単一エンティティ）、複数エンティティをまたぐ場合はドメインサービス
-- **依存性逆転の原則**: ドメイン層がインフラストラクチャに依存しない
-
 ### import
 
 - TypeScript の import は `@/` から始まる絶対パスを使用する（相対パス禁止）
@@ -100,6 +90,10 @@ PRを作成する際は [.claude/commands/pr.md](.claude/commands/pr.md) の手�
 ## 設計作業ルール
 
 設計ドキュメントを作成する場合は [.claude/commands/plan.md](.claude/commands/plan.md) の手順に従うこと。
+
+## admin アーキテクチャ
+
+admin の実装に関する詳細なルールは [docs/admin-architecture-guide.md](docs/admin-architecture-guide.md) を参照すること。
 
 ## admin UI コンポーネント
 

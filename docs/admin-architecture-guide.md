@@ -27,6 +27,8 @@
 | **auth** | 認証・認可、ユーザー管理 |
 | **shared** | 全コンテキスト共通の基盤（Transaction, PoliticalOrganization等） |
 
+> **注意**: auth コンテキストは歴史的な経緯により、本ガイドで定めるレイヤー分割（presentation / application / domain / infrastructure）が適用されていない。新規実装時はレイヤー構造に準拠することが望ましいが、既存コードとの整合性を優先すること。
+
 ### 2.2 コンテキスト間の依存ルール
 
 ```
