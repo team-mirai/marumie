@@ -61,6 +61,7 @@ model Transaction {
   categoryKey              String                   @map("category_key") @db.VarChar(255)
   label                    String                   @default("") @db.VarChar(255)
   hash                     String                   @default("") @db.VarChar(255)
+  isGrantExpenditure       Boolean                  @default(false) @map("is_grant_expenditure")
   politicalOrganization    PoliticalOrganization    @relation(fields: [politicalOrganizationId], references: [id], onDelete: Cascade)
   transactionCounterparts  TransactionCounterpart[]
   transactionDonors        TransactionDonor[]
