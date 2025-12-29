@@ -38,6 +38,31 @@ export const DONOR_TYPE_LABELS: Record<DonorType, string> = {
   political_organization: "政治団体",
 };
 
+/**
+ * 有効な DonorType の一覧
+ * DONOR_TYPE_LABELS のキーから自動生成されるため、型定義と常に同期される
+ */
+export const VALID_DONOR_TYPES = Object.keys(DONOR_TYPE_LABELS) as DonorType[];
+
+/**
+ * 文字列が有効な DonorType かどうかを判定する
+ * @param value 判定対象の文字列
+ * @returns 有効な DonorType の場合は true
+ */
+export function isValidDonorType(value: string): value is DonorType {
+  return VALID_DONOR_TYPES.includes(value as DonorType);
+}
+
+/**
+ * 文字列を DonorType にパースする
+ * @param value パース対象の文字列
+ * @returns 有効な DonorType の場合はその値、無効な場合は null
+ */
+export function parseDonorType(value: string): DonorType | null {
+  const normalized = value.trim().toLowerCase();
+  return isValidDonorType(normalized) ? normalized : null;
+}
+
 export function validateDonorInput(input: CreateDonorInput): string[] {
   const errors: string[] = [];
   const trimmedName = input.name?.trim() ?? "";
@@ -64,8 +89,7 @@ export function validateDonorInput(input: CreateDonorInput): string[] {
     errors.push("職業は個人の場合のみ入力できます");
   }
 
-  const validDonorTypes: DonorType[] = ["individual", "corporation", "political_organization"];
-  if (!validDonorTypes.includes(input.donorType)) {
+  if (!isValidDonorType(input.donorType)) {
     errors.push("無効な寄付者種別です");
   }
 
