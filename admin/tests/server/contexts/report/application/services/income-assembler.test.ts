@@ -44,6 +44,7 @@ describe("IncomeAssembler", () => {
           existsById: jest.fn(),
           findExistingIds: jest.fn(),
           findByIdWithCounterpart: jest.fn(),
+          updateGrantExpenditureFlag: jest.fn(),
         };
     assembler = new IncomeAssembler(mockRepository);
   });

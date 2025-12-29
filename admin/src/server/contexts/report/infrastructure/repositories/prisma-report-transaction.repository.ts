@@ -1059,4 +1059,14 @@ export class PrismaReportTransactionRepository implements IReportTransactionRepo
       isGrantExpenditure: transaction.isGrantExpenditure,
     };
   }
+
+  /**
+   * 交付金フラグを更新する
+   */
+  async updateGrantExpenditureFlag(id: bigint, isGrantExpenditure: boolean): Promise<void> {
+    await this.prisma.transaction.update({
+      where: { id },
+      data: { isGrantExpenditure },
+    });
+  }
 }

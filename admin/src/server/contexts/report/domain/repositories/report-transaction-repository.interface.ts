@@ -62,6 +62,13 @@ export interface ITransactionWithCounterpartRepository {
    * トランザクションIDでCounterpart情報付きのトランザクションを取得
    */
   findByIdWithCounterpart(id: bigint): Promise<TransactionWithCounterpart | null>;
+
+  /**
+   * 交付金フラグを更新する
+   * @param id トランザクションID
+   * @param isGrantExpenditure 交付金に係る支出かどうか
+   */
+  updateGrantExpenditureFlag(id: bigint, isGrantExpenditure: boolean): Promise<void>;
 }
 
 export interface IReportTransactionRepository extends ITransactionWithCounterpartRepository {

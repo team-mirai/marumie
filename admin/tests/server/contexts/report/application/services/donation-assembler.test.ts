@@ -39,6 +39,7 @@ describe("DonationAssembler", () => {
           existsById: jest.fn(),
           findExistingIds: jest.fn(),
           findByIdWithCounterpart: jest.fn(),
+          updateGrantExpenditureFlag: jest.fn(),
         };
     assembler = new DonationAssembler(mockRepository);
   });
