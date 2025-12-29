@@ -13,7 +13,7 @@ import {
 import type { TransactionWithCounterpart } from "@/server/contexts/report/domain/models/transaction-with-counterpart";
 import { PL_CATEGORIES } from "@/shared/accounting/account-category";
 import { cn } from "@/client/lib";
-import { Switch } from "@/client/components/ui";
+import { Switch, Tooltip, TooltipTrigger, TooltipContent } from "@/client/components/ui";
 
 interface TransactionWithCounterpartTableProps {
   transactions: TransactionWithCounterpart[];
@@ -120,32 +120,70 @@ export function TransactionWithCounterpartTable({
         cell: (info) => {
           const transaction = info.row.original;
           return (
-            <div className="flex flex-col gap-1">
-              <div className="flex items-center gap-2">
-                <span>{formatAmount(info.getValue())}</span>
-                {transaction.requiresCounterpart && (
-                  <span className="text-xs bg-amber-500/20 text-amber-400 px-1.5 py-0.5 rounded">
-                    取引先必須
-                  </span>
-                )}
-              </div>
-              {transaction.transactionType === "expense" && (
-                <div className="flex items-center gap-1.5">
-                  <Switch
-                    checked={transaction.isGrantExpenditure}
-                    onCheckedChange={() => alert("not implemented")}
-                    className="scale-75"
-                  />
-                  <span
-                    className={cn(
-                      "text-xs",
-                      transaction.isGrantExpenditure ? "text-primary" : "text-muted-foreground",
-                    )}
-                  >
-                    交付金
-                  </span>
-                </div>
+            <div className="flex items-center gap-2">
+              <span>{formatAmount(info.getValue())}</span>
+              {transaction.requiresCounterpart && (
+                <span className="text-xs bg-amber-500/20 text-amber-400 px-1.5 py-0.5 rounded">
+                  取引先必須
+                </span>
               )}
+            </div>
+          );
+        },
+      }),
+      columnHelper.accessor("isGrantExpenditure", {
+        header: () => (
+          <div className="flex items-center gap-1">
+            <span>交付金</span>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="cursor-help text-muted-foreground hover:text-white">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    role="img"
+                    aria-label="交付金フラグの説明"
+                  >
+                    <title>交付金フラグの説明</title>
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="M12 16v-4" />
+                    <path d="M12 8h.01" />
+                  </svg>
+                </span>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="max-w-xs">
+                交付金に係る支出かどうかを示すフラグです。ONにすると、この支出が政党交付金から支出されたものとして報告書に記載されます。
+              </TooltipContent>
+            </Tooltip>
+          </div>
+        ),
+        cell: (info) => {
+          const transaction = info.row.original;
+          if (transaction.transactionType !== "expense") {
+            return <span className="text-muted-foreground">-</span>;
+          }
+          return (
+            <div className="flex items-center gap-1.5">
+              <Switch
+                checked={transaction.isGrantExpenditure}
+                onCheckedChange={() => alert("not implemented")}
+                className="scale-75"
+              />
+              <span
+                className={cn(
+                  "text-xs",
+                  transaction.isGrantExpenditure ? "text-primary" : "text-muted-foreground",
+                )}
+              >
+                {transaction.isGrantExpenditure ? "ON" : "OFF"}
+              </span>
             </div>
           );
         },
