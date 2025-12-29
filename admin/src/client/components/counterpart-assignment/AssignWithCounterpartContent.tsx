@@ -15,7 +15,7 @@ interface AssignWithCounterpartContentProps {
   transactions: TransactionWithCounterpart[];
   allCounterparts: Counterpart[];
   politicalOrganizationId: string;
-  onSuccess: () => void;
+  onSuccess: (count: number) => void;
   onCancel: () => void;
 }
 
@@ -64,7 +64,7 @@ export function AssignWithCounterpartContent({
           return;
         }
       }
-      onSuccess();
+      onSuccess(transactions.length);
     });
   };
 
@@ -102,7 +102,7 @@ export function AssignWithCounterpartContent({
       }
     }
 
-    onSuccess();
+    onSuccess(transactions.length);
   };
 
   const getSelectButtonLabel = () => {

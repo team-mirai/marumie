@@ -4,6 +4,7 @@ import "client-only";
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { toast } from "sonner";
 import type { RowSelectionState } from "@tanstack/react-table";
 import type { PoliticalOrganization } from "@/shared/models/political-organization";
 import type { TransactionWithCounterpart } from "@/server/contexts/report/domain/models/transaction-with-counterpart";
@@ -96,10 +97,11 @@ export function CounterpartAssignmentClient({
     setAssignDialogTransactions([]);
   };
 
-  const handleAssignSuccess = () => {
+  const handleAssignSuccess = (count: number) => {
     setRowSelection({});
     setIsAssignDialogOpen(false);
     setAssignDialogTransactions([]);
+    toast.success(`${count}件の紐付けが完了しました`);
     router.refresh();
   };
 
