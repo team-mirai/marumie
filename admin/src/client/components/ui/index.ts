@@ -69,3 +69,4 @@ export {
   TabsTrigger,
   TabsContent,
 } from "@/client/components/ui/tabs";
+export { Toaster } from "@/client/components/ui/sonner";
