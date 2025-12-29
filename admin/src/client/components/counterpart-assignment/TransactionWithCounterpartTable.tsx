@@ -196,7 +196,7 @@ export function TransactionWithCounterpartTable({
                 </span>
               </TooltipTrigger>
               <TooltipContent side="bottom" className="max-w-xs">
-                交付金に係る支出かどうかを示すフラグです。ONにすると、この支出が政党交付金から支出されたものとして報告書に記載されます。
+                本部又は支部に対する交付金として支出したかどうかを示すフラグです。ONにすると、報告書のシート16「本部又は支部に対する交付金の支出」にも記載されます。
               </TooltipContent>
             </Tooltip>
           </div>
