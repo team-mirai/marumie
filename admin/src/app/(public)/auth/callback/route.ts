@@ -1,6 +1,6 @@
 import "server-only";
 import { NextResponse } from "next/server";
-import { exchangeCodeForSession } from "@/server/contexts/auth";
+import { exchangeCodeForSession } from "@/server/contexts/auth/presentation/actions/exchange-code-for-session";
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);

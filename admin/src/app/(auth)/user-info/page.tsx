@@ -1,4 +1,4 @@
-import { getCurrentUser } from "@/server/contexts/auth";
+import { getCurrentUser } from "@/server/contexts/auth/presentation/loaders/load-current-user";
 
 export const runtime = "nodejs";
 

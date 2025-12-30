@@ -2,11 +2,16 @@
 import "client-only";
 import { useState } from "react";
 import type { ChangeEvent, FormEvent } from "react";
+import { useRouter } from "next/navigation";
 import { Button, Input, Card } from "../ui";
-import { apiClient } from "@/client/lib/api-client";
-import type { UserRole } from "@prisma/client";
+import type { UserRole } from "@/server/contexts/auth/domain/models/user-role";
+import type { User } from "@/server/contexts/shared/domain/repositories/user-repository.interface";
 
-interface User {
+/**
+ * ユーザー管理画面で表示するユーザーデータ
+ * セキュリティ上、authIdなどの内部情報は含まない
+ */
+interface UserDisplayData {
   id: string;
   email: string;
   role: UserRole;
@@ -14,14 +19,22 @@ interface User {
 }
 
 interface UserManagementProps {
-  users: User[];
+  users: UserDisplayData[];
   availableRoles: UserRole[];
+  updateUserRoleAction: (
+    userId: string,
+    role: UserRole,
+  ) => Promise<{ ok: true; user: User } | { ok: false; error: string }>;
+  inviteUserAction: (email: string) => Promise<{ ok: boolean; error?: string }>;
 }
 
 export default function UserManagement({
   users: initialUsers,
   availableRoles,
+  updateUserRoleAction,
+  inviteUserAction,
 }: UserManagementProps) {
+  const router = useRouter();
   const [users, setUsers] = useState(initialUsers);
   const [isLoading, setIsLoading] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
@@ -31,10 +44,24 @@ export default function UserManagement({
     setIsLoading(true);
 
     try {
-      await apiClient.updateUserRole({ userId, role: newRole });
-      setUsers((prev) =>
-        prev.map((user) => (user.id === userId ? { ...user, role: newRole } : user)),
-      );
+      const result = await updateUserRoleAction(userId, newRole);
+      if (result.ok) {
+        // result.userからUserDisplayDataに必要なフィールドのみを取得して更新
+        setUsers((prev) =>
+          prev.map((user) =>
+            user.id === userId
+              ? {
+                  id: result.user.id,
+                  email: result.user.email,
+                  role: result.user.role,
+                  createdAt: result.user.createdAt,
+                }
+              : user,
+          ),
+        );
+      } else {
+        alert(`ロールの更新に失敗しました: ${result.error}`);
+      }
     } catch (error) {
       console.error("Error updating role:", error);
       alert(
@@ -52,11 +79,15 @@ export default function UserManagement({
     setIsInviting(true);
 
     try {
-      await apiClient.inviteUser({ email: inviteEmail.trim() });
-      alert(`${inviteEmail}に招待を送信しました`);
-      setInviteEmail("");
-      // Refresh the user list to show pending invitations
-      window.location.reload();
+      const result = await inviteUserAction(inviteEmail.trim());
+      if (result.ok) {
+        alert(`${inviteEmail}に招待を送信しました`);
+        setInviteEmail("");
+        // Server ActionのrevalidatePath()によりキャッシュが無効化されるため、ルーターのrefreshで十分
+        router.refresh();
+      } else {
+        alert(`招待の送信に失敗しました: ${result.error}`);
+      }
     } catch (error) {
       console.error("Error sending invitation:", error);
       alert(`招待の送信に失敗しました: ${error instanceof Error ? error.message : "不明なエラー"}`);

@@ -1,7 +1,12 @@
 import "server-only";
+
 import { createServerClient } from "@supabase/ssr";
 
-export async function createClient() {
+/**
+ * Cookie を扱う Supabase Server Client を生成する
+ * Next.js の Server Component / Server Action で使用する
+ */
+export async function createSupabaseClient() {
   const supabaseUrl = process.env.SUPABASE_URL;
   const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
 
@@ -30,7 +35,9 @@ export async function createClient() {
               path: "/",
             });
           }
-        } catch (_error) {}
+        } catch {
+          // Server Component では Cookie を設定できない場合がある
+        }
       },
     },
   });

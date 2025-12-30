@@ -1,7 +1,11 @@
 import "server-only";
-import { getCurrentUser } from "@/server/contexts/auth";
+import { getCurrentUser } from "@/server/contexts/auth/presentation/loaders/load-current-user";
+import { setupPassword } from "@/server/contexts/auth/presentation/actions/setup-password";
 import { redirect } from "next/navigation";
 import SetupForm from "@/client/components/auth/SetupForm";
+
+// 認証チェックでcookiesを使用するため動的レンダリングを強制
+export const dynamic = "force-dynamic";
 
 interface SetupPageProps {
   searchParams: Promise<{ from?: string }>;
@@ -32,7 +36,7 @@ export default async function SetupPage({ searchParams }: SetupPageProps) {
               continue.
             </p>
           </div>
-          <SetupForm userEmail={user.email} />
+          <SetupForm userEmail={user.email} setupPasswordAction={setupPassword} />
         </div>
       </div>
     );
