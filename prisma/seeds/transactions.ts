@@ -515,7 +515,7 @@ const data: TransactionSeedData[] = [
   },
   // SYUUSHI07_15: 政治活動費の支出（KUBUN1: 組織活動費）
   {
-    transactionNo: 'T2025-0060',
+    transactionNo: 'T2025-0061',
     transactionDate: '2025-03-15',
     transactionType: 'expense',
     debitAccount: '組織活動費',
