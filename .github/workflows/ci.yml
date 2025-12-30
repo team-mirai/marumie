@@ -5,10 +5,12 @@ on:
     paths:
       - 'admin/**'
       - 'webapp/**'
+      - '.dependency-cruiser.cjs'
   pull_request:
     paths:
       - 'admin/**'
       - 'webapp/**'
+      - '.dependency-cruiser.cjs'
 
 jobs:
   lint-and-test:
@@ -38,7 +40,10 @@ jobs:
         
       - name: Run type check for admin
         run: pnpm --filter admin run type-check
-        
+
+      - name: Check dependency rules for admin
+        run: pnpm depcruise
+
       - name: Run lint for webapp
         run: pnpm --filter webapp run lint
         

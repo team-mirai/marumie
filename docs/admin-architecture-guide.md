@@ -286,7 +286,37 @@ contexts/{コンテキスト名}/
 
 ---
 
-## 8. よくある質問
+## 8. 依存ルールの自動検証
+
+dependency-cruiser を使用して、アーキテクチャの依存ルールを自動検証できる。
+
+### ローカルでの実行
+
+```bash
+pnpm depcruise
+```
+
+### 検証されるルール
+
+| ルール | 説明 |
+|--------|------|
+| no-client-to-infrastructure | Client → Infrastructure 禁止 |
+| no-client-to-application | Client → Application 禁止 |
+| no-presentation-to-client | Presentation → Client 禁止 |
+| no-domain-to-application | Domain → Application 禁止 |
+| no-domain-to-presentation | Domain → Presentation 禁止 |
+| no-domain-to-infrastructure-impl | Domain → Infrastructure実装 禁止 |
+| no-infrastructure-to-application | Infrastructure → Application 禁止 |
+| no-infrastructure-to-presentation | Infrastructure → Presentation 禁止 |
+| Bounded Context間 | data-import ↔ report, auth ↔ 他コンテキスト 禁止 |
+
+### CI統合
+
+GitHub Actions で PR・push 時に自動実行される。違反があるとCIが失敗する。
+
+---
+
+## 9. よくある質問
 
 **Q: Repositoryインターフェースはどこに配置すべきか?**
 A: Domain層。依存性逆転の原則により、実装はInfrastructure層。
