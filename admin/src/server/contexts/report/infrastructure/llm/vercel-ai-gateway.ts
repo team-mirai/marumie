@@ -1,7 +1,7 @@
 import "server-only";
 import { anthropic } from "@ai-sdk/anthropic";
 import { generateText } from "ai";
-import { buildCounterpartAddressSearchPrompt } from "@/server/contexts/report/application/prompt-templates/counterpart-address-search";
+import { buildCounterpartAddressSearchPrompt } from "@/server/contexts/report/infrastructure/llm/prompt-templates/counterpart-address-search";
 import type {
   LLMGateway,
   SearchAddressParams,

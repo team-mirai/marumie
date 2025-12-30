@@ -1,7 +1,7 @@
 "use client";
 import "client-only";
 
-import type { PreviewMfCsvResult } from "@/server/contexts/data-import/application/usecases/preview-mf-csv-usecase";
+import type { PreviewMfCsvResult } from "@/server/contexts/data-import/presentation/types";
 
 interface StatisticsTableProps {
   statistics: PreviewMfCsvResult["statistics"];

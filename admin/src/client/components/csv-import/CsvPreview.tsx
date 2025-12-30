@@ -2,7 +2,7 @@
 import "client-only";
 
 import { useEffect, useRef, useState } from "react";
-import type { PreviewMfCsvResult } from "@/server/contexts/data-import/application/usecases/preview-mf-csv-usecase";
+import type { PreviewMfCsvResult } from "@/server/contexts/data-import/presentation/types";
 import type { PreviewTransaction } from "@/server/contexts/data-import/domain/models/preview-transaction";
 import type { PreviewCsvRequest } from "@/server/contexts/data-import/presentation/actions/preview-csv";
 import TransactionRow from "./TransactionRow";
