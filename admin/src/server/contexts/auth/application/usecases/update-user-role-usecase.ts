@@ -6,9 +6,8 @@ import type {
   User,
 } from "@/server/contexts/shared/domain/repositories/user-repository.interface";
 import type { UserRole } from "@prisma/client";
-import type { PrismaClient } from "@prisma/client";
 import { AuthError } from "@/server/contexts/auth/domain/errors/auth-error";
-import { validateRole } from "@/server/contexts/auth/domain/services/role-validator";
+import { UserRoleModel } from "@/server/contexts/auth/domain/models/user-role";
 
 /**
  * ユーザーロール更新のユースケース（admin権限必須）
@@ -17,7 +16,6 @@ export class UpdateUserRoleUsecase {
   constructor(
     private readonly authProvider: AuthProvider,
     private readonly userRepository: UserRepository,
-    private readonly prisma: PrismaClient,
   ) {}
 
   async execute(userId: string, role: UserRole): Promise<User> {
@@ -30,14 +28,13 @@ export class UpdateUserRoleUsecase {
     const currentUser = await this.userRepository.findByAuthId(authUser.id);
     const currentRole = currentUser?.role ?? "user";
 
-    const roleResult = validateRole(currentRole, "admin");
-    if (!roleResult.valid) {
+    if (!UserRoleModel.hasPermission(currentRole, "admin")) {
       throw new AuthError("INSUFFICIENT_PERMISSION", "この操作には管理者権限が必要です");
     }
 
     try {
       // まず userId から user を取得
-      const user = await this.prisma.user.findUnique({ where: { id: userId } });
+      const user = await this.userRepository.findById(userId);
       if (!user) {
         throw new AuthError("USER_NOT_FOUND", "User not found");
       }

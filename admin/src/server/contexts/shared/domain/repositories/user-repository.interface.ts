@@ -12,6 +12,7 @@ export interface User {
 
 export interface UserRepository {
   create(data: { authId: string; email: string; role?: UserRole }): Promise<User>;
+  findById(id: string): Promise<User | null>;
   findByAuthId(authId: string): Promise<User | null>;
   findByEmail(email: string): Promise<User | null>;
   findAll(): Promise<User[]>;

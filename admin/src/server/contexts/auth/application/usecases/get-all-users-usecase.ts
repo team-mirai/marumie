@@ -6,7 +6,7 @@ import type {
   User,
 } from "@/server/contexts/shared/domain/repositories/user-repository.interface";
 import { AuthError } from "@/server/contexts/auth/domain/errors/auth-error";
-import { validateRole } from "@/server/contexts/auth/domain/services/role-validator";
+import { UserRoleModel } from "@/server/contexts/auth/domain/models/user-role";
 
 /**
  * 全ユーザー一覧取得のユースケース（admin権限必須）
@@ -27,8 +27,7 @@ export class GetAllUsersUsecase {
     const currentUser = await this.userRepository.findByAuthId(authUser.id);
     const currentRole = currentUser?.role ?? "user";
 
-    const roleResult = validateRole(currentRole, "admin");
-    if (!roleResult.valid) {
+    if (!UserRoleModel.hasPermission(currentRole, "admin")) {
       throw new AuthError("INSUFFICIENT_PERMISSION", "この操作には管理者権限が必要です");
     }
 

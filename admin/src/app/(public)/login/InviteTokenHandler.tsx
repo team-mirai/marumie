@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { completeInviteSession } from "./actions";
+import { completeInviteSession } from "@/app/(public)/login/actions";
 
 export default function InviteTokenHandler() {
   const [processing, setProcessing] = useState(false);

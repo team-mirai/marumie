@@ -18,7 +18,7 @@ export async function updateUserRole(
 ): Promise<{ ok: true; user: User } | { ok: false; error: string }> {
   const authProvider = new SupabaseAuthProvider();
   const userRepository = new PrismaUserRepository(prisma);
-  const usecase = new UpdateUserRoleUsecase(authProvider, userRepository, prisma);
+  const usecase = new UpdateUserRoleUsecase(authProvider, userRepository);
 
   try {
     const user = await usecase.execute(userId, role);

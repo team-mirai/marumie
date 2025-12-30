@@ -1,18 +1,11 @@
 import "server-only";
 
-import type { UserRole } from "@prisma/client";
+import type { User } from "@/server/contexts/shared/domain/repositories/user-repository.interface";
 
 /**
  * 認証済みユーザー（DB に永続化されたユーザー情報）
- * shared コンテキストの User と同等だが、auth コンテキストで使用する型として再定義
+ * shared コンテキストの User 型のエイリアス
  */
-export interface AuthUser {
-  id: string;
-  authId: string;
-  email: string;
-  role: UserRole;
-  createdAt: Date;
-  updatedAt: Date;
-}
+export type AuthUser = User;
 
 export type { UserRole } from "@prisma/client";
