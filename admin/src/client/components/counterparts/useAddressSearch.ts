@@ -3,7 +3,10 @@ import "client-only";
 
 import { useState, useCallback } from "react";
 import { searchCounterpartAddressAction } from "@/server/contexts/report/presentation/actions/search-counterpart-address";
-import type { AddressCandidate, AddressSearchResult } from "@/client/types/address-search";
+import type {
+  AddressCandidate,
+  AddressSearchResult,
+} from "@/server/contexts/report/presentation/types/address-search";
 
 export type AddressInputPhase =
   | "initial" // 初期状態（ボタンのみ）

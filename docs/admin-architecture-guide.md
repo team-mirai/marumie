@@ -96,18 +96,20 @@ contexts/{コンテキスト名}/
 
 ```
 ✓ 許可される依存:
-  - Client → Presentation（actions/schemasの呼び出し・型参照）
+  - Client → Presentation（actions/schemas/typesの呼び出し・型参照）
   - Client → Domain（models の型参照のみ）
 
 ✗ 禁止される依存:
   - Client → Infrastructure（型参照も含めて禁止）
   - Client → Application（型参照も含めて禁止）
+  - Presentation → Client（型参照も含めて禁止）
 ```
 
 **理由**:
 - **Domain層の型参照が許容される理由**: ドメインモデルはビジネス概念を表現しており、UIでも同じ概念を扱う必要がある。型の二重定義は保守コストを増大させる。
-- **Infrastructure層が禁止される理由**: 外部サービスの実装詳細（LLMレスポンス形式、Prisma型等）はUIから隠蔽すべき。変更時の影響範囲を限定するため、`client/types/` で抽象化した型を定義する。
+- **Infrastructure層が禁止される理由**: 外部サービスの実装詳細（LLMレスポンス形式、Prisma型等）はUIから隠蔽すべき。変更時の影響範囲を限定するため、Presentation層の`types/`で型を定義しClientからimportする。
 - **Application層が禁止される理由**: Usecase/Serviceの戻り値型はPresentation層で変換してUIに渡すべき。loaders経由でデータ取得する設計を維持するため。
+- **Presentation → Client が禁止される理由**: 依存の方向は常にClient → Serverであるべき。Presentation層がClient層の型に依存すると、レイヤー間の依存関係が逆転する。
 
 ### 3.3 各レイヤーの責務
 

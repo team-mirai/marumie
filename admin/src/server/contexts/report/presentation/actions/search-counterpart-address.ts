@@ -2,7 +2,7 @@
 
 import { SearchCounterpartAddressUsecase } from "@/server/contexts/report/application/usecases/search-counterpart-address-usecase";
 import { VercelAIGateway } from "@/server/contexts/report/infrastructure/llm/vercel-ai-gateway";
-import type { AddressSearchResult } from "@/client/types/address-search";
+import type { AddressSearchResult } from "@/server/contexts/report/presentation/types/address-search";
 
 export async function searchCounterpartAddressAction(
   companyName: string,
