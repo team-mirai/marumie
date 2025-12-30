@@ -6,6 +6,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/client/components/ui";
+import { formatCurrency } from "@/client/lib";
 import { SectionWrapper } from "./SectionWrapper";
 import type {
   OrganizationExpenseSection,
@@ -30,10 +31,6 @@ interface PoliticalActivityExpenseSectionProps {
   researchExpenses: ResearchExpenseSection[];
   donationGrantExpenses: DonationGrantExpenseSection[];
   otherPoliticalExpenses: OtherPoliticalExpenseSection[];
-}
-
-function formatCurrency(amount: number): string {
-  return `¥${amount.toLocaleString("ja-JP")}`;
 }
 
 function formatDate(date: Date): string {

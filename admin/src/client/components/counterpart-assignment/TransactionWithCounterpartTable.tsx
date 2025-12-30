@@ -13,7 +13,7 @@ import {
 import { toast } from "sonner";
 import type { TransactionWithCounterpart } from "@/server/contexts/report/domain/models/transaction-with-counterpart";
 import { PL_CATEGORIES } from "@/shared/accounting/account-category";
-import { cn } from "@/client/lib";
+import { cn, formatDate, formatAmount } from "@/client/lib";
 import { Switch, Tooltip, TooltipTrigger, TooltipContent } from "@/client/components/ui";
 import { updateGrantExpenditureFlagAction } from "@/server/contexts/report/presentation/actions/update-grant-expenditure-flag";
 
@@ -28,15 +28,6 @@ interface TransactionWithCounterpartTableProps {
 }
 
 const columnHelper = createColumnHelper<TransactionWithCounterpart>();
-
-function formatDate(date: Date): string {
-  const d = new Date(date);
-  return `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, "0")}/${String(d.getDate()).padStart(2, "0")}`;
-}
-
-function formatAmount(amount: number): string {
-  return `¥${amount.toLocaleString()}`;
-}
 
 const DEFAULT_CATEGORY_COLOR = "#64748B"; // slate-500 as default fallback color
 

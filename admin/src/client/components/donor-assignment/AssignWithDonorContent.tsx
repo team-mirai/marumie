@@ -3,6 +3,7 @@ import "client-only";
 
 import { useState, useTransition, useMemo } from "react";
 import { Button, Tabs, TabsList, TabsTrigger, TabsContent } from "@/client/components/ui";
+import { formatDate, formatAmount } from "@/client/lib";
 import type { Donor, DonorType } from "@/server/contexts/report/domain/models/donor";
 import type { TransactionWithDonor } from "@/server/contexts/report/domain/models/transaction-with-donor";
 import { DonorFormContent } from "./DonorFormContent";
@@ -16,15 +17,6 @@ interface AssignWithDonorContentProps {
   allDonors: Donor[];
   onSuccess: () => void;
   onCancel: () => void;
-}
-
-function formatDate(date: Date): string {
-  const d = new Date(date);
-  return `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, "0")}/${String(d.getDate()).padStart(2, "0")}`;
-}
-
-function formatAmount(amount: number): string {
-  return `¥${amount.toLocaleString()}`;
 }
 
 export function AssignWithDonorContent({
