@@ -117,6 +117,7 @@ function createDonationTransaction(
     debitAmount: 0,
     creditAmount: 0,
     memo: null,
+    donorId: "donor-001",
     donorName: "テスト寄附者",
     donorAddress: "東京都千代田区",
     donorOccupation: "会社員",

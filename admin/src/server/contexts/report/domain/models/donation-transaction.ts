@@ -24,7 +24,8 @@ export interface PersonalDonationTransaction {
   debitAmount: number;
   creditAmount: number;
   memo: string | null;
-  // 寄付者情報（現在はダミー値を返す）
+  // 寄付者情報
+  donorId: string | null; // Donor.id（未紐付けの場合はnull）
   donorName: string; // 寄附者氏名
   donorAddress: string; // 住所
   donorOccupation: string; // 職業
@@ -58,6 +59,16 @@ export interface PersonalDonationSection {
   sonotaGk: number; // その他の寄附
   rows: PersonalDonationRow[];
 }
+
+// ============================================================
+// Constants
+// ============================================================
+
+/**
+ * 寄附明細記載閾値（年間5万円超で明細記載）
+ * 同一者からの年間寄附合計がこの金額を超える場合、個別に明細を記載する
+ */
+export const DONATION_DETAIL_THRESHOLD = 50000;
 
 // ============================================================
 // Domain Logic
@@ -129,7 +140,41 @@ export const PersonalDonationTransaction = {
  */
 export const PersonalDonationSection = {
   /**
+   * donorIdでトランザクションをグループ化する
+   * - donorId !== null の場合: donorIdをそのままキーとして使用
+   * - donorId === null の場合: `__unassigned_${index}` 形式のユニークキーを生成し、各取引を別グループとして扱う
+   */
+  groupByDonorId: (
+    transactions: PersonalDonationTransaction[],
+  ): Map<string, PersonalDonationTransaction[]> => {
+    const groups = new Map<string, PersonalDonationTransaction[]>();
+
+    transactions.forEach((tx, index) => {
+      const key = tx.donorId ?? `__unassigned_${index}`;
+      const existing = groups.get(key) ?? [];
+      existing.push(tx);
+      groups.set(key, existing);
+    });
+
+    return groups;
+  },
+
+  /**
+   * グループ内の取引金額合計を算出する
+   */
+  calculateGroupTotal: (transactions: PersonalDonationTransaction[]): number => {
+    return transactions.reduce((sum, tx) => sum + PersonalDonationTransaction.resolveAmount(tx), 0);
+  },
+
+  /**
    * トランザクションリストからセクションを構築する
+   *
+   * 処理フロー:
+   * 1. トランザクションを donorId でグループ化
+   * 2. 各グループの年間合計金額を算出
+   * 3. 年間合計 > 50,000円 のグループ → 各取引を個別に明細行（rows）に展開
+   * 4. 年間合計 <= 50,000円 のグループ → グループ全体の金額を sonotaGk に合算
+   * 5. totalAmount = 明細行の合計 + sonotaGk
    */
   fromTransactions: (transactions: PersonalDonationTransaction[]): PersonalDonationSection => {
     const totalAmount = transactions.reduce(
@@ -137,11 +182,28 @@ export const PersonalDonationSection = {
       0,
     );
 
-    const rows = transactions.map((tx, index) => PersonalDonationTransaction.toRow(tx, index));
+    const groups = PersonalDonationSection.groupByDonorId(transactions);
+
+    const detailTransactions: PersonalDonationTransaction[] = [];
+    let sonotaGk = 0;
+
+    for (const [, groupTransactions] of groups) {
+      const groupTotal = PersonalDonationSection.calculateGroupTotal(groupTransactions);
+
+      if (groupTotal > DONATION_DETAIL_THRESHOLD) {
+        detailTransactions.push(...groupTransactions);
+      } else {
+        sonotaGk += groupTotal;
+      }
+    }
+
+    const rows = detailTransactions.map((tx, index) =>
+      PersonalDonationTransaction.toRow(tx, index),
+    );
 
     return {
       totalAmount,
-      sonotaGk: 0, // その他の寄附は現時点では0
+      sonotaGk,
       rows,
     };
   },
