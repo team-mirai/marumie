@@ -1,4 +1,23 @@
 {
   "$schema": "https://unpkg.com/knip@5/schema.json",
-  "ignoreDependencies": ["server-only", "client-only"]
+  "ignoreDependencies": [
+    "server-only",
+    "client-only",
+    "@tailwindcss/postcss",
+    "tailwindcss",
+    "critters"
+  ],
+  "workspaces": {
+    ".": {
+      "entry": ["shared/**/*.ts"]
+    },
+    "webapp": {
+      "entry": ["src/**/*.{ts,tsx}"],
+      "project": ["src/**/*.{ts,tsx}"]
+    },
+    "admin": {
+      "entry": ["src/**/*.{ts,tsx}"],
+      "project": ["src/**/*.{ts,tsx}"]
+    }
+  }
 }
