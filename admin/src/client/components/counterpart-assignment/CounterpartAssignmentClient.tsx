@@ -133,8 +133,10 @@ export function CounterpartAssignmentClient({
       "counterpartRequired",
       String(params.counterpartRequired ?? counterpartRequiredOnly),
     );
-    if (params.category ?? categoryKey) {
-      searchParams.set("category", params.category ?? categoryKey);
+    const categoryForUrl = params.category ?? categoryKey;
+    const normalizedCategory = categoryForUrl === ALL_CATEGORIES_VALUE ? "" : categoryForUrl;
+    if (normalizedCategory) {
+      searchParams.set("category", normalizedCategory);
     }
     if (params.search ?? searchQuery) {
       searchParams.set("search", params.search ?? searchQuery);
@@ -159,15 +161,10 @@ export function CounterpartAssignmentClient({
       setCounterpartRequiredOnly(changes.counterpartRequiredOnly);
     }
 
-    const categoryForUrl =
-      (changes.categoryKey ?? categoryKey) === ALL_CATEGORIES_VALUE
-        ? ""
-        : (changes.categoryKey ?? categoryKey);
-
     startTransition(() => {
       router.push(
         buildUrl({
-          category: categoryForUrl,
+          category: changes.categoryKey ?? categoryKey,
           search: changes.searchQuery ?? searchQuery,
           unassigned: changes.unassignedOnly ?? unassignedOnly,
           counterpartRequired: changes.counterpartRequiredOnly ?? counterpartRequiredOnly,
