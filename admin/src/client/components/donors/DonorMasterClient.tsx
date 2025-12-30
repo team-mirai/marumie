@@ -17,6 +17,8 @@ import {
   SelectValue,
 } from "@/client/components/ui";
 
+const ALL_TYPES_VALUE = "all" as const;
+
 interface DonorMasterClientProps {
   initialDonors: DonorWithUsage[];
   total: number;
@@ -37,7 +39,9 @@ export function DonorMasterClient({
   const router = useRouter();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [searchInput, setSearchInput] = useState(searchQuery ?? "");
-  const [selectedType, setSelectedType] = useState<DonorType | "">(donorType ?? "");
+  const [selectedType, setSelectedType] = useState<DonorType | typeof ALL_TYPES_VALUE>(
+    donorType ?? ALL_TYPES_VALUE,
+  );
 
   const totalPages = Math.ceil(total / perPage);
 
@@ -58,21 +62,23 @@ export function DonorMasterClient({
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
+    const typeParam = selectedType === ALL_TYPES_VALUE ? undefined : selectedType;
     router.push(
       buildUrl({
         q: searchInput.trim(),
-        type: selectedType || undefined,
+        type: typeParam,
         page: "1",
       }),
     );
   };
 
-  const handleTypeChange = (newType: DonorType | "") => {
+  const handleTypeChange = (newType: DonorType | typeof ALL_TYPES_VALUE) => {
     setSelectedType(newType);
+    const typeParam = newType === ALL_TYPES_VALUE ? undefined : newType;
     router.push(
       buildUrl({
         q: searchQuery,
-        type: newType || undefined,
+        type: typeParam,
         page: "1",
       }),
     );
@@ -90,7 +96,7 @@ export function DonorMasterClient({
 
   const handleClear = () => {
     setSearchInput("");
-    setSelectedType("");
+    setSelectedType(ALL_TYPES_VALUE);
     router.push("/donors");
   };
 
@@ -119,13 +125,13 @@ export function DonorMasterClient({
           />
           <Select
             value={selectedType}
-            onValueChange={(value) => handleTypeChange(value as DonorType | "")}
+            onValueChange={(value) => handleTypeChange(value as DonorType | typeof ALL_TYPES_VALUE)}
           >
             <SelectTrigger className="w-[160px]" aria-label="寄付者種別でフィルタ">
               <SelectValue placeholder="すべての種別" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">すべての種別</SelectItem>
+              <SelectItem value={ALL_TYPES_VALUE}>すべての種別</SelectItem>
               {VALID_DONOR_TYPES.map((type) => (
                 <SelectItem key={type} value={type}>
                   {DONOR_TYPE_LABELS[type]}
