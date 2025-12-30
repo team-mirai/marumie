@@ -21,15 +21,3 @@ export const Subtitle = ({ children, className = "" }: TypographyProps) => (
     {children}
   </p>
 );
-
-export const Label = ({ children, className = "" }: TypographyProps) => (
-  <span
-    className={`text-[11px] leading-[1.55] font-japanese font-bold text-[var(--color-black-600)] ${className}`}
-  >
-    {children}
-  </span>
-);
-
-export const Body = ({ children, className = "" }: TypographyProps) => (
-  <p className={`text-[16px] font-bold leading-[1.75] font-english ${className}`}>{children}</p>
-);

@@ -7,6 +7,4 @@ import type { User } from "@/server/contexts/shared/domain/repositories/user-rep
  * shared コンテキストの User 型のエイリアス
  */
 export type AuthUser = User;
-
 // UserRole は user-role.ts で独自定義しているため、そちらから re-export
-export type { UserRole } from "@/server/contexts/auth/domain/models/user-role";

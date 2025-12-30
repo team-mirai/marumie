@@ -12,11 +12,20 @@
       "entry": ["shared/**/*.ts"]
     },
     "webapp": {
-      "entry": ["src/**/*.{ts,tsx}"],
+      "entry": [
+        "src/app/**/page.tsx",
+        "src/app/**/layout.tsx",
+        "src/app/**/route.ts",
+        "src/app/**/not-found.tsx"
+      ],
       "project": ["src/**/*.{ts,tsx}"]
     },
     "admin": {
-      "entry": ["src/**/*.{ts,tsx}"],
+      "entry": [
+        "src/app/**/page.tsx",
+        "src/app/**/layout.tsx",
+        "src/app/**/route.ts"
+      ],
       "project": ["src/**/*.{ts,tsx}"]
     }
   }
