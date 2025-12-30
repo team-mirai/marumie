@@ -10,6 +10,7 @@ export function formatDate(date: Date): string {
 
 /**
  * 金額を日本円形式でフォーマットする
+ * ユーザーのブラウザロケールに基づいて数値をフォーマットします
  * @param amount - フォーマットする金額
  * @returns フォーマットされた金額文字列（例: ¥1,234）
  */
@@ -19,6 +20,7 @@ export function formatAmount(amount: number): string {
 
 /**
  * 金額を日本円形式でフォーマットする（ja-JPロケール指定版）
+ * レポート等、一貫した日本語形式が必要な場合に使用します
  * @param amount - フォーマットする金額
  * @returns フォーマットされた金額文字列（例: ¥1,234）
  */
