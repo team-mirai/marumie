@@ -16,6 +16,7 @@ interface TransactionSeedData {
   donorAddress?: string;
   donorType?: DonorType;
   friendlyCategory?: string;
+  isGrantExpenditure?: boolean; // 交付金に係る支出フラグ（支出のみ）
 }
 
 const data: TransactionSeedData[] = [
@@ -402,6 +403,21 @@ const data: TransactionSeedData[] = [
     counterpartName: '不動産管理株式会社',
     friendlyCategory: '事務所賃借料',
   },
+  // 【交付金フラグ】支部への事務所費補助（シート14+シート16に出力）
+  {
+    transactionNo: 'T2025-0057',
+    transactionDate: '2025-03-15',
+    transactionType: 'expense',
+    debitAccount: '事務所費',
+    debitAmount: '100000',
+    creditAccount: '普通預金',
+    creditAmount: '100000',
+    description: '東京支部事務所費補助',
+    categoryKey: 'office-expenses',
+    counterpartName: 'サンプル党東京都連',
+    friendlyCategory: '支部事務所費補助',
+    isGrantExpenditure: true,
+  },
   {
     transactionNo: 'T2025-0029',
     transactionDate: '2025-02-28',
@@ -442,6 +458,21 @@ const data: TransactionSeedData[] = [
     categoryKey: 'organizational-activities',
     counterpartName: '株式会社貸会議室',
     friendlyCategory: '会議費',
+  },
+  // 【交付金フラグ】支部への組織活動費補助（シート15+シート16に出力）
+  {
+    transactionNo: 'T2025-0058',
+    transactionDate: '2025-04-01',
+    transactionType: 'expense',
+    debitAccount: '組織活動費',
+    debitAmount: '150000',
+    creditAccount: '普通預金',
+    creditAmount: '150000',
+    description: '大阪支部活動支援金',
+    categoryKey: 'organizational-activities',
+    counterpartName: 'サンプル党本部',
+    friendlyCategory: '支部活動支援',
+    isGrantExpenditure: true,
   },
   {
     transactionNo: 'T2025-0032',
@@ -636,6 +667,36 @@ const data: TransactionSeedData[] = [
     categoryKey: 'donations-grants-expenses',
     counterpartName: 'デジタル政策研究会',
     friendlyCategory: '政治団体寄附',
+  },
+  // 【交付金フラグ】支部への交付金（シート15+シート16に出力）
+  {
+    transactionNo: 'T2025-0059',
+    transactionDate: '2025-06-20',
+    transactionType: 'expense',
+    debitAccount: '寄附・交付金',
+    debitAmount: '300000',
+    creditAccount: '普通預金',
+    creditAmount: '300000',
+    description: '東京支部への交付金',
+    categoryKey: 'donations-grants-expenses',
+    counterpartName: 'サンプル党東京都連',
+    friendlyCategory: '支部交付金',
+    isGrantExpenditure: true,
+  },
+  // 【交付金フラグ】本部への交付金（シート15+シート16に出力）
+  {
+    transactionNo: 'T2025-0060',
+    transactionDate: '2025-09-15',
+    transactionType: 'expense',
+    debitAccount: '寄附・交付金',
+    debitAmount: '200000',
+    creditAccount: '普通預金',
+    creditAmount: '200000',
+    description: '本部への上納金',
+    categoryKey: 'donations-grants-expenses',
+    counterpartName: 'サンプル党本部',
+    friendlyCategory: '本部上納金',
+    isGrantExpenditure: true,
   },
 
   // SYUUSHI07_15: 政治活動費の支出（KUBUN9: その他の経費、境界値テスト: 5万円）
@@ -843,6 +904,7 @@ export const transactionsSeeder: Seeder = {
           description: item.description,
           categoryKey: item.categoryKey,
           friendlyCategory: item.friendlyCategory,
+          isGrantExpenditure: item.isGrantExpenditure ?? false,
         },
       });
 
