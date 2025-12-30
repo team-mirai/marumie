@@ -19,32 +19,11 @@ description: 指定したPRの未解決レビューコメントに対応する
 
 3. **未解決レビューコメントの取得**: GraphQL APIを使用して、resolvedされていないレビュースレッドのみを取得する。
    ```
-   gh api graphql -f query='
-     query($owner: String!, $repo: String!, $pr: Int!) {
-       repository(owner: $owner, name: $repo) {
-         pullRequest(number: $pr) {
-           reviewThreads(first: 100) {
-             nodes {
-               isResolved
-               comments(first: 10) {
-                 nodes {
-                   id
-                   path
-                   line
-                   body
-                   author { login }
-                 }
-               }
-             }
-           }
-         }
-       }
-     }
-   ' -f owner='{owner}' -f repo='{repo}' -F pr=$ARGUMENTS --jq '.data.repository.pullRequest.reviewThreads.nodes[] | select(.isResolved == false) | .comments.nodes[]'
+   gh api graphql -f query='query { repository(owner: "team-mirai", name: "marumie") { pullRequest(number: $ARGUMENTS) { reviewThreads(first: 100) { nodes { isResolved comments(first: 10) { nodes { id path line body author { login } } } } } } } }' --jq '.data.repository.pullRequest.reviewThreads.nodes[] | select(.isResolved == false) | .comments.nodes[]'
    ```
    また、PRレビュー自体のコメント（CHANGES_REQUESTED や COMMENTED）も取得する。
    ```
-   gh api repos/{owner}/{repo}/pulls/$ARGUMENTS/reviews --jq '.[] | select(.state == "CHANGES_REQUESTED" or .state == "COMMENTED") | {id: .id, body: .body, user: .user.login, state: .state}'
+   gh api repos/team-mirai/marumie/pulls/$ARGUMENTS/reviews --jq '.[] | select(.state == "CHANGES_REQUESTED" or .state == "COMMENTED") | {id: .id, body: .body, user: .user.login, state: .state}'
    ```
    **注意**: `isResolved == true` のスレッドは既に解決済みのため、対応不要として無視する。
 
