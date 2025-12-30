@@ -3,7 +3,7 @@ import "server-only";
 import type {
   UserRepository,
   User,
-} from "@/server/contexts/shared/domain/providers/user-repository.interface";
+} from "@/server/contexts/shared/domain/repositories/user-repository.interface";
 import type { UserRole } from "@prisma/client";
 import type { PrismaClient } from "@prisma/client";
 import { AuthError } from "@/server/contexts/auth/domain/errors/auth-error";

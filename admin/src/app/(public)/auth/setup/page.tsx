@@ -1,5 +1,5 @@
 import "server-only";
-import { getCurrentUser } from "@/server/contexts/auth";
+import { getCurrentUser } from "@/server/contexts/auth/presentation/loaders/load-current-user";
 import { redirect } from "next/navigation";
 import SetupForm from "@/client/components/auth/SetupForm";
 

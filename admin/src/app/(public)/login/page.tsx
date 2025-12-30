@@ -1,5 +1,5 @@
 import "server-only";
-import { loginWithPassword } from "@/server/contexts/auth";
+import { loginWithPassword } from "@/server/contexts/auth/presentation/actions/login";
 import LoginForm from "@/client/components/auth/LoginForm";
 import InviteTokenHandler from "./InviteTokenHandler";
 

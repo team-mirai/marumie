@@ -1,6 +1,7 @@
 import "server-only";
 import { NextResponse } from "next/server";
-import { getUserByAuthId, createUser } from "@/server/contexts/auth";
+import { getUserByAuthId } from "@/server/contexts/auth/presentation/loaders/load-user-by-auth-id";
+import { createUser } from "@/server/contexts/auth/presentation/actions/create-user";
 
 export async function POST(request: Request) {
   try {

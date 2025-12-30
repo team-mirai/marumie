@@ -1,4 +1,4 @@
-import { signOut } from "@/server/contexts/auth";
+import { signOut } from "@/server/contexts/auth/presentation/actions/logout";
 import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";

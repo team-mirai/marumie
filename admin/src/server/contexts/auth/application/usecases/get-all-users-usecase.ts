@@ -1,18 +1,38 @@
 import "server-only";
 
+import type { AuthProvider } from "@/server/contexts/auth/domain/providers/auth-provider.interface";
 import type {
   UserRepository,
   User,
-} from "@/server/contexts/shared/domain/providers/user-repository.interface";
+} from "@/server/contexts/shared/domain/repositories/user-repository.interface";
 import { AuthError } from "@/server/contexts/auth/domain/errors/auth-error";
+import { validateRole } from "@/server/contexts/auth/domain/services/role-validator";
 
 /**
- * 全ユーザー一覧取得のユースケース
+ * 全ユーザー一覧取得のユースケース（admin権限必須）
  */
 export class GetAllUsersUsecase {
-  constructor(private readonly userRepository: UserRepository) {}
+  constructor(
+    private readonly authProvider: AuthProvider,
+    private readonly userRepository: UserRepository,
+  ) {}
 
   async execute(): Promise<User[]> {
+    // 認可チェック
+    const supabaseUser = await this.authProvider.getUser();
+    if (!supabaseUser) {
+      throw new AuthError("AUTH_FAILED", "ログインが必要です");
+    }
+
+    const dbUser = await this.userRepository.findByAuthId(supabaseUser.id);
+    const currentRole = dbUser?.role ?? "user";
+
+    const roleResult = validateRole(currentRole, "admin");
+    if (!roleResult.valid) {
+      throw new AuthError("INSUFFICIENT_PERMISSION", "この操作には管理者権限が必要です");
+    }
+
+    // ユーザー一覧取得
     try {
       return await this.userRepository.findAll();
     } catch (e) {

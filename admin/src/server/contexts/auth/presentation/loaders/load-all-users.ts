@@ -1,36 +1,29 @@
 import "server-only";
 
+import { redirect } from "next/navigation";
 import { GetAllUsersUsecase } from "@/server/contexts/auth/application/usecases/get-all-users-usecase";
+import { SupabaseAuthProvider } from "@/server/contexts/auth/infrastructure/supabase/supabase-auth-provider";
 import { prisma } from "@/server/contexts/shared/infrastructure/prisma";
 import { PrismaUserRepository } from "@/server/contexts/shared/infrastructure/repositories/prisma-user.repository";
-import type { User } from "@/server/contexts/shared/domain/providers/user-repository.interface";
+import type { User } from "@/server/contexts/shared/domain/repositories/user-repository.interface";
+import { AuthError } from "@/server/contexts/auth/domain/errors/auth-error";
 
 /**
- * 全ユーザー一覧を取得するローダー
+ * 全ユーザー一覧を取得するローダー（admin権限必須）
  */
-export async function getAllUsers(): Promise<User[]> {
+export async function loadAllUsers(): Promise<User[]> {
+  const authProvider = new SupabaseAuthProvider();
   const userRepository = new PrismaUserRepository(prisma);
-  const usecase = new GetAllUsersUsecase(userRepository);
+  const usecase = new GetAllUsersUsecase(authProvider, userRepository);
 
-  return usecase.execute();
-}
-
-/**
- * authId でユーザーを取得するローダー
- */
-export async function getUserByAuthId(authId: string): Promise<User | null> {
-  const userRepository = new PrismaUserRepository(prisma);
-  return userRepository.findByAuthId(authId);
-}
-
-/**
- * ユーザーを作成するローダー
- */
-export async function createUser(data: {
-  authId: string;
-  email: string;
-  role?: "user" | "admin";
-}): Promise<User> {
-  const userRepository = new PrismaUserRepository(prisma);
-  return userRepository.create(data);
+  try {
+    return await usecase.execute();
+  } catch (e) {
+    if (e instanceof AuthError) {
+      if (e.code === "AUTH_FAILED" || e.code === "INSUFFICIENT_PERMISSION") {
+        redirect("/login");
+      }
+    }
+    throw e;
+  }
 }

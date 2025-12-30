@@ -16,15 +16,3 @@ export async function getCurrentUserRole(): Promise<UserRole | null> {
 
   return usecase.execute();
 }
-
-/**
- * ロール検証を行うローダー
- */
-export async function requireRole(requiredRole: UserRole): Promise<boolean> {
-  const currentRole = await getCurrentUserRole();
-  if (!currentRole) return false;
-  if (requiredRole === "admin") {
-    return currentRole === "admin";
-  }
-  return true;
-}

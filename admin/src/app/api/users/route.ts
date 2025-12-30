@@ -1,16 +1,10 @@
 import "server-only";
 import { NextResponse } from "next/server";
-import { requireRole, getAllUsers } from "@/server/contexts/auth";
+import { loadAllUsers } from "@/server/contexts/auth/presentation/loaders/load-all-users";
 
 export async function GET() {
   try {
-    const hasAccess = await requireRole("admin");
-
-    if (!hasAccess) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const users = await getAllUsers();
+    const users = await loadAllUsers();
     return NextResponse.json(users);
   } catch (error) {
     console.error("Error fetching users:", error);

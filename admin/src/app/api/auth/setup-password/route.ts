@@ -1,6 +1,7 @@
 import "server-only";
 import { NextResponse } from "next/server";
-import { setupPassword, getCurrentUser } from "@/server/contexts/auth";
+import { setupPassword } from "@/server/contexts/auth/presentation/actions/setup-password";
+import { getCurrentUser } from "@/server/contexts/auth/presentation/loaders/load-current-user";
 
 export async function POST(request: Request) {
   try {

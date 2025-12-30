@@ -1,7 +1,8 @@
 import "server-only";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
-import { requireRole, updateUserRole } from "@/server/contexts/auth";
+import { requireRole } from "@/server/contexts/auth/presentation/loaders/require-role";
+import { updateUserRole } from "@/server/contexts/auth/presentation/actions/update-user-role";
 import type { UserRole } from "@prisma/client";
 
 export async function PATCH(request: NextRequest) {

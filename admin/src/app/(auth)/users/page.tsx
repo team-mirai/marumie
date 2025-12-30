@@ -1,16 +1,9 @@
 import "server-only";
-import { requireRole, getAllUsers } from "@/server/contexts/auth";
-import { redirect } from "next/navigation";
+import { loadAllUsers } from "@/server/contexts/auth/presentation/loaders/load-all-users";
 import UserManagement from "@/client/components/user-management/UserManagement";
 
 export default async function UsersPage() {
-  const hasAccess = await requireRole("admin");
-
-  if (!hasAccess) {
-    redirect("/login");
-  }
-
-  const rawUsers = await getAllUsers();
+  const rawUsers = await loadAllUsers();
   // クライアントに渡すのに必要最小限のフィールドのみに絞る（authId等を漏らさない）
   const users = rawUsers.map((u) => ({
     id: u.id,

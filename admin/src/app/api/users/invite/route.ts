@@ -1,6 +1,7 @@
 import "server-only";
 import { NextResponse } from "next/server";
-import { requireRole, inviteUser } from "@/server/contexts/auth";
+import { requireRole } from "@/server/contexts/auth/presentation/loaders/require-role";
+import { inviteUser } from "@/server/contexts/auth/presentation/actions/invite-user";
 
 export async function POST(request: Request) {
   try {

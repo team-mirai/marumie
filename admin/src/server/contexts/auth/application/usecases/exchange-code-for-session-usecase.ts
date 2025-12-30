@@ -4,7 +4,7 @@ import type { AuthProvider } from "@/server/contexts/auth/domain/providers/auth-
 import type {
   UserRepository,
   User,
-} from "@/server/contexts/shared/domain/providers/user-repository.interface";
+} from "@/server/contexts/shared/domain/repositories/user-repository.interface";
 import { AuthError } from "@/server/contexts/auth/domain/errors/auth-error";
 
 export interface ExchangeCodeResult {
