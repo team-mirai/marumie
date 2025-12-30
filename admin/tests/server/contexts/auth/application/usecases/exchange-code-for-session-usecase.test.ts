@@ -1,58 +1,23 @@
 import { ExchangeCodeForSessionUsecase } from "@/server/contexts/auth/application/usecases/exchange-code-for-session-usecase";
 import { AuthError } from "@/server/contexts/auth/domain/errors/auth-error";
 import type { AuthProvider } from "@/server/contexts/auth/domain/providers/auth-provider.interface";
-import type { UserRepository, User } from "@/server/contexts/shared/domain/repositories/user-repository.interface";
-import type { SupabaseAuthUser } from "@/server/contexts/auth/domain/models/supabase-auth-user";
-import type { AuthSession } from "@/server/contexts/auth/domain/models/auth-session";
+import type { UserRepository } from "@/server/contexts/shared/domain/repositories/user-repository.interface";
+import {
+  createMockSupabaseUser,
+  createMockSession,
+  createMockUser,
+  createMockAuthProvider,
+  createMockUserRepository,
+} from "../../test-helpers";
 
 describe("ExchangeCodeForSessionUsecase", () => {
   let mockAuthProvider: jest.Mocked<AuthProvider>;
   let mockUserRepository: jest.Mocked<UserRepository>;
   let usecase: ExchangeCodeForSessionUsecase;
 
-  const createMockSupabaseUser = (overrides: Partial<SupabaseAuthUser> = {}): SupabaseAuthUser => ({
-    id: "auth-user-id",
-    email: "test@example.com",
-    emailConfirmedAt: "2024-01-01T00:00:00Z",
-    lastSignInAt: "2024-01-01T00:00:00Z",
-    ...overrides,
-  });
-
-  const createMockSession = (overrides: Partial<AuthSession> = {}): AuthSession => ({
-    accessToken: "access-token",
-    refreshToken: "refresh-token",
-    user: createMockSupabaseUser(),
-    ...overrides,
-  });
-
-  const createMockUser = (overrides: Partial<User> = {}): User => ({
-    id: "user-id",
-    authId: "auth-user-id",
-    email: "test@example.com",
-    role: "user",
-    createdAt: new Date("2024-01-01"),
-    updatedAt: new Date("2024-01-01"),
-    ...overrides,
-  });
-
   beforeEach(() => {
-    mockAuthProvider = {
-      signInWithPassword: jest.fn(),
-      signOut: jest.fn(),
-      getUser: jest.fn(),
-      updateUser: jest.fn(),
-      setSession: jest.fn(),
-      exchangeCodeForSession: jest.fn(),
-    };
-    mockUserRepository = {
-      create: jest.fn(),
-      findById: jest.fn(),
-      findByAuthId: jest.fn(),
-      findByEmail: jest.fn(),
-      findAll: jest.fn(),
-      updateRole: jest.fn(),
-      delete: jest.fn(),
-    };
+    mockAuthProvider = createMockAuthProvider();
+    mockUserRepository = createMockUserRepository();
     usecase = new ExchangeCodeForSessionUsecase(mockAuthProvider, mockUserRepository);
   });
 

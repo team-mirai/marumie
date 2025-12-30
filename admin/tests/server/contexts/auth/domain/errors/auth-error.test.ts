@@ -39,17 +39,7 @@ describe("AuthError", () => {
 });
 
 describe("AUTH_ERROR_MESSAGES", () => {
-  const errorCodes: AuthErrorCode[] = [
-    "AUTH_FAILED",
-    "SESSION_EXPIRED",
-    "INVALID_TOKEN",
-    "NETWORK_ERROR",
-    "INSUFFICIENT_PERMISSION",
-    "USER_NOT_FOUND",
-    "INVALID_EMAIL",
-    "WEAK_PASSWORD",
-    "INVITE_FAILED",
-  ];
+  const errorCodes = Object.keys(AUTH_ERROR_MESSAGES) as AuthErrorCode[];
 
   it("すべてのエラーコードに対応するメッセージが定義されている", () => {
     for (const code of errorCodes) {
