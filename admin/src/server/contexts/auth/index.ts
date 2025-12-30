@@ -1,45 +1,47 @@
 import "server-only";
 
-import type { UserRole } from "@prisma/client";
-
 // ============================================================
-// 型定義
+// 型定義（domain 層から re-export）
 // ============================================================
 export type { UserRole } from "@prisma/client";
-
-export interface AuthUser {
-  id: string;
-  authId: string;
-  email: string;
-  role: UserRole;
-  createdAt: Date;
-  updatedAt: Date;
-}
+export type { AuthUser } from "@/server/contexts/auth/domain/models/auth-user";
+export type { AuthSession } from "@/server/contexts/auth/domain/models/auth-session";
+export type { SupabaseAuthUser } from "@/server/contexts/auth/domain/models/supabase-auth-user";
+export type { AuthErrorCode } from "@/server/contexts/auth/domain/errors/auth-error";
+export { AuthError, AUTH_ERROR_MESSAGES } from "@/server/contexts/auth/domain/errors/auth-error";
 
 // ============================================================
-// 認証・認可（既存を re-export）
+// 認証・認可（presentation 層から re-export）
 // ============================================================
+export { getCurrentUser } from "@/server/contexts/auth/presentation/loaders/load-current-user";
+
 export {
-  getCurrentUser,
   getCurrentUserRole,
   requireRole,
-} from "@/server/contexts/auth/application/roles";
+} from "@/server/contexts/auth/presentation/loaders/load-current-user-role";
+
+export { loginWithPassword } from "@/server/contexts/auth/presentation/actions/login";
 
 export {
-  loginWithPassword,
   logout,
-} from "@/server/contexts/auth/application/login";
+  signOut,
+} from "@/server/contexts/auth/presentation/actions/logout";
 
 // ============================================================
-// ユーザー管理（新規追加）
+// ユーザー管理（presentation 層から re-export）
 // ============================================================
 export {
   getAllUsers,
   getUserByAuthId,
   createUser,
-  updateUserRole,
-  inviteUser,
-  setupPassword,
-  signOut,
-  exchangeCodeForSession,
-} from "@/server/contexts/auth/application/users";
+} from "@/server/contexts/auth/presentation/loaders/load-all-users";
+
+export { updateUserRole } from "@/server/contexts/auth/presentation/actions/update-user-role";
+
+export { inviteUser } from "@/server/contexts/auth/presentation/actions/invite-user";
+
+export { setupPassword } from "@/server/contexts/auth/presentation/actions/setup-password";
+
+export { exchangeCodeForSession } from "@/server/contexts/auth/presentation/actions/exchange-code-for-session";
+
+export { completeInviteSession } from "@/server/contexts/auth/presentation/actions/complete-invite-session";
