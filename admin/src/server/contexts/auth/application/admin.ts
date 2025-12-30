@@ -1,20 +1,5 @@
 import "server-only";
-import { createClient } from "@supabase/supabase-js";
 
-export function createAdminClient() {
-  const supabaseUrl = process.env.SUPABASE_URL;
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-  if (!supabaseUrl || !serviceRoleKey) {
-    throw new Error(
-      "Missing required environment variables: SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY",
-    );
-  }
-
-  return createClient(supabaseUrl, serviceRoleKey, {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false,
-    },
-  });
-}
+// 新しい infrastructure 層の createSupabaseAdminClient を re-export
+// 後方互換性のため createAdminClient という名前でエクスポート
+export { createSupabaseAdminClient as createAdminClient } from "@/server/contexts/auth/infrastructure/supabase/supabase-admin-client";
