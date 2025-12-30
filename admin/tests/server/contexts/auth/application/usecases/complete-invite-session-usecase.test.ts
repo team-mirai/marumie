@@ -72,16 +72,16 @@ describe("CompleteInviteSessionUsecase", () => {
     });
 
     it("accessTokenが空の場合はエラーを投げる", async () => {
-      await expect(usecase.execute("", "refresh-token")).rejects.toThrow(AuthError);
       await expect(usecase.execute("", "refresh-token")).rejects.toMatchObject({
+        name: "AuthError",
         code: "INVALID_TOKEN",
       });
       expect(mockAuthProvider.setSession).not.toHaveBeenCalled();
     });
 
     it("refreshTokenが空の場合はエラーを投げる", async () => {
-      await expect(usecase.execute("access-token", "")).rejects.toThrow(AuthError);
       await expect(usecase.execute("access-token", "")).rejects.toMatchObject({
+        name: "AuthError",
         code: "INVALID_TOKEN",
       });
       expect(mockAuthProvider.setSession).not.toHaveBeenCalled();
@@ -92,8 +92,8 @@ describe("CompleteInviteSessionUsecase", () => {
       mockAuthProvider.setSession.mockResolvedValue(session);
       mockAuthProvider.getUser.mockResolvedValue(null);
 
-      await expect(usecase.execute("access-token", "refresh-token")).rejects.toThrow(AuthError);
       await expect(usecase.execute("access-token", "refresh-token")).rejects.toMatchObject({
+        name: "AuthError",
         code: "AUTH_FAILED",
       });
     });
@@ -108,8 +108,8 @@ describe("CompleteInviteSessionUsecase", () => {
     it("その他のエラーはAuthErrorにラップされる", async () => {
       mockAuthProvider.setSession.mockRejectedValue(new Error("Unknown error"));
 
-      await expect(usecase.execute("access-token", "refresh-token")).rejects.toThrow(AuthError);
       await expect(usecase.execute("access-token", "refresh-token")).rejects.toMatchObject({
+        name: "AuthError",
         code: "INVALID_TOKEN",
       });
     });

@@ -110,8 +110,8 @@ describe("ExchangeCodeForSessionUsecase", () => {
       mockAuthProvider.exchangeCodeForSession.mockResolvedValue(session);
       mockUserRepository.findByAuthId.mockResolvedValue(null);
 
-      await expect(usecase.execute("auth-code")).rejects.toThrow(AuthError);
       await expect(usecase.execute("auth-code")).rejects.toMatchObject({
+        name: "AuthError",
         code: "AUTH_FAILED",
       });
       expect(mockUserRepository.create).not.toHaveBeenCalled();
@@ -127,8 +127,8 @@ describe("ExchangeCodeForSessionUsecase", () => {
     it("その他のエラーはAuthErrorにラップされる", async () => {
       mockAuthProvider.exchangeCodeForSession.mockRejectedValue(new Error("Unknown error"));
 
-      await expect(usecase.execute("auth-code")).rejects.toThrow(AuthError);
       await expect(usecase.execute("auth-code")).rejects.toMatchObject({
+        name: "AuthError",
         code: "INVALID_TOKEN",
       });
     });
