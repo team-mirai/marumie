@@ -8,13 +8,18 @@ import { XmlExportUsecase } from "@/server/contexts/report/application/usecases/
 import { DonationAssembler } from "@/server/contexts/report/application/services/donation-assembler";
 import { ExpenseAssembler } from "@/server/contexts/report/application/services/expense-assembler";
 import { IncomeAssembler } from "@/server/contexts/report/application/services/income-assembler";
-import type { ReportData } from "@/server/contexts/report/domain/models/report-data";
+import {
+  type ReportData,
+  ReportData as ReportDataModel,
+} from "@/server/contexts/report/domain/models/report-data";
+import type { SummaryData } from "@/server/contexts/report/domain/models/summary-data";
 
 const CACHE_REVALIDATE_SECONDS = 60;
 
 export interface ReportPreviewData {
   xml: string;
   reportData: ReportData;
+  summaryData: SummaryData;
 }
 
 export const loadReportPreviewData = unstable_cache(
@@ -36,9 +41,12 @@ export const loadReportPreviewData = unstable_cache(
       financialYear,
     });
 
+    const summaryData = ReportDataModel.getSummary(result.reportData);
+
     return {
       xml: result.xml,
       reportData: result.reportData,
+      summaryData,
     };
   },
   ["report-preview"],

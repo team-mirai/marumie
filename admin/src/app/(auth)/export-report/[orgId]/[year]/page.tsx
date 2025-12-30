@@ -4,7 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { loadPoliticalOrganizationsData } from "@/server/contexts/shared/presentation/loaders/load-political-organizations-data";
 import { loadReportPreviewData } from "@/server/contexts/report/presentation/loaders/report-preview-loader";
-import type { ReportData } from "@/server/contexts/report/domain/models/report-data";
+import type { ReportPreviewData } from "@/server/contexts/report/presentation/loaders/report-preview-loader";
 import { ExportReportSelectors } from "@/client/components/export-report/ExportReportSelectors";
 import { ExportReportPreview } from "@/client/components/export-report/ExportReportPreview";
 import { DownloadButton } from "@/client/components/export-report/DownloadButton";
@@ -31,10 +31,7 @@ export default async function ExportReportDetailPage({ params }: ExportReportDet
     notFound();
   }
 
-  let previewData: {
-    xml: string;
-    reportData: ReportData;
-  } | null = null;
+  let previewData: ReportPreviewData | null = null;
   let errorMessage: string | null = null;
 
   try {
@@ -77,7 +74,11 @@ export default async function ExportReportDetailPage({ params }: ExportReportDet
         ) : previewData ? (
           <>
             <DownloadButton politicalOrganizationId={orgId} financialYear={financialYear} />
-            <ExportReportPreview xml={previewData.xml} reportData={previewData.reportData} />
+            <ExportReportPreview
+              xml={previewData.xml}
+              reportData={previewData.reportData}
+              summaryData={previewData.summaryData}
+            />
           </>
         ) : null}
       </div>

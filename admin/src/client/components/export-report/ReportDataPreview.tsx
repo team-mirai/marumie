@@ -1,15 +1,18 @@
 import type { ReportData } from "@/server/contexts/report/domain/models/report-data";
+import type { SummaryData } from "@/server/contexts/report/domain/models/summary-data";
 import { DonationSection } from "./sections/DonationSection";
 import { IncomeSection } from "./sections/IncomeSection";
 import { PoliticalActivityExpenseSection } from "./sections/PoliticalActivityExpenseSection";
 import { ProfileSection } from "./sections/ProfileSection";
 import { RegularExpenseSection } from "./sections/RegularExpenseSection";
+import { SummarySection } from "./sections/SummarySection";
 
 interface ReportDataPreviewProps {
   reportData: ReportData;
+  summaryData: SummaryData;
 }
 
-export function ReportDataPreview({ reportData }: ReportDataPreviewProps) {
+export function ReportDataPreview({ reportData, summaryData }: ReportDataPreviewProps) {
   const { profile, donations, income, expenses } = reportData;
 
   return (
@@ -22,6 +25,9 @@ export function ReportDataPreview({ reportData }: ReportDataPreviewProps) {
       <div className="space-y-8">
         {/* プロフィール */}
         <ProfileSection profile={profile} />
+
+        {/* 収支総括表 */}
+        <SummarySection summaryData={summaryData} />
 
         {/* 収入の部 */}
         <DonationSection personalDonations={donations.personalDonations} />
