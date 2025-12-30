@@ -4,6 +4,9 @@ import { setupPassword } from "@/server/contexts/auth/presentation/actions/setup
 import { redirect } from "next/navigation";
 import SetupForm from "@/client/components/auth/SetupForm";
 
+// 認証チェックでcookiesを使用するため動的レンダリングを強制
+export const dynamic = "force-dynamic";
+
 interface SetupPageProps {
   searchParams: Promise<{ from?: string }>;
 }

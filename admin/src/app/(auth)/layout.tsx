@@ -4,6 +4,9 @@ import Sidebar from "@/client/components/layout/Sidebar";
 import { logout } from "@/server/contexts/auth/presentation/actions/logout";
 import { getCurrentUser } from "@/server/contexts/auth/presentation/loaders/load-current-user";
 
+// 認証チェックでcookiesを使用するため動的レンダリングを強制
+export const dynamic = "force-dynamic";
+
 export default async function AuthLayout({ children }: { children: React.ReactNode }) {
   const user = await getCurrentUser();
 
