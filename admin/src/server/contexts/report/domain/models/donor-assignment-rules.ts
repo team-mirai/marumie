@@ -9,17 +9,9 @@ import { PL_CATEGORIES } from "@/shared/accounting/account-category";
 import type { DonorType } from "@/server/contexts/report/domain/models/donor";
 
 /**
- * Donor紐づけ対象カテゴリとそれぞれで許可されるdonor_typeの定義
- */
-export interface DonorCategoryRule {
-  categoryKey: string;
-  allowedDonorTypes: DonorType[];
-}
-
-/**
  * 個人からの寄附カテゴリ - individualのみ許可
  */
-export const INDIVIDUAL_DONATION_CATEGORIES = [
+const INDIVIDUAL_DONATION_CATEGORIES = [
   // biome-ignore lint/complexity/useLiteralKeys: 日本語キー
   PL_CATEGORIES["個人からの寄附"].key,
   PL_CATEGORIES["個人からの寄附（特定寄附）"].key,
@@ -28,7 +20,7 @@ export const INDIVIDUAL_DONATION_CATEGORIES = [
 /**
  * 法人その他の団体からの寄附カテゴリ - corporationのみ許可
  */
-export const CORPORATE_DONATION_CATEGORIES = [
+const CORPORATE_DONATION_CATEGORIES = [
   // biome-ignore lint/complexity/useLiteralKeys: 日本語キー
   PL_CATEGORIES["法人その他の団体からの寄附"].key,
 ] as const;
@@ -36,7 +28,7 @@ export const CORPORATE_DONATION_CATEGORIES = [
 /**
  * 政治団体からの寄附カテゴリ - political_organizationのみ許可
  */
-export const POLITICAL_DONATION_CATEGORIES = [
+const POLITICAL_DONATION_CATEGORIES = [
   // biome-ignore lint/complexity/useLiteralKeys: 日本語キー
   PL_CATEGORIES["政治団体からの寄附"].key,
 ] as const;
@@ -44,7 +36,7 @@ export const POLITICAL_DONATION_CATEGORIES = [
 /**
  * すべてのdonor_typeが許可されるカテゴリ
  */
-export const ALL_DONOR_TYPE_CATEGORIES = [
+const ALL_DONOR_TYPE_CATEGORIES = [
   // biome-ignore lint/complexity/useLiteralKeys: 日本語キー
   PL_CATEGORIES["寄附のあっせんによるもの"].key,
   // biome-ignore lint/complexity/useLiteralKeys: 日本語キー
@@ -68,7 +60,7 @@ export type DonorRequiredCategory = (typeof DONOR_REQUIRED_CATEGORIES)[number];
 /**
  * カテゴリごとに許可されるdonor_typeのマッピング
  */
-export const CATEGORY_ALLOWED_DONOR_TYPES: Record<string, DonorType[]> = {
+const categoryAllowedDonorTypes: Record<string, DonorType[]> = {
   // 個人からの寄附 - individualのみ
   ...Object.fromEntries(
     INDIVIDUAL_DONATION_CATEGORIES.map((key) => [key, ["individual" as const]]),
@@ -107,7 +99,7 @@ export function isDonorRequired(categoryKey: string): boolean {
  * @returns 許可されるdonor_typeの配列。Donor紐づけ対象外の場合は空配列
  */
 export function getAllowedDonorTypes(categoryKey: string): DonorType[] {
-  return CATEGORY_ALLOWED_DONOR_TYPES[categoryKey] ?? [];
+  return categoryAllowedDonorTypes[categoryKey] ?? [];
 }
 
 /**

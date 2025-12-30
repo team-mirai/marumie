@@ -1,5 +1,3 @@
-export const COUNTERPART_ADDRESS_SEARCH_PROMPT_ID = "counterpart-address-search-v1";
-
 export function buildCounterpartAddressSearchPrompt(companyName: string, hint?: string): string {
   const hintPart = hint ? `検索ヒント: ${hint}\n` : "";
 

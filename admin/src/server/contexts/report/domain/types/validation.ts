@@ -37,6 +37,3 @@ export const ValidationErrorCode = {
   NEGATIVE_VALUE: "NEGATIVE_VALUE",
   CONSISTENCY_ERROR: "CONSISTENCY_ERROR",
 } as const;
-
-export type ValidationErrorCodeType =
-  (typeof ValidationErrorCode)[keyof typeof ValidationErrorCode];

@@ -1,4 +1,4 @@
-export interface BalanceSnapshot {
+interface BalanceSnapshot {
   id: string;
   political_organization_id: string;
   snapshot_date: Date;
@@ -7,13 +7,13 @@ export interface BalanceSnapshot {
   updated_at: Date;
 }
 
-export interface ExportReportParams {
+interface ExportReportParams {
   politicalOrganizationId: string;
   financialYear: string;
   sections: string[];
 }
 
-export class ApiClient {
+class ApiClient {
   private baseUrl: string;
 
   constructor() {

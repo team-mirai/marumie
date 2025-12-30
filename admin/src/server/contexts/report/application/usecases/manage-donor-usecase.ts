@@ -45,14 +45,6 @@ export class GetDonorsUsecase {
   }
 }
 
-export class GetDonorByIdUsecase {
-  constructor(private repository: IDonorRepository) {}
-
-  async execute(id: string): Promise<Donor | null> {
-    return this.repository.findById(id);
-  }
-}
-
 export interface CreateDonorResult {
   success: boolean;
   donor?: Donor;
@@ -189,13 +181,5 @@ export class DeleteDonorUsecase {
 
     await this.repository.delete(id);
     return { success: true };
-  }
-}
-
-export class GetDonorUsageUsecase {
-  constructor(private repository: IDonorRepository) {}
-
-  async execute(id: string): Promise<number> {
-    return this.repository.getUsageCount(id);
   }
 }

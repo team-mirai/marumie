@@ -49,7 +49,7 @@ export const VALID_DONOR_TYPES = Object.keys(DONOR_TYPE_LABELS) as DonorType[];
  * @param value 判定対象の文字列
  * @returns 有効な DonorType の場合は true
  */
-export function isValidDonorType(value: string): value is DonorType {
+function isValidDonorType(value: string): value is DonorType {
   return VALID_DONOR_TYPES.includes(value as DonorType);
 }
 

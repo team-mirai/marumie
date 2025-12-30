@@ -74,7 +74,7 @@ const KNOWN_FORM_IDS = [
   "SYUUSHI_KIFUKOUJYO", // 寄附を受けた団体の情報（寄附金控除関連）
 ] as const;
 
-export type XmlSectionType = (typeof KNOWN_FORM_IDS)[number];
+type XmlSectionType = (typeof KNOWN_FORM_IDS)[number];
 
 type XmlSection = {
   formId: XmlSectionType;

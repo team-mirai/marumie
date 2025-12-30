@@ -216,7 +216,6 @@ export type {
   DonationGrantExpenseTransaction,
   OtherPoliticalExpenseTransaction,
   PersonnelExpenseTransaction,
-  TransactionWithCounterpart,
   TransactionWithCounterpartFilters,
   TransactionWithCounterpartResult,
   TransactionByCounterpartFilters,

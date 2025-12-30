@@ -74,10 +74,6 @@ export type CounterpartRequiredIncomeCategory =
 export type CounterpartRequiredExpenseCategory =
   (typeof COUNTERPART_REQUIRED_EXPENSE_CATEGORIES)[number];
 
-export type CounterpartRequiredCategory =
-  | CounterpartRequiredIncomeCategory
-  | CounterpartRequiredExpenseCategory;
-
 /**
  * Counterpart明細記載が必要な金額閾値（円）
  *
@@ -128,7 +124,7 @@ export function isCounterpartRequired(
  * @param categoryKey - カテゴリキー
  * @returns 閾値（円）。収入カテゴリの場合は0（すべて記載必須）
  */
-export function getThresholdForCategory(categoryKey: string): number {
+function getThresholdForCategory(categoryKey: string): number {
   if (
     ROUTINE_EXPENSE_CATEGORIES.includes(categoryKey as (typeof ROUTINE_EXPENSE_CATEGORIES)[number])
   ) {
