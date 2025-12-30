@@ -15,14 +15,15 @@ interface DonorMasterPageProps {
 export default async function DonorMasterPage({ searchParams }: DonorMasterPageProps) {
   const params = await searchParams;
   const searchQuery = params.q;
-  const donorType = params.type ? parseDonorType(params.type) : undefined;
+  const parsed = params.type ? parseDonorType(params.type) : null;
+  const donorType = parsed === null ? undefined : parsed;
   const parsedPage = params.page ? Number.parseInt(params.page, 10) : 1;
   const page = Number.isNaN(parsedPage) || parsedPage < 1 ? 1 : parsedPage;
   const perPage = 50;
 
   const data = await loadDonorsData({
     searchQuery,
-    donorType: donorType ?? undefined,
+    donorType,
     page,
     perPage,
   });
@@ -34,7 +35,7 @@ export default async function DonorMasterPage({ searchParams }: DonorMasterPageP
       page={data.page}
       perPage={data.perPage}
       searchQuery={searchQuery}
-      donorType={donorType ?? undefined}
+      donorType={donorType}
     />
   );
 }
