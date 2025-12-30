@@ -175,6 +175,7 @@ export class PrismaReportTransactionRepository implements IReportTransactionRepo
           select: {
             donor: {
               select: {
+                id: true,
                 name: true,
                 address: true,
                 occupation: true,
@@ -191,6 +192,7 @@ export class PrismaReportTransactionRepository implements IReportTransactionRepo
       debitAmount: Number(t.debitAmount),
       creditAmount: Number(t.creditAmount),
       memo: t.memo,
+      donorId: t.transactionDonors[0]?.donor.id.toString() ?? null,
       donorName: t.transactionDonors[0]?.donor.name ?? "",
       donorAddress: t.transactionDonors[0]?.donor.address ?? "",
       donorOccupation: t.transactionDonors[0]?.donor.occupation ?? "",
