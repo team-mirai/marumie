@@ -53,9 +53,11 @@ interface ProfileRowProps {
 
 function ProfileRow({ label, value }: ProfileRowProps) {
   return (
-    <tr className="border-b border-gray-200">
-      <th className="py-2 px-4 text-left font-medium text-gray-700 bg-gray-50 w-1/3">{label}</th>
-      <td className="py-2 px-4 text-gray-900">{value}</td>
+    <tr className="border border-black">
+      <th className="py-2 px-4 text-left font-medium text-gray-700 bg-gray-50 w-1/3 border border-black">
+        {label}
+      </th>
+      <td className="py-2 px-4 text-gray-900 border border-black">{value}</td>
     </tr>
   );
 }
@@ -74,29 +76,34 @@ export function ProfileSection({ profile }: ProfileSectionProps) {
       : "-";
 
   return (
-    <div className="space-y-4">
-      <h2 className="text-xl font-bold text-white">団体基本情報 (SYUUSHI07_01)</h2>
+    <div className="space-y-6">
+      <h2 className="text-xl font-bold text-white">団体基本情報</h2>
 
       <div className="bg-white border border-black overflow-hidden">
-        <table className="w-full">
-          <tbody>
-            <ProfileRow label="報告年" value={String(profile.financialYear)} />
-            <ProfileRow label="政治団体名称" value={profile.officialName || "-"} />
-            <ProfileRow label="ふりがな" value={profile.officialNameKana || "-"} />
-            <ProfileRow
-              label="主たる事務所の所在地"
-              value={formatAddress(profile.officeAddress, profile.officeAddressBuilding)}
-            />
-            <ProfileRow label="代表者氏名" value={formatFullName(details.representative)} />
-            <ProfileRow label="会計責任者氏名" value={formatFullName(details.accountant)} />
-            <ProfileRow label="事務担当者" value={contactPersonsDisplay} />
-            <ProfileRow label="活動区域" value={getActivityAreaLabel(details.activityArea)} />
-            <ProfileRow
-              label="国会議員関係政治団体の区分"
-              value={getDietMemberRelationTypeLabel(details.dietMemberRelation?.type)}
-            />
-          </tbody>
-        </table>
+        <div className="bg-gray-100 border-b border-black px-4 py-3">
+          <h3 className="text-lg font-semibold text-black">団体基本情報 (SYUUSHI07_01)</h3>
+        </div>
+        <div className="p-4">
+          <table className="w-full border-collapse border border-black">
+            <tbody>
+              <ProfileRow label="報告年" value={String(profile.financialYear)} />
+              <ProfileRow label="政治団体名称" value={profile.officialName || "-"} />
+              <ProfileRow label="ふりがな" value={profile.officialNameKana || "-"} />
+              <ProfileRow
+                label="主たる事務所の所在地"
+                value={formatAddress(profile.officeAddress, profile.officeAddressBuilding)}
+              />
+              <ProfileRow label="代表者氏名" value={formatFullName(details.representative)} />
+              <ProfileRow label="会計責任者氏名" value={formatFullName(details.accountant)} />
+              <ProfileRow label="事務担当者" value={contactPersonsDisplay} />
+              <ProfileRow label="活動区域" value={getActivityAreaLabel(details.activityArea)} />
+              <ProfileRow
+                label="国会議員関係政治団体の区分"
+                value={getDietMemberRelationTypeLabel(details.dietMemberRelation?.type)}
+              />
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );
