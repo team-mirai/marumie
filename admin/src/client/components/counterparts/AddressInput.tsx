@@ -4,7 +4,7 @@ import "client-only";
 import { useId, useState } from "react";
 import { Button, Input, Label } from "@/client/components/ui";
 import { useAddressSearch } from "@/client/components/counterparts/useAddressSearch";
-import type { AddressCandidate } from "@/server/contexts/report/infrastructure/llm/types";
+import type { AddressCandidate } from "@/server/contexts/report/presentation/types/address-search";
 
 /** 候補選択時に返されるデータ */
 export interface CounterpartSearchResult {

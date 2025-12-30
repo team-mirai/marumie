@@ -2,12 +2,12 @@
 
 import { SearchCounterpartAddressUsecase } from "@/server/contexts/report/application/usecases/search-counterpart-address-usecase";
 import { VercelAIGateway } from "@/server/contexts/report/infrastructure/llm/vercel-ai-gateway";
-import type { SearchResult } from "@/server/contexts/report/infrastructure/llm/types";
+import type { AddressSearchResult } from "@/server/contexts/report/presentation/types/address-search";
 
 export async function searchCounterpartAddressAction(
   companyName: string,
   hint?: string,
-): Promise<SearchResult> {
+): Promise<AddressSearchResult> {
   try {
     const gateway = new VercelAIGateway();
     const usecase = new SearchCounterpartAddressUsecase(gateway);

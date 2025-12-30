@@ -6,7 +6,7 @@ import type { PoliticalOrganization } from "@/shared/models/political-organizati
 import { Button, Input, Label } from "@/client/components/ui";
 import { PoliticalOrganizationSelect } from "@/client/components/political-organizations/PoliticalOrganizationSelect";
 import CsvPreview from "@/client/components/csv-import/CsvPreview";
-import type { PreviewMfCsvResult } from "@/server/contexts/data-import/application/usecases/preview-mf-csv-usecase";
+import type { PreviewMfCsvResult } from "@/server/contexts/data-import/presentation/types";
 import type {
   UploadCsvRequest,
   UploadCsvResponse,

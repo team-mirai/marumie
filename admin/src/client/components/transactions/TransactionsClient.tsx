@@ -7,7 +7,7 @@ import { StaticPagination } from "@/client/components/ui/StaticPagination";
 import { DeleteAllButton } from "./DeleteAllButton";
 import { ClearWebappCacheButton } from "./ClearWebappCacheButton";
 import { PoliticalOrganizationSelect } from "@/client/components/political-organizations/PoliticalOrganizationSelect";
-import type { GetTransactionsResult } from "@/server/contexts/data-import/application/usecases/get-transactions-usecase";
+import type { GetTransactionsResult } from "@/server/contexts/data-import/presentation/types";
 import type { PoliticalOrganization } from "@/shared/models/political-organization";
 
 interface TransactionsClientProps {

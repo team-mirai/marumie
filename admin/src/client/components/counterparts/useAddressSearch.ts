@@ -5,8 +5,8 @@ import { useState, useCallback } from "react";
 import { searchCounterpartAddressAction } from "@/server/contexts/report/presentation/actions/search-counterpart-address";
 import type {
   AddressCandidate,
-  SearchResult,
-} from "@/server/contexts/report/infrastructure/llm/types";
+  AddressSearchResult,
+} from "@/server/contexts/report/presentation/types/address-search";
 
 export type AddressInputPhase =
   | "initial" // 初期状態（ボタンのみ）
@@ -23,7 +23,7 @@ interface UseAddressSearchReturn {
   // 状態
   phase: AddressInputPhase;
   address: string;
-  searchResult: SearchResult | null;
+  searchResult: AddressSearchResult | null;
   hint: string;
   isSearching: boolean;
 
@@ -44,7 +44,7 @@ export function useAddressSearch({
   const [phase, setPhase] = useState<AddressInputPhase>(initialAddress ? "confirmed" : "initial");
   const [address, setAddress] = useState(initialAddress ?? "");
   const [hint, setHint] = useState("");
-  const [searchResult, setSearchResult] = useState<SearchResult | null>(null);
+  const [searchResult, setSearchResult] = useState<AddressSearchResult | null>(null);
   const [isSearching, setIsSearching] = useState(false);
 
   const doSearch = useCallback(

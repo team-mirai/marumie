@@ -90,6 +90,27 @@ contexts/{コンテキスト名}/
   - Infrastructure → Application
 ```
 
+### 3.2.1 クライアント層（UI）からの依存ルール
+
+`client/` 配下のUIコンポーネントからサーバー層への依存には以下のルールを適用する：
+
+```
+✓ 許可される依存:
+  - Client → Presentation（actions/schemas/typesの呼び出し・型参照）
+  - Client → Domain（models の型参照のみ）
+
+✗ 禁止される依存:
+  - Client → Infrastructure（型参照も含めて禁止）
+  - Client → Application（型参照も含めて禁止）
+  - Presentation → Client（型参照も含めて禁止）
+```
+
+**理由**:
+- **Domain層の型参照が許容される理由**: ドメインモデルはビジネス概念を表現しており、UIでも同じ概念を扱う必要がある。型の二重定義は保守コストを増大させる。
+- **Infrastructure層が禁止される理由**: 外部サービスの実装詳細（LLMレスポンス形式、Prisma型等）はUIから隠蔽すべき。変更時の影響範囲を限定するため、Presentation層の`types/`で型を定義しClientからimportする。
+- **Application層が禁止される理由**: Usecase/Serviceの戻り値型はPresentation層で変換してUIに渡すべき。loaders経由でデータ取得する設計を維持するため。
+- **Presentation → Client が禁止される理由**: 依存の方向は常にClient → Serverであるべき。Presentation層がClient層の型に依存すると、レイヤー間の依存関係が逆転する。
+
 ### 3.3 各レイヤーの責務
 
 | レイヤー | 責務 | 禁止事項 |
@@ -265,7 +286,37 @@ contexts/{コンテキスト名}/
 
 ---
 
-## 8. よくある質問
+## 8. 依存ルールの自動検証
+
+dependency-cruiser を使用して、アーキテクチャの依存ルールを自動検証できる。
+
+### ローカルでの実行
+
+```bash
+pnpm depcruise
+```
+
+### 検証されるルール
+
+| ルール | 説明 |
+|--------|------|
+| no-client-to-infrastructure | Client → Infrastructure 禁止 |
+| no-client-to-application | Client → Application 禁止 |
+| no-presentation-to-client | Presentation → Client 禁止 |
+| no-domain-to-application | Domain → Application 禁止 |
+| no-domain-to-presentation | Domain → Presentation 禁止 |
+| no-domain-to-infrastructure-impl | Domain → Infrastructure実装 禁止 |
+| no-infrastructure-to-application | Infrastructure → Application 禁止 |
+| no-infrastructure-to-presentation | Infrastructure → Presentation 禁止 |
+| Bounded Context間 | data-import ↔ report, auth ↔ 他コンテキスト 禁止 |
+
+### CI統合
+
+GitHub Actions で PR・push 時に自動実行される。違反があるとCIが失敗する。
+
+---
+
+## 9. よくある質問
 
 **Q: Repositoryインターフェースはどこに配置すべきか?**
 A: Domain層。依存性逆転の原則により、実装はInfrastructure層。

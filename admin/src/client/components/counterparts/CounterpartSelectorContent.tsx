@@ -6,7 +6,7 @@ import { Input, Label } from "@/client/components/ui";
 import type { Counterpart } from "@/server/contexts/report/domain/models/counterpart";
 import type { TransactionWithCounterpart } from "@/server/contexts/report/domain/models/transaction-with-counterpart";
 import { suggestCounterpartAction } from "@/server/contexts/report/presentation/actions/suggest-counterpart";
-import type { CounterpartSuggestion } from "@/server/contexts/report/application/services/counterpart-suggester";
+import type { CounterpartSuggestion } from "@/server/contexts/report/presentation/types/counterpart-suggestion";
 
 interface CounterpartSelectorContentProps {
   allCounterparts: Counterpart[];
