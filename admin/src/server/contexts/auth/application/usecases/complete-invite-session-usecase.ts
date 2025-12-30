@@ -1,7 +1,7 @@
 import "server-only";
 
-import type { AuthProvider } from "@/server/contexts/auth/domain/repositories/auth-provider.interface";
-import type { UserRepository } from "@/server/contexts/shared/domain/repositories/user-repository.interface";
+import type { AuthProvider } from "@/server/contexts/auth/domain/providers/auth-provider.interface";
+import type { UserRepository } from "@/server/contexts/shared/domain/providers/user-repository.interface";
 import { AuthError } from "@/server/contexts/auth/domain/errors/auth-error";
 
 /**

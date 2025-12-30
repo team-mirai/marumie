@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { AdminAuthProvider } from "@/server/contexts/auth/domain/repositories/admin-auth-provider.interface";
+import type { AdminAuthProvider } from "@/server/contexts/auth/domain/providers/admin-auth-provider.interface";
 import { AuthError } from "@/server/contexts/auth/domain/errors/auth-error";
 
 /**

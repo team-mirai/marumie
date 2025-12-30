@@ -1,7 +1,7 @@
 "use server";
 
 import { CompleteInviteSessionUsecase } from "@/server/contexts/auth/application/usecases/complete-invite-session-usecase";
-import { SupabaseAuthProvider } from "@/server/contexts/auth/infrastructure/repositories/supabase-auth-provider";
+import { SupabaseAuthProvider } from "@/server/contexts/auth/infrastructure/supabase/supabase-auth-provider";
 import { prisma } from "@/server/contexts/shared/infrastructure/prisma";
 import { PrismaUserRepository } from "@/server/contexts/shared/infrastructure/repositories/prisma-user.repository";
 import { AuthError, AUTH_ERROR_MESSAGES } from "@/server/contexts/auth/domain/errors/auth-error";

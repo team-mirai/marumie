@@ -1,7 +1,7 @@
 import "server-only";
 
-import type { AuthProvider } from "@/server/contexts/auth/domain/repositories/auth-provider.interface";
-import type { UserRepository } from "@/server/contexts/shared/domain/repositories/user-repository.interface";
+import type { AuthProvider } from "@/server/contexts/auth/domain/providers/auth-provider.interface";
+import type { UserRepository } from "@/server/contexts/shared/domain/providers/user-repository.interface";
 import type { UserRole } from "@prisma/client";
 import { validateRole } from "@/server/contexts/auth/domain/services/role-validator";
 import { AuthError } from "@/server/contexts/auth/domain/errors/auth-error";

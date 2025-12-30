@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { InviteUserUsecase } from "@/server/contexts/auth/application/usecases/invite-user-usecase";
-import { SupabaseAdminAuthProvider } from "@/server/contexts/auth/infrastructure/repositories/supabase-auth-provider";
+import { SupabaseAdminAuthProvider } from "@/server/contexts/auth/infrastructure/supabase/supabase-auth-provider";
 import { AuthError, AUTH_ERROR_MESSAGES } from "@/server/contexts/auth/domain/errors/auth-error";
 
 /**

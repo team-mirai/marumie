@@ -1,11 +1,11 @@
 "use server";
 
 import { ExchangeCodeForSessionUsecase } from "@/server/contexts/auth/application/usecases/exchange-code-for-session-usecase";
-import { SupabaseAuthProvider } from "@/server/contexts/auth/infrastructure/repositories/supabase-auth-provider";
+import { SupabaseAuthProvider } from "@/server/contexts/auth/infrastructure/supabase/supabase-auth-provider";
 import { prisma } from "@/server/contexts/shared/infrastructure/prisma";
 import { PrismaUserRepository } from "@/server/contexts/shared/infrastructure/repositories/prisma-user.repository";
 import { AuthError, AUTH_ERROR_MESSAGES } from "@/server/contexts/auth/domain/errors/auth-error";
-import type { User } from "@/server/contexts/shared/domain/repositories/user-repository.interface";
+import type { User } from "@/server/contexts/shared/domain/providers/user-repository.interface";
 
 /**
  * OAuth コールバック処理アクション
