@@ -22,7 +22,11 @@ export class LoginUsecase {
       if (e instanceof AuthError) {
         throw e;
       }
-      throw new AuthError("AUTH_FAILED", `Failed to login: ${String(e)}`, e);
+      throw new AuthError(
+        "AUTH_FAILED",
+        `Failed to login: ${e instanceof Error ? e.message : String(e)}`,
+        e,
+      );
     }
   }
 }

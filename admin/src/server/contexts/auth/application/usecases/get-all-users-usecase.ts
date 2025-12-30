@@ -40,14 +40,6 @@ export class GetAllUsersUsecase {
     await this.checkPermission();
 
     // ユーザー一覧取得
-    try {
-      return await this.userRepository.findAll();
-    } catch (e) {
-      console.error("Get all users failed:", e);
-      if (e instanceof AuthError) {
-        throw e;
-      }
-      throw new AuthError("AUTH_FAILED", `Failed to get all users: ${String(e)}`, e);
-    }
+    return await this.userRepository.findAll();
   }
 }

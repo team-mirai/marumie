@@ -24,7 +24,11 @@ export class InviteUserUsecase {
     }
 
     const currentUser = await this.userRepository.findByAuthId(authUser.id);
-    const currentRole = currentUser?.role ?? "user";
+    if (!currentUser) {
+      console.warn(`User not found in DB for authId: ${authUser.id}`);
+      throw new AuthError("USER_NOT_FOUND", "ユーザー情報が見つかりません");
+    }
+    const currentRole = currentUser.role;
 
     if (!UserRoleModel.hasPermission(currentRole, "admin")) {
       throw new AuthError("INSUFFICIENT_PERMISSION", "この操作には管理者権限が必要です");
