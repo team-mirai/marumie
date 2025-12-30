@@ -19,13 +19,13 @@ export class GetAllUsersUsecase {
 
   async execute(): Promise<User[]> {
     // 認可チェック
-    const supabaseUser = await this.authProvider.getUser();
-    if (!supabaseUser) {
+    const authUser = await this.authProvider.getUser();
+    if (!authUser) {
       throw new AuthError("AUTH_FAILED", "ログインが必要です");
     }
 
-    const dbUser = await this.userRepository.findByAuthId(supabaseUser.id);
-    const currentRole = dbUser?.role ?? "user";
+    const currentUser = await this.userRepository.findByAuthId(authUser.id);
+    const currentRole = currentUser?.role ?? "user";
 
     const roleResult = validateRole(currentRole, "admin");
     if (!roleResult.valid) {

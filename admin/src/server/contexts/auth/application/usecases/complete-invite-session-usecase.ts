@@ -24,17 +24,17 @@ export class CompleteInviteSessionUsecase {
       await this.authProvider.setSession(accessToken, refreshToken);
 
       // 現在のユーザーを取得
-      const supabaseUser = await this.authProvider.getUser();
-      if (!supabaseUser) {
+      const authUser = await this.authProvider.getUser();
+      if (!authUser) {
         throw new AuthError("AUTH_FAILED", "Failed to get user after setting session");
       }
 
       // DB にユーザーが存在しない場合は作成
-      const existing = await this.userRepository.findByAuthId(supabaseUser.id);
-      if (!existing && supabaseUser.email) {
+      const existing = await this.userRepository.findByAuthId(authUser.id);
+      if (!existing && authUser.email) {
         await this.userRepository.create({
-          authId: supabaseUser.id,
-          email: supabaseUser.email,
+          authId: authUser.id,
+          email: authUser.email,
           role: "user",
         });
       }

@@ -22,12 +22,12 @@ export class UpdateUserRoleUsecase {
 
   async execute(userId: string, role: UserRole): Promise<User> {
     // 認可チェック
-    const supabaseUser = await this.authProvider.getUser();
-    if (!supabaseUser) {
+    const authUser = await this.authProvider.getUser();
+    if (!authUser) {
       throw new AuthError("AUTH_FAILED", "ログインが必要です");
     }
 
-    const currentUser = await this.userRepository.findByAuthId(supabaseUser.id);
+    const currentUser = await this.userRepository.findByAuthId(authUser.id);
     const currentRole = currentUser?.role ?? "user";
 
     const roleResult = validateRole(currentRole, "admin");
