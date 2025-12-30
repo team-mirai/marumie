@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { LogoutUsecase } from "@/server/contexts/auth/application/usecases/logout-usecase";
 import { SupabaseAuthProvider } from "@/server/contexts/auth/infrastructure/supabase/supabase-auth-provider";
@@ -12,5 +13,9 @@ export async function logout() {
   const usecase = new LogoutUsecase(authProvider);
 
   await usecase.execute();
+
+  // 認証済みレイアウトとその配下のページのキャッシュを無効化
+  revalidatePath("/(auth)", "layout");
+
   redirect("/login");
 }

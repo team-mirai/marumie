@@ -179,8 +179,8 @@ export class SupabaseAdminAuthProvider implements AdminAuthProvider {
       });
 
       if (error) {
-        // メールアドレスの形式エラーを判定
-        if (error.message.includes("invalid") || error.message.includes("email")) {
+        // メールアドレスの形式エラーを判定（validation_failed コードで判定）
+        if (error.code === "validation_failed") {
           throw new AuthError("INVALID_EMAIL", error.message, error);
         }
         throw new AuthError("INVITE_FAILED", error.message, error);

@@ -21,7 +21,6 @@ export async function loginWithPassword(formData: FormData) {
 
   try {
     await usecase.execute(email, password);
-    redirect("/");
   } catch (e) {
     if (e instanceof AuthError) {
       const errorMessage = AUTH_ERROR_MESSAGES[e.code] ?? "認証エラーが発生しました";
@@ -29,4 +28,6 @@ export async function loginWithPassword(formData: FormData) {
     }
     redirect(`/login?error=${encodeURIComponent("認証エラーが発生しました")}`);
   }
+
+  redirect("/");
 }

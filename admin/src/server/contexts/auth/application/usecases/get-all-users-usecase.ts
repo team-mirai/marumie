@@ -17,8 +17,11 @@ export class GetAllUsersUsecase {
     private readonly userRepository: UserRepository,
   ) {}
 
-  async execute(): Promise<User[]> {
-    // 認可チェック
+  /**
+   * 認可チェックのみを実行
+   * @throws AuthError 認証・認可エラー時
+   */
+  async checkPermission(): Promise<void> {
     const authUser = await this.authProvider.getUser();
     if (!authUser) {
       throw new AuthError("AUTH_FAILED", "ログインが必要です");
@@ -30,6 +33,11 @@ export class GetAllUsersUsecase {
     if (!UserRoleModel.hasPermission(currentRole, "admin")) {
       throw new AuthError("INSUFFICIENT_PERMISSION", "この操作には管理者権限が必要です");
     }
+  }
+
+  async execute(): Promise<User[]> {
+    // 認可チェック
+    await this.checkPermission();
 
     // ユーザー一覧取得
     try {

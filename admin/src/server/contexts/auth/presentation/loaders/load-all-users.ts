@@ -33,9 +33,9 @@ export async function loadAllUsers(): Promise<User[]> {
   const usecase = new GetAllUsersUsecase(authProvider, userRepository);
 
   try {
-    // 認可チェック（usecase.execute 内で実施）
-    // 認可が通ればキャッシュされたデータを返す
-    await usecase.execute();
+    // 認可チェックのみ実行（キャッシュなし）
+    await usecase.checkPermission();
+    // 認可が通った場合のみ、キャッシュされたデータを返す
     return await fetchAllUsers();
   } catch (e) {
     if (e instanceof AuthError) {

@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { CompleteInviteSessionUsecase } from "@/server/contexts/auth/application/usecases/complete-invite-session-usecase";
 import { SupabaseAuthProvider } from "@/server/contexts/auth/infrastructure/supabase/supabase-auth-provider";
 import { prisma } from "@/server/contexts/shared/infrastructure/prisma";
@@ -19,6 +20,7 @@ export async function completeInviteSession(
 
   try {
     await usecase.execute(accessToken, refreshToken);
+    revalidatePath("/users");
     return { ok: true };
   } catch (e) {
     if (e instanceof AuthError) {
