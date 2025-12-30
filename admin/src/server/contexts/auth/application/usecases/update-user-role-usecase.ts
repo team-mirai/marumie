@@ -1,5 +1,6 @@
 import "server-only";
 
+import type { AuthProvider } from "@/server/contexts/auth/domain/providers/auth-provider.interface";
 import type {
   UserRepository,
   User,
@@ -7,17 +8,33 @@ import type {
 import type { UserRole } from "@prisma/client";
 import type { PrismaClient } from "@prisma/client";
 import { AuthError } from "@/server/contexts/auth/domain/errors/auth-error";
+import { validateRole } from "@/server/contexts/auth/domain/services/role-validator";
 
 /**
- * ユーザーロール更新のユースケース
+ * ユーザーロール更新のユースケース（admin権限必須）
  */
 export class UpdateUserRoleUsecase {
   constructor(
+    private readonly authProvider: AuthProvider,
     private readonly userRepository: UserRepository,
     private readonly prisma: PrismaClient,
   ) {}
 
   async execute(userId: string, role: UserRole): Promise<User> {
+    // 認可チェック
+    const supabaseUser = await this.authProvider.getUser();
+    if (!supabaseUser) {
+      throw new AuthError("AUTH_FAILED", "ログインが必要です");
+    }
+
+    const currentUser = await this.userRepository.findByAuthId(supabaseUser.id);
+    const currentRole = currentUser?.role ?? "user";
+
+    const roleResult = validateRole(currentRole, "admin");
+    if (!roleResult.valid) {
+      throw new AuthError("INSUFFICIENT_PERMISSION", "この操作には管理者権限が必要です");
+    }
+
     try {
       // まず userId から user を取得
       const user = await this.prisma.user.findUnique({ where: { id: userId } });

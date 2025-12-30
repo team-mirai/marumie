@@ -2,7 +2,6 @@
 import "client-only";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { apiClient } from "@/client/lib/api-client";
 import {
   Button,
   Input,
@@ -16,9 +15,10 @@ import {
 
 interface SetupFormProps {
   userEmail: string;
+  setupPasswordAction: (password: string) => Promise<{ ok: boolean; error?: string }>;
 }
 
-export default function SetupForm({ userEmail }: SetupFormProps) {
+export default function SetupForm({ userEmail, setupPasswordAction }: SetupFormProps) {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -42,8 +42,12 @@ export default function SetupForm({ userEmail }: SetupFormProps) {
     setIsLoading(true);
 
     try {
-      await apiClient.setupPassword({ password });
-      router.push("/");
+      const result = await setupPasswordAction(password);
+      if (result.ok) {
+        router.push("/");
+      } else {
+        setError(result.error ?? "パスワードの設定に失敗しました");
+      }
     } catch (error) {
       console.error("Setup error:", error);
       setError(

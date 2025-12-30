@@ -1,5 +1,6 @@
 import "server-only";
 import { getCurrentUser } from "@/server/contexts/auth/presentation/loaders/load-current-user";
+import { setupPassword } from "@/server/contexts/auth/presentation/actions/setup-password";
 import { redirect } from "next/navigation";
 import SetupForm from "@/client/components/auth/SetupForm";
 
@@ -32,7 +33,7 @@ export default async function SetupPage({ searchParams }: SetupPageProps) {
               continue.
             </p>
           </div>
-          <SetupForm userEmail={user.email} />
+          <SetupForm userEmail={user.email} setupPasswordAction={setupPassword} />
         </div>
       </div>
     );

@@ -3,10 +3,10 @@ import "client-only";
 import { useState } from "react";
 import type { ChangeEvent, FormEvent } from "react";
 import { Button, Input, Card } from "../ui";
-import { apiClient } from "@/client/lib/api-client";
 import type { UserRole } from "@prisma/client";
+import type { User } from "@/server/contexts/shared/domain/repositories/user-repository.interface";
 
-interface User {
+interface UserData {
   id: string;
   email: string;
   role: UserRole;
@@ -14,13 +14,20 @@ interface User {
 }
 
 interface UserManagementProps {
-  users: User[];
+  users: UserData[];
   availableRoles: UserRole[];
+  updateUserRoleAction: (
+    userId: string,
+    role: UserRole,
+  ) => Promise<{ ok: true; user: User } | { ok: false; error: string }>;
+  inviteUserAction: (email: string) => Promise<{ ok: boolean; error?: string }>;
 }
 
 export default function UserManagement({
   users: initialUsers,
   availableRoles,
+  updateUserRoleAction,
+  inviteUserAction,
 }: UserManagementProps) {
   const [users, setUsers] = useState(initialUsers);
   const [isLoading, setIsLoading] = useState(false);
@@ -31,10 +38,14 @@ export default function UserManagement({
     setIsLoading(true);
 
     try {
-      await apiClient.updateUserRole({ userId, role: newRole });
-      setUsers((prev) =>
-        prev.map((user) => (user.id === userId ? { ...user, role: newRole } : user)),
-      );
+      const result = await updateUserRoleAction(userId, newRole);
+      if (result.ok) {
+        setUsers((prev) =>
+          prev.map((user) => (user.id === userId ? { ...user, role: newRole } : user)),
+        );
+      } else {
+        alert(`ロールの更新に失敗しました: ${result.error}`);
+      }
     } catch (error) {
       console.error("Error updating role:", error);
       alert(
@@ -52,11 +63,15 @@ export default function UserManagement({
     setIsInviting(true);
 
     try {
-      await apiClient.inviteUser({ email: inviteEmail.trim() });
-      alert(`${inviteEmail}に招待を送信しました`);
-      setInviteEmail("");
-      // Refresh the user list to show pending invitations
-      window.location.reload();
+      const result = await inviteUserAction(inviteEmail.trim());
+      if (result.ok) {
+        alert(`${inviteEmail}に招待を送信しました`);
+        setInviteEmail("");
+        // Refresh the user list to show pending invitations
+        window.location.reload();
+      } else {
+        alert(`招待の送信に失敗しました: ${result.error}`);
+      }
     } catch (error) {
       console.error("Error sending invitation:", error);
       alert(`招待の送信に失敗しました: ${error instanceof Error ? error.message : "不明なエラー"}`);
