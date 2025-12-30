@@ -18,7 +18,7 @@ export class LoginUsecase {
     try {
       return await this.authProvider.signInWithPassword(email, password);
     } catch (e) {
-      console.error(`Login failed for ${email}:`, e);
+      console.error("Login failed:", e);
       if (e instanceof AuthError) {
         throw e;
       }

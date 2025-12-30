@@ -2,6 +2,7 @@
 import "client-only";
 import { useState } from "react";
 import type { ChangeEvent, FormEvent } from "react";
+import { useRouter } from "next/navigation";
 import { Button, Input, Card } from "../ui";
 import type { UserRole } from "@prisma/client";
 import type { User } from "@/server/contexts/shared/domain/repositories/user-repository.interface";
@@ -29,6 +30,7 @@ export default function UserManagement({
   updateUserRoleAction,
   inviteUserAction,
 }: UserManagementProps) {
+  const router = useRouter();
   const [users, setUsers] = useState(initialUsers);
   const [isLoading, setIsLoading] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
@@ -67,8 +69,8 @@ export default function UserManagement({
       if (result.ok) {
         alert(`${inviteEmail}に招待を送信しました`);
         setInviteEmail("");
-        // Refresh the user list to show pending invitations
-        window.location.reload();
+        // Server ActionのrevalidatePath()によりキャッシュが無効化されるため、ルーターのrefreshで十分
+        router.refresh();
       } else {
         alert(`招待の送信に失敗しました: ${result.error}`);
       }

@@ -8,4 +8,5 @@ import type { User } from "@/server/contexts/shared/domain/repositories/user-rep
  */
 export type AuthUser = User;
 
-export type { UserRole } from "@prisma/client";
+// UserRole は user-role.ts で独自定義しているため、そちらから re-export
+export type { UserRole } from "@/server/contexts/auth/domain/models/user-role";

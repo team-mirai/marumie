@@ -40,12 +40,20 @@ export class InviteUserUsecase {
       throw new AuthError("INVALID_EMAIL", "Invalid email format");
     }
 
-    const redirectTo = `${process.env.SITE_URL || "http://localhost:3001"}/auth/callback`;
+    // SITE_URLのバリデーション（本番環境では必須）
+    const siteUrl = process.env.SITE_URL;
+    if (!siteUrl && process.env.NODE_ENV === "production") {
+      throw new AuthError(
+        "NETWORK_ERROR",
+        "SITE_URL environment variable must be set in production",
+      );
+    }
+    const redirectTo = `${siteUrl || "http://localhost:3001"}/auth/callback`;
 
     try {
       await this.adminAuthProvider.inviteUserByEmail(email, redirectTo);
     } catch (e) {
-      console.error(`Invite user failed for ${email}:`, e);
+      console.error("Invite user failed:", e);
       if (e instanceof AuthError) {
         throw e;
       }

@@ -1,6 +1,10 @@
 import "server-only";
 
-import type { UserRole } from "@prisma/client";
+/**
+ * ユーザーロール（ドメイン層の型定義）
+ * Prisma の UserRole と同等の値を持つが、ドメイン層で独自に定義することで依存性逆転を実現
+ */
+export type UserRole = "user" | "admin";
 
 /**
  * UserRole のドメインモデル
@@ -32,5 +36,3 @@ export namespace UserRoleModel {
     return role === "admin";
   }
 }
-
-export type { UserRole } from "@prisma/client";

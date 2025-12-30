@@ -82,8 +82,8 @@ export class SupabaseAuthProvider implements AuthProvider {
       } = await supabase.auth.getUser();
 
       if (error) {
-        // ユーザーが存在しない場合はエラーではなく null を返す
-        if (error.message.includes("not authenticated")) {
+        // ユーザーが存在しない場合（401）はエラーではなく null を返す
+        if (error.status === 401) {
           return null;
         }
         throw new AuthError("AUTH_FAILED", error.message, error);
