@@ -33,7 +33,7 @@ describe("InviteUserUsecase", () => {
 
   beforeEach(() => {
     jest.resetModules();
-    process.env = { ...originalEnv };
+    process.env = { ...originalEnv, SITE_URL: "http://localhost:3001" };
 
     mockAuthProvider = {
       signInWithPassword: jest.fn(),
@@ -172,6 +172,19 @@ describe("InviteUserUsecase", () => {
       await expect(usecase.execute("newuser@example.com")).rejects.toThrow(AuthError);
       await expect(usecase.execute("newuser@example.com")).rejects.toMatchObject({
         code: "INVITE_FAILED",
+      });
+    });
+
+    it("SITE_URLが未設定の場合はエラーを投げる", async () => {
+      delete process.env.SITE_URL;
+      const authUser = createMockSupabaseUser();
+      const adminUser = createMockUser({ role: "admin" });
+      mockAuthProvider.getUser.mockResolvedValue(authUser);
+      mockUserRepository.findByAuthId.mockResolvedValue(adminUser);
+
+      await expect(usecase.execute("newuser@example.com")).rejects.toThrow(AuthError);
+      await expect(usecase.execute("newuser@example.com")).rejects.toMatchObject({
+        code: "NETWORK_ERROR",
       });
     });
   });

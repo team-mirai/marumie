@@ -7,9 +7,16 @@ describe("RequestPasswordResetUsecase", () => {
   let mockAuthProvider: jest.Mocked<AuthProvider>;
   let usecase: RequestPasswordResetUsecase;
 
+  const originalEnv = process.env;
+
   beforeEach(() => {
+    process.env = { ...originalEnv, NEXT_PUBLIC_APP_URL: "http://localhost:3001" };
     mockAuthProvider = createMockAuthProvider();
     usecase = new RequestPasswordResetUsecase(mockAuthProvider);
+  });
+
+  afterEach(() => {
+    process.env = originalEnv;
   });
 
   describe("execute", () => {

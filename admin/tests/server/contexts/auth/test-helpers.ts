@@ -1,4 +1,5 @@
 import type { AuthProvider } from "@/server/contexts/auth/domain/providers/auth-provider.interface";
+import type { AdminAuthProvider } from "@/server/contexts/auth/domain/providers/admin-auth-provider.interface";
 import type {
   UserRepository,
   User,
@@ -44,6 +45,11 @@ export const createMockAuthProvider = (): jest.Mocked<AuthProvider> => ({
   exchangeCodeForSession: jest.fn(),
   resetPasswordForEmail: jest.fn(),
 });
+
+export const createMockAdminAuthProvider =
+  (): jest.Mocked<AdminAuthProvider> => ({
+    inviteUserByEmail: jest.fn(),
+  });
 
 export const createMockUserRepository = (): jest.Mocked<UserRepository> => ({
   create: jest.fn(),

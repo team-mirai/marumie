@@ -15,7 +15,9 @@ import {
 
 interface SetupFormProps {
   userEmail: string;
-  setupPasswordAction: (password: string) => Promise<{ ok: boolean; error?: string }>;
+  setupPasswordAction: (
+    password: string,
+  ) => Promise<{ ok: boolean; error?: string; redirectTo?: string }>;
 }
 
 export default function SetupForm({ userEmail, setupPasswordAction }: SetupFormProps) {
@@ -44,7 +46,7 @@ export default function SetupForm({ userEmail, setupPasswordAction }: SetupFormP
     try {
       const result = await setupPasswordAction(password);
       if (result.ok) {
-        router.push("/");
+        router.push(result.redirectTo ?? "/");
       } else {
         setError(result.error ?? "パスワードの設定に失敗しました");
       }

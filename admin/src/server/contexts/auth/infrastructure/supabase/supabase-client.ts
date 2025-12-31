@@ -1,6 +1,6 @@
 import "server-only";
 
-import { createServerClient } from "@supabase/ssr";
+import { createServerClient, type CookieOptions } from "@supabase/ssr";
 
 /**
  * Cookie を扱う Supabase Server Client を生成する
@@ -21,7 +21,7 @@ export async function createSupabaseClient() {
         const cookieStore = await cookies();
         return cookieStore.getAll();
       },
-      async setAll(cookiesToSet) {
+      async setAll(cookiesToSet: { name: string; value: string; options: CookieOptions }[]) {
         try {
           const { cookies } = await import("next/headers");
           const cookieStore = await cookies();
