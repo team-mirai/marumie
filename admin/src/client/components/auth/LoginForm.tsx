@@ -1,6 +1,7 @@
 "use client";
 import "client-only";
 import { useState } from "react";
+import Link from "next/link";
 import {
   Button,
   Input,
@@ -14,9 +15,10 @@ import {
 interface LoginFormProps {
   action: (formData: FormData) => Promise<void>;
   error?: string;
+  forgotPasswordHref?: string;
 }
 
-export default function LoginForm({ action, error }: LoginFormProps) {
+export default function LoginForm({ action, error, forgotPasswordHref }: LoginFormProps) {
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -46,6 +48,16 @@ export default function LoginForm({ action, error }: LoginFormProps) {
             <Label htmlFor="password">Password</Label>
             <Input id="password" name="password" type="password" required />
           </div>
+          {forgotPasswordHref && (
+            <div className="text-right">
+              <Link
+                href={forgotPasswordHref}
+                className="text-sm text-muted-foreground hover:underline"
+              >
+                パスワードを忘れた場合
+              </Link>
+            </div>
+          )}
           <Button type="submit" disabled={isLoading} className="mt-4 w-full">
             {isLoading ? "ログイン中..." : "ログイン"}
           </Button>
