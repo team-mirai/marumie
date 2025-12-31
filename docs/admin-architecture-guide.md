@@ -165,7 +165,7 @@ contexts/{コンテキスト名}/
 
 #### Models（ドメインモデル）
 - **責務**: 単一エンティティのビジネスルール、値の検証、ドメインロジック
-- **実装パターン**: `interface + const` パターン（同名エクスポートによる自動マージ）
+- **実装パターン**: `interface + const` パターン（型と値の宣言空間が異なるため同名で共存可能）
 - **例**: ハッシュ生成、会計年度計算、型変換、バリデーション
 
 ```typescript
@@ -174,7 +174,7 @@ export interface Password {
   value: string;
 }
 
-// ドメインロジック（同名でエクスポートすると自動マージされる）
+// ドメインロジック（型と値が異なる宣言空間で共存）
 export const Password = {
   validate(password: string): PasswordValidationResult { /* ... */ },
 };
