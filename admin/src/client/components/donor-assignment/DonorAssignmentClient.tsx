@@ -256,19 +256,28 @@ export function DonorAssignmentClient({
           {isPending && <div className="text-muted-foreground text-sm">読み込み中...</div>}
         </div>
 
-        {selectedTransactions.length > 0 && (
-          <div className="flex items-center gap-4 mb-4 p-3 bg-secondary/30 border border-border rounded-lg">
-            <span className="text-white text-sm">
-              選択中: <span className="font-medium">{selectedTransactions.length}件</span>
-            </span>
-            <Button type="button" size="sm" onClick={handleBulkAssignClick}>
-              一括紐付け
-            </Button>
-            <Button type="button" variant="ghost" size="sm" onClick={() => setRowSelection({})}>
-              選択解除
-            </Button>
-          </div>
-        )}
+        <div className="flex items-center gap-4 mb-4 p-3 bg-secondary/30 border border-border rounded-lg">
+          <span className="text-white text-sm">
+            選択中: <span className="font-medium">{selectedTransactions.length}件</span>
+          </span>
+          <Button
+            type="button"
+            size="sm"
+            onClick={handleBulkAssignClick}
+            disabled={selectedTransactions.length === 0}
+          >
+            一括紐付け
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => setRowSelection({})}
+            disabled={selectedTransactions.length === 0}
+          >
+            選択解除
+          </Button>
+        </div>
 
         <TransactionWithDonorTable
           transactions={initialTransactions}
