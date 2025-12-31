@@ -5,9 +5,9 @@ import { AuthError } from "@/server/contexts/auth/domain/errors/auth-error";
 import { Password } from "@/server/contexts/auth/domain/models/password";
 
 /**
- * パスワード設定のユースケース
+ * パスワードリセット（新しいパスワードを設定）のユースケース
  */
-export class SetupPasswordUsecase {
+export class ResetPasswordUsecase {
   constructor(private readonly authProvider: AuthProvider) {}
 
   async execute(password: string): Promise<void> {
@@ -19,11 +19,11 @@ export class SetupPasswordUsecase {
     try {
       await this.authProvider.updateUser({ password });
     } catch (e) {
-      console.error("Setup password failed:", e);
+      console.error("Reset password failed:", e);
       if (e instanceof AuthError) {
         throw e;
       }
-      throw new AuthError("AUTH_FAILED", `Failed to setup password: ${String(e)}`, e);
+      throw new AuthError("AUTH_FAILED", `Failed to reset password: ${String(e)}`, e);
     }
   }
 }

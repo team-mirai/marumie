@@ -35,6 +35,7 @@ describe("GetCurrentUserUsecase", () => {
       updateUser: jest.fn(),
       setSession: jest.fn(),
       exchangeCodeForSession: jest.fn(),
+      resetPasswordForEmail: jest.fn(),
     };
     mockUserRepository = {
       create: jest.fn(),

@@ -22,6 +22,7 @@ describe("SetupPasswordUsecase", () => {
       updateUser: jest.fn(),
       setSession: jest.fn(),
       exchangeCodeForSession: jest.fn(),
+      resetPasswordForEmail: jest.fn(),
     };
     usecase = new SetupPasswordUsecase(mockAuthProvider);
   });

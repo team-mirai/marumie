@@ -165,6 +165,22 @@ export class SupabaseAuthProvider implements AuthProvider {
       throw new AuthError("NETWORK_ERROR", "認証サービスに接続できません", e);
     }
   }
+
+  async resetPasswordForEmail(email: string, redirectTo: string): Promise<void> {
+    try {
+      const supabase = await createSupabaseClient();
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo,
+      });
+
+      if (error) {
+        throw new AuthError("RESET_EMAIL_FAILED", error.message, error);
+      }
+    } catch (e) {
+      if (e instanceof AuthError) throw e;
+      throw new AuthError("NETWORK_ERROR", "認証サービスに接続できません", e);
+    }
+  }
 }
 
 /**

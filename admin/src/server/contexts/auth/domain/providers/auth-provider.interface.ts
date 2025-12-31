@@ -49,4 +49,11 @@ export interface AuthProvider {
    * @throws {AuthError} NETWORK_ERROR - ネットワークエラー
    */
   exchangeCodeForSession(code: string): Promise<AuthSession>;
+
+  /**
+   * パスワードリセットメールを送信
+   * @throws {AuthError} RESET_EMAIL_FAILED - 送信失敗
+   * @throws {AuthError} NETWORK_ERROR - ネットワークエラー
+   */
+  resetPasswordForEmail(email: string, redirectTo: string): Promise<void>;
 }
