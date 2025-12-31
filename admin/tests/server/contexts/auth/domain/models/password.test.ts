@@ -8,6 +8,12 @@ describe("Password", () => {
     });
   });
 
+  describe("MAX_LENGTH", () => {
+    it("最大文字数が72であること", () => {
+      expect(Password.MAX_LENGTH).toBe(72);
+    });
+  });
+
   describe("validate", () => {
     describe("有効なパスワードの場合", () => {
       it("最小文字数ちょうどのパスワードは有効", () => {
@@ -24,12 +30,20 @@ describe("Password", () => {
         expect(result.error).toBeUndefined();
       });
 
-      it("非常に長いパスワードも有効", () => {
-        const longPassword = "a".repeat(100);
+      it("72文字のパスワードは有効", () => {
+        const longPassword = "a".repeat(72);
         const result = Password.validate(longPassword);
 
         expect(result.valid).toBe(true);
         expect(result.error).toBeUndefined();
+      });
+
+      it("73文字以上のパスワードは無効", () => {
+        const tooLongPassword = "a".repeat(73);
+        const result = Password.validate(tooLongPassword);
+
+        expect(result.valid).toBe(false);
+        expect(result.error).toBe("パスワードは72文字以内で設定してください");
       });
 
       it("特殊文字を含むパスワードも有効", () => {

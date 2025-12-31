@@ -7,13 +7,17 @@ import { AuthError, AUTH_ERROR_MESSAGES } from "@/server/contexts/auth/domain/er
 /**
  * パスワードリセット（新しいパスワードを設定）アクション
  */
-export async function resetPassword(password: string): Promise<{ ok: boolean; error?: string }> {
+export async function resetPassword(
+  password: string,
+): Promise<{ ok: boolean; error?: string; redirectTo?: string }> {
   const authProvider = new SupabaseAuthProvider();
   const usecase = new ResetPasswordUsecase(authProvider);
 
   try {
     await usecase.execute(password);
-    return { ok: true };
+    // パスワードリセット後はセッションをクリアしてログイン画面へ
+    await authProvider.signOut();
+    return { ok: true, redirectTo: "/login" };
   } catch (e) {
     if (e instanceof AuthError) {
       const errorMessage = AUTH_ERROR_MESSAGES[e.code] ?? e.message;

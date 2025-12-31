@@ -109,6 +109,10 @@ export class SupabaseAuthProvider implements AuthProvider {
       });
 
       if (error) {
+        // パスワードバリデーションエラーを WEAK_PASSWORD として扱う
+        if (error.code === "validation_failed") {
+          throw new AuthError("WEAK_PASSWORD", error.message, error);
+        }
         throw new AuthError("AUTH_FAILED", error.message, error);
       }
 

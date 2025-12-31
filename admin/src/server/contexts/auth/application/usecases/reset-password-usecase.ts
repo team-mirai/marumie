@@ -21,9 +21,17 @@ export class ResetPasswordUsecase {
     } catch (e) {
       console.error("Reset password failed:", e);
       if (e instanceof AuthError) {
+        // パスワードリセット時の AUTH_FAILED は SESSION_EXPIRED として扱う
+        if (e.code === "AUTH_FAILED") {
+          throw new AuthError(
+            "SESSION_EXPIRED",
+            "Password reset session expired. Please request a new password reset email.",
+            e,
+          );
+        }
         throw e;
       }
-      throw new AuthError("AUTH_FAILED", `Failed to reset password: ${String(e)}`, e);
+      throw new AuthError("SESSION_EXPIRED", `Failed to reset password: ${String(e)}`, e);
     }
   }
 }

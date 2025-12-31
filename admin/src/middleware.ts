@@ -1,4 +1,4 @@
-import { createServerClient } from "@supabase/ssr";
+import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { type NextRequest, NextResponse } from "next/server";
 
 async function hashCredentials(credentials: string): Promise<string> {
@@ -48,6 +48,14 @@ async function performBasicAuth(request: NextRequest): Promise<NextResponse | nu
 
 // publicパス以外は全て認証を必須とする（セキュアデフォルト）
 export async function middleware(request: NextRequest): Promise<NextResponse> {
+  // PKCEフローでのパスワードリセット: codeパラメータがルートURLに来た場合は/loginにリダイレクト
+  const code = request.nextUrl.searchParams.get("code");
+  if (code && request.nextUrl.pathname === "/") {
+    const loginUrl = new URL("/login", request.url);
+    loginUrl.searchParams.set("code", code);
+    return NextResponse.redirect(loginUrl);
+  }
+
   let response = NextResponse.next({
     request: {
       headers: request.headers,
@@ -66,7 +74,7 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
       getAll() {
         return request.cookies.getAll();
       },
-      setAll(cookiesToSet) {
+      setAll(cookiesToSet: { name: string; value: string; options: CookieOptions }[]) {
         response = NextResponse.next({
           request: { headers: request.headers },
         });
@@ -84,7 +92,13 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
     },
   });
 
-  const publicPaths = ["/login", "/auth/callback", "/auth/setup"];
+  const publicPaths = [
+    "/login",
+    "/forgot-password",
+    "/auth/callback",
+    "/auth/setup",
+    "/auth/reset-password",
+  ];
   const isPublicPath = publicPaths.some((path) => request.nextUrl.pathname.startsWith(path));
 
   // publicパスの場合はbasic認証を実行

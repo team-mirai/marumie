@@ -51,19 +51,29 @@ describe("ResetPasswordUsecase", () => {
       expect(mockAuthProvider.updateUser).not.toHaveBeenCalled();
     });
 
-    it("AuthProviderがAuthErrorを投げた場合はそのまま再スローする", async () => {
+    it("AuthProviderがAUTH_FAILEDを投げた場合はSESSION_EXPIREDに変換される", async () => {
       const authError = new AuthError("AUTH_FAILED", "Update failed");
+      mockAuthProvider.updateUser.mockRejectedValue(authError);
+
+      await expect(usecase.execute("password123")).rejects.toThrow(AuthError);
+      await expect(usecase.execute("password123")).rejects.toMatchObject({
+        code: "SESSION_EXPIRED",
+      });
+    });
+
+    it("AuthProviderがWEAK_PASSWORDを投げた場合はそのまま再スローする", async () => {
+      const authError = new AuthError("WEAK_PASSWORD", "Password too weak");
       mockAuthProvider.updateUser.mockRejectedValue(authError);
 
       await expect(usecase.execute("password123")).rejects.toThrow(authError);
     });
 
-    it("その他のエラーはAuthErrorにラップされる", async () => {
+    it("その他のエラーはSESSION_EXPIREDにラップされる", async () => {
       mockAuthProvider.updateUser.mockRejectedValue(new Error("Unknown error"));
 
       await expect(usecase.execute("password123")).rejects.toThrow(AuthError);
       await expect(usecase.execute("password123")).rejects.toMatchObject({
-        code: "AUTH_FAILED",
+        code: "SESSION_EXPIRED",
       });
     });
   });

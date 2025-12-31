@@ -19,13 +19,9 @@ export async function requestPasswordReset(formData: FormData): Promise<void> {
     console.error("Request password reset error:", e);
   }
 
-  // パスワードリセットを申請した時点で既存セッションをクリア
-  // これにより、リセットリンクが期限切れでもログイン状態が維持されることを防ぐ
-  try {
-    await authProvider.signOut();
-  } catch {
-    // サインアウト失敗は無視（未ログイン状態の場合もある）
-  }
+  // 注意: ここで signOut() を呼ぶと PKCE の code_verifier Cookie も消えてしまうため、
+  // パスワードリセットフローでは signOut() を行わない。
+  // セッションのクリアはパスワードリセット完了後に行う。
 
   redirect("/forgot-password?sent=true");
 }
