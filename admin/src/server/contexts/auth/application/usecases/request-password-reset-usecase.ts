@@ -14,7 +14,7 @@ export class RequestPasswordResetUsecase {
       throw new AuthError("INVALID_EMAIL", "Email is required");
     }
 
-    const redirectTo = `${process.env.NEXT_PUBLIC_APP_URL}/login`;
+    const redirectTo = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3001"}/login`;
 
     try {
       await this.authProvider.resetPasswordForEmail(email, redirectTo);
