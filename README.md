@@ -79,75 +79,13 @@ marumie/
 
 ## ローカル開発手順
 
-このプロジェクトはSupabaseローカル開発環境を使用してローカル開発を行います。
-
-### 開発環境セットアップ
-
-1. **初回セットアップ（推奨）**
-```bash
-pnpm run dev:setup
-```
-このコマンドで依存関係のインストール、データベースのリセット・マイグレーション・シードデータの投入を一括実行します。
-
-2. **開発サーバーの起動**
-```bash
-pnpm run dev  # Webapp + 管理画面を同時起動（Supabase自動起動）
-```
-
-### よく使うコマンド
-
-#### 開発関連
-```bash
-pnpm run dev           # Webapp + 管理画面を同時起動（推奨）
-pnpm run dev:webapp    # Webappのみ起動
-pnpm run dev:admin     # 管理画面のみ起動
-```
-
-#### データベース管理
-```bash
-pnpm run db:reset      # データベース完全リセット（データ削除 + マイグレーション + シード）
-pnpm run db:migrate    # マイグレーション実行
-pnpm run db:seed       # シードデータ投入
-pnpm run db:studio     # Prisma Studio起動
-```
-
-#### コード品質チェック
-```bash
-pnpm run lint          # 全体のLint実行
-pnpm run format        # コードフォーマット実行
-pnpm run typecheck     # 型チェック実行
-pnpm run test          # テスト実行
-```
-
-#### Supabase管理
-```bash
-pnpm run supabase:start   # Supabaseローカル環境起動
-pnpm run supabase:stop    # Supabaseローカル環境停止
-pnpm run supabase:status  # Supabase状態確認
-```
-
-#### ユーティリティ
-```bash
-pnpm run clean         # 全てのnode_modulesとSupabaseを停止
-pnpm run fresh         # クリーンインストール + セットアップ
-```
+ローカル開発環境のセットアップ手順は [開発環境セットアップガイド](docs/getting-started.md) を参照してください。
 
 ## データベースのマイグレーション
 
 ### 本番環境・開発環境
-- Vercelで行われるwebappのbuild過程で自動的にマイグレーションが実行されます
 
-### ローカル開発環境
-- 以下のコマンドでマイグレーションを実行してください：
-```bash
-pnpm run db:migrate
-```
-
-### ブラウザからの確認方法
-
-- **メインアプリ**: [http://localhost:3000](http://localhost:3000)
-- **管理画面**: [http://localhost:3001](http://localhost:3001)
-- **Supabase Studio**: [http://127.0.0.1:54323](http://127.0.0.1:54323)
+Vercelで行われるwebappのbuild過程で自動的にマイグレーションが実行されます。
 
 ### モックデータの使用
 
