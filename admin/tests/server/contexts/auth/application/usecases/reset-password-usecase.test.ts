@@ -1,19 +1,11 @@
 import { ResetPasswordUsecase } from "@/server/contexts/auth/application/usecases/reset-password-usecase";
 import { AuthError } from "@/server/contexts/auth/domain/errors/auth-error";
 import type { AuthProvider } from "@/server/contexts/auth/domain/providers/auth-provider.interface";
-import type { SupabaseAuthUser } from "@/server/contexts/auth/domain/models/supabase-auth-user";
-import { createMockAuthProvider } from "../../test-helpers";
+import { createMockAuthProvider, createMockSupabaseUser } from "../../test-helpers";
 
 describe("ResetPasswordUsecase", () => {
   let mockAuthProvider: jest.Mocked<AuthProvider>;
   let usecase: ResetPasswordUsecase;
-
-  const createMockSupabaseUser = (): SupabaseAuthUser => ({
-    id: "user-id",
-    email: "test@example.com",
-    emailConfirmedAt: "2024-01-01T00:00:00Z",
-    lastSignInAt: "2024-01-01T00:00:00Z",
-  });
 
   beforeEach(() => {
     mockAuthProvider = createMockAuthProvider();
