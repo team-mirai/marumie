@@ -28,6 +28,10 @@ export default function RecoveryTokenHandler() {
             const err = encodeURIComponent(res.error || "recovery_error");
             window.location.replace(`/login?error=${err}`);
           }
+        } catch (error) {
+          console.error("Recovery token exchange failed:", error);
+          const err = encodeURIComponent("recovery_error");
+          window.location.replace(`/login?error=${err}`);
         } finally {
           setProcessing(false);
         }

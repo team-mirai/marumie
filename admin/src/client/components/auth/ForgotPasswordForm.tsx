@@ -27,6 +27,8 @@ export default function ForgotPasswordForm({ action }: ForgotPasswordFormProps) 
     const formData = new FormData(e.currentTarget);
     try {
       await action(formData);
+    } catch (error) {
+      console.error("Password reset request failed:", error);
     } finally {
       setIsLoading(false);
     }
