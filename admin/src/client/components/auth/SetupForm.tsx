@@ -12,6 +12,7 @@ import {
   CardDescription,
   Label,
 } from "@/client/components/ui";
+import { Password } from "@/server/contexts/auth/domain/models/password";
 
 interface SetupFormProps {
   userEmail: string;
@@ -34,8 +35,9 @@ export default function SetupForm({ userEmail, setupPasswordAction }: SetupFormP
       return;
     }
 
-    if (password.length < 6) {
-      setError("パスワードは6文字以上で設定してください");
+    const validation = Password.validate(password);
+    if (!validation.valid) {
+      setError(validation.error ?? "パスワードが要件を満たしていません");
       return;
     }
 

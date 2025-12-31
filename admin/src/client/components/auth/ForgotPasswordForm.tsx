@@ -9,16 +9,15 @@ import {
   CardHeader,
   CardTitle,
   CardContent,
+  CardDescription,
   Label,
 } from "@/client/components/ui";
 
-interface LoginFormProps {
+interface ForgotPasswordFormProps {
   action: (formData: FormData) => Promise<void>;
-  error?: string;
-  forgotPasswordHref?: string;
 }
 
-export default function LoginForm({ action, error, forgotPasswordHref }: LoginFormProps) {
+export default function ForgotPasswordForm({ action }: ForgotPasswordFormProps) {
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -28,6 +27,8 @@ export default function LoginForm({ action, error, forgotPasswordHref }: LoginFo
     const formData = new FormData(e.currentTarget);
     try {
       await action(formData);
+    } catch (error) {
+      console.error("Password reset request failed:", error);
     } finally {
       setIsLoading(false);
     }
@@ -36,7 +37,10 @@ export default function LoginForm({ action, error, forgotPasswordHref }: LoginFo
   return (
     <Card className="w-full max-w-md">
       <CardHeader className="px-8 pt-8 pb-4">
-        <CardTitle className="text-2xl">ログイン</CardTitle>
+        <CardTitle className="text-2xl">パスワードをリセット</CardTitle>
+        <CardDescription>
+          登録されているメールアドレスにリセット用のリンクを送信します。
+        </CardDescription>
       </CardHeader>
       <CardContent className="px-8 pb-8">
         <form onSubmit={handleSubmit} className="grid gap-4">
@@ -44,24 +48,14 @@ export default function LoginForm({ action, error, forgotPasswordHref }: LoginFo
             <Label htmlFor="email">Email</Label>
             <Input id="email" name="email" type="email" required />
           </div>
-          <div className="space-y-3">
-            <Label htmlFor="password">Password</Label>
-            <Input id="password" name="password" type="password" required />
-          </div>
-          {forgotPasswordHref && (
-            <div className="text-right">
-              <Link
-                href={forgotPasswordHref}
-                className="text-sm text-muted-foreground hover:underline"
-              >
-                パスワードを忘れた場合
-              </Link>
-            </div>
-          )}
           <Button type="submit" disabled={isLoading} className="mt-4 w-full">
-            {isLoading ? "ログイン中..." : "ログイン"}
+            {isLoading ? "送信中..." : "リセットメールを送信"}
           </Button>
-          {error && <div className="text-muted-foreground mt-2">{error}</div>}
+          <div className="text-center mt-2">
+            <Link href="/login" className="text-sm text-muted-foreground hover:underline">
+              ログイン画面に戻る
+            </Link>
+          </div>
         </form>
       </CardContent>
     </Card>
