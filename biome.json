@@ -54,5 +54,17 @@
         }
       }
     }
-  }
+  },
+  "overrides": [
+    {
+      "includes": ["admin/src/client/components/ui/**/*", "webapp/src/client/components/ui/**/*"],
+      "linter": {
+        "rules": {
+          "correctness": {
+            "noUnusedVariables": "off"
+          }
+        }
+      }
+    }
+  ]
 }

@@ -5,13 +5,7 @@
  */
 
 // CSVプレビュー関連
-export type {
-  PreviewMfCsvInput,
-  PreviewMfCsvResult,
-} from "@/server/contexts/data-import/application/usecases/preview-mf-csv-usecase";
+export type { PreviewMfCsvResult } from "@/server/contexts/data-import/application/usecases/preview-mf-csv-usecase";
 
 // トランザクション取得関連
-export type {
-  GetTransactionsParams,
-  GetTransactionsResult,
-} from "@/server/contexts/data-import/application/usecases/get-transactions-usecase";
+export type { GetTransactionsResult } from "@/server/contexts/data-import/application/usecases/get-transactions-usecase";
