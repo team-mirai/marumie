@@ -1,6 +1,6 @@
 "use client";
 import "client-only";
-import { useState } from "react";
+import { useActionState } from "react";
 import Link from "next/link";
 import {
   Button,
@@ -18,21 +18,10 @@ interface ForgotPasswordFormProps {
 }
 
 export default function ForgotPasswordForm({ action }: ForgotPasswordFormProps) {
-  const [isLoading, setIsLoading] = useState(false);
-
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setIsLoading(true);
-
-    const formData = new FormData(e.currentTarget);
-    try {
-      await action(formData);
-    } catch (error) {
-      console.error("Password reset request failed:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const [, formAction, isPending] = useActionState(async (_: unknown, formData: FormData) => {
+    await action(formData);
+    return null;
+  }, null);
 
   return (
     <Card className="w-full max-w-md">
@@ -43,13 +32,13 @@ export default function ForgotPasswordForm({ action }: ForgotPasswordFormProps) 
         </CardDescription>
       </CardHeader>
       <CardContent className="px-8 pb-8">
-        <form onSubmit={handleSubmit} className="grid gap-4">
+        <form action={formAction} className="grid gap-4">
           <div className="space-y-3">
             <Label htmlFor="email">Email</Label>
             <Input id="email" name="email" type="email" required />
           </div>
-          <Button type="submit" disabled={isLoading} className="mt-4 w-full">
-            {isLoading ? "送信中..." : "リセットメールを送信"}
+          <Button type="submit" disabled={isPending} className="mt-4 w-full">
+            {isPending ? "送信中..." : "リセットメールを送信"}
           </Button>
           <div className="text-center mt-2">
             <Link href="/login" className="text-sm text-muted-foreground hover:underline">

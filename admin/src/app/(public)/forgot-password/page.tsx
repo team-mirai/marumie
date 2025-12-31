@@ -2,6 +2,7 @@ import "server-only";
 import Link from "next/link";
 import { requestPasswordReset } from "@/server/contexts/auth/presentation/actions/request-password-reset";
 import ForgotPasswordForm from "@/client/components/auth/ForgotPasswordForm";
+import ToastNotifier from "@/client/components/auth/ToastNotifier";
 import {
   Card,
   CardHeader,
@@ -22,6 +23,7 @@ export default async function ForgotPasswordPage({ searchParams }: ForgotPasswor
   if (sent) {
     return (
       <div className="h-full flex items-center justify-center">
+        <ToastNotifier type="success" message="パスワードリセット用のメールを送信しました" />
         <Card className="w-full max-w-md">
           <CardHeader className="px-8 pt-8 pb-4">
             <CardTitle className="text-2xl">メールを送信しました</CardTitle>
