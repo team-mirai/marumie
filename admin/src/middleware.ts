@@ -48,6 +48,14 @@ async function performBasicAuth(request: NextRequest): Promise<NextResponse | nu
 
 // publicパス以外は全て認証を必須とする（セキュアデフォルト）
 export async function middleware(request: NextRequest): Promise<NextResponse> {
+  // PKCEフローでのパスワードリセット: codeパラメータがルートURLに来た場合は/loginにリダイレクト
+  const code = request.nextUrl.searchParams.get("code");
+  if (code && request.nextUrl.pathname === "/") {
+    const loginUrl = new URL("/login", request.url);
+    loginUrl.searchParams.set("code", code);
+    return NextResponse.redirect(loginUrl);
+  }
+
   let response = NextResponse.next({
     request: {
       headers: request.headers,
