@@ -69,11 +69,39 @@ describe("Password", () => {
         expect(result.error).toBe("パスワードは6文字以上で設定してください");
       });
 
-      it("スペースのみのパスワードでも6文字以上なら有効", () => {
+      it("スペースのみのパスワードは無効", () => {
         const result = Password.validate("      ");
+
+        expect(result.valid).toBe(false);
+        expect(result.error).toBe("パスワードは6文字以上で設定してください");
+      });
+
+      it("タブのみのパスワードは無効", () => {
+        const result = Password.validate("\t\t\t\t\t\t");
+
+        expect(result.valid).toBe(false);
+        expect(result.error).toBe("パスワードは6文字以上で設定してください");
+      });
+
+      it("空白文字の組み合わせのみのパスワードは無効", () => {
+        const result = Password.validate("  \t\n  \t");
+
+        expect(result.valid).toBe(false);
+        expect(result.error).toBe("パスワードは6文字以上で設定してください");
+      });
+
+      it("前後に空白があっても非空白文字が6文字以上なら有効", () => {
+        const result = Password.validate("  password  ");
 
         expect(result.valid).toBe(true);
         expect(result.error).toBeUndefined();
+      });
+
+      it("前後に空白があり非空白文字が6文字未満なら無効", () => {
+        const result = Password.validate("  abc  ");
+
+        expect(result.valid).toBe(false);
+        expect(result.error).toBe("パスワードは6文字以上で設定してください");
       });
     });
 

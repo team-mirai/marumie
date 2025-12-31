@@ -28,7 +28,7 @@ export const Password = {
    * @returns バリデーション結果
    */
   validate(password: string): PasswordValidationResult {
-    if (!password || password.length < MIN_LENGTH) {
+    if (!password || password.trim().length < MIN_LENGTH) {
       return {
         valid: false,
         error: `パスワードは${MIN_LENGTH}文字以上で設定してください`,
