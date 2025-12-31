@@ -165,8 +165,24 @@ contexts/{コンテキスト名}/
 
 #### Models（ドメインモデル）
 - **責務**: 単一エンティティのビジネスルール、値の検証、ドメインロジック
-- **実装パターン**: `namespace + interface` パターン
+- **実装パターン**: `interface + const` パターン（同名エクスポートによる自動マージ）
 - **例**: ハッシュ生成、会計年度計算、型変換、バリデーション
+
+```typescript
+// 型定義
+export interface Password {
+  value: string;
+}
+
+// ドメインロジック（同名でエクスポートすると自動マージされる）
+export const Password = {
+  validate(password: string): PasswordValidationResult { /* ... */ },
+};
+```
+
+**注意**:
+- クライアントから参照するドメインモデルには `server-only` を含めないこと
+- 既存コードには `namespace` パターンで実装されているものもあるが、今後このパターンに統一予定
 
 #### Domain Services
 - **使用判断**:
