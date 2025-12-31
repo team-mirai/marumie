@@ -14,6 +14,12 @@ export class RequestPasswordResetUsecase {
       throw new AuthError("INVALID_EMAIL", "Email is required");
     }
 
+    // 基本的なメールアドレス形式のチェック
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      throw new AuthError("INVALID_EMAIL", "Invalid email format");
+    }
+
     const redirectTo = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3001"}/login`;
 
     try {

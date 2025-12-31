@@ -4,6 +4,8 @@ import { resetPassword } from "@/server/contexts/auth/presentation/actions/reset
 import { redirect } from "next/navigation";
 import SetupForm from "@/client/components/auth/SetupForm";
 
+export const dynamic = "force-dynamic";
+
 export default async function ResetPasswordPage() {
   const user = await getCurrentUser();
 
