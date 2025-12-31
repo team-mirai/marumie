@@ -19,7 +19,7 @@ description: 設計ドキュメントを作成する (project)
      - [docs/admin-architecture-guide.md](docs/admin-architecture-guide.md): adminのアーキテクチャルール
      - [docs/admin-ui-guidelines.md](docs/admin-ui-guidelines.md): UIコンポーネントのガイドライン
    - 政治資金収支報告書関連の場合:
-     - [docs/report-format.md](docs/report-format.md): 政治資金収支報告書XMLの仕様
+     - [docs/reference/report-format.md](docs/reference/report-format.md): 政治資金収支報告書XMLの仕様
      - [docs/scope-by-2026Jan.md](docs/scope-by-2026Jan.md): 前提となる2026年1月までのスコープ
 
 3. **ファイル作成**: 設計ドキュメントを作成する。
