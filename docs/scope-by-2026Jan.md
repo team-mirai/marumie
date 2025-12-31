@@ -51,4 +51,4 @@
 
 ## 参考資料
 
-- [docs/report-format.md](report-format.md) - 政治資金収支報告書XMLデータフォーマット仕様書
+- [docs/reference/report-format.md](docs/reference/report-format.md) - 政治資金収支報告書XMLデータフォーマット仕様書

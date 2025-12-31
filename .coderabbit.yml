@@ -61,7 +61,7 @@ reviews:
       instructions: "CLAUDE.md の「Next アプリケーション」セクションに従ってレビューしてください。"
 
     - path: "admin/src/server/contexts/report/**"
-      instructions: "docs/report-format.md と docs/scope-by-2026Jan.md に従ってレビューしてください。"
+      instructions: "docs/reference/report-format.md と docs/scope-by-2026Jan.md に従ってレビューしてください。"
 
     - path: "docs/**/*.md"
       instructions: |
