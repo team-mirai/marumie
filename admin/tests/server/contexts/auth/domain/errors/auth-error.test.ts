@@ -66,4 +66,10 @@ describe("AUTH_ERROR_MESSAGES", () => {
       "この操作を行う権限がありません"
     );
   });
+
+  it("RESET_EMAIL_FAILEDのメッセージが正しい", () => {
+    expect(AUTH_ERROR_MESSAGES.RESET_EMAIL_FAILED).toBe(
+      "パスワードリセットメールの送信に失敗しました"
+    );
+  });
 });

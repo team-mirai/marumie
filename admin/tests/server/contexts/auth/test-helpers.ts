@@ -42,6 +42,7 @@ export const createMockAuthProvider = (): jest.Mocked<AuthProvider> => ({
   updateUser: jest.fn(),
   setSession: jest.fn(),
   exchangeCodeForSession: jest.fn(),
+  resetPasswordForEmail: jest.fn(),
 });
 
 export const createMockUserRepository = (): jest.Mocked<UserRepository> => ({
