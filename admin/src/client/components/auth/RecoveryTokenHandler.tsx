@@ -1,13 +1,11 @@
 "use client";
 import "client-only";
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { Card, CardHeader, CardTitle, CardDescription } from "@/client/components/ui";
 import { completeRecoverySession } from "@/server/contexts/auth/presentation/actions/complete-recovery-session";
 
 export default function RecoveryTokenHandler() {
   const [processing, setProcessing] = useState(false);
-  const router = useRouter();
 
   useEffect(() => {
     const run = async () => {
@@ -25,23 +23,22 @@ export default function RecoveryTokenHandler() {
         try {
           const res = await completeRecoverySession(accessToken, refreshToken);
           if (res.ok) {
-            window.history.replaceState({}, document.title, window.location.pathname);
-            router.push("/auth/reset-password");
+            window.location.replace("/auth/reset-password");
           } else {
             const err = encodeURIComponent(res.error || "recovery_error");
-            router.push(`/login?error=${err}`);
+            window.location.replace(`/login?error=${err}`);
           }
         } catch (error) {
           console.error("Recovery token exchange failed:", error);
           const err = encodeURIComponent("recovery_error");
-          router.push(`/login?error=${err}`);
+          window.location.replace(`/login?error=${err}`);
         } finally {
           setProcessing(false);
         }
       }
     };
     run();
-  }, [router]);
+  }, []);
 
   if (!processing) return null;
 
