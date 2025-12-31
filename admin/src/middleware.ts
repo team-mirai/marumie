@@ -92,7 +92,13 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
     },
   });
 
-  const publicPaths = ["/login", "/auth/callback", "/auth/setup"];
+  const publicPaths = [
+    "/login",
+    "/forgot-password",
+    "/auth/callback",
+    "/auth/setup",
+    "/auth/reset-password",
+  ];
   const isPublicPath = publicPaths.some((path) => request.nextUrl.pathname.startsWith(path));
 
   // publicパスの場合はbasic認証を実行
