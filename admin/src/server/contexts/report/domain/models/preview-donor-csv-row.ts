@@ -10,11 +10,10 @@ export type PreviewDonorCsvRowStatus =
   | "type_mismatch";
 
 /**
- * Donor CSV バリデーションに必要な Transaction 情報
+ * Transaction の共通フィールド（TransactionForDonorCsv と PreviewDonorCsvRow.transaction で共有）
  */
-export interface TransactionForDonorCsv {
+interface TransactionCsvBase {
   id: string;
-  transactionNo: string;
   transactionDate: Date;
   categoryKey: string;
   friendlyCategory: string | null;
@@ -27,6 +26,13 @@ export interface TransactionForDonorCsv {
     name: string;
     donorType: DonorType;
   } | null;
+}
+
+/**
+ * Donor CSV バリデーションに必要な Transaction 情報
+ */
+export interface TransactionForDonorCsv extends TransactionCsvBase {
+  transactionNo: string;
 }
 
 /**
@@ -48,22 +54,7 @@ export interface PreviewDonorCsvRow {
   errors: string[];
 
   /** 紐付け先 Transaction 情報（存在する場合） */
-  transaction: {
-    id: string;
-    transactionDate: Date;
-    categoryKey: string;
-    friendlyCategory: string | null;
-    debitAmount: number;
-    creditAmount: number;
-    debitPartner: string | null;
-    creditPartner: string | null;
-    /** 既存の Donor 紐付け（ある場合） */
-    existingDonor: {
-      id: string;
-      name: string;
-      donorType: DonorType;
-    } | null;
-  } | null;
+  transaction: TransactionCsvBase | null;
 
   /** 既存 Donor との一致（name + address + donorType で検索） */
   matchingDonor: {

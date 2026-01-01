@@ -10,7 +10,14 @@ import {
 } from "@/server/contexts/report/domain/models/donor";
 import { isDonorTypeAllowedForCategory } from "@/server/contexts/report/domain/models/donor-assignment-rules";
 
-export class DonorCsvValidator {
+export interface IDonorCsvValidator {
+  validate(
+    rows: PreviewDonorCsvRow[],
+    transactionMap: Map<string, TransactionForDonorCsv>,
+  ): PreviewDonorCsvRow[];
+}
+
+export class DonorCsvValidator implements IDonorCsvValidator {
   validate(
     rows: PreviewDonorCsvRow[],
     transactionMap: Map<string, TransactionForDonorCsv>,

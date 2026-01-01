@@ -1,8 +1,14 @@
+import "server-only";
+
 import type { DonorCsvRecord } from "./donor-csv-record";
 import type { PreviewDonorCsvRow } from "@/server/contexts/report/domain/models/preview-donor-csv-row";
 import { parseDonorType } from "@/server/contexts/report/domain/models/donor";
 
-export class DonorCsvRecordConverter {
+export interface IDonorCsvRecordConverter {
+  convert(record: DonorCsvRecord): PreviewDonorCsvRow;
+}
+
+export class DonorCsvRecordConverter implements IDonorCsvRecordConverter {
   convert(record: DonorCsvRecord): PreviewDonorCsvRow {
     const trimmedName = record.name.trim();
     const trimmedAddress = record.address.trim() || null;

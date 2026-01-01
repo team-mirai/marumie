@@ -1,8 +1,8 @@
 import "server-only";
 
-import type { DonorCsvLoader } from "@/server/contexts/report/infrastructure/donor-csv/donor-csv-loader";
-import type { DonorCsvRecordConverter } from "@/server/contexts/report/infrastructure/donor-csv/donor-csv-record-converter";
-import type { DonorCsvValidator } from "@/server/contexts/report/domain/services/donor-csv-validator";
+import type { IDonorCsvLoader } from "@/server/contexts/report/infrastructure/donor-csv/donor-csv-loader";
+import type { IDonorCsvRecordConverter } from "@/server/contexts/report/infrastructure/donor-csv/donor-csv-record-converter";
+import type { IDonorCsvValidator } from "@/server/contexts/report/domain/services/donor-csv-validator";
 import type {
   PreviewDonorCsvRow,
   TransactionForDonorCsv,
@@ -27,9 +27,9 @@ export interface PreviewDonorCsvResult {
 
 export class PreviewDonorCsvUsecase {
   constructor(
-    private readonly csvLoader: DonorCsvLoader,
-    private readonly recordConverter: DonorCsvRecordConverter,
-    private readonly validator: DonorCsvValidator,
+    private readonly csvLoader: IDonorCsvLoader,
+    private readonly recordConverter: IDonorCsvRecordConverter,
+    private readonly validator: IDonorCsvValidator,
     private readonly transactionRepository: ITransactionWithDonorRepository,
     private readonly donorRepository: IDonorRepository,
   ) {}

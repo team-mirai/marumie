@@ -1,7 +1,7 @@
 "use client";
 import "client-only";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { PoliticalOrganization } from "@/shared/models/political-organization";
 import type { PreviewDonorCsvResult } from "@/server/contexts/report/presentation/types/preview-donor-csv-types";
 import type { PreviewDonorCsvRequest } from "@/server/contexts/report/presentation/actions/preview-donor-csv";
@@ -32,6 +32,16 @@ export default function DonorCsvImportClient({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const previewActionRef = useRef(previewAction);
+
+  useEffect(() => {
+    previewActionRef.current = previewAction;
+  }, [previewAction]);
+
+  const stablePreviewAction = useCallback(
+    (data: PreviewDonorCsvRequest) => previewActionRef.current(data),
+    [],
+  );
 
   useEffect(() => {
     if (!file || !politicalOrganizationId) {
@@ -45,7 +55,7 @@ export default function DonorCsvImportClient({
       setError(null);
 
       try {
-        const result = await previewAction({
+        const result = await stablePreviewAction({
           file,
           politicalOrganizationId,
         });
@@ -60,7 +70,7 @@ export default function DonorCsvImportClient({
     };
 
     previewFile();
-  }, [file, politicalOrganizationId, previewAction]);
+  }, [file, politicalOrganizationId, stablePreviewAction]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0] || null;

@@ -1,5 +1,11 @@
+import "server-only";
+
 import { CsvFormatError } from "@/server/contexts/report/domain/errors/donor-csv-error";
 import type { DonorCsvRecord } from "./donor-csv-record";
+
+export interface IDonorCsvLoader {
+  load(csvContent: string): DonorCsvRecord[];
+}
 
 const MAX_ROWS = 1000;
 
@@ -16,7 +22,7 @@ const COLUMN_MAPPING: Record<string, keyof Omit<DonorCsvRecord, "rowNumber">> = 
 
 const REQUIRED_COLUMNS = ["取引No", "寄付者名", "寄付者種別", "住所", "職業"];
 
-export class DonorCsvLoader {
+export class DonorCsvLoader implements IDonorCsvLoader {
   load(csvContent: string): DonorCsvRecord[] {
     if (!csvContent.trim()) {
       return [];
