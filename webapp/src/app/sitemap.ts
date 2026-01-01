@@ -6,7 +6,20 @@ export const dynamic = "force-static";
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = process.env.WEBAPP_URL || "https://marumie.team-mir.ai";
 
-  const { organizations } = await loadOrganizations();
+  // 組織データを取得（空の場合はベースURLのみのサイトマップを返す）
+  let organizations: { slug: string }[] = [];
+  try {
+    const result = await loadOrganizations();
+    organizations = result.organizations;
+  } catch (error) {
+    // CIビルド時など、DBが空の場合は空の組織リストで続行
+    if (error instanceof Error && error.message === "No political organizations found") {
+      organizations = [];
+    } else {
+      // その他のエラー（DB接続エラーなど）は再スロー
+      throw error;
+    }
+  }
 
   const sitemap: MetadataRoute.Sitemap = [
     {
