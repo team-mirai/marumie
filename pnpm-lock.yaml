@@ -8,9 +8,6 @@ importers:
 
   .:
     dependencies:
-      '@nivo/sankey':
-        specifier: ^0.99.0
-        version: 0.99.0(react-dom@19.1.2(react@19.1.2))(react@19.1.2)
       '@prisma/client':
         specifier: ^6.14.0
         version: 6.16.2(prisma@6.16.2(typescript@5.9.2))(typescript@5.9.2)
@@ -20,31 +17,10 @@ importers:
       dotenv:
         specifier: ^16.4.5
         version: 16.6.1
-      next:
-        specifier: 15.4.10
-        version: 15.4.10(@babel/core@7.28.4)(@opentelemetry/api@1.9.0)(react-dom@19.1.2(react@19.1.2))(react@19.1.2)
-      react:
-        specifier: 19.1.2
-        version: 19.1.2
-      react-dom:
-        specifier: 19.1.2
-        version: 19.1.2(react@19.1.2)
     devDependencies:
       '@biomejs/biome':
         specifier: 2.2.2
         version: 2.2.2
-      '@tailwindcss/postcss':
-        specifier: ^4
-        version: 4.1.13
-      '@types/node':
-        specifier: ^20
-        version: 20.19.17
-      '@types/react':
-        specifier: ^19
-        version: 19.1.13
-      '@types/react-dom':
-        specifier: ^19
-        version: 19.1.9(@types/react@19.1.13)
       concurrently:
         specifier: ^8.2.2
         version: 8.2.2
@@ -66,9 +42,6 @@ importers:
       simple-git-hooks:
         specifier: ^2.13.1
         version: 2.13.1
-      tailwindcss:
-        specifier: ^4
-        version: 4.1.13
       tsx:
         specifier: ^4.21.0
         version: 4.21.0
@@ -193,6 +166,9 @@ importers:
       '@next/third-parties':
         specifier: ^15.5.0
         version: 15.5.4(next@15.4.10(@babel/core@7.28.4)(@opentelemetry/api@1.9.0)(react-dom@19.1.2(react@19.1.2))(react@19.1.2))(react@19.1.2)
+      '@nivo/sankey':
+        specifier: ^0.99.0
+        version: 0.99.0(react-dom@19.1.2(react@19.1.2))(react@19.1.2)
       '@prisma/client':
         specifier: ^6.14.0
         version: 6.16.2(prisma@6.16.2(typescript@5.9.2))(typescript@5.9.2)

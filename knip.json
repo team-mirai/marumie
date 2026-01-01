@@ -3,7 +3,6 @@
   "ignoreDependencies": [
     "server-only",
     "client-only",
-    "@tailwindcss/postcss",
     "tailwindcss",
     "critters"
   ],
