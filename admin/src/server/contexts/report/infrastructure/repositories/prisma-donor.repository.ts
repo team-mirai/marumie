@@ -416,4 +416,26 @@ export class PrismaDonorRepository implements IDonorRepository {
 
     return result;
   }
+
+  async findByMatchCriteriaBatch(
+    criteria: Array<{ name: string; address: string | null; donorType: DonorType }>,
+  ): Promise<Donor[]> {
+    if (criteria.length === 0) {
+      return [];
+    }
+
+    const orConditions = criteria.map((c) => ({
+      name: c.name,
+      address: c.address,
+      donorType: this.mapToPrismaDonorType(c.donorType),
+    }));
+
+    const donors = await this.prisma.donor.findMany({
+      where: {
+        OR: orConditions,
+      },
+    });
+
+    return donors.map((d) => this.mapToDonor(d));
+  }
 }
