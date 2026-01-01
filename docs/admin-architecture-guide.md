@@ -267,16 +267,15 @@ export const Password = {
 
 #### 6.3.2 拡張エラー型とエラーコードの定義
 
-Domain層でバリデーションエラーを扱う場合は、`ValidationError`/`ValidationResult`/`ValidationErrorCode` を定義する。
+Domain層でエラーを扱う場合は、拡張エラー型とエラーコードを定義する。
 
-**配置場所**: `contexts/{コンテキスト名}/domain/types/validation.ts`
+**配置場所**: `contexts/{コンテキスト名}/domain/types/`
 
 **リファレンス実装**: `contexts/report/domain/types/validation.ts`
 
 **原則**:
-- `ValidationError`: `path`（エラー箇所）、`code`（エラーコード）、`message`（日本語メッセージ）、`severity`（"error" | "warning"）を持つ
-- `ValidationResult`: `isValid`、`errors`（致命的問題）、`warnings`（確認が必要な問題）を持つ
-- `ValidationErrorCode`: `as const` で型安全に定義。大文字スネークケース（例: `REQUIRED`, `INVALID_FORMAT`）
+- エラー型は `path`（エラー箇所）、`code`（エラーコード）、`message`（日本語メッセージ）、`severity`（"error" | "warning"）を持つ
+- エラーコードは `as const` で型安全に定義。大文字スネークケース（例: `REQUIRED`, `INVALID_FORMAT`）
 - コンテキスト固有のコードには接頭辞を付ける（例: `REPORT_MISSING_COUNTERPART`）
 
 #### 6.3.3 error と warning の使い分け
