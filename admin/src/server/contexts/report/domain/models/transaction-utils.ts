@@ -8,10 +8,7 @@
  * 借方/貸方から取引金額を解決する（収入用）
  * 収入の場合は貸方金額を優先
  */
-export function resolveIncomeAmount(
-  debitAmount: number,
-  creditAmount: number,
-): number {
+export function resolveIncomeAmount(debitAmount: number, creditAmount: number): number {
   if (Number.isFinite(creditAmount) && creditAmount > 0) {
     return creditAmount;
   }
@@ -22,10 +19,7 @@ export function resolveIncomeAmount(
  * 借方/貸方から取引金額を解決する（支出用）
  * 支出の場合は借方金額を優先
  */
-export function resolveExpenseAmount(
-  debitAmount: number,
-  creditAmount: number,
-): number {
+export function resolveExpenseAmount(debitAmount: number, creditAmount: number): number {
   if (Number.isFinite(debitAmount) && debitAmount > 0) {
     return debitAmount;
   }
@@ -35,10 +29,7 @@ export function resolveExpenseAmount(
 /**
  * テキストを正規化する（空白の統一、トリム、最大長制限）
  */
-export function sanitizeText(
-  value: string | null | undefined,
-  maxLength?: number,
-): string {
+export function sanitizeText(value: string | null | undefined, maxLength?: number): string {
   if (!value) {
     return "";
   }
@@ -52,17 +43,19 @@ export function sanitizeText(
 }
 
 /**
- * 10万円の閾値（政治資金報告書における明細記載基準）
+ * 10万円の閾値（政治資金報告書における明細記載基準：経常経費用）
  */
 export const TEN_MAN_THRESHOLD = 100_000;
 
 /**
+ * 5万円の閾値（政治資金報告書における明細記載基準：政治活動費用）
+ */
+export const FIVE_MAN_THRESHOLD = 50_000;
+
+/**
  * 金額が閾値以上かどうかを判定
  */
-export function isAboveThreshold(
-  amount: number,
-  threshold: number = TEN_MAN_THRESHOLD,
-): boolean {
+export function isAboveThreshold(amount: number, threshold: number = TEN_MAN_THRESHOLD): boolean {
   return amount >= threshold;
 }
 

@@ -6,9 +6,7 @@ import type {
 } from "@/shared/models/balance-snapshot";
 import type { IBalanceSnapshotRepository } from "@/server/contexts/shared/domain/repositories/balance-snapshot-repository.interface";
 
-export class PrismaBalanceSnapshotRepository
-  implements IBalanceSnapshotRepository
-{
+export class PrismaBalanceSnapshotRepository implements IBalanceSnapshotRepository {
   constructor(private prisma: PrismaClient) {}
 
   async create(input: CreateBalanceSnapshotInput): Promise<BalanceSnapshot> {
@@ -34,9 +32,7 @@ export class PrismaBalanceSnapshotRepository
     return balanceSnapshots.map((bs) => this.mapToBalanceSnapshot(bs));
   }
 
-  private buildWhereClause(
-    filters?: BalanceSnapshotFilters,
-  ): Prisma.BalanceSnapshotWhereInput {
+  private buildWhereClause(filters?: BalanceSnapshotFilters): Prisma.BalanceSnapshotWhereInput {
     const where: Prisma.BalanceSnapshotWhereInput = {};
 
     if (filters?.political_organization_id) {
@@ -57,8 +53,7 @@ export class PrismaBalanceSnapshotRepository
   ): BalanceSnapshot {
     return {
       id: prismaBalanceSnapshot.id.toString(),
-      political_organization_id:
-        prismaBalanceSnapshot.politicalOrganizationId.toString(),
+      political_organization_id: prismaBalanceSnapshot.politicalOrganizationId.toString(),
       snapshot_date: prismaBalanceSnapshot.snapshotDate,
       balance: Number(prismaBalanceSnapshot.balance),
       created_at: prismaBalanceSnapshot.createdAt,

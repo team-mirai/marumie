@@ -2,7 +2,7 @@
 import "client-only";
 
 import type { PreviewTransaction } from "@/server/contexts/data-import/domain/models/preview-transaction";
-import { PL_CATEGORIES } from "@/shared/utils/category-mapping";
+import { PL_CATEGORIES } from "@/shared/accounting/account-category";
 import type { TransactionType } from "@/shared/models/transaction";
 
 interface TransactionRowProps {
@@ -159,7 +159,7 @@ export default function TransactionRow({
   return (
     <tr
       key={`${(currentPage - 1) * perPage + index}-${record.transaction_date}-${record.debit_account}-${record.credit_account}-${record.debit_amount || 0}`}
-      className="border-b border-primary-border"
+      className="border-b border-border"
     >
       <td className="px-2 py-3 text-sm">
         <span
@@ -185,9 +185,7 @@ export default function TransactionRow({
       <td className="px-2 py-3 text-sm text-white">
         {record.debit_account}
         {record.debit_sub_account && (
-          <div className="text-primary-muted text-xs">
-            {record.debit_sub_account}
-          </div>
+          <div className="text-muted-foreground text-xs">{record.debit_sub_account}</div>
         )}
       </td>
       <td className="px-2 py-3 text-sm text-right text-white">
@@ -196,15 +194,11 @@ export default function TransactionRow({
       <td className="px-2 py-3 text-sm text-white">
         {record.credit_account}
         {record.credit_sub_account && (
-          <div className="text-primary-muted text-xs">
-            {record.credit_sub_account}
-          </div>
+          <div className="text-muted-foreground text-xs">{record.credit_sub_account}</div>
         )}
       </td>
       <td className="px-2 py-3 text-sm text-right text-white">
-        {record.credit_amount
-          ? `¥${record.credit_amount.toLocaleString()}`
-          : "-"}
+        {record.credit_amount ? `¥${record.credit_amount.toLocaleString()}` : "-"}
       </td>
       <td className="px-2 py-3 text-sm text-white">
         <span
@@ -230,11 +224,7 @@ export default function TransactionRow({
       </td>
       <td className="px-2 py-3 text-sm text-white">
         {record.description || "-"}
-        {record.label && (
-          <div className="text-blue-400 text-xs mt-1">
-            ラベル: {record.label}
-          </div>
-        )}
+        {record.label && <div className="text-blue-400 text-xs mt-1">ラベル: {record.label}</div>}
       </td>
     </tr>
   );

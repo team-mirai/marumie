@@ -37,21 +37,16 @@ export class IncomeAssembler {
       financialYear: input.financialYear,
     };
 
-    const [
-      businessTransactions,
-      loanTransactions,
-      grantTransactions,
-      otherTransactions,
-    ] = await Promise.all([
-      this.repository.findBusinessIncomeTransactions(filters),
-      this.repository.findLoanIncomeTransactions(filters),
-      this.repository.findGrantIncomeTransactions(filters),
-      this.repository.findOtherIncomeTransactions(filters),
-    ]);
+    const [businessTransactions, loanTransactions, grantTransactions, otherTransactions] =
+      await Promise.all([
+        this.repository.findBusinessIncomeTransactions(filters),
+        this.repository.findLoanIncomeTransactions(filters),
+        this.repository.findGrantIncomeTransactions(filters),
+        this.repository.findOtherIncomeTransactions(filters),
+      ]);
 
     return {
-      businessIncome:
-        BusinessIncomeSection.fromTransactions(businessTransactions),
+      businessIncome: BusinessIncomeSection.fromTransactions(businessTransactions),
       loanIncome: LoanIncomeSection.fromTransactions(loanTransactions),
       grantIncome: GrantIncomeSection.fromTransactions(grantTransactions),
       otherIncome: OtherIncomeSection.fromTransactions(otherTransactions),

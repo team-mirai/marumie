@@ -4,7 +4,6 @@ import * as iconv from "iconv-lite";
 import {
   serializeReportData,
   KNOWN_FORM_IDS,
-  FLAG_STRING_LENGTH,
 } from "@/server/contexts/report/domain/services/report-serializer";
 import type { ReportData } from "@/server/contexts/report/domain/models/report-data";
 import type { DonationAssembler } from "@/server/contexts/report/application/services/donation-assembler";
@@ -17,7 +16,7 @@ import type { IOrganizationReportProfileRepository } from "@/server/contexts/rep
 // ============================================================
 
 // Re-export for consumers
-export { KNOWN_FORM_IDS, FLAG_STRING_LENGTH };
+export { KNOWN_FORM_IDS };
 
 export interface XmlExportInput {
   politicalOrganizationId: string;

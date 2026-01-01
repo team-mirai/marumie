@@ -1,8 +1,8 @@
 export default function Home() {
   return (
-    <div className="card">
+    <div className="bg-card rounded-xl p-4">
       <h1>Welcome</h1>
-      <p className="muted">Use the left navigation to manage data.</p>
+      <p className="text-muted-foreground">Use the left navigation to manage data.</p>
     </div>
   );
 }

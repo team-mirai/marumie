@@ -8,10 +8,7 @@ export async function GET(request: NextRequest) {
     const orgId = searchParams.get("orgId");
 
     if (!orgId) {
-      return NextResponse.json(
-        { error: "政治団体IDが必要です" },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "政治団体IDが必要です" }, { status: 400 });
     }
 
     const snapshots = await loadBalanceSnapshotsData(orgId);

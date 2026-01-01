@@ -4,7 +4,7 @@ import "client-only";
 import { useState, useEffect, useCallback } from "react";
 import type { PoliticalOrganization } from "@/shared/models/political-organization";
 import type { BalanceSnapshot } from "@/shared/models/balance-snapshot";
-import { Selector } from "@/client/components/ui";
+import { PoliticalOrganizationSelect } from "@/client/components/political-organizations/PoliticalOrganizationSelect";
 import BalanceSnapshotForm from "./BalanceSnapshotForm";
 import BalanceSnapshotList from "./BalanceSnapshotList";
 import CurrentBalance from "./CurrentBalance";
@@ -14,17 +14,10 @@ interface BalanceSnapshotsClientProps {
   organizations: PoliticalOrganization[];
 }
 
-export default function BalanceSnapshotsClient({
-  organizations,
-}: BalanceSnapshotsClientProps) {
+export default function BalanceSnapshotsClient({ organizations }: BalanceSnapshotsClientProps) {
   const [selectedOrgId, setSelectedOrgId] = useState<string>("");
   const [snapshots, setSnapshots] = useState<BalanceSnapshot[]>([]);
   const [loading, setLoading] = useState(false);
-
-  const organizationOptions = organizations.map((org) => ({
-    value: org.id,
-    label: org.displayName,
-  }));
 
   const currentBalance = snapshots.length > 0 ? snapshots[0] : null;
 
@@ -85,22 +78,18 @@ export default function BalanceSnapshotsClient({
 
   return (
     <div className="space-y-6">
-      <div>
-        <Selector
-          options={organizationOptions}
-          value={selectedOrgId}
-          onChange={handleOrgChange}
-          label="政治団体"
-          placeholder="-- 政治団体を選択してください --"
-          required={true}
-        />
-      </div>
+      <PoliticalOrganizationSelect
+        organizations={organizations}
+        value={selectedOrgId}
+        onValueChange={handleOrgChange}
+        required
+      />
 
       {selectedOrgId && (
         <div className="space-y-8">
           <CurrentBalance snapshot={currentBalance} />
 
-          <hr className="border-primary-border" />
+          <hr className="border-border" />
 
           <div>
             <h3 className="text-lg font-medium text-white mb-4">残高を登録</h3>
@@ -111,12 +100,10 @@ export default function BalanceSnapshotsClient({
           </div>
 
           <div>
-            <h3 className="text-lg font-medium mb-4">
-              残高スナップショット一覧
-            </h3>
+            <h3 className="text-lg font-medium mb-4">残高スナップショット一覧</h3>
             {loading ? (
               <div className="text-center py-4">
-                <p className="text-primary-muted">読み込み中...</p>
+                <p className="text-muted-foreground">読み込み中...</p>
               </div>
             ) : (
               <BalanceSnapshotList snapshots={snapshots} />

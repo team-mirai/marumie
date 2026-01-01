@@ -1,9 +1,8 @@
 import {
   serializeReportData,
   KNOWN_FORM_IDS,
-  FLAG_STRING_LENGTH,
 } from "@/server/contexts/report/domain/services/report-serializer";
-import type { ReportData } from "@/server/contexts/report/domain/models/report-data";
+import { ReportData } from "@/server/contexts/report/domain/models/report-data";
 
 describe("serializeReportData", () => {
   const createEmptyReportData = (): ReportData => ({
@@ -29,15 +28,24 @@ describe("serializeReportData", () => {
       otherIncome: { totalAmount: 0, underThresholdAmount: 0, rows: [] },
     },
     expenses: {
+      // SYUUSHI07_13: 人件費
+      personnelExpenses: { totalAmount: 0 },
+      // SYUUSHI07_14: 経常経費
       utilityExpenses: { totalAmount: 0, underThresholdAmount: 0, rows: [] },
       suppliesExpenses: { totalAmount: 0, underThresholdAmount: 0, rows: [] },
       officeExpenses: { totalAmount: 0, underThresholdAmount: 0, rows: [] },
-      organizationExpenses: {
-        himoku: "",
-        totalAmount: 0,
-        underThresholdAmount: 0,
-        rows: [],
-      },
+      // SYUUSHI07_15: 政治活動費（全9区分）- 配列で返される
+      organizationExpenses: [],
+      electionExpenses: [],
+      publicationExpenses: [],
+      advertisingExpenses: [],
+      fundraisingPartyExpenses: [],
+      otherBusinessExpenses: [],
+      researchExpenses: [],
+      donationGrantExpenses: [],
+      otherPoliticalExpenses: [],
+      // SYUUSHI07_16: 交付金支出
+      grantExpenditures: { totalAmount: 0, rows: [] },
     },
   });
 
@@ -53,16 +61,27 @@ describe("serializeReportData", () => {
     expect(xml).toContain("<APP>収支報告書作成ソフト (収支報告書作成ソフト)</APP>");
   });
 
-  it("generates SYUUSHI_FLG section with profile flag set", () => {
+  it("generates SYUUSHI_UMU_FLG section with profile flag set", () => {
     const reportData = createEmptyReportData();
 
     const xml = serializeReportData(reportData);
 
-    expect(xml).toContain("<SYUUSHI_FLG>");
+    // SYUUSHI_UMU_FLG should be direct child of BOOK (not wrapped in SYUUSHI_FLG)
     expect(xml).toContain("<SYUUSHI_UMU_FLG>");
+    expect(xml).not.toContain("<SYUUSHI_FLG>");
     // First flag is set for profile (SYUUSHI07_01)
     expect(xml).toContain("<SYUUSHI07_01>");
     expect(xml).toContain("<HOUKOKU_NEN>2024</HOUKOKU_NEN>");
+  });
+
+  it("wraps SYUUSHI07_01 content in SHEET tag", () => {
+    const reportData = createEmptyReportData();
+
+    const xml = serializeReportData(reportData);
+
+    // SYUUSHI07_01 should contain SHEET which contains HOUKOKU_NEN
+    expect(xml).toMatch(/<SYUUSHI07_01>\s*<SHEET>/);
+    expect(xml).toMatch(/<\/SHEET>\s*<\/SYUUSHI07_01>/);
   });
 
   it("sets correct flag when personalDonations has data", () => {
@@ -145,6 +164,31 @@ describe("serializeReportData", () => {
     expect(xml).toContain("<SYUUSHI07_03>");
     expect(xml).toContain("<SYUUSHI07_06>");
   });
+
+  it("includes SYUUSHI07_13 when personnel expenses have data", () => {
+    const reportData = createEmptyReportData();
+    // 人件費を設定
+    reportData.expenses.personnelExpenses = { totalAmount: 500000 };
+    // 経常経費の他の項目も設定（シート13の総括表に反映される）
+    reportData.expenses.utilityExpenses = {
+      totalAmount: 100000,
+      underThresholdAmount: 0,
+      rows: [],
+    };
+
+    const xml = serializeReportData(reportData);
+
+    // SYUUSHI07_13（支出項目別金額の内訳・総括表）が出力されることを確認
+    expect(xml).toContain("<SYUUSHI07_13>");
+    expect(xml).toContain("<SHEET>");
+    // 人件費の金額が出力されることを確認
+    expect(xml).toContain("<JINKENHI_GK>500000</JINKENHI_GK>");
+    // 光熱水費の金額が出力されることを確認
+    expect(xml).toContain("<KOUNETU_GK>100000</KOUNETU_GK>");
+    // 経常経費小計が出力されることを確認
+    expect(xml).toContain("<KEIHI_SKEI_GK>600000</KEIHI_SKEI_GK>");
+  });
+
 });
 
 describe("KNOWN_FORM_IDS", () => {
@@ -152,11 +196,5 @@ describe("KNOWN_FORM_IDS", () => {
     expect(KNOWN_FORM_IDS).toContain("SYUUSHI07_07");
     expect(KNOWN_FORM_IDS).toContain("SYUUSHI07_14");
     expect(KNOWN_FORM_IDS).toContain("SYUUSHI07_03");
-  });
-});
-
-describe("FLAG_STRING_LENGTH", () => {
-  it("is 51 characters", () => {
-    expect(FLAG_STRING_LENGTH).toBe(51);
   });
 });

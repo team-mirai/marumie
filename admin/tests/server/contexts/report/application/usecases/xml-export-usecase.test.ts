@@ -1,7 +1,6 @@
 import {
   XmlExportUsecase,
   KNOWN_FORM_IDS,
-  FLAG_STRING_LENGTH,
 } from "@/server/contexts/report/application/usecases/xml-export-usecase";
 import type { DonationAssembler } from "@/server/contexts/report/application/services/donation-assembler";
 import type { ExpenseAssembler } from "@/server/contexts/report/application/services/expense-assembler";
@@ -53,6 +52,9 @@ describe("XmlExportUsecase", () => {
     } as unknown as jest.Mocked<IncomeAssembler>;
     mockExpenseAssembler = {
       assemble: jest.fn().mockResolvedValue({
+        // SYUUSHI07_13: 人件費
+        personnelExpenses: { totalAmount: 0 },
+        // SYUUSHI07_14: 経常経費
         utilityExpenses: {
           totalAmount: 0,
           underThresholdAmount: 0,
@@ -68,12 +70,18 @@ describe("XmlExportUsecase", () => {
           underThresholdAmount: 0,
           rows: [],
         },
-        organizationExpenses: {
-          himoku: "",
-          totalAmount: 0,
-          underThresholdAmount: 0,
-          rows: [],
-        },
+        // SYUUSHI07_15: 政治活動費（全9区分）- 配列で返される
+        organizationExpenses: [],
+        electionExpenses: [],
+        publicationExpenses: [],
+        advertisingExpenses: [],
+        fundraisingPartyExpenses: [],
+        otherBusinessExpenses: [],
+        researchExpenses: [],
+        donationGrantExpenses: [],
+        otherPoliticalExpenses: [],
+        // SYUUSHI07_16: 交付金支出
+        grantExpenditures: { totalAmount: 0, rows: [] },
       }),
     } as unknown as jest.Mocked<ExpenseAssembler>;
     usecase = new XmlExportUsecase(
@@ -173,15 +181,14 @@ describe("XmlExportUsecase", () => {
         financialYear: 2024,
       });
 
-      // SYUUSHI_FLG should be present
-      expect(result.xml).toContain("<SYUUSHI_FLG>");
       expect(result.xml).toContain("<SYUUSHI_UMU_FLG>");
       expect(result.xml).toContain("<SYUUSHI_UMU>");
 
       // SYUUSHI07_01 (profile) is at index 0 and always output
-      // SYUUSHI07_06 is at index 5 (0-based), so the flag string should have a 1 at positions 0 and 5
-      // Expected: "100001" + "0".repeat(45) = 51 chars total
-      const expectedFlagStart = "100001";
+      // SYUUSHI07_02 (summary) is at index 1 and always output
+      // SYUUSHI07_06 is at index 5 (0-based), so the flag string should have a 1 at positions 0, 1, and 5
+      // Expected: "110001" + "0".repeat(45) = 51 chars total
+      const expectedFlagStart = "110001";
       expect(result.xml).toContain(expectedFlagStart);
     });
 
@@ -270,10 +277,6 @@ describe("XmlExportUsecase", () => {
 describe("SYUUSHI_FLG constants", () => {
   it("has 23 known form IDs", () => {
     expect(KNOWN_FORM_IDS).toHaveLength(23);
-  });
-
-  it("has flag string length of 51", () => {
-    expect(FLAG_STRING_LENGTH).toBe(51);
   });
 
   it("SYUUSHI07_06 is at index 5 in known form IDs", () => {

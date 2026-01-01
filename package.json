@@ -30,6 +30,7 @@
     "typecheck": "pnpm typecheck:webapp && pnpm typecheck:admin",
     "typecheck:webapp": "pnpm --filter webapp type-check",
     "typecheck:admin": "pnpm --filter admin type-check",
+    "depcruise": "cd admin && depcruise src --config ../.dependency-cruiser.cjs",
     "// Testing": "===========================================",
     "test": "pnpm test:admin && pnpm test:webapp",
     "test:admin": "pnpm --filter admin test",
@@ -40,7 +41,7 @@
     "db:migrate": "pnpm -s dotenv -e .env.dev -- prisma migrate dev",
     "db:migrate:prod": "pnpm -s dotenv -e .env.prod -- prisma migrate deploy",
     "db:migrate:deploy": "prisma migrate deploy",
-    "db:seed": "node prisma/seed.cjs",
+    "db:seed": "tsx prisma/seed.ts",
     "db:reset": "pnpm supabase:reset && pnpm db:migrate && pnpm db:seed",
     "db:studio": "prisma studio",
     "postinstall": "prisma generate && npx simple-git-hooks",
@@ -53,19 +54,17 @@
     "supabase:types": "pnpm dlx supabase gen types typescript --local > supabase/types.gen.ts",
     "// Utilities": "=========================================",
     "clean": "pnpm supabase:stop && rm -rf node_modules */node_modules",
-    "fresh": "pnpm clean && pnpm install && pnpm dev:setup"
+    "fresh": "pnpm clean && pnpm install && pnpm dev:setup",
+    "knip": "knip"
   },
   "dependencies": {
     "@nivo/sankey": "^0.99.0",
     "@prisma/client": "^6.14.0",
     "@supabase/supabase-js": "^2.55.0",
-    "csv-parse": "^5.5.6",
-    "date-fns": "^4.1.0",
     "dotenv": "^16.4.5",
     "next": "15.4.10",
     "react": "19.1.2",
-    "react-dom": "19.1.2",
-    "zod": "^4.0.15"
+    "react-dom": "19.1.2"
   },
   "devDependencies": {
     "@biomejs/biome": "2.2.2",
@@ -74,11 +73,14 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "concurrently": "^8.2.2",
+    "dependency-cruiser": "^17.3.5",
     "dotenv-cli": "^10.0.0",
+    "knip": "^5.78.0",
     "lint-staged": "^15.5.2",
     "prisma": "^6.14.0",
     "simple-git-hooks": "^2.13.1",
     "tailwindcss": "^4",
+    "tsx": "^4.21.0",
     "typescript": "^5"
   },
   "simple-git-hooks": {

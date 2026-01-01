@@ -2,7 +2,7 @@
 import "client-only";
 
 import type { TransactionWithOrganization } from "@/server/contexts/shared/domain/transaction";
-import { PL_CATEGORIES } from "@/shared/utils/category-mapping";
+import { PL_CATEGORIES } from "@/shared/accounting/account-category";
 import type { TransactionType } from "@/shared/models/transaction";
 
 interface TransactionRowProps {
@@ -123,19 +123,15 @@ export function TransactionRow({ transaction }: TransactionRowProps) {
   };
 
   return (
-    <tr className="border-b border-primary-border">
-      <td className="px-2 py-3 text-sm text-white">
-        {formatDate(transaction.transaction_date)}
-      </td>
+    <tr className="border-b border-border">
+      <td className="px-2 py-3 text-sm text-white">{formatDate(transaction.transaction_date)}</td>
       <td className="px-2 py-3 text-sm text-white">
         {transaction.political_organization_name || "-"}
       </td>
       <td className="px-2 py-3 text-sm text-white">
         {transaction.debit_account}
         {transaction.debit_sub_account && (
-          <div className="text-primary-muted text-xs">
-            {transaction.debit_sub_account}
-          </div>
+          <div className="text-muted-foreground text-xs">{transaction.debit_sub_account}</div>
         )}
       </td>
       <td className="px-2 py-3 text-sm text-right text-white">
@@ -144,20 +140,18 @@ export function TransactionRow({ transaction }: TransactionRowProps) {
       <td className="px-2 py-3 text-sm text-white">
         {transaction.credit_account}
         {transaction.credit_sub_account && (
-          <div className="text-primary-muted text-xs">
-            {transaction.credit_sub_account}
-          </div>
+          <div className="text-muted-foreground text-xs">{transaction.credit_sub_account}</div>
         )}
       </td>
       <td className="px-2 py-3 text-sm text-right text-white">
         ¥{transaction.credit_amount.toLocaleString()}
       </td>
       <td className="px-2 py-3 text-sm text-white">
-        <span
-          className={`px-2 py-1 rounded text-white text-xs font-medium ${getTypeBadgeClass(transaction.transaction_type)}`}
+        <div
+          className={`inline-block px-2 py-1 rounded text-white text-xs font-medium ${getTypeBadgeClass(transaction.transaction_type)}`}
         >
           {getTypeLabel(transaction.transaction_type)}
-        </span>
+        </div>
       </td>
       <td className="px-2 py-3 text-sm text-white">
         {(() => {
@@ -179,9 +173,7 @@ export function TransactionRow({ transaction }: TransactionRowProps) {
       <td className="px-2 py-3 text-sm text-white">
         {transaction.description || "-"}
         {transaction.label && (
-          <div className="text-blue-400 text-xs mt-1">
-            ラベル: {transaction.label}
-          </div>
+          <div className="text-blue-400 text-xs mt-1">ラベル: {transaction.label}</div>
         )}
       </td>
     </tr>

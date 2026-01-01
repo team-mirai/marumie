@@ -2,12 +2,28 @@
 
 language: ja-JP
 
+# ナレッジベース: プロジェクト固有のアーキテクチャガイドとルール
+knowledge_base:
+  code_guidelines:
+    filePatterns:
+      - "docs/admin-architecture-guide.md"
+      - "docs/admin-ui-guidelines.md"
+      - "docs/design-document-rules.md"
+      - "CLAUDE.md"
+
 reviews:
   request_changes_workflow: true
-  high_level_summary: true
   poem: false
-  review_status: true
   collapse_walkthrough: false
+  high_level_summary: true
+  high_level_summary_placeholder: "@coderabbitai summary"
+
+  # レビュースタイル
+  profile: assertive
+
+  # レビュー強化機能
+  auto_apply_labels: true
+
   path_filters:
     - "webapp/**"
     - "admin/**"
@@ -15,7 +31,9 @@ reviews:
     - "prisma/**"
     - "supabase/**"
     - "docs/**"
-    - "!**/*.md"
+    # docs配下のMarkdownはレビュー対象（設計ドキュメントのアーキテクチャレビュー）
+    - "!webapp/**/*.md"
+    - "!admin/**/*.md"
     - "!**/*.mdx"
     - "!**/*.svg"
     - "!**/*.png"
@@ -30,7 +48,43 @@ reviews:
     - "!**/.next/**"
     - "!**/coverage/**"
     - "!**/*.snap"
+
+  # パス別のレビュー指示
+  path_instructions:
+    - path: "admin/src/server/contexts/**"
+      instructions: "docs/admin-architecture-guide.md に従ってレビューしてください。"
+
+    - path: "admin/src/client/**"
+      instructions: "docs/admin-ui-guidelines.md に従ってレビューしてください。"
+
+    - path: "webapp/src/**"
+      instructions: "CLAUDE.md の「Next アプリケーション」セクションに従ってレビューしてください。"
+
+    - path: "admin/src/server/contexts/report/**"
+      instructions: "docs/reference/report-format.md と docs/scope-by-2026Jan.md に従ってレビューしてください。"
+
+    - path: "docs/**/*.md"
+      instructions: |
+        これは設計ドキュメントです。以下の観点でアーキテクチャレビューを行ってください：
+
+        1. **アーキテクチャ整合性**: docs/admin-architecture-guide.md のレイヤードアーキテクチャ（presentation → application → domain ↔ infrastructure）に従っているか
+        2. **Bounded Context**: 適切なコンテキスト境界が設定されているか、責務が明確か
+        3. **ドメインモデル設計**: ドメインロジックがモデルに適切に配置されているか
+        4. **依存関係**: 依存性逆転の原則に違反していないか
+        5. **実装の実現可能性**: 設計が現実的に実装可能か、技術的な問題がないか
+        6. **既存コードとの整合性**: プロジェクトの既存パターンと一貫性があるか
+
+        設計の問題点や改善提案があれば具体的に指摘してください。
+
   auto_review:
-    enabled: true
     drafts: true
   labeling_instructions: []
+
+  pre_merge_checks:
+    docstrings:
+      mode: "off"
+
+  # Markdownの書式チェックを無効化
+  tools:
+    markdownlint:
+      enabled: false

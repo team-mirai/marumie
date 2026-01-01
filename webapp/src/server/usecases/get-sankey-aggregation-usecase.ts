@@ -21,13 +21,12 @@ export class GetSankeyAggregationUsecase {
     private balanceSnapshotRepository: IBalanceSnapshotRepository,
   ) {}
 
-  async execute(
-    params: GetSankeyAggregationParams,
-  ): Promise<GetSankeyAggregationResult> {
+  async execute(params: GetSankeyAggregationParams): Promise<GetSankeyAggregationResult> {
     try {
       // 政治団体を取得
-      const politicalOrganizations =
-        await this.politicalOrganizationRepository.findBySlugs(params.slugs);
+      const politicalOrganizations = await this.politicalOrganizationRepository.findBySlugs(
+        params.slugs,
+      );
 
       if (politicalOrganizations.length === 0) {
         throw new Error(
@@ -37,17 +36,14 @@ export class GetSankeyAggregationUsecase {
 
       // 集計データを取得（IN句で効率的に）
       const organizationIds = politicalOrganizations.map((org) => org.id);
-      const aggregatedResult =
-        await this.transactionRepository.getCategoryAggregationForSankey(
-          organizationIds,
-          params.financialYear,
-          params.categoryType,
-        );
+      const aggregatedResult = await this.transactionRepository.getCategoryAggregationForSankey(
+        organizationIds,
+        params.financialYear,
+        params.categoryType,
+      );
 
       // 今年と昨年の最新残高データを取得（合計値）
-      const organizationIdsAsString = organizationIds.map((id) =>
-        id.toString(),
-      );
+      const organizationIdsAsString = organizationIds.map((id) => id.toString());
       const [balancesByYear, liabilityBalance] = await Promise.all([
         this.balanceSnapshotRepository.getTotalLatestBalancesByYear(
           organizationIdsAsString,

@@ -48,9 +48,7 @@ export default function HeaderClient({ organizations }: HeaderClientProps) {
   const pathname = usePathname();
 
   // 現在のslugを取得（/o/[slug]/... の形式の場合、なければdefaultを使用）
-  const currentSlug = pathname.startsWith("/o/")
-    ? pathname.split("/")[2]
-    : organizations.default;
+  const currentSlug = pathname.startsWith("/o/") ? pathname.split("/")[2] : organizations.default;
   const logoHref = `/o/${organizations.default}/`;
   const navigationItems = getNavigationItems(currentSlug);
 
@@ -128,10 +126,7 @@ export default function HeaderClient({ organizations }: HeaderClientProps) {
                 })}
             </nav>
             <div className="flex items-center w-full max-w-[217px] min-w-0 h-12 flex-shrink">
-              <OrganizationSelector
-                organizations={organizations}
-                initialSlug={currentSlug}
-              />
+              <OrganizationSelector organizations={organizations} initialSlug={currentSlug} />
             </div>
           </div>
         </div>

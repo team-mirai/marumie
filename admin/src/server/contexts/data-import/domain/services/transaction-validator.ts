@@ -1,4 +1,4 @@
-import { PL_CATEGORIES, BS_CATEGORIES } from "@/shared/utils/category-mapping";
+import { PL_CATEGORIES, BS_CATEGORIES } from "@/shared/accounting/account-category";
 import type { PreviewTransaction } from "@/server/contexts/data-import/domain/models/preview-transaction";
 import type { Transaction } from "@/shared/models/transaction";
 
@@ -92,21 +92,17 @@ export class TransactionValidator {
     return errors;
   }
 
-  private validateFriendlyCategory(
-    transaction: PreviewTransaction,
-  ): string | null {
+  private validateFriendlyCategory(transaction: PreviewTransaction): string | null {
     const isOffsetTransaction =
       transaction.debit_account === OFFSET_EXPENSE_ACCOUNT ||
       transaction.credit_account === OFFSET_INCOME_ACCOUNT;
 
-    const isNonCashTransaction =
-      transaction.transaction_type === "non_cash_journal";
+    const isNonCashTransaction = transaction.transaction_type === "non_cash_journal";
 
     if (
       !isOffsetTransaction &&
       !isNonCashTransaction &&
-      (!transaction.friendly_category ||
-        transaction.friendly_category.trim() === "")
+      (!transaction.friendly_category || transaction.friendly_category.trim() === "")
     ) {
       return "独自のカテゴリが設定されていません";
     }

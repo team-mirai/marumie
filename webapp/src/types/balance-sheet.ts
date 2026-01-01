@@ -20,13 +20,3 @@ export const BALANCE_SHEET_LABELS = {
   fixedLiabilities: "固定負債",
   netAssets: "純資産",
 } as const;
-
-// Treemap用のデータ変換型
-export interface TreemapData {
-  name: string;
-  children: Array<{
-    name: string;
-    value: number;
-    color?: string;
-  }>;
-}

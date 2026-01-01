@@ -19,7 +19,7 @@
     "enabled": true,
     "indentStyle": "space",
     "indentWidth": 2,
-    "lineWidth": 80
+    "lineWidth": 100
   },
   "linter": {
     "enabled": true,
@@ -54,5 +54,17 @@
         }
       }
     }
-  }
+  },
+  "overrides": [
+    {
+      "includes": ["admin/src/client/components/ui/**/*", "webapp/src/client/components/ui/**/*"],
+      "linter": {
+        "rules": {
+          "correctness": {
+            "noUnusedVariables": "off"
+          }
+        }
+      }
+    }
+  ]
 }

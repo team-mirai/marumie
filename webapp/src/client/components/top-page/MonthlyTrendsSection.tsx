@@ -24,14 +24,7 @@ export default function MonthlyTrendsSection({
   return (
     <MainColumnCard id="monthly-trends">
       <CardHeader
-        icon={
-          <Image
-            src="/icons/icon-barchart.svg"
-            alt="Bar chart icon"
-            width={30}
-            height={30}
-          />
-        }
+        icon={<Image src="/icons/icon-barchart.svg" alt="Bar chart icon" width={30} height={30} />}
         organizationName={organizationName || "未登録の政治団体"}
         title="月ごとの収支の推移"
         updatedAt={updatedAt}
@@ -45,9 +38,7 @@ export default function MonthlyTrendsSection({
 
       {/* 更新日時 */}
       <div className="mt-4 text-right md:hidden">
-        <span className="text-xs font-normal text-[#9CA3AF] leading-[1.33]">
-          {updatedAt}
-        </span>
+        <span className="text-xs font-normal text-[#9CA3AF] leading-[1.33]">{updatedAt}</span>
       </div>
     </MainColumnCard>
   );

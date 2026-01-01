@@ -1,7 +1,10 @@
 import "server-only";
-import { loginWithPassword } from "@/server/contexts/auth";
+import { loginWithPassword } from "@/server/contexts/auth/presentation/actions/login";
 import LoginForm from "@/client/components/auth/LoginForm";
-import InviteProcessor from "./processor";
+import InviteTokenHandler from "./InviteTokenHandler";
+import RecoveryTokenHandler from "@/client/components/auth/RecoveryTokenHandler";
+import RecoveryCodeHandler from "@/client/components/auth/RecoveryCodeHandler";
+import ToastNotifier from "@/client/components/auth/ToastNotifier";
 
 export default async function LoginPage({
   searchParams,
@@ -12,11 +15,12 @@ export default async function LoginPage({
   const error = params?.error ?? "";
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        <LoginForm action={loginWithPassword} error={error} />
-        <InviteProcessor />
-      </div>
+    <div className="h-full flex items-center justify-center">
+      {error && <ToastNotifier type="error" message={error} />}
+      <LoginForm action={loginWithPassword} error={error} forgotPasswordHref="/forgot-password" />
+      <InviteTokenHandler />
+      <RecoveryTokenHandler />
+      <RecoveryCodeHandler />
     </div>
   );
 }

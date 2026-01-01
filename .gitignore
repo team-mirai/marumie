@@ -2,6 +2,11 @@ g See https://help.github.com/articles/ignoring-files/ for more about ignoring f
 data/*
 !data/sampledata.csv
 !data/test_current_liabilities.csv
+!data/sample_donor_import.csv
+!data/reports/
+data/reports/*
+!data/reports/report_3_2025.xml
+!data/reports/minimum_valid.xml
 */.next/*
 .next
 prompts
@@ -53,7 +58,7 @@ next-env.d.ts
 *.db
 *.db-journal
 prisma/dev.db*
-.claude
+.claude/settings.local.json
 
 admin/node_modules
 webapp/node_modules
@@ -64,5 +69,4 @@ logs
 .vscode/*
 
 # docs
-docs/report_format.md
 docs/report_format.xlsx

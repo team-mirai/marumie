@@ -45,22 +45,16 @@ export class PreviewMfCsvUsecase {
       }
 
       // Get existing transactions first
-      const transactionNos = csvRecords
-        .map((record) => record.transaction_no)
-        .filter(Boolean);
+      const transactionNos = csvRecords.map((record) => record.transaction_no).filter(Boolean);
 
-      const existingTransactions =
-        await this.transactionRepository.findByTransactionNos(transactionNos, [
-          input.politicalOrganizationId,
-        ]);
+      const existingTransactions = await this.transactionRepository.findByTransactionNos(
+        transactionNos,
+        [input.politicalOrganizationId],
+      );
 
       // Convert records to preview transactions
-      const convertedTransactions: PreviewTransaction[] = csvRecords.map(
-        (record) =>
-          this.recordConverter.convertRow(
-            record,
-            input.politicalOrganizationId,
-          ),
+      const convertedTransactions: PreviewTransaction[] = csvRecords.map((record) =>
+        this.recordConverter.convertRow(record, input.politicalOrganizationId),
       );
 
       // Validate converted transactions including duplicate check

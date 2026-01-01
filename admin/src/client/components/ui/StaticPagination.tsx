@@ -9,11 +9,7 @@ interface StaticPaginationProps {
   basePath: string;
 }
 
-export function StaticPagination({
-  currentPage,
-  totalPages,
-  basePath,
-}: StaticPaginationProps) {
+export function StaticPagination({ currentPage, totalPages, basePath }: StaticPaginationProps) {
   const generatePageUrl = (page: number) => {
     return `${basePath}?page=${page}`;
   };
@@ -31,8 +27,8 @@ export function StaticPagination({
           href={generatePageUrl(page)}
           className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
             page === currentPage
-              ? "bg-primary-accent text-white"
-              : "text-primary-muted hover:bg-primary-border hover:text-white"
+              ? "bg-primary text-white"
+              : "text-muted-foreground hover:bg-secondary hover:text-white"
           }`}
         >
           {page}
@@ -42,10 +38,7 @@ export function StaticPagination({
 
     const addEllipsis = (key: string) => {
       pages.push(
-        <span
-          key={`ellipsis-${key}`}
-          className="px-2 text-primary-muted select-none"
-        >
+        <span key={`ellipsis-${key}`} className="px-2 text-muted-foreground select-none">
           …
         </span>,
       );
@@ -90,7 +83,7 @@ export function StaticPagination({
       {currentPage > 1 && (
         <Link
           href={generatePageUrl(currentPage - 1)}
-          className="px-3 py-2 text-sm font-medium text-primary-muted hover:bg-primary-border hover:text-white rounded-md transition-colors"
+          className="px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-secondary hover:text-white rounded-md transition-colors"
         >
           ← 前
         </Link>
@@ -101,7 +94,7 @@ export function StaticPagination({
       {currentPage < totalPages && (
         <Link
           href={generatePageUrl(currentPage + 1)}
-          className="px-3 py-2 text-sm font-medium text-primary-muted hover:bg-primary-border hover:text-white rounded-md transition-colors"
+          className="px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-secondary hover:text-white rounded-md transition-colors"
         >
           次 →
         </Link>

@@ -11,8 +11,7 @@
     "next": "15.4.10",
     "react": "19.1.2",
     "react-apexcharts": "^1.7.0",
-    "react-dom": "19.1.2",
-    "recharts": "^3.1.2"
+    "react-dom": "19.1.2"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.12",
@@ -20,7 +19,6 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "autoprefixer": "^10.4.21",
     "jest": "^29.7.0",
     "postcss": "^8.5.6",
     "tailwindcss": "^4.1.12",
@@ -35,6 +33,7 @@
     "type-check": "tsc --noEmit",
     "format": "biome check --write .",
     "test": "jest",
-    "test:watch": "jest --watch"
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage"
   }
 }

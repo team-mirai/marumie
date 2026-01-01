@@ -8,7 +8,10 @@ module.exports = {
     "^.+\\.ts$": "ts-jest",
   },
   moduleNameMapper: {
+    "^server-only$": "<rootDir>/tests/__mocks__/server-only.js",
     "^@/shared/(.*)$": "<rootDir>/../shared/$1",
     "^@/(.*)$": "<rootDir>/src/$1",
   },
+  collectCoverageFrom: ["src/**/*.{ts,tsx}", "!src/**/*.d.ts"],
+  coverageReporters: ["text", "lcov"],
 };

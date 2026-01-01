@@ -1,5 +1,5 @@
 // Mock the category-mapping module
-jest.mock("@/shared/utils/category-mapping", () => ({
+jest.mock("@/shared/accounting/account-category", () => ({
   BS_CATEGORIES: {
     未払費用: { type: "liability", category: "負債" },
     借入金: { type: "liability", category: "負債" },

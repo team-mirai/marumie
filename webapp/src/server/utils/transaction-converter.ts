@@ -1,12 +1,6 @@
 import type { Transaction } from "@/shared/models/transaction";
-import {
-  PL_CATEGORIES,
-  type CategoryMapping,
-} from "@/shared/utils/category-mapping";
-import type {
-  DisplayTransaction,
-  DisplayTransactionType,
-} from "@/types/display-transaction";
+import { PL_CATEGORIES, type CategoryMapping } from "@/shared/accounting/account-category";
+import type { DisplayTransaction, DisplayTransactionType } from "@/types/display-transaction";
 
 /**
  * アカウント名からカテゴリマッピングを取得する関数
@@ -28,9 +22,7 @@ export function getCategoryMapping(account: string): CategoryMapping {
  * @param transaction 元のTransactionオブジェクト
  * @returns 表示用に変換されたDisplayTransactionオブジェクト
  */
-export function convertToDisplayTransaction(
-  transaction: Transaction,
-): DisplayTransaction {
+export function convertToDisplayTransaction(transaction: Transaction): DisplayTransaction {
   // offset系のトランザクションタイプが渡された場合は警告を出力
   if (
     transaction.transaction_type === "offset_income" ||
@@ -65,8 +57,7 @@ export function convertToDisplayTransaction(
       : transaction.credit_amount;
 
   const absAmount = Math.abs(baseAmount);
-  const amount =
-    transaction.transaction_type === "expense" ? -absAmount : absAmount;
+  const amount = transaction.transaction_type === "expense" ? -absAmount : absAmount;
 
   return {
     id: transaction.id,
@@ -87,8 +78,6 @@ export function convertToDisplayTransaction(
 /**
  * Transaction配列をDisplayTransaction配列に変換する関数
  */
-export function convertToDisplayTransactions(
-  transactions: Transaction[],
-): DisplayTransaction[] {
+export function convertToDisplayTransactions(transactions: Transaction[]): DisplayTransaction[] {
   return transactions.map(convertToDisplayTransaction);
 }

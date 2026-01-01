@@ -1,11 +1,17 @@
 "use client";
 import "client-only";
 import { useState } from "react";
+import type { ChangeEvent, FormEvent } from "react";
+import { useRouter } from "next/navigation";
 import { Button, Input, Card } from "../ui";
-import { apiClient } from "@/client/lib/api-client";
-import type { UserRole } from "@prisma/client";
+import type { UserRole } from "@/server/contexts/auth/domain/models/user-role";
+import type { User } from "@/server/contexts/shared/domain/repositories/user-repository.interface";
 
-interface User {
+/**
+ * ユーザー管理画面で表示するユーザーデータ
+ * セキュリティ上、authIdなどの内部情報は含まない
+ */
+interface UserDisplayData {
   id: string;
   email: string;
   role: UserRole;
@@ -13,14 +19,22 @@ interface User {
 }
 
 interface UserManagementProps {
-  users: User[];
+  users: UserDisplayData[];
   availableRoles: UserRole[];
+  updateUserRoleAction: (
+    userId: string,
+    role: UserRole,
+  ) => Promise<{ ok: true; user: User } | { ok: false; error: string }>;
+  inviteUserAction: (email: string) => Promise<{ ok: boolean; error?: string }>;
 }
 
 export default function UserManagement({
   users: initialUsers,
   availableRoles,
+  updateUserRoleAction,
+  inviteUserAction,
 }: UserManagementProps) {
+  const router = useRouter();
   const [users, setUsers] = useState(initialUsers);
   const [isLoading, setIsLoading] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
@@ -30,12 +44,24 @@ export default function UserManagement({
     setIsLoading(true);
 
     try {
-      await apiClient.updateUserRole({ userId, role: newRole });
-      setUsers((prev) =>
-        prev.map((user) =>
-          user.id === userId ? { ...user, role: newRole } : user,
-        ),
-      );
+      const result = await updateUserRoleAction(userId, newRole);
+      if (result.ok) {
+        // result.userからUserDisplayDataに必要なフィールドのみを取得して更新
+        setUsers((prev) =>
+          prev.map((user) =>
+            user.id === userId
+              ? {
+                  id: result.user.id,
+                  email: result.user.email,
+                  role: result.user.role,
+                  createdAt: result.user.createdAt,
+                }
+              : user,
+          ),
+        );
+      } else {
+        alert(`ロールの更新に失敗しました: ${result.error}`);
+      }
     } catch (error) {
       console.error("Error updating role:", error);
       alert(
@@ -46,23 +72,25 @@ export default function UserManagement({
     }
   };
 
-  const handleInviteUser = async (e: React.FormEvent) => {
+  const handleInviteUser = async (e: FormEvent) => {
     e.preventDefault();
     if (!inviteEmail.trim()) return;
 
     setIsInviting(true);
 
     try {
-      await apiClient.inviteUser({ email: inviteEmail.trim() });
-      alert(`${inviteEmail}に招待を送信しました`);
-      setInviteEmail("");
-      // Refresh the user list to show pending invitations
-      window.location.reload();
+      const result = await inviteUserAction(inviteEmail.trim());
+      if (result.ok) {
+        alert(`${inviteEmail}に招待を送信しました`);
+        setInviteEmail("");
+        // Server ActionのrevalidatePath()によりキャッシュが無効化されるため、ルーターのrefreshで十分
+        router.refresh();
+      } else {
+        alert(`招待の送信に失敗しました: ${result.error}`);
+      }
     } catch (error) {
       console.error("Error sending invitation:", error);
-      alert(
-        `招待の送信に失敗しました: ${error instanceof Error ? error.message : "不明なエラー"}`,
-      );
+      alert(`招待の送信に失敗しました: ${error instanceof Error ? error.message : "不明なエラー"}`);
     } finally {
       setIsInviting(false);
     }
@@ -71,16 +99,14 @@ export default function UserManagement({
   return (
     <div className="space-y-4">
       {/* Invite User Form */}
-      <Card>
-        <h2 className="text-lg font-medium text-white mb-4">
-          新規ユーザー招待
-        </h2>
+      <Card className="p-4">
+        <h2 className="text-lg font-medium text-white mb-4">新規ユーザー招待</h2>
         <form onSubmit={handleInviteUser} className="flex gap-4">
           <div className="flex-1">
             <Input
               type="email"
               value={inviteEmail}
-              onChange={(e) => setInviteEmail(e.target.value)}
+              onChange={(e: ChangeEvent<HTMLInputElement>) => setInviteEmail(e.target.value)}
               placeholder="メールアドレスを入力"
               disabled={isInviting}
               required
@@ -93,29 +119,27 @@ export default function UserManagement({
       </Card>
 
       <Card className="overflow-hidden p-0">
-        <table className="min-w-full divide-y divide-primary-border">
-          <thead className="bg-primary-hover">
+        <table className="min-w-full divide-y divide-border">
+          <thead className="bg-secondary">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-primary-muted uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                 メール
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-primary-muted uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                 ロール
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-primary-muted uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                 作成日
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-primary-muted uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                 操作
               </th>
             </tr>
           </thead>
-          <tbody className="bg-primary-panel divide-y divide-primary-border">
+          <tbody className="bg-card divide-y divide-border">
             {users.map((user) => (
               <tr key={user.id}>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-white">
-                  {user.email}
-                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-white">{user.email}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-white">
                   <span
                     className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
@@ -127,17 +151,15 @@ export default function UserManagement({
                     {user.role}
                   </span>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-primary-muted">
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
                   {new Date(user.createdAt).toLocaleDateString()}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                   <select
                     value={user.role}
-                    onChange={(e) =>
-                      handleRoleChange(user.id, e.target.value as UserRole)
-                    }
+                    onChange={(e) => handleRoleChange(user.id, e.target.value as UserRole)}
                     disabled={isLoading}
-                    className="bg-primary-input text-white border border-primary-border rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-primary-accent"
+                    className="bg-input text-white border border-border rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                   >
                     {availableRoles.map((role) => (
                       <option key={role} value={role}>
@@ -152,9 +174,7 @@ export default function UserManagement({
         </table>
 
         {users.length === 0 && (
-          <div className="text-center py-8 text-primary-muted">
-            ユーザーが見つかりません
-          </div>
+          <div className="text-center py-8 text-muted-foreground">ユーザーが見つかりません</div>
         )}
       </Card>
     </div>

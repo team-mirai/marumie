@@ -43,37 +43,28 @@ export function useMobileDetection() {
 export function useNodeColors() {
   // 統一されたノード色取得関数
   const getNodeColor = useCallback(
-    (
-      nodeType?: string,
-      variant: "fill" | "light" | "box" = "fill",
-      nodeLabel?: string,
-    ): string => {
+    (nodeType?: string, variant: "fill" | "light" | "box" = "fill", nodeLabel?: string): string => {
       // 特別なノードの判定（labelベース）
       if (nodeLabel === "現金残高") {
         if (variant === "light") return COLORS.CASH_BALANCE_LIGHT;
-        if (variant === "box" || variant === "fill")
-          return COLORS.CASH_BALANCE_BOX;
+        if (variant === "box" || variant === "fill") return COLORS.CASH_BALANCE_BOX;
         return COLORS.TEXT;
       }
 
       if (nodeLabel === "昨年からの現金残高") {
         if (variant === "light") return COLORS.CASH_BALANCE_LIGHT;
-        if (variant === "box" || variant === "fill")
-          return COLORS.CASH_BALANCE_BOX;
+        if (variant === "box" || variant === "fill") return COLORS.CASH_BALANCE_BOX;
         return COLORS.TEXT;
       }
 
       if (nodeLabel === "収支") {
         if (variant === "light") return COLORS.CASH_BALANCE_LIGHT;
-        if (variant === "box" || variant === "fill")
-          return COLORS.CASH_BALANCE_BOX;
+        if (variant === "box" || variant === "fill") return COLORS.CASH_BALANCE_BOX;
         return COLORS.TEXT;
       }
 
       if (nodeLabel === "未払費用") {
-        return variant === "light"
-          ? COLORS.PROCESSING_LIGHT
-          : COLORS.PROCESSING_ERROR;
+        return variant === "light" ? COLORS.PROCESSING_LIGHT : COLORS.PROCESSING_ERROR;
       }
 
       // 通常のノードタイプ判定
@@ -91,28 +82,25 @@ export function useNodeColors() {
   );
 
   // パーセンテージテキスト色取得関数
-  const getPercentageTextColor = useCallback(
-    (nodeLabel?: string, boxColor?: string): string => {
-      if (nodeLabel === "未払費用") {
-        return COLORS.EXPENSE;
-      }
+  const getPercentageTextColor = useCallback((nodeLabel?: string, boxColor?: string): string => {
+    if (nodeLabel === "未払費用") {
+      return COLORS.EXPENSE;
+    }
 
-      if (nodeLabel === "現金残高") {
-        return COLORS.TEXT;
-      }
+    if (nodeLabel === "現金残高") {
+      return COLORS.TEXT;
+    }
 
-      if (nodeLabel === "収支") {
-        return COLORS.PERCENTAGE_DARK;
-      }
+    if (nodeLabel === "収支") {
+      return COLORS.PERCENTAGE_DARK;
+    }
 
-      if (nodeLabel === "昨年からの現金残高") {
-        return COLORS.PERCENTAGE_DARK;
-      }
+    if (nodeLabel === "昨年からの現金残高") {
+      return COLORS.PERCENTAGE_DARK;
+    }
 
-      return boxColor || COLORS.TEXT;
-    },
-    [],
-  );
+    return boxColor || COLORS.TEXT;
+  }, []);
 
   return { getNodeColor, getPercentageTextColor };
 }
@@ -135,11 +123,7 @@ export function useLinkColors(data: SankeyData) {
         };
       }
 
-      const targetColor = getNodeColor(
-        targetNode?.nodeType,
-        "light",
-        targetNode?.label,
-      );
+      const targetColor = getNodeColor(targetNode?.nodeType, "light", targetNode?.label);
 
       // すべてのリンクの色はターゲットノードの色で統一
       return {
@@ -156,22 +140,19 @@ export function useLinkColors(data: SankeyData) {
 // ソート関連のカスタムフック
 export function useSankeySorting(data: SankeyData) {
   // ノードの値を計算する関数
-  const calculateNodeValue = useCallback(
-    (nodeId: string, links: SankeyLink[]) => {
-      // 対象ノードに関連するリンクを取得
-      const incomingLinks = links.filter((link) => link.target === nodeId);
-      const outgoingLinks = links.filter((link) => link.source === nodeId);
+  const calculateNodeValue = useCallback((nodeId: string, links: SankeyLink[]) => {
+    // 対象ノードに関連するリンクを取得
+    const incomingLinks = links.filter((link) => link.target === nodeId);
+    const outgoingLinks = links.filter((link) => link.source === nodeId);
 
-      // 入力リンクがある場合はその合計、なければ出力リンクの合計
-      const totalValue =
-        incomingLinks.length > 0
-          ? incomingLinks.reduce((sum, link) => sum + (link.value || 0), 0)
-          : outgoingLinks.reduce((sum, link) => sum + (link.value || 0), 0);
+    // 入力リンクがある場合はその合計、なければ出力リンクの合計
+    const totalValue =
+      incomingLinks.length > 0
+        ? incomingLinks.reduce((sum, link) => sum + (link.value || 0), 0)
+        : outgoingLinks.reduce((sum, link) => sum + (link.value || 0), 0);
 
-      return totalValue;
-    },
-    [],
-  );
+    return totalValue;
+  }, []);
 
   // ヘルパー関数: 親カテゴリIDを取得
   const getParentCategoryId = useCallback(
@@ -183,8 +164,7 @@ export function useSankeySorting(data: SankeyData) {
         return link?.target;
       } else if (nodeType === "expense-sub") {
         const link = data.links.find(
-          (link) =>
-            link.target === nodeId && link.source.startsWith("expense-"),
+          (link) => link.target === nodeId && link.source.startsWith("expense-"),
         );
         return link?.source;
       }
@@ -243,22 +223,14 @@ export function useSankeySorting(data: SankeyData) {
   const sortSubNodes = useCallback(
     (nodes: SankeyNode[], sortedParentNodes: SankeyNode[]) => {
       return [...nodes].sort((a, b) => {
-        const aParent = a.nodeType
-          ? getParentCategoryId(a.id, a.nodeType)
-          : null;
-        const bParent = b.nodeType
-          ? getParentCategoryId(b.id, b.nodeType)
-          : null;
+        const aParent = a.nodeType ? getParentCategoryId(a.id, a.nodeType) : null;
+        const bParent = b.nodeType ? getParentCategoryId(b.id, b.nodeType) : null;
 
         // 親カテゴリが異なる場合は親の順序に従う
         if (aParent && bParent && aParent !== bParent) {
           // ソート済み親ノードの順序を使用
-          const aParentIndex = sortedParentNodes.findIndex(
-            (n) => n.id === aParent,
-          );
-          const bParentIndex = sortedParentNodes.findIndex(
-            (n) => n.id === bParent,
-          );
+          const aParentIndex = sortedParentNodes.findIndex((n) => n.id === aParent);
+          const bParentIndex = sortedParentNodes.findIndex((n) => n.id === bParent);
 
           if (aParentIndex !== -1 && bParentIndex !== -1) {
             return aParentIndex - bParentIndex; // 親の順序に従う
@@ -294,12 +266,8 @@ export function useSankeySorting(data: SankeyData) {
   const sortNodes = useCallback(
     (nodes: SankeyNode[]) => {
       // 親ノードを先にソート
-      const incomeNodes = sortIncomeNodes(
-        nodes.filter((n) => n.nodeType === "income"),
-      );
-      const expenseNodes = sortExpenseNodes(
-        nodes.filter((n) => n.nodeType === "expense"),
-      );
+      const incomeNodes = sortIncomeNodes(nodes.filter((n) => n.nodeType === "income"));
+      const expenseNodes = sortExpenseNodes(nodes.filter((n) => n.nodeType === "expense"));
 
       // ソート済み親ノードを使ってsubノードをソート
       const incomeSubNodes = sortSubNodes(

@@ -9,6 +9,7 @@ import {
   type OtherIncomeTransaction,
 } from "@/server/contexts/report/domain/models/income-transaction";
 import { resolveIncomeAmount } from "@/server/contexts/report/domain/models/transaction-utils";
+import { ValidationErrorCode } from "@/server/contexts/report/domain/types/validation";
 
 describe("BusinessIncomeSection.fromTransactions", () => {
   it("converts business transactions to BusinessIncomeSection", () => {
@@ -197,5 +198,378 @@ describe("resolveIncomeAmount", () => {
 
   it("returns 0 when both are invalid", () => {
     expect(resolveIncomeAmount(NaN, NaN)).toBe(0);
+  });
+});
+
+describe("BusinessIncomeSection.validate", () => {
+  it("空のセクションでエラーを返さない", () => {
+    const section = { totalAmount: 0, rows: [] };
+    const errors = BusinessIncomeSection.validate(section);
+
+    expect(errors).toHaveLength(0);
+  });
+
+  it("正常なデータでエラーを返さない", () => {
+    const section = {
+      totalAmount: 100000,
+      rows: [
+        {
+          ichirenNo: "1",
+          gigyouSyurui: "機関紙発行",
+          kingaku: 100000,
+        },
+      ],
+    };
+    const errors = BusinessIncomeSection.validate(section);
+
+    expect(errors).toHaveLength(0);
+  });
+
+  it("事業種類が空の場合エラーを返す", () => {
+    const section = {
+      totalAmount: 100000,
+      rows: [
+        {
+          ichirenNo: "1",
+          gigyouSyurui: "",
+          kingaku: 100000,
+        },
+      ],
+    };
+    const errors = BusinessIncomeSection.validate(section);
+
+    expect(errors.length).toBeGreaterThan(0);
+    expect(errors[0].code).toBe(ValidationErrorCode.REQUIRED);
+  });
+
+  it("金額が0以下の場合エラーを返す", () => {
+    const section = {
+      totalAmount: 0,
+      rows: [
+        {
+          ichirenNo: "1",
+          gigyouSyurui: "機関紙発行",
+          kingaku: 0,
+        },
+      ],
+    };
+    const errors = BusinessIncomeSection.validate(section);
+
+    expect(errors.length).toBeGreaterThan(0);
+    expect(errors[0].code).toBe(ValidationErrorCode.NEGATIVE_VALUE);
+  });
+
+  it("事業種類が200文字を超える場合エラーを返す", () => {
+    const section = {
+      totalAmount: 100000,
+      rows: [
+        {
+          ichirenNo: "1",
+          gigyouSyurui: "あ".repeat(201),
+          kingaku: 100000,
+        },
+      ],
+    };
+    const errors = BusinessIncomeSection.validate(section);
+
+    expect(errors.length).toBeGreaterThan(0);
+    expect(errors[0].code).toBe(ValidationErrorCode.MAX_LENGTH_EXCEEDED);
+  });
+});
+
+describe("LoanIncomeSection.validate", () => {
+  it("空のセクションでエラーを返さない", () => {
+    const section = { totalAmount: 0, rows: [] };
+    const errors = LoanIncomeSection.validate(section);
+
+    expect(errors).toHaveLength(0);
+  });
+
+  it("正常なデータでエラーを返さない", () => {
+    const section = {
+      totalAmount: 1000000,
+      rows: [
+        {
+          ichirenNo: "1",
+          kariiresaki: "株式会社テスト銀行",
+          kingaku: 1000000,
+        },
+      ],
+    };
+    const errors = LoanIncomeSection.validate(section);
+
+    expect(errors).toHaveLength(0);
+  });
+
+  it("借入先が空の場合エラーを返す", () => {
+    const section = {
+      totalAmount: 1000000,
+      rows: [
+        {
+          ichirenNo: "1",
+          kariiresaki: "",
+          kingaku: 1000000,
+        },
+      ],
+    };
+    const errors = LoanIncomeSection.validate(section);
+
+    expect(errors.length).toBeGreaterThan(0);
+    expect(errors[0].code).toBe(ValidationErrorCode.REQUIRED);
+  });
+
+  it("金額が0以下の場合エラーを返す", () => {
+    const section = {
+      totalAmount: 0,
+      rows: [
+        {
+          ichirenNo: "1",
+          kariiresaki: "株式会社テスト銀行",
+          kingaku: 0,
+        },
+      ],
+    };
+    const errors = LoanIncomeSection.validate(section);
+
+    expect(errors.length).toBeGreaterThan(0);
+    expect(errors[0].code).toBe(ValidationErrorCode.NEGATIVE_VALUE);
+  });
+
+  it("借入先が200文字を超える場合エラーを返す", () => {
+    const section = {
+      totalAmount: 1000000,
+      rows: [
+        {
+          ichirenNo: "1",
+          kariiresaki: "あ".repeat(201),
+          kingaku: 1000000,
+        },
+      ],
+    };
+    const errors = LoanIncomeSection.validate(section);
+
+    expect(errors.length).toBeGreaterThan(0);
+    expect(errors[0].code).toBe(ValidationErrorCode.MAX_LENGTH_EXCEEDED);
+  });
+});
+
+describe("GrantIncomeSection.validate", () => {
+  it("空のセクションでエラーを返さない", () => {
+    const section = { totalAmount: 0, rows: [] };
+    const errors = GrantIncomeSection.validate(section);
+
+    expect(errors).toHaveLength(0);
+  });
+
+  it("正常なデータでエラーを返さない", () => {
+    const section = {
+      totalAmount: 500000,
+      rows: [
+        {
+          ichirenNo: "1",
+          honsibuNm: "〇〇党本部",
+          kingaku: 500000,
+          dt: new Date("2024-05-15"),
+          jimuAdr: "東京都千代田区永田町1-1-1",
+        },
+      ],
+    };
+    const errors = GrantIncomeSection.validate(section);
+
+    expect(errors).toHaveLength(0);
+  });
+
+  it("本支部名が空の場合エラーを返す", () => {
+    const section = {
+      totalAmount: 500000,
+      rows: [
+        {
+          ichirenNo: "1",
+          honsibuNm: "",
+          kingaku: 500000,
+          dt: new Date("2024-05-15"),
+          jimuAdr: "東京都千代田区永田町1-1-1",
+        },
+      ],
+    };
+    const errors = GrantIncomeSection.validate(section);
+
+    expect(errors.length).toBeGreaterThan(0);
+    expect(errors[0].code).toBe(ValidationErrorCode.REQUIRED);
+  });
+
+  it("金額が0以下の場合エラーを返す", () => {
+    const section = {
+      totalAmount: 0,
+      rows: [
+        {
+          ichirenNo: "1",
+          honsibuNm: "〇〇党本部",
+          kingaku: 0,
+          dt: new Date("2024-05-15"),
+          jimuAdr: "東京都千代田区永田町1-1-1",
+        },
+      ],
+    };
+    const errors = GrantIncomeSection.validate(section);
+
+    expect(errors.length).toBeGreaterThan(0);
+    expect(errors[0].code).toBe(ValidationErrorCode.NEGATIVE_VALUE);
+  });
+
+  it("本支部名が120文字を超える場合エラーを返す", () => {
+    const section = {
+      totalAmount: 500000,
+      rows: [
+        {
+          ichirenNo: "1",
+          honsibuNm: "あ".repeat(121),
+          kingaku: 500000,
+          dt: new Date("2024-05-15"),
+          jimuAdr: "東京都千代田区永田町1-1-1",
+        },
+      ],
+    };
+    const errors = GrantIncomeSection.validate(section);
+
+    expect(errors.length).toBeGreaterThan(0);
+    expect(errors[0].code).toBe(ValidationErrorCode.MAX_LENGTH_EXCEEDED);
+  });
+
+  it("事務所住所が80文字を超える場合エラーを返す", () => {
+    const section = {
+      totalAmount: 500000,
+      rows: [
+        {
+          ichirenNo: "1",
+          honsibuNm: "〇〇党本部",
+          kingaku: 500000,
+          dt: new Date("2024-05-15"),
+          jimuAdr: "あ".repeat(81),
+        },
+      ],
+    };
+    const errors = GrantIncomeSection.validate(section);
+
+    expect(errors.length).toBeGreaterThan(0);
+    expect(errors[0].code).toBe(ValidationErrorCode.MAX_LENGTH_EXCEEDED);
+  });
+
+  it("年月日が空の場合エラーを返す", () => {
+    const section = {
+      totalAmount: 500000,
+      rows: [
+        {
+          ichirenNo: "1",
+          honsibuNm: "〇〇党本部",
+          kingaku: 500000,
+          dt: null as unknown as Date,
+          jimuAdr: "東京都千代田区永田町1-1-1",
+        },
+      ],
+    };
+    const errors = GrantIncomeSection.validate(section);
+
+    expect(errors.length).toBeGreaterThan(0);
+    expect(errors[0].code).toBe(ValidationErrorCode.REQUIRED);
+  });
+
+  it("事務所住所が空の場合エラーを返す", () => {
+    const section = {
+      totalAmount: 500000,
+      rows: [
+        {
+          ichirenNo: "1",
+          honsibuNm: "〇〇党本部",
+          kingaku: 500000,
+          dt: new Date("2024-05-15"),
+          jimuAdr: "",
+        },
+      ],
+    };
+    const errors = GrantIncomeSection.validate(section);
+
+    expect(errors.length).toBeGreaterThan(0);
+    expect(errors[0].code).toBe(ValidationErrorCode.REQUIRED);
+  });
+});
+
+describe("OtherIncomeSection.validate", () => {
+  it("空のセクションでエラーを返さない", () => {
+    const section = { totalAmount: 0, underThresholdAmount: 0, rows: [] };
+    const errors = OtherIncomeSection.validate(section);
+
+    expect(errors).toHaveLength(0);
+  });
+
+  it("正常なデータでエラーを返さない", () => {
+    const section = {
+      totalAmount: 150000,
+      underThresholdAmount: 0,
+      rows: [
+        {
+          ichirenNo: "1",
+          tekiyou: "利息収入",
+          kingaku: 150000,
+        },
+      ],
+    };
+    const errors = OtherIncomeSection.validate(section);
+
+    expect(errors).toHaveLength(0);
+  });
+
+  it("摘要が空の場合エラーを返す", () => {
+    const section = {
+      totalAmount: 150000,
+      underThresholdAmount: 0,
+      rows: [
+        {
+          ichirenNo: "1",
+          tekiyou: "",
+          kingaku: 150000,
+        },
+      ],
+    };
+    const errors = OtherIncomeSection.validate(section);
+
+    expect(errors.length).toBeGreaterThan(0);
+    expect(errors[0].code).toBe(ValidationErrorCode.REQUIRED);
+  });
+
+  it("金額が0以下の場合エラーを返す", () => {
+    const section = {
+      totalAmount: 0,
+      underThresholdAmount: 0,
+      rows: [
+        {
+          ichirenNo: "1",
+          tekiyou: "利息収入",
+          kingaku: 0,
+        },
+      ],
+    };
+    const errors = OtherIncomeSection.validate(section);
+
+    expect(errors.length).toBeGreaterThan(0);
+    expect(errors[0].code).toBe(ValidationErrorCode.NEGATIVE_VALUE);
+  });
+
+  it("摘要が200文字を超える場合エラーを返す", () => {
+    const section = {
+      totalAmount: 150000,
+      underThresholdAmount: 0,
+      rows: [
+        {
+          ichirenNo: "1",
+          tekiyou: "あ".repeat(201),
+          kingaku: 150000,
+        },
+      ],
+    };
+    const errors = OtherIncomeSection.validate(section);
+
+    expect(errors.length).toBeGreaterThan(0);
+    expect(errors[0].code).toBe(ValidationErrorCode.MAX_LENGTH_EXCEEDED);
   });
 });

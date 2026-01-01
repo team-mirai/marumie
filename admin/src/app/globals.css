@@ -1,0 +1,96 @@
+@import "tailwindcss";
+
+@theme {
+  /* shadcn/ui Dark Blue テーマ（公式 .dark の値を変換） */
+  --color-background: oklch(0.141 0.005 285.823);
+  --color-foreground: oklch(0.985 0 0);
+
+  --color-card: oklch(0.21 0.006 285.885);
+  --color-card-foreground: oklch(0.985 0 0);
+
+  --color-popover: oklch(0.21 0.006 285.885);
+  --color-popover-foreground: oklch(0.985 0 0);
+
+  --color-primary: oklch(0.488 0.243 264.376);
+  --color-primary-foreground: oklch(0.97 0.014 254.604);
+
+  --color-secondary: oklch(0.274 0.006 286.033);
+  --color-secondary-foreground: oklch(0.985 0 0);
+
+  --color-muted: oklch(0.274 0.006 286.033);
+  --color-muted-foreground: oklch(0.705 0.015 286.067);
+
+  --color-accent: oklch(0.274 0.006 286.033);
+  --color-accent-foreground: oklch(0.985 0 0);
+
+  --color-destructive: oklch(0.704 0.191 22.216);
+  --color-destructive-foreground: oklch(0.985 0 0);
+
+  --color-border: oklch(1 0 0 / 10%);
+  --color-input: oklch(1 0 0 / 15%);
+  --color-ring: oklch(0.556 0 0);
+
+  --color-chart-1: oklch(0.809 0.105 251.813);
+  --color-chart-2: oklch(0.623 0.214 259.815);
+  --color-chart-3: oklch(0.546 0.245 262.881);
+  --color-chart-4: oklch(0.488 0.243 264.376);
+  --color-chart-5: oklch(0.424 0.199 265.638);
+
+  --color-sidebar: oklch(0.21 0.006 285.885);
+  --color-sidebar-foreground: oklch(0.985 0 0);
+  --color-sidebar-primary: oklch(0.623 0.214 259.815);
+  --color-sidebar-primary-foreground: oklch(0.97 0.014 254.604);
+  --color-sidebar-accent: oklch(0.274 0.006 286.033);
+  --color-sidebar-accent-foreground: oklch(0.985 0 0);
+  --color-sidebar-border: oklch(0.225 0.004 286);
+  --color-sidebar-ring: oklch(0.439 0 0);
+
+  --radius: 0.5rem;
+}
+
+html,
+body {
+  height: 100%;
+}
+body {
+  margin: 0;
+  font-family:
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    Segoe UI,
+    Roboto,
+    Ubuntu,
+    Cantarell,
+    Noto Sans,
+    Helvetica Neue,
+    Arial,
+    "Apple Color Emoji",
+    "Segoe UI Emoji";
+  background: var(--color-background);
+  color: var(--color-foreground);
+}
+
+.container {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  height: 100vh;
+}
+.nav {
+  display: grid;
+  gap: 8px;
+}
+.nav a {
+  color: white;
+  text-decoration: none;
+  padding: 8px 10px;
+  border-radius: 8px;
+}
+.nav a.active,
+.nav a:hover {
+  background: var(--color-secondary);
+}
+.content {
+  padding: 20px;
+  overflow: auto;
+}

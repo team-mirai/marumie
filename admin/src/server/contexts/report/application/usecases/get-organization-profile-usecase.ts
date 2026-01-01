@@ -11,9 +11,7 @@ export interface GetOrganizationProfileInput {
 export class GetOrganizationProfileUsecase {
   constructor(private repository: IOrganizationReportProfileRepository) {}
 
-  async execute(
-    input: GetOrganizationProfileInput,
-  ): Promise<OrganizationReportProfile | null> {
+  async execute(input: GetOrganizationProfileInput): Promise<OrganizationReportProfile | null> {
     return this.repository.findByOrganizationIdAndYear(
       input.politicalOrganizationId,
       input.financialYear,

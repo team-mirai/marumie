@@ -3,9 +3,10 @@ import "client-only";
 
 import { useId, useState, useEffect } from "react";
 import type { PoliticalOrganization } from "@/shared/models/political-organization";
-import { Selector } from "@/client/components/ui";
+import { Button, Input, Label } from "@/client/components/ui";
+import { PoliticalOrganizationSelect } from "@/client/components/political-organizations/PoliticalOrganizationSelect";
 import CsvPreview from "@/client/components/csv-import/CsvPreview";
-import type { PreviewMfCsvResult } from "@/server/contexts/data-import/application/usecases/preview-mf-csv-usecase";
+import type { PreviewMfCsvResult } from "@/server/contexts/data-import/presentation/types";
 import type {
   UploadCsvRequest,
   UploadCsvResponse,
@@ -25,20 +26,12 @@ export default function CsvUploadClient({
 }: CsvUploadClientProps) {
   const csvFileInputId = useId();
   const [file, setFile] = useState<File | null>(null);
-  const [politicalOrganizationId, setPoliticalOrganizationId] =
-    useState<string>("");
+  const [politicalOrganizationId, setPoliticalOrganizationId] = useState<string>("");
   const [message, setMessage] = useState<string>("");
   const [errors, setErrors] = useState<string[]>([]);
   const [hasError, setHasError] = useState<boolean>(false);
   const [uploading, setUploading] = useState(false);
-  const [previewResult, setPreviewResult] = useState<PreviewMfCsvResult | null>(
-    null,
-  );
-
-  const organizationOptions = organizations.map((org) => ({
-    value: org.id,
-    label: org.displayName,
-  }));
+  const [previewResult, setPreviewResult] = useState<PreviewMfCsvResult | null>(null);
 
   // 最初の組織を自動選択
   useEffect(() => {
@@ -97,9 +90,7 @@ export default function CsvUploadClient({
       setFile(null);
       setPreviewResult(null);
 
-      const fileInput = document.getElementById(
-        csvFileInputId,
-      ) as HTMLInputElement;
+      const fileInput = document.getElementById(csvFileInputId) as HTMLInputElement;
       if (fileInput) {
         fileInput.value = "";
       }
@@ -118,26 +109,17 @@ export default function CsvUploadClient({
 
   return (
     <form onSubmit={onSubmit} className="space-y-3">
+      <PoliticalOrganizationSelect
+        organizations={organizations}
+        value={politicalOrganizationId}
+        onValueChange={setPoliticalOrganizationId}
+        required
+      />
       <div>
-        <Selector
-          options={organizationOptions}
-          value={politicalOrganizationId}
-          onChange={setPoliticalOrganizationId}
-          label="Political Organization"
-          placeholder="-- 政治団体を選択してください --"
-          required={true}
-        />
-      </div>
-      <div>
-        <label
-          htmlFor={csvFileInputId}
-          className="block text-sm font-medium text-white mb-2"
-        >
-          CSV File:
-        </label>
-        <input
+        <Label htmlFor={csvFileInputId}>CSV File:</Label>
+        <Input
           id={csvFileInputId}
-          className="bg-primary-input text-white border border-primary-border rounded-lg px-3 py-2.5 w-full file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary-accent file:text-white hover:file:bg-blue-600 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-accent focus:border-primary-accent"
+          className="h-10 border-0 bg-transparent shadow-none file:mr-4 file:h-full file:px-6 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90 file:cursor-pointer"
           type="file"
           accept=".csv,text/csv"
           onChange={(e) => setFile(e.target.files?.[0] ?? null)}
@@ -157,23 +139,13 @@ export default function CsvUploadClient({
           !file ||
           !politicalOrganizationId ||
           !previewResult ||
-          previewResult.summary.insertCount +
-            previewResult.summary.updateCount ===
-            0 ||
+          previewResult.summary.insertCount + previewResult.summary.updateCount === 0 ||
           uploading;
 
         return (
-          <button
-            disabled={isDisabled}
-            type="submit"
-            className={`bg-primary-accent text-white border-0 rounded-lg px-4 py-2.5 font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-accent ${
-              isDisabled
-                ? "opacity-50 cursor-not-allowed"
-                : "hover:bg-blue-600 cursor-pointer"
-            }`}
-          >
+          <Button disabled={isDisabled} type="submit">
             {uploading ? "Processing…" : "このデータを保存する"}
-          </button>
+          </Button>
         );
       })()}
 

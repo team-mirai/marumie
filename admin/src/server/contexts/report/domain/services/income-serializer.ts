@@ -25,9 +25,7 @@ import {
 /**
  * Serializes a BusinessIncomeSection into XML format for SYUUSHI07_03.
  */
-export function serializeBusinessIncomeSection(
-  section: BusinessIncomeSection,
-): XMLBuilder {
+export function serializeBusinessIncomeSection(section: BusinessIncomeSection): XMLBuilder {
   const frag = fragment();
   const root = frag.ele("SYUUSHI07_03");
   const sheet = root.ele("SHEET");
@@ -53,9 +51,7 @@ export function serializeBusinessIncomeSection(
 /**
  * Serializes a LoanIncomeSection into XML format for SYUUSHI07_04.
  */
-export function serializeLoanIncomeSection(
-  section: LoanIncomeSection,
-): XMLBuilder {
+export function serializeLoanIncomeSection(section: LoanIncomeSection): XMLBuilder {
   const frag = fragment();
   const root = frag.ele("SYUUSHI07_04");
   const sheet = root.ele("SHEET");
@@ -81,9 +77,7 @@ export function serializeLoanIncomeSection(
 /**
  * Serializes a GrantIncomeSection into XML format for SYUUSHI07_05.
  */
-export function serializeGrantIncomeSection(
-  section: GrantIncomeSection,
-): XMLBuilder {
+export function serializeGrantIncomeSection(section: GrantIncomeSection): XMLBuilder {
   const frag = fragment();
   const root = frag.ele("SYUUSHI07_05");
   const sheet = root.ele("SHEET");
@@ -111,9 +105,7 @@ export function serializeGrantIncomeSection(
 /**
  * Serializes an OtherIncomeSection into XML format for SYUUSHI07_06.
  */
-export function serializeOtherIncomeSection(
-  section: OtherIncomeSection,
-): XMLBuilder {
+export function serializeOtherIncomeSection(section: OtherIncomeSection): XMLBuilder {
   const frag = fragment();
   const root = frag.ele("SYUUSHI07_06");
   const sheet = root.ele("SHEET");

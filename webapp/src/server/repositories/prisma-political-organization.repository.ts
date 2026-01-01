@@ -5,9 +5,7 @@ import type {
 import type { PoliticalOrganization } from "@/shared/models/political-organization";
 import type { IPoliticalOrganizationRepository } from "./interfaces/political-organization-repository.interface";
 
-export class PrismaPoliticalOrganizationRepository
-  implements IPoliticalOrganizationRepository
-{
+export class PrismaPoliticalOrganizationRepository implements IPoliticalOrganizationRepository {
   constructor(private prisma: PrismaClient) {}
 
   async findBySlug(slug: string): Promise<PoliticalOrganization | null> {

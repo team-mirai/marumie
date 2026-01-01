@@ -15,8 +15,7 @@ import {
 } from "@/server/usecases/get-transactions-by-slug-usecase";
 import { CACHE_REVALIDATE_SECONDS } from "./constants";
 
-export interface TopPageDataParams
-  extends Omit<GetTransactionsBySlugParams, "financialYear"> {
+export interface TopPageDataParams extends Omit<GetTransactionsBySlugParams, "financialYear"> {
   financialYear: number; // 必須項目として設定
 }
 
@@ -30,11 +29,8 @@ export const loadTopPageData = unstable_cache(
 
     // 実データを取得する場合
     const transactionRepository = new PrismaTransactionRepository(prisma);
-    const politicalOrganizationRepository =
-      new PrismaPoliticalOrganizationRepository(prisma);
-    const balanceSnapshotRepository = new PrismaBalanceSnapshotRepository(
-      prisma,
-    );
+    const politicalOrganizationRepository = new PrismaPoliticalOrganizationRepository(prisma);
+    const balanceSnapshotRepository = new PrismaBalanceSnapshotRepository(prisma);
 
     // 5つのUsecaseを初期化
     const transactionUsecase = new GetTransactionsBySlugUsecase(
@@ -76,19 +72,18 @@ export const loadTopPageData = unstable_cache(
     ]);
 
     // 第2段階: sankeyの2種類を並列実行
-    const [sankeyPoliticalCategoryData, sankeyFriendlyCategoryData] =
-      await Promise.all([
-        sankeyUsecase.execute({
-          slugs: params.slugs,
-          financialYear: params.financialYear,
-          categoryType: "political-category",
-        }),
-        sankeyUsecase.execute({
-          slugs: params.slugs,
-          financialYear: params.financialYear,
-          categoryType: "friendly-category",
-        }),
-      ]);
+    const [sankeyPoliticalCategoryData, sankeyFriendlyCategoryData] = await Promise.all([
+      sankeyUsecase.execute({
+        slugs: params.slugs,
+        financialYear: params.financialYear,
+        categoryType: "political-category",
+      }),
+      sankeyUsecase.execute({
+        slugs: params.slugs,
+        financialYear: params.financialYear,
+        categoryType: "friendly-category",
+      }),
+    ]);
 
     return {
       transactionData,

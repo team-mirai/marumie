@@ -1,23 +1,13 @@
 import type { MfCsvRecord } from "@/server/contexts/data-import/infrastructure/mf/mf-csv-loader";
-import {
-  PL_CATEGORIES,
-  BS_CATEGORIES,
-  CASH_ACCOUNTS,
-} from "@/shared/utils/category-mapping";
+import { PL_CATEGORIES, BS_CATEGORIES, CASH_ACCOUNTS } from "@/shared/accounting/account-category";
 import type { TransactionType } from "@/shared/models/transaction";
 import { PreviewTransaction } from "@/server/contexts/data-import/domain/models/preview-transaction";
 
 export class MfRecordConverter {
-  public convertRow(
-    record: MfCsvRecord,
-    politicalOrganizationId: string,
-  ): PreviewTransaction {
+  public convertRow(record: MfCsvRecord, politicalOrganizationId: string): PreviewTransaction {
     const debitAmount = this.parseAmount(record.debit_amount);
     const creditAmount = this.parseAmount(record.credit_amount);
-    const categoryKey = this.determineCategoryKey(
-      record.debit_account,
-      record.credit_account,
-    );
+    const categoryKey = this.determineCategoryKey(record.debit_account, record.credit_account);
     const transactionType = this.determineTransactionType(
       record.debit_account,
       record.credit_account,
@@ -25,9 +15,7 @@ export class MfRecordConverter {
 
     const friendlyCategory = record.friendly_category;
 
-    const label = this.shouldDisplayDescription(record)
-      ? record.description
-      : undefined;
+    const label = this.shouldDisplayDescription(record) ? record.description : undefined;
 
     // Determine status and errors based on conversion
     let status: "insert" | "update" | "invalid" | "skip" = "insert";
@@ -41,8 +29,9 @@ export class MfRecordConverter {
     }
 
     // Parse transaction date with validation
-    const { date: transactionDate, isValid: isDateValid } =
-      this.parseTransactionDate(record.transaction_date);
+    const { date: transactionDate, isValid: isDateValid } = this.parseTransactionDate(
+      record.transaction_date,
+    );
     if (!isDateValid) {
       status = "invalid";
       errors.push(`Invalid date format: ${record.transaction_date}`);
@@ -98,14 +87,10 @@ export class MfRecordConverter {
 
     const descriptionStartsWithDebit = description.startsWith("デビット");
     const containsUpsider =
-      normalizedDescription.includes("upsider") ||
-      normalizedMemo.includes("upsider");
-    const containsAmex =
-      normalizedDescription.includes("amex") || normalizedMemo.includes("amex");
+      normalizedDescription.includes("upsider") || normalizedMemo.includes("upsider");
+    const containsAmex = normalizedDescription.includes("amex") || normalizedMemo.includes("amex");
 
-    return Boolean(
-      descriptionStartsWithDebit || containsUpsider || containsAmex,
-    );
+    return Boolean(descriptionStartsWithDebit || containsUpsider || containsAmex);
   }
 
   private parseAmount(amountStr: string): number {
@@ -119,10 +104,7 @@ export class MfRecordConverter {
     return Number.isNaN(parsed) ? 0 : parsed;
   }
 
-  private determineCategoryKey(
-    debitAccount: string,
-    creditAccount: string,
-  ): string {
+  private determineCategoryKey(debitAccount: string, creditAccount: string): string {
     const isDebitPL = debitAccount in PL_CATEGORIES;
     const isCreditPL = creditAccount in PL_CATEGORIES;
 

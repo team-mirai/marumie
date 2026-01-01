@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { Button } from "@/client/components/ui";
 
 interface ClientPaginationProps {
   currentPage: number;
@@ -8,11 +9,7 @@ interface ClientPaginationProps {
   onPageChange: (page: number) => void;
 }
 
-export function ClientPagination({
-  currentPage,
-  totalPages,
-  onPageChange,
-}: ClientPaginationProps) {
+export function ClientPagination({ currentPage, totalPages, onPageChange }: ClientPaginationProps) {
   const renderPageNumbers = () => {
     if (totalPages <= 0) return null;
 
@@ -21,27 +18,21 @@ export function ClientPagination({
 
     const addPageButton = (page: number) => {
       pages.push(
-        <button
+        <Button
           type="button"
           key={`page-${page}`}
+          variant={page === currentPage ? "default" : "ghost"}
+          size="sm"
           onClick={() => onPageChange(page)}
-          className={`px-3 py-2 text-sm font-medium rounded-md transition-colors cursor-pointer ${
-            page === currentPage
-              ? "bg-primary-accent text-white"
-              : "text-primary-muted hover:bg-primary-border hover:text-white"
-          }`}
         >
           {page}
-        </button>,
+        </Button>,
       );
     };
 
     const addEllipsis = (key: string) => {
       pages.push(
-        <span
-          key={`ellipsis-${key}`}
-          className="px-2 text-primary-muted select-none"
-        >
+        <span key={`ellipsis-${key}`} className="px-2 text-muted-foreground select-none">
           …
         </span>,
       );
@@ -84,25 +75,27 @@ export function ClientPagination({
   return (
     <div className="flex justify-center items-center gap-2 mt-6">
       {currentPage > 1 && (
-        <button
+        <Button
           type="button"
+          variant="ghost"
+          size="sm"
           onClick={() => onPageChange(currentPage - 1)}
-          className="px-3 py-2 text-sm font-medium text-primary-muted hover:bg-primary-border hover:text-white rounded-md transition-colors cursor-pointer"
         >
           ← 前
-        </button>
+        </Button>
       )}
 
       {renderPageNumbers()}
 
       {currentPage < totalPages && (
-        <button
+        <Button
           type="button"
+          variant="ghost"
+          size="sm"
           onClick={() => onPageChange(currentPage + 1)}
-          className="px-3 py-2 text-sm font-medium text-primary-muted hover:bg-primary-border hover:text-white rounded-md transition-colors cursor-pointer"
         >
           次 →
-        </button>
+        </Button>
       )}
     </div>
   );

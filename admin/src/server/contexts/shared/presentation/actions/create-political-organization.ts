@@ -15,9 +15,7 @@ export interface CreatePoliticalOrganizationData {
   description?: string;
 }
 
-export async function createPoliticalOrganization(
-  data: CreatePoliticalOrganizationData,
-) {
+export async function createPoliticalOrganization(data: CreatePoliticalOrganizationData) {
   try {
     const { displayName, orgName, slug, description } = data;
 
@@ -32,8 +30,6 @@ export async function createPoliticalOrganization(
       throw new Error("このスラッグは既に使用されています");
     }
 
-    throw new Error(
-      error instanceof Error ? error.message : "政治団体の作成に失敗しました",
-    );
+    throw new Error(error instanceof Error ? error.message : "政治団体の作成に失敗しました");
   }
 }

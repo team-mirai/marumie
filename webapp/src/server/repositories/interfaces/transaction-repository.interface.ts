@@ -49,10 +49,7 @@ export interface SortOptions {
 
 export interface ITransactionRepository {
   findById(id: string): Promise<Transaction | null>;
-  findAll(
-    filters?: TransactionFilters,
-    sortOptions?: SortOptions,
-  ): Promise<Transaction[]>;
+  findAll(filters?: TransactionFilters, sortOptions?: SortOptions): Promise<Transaction[]>;
   findWithPagination(
     filters?: TransactionFilters,
     pagination?: PaginationOptions,
@@ -78,10 +75,7 @@ export interface ITransactionRepository {
     politicalOrganizationIds: string[],
     financialYear: number,
   ): Promise<number>;
-  getLiabilityBalance(
-    politicalOrganizationIds: string[],
-    financialYear: number,
-  ): Promise<number>;
+  getLiabilityBalance(politicalOrganizationIds: string[], financialYear: number): Promise<number>;
   getLastUpdatedAt(): Promise<Date | null>;
   findAllWithPoliticalOrganizationName(
     filters?: TransactionFilters,

@@ -15,11 +15,10 @@ import type {
 /**
  * Serializes an OrganizationReportProfile into XML format for SYUUSHI07_01.
  */
-export function serializeProfileSection(
-  profile: OrganizationReportProfile,
-): XMLBuilder {
+export function serializeProfileSection(profile: OrganizationReportProfile): XMLBuilder {
   const frag = fragment();
-  const root = frag.ele("SYUUSHI07_01");
+  const syuushi0701 = frag.ele("SYUUSHI07_01");
+  const root = syuushi0701.ele("SHEET");
   const details = profile.details;
 
   root.ele("HOUKOKU_NEN").txt(profile.financialYear.toString());
@@ -47,10 +46,7 @@ function serializeRepresentative(
   root.ele("DAI_NM2").txt(details.representative?.firstName ?? "");
 }
 
-function serializeAccountant(
-  root: XMLBuilder,
-  details: OrganizationReportProfileDetails,
-): void {
+function serializeAccountant(root: XMLBuilder, details: OrganizationReportProfileDetails): void {
   root.ele("KAI_NM1").txt(details.accountant?.lastName ?? "");
   root.ele("KAI_NM2").txt(details.accountant?.firstName ?? "");
 }

@@ -19,12 +19,11 @@ export class GetTransactionsForCsvUsecase {
     private politicalOrganizationRepository: IPoliticalOrganizationRepository,
   ) {}
 
-  async execute(
-    params: GetTransactionsForCsvParams,
-  ): Promise<GetTransactionsForCsvResult> {
+  async execute(params: GetTransactionsForCsvParams): Promise<GetTransactionsForCsvResult> {
     try {
-      const politicalOrganizations =
-        await this.politicalOrganizationRepository.findBySlugs(params.slugs);
+      const politicalOrganizations = await this.politicalOrganizationRepository.findBySlugs(
+        params.slugs,
+      );
 
       if (politicalOrganizations.length === 0) {
         throw new Error(
@@ -40,9 +39,7 @@ export class GetTransactionsForCsvUsecase {
 
       // JOINで政治団体名も含めて全件取得
       const transactions =
-        await this.transactionRepository.findAllWithPoliticalOrganizationName(
-          filters,
-        );
+        await this.transactionRepository.findAllWithPoliticalOrganizationName(filters);
 
       const total = transactions.length;
 

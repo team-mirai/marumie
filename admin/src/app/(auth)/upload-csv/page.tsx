@@ -9,7 +9,7 @@ export default async function UploadCsvPage() {
   const organizations = await loadPoliticalOrganizationsData();
 
   return (
-    <div className="bg-primary-panel rounded-xl p-4">
+    <div className="bg-card rounded-xl p-4">
       <h1 className="text-2xl font-bold text-white mb-6">CSVアップロード</h1>
       <CsvUploadClient
         organizations={organizations}

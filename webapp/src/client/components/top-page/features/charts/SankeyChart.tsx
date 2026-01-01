@@ -92,21 +92,13 @@ interface SankeyChartProps {
 
 const getNodeWidth = (nodeType: string | undefined, isMobile: boolean) => {
   if (nodeType === "total") {
-    return !isMobile
-      ? DIMENSIONS.TOTAL_WIDTH_DESKTOP
-      : DIMENSIONS.TOTAL_WIDTH_MOBILE;
+    return !isMobile ? DIMENSIONS.TOTAL_WIDTH_DESKTOP : DIMENSIONS.TOTAL_WIDTH_MOBILE;
   }
-  return !isMobile
-    ? DIMENSIONS.REGULAR_WIDTH_DESKTOP
-    : DIMENSIONS.REGULAR_WIDTH_MOBILE;
+  return !isMobile ? DIMENSIONS.REGULAR_WIDTH_DESKTOP : DIMENSIONS.REGULAR_WIDTH_MOBILE;
 };
 
 // カスタムノードレイヤー（合計ボックスを太くする）
-const CustomNodesLayer = ({
-  nodes,
-}: {
-  nodes: readonly SankeyNodeWithPosition[];
-}) => {
+const CustomNodesLayer = ({ nodes }: { nodes: readonly SankeyNodeWithPosition[] }) => {
   const isMobile = useMobileDetection();
   const { getNodeColor } = useNodeColors();
   const [tooltip, setTooltip] = useState<{
@@ -125,8 +117,7 @@ const CustomNodesLayer = ({
 
     // 支出側（expense, expense-sub）かどうかを判定
     const isExpenseSide =
-      originalNode?.nodeType === "expense" ||
-      originalNode?.nodeType === "expense-sub";
+      originalNode?.nodeType === "expense" || originalNode?.nodeType === "expense-sub";
 
     setTooltip({
       visible: true,
@@ -151,8 +142,7 @@ const CustomNodesLayer = ({
     if (tooltip.visible && tooltip.node) {
       // 支出側（expense, expense-sub）かどうかを判定
       const isExpenseSide =
-        tooltip.node.nodeType === "expense" ||
-        tooltip.node.nodeType === "expense-sub";
+        tooltip.node.nodeType === "expense" || tooltip.node.nodeType === "expense-sub";
 
       setTooltip((prev) => ({
         ...prev,
@@ -213,8 +203,7 @@ const CustomNodesLayer = ({
               minWidth: "max-content",
               // 支出側の場合は右側を基準に配置
               transform:
-                tooltip.node?.nodeType === "expense" ||
-                tooltip.node?.nodeType === "expense-sub"
+                tooltip.node?.nodeType === "expense" || tooltip.node?.nodeType === "expense-sub"
                   ? "translateX(-100%)"
                   : "none",
             }}
@@ -222,9 +211,7 @@ const CustomNodesLayer = ({
             <div style={{ marginBottom: "3px", fontWeight: "700" }}>
               {tooltip.node.label || tooltip.node.id}
             </div>
-            <div
-              style={{ fontSize: "14px", fontWeight: "700", color: "#1E293B" }}
-            >
+            <div style={{ fontSize: "14px", fontWeight: "700", color: "#1E293B" }}>
               ¥{Math.round(tooltip.node.value || 0).toLocaleString("ja-JP")}
             </div>
           </div>,
@@ -276,9 +263,7 @@ const renderTotalNodeLabels = (
       </tspan>
       <tspan
         x={node.x + node.width / 2}
-        dy={
-          !isMobile ? DIMENSIONS.TSPAN_DY_DESKTOP : DIMENSIONS.TSPAN_DY_MOBILE
-        }
+        dy={!isMobile ? DIMENSIONS.TSPAN_DY_DESKTOP : DIMENSIONS.TSPAN_DY_MOBILE}
       >
         {TEXT_CONFIG.TOTAL_LABEL_PERCENTAGE}
       </tspan>
@@ -390,8 +375,7 @@ const renderPrimaryLabel = (
   isMobile: boolean,
 ) => {
   const label = node.label || node.id;
-  const isSubcategory =
-    node.nodeType === "income-sub" || node.nodeType === "expense-sub";
+  const isSubcategory = node.nodeType === "income-sub" || node.nodeType === "expense-sub";
 
   const fontSize = !isMobile
     ? isSubcategory
@@ -447,11 +431,7 @@ const renderPrimaryLabel = (
       dominantBaseline="middle"
     >
       {lines.map((line, index) => (
-        <tspan
-          key={`${node.id}-${index}`}
-          x={x}
-          dy={index === 0 ? 0 : lineHeight}
-        >
+        <tspan key={`${node.id}-${index}`} x={x} dy={index === 0 ? 0 : lineHeight}>
           {line}
         </tspan>
       ))}
@@ -460,34 +440,23 @@ const renderPrimaryLabel = (
 };
 
 // カスタムラベルレイヤー（プライマリ + セカンダリ）
-const CustomLabelsLayer = ({
-  nodes,
-}: {
-  nodes: readonly SankeyNodeWithPosition[];
-}) => {
+const CustomLabelsLayer = ({ nodes }: { nodes: readonly SankeyNodeWithPosition[] }) => {
   const isMobile = useMobileDetection();
   const { getNodeColor, getPercentageTextColor } = useNodeColors();
 
   // 全体の合計値を計算（合計ノードの値を使用）
-  const totalValue =
-    nodes.find((node) => node.label === TEXT_CONFIG.TOTAL_NODE_ID)?.value || 0;
+  const totalValue = nodes.find((node) => node.label === TEXT_CONFIG.TOTAL_NODE_ID)?.value || 0;
 
   return (
     <g>
       {nodes.map((node: SankeyNodeWithPosition) => {
         // ノードタイプで収入・支出を判定
-        const isLeft =
-          node.nodeType === "income" || node.nodeType === "income-sub";
+        const isLeft = node.nodeType === "income" || node.nodeType === "income-sub";
         const x = isLeft
-          ? node.x -
-            (!isMobile
-              ? DIMENSIONS.LABEL_OFFSET_DESKTOP
-              : DIMENSIONS.LABEL_OFFSET_MOBILE)
+          ? node.x - (!isMobile ? DIMENSIONS.LABEL_OFFSET_DESKTOP : DIMENSIONS.LABEL_OFFSET_MOBILE)
           : node.x +
             node.width +
-            (!isMobile
-              ? DIMENSIONS.LABEL_OFFSET_DESKTOP
-              : DIMENSIONS.LABEL_OFFSET_MOBILE);
+            (!isMobile ? DIMENSIONS.LABEL_OFFSET_DESKTOP : DIMENSIONS.LABEL_OFFSET_MOBILE);
         const textAnchor = isLeft ? "end" : "start";
         const percentageY = node.y - DIMENSIONS.PERCENTAGE_OFFSET;
         const percentageText = calculatePercentageText(node.value, totalValue);
@@ -495,9 +464,7 @@ const CustomLabelsLayer = ({
         const elements = [];
 
         if (node.nodeType === "total") {
-          elements.push(
-            ...renderTotalNodeLabels(node, boxColor, percentageY, isMobile),
-          );
+          elements.push(...renderTotalNodeLabels(node, boxColor, percentageY, isMobile));
         } else if (percentageText) {
           const percentageLabel = renderPercentageLabel(
             node,
@@ -532,13 +499,7 @@ export default function SankeyChart({ data }: SankeyChartProps) {
   const { sortNodes, sortLinks } = useSankeySorting(safeData);
 
   // データが空または不正な場合の早期リターン
-  if (
-    !data ||
-    !data.nodes ||
-    !data.links ||
-    data.nodes.length === 0 ||
-    data.links.length === 0
-  ) {
+  if (!data || !data.nodes || !data.links || data.nodes.length === 0 || data.links.length === 0) {
     return (
       <div
         style={{
@@ -570,9 +531,7 @@ export default function SankeyChart({ data }: SankeyChartProps) {
   return (
     <div
       style={{
-        height: !isMobile
-          ? DIMENSIONS.CHART_HEIGHT_DESKTOP
-          : DIMENSIONS.CHART_HEIGHT_MOBILE,
+        height: !isMobile ? DIMENSIONS.CHART_HEIGHT_DESKTOP : DIMENSIONS.CHART_HEIGHT_MOBILE,
       }}
       className="sankey-container !mb-0"
       role="img"
@@ -593,15 +552,10 @@ export default function SankeyChart({ data }: SankeyChartProps) {
       <ResponsiveSankey
         data={processedData}
         label={(node) => {
-          return (
-            (node as { label?: string; id: string }).label ||
-            (node as { id: string }).id
-          );
+          return (node as { label?: string; id: string }).label || (node as { id: string }).id;
         }}
         margin={{
-          top: !isMobile
-            ? CHART_CONFIG.MARGIN_TOP_DESKTOP
-            : CHART_CONFIG.MARGIN_TOP_MOBILE,
+          top: !isMobile ? CHART_CONFIG.MARGIN_TOP_DESKTOP : CHART_CONFIG.MARGIN_TOP_MOBILE,
           right: !isMobile
             ? CHART_CONFIG.MARGIN_HORIZONTAL_DESKTOP
             : CHART_CONFIG.MARGIN_HORIZONTAL_MOBILE,
@@ -618,16 +572,12 @@ export default function SankeyChart({ data }: SankeyChartProps) {
             (node as { label?: string }).label,
           )
         }
-        valueFormat={(v) =>
-          `¥${Math.round(v as number).toLocaleString("ja-JP")}`
-        }
+        valueFormat={(v) => `¥${Math.round(v as number).toLocaleString("ja-JP")}`}
         nodeOpacity={1}
         nodeBorderWidth={0}
         nodeThickness={CHART_CONFIG.NODE_THICKNESS}
         nodeSpacing={
-          !isMobile
-            ? CHART_CONFIG.NODE_SPACING_DESKTOP
-            : CHART_CONFIG.NODE_SPACING_MOBILE
+          !isMobile ? CHART_CONFIG.NODE_SPACING_DESKTOP : CHART_CONFIG.NODE_SPACING_MOBILE
         }
         sort="input"
         linkOpacity={CHART_CONFIG.LINK_OPACITY}
@@ -639,9 +589,7 @@ export default function SankeyChart({ data }: SankeyChartProps) {
         theme={{
           labels: {
             text: {
-              fontSize: !isMobile
-                ? DIMENSIONS.FONT_SIZE_DESKTOP
-                : DIMENSIONS.FONT_SIZE_MOBILE,
+              fontSize: !isMobile ? DIMENSIONS.FONT_SIZE_DESKTOP : DIMENSIONS.FONT_SIZE_MOBILE,
               fontWeight: "bold",
             },
           },

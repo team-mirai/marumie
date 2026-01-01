@@ -16,8 +16,7 @@ export const loadTransactionsForCsv = (params: GetTransactionsForCsvParams) => {
   return unstable_cache(
     async () => {
       const transactionRepository = new PrismaTransactionRepository(prisma);
-      const politicalOrganizationRepository =
-        new PrismaPoliticalOrganizationRepository(prisma);
+      const politicalOrganizationRepository = new PrismaPoliticalOrganizationRepository(prisma);
       const usecase = new GetTransactionsForCsvUsecase(
         transactionRepository,
         politicalOrganizationRepository,

@@ -6,6 +6,15 @@ import type {
   FundManagementPeriod,
   OrganizationReportProfileDetails,
 } from "@/server/contexts/report/domain/models/organization-report-profile";
+import {
+  Button,
+  Card,
+  CardHeader,
+  CardContent,
+  Label,
+  Input,
+  Checkbox,
+} from "@/client/components/ui";
 
 interface FundManagementSectionProps {
   details: OrganizationReportProfileDetails;
@@ -20,10 +29,7 @@ const emptyPeriod = (): FundManagementPeriod => ({
   to: "",
 });
 
-export function FundManagementSection({
-  details,
-  updateDetails,
-}: FundManagementSectionProps) {
+export function FundManagementSection({ details, updateDetails }: FundManagementSectionProps) {
   const fundManagement = details.fundManagement;
   const isEnabled = !!fundManagement;
 
@@ -60,17 +66,12 @@ export function FundManagementSection({
 
   const removePeriod = (index: number) => {
     if (fundManagement) {
-      const newPeriods = (fundManagement.periods ?? []).filter(
-        (_, i) => i !== index,
-      );
+      const newPeriods = (fundManagement.periods ?? []).filter((_, i) => i !== index);
       updateFundManagement({ periods: newPeriods });
     }
   };
 
-  const updatePeriod = (
-    index: number,
-    updates: Partial<FundManagementPeriod>,
-  ) => {
+  const updatePeriod = (index: number, updates: Partial<FundManagementPeriod>) => {
     if (fundManagement) {
       const newPeriods = [...(fundManagement.periods ?? [])];
       newPeriods[index] = { ...newPeriods[index], ...updates };
@@ -79,54 +80,47 @@ export function FundManagementSection({
   };
 
   return (
-    <div className="bg-primary-hover rounded-lg p-4">
-      <div className="flex items-center gap-3 mb-4">
-        <input
-          type="checkbox"
-          id="fundManagementEnabled"
-          checked={isEnabled}
-          onChange={toggleFundManagement}
-          className="w-4 h-4"
-        />
-        <label
-          htmlFor="fundManagementEnabled"
-          className="text-lg font-semibold text-white cursor-pointer"
-        >
-          資金管理団体情報
-        </label>
-      </div>
+    <Card>
+      <CardHeader>
+        <div className="flex items-center gap-3">
+          <Checkbox
+            id="fundManagementEnabled"
+            checked={isEnabled}
+            onCheckedChange={toggleFundManagement}
+          />
+          <label
+            htmlFor="fundManagementEnabled"
+            className="text-lg font-semibold text-foreground cursor-pointer"
+          >
+            資金管理団体情報
+          </label>
+        </div>
+      </CardHeader>
 
       {isEnabled && fundManagement && (
-        <div className="space-y-4 pl-7">
-          <label className="block font-medium text-white">
-            公職の名称
-            <input
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label>公職の名称</Label>
+            <Input
               type="text"
               value={fundManagement.publicPositionName ?? ""}
-              onChange={(e) =>
-                updateFundManagement({ publicPositionName: e.target.value })
-              }
+              onChange={(e) => updateFundManagement({ publicPositionName: e.target.value })}
               maxLength={60}
-              className="bg-primary-input text-white border border-primary-border rounded-lg px-3 py-2.5 w-full max-w-md mt-2 block font-normal"
+              className="max-w-md"
               placeholder="衆議院議員"
             />
-          </label>
+          </div>
 
-          <label className="block font-medium text-white">
-            公職の種別
+          <div className="space-y-2">
+            <Label>公職の種別</Label>
             <select
               value={fundManagement.publicPositionType ?? ""}
               onChange={(e) =>
                 updateFundManagement({
-                  publicPositionType: e.target.value as
-                    | "1"
-                    | "2"
-                    | "3"
-                    | "4"
-                    | undefined,
+                  publicPositionType: e.target.value as "1" | "2" | "3" | "4" | undefined,
                 })
               }
-              className="bg-primary-input text-white border border-primary-border rounded-lg px-3 py-2.5 mt-2 block font-normal"
+              className="flex h-9 w-full rounded-md border border-input bg-input px-3 py-1 text-base shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm max-w-md"
             >
               <option value="">選択してください</option>
               <option value="1">現職</option>
@@ -134,14 +128,14 @@ export function FundManagementSection({
               <option value="3">候補者となろうとする者</option>
               <option value="4">候補者等</option>
             </select>
-          </label>
+          </div>
 
           <div>
-            <h3 className="text-md font-medium text-white mb-2">届出者</h3>
+            <h3 className="text-md font-medium text-foreground mb-2">届出者</h3>
             <div className="flex gap-4">
-              <label className="flex-1 block text-sm text-primary-muted">
-                姓
-                <input
+              <div className="flex-1 space-y-2">
+                <Label className="text-muted-foreground">姓</Label>
+                <Input
                   type="text"
                   value={fundManagement.applicant?.lastName ?? ""}
                   onChange={(e) =>
@@ -154,12 +148,11 @@ export function FundManagementSection({
                     })
                   }
                   maxLength={30}
-                  className="bg-primary-input text-white border border-primary-border rounded-lg px-3 py-2 w-full mt-1 block"
                 />
-              </label>
-              <label className="flex-1 block text-sm text-primary-muted">
-                名
-                <input
+              </div>
+              <div className="flex-1 space-y-2">
+                <Label className="text-muted-foreground">名</Label>
+                <Input
                   type="text"
                   value={fundManagement.applicant?.firstName ?? ""}
                   onChange={(e) =>
@@ -172,64 +165,55 @@ export function FundManagementSection({
                     })
                   }
                   maxLength={30}
-                  className="bg-primary-input text-white border border-primary-border rounded-lg px-3 py-2 w-full mt-1 block"
                 />
-              </label>
+              </div>
             </div>
           </div>
 
           <div>
             <div className="flex justify-between items-center mb-2">
-              <h3 className="text-md font-medium text-white">
-                指定期間（最大3件）
-              </h3>
+              <h3 className="text-md font-medium text-foreground">指定期間（最大3件）</h3>
               {(fundManagement.periods?.length ?? 0) < 3 && (
-                <button
-                  type="button"
-                  onClick={addPeriod}
-                  className="text-primary-accent hover:text-blue-400 text-sm"
-                >
+                <Button type="button" variant="ghost" size="sm" onClick={addPeriod}>
                   + 追加
-                </button>
+                </Button>
               )}
             </div>
             <div className="space-y-2">
               {(fundManagement.periods ?? []).map((period, index) => (
                 <div key={period.id} className="flex gap-2 items-center">
-                  <input
+                  <Input
                     type="text"
                     value={period.from}
-                    onChange={(e) =>
-                      updatePeriod(index, { from: e.target.value })
-                    }
+                    onChange={(e) => updatePeriod(index, { from: e.target.value })}
                     maxLength={20}
-                    className="bg-primary-input text-white border border-primary-border rounded-lg px-3 py-2 w-32"
+                    className="w-32"
                     placeholder="R6/4/1"
                   />
-                  <span className="text-white">〜</span>
-                  <input
+                  <span className="text-foreground">〜</span>
+                  <Input
                     type="text"
                     value={period.to}
-                    onChange={(e) =>
-                      updatePeriod(index, { to: e.target.value })
-                    }
+                    onChange={(e) => updatePeriod(index, { to: e.target.value })}
                     maxLength={20}
-                    className="bg-primary-input text-white border border-primary-border rounded-lg px-3 py-2 w-32"
+                    className="w-32"
                     placeholder="R7/3/31"
                   />
-                  <button
+                  <Button
                     type="button"
+                    variant="ghost"
+                    size="sm"
                     onClick={() => removePeriod(index)}
-                    className="text-red-400 hover:text-red-300 text-sm"
+                    className="text-destructive hover:text-destructive"
                   >
                     削除
-                  </button>
+                  </Button>
                 </div>
               ))}
             </div>
           </div>
-        </div>
+        </CardContent>
       )}
-    </div>
+    </Card>
   );
 }

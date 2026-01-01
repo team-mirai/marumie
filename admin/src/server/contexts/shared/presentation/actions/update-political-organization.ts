@@ -2,6 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/server/contexts/shared/infrastructure/prisma";
+import { PrismaPoliticalOrganizationRepository } from "@/server/contexts/shared/infrastructure/repositories/prisma-political-organization.repository";
+import { UpdatePoliticalOrganizationUsecase } from "@/server/contexts/shared/application/usecases/update-political-organization-usecase";
 
 export interface UpdatePoliticalOrganizationData {
   displayName: string;
@@ -21,35 +23,16 @@ export async function updatePoliticalOrganization(
       throw new Error("Invalid organization ID");
     }
 
-    const { displayName, orgName, slug, description } = data;
-
-    if (!displayName.trim()) {
-      throw new Error("表示名は必須です");
-    }
-
-    if (!slug.trim()) {
-      throw new Error("スラッグは必須です");
-    }
-
-    await prisma.politicalOrganization.update({
-      where: { id: organizationId },
-      data: {
-        displayName: displayName.trim(),
-        orgName: orgName?.trim() || null,
-        slug: slug.trim(),
-        description: description?.trim() || null,
-      },
-    });
+    const repository = new PrismaPoliticalOrganizationRepository(prisma);
+    const usecase = new UpdatePoliticalOrganizationUsecase(repository);
+    await usecase.execute(BigInt(organizationId), data);
 
     revalidatePath("/political-organizations");
     return { success: true };
   } catch (error) {
     console.error("Error updating political organization:", error);
 
-    if (
-      error instanceof Error &&
-      error.message.includes("Record to update not found")
-    ) {
+    if (error instanceof Error && error.message.includes("Record to update not found")) {
       throw new Error("政治団体が見つかりません");
     }
 
@@ -57,8 +40,6 @@ export async function updatePoliticalOrganization(
       throw new Error("このスラッグは既に使用されています");
     }
 
-    throw new Error(
-      error instanceof Error ? error.message : "政治団体の更新に失敗しました",
-    );
+    throw new Error(error instanceof Error ? error.message : "政治団体の更新に失敗しました");
   }
 }

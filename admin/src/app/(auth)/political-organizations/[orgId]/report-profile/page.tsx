@@ -11,10 +11,7 @@ interface ReportProfilePageProps {
   searchParams: Promise<{ year?: string }>;
 }
 
-export default async function ReportProfilePage({
-  params,
-  searchParams,
-}: ReportProfilePageProps) {
+export default async function ReportProfilePage({ params, searchParams }: ReportProfilePageProps) {
   const { orgId } = await params;
   const { year } = await searchParams;
 
@@ -27,11 +24,9 @@ export default async function ReportProfilePage({
     organization = await loadPoliticalOrganizationData(orgId);
   } catch (error) {
     return (
-      <div className="bg-primary-panel rounded-xl p-4">
+      <div className="bg-card rounded-xl p-4">
         <div className="text-red-500 text-center p-10">
-          {error instanceof Error
-            ? error.message
-            : "政治団体の取得に失敗しました"}
+          {error instanceof Error ? error.message : "政治団体の取得に失敗しました"}
         </div>
       </div>
     );
@@ -46,11 +41,11 @@ export default async function ReportProfilePage({
   }
 
   return (
-    <div className="bg-primary-panel rounded-xl p-4">
+    <div className="bg-card rounded-xl p-4">
       <div className="mb-5">
         <Link
           href="/political-organizations"
-          className="text-primary-muted no-underline hover:text-white transition-colors"
+          className="text-muted-foreground no-underline hover:text-white transition-colors"
         >
           ← 政治団体一覧に戻る
         </Link>
@@ -61,11 +56,7 @@ export default async function ReportProfilePage({
       </h1>
 
       <div className="block mb-4">
-        <YearSelector
-          orgId={orgId}
-          financialYear={financialYear}
-          currentYear={currentYear}
-        />
+        <YearSelector orgId={orgId} financialYear={financialYear} currentYear={currentYear} />
       </div>
 
       <ReportProfileForm

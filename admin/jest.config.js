@@ -13,4 +13,6 @@ module.exports = {
     "^server-only$": "<rootDir>/tests/mocks/server-only.ts",
   },
   setupFilesAfterEnv: ["<rootDir>/tests/setup.ts"],
+  collectCoverageFrom: ["src/**/*.{ts,tsx}", "!src/**/*.d.ts"],
+  coverageReporters: ["text", "lcov"],
 };
