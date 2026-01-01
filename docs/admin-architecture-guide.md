@@ -256,12 +256,39 @@ export const Password = {
 
 ### 6.3 エラーハンドリング
 
+#### 6.3.1 レイヤー別エラーハンドリング方針
+
 | 層 | エラーハンドリング |
 |---|---|
 | **Presentation** | ユーザーフレンドリーなメッセージに変換（`{ ok: false, error: "..." }`） |
 | **Application** | 詳細なエラーメッセージでラップ（`throw new Error(\`Failed to ...: ${error.message}\`)`) |
 | **Domain** | ビジネスルールエラーを返す（`{ status: "invalid", errors: [...] }`） |
 | **Infrastructure** | 技術的なエラーを投げる（`throw new Error("Database connection failed")`） |
+
+#### 6.3.2 拡張エラー型とエラーコードの定義
+
+Domain層でエラーを扱う場合は、拡張エラー型とエラーコードを定義する。
+
+**配置場所**: `contexts/{コンテキスト名}/domain/types/`
+
+**リファレンス実装**: `contexts/report/domain/types/validation.ts`
+
+**原則**:
+- エラー型は `path`（エラー箇所）、`code`（エラーコード）、`message`（日本語メッセージ）、`severity`（"error" | "warning"）を持つ
+- エラーコードは `as const` で型安全に定義。大文字スネークケース（例: `REQUIRED`, `INVALID_FORMAT`）
+- コンテキスト固有のコードには接頭辞を付ける（例: `REPORT_MISSING_COUNTERPART`）
+
+#### 6.3.3 error と warning の使い分け
+
+| 種別 | 用途 | 処理の継続 |
+|---|---|---|
+| **error** | 処理を続行できない致命的な問題 | 不可 |
+| **warning** | 処理は可能だが確認が必要な問題 | 可能（ユーザーに警告を表示） |
+
+**原則**:
+- errors がある場合は処理を中断し、errors と warnings を返す
+- warnings のみの場合は処理を続行し、成功結果と共に warnings を返す
+- Presentation層で errors/warnings をユーザーフレンドリーなメッセージに変換する
 
 ### 6.4 キャッシング
 
