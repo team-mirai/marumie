@@ -40,7 +40,7 @@
 |-----------|---------------|------|
 | `@nivo/sankey` | webapp のみ | webapp に移動 |
 | `@prisma/client` | prisma/seed.ts, webapp, admin | root に残す（seed で使用） |
-| `@supabase/supabase-js` | admin のみ | root から削除（admin に既存） |
+| `@supabase/supabase-js` | prisma/seed.ts, admin | root に残す（seed で使用） |
 | `dotenv` | prisma/seed.ts | root に残す |
 | `next` | webapp, admin | root から削除（各 workspace に既存） |
 | `react` | webapp, admin | root から削除（各 workspace に既存） |
@@ -50,7 +50,7 @@
 
 - `@nivo/sankey`: webapp/src/client/components/top-page/features/charts/SankeyChart.tsx で import
 - `@prisma/client`: prisma/seed.ts で import、webapp/admin でも使用
-- `@supabase/supabase-js`: admin/package.json に既に存在、webapp では未使用
+- `@supabase/supabase-js`: prisma/seeds/users.ts で import、admin でも使用
 - `dotenv`: prisma/seed.ts で `import 'dotenv/config'`
 - `next`, `react`, `react-dom`: webapp/package.json, admin/package.json に既に存在
 
@@ -60,13 +60,13 @@
 
 **削除する dependencies:**
 - `@nivo/sankey`
-- `@supabase/supabase-js`
 - `next`
 - `react`
 - `react-dom`
 
 **残す dependencies:**
 - `@prisma/client` (seed.ts で使用)
+- `@supabase/supabase-js` (seed.ts で使用)
 - `dotenv` (seed.ts で使用)
 
 **削除する devDependencies:**
@@ -90,8 +90,9 @@
 ```
 root package.json
 ├── dependencies
-│   ├── @prisma/client  ← seed.ts 用
-│   └── dotenv          ← seed.ts 用
+│   ├── @prisma/client       ← seed.ts 用
+│   ├── @supabase/supabase-js ← seed.ts 用
+│   └── dotenv               ← seed.ts 用
 └── devDependencies
     ├── @biomejs/biome
     ├── concurrently
