@@ -256,12 +256,142 @@ export const Password = {
 
 ### 6.3 エラーハンドリング
 
+#### 6.3.1 レイヤー別エラーハンドリング方針
+
 | 層 | エラーハンドリング |
 |---|---|
 | **Presentation** | ユーザーフレンドリーなメッセージに変換（`{ ok: false, error: "..." }`） |
 | **Application** | 詳細なエラーメッセージでラップ（`throw new Error(\`Failed to ...: ${error.message}\`)`) |
 | **Domain** | ビジネスルールエラーを返す（`{ status: "invalid", errors: [...] }`） |
 | **Infrastructure** | 技術的なエラーを投げる（`throw new Error("Database connection failed")`） |
+
+#### 6.3.2 拡張エラー型とエラーコードの定義
+
+Domain層でバリデーションエラーを扱う場合は、以下のパターンに従って拡張エラー型とエラーコードを定義する。
+
+**配置場所**: `contexts/{コンテキスト名}/domain/types/validation.ts`
+
+**ValidationError インターフェース**:
+
+```typescript
+export interface ValidationError {
+  path: string;                    // エラー箇所のパス（例: "profile.officialName"）
+  code: string;                    // エラーコード（例: "REQUIRED", "INVALID_FORMAT"）
+  message: string;                 // 日本語メッセージ
+  severity: "error" | "warning";
+}
+```
+
+**ValidationResult インターフェース**:
+
+```typescript
+export interface ValidationResult {
+  isValid: boolean;
+  errors: ValidationError[];       // XMLとして出力できない致命的な問題
+  warnings: ValidationError[];     // 出力は可能だが確認が必要な問題
+}
+```
+
+**エラーコードの定義**:
+
+エラーコードは `as const` を使用して型安全に定義する。コンテキストごとに共通のエラーコードを定義し、必要に応じて拡張する。
+
+```typescript
+export const ValidationErrorCode = {
+  // 共通エラーコード
+  REQUIRED: "REQUIRED",
+  INVALID_FORMAT: "INVALID_FORMAT",
+  MAX_LENGTH_EXCEEDED: "MAX_LENGTH_EXCEEDED",
+  INVALID_VALUE: "INVALID_VALUE",
+  NEGATIVE_VALUE: "NEGATIVE_VALUE",
+  CONSISTENCY_ERROR: "CONSISTENCY_ERROR",
+  // コンテキスト固有のエラーコードはここに追加
+} as const;
+```
+
+#### 6.3.3 エラーコード設計ガイドライン
+
+エラーコードを定義する際は以下のガイドラインに従う：
+
+| カテゴリ | エラーコード例 | 用途 |
+|---|---|---|
+| **必須チェック** | `REQUIRED` | 必須フィールドが未入力 |
+| **形式チェック** | `INVALID_FORMAT` | 日付、郵便番号等の形式不正 |
+| **長さチェック** | `MAX_LENGTH_EXCEEDED` | 文字数制限超過 |
+| **値チェック** | `INVALID_VALUE`, `NEGATIVE_VALUE` | 許容範囲外の値 |
+| **整合性チェック** | `CONSISTENCY_ERROR` | 複数フィールド間の整合性エラー |
+
+**命名規則**:
+- 大文字スネークケース（例: `INVALID_FORMAT`）
+- 動詞ではなく状態を表す形容詞または名詞を使用
+- コンテキスト固有のコードには接頭辞を付ける（例: `REPORT_MISSING_COUNTERPART`）
+
+#### 6.3.4 使用例
+
+**Domain Model でのバリデーション実装**:
+
+```typescript
+import { ValidationError, ValidationErrorCode, ValidationResult } from "../types/validation";
+
+export const Counterpart = {
+  validate(counterpart: Counterpart): ValidationResult {
+    const errors: ValidationError[] = [];
+    const warnings: ValidationError[] = [];
+
+    if (!counterpart.name) {
+      errors.push({
+        path: "name",
+        code: ValidationErrorCode.REQUIRED,
+        message: "取引先名は必須です",
+        severity: "error",
+      });
+    }
+
+    if (counterpart.postalCode && !/^\d{3}-?\d{4}$/.test(counterpart.postalCode)) {
+      errors.push({
+        path: "postalCode",
+        code: ValidationErrorCode.INVALID_FORMAT,
+        message: "郵便番号の形式が不正です（例: 123-4567）",
+        severity: "error",
+      });
+    }
+
+    return {
+      isValid: errors.length === 0,
+      errors,
+      warnings,
+    };
+  },
+};
+```
+
+**Usecase でのエラーハンドリング**:
+
+```typescript
+async execute(input: CreateCounterpartInput): Promise<CreateCounterpartResult> {
+  const validationResult = Counterpart.validate(input);
+  
+  if (!validationResult.isValid) {
+    return {
+      ok: false,
+      errors: validationResult.errors,
+    };
+  }
+  
+  // 処理続行...
+}
+```
+
+#### 6.3.5 error と warning の使い分け
+
+| 種別 | 用途 | 処理の継続 |
+|---|---|---|
+| **error** | 処理を続行できない致命的な問題 | 不可 |
+| **warning** | 処理は可能だが確認が必要な問題 | 可能（ユーザーに警告を表示） |
+
+**例**:
+- `error`: 必須フィールドの未入力、形式不正、整合性エラー
+- `warning`: 未分類の取引がある、推奨値と異なる入力
 
 ### 6.4 キャッシング
 
