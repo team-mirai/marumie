@@ -29,6 +29,7 @@
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "cd ../ && prisma generate && prisma migrate deploy && cd webapp && next build",
+    "build:ci": "cd ../ && prisma generate && cd webapp && next build",
     "start": "next start",
     "lint": "biome check",
     "type-check": "tsc --noEmit",
