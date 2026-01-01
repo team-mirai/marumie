@@ -3,8 +3,7 @@ import "server-only";
 import { unstable_cache } from "next/cache";
 import { prisma } from "@/server/lib/prisma";
 import { PrismaPoliticalOrganizationRepository } from "@/server/contexts/public-finance/infrastructure/repositories/prisma-political-organization.repository";
-import { PrismaMonthlyAggregationRepository } from "@/server/contexts/public-finance/infrastructure/repositories/prisma-monthly-aggregation.repository";
-import { GetMonthlyAggregationUsecase } from "@/server/contexts/public-finance/application/usecases/get-monthly-aggregation-usecase";
+import { loadMonthlyAggregation } from "@/server/contexts/public-finance/presentation/loaders/load-monthly-aggregation";
 import { PrismaTransactionRepository } from "@/server/repositories/prisma-transaction.repository";
 import { PrismaBalanceSnapshotRepository } from "@/server/repositories/prisma-balance-snapshot.repository";
 import { GetBalanceSheetUsecase } from "@/server/usecases/get-balance-sheet-usecase";
@@ -31,17 +30,11 @@ export const loadTopPageData = unstable_cache(
     // 実データを取得する場合
     const transactionRepository = new PrismaTransactionRepository(prisma);
     const politicalOrganizationRepository = new PrismaPoliticalOrganizationRepository(prisma);
-    const monthlyAggregationRepository = new PrismaMonthlyAggregationRepository(prisma);
     const balanceSnapshotRepository = new PrismaBalanceSnapshotRepository(prisma);
 
-    // 5つのUsecaseを初期化
+    // Usecaseを初期化
     const transactionUsecase = new GetTransactionsBySlugUsecase(
       transactionRepository,
-      politicalOrganizationRepository,
-    );
-
-    const monthlyUsecase = new GetMonthlyAggregationUsecase(
-      monthlyAggregationRepository,
       politicalOrganizationRepository,
     );
 
@@ -63,7 +56,7 @@ export const loadTopPageData = unstable_cache(
     // 第1段階: transaction、monthly、balanceSheetを並列実行
     const [transactionData, monthlyData, balanceSheetData] = await Promise.all([
       transactionUsecase.execute(params),
-      monthlyUsecase.execute({
+      loadMonthlyAggregation({
         slugs: params.slugs,
         financialYear: params.financialYear,
       }),
