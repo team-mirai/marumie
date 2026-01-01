@@ -20,7 +20,6 @@ export interface PreviewDonorCsvRequest {
 export async function previewDonorCsv(
   data: PreviewDonorCsvRequest,
 ): Promise<PreviewDonorCsvResult> {
-  "use server";
   try {
     const { file, politicalOrganizationId } = data;
 

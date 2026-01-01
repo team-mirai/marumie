@@ -8,7 +8,10 @@ import type {
   TransactionForDonorCsv,
 } from "@/server/contexts/report/domain/models/preview-donor-csv-row";
 import type { DonorType, Donor } from "@/server/contexts/report/domain/models/donor";
-import { calculateDonorPreviewSummary } from "@/server/contexts/report/domain/services/donor-csv-summary-calculator";
+import {
+  calculateDonorPreviewSummary,
+  type PreviewDonorCsvSummary,
+} from "@/server/contexts/report/domain/services/donor-csv-summary-calculator";
 import type { IDonorRepository } from "@/server/contexts/report/domain/repositories/donor-repository.interface";
 import type { ITransactionWithDonorRepository } from "@/server/contexts/report/domain/repositories/transaction-with-donor-repository.interface";
 
@@ -17,7 +20,10 @@ export interface PreviewDonorCsvInput {
   politicalOrganizationId: string;
 }
 
-export type { PreviewDonorCsvResult } from "@/server/contexts/report/presentation/types/preview-donor-csv-types";
+export interface PreviewDonorCsvResult {
+  rows: PreviewDonorCsvRow[];
+  summary: PreviewDonorCsvSummary;
+}
 
 export class PreviewDonorCsvUsecase {
   constructor(
@@ -65,6 +71,10 @@ export class PreviewDonorCsvUsecase {
     }
   }
 
+  private getDonorMatchKey(name: string, address: string | null, donorType: DonorType): string {
+    return `${name}|${address ?? ""}|${donorType}`;
+  }
+
   private async enrichWithMatchingDonors(
     rows: PreviewDonorCsvRow[],
   ): Promise<PreviewDonorCsvRow[]> {
@@ -75,7 +85,7 @@ export class PreviewDonorCsvUsecase {
 
     for (const row of rows) {
       if (row.donorType === null) continue;
-      const key = `${row.name}|${row.address ?? ""}|${row.donorType}`;
+      const key = this.getDonorMatchKey(row.name, row.address, row.donorType);
       if (!searchKeys.has(key)) {
         searchKeys.set(key, { name: row.name, address: row.address, donorType: row.donorType });
       }
@@ -85,13 +95,13 @@ export class PreviewDonorCsvUsecase {
     const donors = await this.donorRepository.findByMatchCriteriaBatch(uniqueCriteria);
 
     const donorMap = new Map<string, Donor>(
-      donors.map((d) => [`${d.name}|${d.address ?? ""}|${d.donorType}`, d]),
+      donors.map((d) => [this.getDonorMatchKey(d.name, d.address, d.donorType), d]),
     );
 
     return rows.map((row) => {
       if (row.donorType === null) return row;
 
-      const key = `${row.name}|${row.address ?? ""}|${row.donorType}`;
+      const key = this.getDonorMatchKey(row.name, row.address, row.donorType);
       const matchingDonor = donorMap.get(key);
 
       return {

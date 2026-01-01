@@ -14,11 +14,30 @@ export interface PreviewDonorCsvSummary {
 }
 
 export function calculateDonorPreviewSummary(rows: PreviewDonorCsvRow[]): PreviewDonorCsvSummary {
-  return {
+  const summary = {
     total: rows.length,
-    valid: rows.filter((row) => row.status === "valid").length,
-    invalid: rows.filter((row) => row.status === "invalid").length,
-    transactionNotFound: rows.filter((row) => row.status === "transaction_not_found").length,
-    typeMismatch: rows.filter((row) => row.status === "type_mismatch").length,
+    valid: 0,
+    invalid: 0,
+    transactionNotFound: 0,
+    typeMismatch: 0,
   };
+
+  for (const row of rows) {
+    switch (row.status) {
+      case "valid":
+        summary.valid++;
+        break;
+      case "invalid":
+        summary.invalid++;
+        break;
+      case "transaction_not_found":
+        summary.transactionNotFound++;
+        break;
+      case "type_mismatch":
+        summary.typeMismatch++;
+        break;
+    }
+  }
+
+  return summary;
 }

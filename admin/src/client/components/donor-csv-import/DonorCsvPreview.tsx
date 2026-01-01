@@ -117,9 +117,15 @@ export default function DonorCsvPreview({ result }: DonorCsvPreviewProps) {
             </tr>
           </thead>
           <tbody>
-            {currentRows.map((row) => (
-              <DonorCsvRow key={row.rowNumber} row={row} />
-            ))}
+            {currentRows.length === 0 ? (
+              <tr>
+                <td colSpan={11} className="px-2 py-8 text-center text-muted-foreground">
+                  表示するデータがありません
+                </td>
+              </tr>
+            ) : (
+              currentRows.map((row) => <DonorCsvRow key={row.rowNumber} row={row} />)
+            )}
           </tbody>
         </table>
       </div>

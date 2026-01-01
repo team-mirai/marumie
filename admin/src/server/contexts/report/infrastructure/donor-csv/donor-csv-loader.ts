@@ -52,15 +52,21 @@ export class DonorCsvLoader {
   }
 
   private parseCSVLine(line: string): string[] {
-    const chars = Array.from(line);
+    const chars = Array.from(line.replace(/\r$/, ""));
 
     const result: string[] = [];
     let current = "";
     let inQuotes = false;
 
-    for (const char of chars) {
+    for (let i = 0; i < chars.length; i++) {
+      const char = chars[i];
       if (char === '"') {
-        inQuotes = !inQuotes;
+        if (inQuotes && chars[i + 1] === '"') {
+          current += '"';
+          i++;
+        } else {
+          inQuotes = !inQuotes;
+        }
       } else if (char === "," && !inQuotes) {
         result.push(current);
         current = "";
