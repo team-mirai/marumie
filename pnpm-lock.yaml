@@ -179,8 +179,8 @@ importers:
         specifier: ^1.2.0
         version: 1.2.0(next@15.4.10(@babel/core@7.28.4)(@opentelemetry/api@1.9.0)(react-dom@19.1.2(react@19.1.2))(react@19.1.2))(react@19.1.2)
       apexcharts:
-        specifier: ^5.3.3
-        version: 5.3.5
+        specifier: ^5.3.6
+        version: 5.3.6
       critters:
         specifier: ^0.0.25
         version: 0.0.25
@@ -192,7 +192,7 @@ importers:
         version: 19.1.2
       react-apexcharts:
         specifier: ^1.7.0
-        version: 1.7.0(apexcharts@5.3.5)(react@19.1.2)
+        version: 1.7.0(apexcharts@5.3.6)(react@19.1.2)
       react-dom:
         specifier: 19.1.2
         version: 19.1.2(react@19.1.2)
@@ -1885,8 +1885,8 @@ packages:
     resolution: {integrity: sha512-KMReFUr0B4t+D+OBkjR3KYqvocp2XaSzO55UcB6mgQMd3KbcE+mWTyvVV7D/zsdEbNnV6acZUutkiHQXvTr1Rw==}
     engines: {node: '>= 8'}
 
-  apexcharts@5.3.5:
-    resolution: {integrity: sha512-I04DY/WBZbJgJD2uixeV5EzyiL+J5LgKQXEu8rctqAwyRmKv44aDVeofJoLdTJe3ao4r2KEQfCgtVzXn6pqirg==}
+  apexcharts@5.3.6:
+    resolution: {integrity: sha512-sVEPw+J0Gp0IHQabKu8cfdsxlfME0e36Wid7RIaPclGM2OUt+O7O4+6mfAmTUYhy5bDk8cNHzEhPfVtLCIXEJA==}
 
   argparse@1.0.10:
     resolution: {integrity: sha512-o5Roy6tNG4SL/FOkCAN6RzjiakZS25RLYFrcMttJqbdd8BWrnA+fGz57iN5Pb06pvBGvl5gQ0B48dJlslXvoTg==}
@@ -5294,7 +5294,7 @@ snapshots:
       normalize-path: 3.0.0
       picomatch: 2.3.1
 
-  apexcharts@5.3.5:
+  apexcharts@5.3.6:
     dependencies:
       '@svgdotjs/svg.draggable.js': 3.0.6(@svgdotjs/svg.js@3.2.5)
       '@svgdotjs/svg.filter.js': 3.0.9
@@ -6773,9 +6773,9 @@ snapshots:
       defu: 6.1.4
       destr: 2.0.5
 
-  react-apexcharts@1.7.0(apexcharts@5.3.5)(react@19.1.2):
+  react-apexcharts@1.7.0(apexcharts@5.3.6)(react@19.1.2):
     dependencies:
-      apexcharts: 5.3.5
+      apexcharts: 5.3.6
       prop-types: 15.8.1
       react: 19.1.2
 

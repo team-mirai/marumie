@@ -7,7 +7,7 @@
     "@nivo/sankey": "^0.99.0",
     "@prisma/client": "^6.14.0",
     "@vercel/speed-insights": "^1.2.0",
-    "apexcharts": "^5.3.3",
+    "apexcharts": "^5.3.6",
     "critters": "^0.0.25",
     "next": "15.4.10",
     "react": "19.1.2",
