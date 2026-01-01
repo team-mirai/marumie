@@ -1,6 +1,6 @@
 "use server";
 
-import { bufferToString } from "@/server/contexts/data-import/domain/services/encoding-converter";
+import { bufferToString } from "@/server/contexts/shared/domain/services/encoding-converter";
 import { prisma } from "@/server/contexts/shared/infrastructure/prisma";
 import { PrismaDonorRepository } from "@/server/contexts/report/infrastructure/repositories/prisma-donor.repository";
 import { PrismaTransactionWithDonorRepository } from "@/server/contexts/report/infrastructure/repositories/prisma-transaction-with-donor.repository";

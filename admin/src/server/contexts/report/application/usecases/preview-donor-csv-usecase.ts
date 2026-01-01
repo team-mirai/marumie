@@ -8,10 +8,7 @@ import type {
   TransactionForDonorCsv,
 } from "@/server/contexts/report/domain/models/preview-donor-csv-row";
 import type { DonorType, Donor } from "@/server/contexts/report/domain/models/donor";
-import {
-  calculateDonorPreviewSummary,
-  type PreviewDonorCsvSummary,
-} from "@/server/contexts/report/domain/services/donor-csv-summary-calculator";
+import { calculateDonorPreviewSummary } from "@/server/contexts/report/domain/services/donor-csv-summary-calculator";
 import type { IDonorRepository } from "@/server/contexts/report/domain/repositories/donor-repository.interface";
 import type { ITransactionWithDonorRepository } from "@/server/contexts/report/domain/repositories/transaction-with-donor-repository.interface";
 
@@ -20,10 +17,7 @@ export interface PreviewDonorCsvInput {
   politicalOrganizationId: string;
 }
 
-export interface PreviewDonorCsvResult {
-  rows: PreviewDonorCsvRow[];
-  summary: PreviewDonorCsvSummary;
-}
+export type { PreviewDonorCsvResult } from "@/server/contexts/report/presentation/types/preview-donor-csv-types";
 
 export class PreviewDonorCsvUsecase {
   constructor(

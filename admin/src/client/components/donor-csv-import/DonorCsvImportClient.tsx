@@ -2,7 +2,7 @@
 import "client-only";
 
 import { useEffect, useRef, useState } from "react";
-import type { PreviewDonorCsvResult } from "@/server/contexts/report/application/usecases/preview-donor-csv-usecase";
+import type { PreviewDonorCsvResult } from "@/server/contexts/report/presentation/types/preview-donor-csv-types";
 import type { PreviewDonorCsvRequest } from "@/server/contexts/report/presentation/actions/preview-donor-csv";
 import DonorCsvPreview from "./DonorCsvPreview";
 import {
