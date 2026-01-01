@@ -5,53 +5,172 @@ on:
     paths:
       - 'admin/**'
       - 'webapp/**'
+      - 'packages/**'
+      - 'prisma/**'
       - '.dependency-cruiser.cjs'
+      - 'pnpm-lock.yaml'
   pull_request:
     paths:
       - 'admin/**'
       - 'webapp/**'
+      - 'packages/**'
+      - 'prisma/**'
       - '.dependency-cruiser.cjs'
+      - 'pnpm-lock.yaml'
 
 jobs:
-  lint-and-test:
+  admin:
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        
+
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
-          
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'pnpm'
-          
+
+      - name: Cache Prisma client
+        uses: actions/cache@v4
+        with:
+          path: node_modules/.prisma
+          key: ${{ runner.os }}-prisma-${{ hashFiles('prisma/schema.prisma') }}
+          restore-keys: |
+            ${{ runner.os }}-prisma-
+
+      - name: Cache Next.js build
+        uses: actions/cache@v4
+        with:
+          path: admin/.next/cache
+          key: ${{ runner.os }}-nextjs-admin-${{ hashFiles('pnpm-lock.yaml') }}-${{ hashFiles('admin/**/*.ts', 'admin/**/*.tsx') }}
+          restore-keys: |
+            ${{ runner.os }}-nextjs-admin-${{ hashFiles('pnpm-lock.yaml') }}-
+            ${{ runner.os }}-nextjs-admin-
+
       - name: Install dependencies
         run: pnpm install
-        
+
       - name: Run lint for admin
         run: pnpm --filter admin run lint
-        
+
       - name: Run tests for admin with coverage
         run: pnpm --filter admin run test:coverage
-        
+
       - name: Run type check for admin
         run: pnpm --filter admin run type-check
 
       - name: Check dependency rules for admin
         run: pnpm depcruise
 
+      - name: Build admin
+        run: pnpm build:admin
+
+      - name: Upload admin coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: admin-coverage
+          path: admin/coverage/lcov.info
+
+  webapp:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Cache Prisma client
+        uses: actions/cache@v4
+        with:
+          path: node_modules/.prisma
+          key: ${{ runner.os }}-prisma-${{ hashFiles('prisma/schema.prisma') }}
+          restore-keys: |
+            ${{ runner.os }}-prisma-
+
+      - name: Cache Next.js build
+        uses: actions/cache@v4
+        with:
+          path: webapp/.next/cache
+          key: ${{ runner.os }}-nextjs-webapp-${{ hashFiles('pnpm-lock.yaml') }}-${{ hashFiles('webapp/**/*.ts', 'webapp/**/*.tsx') }}
+          restore-keys: |
+            ${{ runner.os }}-nextjs-webapp-${{ hashFiles('pnpm-lock.yaml') }}-
+            ${{ runner.os }}-nextjs-webapp-
+
+      - name: Install dependencies
+        run: pnpm install
+
       - name: Run lint for webapp
         run: pnpm --filter webapp run lint
-        
+
       - name: Run tests for webapp with coverage
         run: pnpm --filter webapp run test:coverage
-        
+
       - name: Run type check for webapp
         run: pnpm --filter webapp run type-check
+
+      - name: Build webapp
+        run: pnpm build:webapp
+
+      - name: Upload webapp coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: webapp-coverage
+          path: webapp/coverage/lcov.info
+
+  knip:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Check unused code
+        run: pnpm knip
+
+  coverage:
+    runs-on: ubuntu-latest
+    needs: [admin, webapp]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download admin coverage
+        uses: actions/download-artifact@v4
+        with:
+          name: admin-coverage
+          path: admin/coverage
+
+      - name: Download webapp coverage
+        uses: actions/download-artifact@v4
+        with:
+          name: webapp-coverage
+          path: webapp/coverage
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
