@@ -9,7 +9,6 @@ import type { TransactionWithCounterpart } from "@/server/contexts/report/domain
 import { CounterpartFormContent } from "@/client/components/counterparts/CounterpartFormContent";
 import { CounterpartSelectorContent } from "@/client/components/counterparts/CounterpartSelectorContent";
 import { createCounterpartAction } from "@/server/contexts/report/presentation/actions/create-counterpart";
-import { assignCounterpartAction } from "@/server/contexts/report/presentation/actions/assign-counterpart";
 import { bulkAssignCounterpartAction } from "@/server/contexts/report/presentation/actions/bulk-assign-counterpart";
 
 interface AssignWithCounterpartContentProps {
@@ -32,8 +31,6 @@ export function AssignWithCounterpartContent({
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  const isBulk = transactions.length > 1;
-
   const handleSelectExisting = async () => {
     if (!selectedCounterpartId) {
       setError("取引先を選択してください");
@@ -42,19 +39,11 @@ export function AssignWithCounterpartContent({
 
     setError(null);
     startTransition(async () => {
-      if (isBulk) {
-        const transactionIds = transactions.map((t) => t.id);
-        const result = await bulkAssignCounterpartAction(transactionIds, selectedCounterpartId);
-        if (!result.success) {
-          setError(result.errors?.join(", ") ?? "一括紐付けに失敗しました");
-          return;
-        }
-      } else {
-        const result = await assignCounterpartAction(transactions[0].id, selectedCounterpartId);
-        if (!result.success) {
-          setError(result.errors?.join(", ") ?? "紐付けに失敗しました");
-          return;
-        }
+      const transactionIds = transactions.map((t) => t.id);
+      const result = await bulkAssignCounterpartAction(transactionIds, selectedCounterpartId);
+      if (!result.success) {
+        setError(result.errors?.join(", ") ?? "紐付けに失敗しました");
+        return;
       }
       onSuccess(transactions.length);
     });
@@ -81,34 +70,24 @@ export function AssignWithCounterpartContent({
       throw new Error("取引先IDが取得できませんでした");
     }
 
-    if (isBulk) {
-      const transactionIds = transactions.map((t) => t.id);
-      const result = await bulkAssignCounterpartAction(transactionIds, createResult.counterpartId);
-      if (!result.success) {
-        throw new Error(result.errors?.join(", ") ?? "一括紐付けに失敗しました");
-      }
-    } else {
-      const result = await assignCounterpartAction(transactions[0].id, createResult.counterpartId);
-      if (!result.success) {
-        throw new Error(result.errors?.join(", ") ?? "紐付けに失敗しました");
-      }
+    const transactionIds = transactions.map((t) => t.id);
+    const result = await bulkAssignCounterpartAction(transactionIds, createResult.counterpartId);
+    if (!result.success) {
+      throw new Error(result.errors?.join(", ") ?? "紐付けに失敗しました");
     }
 
     onSuccess(transactions.length);
   };
 
   const getSelectButtonLabel = () => {
-    if (isBulk) {
-      return `すべてに紐付け (${transactions.length}件)`;
-    }
-    return "この取引先を紐付け";
+    return `紐付け (${transactions.length}件)`;
   };
 
   return (
     <div className="flex flex-col lg:flex-row gap-6 flex-1 min-h-0 overflow-hidden">
       <div className="lg:w-1/3 flex-shrink-0 flex flex-col min-h-0">
         <div className="text-white font-medium mb-3">
-          {isBulk ? `選択中の取引 (${transactions.length}件)` : "取引情報"}
+          {`選択中の取引 (${transactions.length}件)`}
         </div>
 
         <div className="border border-border rounded-lg flex-1 overflow-y-auto">
