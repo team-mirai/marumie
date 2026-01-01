@@ -1,3 +1,4 @@
+import { CsvFormatError } from "@/server/contexts/report/domain/errors/donor-csv-error";
 import type { DonorCsvRecord } from "./donor-csv-record";
 
 const MAX_ROWS = 1000;
@@ -31,18 +32,20 @@ export class DonorCsvLoader {
     const headers = this.parseCSVLine(headerLine);
 
     if (headers.length === 0) {
-      throw new Error("Invalid CSV header: no headers found");
+      throw new CsvFormatError("Invalid CSV header: no headers found");
     }
 
     const missingColumns = REQUIRED_COLUMNS.filter((col) => !headers.includes(col));
     if (missingColumns.length > 0) {
-      throw new Error(`Invalid CSV header: missing required columns: ${missingColumns.join(", ")}`);
+      throw new CsvFormatError(
+        `Invalid CSV header: missing required columns: ${missingColumns.join(", ")}`,
+      );
     }
 
     const dataLines = lines.slice(1).filter((line) => line.trim());
 
     if (dataLines.length > MAX_ROWS) {
-      throw new Error(`CSVの行数が上限（${MAX_ROWS}行）を超えています`);
+      throw new CsvFormatError(`CSVの行数が上限（${MAX_ROWS}行）を超えています`);
     }
 
     return dataLines.map((line, index) => {

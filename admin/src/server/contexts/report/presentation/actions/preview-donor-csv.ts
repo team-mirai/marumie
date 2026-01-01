@@ -7,6 +7,10 @@ import { PrismaTransactionWithDonorRepository } from "@/server/contexts/report/i
 import { DonorCsvLoader } from "@/server/contexts/report/infrastructure/donor-csv/donor-csv-loader";
 import { DonorCsvRecordConverter } from "@/server/contexts/report/infrastructure/donor-csv/donor-csv-record-converter";
 import { DonorCsvValidator } from "@/server/contexts/report/domain/services/donor-csv-validator";
+import {
+  CsvFormatError,
+  ProcessingError,
+} from "@/server/contexts/report/domain/errors/donor-csv-error";
 import { PreviewDonorCsvUsecase } from "@/server/contexts/report/application/usecases/preview-donor-csv-usecase";
 import type { PreviewDonorCsvResult } from "@/server/contexts/report/presentation/types/preview-donor-csv-types";
 
@@ -54,13 +58,13 @@ export async function previewDonorCsv(
     return result;
   } catch (error) {
     console.error("Preview Donor CSV error:", error);
+    if (error instanceof CsvFormatError) {
+      throw new Error("CSVファイルの形式が正しくありません。テンプレートを確認してください");
+    }
+    if (error instanceof ProcessingError) {
+      throw new Error("処理に失敗しました。時間をおいて再度お試しください");
+    }
     if (error instanceof Error) {
-      if (error.message.includes("Invalid CSV") || error.message.includes("CSVの行数が上限")) {
-        throw new Error("CSVファイルの形式が正しくありません。テンプレートを確認してください");
-      }
-      if (error.message.includes("Failed to") || error.message.includes("失敗")) {
-        throw new Error("処理に失敗しました。時間をおいて再度お試しください");
-      }
       throw error;
     }
     throw new Error("予期しないエラーが発生しました");

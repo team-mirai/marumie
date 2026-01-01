@@ -2,6 +2,7 @@
 import "client-only";
 
 import { useEffect, useRef, useState } from "react";
+import type { PoliticalOrganization } from "@/shared/models/political-organization";
 import type { PreviewDonorCsvResult } from "@/server/contexts/report/presentation/types/preview-donor-csv-types";
 import type { PreviewDonorCsvRequest } from "@/server/contexts/report/presentation/actions/preview-donor-csv";
 import DonorCsvPreview from "./DonorCsvPreview";
@@ -15,11 +16,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/client/components/ui";
-
-interface PoliticalOrganization {
-  id: string;
-  displayName: string;
-}
 
 interface DonorCsvImportClientProps {
   organizations: PoliticalOrganization[];
