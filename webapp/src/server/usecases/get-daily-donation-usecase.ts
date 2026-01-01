@@ -1,4 +1,4 @@
-import type { IPoliticalOrganizationRepository } from "../repositories/interfaces/political-organization-repository.interface";
+import type { IPoliticalOrganizationRepository } from "@/server/contexts/public-finance/domain/repositories/political-organization-repository.interface";
 import type {
   DailyDonationData,
   ITransactionRepository,

@@ -3,7 +3,7 @@ import type {
   PoliticalOrganization as PrismaPoliticalOrganization,
 } from "@prisma/client";
 import type { PoliticalOrganization } from "@/shared/models/political-organization";
-import type { IPoliticalOrganizationRepository } from "./interfaces/political-organization-repository.interface";
+import type { IPoliticalOrganizationRepository } from "@/server/contexts/public-finance/domain/repositories/political-organization-repository.interface";
 
 export class PrismaPoliticalOrganizationRepository implements IPoliticalOrganizationRepository {
   constructor(private prisma: PrismaClient) {}

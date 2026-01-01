@@ -2,12 +2,13 @@ import "server-only";
 
 import { unstable_cache } from "next/cache";
 import { prisma } from "@/server/lib/prisma";
-import { PrismaPoliticalOrganizationRepository } from "@/server/repositories/prisma-political-organization.repository";
+import { PrismaPoliticalOrganizationRepository } from "@/server/contexts/public-finance/infrastructure/repositories/prisma-political-organization.repository";
+import { PrismaMonthlyAggregationRepository } from "@/server/contexts/public-finance/infrastructure/repositories/prisma-monthly-aggregation.repository";
+import { GetMonthlyAggregationUsecase } from "@/server/contexts/public-finance/application/usecases/get-monthly-aggregation-usecase";
 import { PrismaTransactionRepository } from "@/server/repositories/prisma-transaction.repository";
 import { PrismaBalanceSnapshotRepository } from "@/server/repositories/prisma-balance-snapshot.repository";
 import { GetBalanceSheetUsecase } from "@/server/usecases/get-balance-sheet-usecase";
 import { GetMockTransactionPageDataUsecase } from "@/server/usecases/get-mock-transaction-page-data-usecase";
-import { GetMonthlyTransactionAggregationUsecase } from "@/server/usecases/get-monthly-transaction-aggregation-usecase";
 import { GetSankeyAggregationUsecase } from "@/server/usecases/get-sankey-aggregation-usecase";
 import {
   type GetTransactionsBySlugParams,
@@ -30,6 +31,7 @@ export const loadTopPageData = unstable_cache(
     // 実データを取得する場合
     const transactionRepository = new PrismaTransactionRepository(prisma);
     const politicalOrganizationRepository = new PrismaPoliticalOrganizationRepository(prisma);
+    const monthlyAggregationRepository = new PrismaMonthlyAggregationRepository(prisma);
     const balanceSnapshotRepository = new PrismaBalanceSnapshotRepository(prisma);
 
     // 5つのUsecaseを初期化
@@ -38,8 +40,8 @@ export const loadTopPageData = unstable_cache(
       politicalOrganizationRepository,
     );
 
-    const monthlyUsecase = new GetMonthlyTransactionAggregationUsecase(
-      transactionRepository,
+    const monthlyUsecase = new GetMonthlyAggregationUsecase(
+      monthlyAggregationRepository,
       politicalOrganizationRepository,
     );
 

@@ -3,7 +3,7 @@ import type {
   ITransactionRepository,
   SankeyCategoryAggregationResult,
 } from "@/server/repositories/interfaces/transaction-repository.interface";
-import type { IPoliticalOrganizationRepository } from "@/server/repositories/interfaces/political-organization-repository.interface";
+import type { IPoliticalOrganizationRepository } from "@/server/contexts/public-finance/domain/repositories/political-organization-repository.interface";
 import type {
   IBalanceSnapshotRepository,
   TotalBalancesByYear,

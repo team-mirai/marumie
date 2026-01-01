@@ -1,7 +1,7 @@
 import type { PoliticalOrganization } from "@/shared/models/political-organization";
 import type { TransactionFilters } from "@/types/transaction-filters";
 import type { DisplayTransaction, DisplayTransactionType } from "@/types/display-transaction";
-import type { IPoliticalOrganizationRepository } from "../repositories/interfaces/political-organization-repository.interface";
+import type { IPoliticalOrganizationRepository } from "@/server/contexts/public-finance/domain/repositories/political-organization-repository.interface";
 import type {
   ITransactionRepository,
   PaginationOptions,
