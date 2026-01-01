@@ -1,6 +1,3 @@
-"use client";
-import "client-only";
-
 import type { PreviewDonorCsvSummary } from "@/server/contexts/report/domain/services/donor-csv-summary-calculator";
 
 interface DonorCsvSummaryProps {

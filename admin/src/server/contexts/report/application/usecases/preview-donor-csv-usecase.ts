@@ -72,7 +72,7 @@ export class PreviewDonorCsvUsecase {
   }
 
   private getDonorMatchKey(name: string, address: string | null, donorType: DonorType): string {
-    return `${name}|${address ?? ""}|${donorType}`;
+    return JSON.stringify({ name, address: address ?? "", donorType });
   }
 
   private async enrichWithMatchingDonors(

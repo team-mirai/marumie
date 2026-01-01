@@ -5,7 +5,7 @@
 export interface DonorCsvRecord {
   /** 行番号（1始まり、ヘッダー行を除く） */
   rowNumber: number;
-  /** 紐付け対象の Transaction.transaction_no */
+  /** 紐付け対象の Transaction.transaction_no（CSVヘッダー「取引No」との対応を明示するためスネークケースを使用） */
   transaction_no: string;
   /** 寄付者名 */
   name: string;

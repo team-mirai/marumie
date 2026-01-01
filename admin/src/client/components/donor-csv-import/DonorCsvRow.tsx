@@ -1,6 +1,3 @@
-"use client";
-import "client-only";
-
 import type { PreviewDonorCsvRow } from "@/server/contexts/report/domain/models/preview-donor-csv-row";
 import { DONOR_TYPE_LABELS } from "@/server/contexts/report/domain/models/donor";
 

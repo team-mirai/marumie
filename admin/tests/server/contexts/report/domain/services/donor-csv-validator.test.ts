@@ -157,6 +157,18 @@ describe("DonorCsvValidator", () => {
       expect(result[0].errors).toContain("個人の寄付者の場合、職業は必須です");
     });
 
+    it("should return invalid status when individual donor has null occupation", () => {
+      const rows = [createMockRow({ donorType: "individual", occupation: null })];
+      const transactionMap = new Map<string, TransactionForDonorCsv>([
+        ["T2025-0001", createMockTransaction()],
+      ]);
+
+      const result = validator.validate(rows, transactionMap);
+
+      expect(result[0].status).toBe("invalid");
+      expect(result[0].errors).toContain("個人の寄付者の場合、職業は必須です");
+    });
+
     it("should return invalid status when corporation has occupation", () => {
       const rows = [createMockRow({ donorType: "corporation", occupation: "会社員" })];
       const transactionMap = new Map<string, TransactionForDonorCsv>([

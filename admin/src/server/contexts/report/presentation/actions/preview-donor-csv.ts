@@ -7,10 +7,8 @@ import { PrismaTransactionWithDonorRepository } from "@/server/contexts/report/i
 import { DonorCsvLoader } from "@/server/contexts/report/infrastructure/donor-csv/donor-csv-loader";
 import { DonorCsvRecordConverter } from "@/server/contexts/report/infrastructure/donor-csv/donor-csv-record-converter";
 import { DonorCsvValidator } from "@/server/contexts/report/domain/services/donor-csv-validator";
-import {
-  PreviewDonorCsvUsecase,
-  type PreviewDonorCsvResult,
-} from "@/server/contexts/report/application/usecases/preview-donor-csv-usecase";
+import { PreviewDonorCsvUsecase } from "@/server/contexts/report/application/usecases/preview-donor-csv-usecase";
+import type { PreviewDonorCsvResult } from "@/server/contexts/report/presentation/types/preview-donor-csv-types";
 
 export interface PreviewDonorCsvRequest {
   file: File;
