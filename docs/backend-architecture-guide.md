@@ -1,4 +1,4 @@
-# admin アーキテクチャガイド
+# バックエンドアーキテクチャガイド
 
 ## 1. 目的と方針
 
@@ -9,7 +9,7 @@
 4. **コンテキスト間の独立性**: Bounded Contextパターンにより、各ドメインが独立して進化できる
 
 ### 1.2 アーキテクチャ方針
-1. **Bounded Context による分離**: 各ドメイン（data-import, report, auth）を明確に分離し、共通部分はsharedコンテキストで提供
+1. **Bounded Context による分離**: 各ドメインを明確に分離し、共通部分はsharedコンテキストで提供
 2. **レイヤードアーキテクチャ**: presentation → application → domain ↔ infrastructure の明確な責務分離
 3. **依存性逆転の原則**: ドメイン層はインフラストラクチャに依存せず、インターフェースを通じて抽象化
 4. **Next.js App Router との統合**: loaders/actionsを通じたキャッシング戦略とサーバーコンポーネント最適化
@@ -20,28 +20,27 @@
 
 ### 2.1 コンテキスト一覧
 
-| コンテキスト | 責務 |
-|---|---|
-| **data-import** | MFクラウドCSVインポート、取引データプレビュー |
-| **report** | 政治資金報告書XML生成、Counterpart（取引先）管理 |
-| **auth** | 認証・認可、ユーザー管理 |
-| **shared** | 全コンテキスト共通の基盤（Transaction, PoliticalOrganization等） |
-
-> **注意**: auth コンテキストは歴史的な経緯により、本ガイドで定めるレイヤー分割（presentation / application / domain / infrastructure）が適用されていない。新規実装時はレイヤー構造に準拠することが望ましいが、既存コードとの整合性を優先すること。
+| アプリ | コンテキスト | 責務 |
+|--------|-------------|------|
+| webapp | **public-finance** | 政治資金データの公開・可視化 |
+| admin | **data-import** | MFクラウドCSVインポート、取引データプレビュー |
+| admin | **report** | 政治資金報告書XML生成、Counterpart（取引先）管理 |
+| admin | **auth** | 認証・認可、ユーザー管理 |
+| 共通 | **shared** | 全コンテキスト共通の基盤（Transaction, PoliticalOrganization等） |
 
 ### 2.2 コンテキスト間の依存ルール
 
 ```
 ✓ 許可される依存:
-  - data-import → shared
-  - report → shared
-  - auth → shared
+  - public-finance → shared（webapp）
+  - data-import → shared（admin）
+  - report → shared（admin）
+  - auth → shared（admin）
 
 ✗ 禁止される依存:
-  - data-import → report
-  - report → data-import
-  - auth → data-import, report
+  - コンテキスト間の直接依存（例: data-import → report）
   - shared → 任意のコンテキスト
+  - webapp ↔ admin 間の依存
 ```
 
 **原則**: コンテキスト間の直接依存は禁止。shared を経由すること。
