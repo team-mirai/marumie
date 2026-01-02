@@ -1,5 +1,6 @@
 import type { SankeyData } from "@/types/sankey";
 import type { IPoliticalOrganizationRepository } from "@/server/contexts/public-finance/domain/repositories/political-organization-repository.interface";
+import type { IBalanceSheetRepository } from "@/server/contexts/public-finance/domain/repositories/balance-sheet-repository.interface";
 import type { ITransactionRepository } from "../repositories/interfaces/transaction-repository.interface";
 import type { IBalanceSnapshotRepository } from "../repositories/interfaces/balance-snapshot-repository.interface";
 import { convertCategoryAggregationToSankeyData } from "../utils/sankey-category-converter";
@@ -19,6 +20,7 @@ export class GetSankeyAggregationUsecase {
     private transactionRepository: ITransactionRepository,
     private politicalOrganizationRepository: IPoliticalOrganizationRepository,
     private balanceSnapshotRepository: IBalanceSnapshotRepository,
+    private balanceSheetRepository: IBalanceSheetRepository,
   ) {}
 
   async execute(params: GetSankeyAggregationParams): Promise<GetSankeyAggregationResult> {
@@ -49,7 +51,7 @@ export class GetSankeyAggregationUsecase {
           organizationIdsAsString,
           params.financialYear,
         ),
-        this.transactionRepository.getLiabilityBalance(
+        this.balanceSheetRepository.getCurrentLiabilities(
           organizationIdsAsString,
           params.financialYear,
         ),

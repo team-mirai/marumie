@@ -4,16 +4,17 @@ import { unstable_cache } from "next/cache";
 import { prisma } from "@/server/lib/prisma";
 import { PrismaPoliticalOrganizationRepository } from "@/server/contexts/public-finance/infrastructure/repositories/prisma-political-organization.repository";
 import { PrismaMonthlyAggregationRepository } from "@/server/contexts/public-finance/infrastructure/repositories/prisma-monthly-aggregation.repository";
+import { PrismaBalanceSheetRepository } from "@/server/contexts/public-finance/infrastructure/repositories/prisma-balance-sheet.repository";
 import { GetMonthlyAggregationUsecase } from "@/server/contexts/public-finance/application/usecases/get-monthly-aggregation-usecase";
+import { GetBalanceSheetUsecase } from "@/server/contexts/public-finance/application/usecases/get-balance-sheet-usecase";
 import { PrismaTransactionRepository } from "@/server/repositories/prisma-transaction.repository";
 import { PrismaBalanceSnapshotRepository } from "@/server/repositories/prisma-balance-snapshot.repository";
-import { GetBalanceSheetUsecase } from "@/server/usecases/get-balance-sheet-usecase";
 import { GetMockTransactionPageDataUsecase } from "@/server/usecases/get-mock-transaction-page-data-usecase";
 import { GetSankeyAggregationUsecase } from "@/server/usecases/get-sankey-aggregation-usecase";
 import {
   type GetTransactionsBySlugParams,
   GetTransactionsBySlugUsecase,
-} from "@/server/usecases/get-transactions-by-slug-usecase";
+} from "@/server/contexts/public-finance/application/usecases/get-transactions-by-slug-usecase";
 import { CACHE_REVALIDATE_SECONDS } from "./constants";
 
 export interface TopPageDataParams extends Omit<GetTransactionsBySlugParams, "financialYear"> {
@@ -33,6 +34,7 @@ export const loadTopPageData = unstable_cache(
     const politicalOrganizationRepository = new PrismaPoliticalOrganizationRepository(prisma);
     const balanceSnapshotRepository = new PrismaBalanceSnapshotRepository(prisma);
     const monthlyAggregationRepository = new PrismaMonthlyAggregationRepository(prisma);
+    const balanceSheetRepository = new PrismaBalanceSheetRepository(prisma);
 
     // Usecaseを初期化
     const transactionUsecase = new GetTransactionsBySlugUsecase(
@@ -44,11 +46,11 @@ export const loadTopPageData = unstable_cache(
       transactionRepository,
       politicalOrganizationRepository,
       balanceSnapshotRepository,
+      balanceSheetRepository,
     );
 
     const balanceSheetUsecase = new GetBalanceSheetUsecase(
-      transactionRepository,
-      balanceSnapshotRepository,
+      balanceSheetRepository,
       politicalOrganizationRepository,
     );
 
