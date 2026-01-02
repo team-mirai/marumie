@@ -1,9 +1,14 @@
 # みらいまる見え政治資金
 
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
+[![CI](https://github.com/team-mirai/marumie/actions/workflows/ci.yml/badge.svg)](https://github.com/team-mirai/marumie/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/team-mirai/marumie/branch/develop/graph/badge.svg)](https://codecov.io/gh/team-mirai/marumie)
 [![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Next.js](https://img.shields.io/badge/Next.js-000000?logo=next.js&logoColor=white)](https://nextjs.org/)
-[![codecov](https://codecov.io/gh/team-mirai/marumie/branch/develop/graph/badge.svg)](https://codecov.io/gh/team-mirai/marumie)
+[![Prisma](https://img.shields.io/badge/Prisma-2D3748?logo=prisma&logoColor=white)](https://www.prisma.io/)
+[![Supabase](https://img.shields.io/badge/Supabase-3FCF8E?logo=supabase&logoColor=white)](https://supabase.com/)
+[![pnpm](https://img.shields.io/badge/pnpm-F69220?logo=pnpm&logoColor=white)](https://pnpm.io/)
+[![Biome](https://img.shields.io/badge/Biome-60A5FA?logo=biome&logoColor=white)](https://biomejs.dev/)
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/team-mirai/marumie)
 
 > 政治資金の透明性向上を目指すオープンソースダッシュボード
