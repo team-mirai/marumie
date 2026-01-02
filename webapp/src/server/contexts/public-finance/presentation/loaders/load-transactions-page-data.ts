@@ -8,7 +8,7 @@ import {
   type GetTransactionsBySlugParams,
   GetTransactionsBySlugUsecase,
 } from "@/server/contexts/public-finance/application/usecases/get-transactions-by-slug-usecase";
-import { CACHE_REVALIDATE_SECONDS } from "./constants";
+import { CACHE_REVALIDATE_SECONDS } from "@/server/contexts/public-finance/presentation/loaders/constants";
 
 export const loadTransactionsPageData = (params: GetTransactionsBySlugParams) => {
   const cacheKey = ["transactions-page-data", JSON.stringify(params)];
