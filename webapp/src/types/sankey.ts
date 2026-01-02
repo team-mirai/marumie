@@ -1,17 +1,10 @@
-export interface SankeyNode {
-  id: string;
-  label?: string;
-  nodeType?: "income" | "income-sub" | "total" | "expense" | "expense-sub";
-}
-
-export interface SankeyLink {
-  source: string;
-  target: string;
-  value: number;
-}
-
-export interface SankeyData {
-  nodes: SankeyNode[];
-  links: SankeyLink[];
-  totalLatestBalance?: number;
-}
+/**
+ * Sankeyダイアグラムの型定義
+ *
+ * 実装はドメインモデルに移動。UIコンポーネントからの参照パスを維持するためにre-export
+ */
+export type {
+  SankeyData,
+  SankeyNode,
+  SankeyLink,
+} from "@/server/contexts/public-finance/domain/models/sankey-data";

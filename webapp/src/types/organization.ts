@@ -5,6 +5,6 @@ export type OrganizationData = {
 };
 
 export type OrganizationsResponse = {
-  default: string;
+  default: string | null;
   organizations: OrganizationData[];
 };

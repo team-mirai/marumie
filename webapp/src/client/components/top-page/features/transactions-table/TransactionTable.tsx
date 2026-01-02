@@ -1,6 +1,6 @@
-import type { DisplayTransaction } from "@/types/display-transaction";
-import TransactionTableBody from "./TransactionTableBody";
-import TransactionTableHeader from "./TransactionTableHeader";
+import type { DisplayTransaction } from "@/server/contexts/public-finance/domain/models/display-transaction";
+import TransactionTableBody from "@/client/components/top-page/features/transactions-table/TransactionTableBody";
+import TransactionTableHeader from "@/client/components/top-page/features/transactions-table/TransactionTableHeader";
 
 interface TransactionTableProps {
   transactions: DisplayTransaction[];

@@ -13,9 +13,9 @@ import MainColumn from "@/client/components/layout/MainColumn";
 import MainColumnCard from "@/client/components/layout/MainColumnCard";
 import InteractiveTransactionTable from "@/client/components/top-page/features/transactions-table/InteractiveTransactionTable";
 import ProgressSection from "@/client/components/top-page/ProgressSection";
-import { loadTransactionsPageData } from "@/server/loaders/load-transactions-page-data";
-import { loadOrganizations } from "@/server/loaders/load-organizations";
-import { formatUpdatedAt } from "@/server/utils/format-date";
+import { loadTransactionsPageData } from "@/server/contexts/public-finance/presentation/loaders/load-transactions-page-data";
+import { loadOrganizations } from "@/server/contexts/public-finance/presentation/loaders/load-organizations";
+import { formatUpdatedAt } from "@/client/lib/format-date";
 
 interface TransactionsPageProps {
   params: Promise<{

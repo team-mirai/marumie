@@ -23,6 +23,8 @@ prompts
 
 # testing
 /coverage
+**/e2e/.output/
+**/e2e/.auth/
 
 # next.js
 /.next/

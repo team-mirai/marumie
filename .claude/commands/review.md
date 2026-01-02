@@ -14,7 +14,7 @@ description: 現在の変更に対して設計レビューを行う (project)
 1. **変更内容の把握**: `git diff` で変更されたファイルの差分を取得し、変更内容を把握する。必要に応じて関連ファイルも読み込む。
 
 2. **ガイドラインの参照**: 変更対象に応じて以下のガイドラインを参照する。
-   - `admin/src/server/contexts/` 配下の変更: [docs/admin-architecture-guide.md](docs/admin-architecture-guide.md)
+   - `admin/src/server/contexts/` または `webapp/src/server/contexts/` 配下の変更: [docs/backend-architecture-guide.md](docs/backend-architecture-guide.md)
    - `admin/src/client/` または `admin/src/app/` 配下の変更: [docs/admin-ui-guidelines.md](docs/admin-ui-guidelines.md)
 
 3. **レビュー実施**: 以下の観点でレビューを行う。

@@ -3,17 +3,19 @@
   "private": true,
   "version": "0.0.0",
   "dependencies": {
-    "@next/third-parties": "^15.5.0",
-    "@prisma/client": "^6.14.0",
-    "@vercel/speed-insights": "^1.2.0",
-    "apexcharts": "^5.3.3",
+    "@next/third-parties": "^15.5.9",
+    "@nivo/sankey": "^0.99.0",
+    "@prisma/client": "^6.19.1",
+    "@vercel/speed-insights": "^1.3.1",
+    "apexcharts": "^5.3.6",
     "critters": "^0.0.25",
-    "next": "15.4.10",
-    "react": "19.1.2",
-    "react-apexcharts": "^1.7.0",
-    "react-dom": "19.1.2"
+    "next": "15.5.9",
+    "react": "19.1.4",
+    "react-apexcharts": "^1.9.0",
+    "react-dom": "19.1.4"
   },
   "devDependencies": {
+    "@playwright/test": "^1.57.0",
     "@tailwindcss/postcss": "^4.1.12",
     "@types/jest": "^29.5.14",
     "@types/node": "^20",
@@ -26,6 +28,7 @@
     "typescript": "^5"
   },
   "scripts": {
+    "postinstall": "pnpm exec playwright install chromium",
     "dev": "next dev --turbopack",
     "build": "cd ../ && prisma generate && prisma migrate deploy && cd webapp && next build",
     "start": "next start",
@@ -34,6 +37,9 @@
     "format": "biome check --write .",
     "test": "jest",
     "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage"
+    "test:coverage": "jest --coverage",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui --ui-host=0.0.0.0",
+    "test:e2e:headed": "playwright test --headed"
   }
 }

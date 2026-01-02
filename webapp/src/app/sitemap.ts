@@ -1,11 +1,12 @@
 import type { MetadataRoute } from "next";
-import { loadOrganizations } from "@/server/loaders/load-organizations";
+import { loadOrganizations } from "@/server/contexts/public-finance/presentation/loaders/load-organizations";
 
 export const dynamic = "force-static";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = process.env.WEBAPP_URL || "https://marumie.team-mir.ai";
 
+  // 組織データを取得（0件の場合は空配列が返される）
   const { organizations } = await loadOrganizations();
 
   const sitemap: MetadataRoute.Sitemap = [

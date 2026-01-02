@@ -2,7 +2,7 @@
 import "client-only";
 
 import { PL_CATEGORIES } from "@/shared/accounting/account-category";
-import type { DisplayTransaction } from "@/types/display-transaction";
+import type { DisplayTransaction } from "@/server/contexts/public-finance/domain/models/display-transaction";
 
 interface TransactionTableRowProps {
   transaction: DisplayTransaction;

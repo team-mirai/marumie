@@ -510,7 +510,6 @@ const data: TransactionSeedData[] = [
     creditAmount: '250000',
     description: '事務職員給与',
     categoryKey: 'personnel-costs',
-    counterpartName: '事務　太郎',
     friendlyCategory: '人件費',
   },
   // SYUUSHI07_15: 政治活動費の支出（KUBUN1: 組織活動費）

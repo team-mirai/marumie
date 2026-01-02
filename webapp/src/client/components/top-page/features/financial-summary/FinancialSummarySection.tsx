@@ -1,4 +1,4 @@
-import { formatAmount } from "@/server/utils/financial-calculator";
+import { formatAmount } from "@/client/lib/financial-calculator";
 import type { SankeyData } from "@/types/sankey";
 import FinancialSummaryCard from "./FinancialSummaryCard";
 import BalanceDetailCard from "./BalanceDetailCard";

@@ -14,6 +14,7 @@ import {
   isDonorRequired,
   getAllowedDonorTypes,
 } from "@/server/contexts/report/domain/models/donor-assignment-rules";
+import type { TransactionForDonorCsv } from "@/server/contexts/report/domain/models/preview-donor-csv-row";
 
 export class PrismaTransactionWithDonorRepository implements ITransactionWithDonorRepository {
   constructor(private prisma: PrismaClient) {}
@@ -403,6 +404,60 @@ export class PrismaTransactionWithDonorRepository implements ITransactionWithDon
           : null,
         requiresDonor: isDonorRequired(transaction.categoryKey),
         allowedDonorTypes: getAllowedDonorTypes(transaction.categoryKey),
+      };
+    });
+  }
+
+  async findByTransactionNosForDonorCsv(
+    transactionNos: string[],
+    politicalOrganizationId: string,
+  ): Promise<TransactionForDonorCsv[]> {
+    if (transactionNos.length === 0) {
+      return [];
+    }
+
+    if (!/^\d+$/.test(politicalOrganizationId)) {
+      throw new Error(
+        `Invalid politicalOrganizationId: "${politicalOrganizationId}" is not a valid numeric string`,
+      );
+    }
+
+    const transactions = await this.prisma.transaction.findMany({
+      where: {
+        transactionNo: { in: transactionNos },
+        politicalOrganizationId: BigInt(politicalOrganizationId),
+      },
+      include: {
+        transactionDonors: {
+          include: {
+            donor: true,
+          },
+        },
+      },
+      orderBy: {
+        transactionNo: "asc",
+      },
+    });
+
+    return transactions.map((t) => {
+      const firstDonor = t.transactionDonors[0];
+      return {
+        id: t.id.toString(),
+        transactionNo: t.transactionNo,
+        transactionDate: t.transactionDate,
+        categoryKey: t.categoryKey,
+        friendlyCategory: t.friendlyCategory,
+        debitAmount: Number(t.debitAmount),
+        creditAmount: Number(t.creditAmount),
+        debitPartner: t.debitPartner,
+        creditPartner: t.creditPartner,
+        existingDonor: firstDonor
+          ? {
+              id: firstDonor.donor.id.toString(),
+              name: firstDonor.donor.name,
+              donorType: this.mapDonorType(firstDonor.donor.donorType),
+            }
+          : null,
       };
     });
   }

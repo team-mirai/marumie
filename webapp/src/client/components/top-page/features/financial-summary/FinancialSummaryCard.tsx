@@ -1,7 +1,7 @@
 "use client";
 import "client-only";
 import BaseCard from "@/client/components/ui/BaseCard";
-import type { FormattedAmount } from "@/server/utils/financial-calculator";
+import type { FormattedAmount } from "@/client/lib/financial-calculator";
 
 interface FinancialSummaryCardProps {
   title: string;
