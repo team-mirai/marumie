@@ -10,7 +10,7 @@ import type {
   PaginationOptions,
   SankeyCategoryAggregationResult,
   TransactionCategoryAggregation,
-} from "./interfaces/transaction-repository.interface";
+} from "@/server/contexts/public-finance/domain/repositories/transaction-repository.interface";
 import type { ITransactionListRepository } from "@/server/contexts/public-finance/domain/repositories/transaction-list-repository.interface";
 
 export class PrismaTransactionRepository

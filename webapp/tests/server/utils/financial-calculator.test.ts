@@ -1,4 +1,4 @@
-import { formatAmount, FormattedAmount } from "../../../src/server/utils/financial-calculator";
+import { formatAmount, FormattedAmount } from "@/client/lib/financial-calculator";
 
 describe("formatAmount", () => {
   const testCases: Array<{

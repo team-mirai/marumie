@@ -1,5 +1,5 @@
 import type { ReactElement } from "react";
-import type { FormattedAmount } from "@/server/utils/financial-calculator";
+import type { FormattedAmount } from "@/client/lib/financial-calculator";
 
 interface BalanceDetailCardProps {
   className?: string;

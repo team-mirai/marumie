@@ -1,4 +1,4 @@
-import { formatUpdatedAt } from "@/server/utils/format-date";
+import { formatUpdatedAt } from "@/client/lib/format-date";
 
 describe("formatUpdatedAt", () => {
   it("should return empty string when date is null", () => {
