@@ -1,4 +1,4 @@
-import { GetSankeyAggregationUsecase } from "@/server/usecases/get-sankey-aggregation-usecase";
+import { GetSankeyAggregationUsecase } from "@/server/contexts/public-finance/application/usecases/get-sankey-aggregation-usecase";
 import type {
   ITransactionRepository,
   SankeyCategoryAggregationResult,

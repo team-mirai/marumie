@@ -10,7 +10,7 @@ import { GetBalanceSheetUsecase } from "@/server/contexts/public-finance/applica
 import { PrismaTransactionRepository } from "@/server/repositories/prisma-transaction.repository";
 import { PrismaBalanceSnapshotRepository } from "@/server/repositories/prisma-balance-snapshot.repository";
 import { GetMockTransactionPageDataUsecase } from "@/server/usecases/get-mock-transaction-page-data-usecase";
-import { GetSankeyAggregationUsecase } from "@/server/usecases/get-sankey-aggregation-usecase";
+import { GetSankeyAggregationUsecase } from "@/server/contexts/public-finance/application/usecases/get-sankey-aggregation-usecase";
 import {
   type GetTransactionsBySlugParams,
   GetTransactionsBySlugUsecase,
