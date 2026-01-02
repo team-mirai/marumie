@@ -1,5 +1,7 @@
 "use server";
 
+import "server-only";
+
 import { unstable_cache } from "next/cache";
 import { prisma } from "@/server/contexts/public-finance/infrastructure/prisma";
 import { PrismaPoliticalOrganizationRepository } from "@/server/contexts/public-finance/infrastructure/repositories/prisma-political-organization.repository";
