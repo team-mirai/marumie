@@ -18,6 +18,16 @@ on:
       - '.dependency-cruiser.cjs'
       - 'pnpm-lock.yaml'
 
+env:
+  # Supabase local development defaults (public, not secrets)
+  # https://supabase.com/docs/guides/local-development/auth#log-in-as-an-existing-user
+  SUPABASE_URL: http://127.0.0.1:54321
+  SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0
+  SUPABASE_SERVICE_ROLE_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU
+  # Note: CI uses default Supabase ports (54321 for API, 54322 for DB)
+  # Local development may use different ports - check supabase/config.toml
+  DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
+
 jobs:
   admin:
     runs-on: ubuntu-latest
@@ -69,6 +79,57 @@ jobs:
 
       - name: Build admin
         run: pnpm build:admin
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ env.SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ env.SUPABASE_ANON_KEY }}
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('admin/pnpm-lock.yaml', 'pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-playwright-
+
+      - name: Install Playwright browsers
+        run: pnpm --filter admin exec playwright install chromium --with-deps
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Start Supabase
+        run: |
+          # Enable API and use default ports for CI
+          sed -i 's/^\[api\]$/[api]\nenabled = true/' supabase/config.toml
+          sed -i 's/^port = 54332$/port = 54322/' supabase/config.toml
+          supabase start --exclude imgproxy,edge-runtime,vector,studio,analytics
+
+      - name: Wait for Supabase to be ready
+        run: |
+          echo "Waiting for Supabase API..."
+          timeout 60 bash -c 'until curl -s http://127.0.0.1:54321/rest/v1/ > /dev/null 2>&1; do sleep 2; done'
+          echo "Supabase is ready"
+
+      - name: Run database migrations and seed
+        run: |
+          pnpm db:migrate:deploy
+          pnpm db:seed
+
+      - name: Run E2E tests for admin
+        run: pnpm --filter admin test:e2e
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ env.SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ env.SUPABASE_ANON_KEY }}
+
+      - name: Upload E2E test results
+        uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: admin-e2e-report
+          path: admin/e2e/.output/
+          retention-days: 7
 
       - name: Upload admin coverage
         uses: actions/upload-artifact@v4
