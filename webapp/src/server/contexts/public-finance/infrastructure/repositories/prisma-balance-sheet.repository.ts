@@ -9,7 +9,13 @@ import type { IBalanceSheetRepository } from "@/server/contexts/public-finance/d
  * creditAccount / debitAccount でのクエリに使用
  */
 const ACCOUNT_NAMES = {
-  LOAN: Object.keys(PL_CATEGORIES).find((key) => PL_CATEGORIES[key].key === "loans") as string,
+  LOAN: (() => {
+    const loan = Object.keys(PL_CATEGORIES).find((key) => PL_CATEGORIES[key].key === "loans");
+    if (!loan) {
+      throw new Error("PL_CATEGORIES does not contain 'loans' key");
+    }
+    return loan;
+  })(),
 } as const;
 
 /**
