@@ -26,7 +26,12 @@ test.describe("政治団体管理", () => {
 		test("政治団体の編集ページが正常に表示される", async ({ page }) => {
 			await page.goto("/political-organizations");
 
-			await page.getByRole("link", { name: "編集" }).first().click();
+			// 特定の団体（サンプル党）の編集リンクを選択
+			const samplePartyCard = page
+				.locator("h3")
+				.filter({ hasText: "サンプル党" })
+				.locator("xpath=ancestor::div[contains(@class, 'border')]");
+			await samplePartyCard.getByRole("link", { name: "編集" }).click();
 
 			// CardTitleはdiv要素としてレンダリングされるため、getByTextを使用
 			await expect(page.getByText(/を編集/).first()).toBeVisible();
@@ -37,7 +42,12 @@ test.describe("政治団体管理", () => {
 		test("編集ページで既存の政治団体データが読み込まれる", async ({ page }) => {
 			await page.goto("/political-organizations");
 
-			await page.getByRole("link", { name: "編集" }).first().click();
+			// 特定の団体（サンプル党）の編集リンクを選択
+			const samplePartyCard = page
+				.locator("h3")
+				.filter({ hasText: "サンプル党" })
+				.locator("xpath=ancestor::div[contains(@class, 'border')]");
+			await samplePartyCard.getByRole("link", { name: "編集" }).click();
 
 			const displayNameInput = page.getByLabel(/表示名/);
 			await expect(displayNameInput).toHaveValue("サンプル党");
