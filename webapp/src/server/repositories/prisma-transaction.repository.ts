@@ -2,7 +2,7 @@ import "server-only";
 import type { Prisma, PrismaClient, Transaction as PrismaTransaction } from "@prisma/client";
 import type { Transaction, TransactionType } from "@/shared/models/transaction";
 import type { TransactionFilters } from "@/types/transaction-filters";
-import type { DisplayTransactionType } from "@/types/display-transaction";
+import type { DisplayTransactionType } from "@/server/contexts/public-finance/domain/models/display-transaction";
 import { PL_CATEGORIES } from "@/shared/accounting/account-category";
 import type {
   ITransactionRepository,
@@ -11,8 +11,11 @@ import type {
   SankeyCategoryAggregationResult,
   TransactionCategoryAggregation,
 } from "./interfaces/transaction-repository.interface";
+import type { ITransactionListRepository } from "@/server/contexts/public-finance/domain/repositories/transaction-list-repository.interface";
 
-export class PrismaTransactionRepository implements ITransactionRepository {
+export class PrismaTransactionRepository
+  implements ITransactionRepository, ITransactionListRepository
+{
   constructor(private prisma: PrismaClient) {}
 
   async findById(id: string): Promise<Transaction | null> {

@@ -3,10 +3,12 @@ import {
   getCategoryMapping,
   convertToDisplayTransaction,
   convertToDisplayTransactions,
-} from "../../../src/server/utils/transaction-converter";
-import { DisplayTransaction } from "../../../src/types/display-transaction";
+  formatYearMonth,
+  getAccountFromTransaction,
+  calculateDisplayAmount,
+} from "@/server/contexts/public-finance/domain/models/display-transaction";
+import { DisplayTransaction } from "@/server/contexts/public-finance/domain/models/display-transaction";
 
-// モックデータの作成用ヘルパー
 const createMockTransaction = (overrides: Partial<Transaction> = {}): Transaction => ({
   id: "test-id-1",
   political_organization_id: "org-1",
@@ -25,6 +27,72 @@ const createMockTransaction = (overrides: Partial<Transaction> = {}): Transactio
   created_at: new Date(),
   updated_at: new Date(),
   ...overrides,
+});
+
+describe("formatYearMonth", () => {
+  it("should format date to YYYY.MM format", () => {
+    expect(formatYearMonth(new Date("2025-08-15"))).toBe("2025.08");
+  });
+
+  it("should pad single digit month with zero", () => {
+    expect(formatYearMonth(new Date("2025-01-05"))).toBe("2025.01");
+  });
+
+  it("should handle December correctly", () => {
+    expect(formatYearMonth(new Date("2025-12-31"))).toBe("2025.12");
+  });
+});
+
+describe("getAccountFromTransaction", () => {
+  it("should return debit_account for expense transactions", () => {
+    const transaction = createMockTransaction({
+      transaction_type: "expense",
+      debit_account: "政治活動費",
+      credit_account: "現金",
+    });
+    expect(getAccountFromTransaction(transaction)).toBe("政治活動費");
+  });
+
+  it("should return credit_account for income transactions", () => {
+    const transaction = createMockTransaction({
+      transaction_type: "income",
+      debit_account: "現金",
+      credit_account: "個人からの寄附",
+    });
+    expect(getAccountFromTransaction(transaction)).toBe("個人からの寄附");
+  });
+});
+
+describe("calculateDisplayAmount", () => {
+  it("should return negative amount for expense transactions", () => {
+    const transaction = createMockTransaction({
+      transaction_type: "expense",
+      debit_amount: 100000,
+    });
+    const result = calculateDisplayAmount(transaction);
+    expect(result.absAmount).toBe(100000);
+    expect(result.amount).toBe(-100000);
+  });
+
+  it("should return positive amount for income transactions", () => {
+    const transaction = createMockTransaction({
+      transaction_type: "income",
+      credit_amount: 50000,
+    });
+    const result = calculateDisplayAmount(transaction);
+    expect(result.absAmount).toBe(50000);
+    expect(result.amount).toBe(50000);
+  });
+
+  it("should handle negative amounts correctly", () => {
+    const transaction = createMockTransaction({
+      transaction_type: "expense",
+      debit_amount: -50000,
+    });
+    const result = calculateDisplayAmount(transaction);
+    expect(result.absAmount).toBe(50000);
+    expect(result.amount).toBe(-50000);
+  });
 });
 
 describe("getCategoryMapping", () => {
@@ -146,7 +214,7 @@ describe("convertToDisplayTransaction", () => {
     convertToDisplayTransaction(transaction);
 
     expect(console.warn).toHaveBeenCalledWith(
-      expect.stringContaining("offset（相殺取引）を直接表示することは想定されていません")
+      expect.stringContaining("offset（相殺取引）を直接表示することは想定されていません"),
     );
   });
 
