@@ -27,6 +27,7 @@ env:
   # Note: CI uses default Supabase ports (54321 for API, 54322 for DB)
   # Local development may use different ports - check supabase/config.toml
   DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
+  DIRECT_URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
 
 jobs:
   admin:
