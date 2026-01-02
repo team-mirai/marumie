@@ -6,6 +6,34 @@
 
 ---
 
+## ブランチ戦略
+
+### エピックブランチの導入
+
+全 Phase のリファクタリングは**エピックブランチ**で行い、完了後に develop にマージする。
+
+```
+develop
+  └── epic/webapp-ddd-refactoring    # エピックブランチ
+        ├── refactor/webapp-ddd-phase0
+        ├── refactor/webapp-ddd-phase1
+        ├── refactor/webapp-ddd-phase2
+        └── ...
+```
+
+**理由**:
+- 各 Phase の PR はエピックブランチにマージし、develop には影響を与えない
+- 全 Phase 完了後にエピックブランチを develop にマージすることで、途中の不完全な状態が develop に混入しない
+- レビューは各 Phase 単位で行いつつ、最終的な統合は一括で行える
+
+### PR の流れ
+
+1. 各 Phase のブランチを作成: `refactor/webapp-ddd-phaseN`
+2. 作業完了後、エピックブランチ `epic/webapp-ddd-refactoring` に PR を作成・マージ
+3. 全 Phase 完了後、エピックブランチから `develop` に PR を作成・マージ
+
+---
+
 ## Phase 0: 基盤準備
 
 ### 0.1 概要
@@ -91,9 +119,6 @@ interface MonthlyAggregation {
 
 ```
 webapp/src/server/contexts/public-finance/
-├── presentation/
-│   └── loaders/
-│       └── load-monthly-aggregation.ts      # 新規作成
 ├── application/
 │   └── usecases/
 │       └── get-monthly-aggregation-usecase.ts  # 移動・リネーム
@@ -109,7 +134,10 @@ webapp/src/server/contexts/public-finance/
         └── prisma-political-organization.repository.ts  # 移動
 ```
 
-**注**: `ITransactionRepository` および `IBalanceSnapshotRepository` は Phase 1 では移動しない。後続の Phase で必要になった時点で移動する。
+**注**:
+- `presentation/` は Phase 1 では作成しない。既存の `loaders/load-top-page.ts` から contexts 以下の UseCase を呼び出す形とする
+- `ITransactionRepository` および `IBalanceSnapshotRepository` は Phase 1 では移動しない。後続の Phase で必要になった時点で移動する
+- 最終 Phase で全リファクタリング完了後に `presentation/` を作成し、loader を移動する
 
 ### 1.5 Interface Segregation の適用
 
@@ -167,13 +195,15 @@ getMonthlyAggregation(
 - `ITransactionRepository` への依存を `IMonthlyAggregationRepository` に変更
 - ファイル名を `get-monthly-transaction-aggregation-usecase.ts` から `get-monthly-aggregation-usecase.ts` に変更（冗長な "transaction" を削除）
 
-### 1.8 Loader
+### 1.8 既存 Loader の修正
 
-**ファイル**: `presentation/loaders/load-monthly-aggregation.ts`
+**ファイル**: `loaders/load-top-page.ts`（既存ファイルを修正）
 
 **変更点**:
-- 新しいリポジトリ実装をインスタンス化
-- import パスを更新
+- 新しい UseCase（`contexts/public-finance/application/usecases/get-monthly-aggregation-usecase.ts`）を呼び出すように import パスを更新
+- UseCase 内で新しいリポジトリ実装をインスタンス化
+
+**注**: `presentation/loaders/` への移動は最終 Phase で行う。Phase 1 では既存の loader から contexts 以下の UseCase を参照する形に留める。
 
 ### 1.9 リポジトリ実装
 
@@ -195,17 +225,17 @@ getMonthlyAggregation(
 | 新規作成 | `contexts/public-finance/infrastructure/repositories/prisma-monthly-aggregation.repository.ts` |
 | 移動 | `repositories/prisma-political-organization.repository.ts` → `contexts/public-finance/infrastructure/repositories/` |
 | 移動・修正 | `usecases/get-monthly-transaction-aggregation-usecase.ts` → `contexts/public-finance/application/usecases/get-monthly-aggregation-usecase.ts` |
-| 新規作成 | `contexts/public-finance/presentation/loaders/load-monthly-aggregation.ts` |
+| 修正 | `loaders/load-top-page.ts`（新しい UseCase を参照するように import パス更新） |
 | 修正 | `repositories/interfaces/transaction-repository.interface.ts`（`getMonthlyAggregation` メソッド削除） |
 | 修正 | `repositories/prisma-transaction.repository.ts`（`getMonthlyAggregation` メソッド削除） |
 
-**注**: `ITransactionRepository` と `PrismaTransactionRepository` は旧ディレクトリに残す（他の Phase で使用するため）。Phase 6 で移動する。
+**注**:
+- `ITransactionRepository` と `PrismaTransactionRepository` は旧ディレクトリに残す（他の Phase で使用するため）。Phase 6 で移動する
+- `presentation/loaders/` は Phase 1 では作成しない。最終 Phase で loader を移動する
 
 ### 1.12 呼び出し元の更新
 
-月別収支グラフを表示しているページコンポーネントの import パスを更新する。
-
-対象の特定は実装時に行う（グラフコンポーネントから loader を呼び出している箇所）。
+`loaders/load-top-page.ts` の import パスを更新する。既存の loader ファイルの位置は変更せず、UseCase の参照先のみ contexts 以下に変更する。
 
 ---
 
@@ -222,7 +252,7 @@ getMonthlyAggregation(
 - [ ] `PrismaMonthlyAggregationRepository` が作成されている
 - [ ] `MonthlyAggregation` ドメインモデルが作成されている
 - [ ] Usecase が新しいリポジトリに依存している
-- [ ] Loader が `presentation/loaders/` に配置されている
+- [ ] 既存の `loaders/load-top-page.ts` が contexts 以下の UseCase を参照している
 - [ ] `ITransactionRepository` から `getMonthlyAggregation` が削除されている
 - [ ] すべての import パスが `@/` から始まる絶対パスである
 - [ ] `server-only` が適切なファイルに含まれている
