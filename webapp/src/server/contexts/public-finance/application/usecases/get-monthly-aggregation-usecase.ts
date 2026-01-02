@@ -1,3 +1,5 @@
+import "server-only";
+
 import type { MonthlyAggregation } from "@/server/contexts/public-finance/domain/models/monthly-aggregation";
 import type { IMonthlyAggregationRepository } from "@/server/contexts/public-finance/domain/repositories/monthly-aggregation-repository.interface";
 import type { IPoliticalOrganizationRepository } from "@/server/contexts/public-finance/domain/repositories/political-organization-repository.interface";
