@@ -221,5 +221,5 @@ pnpm run supabase:status  # Supabase 状態確認
 
 - [README.md](../README.md) - プロジェクト概要
 - [CLAUDE.md](../CLAUDE.md) - コード規約・アーキテクチャ
-- [admin-architecture-guide.md](admin-architecture-guide.md) - admin のアーキテクチャ詳細
+- [backend-architecture-guide.md](backend-architecture-guide.md) - バックエンドのアーキテクチャ詳細
 - [admin-ui-guidelines.md](admin-ui-guidelines.md) - admin の UI コンポーネントガイドライン

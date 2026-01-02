@@ -6,7 +6,7 @@ language: ja-JP
 knowledge_base:
   code_guidelines:
     filePatterns:
-      - "docs/admin-architecture-guide.md"
+      - "docs/backend-architecture-guide.md"
       - "docs/admin-ui-guidelines.md"
       - "docs/design-document-rules.md"
       - "CLAUDE.md"
@@ -52,7 +52,10 @@ reviews:
   # パス別のレビュー指示
   path_instructions:
     - path: "admin/src/server/contexts/**"
-      instructions: "docs/admin-architecture-guide.md に従ってレビューしてください。"
+      instructions: "docs/backend-architecture-guide.md に従ってレビューしてください。"
+
+    - path: "webapp/src/server/contexts/**"
+      instructions: "docs/backend-architecture-guide.md に従ってレビューしてください。"
 
     - path: "admin/src/client/**"
       instructions: "docs/admin-ui-guidelines.md に従ってレビューしてください。"
@@ -67,7 +70,7 @@ reviews:
       instructions: |
         これは設計ドキュメントです。以下の観点でアーキテクチャレビューを行ってください：
 
-        1. **アーキテクチャ整合性**: docs/admin-architecture-guide.md のレイヤードアーキテクチャ（presentation → application → domain ↔ infrastructure）に従っているか
+        1. **アーキテクチャ整合性**: docs/backend-architecture-guide.md のレイヤードアーキテクチャ（presentation → application → domain ↔ infrastructure）に従っているか
         2. **Bounded Context**: 適切なコンテキスト境界が設定されているか、責務が明確か
         3. **ドメインモデル設計**: ドメインロジックがモデルに適切に配置されているか
         4. **依存関係**: 依存性逆転の原則に違反していないか

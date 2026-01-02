@@ -21,8 +21,9 @@ description: 設計ドキュメントを作成する (project)
    目的が明確でない場合は、必ずユーザーに質問して確認を取ること。設計ドキュメントの冒頭に「目的」セクションとして記載する。
 
 3. **関連コード・ドキュメントの調査**: 設計に必要な既存コードやドキュメントを読み込み、現状を理解する。設計対象に応じて以下を参照する。
-   - admin関連の場合:
-     - [docs/admin-architecture-guide.md](docs/admin-architecture-guide.md): adminのアーキテクチャルール
+   - バックエンド（webapp/admin の server/contexts）関連の場合:
+     - [docs/backend-architecture-guide.md](docs/backend-architecture-guide.md): バックエンドのアーキテクチャルール
+   - admin の UI 関連の場合:
      - [docs/admin-ui-guidelines.md](docs/admin-ui-guidelines.md): UIコンポーネントのガイドライン
    - 政治資金収支報告書関連の場合:
      - [docs/reference/report-format.md](docs/reference/report-format.md): 政治資金収支報告書XMLの仕様
@@ -34,7 +35,7 @@ description: 設計ドキュメントを作成する (project)
    - 日時は `TZ=Asia/Tokyo date +%Y%m%d_%H%M` で取得する
    - 例: `docs/20250815_1430_ユーザー認証システム設計.md`
 
-5. **整合性チェック**: admin関連の設計の場合、作成したドキュメントが [docs/admin-architecture-guide.md](docs/admin-architecture-guide.md) のアーキテクチャルールと矛盾していないかダブルチェックする。矛盾があれば修正する。
+5. **整合性チェック**: バックエンド関連の設計の場合、作成したドキュメントが [docs/backend-architecture-guide.md](docs/backend-architecture-guide.md) のアーキテクチャルールと矛盾していないかダブルチェックする。矛盾があれば修正する。
 
 6. **完了報告**: 作成した設計ドキュメントのパスを報告し、ユーザーのレビューを待つ。そのまま実装に進んではならない。
 
