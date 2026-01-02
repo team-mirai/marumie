@@ -102,9 +102,10 @@ jobs:
       - name: Start Supabase
         run: |
           # Enable API and use default ports for CI
-          sed -i 's/^\[api\]$/[api]\nenabled = true/' supabase/config.toml
+          sed -i 's/^\[api\]$/[api]/' supabase/config.toml
+          sed -i '/^\[api\]$/,/^\[/{s/^enabled = false$/enabled = true/}' supabase/config.toml
           sed -i 's/^port = 54332$/port = 54322/' supabase/config.toml
-          supabase start --exclude imgproxy,edge-runtime,vector,studio,analytics
+          supabase start --exclude imgproxy,edge-runtime,vector,studio
 
       - name: Wait for Supabase to be ready
         run: |
