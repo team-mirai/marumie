@@ -1,7 +1,7 @@
 import { GetBalanceSheetUsecase } from "@/server/usecases/get-balance-sheet-usecase";
 import type { ITransactionRepository } from "@/server/repositories/interfaces/transaction-repository.interface";
 import type { IBalanceSnapshotRepository } from "@/server/repositories/interfaces/balance-snapshot-repository.interface";
-import type { IPoliticalOrganizationRepository } from "@/server/repositories/interfaces/political-organization-repository.interface";
+import type { IPoliticalOrganizationRepository } from "@/server/contexts/public-finance/domain/repositories/political-organization-repository.interface";
 
 const mockTransactionRepository = {
   getBorrowingIncomeTotal: jest.fn(),

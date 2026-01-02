@@ -1,5 +1,5 @@
 import type { SankeyData } from "@/types/sankey";
-import type { IPoliticalOrganizationRepository } from "../repositories/interfaces/political-organization-repository.interface";
+import type { IPoliticalOrganizationRepository } from "@/server/contexts/public-finance/domain/repositories/political-organization-repository.interface";
 import type { ITransactionRepository } from "../repositories/interfaces/transaction-repository.interface";
 import type { IBalanceSnapshotRepository } from "../repositories/interfaces/balance-snapshot-repository.interface";
 import { convertCategoryAggregationToSankeyData } from "../utils/sankey-category-converter";

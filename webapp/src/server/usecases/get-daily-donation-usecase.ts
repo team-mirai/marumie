@@ -1,8 +1,10 @@
-import type { IPoliticalOrganizationRepository } from "../repositories/interfaces/political-organization-repository.interface";
+import "server-only";
+
+import type { IPoliticalOrganizationRepository } from "@/server/contexts/public-finance/domain/repositories/political-organization-repository.interface";
 import type {
   DailyDonationData,
   ITransactionRepository,
-} from "../repositories/interfaces/transaction-repository.interface";
+} from "@/server/repositories/interfaces/transaction-repository.interface";
 
 export interface DonationSummaryData {
   dailyDonationData: DailyDonationData[];

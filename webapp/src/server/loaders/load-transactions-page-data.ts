@@ -2,7 +2,7 @@ import "server-only";
 
 import { unstable_cache } from "next/cache";
 import { prisma } from "@/server/lib/prisma";
-import { PrismaPoliticalOrganizationRepository } from "@/server/repositories/prisma-political-organization.repository";
+import { PrismaPoliticalOrganizationRepository } from "@/server/contexts/public-finance/infrastructure/repositories/prisma-political-organization.repository";
 import { PrismaTransactionRepository } from "@/server/repositories/prisma-transaction.repository";
 import {
   type GetTransactionsBySlugParams,

@@ -1,6 +1,6 @@
 import { GetTransactionsForCsvUsecase } from "@/server/usecases/get-transactions-for-csv-usecase";
 import type { ITransactionRepository } from "@/server/repositories/interfaces/transaction-repository.interface";
-import type { IPoliticalOrganizationRepository } from "@/server/repositories/interfaces/political-organization-repository.interface";
+import type { IPoliticalOrganizationRepository } from "@/server/contexts/public-finance/domain/repositories/political-organization-repository.interface";
 import type { Transaction } from "@/shared/models/transaction";
 
 const createMockTransactionWithOrgName = (

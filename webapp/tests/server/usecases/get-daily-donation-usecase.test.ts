@@ -1,6 +1,6 @@
 import { GetDailyDonationUsecase } from "@/server/usecases/get-daily-donation-usecase";
 import type { ITransactionRepository, DailyDonationData } from "@/server/repositories/interfaces/transaction-repository.interface";
-import type { IPoliticalOrganizationRepository } from "@/server/repositories/interfaces/political-organization-repository.interface";
+import type { IPoliticalOrganizationRepository } from "@/server/contexts/public-finance/domain/repositories/political-organization-repository.interface";
 
 // モックリポジトリの作成
 const mockTransactionRepository = {

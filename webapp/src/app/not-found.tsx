@@ -4,5 +4,11 @@ import { loadOrganizations } from "@/server/loaders/load-organizations";
 
 export default async function NotFound() {
   const { default: defaultSlug } = await loadOrganizations();
-  redirect(`/o/${defaultSlug}`);
+
+  if (defaultSlug) {
+    redirect(`/o/${defaultSlug}`);
+  } else {
+    // 組織が存在しない場合はルートページにリダイレクト
+    redirect("/");
+  }
 }
