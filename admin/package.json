@@ -3,6 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "scripts": {
+    "postinstall": "pnpm exec playwright install chromium",
     "dev": "next dev --turbopack --port 3001",
     "build": "next build",
     "start": "next start",
@@ -10,7 +11,10 @@
     "type-check": "tsc --noEmit",
     "test": "jest",
     "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage"
+    "test:coverage": "jest --coverage",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:headed": "playwright test --headed"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.2",
@@ -41,6 +45,7 @@
     "zod": "^4.3.4"
   },
   "devDependencies": {
+    "@playwright/test": "^1.57.0",
     "@tailwindcss/postcss": "^4.1.12",
     "@types/jest": "^29.5.12",
     "@types/node": "^20",

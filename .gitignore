@@ -23,6 +23,11 @@ prompts
 
 # testing
 /coverage
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/test-results/
+/e2e/.auth/
 
 # next.js
 /.next/
