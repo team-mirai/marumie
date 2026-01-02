@@ -35,13 +35,6 @@ export interface MonthlyAggregation {
   expense: number;
 }
 
-// 日次寄附データの型定義
-export interface DailyDonationData {
-  date: string; // "YYYY-MM-DD" 形式
-  dailyAmount: number; // その日の寄附額
-  cumulativeAmount: number; // 累積寄附額
-}
-
 export interface SortOptions {
   sortBy?: "date" | "amount";
   order?: "asc" | "desc";
@@ -59,10 +52,6 @@ export interface ITransactionRepository {
     financialYear: number,
     categoryType?: "political-category" | "friendly-category",
   ): Promise<SankeyCategoryAggregationResult>;
-  getDailyDonationData(
-    politicalOrganizationIds: string[],
-    financialYear: number,
-  ): Promise<DailyDonationData[]>;
   getLastUpdatedAt(): Promise<Date | null>;
   findAllWithPoliticalOrganizationName(
     filters?: TransactionFilters,

@@ -1,11 +1,10 @@
 import "server-only";
-import { Prisma, type PrismaClient, type Transaction as PrismaTransaction } from "@prisma/client";
+import type { Prisma, PrismaClient, Transaction as PrismaTransaction } from "@prisma/client";
 import type { Transaction, TransactionType } from "@/shared/models/transaction";
 import type { TransactionFilters } from "@/types/transaction-filters";
 import type { DisplayTransactionType } from "@/types/display-transaction";
 import { PL_CATEGORIES } from "@/shared/accounting/account-category";
 import type {
-  DailyDonationData,
   ITransactionRepository,
   PaginatedResult,
   PaginationOptions,
@@ -178,48 +177,6 @@ export class PrismaTransactionRepository implements ITransactionRepository {
     );
 
     return { income, expense };
-  }
-
-  async getDailyDonationData(
-    politicalOrganizationIds: string[],
-    financialYear: number,
-  ): Promise<DailyDonationData[]> {
-    // 寄附カテゴリに該当するアカウントキーを抽出
-    const donationAccountKeys = Object.keys(PL_CATEGORIES).filter(
-      (key) => PL_CATEGORIES[key].category === "寄附",
-    );
-    const organizationIdsBigInt = politicalOrganizationIds.map((id) => BigInt(id));
-
-    // 寄附に該当するアカウントからの収入データを日別に集計
-    const dailyDonationResults = await this.prisma.$queryRaw<
-      Array<{ transaction_date: Date; total_amount: number }>
-    >`
-      SELECT
-        transaction_date,
-        SUM(credit_amount) as total_amount
-      FROM transactions
-      WHERE political_organization_id IN (${Prisma.join(organizationIdsBigInt)})
-        AND financial_year = ${financialYear}
-        AND transaction_type = 'income'
-        AND credit_account IN (${Prisma.join(donationAccountKeys)})
-      GROUP BY transaction_date
-      ORDER BY transaction_date
-    `;
-
-    // 日付文字列にフォーマットし、累積額を計算
-    let cumulativeAmount = 0;
-    const dailyData: DailyDonationData[] = dailyDonationResults.map((item) => {
-      const dailyAmount = Number(item.total_amount);
-      cumulativeAmount += dailyAmount;
-
-      return {
-        date: item.transaction_date.toISOString().split("T")[0], // YYYY-MM-DD形式
-        dailyAmount,
-        cumulativeAmount,
-      };
-    });
-
-    return dailyData;
   }
 
   async getLastUpdatedAt(): Promise<Date | null> {
