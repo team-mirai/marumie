@@ -52,15 +52,6 @@ export interface ITransactionRepository {
     financialYear: number,
     categoryType?: "political-category" | "friendly-category",
   ): Promise<SankeyCategoryAggregationResult>;
-  getBorrowingIncomeTotal(
-    politicalOrganizationIds: string[],
-    financialYear: number,
-  ): Promise<number>;
-  getBorrowingExpenseTotal(
-    politicalOrganizationIds: string[],
-    financialYear: number,
-  ): Promise<number>;
-  getLiabilityBalance(politicalOrganizationIds: string[], financialYear: number): Promise<number>;
   getLastUpdatedAt(): Promise<Date | null>;
   findAllWithPoliticalOrganizationName(
     filters?: TransactionFilters,
