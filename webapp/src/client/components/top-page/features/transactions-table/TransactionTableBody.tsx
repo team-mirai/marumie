@@ -1,4 +1,4 @@
-import type { DisplayTransaction } from "@/types/display-transaction";
+import type { DisplayTransaction } from "@/server/contexts/public-finance/domain/models/display-transaction";
 import TransactionTableRow from "./TransactionTableRow";
 
 interface TransactionTableBodyProps {

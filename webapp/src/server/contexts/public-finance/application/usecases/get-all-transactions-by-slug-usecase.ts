@@ -2,10 +2,13 @@ import "server-only";
 
 import type { PoliticalOrganization } from "@/shared/models/political-organization";
 import type { TransactionFilters } from "@/types/transaction-filters";
-import type { DisplayTransaction, DisplayTransactionType } from "@/types/display-transaction";
+import type {
+  DisplayTransaction,
+  DisplayTransactionType,
+} from "@/server/contexts/public-finance/domain/models/display-transaction";
+import { convertToDisplayTransactions } from "@/server/contexts/public-finance/domain/models/display-transaction";
 import type { IPoliticalOrganizationRepository } from "@/server/contexts/public-finance/domain/repositories/political-organization-repository.interface";
-import type { ITransactionRepository } from "@/server/repositories/interfaces/transaction-repository.interface";
-import { convertToDisplayTransactions } from "@/server/utils/transaction-converter";
+import type { ITransactionListRepository } from "@/server/contexts/public-finance/domain/repositories/transaction-list-repository.interface";
 
 export interface GetAllTransactionsBySlugParams {
   slugs: string[];
@@ -27,7 +30,7 @@ export interface GetAllTransactionsBySlugResult {
 
 export class GetAllTransactionsBySlugUsecase {
   constructor(
-    private transactionRepository: ITransactionRepository,
+    private transactionRepository: ITransactionListRepository,
     private politicalOrganizationRepository: IPoliticalOrganizationRepository,
   ) {}
 

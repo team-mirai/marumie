@@ -1,8 +1,6 @@
-import { GetTransactionsBySlugUsecase } from "@/server/usecases/get-transactions-by-slug-usecase";
-import type {
-  ITransactionRepository,
-  PaginatedResult,
-} from "@/server/repositories/interfaces/transaction-repository.interface";
+import { GetTransactionsBySlugUsecase } from "@/server/contexts/public-finance/application/usecases/get-transactions-by-slug-usecase";
+import type { ITransactionListRepository } from "@/server/contexts/public-finance/domain/repositories/transaction-list-repository.interface";
+import type { PaginatedResult } from "@/server/contexts/public-finance/domain/repositories/transaction-list-repository.interface";
 import type { IPoliticalOrganizationRepository } from "@/server/contexts/public-finance/domain/repositories/political-organization-repository.interface";
 import type { Transaction } from "@/shared/models/transaction";
 
@@ -29,7 +27,7 @@ const createMockTransaction = (overrides: Partial<Transaction> = {}): Transactio
 const mockTransactionRepository = {
   findWithPagination: jest.fn(),
   getLastUpdatedAt: jest.fn(),
-} as unknown as ITransactionRepository;
+} as unknown as ITransactionListRepository;
 
 const mockPoliticalOrganizationRepository = {
   findBySlugs: jest.fn(),

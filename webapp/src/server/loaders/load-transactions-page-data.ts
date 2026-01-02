@@ -7,7 +7,7 @@ import { PrismaTransactionRepository } from "@/server/repositories/prisma-transa
 import {
   type GetTransactionsBySlugParams,
   GetTransactionsBySlugUsecase,
-} from "@/server/usecases/get-transactions-by-slug-usecase";
+} from "@/server/contexts/public-finance/application/usecases/get-transactions-by-slug-usecase";
 import { CACHE_REVALIDATE_SECONDS } from "./constants";
 
 export const loadTransactionsPageData = (params: GetTransactionsBySlugParams) => {
