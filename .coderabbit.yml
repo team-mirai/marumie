@@ -81,8 +81,7 @@ reviews:
     drafts: true
     base_branches:
       - develop
-      - 'epic/**'
-      - 'epic*'
+      - '^epic.*'
   labeling_instructions: []
 
   pre_merge_checks:
