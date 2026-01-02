@@ -8,9 +8,9 @@ import type { BalanceSheetData } from "@/types/balance-sheet";
  */
 
 /**
- * リポジトリから返される貸借対照表の入力データ
+ * 貸借対照表ドメインモデルの入力データ
  */
-export interface BalanceSheetInput {
+export interface BalanceSheet {
   /** 流動資産（最新残高スナップショットの合計） */
   currentAssets: number;
   /** 借入金収入（借入金勘定の貸方合計） */
@@ -28,7 +28,7 @@ export const BalanceSheet = {
    * - 固定負債 = 借入金収入 - 借入金支出
    * - 純資産/債務超過 = 資産合計 - 負債合計
    */
-  fromInput(input: BalanceSheetInput): BalanceSheetData {
+  fromInput(input: BalanceSheet): BalanceSheetData {
     const fixedAssets = 0;
     const fixedLiabilities = BalanceSheet.calculateFixedLiabilities(
       input.borrowingIncome,

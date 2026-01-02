@@ -206,4 +206,45 @@ describe("GetSankeyAggregationUsecase", () => {
     expect(result.sankeyData.nodes).toHaveLength(1);
     expect(result.sankeyData.nodes[0].label).toBe("合計");
   });
+
+  it("should include liability balance in sankey data for friendly-category", async () => {
+    const mockOrganizations = [{ id: "1", slug: "test-org" }];
+    const mockAggregation: SankeyCategoryAggregationResult = {
+      income: [{ category: "寄附", totalAmount: 1000000 }],
+      expense: [{ category: "政治活動費", totalAmount: 500000 }],
+    };
+    const mockBalances: TotalBalancesByYear = {
+      currentYear: 300000,
+      previousYear: 200000,
+    };
+    const liabilityBalance = 100000;
+
+    (mockPoliticalOrganizationRepository.findBySlugs as jest.Mock).mockResolvedValue(
+      mockOrganizations,
+    );
+    (mockTransactionRepository.getCategoryAggregationForSankey as jest.Mock).mockResolvedValue(
+      mockAggregation,
+    );
+    (mockBalanceSnapshotRepository.getTotalLatestBalancesByYear as jest.Mock).mockResolvedValue(
+      mockBalances,
+    );
+    (mockBalanceSheetRepository.getCurrentLiabilities as jest.Mock).mockResolvedValue(
+      liabilityBalance,
+    );
+
+    const result = await usecase.execute({
+      slugs: ["test-org"],
+      financialYear: 2025,
+      categoryType: "friendly-category",
+    });
+
+    expect(result.sankeyData).toBeDefined();
+    expect(mockBalanceSheetRepository.getCurrentLiabilities).toHaveBeenCalledWith(["1"], 2025);
+
+    const unpaidExpenseNode = result.sankeyData.nodes.find((node) => node.label === "未払費用");
+    expect(unpaidExpenseNode).toBeDefined();
+
+    const balanceNode = result.sankeyData.nodes.find((node) => node.label === "収支");
+    expect(balanceNode).toBeDefined();
+  });
 });
