@@ -51,11 +51,28 @@ describe("GetMonthlyAggregationUsecase", () => {
       financialYear: 2025,
     });
 
-    expect(result.monthlyData).toHaveLength(3);
+    // 全12ヶ月分が返される
+    expect(result.monthlyData).toHaveLength(12);
     expect(result.monthlyData[0]).toEqual({
       yearMonth: "2025-01",
       income: 1000000,
       expense: 500000,
+    });
+    expect(result.monthlyData[1]).toEqual({
+      yearMonth: "2025-02",
+      income: 800000,
+      expense: 600000,
+    });
+    expect(result.monthlyData[2]).toEqual({
+      yearMonth: "2025-03",
+      income: 1200000,
+      expense: 400000,
+    });
+    // データがない月は収支0
+    expect(result.monthlyData[3]).toEqual({
+      yearMonth: "2025-04",
+      income: 0,
+      expense: 0,
     });
     expect(mockPoliticalOrganizationRepository.findBySlugs).toHaveBeenCalledWith(["test-org"]);
     expect(mockMonthlyAggregationRepository.getIncomeByOrganizationIds).toHaveBeenCalledWith(
@@ -106,7 +123,13 @@ describe("GetMonthlyAggregationUsecase", () => {
       financialYear: 2025,
     });
 
-    expect(result.monthlyData).toHaveLength(1);
+    // 全12ヶ月分が返される
+    expect(result.monthlyData).toHaveLength(12);
+    expect(result.monthlyData[0]).toEqual({
+      yearMonth: "2025-01",
+      income: 2000000,
+      expense: 1000000,
+    });
     expect(mockMonthlyAggregationRepository.getIncomeByOrganizationIds).toHaveBeenCalledWith(
       ["1", "2"],
       2025,
@@ -135,7 +158,14 @@ describe("GetMonthlyAggregationUsecase", () => {
       financialYear: 2025,
     });
 
-    expect(result.monthlyData).toEqual([]);
+    // 全12ヶ月分が収支0で返される
+    expect(result.monthlyData).toHaveLength(12);
+    for (const item of result.monthlyData) {
+      expect(item.income).toBe(0);
+      expect(item.expense).toBe(0);
+    }
+    expect(result.monthlyData[0].yearMonth).toBe("2025-01");
+    expect(result.monthlyData[11].yearMonth).toBe("2025-12");
   });
 
   it("should handle different financial years", async () => {
@@ -162,7 +192,19 @@ describe("GetMonthlyAggregationUsecase", () => {
       financialYear: 2024,
     });
 
-    expect(result.monthlyData).toHaveLength(1);
+    // 全12ヶ月分が返される
+    expect(result.monthlyData).toHaveLength(12);
+    expect(result.monthlyData[3]).toEqual({
+      yearMonth: "2024-04",
+      income: 500000,
+      expense: 300000,
+    });
+    // データがない月は収支0
+    expect(result.monthlyData[0]).toEqual({
+      yearMonth: "2024-01",
+      income: 0,
+      expense: 0,
+    });
     expect(mockMonthlyAggregationRepository.getIncomeByOrganizationIds).toHaveBeenCalledWith(
       ["1"],
       2024,

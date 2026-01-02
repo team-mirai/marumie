@@ -53,7 +53,7 @@ export class GetMonthlyAggregationUsecase {
         ),
       ]);
 
-      const monthlyData = aggregateFromTotals(incomeData, expenseData);
+      const monthlyData = aggregateFromTotals(incomeData, expenseData, params.financialYear);
 
       return { monthlyData };
     } catch (error) {

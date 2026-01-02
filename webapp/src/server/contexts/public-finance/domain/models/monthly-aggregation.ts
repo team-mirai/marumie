@@ -48,36 +48,41 @@ function formatYearMonth(year: number, month: number): string {
 /**
  * 収入・支出データをマージして MonthlyAggregation[] を生成する
  *
+ * - 会計年度の全12ヶ月分のデータを生成（データがない月は収支0として補完）
  * - 年月でグルーピング
  * - yearMonth フォーマット変換
  * - yearMonth でソート
  *
  * @param incomeData 収入の月別合計データ
  * @param expenseData 支出の月別合計データ
- * @returns マージ・ソート済みの月別収支集計データ
+ * @param financialYear 会計年度（指定した年の1月〜12月の全月データを生成）
+ * @returns マージ・ソート済みの月別収支集計データ（12ヶ月分）
  */
 export function aggregateFromTotals(
   incomeData: MonthlyTransactionTotal[],
   expenseData: MonthlyTransactionTotal[],
+  financialYear: number,
 ): MonthlyAggregation[] {
   const monthlyMap = new Map<string, MonthlyAggregation>();
 
+  // 会計年度の全12ヶ月分を初期化（データがない月も収支0として含める）
+  for (let month = 1; month <= 12; month++) {
+    const yearMonth = formatYearMonth(financialYear, month);
+    monthlyMap.set(yearMonth, { yearMonth, income: 0, expense: 0 });
+  }
+
+  // 収入データをマージ
   for (const item of incomeData) {
     const yearMonth = formatYearMonth(item.year, item.month);
-    if (!monthlyMap.has(yearMonth)) {
-      monthlyMap.set(yearMonth, { yearMonth, income: 0, expense: 0 });
-    }
     const existing = monthlyMap.get(yearMonth);
     if (existing) {
       existing.income = item.totalAmount;
     }
   }
 
+  // 支出データをマージ
   for (const item of expenseData) {
     const yearMonth = formatYearMonth(item.year, item.month);
-    if (!monthlyMap.has(yearMonth)) {
-      monthlyMap.set(yearMonth, { yearMonth, income: 0, expense: 0 });
-    }
     const existing = monthlyMap.get(yearMonth);
     if (existing) {
       existing.expense = item.totalAmount;

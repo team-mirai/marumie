@@ -69,7 +69,7 @@ describe("MonthlyAggregation domain model", () => {
   });
 
   describe("aggregateFromTotals", () => {
-    it("should merge income and expense data for the same month", () => {
+    it("should return all 12 months for the financial year", () => {
       const incomeData: MonthlyTransactionTotal[] = [
         { year: 2025, month: 1, totalAmount: 1000000 },
         { year: 2025, month: 2, totalAmount: 800000 },
@@ -79,9 +79,10 @@ describe("MonthlyAggregation domain model", () => {
         { year: 2025, month: 2, totalAmount: 600000 },
       ];
 
-      const result = aggregateFromTotals(incomeData, expenseData);
+      const result = aggregateFromTotals(incomeData, expenseData, 2025);
 
-      expect(result).toHaveLength(2);
+      // 全12ヶ月分が返される
+      expect(result).toHaveLength(12);
       expect(result[0]).toEqual({
         yearMonth: "2025-01",
         income: 1000000,
@@ -92,9 +93,15 @@ describe("MonthlyAggregation domain model", () => {
         income: 800000,
         expense: 600000,
       });
+      // データがない月は収支0
+      expect(result[2]).toEqual({
+        yearMonth: "2025-03",
+        income: 0,
+        expense: 0,
+      });
     });
 
-    it("should handle months with only income data", () => {
+    it("should fill missing months with zero income and expense", () => {
       const incomeData: MonthlyTransactionTotal[] = [
         { year: 2025, month: 1, totalAmount: 1000000 },
         { year: 2025, month: 3, totalAmount: 500000 },
@@ -103,15 +110,21 @@ describe("MonthlyAggregation domain model", () => {
         { year: 2025, month: 1, totalAmount: 300000 },
       ];
 
-      const result = aggregateFromTotals(incomeData, expenseData);
+      const result = aggregateFromTotals(incomeData, expenseData, 2025);
 
-      expect(result).toHaveLength(2);
+      expect(result).toHaveLength(12);
       expect(result[0]).toEqual({
         yearMonth: "2025-01",
         income: 1000000,
         expense: 300000,
       });
+      // 2月はデータがないので収支0
       expect(result[1]).toEqual({
+        yearMonth: "2025-02",
+        income: 0,
+        expense: 0,
+      });
+      expect(result[2]).toEqual({
         yearMonth: "2025-03",
         income: 500000,
         expense: 0,
@@ -127,9 +140,9 @@ describe("MonthlyAggregation domain model", () => {
         { year: 2025, month: 2, totalAmount: 200000 },
       ];
 
-      const result = aggregateFromTotals(incomeData, expenseData);
+      const result = aggregateFromTotals(incomeData, expenseData, 2025);
 
-      expect(result).toHaveLength(2);
+      expect(result).toHaveLength(12);
       expect(result[0]).toEqual({
         yearMonth: "2025-01",
         income: 1000000,
@@ -151,12 +164,13 @@ describe("MonthlyAggregation domain model", () => {
         { year: 2025, month: 2, totalAmount: 200000 },
       ];
 
-      const result = aggregateFromTotals(incomeData, expenseData);
+      const result = aggregateFromTotals(incomeData, expenseData, 2025);
 
-      expect(result).toHaveLength(3);
+      expect(result).toHaveLength(12);
       expect(result[0].yearMonth).toBe("2025-01");
       expect(result[1].yearMonth).toBe("2025-02");
       expect(result[2].yearMonth).toBe("2025-03");
+      expect(result[11].yearMonth).toBe("2025-12");
     });
 
     it("should format yearMonth with zero-padded month", () => {
@@ -166,18 +180,25 @@ describe("MonthlyAggregation domain model", () => {
       ];
       const expenseData: MonthlyTransactionTotal[] = [];
 
-      const result = aggregateFromTotals(incomeData, expenseData);
+      const result = aggregateFromTotals(incomeData, expenseData, 2025);
 
       expect(result[0].yearMonth).toBe("2025-01");
-      expect(result[1].yearMonth).toBe("2025-12");
+      expect(result[11].yearMonth).toBe("2025-12");
     });
 
-    it("should handle empty income and expense data", () => {
-      const result = aggregateFromTotals([], []);
-      expect(result).toEqual([]);
+    it("should return 12 months with zero values when no data exists", () => {
+      const result = aggregateFromTotals([], [], 2025);
+      expect(result).toHaveLength(12);
+      // 全ての月が収支0
+      for (const item of result) {
+        expect(item.income).toBe(0);
+        expect(item.expense).toBe(0);
+      }
+      expect(result[0].yearMonth).toBe("2025-01");
+      expect(result[11].yearMonth).toBe("2025-12");
     });
 
-    it("should handle data spanning multiple years", () => {
+    it("should only include data for the specified financial year", () => {
       const incomeData: MonthlyTransactionTotal[] = [
         { year: 2024, month: 12, totalAmount: 500000 },
         { year: 2025, month: 1, totalAmount: 600000 },
@@ -187,19 +208,17 @@ describe("MonthlyAggregation domain model", () => {
         { year: 2025, month: 1, totalAmount: 300000 },
       ];
 
-      const result = aggregateFromTotals(incomeData, expenseData);
+      const result = aggregateFromTotals(incomeData, expenseData, 2025);
 
-      expect(result).toHaveLength(2);
+      // 2025年の12ヶ月分のみ返される
+      expect(result).toHaveLength(12);
       expect(result[0]).toEqual({
-        yearMonth: "2024-12",
-        income: 500000,
-        expense: 200000,
-      });
-      expect(result[1]).toEqual({
         yearMonth: "2025-01",
         income: 600000,
         expense: 300000,
       });
+      // 2024年12月のデータは含まれない（2025年の会計年度外）
+      expect(result.find((r) => r.yearMonth === "2024-12")).toBeUndefined();
     });
   });
 });
