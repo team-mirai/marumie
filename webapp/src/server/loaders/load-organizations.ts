@@ -17,8 +17,12 @@ export const loadOrganizations = unstable_cache(
       orderBy: { id: "asc" },
     });
 
+    // 0件の場合は空のレスポンスを返す（CIビルド時など）
     if (organizations.length === 0) {
-      throw new Error("No political organizations found");
+      return {
+        default: null,
+        organizations: [],
+      };
     }
 
     return {
