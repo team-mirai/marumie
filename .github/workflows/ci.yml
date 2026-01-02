@@ -46,15 +46,6 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-prisma-
 
-      - name: Cache Next.js build
-        uses: actions/cache@v4
-        with:
-          path: admin/.next/cache
-          key: ${{ runner.os }}-nextjs-admin-${{ hashFiles('pnpm-lock.yaml') }}-${{ hashFiles('admin/**/*.ts', 'admin/**/*.tsx') }}
-          restore-keys: |
-            ${{ runner.os }}-nextjs-admin-${{ hashFiles('pnpm-lock.yaml') }}-
-            ${{ runner.os }}-nextjs-admin-
-
       - name: Install dependencies
         run: pnpm install
 
@@ -69,61 +60,6 @@ jobs:
 
       - name: Check dependency rules for admin
         run: pnpm depcruise
-
-      - name: Build admin
-        run: pnpm build:admin
-        env:
-          NEXT_PUBLIC_SUPABASE_URL: ${{ env.SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ env.SUPABASE_ANON_KEY }}
-
-      - name: Cache Playwright browsers
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/ms-playwright
-          key: ${{ runner.os }}-playwright-${{ hashFiles('admin/pnpm-lock.yaml', 'pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-playwright-
-
-      - name: Install Playwright browsers
-        run: pnpm --filter admin exec playwright install chromium --with-deps
-
-      - name: Setup Supabase CLI
-        uses: supabase/setup-cli@v1
-        with:
-          version: latest
-
-      - name: Start Supabase
-        run: |
-          # Enable API and use default ports for CI
-          sed -i 's/^\[api\]$/[api]/' supabase/config.toml
-          sed -i '/^\[api\]$/,/^\[/{s/^enabled = false$/enabled = true/}' supabase/config.toml
-          sed -i 's/^port = 54332$/port = 54322/' supabase/config.toml
-          supabase start --exclude imgproxy,edge-runtime,vector,studio
-
-      - name: Wait for Supabase to be ready
-        run: |
-          echo "Waiting for Supabase API..."
-          timeout 60 bash -c 'until curl -s http://127.0.0.1:54321/rest/v1/ > /dev/null 2>&1; do sleep 2; done'
-          echo "Supabase is ready"
-
-      - name: Run database migrations and seed
-        run: |
-          pnpm db:migrate:deploy
-          pnpm db:seed
-
-      - name: Run E2E tests for admin
-        run: pnpm --filter admin test:e2e
-        env:
-          NEXT_PUBLIC_SUPABASE_URL: ${{ env.SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ env.SUPABASE_ANON_KEY }}
-
-      - name: Upload E2E test results
-        uses: actions/upload-artifact@v4
-        if: ${{ !cancelled() }}
-        with:
-          name: admin-e2e-report
-          path: admin/e2e/.output/
-          retention-days: 7
 
       - name: Upload admin coverage
         uses: actions/upload-artifact@v4
@@ -249,3 +185,117 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: ./admin/coverage/lcov.info,./webapp/coverage/lcov.info
           fail_ci_if_error: false
+
+  e2e:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Cache Prisma client
+        uses: actions/cache@v4
+        with:
+          path: node_modules/.prisma
+          key: ${{ runner.os }}-prisma-${{ hashFiles('prisma/schema.prisma') }}
+          restore-keys: |
+            ${{ runner.os }}-prisma-
+
+      - name: Cache Next.js build (admin)
+        uses: actions/cache@v4
+        with:
+          path: admin/.next/cache
+          key: ${{ runner.os }}-nextjs-admin-${{ hashFiles('pnpm-lock.yaml') }}-${{ hashFiles('admin/**/*.ts', 'admin/**/*.tsx') }}
+          restore-keys: |
+            ${{ runner.os }}-nextjs-admin-${{ hashFiles('pnpm-lock.yaml') }}-
+            ${{ runner.os }}-nextjs-admin-
+
+      - name: Cache Next.js build (webapp)
+        uses: actions/cache@v4
+        with:
+          path: webapp/.next/cache
+          key: ${{ runner.os }}-nextjs-webapp-${{ hashFiles('pnpm-lock.yaml') }}-${{ hashFiles('webapp/**/*.ts', 'webapp/**/*.tsx') }}
+          restore-keys: |
+            ${{ runner.os }}-nextjs-webapp-${{ hashFiles('pnpm-lock.yaml') }}-
+            ${{ runner.os }}-nextjs-webapp-
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-playwright-
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Install Playwright browsers
+        run: pnpm --filter admin exec playwright install chromium --with-deps
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Start Supabase
+        run: |
+          # Enable API and use default ports for CI
+          sed -i 's/^\[api\]$/[api]/' supabase/config.toml
+          sed -i '/^\[api\]$/,/^\[/{s/^enabled = false$/enabled = true/}' supabase/config.toml
+          sed -i 's/^port = 54332$/port = 54322/' supabase/config.toml
+          supabase start --exclude imgproxy,edge-runtime,vector,studio
+
+      - name: Wait for Supabase to be ready
+        run: |
+          echo "Waiting for Supabase API..."
+          timeout 60 bash -c 'until curl -s http://127.0.0.1:54321/rest/v1/ > /dev/null 2>&1; do sleep 2; done'
+          echo "Supabase is ready"
+
+      - name: Run database migrations and seed
+        run: |
+          pnpm db:migrate:deploy
+          pnpm db:seed
+
+      - name: Build admin
+        run: pnpm build:admin
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ env.SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ env.SUPABASE_ANON_KEY }}
+
+      - name: Build webapp
+        run: pnpm build:webapp
+
+      - name: Run E2E tests for admin
+        run: pnpm --filter admin test:e2e
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ env.SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ env.SUPABASE_ANON_KEY }}
+
+      - name: Run E2E tests for webapp
+        run: pnpm --filter webapp test:e2e
+
+      - name: Upload admin E2E test results
+        uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: admin-e2e-report
+          path: admin/e2e/.output/
+          retention-days: 7
+
+      - name: Upload webapp E2E test results
+        uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: webapp-e2e-report
+          path: webapp/e2e/.output/
+          retention-days: 7
