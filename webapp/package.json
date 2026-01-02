@@ -15,6 +15,7 @@
     "react-dom": "19.1.4"
   },
   "devDependencies": {
+    "@playwright/test": "^1.57.0",
     "@tailwindcss/postcss": "^4.1.12",
     "@types/jest": "^29.5.14",
     "@types/node": "^20",
@@ -27,6 +28,7 @@
     "typescript": "^5"
   },
   "scripts": {
+    "postinstall": "pnpm exec playwright install chromium",
     "dev": "next dev --turbopack",
     "build": "cd ../ && prisma generate && prisma migrate deploy && cd webapp && next build",
     "start": "next start",
@@ -35,6 +37,9 @@
     "format": "biome check --write .",
     "test": "jest",
     "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage"
+    "test:coverage": "jest --coverage",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui --ui-host=0.0.0.0",
+    "test:e2e:headed": "playwright test --headed"
   }
 }
