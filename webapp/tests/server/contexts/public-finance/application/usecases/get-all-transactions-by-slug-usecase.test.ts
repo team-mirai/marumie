@@ -1,5 +1,5 @@
-import { GetAllTransactionsBySlugUsecase } from "@/server/usecases/get-all-transactions-by-slug-usecase";
-import type { ITransactionRepository } from "@/server/repositories/interfaces/transaction-repository.interface";
+import { GetAllTransactionsBySlugUsecase } from "@/server/contexts/public-finance/application/usecases/get-all-transactions-by-slug-usecase";
+import type { ITransactionListRepository } from "@/server/contexts/public-finance/domain/repositories/transaction-list-repository.interface";
 import type { IPoliticalOrganizationRepository } from "@/server/contexts/public-finance/domain/repositories/political-organization-repository.interface";
 import type { Transaction } from "@/shared/models/transaction";
 
@@ -26,7 +26,7 @@ const createMockTransaction = (overrides: Partial<Transaction> = {}): Transactio
 const mockTransactionRepository = {
   findAll: jest.fn(),
   getLastUpdatedAt: jest.fn(),
-} as unknown as ITransactionRepository;
+} as unknown as ITransactionListRepository;
 
 const mockPoliticalOrganizationRepository = {
   findBySlugs: jest.fn(),

@@ -7,7 +7,7 @@ import MainColumnCard from "@/client/components/layout/MainColumnCard";
 import TransactionTable from "@/client/components/top-page/features/transactions-table/TransactionTable";
 import MainButton from "@/client/components/ui/MainButton";
 
-import type { DisplayTransaction } from "@/types/display-transaction";
+import type { DisplayTransaction } from "@/server/contexts/public-finance/domain/models/display-transaction";
 
 interface TransactionData {
   transactions: DisplayTransaction[];

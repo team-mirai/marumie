@@ -13,7 +13,7 @@ import { GetSankeyAggregationUsecase } from "@/server/usecases/get-sankey-aggreg
 import {
   type GetTransactionsBySlugParams,
   GetTransactionsBySlugUsecase,
-} from "@/server/usecases/get-transactions-by-slug-usecase";
+} from "@/server/contexts/public-finance/application/usecases/get-transactions-by-slug-usecase";
 import { CACHE_REVALIDATE_SECONDS } from "./constants";
 
 export interface TopPageDataParams extends Omit<GetTransactionsBySlugParams, "financialYear"> {
