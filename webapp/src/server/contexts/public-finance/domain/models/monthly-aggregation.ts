@@ -1,4 +1,4 @@
-import type { MonthlyTransactionTotal } from "./monthly-transaction-total";
+import type { MonthlyTransactionTotal } from "@/server/contexts/public-finance/domain/models/monthly-transaction-total";
 
 /**
  * MonthlyAggregation ドメインモデル
