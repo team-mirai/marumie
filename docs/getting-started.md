@@ -192,6 +192,23 @@ pnpm run typecheck     # 型チェック
 pnpm run test          # テスト実行
 ```
 
+### E2Eテスト（admin）
+
+```bash
+pnpm --filter admin test:e2e          # E2Eテスト実行（ヘッドレス）
+pnpm --filter admin test:e2e:ui       # UIモードで実行（デバッグ用）
+pnpm --filter admin test:e2e:headed   # ブラウザを表示して実行
+```
+
+**注意**: E2Eテスト実行前に Supabase が起動している必要があります。
+
+WSL2 で初めて実行する場合、ブラウザのシステム依存関係が必要です：
+
+```bash
+# Playwrightの依存関係をインストール（sudo必要）
+pnpm --filter admin exec playwright install-deps chromium
+```
+
 ### Supabase
 
 ```bash
