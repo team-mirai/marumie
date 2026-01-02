@@ -3,8 +3,8 @@ import "server-only";
 import type { SankeyData } from "@/server/contexts/public-finance/domain/models/sankey-data";
 import type { IPoliticalOrganizationRepository } from "@/server/contexts/public-finance/domain/repositories/political-organization-repository.interface";
 import type { IBalanceSheetRepository } from "@/server/contexts/public-finance/domain/repositories/balance-sheet-repository.interface";
-import type { ITransactionRepository } from "@/server/repositories/interfaces/transaction-repository.interface";
-import type { IBalanceSnapshotRepository } from "@/server/repositories/interfaces/balance-snapshot-repository.interface";
+import type { ITransactionRepository } from "@/server/contexts/public-finance/domain/repositories/transaction-repository.interface";
+import type { IBalanceSnapshotRepository } from "@/server/contexts/public-finance/domain/repositories/balance-snapshot-repository.interface";
 import {
   CategoryAggregation,
   DEFAULT_SUBCATEGORY_MAX_COUNT,

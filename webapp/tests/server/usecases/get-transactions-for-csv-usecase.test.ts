@@ -1,5 +1,5 @@
-import { GetTransactionsForCsvUsecase } from "@/server/usecases/get-transactions-for-csv-usecase";
-import type { ITransactionRepository } from "@/server/repositories/interfaces/transaction-repository.interface";
+import { GetTransactionsForCsvUsecase } from "@/server/contexts/public-finance/application/usecases/get-transactions-for-csv-usecase";
+import type { ITransactionRepository } from "@/server/contexts/public-finance/domain/repositories/transaction-repository.interface";
 import type { IPoliticalOrganizationRepository } from "@/server/contexts/public-finance/domain/repositories/political-organization-repository.interface";
 import type { Transaction } from "@/shared/models/transaction";
 

@@ -3,7 +3,7 @@ import type { PrismaClient } from "@prisma/client";
 import type {
   IBalanceSnapshotRepository,
   TotalBalancesByYear,
-} from "./interfaces/balance-snapshot-repository.interface";
+} from "@/server/contexts/public-finance/domain/repositories/balance-snapshot-repository.interface";
 
 export class PrismaBalanceSnapshotRepository implements IBalanceSnapshotRepository {
   constructor(private prisma: PrismaClient) {}

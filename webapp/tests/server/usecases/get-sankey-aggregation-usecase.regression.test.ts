@@ -9,12 +9,12 @@ import { GetSankeyAggregationUsecase } from "@/server/contexts/public-finance/ap
 import type {
   ITransactionRepository,
   SankeyCategoryAggregationResult,
-} from "@/server/repositories/interfaces/transaction-repository.interface";
+} from "@/server/contexts/public-finance/domain/repositories/transaction-repository.interface";
 import type { IPoliticalOrganizationRepository } from "@/server/contexts/public-finance/domain/repositories/political-organization-repository.interface";
 import type {
   IBalanceSnapshotRepository,
   TotalBalancesByYear,
-} from "@/server/repositories/interfaces/balance-snapshot-repository.interface";
+} from "@/server/contexts/public-finance/domain/repositories/balance-snapshot-repository.interface";
 import type { IBalanceSheetRepository } from "@/server/contexts/public-finance/domain/repositories/balance-sheet-repository.interface";
 
 // ヘルパー: ノードをラベルで検索してIDを取得

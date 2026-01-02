@@ -1,5 +1,5 @@
 import "server-only";
-import { loadOrganizations } from "@/server/loaders/load-organizations";
+import { loadOrganizations } from "@/server/contexts/public-finance/presentation/loaders/load-organizations";
 import HeaderClient from "@/client/components/layout/header/HeaderClient";
 
 export default async function Header() {

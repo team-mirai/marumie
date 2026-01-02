@@ -252,7 +252,7 @@ export const Password = {
 
 - **Usecase**: Constructor Injection でインターフェースに依存
 - **loaders**: 関数内でインスタンス化（DIコンテナを使わないシンプルなDI）
-- **actions**: モジュールレベルでシングルトン化（パフォーマンス最適化）
+- **actions**: 関数内でインスタンス化（loadersと同様）
 
 ### 6.3 エラーハンドリング
 

@@ -1,15 +1,15 @@
 import "server-only";
 
 import { unstable_cache } from "next/cache";
-import { prisma } from "@/server/lib/prisma";
+import { prisma } from "@/server/contexts/public-finance/infrastructure/prisma";
 import { PrismaPoliticalOrganizationRepository } from "@/server/contexts/public-finance/infrastructure/repositories/prisma-political-organization.repository";
 import { PrismaMonthlyAggregationRepository } from "@/server/contexts/public-finance/infrastructure/repositories/prisma-monthly-aggregation.repository";
 import { PrismaBalanceSheetRepository } from "@/server/contexts/public-finance/infrastructure/repositories/prisma-balance-sheet.repository";
 import { GetMonthlyAggregationUsecase } from "@/server/contexts/public-finance/application/usecases/get-monthly-aggregation-usecase";
 import { GetBalanceSheetUsecase } from "@/server/contexts/public-finance/application/usecases/get-balance-sheet-usecase";
-import { PrismaTransactionRepository } from "@/server/repositories/prisma-transaction.repository";
-import { PrismaBalanceSnapshotRepository } from "@/server/repositories/prisma-balance-snapshot.repository";
-import { GetMockTransactionPageDataUsecase } from "@/server/usecases/get-mock-transaction-page-data-usecase";
+import { PrismaTransactionRepository } from "@/server/contexts/public-finance/infrastructure/repositories/prisma-transaction.repository";
+import { PrismaBalanceSnapshotRepository } from "@/server/contexts/public-finance/infrastructure/repositories/prisma-balance-snapshot.repository";
+import { GetMockTransactionPageDataUsecase } from "@/server/contexts/public-finance/application/usecases/get-mock-transaction-page-data-usecase";
 import { GetSankeyAggregationUsecase } from "@/server/contexts/public-finance/application/usecases/get-sankey-aggregation-usecase";
 import {
   type GetTransactionsBySlugParams,

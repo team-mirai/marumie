@@ -1,6 +1,35 @@
 "use server";
 
-import { loadTransactionsForCsv } from "@/server/loaders/load-transactions-for-csv";
+import "server-only";
+
+import { unstable_cache } from "next/cache";
+import { prisma } from "@/server/contexts/public-finance/infrastructure/prisma";
+import { PrismaPoliticalOrganizationRepository } from "@/server/contexts/public-finance/infrastructure/repositories/prisma-political-organization.repository";
+import { PrismaTransactionRepository } from "@/server/contexts/public-finance/infrastructure/repositories/prisma-transaction.repository";
+import {
+  type GetTransactionsForCsvParams,
+  GetTransactionsForCsvUsecase,
+} from "@/server/contexts/public-finance/application/usecases/get-transactions-for-csv-usecase";
+import { CACHE_REVALIDATE_SECONDS } from "./constants";
+
+const loadTransactionsForCsv = (params: GetTransactionsForCsvParams) => {
+  const cacheKey = `transactions-for-csv-${params.slugs.join("-")}-${params.financialYear}`;
+
+  return unstable_cache(
+    async () => {
+      const transactionRepository = new PrismaTransactionRepository(prisma);
+      const politicalOrganizationRepository = new PrismaPoliticalOrganizationRepository(prisma);
+      const usecase = new GetTransactionsForCsvUsecase(
+        transactionRepository,
+        politicalOrganizationRepository,
+      );
+
+      return await usecase.execute(params);
+    },
+    [cacheKey],
+    { revalidate: CACHE_REVALIDATE_SECONDS, tags: ["transactions-for-csv"] },
+  )();
+};
 
 export async function downloadTransactionsCsv(slug: string) {
   try {

@@ -12,9 +12,9 @@ import CashFlowSection from "@/client/components/top-page/CashFlowSection";
 import MonthlyTrendsSection from "@/client/components/top-page/MonthlyTrendsSection";
 import ProgressSection from "@/client/components/top-page/ProgressSection";
 import TransactionsSection from "@/client/components/top-page/TransactionsSection";
-import { loadTopPageData } from "@/server/loaders/load-top-page-data";
-import { loadOrganizations } from "@/server/loaders/load-organizations";
-import { formatUpdatedAt } from "@/server/utils/format-date";
+import { loadTopPageData } from "@/server/contexts/public-finance/presentation/loaders/load-top-page-data";
+import { loadOrganizations } from "@/server/contexts/public-finance/presentation/loaders/load-organizations";
+import { formatUpdatedAt } from "@/client/lib/format-date";
 
 export const revalidate = 300; // 5 minutes
 
