@@ -15,6 +15,7 @@ import type {
   IBalanceSnapshotRepository,
   TotalBalancesByYear,
 } from "@/server/repositories/interfaces/balance-snapshot-repository.interface";
+import type { IBalanceSheetRepository } from "@/server/contexts/public-finance/domain/repositories/balance-sheet-repository.interface";
 
 // ヘルパー: ノードをラベルで検索してIDを取得
 const getNodeIdByLabel = (
@@ -34,7 +35,6 @@ describe("GetSankeyAggregationUsecase リグレッションテスト", () => {
   const createMockRepositories = () => {
     const mockTransactionRepository = {
       getCategoryAggregationForSankey: jest.fn(),
-      getLiabilityBalance: jest.fn(),
     } as unknown as ITransactionRepository;
 
     const mockPoliticalOrganizationRepository = {
@@ -45,10 +45,15 @@ describe("GetSankeyAggregationUsecase リグレッションテスト", () => {
       getTotalLatestBalancesByYear: jest.fn(),
     } as unknown as IBalanceSnapshotRepository;
 
+    const mockBalanceSheetRepository = {
+      getCurrentLiabilities: jest.fn(),
+    } as unknown as IBalanceSheetRepository;
+
     return {
       mockTransactionRepository,
       mockPoliticalOrganizationRepository,
       mockBalanceSnapshotRepository,
+      mockBalanceSheetRepository,
     };
   };
 
@@ -58,6 +63,7 @@ describe("GetSankeyAggregationUsecase リグレッションテスト", () => {
         mockTransactionRepository,
         mockPoliticalOrganizationRepository,
         mockBalanceSnapshotRepository,
+        mockBalanceSheetRepository,
       } = createMockRepositories();
 
       // リポジトリの戻り値を設定
@@ -84,12 +90,13 @@ describe("GetSankeyAggregationUsecase リグレッションテスト", () => {
       (mockBalanceSnapshotRepository.getTotalLatestBalancesByYear as jest.Mock).mockResolvedValue(
         mockBalances,
       );
-      (mockTransactionRepository.getLiabilityBalance as jest.Mock).mockResolvedValue(0);
+      (mockBalanceSheetRepository.getCurrentLiabilities as jest.Mock).mockResolvedValue(0);
 
       const usecase = new GetSankeyAggregationUsecase(
         mockTransactionRepository,
         mockPoliticalOrganizationRepository,
         mockBalanceSnapshotRepository,
+        mockBalanceSheetRepository,
       );
 
       const result = await usecase.execute({
@@ -155,6 +162,7 @@ describe("GetSankeyAggregationUsecase リグレッションテスト", () => {
         mockTransactionRepository,
         mockPoliticalOrganizationRepository,
         mockBalanceSnapshotRepository,
+        mockBalanceSheetRepository,
       } = createMockRepositories();
 
       const mockAggregation: SankeyCategoryAggregationResult = {
@@ -172,12 +180,13 @@ describe("GetSankeyAggregationUsecase リグレッションテスト", () => {
       (mockBalanceSnapshotRepository.getTotalLatestBalancesByYear as jest.Mock).mockResolvedValue(
         mockBalances,
       );
-      (mockTransactionRepository.getLiabilityBalance as jest.Mock).mockResolvedValue(0);
+      (mockBalanceSheetRepository.getCurrentLiabilities as jest.Mock).mockResolvedValue(0);
 
       const usecase = new GetSankeyAggregationUsecase(
         mockTransactionRepository,
         mockPoliticalOrganizationRepository,
         mockBalanceSnapshotRepository,
+        mockBalanceSheetRepository,
       );
 
       const result = await usecase.execute({
@@ -204,6 +213,7 @@ describe("GetSankeyAggregationUsecase リグレッションテスト", () => {
         mockTransactionRepository,
         mockPoliticalOrganizationRepository,
         mockBalanceSnapshotRepository,
+        mockBalanceSheetRepository,
       } = createMockRepositories();
 
       const mockAggregation: SankeyCategoryAggregationResult = {
@@ -221,12 +231,13 @@ describe("GetSankeyAggregationUsecase リグレッションテスト", () => {
       (mockBalanceSnapshotRepository.getTotalLatestBalancesByYear as jest.Mock).mockResolvedValue(
         mockBalances,
       );
-      (mockTransactionRepository.getLiabilityBalance as jest.Mock).mockResolvedValue(0);
+      (mockBalanceSheetRepository.getCurrentLiabilities as jest.Mock).mockResolvedValue(0);
 
       const usecase = new GetSankeyAggregationUsecase(
         mockTransactionRepository,
         mockPoliticalOrganizationRepository,
         mockBalanceSnapshotRepository,
+        mockBalanceSheetRepository,
       );
 
       const result = await usecase.execute({
@@ -247,6 +258,7 @@ describe("GetSankeyAggregationUsecase リグレッションテスト", () => {
         mockTransactionRepository,
         mockPoliticalOrganizationRepository,
         mockBalanceSnapshotRepository,
+        mockBalanceSheetRepository,
       } = createMockRepositories();
 
       const mockAggregation: SankeyCategoryAggregationResult = {
@@ -264,12 +276,13 @@ describe("GetSankeyAggregationUsecase リグレッションテスト", () => {
       (mockBalanceSnapshotRepository.getTotalLatestBalancesByYear as jest.Mock).mockResolvedValue(
         mockBalances,
       );
-      (mockTransactionRepository.getLiabilityBalance as jest.Mock).mockResolvedValue(0);
+      (mockBalanceSheetRepository.getCurrentLiabilities as jest.Mock).mockResolvedValue(0);
 
       const usecase = new GetSankeyAggregationUsecase(
         mockTransactionRepository,
         mockPoliticalOrganizationRepository,
         mockBalanceSnapshotRepository,
+        mockBalanceSheetRepository,
       );
 
       const result = await usecase.execute({
@@ -296,6 +309,7 @@ describe("GetSankeyAggregationUsecase リグレッションテスト", () => {
         mockTransactionRepository,
         mockPoliticalOrganizationRepository,
         mockBalanceSnapshotRepository,
+        mockBalanceSheetRepository,
       } = createMockRepositories();
 
       const mockAggregation: SankeyCategoryAggregationResult = {
@@ -313,12 +327,13 @@ describe("GetSankeyAggregationUsecase リグレッションテスト", () => {
       (mockBalanceSnapshotRepository.getTotalLatestBalancesByYear as jest.Mock).mockResolvedValue(
         mockBalances,
       );
-      (mockTransactionRepository.getLiabilityBalance as jest.Mock).mockResolvedValue(0);
+      (mockBalanceSheetRepository.getCurrentLiabilities as jest.Mock).mockResolvedValue(0);
 
       const usecase = new GetSankeyAggregationUsecase(
         mockTransactionRepository,
         mockPoliticalOrganizationRepository,
         mockBalanceSnapshotRepository,
+        mockBalanceSheetRepository,
       );
 
       const result = await usecase.execute({
@@ -345,6 +360,7 @@ describe("GetSankeyAggregationUsecase リグレッションテスト", () => {
         mockTransactionRepository,
         mockPoliticalOrganizationRepository,
         mockBalanceSnapshotRepository,
+        mockBalanceSheetRepository,
       } = createMockRepositories();
 
       const mockAggregation: SankeyCategoryAggregationResult = {
@@ -362,12 +378,13 @@ describe("GetSankeyAggregationUsecase リグレッションテスト", () => {
       (mockBalanceSnapshotRepository.getTotalLatestBalancesByYear as jest.Mock).mockResolvedValue(
         mockBalances,
       );
-      (mockTransactionRepository.getLiabilityBalance as jest.Mock).mockResolvedValue(0);
+      (mockBalanceSheetRepository.getCurrentLiabilities as jest.Mock).mockResolvedValue(0);
 
       const usecase = new GetSankeyAggregationUsecase(
         mockTransactionRepository,
         mockPoliticalOrganizationRepository,
         mockBalanceSnapshotRepository,
+        mockBalanceSheetRepository,
       );
 
       const result = await usecase.execute({
@@ -398,6 +415,7 @@ describe("GetSankeyAggregationUsecase リグレッションテスト", () => {
         mockTransactionRepository,
         mockPoliticalOrganizationRepository,
         mockBalanceSnapshotRepository,
+        mockBalanceSheetRepository,
       } = createMockRepositories();
 
       const mockAggregation: SankeyCategoryAggregationResult = {
@@ -415,12 +433,13 @@ describe("GetSankeyAggregationUsecase リグレッションテスト", () => {
       (mockBalanceSnapshotRepository.getTotalLatestBalancesByYear as jest.Mock).mockResolvedValue(
         mockBalances,
       );
-      (mockTransactionRepository.getLiabilityBalance as jest.Mock).mockResolvedValue(0);
+      (mockBalanceSheetRepository.getCurrentLiabilities as jest.Mock).mockResolvedValue(0);
 
       const usecase = new GetSankeyAggregationUsecase(
         mockTransactionRepository,
         mockPoliticalOrganizationRepository,
         mockBalanceSnapshotRepository,
+        mockBalanceSheetRepository,
       );
 
       const result = await usecase.execute({
@@ -444,6 +463,7 @@ describe("GetSankeyAggregationUsecase リグレッションテスト", () => {
         mockTransactionRepository,
         mockPoliticalOrganizationRepository,
         mockBalanceSnapshotRepository,
+        mockBalanceSheetRepository,
       } = createMockRepositories();
 
       const mockAggregation: SankeyCategoryAggregationResult = {
@@ -462,7 +482,7 @@ describe("GetSankeyAggregationUsecase リグレッションテスト", () => {
       (mockBalanceSnapshotRepository.getTotalLatestBalancesByYear as jest.Mock).mockResolvedValue(
         mockBalances,
       );
-      (mockTransactionRepository.getLiabilityBalance as jest.Mock).mockResolvedValue(
+      (mockBalanceSheetRepository.getCurrentLiabilities as jest.Mock).mockResolvedValue(
         liabilityBalance,
       );
 
@@ -470,6 +490,7 @@ describe("GetSankeyAggregationUsecase リグレッションテスト", () => {
         mockTransactionRepository,
         mockPoliticalOrganizationRepository,
         mockBalanceSnapshotRepository,
+        mockBalanceSheetRepository,
       );
 
       const result = await usecase.execute({
@@ -512,6 +533,7 @@ describe("GetSankeyAggregationUsecase リグレッションテスト", () => {
         mockTransactionRepository,
         mockPoliticalOrganizationRepository,
         mockBalanceSnapshotRepository,
+        mockBalanceSheetRepository,
       } = createMockRepositories();
 
       // 10個のサブカテゴリを持つ収入データ
@@ -541,12 +563,13 @@ describe("GetSankeyAggregationUsecase リグレッションテスト", () => {
       (mockBalanceSnapshotRepository.getTotalLatestBalancesByYear as jest.Mock).mockResolvedValue(
         mockBalances,
       );
-      (mockTransactionRepository.getLiabilityBalance as jest.Mock).mockResolvedValue(0);
+      (mockBalanceSheetRepository.getCurrentLiabilities as jest.Mock).mockResolvedValue(0);
 
       const usecase = new GetSankeyAggregationUsecase(
         mockTransactionRepository,
         mockPoliticalOrganizationRepository,
         mockBalanceSnapshotRepository,
+        mockBalanceSheetRepository,
       );
 
       const result = await usecase.execute({
@@ -581,6 +604,7 @@ describe("GetSankeyAggregationUsecase リグレッションテスト", () => {
         mockTransactionRepository,
         mockPoliticalOrganizationRepository,
         mockBalanceSnapshotRepository,
+        mockBalanceSheetRepository,
       } = createMockRepositories();
 
       const mockAggregation: SankeyCategoryAggregationResult = {
@@ -599,12 +623,13 @@ describe("GetSankeyAggregationUsecase リグレッションテスト", () => {
       (mockBalanceSnapshotRepository.getTotalLatestBalancesByYear as jest.Mock).mockResolvedValue(
         mockBalances,
       );
-      (mockTransactionRepository.getLiabilityBalance as jest.Mock).mockResolvedValue(0);
+      (mockBalanceSheetRepository.getCurrentLiabilities as jest.Mock).mockResolvedValue(0);
 
       const usecase = new GetSankeyAggregationUsecase(
         mockTransactionRepository,
         mockPoliticalOrganizationRepository,
         mockBalanceSnapshotRepository,
+        mockBalanceSheetRepository,
       );
 
       const result = await usecase.execute({
@@ -634,6 +659,7 @@ describe("GetSankeyAggregationUsecase リグレッションテスト", () => {
         mockTransactionRepository,
         mockPoliticalOrganizationRepository,
         mockBalanceSnapshotRepository,
+        mockBalanceSheetRepository,
       } = createMockRepositories();
 
       (mockPoliticalOrganizationRepository.findBySlugs as jest.Mock).mockResolvedValue([]);
@@ -642,6 +668,7 @@ describe("GetSankeyAggregationUsecase リグレッションテスト", () => {
         mockTransactionRepository,
         mockPoliticalOrganizationRepository,
         mockBalanceSnapshotRepository,
+        mockBalanceSheetRepository,
       );
 
       await expect(
