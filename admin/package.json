@@ -13,7 +13,7 @@
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "test:e2e": "playwright test",
-    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:ui": "playwright test --ui --ui-host=0.0.0.0",
     "test:e2e:headed": "playwright test --headed"
   },
   "dependencies": {
