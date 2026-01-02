@@ -1,9 +1,15 @@
-import type { SankeyData } from "@/types/sankey";
+import "server-only";
+
+import type { SankeyData } from "@/server/contexts/public-finance/domain/models/sankey-data";
 import type { IPoliticalOrganizationRepository } from "@/server/contexts/public-finance/domain/repositories/political-organization-repository.interface";
 import type { IBalanceSheetRepository } from "@/server/contexts/public-finance/domain/repositories/balance-sheet-repository.interface";
-import type { ITransactionRepository } from "../repositories/interfaces/transaction-repository.interface";
-import type { IBalanceSnapshotRepository } from "../repositories/interfaces/balance-snapshot-repository.interface";
-import { convertCategoryAggregationToSankeyData } from "../utils/sankey-category-converter";
+import type { ITransactionRepository } from "@/server/repositories/interfaces/transaction-repository.interface";
+import type { IBalanceSnapshotRepository } from "@/server/repositories/interfaces/balance-snapshot-repository.interface";
+import {
+  CategoryAggregation,
+  DEFAULT_SUBCATEGORY_MAX_COUNT,
+} from "@/server/contexts/public-finance/domain/models/category-aggregation";
+import { SankeyDataBuilder } from "@/server/contexts/public-finance/domain/services/sankey-data-builder";
 
 export interface GetSankeyAggregationParams {
   slugs: string[];
@@ -25,7 +31,7 @@ export class GetSankeyAggregationUsecase {
 
   async execute(params: GetSankeyAggregationParams): Promise<GetSankeyAggregationResult> {
     try {
-      // 政治団体を取得
+      // 1. 政治団体を取得
       const politicalOrganizations = await this.politicalOrganizationRepository.findBySlugs(
         params.slugs,
       );
@@ -36,17 +42,17 @@ export class GetSankeyAggregationUsecase {
         );
       }
 
-      // 集計データを取得（IN句で効率的に）
       const organizationIds = politicalOrganizations.map((org) => org.id);
-      const aggregatedResult = await this.transactionRepository.getCategoryAggregationForSankey(
-        organizationIds,
-        params.financialYear,
-        params.categoryType,
-      );
+      const isFriendlyCategory = params.categoryType === "friendly-category";
 
-      // 今年と昨年の最新残高データを取得（合計値）
+      // 2. データを並列取得
       const organizationIdsAsString = organizationIds.map((id) => id.toString());
-      const [balancesByYear, liabilityBalance] = await Promise.all([
+      const [rawAggregation, balancesByYear, liabilityBalance] = await Promise.all([
+        this.transactionRepository.getCategoryAggregationForSankey(
+          organizationIds,
+          params.financialYear,
+          params.categoryType,
+        ),
         this.balanceSnapshotRepository.getTotalLatestBalancesByYear(
           organizationIdsAsString,
           params.financialYear,
@@ -57,15 +63,28 @@ export class GetSankeyAggregationUsecase {
         ),
       ]);
 
-      // Sankeyデータに変換
-      const isFriendlyCategory = params.categoryType === "friendly-category";
-      const sankeyData = convertCategoryAggregationToSankeyData(
-        aggregatedResult,
-        isFriendlyCategory,
-        balancesByYear.currentYear,
-        balancesByYear.previousYear,
-        liabilityBalance,
+      // 3. ドメインモデルで変換処理
+      let aggregation = CategoryAggregation.renameOtherCategories(rawAggregation);
+
+      if (isFriendlyCategory) {
+        aggregation = CategoryAggregation.consolidateSmallItems(aggregation, {
+          targetMaxCount: DEFAULT_SUBCATEGORY_MAX_COUNT,
+        });
+      }
+
+      aggregation = CategoryAggregation.adjustWithBalance(
+        aggregation,
+        {
+          previousYearBalance: balancesByYear.previousYear,
+          currentYearBalance: balancesByYear.currentYear,
+          liabilityBalance,
+        },
+        { isFriendlyCategory },
       );
+
+      // 4. ドメインサービスでSankeyDataを構築
+      const builder = new SankeyDataBuilder();
+      const sankeyData = builder.build(aggregation);
 
       return { sankeyData };
     } catch (error) {

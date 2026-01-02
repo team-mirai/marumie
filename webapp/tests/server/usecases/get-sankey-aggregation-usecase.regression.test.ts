@@ -5,7 +5,7 @@
  * 詳細に検証することで、内部実装のリファクタリング時にも
  * 振る舞いが変わらないことを保証します。
  */
-import { GetSankeyAggregationUsecase } from "@/server/usecases/get-sankey-aggregation-usecase";
+import { GetSankeyAggregationUsecase } from "@/server/contexts/public-finance/application/usecases/get-sankey-aggregation-usecase";
 import type {
   ITransactionRepository,
   SankeyCategoryAggregationResult,
