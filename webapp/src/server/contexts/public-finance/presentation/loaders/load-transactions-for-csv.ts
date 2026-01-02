@@ -10,7 +10,7 @@ import {
 } from "@/server/contexts/public-finance/application/usecases/get-transactions-for-csv-usecase";
 import { CACHE_REVALIDATE_SECONDS } from "./constants";
 
-export const loadTransactionsForCsv = (params: GetTransactionsForCsvParams) => {
+const loadTransactionsForCsv = (params: GetTransactionsForCsvParams) => {
   const cacheKey = `transactions-for-csv-${params.slugs.join("-")}-${params.financialYear}`;
 
   return unstable_cache(
