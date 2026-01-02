@@ -18,10 +18,13 @@ export class LoginUsecase {
     try {
       return await this.authProvider.signInWithPassword(email, password);
     } catch (e) {
-      console.error("Login failed:", e);
       if (e instanceof AuthError) {
+        // 認証エラーは予期される失敗なのでスタックトレースなしでログ
+        console.warn(`Login failed for ${email}: ${e.message}`);
         throw e;
       }
+      // 予期しないエラーのみスタックトレース付きでログ
+      console.error("Unexpected login error:", e);
       throw new AuthError(
         "AUTH_FAILED",
         `Failed to login: ${e instanceof Error ? e.message : String(e)}`,
