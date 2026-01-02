@@ -2,9 +2,11 @@
 import "client-only";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 import type { PoliticalOrganization } from "@/shared/models/political-organization";
 import type { PreviewDonorCsvResult } from "@/server/contexts/report/presentation/types/preview-donor-csv-types";
 import type { PreviewDonorCsvRequest } from "@/server/contexts/report/presentation/actions/preview-donor-csv";
+import type { ImportDonorCsvResult } from "@/server/contexts/report/presentation/actions/import-donor-csv";
 import DonorCsvPreview from "./DonorCsvPreview";
 import {
   Button,
@@ -20,23 +22,34 @@ import {
 interface DonorCsvImportClientProps {
   organizations: PoliticalOrganization[];
   previewAction: (data: PreviewDonorCsvRequest) => Promise<PreviewDonorCsvResult>;
+  importAction: (data: {
+    csvContent: string;
+    politicalOrganizationId: string;
+  }) => Promise<ImportDonorCsvResult>;
 }
 
 export default function DonorCsvImportClient({
   organizations,
   previewAction,
+  importAction,
 }: DonorCsvImportClientProps) {
   const [file, setFile] = useState<File | null>(null);
   const [politicalOrganizationId, setPoliticalOrganizationId] = useState<string>("");
   const [previewResult, setPreviewResult] = useState<PreviewDonorCsvResult | null>(null);
   const [loading, setLoading] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const previewActionRef = useRef(previewAction);
+  const importActionRef = useRef(importAction);
 
   useEffect(() => {
     previewActionRef.current = previewAction;
   }, [previewAction]);
+
+  useEffect(() => {
+    importActionRef.current = importAction;
+  }, [importAction]);
 
   const stablePreviewAction = useCallback(
     (data: PreviewDonorCsvRequest) => previewActionRef.current(data),
@@ -87,6 +100,34 @@ export default function DonorCsvImportClient({
     setError(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
+    }
+  };
+
+  const handleImport = async () => {
+    if (!file || !politicalOrganizationId) {
+      return;
+    }
+
+    setIsImporting(true);
+
+    try {
+      const csvContent = await file.text();
+      const result = await importActionRef.current({
+        csvContent,
+        politicalOrganizationId,
+      });
+
+      if (result.ok) {
+        toast.success(`${result.importedCount}件のインポートが完了しました`);
+        handleClearFile();
+      } else {
+        toast.error(`インポートに失敗しました: ${result.error}`);
+      }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "インポートに失敗しました";
+      toast.error(`インポートに失敗しました: ${errorMessage}`);
+    } finally {
+      setIsImporting(false);
     }
   };
 
@@ -149,7 +190,11 @@ export default function DonorCsvImportClient({
       {previewResult && !loading && (
         <div className="bg-card rounded-xl p-4">
           <h3 className="text-lg font-medium text-white mb-4">プレビュー結果</h3>
-          <DonorCsvPreview result={previewResult} />
+          <DonorCsvPreview
+            result={previewResult}
+            onImport={handleImport}
+            isImporting={isImporting}
+          />
         </div>
       )}
     </div>

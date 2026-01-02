@@ -27,3 +27,14 @@ export class ProcessingError extends Error {
     this.name = "ProcessingError";
   }
 }
+
+/**
+ * インポート可能な行がないエラー
+ * valid行が0件の場合にスローされる
+ */
+export class NoValidRowsError extends Error {
+  constructor(message = "インポート可能な行がありません") {
+    super(message);
+    this.name = "NoValidRowsError";
+  }
+}

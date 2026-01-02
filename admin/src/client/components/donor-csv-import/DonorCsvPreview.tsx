@@ -11,9 +11,12 @@ import DonorCsvRow from "./DonorCsvRow";
 import DonorCsvSummary from "./DonorCsvSummary";
 import { ClientPagination } from "@/client/components/ui/ClientPagination";
 import { Button } from "@/client/components/ui";
+import { Loader2 } from "lucide-react";
 
 interface DonorCsvPreviewProps {
   result: PreviewDonorCsvResult;
+  onImport: () => Promise<void>;
+  isImporting: boolean;
 }
 
 type TabKey = "all" | PreviewDonorCsvRowStatus;
@@ -26,7 +29,7 @@ const TABS: { key: TabKey; label: string; color: string }[] = [
   { key: "type_mismatch", label: "種別不整合", color: "text-orange-500" },
 ];
 
-export default function DonorCsvPreview({ result }: DonorCsvPreviewProps) {
+export default function DonorCsvPreview({ result, onImport, isImporting }: DonorCsvPreviewProps) {
   const [activeTab, setActiveTab] = useState<TabKey>("all");
   const [currentPage, setCurrentPage] = useState(1);
   const perPage = 10;
@@ -137,6 +140,24 @@ export default function DonorCsvPreview({ result }: DonorCsvPreviewProps) {
           onPageChange={handlePageChange}
         />
       )}
+
+      <div className="mt-6 flex justify-end">
+        <Button
+          type="button"
+          onClick={onImport}
+          disabled={result.summary.valid === 0 || isImporting}
+          className="min-w-[160px]"
+        >
+          {isImporting ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              インポート中...
+            </>
+          ) : (
+            `${result.summary.valid}件をインポート`
+          )}
+        </Button>
+      </div>
     </div>
   );
 }
