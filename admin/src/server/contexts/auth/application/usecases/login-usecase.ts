@@ -19,8 +19,7 @@ export class LoginUsecase {
       return await this.authProvider.signInWithPassword(email, password);
     } catch (e) {
       if (e instanceof AuthError) {
-        // 認証エラーは予期される失敗なのでスタックトレースなしでログ
-        console.warn(`Login failed for ${email}: ${e.message}`);
+        // 認証エラーは予期される失敗なのでログ出力しない
         throw e;
       }
       // 予期しないエラーのみスタックトレース付きでログ
