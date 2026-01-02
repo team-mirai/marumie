@@ -247,16 +247,34 @@ jobs:
         with:
           version: latest
 
-      - name: Start Supabase
+      - name: Start Supabase and build in parallel
         run: |
           # Enable API and use default ports for CI
           sed -i 's/^\[api\]$/[api]/' supabase/config.toml
           sed -i '/^\[api\]$/,/^\[/{s/^enabled = false$/enabled = true/}' supabase/config.toml
           sed -i 's/^port = 54332$/port = 54322/' supabase/config.toml
-          supabase start --exclude imgproxy,edge-runtime,vector,studio
 
-      - name: Wait for Supabase to be ready
-        run: |
+          # Start Supabase in background
+          supabase start --exclude imgproxy,edge-runtime,vector,studio &
+          SUPABASE_PID=$!
+
+          # Build admin and webapp in parallel
+          NEXT_PUBLIC_SUPABASE_URL=${{ env.SUPABASE_URL }} \
+          NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ env.SUPABASE_ANON_KEY }} \
+          pnpm build:admin &
+          ADMIN_PID=$!
+
+          pnpm build:webapp &
+          WEBAPP_PID=$!
+
+          # Wait for builds to complete
+          wait $ADMIN_PID
+          wait $WEBAPP_PID
+
+          # Wait for Supabase to complete
+          wait $SUPABASE_PID
+
+          # Wait for Supabase API to be ready
           echo "Waiting for Supabase API..."
           timeout 60 bash -c 'until curl -s http://127.0.0.1:54321/rest/v1/ > /dev/null 2>&1; do sleep 2; done'
           echo "Supabase is ready"
@@ -265,15 +283,6 @@ jobs:
         run: |
           pnpm db:migrate:deploy
           pnpm db:seed
-
-      - name: Build admin
-        run: pnpm build:admin
-        env:
-          NEXT_PUBLIC_SUPABASE_URL: ${{ env.SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ env.SUPABASE_ANON_KEY }}
-
-      - name: Build webapp
-        run: pnpm build:webapp
 
       - name: Run E2E tests for admin
         run: pnpm --filter admin test:e2e
