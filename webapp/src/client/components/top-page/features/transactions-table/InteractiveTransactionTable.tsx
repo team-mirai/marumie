@@ -2,7 +2,7 @@
 import "client-only";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import type { DisplayTransaction } from "@/types/display-transaction";
+import type { DisplayTransaction } from "@/server/contexts/public-finance/domain/models/display-transaction";
 import TransactionTable from "./TransactionTable";
 import TransactionTableMobileHeader, { type SortOption } from "./TransactionTableMobileHeader";
 import PCPaginator from "./PCPaginator";

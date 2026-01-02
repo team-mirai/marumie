@@ -2,7 +2,7 @@
 import "client-only";
 
 import { useState } from "react";
-import { downloadTransactionsCsv } from "@/server/actions/download-transactions-csv";
+import { downloadTransactionsCsv } from "@/server/contexts/public-finance/presentation/loaders/load-transactions-for-csv";
 
 interface CsvDownloadLinkProps {
   slug: string;
