@@ -1,14 +1,6 @@
 name: CI
 
 on:
-  push:
-    paths:
-      - 'admin/**'
-      - 'webapp/**'
-      - 'packages/**'
-      - 'prisma/**'
-      - '.dependency-cruiser.cjs'
-      - 'pnpm-lock.yaml'
   pull_request:
     paths:
       - 'admin/**'
