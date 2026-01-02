@@ -8,10 +8,10 @@ import type {
   IBalanceSnapshotRepository,
   TotalBalancesByYear,
 } from "@/server/repositories/interfaces/balance-snapshot-repository.interface";
+import type { IBalanceSheetRepository } from "@/server/contexts/public-finance/domain/repositories/balance-sheet-repository.interface";
 
 const mockTransactionRepository = {
   getCategoryAggregationForSankey: jest.fn(),
-  getLiabilityBalance: jest.fn(),
 } as unknown as ITransactionRepository;
 
 const mockPoliticalOrganizationRepository = {
@@ -22,6 +22,10 @@ const mockBalanceSnapshotRepository = {
   getTotalLatestBalancesByYear: jest.fn(),
 } as unknown as IBalanceSnapshotRepository;
 
+const mockBalanceSheetRepository = {
+  getCurrentLiabilities: jest.fn(),
+} as unknown as IBalanceSheetRepository;
+
 describe("GetSankeyAggregationUsecase", () => {
   let usecase: GetSankeyAggregationUsecase;
 
@@ -31,6 +35,7 @@ describe("GetSankeyAggregationUsecase", () => {
       mockTransactionRepository,
       mockPoliticalOrganizationRepository,
       mockBalanceSnapshotRepository,
+      mockBalanceSheetRepository,
     );
   });
 
@@ -66,7 +71,7 @@ describe("GetSankeyAggregationUsecase", () => {
     (mockBalanceSnapshotRepository.getTotalLatestBalancesByYear as jest.Mock).mockResolvedValue(
       mockBalances,
     );
-    (mockTransactionRepository.getLiabilityBalance as jest.Mock).mockResolvedValue(0);
+    (mockBalanceSheetRepository.getCurrentLiabilities as jest.Mock).mockResolvedValue(0);
 
     const result = await usecase.execute({
       slugs: ["test-org"],
@@ -105,7 +110,7 @@ describe("GetSankeyAggregationUsecase", () => {
     (mockBalanceSnapshotRepository.getTotalLatestBalancesByYear as jest.Mock).mockResolvedValue(
       mockBalances,
     );
-    (mockTransactionRepository.getLiabilityBalance as jest.Mock).mockResolvedValue(0);
+    (mockBalanceSheetRepository.getCurrentLiabilities as jest.Mock).mockResolvedValue(0);
 
     const result = await usecase.execute({
       slugs: ["test-org"],
@@ -155,7 +160,7 @@ describe("GetSankeyAggregationUsecase", () => {
     (mockBalanceSnapshotRepository.getTotalLatestBalancesByYear as jest.Mock).mockResolvedValue(
       mockBalances,
     );
-    (mockTransactionRepository.getLiabilityBalance as jest.Mock).mockResolvedValue(0);
+    (mockBalanceSheetRepository.getCurrentLiabilities as jest.Mock).mockResolvedValue(0);
 
     const result = await usecase.execute({
       slugs: ["org-1", "org-2"],
@@ -190,7 +195,7 @@ describe("GetSankeyAggregationUsecase", () => {
     (mockBalanceSnapshotRepository.getTotalLatestBalancesByYear as jest.Mock).mockResolvedValue(
       mockBalances,
     );
-    (mockTransactionRepository.getLiabilityBalance as jest.Mock).mockResolvedValue(0);
+    (mockBalanceSheetRepository.getCurrentLiabilities as jest.Mock).mockResolvedValue(0);
 
     const result = await usecase.execute({
       slugs: ["test-org"],
