@@ -28,9 +28,10 @@ test.describe("政治団体管理", () => {
 
 			await page.getByRole("link", { name: "編集" }).first().click();
 
-			await expect(page.getByRole("heading", { name: /を編集/ })).toBeVisible();
-			await expect(page.getByLabel("表示名")).toBeVisible();
-			await expect(page.getByLabel("スラッグ")).toBeVisible();
+			// CardTitleはdiv要素としてレンダリングされるため、getByTextを使用
+			await expect(page.getByText(/を編集/).first()).toBeVisible();
+			await expect(page.getByLabel(/表示名/)).toBeVisible();
+			await expect(page.getByLabel(/スラッグ/)).toBeVisible();
 		});
 
 		test("編集ページで既存の政治団体データが読み込まれる", async ({ page }) => {
@@ -38,10 +39,10 @@ test.describe("政治団体管理", () => {
 
 			await page.getByRole("link", { name: "編集" }).first().click();
 
-			const displayNameInput = page.getByLabel("表示名");
+			const displayNameInput = page.getByLabel(/表示名/);
 			await expect(displayNameInput).toHaveValue("サンプル党");
 
-			const slugInput = page.getByLabel("スラッグ");
+			const slugInput = page.getByLabel(/スラッグ/);
 			await expect(slugInput).toHaveValue("sample-party");
 		});
 	});
@@ -50,13 +51,14 @@ test.describe("政治団体管理", () => {
 		test("新しい政治団体を作成できる", async ({ page }) => {
 			await page.goto("/political-organizations/new");
 
-			await expect(page.getByRole("heading", { name: "新しい政治団体を作成" })).toBeVisible();
+			// CardTitleはdiv要素としてレンダリングされるため、getByTextを使用
+			await expect(page.getByText("新しい政治団体を作成")).toBeVisible();
 
 			const uniqueSlug = `test-org-${Date.now()}`;
 			const displayName = `テスト政治団体 ${Date.now()}`;
 
-			await page.getByLabel("表示名").fill(displayName);
-			await page.getByLabel("スラッグ").fill(uniqueSlug);
+			await page.getByLabel(/表示名/).fill(displayName);
+			await page.getByLabel(/スラッグ/).fill(uniqueSlug);
 			await page.getByLabel("説明（任意）").fill("E2Eテストで作成された政治団体");
 
 			await page.getByRole("button", { name: "作成" }).click();
@@ -71,20 +73,24 @@ test.describe("政治団体管理", () => {
 			const uniqueSlug = `update-test-${Date.now()}`;
 			const originalName = `更新テスト用団体 ${Date.now()}`;
 
-			await page.getByLabel("表示名").fill(originalName);
-			await page.getByLabel("スラッグ").fill(uniqueSlug);
+			await page.getByLabel(/表示名/).fill(originalName);
+			await page.getByLabel(/スラッグ/).fill(uniqueSlug);
 			await page.getByRole("button", { name: "作成" }).click();
 
 			await expect(page).toHaveURL("/political-organizations");
 			await expect(page.getByText(originalName)).toBeVisible();
 
-			const orgCard = page.locator("div").filter({ hasText: originalName }).first();
+			// 作成した政治団体のカードを特定して編集リンクをクリック
+			// h3要素（政治団体名）を含む親カードを特定し、その中の編集リンクをクリック
+			const orgHeading = page.locator("h3").filter({ hasText: originalName });
+			const orgCard = orgHeading.locator("xpath=ancestor::div[contains(@class, 'border')]");
 			await orgCard.getByRole("link", { name: "編集" }).click();
 
-			await expect(page.getByRole("heading", { name: /を編集/ })).toBeVisible();
+			// CardTitleはdiv要素としてレンダリングされるため、getByTextを使用
+			await expect(page.getByText(/を編集/).first()).toBeVisible();
 
 			const updatedName = `${originalName} (更新済み)`;
-			await page.getByLabel("表示名").fill(updatedName);
+			await page.getByLabel(/表示名/).fill(updatedName);
 			await page.getByLabel("説明（任意）").fill("E2Eテストで更新された説明");
 
 			await page.getByRole("button", { name: "更新" }).click();
@@ -99,10 +105,10 @@ test.describe("政治団体管理", () => {
 			const createButton = page.getByRole("button", { name: "作成" });
 			await expect(createButton).toBeDisabled();
 
-			await page.getByLabel("表示名").fill("テスト");
+			await page.getByLabel(/表示名/).fill("テスト");
 			await expect(createButton).toBeDisabled();
 
-			await page.getByLabel("スラッグ").fill("test-slug");
+			await page.getByLabel(/スラッグ/).fill("test-slug");
 			await expect(createButton).toBeEnabled();
 		});
 	});
