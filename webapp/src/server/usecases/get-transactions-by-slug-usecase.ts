@@ -1,3 +1,5 @@
+import "server-only";
+
 import type { PoliticalOrganization } from "@/shared/models/political-organization";
 import type { TransactionFilters } from "@/types/transaction-filters";
 import type { DisplayTransaction, DisplayTransactionType } from "@/types/display-transaction";
@@ -5,8 +7,8 @@ import type { IPoliticalOrganizationRepository } from "@/server/contexts/public-
 import type {
   ITransactionRepository,
   PaginationOptions,
-} from "../repositories/interfaces/transaction-repository.interface";
-import { convertToDisplayTransactions } from "../utils/transaction-converter";
+} from "@/server/repositories/interfaces/transaction-repository.interface";
+import { convertToDisplayTransactions } from "@/server/utils/transaction-converter";
 
 export interface GetTransactionsBySlugParams {
   slugs: string[];

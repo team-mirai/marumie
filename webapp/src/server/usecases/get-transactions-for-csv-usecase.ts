@@ -1,7 +1,9 @@
+import "server-only";
+
 import type { Transaction } from "@/shared/models/transaction";
 import type { TransactionFilters } from "@/types/transaction-filters";
 import type { IPoliticalOrganizationRepository } from "@/server/contexts/public-finance/domain/repositories/political-organization-repository.interface";
-import type { ITransactionRepository } from "../repositories/interfaces/transaction-repository.interface";
+import type { ITransactionRepository } from "@/server/repositories/interfaces/transaction-repository.interface";
 
 export interface GetTransactionsForCsvParams {
   slugs: string[];
