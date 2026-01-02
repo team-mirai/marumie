@@ -28,13 +28,6 @@ export interface SankeyCategoryAggregationResult {
   expense: TransactionCategoryAggregation[];
 }
 
-// 月次集計データの型定義
-export interface MonthlyAggregation {
-  yearMonth: string; // "YYYY-MM" 形式
-  income: number;
-  expense: number;
-}
-
 export interface SortOptions {
   sortBy?: "date" | "amount";
   order?: "asc" | "desc";
