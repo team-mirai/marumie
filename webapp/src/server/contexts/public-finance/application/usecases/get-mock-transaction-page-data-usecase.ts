@@ -1,7 +1,7 @@
 import "server-only";
 
 import type { TopPageDataParams } from "@/server/contexts/public-finance/presentation/loaders/load-top-page-data";
-import type { MonthlyAggregation } from "@/server/contexts/public-finance/domain/repositories/transaction-repository.interface";
+import type { MonthlyAggregation } from "@/server/contexts/public-finance/domain/models/monthly-aggregation";
 import type { SankeyData } from "@/types/sankey";
 import type { BalanceSheetData } from "@/types/balance-sheet";
 
