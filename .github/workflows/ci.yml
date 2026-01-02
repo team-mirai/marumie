@@ -140,9 +140,6 @@ jobs:
       - name: Run type check for webapp
         run: pnpm --filter webapp run type-check
 
-      - name: Build webapp
-        run: pnpm build:webapp
-
       - name: Upload webapp coverage
         uses: actions/upload-artifact@v4
         with:

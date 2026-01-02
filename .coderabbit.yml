@@ -77,7 +77,11 @@ reviews:
         設計の問題点や改善提案があれば具体的に指摘してください。
 
   auto_review:
+    enabled: true
     drafts: true
+    base_branches:
+      - develop
+      - '^epic.*'
   labeling_instructions: []
 
   pre_merge_checks:
