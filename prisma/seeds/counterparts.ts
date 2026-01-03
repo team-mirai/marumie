@@ -83,6 +83,9 @@ const data: CounterpartSeedData[] = [
   { name: '株式会社法務コンサルティング', address: '東京都中央区銀座一丁目1番1号' },
   { name: '行政書士事務所山田', address: '東京都港区新橋二丁目2番2号' },
   { name: '税理士法人田中事務所', address: '東京都千代田区霞が関三丁目3番3号' },
+
+  // E2Eテスト用
+  { name: 'E2Eテスト取引先株式会社', address: '東京都渋谷区テスト一丁目1番1号' },
 ];
 
 export const counterpartsSeeder: Seeder = {

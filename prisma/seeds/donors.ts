@@ -98,6 +98,14 @@ const data: DonorSeedData[] = [
 		donorType: 'political_organization',
 		occupation: null,
 	},
+
+	// E2Eテスト用
+	{
+		name: 'E2Eテスト寄附太郎',
+		address: '東京都渋谷区テスト二丁目2番2号',
+		donorType: 'individual',
+		occupation: 'テスト職業',
+	},
 ];
 
 export const donorsSeeder: Seeder = {
