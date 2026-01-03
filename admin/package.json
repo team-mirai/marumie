@@ -34,7 +34,7 @@
     "ai": "^6.0.5",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
-    "iconv-lite": "^0.6.3",
+    "iconv-lite": "^0.7.1",
     "lucide-react": "^0.562.0",
     "next": "15.5.9",
     "react": "19.1.4",
