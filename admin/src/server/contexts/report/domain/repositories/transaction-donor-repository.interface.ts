@@ -1,3 +1,5 @@
+import type { PrismaTransactionClient } from "@/server/contexts/report/domain/repositories/transaction-manager.interface";
+
 export interface TransactionDonorData {
   transactionId: bigint;
   donorId: bigint;
@@ -34,4 +36,16 @@ export interface ITransactionDonorRepository {
    * 指定されたトランザクションIDの既存紐付けを削除し、新しい紐付けを作成
    */
   replaceMany(transactionIds: bigint[], data: TransactionDonorData[]): Promise<void>;
+
+  /**
+   * 複数のTransactionに対するDonor紐付けを一括でupsertする
+   * - 既存の紐付けがあれば donorId を更新（createdAt は保持）
+   * - 既存の紐付けがなければ新規作成
+   * @param pairs TransactionIdとDonorIdのペア配列
+   * @param tx トランザクションコンテキスト
+   */
+  bulkUpsert(
+    pairs: { transactionId: bigint; donorId: bigint }[],
+    tx?: PrismaTransactionClient,
+  ): Promise<void>;
 }

@@ -5,6 +5,7 @@ import type {
   ITransactionDonorRepository,
   TransactionDonorData,
 } from "@/server/contexts/report/domain/repositories/transaction-donor-repository.interface";
+import type { PrismaTransactionClient } from "@/server/contexts/report/domain/repositories/transaction-manager.interface";
 
 export class PrismaTransactionDonorRepository implements ITransactionDonorRepository {
   constructor(private prisma: PrismaClient) {}
@@ -76,5 +77,37 @@ export class PrismaTransactionDonorRepository implements ITransactionDonorReposi
         })),
       });
     });
+  }
+
+  async bulkUpsert(
+    pairs: { transactionId: bigint; donorId: bigint }[],
+    tx?: PrismaTransactionClient,
+  ): Promise<void> {
+    if (pairs.length === 0) {
+      return;
+    }
+
+    const client = tx ?? this.prisma;
+
+    const valuesClauses: string[] = [];
+    const params: (bigint | Date)[] = [];
+
+    for (let i = 0; i < pairs.length; i++) {
+      const pair = pairs[i];
+      const txIdParam = i * 2 + 1;
+      const donorIdParam = i * 2 + 2;
+      valuesClauses.push(`($${txIdParam}, $${donorIdParam}, NOW())`);
+      params.push(pair.transactionId, pair.donorId);
+    }
+
+    const sql = `
+      INSERT INTO "transaction_donors" ("transaction_id", "donor_id", "created_at")
+      VALUES ${valuesClauses.join(", ")}
+      ON CONFLICT ("transaction_id")
+      DO UPDATE SET
+        "donor_id" = EXCLUDED."donor_id"
+    `;
+
+    await client.$executeRawUnsafe(sql, ...params);
   }
 }
