@@ -37,7 +37,7 @@
     "iconv-lite": "^0.6.3",
     "lucide-react": "^0.562.0",
     "next": "15.5.9",
-    "react": "19.1.4",
+    "react": "19.2.3",
     "react-dom": "19.1.4",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.4.0",
