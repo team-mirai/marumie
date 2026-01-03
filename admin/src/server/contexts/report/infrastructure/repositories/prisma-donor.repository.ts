@@ -1,10 +1,6 @@
 import "server-only";
 
-import type {
-  PrismaClient,
-  Donor as PrismaDonor,
-  DonorType as PrismaDonorType,
-} from "@prisma/client";
+import type { Donor as PrismaDonor, DonorType as PrismaDonorType } from "@prisma/client";
 import type {
   Donor,
   DonorWithUsage,
@@ -17,9 +13,10 @@ import type {
   DonorWithUsageAndLastUsed,
   IDonorRepository,
 } from "@/server/contexts/report/domain/repositories/donor-repository.interface";
+import type { PrismaClientOrTransaction } from "@/server/contexts/shared/infrastructure/prisma";
 
 export class PrismaDonorRepository implements IDonorRepository {
-  constructor(private prisma: PrismaClient) {}
+  constructor(private prisma: PrismaClientOrTransaction) {}
 
   private mapDonorType(prismaDonorType: PrismaDonorType): DonorType {
     switch (prismaDonorType) {
@@ -81,6 +78,26 @@ export class PrismaDonorRepository implements IDonorRepository {
     }
 
     return this.mapToDonor(donor);
+  }
+
+  async findByIds(ids: string[]): Promise<Donor[]> {
+    if (ids.length === 0) {
+      return [];
+    }
+
+    const bigIntIds = ids
+      .map((id) => this.parseBigIntId(id))
+      .filter((id): id is bigint => id !== null);
+
+    if (bigIntIds.length === 0) {
+      return [];
+    }
+
+    const donors = await this.prisma.donor.findMany({
+      where: { id: { in: bigIntIds } },
+    });
+
+    return donors.map((d) => this.mapToDonor(d));
   }
 
   async findByNameAddressAndType(
@@ -161,6 +178,27 @@ export class PrismaDonorRepository implements IDonorRepository {
     });
 
     return this.mapToDonor(donor);
+  }
+
+  async createMany(data: CreateDonorInput[]): Promise<Donor[]> {
+    if (data.length === 0) {
+      return [];
+    }
+
+    const results: Donor[] = [];
+    for (const d of data) {
+      const donor = await this.prisma.donor.create({
+        data: {
+          donorType: this.mapToPrismaDonorType(d.donorType),
+          name: d.name.trim(),
+          address: d.address?.trim() || null,
+          occupation: d.occupation?.trim() || null,
+        },
+      });
+      results.push(this.mapToDonor(donor));
+    }
+
+    return results;
   }
 
   async update(id: string, data: UpdateDonorInput): Promise<Donor> {

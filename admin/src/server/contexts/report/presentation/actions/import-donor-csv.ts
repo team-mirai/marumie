@@ -35,25 +35,27 @@ export async function importDonorCsv(data: ImportDonorCsvRequest): Promise<Impor
       return { ok: false, error: "政治団体IDが指定されていません" };
     }
 
-    const csvLoader = new DonorCsvLoader();
-    const recordConverter = new DonorCsvRecordConverter();
-    const validator = new DonorCsvValidator();
-    const transactionRepository = new PrismaTransactionWithDonorRepository(prisma);
-    const donorRepository = new PrismaDonorRepository(prisma);
-    const transactionDonorRepository = new PrismaTransactionDonorRepository(prisma);
+    const result = await prisma.$transaction(async (tx) => {
+      const csvLoader = new DonorCsvLoader();
+      const recordConverter = new DonorCsvRecordConverter();
+      const validator = new DonorCsvValidator();
+      const transactionRepository = new PrismaTransactionWithDonorRepository(tx);
+      const donorRepository = new PrismaDonorRepository(tx);
+      const transactionDonorRepository = new PrismaTransactionDonorRepository(tx);
 
-    const usecase = new ImportDonorCsvUsecase(
-      csvLoader,
-      recordConverter,
-      validator,
-      transactionRepository,
-      donorRepository,
-      transactionDonorRepository,
-    );
+      const usecase = new ImportDonorCsvUsecase(
+        csvLoader,
+        recordConverter,
+        validator,
+        transactionRepository,
+        donorRepository,
+        transactionDonorRepository,
+      );
 
-    const result = await usecase.execute({
-      csvContent,
-      politicalOrganizationId,
+      return await usecase.execute({
+        csvContent,
+        politicalOrganizationId,
+      });
     });
 
     revalidatePath("/import/donors");

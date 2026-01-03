@@ -19,6 +19,7 @@ export interface DonorWithUsageAndLastUsed extends DonorWithUsage {
 
 export interface IDonorRepository {
   findById(id: string): Promise<Donor | null>;
+  findByIds(ids: string[]): Promise<Donor[]>;
   findByNameAddressAndType(
     name: string,
     address: string | null,
@@ -28,6 +29,7 @@ export interface IDonorRepository {
   findAllWithUsage(filters?: DonorFilters): Promise<DonorWithUsage[]>;
   findByType(donorType: DonorType): Promise<Donor[]>;
   create(data: CreateDonorInput): Promise<Donor>;
+  createMany(data: CreateDonorInput[]): Promise<Donor[]>;
   update(id: string, data: UpdateDonorInput): Promise<Donor>;
   delete(id: string): Promise<void>;
   getUsageCount(id: string): Promise<number>;

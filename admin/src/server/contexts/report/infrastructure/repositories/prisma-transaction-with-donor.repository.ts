@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { Prisma, PrismaClient, DonorType as PrismaDonorType } from "@prisma/client";
+import type { Prisma, DonorType as PrismaDonorType } from "@prisma/client";
 import type { ITransactionWithDonorRepository } from "@/server/contexts/report/domain/repositories/transaction-with-donor-repository.interface";
 import type {
   TransactionWithDonor,
@@ -15,9 +15,10 @@ import {
   getAllowedDonorTypes,
 } from "@/server/contexts/report/domain/models/donor-assignment-rules";
 import type { TransactionForDonorCsv } from "@/server/contexts/report/domain/models/preview-donor-csv-row";
+import type { PrismaClientOrTransaction } from "@/server/contexts/shared/infrastructure/prisma";
 
 export class PrismaTransactionWithDonorRepository implements ITransactionWithDonorRepository {
-  constructor(private prisma: PrismaClient) {}
+  constructor(private prisma: PrismaClientOrTransaction) {}
 
   private mapDonorType(prismaDonorType: PrismaDonorType): DonorType {
     switch (prismaDonorType) {

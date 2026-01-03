@@ -1,13 +1,13 @@
 import "server-only";
 
-import type { PrismaClient } from "@prisma/client";
 import type {
   ITransactionDonorRepository,
   TransactionDonorData,
 } from "@/server/contexts/report/domain/repositories/transaction-donor-repository.interface";
+import type { PrismaClientOrTransaction } from "@/server/contexts/shared/infrastructure/prisma";
 
 export class PrismaTransactionDonorRepository implements ITransactionDonorRepository {
-  constructor(private prisma: PrismaClient) {}
+  constructor(private prisma: PrismaClientOrTransaction) {}
 
   async findByTransactionId(transactionId: bigint): Promise<TransactionDonorData | null> {
     const result = await this.prisma.transactionDonor.findUnique({
@@ -59,22 +59,20 @@ export class PrismaTransactionDonorRepository implements ITransactionDonorReposi
   }
 
   async replaceMany(transactionIds: bigint[], data: TransactionDonorData[]): Promise<void> {
-    await this.prisma.$transaction(async (tx) => {
-      await tx.transactionDonor.deleteMany({
-        where: {
-          transactionId: { in: transactionIds },
-        },
-      });
+    await this.prisma.transactionDonor.deleteMany({
+      where: {
+        transactionId: { in: transactionIds },
+      },
+    });
 
-      if (data.length === 0) {
-        return;
-      }
-      await tx.transactionDonor.createMany({
-        data: data.map((d) => ({
-          transactionId: d.transactionId,
-          donorId: d.donorId,
-        })),
-      });
+    if (data.length === 0) {
+      return;
+    }
+    await this.prisma.transactionDonor.createMany({
+      data: data.map((d) => ({
+        transactionId: d.transactionId,
+        donorId: d.donorId,
+      })),
     });
   }
 }

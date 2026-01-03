@@ -176,13 +176,12 @@ export class ImportDonorCsvUsecase {
       }
     }
 
-    const createdDonors: Donor[] = [];
-    for (const donorInput of uniqueDonorInputs.values()) {
-      const donor = await this.donorRepository.create(donorInput);
-      createdDonors.push(donor);
+    const donorInputs = [...uniqueDonorInputs.values()];
+    if (donorInputs.length === 0) {
+      return [];
     }
 
-    return createdDonors;
+    return await this.donorRepository.createMany(donorInputs);
   }
 
   private async buildDonorMap(
@@ -196,15 +195,21 @@ export class ImportDonorCsvUsecase {
       donorMap.set(key, donor);
     }
 
+    const existingDonorIds = new Set<string>();
     for (const { row } of deduplicatedRows) {
       if (row.matchingDonor && row.donorType) {
         const key = this.getDonorMatchKey(row.name, row.address, row.donorType);
         if (!donorMap.has(key)) {
-          const existingDonor = await this.donorRepository.findById(row.matchingDonor.id);
-          if (existingDonor) {
-            donorMap.set(key, existingDonor);
-          }
+          existingDonorIds.add(row.matchingDonor.id);
         }
+      }
+    }
+
+    if (existingDonorIds.size > 0) {
+      const existingDonors = await this.donorRepository.findByIds([...existingDonorIds]);
+      for (const donor of existingDonors) {
+        const key = this.getDonorMatchKey(donor.name, donor.address, donor.donorType);
+        donorMap.set(key, donor);
       }
     }
 

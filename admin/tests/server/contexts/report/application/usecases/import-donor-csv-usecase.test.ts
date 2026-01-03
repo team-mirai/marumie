@@ -41,11 +41,13 @@ describe("ImportDonorCsvUsecase", () => {
 
   const mockDonorRepository: jest.Mocked<IDonorRepository> = {
     findById: jest.fn(),
+    findByIds: jest.fn(),
     findByNameAddressAndType: jest.fn(),
     findAll: jest.fn(),
     findAllWithUsage: jest.fn(),
     findByType: jest.fn(),
     create: jest.fn(),
+    createMany: jest.fn(),
     update: jest.fn(),
     delete: jest.fn(),
     getUsageCount: jest.fn(),
@@ -142,7 +144,7 @@ describe("ImportDonorCsvUsecase", () => {
       mockTransactionRepository.findByTransactionNosForDonorCsv.mockResolvedValue([transaction]);
       mockDonorRepository.findByMatchCriteriaBatch.mockResolvedValue([]);
       mockValidator.validate.mockReturnValue([{ ...previewRow, status: "valid" }]);
-      mockDonorRepository.create.mockResolvedValue(createdDonor);
+      mockDonorRepository.createMany.mockResolvedValue([createdDonor]);
       mockTransactionDonorRepository.replaceMany.mockResolvedValue();
 
       const usecase = createUsecase();
@@ -169,7 +171,7 @@ describe("ImportDonorCsvUsecase", () => {
       mockTransactionRepository.findByTransactionNosForDonorCsv.mockResolvedValue([transaction]);
       mockDonorRepository.findByMatchCriteriaBatch.mockResolvedValue([]);
       mockValidator.validate.mockReturnValue([{ ...previewRow, status: "valid" }]);
-      mockDonorRepository.create.mockResolvedValue(createdDonor);
+      mockDonorRepository.createMany.mockResolvedValue([createdDonor]);
       mockTransactionDonorRepository.replaceMany.mockResolvedValue();
 
       const usecase = createUsecase();
@@ -181,12 +183,14 @@ describe("ImportDonorCsvUsecase", () => {
       const result = await usecase.execute(input);
 
       expect(result.createdDonorCount).toBe(1);
-      expect(mockDonorRepository.create).toHaveBeenCalledWith({
-        donorType: "individual",
-        name: "テスト太郎",
-        address: "東京都渋谷区",
-        occupation: "会社員",
-      });
+      expect(mockDonorRepository.createMany).toHaveBeenCalledWith([
+        {
+          donorType: "individual",
+          name: "テスト太郎",
+          address: "東京都渋谷区",
+          occupation: "会社員",
+        },
+      ]);
     });
 
     it("既存Donorが再利用される（matchingDonorあり）", async () => {
@@ -218,7 +222,8 @@ describe("ImportDonorCsvUsecase", () => {
           },
         },
       ]);
-      mockDonorRepository.findById.mockResolvedValue(existingDonor);
+      mockDonorRepository.findByIds.mockResolvedValue([existingDonor]);
+      mockDonorRepository.createMany.mockResolvedValue([]);
       mockTransactionDonorRepository.replaceMany.mockResolvedValue();
 
       const usecase = createUsecase();
@@ -231,7 +236,7 @@ describe("ImportDonorCsvUsecase", () => {
 
       expect(result.importedCount).toBe(1);
       expect(result.createdDonorCount).toBe(0);
-      expect(mockDonorRepository.create).not.toHaveBeenCalled();
+      expect(mockDonorRepository.createMany).not.toHaveBeenCalled();
     });
   });
 
@@ -258,7 +263,7 @@ describe("ImportDonorCsvUsecase", () => {
         { ...previewRows[0], status: "valid" },
         { ...previewRows[1], status: "valid" },
       ]);
-      mockDonorRepository.create.mockResolvedValue(createdDonor);
+      mockDonorRepository.createMany.mockResolvedValue([createdDonor]);
       mockTransactionDonorRepository.replaceMany.mockResolvedValue();
 
       const usecase = createUsecase();
@@ -270,9 +275,9 @@ describe("ImportDonorCsvUsecase", () => {
       const result = await usecase.execute(input);
 
       expect(result.importedCount).toBe(1);
-      expect(mockDonorRepository.create).toHaveBeenCalledWith(
+      expect(mockDonorRepository.createMany).toHaveBeenCalledWith([
         expect.objectContaining({ name: "山田花子" }),
-      );
+      ]);
     });
   });
 
@@ -302,7 +307,7 @@ describe("ImportDonorCsvUsecase", () => {
         { ...previewRows[0], status: "valid" },
         { ...previewRows[1], status: "valid" },
       ]);
-      mockDonorRepository.create.mockResolvedValue(createdDonor);
+      mockDonorRepository.createMany.mockResolvedValue([createdDonor]);
       mockTransactionDonorRepository.replaceMany.mockResolvedValue();
 
       const usecase = createUsecase();
@@ -315,7 +320,7 @@ describe("ImportDonorCsvUsecase", () => {
 
       expect(result.importedCount).toBe(2);
       expect(result.createdDonorCount).toBe(1);
-      expect(mockDonorRepository.create).toHaveBeenCalledTimes(1);
+      expect(mockDonorRepository.createMany).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -379,7 +384,7 @@ describe("ImportDonorCsvUsecase", () => {
         { ...previewRows[0], status: "valid" },
         { ...previewRows[1], status: "invalid", errors: ["エラー"] },
       ]);
-      mockDonorRepository.create.mockResolvedValue(createdDonor);
+      mockDonorRepository.createMany.mockResolvedValue([createdDonor]);
       mockTransactionDonorRepository.replaceMany.mockResolvedValue();
 
       const usecase = createUsecase();
@@ -415,7 +420,7 @@ describe("ImportDonorCsvUsecase", () => {
         { ...previewRows[0], status: "valid" },
         { ...previewRows[1], status: "transaction_not_found", errors: ["取引が見つかりません"] },
       ]);
-      mockDonorRepository.create.mockResolvedValue(createdDonor);
+      mockDonorRepository.createMany.mockResolvedValue([createdDonor]);
       mockTransactionDonorRepository.replaceMany.mockResolvedValue();
 
       const usecase = createUsecase();
@@ -454,7 +459,7 @@ describe("ImportDonorCsvUsecase", () => {
         { ...previewRows[0], status: "valid" },
         { ...previewRows[1], status: "type_mismatch", errors: ["種別不整合"] },
       ]);
-      mockDonorRepository.create.mockResolvedValue(createdDonor);
+      mockDonorRepository.createMany.mockResolvedValue([createdDonor]);
       mockTransactionDonorRepository.replaceMany.mockResolvedValue();
 
       const usecase = createUsecase();
