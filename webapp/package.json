@@ -12,7 +12,7 @@
     "next": "15.5.9",
     "react": "19.1.4",
     "react-apexcharts": "^1.9.0",
-    "react-dom": "19.1.4"
+    "react-dom": "19.2.3"
   },
   "devDependencies": {
     "@playwright/test": "^1.57.0",
