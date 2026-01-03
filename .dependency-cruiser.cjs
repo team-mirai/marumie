@@ -114,6 +114,103 @@ module.exports = {
       from: { path: "contexts/shared" },
       to: { path: "contexts/(data-import|report|auth)" },
     },
+
+    // ===========================================
+    // webapp: Client層からの依存ルール
+    // ===========================================
+    {
+      name: "webapp-no-client-to-infrastructure",
+      comment: "webapp: Client層からInfrastructure層への依存は禁止",
+      severity: "error",
+      from: { path: "^webapp/src/client" },
+      to: { path: "contexts/.*/infrastructure" },
+    },
+    {
+      name: "webapp-no-client-to-application",
+      comment: "webapp: Client層からApplication層への依存は禁止",
+      severity: "error",
+      from: { path: "^webapp/src/client" },
+      to: { path: "contexts/.*/application" },
+    },
+    {
+      name: "webapp-no-client-to-domain",
+      comment: "webapp: Client層からDomain層への依存は禁止",
+      severity: "error",
+      from: { path: "^webapp/src/client" },
+      to: { path: "contexts/.*/domain" },
+    },
+
+    // ===========================================
+    // webapp: Presentation層からの依存ルール
+    // ===========================================
+    {
+      name: "webapp-no-presentation-to-client",
+      comment: "webapp: Presentation層からClient層への依存は禁止",
+      severity: "error",
+      from: { path: "webapp/src/server/contexts/.*/presentation" },
+      to: { path: "^webapp/src/client" },
+    },
+    {
+      name: "webapp-no-presentation-to-infrastructure",
+      comment: "webapp: Presentation層からInfrastructure層への直接依存は禁止",
+      severity: "error",
+      from: { path: "webapp/src/server/contexts/.*/presentation" },
+      to: { path: "contexts/.*/infrastructure" },
+    },
+
+    // ===========================================
+    // webapp: Domain層からの依存ルール
+    // ===========================================
+    {
+      name: "webapp-no-domain-to-application",
+      comment: "webapp: Domain層からApplication層への依存は禁止",
+      severity: "error",
+      from: { path: "webapp/src/server/contexts/.*/domain" },
+      to: { path: "contexts/.*/application" },
+    },
+    {
+      name: "webapp-no-domain-to-presentation",
+      comment: "webapp: Domain層からPresentation層への依存は禁止",
+      severity: "error",
+      from: { path: "webapp/src/server/contexts/.*/domain" },
+      to: { path: "contexts/.*/presentation" },
+    },
+    {
+      name: "webapp-no-domain-to-infrastructure",
+      comment: "webapp: Domain層からInfrastructure層への依存は禁止",
+      severity: "error",
+      from: { path: "webapp/src/server/contexts/.*/domain" },
+      to: { path: "contexts/.*/infrastructure" },
+    },
+
+    // ===========================================
+    // webapp: Infrastructure層からの依存ルール
+    // ===========================================
+    {
+      name: "webapp-no-infrastructure-to-application",
+      comment: "webapp: Infrastructure層からApplication層への依存は禁止",
+      severity: "error",
+      from: { path: "webapp/src/server/contexts/.*/infrastructure" },
+      to: { path: "contexts/.*/application" },
+    },
+    {
+      name: "webapp-no-infrastructure-to-presentation",
+      comment: "webapp: Infrastructure層からPresentation層への依存は禁止",
+      severity: "error",
+      from: { path: "webapp/src/server/contexts/.*/infrastructure" },
+      to: { path: "contexts/.*/presentation" },
+    },
+
+    // ===========================================
+    // webapp: Application層からの依存ルール
+    // ===========================================
+    {
+      name: "webapp-no-application-to-presentation",
+      comment: "webapp: Application層からPresentation層への依存は禁止",
+      severity: "error",
+      from: { path: "webapp/src/server/contexts/.*/application" },
+      to: { path: "contexts/.*/presentation" },
+    },
   ],
   options: {
     doNotFollow: {
