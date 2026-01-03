@@ -3,6 +3,7 @@ import "client-only";
 
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import type { RowSelectionState } from "@tanstack/react-table";
 import type { PoliticalOrganization } from "@/shared/models/political-organization";
 import type { TransactionWithDonor } from "@/server/contexts/report/domain/models/transaction-with-donor";
@@ -208,6 +209,9 @@ export function DonorAssignmentClient({
           <h1 className="text-2xl font-bold text-white mb-1">寄付者紐付け管理</h1>
           <p className="text-muted-foreground">Transactionに対してDonor（寄付者）を紐付けます</p>
         </div>
+        <Button asChild variant="outline">
+          <Link href="/import-donors">CSV一括登録</Link>
+        </Button>
       </div>
 
       <Card className="p-4">
