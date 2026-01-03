@@ -17,6 +17,7 @@ import type {
   DonorWithUsageAndLastUsed,
   IDonorRepository,
 } from "@/server/contexts/report/domain/repositories/donor-repository.interface";
+import type { PrismaTransactionClient } from "@/server/contexts/report/domain/repositories/transaction-manager.interface";
 
 export class PrismaDonorRepository implements IDonorRepository {
   constructor(private prisma: PrismaClient) {}
@@ -437,5 +438,24 @@ export class PrismaDonorRepository implements IDonorRepository {
     });
 
     return donors.map((d) => this.mapToDonor(d));
+  }
+
+  async createMany(donors: CreateDonorInput[], tx?: PrismaTransactionClient): Promise<Donor[]> {
+    if (donors.length === 0) {
+      return [];
+    }
+
+    const client = tx ?? this.prisma;
+
+    const created = await client.donor.createManyAndReturn({
+      data: donors.map((d) => ({
+        donorType: this.mapToPrismaDonorType(d.donorType),
+        name: d.name.trim(),
+        address: d.address?.trim() || null,
+        occupation: d.occupation?.trim() || null,
+      })),
+    });
+
+    return created.map((d) => this.mapToDonor(d));
   }
 }

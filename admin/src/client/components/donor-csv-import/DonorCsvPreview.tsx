@@ -2,6 +2,7 @@
 import "client-only";
 
 import { useState } from "react";
+import { Loader2 } from "lucide-react";
 import type { PreviewDonorCsvResult } from "@/server/contexts/report/presentation/types/preview-donor-csv-types";
 import type {
   PreviewDonorCsvRow,
@@ -13,6 +14,8 @@ import { Button, Tooltip, TooltipTrigger, TooltipContent } from "@/client/compon
 
 interface DonorCsvPreviewProps {
   result: PreviewDonorCsvResult;
+  onImport?: () => Promise<void>;
+  isImporting?: boolean;
 }
 
 type TabKey = "all" | "valid_new" | "valid_existing" | PreviewDonorCsvRowStatus;
@@ -58,10 +61,16 @@ const TABS: TabDefinition[] = [
   },
 ];
 
-export default function DonorCsvPreview({ result }: DonorCsvPreviewProps) {
+export default function DonorCsvPreview({
+  result,
+  onImport,
+  isImporting = false,
+}: DonorCsvPreviewProps) {
   const [activeTab, setActiveTab] = useState<TabKey>("all");
   const [currentPage, setCurrentPage] = useState(1);
   const perPage = 10;
+
+  const validCount = result.summary.valid;
 
   const getFilteredRows = (): PreviewDonorCsvRow[] => {
     if (activeTab === "all") {
@@ -189,6 +198,21 @@ export default function DonorCsvPreview({ result }: DonorCsvPreviewProps) {
           totalPages={totalPages}
           onPageChange={handlePageChange}
         />
+      )}
+
+      {onImport && (
+        <div className="mt-6 flex justify-end">
+          <Button type="button" onClick={onImport} disabled={validCount === 0 || isImporting}>
+            {isImporting ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                インポート中...
+              </>
+            ) : (
+              `${validCount}件をインポート`
+            )}
+          </Button>
+        </div>
       )}
     </div>
   );
