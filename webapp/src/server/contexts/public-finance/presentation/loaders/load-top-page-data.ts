@@ -17,7 +17,7 @@ import {
 } from "@/server/contexts/public-finance/application/usecases/get-transactions-by-slug-usecase";
 import { CACHE_REVALIDATE_SECONDS } from "./constants";
 
-export interface TopPageDataParams extends Omit<GetTransactionsBySlugParams, "financialYear"> {
+interface TopPageDataParams extends Omit<GetTransactionsBySlugParams, "financialYear"> {
   financialYear: number; // 必須項目として設定
 }
 
