@@ -2,6 +2,7 @@ import type { DonorType, PrismaClient } from '@prisma/client';
 import type { Seeder } from './lib/types';
 
 interface TransactionSeedData {
+  orgSlug: string;
   transactionNo: string;
   transactionDate: string;
   transactionType: 'income' | 'expense';
@@ -22,6 +23,7 @@ interface TransactionSeedData {
 const data: TransactionSeedData[] = [
   // SYUUSHI07_03: 事業による収入
   {
+    orgSlug: 'sample-party',
     transactionNo: 'T2025-0001',
     transactionDate: '2025-04-15',
     transactionType: 'income',
@@ -34,6 +36,7 @@ const data: TransactionSeedData[] = [
     friendlyCategory: '機関紙発行事業',
   },
   {
+    orgSlug: 'sample-party',
     transactionNo: 'T2025-0002',
     transactionDate: '2025-05-20',
     transactionType: 'income',
@@ -46,6 +49,7 @@ const data: TransactionSeedData[] = [
     friendlyCategory: '物品販売収入',
   },
   {
+    orgSlug: 'sample-party',
     transactionNo: 'T2025-0003',
     transactionDate: '2025-06-25',
     transactionType: 'income',
@@ -60,6 +64,7 @@ const data: TransactionSeedData[] = [
 
   // SYUUSHI07_04: 借入金
   {
+    orgSlug: 'sample-party',
     transactionNo: 'T2025-0004',
     transactionDate: '2025-02-10',
     transactionType: 'income',
@@ -72,6 +77,7 @@ const data: TransactionSeedData[] = [
     counterpartName: '代表　太郎',
   },
   {
+    orgSlug: 'sample-party',
     transactionNo: 'T2025-0005',
     transactionDate: '2025-03-15',
     transactionType: 'income',
@@ -86,6 +92,7 @@ const data: TransactionSeedData[] = [
 
   // SYUUSHI07_05: 本部または支部から供与された交付金
   {
+    orgSlug: 'sample-party',
     transactionNo: 'T2025-0006',
     transactionDate: '2025-04-01',
     transactionType: 'income',
@@ -98,6 +105,7 @@ const data: TransactionSeedData[] = [
     counterpartName: 'サンプル党本部',
   },
   {
+    orgSlug: 'sample-party',
     transactionNo: 'T2025-0007',
     transactionDate: '2025-07-15',
     transactionType: 'income',
@@ -112,6 +120,7 @@ const data: TransactionSeedData[] = [
 
   // SYUUSHI07_06: その他の収入（境界値テスト: 10万円）
   {
+    orgSlug: 'sample-party',
     transactionNo: 'T2025-0008',
     transactionDate: '2025-03-31',
     transactionType: 'income',
@@ -124,6 +133,7 @@ const data: TransactionSeedData[] = [
     friendlyCategory: '受取利息',
   },
   {
+    orgSlug: 'sample-party',
     transactionNo: 'T2025-0009',
     transactionDate: '2025-06-30',
     transactionType: 'income',
@@ -136,6 +146,7 @@ const data: TransactionSeedData[] = [
     friendlyCategory: '雑収入',
   },
   {
+    orgSlug: 'sample-party',
     transactionNo: 'T2025-0010',
     transactionDate: '2025-09-30',
     transactionType: 'income',
@@ -148,6 +159,7 @@ const data: TransactionSeedData[] = [
     friendlyCategory: '助成金',
   },
   {
+    orgSlug: 'sample-party',
     transactionNo: 'T2025-0011',
     transactionDate: '2025-01-01',
     transactionType: 'income',
@@ -163,6 +175,7 @@ const data: TransactionSeedData[] = [
   // SYUUSHI07_07: 寄附の明細（KUBUN1: 個人、境界値テスト: 5万円）
   // 注: 寄附はcounterpart必須ではないため、counterpartNameは削除
   {
+    orgSlug: 'sample-party',
     transactionNo: 'T2025-0012',
     transactionDate: '2025-03-15',
     transactionType: 'income',
@@ -177,6 +190,7 @@ const data: TransactionSeedData[] = [
     donorType: 'individual',
   },
   {
+    orgSlug: 'sample-party',
     transactionNo: 'T2025-0013',
     transactionDate: '2025-06-20',
     transactionType: 'income',
@@ -191,6 +205,7 @@ const data: TransactionSeedData[] = [
     donorType: 'individual',
   },
   {
+    orgSlug: 'sample-party',
     transactionNo: 'T2025-0014',
     transactionDate: '2025-05-10',
     transactionType: 'income',
@@ -205,6 +220,7 @@ const data: TransactionSeedData[] = [
     donorType: 'individual',
   },
   {
+    orgSlug: 'sample-party',
     transactionNo: 'T2025-0015',
     transactionDate: '2025-09-30',
     transactionType: 'income',
@@ -219,6 +235,7 @@ const data: TransactionSeedData[] = [
     donorType: 'individual',
   },
   {
+    orgSlug: 'sample-party',
     transactionNo: 'T2025-0016',
     transactionDate: '2025-11-05',
     transactionType: 'income',
@@ -235,6 +252,7 @@ const data: TransactionSeedData[] = [
 
   // SYUUSHI07_07: 寄附の明細（KUBUN2: 法人）
   {
+    orgSlug: 'sample-party',
     transactionNo: 'T2025-0017',
     transactionDate: '2025-04-25',
     transactionType: 'income',
@@ -249,6 +267,7 @@ const data: TransactionSeedData[] = [
     donorType: 'corporation',
   },
   {
+    orgSlug: 'sample-party',
     transactionNo: 'T2025-0018',
     transactionDate: '2025-07-08',
     transactionType: 'income',
@@ -263,6 +282,7 @@ const data: TransactionSeedData[] = [
     donorType: 'corporation',
   },
   {
+    orgSlug: 'sample-party',
     transactionNo: 'T2025-0019',
     transactionDate: '2025-10-15',
     transactionType: 'income',
@@ -279,6 +299,7 @@ const data: TransactionSeedData[] = [
 
   // SYUUSHI07_07: 寄附の明細（KUBUN3: 政治団体）
   {
+    orgSlug: 'sample-party',
     transactionNo: 'T2025-0020',
     transactionDate: '2025-06-01',
     transactionType: 'income',
@@ -293,6 +314,7 @@ const data: TransactionSeedData[] = [
     donorType: 'political_organization',
   },
   {
+    orgSlug: 'sample-party',
     transactionNo: 'T2025-0021',
     transactionDate: '2025-08-20',
     transactionType: 'income',
@@ -309,6 +331,7 @@ const data: TransactionSeedData[] = [
 
   // SYUUSHI07_14: 経常経費の支出（KUBUN1: 光熱水費、境界値テスト: 5万円）
   {
+    orgSlug: 'sample-party',
     transactionNo: 'T2025-0022',
     transactionDate: '2025-02-28',
     transactionType: 'expense',
@@ -322,6 +345,7 @@ const data: TransactionSeedData[] = [
     friendlyCategory: '電気料金',
   },
   {
+    orgSlug: 'sample-party',
     transactionNo: 'T2025-0023',
     transactionDate: '2025-02-28',
     transactionType: 'expense',
@@ -335,6 +359,7 @@ const data: TransactionSeedData[] = [
     friendlyCategory: '水道料金',
   },
   {
+    orgSlug: 'sample-party',
     transactionNo: 'T2025-0024',
     transactionDate: '2025-01-31',
     transactionType: 'expense',
@@ -350,6 +375,7 @@ const data: TransactionSeedData[] = [
 
   // SYUUSHI07_14: 経常経費の支出（KUBUN2: 備品・消耗品費）
   {
+    orgSlug: 'sample-party',
     transactionNo: 'T2025-0025',
     transactionDate: '2025-03-10',
     transactionType: 'expense',
@@ -363,6 +389,7 @@ const data: TransactionSeedData[] = [
     friendlyCategory: '事務用品費',
   },
   {
+    orgSlug: 'sample-party',
     transactionNo: 'T2025-0026',
     transactionDate: '2025-04-05',
     transactionType: 'expense',
@@ -376,6 +403,7 @@ const data: TransactionSeedData[] = [
     friendlyCategory: 'パソコン購入',
   },
   {
+    orgSlug: 'sample-party',
     transactionNo: 'T2025-0027',
     transactionDate: '2025-05-20',
     transactionType: 'expense',
@@ -391,6 +419,7 @@ const data: TransactionSeedData[] = [
 
   // SYUUSHI07_14: 経常経費の支出（KUBUN3: 事務所費）
   {
+    orgSlug: 'sample-party',
     transactionNo: 'T2025-0028',
     transactionDate: '2025-01-31',
     transactionType: 'expense',
@@ -405,6 +434,7 @@ const data: TransactionSeedData[] = [
   },
   // 【交付金フラグ】支部への事務所費補助（シート14+シート16に出力）
   {
+    orgSlug: 'sample-party',
     transactionNo: 'T2025-0057',
     transactionDate: '2025-03-15',
     transactionType: 'expense',
@@ -419,6 +449,7 @@ const data: TransactionSeedData[] = [
     isGrantExpenditure: true,
   },
   {
+    orgSlug: 'sample-party',
     transactionNo: 'T2025-0029',
     transactionDate: '2025-02-28',
     transactionType: 'expense',
@@ -432,6 +463,7 @@ const data: TransactionSeedData[] = [
     friendlyCategory: '通信費',
   },
   {
+    orgSlug: 'sample-party',
     transactionNo: 'T2025-0030',
     transactionDate: '2025-02-28',
     transactionType: 'expense',
@@ -447,6 +479,7 @@ const data: TransactionSeedData[] = [
 
   // SYUUSHI07_15: 政治活動費の支出（KUBUN1: 組織活動費）
   {
+    orgSlug: 'sample-party',
     transactionNo: 'T2025-0031',
     transactionDate: '2025-03-15',
     transactionType: 'expense',
@@ -461,6 +494,7 @@ const data: TransactionSeedData[] = [
   },
   // 【交付金フラグ】支部への組織活動費補助（シート15+シート16に出力）
   {
+    orgSlug: 'sample-party',
     transactionNo: 'T2025-0058',
     transactionDate: '2025-04-01',
     transactionType: 'expense',
@@ -475,6 +509,7 @@ const data: TransactionSeedData[] = [
     isGrantExpenditure: true,
   },
   {
+    orgSlug: 'sample-party',
     transactionNo: 'T2025-0032',
     transactionDate: '2025-04-20',
     transactionType: 'expense',
@@ -488,6 +523,7 @@ const data: TransactionSeedData[] = [
     friendlyCategory: '会議費',
   },
   {
+    orgSlug: 'sample-party',
     transactionNo: 'T2025-0033',
     transactionDate: '2025-06-10',
     transactionType: 'expense',
@@ -501,6 +537,7 @@ const data: TransactionSeedData[] = [
     friendlyCategory: '旅費交通費',
   },
   {
+    orgSlug: 'sample-party',
     transactionNo: 'T2025-0034',
     transactionDate: '2025-01-31',
     transactionType: 'expense',
@@ -514,6 +551,7 @@ const data: TransactionSeedData[] = [
   },
   // SYUUSHI07_15: 政治活動費の支出（KUBUN1: 組織活動費）
   {
+    orgSlug: 'sample-party',
     transactionNo: 'T2025-0061',
     transactionDate: '2025-03-15',
     transactionType: 'expense',
@@ -529,6 +567,7 @@ const data: TransactionSeedData[] = [
 
   // SYUUSHI07_15: 政治活動費の支出（KUBUN2: 選挙関係費）
   {
+    orgSlug: 'sample-party',
     transactionNo: 'T2025-0035',
     transactionDate: '2025-05-20',
     transactionType: 'expense',
@@ -542,6 +581,7 @@ const data: TransactionSeedData[] = [
     friendlyCategory: '選挙ポスター印刷',
   },
   {
+    orgSlug: 'sample-party',
     transactionNo: 'T2025-0036',
     transactionDate: '2025-06-05',
     transactionType: 'expense',
@@ -557,6 +597,7 @@ const data: TransactionSeedData[] = [
 
   // SYUUSHI07_15: 政治活動費の支出（KUBUN3: 機関紙誌の発行事業費）
   {
+    orgSlug: 'sample-party',
     transactionNo: 'T2025-0037',
     transactionDate: '2025-04-30',
     transactionType: 'expense',
@@ -570,6 +611,7 @@ const data: TransactionSeedData[] = [
     friendlyCategory: '印刷費',
   },
   {
+    orgSlug: 'sample-party',
     transactionNo: 'T2025-0038',
     transactionDate: '2025-05-10',
     transactionType: 'expense',
@@ -585,6 +627,7 @@ const data: TransactionSeedData[] = [
 
   // SYUUSHI07_15: 政治活動費の支出（KUBUN4: 宣伝事業費）
   {
+    orgSlug: 'sample-party',
     transactionNo: 'T2025-0039',
     transactionDate: '2025-07-15',
     transactionType: 'expense',
@@ -598,6 +641,7 @@ const data: TransactionSeedData[] = [
     friendlyCategory: 'インターネット広告',
   },
   {
+    orgSlug: 'sample-party',
     transactionNo: 'T2025-0040',
     transactionDate: '2025-08-20',
     transactionType: 'expense',
@@ -613,6 +657,7 @@ const data: TransactionSeedData[] = [
 
   // SYUUSHI07_15: 政治活動費の支出（KUBUN6: その他の事業費）
   {
+    orgSlug: 'sample-party',
     transactionNo: 'T2025-0041',
     transactionDate: '2025-09-10',
     transactionType: 'expense',
@@ -626,6 +671,7 @@ const data: TransactionSeedData[] = [
     friendlyCategory: '会場費',
   },
   {
+    orgSlug: 'sample-party',
     transactionNo: 'T2025-0042',
     transactionDate: '2025-09-10',
     transactionType: 'expense',
@@ -641,6 +687,7 @@ const data: TransactionSeedData[] = [
 
   // SYUUSHI07_15: 政治活動費の支出（KUBUN7: 調査研究費）
   {
+    orgSlug: 'sample-party',
     transactionNo: 'T2025-0043',
     transactionDate: '2025-10-15',
     transactionType: 'expense',
@@ -654,6 +701,7 @@ const data: TransactionSeedData[] = [
     friendlyCategory: '調査委託費',
   },
   {
+    orgSlug: 'sample-party',
     transactionNo: 'T2025-0044',
     transactionDate: '2025-11-05',
     transactionType: 'expense',
@@ -669,6 +717,7 @@ const data: TransactionSeedData[] = [
 
   // SYUUSHI07_15: 政治活動費の支出（KUBUN8: 寄附・交付金）
   {
+    orgSlug: 'sample-party',
     transactionNo: 'T2025-0045',
     transactionDate: '2025-12-10',
     transactionType: 'expense',
@@ -683,6 +732,7 @@ const data: TransactionSeedData[] = [
   },
   // 【交付金フラグ】支部への交付金（シート15+シート16に出力）
   {
+    orgSlug: 'sample-party',
     transactionNo: 'T2025-0059',
     transactionDate: '2025-06-20',
     transactionType: 'expense',
@@ -698,6 +748,7 @@ const data: TransactionSeedData[] = [
   },
   // 【交付金フラグ】本部への交付金（シート15+シート16に出力）
   {
+    orgSlug: 'sample-party',
     transactionNo: 'T2025-0060',
     transactionDate: '2025-09-15',
     transactionType: 'expense',
@@ -714,6 +765,7 @@ const data: TransactionSeedData[] = [
 
   // SYUUSHI07_15: 政治活動費の支出（KUBUN9: その他の経費、境界値テスト: 5万円）
   {
+    orgSlug: 'sample-party',
     transactionNo: 'T2025-0046',
     transactionDate: '2025-12-31',
     transactionType: 'expense',
@@ -727,6 +779,7 @@ const data: TransactionSeedData[] = [
     friendlyCategory: 'ソフトウェア利用料',
   },
   {
+    orgSlug: 'sample-party',
     transactionNo: 'T2025-0047',
     transactionDate: '2025-12-31',
     transactionType: 'expense',
@@ -740,6 +793,7 @@ const data: TransactionSeedData[] = [
     friendlyCategory: '振込手数料',
   },
   {
+    orgSlug: 'sample-party',
     transactionNo: 'T2025-0050',
     transactionDate: '2025-10-20',
     transactionType: 'expense',
@@ -753,6 +807,7 @@ const data: TransactionSeedData[] = [
     friendlyCategory: '法務相談料',
   },
   {
+    orgSlug: 'sample-party',
     transactionNo: 'T2025-0051',
     transactionDate: '2025-11-15',
     transactionType: 'expense',
@@ -766,6 +821,7 @@ const data: TransactionSeedData[] = [
     friendlyCategory: '行政書士報酬',
   },
   {
+    orgSlug: 'sample-party',
     transactionNo: 'T2025-0052',
     transactionDate: '2025-12-10',
     transactionType: 'expense',
@@ -781,6 +837,7 @@ const data: TransactionSeedData[] = [
 
   // パーティー対価収入（政治資金パーティー）
   {
+    orgSlug: 'sample-party',
     transactionNo: 'T2025-0053',
     transactionDate: '2025-07-20',
     transactionType: 'income',
@@ -796,6 +853,7 @@ const data: TransactionSeedData[] = [
     friendlyCategory: 'パーティー対価（個人）',
   },
   {
+    orgSlug: 'sample-party',
     transactionNo: 'T2025-0054',
     transactionDate: '2025-07-20',
     transactionType: 'income',
@@ -811,6 +869,7 @@ const data: TransactionSeedData[] = [
     friendlyCategory: 'パーティー対価（個人）',
   },
   {
+    orgSlug: 'sample-party',
     transactionNo: 'T2025-0055',
     transactionDate: '2025-07-20',
     transactionType: 'income',
@@ -826,6 +885,7 @@ const data: TransactionSeedData[] = [
     friendlyCategory: 'パーティー対価（法人）',
   },
   {
+    orgSlug: 'sample-party',
     transactionNo: 'T2025-0056',
     transactionDate: '2025-07-20',
     transactionType: 'income',
@@ -840,22 +900,54 @@ const data: TransactionSeedData[] = [
     donorType: 'political_organization',
     friendlyCategory: 'パーティー対価（政治団体）',
   },
+
+  // E2Eテスト用トランザクション
+  // 寄附トランザクション（Donor紐付け確認用）
+  {
+    orgSlug: 'e2e-test-org',
+    transactionNo: 'E2E-0001',
+    transactionDate: '2025-06-01',
+    transactionType: 'income',
+    debitAccount: '普通預金',
+    debitAmount: '50000',
+    creditAccount: '個人からの寄附',
+    creditAmount: '50000',
+    description: 'E2Eテスト個人寄附',
+    categoryKey: 'individual-donations',
+    donorName: 'E2Eテスト寄附太郎',
+    donorAddress: '東京都渋谷区テスト二丁目2番2号',
+    donorType: 'individual',
+  },
+  // 支出トランザクション（Counterpart紐付け確認用）
+  {
+    orgSlug: 'e2e-test-org',
+    transactionNo: 'E2E-0002',
+    transactionDate: '2025-06-15',
+    transactionType: 'expense',
+    debitAccount: '備品・消耗品費',
+    debitAmount: '30000',
+    creditAccount: '普通預金',
+    creditAmount: '30000',
+    description: 'E2Eテスト備品購入',
+    categoryKey: 'equipment-supplies',
+    counterpartName: 'E2Eテスト取引先株式会社',
+  },
 ];
 
 export const transactionsSeeder: Seeder = {
   name: 'Transactions',
   async seed(prisma: PrismaClient) {
-    // サンプル党の取得
-    const organization = await prisma.politicalOrganization.findFirst({
-      where: { slug: 'sample-party' },
-    });
-
-    if (!organization) {
-      console.log('⚠️  Warning: Organization "sample-party" not found - skipping');
-      return;
-    }
-
     for (const item of data) {
+      // orgSlugでorganizationを取得
+      const organization = await prisma.politicalOrganization.findFirst({
+        where: { slug: item.orgSlug },
+      });
+
+      if (!organization) {
+        console.log(`⚠️  Warning: Organization "${item.orgSlug}" not found - skipping ${item.transactionNo}`);
+        continue;
+      }
+
       // 既存チェック
       const existing = await prisma.transaction.findFirst({
         where: {
