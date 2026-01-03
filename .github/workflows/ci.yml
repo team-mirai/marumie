@@ -247,6 +247,9 @@ jobs:
         with:
           version: latest
 
+      - name: Generate Prisma Client
+        run: pnpm db:generate
+
       - name: Start Supabase and build in parallel
         run: |
           # Enable API and use default ports for CI
