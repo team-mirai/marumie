@@ -30,7 +30,9 @@
   "scripts": {
     "postinstall": "pnpm exec playwright install chromium",
     "dev": "next dev --turbopack",
-    "build": "cd ../ && prisma generate && prisma migrate deploy && cd webapp && next build",
+    "build": "next build",
+    "build:vercel": "pnpm run db:setup && pnpm run build",
+    "db:setup": "prisma generate && prisma migrate deploy",
     "start": "next start",
     "lint": "biome check",
     "type-check": "tsc --noEmit",
