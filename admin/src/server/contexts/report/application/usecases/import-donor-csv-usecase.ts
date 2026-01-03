@@ -199,10 +199,8 @@ export class ImportDonorCsvUsecase {
       }
     }
 
-    for (let i = 0; i < uniqueDonors.length; i++) {
-      const input = uniqueDonors[i];
-      const created = createdDonors[i];
-      const key = this.getDonorMatchKey(input.name, input.address, input.donorType);
+    for (const created of createdDonors) {
+      const key = this.getDonorMatchKey(created.name, created.address, created.donorType);
       donorIdMap.set(key, created.id);
     }
 
