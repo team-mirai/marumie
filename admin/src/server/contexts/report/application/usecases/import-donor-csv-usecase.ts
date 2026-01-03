@@ -76,9 +76,9 @@ export class ImportDonorCsvUsecase {
     const deduplicatedRows = this.deduplicateByTransactionNo(validRows);
 
     return await this.transactionManager.execute(async (tx) => {
-      const { createdDonors, donorMap } = await this.createNewDonors(deduplicatedRows, tx);
+      const { createdDonors, donorIdMap } = await this.createNewDonors(deduplicatedRows, tx);
 
-      const pairs = this.buildTransactionDonorPairs(deduplicatedRows, donorMap);
+      const pairs = this.buildTransactionDonorPairs(deduplicatedRows, donorIdMap);
 
       await this.transactionDonorRepository.bulkUpsert(pairs, tx);
 
@@ -170,7 +170,7 @@ export class ImportDonorCsvUsecase {
   private async createNewDonors(
     rows: ValidRowWithTransaction[],
     tx: Parameters<Parameters<ITransactionManager["execute"]>[0]>[0],
-  ): Promise<{ createdDonors: Donor[]; donorMap: Map<string, Donor> }> {
+  ): Promise<{ createdDonors: Donor[]; donorIdMap: Map<string, string> }> {
     const rowsNeedingNewDonor = rows.filter((row) => !row.matchingDonor);
 
     const uniqueDonorMap = new Map<string, CreateDonorInput>();
@@ -190,20 +190,12 @@ export class ImportDonorCsvUsecase {
 
     const createdDonors = await this.donorRepository.createMany(uniqueDonors, tx);
 
-    const donorMap = new Map<string, Donor>();
+    const donorIdMap = new Map<string, string>();
 
     for (const row of rows) {
       if (row.matchingDonor) {
         const key = this.getDonorMatchKey(row.name, row.address, row.donorType);
-        donorMap.set(key, {
-          id: row.matchingDonor.id,
-          name: row.matchingDonor.name,
-          donorType: row.matchingDonor.donorType,
-          address: row.matchingDonor.address,
-          occupation: null,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        });
+        donorIdMap.set(key, row.matchingDonor.id);
       }
     }
 
@@ -211,25 +203,25 @@ export class ImportDonorCsvUsecase {
       const input = uniqueDonors[i];
       const created = createdDonors[i];
       const key = this.getDonorMatchKey(input.name, input.address, input.donorType);
-      donorMap.set(key, created);
+      donorIdMap.set(key, created.id);
     }
 
-    return { createdDonors, donorMap };
+    return { createdDonors, donorIdMap };
   }
 
   private buildTransactionDonorPairs(
     rows: ValidRowWithTransaction[],
-    donorMap: Map<string, Donor>,
+    donorIdMap: Map<string, string>,
   ): { transactionId: bigint; donorId: bigint }[] {
     return rows.map((row) => {
       const key = this.getDonorMatchKey(row.name, row.address, row.donorType);
-      const donor = donorMap.get(key);
-      if (!donor) {
+      const donorId = donorIdMap.get(key);
+      if (!donorId) {
         throw new Error(`Donor not found for key: ${key}`);
       }
       return {
         transactionId: BigInt(row.transactionId),
-        donorId: BigInt(donor.id),
+        donorId: BigInt(donorId),
       };
     });
   }
