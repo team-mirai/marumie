@@ -29,15 +29,21 @@ description: 設計ドキュメントを作成する (project)
      - [docs/reference/report-format.md](docs/reference/report-format.md): 政治資金収支報告書XMLの仕様
      - [docs/scope-by-2026Jan.md](docs/scope-by-2026Jan.md): 前提となる2026年1月までのスコープ
 
-4. **ファイル作成**: 設計ドキュメントを作成する。
+4. **エラーパターンの設計**（バックエンド関連の場合は必須）: [docs/backend-architecture-guide.md](docs/backend-architecture-guide.md) のセクション6.3「エラーハンドリング」に従い、以下を設計する。
+   - エラーコードの定義（`as const` で型安全に、大文字スネークケース）
+   - 拡張エラー型の定義（`path`, `code`, `message`, `severity` を含む）
+   - error と warning の使い分け
+   - リファレンス実装: `contexts/report/domain/types/validation.ts`
+
+5. **ファイル作成**: 設計ドキュメントを作成する。
    - 保存場所: `docs/` 以下
    - ファイル名: `YYYYMMDD_HHMM_{日本語の作業内容}.md`
    - 日時は `TZ=Asia/Tokyo date +%Y%m%d_%H%M` で取得する
    - 例: `docs/20250815_1430_ユーザー認証システム設計.md`
 
-5. **整合性チェック**: バックエンド関連の設計の場合、作成したドキュメントが [docs/backend-architecture-guide.md](docs/backend-architecture-guide.md) のアーキテクチャルールと矛盾していないかダブルチェックする。矛盾があれば修正する。
+6. **整合性チェック**: バックエンド関連の設計の場合、作成したドキュメントが [docs/backend-architecture-guide.md](docs/backend-architecture-guide.md) のアーキテクチャルールと矛盾していないかダブルチェックする。矛盾があれば修正する。
 
-6. **完了報告**: 作成した設計ドキュメントのパスを報告し、ユーザーのレビューを待つ。そのまま実装に進んではならない。
+7. **完了報告**: 作成した設計ドキュメントのパスを報告し、ユーザーのレビューを待つ。そのまま実装に進んではならない。
 
 ## 注意事項
 

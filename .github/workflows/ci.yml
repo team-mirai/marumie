@@ -39,7 +39,7 @@ jobs:
           cache: 'pnpm'
 
       - name: Cache Prisma client
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: node_modules/.prisma
           key: ${{ runner.os }}-prisma-${{ hashFiles('prisma/schema.prisma') }}
@@ -62,7 +62,7 @@ jobs:
         run: pnpm depcruise
 
       - name: Upload admin coverage
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: admin-coverage
           path: admin/coverage/lcov.info
@@ -103,7 +103,7 @@ jobs:
           cache: 'pnpm'
 
       - name: Cache Prisma client
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: node_modules/.prisma
           key: ${{ runner.os }}-prisma-${{ hashFiles('prisma/schema.prisma') }}
@@ -111,7 +111,7 @@ jobs:
             ${{ runner.os }}-prisma-
 
       - name: Cache Next.js build
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: webapp/.next/cache
           key: ${{ runner.os }}-nextjs-webapp-${{ hashFiles('pnpm-lock.yaml') }}-${{ hashFiles('webapp/**/*.ts', 'webapp/**/*.tsx') }}
@@ -132,7 +132,7 @@ jobs:
         run: pnpm --filter webapp run type-check
 
       - name: Upload webapp coverage
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: webapp-coverage
           path: webapp/coverage/lcov.info
@@ -168,13 +168,13 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Download admin coverage
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: admin-coverage
           path: admin/coverage
 
       - name: Download webapp coverage
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: webapp-coverage
           path: webapp/coverage
@@ -203,7 +203,7 @@ jobs:
           cache: 'pnpm'
 
       - name: Cache Prisma client
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: node_modules/.prisma
           key: ${{ runner.os }}-prisma-${{ hashFiles('prisma/schema.prisma') }}
@@ -211,7 +211,7 @@ jobs:
             ${{ runner.os }}-prisma-
 
       - name: Cache Next.js build (admin)
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: admin/.next/cache
           key: ${{ runner.os }}-nextjs-admin-${{ hashFiles('pnpm-lock.yaml') }}-${{ hashFiles('admin/**/*.ts', 'admin/**/*.tsx') }}
@@ -220,7 +220,7 @@ jobs:
             ${{ runner.os }}-nextjs-admin-
 
       - name: Cache Next.js build (webapp)
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: webapp/.next/cache
           key: ${{ runner.os }}-nextjs-webapp-${{ hashFiles('pnpm-lock.yaml') }}-${{ hashFiles('webapp/**/*.ts', 'webapp/**/*.tsx') }}
@@ -229,7 +229,7 @@ jobs:
             ${{ runner.os }}-nextjs-webapp-
 
       - name: Cache Playwright browsers
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.cache/ms-playwright
           key: ${{ runner.os }}-playwright-${{ hashFiles('pnpm-lock.yaml') }}
@@ -247,7 +247,10 @@ jobs:
         with:
           version: latest
 
-      - name: Start Supabase and build in parallel
+      - name: Generate Prisma Client
+        run: pnpm db:generate
+
+      - name: Start Supabase and build admin in parallel
         run: |
           # Enable API and use default ports for CI
           sed -i 's/^\[api\]$/[api]/' supabase/config.toml
@@ -258,18 +261,14 @@ jobs:
           supabase start --exclude imgproxy,edge-runtime,vector,studio &
           SUPABASE_PID=$!
 
-          # Build admin and webapp in parallel
+          # Build admin in parallel (admin doesn't need DB)
           NEXT_PUBLIC_SUPABASE_URL=${{ env.SUPABASE_URL }} \
           NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ env.SUPABASE_ANON_KEY }} \
           pnpm build:admin &
           ADMIN_PID=$!
 
-          pnpm build:webapp &
-          WEBAPP_PID=$!
-
-          # Wait for builds to complete
+          # Wait for admin build to complete
           wait $ADMIN_PID
-          wait $WEBAPP_PID
 
           # Wait for Supabase to complete
           wait $SUPABASE_PID
@@ -284,6 +283,9 @@ jobs:
           pnpm db:migrate:deploy
           pnpm db:seed
 
+      - name: Build webapp
+        run: pnpm build:webapp
+
       - name: Run E2E tests for admin
         run: pnpm --filter admin test:e2e
         env:
@@ -294,7 +296,7 @@ jobs:
         run: pnpm --filter webapp test:e2e
 
       - name: Upload admin E2E test results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         if: ${{ !cancelled() }}
         with:
           name: admin-e2e-report
@@ -302,7 +304,7 @@ jobs:
           retention-days: 7
 
       - name: Upload webapp E2E test results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         if: ${{ !cancelled() }}
         with:
           name: webapp-e2e-report
