@@ -62,7 +62,7 @@ jobs:
         run: pnpm depcruise
 
       - name: Upload admin coverage
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: admin-coverage
           path: admin/coverage/lcov.info
@@ -132,7 +132,7 @@ jobs:
         run: pnpm --filter webapp run type-check
 
       - name: Upload webapp coverage
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: webapp-coverage
           path: webapp/coverage/lcov.info
@@ -294,7 +294,7 @@ jobs:
         run: pnpm --filter webapp test:e2e
 
       - name: Upload admin E2E test results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         if: ${{ !cancelled() }}
         with:
           name: admin-e2e-report
@@ -302,7 +302,7 @@ jobs:
           retention-days: 7
 
       - name: Upload webapp E2E test results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         if: ${{ !cancelled() }}
         with:
           name: webapp-e2e-report
