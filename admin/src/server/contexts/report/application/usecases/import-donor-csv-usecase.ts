@@ -89,6 +89,10 @@ export class ImportDonorCsvUsecase {
     };
   }
 
+  /**
+   * Donorマッチング用のキーを生成する
+   * Note: プロパティ順序を維持すること（キャッシュキーの一貫性のため）
+   */
   private getDonorMatchKey(name: string, address: string | null, donorType: DonorType): string {
     return JSON.stringify({ name, address: address ?? "", donorType });
   }

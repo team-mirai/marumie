@@ -185,20 +185,28 @@ export class PrismaDonorRepository implements IDonorRepository {
       return [];
     }
 
-    const results: Donor[] = [];
-    for (const d of data) {
-      const donor = await this.prisma.donor.create({
-        data: {
-          donorType: this.mapToPrismaDonorType(d.donorType),
-          name: d.name.trim(),
-          address: d.address?.trim() || null,
-          occupation: d.occupation?.trim() || null,
-        },
-      });
-      results.push(this.mapToDonor(donor));
-    }
+    const createData = data.map((d) => ({
+      donorType: this.mapToPrismaDonorType(d.donorType),
+      name: d.name.trim(),
+      address: d.address?.trim() || null,
+      occupation: d.occupation?.trim() || null,
+    }));
 
-    return results;
+    await this.prisma.donor.createMany({
+      data: createData,
+    });
+
+    const orConditions = data.map((d) => ({
+      name: d.name.trim(),
+      address: d.address?.trim() || null,
+      donorType: this.mapToPrismaDonorType(d.donorType),
+    }));
+
+    const createdDonors = await this.prisma.donor.findMany({
+      where: { OR: orConditions },
+    });
+
+    return createdDonors.map((d) => this.mapToDonor(d));
   }
 
   async update(id: string, data: UpdateDonorInput): Promise<Donor> {

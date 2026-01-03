@@ -1,6 +1,8 @@
 "use server";
+import "server-only";
 
 import { revalidatePath } from "next/cache";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/server/contexts/shared/infrastructure/prisma";
 import { PrismaDonorRepository } from "@/server/contexts/report/infrastructure/repositories/prisma-donor.repository";
 import { PrismaTransactionWithDonorRepository } from "@/server/contexts/report/infrastructure/repositories/prisma-transaction-with-donor.repository";
@@ -58,7 +60,7 @@ export async function importDonorCsv(data: ImportDonorCsvRequest): Promise<Impor
       });
     });
 
-    revalidatePath("/import/donors");
+    revalidatePath("/import-donors");
 
     return {
       ok: true,
@@ -74,7 +76,7 @@ export async function importDonorCsv(data: ImportDonorCsvRequest): Promise<Impor
     if (error instanceof CsvFormatError) {
       return { ok: false, error: "CSVファイルの形式が正しくありません" };
     }
-    if (error instanceof Error && error.message.includes("database")) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
       return {
         ok: false,
         error: "データベースへの保存に失敗しました。時間をおいて再試行してください",

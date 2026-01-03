@@ -33,8 +33,15 @@ export class ProcessingError extends Error {
  * valid行が0件の場合にスローされる
  */
 export class NoValidRowsError extends Error {
-  constructor(message = "インポート可能な行がありません") {
+  public readonly path: string;
+  public readonly code: string;
+  public readonly severity: "error" | "warning";
+
+  constructor(message = "インポート可能な行がありません", path = "donor-csv-import") {
     super(message);
     this.name = "NoValidRowsError";
+    this.path = path;
+    this.code = "REPORT_NO_VALID_ROWS";
+    this.severity = "error";
   }
 }

@@ -236,6 +236,7 @@ describe("ImportDonorCsvUsecase", () => {
 
       expect(result.importedCount).toBe(1);
       expect(result.createdDonorCount).toBe(0);
+      // 既存Donorが存在するため、新規Donor作成は不要（createNewDonorsでdonorInputs.length === 0となる）
       expect(mockDonorRepository.createMany).not.toHaveBeenCalled();
     });
   });
