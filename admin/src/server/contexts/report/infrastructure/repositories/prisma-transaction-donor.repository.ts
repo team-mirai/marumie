@@ -96,17 +96,16 @@ export class PrismaTransactionDonorRepository implements ITransactionDonorReposi
       const pair = pairs[i];
       const txIdParam = i * 2 + 1;
       const donorIdParam = i * 2 + 2;
-      valuesClauses.push(`($${txIdParam}, $${donorIdParam}, NOW(), NOW())`);
+      valuesClauses.push(`($${txIdParam}, $${donorIdParam}, NOW())`);
       params.push(pair.transactionId, pair.donorId);
     }
 
     const sql = `
-      INSERT INTO "TransactionDonor" ("transactionId", "donorId", "createdAt", "updatedAt")
+      INSERT INTO "transaction_donors" ("transaction_id", "donor_id", "created_at")
       VALUES ${valuesClauses.join(", ")}
-      ON CONFLICT ("transactionId")
+      ON CONFLICT ("transaction_id")
       DO UPDATE SET
-        "donorId" = EXCLUDED."donorId",
-        "updatedAt" = NOW()
+        "donor_id" = EXCLUDED."donor_id"
     `;
 
     await client.$executeRawUnsafe(sql, ...params);

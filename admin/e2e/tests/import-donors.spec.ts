@@ -154,5 +154,89 @@ test.describe("寄付者一括インポート", () => {
 				timeout: 3000,
 			});
 		});
+
+		test.describe("CSVインポート確定", () => {
+			test("有効な行がある場合、インポートボタンが表示される", async ({
+				page,
+			}) => {
+				await page.goto("/import-donors");
+
+				const fileInput = page.getByLabel("CSV File:");
+				const csvPath = path.resolve(
+					process.cwd(),
+					"../data/sample_donor_import.csv",
+				);
+				await fileInput.setInputFiles(csvPath);
+
+				await expect(page.getByRole("button", { name: /全件/ })).toBeVisible({
+					timeout: 10000,
+				});
+
+				const importButton = page.getByRole("button", { name: /件をインポート/ });
+				await expect(importButton).toBeVisible();
+				await expect(importButton).toBeEnabled();
+			});
+
+			test("インポートボタンをクリックするとインポートが実行される", async ({
+				page,
+			}) => {
+				await page.goto("/import-donors");
+
+				const fileInput = page.getByLabel("CSV File:");
+				const csvPath = path.resolve(
+					process.cwd(),
+					"../data/sample_donor_import.csv",
+				);
+				await fileInput.setInputFiles(csvPath);
+
+				await expect(page.getByRole("button", { name: /全件/ })).toBeVisible({
+					timeout: 10000,
+				});
+
+				const importButton = page.getByRole("button", { name: /件をインポート/ });
+				await expect(importButton).toBeVisible();
+
+				await importButton.click();
+
+				await expect(page.getByRole("button", { name: /インポート中/ })).toBeVisible({
+					timeout: 5000,
+				});
+
+				await expect(page.getByText(/件のインポートが完了しました/)).toBeVisible({
+					timeout: 30000,
+				});
+
+				await expect(page.getByRole("button", { name: /件をインポート/ })).not.toBeVisible({
+					timeout: 5000,
+				});
+			});
+
+			test("インポート成功後、ファイル入力がリセットされる", async ({
+				page,
+			}) => {
+				await page.goto("/import-donors");
+
+				const fileInput = page.getByLabel("CSV File:");
+				const csvPath = path.resolve(
+					process.cwd(),
+					"../data/sample_donor_import.csv",
+				);
+				await fileInput.setInputFiles(csvPath);
+
+				await expect(page.getByRole("button", { name: /全件/ })).toBeVisible({
+					timeout: 10000,
+				});
+
+				const importButton = page.getByRole("button", { name: /件をインポート/ });
+				await importButton.click();
+
+				await expect(page.getByText(/件のインポートが完了しました/)).toBeVisible({
+					timeout: 30000,
+				});
+
+				const table = page.locator("table");
+				await expect(table).not.toBeVisible({ timeout: 5000 });
+			});
+		});
 	});
 });
