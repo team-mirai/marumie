@@ -32,7 +32,7 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "build:vercel": "pnpm run db:setup && pnpm run build",
-    "db:setup": "prisma generate && prisma migrate deploy",
+    "db:setup": "cd .. && prisma generate && prisma migrate deploy",
     "start": "next start",
     "lint": "biome check",
     "type-check": "tsc --noEmit",
