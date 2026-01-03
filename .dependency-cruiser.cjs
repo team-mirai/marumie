@@ -133,11 +133,18 @@ module.exports = {
       to: { path: "contexts/.*/application" },
     },
     {
-      name: "webapp-no-client-to-domain",
-      comment: "webapp: Client層からDomain層への依存は禁止",
+      name: "webapp-no-client-to-domain-services",
+      comment: "webapp: Client層からDomain層のservicesへの依存は禁止（modelsは許可）",
       severity: "error",
       from: { path: "^webapp/src/client" },
-      to: { path: "contexts/.*/domain" },
+      to: { path: "contexts/.*/domain/services" },
+    },
+    {
+      name: "webapp-no-client-to-domain-repositories",
+      comment: "webapp: Client層からDomain層のrepositoriesへの依存は禁止（modelsは許可）",
+      severity: "error",
+      from: { path: "^webapp/src/client" },
+      to: { path: "contexts/.*/domain/repositories" },
     },
 
     // ===========================================
@@ -150,13 +157,7 @@ module.exports = {
       from: { path: "webapp/src/server/contexts/.*/presentation" },
       to: { path: "^webapp/src/client" },
     },
-    {
-      name: "webapp-no-presentation-to-infrastructure",
-      comment: "webapp: Presentation層からInfrastructure層への直接依存は禁止",
-      severity: "error",
-      from: { path: "webapp/src/server/contexts/.*/presentation" },
-      to: { path: "contexts/.*/infrastructure" },
-    },
+    // Presentation層からInfrastructure層へのDI（リポジトリのインスタンス化）は許可
 
     // ===========================================
     // webapp: Domain層からの依存ルール

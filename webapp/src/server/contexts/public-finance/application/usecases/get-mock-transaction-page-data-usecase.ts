@@ -1,7 +1,11 @@
 import "server-only";
 
-import type { TopPageDataParams } from "@/server/contexts/public-finance/presentation/loaders/load-top-page-data";
 import type { MonthlyAggregation } from "@/server/contexts/public-finance/domain/models/monthly-aggregation";
+
+interface MockUsecaseParams {
+  slugs: string[];
+  financialYear: number;
+}
 import type { SankeyData } from "@/types/sankey";
 import type { BalanceSheetData } from "@/types/balance-sheet";
 
@@ -75,7 +79,7 @@ const MOCK_TRANSACTION_DATA = {
 };
 
 export class GetMockTransactionPageDataUsecase {
-  async execute(params: TopPageDataParams) {
+  async execute(params: MockUsecaseParams) {
     console.log("Using mock data for development");
 
     return {
