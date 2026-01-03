@@ -250,7 +250,7 @@ jobs:
       - name: Generate Prisma Client
         run: pnpm db:generate
 
-      - name: Start Supabase and build in parallel
+      - name: Start Supabase and build admin in parallel
         run: |
           # Enable API and use default ports for CI
           sed -i 's/^\[api\]$/[api]/' supabase/config.toml
@@ -261,18 +261,14 @@ jobs:
           supabase start --exclude imgproxy,edge-runtime,vector,studio &
           SUPABASE_PID=$!
 
-          # Build admin and webapp in parallel
+          # Build admin in parallel (admin doesn't need DB)
           NEXT_PUBLIC_SUPABASE_URL=${{ env.SUPABASE_URL }} \
           NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ env.SUPABASE_ANON_KEY }} \
           pnpm build:admin &
           ADMIN_PID=$!
 
-          pnpm build:webapp &
-          WEBAPP_PID=$!
-
-          # Wait for builds to complete
+          # Wait for admin build to complete
           wait $ADMIN_PID
-          wait $WEBAPP_PID
 
           # Wait for Supabase to complete
           wait $SUPABASE_PID
@@ -286,6 +282,9 @@ jobs:
         run: |
           pnpm db:migrate:deploy
           pnpm db:seed
+
+      - name: Build webapp
+        run: pnpm build:webapp
 
       - name: Run E2E tests for admin
         run: pnpm --filter admin test:e2e
