@@ -39,7 +39,7 @@ jobs:
           cache: 'pnpm'
 
       - name: Cache Prisma client
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: node_modules/.prisma
           key: ${{ runner.os }}-prisma-${{ hashFiles('prisma/schema.prisma') }}
@@ -103,7 +103,7 @@ jobs:
           cache: 'pnpm'
 
       - name: Cache Prisma client
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: node_modules/.prisma
           key: ${{ runner.os }}-prisma-${{ hashFiles('prisma/schema.prisma') }}
@@ -111,7 +111,7 @@ jobs:
             ${{ runner.os }}-prisma-
 
       - name: Cache Next.js build
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: webapp/.next/cache
           key: ${{ runner.os }}-nextjs-webapp-${{ hashFiles('pnpm-lock.yaml') }}-${{ hashFiles('webapp/**/*.ts', 'webapp/**/*.tsx') }}
@@ -203,7 +203,7 @@ jobs:
           cache: 'pnpm'
 
       - name: Cache Prisma client
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: node_modules/.prisma
           key: ${{ runner.os }}-prisma-${{ hashFiles('prisma/schema.prisma') }}
@@ -211,7 +211,7 @@ jobs:
             ${{ runner.os }}-prisma-
 
       - name: Cache Next.js build (admin)
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: admin/.next/cache
           key: ${{ runner.os }}-nextjs-admin-${{ hashFiles('pnpm-lock.yaml') }}-${{ hashFiles('admin/**/*.ts', 'admin/**/*.tsx') }}
@@ -220,7 +220,7 @@ jobs:
             ${{ runner.os }}-nextjs-admin-
 
       - name: Cache Next.js build (webapp)
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: webapp/.next/cache
           key: ${{ runner.os }}-nextjs-webapp-${{ hashFiles('pnpm-lock.yaml') }}-${{ hashFiles('webapp/**/*.ts', 'webapp/**/*.tsx') }}
@@ -229,7 +229,7 @@ jobs:
             ${{ runner.os }}-nextjs-webapp-
 
       - name: Cache Playwright browsers
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.cache/ms-playwright
           key: ${{ runner.os }}-playwright-${{ hashFiles('pnpm-lock.yaml') }}
