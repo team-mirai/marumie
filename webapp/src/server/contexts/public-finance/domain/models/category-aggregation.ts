@@ -25,7 +25,7 @@ export interface CategoryAggregation {
 /**
  * 残高情報
  */
-export interface BalanceInfo {
+interface BalanceInfo {
   previousYearBalance: number;
   currentYearBalance: number;
   liabilityBalance: number;
