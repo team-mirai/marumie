@@ -14,6 +14,11 @@ export interface IOrganizationReportProfileRepository {
   ): Promise<OrganizationReportProfile | null>;
 
   /**
+   * Get the slug of a political organization by its ID.
+   */
+  getOrganizationSlug(politicalOrganizationId: string): Promise<string | null>;
+
+  /**
    * Create a new organization report profile.
    */
   create(input: CreateOrganizationReportProfileInput): Promise<OrganizationReportProfile>;
