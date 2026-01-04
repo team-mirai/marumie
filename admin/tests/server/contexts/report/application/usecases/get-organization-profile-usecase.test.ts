@@ -21,6 +21,7 @@ describe("GetOrganizationProfileUsecase", () => {
 
   const createMockRepository = (): jest.Mocked<IOrganizationReportProfileRepository> => ({
     findByOrganizationIdAndYear: jest.fn(),
+    getOrganizationSlug: jest.fn(),
     create: jest.fn(),
     update: jest.fn(),
   });

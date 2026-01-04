@@ -35,6 +35,7 @@ describe("XmlExportUsecase", () => {
   beforeEach(() => {
     mockProfileRepository = {
       findByOrganizationIdAndYear: jest.fn().mockResolvedValue(createMockProfile()),
+      getOrganizationSlug: jest.fn().mockResolvedValue("team-mirai"),
       create: jest.fn(),
       update: jest.fn(),
     } as jest.Mocked<IOrganizationReportProfileRepository>;
@@ -142,7 +143,7 @@ describe("XmlExportUsecase", () => {
       expect(result.xml).toContain("<KINGAKU_GK>250000</KINGAKU_GK>");
       expect(result.xml).toContain("</BOOK>");
 
-      expect(result.filename).toBe("report_123_2024.xml");
+      expect(result.filename).toMatch(/^report_2024_team-mirai_\d{8}_\d{4}\.xml$/);
       expect(result.shiftJisBuffer).toBeInstanceOf(Buffer);
       expect(result.reportData.income.otherIncome.totalAmount).toBe(250000);
     });
@@ -281,5 +282,80 @@ describe("SYUUSHI_FLG constants", () => {
 
   it("SYUUSHI07_06 is at index 5 in known form IDs", () => {
     expect(KNOWN_FORM_IDS.indexOf("SYUUSHI07_06")).toBe(5);
+  });
+});
+
+describe("generateFilename", () => {
+  let usecase: XmlExportUsecase;
+  let mockProfileRepository: jest.Mocked<IOrganizationReportProfileRepository>;
+  let mockDonationAssembler: jest.Mocked<DonationAssembler>;
+  let mockIncomeAssembler: jest.Mocked<IncomeAssembler>;
+  let mockExpenseAssembler: jest.Mocked<ExpenseAssembler>;
+
+  beforeEach(() => {
+    mockProfileRepository = {
+      findByOrganizationIdAndYear: jest.fn(),
+      getOrganizationSlug: jest.fn(),
+      create: jest.fn(),
+      update: jest.fn(),
+    } as jest.Mocked<IOrganizationReportProfileRepository>;
+    mockDonationAssembler = {
+      assemble: jest.fn(),
+    } as unknown as jest.Mocked<DonationAssembler>;
+    mockIncomeAssembler = {
+      assemble: jest.fn(),
+    } as unknown as jest.Mocked<IncomeAssembler>;
+    mockExpenseAssembler = {
+      assemble: jest.fn(),
+    } as unknown as jest.Mocked<ExpenseAssembler>;
+    usecase = new XmlExportUsecase(
+      mockProfileRepository,
+      mockDonationAssembler,
+      mockIncomeAssembler,
+      mockExpenseAssembler,
+    );
+  });
+
+  it("generates filename with correct format: report_{fy}_{slug}_{datetime}.xml", () => {
+    const filename = usecase.generateFilename(2025, "team-mirai");
+
+    expect(filename).toMatch(/^report_2025_team-mirai_\d{8}_\d{4}\.xml$/);
+  });
+
+  it("uses 'unknown' when slug is null", () => {
+    const filename = usecase.generateFilename(2025, null);
+
+    expect(filename).toMatch(/^report_2025_unknown_\d{8}_\d{4}\.xml$/);
+  });
+
+  it("includes correct datetime format YYYYMMDD_HHMM", () => {
+    const now = new Date();
+    const filename = usecase.generateFilename(2024, "test-org");
+
+    const match = filename.match(/report_2024_test-org_(\d{4})(\d{2})(\d{2})_(\d{2})(\d{2})\.xml/);
+    expect(match).not.toBeNull();
+
+    if (match) {
+      const [, year, month, day, hours, minutes] = match;
+      expect(Number.parseInt(year, 10)).toBe(now.getFullYear());
+      expect(Number.parseInt(month, 10)).toBeGreaterThanOrEqual(1);
+      expect(Number.parseInt(month, 10)).toBeLessThanOrEqual(12);
+      expect(Number.parseInt(day, 10)).toBeGreaterThanOrEqual(1);
+      expect(Number.parseInt(day, 10)).toBeLessThanOrEqual(31);
+      expect(Number.parseInt(hours, 10)).toBeGreaterThanOrEqual(0);
+      expect(Number.parseInt(hours, 10)).toBeLessThanOrEqual(23);
+      expect(Number.parseInt(minutes, 10)).toBeGreaterThanOrEqual(0);
+      expect(Number.parseInt(minutes, 10)).toBeLessThanOrEqual(59);
+    }
+  });
+
+  it("pads single digit month, day, hours, and minutes with leading zeros", () => {
+    const filename = usecase.generateFilename(2025, "org");
+
+    const datetimePart = filename.match(/_(\d{8}_\d{4})\.xml$/);
+    expect(datetimePart).not.toBeNull();
+    if (datetimePart) {
+      expect(datetimePart[1]).toHaveLength(13);
+    }
   });
 });

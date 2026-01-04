@@ -52,8 +52,9 @@ export class XmlExportUsecase {
     // Step 3: Encode to Shift_JIS
     const shiftJisBuffer = iconv.encode(xml, "shift_jis");
 
-    // Generate filename
-    const filename = `report_${input.politicalOrganizationId}_${input.financialYear}.xml`;
+    // Generate filename with format: report_{fy}_{org_slug}_{exportedDateTime}.xml
+    const slug = await this.profileRepository.getOrganizationSlug(input.politicalOrganizationId);
+    const filename = this.generateFilename(input.financialYear, slug);
 
     return {
       xml,
@@ -61,6 +62,19 @@ export class XmlExportUsecase {
       filename,
       reportData,
     };
+  }
+
+  generateFilename(financialYear: number, slug: string | null): string {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+    const day = String(now.getDate()).padStart(2, "0");
+    const hours = String(now.getHours()).padStart(2, "0");
+    const minutes = String(now.getMinutes()).padStart(2, "0");
+    const exportedDateTime = `${year}${month}${day}_${hours}${minutes}`;
+
+    const orgSlug = slug ?? "unknown";
+    return `report_${financialYear}_${orgSlug}_${exportedDateTime}.xml`;
   }
 
   // ============================================================
