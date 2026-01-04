@@ -36,12 +36,22 @@ export function serializePersonalDonationSection(section: PersonalDonationSectio
 
   for (const row of section.rows) {
     const rowEle = sheet.ele("ROW");
+    const isSubtotalRow = row.rowkbn === "1";
+
     rowEle.ele("ICHIREN_NO").txt(row.ichirenNo);
     rowEle.ele("KIFUSYA_NM").txt(row.kifusyaNm);
     rowEle.ele("KINGAKU").txt(formatAmount(row.kingaku));
-    rowEle.ele("DT").txt(formatWarekiDate(row.dt));
-    rowEle.ele("ADR").txt(row.adr);
-    rowEle.ele("SYOKUGYO").txt(row.syokugyo);
+
+    // 小計行の場合は日付・住所・職業を空で出力
+    if (isSubtotalRow) {
+      rowEle.ele("DT");
+      rowEle.ele("ADR");
+      rowEle.ele("SYOKUGYO");
+    } else {
+      rowEle.ele("DT").txt(formatWarekiDate(row.dt));
+      rowEle.ele("ADR").txt(row.adr);
+      rowEle.ele("SYOKUGYO").txt(row.syokugyo);
+    }
 
     if (row.bikou) {
       rowEle.ele("BIKOU").txt(row.bikou);

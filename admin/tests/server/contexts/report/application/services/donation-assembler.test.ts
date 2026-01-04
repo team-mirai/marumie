@@ -65,14 +65,14 @@ describe("DonationAssembler", () => {
   describe("セクション構築の委譲", () => {
     it("取得したトランザクションを個人寄附セクションに正しく委譲する", async () => {
       const transactions: PersonalDonationTransaction[] = [
-        createDonationTransaction({ debitAmount: 100000 }),
-        createDonationTransaction({ debitAmount: 50000 }),
+        createDonationTransaction({ donorId: "donor-001", debitAmount: 100000 }),
+        createDonationTransaction({ donorId: "donor-002", debitAmount: 50001 }),
       ];
       mockRepository.findPersonalDonationTransactions.mockResolvedValue(transactions);
 
       const result = await assembler.assemble(defaultInput);
 
-      expect(result.personalDonations.totalAmount).toBe(150000);
+      expect(result.personalDonations.totalAmount).toBe(150001);
       expect(result.personalDonations.rows).toHaveLength(2);
     });
 

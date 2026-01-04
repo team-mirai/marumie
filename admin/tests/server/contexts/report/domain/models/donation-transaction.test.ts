@@ -214,11 +214,15 @@ describe("PersonalDonationSection.fromTransactions - 5万円超ルール", () =>
 
     expect(section.totalAmount).toBe(115000);
     expect(section.sonotaGk).toBe(45000);
-    expect(section.rows).toHaveLength(2);
+    // 2件の明細行 + 1件の小計行 = 3行
+    expect(section.rows).toHaveLength(3);
     expect(section.rows[0].kifusyaNm).toBe("田中太郎");
     expect(section.rows[0].kingaku).toBe(30000);
     expect(section.rows[1].kifusyaNm).toBe("田中太郎");
     expect(section.rows[1].kingaku).toBe(40000);
+    expect(section.rows[2].rowkbn).toBe("1");
+    expect(section.rows[2].kifusyaNm).toBe("（小計）");
+    expect(section.rows[2].kingaku).toBe(70000);
   });
 
   it("境界値テスト: 年間ちょうど50,000円 → その他に合算", () => {
@@ -265,7 +269,7 @@ describe("PersonalDonationSection.fromTransactions - 5万円超ルール", () =>
     expect(section.rows).toHaveLength(1);
   });
 
-  it("同一者からの複数取引（5万円超）→ 複数の明細行", () => {
+  it("同一者からの複数取引（5万円超）→ 複数の明細行と小計行", () => {
     const transactions: PersonalDonationTransaction[] = [
       {
         transactionNo: "1",
@@ -306,7 +310,11 @@ describe("PersonalDonationSection.fromTransactions - 5万円超ルール", () =>
 
     expect(section.totalAmount).toBe(90000);
     expect(section.sonotaGk).toBe(0);
-    expect(section.rows).toHaveLength(3);
+    // 3件の明細行 + 1件の小計行 = 4行
+    expect(section.rows).toHaveLength(4);
+    expect(section.rows[3].rowkbn).toBe("1");
+    expect(section.rows[3].kifusyaNm).toBe("（小計）");
+    expect(section.rows[3].kingaku).toBe(90000);
   });
 
   it("donorId が null の取引は各取引を別人として扱う", () => {
@@ -364,7 +372,7 @@ describe("PersonalDonationSection.fromTransactions - 5万円超ルール", () =>
     expect(section.rows).toHaveLength(1);
   });
 
-  it("合計額の整合性: totalAmount === 明細行の合計 + sonotaGk", () => {
+  it("合計額の整合性: totalAmount === 明細行の合計 + sonotaGk（小計行を除く）", () => {
     const transactions: PersonalDonationTransaction[] = [
       {
         transactionNo: "1",
@@ -403,8 +411,11 @@ describe("PersonalDonationSection.fromTransactions - 5万円超ルール", () =>
 
     const section = PersonalDonationSection.fromTransactions(transactions);
 
-    const rowsTotal = section.rows.reduce((sum, row) => sum + row.kingaku, 0);
-    expect(section.totalAmount).toBe(rowsTotal + section.sonotaGk);
+    // 明細行（rowkbn="0"）のみの合計を計算（小計行を除く）
+    const detailRowsTotal = section.rows
+      .filter((row) => row.rowkbn === "0")
+      .reduce((sum, row) => sum + row.kingaku, 0);
+    expect(section.totalAmount).toBe(detailRowsTotal + section.sonotaGk);
   });
 });
 
@@ -617,5 +628,405 @@ describe("PersonalDonationSection.validate", () => {
     const errors = PersonalDonationSection.validate(section);
 
     expect(errors.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it("小計行（rowkbn=1）はバリデーション対象外", () => {
+    const section = {
+      totalAmount: 60000,
+      sonotaGk: 0,
+      rows: [
+        {
+          ichirenNo: "1",
+          kifusyaNm: "山田太郎",
+          kingaku: 30000,
+          dt: new Date("2024-01-01"),
+          adr: "東京都",
+          syokugyo: "会社員",
+          seqNo: "1",
+          zeigakukoujyo: "0",
+          rowkbn: "0",
+        },
+        {
+          ichirenNo: "2",
+          kifusyaNm: "山田太郎",
+          kingaku: 30000,
+          dt: new Date("2024-01-02"),
+          adr: "東京都",
+          syokugyo: "会社員",
+          seqNo: "1",
+          zeigakukoujyo: "0",
+          rowkbn: "0",
+        },
+        {
+          ichirenNo: "3",
+          kifusyaNm: "（小計）",
+          kingaku: 60000,
+          dt: new Date(0),
+          adr: "",
+          syokugyo: "",
+          seqNo: "1",
+          zeigakukoujyo: "0",
+          rowkbn: "1",
+        },
+      ],
+    };
+    const errors = PersonalDonationSection.validate(section);
+
+    expect(errors).toHaveLength(0);
+  });
+});
+
+describe("PersonalDonationSection.fromTransactions - 名寄せ・小計行", () => {
+  it("同一寄附者から2件以上の寄附がある場合、小計行が生成される", () => {
+    const transactions: PersonalDonationTransaction[] = [
+      {
+        transactionNo: "1",
+        transactionDate: new Date("2024-04-01"),
+        debitAmount: 0,
+        creditAmount: 30000,
+        memo: null,
+        donorId: "123",
+        donorName: "田中太郎",
+        donorAddress: "東京都千代田区1-1",
+        donorOccupation: "会社員",
+      },
+      {
+        transactionNo: "2",
+        transactionDate: new Date("2024-05-01"),
+        debitAmount: 0,
+        creditAmount: 30000,
+        memo: null,
+        donorId: "123",
+        donorName: "田中太郎",
+        donorAddress: "東京都千代田区1-1",
+        donorOccupation: "会社員",
+      },
+    ];
+
+    const section = PersonalDonationSection.fromTransactions(transactions);
+
+    expect(section.rows).toHaveLength(3);
+    expect(section.rows[0].rowkbn).toBe("0");
+    expect(section.rows[1].rowkbn).toBe("0");
+    expect(section.rows[2].rowkbn).toBe("1");
+    expect(section.rows[2].kifusyaNm).toBe("（小計）");
+    expect(section.rows[2].kingaku).toBe(60000);
+  });
+
+  it("同一寄附者から1件のみの寄附の場合、小計行は生成されない", () => {
+    const transactions: PersonalDonationTransaction[] = [
+      {
+        transactionNo: "1",
+        transactionDate: new Date("2024-04-01"),
+        debitAmount: 0,
+        creditAmount: 60000,
+        memo: null,
+        donorId: "123",
+        donorName: "田中太郎",
+        donorAddress: "東京都千代田区1-1",
+        donorOccupation: "会社員",
+      },
+    ];
+
+    const section = PersonalDonationSection.fromTransactions(transactions);
+
+    expect(section.rows).toHaveLength(1);
+    expect(section.rows[0].rowkbn).toBe("0");
+  });
+
+  it("複数の寄附者（2件以上と1件混在）の場合、該当グループのみ小計行あり", () => {
+    const transactions: PersonalDonationTransaction[] = [
+      {
+        transactionNo: "1",
+        transactionDate: new Date("2024-04-01"),
+        debitAmount: 0,
+        creditAmount: 30000,
+        memo: null,
+        donorId: "123",
+        donorName: "田中太郎",
+        donorAddress: "東京都千代田区1-1",
+        donorOccupation: "会社員",
+      },
+      {
+        transactionNo: "2",
+        transactionDate: new Date("2024-05-01"),
+        debitAmount: 0,
+        creditAmount: 30000,
+        memo: null,
+        donorId: "123",
+        donorName: "田中太郎",
+        donorAddress: "東京都千代田区1-1",
+        donorOccupation: "会社員",
+      },
+      {
+        transactionNo: "3",
+        transactionDate: new Date("2024-06-01"),
+        debitAmount: 0,
+        creditAmount: 60000,
+        memo: null,
+        donorId: "456",
+        donorName: "鈴木花子",
+        donorAddress: "大阪府大阪市1-1",
+        donorOccupation: "自営業",
+      },
+    ];
+
+    const section = PersonalDonationSection.fromTransactions(transactions);
+
+    expect(section.rows).toHaveLength(4);
+    const subtotalRows = section.rows.filter((row) => row.rowkbn === "1");
+    expect(subtotalRows).toHaveLength(1);
+    expect(subtotalRows[0].kifusyaNm).toBe("（小計）");
+    expect(subtotalRows[0].kingaku).toBe(60000);
+  });
+
+  it("一連番号（ichirenNo）が明細・小計通しで連番になっている", () => {
+    const transactions: PersonalDonationTransaction[] = [
+      {
+        transactionNo: "1",
+        transactionDate: new Date("2024-04-01"),
+        debitAmount: 0,
+        creditAmount: 30000,
+        memo: null,
+        donorId: "123",
+        donorName: "田中太郎",
+        donorAddress: "東京都千代田区1-1",
+        donorOccupation: "会社員",
+      },
+      {
+        transactionNo: "2",
+        transactionDate: new Date("2024-05-01"),
+        debitAmount: 0,
+        creditAmount: 30000,
+        memo: null,
+        donorId: "123",
+        donorName: "田中太郎",
+        donorAddress: "東京都千代田区1-1",
+        donorOccupation: "会社員",
+      },
+      {
+        transactionNo: "3",
+        transactionDate: new Date("2024-06-01"),
+        debitAmount: 0,
+        creditAmount: 60000,
+        memo: null,
+        donorId: "456",
+        donorName: "鈴木花子",
+        donorAddress: "大阪府大阪市1-1",
+        donorOccupation: "自営業",
+      },
+    ];
+
+    const section = PersonalDonationSection.fromTransactions(transactions);
+
+    expect(section.rows[0].ichirenNo).toBe("1");
+    expect(section.rows[1].ichirenNo).toBe("2");
+    expect(section.rows[2].ichirenNo).toBe("3");
+    expect(section.rows[3].ichirenNo).toBe("4");
+  });
+
+  it("通し番号（seqNo）が同一グループで同じ値になっている", () => {
+    const transactions: PersonalDonationTransaction[] = [
+      {
+        transactionNo: "1",
+        transactionDate: new Date("2024-04-01"),
+        debitAmount: 0,
+        creditAmount: 30000,
+        memo: null,
+        donorId: "123",
+        donorName: "田中太郎",
+        donorAddress: "東京都千代田区1-1",
+        donorOccupation: "会社員",
+      },
+      {
+        transactionNo: "2",
+        transactionDate: new Date("2024-05-01"),
+        debitAmount: 0,
+        creditAmount: 30000,
+        memo: null,
+        donorId: "123",
+        donorName: "田中太郎",
+        donorAddress: "東京都千代田区1-1",
+        donorOccupation: "会社員",
+      },
+      {
+        transactionNo: "3",
+        transactionDate: new Date("2024-06-01"),
+        debitAmount: 0,
+        creditAmount: 60000,
+        memo: null,
+        donorId: "456",
+        donorName: "鈴木花子",
+        donorAddress: "大阪府大阪市1-1",
+        donorOccupation: "自営業",
+      },
+    ];
+
+    const section = PersonalDonationSection.fromTransactions(transactions);
+
+    expect(section.rows[0].seqNo).toBe("1");
+    expect(section.rows[1].seqNo).toBe("1");
+    expect(section.rows[2].seqNo).toBe("1");
+    expect(section.rows[3].seqNo).toBe("2");
+  });
+
+  it("グループ内の明細が日付順にソートされている", () => {
+    const transactions: PersonalDonationTransaction[] = [
+      {
+        transactionNo: "1",
+        transactionDate: new Date("2024-06-01"),
+        debitAmount: 0,
+        creditAmount: 20000,
+        memo: null,
+        donorId: "123",
+        donorName: "田中太郎",
+        donorAddress: "東京都千代田区1-1",
+        donorOccupation: "会社員",
+      },
+      {
+        transactionNo: "2",
+        transactionDate: new Date("2024-04-01"),
+        debitAmount: 0,
+        creditAmount: 20000,
+        memo: null,
+        donorId: "123",
+        donorName: "田中太郎",
+        donorAddress: "東京都千代田区1-1",
+        donorOccupation: "会社員",
+      },
+      {
+        transactionNo: "3",
+        transactionDate: new Date("2024-05-01"),
+        debitAmount: 0,
+        creditAmount: 20000,
+        memo: null,
+        donorId: "123",
+        donorName: "田中太郎",
+        donorAddress: "東京都千代田区1-1",
+        donorOccupation: "会社員",
+      },
+    ];
+
+    const section = PersonalDonationSection.fromTransactions(transactions);
+
+    expect(section.rows[0].dt.getTime()).toBe(new Date("2024-04-01").getTime());
+    expect(section.rows[1].dt.getTime()).toBe(new Date("2024-05-01").getTime());
+    expect(section.rows[2].dt.getTime()).toBe(new Date("2024-06-01").getTime());
+    expect(section.rows[3].rowkbn).toBe("1");
+  });
+
+  it("合計金額（totalAmount）に小計行が含まれていない", () => {
+    const transactions: PersonalDonationTransaction[] = [
+      {
+        transactionNo: "1",
+        transactionDate: new Date("2024-04-01"),
+        debitAmount: 0,
+        creditAmount: 30000,
+        memo: null,
+        donorId: "123",
+        donorName: "田中太郎",
+        donorAddress: "東京都千代田区1-1",
+        donorOccupation: "会社員",
+      },
+      {
+        transactionNo: "2",
+        transactionDate: new Date("2024-05-01"),
+        debitAmount: 0,
+        creditAmount: 30000,
+        memo: null,
+        donorId: "123",
+        donorName: "田中太郎",
+        donorAddress: "東京都千代田区1-1",
+        donorOccupation: "会社員",
+      },
+    ];
+
+    const section = PersonalDonationSection.fromTransactions(transactions);
+
+    expect(section.totalAmount).toBe(60000);
+    const detailRowsTotal = section.rows
+      .filter((row) => row.rowkbn === "0")
+      .reduce((sum, row) => sum + row.kingaku, 0);
+    expect(section.totalAmount).toBe(detailRowsTotal);
+  });
+
+  it("グループが「グループ内最初の取引日付順」でソートされている", () => {
+    const transactions: PersonalDonationTransaction[] = [
+      {
+        transactionNo: "1",
+        transactionDate: new Date("2024-06-01"),
+        debitAmount: 0,
+        creditAmount: 60000,
+        memo: null,
+        donorId: "456",
+        donorName: "鈴木花子",
+        donorAddress: "大阪府大阪市1-1",
+        donorOccupation: "自営業",
+      },
+      {
+        transactionNo: "2",
+        transactionDate: new Date("2024-04-01"),
+        debitAmount: 0,
+        creditAmount: 30000,
+        memo: null,
+        donorId: "123",
+        donorName: "田中太郎",
+        donorAddress: "東京都千代田区1-1",
+        donorOccupation: "会社員",
+      },
+      {
+        transactionNo: "3",
+        transactionDate: new Date("2024-05-01"),
+        debitAmount: 0,
+        creditAmount: 30000,
+        memo: null,
+        donorId: "123",
+        donorName: "田中太郎",
+        donorAddress: "東京都千代田区1-1",
+        donorOccupation: "会社員",
+      },
+    ];
+
+    const section = PersonalDonationSection.fromTransactions(transactions);
+
+    expect(section.rows[0].kifusyaNm).toBe("田中太郎");
+    expect(section.rows[1].kifusyaNm).toBe("田中太郎");
+    expect(section.rows[2].kifusyaNm).toBe("（小計）");
+    expect(section.rows[3].kifusyaNm).toBe("鈴木花子");
+  });
+
+  it("小計行の日付・住所・職業・備考が空になっている", () => {
+    const transactions: PersonalDonationTransaction[] = [
+      {
+        transactionNo: "1",
+        transactionDate: new Date("2024-04-01"),
+        debitAmount: 0,
+        creditAmount: 30000,
+        memo: null,
+        donorId: "123",
+        donorName: "田中太郎",
+        donorAddress: "東京都千代田区1-1",
+        donorOccupation: "会社員",
+      },
+      {
+        transactionNo: "2",
+        transactionDate: new Date("2024-05-01"),
+        debitAmount: 0,
+        creditAmount: 30000,
+        memo: null,
+        donorId: "123",
+        donorName: "田中太郎",
+        donorAddress: "東京都千代田区1-1",
+        donorOccupation: "会社員",
+      },
+    ];
+
+    const section = PersonalDonationSection.fromTransactions(transactions);
+
+    const subtotalRow = section.rows.find((row) => row.rowkbn === "1");
+    expect(subtotalRow).toBeDefined();
+    expect(subtotalRow?.adr).toBe("");
+    expect(subtotalRow?.syokugyo).toBe("");
+    expect(subtotalRow?.bikou).toBe("");
   });
 });

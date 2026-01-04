@@ -136,6 +136,16 @@ export const PersonalDonationTransaction = {
 // ============================================================
 
 /**
+ * 処理対象グループの情報
+ */
+interface DonorGroup {
+  donorId: string;
+  transactions: PersonalDonationTransaction[];
+  groupTotal: number;
+  firstTransactionDate: Date;
+}
+
+/**
  * PersonalDonationSection に関連するドメインロジック
  */
 export const PersonalDonationSection = {
@@ -167,14 +177,57 @@ export const PersonalDonationSection = {
   },
 
   /**
+   * グループ内の最初の取引日付を取得する
+   */
+  getFirstTransactionDate: (transactions: PersonalDonationTransaction[]): Date => {
+    return transactions.reduce(
+      (earliest, tx) => (tx.transactionDate < earliest ? tx.transactionDate : earliest),
+      transactions[0].transactionDate,
+    );
+  },
+
+  /**
+   * グループ内のトランザクションを日付順にソートする
+   */
+  sortByDate: (transactions: PersonalDonationTransaction[]): PersonalDonationTransaction[] => {
+    return [...transactions].sort(
+      (a, b) => a.transactionDate.getTime() - b.transactionDate.getTime(),
+    );
+  },
+
+  /**
+   * 小計行を生成する
+   */
+  createSubtotalRow: (groupTotal: number, seqNo: string): PersonalDonationRow => {
+    return {
+      ichirenNo: "", // 後で採番
+      kifusyaNm: "（小計）",
+      kingaku: Math.round(groupTotal),
+      dt: new Date(0), // 空として扱う（シリアライザで空文字に変換）
+      adr: "",
+      syokugyo: "",
+      bikou: "",
+      seqNo,
+      zeigakukoujyo: "0",
+      rowkbn: "1", // 小計行
+    };
+  },
+
+  /**
    * トランザクションリストからセクションを構築する
    *
    * 処理フロー:
    * 1. トランザクションを donorId でグループ化
    * 2. 各グループの年間合計金額を算出
-   * 3. 年間合計 > 50,000円 のグループ → 各取引を個別に明細行（rows）に展開
+   * 3. 年間合計 > 50,000円 のグループ → 処理対象グループとして保持
    * 4. 年間合計 <= 50,000円 のグループ → グループ全体の金額を sonotaGk に合算
-   * 5. totalAmount = 明細行の合計 + sonotaGk
+   * 5. 処理対象グループを「グループ内最初の取引日付順」でソート
+   * 6. 各グループについて:
+   *    a. グループ内の明細を日付順にソート
+   *    b. 各明細を PersonalDonationRow に変換（seqNo 付与）
+   *    c. グループ内明細が2件以上の場合、小計行を追加
+   * 7. 全行に一連番号（ichirenNo）を振る
+   * 8. totalAmount = 全トランザクションの合計（小計行を含まない）
    */
   fromTransactions: (transactions: PersonalDonationTransaction[]): PersonalDonationSection => {
     const totalAmount = transactions.reduce(
@@ -184,22 +237,55 @@ export const PersonalDonationSection = {
 
     const groups = PersonalDonationSection.groupByDonorId(transactions);
 
-    const detailTransactions: PersonalDonationTransaction[] = [];
+    const detailGroups: DonorGroup[] = [];
     let sonotaGk = 0;
 
-    for (const [, groupTransactions] of groups) {
+    for (const [donorId, groupTransactions] of groups) {
       const groupTotal = PersonalDonationSection.calculateGroupTotal(groupTransactions);
 
       if (groupTotal > DONATION_DETAIL_THRESHOLD) {
-        detailTransactions.push(...groupTransactions);
+        detailGroups.push({
+          donorId,
+          transactions: groupTransactions,
+          groupTotal,
+          firstTransactionDate: PersonalDonationSection.getFirstTransactionDate(groupTransactions),
+        });
       } else {
         sonotaGk += groupTotal;
       }
     }
 
-    const rows = detailTransactions.map((tx, index) =>
-      PersonalDonationTransaction.toRow(tx, index),
+    // グループを「グループ内最初の取引日付順」でソート
+    detailGroups.sort(
+      (a, b) => a.firstTransactionDate.getTime() - b.firstTransactionDate.getTime(),
     );
+
+    const rows: PersonalDonationRow[] = [];
+    let seqNo = 1;
+
+    for (const group of detailGroups) {
+      const sortedTransactions = PersonalDonationSection.sortByDate(group.transactions);
+      const currentSeqNo = seqNo.toString();
+
+      // 明細行を追加
+      for (const tx of sortedTransactions) {
+        const row = PersonalDonationTransaction.toRow(tx, 0); // indexは後で上書き
+        row.seqNo = currentSeqNo;
+        rows.push(row);
+      }
+
+      // グループ内明細が2件以上の場合、小計行を追加
+      if (sortedTransactions.length >= 2) {
+        rows.push(PersonalDonationSection.createSubtotalRow(group.groupTotal, currentSeqNo));
+      }
+
+      seqNo++;
+    }
+
+    // 全行に一連番号（ichirenNo）を振る
+    rows.forEach((row, index) => {
+      row.ichirenNo = (index + 1).toString();
+    });
 
     return {
       totalAmount,
@@ -224,11 +310,18 @@ export const PersonalDonationSection = {
    * - 年月日 (DT): 必須
    * - 住所 (ADR): 必須、120文字以内
    * - 職業 (SYOKUGYO): 必須、50文字以内
+   *
+   * 小計行（rowkbn="1"）はバリデーション対象外
    */
   validate: (section: PersonalDonationSection): ValidationError[] => {
     const errors: ValidationError[] = [];
 
     section.rows.forEach((row, index) => {
+      // 小計行（rowkbn="1"）はバリデーション対象外
+      if (row.rowkbn === "1") {
+        return;
+      }
+
       const rowNum = index + 1;
       const basePath = `donations.personalDonations.rows[${index}]`;
 
