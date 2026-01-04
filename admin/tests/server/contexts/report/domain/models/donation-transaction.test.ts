@@ -1031,4 +1031,47 @@ describe("PersonalDonationSection - 小計行生成", () => {
     expect(section.rows[4].kifusyaNm).toBe("寄附者B");
     expect(section.rows[5].kifusyaNm).toBe("（小計）");
   });
+
+  it("小計行の金額は明細行の丸め後金額の合計と一致する（丸め誤差対策）", () => {
+    // 小数点以下の金額を持つトランザクション（丸め誤差が発生しやすいケース）
+    const transactions: PersonalDonationTransaction[] = [
+      {
+        transactionNo: "1",
+        transactionDate: new Date("2024-01-01"),
+        debitAmount: 0,
+        creditAmount: 30000.6, // 丸めると30001
+        memo: null,
+        donorId: "donor1",
+        donorName: "山田太郎",
+        donorAddress: "東京都渋谷区",
+        donorOccupation: "会社員",
+      },
+      {
+        transactionNo: "2",
+        transactionDate: new Date("2024-01-02"),
+        debitAmount: 0,
+        creditAmount: 30000.6, // 丸めると30001
+        memo: null,
+        donorId: "donor1",
+        donorName: "山田太郎",
+        donorAddress: "東京都渋谷区",
+        donorOccupation: "会社員",
+      },
+    ];
+
+    const section = PersonalDonationSection.fromTransactions(transactions);
+
+    // 明細行の金額
+    const detailRows = section.rows.filter((r) => r.rowkbn === "0");
+    expect(detailRows[0].kingaku).toBe(30001);
+    expect(detailRows[1].kingaku).toBe(30001);
+
+    // 小計行の金額は明細行の合計と一致する（60002、not 60001）
+    const subtotalRow = section.rows.find((r) => r.rowkbn === "1");
+    expect(subtotalRow?.kingaku).toBe(60002);
+
+    // 明細行の合計と小計行の金額が一致することを確認
+    const sumOfDetailRows = detailRows.reduce((sum, r) => sum + r.kingaku, 0);
+    expect(subtotalRow?.kingaku).toBe(sumOfDetailRows);
+  });
 });

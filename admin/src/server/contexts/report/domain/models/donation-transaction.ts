@@ -253,10 +253,12 @@ export const PersonalDonationSection = {
 
     // 2件以上の場合のみ小計行を追加
     if (sortedTransactions.length >= 2) {
+      // 丸め誤差を防ぐため、小計は明細行の丸め後金額を合計する
+      const subtotalAmount = detailRows.reduce((sum, row) => sum + row.kingaku, 0);
       const subtotalRow: PersonalDonationRow = {
         ichirenNo: "",
         kifusyaNm: "（小計）",
-        kingaku: Math.round(group.total),
+        kingaku: subtotalAmount,
         dt: null,
         adr: "",
         syokugyo: "",
