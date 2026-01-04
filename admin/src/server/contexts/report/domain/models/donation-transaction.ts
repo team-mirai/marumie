@@ -182,8 +182,12 @@ export const PersonalDonationSection = {
 
   /**
    * グループ内の最も古い取引日付を取得する
+   * @throws {Error} 空配列が渡された場合
    */
   getFirstTransactionDate: (transactions: PersonalDonationTransaction[]): Date => {
+    if (transactions.length === 0) {
+      throw new Error("Cannot get first transaction date from empty array");
+    }
     return transactions
       .map((tx) => tx.transactionDate)
       .reduce((min, date) => (date < min ? date : min));
