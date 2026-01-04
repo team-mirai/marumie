@@ -7,6 +7,7 @@ data/*
 data/reports/*
 !data/reports/report_3_2025.xml
 !data/reports/minimum_valid.xml
+!data/reports/donation-aggregation-sample.xml
 */.next/*
 .next
 prompts
