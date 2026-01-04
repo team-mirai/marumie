@@ -73,7 +73,10 @@ describe("DonationAssembler", () => {
       const result = await assembler.assemble(defaultInput);
 
       expect(result.personalDonations.totalAmount).toBe(150000);
-      expect(result.personalDonations.rows).toHaveLength(2);
+      // 同一寄附者から2件 → 2件明細 + 1件小計 = 3行
+      expect(result.personalDonations.rows).toHaveLength(3);
+      expect(result.personalDonations.rows[2].rowkbn).toBe("1"); // 小計行
+      expect(result.personalDonations.rows[2].kifusyaNm).toBe("（小計）");
     });
 
     it("空のトランザクションの場合は空のセクションを返す", async () => {
