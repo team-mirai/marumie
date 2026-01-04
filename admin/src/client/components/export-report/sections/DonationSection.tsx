@@ -17,7 +17,8 @@ interface DonationSectionProps {
   personalDonations: PersonalDonationSection;
 }
 
-function formatDate(date: Date): string {
+function formatDate(date: Date | null): string {
+  if (!date) return "";
   const d = new Date(date);
   const year = d.getFullYear();
   const month = d.getMonth() + 1;
