@@ -123,6 +123,37 @@ Supabase、webapp（ポート 3000）、admin（ポート 3001）が同時に起
 | Admin | foo@example.com | foo@example.com |
 | User | bar@example.com | bar@example.com |
 
+## データベースのマイグレーション
+
+### 本番環境・開発環境
+
+Vercelで行われるwebappのbuild過程で自動的にマイグレーションが実行されます（`build:vercel` スクリプト内で `db:setup` を実行）。
+
+### ローカル開発環境
+
+マイグレーションは初回セットアップ（`pnpm run dev:setup`）時に自動実行されます。手動でマイグレーションやデータベースリセットを行う場合は、以下のコマンドをプロジェクトルートから実行してください：
+
+```bash
+pnpm run db:migrate           # マイグレーション実行（開発環境）
+pnpm run db:migrate:deploy    # マイグレーション実行（本番同等）
+pnpm run db:reset             # データベース完全リセット（Supabaseリセット + マイグレーション + シード）
+pnpm run db:seed              # シードデータのみ投入
+```
+
+## モックデータの使用
+
+webappでモックデータを使用する場合は、`webapp/.env.local` に以下を追加してください：
+
+```env
+USE_MOCK_DATA=true
+```
+
+設定後、トランザクションページのバックエンドがモックデータを返すようになります。
+
+## サンプルデータ
+
+`data/sampledata.csv` に政治資金の取引データのサンプルが含まれています。管理画面（http://localhost:3001）の「CSVアップロード」機能からこのファイルをアップロードして確認できます。
+
 ## Supabase のポート番号
 
 ポート番号は `supabase/config.toml` で設定されています：
@@ -154,11 +185,11 @@ Error: Port 3000 is already in use
 
 ### Supabase が正常に起動しない
 
-→ 停止してから再起動: `pnpm supabase:stop && pnpm supabase:start`
+→ 停止してから再起動: `pnpm run supabase:stop && pnpm run supabase:start`
 
 ### データベースをリセットしたい
 
-→ `pnpm db:reset`
+→ `pnpm run db:reset`
 
 ### 依存関係のエラー
 
@@ -177,10 +208,11 @@ pnpm run dev:admin     # admin のみ起動
 ### データベース
 
 ```bash
-pnpm run db:reset      # データベース完全リセット
-pnpm run db:migrate    # マイグレーション実行
-pnpm run db:seed       # シードデータ投入
-pnpm run db:studio     # Prisma Studio 起動
+pnpm run db:reset             # データベース完全リセット（Supabaseリセット + マイグレーション + シード）
+pnpm run db:migrate           # マイグレーション実行（開発環境）
+pnpm run db:migrate:deploy    # マイグレーション実行（本番同等）
+pnpm run db:seed              # シードデータ投入
+pnpm run db:studio            # Prisma Studio 起動
 ```
 
 ### コード品質
