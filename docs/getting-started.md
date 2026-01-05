@@ -123,6 +123,35 @@ Supabase、webapp（ポート 3000）、admin（ポート 3001）が同時に起
 | Admin | foo@example.com | foo@example.com |
 | User | bar@example.com | bar@example.com |
 
+## データベースのマイグレーション
+
+### 本番環境・開発環境
+
+Vercelで行われるwebappのbuild過程で自動的にマイグレーションが実行されます。
+
+### ローカル開発環境
+
+マイグレーションは初回セットアップ時に自動実行されます。手動でマイグレーションを実行する場合は以下のコマンドを使用してください：
+
+```bash
+pnpm run db:migrate    # マイグレーション実行
+pnpm run db:reset      # データベース完全リセット
+```
+
+## モックデータの使用
+
+webappでモックデータを使用する場合は、`webapp/.env.local` に以下を追加してください：
+
+```env
+USE_MOCK_DATA=true
+```
+
+設定後、トランザクションページのバックエンドがモックデータを返すようになります。
+
+## サンプルデータ
+
+`data/sampledata.csv` に政治資金の取引データのサンプルが含まれています。管理画面（http://localhost:3001）の「CSVアップロード」機能からこのファイルをアップロードして確認できます。
+
 ## Supabase のポート番号
 
 ポート番号は `supabase/config.toml` で設定されています：

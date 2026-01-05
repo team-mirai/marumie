@@ -29,7 +29,8 @@ marumie/
 │   ├── src/
 │   │   ├── app/           # Next.js App Router
 │   │   ├── client/        # クライアントサイドコンポーネント
-│   │   ├── server/        # サーバーサイドロジック
+│   │   ├── server/contexts/ # Bounded Context ベース構成
+│   │   │   └── public-finance/  # 政治資金データの公開・可視化
 │   │   └── types/         # 型定義
 │   ├── tests/             # テストファイル
 │   └── package.json
@@ -85,25 +86,6 @@ marumie/
 ## ローカル開発手順
 
 ローカル開発環境のセットアップ手順は [開発環境セットアップガイド](docs/getting-started.md) を参照してください。
-
-## データベースのマイグレーション
-
-### 本番環境・開発環境
-
-Vercelで行われるwebappのbuild過程で自動的にマイグレーションが実行されます。
-
-### モックデータの使用
-
-`webapp/.env.local` に以下を追加してモックデータを有効化：
-```
-USE_MOCK_DATA=true
-```
-
-設定後、トランザクションページのバックエンドがモックデータを返すようになります。
-
-## サンプルデータ
-
-`data/sampledata.csv` に政治資金の取引データのサンプルが含まれています。管理画面（ http://localhost:3001 ）の「CSVアップロード」機能からこのファイルをアップロードして確認できます。
 
 ## ライセンス
 
