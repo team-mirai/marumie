@@ -259,14 +259,72 @@ export const Password = {
 
 | 層 | エラーハンドリング |
 |---|---|
-| **Presentation** | ユーザーフレンドリーなメッセージに変換（`{ ok: false, error: "..." }`） |
-| **Application** | 詳細なエラーメッセージでラップ（`throw new Error(\`Failed to ...: ${error.message}\`)`) |
-| **Domain** | ビジネスルールエラーを返す（`{ status: "invalid", errors: [...] }`） |
-| **Infrastructure** | 技術的なエラーを投げる（`throw new Error("Database connection failed")`） |
+| **Presentation** | try-catchでエラーをキャッチし、`{ ok: false, error: "ユーザー向けメッセージ" }` 形式で返す |
+| **Application** | 基本はエラーをそのまま伝播。try-catchは限定的なケースのみ使用（後述） |
+| **Domain** | バリデーションエラーは戻り値で返す（`{ isValid: false, errors: [...] }`）。それ以外はthrow |
+| **Infrastructure** | 技術的なエラーをthrow（`throw new Error("Database connection failed")`） |
 
-#### 6.3.2 拡張エラー型とエラーコードの定義
+#### 6.3.2 Application層でのtry-catch使用ガイドライン
 
-Domain層でエラーを扱う場合は、拡張エラー型とエラーコードを定義する。
+Application層（Usecase）では、基本的にエラーをそのまま上位層に伝播させる。try-catchは以下のケースに限定する。
+
+**許容されるケース**:
+
+```typescript
+// 1. 部分的失敗を許容するオーケストレーション
+async execute(items: Item[]) {
+  const results = [];
+  for (const item of items) {
+    try {
+      results.push(await this.process(item));
+    } catch (e) {
+      results.push({ id: item.id, error: e.message }); // エラーを記録して続行
+    }
+  }
+  return results;
+}
+
+// 2. フォールバック処理
+async execute() {
+  try {
+    return await this.primarySource.fetch();
+  } catch {
+    return await this.fallbackSource.fetch(); // 代替手段に切り替え
+  }
+}
+
+// 3. リソースのクリーンアップ
+async execute() {
+  const lock = await this.acquireLock();
+  try {
+    return await this.doWork();
+  } finally {
+    await lock.release();
+  }
+}
+```
+
+**避けるべきケース**:
+
+```typescript
+// ❌ 単にラップしてre-throw（無意味）
+try {
+  return await this.repo.save(data);
+} catch (e) {
+  throw new Error(`Failed to save: ${e.message}`);
+}
+
+// ❌ エラーを握りつぶす
+try {
+  await this.repo.save(data);
+} catch {
+  // 何もしない
+}
+```
+
+#### 6.3.3 拡張エラー型とエラーコードの定義
+
+Domain層でバリデーションエラーを扱う場合は、拡張エラー型とエラーコードを定義する。
 
 **配置場所**: `contexts/{コンテキスト名}/domain/types/`
 
@@ -277,7 +335,7 @@ Domain層でエラーを扱う場合は、拡張エラー型とエラーコー�
 - エラーコードは `as const` で型安全に定義。大文字スネークケース（例: `REQUIRED`, `INVALID_FORMAT`）
 - コンテキスト固有のコードには接頭辞を付ける（例: `REPORT_MISSING_COUNTERPART`）
 
-#### 6.3.3 error と warning の使い分け
+#### 6.3.4 error と warning の使い分け
 
 | 種別 | 用途 | 処理の継続 |
 |---|---|---|
