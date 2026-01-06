@@ -180,3 +180,23 @@ export class GetCounterpartUsageUsecase {
     return this.repository.getUsageCount(id);
   }
 }
+
+export interface GetCounterpartDetailResult {
+  counterpart: Counterpart | null;
+  usageCount: number;
+  allCounterparts: Counterpart[];
+}
+
+export class GetCounterpartDetailUsecase {
+  constructor(private repository: ICounterpartRepository) {}
+
+  async execute(id: string): Promise<GetCounterpartDetailResult> {
+    const [counterpart, usageCount, allCounterparts] = await Promise.all([
+      this.repository.findById(id),
+      this.repository.getUsageCount(id),
+      this.repository.findAll({ limit: 1000 }),
+    ]);
+
+    return { counterpart, usageCount, allCounterparts };
+  }
+}

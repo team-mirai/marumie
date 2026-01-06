@@ -1,11 +1,7 @@
 import "server-only";
 
 import { notFound } from "next/navigation";
-import {
-  loadCounterpartByIdData,
-  loadCounterpartUsageData,
-  loadAllCounterpartsData,
-} from "@/server/contexts/report/presentation/loaders/counterparts-loader";
+import { loadCounterpartDetailPageData } from "@/server/contexts/report/presentation/loaders/counterparts-loader";
 import { loadCounterpartTransactionsData } from "@/server/contexts/report/presentation/loaders/counterpart-detail-loader";
 import { loadPoliticalOrganizationsData } from "@/server/contexts/shared/presentation/loaders/load-political-organizations-data";
 import { CounterpartDetailClient } from "@/client/components/counterparts/CounterpartDetailClient";
@@ -28,16 +24,14 @@ export default async function CounterpartDetailPage({
   const { id } = await params;
   const searchParamsResolved = await searchParams;
 
-  const counterpart = await loadCounterpartByIdData(id);
+  const [{ counterpart, usageCount, allCounterparts }, organizations] = await Promise.all([
+    loadCounterpartDetailPageData(id),
+    loadPoliticalOrganizationsData(),
+  ]);
+
   if (!counterpart) {
     notFound();
   }
-
-  const usageCount = await loadCounterpartUsageData(id);
-
-  const organizations = await loadPoliticalOrganizationsData();
-
-  const allCounterparts = await loadAllCounterpartsData();
 
   const politicalOrganizationId = searchParamsResolved.orgId || "";
   const financialYear = searchParamsResolved.year
