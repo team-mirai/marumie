@@ -6,6 +6,7 @@ import { PrismaCounterpartRepository } from "@/server/contexts/report/infrastruc
 import {
   GetCounterpartsUsecase,
   GetCounterpartDetailUsecase,
+  GetAllCounterpartsUsecase,
 } from "@/server/contexts/report/application/usecases/manage-counterpart-usecase";
 import type {
   CounterpartWithUsage,
@@ -87,7 +88,8 @@ export async function loadAllCounterpartsData(): Promise<Counterpart[]> {
   const cachedLoader = unstable_cache(
     async (): Promise<Counterpart[]> => {
       const repository = new PrismaCounterpartRepository(prisma);
-      return repository.findAll({ limit: 1000 });
+      const usecase = new GetAllCounterpartsUsecase(repository);
+      return usecase.execute();
     },
     ["all-counterparts-data"],
     { revalidate: CACHE_REVALIDATE_SECONDS },
