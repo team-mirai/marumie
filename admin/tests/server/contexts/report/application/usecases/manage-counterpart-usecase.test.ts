@@ -5,6 +5,7 @@ import {
   UpdateCounterpartUsecase,
   DeleteCounterpartUsecase,
   GetCounterpartUsageUsecase,
+  GetCounterpartDetailUsecase,
 } from "@/server/contexts/report/application/usecases/manage-counterpart-usecase";
 import type { ICounterpartRepository } from "@/server/contexts/report/domain/repositories/counterpart-repository.interface";
 import type { Counterpart, CounterpartWithUsage } from "@/server/contexts/report/domain/models/counterpart";
@@ -247,6 +248,42 @@ describe("manage-counterpart-usecase", () => {
 
       expect(result).toBe(5);
       expect(mockRepository.getUsageCount).toHaveBeenCalledWith("cp-1");
+    });
+  });
+
+  describe("GetCounterpartDetailUsecase", () => {
+    it("取引先詳細情報を並列で取得する", async () => {
+      const counterpart = createMockCounterpart();
+      const allCounterparts = [counterpart, createMockCounterpart({ id: "cp-2", name: "別の取引先" })];
+
+      mockRepository.findById.mockResolvedValue(counterpart);
+      mockRepository.getUsageCount.mockResolvedValue(5);
+      mockRepository.findAll.mockResolvedValue(allCounterparts);
+
+      const usecase = new GetCounterpartDetailUsecase(mockRepository);
+      const result = await usecase.execute("cp-1");
+
+      expect(result.counterpart).toEqual(counterpart);
+      expect(result.usageCount).toBe(5);
+      expect(result.allCounterparts).toEqual(allCounterparts);
+      expect(mockRepository.findById).toHaveBeenCalledWith("cp-1");
+      expect(mockRepository.getUsageCount).toHaveBeenCalledWith("cp-1");
+      expect(mockRepository.findAll).toHaveBeenCalledWith({ limit: 1000 });
+    });
+
+    it("存在しない取引先の場合はcounterpartがnullになる", async () => {
+      const allCounterparts = [createMockCounterpart()];
+
+      mockRepository.findById.mockResolvedValue(null);
+      mockRepository.getUsageCount.mockResolvedValue(0);
+      mockRepository.findAll.mockResolvedValue(allCounterparts);
+
+      const usecase = new GetCounterpartDetailUsecase(mockRepository);
+      const result = await usecase.execute("non-existent");
+
+      expect(result.counterpart).toBeNull();
+      expect(result.usageCount).toBe(0);
+      expect(result.allCounterparts).toEqual(allCounterparts);
     });
   });
 });
