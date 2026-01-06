@@ -6,6 +6,7 @@ import {
   DeleteCounterpartUsecase,
   GetCounterpartUsageUsecase,
   GetCounterpartDetailUsecase,
+  GetAllCounterpartsUsecase,
 } from "@/server/contexts/report/application/usecases/manage-counterpart-usecase";
 import type { ICounterpartRepository } from "@/server/contexts/report/domain/repositories/counterpart-repository.interface";
 import type { Counterpart, CounterpartWithUsage } from "@/server/contexts/report/domain/models/counterpart";
@@ -284,6 +285,33 @@ describe("manage-counterpart-usecase", () => {
       expect(result.counterpart).toBeNull();
       expect(result.usageCount).toBe(0);
       expect(result.allCounterparts).toEqual(allCounterparts);
+    });
+  });
+
+  describe("GetAllCounterpartsUsecase", () => {
+    it("全取引先を取得する（デフォルトlimit=1000）", async () => {
+      const counterparts = [
+        createMockCounterpart({ id: "cp-1" }),
+        createMockCounterpart({ id: "cp-2", name: "別の取引先" }),
+      ];
+      mockRepository.findAll.mockResolvedValue(counterparts);
+
+      const usecase = new GetAllCounterpartsUsecase(mockRepository);
+      const result = await usecase.execute();
+
+      expect(result).toEqual(counterparts);
+      expect(mockRepository.findAll).toHaveBeenCalledWith({ limit: 1000 });
+    });
+
+    it("カスタムlimitを指定して取得する", async () => {
+      const counterparts = [createMockCounterpart()];
+      mockRepository.findAll.mockResolvedValue(counterparts);
+
+      const usecase = new GetAllCounterpartsUsecase(mockRepository);
+      const result = await usecase.execute({ limit: 500 });
+
+      expect(result).toEqual(counterparts);
+      expect(mockRepository.findAll).toHaveBeenCalledWith({ limit: 500 });
     });
   });
 });

@@ -200,3 +200,16 @@ export class GetCounterpartDetailUsecase {
     return { counterpart, usageCount, allCounterparts };
   }
 }
+
+export interface GetAllCounterpartsInput {
+  limit?: number;
+}
+
+export class GetAllCounterpartsUsecase {
+  constructor(private repository: ICounterpartRepository) {}
+
+  async execute(input: GetAllCounterpartsInput = {}): Promise<Counterpart[]> {
+    const limit = input.limit ?? 1000;
+    return this.repository.findAll({ limit });
+  }
+}
