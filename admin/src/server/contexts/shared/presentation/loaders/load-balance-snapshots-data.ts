@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { BalanceSnapshot } from "@/shared/models/balance-snapshot";
+import type { BalanceSnapshot } from "@/server/contexts/shared/domain/models/balance-snapshot";
 import { prisma } from "@/server/contexts/shared/infrastructure/prisma";
 import { PrismaBalanceSnapshotRepository } from "@/server/contexts/shared/infrastructure/repositories/prisma-balance-snapshot.repository";
 

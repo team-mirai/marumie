@@ -3,7 +3,7 @@ import "client-only";
 
 import { useState, useEffect, useCallback } from "react";
 import type { PoliticalOrganization } from "@/shared/models/political-organization";
-import type { BalanceSnapshot } from "@/shared/models/balance-snapshot";
+import type { BalanceSnapshot } from "@/server/contexts/shared/domain/models/balance-snapshot";
 import { PoliticalOrganizationSelect } from "@/client/components/political-organizations/PoliticalOrganizationSelect";
 import BalanceSnapshotForm from "./BalanceSnapshotForm";
 import BalanceSnapshotList from "./BalanceSnapshotList";

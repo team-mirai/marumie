@@ -2,7 +2,7 @@ import type {
   BalanceSnapshot,
   CreateBalanceSnapshotInput,
   BalanceSnapshotFilters,
-} from "@/shared/models/balance-snapshot";
+} from "@/server/contexts/shared/domain/models/balance-snapshot";
 
 export interface IBalanceSnapshotRepository {
   create(input: CreateBalanceSnapshotInput): Promise<BalanceSnapshot>;
