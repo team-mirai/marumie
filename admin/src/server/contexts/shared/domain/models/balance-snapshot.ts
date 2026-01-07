@@ -12,7 +12,3 @@ export interface CreateBalanceSnapshotInput {
   snapshot_date: Date;
   balance: number;
 }
-
-export interface BalanceSnapshotFilters {
-  political_organization_id?: string;
-}

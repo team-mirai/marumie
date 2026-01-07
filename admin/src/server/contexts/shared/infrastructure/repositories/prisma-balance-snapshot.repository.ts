@@ -2,9 +2,11 @@ import type { Prisma, PrismaClient } from "@prisma/client";
 import type {
   BalanceSnapshot,
   CreateBalanceSnapshotInput,
-  BalanceSnapshotFilters,
 } from "@/server/contexts/shared/domain/models/balance-snapshot";
-import type { IBalanceSnapshotRepository } from "@/server/contexts/shared/domain/repositories/balance-snapshot-repository.interface";
+import type {
+  BalanceSnapshotFilters,
+  IBalanceSnapshotRepository,
+} from "@/server/contexts/shared/domain/repositories/balance-snapshot-repository.interface";
 
 export class PrismaBalanceSnapshotRepository implements IBalanceSnapshotRepository {
   constructor(private prisma: PrismaClient) {}
