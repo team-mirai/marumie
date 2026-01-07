@@ -1,5 +1,8 @@
-import type { BalanceSnapshot, CreateBalanceSnapshotInput } from "@/server/contexts/shared/domain/models/balance-snapshot";
-import type { IBalanceSnapshotRepository } from "@/server/contexts/shared/domain/repositories/balance-snapshot-repository.interface";
+import type { BalanceSnapshot } from "@/server/contexts/shared/domain/models/balance-snapshot";
+import type {
+  CreateBalanceSnapshotInput,
+  IBalanceSnapshotRepository,
+} from "@/server/contexts/shared/domain/repositories/balance-snapshot-repository.interface";
 
 export class CreateBalanceSnapshotUsecase {
   constructor(private repository: IBalanceSnapshotRepository) {}

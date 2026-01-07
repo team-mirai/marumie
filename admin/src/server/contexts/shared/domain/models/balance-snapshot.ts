@@ -6,9 +6,3 @@ export interface BalanceSnapshot {
   created_at: Date;
   updated_at: Date;
 }
-
-export interface CreateBalanceSnapshotInput {
-  political_organization_id: string;
-  snapshot_date: Date;
-  balance: number;
-}
