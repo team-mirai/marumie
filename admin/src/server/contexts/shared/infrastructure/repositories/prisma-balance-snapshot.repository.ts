@@ -1,3 +1,5 @@
+import "server-only";
+
 import type { Prisma, PrismaClient } from "@prisma/client";
 import type { BalanceSnapshot } from "@/server/contexts/shared/domain/models/balance-snapshot";
 import type {
