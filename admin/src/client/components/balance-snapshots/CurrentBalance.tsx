@@ -1,4 +1,4 @@
-import type { BalanceSnapshot } from "@/shared/models/balance-snapshot";
+import type { BalanceSnapshot } from "@/server/contexts/shared/domain/models/balance-snapshot";
 
 interface CurrentBalanceProps {
   snapshot: BalanceSnapshot | null;
