@@ -42,7 +42,7 @@
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.4.0",
     "xmlbuilder2": "^4.0.3",
-    "zod": "^4.3.4"
+    "zod": "^4.3.5"
   },
   "devDependencies": {
     "@playwright/test": "^1.57.0",
