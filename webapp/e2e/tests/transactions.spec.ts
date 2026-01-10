@@ -8,24 +8,34 @@ test.describe("取引一覧ページ", () => {
 
 		// ページ内で発生するエラーを収集（warningは除外）
 		page.on("pageerror", (error) => {
-			errors.push(`${error.name}: ${error.message}`);
+			errors.push(
+				`${error.name}: ${error.message}${error.stack ? `\n${error.stack}` : ""}`,
+			);
 		});
 
 		// コンソールのerrorレベルのメッセージも収集（warningは除外）
 		page.on("console", (msg) => {
 			if (msg.type() === "error") {
-				errors.push(`Console error: ${msg.text()}`);
+				const loc = msg.location();
+				const where = loc?.url
+					? ` (${loc.url}:${loc.lineNumber}:${loc.columnNumber})`
+					: "";
+				errors.push(`Console error: ${msg.text()}${where}`);
 			}
 		});
 
 		const response = await page.goto("/o/sample-party/transactions");
 
-		expect(response?.status()).toBe(200);
+		expect(response, "page.goto() が失敗しました").not.toBeNull();
+		expect(response!.status()).toBe(200);
 		await expect(page).toHaveTitle(/全ての出入金.*みらいまる見え政治資金/);
 
-		// ページの描画が完了するまで待機
-		await page.waitForLoadState("networkidle");
-		await page.waitForTimeout(2000);
+		// 取引一覧の見出しが描画されるまで待機（networkidle依存を避ける）
+		await expect(
+			page.getByRole("heading", { name: /すべての出入金|全ての出入金/ }),
+		).toBeVisible();
+		// グラフ等の非同期描画のための最小限の待機
+		await page.waitForTimeout(500);
 
 		// 実行時エラーが発生していないことを確認
 		expect(

@@ -9,13 +9,19 @@ test.describe("政治団体ページ", () => {
 
 			// ページ内で発生するエラーを収集（warningは除外）
 			page.on("pageerror", (error) => {
-				errors.push(`${error.name}: ${error.message}`);
+				errors.push(
+					`${error.name}: ${error.message}${error.stack ? `\n${error.stack}` : ""}`,
+				);
 			});
 
 			// コンソールのerrorレベルのメッセージも収集（warningは除外）
 			page.on("console", (msg) => {
 				if (msg.type() === "error") {
-					errors.push(`Console error: ${msg.text()}`);
+					const loc = msg.location();
+					const where = loc?.url
+						? ` (${loc.url}:${loc.lineNumber}:${loc.columnNumber})`
+						: "";
+					errors.push(`Console error: ${msg.text()}${where}`);
 				}
 			});
 
@@ -25,9 +31,12 @@ test.describe("政治団体ページ", () => {
 			await expect(page).toHaveURL(/\/o\/[\w-]+$/);
 			await expect(page).toHaveTitle(/みらいまる見え政治資金/);
 
-			// グラフなどの描画が完了するまで待機
-			await page.waitForLoadState("networkidle");
-			await page.waitForTimeout(2000);
+			// 収支の流れセクションが描画されるまで待機（networkidle依存を避ける）
+			await expect(
+				page.locator("#cash-flow").getByText("収支の流れ"),
+			).toBeVisible();
+			// グラフ等の非同期描画のための最小限の待機
+			await page.waitForTimeout(500);
 
 			// 実行時エラーが発生していないことを確認
 			expect(
