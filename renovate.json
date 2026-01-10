@@ -4,7 +4,7 @@
     "config:recommended"
   ],
   "timezone": "Asia/Tokyo",
-  "schedule": ["at 12:00 on Saturday"],
+  "schedule": ["after 3:15pm every day"],
   "prHourlyLimit": 5,
   "prConcurrentLimit": 10,
   "labels": ["dependencies"],
