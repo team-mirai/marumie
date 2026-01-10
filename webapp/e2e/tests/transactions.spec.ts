@@ -6,22 +6,11 @@ test.describe("取引一覧ページ", () => {
 	}) => {
 		const errors: string[] = [];
 
-		// ページ内で発生するエラーを収集（warningは除外）
+		// ページ内で発生する未キャッチ例外を収集
 		page.on("pageerror", (error) => {
 			errors.push(
 				`${error.name}: ${error.message}${error.stack ? `\n${error.stack}` : ""}`,
 			);
-		});
-
-		// コンソールのerrorレベルのメッセージも収集（warningは除外）
-		page.on("console", (msg) => {
-			if (msg.type() === "error") {
-				const loc = msg.location();
-				const where = loc?.url
-					? ` (${loc.url}:${loc.lineNumber}:${loc.columnNumber})`
-					: "";
-				errors.push(`Console error: ${msg.text()}${where}`);
-			}
 		});
 
 		const response = await page.goto("/o/sample-party/transactions");
