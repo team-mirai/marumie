@@ -66,7 +66,7 @@
   "dependencies": {
     "@prisma/client": "^6.19.1",
     "@supabase/supabase-js": "^2.89.0",
-    "dotenv": "^16.6.1"
+    "dotenv": "^17.0.0"
   },
   "devDependencies": {
     "@biomejs/biome": "2.3.11",

@@ -15,8 +15,8 @@ importers:
         specifier: ^2.89.0
         version: 2.89.0
       dotenv:
-        specifier: ^16.6.1
-        version: 16.6.1
+        specifier: ^17.0.0
+        version: 17.2.3
     devDependencies:
       '@biomejs/biome':
         specifier: 2.3.11
