@@ -1,0 +1,61 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended"
+  ],
+  "timezone": "Asia/Tokyo",
+  "schedule": ["at 12:00 on Saturday"],
+  "prHourlyLimit": 5,
+  "prConcurrentLimit": 10,
+  "labels": ["dependencies"],
+  "lockFileMaintenance": {
+    "enabled": true
+  },
+  "packageRules": [
+    {
+      "description": "Prisma packages",
+      "matchPackagePatterns": ["^prisma$", "^@prisma/"],
+      "groupName": "prisma"
+    },
+    {
+      "description": "Supabase packages",
+      "matchPackagePatterns": ["^@supabase/", "^supabase$"],
+      "groupName": "supabase"
+    },
+    {
+      "description": "Radix UI packages",
+      "matchPackagePatterns": ["^@radix-ui/"],
+      "groupName": "radix-ui"
+    },
+    {
+      "description": "TanStack packages",
+      "matchPackagePatterns": ["^@tanstack/"],
+      "groupName": "tanstack"
+    },
+    {
+      "description": "AI SDK packages",
+      "matchPackagePatterns": ["^@ai-sdk/", "^ai$"],
+      "groupName": "ai-sdk"
+    },
+    {
+      "description": "Next.js and React",
+      "matchPackageNames": ["next", "react", "react-dom"],
+      "groupName": "next-react"
+    },
+    {
+      "description": "Chart libraries",
+      "matchPackagePatterns": ["^apexcharts$", "^react-apexcharts$", "^@nivo/"],
+      "groupName": "charts"
+    },
+    {
+      "description": "TypeScript type definitions",
+      "matchPackagePatterns": ["^@types/"],
+      "groupName": "types"
+    },
+    {
+      "description": "GitHub Actions",
+      "matchManagers": ["github-actions"],
+      "groupName": "github-actions"
+    }
+  ]
+}
