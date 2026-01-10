@@ -5,11 +5,35 @@ test.describe("政治団体ページ", () => {
 		test("ルートにアクセスすると政治団体ページにリダイレクトされる", async ({
 			page,
 		}) => {
+			const errors: string[] = [];
+
+			// ページ内で発生するエラーを収集（warningは除外）
+			page.on("pageerror", (error) => {
+				errors.push(`${error.name}: ${error.message}`);
+			});
+
+			// コンソールのerrorレベルのメッセージも収集（warningは除外）
+			page.on("console", (msg) => {
+				if (msg.type() === "error") {
+					errors.push(`Console error: ${msg.text()}`);
+				}
+			});
+
 			await page.goto("/");
 
 			// /o/{slug} にリダイレクトされることを確認
 			await expect(page).toHaveURL(/\/o\/[\w-]+$/);
 			await expect(page).toHaveTitle(/みらいまる見え政治資金/);
+
+			// グラフなどの描画が完了するまで待機
+			await page.waitForLoadState("networkidle");
+			await page.waitForTimeout(2000);
+
+			// 実行時エラーが発生していないことを確認
+			expect(
+				errors,
+				`以下のエラーが発生しました:\n${errors.join("\n")}`,
+			).toHaveLength(0);
 		});
 
 		test("政治団体ページが正常に表示される", async ({ page }) => {
