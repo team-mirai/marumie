@@ -23,8 +23,10 @@ test.describe("取引一覧ページ", () => {
 		await expect(
 			page.getByRole("heading", { name: /すべての出入金|全ての出入金/ }),
 		).toBeVisible();
-		// グラフ等の非同期描画のための最小限の待機
-		await page.waitForTimeout(500);
+		// 取引一覧テーブルが描画されるまで待機
+		await expect(
+			page.locator('table[aria-label="政治資金取引一覧表"]'),
+		).toBeVisible();
 
 		// 実行時エラーが発生していないことを確認
 		expect(

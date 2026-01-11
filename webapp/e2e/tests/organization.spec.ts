@@ -24,8 +24,10 @@ test.describe("政治団体ページ", () => {
 			await expect(
 				page.locator("#cash-flow").getByText("収支の流れ"),
 			).toBeVisible();
-			// グラフ等の非同期描画のための最小限の待機
-			await page.waitForTimeout(500);
+			// サンキーチャート（SVG）が描画されるまで待機
+			await expect(
+				page.locator("#cash-flow").locator('[role="img"][aria-label="政治資金の収支フロー図"]'),
+			).toBeVisible();
 
 			// 実行時エラーが発生していないことを確認
 			expect(
