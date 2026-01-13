@@ -17,7 +17,7 @@ export async function deleteAllTransactionsAction(organizationId?: string): Prom
     const result = await usecase.execute(organizationId);
 
     // データキャッシュを無効化してトランザクション一覧を更新
-    revalidateTag("transactions-data");
+    revalidateTag("transactions-data", "max");
 
     return {
       success: true,

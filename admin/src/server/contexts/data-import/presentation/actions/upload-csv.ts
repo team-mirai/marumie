@@ -60,8 +60,8 @@ export async function uploadCsv(data: UploadCsvRequest): Promise<UploadCsvRespon
         : `${result.processedCount}件を処理し、${result.savedCount}件を保存しました`;
 
     // キャッシュを無効化してトランザクション一覧を更新
-    revalidateTag("transactions-data");
-    revalidateTag("transactions-for-csv");
+    revalidateTag("transactions-data", "max");
+    revalidateTag("transactions-for-csv", "max");
 
     return {
       ok: true,
