@@ -4,58 +4,87 @@
     "config:recommended"
   ],
   "timezone": "Asia/Tokyo",
-  "schedule": ["after 3:15pm every day"],
+  "schedule": [
+    "after 3:15pm"
+  ],
   "prHourlyLimit": 5,
   "prConcurrentLimit": 10,
-  "labels": ["dependencies"],
+  "labels": [
+    "dependencies"
+  ],
   "lockFileMaintenance": {
     "enabled": true
   },
   "packageRules": [
     {
       "description": "Prisma packages (exclude v7 due to ESM compatibility issues)",
-      "matchPackagePatterns": ["^prisma$", "^@prisma/"],
       "groupName": "prisma",
-      "allowedVersions": "<7.0.0"
+      "allowedVersions": "<7.0.0",
+      "matchPackageNames": [
+        "/^prisma$/",
+        "/^@prisma//"
+      ]
     },
     {
       "description": "Supabase packages",
-      "matchPackagePatterns": ["^@supabase/", "^supabase$"],
-      "groupName": "supabase"
+      "groupName": "supabase",
+      "matchPackageNames": [
+        "/^@supabase//",
+        "/^supabase$/"
+      ]
     },
     {
       "description": "Radix UI packages",
-      "matchPackagePatterns": ["^@radix-ui/"],
-      "groupName": "radix-ui"
+      "groupName": "radix-ui",
+      "matchPackageNames": [
+        "/^@radix-ui//"
+      ]
     },
     {
       "description": "TanStack packages",
-      "matchPackagePatterns": ["^@tanstack/"],
-      "groupName": "tanstack"
+      "groupName": "tanstack",
+      "matchPackageNames": [
+        "/^@tanstack//"
+      ]
     },
     {
       "description": "AI SDK packages",
-      "matchPackagePatterns": ["^@ai-sdk/", "^ai$"],
-      "groupName": "ai-sdk"
+      "groupName": "ai-sdk",
+      "matchPackageNames": [
+        "/^@ai-sdk//",
+        "/^ai$/"
+      ]
     },
     {
       "description": "Next.js and React",
-      "matchPackageNames": ["next", "react", "react-dom"],
+      "matchPackageNames": [
+        "next",
+        "react",
+        "react-dom"
+      ],
       "groupName": "next-react"
     },
     {
       "description": "Chart libraries",
-      "matchPackagePatterns": ["^apexcharts$", "^react-apexcharts$", "^@nivo/"],
-      "groupName": "charts"
+      "groupName": "charts",
+      "matchPackageNames": [
+        "/^apexcharts$/",
+        "/^react-apexcharts$/",
+        "/^@nivo//"
+      ]
     },
     {
       "description": "TypeScript type definitions",
-      "matchPackagePatterns": ["^@types/"],
-      "groupName": "types"
+      "groupName": "types",
+      "matchPackageNames": [
+        "/^@types//"
+      ]
     },
     {
       "description": "GitHub Actions",
-      "matchManagers": ["github-actions"],
+      "matchManagers": [
+        "github-actions"
+      ],
       "groupName": "github-actions"
     }
   ]
