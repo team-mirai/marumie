@@ -13,9 +13,10 @@
   },
   "packageRules": [
     {
-      "description": "Prisma packages",
+      "description": "Prisma packages (exclude v7 due to ESM compatibility issues)",
       "matchPackagePatterns": ["^prisma$", "^@prisma/"],
-      "groupName": "prisma"
+      "groupName": "prisma",
+      "allowedVersions": "<7.0.0"
     },
     {
       "description": "Supabase packages",
