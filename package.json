@@ -42,6 +42,7 @@
     "test:e2e:webapp": "pnpm --filter webapp test:e2e",
     "test:e2e:admin": "pnpm --filter admin test:e2e",
     "test:e2e:ui": "pnpm --filter admin test:e2e:ui",
+    "test:integration": "INTEGRATION_TEST=true pnpm --filter admin test -- vercel-ai-gateway.integration.test.ts",
     "// Database": "==========================================",
     "db:generate": "prisma generate",
     "db:migrate": "pnpm -s dotenv -e .env.dev -- prisma migrate dev",
