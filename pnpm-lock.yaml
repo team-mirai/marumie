@@ -44,7 +44,7 @@ importers:
         version: 2.13.1
       supabase:
         specifier: ^2.70.5
-        version: 2.72.6
+        version: 2.72.7
       tsx:
         specifier: ^4.21.0
         version: 4.21.0
@@ -3543,8 +3543,8 @@ packages:
       babel-plugin-macros:
         optional: true
 
-  supabase@2.72.6:
-    resolution: {integrity: sha512-axO1MkZgwMIxj78vKiGosnuXwzOaQq0Kz0I8jheNMwJH9dKGf3q/arivYT44z8u3t5FjGUxQWOuQoJetzcmm/A==}
+  supabase@2.72.7:
+    resolution: {integrity: sha512-T7wEqqU+kCilZ9vQUBg7O0AhKKGQYOnuy9lb9c7YCpZ56emq0Nmn29RbaVq5nJnfOIxTfG4mPDuYukqRwO1SKg==}
     engines: {npm: '>=8'}
     hasBin: true
 
@@ -7207,7 +7207,7 @@ snapshots:
     optionalDependencies:
       '@babel/core': 7.28.5
 
-  supabase@2.72.6:
+  supabase@2.72.7:
     dependencies:
       bin-links: 6.0.0
       https-proxy-agent: 7.0.6
