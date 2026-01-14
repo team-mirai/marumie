@@ -5,6 +5,10 @@ export interface PreviewDonorCsvSummary {
   total: number;
   /** 正常件数（インポート可能） */
   valid: number;
+  /** 正常件数のうち新規寄付者 */
+  validNew: number;
+  /** 正常件数のうち既存寄付者 */
+  validExisting: number;
   /** 入力値エラー件数 */
   invalid: number;
   /** Transaction 未存在件数 */
@@ -17,6 +21,8 @@ export function calculateDonorPreviewSummary(rows: PreviewDonorCsvRow[]): Previe
   const summary = {
     total: rows.length,
     valid: 0,
+    validNew: 0,
+    validExisting: 0,
     invalid: 0,
     transactionNotFound: 0,
     typeMismatch: 0,
@@ -26,6 +32,11 @@ export function calculateDonorPreviewSummary(rows: PreviewDonorCsvRow[]): Previe
     switch (row.status) {
       case "valid":
         summary.valid++;
+        if (row.matchingDonor) {
+          summary.validExisting++;
+        } else {
+          summary.validNew++;
+        }
         break;
       case "invalid":
         summary.invalid++;

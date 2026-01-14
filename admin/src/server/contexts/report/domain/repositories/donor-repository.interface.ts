@@ -5,6 +5,7 @@ import type {
   CreateDonorInput,
   UpdateDonorInput,
 } from "@/server/contexts/report/domain/models/donor";
+import type { PrismaTransactionClient } from "@/server/contexts/report/domain/repositories/transaction-manager.interface";
 
 export interface DonorFilters {
   searchQuery?: string;
@@ -56,4 +57,12 @@ export interface IDonorRepository {
   findByMatchCriteriaBatch(
     criteria: Array<{ name: string; address: string | null; donorType: DonorType }>,
   ): Promise<Donor[]>;
+
+  /**
+   * 複数のDonorを一括作成する（N+1回避のためのバルクインサート）
+   * @param donors 作成するDonorの配列
+   * @param tx トランザクションコンテキスト（Prisma.$transaction 内で使用）
+   * @returns 作成されたDonorの配列（IDを含む）
+   */
+  createMany(donors: CreateDonorInput[], tx?: PrismaTransactionClient): Promise<Donor[]>;
 }

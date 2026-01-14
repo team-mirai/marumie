@@ -1,42 +1,55 @@
 "use client";
 import "client-only";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { toast } from "sonner";
 import type { PoliticalOrganization } from "@/shared/models/political-organization";
 import type { PreviewDonorCsvResult } from "@/server/contexts/report/presentation/types/preview-donor-csv-types";
 import type { PreviewDonorCsvRequest } from "@/server/contexts/report/presentation/actions/preview-donor-csv";
+import type {
+  ImportDonorCsvRequest,
+  ImportDonorCsvResult,
+} from "@/server/contexts/report/presentation/actions/import-donor-csv";
 import DonorCsvPreview from "./DonorCsvPreview";
-import {
-  Button,
-  Input,
-  Label,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/client/components/ui";
+import { Input, Label } from "@/client/components/ui";
+import { PoliticalOrganizationSelect } from "@/client/components/political-organizations/PoliticalOrganizationSelect";
 
 interface DonorCsvImportClientProps {
   organizations: PoliticalOrganization[];
   previewAction: (data: PreviewDonorCsvRequest) => Promise<PreviewDonorCsvResult>;
+  importAction: (data: ImportDonorCsvRequest) => Promise<ImportDonorCsvResult>;
 }
 
 export default function DonorCsvImportClient({
   organizations,
   previewAction,
+  importAction,
 }: DonorCsvImportClientProps) {
+  const csvFileInputId = useId();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
   const [politicalOrganizationId, setPoliticalOrganizationId] = useState<string>("");
   const [previewResult, setPreviewResult] = useState<PreviewDonorCsvResult | null>(null);
   const [loading, setLoading] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const previewActionRef = useRef(previewAction);
+  const importActionRef = useRef(importAction);
+
+  // 最初の組織を自動選択
+  useEffect(() => {
+    if (organizations.length > 0 && !politicalOrganizationId) {
+      setPoliticalOrganizationId(organizations[0].id);
+    }
+  }, [organizations, politicalOrganizationId]);
 
   useEffect(() => {
     previewActionRef.current = previewAction;
   }, [previewAction]);
+
+  useEffect(() => {
+    importActionRef.current = importAction;
+  }, [importAction]);
 
   const stablePreviewAction = useCallback(
     (data: PreviewDonorCsvRequest) => previewActionRef.current(data),
@@ -72,66 +85,62 @@ export default function DonorCsvImportClient({
     previewFile();
   }, [file, politicalOrganizationId, stablePreviewAction]);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = e.target.files?.[0] || null;
-    setFile(selectedFile);
-  };
-
-  const handleOrganizationChange = (value: string) => {
-    setPoliticalOrganizationId(value);
-  };
-
-  const handleClearFile = () => {
+  const resetFileInput = useCallback(() => {
     setFile(null);
     setPreviewResult(null);
     setError(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
-  };
+  }, []);
+
+  const handleImport = useCallback(async () => {
+    if (!file || !politicalOrganizationId) {
+      return;
+    }
+
+    setIsImporting(true);
+
+    try {
+      const csvContent = await file.text();
+      const result = await importActionRef.current({
+        csvContent,
+        politicalOrganizationId,
+      });
+
+      if (result.ok) {
+        toast.success(`${result.importedCount}件のインポートが完了しました`);
+        resetFileInput();
+      } else {
+        toast.error(`インポートに失敗しました: ${result.error}`);
+      }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "インポートに失敗しました";
+      toast.error(`インポートに失敗しました: ${errorMessage}`);
+    } finally {
+      setIsImporting(false);
+    }
+  }, [file, politicalOrganizationId, resetFileInput]);
 
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <Label htmlFor="organization" className="text-white mb-2 block">
-            政治団体
-          </Label>
-          <Select value={politicalOrganizationId} onValueChange={handleOrganizationChange}>
-            <SelectTrigger id="organization" className="w-full">
-              <SelectValue placeholder="政治団体を選択" />
-            </SelectTrigger>
-            <SelectContent>
-              {organizations.map((org) => (
-                <SelectItem key={org.id} value={org.id}>
-                  {org.displayName}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div>
-          <Label htmlFor="file" className="text-white mb-2 block">
-            CSVファイル
-          </Label>
-          <div className="flex gap-2">
-            <Input
-              ref={fileInputRef}
-              id="file"
-              type="file"
-              accept=".csv"
-              onChange={handleFileChange}
-              className="flex-1"
-            />
-            {file && (
-              <Button type="button" variant="outline" onClick={handleClearFile}>
-                クリア
-              </Button>
-            )}
-          </div>
-          {file && <p className="text-sm text-muted-foreground mt-1">選択中: {file.name}</p>}
-        </div>
+    <div className="space-y-3">
+      <PoliticalOrganizationSelect
+        organizations={organizations}
+        value={politicalOrganizationId}
+        onValueChange={setPoliticalOrganizationId}
+        required
+      />
+      <div>
+        <Label htmlFor={csvFileInputId}>CSV File:</Label>
+        <Input
+          ref={fileInputRef}
+          id={csvFileInputId}
+          className="h-10 border-0 bg-transparent shadow-none file:mr-4 file:h-full file:px-6 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90 file:cursor-pointer"
+          type="file"
+          accept=".csv,text/csv"
+          onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+          required
+        />
       </div>
 
       {loading && (
@@ -147,10 +156,7 @@ export default function DonorCsvImportClient({
       )}
 
       {previewResult && !loading && (
-        <div className="bg-card rounded-xl p-4">
-          <h3 className="text-lg font-medium text-white mb-4">プレビュー結果</h3>
-          <DonorCsvPreview result={previewResult} />
-        </div>
+        <DonorCsvPreview result={previewResult} onImport={handleImport} isImporting={isImporting} />
       )}
     </div>
   );

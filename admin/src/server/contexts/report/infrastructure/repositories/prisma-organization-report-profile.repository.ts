@@ -34,6 +34,15 @@ export class PrismaOrganizationReportProfileRepository
     return this.mapToModel(profile);
   }
 
+  async getOrganizationSlug(politicalOrganizationId: string): Promise<string | null> {
+    const organization = await this.prisma.politicalOrganization.findUnique({
+      where: { id: BigInt(politicalOrganizationId) },
+      select: { slug: true },
+    });
+
+    return organization?.slug ?? null;
+  }
+
   async create(input: CreateOrganizationReportProfileInput): Promise<OrganizationReportProfile> {
     const profile = await this.prisma.organizationReportProfile.create({
       data: {

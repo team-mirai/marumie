@@ -1,3 +1,5 @@
+import "server-only";
+
 import type { IBalanceSnapshotRepository } from "@/server/contexts/shared/domain/repositories/balance-snapshot-repository.interface";
 
 export class DeleteBalanceSnapshotUsecase {

@@ -5,8 +5,8 @@ import { prisma } from "@/server/contexts/shared/infrastructure/prisma";
 import { PrismaCounterpartRepository } from "@/server/contexts/report/infrastructure/repositories/prisma-counterpart.repository";
 import {
   GetCounterpartsUsecase,
-  GetCounterpartByIdUsecase,
-  GetCounterpartUsageUsecase,
+  GetCounterpartDetailUsecase,
+  GetAllCounterpartsUsecase,
 } from "@/server/contexts/report/application/usecases/manage-counterpart-usecase";
 import type {
   CounterpartWithUsage,
@@ -62,30 +62,22 @@ export async function loadCounterpartsData(
   return cachedLoader(searchQuery, page, perPage);
 }
 
-export async function loadCounterpartByIdData(id: string): Promise<Counterpart | null> {
-  const cachedLoader = unstable_cache(
-    async (id: string): Promise<Counterpart | null> => {
-      const repository = new PrismaCounterpartRepository(prisma);
-      const usecase = new GetCounterpartByIdUsecase(repository);
-
-      return usecase.execute(id);
-    },
-    ["counterpart-by-id-data", id],
-    { revalidate: CACHE_REVALIDATE_SECONDS },
-  );
-
-  return cachedLoader(id);
+export interface LoadCounterpartDetailPageResult {
+  counterpart: Counterpart | null;
+  usageCount: number;
+  allCounterparts: Counterpart[];
 }
 
-export async function loadCounterpartUsageData(id: string): Promise<number> {
+export async function loadCounterpartDetailPageData(
+  id: string,
+): Promise<LoadCounterpartDetailPageResult> {
   const cachedLoader = unstable_cache(
-    async (id: string): Promise<number> => {
+    async (id: string): Promise<LoadCounterpartDetailPageResult> => {
       const repository = new PrismaCounterpartRepository(prisma);
-      const usecase = new GetCounterpartUsageUsecase(repository);
-
+      const usecase = new GetCounterpartDetailUsecase(repository);
       return usecase.execute(id);
     },
-    ["counterpart-usage-data", id],
+    ["counterpart-detail-page-data", id],
     { revalidate: CACHE_REVALIDATE_SECONDS },
   );
 
@@ -96,8 +88,8 @@ export async function loadAllCounterpartsData(): Promise<Counterpart[]> {
   const cachedLoader = unstable_cache(
     async (): Promise<Counterpart[]> => {
       const repository = new PrismaCounterpartRepository(prisma);
-      const counterparts = await repository.findAll({ limit: 1000 });
-      return counterparts;
+      const usecase = new GetAllCounterpartsUsecase(repository);
+      return usecase.execute();
     },
     ["all-counterparts-data"],
     { revalidate: CACHE_REVALIDATE_SECONDS },

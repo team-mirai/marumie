@@ -8,6 +8,12 @@ const data: Prisma.PoliticalOrganizationCreateInput[] = [
     slug: 'sample-party',
     description: '政治資金報告書XMLエクスポート機能のテストデータ用政治団体',
   },
+  {
+    displayName: 'E2Eテスト団体',
+    orgName: null,
+    slug: 'e2e-test-org',
+    description: 'E2Eテスト用の最小構成政治団体',
+  },
 ];
 
 export const politicalOrganizationsSeeder: Seeder = {

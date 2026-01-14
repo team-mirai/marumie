@@ -2,7 +2,7 @@
 import "client-only";
 
 import { useState } from "react";
-import type { BalanceSnapshot } from "@/shared/models/balance-snapshot";
+import type { BalanceSnapshot } from "@/server/contexts/shared/domain/models/balance-snapshot";
 import { Button } from "@/client/components/ui";
 
 interface BalanceSnapshotListProps {

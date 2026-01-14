@@ -9,7 +9,7 @@ async function hashCredentials(credentials: string): Promise<string> {
   return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const basicAuthSecret = process.env.BASIC_AUTH_SECRET;
 
   // ベーシック認証の環境変数がない場合は認証をスキップ

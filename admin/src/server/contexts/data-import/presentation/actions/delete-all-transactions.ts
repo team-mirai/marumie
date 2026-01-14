@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidateTag } from "next/cache";
+import { updateTag } from "next/cache";
 import { prisma } from "@/server/contexts/shared/infrastructure/prisma";
 import { PrismaTransactionRepository } from "@/server/contexts/shared/infrastructure/repositories/prisma-transaction.repository";
 import { DeleteAllTransactionsUsecase } from "@/server/contexts/data-import/application/usecases/delete-all-transactions-usecase";
@@ -17,7 +17,7 @@ export async function deleteAllTransactionsAction(organizationId?: string): Prom
     const result = await usecase.execute(organizationId);
 
     // データキャッシュを無効化してトランザクション一覧を更新
-    revalidateTag("transactions-data");
+    updateTag("transactions-data");
 
     return {
       success: true,
