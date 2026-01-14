@@ -1,6 +1,6 @@
 import "server-only";
 
-import { revalidateTag } from "next/cache";
+import { updateTag } from "next/cache";
 import { prisma } from "@/server/contexts/shared/infrastructure/prisma";
 import { PrismaTransactionRepository } from "@/server/contexts/shared/infrastructure/repositories/prisma-transaction.repository";
 import { WebappCacheInvalidator } from "@/server/contexts/shared/infrastructure/services/webapp-cache-invalidator";
@@ -60,8 +60,8 @@ export async function uploadCsv(data: UploadCsvRequest): Promise<UploadCsvRespon
         : `${result.processedCount}件を処理し、${result.savedCount}件を保存しました`;
 
     // キャッシュを無効化してトランザクション一覧を更新
-    revalidateTag("transactions-data");
-    revalidateTag("transactions-for-csv");
+    updateTag("transactions-data");
+    updateTag("transactions-for-csv");
 
     return {
       ok: true,
