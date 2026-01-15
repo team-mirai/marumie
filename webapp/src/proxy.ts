@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { getMaintenanceHtml } from "@/lib/maintenance-html";
 
 async function hashCredentials(credentials: string): Promise<string> {
   const encoder = new TextEncoder();
@@ -10,6 +11,21 @@ async function hashCredentials(credentials: string): Promise<string> {
 }
 
 export async function proxy(request: NextRequest) {
+  // メンテナンスモードチェック
+  const isMaintenanceMode = process.env.MAINTENANCE_MODE === "true";
+  if (isMaintenanceMode) {
+    const maintenanceMessage = process.env.MAINTENANCE_MESSAGE;
+    const html = getMaintenanceHtml(maintenanceMessage);
+    return new NextResponse(html, {
+      status: 503,
+      headers: {
+        "Content-Type": "text/html; charset=utf-8",
+        "Retry-After": "3600",
+        "Cache-Control": "no-store, no-cache, must-revalidate",
+      },
+    });
+  }
+
   const basicAuthSecret = process.env.BASIC_AUTH_SECRET;
 
   // ベーシック認証の環境変数がない場合は認証をスキップ

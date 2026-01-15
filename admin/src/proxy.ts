@@ -1,5 +1,6 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { type NextRequest, NextResponse } from "next/server";
+import { getMaintenanceHtml } from "@/lib/maintenance-html";
 
 async function hashCredentials(credentials: string): Promise<string> {
   const encoder = new TextEncoder();
@@ -48,6 +49,21 @@ async function performBasicAuth(request: NextRequest): Promise<NextResponse | nu
 
 // publicパス以外は全て認証を必須とする（セキュアデフォルト）
 export async function proxy(request: NextRequest): Promise<NextResponse> {
+  // メンテナンスモードチェック
+  const isMaintenanceMode = process.env.MAINTENANCE_MODE === "true";
+  if (isMaintenanceMode) {
+    const maintenanceMessage = process.env.MAINTENANCE_MESSAGE;
+    const html = getMaintenanceHtml(maintenanceMessage);
+    return new NextResponse(html, {
+      status: 503,
+      headers: {
+        "Content-Type": "text/html; charset=utf-8",
+        "Retry-After": "3600",
+        "Cache-Control": "no-store, no-cache, must-revalidate",
+      },
+    });
+  }
+
   // PKCEフローでのパスワードリセット: codeパラメータがルートURLに来た場合は/loginにリダイレクト
   const code = request.nextUrl.searchParams.get("code");
   if (code && request.nextUrl.pathname === "/") {
