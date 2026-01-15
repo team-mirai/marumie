@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { getMaintenanceHtml } from "@/lib/maintenance-html";
+import { getMaintenanceHtml } from "@/client/templates/maintenance-html";
 
 async function hashCredentials(credentials: string): Promise<string> {
   const encoder = new TextEncoder();
