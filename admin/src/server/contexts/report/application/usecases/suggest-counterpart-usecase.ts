@@ -8,6 +8,7 @@ import {
 } from "@/server/contexts/report/application/services/counterpart-suggester";
 
 export interface SuggestCounterpartInput {
+  tenantId: bigint;
   transactionId: string;
   politicalOrganizationId: string;
   limit?: number;
@@ -53,6 +54,7 @@ export class SuggestCounterpartUsecase {
 
     const suggestions = await suggester.suggest(
       transactionWithCounterpart,
+      input.tenantId,
       input.politicalOrganizationId,
       input.limit ?? 5,
     );

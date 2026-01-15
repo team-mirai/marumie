@@ -16,6 +16,7 @@ import type {
 const CACHE_REVALIDATE_SECONDS = 60;
 
 export interface LoadCounterpartsInput {
+  tenantId: bigint;
   searchQuery?: string;
   page?: number;
   perPage?: number;
@@ -29,20 +30,27 @@ export interface LoadCounterpartsResult {
 }
 
 export async function loadCounterpartsData(
-  input: LoadCounterpartsInput = {},
+  input: LoadCounterpartsInput,
 ): Promise<LoadCounterpartsResult> {
+  const { tenantId } = input;
   const page = input.page ?? 1;
   const perPage = input.perPage ?? 50;
   const searchQuery = input.searchQuery ?? "";
 
   const cachedLoader = unstable_cache(
-    async (searchQuery: string, page: number, perPage: number): Promise<LoadCounterpartsResult> => {
+    async (
+      tenantIdStr: string,
+      searchQuery: string,
+      page: number,
+      perPage: number,
+    ): Promise<LoadCounterpartsResult> => {
       const offset = (page - 1) * perPage;
 
       const repository = new PrismaCounterpartRepository(prisma);
       const usecase = new GetCounterpartsUsecase(repository);
 
       const result = await usecase.execute({
+        tenantId: BigInt(tenantIdStr),
         searchQuery: searchQuery || undefined,
         limit: perPage,
         offset,
@@ -55,11 +63,11 @@ export async function loadCounterpartsData(
         perPage,
       };
     },
-    ["counterparts-data", searchQuery, String(page), String(perPage)],
+    ["counterparts-data", tenantId.toString(), searchQuery, String(page), String(perPage)],
     { revalidate: CACHE_REVALIDATE_SECONDS },
   );
 
-  return cachedLoader(searchQuery, page, perPage);
+  return cachedLoader(tenantId.toString(), searchQuery, page, perPage);
 }
 
 export interface LoadCounterpartDetailPageResult {
@@ -70,30 +78,31 @@ export interface LoadCounterpartDetailPageResult {
 
 export async function loadCounterpartDetailPageData(
   id: string,
+  tenantId: bigint,
 ): Promise<LoadCounterpartDetailPageResult> {
   const cachedLoader = unstable_cache(
-    async (id: string): Promise<LoadCounterpartDetailPageResult> => {
+    async (id: string, tenantIdStr: string): Promise<LoadCounterpartDetailPageResult> => {
       const repository = new PrismaCounterpartRepository(prisma);
       const usecase = new GetCounterpartDetailUsecase(repository);
-      return usecase.execute(id);
+      return usecase.execute(id, BigInt(tenantIdStr));
     },
-    ["counterpart-detail-page-data", id],
+    ["counterpart-detail-page-data", id, tenantId.toString()],
     { revalidate: CACHE_REVALIDATE_SECONDS },
   );
 
-  return cachedLoader(id);
+  return cachedLoader(id, tenantId.toString());
 }
 
-export async function loadAllCounterpartsData(): Promise<Counterpart[]> {
+export async function loadAllCounterpartsData(tenantId: bigint): Promise<Counterpart[]> {
   const cachedLoader = unstable_cache(
-    async (): Promise<Counterpart[]> => {
+    async (tenantIdStr: string): Promise<Counterpart[]> => {
       const repository = new PrismaCounterpartRepository(prisma);
       const usecase = new GetAllCounterpartsUsecase(repository);
-      return usecase.execute();
+      return usecase.execute({ tenantId: BigInt(tenantIdStr) });
     },
-    ["all-counterparts-data"],
+    ["all-counterparts-data", tenantId.toString()],
     { revalidate: CACHE_REVALIDATE_SECONDS },
   );
 
-  return cachedLoader();
+  return cachedLoader(tenantId.toString());
 }

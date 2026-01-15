@@ -11,6 +11,7 @@ export interface CounterpartSuggestion {
 }
 
 export interface SuggestionContext {
+  tenantId: bigint;
   politicalOrganizationId: string;
   repository: ICounterpartRepository;
 }
@@ -31,6 +32,7 @@ export class FrequencyStrategy implements SuggestionStrategy {
     context: SuggestionContext,
   ): Promise<CounterpartSuggestion[]> {
     const frequentCounterparts = await context.repository.findByUsageFrequency(
+      context.tenantId,
       context.politicalOrganizationId,
       10,
     );
@@ -41,6 +43,7 @@ export class FrequencyStrategy implements SuggestionStrategy {
         name: cp.name,
         postalCode: cp.postalCode,
         address: cp.address,
+        tenantId: cp.tenantId,
         createdAt: cp.createdAt,
         updatedAt: cp.updatedAt,
       },
@@ -63,6 +66,7 @@ export class PartnerNameStrategy implements SuggestionStrategy {
     }
 
     const matchingCounterparts = await context.repository.findByPartnerName(
+      context.tenantId,
       context.politicalOrganizationId,
       partnerName,
     );
@@ -73,6 +77,7 @@ export class PartnerNameStrategy implements SuggestionStrategy {
         name: cp.name,
         postalCode: cp.postalCode,
         address: cp.address,
+        tenantId: cp.tenantId,
         createdAt: cp.createdAt,
         updatedAt: cp.updatedAt,
       },
@@ -90,10 +95,12 @@ export class CounterpartSuggester {
 
   async suggest(
     transaction: TransactionWithCounterpart,
+    tenantId: bigint,
     politicalOrganizationId: string,
     limit = 5,
   ): Promise<CounterpartSuggestion[]> {
     const context: SuggestionContext = {
+      tenantId,
       politicalOrganizationId,
       repository: this.repository,
     };

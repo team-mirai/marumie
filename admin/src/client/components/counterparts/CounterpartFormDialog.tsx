@@ -33,8 +33,12 @@ export function CounterpartFormDialog(props: CounterpartFormDialogProps) {
   }) => {
     setIsLoading(true);
     try {
+      // TODO: マルチテナント対応後はコンテキストからtenantIdを取得する
+      const tenantId = "1"; // 固定値: sample-party
+
       if (mode === "create") {
         const result = await createCounterpartAction({
+          tenantId,
           name: data.name,
           postalCode: data.postalCode,
           address: data.address,
@@ -44,7 +48,7 @@ export function CounterpartFormDialog(props: CounterpartFormDialogProps) {
           throw new Error(result.errors?.join(", ") ?? "作成に失敗しました");
         }
       } else if (counterpart) {
-        const result = await updateCounterpartAction(counterpart.id, {
+        const result = await updateCounterpartAction(counterpart.id, tenantId, {
           name: data.name,
           postalCode: data.postalCode,
           address: data.address,

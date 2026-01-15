@@ -14,6 +14,8 @@ import type {
 } from "@/server/contexts/report/domain/models/preview-donor-csv-row";
 
 describe("PreviewDonorCsvUsecase", () => {
+  const tenantId = BigInt(1);
+
   const mockCsvLoader: jest.Mocked<DonorCsvLoader> = {
     load: jest.fn(),
   } as unknown as jest.Mocked<DonorCsvLoader>;
@@ -103,6 +105,7 @@ describe("PreviewDonorCsvUsecase", () => {
     );
 
     const input: PreviewDonorCsvInput = {
+      tenantId,
       csvContent: "dummy csv content",
       politicalOrganizationId: "org-123",
     };
@@ -131,6 +134,7 @@ describe("PreviewDonorCsvUsecase", () => {
     );
 
     const input: PreviewDonorCsvInput = {
+      tenantId,
       csvContent: "",
       politicalOrganizationId: "org-123",
     };
@@ -149,6 +153,7 @@ describe("PreviewDonorCsvUsecase", () => {
     const transaction = createMockTransaction();
     const matchingDonor = {
       id: "donor-1",
+      tenantId: "1",
       name: "テスト太郎",
       donorType: "individual" as const,
       address: "東京都渋谷区",
@@ -172,6 +177,7 @@ describe("PreviewDonorCsvUsecase", () => {
     );
 
     const input: PreviewDonorCsvInput = {
+      tenantId,
       csvContent: "dummy csv content",
       politicalOrganizationId: "org-123",
     };
@@ -180,7 +186,7 @@ describe("PreviewDonorCsvUsecase", () => {
 
     expect(result.rows[0].matchingDonor).not.toBeNull();
     expect(result.rows[0].matchingDonor?.id).toBe("donor-1");
-    expect(mockDonorRepository.findByMatchCriteriaBatch).toHaveBeenCalledWith([
+    expect(mockDonorRepository.findByMatchCriteriaBatch).toHaveBeenCalledWith(tenantId, [
       { name: "テスト太郎", address: "東京都渋谷区", donorType: "individual" },
     ]);
   });
@@ -218,6 +224,7 @@ describe("PreviewDonorCsvUsecase", () => {
     );
 
     const input: PreviewDonorCsvInput = {
+      tenantId,
       csvContent: "dummy csv content",
       politicalOrganizationId: "org-123",
     };
@@ -247,6 +254,7 @@ describe("PreviewDonorCsvUsecase", () => {
     );
 
     const input: PreviewDonorCsvInput = {
+      tenantId,
       csvContent: "invalid csv",
       politicalOrganizationId: "org-123",
     };
@@ -274,6 +282,7 @@ describe("PreviewDonorCsvUsecase", () => {
     );
 
     const input: PreviewDonorCsvInput = {
+      tenantId,
       csvContent: "dummy csv content",
       politicalOrganizationId: "org-123",
     };
@@ -281,6 +290,6 @@ describe("PreviewDonorCsvUsecase", () => {
     const result = await usecase.execute(input);
 
     expect(result.rows[0].matchingDonor).toBeNull();
-    expect(mockDonorRepository.findByMatchCriteriaBatch).toHaveBeenCalledWith([]);
+    expect(mockDonorRepository.findByMatchCriteriaBatch).toHaveBeenCalledWith(tenantId, []);
   });
 });

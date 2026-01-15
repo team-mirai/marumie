@@ -17,7 +17,12 @@ import {
 } from "@/server/contexts/report/domain/errors/donor-csv-error";
 import { ImportDonorCsvUsecase } from "@/server/contexts/report/application/usecases/import-donor-csv-usecase";
 
+/**
+ * クライアントから受け取る入力
+ * tenantId は JSON シリアライズのため string で受け取る
+ */
 export interface ImportDonorCsvRequest {
+  tenantId: string;
   csvContent: string;
   politicalOrganizationId: string;
 }
@@ -28,7 +33,7 @@ export type ImportDonorCsvResult =
 
 export async function importDonorCsv(data: ImportDonorCsvRequest): Promise<ImportDonorCsvResult> {
   try {
-    const { csvContent, politicalOrganizationId } = data;
+    const { tenantId, csvContent, politicalOrganizationId } = data;
 
     if (!csvContent) {
       return { ok: false, error: "CSVコンテンツが指定されていません" };
@@ -57,6 +62,7 @@ export async function importDonorCsv(data: ImportDonorCsvRequest): Promise<Impor
     );
 
     const result = await usecase.execute({
+      tenantId: BigInt(tenantId),
       csvContent,
       politicalOrganizationId,
     });

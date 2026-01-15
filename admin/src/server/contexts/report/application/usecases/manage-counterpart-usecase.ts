@@ -13,6 +13,7 @@ import type {
 } from "@/server/contexts/report/domain/repositories/counterpart-repository.interface";
 
 export interface GetCounterpartsInput {
+  tenantId: bigint;
   searchQuery?: string;
   limit?: number;
   offset?: number;
@@ -28,6 +29,7 @@ export class GetCounterpartsUsecase {
 
   async execute(input: GetCounterpartsInput): Promise<GetCounterpartsResult> {
     const filters: CounterpartFilters = {
+      tenantId: input.tenantId,
       searchQuery: input.searchQuery,
       limit: input.limit,
       offset: input.offset,
@@ -45,8 +47,8 @@ export class GetCounterpartsUsecase {
 export class GetCounterpartByIdUsecase {
   constructor(private repository: ICounterpartRepository) {}
 
-  async execute(id: string): Promise<Counterpart | null> {
-    return this.repository.findById(id);
+  async execute(id: string, tenantId: bigint): Promise<Counterpart | null> {
+    return this.repository.findById(id, tenantId);
   }
 }
 
@@ -62,10 +64,11 @@ export class CreateCounterpartUsecase {
   async execute(input: CreateCounterpartInput): Promise<CreateCounterpartResult> {
     const trimmedAddress = input.address?.trim() || null;
     const trimmedPostalCode = input.postalCode?.trim() || null;
-    const normalizedInput = {
+    const normalizedInput: CreateCounterpartInput = {
       name: input.name.trim(),
       postalCode: trimmedPostalCode,
       address: trimmedAddress,
+      tenantId: input.tenantId,
     };
 
     const validationErrors = validateCounterpartInput(normalizedInput);
@@ -74,6 +77,7 @@ export class CreateCounterpartUsecase {
     }
 
     const existing = await this.repository.findByNameAndAddress(
+      input.tenantId,
       normalizedInput.name,
       normalizedInput.address,
     );
@@ -98,8 +102,12 @@ export interface UpdateCounterpartResult {
 export class UpdateCounterpartUsecase {
   constructor(private repository: ICounterpartRepository) {}
 
-  async execute(id: string, input: UpdateCounterpartInput): Promise<UpdateCounterpartResult> {
-    const existing = await this.repository.findById(id);
+  async execute(
+    id: string,
+    tenantId: bigint,
+    input: UpdateCounterpartInput,
+  ): Promise<UpdateCounterpartResult> {
+    const existing = await this.repository.findById(id, tenantId);
     if (!existing) {
       return { success: false, errors: ["取引先が見つかりません"] };
     }
@@ -121,7 +129,7 @@ export class UpdateCounterpartUsecase {
     }
 
     if (newName !== existing.name || newAddress !== existing.address) {
-      const duplicate = await this.repository.findByNameAndAddress(newName, newAddress);
+      const duplicate = await this.repository.findByNameAndAddress(tenantId, newName, newAddress);
       if (duplicate && duplicate.id !== id) {
         return {
           success: false,
@@ -130,7 +138,7 @@ export class UpdateCounterpartUsecase {
       }
     }
 
-    const counterpart = await this.repository.update(id, {
+    const counterpart = await this.repository.update(id, tenantId, {
       name: newName,
       postalCode: newPostalCode,
       address: newAddress,
@@ -150,8 +158,8 @@ export class DeleteCounterpartUsecase {
     private checkUsage = true,
   ) {}
 
-  async execute(id: string): Promise<DeleteCounterpartResult> {
-    const existing = await this.repository.findById(id);
+  async execute(id: string, tenantId: bigint): Promise<DeleteCounterpartResult> {
+    const existing = await this.repository.findById(id, tenantId);
     if (!existing) {
       return { success: false, errors: ["取引先が見つかりません"] };
     }
@@ -168,7 +176,7 @@ export class DeleteCounterpartUsecase {
       }
     }
 
-    await this.repository.delete(id);
+    await this.repository.delete(id, tenantId);
     return { success: true };
   }
 }
@@ -188,15 +196,16 @@ export interface GetCounterpartDetailResult {
 }
 
 export interface GetAllCounterpartsInput {
+  tenantId: bigint;
   limit?: number;
 }
 
 export class GetAllCounterpartsUsecase {
   constructor(private repository: ICounterpartRepository) {}
 
-  async execute(input: GetAllCounterpartsInput = {}): Promise<Counterpart[]> {
+  async execute(input: GetAllCounterpartsInput): Promise<Counterpart[]> {
     const limit = input.limit ?? 1000;
-    return this.repository.findAll({ limit });
+    return this.repository.findAll({ tenantId: input.tenantId, limit });
   }
 }
 
@@ -207,11 +216,11 @@ export class GetCounterpartDetailUsecase {
     this.getAllCounterpartsUsecase = new GetAllCounterpartsUsecase(repository);
   }
 
-  async execute(id: string): Promise<GetCounterpartDetailResult> {
+  async execute(id: string, tenantId: bigint): Promise<GetCounterpartDetailResult> {
     const [counterpart, usageCount, allCounterparts] = await Promise.all([
-      this.repository.findById(id),
+      this.repository.findById(id, tenantId),
       this.repository.getUsageCount(id),
-      this.getAllCounterpartsUsecase.execute(),
+      this.getAllCounterpartsUsecase.execute({ tenantId }),
     ]);
 
     return { counterpart, usageCount, allCounterparts };

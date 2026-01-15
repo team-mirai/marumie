@@ -21,7 +21,11 @@ export default async function DonorMasterPage({ searchParams }: DonorMasterPageP
   const page = Number.isNaN(parsedPage) || parsedPage < 1 ? 1 : parsedPage;
   const perPage = 50;
 
+  // TODO: マルチテナント対応後はURLパラメータからtenantIdを取得する
+  const tenantId = BigInt(1); // 固定値: sample-party
+
   const data = await loadDonorsData({
+    tenantId,
     searchQuery,
     donorType,
     page,

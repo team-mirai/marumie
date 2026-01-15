@@ -22,6 +22,7 @@ export class PrismaCounterpartRepository implements ICounterpartRepository {
       name: prismaCounterpart.name,
       postalCode: prismaCounterpart.postalCode ?? null,
       address: prismaCounterpart.address,
+      tenantId: prismaCounterpart.tenantId?.toString() ?? null,
       createdAt: prismaCounterpart.createdAt,
       updatedAt: prismaCounterpart.updatedAt,
     };
@@ -38,14 +39,17 @@ export class PrismaCounterpartRepository implements ICounterpartRepository {
     }
   }
 
-  async findById(id: string): Promise<Counterpart | null> {
+  async findById(id: string, tenantId: bigint): Promise<Counterpart | null> {
     const bigIntId = this.parseBigIntId(id);
     if (bigIntId === null) {
       return null;
     }
 
-    const counterpart = await this.prisma.counterpart.findUnique({
-      where: { id: bigIntId },
+    const counterpart = await this.prisma.counterpart.findFirst({
+      where: {
+        id: bigIntId,
+        tenantId,
+      },
     });
 
     if (!counterpart) {
@@ -55,9 +59,14 @@ export class PrismaCounterpartRepository implements ICounterpartRepository {
     return this.mapToCounterpart(counterpart);
   }
 
-  async findByNameAndAddress(name: string, address: string | null): Promise<Counterpart | null> {
+  async findByNameAndAddress(
+    tenantId: bigint,
+    name: string,
+    address: string | null,
+  ): Promise<Counterpart | null> {
     const counterpart = await this.prisma.counterpart.findFirst({
       where: {
+        tenantId,
         name,
         address,
       },
@@ -70,27 +79,27 @@ export class PrismaCounterpartRepository implements ICounterpartRepository {
     return this.mapToCounterpart(counterpart);
   }
 
-  async findAll(filters?: CounterpartFilters): Promise<Counterpart[]> {
+  async findAll(filters: CounterpartFilters): Promise<Counterpart[]> {
     const where = this.buildWhereClause(filters);
 
     const counterparts = await this.prisma.counterpart.findMany({
       where,
       orderBy: [{ name: "asc" }, { id: "asc" }],
-      take: filters?.limit,
-      skip: filters?.offset,
+      take: filters.limit,
+      skip: filters.offset,
     });
 
     return counterparts.map((c) => this.mapToCounterpart(c));
   }
 
-  async findAllWithUsage(filters?: CounterpartFilters): Promise<CounterpartWithUsage[]> {
+  async findAllWithUsage(filters: CounterpartFilters): Promise<CounterpartWithUsage[]> {
     const where = this.buildWhereClause(filters);
 
     const counterparts = await this.prisma.counterpart.findMany({
       where,
       orderBy: [{ name: "asc" }, { id: "asc" }],
-      take: filters?.limit,
-      skip: filters?.offset,
+      take: filters.limit,
+      skip: filters.offset,
       include: {
         _count: {
           select: {
@@ -112,13 +121,14 @@ export class PrismaCounterpartRepository implements ICounterpartRepository {
         name: data.name.trim(),
         postalCode: data.postalCode?.trim() || null,
         address: data.address?.trim() || null,
+        tenantId: data.tenantId,
       },
     });
 
     return this.mapToCounterpart(counterpart);
   }
 
-  async update(id: string, data: UpdateCounterpartInput): Promise<Counterpart> {
+  async update(id: string, tenantId: bigint, data: UpdateCounterpartInput): Promise<Counterpart> {
     const bigIntId = this.parseBigIntId(id);
     if (bigIntId === null) {
       throw new Error(`無効なID形式です: ${id}`);
@@ -136,23 +146,44 @@ export class PrismaCounterpartRepository implements ICounterpartRepository {
       updateData.address = data.address?.trim() || null;
     }
 
-    const counterpart = await this.prisma.counterpart.update({
-      where: { id: bigIntId },
+    // テナント検証付きで更新
+    const result = await this.prisma.counterpart.updateMany({
+      where: {
+        id: bigIntId,
+        tenantId,
+      },
       data: updateData,
     });
 
-    return this.mapToCounterpart(counterpart);
+    if (result.count === 0) {
+      throw new Error("Counterpart not found or access denied");
+    }
+
+    // 更新後のデータを取得
+    const updated = await this.findById(id, tenantId);
+    if (!updated) {
+      throw new Error("Failed to retrieve updated counterpart");
+    }
+
+    return updated;
   }
 
-  async delete(id: string): Promise<void> {
+  async delete(id: string, tenantId: bigint): Promise<void> {
     const bigIntId = this.parseBigIntId(id);
     if (bigIntId === null) {
       throw new Error(`無効なID形式です: ${id}`);
     }
 
-    await this.prisma.counterpart.delete({
-      where: { id: bigIntId },
+    const result = await this.prisma.counterpart.deleteMany({
+      where: {
+        id: bigIntId,
+        tenantId,
+      },
     });
+
+    if (result.count === 0) {
+      throw new Error("Counterpart not found or access denied");
+    }
   }
 
   async getUsageCount(id: string): Promise<number> {
@@ -168,23 +199,28 @@ export class PrismaCounterpartRepository implements ICounterpartRepository {
     return count;
   }
 
-  async count(filters?: CounterpartFilters): Promise<number> {
+  async count(filters: CounterpartFilters): Promise<number> {
     const where = this.buildWhereClause(filters);
 
     return this.prisma.counterpart.count({ where });
   }
 
-  private buildWhereClause(filters?: CounterpartFilters) {
-    if (!filters?.searchQuery) {
-      return {};
+  private buildWhereClause(filters: CounterpartFilters) {
+    const baseWhere: { tenantId: bigint; OR?: { name?: object; address?: object }[] } = {
+      tenantId: filters.tenantId,
+    };
+
+    if (!filters.searchQuery) {
+      return baseWhere;
     }
 
     const searchQuery = filters.searchQuery.trim();
     if (!searchQuery) {
-      return {};
+      return baseWhere;
     }
 
     return {
+      ...baseWhere,
       OR: [
         { name: { contains: searchQuery, mode: "insensitive" as const } },
         { address: { contains: searchQuery, mode: "insensitive" as const } },
@@ -193,6 +229,7 @@ export class PrismaCounterpartRepository implements ICounterpartRepository {
   }
 
   async findByUsageFrequency(
+    tenantId: bigint,
     politicalOrganizationId: string,
     limit: number,
   ): Promise<CounterpartWithUsageAndLastUsed[]> {
@@ -203,6 +240,7 @@ export class PrismaCounterpartRepository implements ICounterpartRepository {
 
     const counterpartsWithUsage = await this.prisma.counterpart.findMany({
       where: {
+        tenantId,
         transactionCounterparts: {
           some: {
             transaction: {
@@ -257,6 +295,7 @@ export class PrismaCounterpartRepository implements ICounterpartRepository {
   }
 
   async findByPartnerName(
+    tenantId: bigint,
     politicalOrganizationId: string,
     partnerName: string,
   ): Promise<CounterpartWithUsageAndLastUsed[]> {
@@ -272,6 +311,7 @@ export class PrismaCounterpartRepository implements ICounterpartRepository {
 
     const counterpartsWithUsage = await this.prisma.counterpart.findMany({
       where: {
+        tenantId,
         transactionCounterparts: {
           some: {
             transaction: {

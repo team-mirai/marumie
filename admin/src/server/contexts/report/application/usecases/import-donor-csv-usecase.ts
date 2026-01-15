@@ -19,6 +19,7 @@ import type { ITransactionManager } from "@/server/contexts/report/domain/reposi
 import { NoValidRowsError } from "@/server/contexts/report/domain/errors/donor-csv-error";
 
 export interface ImportDonorCsvInput {
+  tenantId: bigint;
   csvContent: string;
   politicalOrganizationId: string;
 }
@@ -63,7 +64,7 @@ export class ImportDonorCsvUsecase {
       transactions.map((t) => [t.transactionNo, t]),
     );
 
-    const rowsWithMatchingDonor = await this.enrichWithMatchingDonors(rows);
+    const rowsWithMatchingDonor = await this.enrichWithMatchingDonors(input.tenantId, rows);
 
     const validatedRows = this.validator.validate(rowsWithMatchingDonor, transactionMap);
 
@@ -76,7 +77,11 @@ export class ImportDonorCsvUsecase {
     const deduplicatedRows = this.deduplicateByTransactionNo(validRows);
 
     return await this.transactionManager.execute(async (tx) => {
-      const { createdDonors, donorIdMap } = await this.createNewDonors(deduplicatedRows, tx);
+      const { createdDonors, donorIdMap } = await this.createNewDonors(
+        input.tenantId,
+        deduplicatedRows,
+        tx,
+      );
 
       const pairs = this.buildTransactionDonorPairs(deduplicatedRows, donorIdMap);
 
@@ -94,6 +99,7 @@ export class ImportDonorCsvUsecase {
   }
 
   private async enrichWithMatchingDonors(
+    tenantId: bigint,
     rows: PreviewDonorCsvRow[],
   ): Promise<PreviewDonorCsvRow[]> {
     const searchKeys = new Map<
@@ -110,7 +116,7 @@ export class ImportDonorCsvUsecase {
     }
 
     const uniqueCriteria = [...searchKeys.values()];
-    const donors = await this.donorRepository.findByMatchCriteriaBatch(uniqueCriteria);
+    const donors = await this.donorRepository.findByMatchCriteriaBatch(tenantId, uniqueCriteria);
 
     const donorMap = new Map<string, Donor>(
       donors.map((d) => [this.getDonorMatchKey(d.name, d.address, d.donorType), d]),
@@ -168,6 +174,7 @@ export class ImportDonorCsvUsecase {
   }
 
   private async createNewDonors(
+    tenantId: bigint,
     rows: ValidRowWithTransaction[],
     tx: Parameters<Parameters<ITransactionManager["execute"]>[0]>[0],
   ): Promise<{ createdDonors: Donor[]; donorIdMap: Map<string, string> }> {
@@ -182,6 +189,7 @@ export class ImportDonorCsvUsecase {
           address: row.address,
           donorType: row.donorType,
           occupation: row.occupation,
+          tenantId,
         });
       }
     }

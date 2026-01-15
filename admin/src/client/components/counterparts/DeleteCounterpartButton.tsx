@@ -32,7 +32,9 @@ export function DeleteCounterpartButton({
 
     try {
       setIsDeleting(true);
-      const result = await deleteCounterpartAction(counterpartId);
+      // TODO: マルチテナント対応後はコンテキストからtenantIdを取得する
+      const tenantId = "1"; // 固定値: sample-party
+      const result = await deleteCounterpartAction(counterpartId, tenantId);
 
       if (result.success) {
         onDelete();

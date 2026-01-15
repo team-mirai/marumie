@@ -13,7 +13,11 @@ export interface BulkAssignDonorActionResult {
   errors?: string[];
 }
 
+/**
+ * tenantId は JSON シリアライズのため string で受け取る
+ */
 export async function bulkAssignDonorAction(
+  tenantId: string,
   transactionIds: string[],
   donorId: string,
 ): Promise<BulkAssignDonorActionResult> {
@@ -26,7 +30,7 @@ export async function bulkAssignDonorAction(
       donorRepository,
       transactionDonorRepository,
     );
-    const result = await usecase.execute({ transactionIds, donorId });
+    const result = await usecase.execute({ tenantId: BigInt(tenantId), transactionIds, donorId });
 
     if (!result.success) {
       return { success: false, errors: result.errors };

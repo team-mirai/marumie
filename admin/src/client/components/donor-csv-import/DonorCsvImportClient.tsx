@@ -68,7 +68,10 @@ export default function DonorCsvImportClient({
       setError(null);
 
       try {
+        // TODO: マルチテナント対応後はコンテキストからtenantIdを取得する
+        const tenantId = "1"; // 固定値: sample-party
         const result = await stablePreviewAction({
+          tenantId,
           file,
           politicalOrganizationId,
         });
@@ -102,8 +105,11 @@ export default function DonorCsvImportClient({
     setIsImporting(true);
 
     try {
+      // TODO: マルチテナント対応後はコンテキストからtenantIdを取得する
+      const tenantId = "1"; // 固定値: sample-party
       const csvContent = await file.text();
       const result = await importActionRef.current({
+        tenantId,
         csvContent,
         politicalOrganizationId,
       });

@@ -39,8 +39,14 @@ export function AssignWithCounterpartContent({
 
     setError(null);
     startTransition(async () => {
+      // TODO: マルチテナント対応後はコンテキストからtenantIdを取得する
+      const tenantId = "1"; // 固定値: sample-party
       const transactionIds = transactions.map((t) => t.id);
-      const result = await bulkAssignCounterpartAction(transactionIds, selectedCounterpartId);
+      const result = await bulkAssignCounterpartAction(
+        tenantId,
+        transactionIds,
+        selectedCounterpartId,
+      );
       if (!result.success) {
         setError(result.errors?.join(", ") ?? "紐付けに失敗しました");
         return;
@@ -56,7 +62,11 @@ export function AssignWithCounterpartContent({
   }) => {
     setError(null);
 
+    // TODO: マルチテナント対応後はコンテキストからtenantIdを取得する
+    const tenantId = "1"; // 固定値: sample-party
+
     const createResult = await createCounterpartAction({
+      tenantId,
       name: data.name,
       postalCode: data.postalCode,
       address: data.address,
@@ -71,7 +81,11 @@ export function AssignWithCounterpartContent({
     }
 
     const transactionIds = transactions.map((t) => t.id);
-    const result = await bulkAssignCounterpartAction(transactionIds, createResult.counterpartId);
+    const result = await bulkAssignCounterpartAction(
+      tenantId,
+      transactionIds,
+      createResult.counterpartId,
+    );
     if (!result.success) {
       throw new Error(result.errors?.join(", ") ?? "紐付けに失敗しました");
     }

@@ -6,6 +6,7 @@ import type {
 } from "@/server/contexts/report/domain/models/counterpart";
 
 export interface CounterpartFilters {
+  tenantId: bigint;
   searchQuery?: string;
   limit?: number;
   offset?: number;
@@ -16,22 +17,28 @@ export interface CounterpartWithUsageAndLastUsed extends CounterpartWithUsage {
 }
 
 export interface ICounterpartRepository {
-  findById(id: string): Promise<Counterpart | null>;
-  findByNameAndAddress(name: string, address: string | null): Promise<Counterpart | null>;
-  findAll(filters?: CounterpartFilters): Promise<Counterpart[]>;
-  findAllWithUsage(filters?: CounterpartFilters): Promise<CounterpartWithUsage[]>;
+  findById(id: string, tenantId: bigint): Promise<Counterpart | null>;
+  findByNameAndAddress(
+    tenantId: bigint,
+    name: string,
+    address: string | null,
+  ): Promise<Counterpart | null>;
+  findAll(filters: CounterpartFilters): Promise<Counterpart[]>;
+  findAllWithUsage(filters: CounterpartFilters): Promise<CounterpartWithUsage[]>;
   create(data: CreateCounterpartInput): Promise<Counterpart>;
-  update(id: string, data: UpdateCounterpartInput): Promise<Counterpart>;
-  delete(id: string): Promise<void>;
+  update(id: string, tenantId: bigint, data: UpdateCounterpartInput): Promise<Counterpart>;
+  delete(id: string, tenantId: bigint): Promise<void>;
   getUsageCount(id: string): Promise<number>;
-  count(filters?: CounterpartFilters): Promise<number>;
+  count(filters: CounterpartFilters): Promise<number>;
 
   findByUsageFrequency(
+    tenantId: bigint,
     politicalOrganizationId: string,
     limit: number,
   ): Promise<CounterpartWithUsageAndLastUsed[]>;
 
   findByPartnerName(
+    tenantId: bigint,
     politicalOrganizationId: string,
     partnerName: string,
   ): Promise<CounterpartWithUsageAndLastUsed[]>;

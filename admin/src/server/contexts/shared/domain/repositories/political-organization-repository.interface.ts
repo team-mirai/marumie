@@ -7,9 +7,18 @@ export interface UpdatePoliticalOrganizationInput {
   description?: string;
 }
 
+/**
+ * 政治団体（テナントID付き）
+ */
+export interface PoliticalOrganizationWithTenantId extends PoliticalOrganization {
+  tenantId: bigint | null;
+}
+
 export interface IPoliticalOrganizationRepository {
   findAll(): Promise<PoliticalOrganization[]>;
   findById(id: bigint): Promise<PoliticalOrganization | null>;
+  findBySlug(slug: string): Promise<PoliticalOrganizationWithTenantId | null>;
+  findByTenantId(tenantId: bigint): Promise<PoliticalOrganization[]>;
   create(
     displayName: string,
     slug: string,

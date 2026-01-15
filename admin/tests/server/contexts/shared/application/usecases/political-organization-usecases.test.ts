@@ -21,6 +21,8 @@ describe("Political Organization Usecases", () => {
     mockRepository = {
       findAll: jest.fn(),
       findById: jest.fn(),
+      findBySlug: jest.fn(),
+      findByTenantId: jest.fn(),
       create: jest.fn(),
       update: jest.fn(),
       delete: jest.fn(),

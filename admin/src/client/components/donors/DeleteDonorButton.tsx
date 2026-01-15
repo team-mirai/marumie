@@ -32,7 +32,9 @@ export function DeleteDonorButton({
 
     try {
       setIsDeleting(true);
-      const result = await deleteDonorAction(donorId);
+      // TODO: マルチテナント対応後はコンテキストからtenantIdを取得する
+      const tenantId = "1"; // 固定値: sample-party
+      const result = await deleteDonorAction(donorId, tenantId);
 
       if (result.success) {
         onDelete();

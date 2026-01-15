@@ -18,6 +18,8 @@ import type { Donor } from "@/server/contexts/report/domain/models/donor";
 import { NoValidRowsError } from "@/server/contexts/report/domain/errors/donor-csv-error";
 
 describe("ImportDonorCsvUsecase", () => {
+  const tenantId = BigInt(1);
+
   const mockCsvLoader: jest.Mocked<IDonorCsvLoader> = {
     load: jest.fn(),
   } as unknown as jest.Mocked<IDonorCsvLoader>;
@@ -106,6 +108,7 @@ describe("ImportDonorCsvUsecase", () => {
 
   const createMockDonor = (overrides: Partial<Donor> = {}): Donor => ({
     id: "1",
+    tenantId: "1",
     name: "テスト太郎",
     donorType: "individual",
     address: "東京都渋谷区",
@@ -143,6 +146,7 @@ describe("ImportDonorCsvUsecase", () => {
     const usecase = createUsecase();
 
     const input: ImportDonorCsvInput = {
+      tenantId,
       csvContent: "dummy csv content",
       politicalOrganizationId: "org-123",
     };
@@ -158,6 +162,7 @@ describe("ImportDonorCsvUsecase", () => {
           address: "東京都渋谷区",
           donorType: "individual",
           occupation: "会社員",
+          tenantId,
         },
       ],
       expect.anything(),
@@ -174,6 +179,7 @@ describe("ImportDonorCsvUsecase", () => {
     const usecase = createUsecase();
 
     const input: ImportDonorCsvInput = {
+      tenantId,
       csvContent: "",
       politicalOrganizationId: "org-123",
     };
@@ -195,6 +201,7 @@ describe("ImportDonorCsvUsecase", () => {
     const usecase = createUsecase();
 
     const input: ImportDonorCsvInput = {
+      tenantId,
       csvContent: "dummy csv content",
       politicalOrganizationId: "org-123",
     };
@@ -226,6 +233,7 @@ describe("ImportDonorCsvUsecase", () => {
     const usecase = createUsecase();
 
     const input: ImportDonorCsvInput = {
+      tenantId,
       csvContent: "dummy csv content",
       politicalOrganizationId: "org-123",
     };
@@ -268,6 +276,7 @@ describe("ImportDonorCsvUsecase", () => {
     const usecase = createUsecase();
 
     const input: ImportDonorCsvInput = {
+      tenantId,
       csvContent: "dummy csv content",
       politicalOrganizationId: "org-123",
     };
@@ -311,6 +320,7 @@ describe("ImportDonorCsvUsecase", () => {
     const usecase = createUsecase();
 
     const input: ImportDonorCsvInput = {
+      tenantId,
       csvContent: "dummy csv content",
       politicalOrganizationId: "org-123",
     };
@@ -326,6 +336,7 @@ describe("ImportDonorCsvUsecase", () => {
           address: "東京都渋谷区",
           donorType: "individual",
           occupation: "会社員",
+          tenantId,
         },
       ],
       expect.anything(),
@@ -380,6 +391,7 @@ describe("ImportDonorCsvUsecase", () => {
     const usecase = createUsecase();
 
     const input: ImportDonorCsvInput = {
+      tenantId,
       csvContent: "dummy csv content",
       politicalOrganizationId: "org-123",
     };
@@ -407,6 +419,7 @@ describe("ImportDonorCsvUsecase", () => {
     const usecase = createUsecase();
 
     const input: ImportDonorCsvInput = {
+      tenantId,
       csvContent: "dummy csv content",
       politicalOrganizationId: "org-123",
     };
@@ -444,6 +457,7 @@ describe("ImportDonorCsvUsecase", () => {
     const usecase = createUsecase();
 
     const input: ImportDonorCsvInput = {
+      tenantId,
       csvContent: "dummy csv content",
       politicalOrganizationId: "org-123",
     };

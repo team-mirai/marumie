@@ -47,7 +47,10 @@ export default async function CounterpartAssignmentPage({
   const params = await searchParams;
   const organizations = await loadPoliticalOrganizationsData();
 
-  const allCounterparts = await loadAllCounterpartsData();
+  // TODO: マルチテナント対応後はURLパラメータからtenantIdを取得する
+  const tenantId = BigInt(1); // 固定値: sample-party
+
+  const allCounterparts = await loadAllCounterpartsData(tenantId);
 
   const categoryOptions = buildCategoryOptions();
 

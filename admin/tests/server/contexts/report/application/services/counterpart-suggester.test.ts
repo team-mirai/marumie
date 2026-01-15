@@ -10,9 +10,11 @@ import type { TransactionWithCounterpart } from "@/server/contexts/report/domain
 
 describe("CounterpartSuggester", () => {
   let mockRepository: jest.Mocked<ICounterpartRepository>;
+  const tenantId = BigInt(1);
 
   const createMockCounterpart = (overrides: Partial<CounterpartWithUsageAndLastUsed> = {}): CounterpartWithUsageAndLastUsed => ({
     id: "cp-1",
+    tenantId: "1",
     name: "テスト取引先",
     postalCode: null,
     address: "東京都千代田区",
@@ -70,6 +72,7 @@ describe("CounterpartSuggester", () => {
       mockRepository.findByUsageFrequency.mockResolvedValue(counterparts);
 
       const context: SuggestionContext = {
+        tenantId,
         politicalOrganizationId: "org-1",
         repository: mockRepository,
       };
@@ -92,6 +95,7 @@ describe("CounterpartSuggester", () => {
       mockRepository.findByUsageFrequency.mockResolvedValue(counterparts);
 
       const context: SuggestionContext = {
+        tenantId,
         politicalOrganizationId: "org-1",
         repository: mockRepository,
       };
@@ -107,6 +111,7 @@ describe("CounterpartSuggester", () => {
       mockRepository.findByUsageFrequency.mockResolvedValue([]);
 
       const context: SuggestionContext = {
+        tenantId,
         politicalOrganizationId: "org-1",
         repository: mockRepository,
       };
@@ -126,6 +131,7 @@ describe("CounterpartSuggester", () => {
       mockRepository.findByPartnerName.mockResolvedValue(counterparts);
 
       const context: SuggestionContext = {
+        tenantId,
         politicalOrganizationId: "org-1",
         repository: mockRepository,
       };
@@ -142,6 +148,7 @@ describe("CounterpartSuggester", () => {
       const strategy = new PartnerNameStrategy();
 
       const context: SuggestionContext = {
+        tenantId,
         politicalOrganizationId: "org-1",
         repository: mockRepository,
       };
@@ -161,6 +168,7 @@ describe("CounterpartSuggester", () => {
       mockRepository.findByPartnerName.mockResolvedValue(counterparts);
 
       const context: SuggestionContext = {
+        tenantId,
         politicalOrganizationId: "org-1",
         repository: mockRepository,
       };
@@ -169,7 +177,7 @@ describe("CounterpartSuggester", () => {
       const suggestions = await strategy.suggest(transaction, context);
 
       expect(suggestions).toHaveLength(1);
-      expect(mockRepository.findByPartnerName).toHaveBeenCalledWith("org-1", "ガス会社");
+      expect(mockRepository.findByPartnerName).toHaveBeenCalledWith(tenantId, "org-1", "ガス会社");
     });
   });
 
@@ -188,6 +196,7 @@ describe("CounterpartSuggester", () => {
 
       const suggestions = await suggester.suggest(
         createMockTransaction({ debitPartner: "取引先A" }),
+        tenantId,
         "org-1",
       );
 
@@ -209,6 +218,7 @@ describe("CounterpartSuggester", () => {
 
       const suggestions = await suggester.suggest(
         createMockTransaction({ debitPartner: "共通取引先" }),
+        tenantId,
         "org-1",
       );
 
@@ -229,7 +239,7 @@ describe("CounterpartSuggester", () => {
         mockRepository,
       );
 
-      const suggestions = await suggester.suggest(createMockTransaction(), "org-1");
+      const suggestions = await suggester.suggest(createMockTransaction(), tenantId, "org-1");
 
       expect(suggestions[0].counterpart.id).toBe("cp-2");
     });
@@ -247,7 +257,7 @@ describe("CounterpartSuggester", () => {
         mockRepository,
       );
 
-      const suggestions = await suggester.suggest(createMockTransaction(), "org-1", 3);
+      const suggestions = await suggester.suggest(createMockTransaction(), tenantId, "org-1", 3);
 
       expect(suggestions).toHaveLength(3);
     });
@@ -265,6 +275,7 @@ describe("CounterpartSuggester", () => {
 
       const suggestions = await suggester.suggest(
         createMockTransaction({ debitPartner: "取引先A" }),
+        tenantId,
         "org-1",
       );
 

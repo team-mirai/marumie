@@ -16,6 +16,7 @@ import type { IDonorRepository } from "@/server/contexts/report/domain/repositor
 import type { ITransactionWithDonorRepository } from "@/server/contexts/report/domain/repositories/transaction-with-donor-repository.interface";
 
 export interface PreviewDonorCsvInput {
+  tenantId: bigint;
   csvContent: string;
   politicalOrganizationId: string;
 }
@@ -57,7 +58,7 @@ export class PreviewDonorCsvUsecase {
         transactions.map((t) => [t.transactionNo, t]),
       );
 
-      const rowsWithMatchingDonor = await this.enrichWithMatchingDonors(rows);
+      const rowsWithMatchingDonor = await this.enrichWithMatchingDonors(input.tenantId, rows);
 
       const validatedRows = this.validator.validate(rowsWithMatchingDonor, transactionMap);
 
@@ -76,6 +77,7 @@ export class PreviewDonorCsvUsecase {
   }
 
   private async enrichWithMatchingDonors(
+    tenantId: bigint,
     rows: PreviewDonorCsvRow[],
   ): Promise<PreviewDonorCsvRow[]> {
     const searchKeys = new Map<
@@ -92,7 +94,7 @@ export class PreviewDonorCsvUsecase {
     }
 
     const uniqueCriteria = [...searchKeys.values()];
-    const donors = await this.donorRepository.findByMatchCriteriaBatch(uniqueCriteria);
+    const donors = await this.donorRepository.findByMatchCriteriaBatch(tenantId, uniqueCriteria);
 
     const donorMap = new Map<string, Donor>(
       donors.map((d) => [this.getDonorMatchKey(d.name, d.address, d.donorType), d]),

@@ -11,15 +11,19 @@ export interface UpdateDonorActionResult {
   errors?: string[];
 }
 
+/**
+ * tenantId は JSON シリアライズのため string で受け取る
+ */
 export async function updateDonorAction(
   id: string,
+  tenantId: string,
   input: UpdateDonorInput,
 ): Promise<UpdateDonorActionResult> {
   try {
     const repository = new PrismaDonorRepository(prisma);
     const usecase = new UpdateDonorUsecase(repository);
 
-    const result = await usecase.execute(id, input);
+    const result = await usecase.execute(id, BigInt(tenantId), input);
 
     if (!result.success) {
       return { success: false, errors: result.errors };

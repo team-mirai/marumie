@@ -6,6 +6,7 @@ import type { ITransactionWithDonorRepository } from "@/server/contexts/report/d
 import { isDonorTypeAllowedForCategory } from "@/server/contexts/report/domain/models/donor-assignment-rules";
 
 export interface BulkAssignDonorInput {
+  tenantId: bigint;
   transactionIds: string[];
   donorId: string;
 }
@@ -44,7 +45,7 @@ export class BulkAssignDonorUsecase {
       return { success: false, errors: ["無効な寄付者IDです"] };
     }
 
-    const donor = await this.donorRepository.findById(input.donorId);
+    const donor = await this.donorRepository.findById(input.donorId, input.tenantId);
     if (!donor) {
       return { success: false, errors: ["寄付者が見つかりません"] };
     }

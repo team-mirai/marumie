@@ -8,6 +8,7 @@ import type {
 import type { PrismaTransactionClient } from "@/server/contexts/report/domain/repositories/transaction-manager.interface";
 
 export interface DonorFilters {
+  tenantId: bigint;
   searchQuery?: string;
   donorType?: DonorType;
   limit?: number;
@@ -19,28 +20,36 @@ export interface DonorWithUsageAndLastUsed extends DonorWithUsage {
 }
 
 export interface IDonorRepository {
-  findById(id: string): Promise<Donor | null>;
+  findById(id: string, tenantId: bigint): Promise<Donor | null>;
   findByNameAddressAndType(
+    tenantId: bigint,
     name: string,
     address: string | null,
     donorType: DonorType,
   ): Promise<Donor | null>;
-  findAll(filters?: DonorFilters): Promise<Donor[]>;
-  findAllWithUsage(filters?: DonorFilters): Promise<DonorWithUsage[]>;
-  findByType(donorType: DonorType): Promise<Donor[]>;
+  findAll(filters: DonorFilters): Promise<Donor[]>;
+  findAllWithUsage(filters: DonorFilters): Promise<DonorWithUsage[]>;
+  findByType(tenantId: bigint, donorType: DonorType): Promise<Donor[]>;
   create(data: CreateDonorInput): Promise<Donor>;
-  update(id: string, data: UpdateDonorInput): Promise<Donor>;
-  delete(id: string): Promise<void>;
+  update(id: string, tenantId: bigint, data: UpdateDonorInput): Promise<Donor>;
+  delete(id: string, tenantId: bigint): Promise<void>;
   getUsageCount(id: string): Promise<number>;
-  count(filters?: DonorFilters): Promise<number>;
-  exists(name: string, address: string | null, donorType: DonorType): Promise<boolean>;
+  count(filters: DonorFilters): Promise<number>;
+  exists(
+    tenantId: bigint,
+    name: string,
+    address: string | null,
+    donorType: DonorType,
+  ): Promise<boolean>;
 
   findByUsageFrequency(
+    tenantId: bigint,
     politicalOrganizationId: string,
     limit: number,
   ): Promise<DonorWithUsageAndLastUsed[]>;
 
   findByPartnerName(
+    tenantId: bigint,
     politicalOrganizationId: string,
     partnerName: string,
   ): Promise<DonorWithUsageAndLastUsed[]>;
@@ -51,10 +60,12 @@ export interface IDonorRepository {
    * 同一人物判定に使用。政治資金報告書では同一寄付者の寄付を合算して
    * 5万円以上かを判定する必要があるため、既存Donorとの照合が重要。
    *
+   * @param tenantId テナントID
    * @param criteria 検索条件の配列
    * @returns 条件に一致した Donor の配列（一致しない条件は結果に含まれない）
    */
   findByMatchCriteriaBatch(
+    tenantId: bigint,
     criteria: Array<{ name: string; address: string | null; donorType: DonorType }>,
   ): Promise<Donor[]>;
 

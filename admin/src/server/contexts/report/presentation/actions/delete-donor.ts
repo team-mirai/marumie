@@ -12,12 +12,18 @@ export interface DeleteDonorActionResult {
   errors?: string[];
 }
 
-export async function deleteDonorAction(id: string): Promise<DeleteDonorActionResult> {
+/**
+ * tenantId は JSON シリアライズのため string で受け取る
+ */
+export async function deleteDonorAction(
+  id: string,
+  tenantId: string,
+): Promise<DeleteDonorActionResult> {
   try {
     const repository = new PrismaDonorRepository(prisma);
     const usecase = new DeleteDonorUsecase(repository, false);
 
-    const result = await usecase.execute(id);
+    const result = await usecase.execute(id, BigInt(tenantId));
 
     if (!result.success) {
       return { success: false, errors: result.errors };

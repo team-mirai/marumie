@@ -45,8 +45,10 @@ export function AssignWithDonorContent({
 
     setError(null);
     startTransition(async () => {
+      // TODO: マルチテナント対応後はコンテキストからtenantIdを取得する
+      const tenantId = "1"; // 固定値: sample-party
       const transactionIds = transactions.map((t) => t.id);
-      const result = await bulkAssignDonorAction(transactionIds, selectedDonorId);
+      const result = await bulkAssignDonorAction(tenantId, transactionIds, selectedDonorId);
       if (!result.success) {
         setError(result.errors?.join(", ") ?? "紐付けに失敗しました");
         return;
@@ -63,7 +65,11 @@ export function AssignWithDonorContent({
   }) => {
     setError(null);
 
+    // TODO: マルチテナント対応後はコンテキストからtenantIdを取得する
+    const tenantId = "1"; // 固定値: sample-party
+
     const createResult = await createDonorAction({
+      tenantId,
       donorType: data.donorType,
       name: data.name,
       address: data.address,
@@ -79,7 +85,7 @@ export function AssignWithDonorContent({
     }
 
     const transactionIds = transactions.map((t) => t.id);
-    const result = await bulkAssignDonorAction(transactionIds, createResult.donorId);
+    const result = await bulkAssignDonorAction(tenantId, transactionIds, createResult.donorId);
     if (!result.success) {
       throw new Error(result.errors?.join(", ") ?? "紐付けに失敗しました");
     }

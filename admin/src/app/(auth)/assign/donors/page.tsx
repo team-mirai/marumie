@@ -35,7 +35,10 @@ export default async function DonorAssignmentPage({ searchParams }: DonorAssignm
   const params = await searchParams;
   const organizations = await loadPoliticalOrganizationsData();
 
-  const allDonors = await loadAllDonorsData();
+  // TODO: マルチテナント対応後はURLパラメータからtenantIdを取得する
+  const tenantId = BigInt(1); // 固定値: sample-party
+
+  const allDonors = await loadAllDonorsData(tenantId);
 
   const categoryOptions = buildCategoryOptions();
 

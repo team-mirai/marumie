@@ -2,6 +2,7 @@ import type { PrismaClient } from "@prisma/client";
 import type { PoliticalOrganization } from "@/shared/models/political-organization";
 import type {
   IPoliticalOrganizationRepository,
+  PoliticalOrganizationWithTenantId,
   UpdatePoliticalOrganizationInput,
 } from "@/server/contexts/shared/domain/repositories/political-organization-repository.interface";
 
@@ -44,6 +45,44 @@ export class PrismaPoliticalOrganizationRepository implements IPoliticalOrganiza
       createdAt: organization.createdAt,
       updatedAt: organization.updatedAt,
     };
+  }
+
+  async findBySlug(slug: string): Promise<PoliticalOrganizationWithTenantId | null> {
+    const organization = await this.prisma.politicalOrganization.findUnique({
+      where: { slug },
+    });
+
+    if (!organization) {
+      return null;
+    }
+
+    return {
+      id: organization.id.toString(),
+      displayName: organization.displayName,
+      orgName: organization.orgName,
+      slug: organization.slug,
+      description: organization.description,
+      tenantId: organization.tenantId,
+      createdAt: organization.createdAt,
+      updatedAt: organization.updatedAt,
+    };
+  }
+
+  async findByTenantId(tenantId: bigint): Promise<PoliticalOrganization[]> {
+    const organizations = await this.prisma.politicalOrganization.findMany({
+      where: { tenantId },
+      orderBy: { displayName: "asc" },
+    });
+
+    return organizations.map((org) => ({
+      id: org.id.toString(),
+      displayName: org.displayName,
+      orgName: org.orgName,
+      slug: org.slug,
+      description: org.description,
+      createdAt: org.createdAt,
+      updatedAt: org.updatedAt,
+    }));
   }
 
   async create(

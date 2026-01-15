@@ -3,6 +3,7 @@ export interface Counterpart {
   name: string;
   postalCode: string | null;
   address: string | null;
+  tenantId: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -15,6 +16,7 @@ export interface CreateCounterpartInput {
   name: string;
   postalCode: string | null;
   address: string | null;
+  tenantId: bigint;
 }
 
 export interface UpdateCounterpartInput {
@@ -27,7 +29,13 @@ export const MAX_NAME_LENGTH = 120;
 export const MAX_ADDRESS_LENGTH = 120;
 export const MAX_POSTAL_CODE_LENGTH = 10;
 
-export function validateCounterpartInput(input: CreateCounterpartInput): string[] {
+export interface ValidateCounterpartInput {
+  name: string;
+  postalCode: string | null;
+  address: string | null;
+}
+
+export function validateCounterpartInput(input: ValidateCounterpartInput): string[] {
   const errors: string[] = [];
   const trimmedName = input.name?.trim() ?? "";
   const trimmedAddress = input.address?.trim() ?? "";

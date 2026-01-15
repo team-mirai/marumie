@@ -51,6 +51,7 @@ export class PrismaDonorRepository implements IDonorRepository {
       name: prismaDonor.name,
       address: prismaDonor.address,
       occupation: prismaDonor.occupation,
+      tenantId: prismaDonor.tenantId?.toString() ?? null,
       createdAt: prismaDonor.createdAt,
       updatedAt: prismaDonor.updatedAt,
     };
@@ -67,14 +68,17 @@ export class PrismaDonorRepository implements IDonorRepository {
     }
   }
 
-  async findById(id: string): Promise<Donor | null> {
+  async findById(id: string, tenantId: bigint): Promise<Donor | null> {
     const bigIntId = this.parseBigIntId(id);
     if (bigIntId === null) {
       return null;
     }
 
-    const donor = await this.prisma.donor.findUnique({
-      where: { id: bigIntId },
+    const donor = await this.prisma.donor.findFirst({
+      where: {
+        id: bigIntId,
+        tenantId,
+      },
     });
 
     if (!donor) {
@@ -85,12 +89,14 @@ export class PrismaDonorRepository implements IDonorRepository {
   }
 
   async findByNameAddressAndType(
+    tenantId: bigint,
     name: string,
     address: string | null,
     donorType: DonorType,
   ): Promise<Donor | null> {
     const donor = await this.prisma.donor.findFirst({
       where: {
+        tenantId,
         name,
         address,
         donorType: this.mapToPrismaDonorType(donorType),
@@ -104,27 +110,27 @@ export class PrismaDonorRepository implements IDonorRepository {
     return this.mapToDonor(donor);
   }
 
-  async findAll(filters?: DonorFilters): Promise<Donor[]> {
+  async findAll(filters: DonorFilters): Promise<Donor[]> {
     const where = this.buildWhereClause(filters);
 
     const donors = await this.prisma.donor.findMany({
       where,
       orderBy: [{ name: "asc" }, { id: "asc" }],
-      take: filters?.limit,
-      skip: filters?.offset,
+      take: filters.limit,
+      skip: filters.offset,
     });
 
     return donors.map((d) => this.mapToDonor(d));
   }
 
-  async findAllWithUsage(filters?: DonorFilters): Promise<DonorWithUsage[]> {
+  async findAllWithUsage(filters: DonorFilters): Promise<DonorWithUsage[]> {
     const where = this.buildWhereClause(filters);
 
     const donors = await this.prisma.donor.findMany({
       where,
       orderBy: [{ name: "asc" }, { id: "asc" }],
-      take: filters?.limit,
-      skip: filters?.offset,
+      take: filters.limit,
+      skip: filters.offset,
       include: {
         _count: {
           select: {
@@ -140,9 +146,10 @@ export class PrismaDonorRepository implements IDonorRepository {
     }));
   }
 
-  async findByType(donorType: DonorType): Promise<Donor[]> {
+  async findByType(tenantId: bigint, donorType: DonorType): Promise<Donor[]> {
     const donors = await this.prisma.donor.findMany({
       where: {
+        tenantId,
         donorType: this.mapToPrismaDonorType(donorType),
       },
       orderBy: [{ name: "asc" }, { id: "asc" }],
@@ -158,13 +165,14 @@ export class PrismaDonorRepository implements IDonorRepository {
         name: data.name.trim(),
         address: data.address?.trim() || null,
         occupation: data.occupation?.trim() || null,
+        tenantId: data.tenantId,
       },
     });
 
     return this.mapToDonor(donor);
   }
 
-  async update(id: string, data: UpdateDonorInput): Promise<Donor> {
+  async update(id: string, tenantId: bigint, data: UpdateDonorInput): Promise<Donor> {
     const bigIntId = this.parseBigIntId(id);
     if (bigIntId === null) {
       throw new Error(`無効なID形式です: ${id}`);
@@ -190,23 +198,44 @@ export class PrismaDonorRepository implements IDonorRepository {
       updateData.occupation = data.occupation?.trim() || null;
     }
 
-    const donor = await this.prisma.donor.update({
-      where: { id: bigIntId },
+    // テナント検証付きで更新
+    const result = await this.prisma.donor.updateMany({
+      where: {
+        id: bigIntId,
+        tenantId,
+      },
       data: updateData,
     });
 
-    return this.mapToDonor(donor);
+    if (result.count === 0) {
+      throw new Error("Donor not found or access denied");
+    }
+
+    // 更新後のデータを取得
+    const updated = await this.findById(id, tenantId);
+    if (!updated) {
+      throw new Error("Failed to retrieve updated donor");
+    }
+
+    return updated;
   }
 
-  async delete(id: string): Promise<void> {
+  async delete(id: string, tenantId: bigint): Promise<void> {
     const bigIntId = this.parseBigIntId(id);
     if (bigIntId === null) {
       throw new Error(`無効なID形式です: ${id}`);
     }
 
-    await this.prisma.donor.delete({
-      where: { id: bigIntId },
+    const result = await this.prisma.donor.deleteMany({
+      where: {
+        id: bigIntId,
+        tenantId,
+      },
     });
+
+    if (result.count === 0) {
+      throw new Error("Donor not found or access denied");
+    }
   }
 
   async getUsageCount(id: string): Promise<number> {
@@ -222,15 +251,21 @@ export class PrismaDonorRepository implements IDonorRepository {
     return count;
   }
 
-  async count(filters?: DonorFilters): Promise<number> {
+  async count(filters: DonorFilters): Promise<number> {
     const where = this.buildWhereClause(filters);
 
     return this.prisma.donor.count({ where });
   }
 
-  async exists(name: string, address: string | null, donorType: DonorType): Promise<boolean> {
+  async exists(
+    tenantId: bigint,
+    name: string,
+    address: string | null,
+    donorType: DonorType,
+  ): Promise<boolean> {
     const donor = await this.prisma.donor.findFirst({
       where: {
+        tenantId,
         name,
         address,
         donorType: this.mapToPrismaDonorType(donorType),
@@ -240,16 +275,16 @@ export class PrismaDonorRepository implements IDonorRepository {
     return donor !== null;
   }
 
-  private buildWhereClause(filters?: DonorFilters) {
-    const conditions: Record<string, unknown>[] = [];
+  private buildWhereClause(filters: DonorFilters) {
+    const conditions: Record<string, unknown>[] = [{ tenantId: filters.tenantId }];
 
-    if (filters?.donorType) {
+    if (filters.donorType) {
       conditions.push({
         donorType: this.mapToPrismaDonorType(filters.donorType),
       });
     }
 
-    if (filters?.searchQuery) {
+    if (filters.searchQuery) {
       const searchQuery = filters.searchQuery.trim();
       if (searchQuery) {
         conditions.push({
@@ -262,10 +297,6 @@ export class PrismaDonorRepository implements IDonorRepository {
       }
     }
 
-    if (conditions.length === 0) {
-      return {};
-    }
-
     if (conditions.length === 1) {
       return conditions[0];
     }
@@ -274,6 +305,7 @@ export class PrismaDonorRepository implements IDonorRepository {
   }
 
   async findByUsageFrequency(
+    tenantId: bigint,
     politicalOrganizationId: string,
     limit: number,
   ): Promise<DonorWithUsageAndLastUsed[]> {
@@ -284,6 +316,7 @@ export class PrismaDonorRepository implements IDonorRepository {
 
     const donorsWithUsage = await this.prisma.donor.findMany({
       where: {
+        tenantId,
         transactionDonors: {
           some: {
             transaction: {
@@ -338,6 +371,7 @@ export class PrismaDonorRepository implements IDonorRepository {
   }
 
   async findByPartnerName(
+    tenantId: bigint,
     politicalOrganizationId: string,
     partnerName: string,
   ): Promise<DonorWithUsageAndLastUsed[]> {
@@ -353,6 +387,7 @@ export class PrismaDonorRepository implements IDonorRepository {
 
     const donorsWithUsage = await this.prisma.donor.findMany({
       where: {
+        tenantId,
         transactionDonors: {
           some: {
             transaction: {
@@ -419,6 +454,7 @@ export class PrismaDonorRepository implements IDonorRepository {
   }
 
   async findByMatchCriteriaBatch(
+    tenantId: bigint,
     criteria: Array<{ name: string; address: string | null; donorType: DonorType }>,
   ): Promise<Donor[]> {
     if (criteria.length === 0) {
@@ -433,6 +469,7 @@ export class PrismaDonorRepository implements IDonorRepository {
 
     const donors = await this.prisma.donor.findMany({
       where: {
+        tenantId,
         OR: orConditions,
       },
     });
@@ -453,6 +490,7 @@ export class PrismaDonorRepository implements IDonorRepository {
         name: d.name.trim(),
         address: d.address?.trim() || null,
         occupation: d.occupation?.trim() || null,
+        tenantId: d.tenantId,
       })),
     });
 

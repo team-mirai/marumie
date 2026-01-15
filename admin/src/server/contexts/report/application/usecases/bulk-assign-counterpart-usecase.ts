@@ -5,6 +5,7 @@ import type { ICounterpartRepository } from "@/server/contexts/report/domain/rep
 import type { ITransactionCounterpartRepository } from "@/server/contexts/report/domain/repositories/transaction-counterpart-repository.interface";
 
 export interface BulkAssignCounterpartInput {
+  tenantId: bigint;
   transactionIds: string[];
   counterpartId: string;
 }
@@ -44,7 +45,10 @@ export class BulkAssignCounterpartUsecase {
       };
     }
 
-    const counterpart = await this.counterpartRepository.findById(input.counterpartId);
+    const counterpart = await this.counterpartRepository.findById(
+      input.counterpartId,
+      input.tenantId,
+    );
     if (!counterpart) {
       return { success: false, successCount: 0, failedIds: [], errors: ["無効な取引先IDです"] };
     }

@@ -34,8 +34,12 @@ export function DonorFormDialog(props: DonorFormDialogProps) {
   }) => {
     setIsLoading(true);
     try {
+      // TODO: マルチテナント対応後はコンテキストからtenantIdを取得する
+      const tenantId = "1"; // 固定値: sample-party
+
       if (mode === "create") {
         const result = await createDonorAction({
+          tenantId,
           donorType: data.donorType,
           name: data.name,
           address: data.address,
@@ -46,7 +50,7 @@ export function DonorFormDialog(props: DonorFormDialogProps) {
           throw new Error(result.errors?.join(", ") ?? "作成に失敗しました");
         }
       } else if (donor) {
-        const result = await updateDonorAction(donor.id, {
+        const result = await updateDonorAction(donor.id, tenantId, {
           donorType: data.donorType,
           name: data.name,
           address: data.address,

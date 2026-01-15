@@ -14,6 +14,7 @@ import type {
 } from "@/server/contexts/report/domain/repositories/donor-repository.interface";
 
 export interface GetDonorsInput {
+  tenantId: bigint;
   searchQuery?: string;
   donorType?: DonorType;
   limit?: number;
@@ -30,6 +31,7 @@ export class GetDonorsUsecase {
 
   async execute(input: GetDonorsInput): Promise<GetDonorsResult> {
     const filters: DonorFilters = {
+      tenantId: input.tenantId,
       searchQuery: input.searchQuery,
       donorType: input.donorType,
       limit: input.limit,
@@ -62,6 +64,7 @@ export class CreateDonorUsecase {
       name: input.name.trim(),
       address: trimmedAddress,
       occupation: input.donorType === "individual" ? trimmedOccupation : null,
+      tenantId: input.tenantId,
     };
 
     const validationErrors = validateDonorInput(normalizedInput);
@@ -70,6 +73,7 @@ export class CreateDonorUsecase {
     }
 
     const existing = await this.repository.findByNameAddressAndType(
+      input.tenantId,
       normalizedInput.name,
       normalizedInput.address,
       normalizedInput.donorType,
@@ -95,8 +99,8 @@ export interface UpdateDonorResult {
 export class UpdateDonorUsecase {
   constructor(private repository: IDonorRepository) {}
 
-  async execute(id: string, input: UpdateDonorInput): Promise<UpdateDonorResult> {
-    const existing = await this.repository.findById(id);
+  async execute(id: string, tenantId: bigint, input: UpdateDonorInput): Promise<UpdateDonorResult> {
+    const existing = await this.repository.findById(id, tenantId);
     if (!existing) {
       return { success: false, errors: ["寄付者が見つかりません"] };
     }
@@ -128,6 +132,7 @@ export class UpdateDonorUsecase {
       newDonorType !== existing.donorType
     ) {
       const duplicate = await this.repository.findByNameAddressAndType(
+        tenantId,
         newName,
         newAddress,
         newDonorType,
@@ -140,7 +145,7 @@ export class UpdateDonorUsecase {
       }
     }
 
-    const donor = await this.repository.update(id, {
+    const donor = await this.repository.update(id, tenantId, {
       donorType: newDonorType,
       name: newName,
       address: newAddress,
@@ -161,8 +166,8 @@ export class DeleteDonorUsecase {
     private checkUsage = true,
   ) {}
 
-  async execute(id: string): Promise<DeleteDonorResult> {
-    const existing = await this.repository.findById(id);
+  async execute(id: string, tenantId: bigint): Promise<DeleteDonorResult> {
+    const existing = await this.repository.findById(id, tenantId);
     if (!existing) {
       return { success: false, errors: ["寄付者が見つかりません"] };
     }
@@ -179,7 +184,7 @@ export class DeleteDonorUsecase {
       }
     }
 
-    await this.repository.delete(id);
+    await this.repository.delete(id, tenantId);
     return { success: true };
   }
 }

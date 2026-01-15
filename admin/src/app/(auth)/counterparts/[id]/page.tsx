@@ -24,8 +24,11 @@ export default async function CounterpartDetailPage({
   const { id } = await params;
   const searchParamsResolved = await searchParams;
 
+  // TODO: マルチテナント対応後はURLパラメータからtenantIdを取得する
+  const tenantId = BigInt(1); // 固定値: sample-party
+
   const [{ counterpart, usageCount, allCounterparts }, organizations] = await Promise.all([
-    loadCounterpartDetailPageData(id),
+    loadCounterpartDetailPageData(id, tenantId),
     loadPoliticalOrganizationsData(),
   ]);
 

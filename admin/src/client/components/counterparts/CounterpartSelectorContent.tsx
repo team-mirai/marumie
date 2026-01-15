@@ -51,8 +51,10 @@ export function CounterpartSelectorContent({
     if (transactions.length === 0 || !politicalOrganizationId) return;
 
     setIsLoadingSuggestions(true);
+    // TODO: マルチテナント対応後はコンテキストからtenantIdを取得する
+    const tenantId = "1"; // 固定値: sample-party
     const transactionId = transactions[0].id;
-    suggestCounterpartAction(transactionId, politicalOrganizationId, 5)
+    suggestCounterpartAction(tenantId, transactionId, politicalOrganizationId, 5)
       .then((result) => {
         if (result.success) {
           setSuggestions(result.suggestions);

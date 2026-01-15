@@ -6,6 +6,7 @@ export interface Donor {
   name: string;
   address: string | null;
   occupation: string | null;
+  tenantId: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -19,6 +20,7 @@ export interface CreateDonorInput {
   name: string;
   address: string | null;
   occupation: string | null;
+  tenantId: bigint;
 }
 
 export interface UpdateDonorInput {
@@ -63,7 +65,14 @@ export function parseDonorType(value: string): DonorType | null {
   return isValidDonorType(normalized) ? normalized : null;
 }
 
-export function validateDonorInput(input: CreateDonorInput): string[] {
+export interface ValidateDonorInput {
+  donorType: DonorType;
+  name: string;
+  address: string | null;
+  occupation: string | null;
+}
+
+export function validateDonorInput(input: ValidateDonorInput): string[] {
   const errors: string[] = [];
   const trimmedName = input.name?.trim() ?? "";
   const trimmedAddress = input.address?.trim() ?? "";

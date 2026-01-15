@@ -12,12 +12,18 @@ export interface DeleteCounterpartActionResult {
   errors?: string[];
 }
 
-export async function deleteCounterpartAction(id: string): Promise<DeleteCounterpartActionResult> {
+/**
+ * tenantId は JSON シリアライズのため string で受け取る
+ */
+export async function deleteCounterpartAction(
+  id: string,
+  tenantId: string,
+): Promise<DeleteCounterpartActionResult> {
   try {
     const repository = new PrismaCounterpartRepository(prisma);
     const usecase = new DeleteCounterpartUsecase(repository);
 
-    const result = await usecase.execute(id);
+    const result = await usecase.execute(id, BigInt(tenantId));
 
     if (!result.success) {
       return { success: false, errors: result.errors };

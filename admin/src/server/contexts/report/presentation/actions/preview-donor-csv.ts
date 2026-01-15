@@ -14,7 +14,12 @@ import {
 import { PreviewDonorCsvUsecase } from "@/server/contexts/report/application/usecases/preview-donor-csv-usecase";
 import type { PreviewDonorCsvResult } from "@/server/contexts/report/presentation/types/preview-donor-csv-types";
 
+/**
+ * クライアントから受け取る入力
+ * tenantId は JSON シリアライズのため string で受け取る
+ */
 export interface PreviewDonorCsvRequest {
+  tenantId: string;
   file: File;
   politicalOrganizationId: string;
 }
@@ -23,7 +28,7 @@ export async function previewDonorCsv(
   data: PreviewDonorCsvRequest,
 ): Promise<PreviewDonorCsvResult> {
   try {
-    const { file, politicalOrganizationId } = data;
+    const { tenantId, file, politicalOrganizationId } = data;
 
     if (!file) {
       throw new Error("ファイルが選択されていません");
@@ -51,6 +56,7 @@ export async function previewDonorCsv(
     );
 
     const result = await usecase.execute({
+      tenantId: BigInt(tenantId),
       csvContent,
       politicalOrganizationId,
     });

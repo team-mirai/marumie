@@ -11,15 +11,19 @@ export interface UpdateCounterpartActionResult {
   errors?: string[];
 }
 
+/**
+ * tenantId は JSON シリアライズのため string で受け取る
+ */
 export async function updateCounterpartAction(
   id: string,
+  tenantId: string,
   input: UpdateCounterpartInput,
 ): Promise<UpdateCounterpartActionResult> {
   try {
     const repository = new PrismaCounterpartRepository(prisma);
     const usecase = new UpdateCounterpartUsecase(repository);
 
-    const result = await usecase.execute(id, input);
+    const result = await usecase.execute(id, BigInt(tenantId), input);
 
     if (!result.success) {
       return { success: false, errors: result.errors };

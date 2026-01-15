@@ -14,7 +14,11 @@ export interface BulkAssignCounterpartActionResult {
   errors?: string[];
 }
 
+/**
+ * tenantId は JSON シリアライズのため string で受け取る
+ */
 export async function bulkAssignCounterpartAction(
+  tenantId: string,
   transactionIds: string[],
   counterpartId: string,
 ): Promise<BulkAssignCounterpartActionResult> {
@@ -27,7 +31,11 @@ export async function bulkAssignCounterpartAction(
       counterpartRepository,
       transactionCounterpartRepository,
     );
-    const result = await usecase.execute({ transactionIds, counterpartId });
+    const result = await usecase.execute({
+      tenantId: BigInt(tenantId),
+      transactionIds,
+      counterpartId,
+    });
 
     if (!result.success) {
       return {
