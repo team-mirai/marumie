@@ -16,8 +16,13 @@ export class PrismaPoliticalOrganizationRepository implements IPoliticalOrganiza
     });
 
     return organizations.map((org) => ({
-      ...org,
       id: org.id.toString(),
+      displayName: org.displayName,
+      orgName: org.orgName,
+      slug: org.slug,
+      description: org.description,
+      createdAt: org.createdAt,
+      updatedAt: org.updatedAt,
     }));
   }
 
@@ -31,8 +36,13 @@ export class PrismaPoliticalOrganizationRepository implements IPoliticalOrganiza
     }
 
     return {
-      ...organization,
       id: organization.id.toString(),
+      displayName: organization.displayName,
+      orgName: organization.orgName,
+      slug: organization.slug,
+      description: organization.description,
+      createdAt: organization.createdAt,
+      updatedAt: organization.updatedAt,
     };
   }
 
@@ -57,8 +67,13 @@ export class PrismaPoliticalOrganizationRepository implements IPoliticalOrganiza
     });
 
     return {
-      ...organization,
       id: organization.id.toString(),
+      displayName: organization.displayName,
+      orgName: organization.orgName,
+      slug: organization.slug,
+      description: organization.description,
+      createdAt: organization.createdAt,
+      updatedAt: organization.updatedAt,
     };
   }
 
@@ -74,8 +89,13 @@ export class PrismaPoliticalOrganizationRepository implements IPoliticalOrganiza
     });
 
     return {
-      ...organization,
       id: organization.id.toString(),
+      displayName: organization.displayName,
+      orgName: organization.orgName,
+      slug: organization.slug,
+      description: organization.description,
+      createdAt: organization.createdAt,
+      updatedAt: organization.updatedAt,
     };
   }
 

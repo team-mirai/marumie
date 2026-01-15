@@ -16,7 +16,42 @@ model User {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
+  tenantMemberships UserTenantMembership[]
+
   @@map("users")
+}
+
+model Tenant {
+  id          BigInt   @id @default(autoincrement())
+  name        String   @db.VarChar(100)
+  slug        String   @unique @db.VarChar(50)
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  politicalOrganizations PoliticalOrganization[]
+  counterparts           Counterpart[]
+  donors                 Donor[]
+  memberships            UserTenantMembership[]
+
+  @@map("tenants")
+}
+
+model UserTenantMembership {
+  id        BigInt     @id @default(autoincrement())
+  userId    String     @map("user_id")
+  tenantId  BigInt     @map("tenant_id")
+  role      TenantRole @default(editor)
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @updatedAt @map("updated_at")
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, tenantId])
+  @@index([userId])
+  @@index([tenantId])
+  @@map("user_tenant_memberships")
 }
 
 model PoliticalOrganization {
@@ -27,10 +62,15 @@ model PoliticalOrganization {
   updatedAt        DateTime          @updatedAt @map("updated_at")
   slug             String            @unique @db.VarChar(255)
   orgName          String?           @map("org_name") @db.VarChar(255)
+
+  tenantId BigInt? @map("tenant_id")
+  tenant   Tenant? @relation(fields: [tenantId], references: [id])
+
   balanceSnapshots BalanceSnapshot[]
   reportProfiles   OrganizationReportProfile[]
   transactions     Transaction[]
 
+  @@index([tenantId])
   @@map("political_organizations")
 }
 
@@ -79,9 +119,13 @@ model Counterpart {
   createdAt  DateTime @default(now()) @map("created_at")
   updatedAt  DateTime @updatedAt @map("updated_at")
 
+  tenantId BigInt? @map("tenant_id")
+  tenant   Tenant? @relation(fields: [tenantId], references: [id])
+
   transactionCounterparts TransactionCounterpart[]
 
   @@unique([name, address])
+  @@index([tenantId])
   @@map("counterparts")
 }
 
@@ -123,9 +167,13 @@ model Donor {
   createdAt         DateTime          @default(now()) @map("created_at")
   updatedAt         DateTime          @updatedAt @map("updated_at")
 
+  tenantId BigInt? @map("tenant_id")
+  tenant   Tenant? @relation(fields: [tenantId], references: [id])
+
   transactionDonors TransactionDonor[]
 
   @@unique([name, address, donorType])
+  @@index([tenantId])
   @@map("donors")
 }
 
@@ -177,6 +225,12 @@ enum TransactionType {
 enum UserRole {
   admin
   user
+}
+
+enum TenantRole {
+  owner
+  admin
+  editor
 }
 
 enum DonorType {
