@@ -11,10 +11,55 @@ import type {
 import type { TenantRole } from "@/server/contexts/auth/domain/models/tenant-role";
 import { prisma } from "@/server/contexts/shared/infrastructure/prisma";
 
+/** Prismaから取得したメンバーシップレコードの型 */
+type PrismaMembershipRecord = {
+  id: bigint;
+  userId: string;
+  tenantId: bigint;
+  role: string;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+/** テナント情報付きのPrismaメンバーシップレコードの型 */
+type PrismaMembershipWithTenantRecord = PrismaMembershipRecord & {
+  tenant: {
+    slug: string;
+    name: string;
+  };
+};
+
 /**
  * Prisma実装のユーザー・テナントメンバーシップリポジトリ
  */
 export class PrismaUserTenantMembershipRepository implements UserTenantMembershipRepository {
+  /**
+   * Prismaレコードをドメインモデルにマッピング
+   */
+  private mapToMembership(record: PrismaMembershipRecord): UserTenantMembership {
+    return {
+      id: record.id,
+      userId: record.userId,
+      tenantId: record.tenantId,
+      role: record.role as TenantRole,
+      createdAt: record.createdAt,
+      updatedAt: record.updatedAt,
+    };
+  }
+
+  /**
+   * テナント情報付きPrismaレコードをドメインモデルにマッピング
+   */
+  private mapToMembershipWithTenant(
+    record: PrismaMembershipWithTenantRecord,
+  ): TenantMembershipWithTenant {
+    return {
+      membership: this.mapToMembership(record),
+      tenantSlug: record.tenant.slug,
+      tenantName: record.tenant.name,
+    };
+  }
+
   async findByUserId(userId: string): Promise<TenantMembershipWithTenant[]> {
     const memberships = await prisma.userTenantMembership.findMany({
       where: { userId },
@@ -29,18 +74,7 @@ export class PrismaUserTenantMembershipRepository implements UserTenantMembershi
       orderBy: { createdAt: "asc" },
     });
 
-    return memberships.map((m) => ({
-      membership: {
-        id: m.id,
-        userId: m.userId,
-        tenantId: m.tenantId,
-        role: m.role as TenantRole,
-        createdAt: m.createdAt,
-        updatedAt: m.updatedAt,
-      },
-      tenantSlug: m.tenant.slug,
-      tenantName: m.tenant.name,
-    }));
+    return memberships.map((m) => this.mapToMembershipWithTenant(m));
   }
 
   async findByTenantId(tenantId: bigint): Promise<UserTenantMembership[]> {
@@ -49,14 +83,7 @@ export class PrismaUserTenantMembershipRepository implements UserTenantMembershi
       orderBy: { createdAt: "asc" },
     });
 
-    return memberships.map((m) => ({
-      id: m.id,
-      userId: m.userId,
-      tenantId: m.tenantId,
-      role: m.role as TenantRole,
-      createdAt: m.createdAt,
-      updatedAt: m.updatedAt,
-    }));
+    return memberships.map((m) => this.mapToMembership(m));
   }
 
   async findByUserAndTenant(
@@ -71,14 +98,7 @@ export class PrismaUserTenantMembershipRepository implements UserTenantMembershi
 
     if (!membership) return null;
 
-    return {
-      id: membership.id,
-      userId: membership.userId,
-      tenantId: membership.tenantId,
-      role: membership.role as TenantRole,
-      createdAt: membership.createdAt,
-      updatedAt: membership.updatedAt,
-    };
+    return this.mapToMembership(membership);
   }
 
   async create(input: CreateMembershipInput): Promise<UserTenantMembership> {
@@ -90,14 +110,7 @@ export class PrismaUserTenantMembershipRepository implements UserTenantMembershi
       },
     });
 
-    return {
-      id: membership.id,
-      userId: membership.userId,
-      tenantId: membership.tenantId,
-      role: membership.role as TenantRole,
-      createdAt: membership.createdAt,
-      updatedAt: membership.updatedAt,
-    };
+    return this.mapToMembership(membership);
   }
 
   async updateRole(id: bigint, role: TenantRole): Promise<UserTenantMembership> {
@@ -106,14 +119,7 @@ export class PrismaUserTenantMembershipRepository implements UserTenantMembershi
       data: { role },
     });
 
-    return {
-      id: membership.id,
-      userId: membership.userId,
-      tenantId: membership.tenantId,
-      role: membership.role as TenantRole,
-      createdAt: membership.createdAt,
-      updatedAt: membership.updatedAt,
-    };
+    return this.mapToMembership(membership);
   }
 
   async delete(id: bigint): Promise<void> {
