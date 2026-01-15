@@ -1,6 +1,6 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { type NextRequest, NextResponse } from "next/server";
-import { getMaintenanceHtml } from "@/lib/maintenance-html";
+import { getMaintenanceHtml } from "@/client/templates/maintenance-html";
 
 async function hashCredentials(credentials: string): Promise<string> {
   const encoder = new TextEncoder();
