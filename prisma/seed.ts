@@ -6,13 +6,16 @@ import { counterpartsSeeder } from './seeds/counterparts';
 import { donorsSeeder } from './seeds/donors';
 import { politicalOrganizationsSeeder } from './seeds/politicalOrganizations';
 import { reportProfilesSeeder } from './seeds/reportProfiles';
+import { tenantsSeeder } from './seeds/tenants';
 import { transactionsSeeder } from './seeds/transactions';
 import { usersSeeder } from './seeds/users';
 
 const prisma = new PrismaClient();
 
 // シーダーを配列で管理（順序も制御可能）
+// テナントは最初に作成する必要がある（他のエンティティがテナントを参照するため）
 const seeders: Seeder[] = [
+  tenantsSeeder,
   politicalOrganizationsSeeder,
   reportProfilesSeeder,
   usersSeeder,

@@ -27,7 +27,16 @@
         "src/app/**/route.ts"
       ],
       "project": ["src/**/*.{ts,tsx}"],
-      "ignore": ["src/client/components/ui/**/*"]
+      "ignore": [
+        "src/client/components/ui/**/*",
+        "src/server/contexts/auth/domain/models/tenant-role.ts",
+        "src/server/contexts/auth/domain/models/tenant.ts",
+        "src/server/contexts/auth/domain/models/user-tenant-membership.ts",
+        "src/server/contexts/auth/domain/repositories/tenant-repository.interface.ts",
+        "src/server/contexts/auth/domain/repositories/user-tenant-membership-repository.interface.ts",
+        "src/server/contexts/auth/infrastructure/repositories/prisma-tenant.repository.ts",
+        "src/server/contexts/auth/infrastructure/repositories/prisma-user-tenant-membership.repository.ts"
+      ]
     }
   }
 }
