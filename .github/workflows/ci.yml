@@ -9,6 +9,7 @@ on:
       - 'prisma/**'
       - '.dependency-cruiser.cjs'
       - 'pnpm-lock.yaml'
+      - '.github/workflows/**'
 
 env:
   # Supabase local development defaults
