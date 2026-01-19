@@ -11,11 +11,10 @@ on:
       - 'pnpm-lock.yaml'
 
 env:
-  # Supabase local development defaults (public, not secrets)
-  # https://supabase.com/docs/guides/local-development/auth#log-in-as-an-existing-user
+  # Supabase local development defaults
+  # Note: SUPABASE_ANON_KEY and SUPABASE_SERVICE_ROLE_KEY are now dynamically generated
+  # by Supabase CLI and will be extracted after `supabase start` in the e2e job
   SUPABASE_URL: http://127.0.0.1:54321
-  SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0
-  SUPABASE_SERVICE_ROLE_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU
   # Note: CI uses default Supabase ports (54321 for API, 54322 for DB)
   # Local development may use different ports - check supabase/config.toml
   DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
@@ -250,38 +249,46 @@ jobs:
       - name: Generate Prisma Client
         run: pnpm db:generate
 
-      - name: Start Supabase and build admin in parallel
+      - name: Start Supabase
         run: |
           # Enable API and use default ports for CI
           sed -i 's/^\[api\]$/[api]/' supabase/config.toml
           sed -i '/^\[api\]$/,/^\[/{s/^enabled = false$/enabled = true/}' supabase/config.toml
           sed -i 's/^port = 54332$/port = 54322/' supabase/config.toml
 
-          # Start Supabase in background
-          supabase start --exclude imgproxy,edge-runtime,vector,studio &
-          SUPABASE_PID=$!
-
-          # Build admin in parallel (admin doesn't need DB)
-          NEXT_PUBLIC_SUPABASE_URL=${{ env.SUPABASE_URL }} \
-          NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ env.SUPABASE_ANON_KEY }} \
-          pnpm build:admin &
-          ADMIN_PID=$!
-
-          # Wait for admin build to complete
-          wait $ADMIN_PID
-
-          # Wait for Supabase to complete
-          wait $SUPABASE_PID
+          # Start Supabase
+          supabase start --exclude imgproxy,edge-runtime,vector,studio
 
           # Wait for Supabase API to be ready
           echo "Waiting for Supabase API..."
           timeout 60 bash -c 'until curl -s http://127.0.0.1:54321/rest/v1/ > /dev/null 2>&1; do sleep 2; done'
           echo "Supabase is ready"
 
+      - name: Get Supabase keys
+        id: supabase-keys
+        run: |
+          # Extract dynamic keys from Supabase CLI
+          SUPABASE_STATUS=$(supabase status --output json)
+          ANON_KEY=$(echo "$SUPABASE_STATUS" | jq -r '.ANON_KEY')
+          SERVICE_ROLE_KEY=$(echo "$SUPABASE_STATUS" | jq -r '.SERVICE_ROLE_KEY')
+
+          echo "SUPABASE_ANON_KEY=$ANON_KEY" >> $GITHUB_OUTPUT
+          echo "SUPABASE_SERVICE_ROLE_KEY=$SERVICE_ROLE_KEY" >> $GITHUB_OUTPUT
+
+          # Also set as environment variables for subsequent steps
+          echo "SUPABASE_ANON_KEY=$ANON_KEY" >> $GITHUB_ENV
+          echo "SUPABASE_SERVICE_ROLE_KEY=$SERVICE_ROLE_KEY" >> $GITHUB_ENV
+
       - name: Run database migrations and seed
         run: |
           pnpm db:migrate:deploy
           pnpm db:seed
+
+      - name: Build admin
+        run: pnpm build:admin
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ env.SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ steps.supabase-keys.outputs.SUPABASE_ANON_KEY }}
 
       - name: Build webapp
         run: pnpm build:webapp
@@ -290,7 +297,7 @@ jobs:
         run: pnpm --filter admin test:e2e
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ env.SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ env.SUPABASE_ANON_KEY }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ steps.supabase-keys.outputs.SUPABASE_ANON_KEY }}
 
       - name: Run E2E tests for webapp
         run: pnpm --filter webapp test:e2e
