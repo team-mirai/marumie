@@ -26,7 +26,7 @@ importers:
         version: 9.2.1
       dependency-cruiser:
         specifier: ^17.3.6
-        version: 17.3.6
+        version: 17.3.7
       dotenv-cli:
         specifier: ^11.0.0
         version: 11.0.0
@@ -2323,8 +2323,8 @@ packages:
   defu@6.1.4:
     resolution: {integrity: sha512-mEQCMmwJu317oSz8CwdIOdwf3xMif1ttiM8LTufzc3g6kR+9Pe236twL8j3IYT1F7GfRgGcW6MWxzZjLIkuHIg==}
 
-  dependency-cruiser@17.3.6:
-    resolution: {integrity: sha512-k0mXZaNvR2hZC0Dh2y4NGZZGqWLM6AbxQXmKL0T2m+KRE19nK5gAhm+PdV7f1L+AhdwwSOnebok7C6P27l2xXA==}
+  dependency-cruiser@17.3.7:
+    resolution: {integrity: sha512-WEEOrnf0eshNirg4CMWuB7kK+qVZ+fecW6EBJa6AomEFhDDZKi3Zel1Tyl4ihcWtiSDhF+vALQb8NJS+wQiwLA==}
     engines: {node: ^20.12||^22||>=24}
     hasBin: true
 
@@ -3362,8 +3362,8 @@ packages:
   resolve-pkg-maps@1.0.0:
     resolution: {integrity: sha512-seS2Tj26TBVOC2NIc2rOe2y2ZO7efxITtLZcGSOnHHNOQ7CkiUBfw0Iw2ck6xkIhPwLhKNLS8BO+hEpngQlqzw==}
 
-  resolve@1.22.10:
-    resolution: {integrity: sha512-NPRy+/ncIMeDlTAsuqwKIiferiawhefFJtkNSW0qZJEqMEb+qBt/77B/jGeeek+F0uOeN05CDa6HXbbIgtVX4w==}
+  resolve@1.22.11:
+    resolution: {integrity: sha512-RfqAvLnMl313r7c9oclB1HhUEAezcpLjz95wFH4LVuhk9JF/r22qmVP9AMmOU4vMX7Q8pN8jwNg/CSpdFnMjTQ==}
     engines: {node: '>= 0.4'}
     hasBin: true
 
@@ -3560,13 +3560,14 @@ packages:
   tailwindcss@4.1.18:
     resolution: {integrity: sha512-4+Z+0yiYyEtUVCScyfHCxOYP06L5Ne+JiHhY2IjR2KWMIWhJOYZKLSGZaP5HkZ8+bY0cxfzwDE5uOmzFXyIwxw==}
 
-  tapable@2.2.3:
-    resolution: {integrity: sha512-ZL6DDuAlRlLGghwcfmSn9sK3Hr6ArtyudlSAiCqQ6IfE+b+HHbydbYDIG15IfS5do+7XQQBdBiubF/cV2dnDzg==}
+  tapable@2.3.0:
+    resolution: {integrity: sha512-g9ljZiwki/LfxmQADO3dEY1CbpmXT5Hm2fJ+QaGKwSXUylMybePR7/67YW7jOrrvjEgL1Fmz5kzyAjWVWLlucg==}
     engines: {node: '>=6'}
 
   tar@7.5.2:
     resolution: {integrity: sha512-7NyxrTE4Anh8km8iEy7o0QYPs+0JKBTj5ZaqHg6B39erLg0qYXN3BijtShwbsNSvQ+LN75+KV+C4QR/f6Gwnpg==}
     engines: {node: '>=18'}
+    deprecated: Old versions of tar are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exhorbitant rates) by contacting i@izs.me
 
   test-exclude@6.0.0:
     resolution: {integrity: sha512-cAGWPIyOHU6zlmg88jwm7VRyXnMN7iV68OGAbYDk/Mh/xC/pzVPlQtY6ngoIH/5/tciuhGfvESU8GrHrcxD56w==}
@@ -3704,8 +3705,8 @@ packages:
   walker@1.0.8:
     resolution: {integrity: sha512-ts/8E8l5b7kY0vlWLewOkDXMmPdLcVV4GmOQLyxuSswIJsweeFZtAsMF7k1Nszz+TYBQrlYRmzOnr398y1JemQ==}
 
-  watskeburt@5.0.0:
-    resolution: {integrity: sha512-fEMhfIzu9WOuAJdDcTT+aPjn0JHI2+UeJ+zWSEs/tgMvc+MFDZVmhlZ8C1uJWXax1ETYc4trUnHFHyx2DrG0jQ==}
+  watskeburt@5.0.2:
+    resolution: {integrity: sha512-8xIz2RALjwTA7kYeRtkiQ2uaFyr327T1GXJnVcGOoPuzQX2axpUXqeJPcgOEVemCWB2YveZjhWCcW/eZ3uTkZA==}
     engines: {node: ^20.12||^22.13||>=24.0}
     hasBin: true
 
@@ -5819,7 +5820,7 @@ snapshots:
 
   defu@6.1.4: {}
 
-  dependency-cruiser@17.3.6:
+  dependency-cruiser@17.3.7:
     dependencies:
       acorn: 8.15.0
       acorn-jsx: 5.3.2(acorn@8.15.0)
@@ -5838,7 +5839,7 @@ snapshots:
       safe-regex: 2.1.1
       semver: 7.7.3
       tsconfig-paths-webpack-plugin: 4.2.0
-      watskeburt: 5.0.0
+      watskeburt: 5.0.2
 
   destr@2.0.5: {}
 
@@ -5903,7 +5904,7 @@ snapshots:
   enhanced-resolve@5.18.4:
     dependencies:
       graceful-fs: 4.2.11
-      tapable: 2.2.3
+      tapable: 2.3.0
 
   entities@4.5.0: {}
 
@@ -7009,7 +7010,7 @@ snapshots:
 
   rechoir@0.8.0:
     dependencies:
-      resolve: 1.22.10
+      resolve: 1.22.11
 
   regexp-tree@0.1.27: {}
 
@@ -7023,7 +7024,7 @@ snapshots:
 
   resolve-pkg-maps@1.0.0: {}
 
-  resolve@1.22.10:
+  resolve@1.22.11:
     dependencies:
       is-core-module: 2.16.1
       path-parse: 1.0.7
@@ -7215,7 +7216,7 @@ snapshots:
 
   tailwindcss@4.1.18: {}
 
-  tapable@2.2.3: {}
+  tapable@2.3.0: {}
 
   tar@7.5.2:
     dependencies:
@@ -7267,7 +7268,7 @@ snapshots:
     dependencies:
       chalk: 4.1.2
       enhanced-resolve: 5.18.4
-      tapable: 2.2.3
+      tapable: 2.3.0
       tsconfig-paths: 4.2.0
 
   tsconfig-paths@4.2.0:
@@ -7359,7 +7360,7 @@ snapshots:
     dependencies:
       makeerror: 1.0.12
 
-  watskeburt@5.0.0: {}
+  watskeburt@5.0.2: {}
 
   web-streams-polyfill@3.3.3: {}
 
