@@ -10,9 +10,9 @@
     "apexcharts": "^5.3.6",
     "critters": "^0.0.25",
     "next": "16.1.1",
-    "react": "19.2.3",
+    "react": "19.2.4",
     "react-apexcharts": "^1.9.0",
-    "react-dom": "19.2.3"
+    "react-dom": "19.2.4"
   },
   "devDependencies": {
     "@playwright/test": "^1.57.0",
