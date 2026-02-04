@@ -36,7 +36,7 @@ export class PrismaPoliticalOrganizationRepository implements IPoliticalOrganiza
 
   async findAll(): Promise<PoliticalOrganization[]> {
     const organizations = await this.prisma.politicalOrganization.findMany({
-      orderBy: { displayName: "asc" },
+      orderBy: { displayName: "desc" },
     });
 
     return organizations.map((org) => this.mapToPoliticalOrganization(org));
