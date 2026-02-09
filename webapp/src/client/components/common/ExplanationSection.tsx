@@ -22,14 +22,14 @@ export default function ExplanationSection() {
             </a>
             にて無償公開中であり、政党や所属を問わず利用可能な形で提供しております。開発コミュニティにご興味のある方は
             <a
-              href="https://join.slack.com/t/team-mirai-volunteer/shared_invite/zt-3n6h3a45j-yfNpEPXFcKTcmXZlmRGsyw"
+              href="https://action.team-mir.ai/missions/join-slack"
               target="_blank"
               rel="noopener noreferrer"
               className="font-bold text-[#238778] underline hover:no-underline"
             >
-              こちらのSlack
+              アクションボード
             </a>
-            をご覧ください。
+            からSlackにご参加ください。
           </p>
         </div>
 
