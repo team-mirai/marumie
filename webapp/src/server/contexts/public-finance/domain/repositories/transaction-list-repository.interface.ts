@@ -57,6 +57,13 @@ export interface ITransactionListRepository {
   findAll(filters?: TransactionFilters, sortOptions?: SortOptions): Promise<Transaction[]>;
 
   /**
+   * フィルター条件に合致する取引の合計金額を取得する
+   * @param filters フィルター条件
+   * @returns 合計金額（収入はプラス、支出はマイナス）
+   */
+  getTotalAmount(filters?: TransactionFilters): Promise<number>;
+
+  /**
    * 最終更新日時を取得する
    * @returns 最終更新日時（存在しない場合はnull）
    */
