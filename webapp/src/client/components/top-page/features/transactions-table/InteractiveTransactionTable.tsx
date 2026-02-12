@@ -15,6 +15,8 @@ interface SortConfig {
   filterType?: "income" | "expense";
 }
 
+const currencyFormatter = new Intl.NumberFormat("ja-JP", { style: "decimal", useGrouping: true });
+
 const SORT_CONFIGS: Record<SortOption, SortConfig> = {
   "date-desc": { sort: "date", order: "desc" },
   "date-asc": { sort: "date", order: "asc" },
@@ -126,10 +128,7 @@ export default function InteractiveTransactionTable({
   const startItem = (page - 1) * perPage + 1;
   const endItem = Math.min(page * perPage, total);
 
-  const formatCurrency = (amount: number) =>
-    new Intl.NumberFormat("ja-JP", { style: "decimal", useGrouping: true }).format(
-      Math.abs(amount),
-    );
+  const formatCurrency = (amount: number) => currencyFormatter.format(Math.abs(amount));
 
   const showTotalAmount =
     selectedCategories && selectedCategories.length > 0 && totalAmount != null;

@@ -81,6 +81,7 @@ describe("GetTransactionsBySlugUsecase", () => {
     expect(result.totalPages).toBe(1);
     expect(result.politicalOrganizations).toEqual(mockOrganizations);
     expect(result.lastUpdatedAt).toBe("2025-01-01T00:00:00.000Z");
+    expect(result.totalAmount).toBeNull();
   });
 
   it("should throw error when organization not found", async () => {
