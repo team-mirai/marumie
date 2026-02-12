@@ -148,10 +148,14 @@ export default function InteractiveTransactionTable({
           フィルター合計:
           <span
             className={`ml-2 text-base font-bold ${
-              totalAmount >= 0 ? "text-[#238778]" : "text-[#DC2626]"
+              totalAmount > 0
+                ? "text-[#238778]"
+                : totalAmount < 0
+                  ? "text-[#DC2626]"
+                  : "text-[#6A7383]"
             }`}
           >
-            {totalAmount >= 0 ? "+" : "-"}
+            {totalAmount > 0 ? "+" : totalAmount < 0 ? "-" : ""}
             {formatCurrency(totalAmount)}
             <span className="text-[12px] text-gray-600 font-normal"> 円</span>
           </span>

@@ -124,6 +124,7 @@ describe("GetTransactionsBySlugUsecase", () => {
     expect(result.perPage).toBe(10);
     expect(result.totalPages).toBe(10);
     expect(result.lastUpdatedAt).toBeNull();
+    expect(result.totalAmount).toBeNull();
   });
 
   it("should enforce perPage maximum of 100", async () => {
@@ -233,7 +234,16 @@ describe("GetTransactionsBySlugUsecase", () => {
         order: "desc",
       }),
     );
-    expect(mockTransactionRepository.getTotalAmount).toHaveBeenCalled();
+    expect(mockTransactionRepository.getTotalAmount).toHaveBeenCalledWith(
+      expect.objectContaining({
+        political_organization_ids: ["1"],
+        transaction_type: "income",
+        date_from: dateFrom,
+        date_to: dateTo,
+        category_keys: ["donation-personal"],
+        financial_year: 2025,
+      }),
+    );
     expect(result.totalAmount).toBe(500000);
   });
 
