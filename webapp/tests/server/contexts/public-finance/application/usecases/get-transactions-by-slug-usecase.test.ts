@@ -27,6 +27,7 @@ const createMockTransaction = (overrides: Partial<Transaction> = {}): Transactio
 const mockTransactionRepository = {
   findWithPagination: jest.fn(),
   getLastUpdatedAt: jest.fn(),
+  getTotalAmount: jest.fn(),
 } as unknown as ITransactionListRepository;
 
 const mockPoliticalOrganizationRepository = {
@@ -201,11 +202,12 @@ describe("GetTransactionsBySlugUsecase", () => {
       mockPaginatedResult,
     );
     (mockTransactionRepository.getLastUpdatedAt as jest.Mock).mockResolvedValue(null);
+    (mockTransactionRepository.getTotalAmount as jest.Mock).mockResolvedValue(500000);
 
     const dateFrom = new Date("2025-01-01");
     const dateTo = new Date("2025-12-31");
 
-    await usecase.execute({
+    const result = await usecase.execute({
       slugs: ["test-org"],
       financialYear: 2025,
       transactionType: "income",
@@ -230,6 +232,35 @@ describe("GetTransactionsBySlugUsecase", () => {
         order: "desc",
       }),
     );
+    expect(mockTransactionRepository.getTotalAmount).toHaveBeenCalled();
+    expect(result.totalAmount).toBe(500000);
+  });
+
+  it("should not call getTotalAmount when no categories filter is set", async () => {
+    const mockOrganizations = [{ id: "1", slug: "test-org" }];
+    const mockPaginatedResult: PaginatedResult<Transaction> = {
+      items: [],
+      total: 0,
+      page: 1,
+      perPage: 50,
+      totalPages: 0,
+    };
+
+    (mockPoliticalOrganizationRepository.findBySlugs as jest.Mock).mockResolvedValue(
+      mockOrganizations,
+    );
+    (mockTransactionRepository.findWithPagination as jest.Mock).mockResolvedValue(
+      mockPaginatedResult,
+    );
+    (mockTransactionRepository.getLastUpdatedAt as jest.Mock).mockResolvedValue(null);
+
+    const result = await usecase.execute({
+      slugs: ["test-org"],
+      financialYear: 2025,
+    });
+
+    expect(mockTransactionRepository.getTotalAmount).not.toHaveBeenCalled();
+    expect(result.totalAmount).toBeNull();
   });
 
   it("should handle multiple organizations", async () => {

@@ -182,6 +182,29 @@ export class PrismaTransactionRepository
     return { income, expense };
   }
 
+  async getTotalAmount(filters?: TransactionFilters): Promise<number> {
+    const where = this.buildWhereClause(filters);
+
+    const result = await this.prisma.transaction.groupBy({
+      by: ["transactionType"],
+      where,
+      _sum: {
+        debitAmount: true,
+        creditAmount: true,
+      },
+    });
+
+    let total = 0;
+    for (const row of result) {
+      if (row.transactionType === "expense") {
+        total -= Number(row._sum.debitAmount ?? 0);
+      } else if (row.transactionType === "income") {
+        total += Number(row._sum.creditAmount ?? 0);
+      }
+    }
+    return total;
+  }
+
   async getLastUpdatedAt(): Promise<Date | null> {
     const result = await this.prisma.transaction.aggregate({
       _max: {
