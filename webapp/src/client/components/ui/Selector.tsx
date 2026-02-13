@@ -1,6 +1,6 @@
 "use client";
 import "client-only";
-import { useState } from "react";
+import { useId, useRef, useState } from "react";
 import Image from "next/image";
 
 interface SelectorOption {
@@ -29,15 +29,38 @@ export default function Selector({
   const [isOpen, setIsOpen] = useState(false);
   const [selectedValue, setSelectedValue] = useState(defaultValue || "");
 
+  const uniqueId = useId();
+  const openButtonRef = useRef<HTMLButtonElement>(null);
+
   const currentValue = value !== undefined ? value : selectedValue;
 
   const selectedOption = options.find((option) => option.value === currentValue);
+
+  const openMenu = () => {
+    setIsOpen(true);
+  };
+
+  const closeMenu = () => {
+    setIsOpen(false);
+    // 閉じられたときに、元の開くボタンにフォーカスを戻す
+    requestAnimationFrame(() => {
+      openButtonRef.current?.focus();
+    });
+  };
+
+  const toggleMenu = () => {
+    if (isOpen) {
+      closeMenu();
+    } else {
+      openMenu();
+    }
+  };
 
   const handleSelect = (newValue: string) => {
     if (value === undefined) {
       setSelectedValue(newValue);
     }
-    setIsOpen(false);
+    closeMenu();
     onSelect?.(newValue);
   };
 
@@ -51,9 +74,19 @@ export default function Selector({
           background:
             "linear-gradient(90deg, rgba(226, 246, 243, 1) 0%, rgba(238, 246, 226, 1) 100%)",
         }}
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={() => toggleMenu()}
+        ref={openButtonRef}
+        role="combobox"
+        aria-haspopup="menu"
+        aria-controls={`${uniqueId}-options-list`}
+        aria-expanded={isOpen}
+        aria-label={selectedOption ? `${title}, 現在の選択: ${selectedOption.label}` : title}
+        // 開いている間、このボタンは隠れた状態になり、閉じる操作は前面に表示されるボタンが請け負う
+        aria-hidden={isOpen}
+        tabIndex={isOpen ? -1 : 0}
       >
-        <span className="text-left truncate flex-1 min-w-0">
+        {/* aria-hidden: 現在の選択項目の表現はbuttonのaria-labelに委ねる */}
+        <span className="text-left truncate flex-1 min-w-0" aria-hidden="true">
           {selectedOption?.label || placeholder}
         </span>
         <Image
@@ -73,7 +106,12 @@ export default function Selector({
             <button
               type="button"
               className="flex items-center justify-between w-full px-4 py-2.5 bg-white rounded-md text-gray-600 text-sm font-bold hover:bg-gray-50 transition-colors cursor-pointer"
-              onClick={() => setIsOpen(false)}
+              onClick={() => closeMenu()}
+              ref={(el) => el?.focus()}
+              role="combobox"
+              aria-haspopup="menu"
+              aria-controls={`${uniqueId}-options-list`}
+              aria-expanded={isOpen}
             >
               <span className="text-left truncate">{title}</span>
               <Image
@@ -86,13 +124,15 @@ export default function Selector({
             </button>
 
             {/* Options List */}
-            <div className="px-2 lg:px-4 space-y-1">
+            <div className="px-2 lg:px-4 space-y-1" id={`${uniqueId}-options-list`} role="menu">
               {options.map((option) => (
                 <button
                   key={option.value}
                   type="button"
                   className="flex items-start gap-2 w-full cursor-pointer hover:bg-gray-50 px-1 py-2 rounded"
                   onClick={() => handleSelect(option.value)}
+                  role="menuitemradio"
+                  aria-checked={currentValue === option.value}
                 >
                   {/* Checkbox */}
                   <div className="flex items-center justify-center w-[18px] h-[18px] mt-0.5">
