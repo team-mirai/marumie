@@ -19,7 +19,7 @@ export default function BalanceSheetSection({
   return (
     <MainColumnCard id="balance-sheet">
       <CardHeader
-        icon={<Image src="/icons/balance.svg" alt="Balance sheet icon" width={30} height={30} />}
+        icon={<Image src="/icons/balance.svg" alt="" width={30} height={30} />}
         organizationName={organizationName || "未登録の政治団体"}
         title="現時点での貸借対照表"
         updatedAt={updatedAt}
