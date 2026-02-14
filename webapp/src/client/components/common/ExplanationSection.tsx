@@ -11,23 +11,23 @@ export default function ExplanationSection() {
             みらい まる見え政治資金について
           </h3>
           <p className="text-[11px] sm:text-[15px] leading-[1.82] sm:leading-[1.87] tracking-[0.01em] text-gray-500 sm:text-gray-800 font-medium sm:font-normal font-japanese">
-            本プロジェクトは、チームみらいによって政治資金の透明化を目的に開発されたオープンソースソフトウェアです。決済データは、クレジットカード、デビットカード、銀行口座を通じて収集され、現状不定期で更新されています。すでにオープンソースで
+            本プロジェクトは、チームみらいによって政治資金の透明化を目的に開発されたオープンソースソフトウェアです。決済データは、クレジットカード、デビットカード、銀行口座を通じて収集され、現状不定期で更新されています。すでに
             <a
               href="https://github.com/team-mirai-volunteer/marumie"
               target="_blank"
               rel="noopener noreferrer"
               className="font-bold text-[#238778] underline hover:no-underline"
             >
-              こちらのGitHub
+              GitHubにてオープンソースで無償公開中
             </a>
-            にて無償公開中であり、政党や所属を問わず利用可能な形で提供しております。開発コミュニティにご興味のある方は
+            であり、政党や所属を問わず利用可能な形で提供しております。開発コミュニティにご興味のある方は
             <a
               href="https://join.slack.com/t/team-mirai-volunteer/shared_invite/zt-3n6h3a45j-yfNpEPXFcKTcmXZlmRGsyw"
               target="_blank"
               rel="noopener noreferrer"
               className="font-bold text-[#238778] underline hover:no-underline"
             >
-              こちらのSlack
+              チームみらいのSlack
             </a>
             をご覧ください。
           </p>
