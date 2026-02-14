@@ -18,16 +18,16 @@ export default function TransparencySection({ title }: TransparencySectionProps)
           <span className="hidden sm:inline">
             <br />
           </span>
-          私たちがなぜここまでオープンにするのか、その理由は
+          私たちがなぜここまでオープンにするのか、
           <a
             href="https://note.com/team_mirai_jp/n/n58fca6f9e4e8"
             target="_blank"
             rel="noopener noreferrer"
             className="font-bold underline hover:no-underline"
           >
-            こちらのnote
+            その理由をnoteでお読みください
           </a>
-          をお読みください。
+          。
         </p>
       </div>
     </div>
