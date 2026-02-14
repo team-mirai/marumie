@@ -66,18 +66,18 @@ test.describe("政治団体ページ", () => {
 			await page.goto("/o/sample-party");
 
 			// セレクターボタンをクリック
-			const selectorButton = page.getByRole("button", { name: /サンプル党/ });
+			const selectorButton = page.getByRole("combobox", { name: /表示する政治団体,/ });
 			await selectorButton.click();
 
 			// ドロップダウンが開いて選択肢が表示される
-			await expect(page.getByText("表示する政治団体")).toBeVisible();
+			await expect(page.getByText("E2Eテスト団体")).toBeVisible();
 		});
 
 		test("別の政治団体を選択するとページが切り替わる", async ({ page }) => {
 			await page.goto("/o/sample-party");
 
 			// セレクターを開く
-			const selectorButton = page.getByRole("button", { name: /サンプル党/ });
+			const selectorButton = page.getByRole("combobox", { name: /表示する政治団体,/ });
 			await selectorButton.click();
 
 			// ドロップダウン内の選択肢をクリック（E2Eテスト団体が存在する場合）
@@ -127,7 +127,7 @@ test.describe("政治団体ページ", () => {
 			await page.goto("/o/sample-party/transactions");
 
 			// セレクターを開く
-			const selectorButton = page.getByRole("button", { name: /サンプル党/ });
+			const selectorButton = page.getByRole("combobox", { name: /表示する政治団体,/ });
 			await selectorButton.click();
 
 			// ドロップダウン内の選択肢をクリック
