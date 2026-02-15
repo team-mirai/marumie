@@ -33,7 +33,7 @@ export default function TransactionsSection({
   return (
     <MainColumnCard id="transactions">
       <CardHeader
-        icon={<Image src="/icons/icon-cashback.svg" alt="Cash move icon" width={30} height={30} />}
+        icon={<Image src="/icons/icon-cashback.svg" alt="" width={30} height={30} />}
         organizationName={organizationName || "未登録の政治団体"}
         title="すべての出入金"
         updatedAt={updatedAt}
@@ -51,10 +51,10 @@ export default function TransactionsSection({
 
           {/* グラデーションオーバーレイ - テーブルの一番下の部分にかかる */}
           <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-white via-white/70 to-transparent">
-            {/* もっと見るボタン - グラデーション内に配置 */}
+            {/* すべての出入金を見るボタン - グラデーション内に配置 */}
             <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2">
               <Link href={`/o/${slug}/transactions`}>
-                <MainButton>もっと見る</MainButton>
+                <MainButton>すべての出入金を見る</MainButton>
               </Link>
             </div>
           </div>

@@ -1,7 +1,7 @@
 "use client";
 import "client-only";
 import Image from "next/image";
-import { useState } from "react";
+import { useId, useState } from "react";
 import CardHeader from "@/client/components/layout/CardHeader";
 import MainColumnCard from "@/client/components/layout/MainColumnCard";
 import SankeyChart from "@/client/components/top-page/features/charts/SankeyChart";
@@ -26,10 +26,12 @@ export default function CashFlowSection({
 
   const currentData = activeTab === "political" ? political : friendly;
 
+  const uniqueId = useId();
+
   return (
     <MainColumnCard id="cash-flow">
       <CardHeader
-        icon={<Image src="/icons/icon-cashflow.svg" alt="Cash flow icon" width={30} height={31} />}
+        icon={<Image src="/icons/icon-cashflow.svg" alt="" width={30} height={31} />}
         organizationName={organizationName || "未登録の政治団体"}
         title="収支の流れ"
         updatedAt={updatedAt}
@@ -40,7 +42,7 @@ export default function CashFlowSection({
       <FinancialSummarySection sankeyData={friendly ?? null} />
 
       {/* タブ */}
-      <div className="flex gap-7 border-b border-gray-300 mb-4">
+      <div className="flex gap-7 border-b border-gray-300 mb-4" role="tablist">
         <button
           type="button"
           onClick={() => setActiveTab("friendly")}
@@ -49,6 +51,10 @@ export default function CashFlowSection({
               ? "border-[#238778] text-[#238778]"
               : "border-transparent text-[#9CA3AF] hover:text-gray-600"
           }`}
+          id={`${uniqueId}-friendly-tab`}
+          role="tab"
+          aria-selected={activeTab === "friendly"}
+          aria-controls={`${uniqueId}-sankey-chart-panel`}
         >
           詳細の区分
         </button>
@@ -60,13 +66,24 @@ export default function CashFlowSection({
               ? "border-[#238778] text-[#238778]"
               : "border-transparent text-[#9CA3AF] hover:text-gray-600"
           }`}
+          id={`${uniqueId}-political-tab`}
+          role="tab"
+          aria-selected={activeTab === "political"}
+          aria-controls={`${uniqueId}-sankey-chart-panel`}
         >
           法律上の区分
         </button>
       </div>
 
       {/* サンキー図 */}
-      <div className="md:mx-0 -mx-3 mb-0">
+      <div
+        className="md:mx-0 -mx-3 mb-0"
+        id={`${uniqueId}-sankey-chart-panel`}
+        role="tabpanel"
+        aria-live="polite"
+        aria-atomic="true"
+        aria-label={`収支の流れの図: ${activeTab === "friendly" ? "詳細の区分" : "法律上の区分"}`}
+      >
         {currentData ? (
           <SankeyChart data={currentData} />
         ) : (
