@@ -77,7 +77,7 @@ export default function Selector({
         onClick={() => toggleMenu()}
         ref={openButtonRef}
         role="combobox"
-        aria-haspopup="menu"
+        aria-haspopup="listbox"
         aria-controls={`${uniqueId}-options-list`}
         aria-expanded={isOpen}
         aria-label={selectedOption ? `${title}, 現在の選択: ${selectedOption.label}` : title}
