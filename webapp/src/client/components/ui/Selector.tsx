@@ -109,7 +109,7 @@ export default function Selector({
               onClick={() => closeMenu()}
               ref={(el) => el?.focus()}
               role="combobox"
-              aria-haspopup="menu"
+              aria-haspopup="listbox"
               aria-controls={`${uniqueId}-options-list`}
               aria-expanded={isOpen}
             >
@@ -124,15 +124,15 @@ export default function Selector({
             </button>
 
             {/* Options List */}
-            <div className="px-2 lg:px-4 space-y-1" id={`${uniqueId}-options-list`} role="menu">
+            <div className="px-2 lg:px-4 space-y-1" id={`${uniqueId}-options-list`} role="listbox">
               {options.map((option) => (
                 <button
                   key={option.value}
                   type="button"
                   className="flex items-start gap-2 w-full cursor-pointer hover:bg-gray-50 px-1 py-2 rounded"
                   onClick={() => handleSelect(option.value)}
-                  role="menuitemradio"
-                  aria-checked={currentValue === option.value}
+                  role="option"
+                  aria-selected={currentValue === option.value}
                 >
                   {/* Checkbox */}
                   <div className="flex items-center justify-center w-[18px] h-[18px] mt-0.5">
