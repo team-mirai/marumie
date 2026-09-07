@@ -44,7 +44,15 @@ for ((i = 1; i <= COUNT; i++)); do
   status=$?
 
   result="$(grep -Eo 'LOOP_RESULT: [A-Z_]+[^\r]*' "$log_file" 2>/dev/null | tail -1 || true)"
-  results+=("[loop $i] exit=$status ${result:-LOOP_RESULT: NO_TASK}")
+  if [[ -z "$result" ]]; then
+    # NO_TASK はログファイル作成前に終了するため結果行がない。それ以外は起動失敗
+    if ((status == 2)); then
+      result="LOOP_RESULT: NO_TASK"
+    else
+      result="LOOP_RESULT: FAILED reason=no-result-line"
+    fi
+  fi
+  results+=("[loop $i] exit=$status $result")
 
   case "$status" in
     0) # SUCCESS
