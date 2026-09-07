@@ -111,11 +111,11 @@ export default function MonthlyChart({ data }: MonthlyChartProps) {
         enabled: false,
       },
       events: {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        beforeMount: (chart: any) => {
+        beforeMount: (chart) => {
           // チャートコンテナのタッチイベントを親要素に委譲
           if (typeof window !== "undefined" && "ontouchstart" in window) {
-            const chartEl = chart.el as HTMLElement;
+            // ApexCharts の型定義に el は無いが、実体はチャートのルート要素を持つ
+            const chartEl = (chart as unknown as { el: HTMLElement }).el;
             chartEl.style.touchAction = "pan-x pan-y";
           }
         },
