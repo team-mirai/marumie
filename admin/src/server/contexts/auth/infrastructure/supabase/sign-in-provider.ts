@@ -1,7 +1,7 @@
 import "server-only";
 
 import type { Session } from "@supabase/supabase-js";
-import type { AuthProviderName } from "@/server/contexts/auth/domain/models/auth-provider-config";
+import type { SignInProvider } from "@/server/contexts/auth/domain/models/auth-session";
 
 /**
  * アクセストークン（JWT）の amr クレームから認証方式の一覧を取り出す
@@ -38,20 +38,23 @@ function decodeAmrMethods(accessToken: string): string[] | null {
 /**
  * このサインインで実際に使われた認証プロバイダーを判定する
  *
- * `app_metadata.provider` は「そのユーザーが最初に登録に使ったプロバイダー」であり、
- * メールと Google の両方の identity を持つユーザーでは実際のログイン方式と一致しない。
- * アクセストークンの amr（Authentication Methods References）クレームには
- * このセッションで使われた認証方式が入るため、そちらを正とする。
+ * 判定には必ずアクセストークンの amr（Authentication Methods References）クレームを使う。
+ * amr にはこのセッションで使われた認証方式が入る。
+ * 一方 `app_metadata.provider` は「そのユーザーが最初に登録に使ったプロバイダー」であり、
+ * メール登録後に Google の identity をリンクしたユーザーでは Google ログインでも
+ * "email" のまま残るため、認可の判定には使えない（フォールバックにも使わない）。
  *
+ * @see https://supabase.com/docs/guides/auth/jwt-fields
  * @see https://supabase.com/docs/guides/auth/users
  */
-export function resolveSignInProvider(session: Session): AuthProviderName | null {
+export function resolveSignInProvider(session: Session): SignInProvider {
   const methods = decodeAmrMethods(session.access_token);
 
   if (methods === null) {
-    // amr を読めない場合のみ app_metadata にフォールバックする。
-    // 精度は落ちるが、Google が主プロバイダーのユーザーは検出できる
-    return session.user.app_metadata?.provider === "google" ? "google" : null;
+    // amr が読めないセッションは、使われた認証方式を特定できない。
+    // 「メール経由フロー（null）」と区別できるよう判定不能として返し、
+    // 認可の判定が必要な呼び出し元にはこのセッションを拒否させる
+    return "indeterminate";
   }
 
   // 本アプリで有効な OAuth プロバイダーは Google のみ。

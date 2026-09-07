@@ -338,4 +338,47 @@ describe("ExchangeCodeForSessionUsecase", () => {
       expect(mockAuthProvider.signOut).not.toHaveBeenCalled();
     });
   });
+
+  describe("execute（認証方式を判定できない場合）", () => {
+    it("セッションを破棄して拒否する", async () => {
+      const session = createMockSession({
+        user: createMockSupabaseUser({ email: "member@team-mir.ai" }),
+        signInProvider: "indeterminate",
+      });
+
+      mockAuthProvider.exchangeCodeForSession.mockResolvedValue(session);
+
+      await expect(usecase.execute("auth-code")).rejects.toMatchObject({
+        name: "AuthError",
+        code: "AUTH_FAILED",
+      });
+      expect(mockAuthProvider.signOut).toHaveBeenCalled();
+      expect(mockUserRepository.findByAuthId).not.toHaveBeenCalled();
+      expect(mockUserRepository.create).not.toHaveBeenCalled();
+    });
+
+    it("ドメイン制限が設定されていても判定不能なセッションは通さない", async () => {
+      // Google 経由かどうかを特定できないセッションを通すと、
+      // 許可ドメイン外のユーザーがドメイン制限をすり抜けてしまう
+      const restricted = AllowedEmailDomains.parse("team-mir.ai");
+      usecase = new ExchangeCodeForSessionUsecase(
+        mockAuthProvider,
+        mockUserRepository,
+        restricted,
+        allProviders,
+      );
+      const session = createMockSession({
+        user: createMockSupabaseUser({ email: "outsider@example.com" }),
+        signInProvider: "indeterminate",
+      });
+
+      mockAuthProvider.exchangeCodeForSession.mockResolvedValue(session);
+
+      await expect(usecase.execute("auth-code")).rejects.toMatchObject({
+        name: "AuthError",
+        code: "AUTH_FAILED",
+      });
+      expect(mockAuthProvider.signOut).toHaveBeenCalled();
+    });
+  });
 });

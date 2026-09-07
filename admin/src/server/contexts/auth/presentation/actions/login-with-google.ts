@@ -1,5 +1,6 @@
 "use server";
 
+import "server-only";
 import { redirect } from "next/navigation";
 import { LoginWithGoogleUsecase } from "@/server/contexts/auth/application/usecases/login-with-google-usecase";
 import { SupabaseAuthProvider } from "@/server/contexts/auth/infrastructure/supabase/supabase-auth-provider";

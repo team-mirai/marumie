@@ -67,24 +67,36 @@ describe("resolveSignInProvider", () => {
     expect(resolveSignInProvider(session)).toBe("google");
   });
 
-  it("amrを読めない場合はapp_metadata.providerにフォールバックする", () => {
+  it("amrを読めない場合はapp_metadata.providerにフォールバックせずindeterminateを返す", () => {
+    // app_metadata.provider は初回登録時のプロバイダーでしかなく、
+    // Google identity をあとから紐付けたユーザーでは "email" のまま残るため信頼できない
     const withoutAmr = createAccessToken({ sub: "auth-user-id" });
 
-    expect(resolveSignInProvider(createSession(withoutAmr, { provider: "google" }))).toBe("google");
-    expect(resolveSignInProvider(createSession(withoutAmr, { provider: "email" }))).toBeNull();
+    expect(resolveSignInProvider(createSession(withoutAmr, { provider: "google" }))).toBe(
+      "indeterminate",
+    );
+    expect(
+      resolveSignInProvider(
+        createSession(withoutAmr, { provider: "email", providers: ["email", "google"] }),
+      ),
+    ).toBe("indeterminate");
   });
 
-  it("JWTとして解釈できないトークンでも例外を投げない", () => {
-    expect(resolveSignInProvider(createSession("not-a-jwt", { provider: "google" }))).toBe("google");
-    expect(resolveSignInProvider(createSession("", { provider: "email" }))).toBeNull();
+  it("JWTとして解釈できないトークンでも例外を投げずindeterminateを返す", () => {
+    expect(resolveSignInProvider(createSession("not-a-jwt", { provider: "google" }))).toBe(
+      "indeterminate",
+    );
+    expect(resolveSignInProvider(createSession("", { provider: "email" }))).toBe("indeterminate");
     expect(
       resolveSignInProvider(createSession("header.!!not-base64-json!!.sig", { provider: "email" })),
-    ).toBeNull();
+    ).toBe("indeterminate");
   });
 
-  it("amrが空配列の場合はapp_metadata.providerにフォールバックする", () => {
+  it("amrが空配列の場合もindeterminateを返す", () => {
     const emptyAmr = createAccessToken({ sub: "auth-user-id", amr: [] });
 
-    expect(resolveSignInProvider(createSession(emptyAmr, { provider: "google" }))).toBe("google");
+    expect(resolveSignInProvider(createSession(emptyAmr, { provider: "google" }))).toBe(
+      "indeterminate",
+    );
   });
 });

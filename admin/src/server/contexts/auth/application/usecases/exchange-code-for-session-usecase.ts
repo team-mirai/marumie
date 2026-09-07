@@ -31,6 +31,13 @@ export class ExchangeCodeForSessionUsecase {
     try {
       const session = await this.authProvider.exchangeCodeForSession(code);
 
+      // 使われた認証方式を特定できないセッションは、Google の無効化チェックと
+      // ドメイン制限をすり抜けてしまうため、正当な認可コードでも拒否する
+      if (session.signInProvider === "indeterminate") {
+        await this.destroySession();
+        throw new AuthError("AUTH_FAILED", "Sign-in provider could not be determined");
+      }
+
       // app_metadata の登録元プロバイダーではなく、このサインインで実際に使われた
       // プロバイダーで判定する（メールと Google の両方の identity を持つユーザー対策）
       const isGoogleLogin = session.signInProvider === "google";
@@ -46,10 +53,8 @@ export class ExchangeCodeForSessionUsecase {
         // （招待・リカバリー等のメール経由フローは従来どおり制限しない）
         if (!AllowedEmailDomains.isAllowed(this.allowedEmailDomains, session.user.email)) {
           await this.destroySession();
-          throw new AuthError(
-            "DOMAIN_NOT_ALLOWED",
-            `Email domain is not allowed: ${session.user.email}`,
-          );
+          // メールアドレスはサーバーログに残さない（拒否理由はエラーコードで表現する）
+          throw new AuthError("DOMAIN_NOT_ALLOWED", "Email domain is not allowed");
         }
       }
 
