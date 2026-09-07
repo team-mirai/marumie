@@ -22,7 +22,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "jest": "^30.2.0",
-    "node-html-parser": "9.0.2",
+    "node-html-parser": "9.0.4",
     "postcss": "^8.5.6",
     "tailwindcss": "^4.1.18",
     "ts-jest": "^29.4.6",
