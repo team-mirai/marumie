@@ -68,10 +68,6 @@ contexts/{コンテキスト名}/
 
 - TypeScript の import は `@/` から始まる絶対パスを使用する（相対パス禁止）
 
-## wtp (git worktree) の利用
-
-並行開発が必要な場合は wtp を使う。詳細は [docs/wtp-guide.md](docs/wtp-guide.md) を参照。
-
 ## バックエンドアーキテクチャガイド
 
 webapp / admin のバックエンド実装に関する詳細なルールは [docs/backend-architecture-guide.md](docs/backend-architecture-guide.md) を参照すること。
