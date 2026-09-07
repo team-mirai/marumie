@@ -53,9 +53,10 @@ $ARGUMENTS
 - 関連するコード・ドキュメントを実際に読み、以下を確認する:
   - 依頼の前提が現状のコードと合っているか（既に実装済み・別の形で解決済みでないか）
   - 影響範囲（webapp / admin のどちらか、どの Bounded Context か、隣接して巻き込まれそうな領域はどこか）
-  - 設計の正本は [docs/backend-architecture-guide.md](../../docs/backend-architecture-guide.md) と
+  - どのドキュメントを根拠にしてよいかは [docs/README.md](../../docs/README.md) を参照する。
+    設計の正本は [docs/backend-architecture-guide.md](../../docs/backend-architecture-guide.md) と
     [docs/admin-ui-guidelines.md](../../docs/admin-ui-guidelines.md)。
-    `docs/` 配下の日付付き設計ドキュメントはその時点のメモであり、コードと食い違う場合は実装を正とする。
+    `docs/old/` 配下の設計ドキュメントはその時点のメモであり、コードと食い違う場合は実装を正とする。
 - 「現在の状況」の既存 Issue と重複していないか確認する。重複していれば起票せず、既存 Issue 番号を報告する。
 
 ### 2. 粒度の判定と分割
