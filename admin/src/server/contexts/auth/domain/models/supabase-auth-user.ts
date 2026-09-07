@@ -9,4 +9,6 @@ export interface SupabaseAuthUser {
   email: string | null;
   emailConfirmedAt: string | null;
   lastSignInAt: string | null;
+  /** 認証プロバイダー（app_metadata.provider。"email" / "google" など） */
+  provider: string | null;
 }

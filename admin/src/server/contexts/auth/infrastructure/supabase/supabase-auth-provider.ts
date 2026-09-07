@@ -18,6 +18,7 @@ function mapToSupabaseAuthUser(user: SupabaseUser): SupabaseAuthUser {
     email: user.email ?? null,
     emailConfirmedAt: user.email_confirmed_at ?? null,
     lastSignInAt: user.last_sign_in_at ?? null,
+    provider: user.app_metadata?.provider ?? null,
   };
 }
 
@@ -164,6 +165,36 @@ export class SupabaseAuthProvider implements AuthProvider {
       }
 
       return mapToAuthSession(data.session);
+    } catch (e) {
+      if (e instanceof AuthError) throw e;
+      throw new AuthError("NETWORK_ERROR", "認証サービスに接続できません", e);
+    }
+  }
+
+  async signInWithOAuth(
+    provider: "google",
+    options: { redirectTo: string; queryParams?: Record<string, string> },
+  ): Promise<{ url: string }> {
+    try {
+      const supabase = await createSupabaseClient();
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: {
+          redirectTo: options.redirectTo,
+          queryParams: options.queryParams,
+          skipBrowserRedirect: true,
+        },
+      });
+
+      if (error) {
+        throw new AuthError("AUTH_FAILED", error.message, error);
+      }
+
+      if (!data.url) {
+        throw new AuthError("AUTH_FAILED", "No authorization URL returned");
+      }
+
+      return { url: data.url };
     } catch (e) {
       if (e instanceof AuthError) throw e;
       throw new AuthError("NETWORK_ERROR", "認証サービスに接続できません", e);

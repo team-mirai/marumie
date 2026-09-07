@@ -11,8 +11,8 @@ export async function GET(request: Request) {
       const result = await exchangeCodeForSession(code);
 
       if (result.ok) {
-        // For invited users (email confirmed but no previous sign in), redirect to setup
-        if (result.isNewUser) {
+        // 招待経由の新規ユーザーはパスワード設定へ（Google 経由のユーザーは不要）
+        if (result.requiresPasswordSetup) {
           return NextResponse.redirect(`${origin}/auth/setup`);
         }
 
@@ -21,6 +21,7 @@ export async function GET(request: Request) {
       }
 
       console.error("Auth callback error:", result.error);
+      return NextResponse.redirect(`${origin}/login?error=${encodeURIComponent(result.error)}`);
     } catch (e) {
       console.error("Auth callback exception:", e);
     }

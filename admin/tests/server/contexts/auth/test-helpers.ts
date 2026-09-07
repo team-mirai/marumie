@@ -14,6 +14,7 @@ export const createMockSupabaseUser = (
   email: "test@example.com",
   emailConfirmedAt: "2024-01-01T00:00:00Z",
   lastSignInAt: "2024-01-01T00:00:00Z",
+  provider: "email",
   ...overrides,
 });
 
@@ -43,6 +44,7 @@ export const createMockAuthProvider = (): jest.Mocked<AuthProvider> => ({
   updateUser: jest.fn(),
   setSession: jest.fn(),
   exchangeCodeForSession: jest.fn(),
+  signInWithOAuth: jest.fn(),
   resetPasswordForEmail: jest.fn(),
 });
 
