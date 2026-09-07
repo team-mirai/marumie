@@ -2,7 +2,7 @@
 
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 [![CI](https://github.com/team-mirai/marumie/actions/workflows/ci.yml/badge.svg)](https://github.com/team-mirai/marumie/actions/workflows/ci.yml)
-[![codecov](https://codecov.io/gh/team-mirai/marumie/branch/develop/graph/badge.svg)](https://codecov.io/gh/team-mirai/marumie)
+[![codecov](https://codecov.io/gh/team-mirai/marumie/branch/main/graph/badge.svg)](https://codecov.io/gh/team-mirai/marumie)
 [![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Next.js](https://img.shields.io/badge/Next.js-000000?logo=next.js&logoColor=white)](https://nextjs.org/)
 [![Prisma](https://img.shields.io/badge/Prisma-2D3748?logo=prisma&logoColor=white)](https://www.prisma.io/)

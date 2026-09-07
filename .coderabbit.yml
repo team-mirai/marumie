@@ -83,7 +83,7 @@ reviews:
     enabled: true
     drafts: true
     base_branches:
-      - develop
+      - main
       - '^epic.*'
   labeling_instructions: []
 
