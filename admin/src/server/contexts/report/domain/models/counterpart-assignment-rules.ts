@@ -1,7 +1,7 @@
 /**
  * 政治資金報告書におけるCounterpart紐づけルールを定義するドメインモデル
  *
- * このファイルは報告書の仕様（docs/report_format.md）に基づき、
+ * このファイルは報告書の仕様（docs/reference/report-format.md）に基づき、
  * どのトランザクションがCounterpart情報を必要とするかを定義します。
  */
 
@@ -78,7 +78,7 @@ type CounterpartRequiredExpenseCategory = (typeof COUNTERPART_REQUIRED_EXPENSE_C
  * 政治資金規正法では、一定金額以上の支出について
  * 支払先の氏名・住所を明細に記載する必要があります。
  *
- * 参考: docs/report_format.md
+ * 参考: docs/reference/report-format.md
  * - 経常経費（SYUUSHI07_14）: 5万円以上
  * - 政治活動費（SYUUSHI07_15）: 5万円以上
  * - 収入（借入金・交付金）: 閾値なし（すべて記載）

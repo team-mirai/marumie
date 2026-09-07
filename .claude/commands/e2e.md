@@ -15,7 +15,7 @@ $ARGUMENTS
 - 引数が指定されている場合: その機能を対象とする
 - 引数がない場合: 以下の順で対象を特定する
   1. unstaged の変更ファイル (`git diff --name-only`)
-  2. develop ブランチからの差分 (`git diff --name-only develop...HEAD`)
+  2. main ブランチからの差分 (`git diff --name-only main...HEAD`)
 
 対象ファイルから `app/` 配下のページコンポーネントを抽出し、E2Eテストが必要な機能を特定する。
 

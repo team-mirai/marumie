@@ -1,5 +1,14 @@
 # Claude Code 設定
 
+## ドキュメントの読み方（最初に読むこと）
+
+`docs/` 配下には「現行の正（正本）」と「作成時点のスナップショット」が混在しています。
+**作業ルールや仕様を探す前に [docs/README.md](docs/README.md) を読み、どれを根拠にしてよいかを確認してください。**
+
+- 現行の根拠にしてよいのは正本（`docs/` 直下と `docs/reference/`）だけです
+- `docs/old/` は実装当時の設計メモです。記述と実装が食い違ったら**実装が正**です
+- 新しく書く設計ドキュメントは `docs/old/` に置きます
+
 ## アプリケーション概要
 
 政治家・政治団体が会計データを透明に公開し、市民が政治資金の流れを理解しやすくするためのWebアプリケーションです。クラウド会計ソフト（MFクラウド・freee等）から取得したデータを可視化し、政治資金報告書の作成も支援します。
@@ -68,18 +77,6 @@ contexts/{コンテキスト名}/
 
 - TypeScript の import は `@/` から始まる絶対パスを使用する（相対パス禁止）
 
-## wtp (git worktree) の利用
-
-並行開発が必要な場合は wtp を使う。詳細は [docs/wtp-guide.md](docs/wtp-guide.md) を参照。
-
-## GitHub操作ルール
-
-PRを作成する際は [.claude/commands/pr.md](.claude/commands/pr.md) の手順に従うこと。
-
-## 設計作業ルール
-
-設計ドキュメントを作成する場合は [.claude/commands/plan.md](.claude/commands/plan.md) の手順に従うこと。
-
 ## バックエンドアーキテクチャガイド
 
 webapp / admin のバックエンド実装に関する詳細なルールは [docs/backend-architecture-guide.md](docs/backend-architecture-guide.md) を参照すること。
@@ -91,4 +88,5 @@ admin で UI コンポーネントを使用する際は [docs/admin-ui-guideline
 ## ループエンジニアリング（AIによる自律実装）
 
 `loop:ready` ラベルの付いたIssueをAIエージェントが自律実装し、CI green で自動マージする運用を行っている。
-運用ルールは [docs/loop-engineering.md](docs/loop-engineering.md)、1イテレーションの手順は [.claude/commands/loop-once.md](.claude/commands/loop-once.md) を参照すること。
+運用ルールは [docs/loop-engineering.md](docs/loop-engineering.md)、1イテレーションの手順は [.claude/commands/loop-once.md](.claude/commands/loop-once.md)、
+ループ向け Issue の起票手順は [.claude/commands/loop-issue.md](.claude/commands/loop-issue.md) を参照すること。

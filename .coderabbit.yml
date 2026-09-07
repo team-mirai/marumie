@@ -8,7 +8,7 @@ knowledge_base:
     filePatterns:
       - "docs/backend-architecture-guide.md"
       - "docs/admin-ui-guidelines.md"
-      - "docs/design-document-rules.md"
+      - "docs/README.md"
       - "CLAUDE.md"
 
 reviews:
@@ -64,7 +64,7 @@ reviews:
       instructions: "CLAUDE.md の「Next アプリケーション」セクションに従ってレビューしてください。"
 
     - path: "admin/src/server/contexts/report/**"
-      instructions: "docs/reference/report-format.md と docs/scope-by-2026Jan.md に従ってレビューしてください。"
+      instructions: "docs/reference/report-format.md に従ってレビューしてください。docs/old/scope-by-2026Jan.md は作成時点のスコープ定義（スナップショット）なので、参考情報として扱ってください。"
 
     - path: "docs/**/*.md"
       instructions: |
@@ -83,7 +83,7 @@ reviews:
     enabled: true
     drafts: true
     base_branches:
-      - develop
+      - main
       - '^epic.*'
   labeling_instructions: []
 
