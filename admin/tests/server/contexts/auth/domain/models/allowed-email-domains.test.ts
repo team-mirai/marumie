@@ -24,10 +24,16 @@ describe("AllowedEmailDomains", () => {
   describe("isAllowed", () => {
     const restricted = AllowedEmailDomains.parse("team-mir.ai");
 
-    it("許可リストが空の場合は常に許可する", () => {
+    it("許可リストが空の場合はドメインを判定できるメールアドレスを許可する", () => {
       const noRestriction = AllowedEmailDomains.parse(undefined);
       expect(AllowedEmailDomains.isAllowed(noRestriction, "anyone@example.com")).toBe(true);
-      expect(AllowedEmailDomains.isAllowed(noRestriction, null)).toBe(true);
+    });
+
+    it("許可リストが空でもドメインを判定できないメールアドレスは拒否する", () => {
+      const noRestriction = AllowedEmailDomains.parse(undefined);
+      expect(AllowedEmailDomains.isAllowed(noRestriction, null)).toBe(false);
+      expect(AllowedEmailDomains.isAllowed(noRestriction, "not-an-email")).toBe(false);
+      expect(AllowedEmailDomains.isAllowed(noRestriction, "trailing@")).toBe(false);
     });
 
     it("許可ドメインのメールアドレスを許可する", () => {

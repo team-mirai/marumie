@@ -1,6 +1,7 @@
 import { ExchangeCodeForSessionUsecase } from "@/server/contexts/auth/application/usecases/exchange-code-for-session-usecase";
 import { AuthError } from "@/server/contexts/auth/domain/errors/auth-error";
 import { AllowedEmailDomains } from "@/server/contexts/auth/domain/models/allowed-email-domains";
+import { AuthProviderConfig } from "@/server/contexts/auth/domain/models/auth-provider-config";
 import type { AuthProvider } from "@/server/contexts/auth/domain/providers/auth-provider.interface";
 import type { UserRepository } from "@/server/contexts/shared/domain/repositories/user-repository.interface";
 import {
@@ -12,6 +13,7 @@ import {
 } from "../../test-helpers";
 
 const noRestriction = AllowedEmailDomains.parse(undefined);
+const allProviders = AuthProviderConfig.parse("password,google");
 
 describe("ExchangeCodeForSessionUsecase", () => {
   let mockAuthProvider: jest.Mocked<AuthProvider>;
@@ -21,7 +23,12 @@ describe("ExchangeCodeForSessionUsecase", () => {
   beforeEach(() => {
     mockAuthProvider = createMockAuthProvider();
     mockUserRepository = createMockUserRepository();
-    usecase = new ExchangeCodeForSessionUsecase(mockAuthProvider, mockUserRepository, noRestriction);
+    usecase = new ExchangeCodeForSessionUsecase(
+      mockAuthProvider,
+      mockUserRepository,
+      noRestriction,
+      allProviders,
+    );
   });
 
   describe("execute", () => {
@@ -118,6 +125,7 @@ describe("ExchangeCodeForSessionUsecase", () => {
         code: "AUTH_FAILED",
       });
       expect(mockUserRepository.create).not.toHaveBeenCalled();
+      expect(mockAuthProvider.signOut).toHaveBeenCalled();
     });
 
     it("AuthProviderがAuthErrorを投げた場合はそのまま再スローする", async () => {
@@ -141,17 +149,22 @@ describe("ExchangeCodeForSessionUsecase", () => {
     const restricted = AllowedEmailDomains.parse("team-mir.ai");
 
     beforeEach(() => {
-      usecase = new ExchangeCodeForSessionUsecase(mockAuthProvider, mockUserRepository, restricted);
+      usecase = new ExchangeCodeForSessionUsecase(
+        mockAuthProvider,
+        mockUserRepository,
+        restricted,
+        allProviders,
+      );
     });
 
     it("Google経由で許可ドメインのユーザーはログインでき、パスワード設定は不要", async () => {
       const session = createMockSession({
         user: createMockSupabaseUser({
           email: "member@team-mir.ai",
-          provider: "google",
           emailConfirmedAt: "2024-01-01T00:00:00Z",
           lastSignInAt: null,
         }),
+        signInProvider: "google",
       });
       const newUser = createMockUser({ email: "member@team-mir.ai" });
 
@@ -174,10 +187,8 @@ describe("ExchangeCodeForSessionUsecase", () => {
 
     it("Google経由で許可ドメイン外の場合はセッションを破棄してエラーを投げる", async () => {
       const session = createMockSession({
-        user: createMockSupabaseUser({
-          email: "outsider@example.com",
-          provider: "google",
-        }),
+        user: createMockSupabaseUser({ email: "outsider@example.com" }),
+        signInProvider: "google",
       });
 
       mockAuthProvider.exchangeCodeForSession.mockResolvedValue(session);
@@ -192,7 +203,8 @@ describe("ExchangeCodeForSessionUsecase", () => {
 
     it("Google経由でメールがない場合もエラーを投げる", async () => {
       const session = createMockSession({
-        user: createMockSupabaseUser({ email: null, provider: "google" }),
+        user: createMockSupabaseUser({ email: null }),
+        signInProvider: "google",
       });
 
       mockAuthProvider.exchangeCodeForSession.mockResolvedValue(session);
@@ -204,14 +216,57 @@ describe("ExchangeCodeForSessionUsecase", () => {
       expect(mockAuthProvider.signOut).toHaveBeenCalled();
     });
 
+    it("招待済み（provider=email）のユーザーがGoogleでログインしてもドメイン制限が適用される", async () => {
+      // メールと Google の両方の identity を持つユーザー。
+      // app_metadata.provider は "email" のままだが、このサインインは Google 経由
+      const session = createMockSession({
+        user: createMockSupabaseUser({
+          email: "invited@example.com",
+          emailConfirmedAt: "2024-01-01T00:00:00Z",
+          lastSignInAt: null,
+        }),
+        signInProvider: "google",
+      });
+
+      mockAuthProvider.exchangeCodeForSession.mockResolvedValue(session);
+
+      await expect(usecase.execute("auth-code")).rejects.toMatchObject({
+        name: "AuthError",
+        code: "DOMAIN_NOT_ALLOWED",
+      });
+      expect(mockAuthProvider.signOut).toHaveBeenCalled();
+      expect(mockUserRepository.create).not.toHaveBeenCalled();
+    });
+
+    it("招待済みのユーザーが許可ドメインのGoogleでログインした場合はパスワード設定へ誘導しない", async () => {
+      const session = createMockSession({
+        user: createMockSupabaseUser({
+          email: "invited@team-mir.ai",
+          emailConfirmedAt: "2024-01-01T00:00:00Z",
+          lastSignInAt: null,
+        }),
+        signInProvider: "google",
+      });
+      const newUser = createMockUser({ email: "invited@team-mir.ai" });
+
+      mockAuthProvider.exchangeCodeForSession.mockResolvedValue(session);
+      mockUserRepository.findByAuthId.mockResolvedValue(null);
+      mockUserRepository.create.mockResolvedValue(newUser);
+
+      const result = await usecase.execute("auth-code");
+
+      expect(result.requiresPasswordSetup).toBe(false);
+      expect(mockAuthProvider.signOut).not.toHaveBeenCalled();
+    });
+
     it("メール（招待）経由のユーザーにはドメイン制限を適用しない", async () => {
       const session = createMockSession({
         user: createMockSupabaseUser({
           email: "invited@example.com",
-          provider: "email",
           emailConfirmedAt: "2024-01-01T00:00:00Z",
           lastSignInAt: null,
         }),
+        signInProvider: null,
       });
       const newUser = createMockUser({ email: "invited@example.com" });
 
@@ -222,6 +277,64 @@ describe("ExchangeCodeForSessionUsecase", () => {
       const result = await usecase.execute("auth-code");
 
       expect(result.requiresPasswordSetup).toBe(true);
+      expect(mockAuthProvider.signOut).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("execute（Googleが無効な設定）", () => {
+    const passwordOnly = AuthProviderConfig.parse("password");
+
+    beforeEach(() => {
+      usecase = new ExchangeCodeForSessionUsecase(
+        mockAuthProvider,
+        mockUserRepository,
+        noRestriction,
+        passwordOnly,
+      );
+    });
+
+    it("Googleの認証コードを渡してもセッションを破棄して拒否する", async () => {
+      const session = createMockSession({
+        user: createMockSupabaseUser({ email: "member@team-mir.ai" }),
+        signInProvider: "google",
+      });
+
+      mockAuthProvider.exchangeCodeForSession.mockResolvedValue(session);
+
+      await expect(usecase.execute("auth-code")).rejects.toMatchObject({
+        name: "AuthError",
+        code: "PROVIDER_DISABLED",
+      });
+      expect(mockAuthProvider.signOut).toHaveBeenCalled();
+      expect(mockUserRepository.findByAuthId).not.toHaveBeenCalled();
+      expect(mockUserRepository.create).not.toHaveBeenCalled();
+    });
+
+    it("セッション破棄に失敗しても拒否の理由をそのまま返す", async () => {
+      const session = createMockSession({
+        user: createMockSupabaseUser({ email: "member@team-mir.ai" }),
+        signInProvider: "google",
+      });
+
+      mockAuthProvider.exchangeCodeForSession.mockResolvedValue(session);
+      mockAuthProvider.signOut.mockRejectedValue(new AuthError("NETWORK_ERROR", "offline"));
+
+      await expect(usecase.execute("auth-code")).rejects.toMatchObject({
+        name: "AuthError",
+        code: "PROVIDER_DISABLED",
+      });
+    });
+
+    it("メール経由（招待・リカバリー）のコード交換は従来どおり通す", async () => {
+      const session = createMockSession({ signInProvider: null });
+      const existingUser = createMockUser();
+
+      mockAuthProvider.exchangeCodeForSession.mockResolvedValue(session);
+      mockUserRepository.findByAuthId.mockResolvedValue(existingUser);
+
+      const result = await usecase.execute("auth-code");
+
+      expect(result.user).toEqual(existingUser);
       expect(mockAuthProvider.signOut).not.toHaveBeenCalled();
     });
   });

@@ -14,7 +14,6 @@ describe("GetAllUsersUsecase", () => {
     email: "admin@example.com",
     emailConfirmedAt: "2024-01-01T00:00:00Z",
     lastSignInAt: "2024-01-01T00:00:00Z",
-    provider: "email",
     ...overrides,
   });
 

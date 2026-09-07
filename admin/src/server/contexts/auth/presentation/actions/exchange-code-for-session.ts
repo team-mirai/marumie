@@ -5,6 +5,7 @@ import { SupabaseAuthProvider } from "@/server/contexts/auth/infrastructure/supa
 import { prisma } from "@/server/contexts/shared/infrastructure/prisma";
 import { PrismaUserRepository } from "@/server/contexts/shared/infrastructure/repositories/prisma-user.repository";
 import { AllowedEmailDomains } from "@/server/contexts/auth/domain/models/allowed-email-domains";
+import { AuthProviderConfig } from "@/server/contexts/auth/domain/models/auth-provider-config";
 import { AuthError, AUTH_ERROR_MESSAGES } from "@/server/contexts/auth/domain/errors/auth-error";
 import type { User } from "@/server/contexts/shared/domain/repositories/user-repository.interface";
 
@@ -19,7 +20,13 @@ export async function exchangeCodeForSession(
   const authProvider = new SupabaseAuthProvider();
   const userRepository = new PrismaUserRepository(prisma);
   const allowedDomains = AllowedEmailDomains.parse(process.env.AUTH_ALLOWED_EMAIL_DOMAINS);
-  const usecase = new ExchangeCodeForSessionUsecase(authProvider, userRepository, allowedDomains);
+  const providerConfig = AuthProviderConfig.parse(process.env.ADMIN_AUTH_PROVIDERS);
+  const usecase = new ExchangeCodeForSessionUsecase(
+    authProvider,
+    userRepository,
+    allowedDomains,
+    providerConfig,
+  );
 
   try {
     const result = await usecase.execute(code);

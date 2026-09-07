@@ -14,7 +14,6 @@ export const createMockSupabaseUser = (
   email: "test@example.com",
   emailConfirmedAt: "2024-01-01T00:00:00Z",
   lastSignInAt: "2024-01-01T00:00:00Z",
-  provider: "email",
   ...overrides,
 });
 
@@ -24,6 +23,7 @@ export const createMockSession = (
   accessToken: "access-token",
   refreshToken: "refresh-token",
   user: createMockSupabaseUser(),
+  signInProvider: null,
   ...overrides,
 });
 
