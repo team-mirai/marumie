@@ -1,5 +1,5 @@
 import { MfRecordConverter } from "@/server/contexts/data-import/infrastructure/mf/mf-record-converter";
-import { MfCsvRecord } from "@/server/contexts/data-import/infrastructure/mf/mf-csv-loader";
+import { MfCsvRecord } from "@/server/contexts/data-import/domain/models/mf-csv-record";
 
 describe("MfRecordConverter", () => {
   let converter: MfRecordConverter;

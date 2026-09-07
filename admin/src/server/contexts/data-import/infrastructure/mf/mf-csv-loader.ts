@@ -1,26 +1,7 @@
-export interface MfCsvRecord {
-  transaction_no: string;
-  transaction_date: string;
-  debit_account: string;
-  debit_sub_account: string;
-  debit_department: string;
-  debit_partner: string;
-  debit_tax_category: string;
-  debit_invoice: string;
-  debit_amount: string;
-  credit_account: string;
-  credit_sub_account: string;
-  credit_department: string;
-  credit_partner: string;
-  credit_tax_category: string;
-  credit_invoice: string;
-  credit_amount: string;
-  description: string;
-  friendly_category: string;
-  memo: string;
-}
+import type { MfCsvRecord } from "@/server/contexts/data-import/domain/models/mf-csv-record";
+import type { IMfCsvLoader } from "@/server/contexts/data-import/domain/repositories/mf-csv-loader.interface";
 
-export class MfCsvLoader {
+export class MfCsvLoader implements IMfCsvLoader {
   private readonly columnMapping: Record<string, keyof MfCsvRecord> = {
     取引No: "transaction_no",
     取引日: "transaction_date",

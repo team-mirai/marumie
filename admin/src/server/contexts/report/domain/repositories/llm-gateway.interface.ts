@@ -1,4 +1,4 @@
-import type { CounterpartAddressSearchResult } from "@/server/contexts/report/infrastructure/llm/types";
+import type { CounterpartAddressSearchResult } from "@/server/contexts/report/domain/models/counterpart-address-search";
 
 export interface SearchAddressParams {
   companyName: string;

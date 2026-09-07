@@ -59,6 +59,27 @@ module.exports = {
     },
 
     // ===========================================
+    // Application層からの依存ルール (admin)
+    // ===========================================
+    {
+      name: "no-application-to-infrastructure",
+      comment:
+        "Application層からInfrastructure層への依存は禁止。" +
+        "外部サービス（CSVローダー、LLMゲートウェイ等）もdomain/repositoriesの" +
+        "インターフェースに依存し、実装はPresentation層から注入する",
+      severity: "error",
+      from: { path: "^admin/src/server/contexts/.*/application" },
+      to: { path: "contexts/.*/infrastructure" },
+    },
+    {
+      name: "no-application-to-presentation",
+      comment: "Application層からPresentation層への依存は禁止",
+      severity: "error",
+      from: { path: "^admin/src/server/contexts/.*/application" },
+      to: { path: "contexts/.*/presentation" },
+    },
+
+    // ===========================================
     // Infrastructure層からの依存ルール (admin)
     // ===========================================
     {

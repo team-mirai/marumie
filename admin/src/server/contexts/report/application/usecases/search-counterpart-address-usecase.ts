@@ -1,6 +1,6 @@
 import "server-only";
-import type { LLMGateway } from "@/server/contexts/report/infrastructure/llm/llm-gateway.interface";
-import type { SearchResult } from "@/server/contexts/report/infrastructure/llm/types";
+import type { LLMGateway } from "@/server/contexts/report/domain/repositories/llm-gateway.interface";
+import type { SearchResult } from "@/server/contexts/report/domain/models/counterpart-address-search";
 
 export class SearchCounterpartAddressUsecase {
   constructor(private readonly llmGateway: LLMGateway) {}

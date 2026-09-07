@@ -65,7 +65,7 @@ contexts/{コンテキスト名}/
 ├── domain/            # ドメイン層
 │   ├── models/        # ドメインモデル
 │   ├── services/      # ドメインサービス
-│   └── repositories/  # リポジトリインターフェース
+│   └── repositories/  # 外部への出口インターフェース（リポジトリ／CSVローダー／LLMゲートウェイ等）
 └── infrastructure/    # インフラストラクチャ層
     ├── repositories/  # リポジトリ実装（Prisma等）
     └── (外部連携)     # mf/, llm/ など
@@ -76,18 +76,26 @@ contexts/{コンテキスト名}/
 ```
 ✓ 許可される依存:
   - Presentation → Application
-  - Presentation → Infrastructure（リポジトリ実装をインスタンス化するため）
+  - Presentation → Infrastructure（リポジトリ実装・外部サービス実装をインスタンス化するため）
   - Application → Domain（インターフェースのみ）
-  - Application → Infrastructure（外部サービスのみ）
   - Infrastructure → Domain（インターフェース実装のため）
   - Domain → Domain（同一コンテキスト内のみ）
 
 ✗ 禁止される依存:
+  - Application → Infrastructure（型参照も含めて禁止）
+  - Application → Presentation
   - Domain → Application
   - Domain → Presentation
   - Domain → Infrastructure（直接実装への依存）
   - Infrastructure → Application
+  - Infrastructure → Presentation
 ```
+
+**Application → Infrastructure が禁止される理由**: CSVローダーやLLMゲートウェイのような外部サービスも、
+実装を直接参照すると Usecase から差し替えられなくなり、テストで実物を動かさざるを得なくなる。
+外部サービスのインターフェースは `domain/repositories/` に置き、Usecase はそのインターフェースだけに依存する。
+実装のインスタンス化は Presentation 層（actions / loaders）で行い、コンストラクタ経由で注入する。
+外部形式の生データ型（`MfCsvRecord`、`DonorCsvRecord` 等）も同様に `domain/models/` に置く。
 
 ### 3.2.1 クライアント層（UI）からの依存ルール
 
@@ -350,6 +358,8 @@ pnpm depcruise
 | no-domain-to-application | Domain → Application 禁止 |
 | no-domain-to-presentation | Domain → Presentation 禁止 |
 | no-domain-to-infrastructure-impl | Domain → Infrastructure実装 禁止 |
+| no-application-to-infrastructure | Application → Infrastructure 禁止 |
+| no-application-to-presentation | Application → Presentation 禁止 |
 | no-infrastructure-to-application | Infrastructure → Application 禁止 |
 | no-infrastructure-to-presentation | Infrastructure → Presentation 禁止 |
 | Bounded Context間 | data-import ↔ report, auth ↔ 他コンテキスト 禁止 |

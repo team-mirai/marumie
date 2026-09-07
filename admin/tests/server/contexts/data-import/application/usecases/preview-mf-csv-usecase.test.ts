@@ -31,7 +31,11 @@ describe("PreviewMfCsvUsecase", () => {
       politicalOrganizationId: "org-123",
     };
 
-    const usecase = new PreviewMfCsvUsecase(mockTransactionRepository);
+    const usecase = new PreviewMfCsvUsecase(
+      mockTransactionRepository,
+      new MfCsvLoader(),
+      new MfRecordConverter(),
+    );
     const result = await usecase.execute(input);
 
     expect(result.transactions).toHaveLength(1);
@@ -47,7 +51,11 @@ describe("PreviewMfCsvUsecase", () => {
       politicalOrganizationId: "org-123",
     };
 
-    const usecase = new PreviewMfCsvUsecase(mockTransactionRepository);
+    const usecase = new PreviewMfCsvUsecase(
+      mockTransactionRepository,
+      new MfCsvLoader(),
+      new MfRecordConverter(),
+    );
     const result = await usecase.execute(input);
 
     expect(result.transactions).toHaveLength(0);
@@ -62,7 +70,11 @@ describe("PreviewMfCsvUsecase", () => {
       politicalOrganizationId: "org-123",
     };
 
-    const usecase = new PreviewMfCsvUsecase(mockTransactionRepository);
+    const usecase = new PreviewMfCsvUsecase(
+      mockTransactionRepository,
+      new MfCsvLoader(),
+      new MfRecordConverter(),
+    );
     const result = await usecase.execute(input);
 
     expect(result.transactions).toHaveLength(0);
@@ -104,7 +116,11 @@ describe("PreviewMfCsvUsecase", () => {
       politicalOrganizationId: "123",
     };
 
-    const usecase = new PreviewMfCsvUsecase(mockTransactionRepository);
+    const usecase = new PreviewMfCsvUsecase(
+      mockTransactionRepository,
+      new MfCsvLoader(),
+      new MfRecordConverter(),
+    );
     const result = await usecase.execute(input);
 
     expect(result.transactions).toHaveLength(1);

@@ -5,9 +5,15 @@ import { prisma } from "@/server/contexts/shared/infrastructure/prisma";
 import { PrismaTransactionRepository } from "@/server/contexts/shared/infrastructure/repositories/prisma-transaction.repository";
 import { PreviewMfCsvUsecase } from "@/server/contexts/data-import/application/usecases/preview-mf-csv-usecase";
 import type { PreviewMfCsvResult } from "@/server/contexts/data-import/application/usecases/preview-mf-csv-usecase";
+import { MfCsvLoader } from "@/server/contexts/data-import/infrastructure/mf/mf-csv-loader";
+import { MfRecordConverter } from "@/server/contexts/data-import/infrastructure/mf/mf-record-converter";
 import { requireAuth } from "@/server/contexts/auth/presentation/loaders/require-auth";
 const transactionRepository = new PrismaTransactionRepository(prisma);
-const previewUsecase = new PreviewMfCsvUsecase(transactionRepository);
+const previewUsecase = new PreviewMfCsvUsecase(
+  transactionRepository,
+  new MfCsvLoader(),
+  new MfRecordConverter(),
+);
 
 export interface PreviewCsvRequest {
   file: File;

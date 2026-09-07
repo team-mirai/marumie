@@ -1,12 +1,9 @@
 import "server-only";
 
-import type { DonorCsvRecord } from "./donor-csv-record";
+import type { DonorCsvRecord } from "@/server/contexts/report/domain/models/donor-csv-record";
 import type { PreviewDonorCsvRow } from "@/server/contexts/report/domain/models/preview-donor-csv-row";
 import { parseDonorType } from "@/server/contexts/report/domain/models/donor";
-
-export interface IDonorCsvRecordConverter {
-  convert(record: DonorCsvRecord): PreviewDonorCsvRow;
-}
+import type { IDonorCsvRecordConverter } from "@/server/contexts/report/domain/repositories/donor-csv-record-converter.interface";
 
 export class DonorCsvRecordConverter implements IDonorCsvRecordConverter {
   convert(record: DonorCsvRecord): PreviewDonorCsvRow {

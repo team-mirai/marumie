@@ -2,14 +2,14 @@ import {
   ImportDonorCsvUsecase,
   type ImportDonorCsvInput,
 } from "@/server/contexts/report/application/usecases/import-donor-csv-usecase";
-import type { IDonorCsvLoader } from "@/server/contexts/report/infrastructure/donor-csv/donor-csv-loader";
-import type { IDonorCsvRecordConverter } from "@/server/contexts/report/infrastructure/donor-csv/donor-csv-record-converter";
+import type { IDonorCsvLoader } from "@/server/contexts/report/domain/repositories/donor-csv-loader.interface";
+import type { IDonorCsvRecordConverter } from "@/server/contexts/report/domain/repositories/donor-csv-record-converter.interface";
 import type { IDonorCsvValidator } from "@/server/contexts/report/domain/services/donor-csv-validator";
 import type { IDonorRepository } from "@/server/contexts/report/domain/repositories/donor-repository.interface";
 import type { ITransactionWithDonorRepository } from "@/server/contexts/report/domain/repositories/transaction-with-donor-repository.interface";
 import type { ITransactionDonorRepository } from "@/server/contexts/report/domain/repositories/transaction-donor-repository.interface";
 import type { ITransactionManager } from "@/server/contexts/report/domain/repositories/transaction-manager.interface";
-import type { DonorCsvRecord } from "@/server/contexts/report/infrastructure/donor-csv/donor-csv-record";
+import type { DonorCsvRecord } from "@/server/contexts/report/domain/models/donor-csv-record";
 import type {
   PreviewDonorCsvRow,
   TransactionForDonorCsv,

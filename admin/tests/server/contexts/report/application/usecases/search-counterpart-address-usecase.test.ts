@@ -1,6 +1,6 @@
 import { SearchCounterpartAddressUsecase } from "@/server/contexts/report/application/usecases/search-counterpart-address-usecase";
-import type { LLMGateway } from "@/server/contexts/report/infrastructure/llm/llm-gateway.interface";
-import type { CounterpartAddressSearchResult } from "@/server/contexts/report/infrastructure/llm/types";
+import type { LLMGateway } from "@/server/contexts/report/domain/repositories/llm-gateway.interface";
+import type { CounterpartAddressSearchResult } from "@/server/contexts/report/domain/models/counterpart-address-search";
 
 describe("SearchCounterpartAddressUsecase", () => {
   let mockLLMGateway: jest.Mocked<LLMGateway>;
