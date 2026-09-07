@@ -188,7 +188,10 @@ module.exports = {
       comment: "webapp: Presentation層からClient層への依存は禁止",
       severity: "error",
       from: { path: "webapp/src/server/contexts/.*/presentation" },
-      to: { path: "^webapp/src/client" },
+      // depcruise はリポジトリルートの tsconfig で実行されるため webapp の `@/*` エイリアスは
+      // 解決できず、依存先は生の import 指定子（`@/client/...`）として記録される。
+      // 解決済みパス（`webapp/src/client/...`）と両方にマッチさせる必要がある。
+      to: { path: "^(webapp/src|@)/client" },
     },
     // Presentation層からInfrastructure層へのDI（リポジトリのインスタンス化）は許可
 
