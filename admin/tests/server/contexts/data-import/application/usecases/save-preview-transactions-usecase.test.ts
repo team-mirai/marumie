@@ -8,6 +8,8 @@ import {
   PreviewMfCsvUsecase,
   type PreviewMfCsvInput,
 } from "@/server/contexts/data-import/application/usecases/preview-mf-csv-usecase";
+import { MfCsvLoader } from "@/server/contexts/data-import/infrastructure/mf/mf-csv-loader";
+import { MfRecordConverter } from "@/server/contexts/data-import/infrastructure/mf/mf-record-converter";
 import type { ITransactionRepository } from "@/server/contexts/shared/domain/repositories/transaction-repository.interface";
 import type { ICacheInvalidator } from "@/server/contexts/shared/domain/services/cache-invalidator.interface";
 import type { CreateTransactionInput } from "@/server/contexts/shared/domain/transaction";
@@ -31,7 +33,11 @@ describe("SavePreviewTransactionsUsecase", () => {
       mockRepository as unknown as ITransactionRepository,
       mockCacheInvalidator,
     );
-    previewUsecase = new PreviewMfCsvUsecase(mockRepository as unknown as ITransactionRepository);
+    previewUsecase = new PreviewMfCsvUsecase(
+      mockRepository as unknown as ITransactionRepository,
+      new MfCsvLoader(),
+      new MfRecordConverter(),
+    );
   });
 
   describe("execute with sample data", () => {

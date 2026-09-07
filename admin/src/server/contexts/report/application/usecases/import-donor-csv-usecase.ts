@@ -1,7 +1,7 @@
 import "server-only";
 
-import type { IDonorCsvLoader } from "@/server/contexts/report/infrastructure/donor-csv/donor-csv-loader";
-import type { IDonorCsvRecordConverter } from "@/server/contexts/report/infrastructure/donor-csv/donor-csv-record-converter";
+import type { IDonorCsvLoader } from "@/server/contexts/report/domain/repositories/donor-csv-loader.interface";
+import type { IDonorCsvRecordConverter } from "@/server/contexts/report/domain/repositories/donor-csv-record-converter.interface";
 import type { IDonorCsvValidator } from "@/server/contexts/report/domain/services/donor-csv-validator";
 import type {
   PreviewDonorCsvRow,

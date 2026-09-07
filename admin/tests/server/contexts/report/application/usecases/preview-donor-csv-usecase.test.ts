@@ -7,7 +7,7 @@ import type { DonorCsvRecordConverter } from "@/server/contexts/report/infrastru
 import type { DonorCsvValidator } from "@/server/contexts/report/domain/services/donor-csv-validator";
 import type { IDonorRepository } from "@/server/contexts/report/domain/repositories/donor-repository.interface";
 import type { ITransactionWithDonorRepository } from "@/server/contexts/report/domain/repositories/transaction-with-donor-repository.interface";
-import type { DonorCsvRecord } from "@/server/contexts/report/infrastructure/donor-csv/donor-csv-record";
+import type { DonorCsvRecord } from "@/server/contexts/report/domain/models/donor-csv-record";
 import type {
   PreviewDonorCsvRow,
   TransactionForDonorCsv,

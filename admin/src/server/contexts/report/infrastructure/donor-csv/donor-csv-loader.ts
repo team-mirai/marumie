@@ -1,11 +1,8 @@
 import "server-only";
 
 import { CsvFormatError } from "@/server/contexts/report/domain/errors/donor-csv-error";
-import type { DonorCsvRecord } from "./donor-csv-record";
-
-export interface IDonorCsvLoader {
-  load(csvContent: string): DonorCsvRecord[];
-}
+import type { DonorCsvRecord } from "@/server/contexts/report/domain/models/donor-csv-record";
+import type { IDonorCsvLoader } from "@/server/contexts/report/domain/repositories/donor-csv-loader.interface";
 
 const MAX_ROWS = 1000;
 

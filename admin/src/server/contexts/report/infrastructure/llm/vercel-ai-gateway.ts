@@ -5,11 +5,11 @@ import { buildCounterpartAddressSearchPrompt } from "@/server/contexts/report/in
 import type {
   LLMGateway,
   SearchAddressParams,
-} from "@/server/contexts/report/infrastructure/llm/llm-gateway.interface";
+} from "@/server/contexts/report/domain/repositories/llm-gateway.interface";
 import type {
   AddressCandidate,
   CounterpartAddressSearchResult,
-} from "@/server/contexts/report/infrastructure/llm/types";
+} from "@/server/contexts/report/domain/models/counterpart-address-search";
 
 const MODEL = "claude-sonnet-4-20250514";
 

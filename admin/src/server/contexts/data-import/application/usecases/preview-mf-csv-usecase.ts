@@ -1,7 +1,7 @@
 import "server-only";
 
-import { MfCsvLoader } from "@/server/contexts/data-import/infrastructure/mf/mf-csv-loader";
-import { MfRecordConverter } from "@/server/contexts/data-import/infrastructure/mf/mf-record-converter";
+import type { IMfCsvLoader } from "@/server/contexts/data-import/domain/repositories/mf-csv-loader.interface";
+import type { IMfRecordConverter } from "@/server/contexts/data-import/domain/repositories/mf-record-converter.interface";
 import type { PreviewTransaction } from "@/server/contexts/data-import/domain/models/preview-transaction";
 import { TransactionValidator } from "@/server/contexts/data-import/domain/services/transaction-validator";
 import {
@@ -27,8 +27,8 @@ export interface PreviewMfCsvResult {
 export class PreviewMfCsvUsecase {
   constructor(
     private transactionRepository: ITransactionRepository,
-    private csvLoader: MfCsvLoader = new MfCsvLoader(),
-    private recordConverter: MfRecordConverter = new MfRecordConverter(),
+    private csvLoader: IMfCsvLoader,
+    private recordConverter: IMfRecordConverter,
     private validator: TransactionValidator = new TransactionValidator(),
   ) {}
 
