@@ -1,7 +1,7 @@
 /**
  * 政治資金報告書におけるDonor紐づけルールを定義するドメインモデル
  *
- * このファイルは報告書の仕様（docs/report_format.md）に基づき、
+ * このファイルは報告書の仕様（docs/reference/report-format.md）に基づき、
  * どのトランザクションがDonor情報を必要とするかを定義します。
  */
 
