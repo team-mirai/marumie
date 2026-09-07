@@ -111,6 +111,9 @@ Issueテンプレート「[Loop Task](../.github/ISSUE_TEMPLATE/loop-task.md)」
 粒度が大きい仕様は、人間が分解Issueを起票するか、
 「〜をタスク分解して `loop:ready` Issueを起票する」というIssue自体を `loop:ready` にしてもよい（分解もループにやらせる）。
 
+Claude Code 内で `/loop-issue <やりたいことの概要>` を実行すると、コードを調査したうえで上記の要点を満たす Issue を起票できる
+（手順は [.claude/commands/loop-issue.md](../.claude/commands/loop-issue.md)）。
+
 ## コマンド
 
 ```bash
