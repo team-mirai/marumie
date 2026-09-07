@@ -4,7 +4,7 @@ import { unstable_cache } from "next/cache";
 import { prisma } from "@/server/contexts/public-finance/infrastructure/prisma";
 import { PrismaPoliticalOrganizationRepository } from "@/server/contexts/public-finance/infrastructure/repositories/prisma-political-organization.repository";
 import { GetOrganizationBySlugUsecase } from "@/server/contexts/public-finance/application/usecases/get-organization-by-slug-usecase";
-import { CACHE_REVALIDATE_SECONDS } from "./constants";
+import { CACHE_REVALIDATE_SECONDS } from "@/server/contexts/public-finance/presentation/loaders/constants";
 
 /**
  * slug で指定した政治団体を1件だけ取得する。
