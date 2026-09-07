@@ -8,14 +8,14 @@ module.exports = {
       name: "no-client-to-infrastructure",
       comment: "Client層からInfrastructure層への依存は禁止",
       severity: "error",
-      from: { path: "^src/client" },
+      from: { path: "^admin/src/client" },
       to: { path: "infrastructure" },
     },
     {
       name: "no-client-to-application",
       comment: "Client層からApplication層への依存は禁止",
       severity: "error",
-      from: { path: "^src/client" },
+      from: { path: "^admin/src/client" },
       to: { path: "application" },
     },
 
@@ -26,8 +26,11 @@ module.exports = {
       name: "no-presentation-to-client",
       comment: "Presentation層からClient層への依存は禁止",
       severity: "error",
-      from: { path: "presentation" },
-      to: { path: "^src/client" },
+      from: { path: "^admin/src/server/contexts/.*/presentation" },
+      // depcruise はリポジトリルートの tsconfig で実行されるため admin の `@/*` エイリアスは
+      // 解決できず、依存先は生の import 指定子（`@/client/...`）として記録される。
+      // 解決済みパス（`admin/src/client/...`）と両方にマッチさせる必要がある。
+      to: { path: "^(admin/src|@)/client" },
     },
 
     // ===========================================
