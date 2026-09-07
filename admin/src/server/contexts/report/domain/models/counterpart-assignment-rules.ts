@@ -27,7 +27,6 @@ export const COUNTERPART_REQUIRED_INCOME_CATEGORIES = [
 export const ROUTINE_EXPENSE_CATEGORIES = [
   // biome-ignore lint/complexity/useLiteralKeys: 日本語キー
   PL_CATEGORIES["光熱水費"].key,
-  // biome-ignore lint/complexity/useLiteralKeys: 日本語キー
   PL_CATEGORIES["備品・消耗品費"].key,
   // biome-ignore lint/complexity/useLiteralKeys: 日本語キー
   PL_CATEGORIES["事務所費"].key,
@@ -51,7 +50,6 @@ export const POLITICAL_ACTIVITY_EXPENSE_CATEGORIES = [
   PL_CATEGORIES["その他の事業費"].key,
   // biome-ignore lint/complexity/useLiteralKeys: 日本語キー
   PL_CATEGORIES["調査研究費"].key,
-  // biome-ignore lint/complexity/useLiteralKeys: 日本語キー
   PL_CATEGORIES["寄附・交付金"].key,
   // biome-ignore lint/complexity/useLiteralKeys: 日本語キー
   PL_CATEGORIES["その他の経費"].key,
