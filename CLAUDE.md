@@ -72,14 +72,6 @@ contexts/{コンテキスト名}/
 
 並行開発が必要な場合は wtp を使う。詳細は [docs/wtp-guide.md](docs/wtp-guide.md) を参照。
 
-## GitHub操作ルール
-
-PRを作成する際は [.claude/commands/pr.md](.claude/commands/pr.md) の手順に従うこと。
-
-## 設計作業ルール
-
-設計ドキュメントを作成する場合は [.claude/commands/plan.md](.claude/commands/plan.md) の手順に従うこと。
-
 ## バックエンドアーキテクチャガイド
 
 webapp / admin のバックエンド実装に関する詳細なルールは [docs/backend-architecture-guide.md](docs/backend-architecture-guide.md) を参照すること。
