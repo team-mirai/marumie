@@ -7,11 +7,13 @@ import type {
   PreviewDonorCsvRow,
   TransactionForDonorCsv,
 } from "@/server/contexts/report/domain/models/preview-donor-csv-row";
-import type {
-  DonorType,
-  CreateDonorInput,
-  Donor,
+import {
+  buildDonorMatchKey,
+  type DonorType,
+  type CreateDonorInput,
+  type Donor,
 } from "@/server/contexts/report/domain/models/donor";
+import { enrichRowsWithMatchingDonors } from "@/server/contexts/report/domain/services/donor-matcher";
 import type { IDonorRepository } from "@/server/contexts/report/domain/repositories/donor-repository.interface";
 import type { ITransactionWithDonorRepository } from "@/server/contexts/report/domain/repositories/transaction-with-donor-repository.interface";
 import type { ITransactionDonorRepository } from "@/server/contexts/report/domain/repositories/transaction-donor-repository.interface";
@@ -63,7 +65,7 @@ export class ImportDonorCsvUsecase {
       transactions.map((t) => [t.transactionNo, t]),
     );
 
-    const rowsWithMatchingDonor = await this.enrichWithMatchingDonors(rows);
+    const rowsWithMatchingDonor = await enrichRowsWithMatchingDonors(rows, this.donorRepository);
 
     const validatedRows = this.validator.validate(rowsWithMatchingDonor, transactionMap);
 
@@ -85,53 +87,6 @@ export class ImportDonorCsvUsecase {
       return {
         importedCount: deduplicatedRows.length,
         createdDonorCount: createdDonors.length,
-      };
-    });
-  }
-
-  private getDonorMatchKey(name: string, address: string | null, donorType: DonorType): string {
-    return JSON.stringify({ name, address: address ?? "", donorType });
-  }
-
-  private async enrichWithMatchingDonors(
-    rows: PreviewDonorCsvRow[],
-  ): Promise<PreviewDonorCsvRow[]> {
-    const searchKeys = new Map<
-      string,
-      { name: string; address: string | null; donorType: DonorType }
-    >();
-
-    for (const row of rows) {
-      if (row.donorType === null) continue;
-      const key = this.getDonorMatchKey(row.name, row.address, row.donorType);
-      if (!searchKeys.has(key)) {
-        searchKeys.set(key, { name: row.name, address: row.address, donorType: row.donorType });
-      }
-    }
-
-    const uniqueCriteria = [...searchKeys.values()];
-    const donors = await this.donorRepository.findByMatchCriteriaBatch(uniqueCriteria);
-
-    const donorMap = new Map<string, Donor>(
-      donors.map((d) => [this.getDonorMatchKey(d.name, d.address, d.donorType), d]),
-    );
-
-    return rows.map((row) => {
-      if (row.donorType === null) return row;
-
-      const key = this.getDonorMatchKey(row.name, row.address, row.donorType);
-      const matchingDonor = donorMap.get(key);
-
-      return {
-        ...row,
-        matchingDonor: matchingDonor
-          ? {
-              id: matchingDonor.id,
-              name: matchingDonor.name,
-              donorType: matchingDonor.donorType,
-              address: matchingDonor.address,
-            }
-          : null,
       };
     });
   }
@@ -175,7 +130,7 @@ export class ImportDonorCsvUsecase {
 
     const uniqueDonorMap = new Map<string, CreateDonorInput>();
     for (const row of rowsNeedingNewDonor) {
-      const key = this.getDonorMatchKey(row.name, row.address, row.donorType);
+      const key = buildDonorMatchKey(row.name, row.address, row.donorType);
       if (!uniqueDonorMap.has(key)) {
         uniqueDonorMap.set(key, {
           name: row.name,
@@ -194,13 +149,13 @@ export class ImportDonorCsvUsecase {
 
     for (const row of rows) {
       if (row.matchingDonor) {
-        const key = this.getDonorMatchKey(row.name, row.address, row.donorType);
+        const key = buildDonorMatchKey(row.name, row.address, row.donorType);
         donorIdMap.set(key, row.matchingDonor.id);
       }
     }
 
     for (const created of createdDonors) {
-      const key = this.getDonorMatchKey(created.name, created.address, created.donorType);
+      const key = buildDonorMatchKey(created.name, created.address, created.donorType);
       donorIdMap.set(key, created.id);
     }
 
@@ -212,7 +167,7 @@ export class ImportDonorCsvUsecase {
     donorIdMap: Map<string, string>,
   ): { transactionId: bigint; donorId: bigint }[] {
     return rows.map((row) => {
-      const key = this.getDonorMatchKey(row.name, row.address, row.donorType);
+      const key = buildDonorMatchKey(row.name, row.address, row.donorType);
       const donorId = donorIdMap.get(key);
       if (!donorId) {
         throw new Error(`Donor not found for key: ${key}`);

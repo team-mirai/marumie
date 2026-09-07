@@ -7,7 +7,7 @@ import type {
   PreviewDonorCsvRow,
   TransactionForDonorCsv,
 } from "@/server/contexts/report/domain/models/preview-donor-csv-row";
-import type { DonorType, Donor } from "@/server/contexts/report/domain/models/donor";
+import { enrichRowsWithMatchingDonors } from "@/server/contexts/report/domain/services/donor-matcher";
 import {
   calculateDonorPreviewSummary,
   type PreviewDonorCsvSummary,
@@ -57,7 +57,7 @@ export class PreviewDonorCsvUsecase {
         transactions.map((t) => [t.transactionNo, t]),
       );
 
-      const rowsWithMatchingDonor = await this.enrichWithMatchingDonors(rows);
+      const rowsWithMatchingDonor = await enrichRowsWithMatchingDonors(rows, this.donorRepository);
 
       const validatedRows = this.validator.validate(rowsWithMatchingDonor, transactionMap);
 
@@ -69,52 +69,5 @@ export class PreviewDonorCsvUsecase {
         `プレビュー処理に失敗しました: ${error instanceof Error ? error.message : "不明なエラー"}`,
       );
     }
-  }
-
-  private getDonorMatchKey(name: string, address: string | null, donorType: DonorType): string {
-    return JSON.stringify({ name, address: address ?? "", donorType });
-  }
-
-  private async enrichWithMatchingDonors(
-    rows: PreviewDonorCsvRow[],
-  ): Promise<PreviewDonorCsvRow[]> {
-    const searchKeys = new Map<
-      string,
-      { name: string; address: string | null; donorType: DonorType }
-    >();
-
-    for (const row of rows) {
-      if (row.donorType === null) continue;
-      const key = this.getDonorMatchKey(row.name, row.address, row.donorType);
-      if (!searchKeys.has(key)) {
-        searchKeys.set(key, { name: row.name, address: row.address, donorType: row.donorType });
-      }
-    }
-
-    const uniqueCriteria = [...searchKeys.values()];
-    const donors = await this.donorRepository.findByMatchCriteriaBatch(uniqueCriteria);
-
-    const donorMap = new Map<string, Donor>(
-      donors.map((d) => [this.getDonorMatchKey(d.name, d.address, d.donorType), d]),
-    );
-
-    return rows.map((row) => {
-      if (row.donorType === null) return row;
-
-      const key = this.getDonorMatchKey(row.name, row.address, row.donorType);
-      const matchingDonor = donorMap.get(key);
-
-      return {
-        ...row,
-        matchingDonor: matchingDonor
-          ? {
-              id: matchingDonor.id,
-              name: matchingDonor.name,
-              donorType: matchingDonor.donorType,
-              address: matchingDonor.address,
-            }
-          : null,
-      };
-    });
   }
 }
