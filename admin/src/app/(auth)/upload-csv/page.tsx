@@ -12,13 +12,11 @@ export default async function UploadCsvPage() {
   return (
     <div>
       <PageHeader label="Data Import" title="CSVアップロード" />
-      <div className="bg-card rounded-xl p-4">
-        <CsvUploadClient
-          organizations={organizations}
-          uploadAction={uploadCsv}
-          previewAction={previewCsv}
-        />
-      </div>
+      <CsvUploadClient
+        organizations={organizations}
+        uploadAction={uploadCsv}
+        previewAction={previewCsv}
+      />
     </div>
   );
 }
