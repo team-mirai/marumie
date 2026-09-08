@@ -1,14 +1,6 @@
 import { test, expect } from "@playwright/test";
 
 test.describe("ユーザー情報", () => {
-	test.beforeEach(async ({ page }) => {
-		await page.goto("/login");
-		await page.getByLabel("Email").fill("foo@example.com");
-		await page.getByLabel("Password").fill("foo@example.com");
-		await page.getByRole("button", { name: "ログイン" }).click();
-		await expect(page).toHaveURL("/");
-	});
-
 	test.describe("読み込み", () => {
 		test("ユーザー情報ページが正常に表示される", async ({ page }) => {
 			await page.goto("/user-info");

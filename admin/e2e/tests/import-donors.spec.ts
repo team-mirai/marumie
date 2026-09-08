@@ -2,14 +2,6 @@ import { test, expect } from "@playwright/test";
 import path from "node:path";
 
 test.describe("寄付者一括インポート", () => {
-	test.beforeEach(async ({ page }) => {
-		await page.goto("/login");
-		await page.getByLabel("Email").fill("foo@example.com");
-		await page.getByLabel("Password").fill("foo@example.com");
-		await page.getByRole("button", { name: "ログイン" }).click();
-		await expect(page).toHaveURL("/");
-	});
-
 	test.describe("読み込み", () => {
 		test("寄付者一括インポートページが正常に表示される", async ({ page }) => {
 			await page.goto("/import-donors");

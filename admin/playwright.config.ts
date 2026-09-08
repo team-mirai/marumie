@@ -1,5 +1,9 @@
 import { defineConfig, devices } from "@playwright/test";
 
+// setup プロジェクトで 1 回だけ UI ログインし、各テストは保存した
+// storageState を使い回す（spec ごとの beforeEach ログインを廃止）
+export const STORAGE_STATE = "e2e/.output/.auth/user.json";
+
 export default defineConfig({
   testDir: "./e2e/tests",
   outputDir: "./e2e/.output/test-results",
@@ -14,8 +18,13 @@ export default defineConfig({
   },
   projects: [
     {
+      name: "setup",
+      testMatch: /auth\.setup\.ts/,
+    },
+    {
       name: "chromium",
-      use: { ...devices["Desktop Chrome"] },
+      use: { ...devices["Desktop Chrome"], storageState: STORAGE_STATE },
+      dependencies: ["setup"],
     },
   ],
   webServer: {

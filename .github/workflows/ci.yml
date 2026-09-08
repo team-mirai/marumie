@@ -154,6 +154,19 @@ jobs:
             ${{ runner.os }}-nextjs-webapp-${{ hashFiles('pnpm-lock.yaml') }}-
             ${{ runner.os }}-nextjs-webapp-
 
+      - name: Cache Playwright browsers
+        uses: actions/cache@v5
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-playwright-
+
+      # .next/cache には Data Cache（fetch-cache）が永続化されるため、
+      # 前ランのデータ持ち越しを防ぐようビルド前に必ず削除する（e2e ジョブと同様）
+      - name: Remove restored Next.js Data Cache
+        run: rm -rf webapp/.next/cache/fetch-cache
+
       - name: Install dependencies
         run: pnpm install
 
@@ -166,11 +179,33 @@ jobs:
       - name: Run type check for webapp
         run: pnpm --filter webapp run type-check
 
+      - name: Install Playwright browsers
+        run: pnpm --filter webapp exec playwright install chromium --with-deps
+
+      - name: Run database migrations and seed
+        run: |
+          pnpm db:migrate:deploy
+          pnpm db:seed
+
+      - name: Build webapp
+        run: pnpm build:webapp
+
+      - name: Run E2E tests for webapp
+        run: pnpm --filter webapp test:e2e
+
       - name: Upload webapp coverage
         uses: actions/upload-artifact@v6
         with:
           name: webapp-coverage
           path: webapp/coverage/lcov.info
+
+      - name: Upload webapp E2E test results
+        uses: actions/upload-artifact@v6
+        if: ${{ !cancelled() }}
+        with:
+          name: webapp-e2e-report
+          path: webapp/e2e/.output/
+          retention-days: 7
 
   knip:
     runs-on: ubuntu-latest
@@ -259,15 +294,6 @@ jobs:
             ${{ runner.os }}-nextjs-admin-${{ hashFiles('pnpm-lock.yaml') }}-
             ${{ runner.os }}-nextjs-admin-
 
-      - name: Cache Next.js build (webapp)
-        uses: actions/cache@v5
-        with:
-          path: webapp/.next/cache
-          key: ${{ runner.os }}-nextjs-webapp-${{ hashFiles('pnpm-lock.yaml') }}-${{ hashFiles('webapp/**/*.ts', 'webapp/**/*.tsx') }}
-          restore-keys: |
-            ${{ runner.os }}-nextjs-webapp-${{ hashFiles('pnpm-lock.yaml') }}-
-            ${{ runner.os }}-nextjs-webapp-
-
       - name: Cache Playwright browsers
         uses: actions/cache@v5
         with:
@@ -282,7 +308,7 @@ jobs:
       # キャッシュキーが衝突して前ランのデータが画面に表示されてしまう。
       # コンパイラキャッシュだけを持ち越すよう、ビルド前に必ず削除する。
       - name: Remove restored Next.js Data Cache
-        run: rm -rf admin/.next/cache/fetch-cache webapp/.next/cache/fetch-cache
+        run: rm -rf admin/.next/cache/fetch-cache
 
       - name: Install dependencies
         run: pnpm install
@@ -339,17 +365,11 @@ jobs:
           NEXT_PUBLIC_SUPABASE_URL: ${{ env.SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ steps.supabase-keys.outputs.SUPABASE_ANON_KEY }}
 
-      - name: Build webapp
-        run: pnpm build:webapp
-
       - name: Run E2E tests for admin
         run: pnpm --filter admin test:e2e
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ env.SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ steps.supabase-keys.outputs.SUPABASE_ANON_KEY }}
-
-      - name: Run E2E tests for webapp
-        run: pnpm --filter webapp test:e2e
 
       - name: Upload admin E2E test results
         uses: actions/upload-artifact@v6
@@ -357,14 +377,6 @@ jobs:
         with:
           name: admin-e2e-report
           path: admin/e2e/.output/
-          retention-days: 7
-
-      - name: Upload webapp E2E test results
-        uses: actions/upload-artifact@v6
-        if: ${{ !cancelled() }}
-        with:
-          name: webapp-e2e-report
-          path: webapp/e2e/.output/
           retention-days: 7
 
   # main のブランチ保護で必須にする唯一のチェック。
