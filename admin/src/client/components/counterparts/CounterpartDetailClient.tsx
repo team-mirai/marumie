@@ -14,6 +14,7 @@ import type {
 import { TransactionWithCounterpartTable } from "@/client/components/counterpart-assignment/TransactionWithCounterpartTable";
 import { AssignCounterpartDialog } from "@/client/components/counterpart-assignment/AssignCounterpartDialog";
 import { CounterpartFormDialog } from "@/client/components/counterparts/CounterpartFormDialog";
+import { PageHeader } from "@/client/components/layout/PageHeader";
 import { ClientPagination } from "@/client/components/ui/ClientPagination";
 import { Card, Input, Button, Label } from "@/client/components/ui";
 import { formatDate } from "@/client/lib";
@@ -182,8 +183,8 @@ export function CounterpartDetailClient({
   };
 
   return (
-    <div className="bg-card rounded-xl p-4 space-y-6">
-      <div className="flex items-center gap-4">
+    <div>
+      <div className="mb-4">
         <Link
           href="/counterparts"
           className="text-muted-foreground hover:text-foreground transition-colors"
@@ -192,132 +193,136 @@ export function CounterpartDetailClient({
         </Link>
       </div>
 
-      <Card className="p-6">
-        <div className="flex justify-between items-start mb-4">
-          <h2 className="text-lg font-semibold text-foreground">カウンターパート情報</h2>
-          <Button
-            type="button"
-            variant="secondary"
-            size="sm"
-            onClick={() => setIsEditDialogOpen(true)}
-          >
-            編集
-          </Button>
-        </div>
+      <PageHeader label="Counterparts" title="取引先詳細" />
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <div className="text-muted-foreground text-sm mb-1">名前</div>
-            <div className="text-foreground font-medium">{counterpart.name}</div>
-          </div>
-          <div>
-            <div className="text-muted-foreground text-sm mb-1">住所</div>
-            <div className="text-foreground">{counterpart.address || "-"}</div>
-          </div>
-          <div>
-            <div className="text-muted-foreground text-sm mb-1">作成日</div>
-            <div className="text-foreground">{formatDate(counterpart.createdAt)}</div>
-          </div>
-          <div>
-            <div className="text-muted-foreground text-sm mb-1">更新日</div>
-            <div className="text-foreground">{formatDate(counterpart.updatedAt)}</div>
-          </div>
-          <div>
-            <div className="text-muted-foreground text-sm mb-1">使用回数</div>
-            <div className="text-foreground">{counterpart.usageCount}件</div>
-          </div>
-        </div>
-      </Card>
-
-      <Card className="p-6">
-        <h2 className="text-lg font-semibold text-foreground mb-4">紐づいている取引</h2>
-
-        <div className="flex flex-col md:flex-row md:items-end gap-4 mb-6">
-          <div className="w-fit">
-            <PoliticalOrganizationSelect
-              organizations={organizations}
-              value={selectedOrganizationId}
-              onValueChange={handleOrganizationChange}
-            />
-          </div>
-          <div className="w-fit space-y-2">
-            <Label>報告年 (西暦)</Label>
-            <Input
-              type="number"
-              value={String(financialYear)}
-              onChange={handleYearChange}
-              min={1900}
-              max={2100}
-              required
-              className="w-24"
-            />
-          </div>
-        </div>
-
-        <div className="flex justify-between items-center mb-4">
-          <div className="text-muted-foreground text-sm">{total}件の取引</div>
-          {isPending && <div className="text-muted-foreground text-sm">読み込み中...</div>}
-        </div>
-
-        {selectedTransactions.length > 0 && (
-          <div className="flex items-center gap-4 mb-4 p-3 bg-secondary/30 border border-border rounded-lg">
-            <span className="text-foreground text-sm">
-              選択中: <span className="font-medium">{selectedTransactions.length}件</span>
-            </span>
-            <Button type="button" size="sm" onClick={handleBulkAssignClick}>
-              一括紐付け変更
-            </Button>
+      <div className="bg-card rounded-xl p-4 space-y-6">
+        <Card className="p-6">
+          <div className="flex justify-between items-start mb-4">
+            <h2 className="text-lg font-semibold text-foreground">カウンターパート情報</h2>
             <Button
               type="button"
-              variant="destructive"
+              variant="secondary"
               size="sm"
-              onClick={handleBulkUnassign}
-              disabled={isUnassigning}
+              onClick={() => setIsEditDialogOpen(true)}
             >
-              {isUnassigning ? "処理中..." : "一括紐付け解除"}
-            </Button>
-            <Button type="button" variant="ghost" size="sm" onClick={() => setRowSelection({})}>
-              選択解除
+              編集
             </Button>
           </div>
-        )}
 
-        <TransactionWithCounterpartTable
-          transactions={transactions}
-          sortField={sortField}
-          sortOrder={sortOrder}
-          onSortChange={handleSortChange}
-          rowSelection={rowSelection}
-          onRowSelectionChange={setRowSelection}
-          onAssignClick={handleAssignClick}
-        />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <div className="text-muted-foreground text-sm mb-1">名前</div>
+              <div className="text-foreground font-medium">{counterpart.name}</div>
+            </div>
+            <div>
+              <div className="text-muted-foreground text-sm mb-1">住所</div>
+              <div className="text-foreground">{counterpart.address || "-"}</div>
+            </div>
+            <div>
+              <div className="text-muted-foreground text-sm mb-1">作成日</div>
+              <div className="text-foreground">{formatDate(counterpart.createdAt)}</div>
+            </div>
+            <div>
+              <div className="text-muted-foreground text-sm mb-1">更新日</div>
+              <div className="text-foreground">{formatDate(counterpart.updatedAt)}</div>
+            </div>
+            <div>
+              <div className="text-muted-foreground text-sm mb-1">使用回数</div>
+              <div className="text-foreground">{counterpart.usageCount}件</div>
+            </div>
+          </div>
+        </Card>
 
-        {totalPages > 1 && (
-          <ClientPagination
-            currentPage={page}
-            totalPages={totalPages}
-            onPageChange={handlePageChange}
+        <Card className="p-6">
+          <h2 className="text-lg font-semibold text-foreground mb-4">紐づいている取引</h2>
+
+          <div className="flex flex-col md:flex-row md:items-end gap-4 mb-6">
+            <div className="w-fit">
+              <PoliticalOrganizationSelect
+                organizations={organizations}
+                value={selectedOrganizationId}
+                onValueChange={handleOrganizationChange}
+              />
+            </div>
+            <div className="w-fit space-y-2">
+              <Label>報告年 (西暦)</Label>
+              <Input
+                type="number"
+                value={String(financialYear)}
+                onChange={handleYearChange}
+                min={1900}
+                max={2100}
+                required
+                className="w-24"
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-between items-center mb-4">
+            <div className="text-muted-foreground text-sm">{total}件の取引</div>
+            {isPending && <div className="text-muted-foreground text-sm">読み込み中...</div>}
+          </div>
+
+          {selectedTransactions.length > 0 && (
+            <div className="flex items-center gap-4 mb-4 p-3 bg-secondary/30 border border-border rounded-lg">
+              <span className="text-foreground text-sm">
+                選択中: <span className="font-medium">{selectedTransactions.length}件</span>
+              </span>
+              <Button type="button" size="sm" onClick={handleBulkAssignClick}>
+                一括紐付け変更
+              </Button>
+              <Button
+                type="button"
+                variant="destructive"
+                size="sm"
+                onClick={handleBulkUnassign}
+                disabled={isUnassigning}
+              >
+                {isUnassigning ? "処理中..." : "一括紐付け解除"}
+              </Button>
+              <Button type="button" variant="ghost" size="sm" onClick={() => setRowSelection({})}>
+                選択解除
+              </Button>
+            </div>
+          )}
+
+          <TransactionWithCounterpartTable
+            transactions={transactions}
+            sortField={sortField}
+            sortOrder={sortOrder}
+            onSortChange={handleSortChange}
+            rowSelection={rowSelection}
+            onRowSelectionChange={setRowSelection}
+            onAssignClick={handleAssignClick}
+          />
+
+          {totalPages > 1 && (
+            <ClientPagination
+              currentPage={page}
+              totalPages={totalPages}
+              onPageChange={handlePageChange}
+            />
+          )}
+        </Card>
+
+        {isEditDialogOpen && (
+          <CounterpartFormDialog
+            mode="edit"
+            counterpart={counterpart}
+            onClose={() => setIsEditDialogOpen(false)}
+            onSuccess={handleEditSuccess}
           />
         )}
-      </Card>
 
-      {isEditDialogOpen && (
-        <CounterpartFormDialog
-          mode="edit"
-          counterpart={counterpart}
-          onClose={() => setIsEditDialogOpen(false)}
-          onSuccess={handleEditSuccess}
+        <AssignCounterpartDialog
+          isOpen={isAssignDialogOpen}
+          transactions={assignDialogTransactions}
+          allCounterparts={allCounterparts}
+          politicalOrganizationId={selectedOrganizationId || organizations[0]?.id || ""}
+          onClose={handleAssignDialogClose}
+          onSuccess={handleAssignSuccess}
         />
-      )}
-
-      <AssignCounterpartDialog
-        isOpen={isAssignDialogOpen}
-        transactions={assignDialogTransactions}
-        allCounterparts={allCounterparts}
-        politicalOrganizationId={selectedOrganizationId || organizations[0]?.id || ""}
-        onClose={handleAssignDialogClose}
-        onSuccess={handleAssignSuccess}
-      />
+      </div>
     </div>
   );
 }

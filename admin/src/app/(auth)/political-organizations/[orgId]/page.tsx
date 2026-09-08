@@ -2,6 +2,7 @@ import "server-only";
 
 import Link from "next/link";
 import { PoliticalOrganizationForm } from "@/client/components/political-organizations/PoliticalOrganizationForm";
+import { PageHeader } from "@/client/components/layout/PageHeader";
 import { loadPoliticalOrganizationData } from "@/server/contexts/shared/presentation/loaders/load-political-organization-data";
 import { updatePoliticalOrganization } from "@/server/contexts/shared/presentation/actions/update-political-organization";
 import type { UpdatePoliticalOrganizationData } from "@/server/contexts/shared/presentation/actions/update-political-organization";
@@ -34,28 +35,40 @@ export default async function EditPoliticalOrganizationPage({
   };
 
   return (
-    <div className="space-y-4">
-      <PoliticalOrganizationForm
-        initialData={{
-          displayName: organization.displayName,
-          orgName: organization.orgName || "",
-          slug: organization.slug,
-          description: organization.description || "",
-        }}
-        onSubmit={handleSubmit}
-        submitButtonText="更新"
-        title={`「${organization.displayName}」を編集`}
-      />
+    <div>
+      <div className="mb-4">
+        <Link
+          href="/political-organizations"
+          className="text-muted-foreground no-underline hover:text-foreground transition-colors"
+        >
+          ← 政治団体一覧に戻る
+        </Link>
+      </div>
 
-      <div className="bg-card rounded-xl p-4">
-        <h2 className="text-lg font-semibold text-foreground mb-3">関連機能</h2>
-        <div className="flex gap-3">
-          <Link
-            href={`/political-organizations/${orgId}/report-profile`}
-            className="bg-secondary text-secondary-foreground border border-border rounded-lg px-4 py-2.5 hover:bg-accent transition-colors no-underline"
-          >
-            報告書プロフィール
-          </Link>
+      <PageHeader label="Organizations" title={`「${organization.displayName}」を編集`} />
+
+      <div className="space-y-4">
+        <PoliticalOrganizationForm
+          initialData={{
+            displayName: organization.displayName,
+            orgName: organization.orgName || "",
+            slug: organization.slug,
+            description: organization.description || "",
+          }}
+          onSubmit={handleSubmit}
+          submitButtonText="更新"
+        />
+
+        <div className="bg-card rounded-xl p-4">
+          <h2 className="text-lg font-semibold text-foreground mb-3">関連機能</h2>
+          <div className="flex gap-3">
+            <Link
+              href={`/political-organizations/${orgId}/report-profile`}
+              className="bg-secondary text-secondary-foreground border border-border rounded-lg px-4 py-2.5 hover:bg-accent transition-colors no-underline"
+            >
+              報告書プロフィール
+            </Link>
+          </div>
         </div>
       </div>
     </div>

@@ -17,6 +17,7 @@ import {
 } from "./CounterpartAssignmentFilters";
 import { ClientPagination } from "@/client/components/ui/ClientPagination";
 import { Card, Input, Button, Label } from "@/client/components/ui";
+import { PageHeader } from "@/client/components/layout/PageHeader";
 import { PoliticalOrganizationSelect } from "@/client/components/political-organizations/PoliticalOrganizationSelect";
 
 const ALL_CATEGORIES_VALUE = "__all__";
@@ -209,130 +210,138 @@ export function CounterpartAssignmentClient({
     });
   };
 
-  if (organizations.length === 0) {
-    return (
-      <Card className="p-4">
-        <p className="text-foreground">
-          政治団体が登録されていません。先に政治団体を作成してください。
-        </p>
-      </Card>
-    );
-  }
-
-  return (
-    <div className="bg-card rounded-xl p-4 space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground mb-1">取引先紐付け管理</h1>
-          <p className="text-muted-foreground">
-            Transactionに対してCounterpart（取引先）を紐付けます
-          </p>
-        </div>
+  const header = (
+    <PageHeader
+      label="Counterpart Assignment"
+      title="取引先紐付け管理"
+      description="Transactionに対してCounterpart（取引先）を紐付けます"
+      actions={
         <Link
           href="/counterparts"
           className="bg-secondary text-secondary-foreground border border-border hover:bg-secondary rounded-lg px-4 py-2.5 font-medium transition-colors duration-200"
         >
           マスタ管理へ
         </Link>
+      }
+    />
+  );
+
+  if (organizations.length === 0) {
+    return (
+      <div>
+        {header}
+        <Card className="p-4">
+          <p className="text-foreground">
+            政治団体が登録されていません。先に政治団体を作成してください。
+          </p>
+        </Card>
       </div>
+    );
+  }
 
-      <Card className="p-4">
-        <div className="flex flex-col md:flex-row md:items-end gap-4">
-          <div className="w-fit">
-            <PoliticalOrganizationSelect
-              organizations={organizations}
-              value={selectedOrganizationId}
-              onValueChange={handleOrganizationChange}
-              required
-            />
+  return (
+    <div>
+      {header}
+
+      <div className="bg-card rounded-xl p-4 space-y-6">
+        <Card className="p-4">
+          <div className="flex flex-col md:flex-row md:items-end gap-4">
+            <div className="w-fit">
+              <PoliticalOrganizationSelect
+                organizations={organizations}
+                value={selectedOrganizationId}
+                onValueChange={handleOrganizationChange}
+                required
+              />
+            </div>
+            <div className="w-fit space-y-2">
+              <Label>報告年 (西暦)</Label>
+              <Input
+                type="number"
+                value={String(financialYear)}
+                onChange={handleYearChange}
+                min={1900}
+                max={2100}
+                required
+                className="w-24"
+              />
+            </div>
           </div>
-          <div className="w-fit space-y-2">
-            <Label>報告年 (西暦)</Label>
-            <Input
-              type="number"
-              value={String(financialYear)}
-              onChange={handleYearChange}
-              min={1900}
-              max={2100}
-              required
-              className="w-24"
-            />
-          </div>
-        </div>
-      </Card>
+        </Card>
 
-      <hr className="border-border" />
+        <hr className="border-border" />
 
-      <CounterpartAssignmentFilters
-        values={{
-          categoryKey,
-          searchQuery,
-          unassignedOnly,
-          counterpartRequiredOnly,
-        }}
-        categoryOptions={categoryOptions}
-        onChange={handleFilterChange}
-      />
-
-      <Card className="p-4">
-        <div className="flex justify-between items-center mb-4">
-          <div className="text-muted-foreground text-sm">
-            {total}件のTransaction
-            {unassignedOnly && " (未紐付けのみ)"}
-          </div>
-          {isPending && <div className="text-muted-foreground text-sm">読み込み中...</div>}
-        </div>
-
-        <div className="flex items-center gap-4 mb-4 p-3 bg-secondary/30 border border-border rounded-lg">
-          <span className="text-foreground text-sm">
-            選択中: <span className="font-medium">{selectedTransactions.length}件</span>
-          </span>
-          <Button
-            type="button"
-            size="sm"
-            onClick={handleBulkAssignClick}
-            disabled={selectedTransactions.length === 0}
-          >
-            一括紐付け
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => setRowSelection({})}
-            disabled={selectedTransactions.length === 0}
-          >
-            選択解除
-          </Button>
-        </div>
-
-        <TransactionWithCounterpartTable
-          transactions={initialTransactions}
-          sortField={sortField}
-          sortOrder={sortOrder}
-          onSortChange={handleSortChange}
-          rowSelection={rowSelection}
-          onRowSelectionChange={setRowSelection}
-          onAssignClick={handleAssignClick}
+        <CounterpartAssignmentFilters
+          values={{
+            categoryKey,
+            searchQuery,
+            unassignedOnly,
+            counterpartRequiredOnly,
+          }}
+          categoryOptions={categoryOptions}
+          onChange={handleFilterChange}
         />
 
-        {totalPages > 1 && (
-          <ClientPagination
-            currentPage={page}
-            totalPages={totalPages}
-            onPageChange={handlePageChange}
-          />
-        )}
-      </Card>
+        <Card className="p-4">
+          <div className="flex justify-between items-center mb-4">
+            <div className="text-muted-foreground text-sm">
+              {total}件のTransaction
+              {unassignedOnly && " (未紐付けのみ)"}
+            </div>
+            {isPending && <div className="text-muted-foreground text-sm">読み込み中...</div>}
+          </div>
 
-      <AssignCounterpartDialog
-        isOpen={isAssignDialogOpen}
-        transactions={assignDialogTransactions}
-        allCounterparts={allCounterparts}
-        politicalOrganizationId={selectedOrganizationId}
-        onClose={handleAssignDialogClose}
-        onSuccess={handleAssignSuccess}
-      />
+          <div className="flex items-center gap-4 mb-4 p-3 bg-secondary/30 border border-border rounded-lg">
+            <span className="text-foreground text-sm">
+              選択中: <span className="font-medium">{selectedTransactions.length}件</span>
+            </span>
+            <Button
+              type="button"
+              size="sm"
+              onClick={handleBulkAssignClick}
+              disabled={selectedTransactions.length === 0}
+            >
+              一括紐付け
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => setRowSelection({})}
+              disabled={selectedTransactions.length === 0}
+            >
+              選択解除
+            </Button>
+          </div>
+
+          <TransactionWithCounterpartTable
+            transactions={initialTransactions}
+            sortField={sortField}
+            sortOrder={sortOrder}
+            onSortChange={handleSortChange}
+            rowSelection={rowSelection}
+            onRowSelectionChange={setRowSelection}
+            onAssignClick={handleAssignClick}
+          />
+
+          {totalPages > 1 && (
+            <ClientPagination
+              currentPage={page}
+              totalPages={totalPages}
+              onPageChange={handlePageChange}
+            />
+          )}
+        </Card>
+
+        <AssignCounterpartDialog
+          isOpen={isAssignDialogOpen}
+          transactions={assignDialogTransactions}
+          allCounterparts={allCounterparts}
+          politicalOrganizationId={selectedOrganizationId}
+          onClose={handleAssignDialogClose}
+          onSuccess={handleAssignSuccess}
+        />
+      </div>
     </div>
   );
 }

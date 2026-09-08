@@ -2,17 +2,20 @@ import "server-only";
 
 import { redirect } from "next/navigation";
 import { loadPoliticalOrganizationsData } from "@/server/contexts/shared/presentation/loaders/load-political-organizations-data";
+import { PageHeader } from "@/client/components/layout/PageHeader";
 
 export default async function ExportReportPage() {
   const organizations = await loadPoliticalOrganizationsData();
 
   if (organizations.length === 0) {
     return (
-      <div className="bg-card rounded-xl p-4">
-        <h1 className="text-2xl font-bold text-foreground mb-1">報告書エクスポート</h1>
-        <p className="text-muted-foreground">
-          政治団体が登録されていません。先に政治団体を作成してください。
-        </p>
+      <div>
+        <PageHeader label="Report Export" title="報告書エクスポート" />
+        <div className="bg-card rounded-xl p-4">
+          <p className="text-muted-foreground">
+            政治団体が登録されていません。先に政治団体を作成してください。
+          </p>
+        </div>
       </div>
     );
   }

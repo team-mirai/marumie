@@ -4,16 +4,7 @@ import "client-only";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import {
-  Button,
-  Input,
-  Card,
-  CardHeader,
-  CardTitle,
-  CardContent,
-  Label,
-  Textarea,
-} from "@/client/components/ui";
+import { Button, Input, Card, CardContent, Label, Textarea } from "@/client/components/ui";
 
 interface PoliticalOrganizationFormData {
   displayName: string;
@@ -26,14 +17,12 @@ interface PoliticalOrganizationFormProps {
   initialData?: Partial<PoliticalOrganizationFormData>;
   onSubmit: (data: PoliticalOrganizationFormData) => Promise<{ success: boolean }>;
   submitButtonText: string;
-  title: string;
 }
 
 export function PoliticalOrganizationForm({
   initialData = { displayName: "", orgName: "", slug: "", description: "" },
   onSubmit,
   submitButtonText,
-  title,
 }: PoliticalOrganizationFormProps) {
   const router = useRouter();
   const [formData, setFormData] = useState<PoliticalOrganizationFormData>({
@@ -73,17 +62,6 @@ export function PoliticalOrganizationForm({
 
   return (
     <Card>
-      <CardHeader>
-        <div className="mb-2">
-          <Link
-            href="/political-organizations"
-            className="text-muted-foreground no-underline hover:text-foreground transition-colors"
-          >
-            ← 政治団体一覧に戻る
-          </Link>
-        </div>
-        <CardTitle className="text-2xl">{title}</CardTitle>
-      </CardHeader>
       <CardContent>
         {error && (
           <div className="text-destructive mb-4 p-3 bg-destructive/10 rounded-lg border border-destructive/30">

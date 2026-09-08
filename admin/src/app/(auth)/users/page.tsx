@@ -3,6 +3,7 @@ import { loadAllUsers } from "@/server/contexts/auth/presentation/loaders/load-a
 import { updateUserRole } from "@/server/contexts/auth/presentation/actions/update-user-role";
 import { inviteUser } from "@/server/contexts/auth/presentation/actions/invite-user";
 import UserManagement from "@/client/components/user-management/UserManagement";
+import { PageHeader } from "@/client/components/layout/PageHeader";
 
 export default async function UsersPage() {
   const rawUsers = await loadAllUsers();
@@ -15,14 +16,16 @@ export default async function UsersPage() {
   }));
 
   return (
-    <div className="bg-card rounded-xl p-4">
-      <h1 className="text-2xl font-bold text-foreground mb-4">ユーザー管理</h1>
-      <UserManagement
-        users={users}
-        availableRoles={["user", "admin"]}
-        updateUserRoleAction={updateUserRole}
-        inviteUserAction={inviteUser}
-      />
+    <div>
+      <PageHeader label="Users" title="ユーザー管理" />
+      <div className="bg-card rounded-xl p-4">
+        <UserManagement
+          users={users}
+          availableRoles={["user", "admin"]}
+          updateUserRoleAction={updateUserRole}
+          inviteUserAction={inviteUser}
+        />
+      </div>
     </div>
   );
 }

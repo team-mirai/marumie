@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import type { CounterpartWithUsage } from "@/server/contexts/report/domain/models/counterpart";
 import { CounterpartTable } from "@/client/components/counterparts/CounterpartTable";
 import { CounterpartFormDialog } from "@/client/components/counterparts/CounterpartFormDialog";
+import { PageHeader } from "@/client/components/layout/PageHeader";
 
 interface CounterpartMasterClientProps {
   initialCounterparts: CounterpartWithUsage[];
@@ -52,98 +53,103 @@ export function CounterpartMasterClient({
   };
 
   return (
-    <div className="bg-card rounded-xl p-4">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-foreground">取引先マスタ管理</h1>
-        <button
-          type="button"
-          onClick={() => setIsCreateDialogOpen(true)}
-          className="bg-primary text-primary-foreground border-0 rounded-lg px-4 py-2.5 font-medium hover:bg-primary-hover transition-colors duration-200 cursor-pointer"
-        >
-          新規作成
-        </button>
-      </div>
-
-      <form onSubmit={handleSearch} className="mb-6">
-        <div className="flex gap-2">
-          <input
-            type="text"
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-            placeholder="名前または住所で検索..."
-            aria-label="取引先を名前または住所で検索"
-            className="bg-input text-foreground border border-border rounded-lg px-3 py-2.5 flex-1 max-w-md transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary"
-          />
+    <div>
+      <PageHeader
+        label="Counterparts"
+        title="取引先マスタ管理"
+        actions={
           <button
-            type="submit"
-            className="bg-secondary text-secondary-foreground border border-border hover:bg-secondary/80 rounded-lg px-4 py-2.5 font-medium transition-colors duration-200 cursor-pointer"
+            type="button"
+            onClick={() => setIsCreateDialogOpen(true)}
+            className="bg-primary text-primary-foreground border-0 rounded-lg px-4 py-2.5 font-medium hover:bg-primary-hover transition-colors duration-200 cursor-pointer"
           >
-            検索
+            新規作成
           </button>
-          {searchQuery && (
+        }
+      />
+
+      <div className="bg-card rounded-xl p-4">
+        <form onSubmit={handleSearch} className="mb-6">
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              placeholder="名前または住所で検索..."
+              aria-label="取引先を名前または住所で検索"
+              className="bg-input text-foreground border border-border rounded-lg px-3 py-2.5 flex-1 max-w-md transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary"
+            />
             <button
-              type="button"
-              onClick={() => {
-                setSearchInput("");
-                router.push("/counterparts");
-              }}
+              type="submit"
               className="bg-secondary text-secondary-foreground border border-border hover:bg-secondary/80 rounded-lg px-4 py-2.5 font-medium transition-colors duration-200 cursor-pointer"
             >
-              クリア
+              検索
             </button>
-          )}
-        </div>
-      </form>
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchInput("");
+                  router.push("/counterparts");
+                }}
+                className="bg-secondary text-secondary-foreground border border-border hover:bg-secondary/80 rounded-lg px-4 py-2.5 font-medium transition-colors duration-200 cursor-pointer"
+              >
+                クリア
+              </button>
+            )}
+          </div>
+        </form>
 
-      <div className="text-muted-foreground text-sm mb-4">
-        {total}件の取引先
-        {searchQuery && <span> (検索: &quot;{searchQuery}&quot;)</span>}
+        <div className="text-muted-foreground text-sm mb-4">
+          {total}件の取引先
+          {searchQuery && <span> (検索: &quot;{searchQuery}&quot;)</span>}
+        </div>
+
+        <CounterpartTable counterparts={initialCounterparts} onUpdate={handleUpdate} />
+
+        {totalPages > 1 && (
+          <div className="flex justify-center items-center gap-2 mt-6">
+            <button
+              type="button"
+              onClick={() => handlePageChange(page - 1)}
+              disabled={page <= 1}
+              aria-label="前のページへ"
+              className={`bg-secondary text-secondary-foreground border border-border rounded-lg px-3 py-1.5 text-sm font-medium transition-colors duration-200 ${
+                page <= 1 ? "opacity-50 cursor-not-allowed" : "hover:bg-secondary/80 cursor-pointer"
+              }`}
+            >
+              前へ
+            </button>
+            <span className="text-foreground px-4">
+              {page} / {totalPages}
+            </span>
+            <button
+              type="button"
+              onClick={() => handlePageChange(page + 1)}
+              disabled={page >= totalPages}
+              aria-label="次のページへ"
+              className={`bg-secondary text-secondary-foreground border border-border rounded-lg px-3 py-1.5 text-sm font-medium transition-colors duration-200 ${
+                page >= totalPages
+                  ? "opacity-50 cursor-not-allowed"
+                  : "hover:bg-secondary/80 cursor-pointer"
+              }`}
+            >
+              次へ
+            </button>
+          </div>
+        )}
+
+        {isCreateDialogOpen && (
+          <CounterpartFormDialog
+            mode="create"
+            onClose={() => setIsCreateDialogOpen(false)}
+            onSuccess={() => {
+              setIsCreateDialogOpen(false);
+              handleUpdate();
+            }}
+          />
+        )}
       </div>
-
-      <CounterpartTable counterparts={initialCounterparts} onUpdate={handleUpdate} />
-
-      {totalPages > 1 && (
-        <div className="flex justify-center items-center gap-2 mt-6">
-          <button
-            type="button"
-            onClick={() => handlePageChange(page - 1)}
-            disabled={page <= 1}
-            aria-label="前のページへ"
-            className={`bg-secondary text-secondary-foreground border border-border rounded-lg px-3 py-1.5 text-sm font-medium transition-colors duration-200 ${
-              page <= 1 ? "opacity-50 cursor-not-allowed" : "hover:bg-secondary/80 cursor-pointer"
-            }`}
-          >
-            前へ
-          </button>
-          <span className="text-foreground px-4">
-            {page} / {totalPages}
-          </span>
-          <button
-            type="button"
-            onClick={() => handlePageChange(page + 1)}
-            disabled={page >= totalPages}
-            aria-label="次のページへ"
-            className={`bg-secondary text-secondary-foreground border border-border rounded-lg px-3 py-1.5 text-sm font-medium transition-colors duration-200 ${
-              page >= totalPages
-                ? "opacity-50 cursor-not-allowed"
-                : "hover:bg-secondary/80 cursor-pointer"
-            }`}
-          >
-            次へ
-          </button>
-        </div>
-      )}
-
-      {isCreateDialogOpen && (
-        <CounterpartFormDialog
-          mode="create"
-          onClose={() => setIsCreateDialogOpen(false)}
-          onSuccess={() => {
-            setIsCreateDialogOpen(false);
-            handleUpdate();
-          }}
-        />
-      )}
     </div>
   );
 }

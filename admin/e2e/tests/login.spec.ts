@@ -20,7 +20,7 @@ test.describe("ログインページ", () => {
 
 		// ダッシュボードにリダイレクトされることを確認
 		await expect(page).toHaveURL("/");
-		await expect(page.getByRole("heading", { name: "Welcome" })).toBeVisible();
+		await expect(page.getByRole("heading", { name: "ダッシュボード" })).toBeVisible();
 	});
 
 	test("間違ったパスワードでログインに失敗する", async ({ page }) => {
