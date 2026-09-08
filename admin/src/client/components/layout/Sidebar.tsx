@@ -24,6 +24,7 @@ import {
   Users,
 } from "@phosphor-icons/react/dist/ssr";
 import { Button, Tooltip, TooltipContent, TooltipTrigger } from "@/client/components/ui";
+import { BrandWordmark } from "@/client/components/layout/BrandWordmark";
 import { cn } from "@/client/lib/index";
 import {
   getVisibleNavSections,
@@ -100,16 +101,7 @@ export default function Sidebar({
           collapsed ? "justify-center" : "justify-between",
         )}
       >
-        {!collapsed && (
-          <div className="min-w-0">
-            <div className="whitespace-nowrap text-[13px] font-bold tracking-[0.06em] text-foreground">
-              みらいまる見え政治資金
-            </div>
-            <div className="mt-0.5 font-latin text-[10px] font-semibold tracking-[0.14em] text-primary-hover">
-              ADMIN CONSOLE
-            </div>
-          </div>
-        )}
+        {!collapsed && <BrandWordmark />}
         <button
           type="button"
           onClick={onToggleCollapsed}

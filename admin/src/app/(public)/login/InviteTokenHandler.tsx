@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { ProcessingNotice } from "@/client/components/auth/ProcessingNotice";
 import { completeInviteSession } from "@/server/contexts/auth/presentation/actions/complete-invite-session";
 
 export default function InviteTokenHandler() {
@@ -38,9 +39,9 @@ export default function InviteTokenHandler() {
   if (!processing) return null;
 
   return (
-    <div className="bg-card rounded-xl p-4 mt-4">
-      <h2>Processing Invitation...</h2>
-      <p>Please wait while we set up your account.</p>
-    </div>
+    <ProcessingNotice
+      title="招待を処理しています..."
+      description="アカウントの準備をしています。しばらくお待ちください。"
+    />
   );
 }
