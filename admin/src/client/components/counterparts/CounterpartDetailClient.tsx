@@ -1,9 +1,9 @@
 "use client";
 import "client-only";
 
-import { useMemo, useState, useTransition } from "react";
+import { useId, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
+import { PencilSimple } from "@phosphor-icons/react/dist/ssr";
 import type { RowSelectionState } from "@tanstack/react-table";
 import type { PoliticalOrganization } from "@/shared/models/political-organization";
 import type { TransactionWithCounterpart } from "@/server/contexts/report/domain/models/transaction-with-counterpart";
@@ -15,8 +15,9 @@ import { TransactionWithCounterpartTable } from "@/client/components/counterpart
 import { AssignCounterpartDialog } from "@/client/components/counterpart-assignment/AssignCounterpartDialog";
 import { CounterpartFormDialog } from "@/client/components/counterparts/CounterpartFormDialog";
 import { PageHeader } from "@/client/components/layout/PageHeader";
-import { ClientPagination } from "@/client/components/ui/ClientPagination";
-import { Card, Input, Button, Label } from "@/client/components/ui";
+import { BackLink } from "@/client/components/layout/BackLink";
+import { StaticPagination } from "@/client/components/ui/StaticPagination";
+import { Input, Button, Label } from "@/client/components/ui";
 import { formatDate } from "@/client/lib";
 import { PoliticalOrganizationSelect } from "@/client/components/political-organizations/PoliticalOrganizationSelect";
 import { bulkUnassignCounterpartAction } from "@/server/contexts/report/presentation/actions/bulk-unassign-counterpart";
@@ -49,6 +50,7 @@ export function CounterpartDetailClient({
 }: CounterpartDetailClientProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const yearInputId = useId();
 
   const initialFinancialYear = useMemo(() => new Date().getFullYear(), []);
 
@@ -171,12 +173,6 @@ export function CounterpartDetailClient({
     });
   };
 
-  const handlePageChange = (newPage: number) => {
-    startTransition(() => {
-      router.push(buildUrl({ page: newPage }));
-    });
-  };
-
   const handleEditSuccess = () => {
     setIsEditDialogOpen(false);
     router.refresh();
@@ -184,59 +180,66 @@ export function CounterpartDetailClient({
 
   return (
     <div>
-      <div className="mb-4">
-        <Link
-          href="/counterparts"
-          className="text-muted-foreground hover:text-foreground transition-colors"
-        >
-          ← 一覧に戻る
-        </Link>
-      </div>
+      <BackLink href="/counterparts">一覧に戻る</BackLink>
 
-      <PageHeader label="Counterparts" title="取引先詳細" />
+      <PageHeader
+        label="Counterparts"
+        title="取引先詳細"
+        actions={
+          <Button
+            type="button"
+            variant="outline"
+            className="text-[13px]"
+            onClick={() => setIsEditDialogOpen(true)}
+          >
+            <PencilSimple />
+            編集
+          </Button>
+        }
+      />
 
-      <div className="bg-card rounded-xl p-4 space-y-6">
-        <Card className="p-6">
-          <div className="flex justify-between items-start mb-4">
-            <h2 className="text-lg font-semibold text-foreground">カウンターパート情報</h2>
-            <Button
-              type="button"
-              variant="secondary"
-              size="sm"
-              onClick={() => setIsEditDialogOpen(true)}
-            >
-              編集
-            </Button>
-          </div>
+      <div className="flex flex-col gap-6">
+        <section className="rounded-lg border border-border bg-card p-6">
+          <h2 className="mb-4 text-[17px] font-bold tracking-[0.04em] text-foreground">
+            取引先情報
+          </h2>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <dl className="grid grid-cols-1 gap-x-8 gap-y-4 md:grid-cols-2">
             <div>
-              <div className="text-muted-foreground text-sm mb-1">名前</div>
-              <div className="text-foreground font-medium">{counterpart.name}</div>
+              <dt className="mb-1 text-xs font-bold text-muted-foreground">名前</dt>
+              <dd className="text-sm font-semibold text-foreground">{counterpart.name}</dd>
             </div>
             <div>
-              <div className="text-muted-foreground text-sm mb-1">住所</div>
-              <div className="text-foreground">{counterpart.address || "-"}</div>
+              <dt className="mb-1 text-xs font-bold text-muted-foreground">住所</dt>
+              <dd className="text-sm text-foreground">{counterpart.address || "-"}</dd>
             </div>
             <div>
-              <div className="text-muted-foreground text-sm mb-1">作成日</div>
-              <div className="text-foreground">{formatDate(counterpart.createdAt)}</div>
+              <dt className="mb-1 text-xs font-bold text-muted-foreground">作成日</dt>
+              <dd className="font-latin text-sm text-foreground">
+                {formatDate(counterpart.createdAt)}
+              </dd>
             </div>
             <div>
-              <div className="text-muted-foreground text-sm mb-1">更新日</div>
-              <div className="text-foreground">{formatDate(counterpart.updatedAt)}</div>
+              <dt className="mb-1 text-xs font-bold text-muted-foreground">更新日</dt>
+              <dd className="font-latin text-sm text-foreground">
+                {formatDate(counterpart.updatedAt)}
+              </dd>
             </div>
             <div>
-              <div className="text-muted-foreground text-sm mb-1">使用回数</div>
-              <div className="text-foreground">{counterpart.usageCount}件</div>
+              <dt className="mb-1 text-xs font-bold text-muted-foreground">使用回数</dt>
+              <dd className="font-latin text-sm font-semibold text-foreground">
+                {counterpart.usageCount}件
+              </dd>
             </div>
-          </div>
-        </Card>
+          </dl>
+        </section>
 
-        <Card className="p-6">
-          <h2 className="text-lg font-semibold text-foreground mb-4">紐づいている取引</h2>
+        <section className="rounded-lg border border-border bg-card p-6">
+          <h2 className="mb-4 text-[17px] font-bold tracking-[0.04em] text-foreground">
+            紐づいている取引
+          </h2>
 
-          <div className="flex flex-col md:flex-row md:items-end gap-4 mb-6">
+          <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-end">
             <div className="w-fit">
               <PoliticalOrganizationSelect
                 organizations={organizations}
@@ -245,28 +248,30 @@ export function CounterpartDetailClient({
               />
             </div>
             <div className="w-fit space-y-2">
-              <Label>報告年 (西暦)</Label>
+              <Label htmlFor={yearInputId}>報告年 (西暦)</Label>
               <Input
+                id={yearInputId}
                 type="number"
                 value={String(financialYear)}
                 onChange={handleYearChange}
                 min={1900}
                 max={2100}
                 required
-                className="w-24"
+                className="font-latin w-28"
               />
             </div>
           </div>
 
-          <div className="flex justify-between items-center mb-4">
-            <div className="text-muted-foreground text-sm">{total}件の取引</div>
-            {isPending && <div className="text-muted-foreground text-sm">読み込み中...</div>}
+          <div className="mb-3 flex items-center justify-between">
+            <p className="text-[13px] text-muted-foreground">{total}件の取引</p>
+            {isPending && <p className="text-[13px] text-muted-foreground">読み込み中...</p>}
           </div>
 
           {selectedTransactions.length > 0 && (
-            <div className="flex items-center gap-4 mb-4 p-3 bg-secondary/30 border border-border rounded-lg">
-              <span className="text-foreground text-sm">
-                選択中: <span className="font-medium">{selectedTransactions.length}件</span>
+            <div className="mb-4 flex flex-wrap items-center gap-3 rounded-lg border border-border-soft bg-secondary p-3">
+              <span className="text-[13px] text-foreground">
+                選択中:{" "}
+                <span className="font-latin font-semibold">{selectedTransactions.length}</span>件
               </span>
               <Button type="button" size="sm" onClick={handleBulkAssignClick}>
                 一括紐付け変更
@@ -280,7 +285,7 @@ export function CounterpartDetailClient({
               >
                 {isUnassigning ? "処理中..." : "一括紐付け解除"}
               </Button>
-              <Button type="button" variant="ghost" size="sm" onClick={() => setRowSelection({})}>
+              <Button type="button" variant="outline" size="sm" onClick={() => setRowSelection({})}>
                 選択解除
               </Button>
             </div>
@@ -297,13 +302,13 @@ export function CounterpartDetailClient({
           />
 
           {totalPages > 1 && (
-            <ClientPagination
+            <StaticPagination
               currentPage={page}
               totalPages={totalPages}
-              onPageChange={handlePageChange}
+              buildPageUrl={(nextPage) => buildUrl({ page: nextPage })}
             />
           )}
-        </Card>
+        </section>
 
         {isEditDialogOpen && (
           <CounterpartFormDialog

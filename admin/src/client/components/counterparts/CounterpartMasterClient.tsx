@@ -3,10 +3,13 @@ import "client-only";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { MagnifyingGlass, Plus } from "@phosphor-icons/react/dist/ssr";
 import type { CounterpartWithUsage } from "@/server/contexts/report/domain/models/counterpart";
 import { CounterpartTable } from "@/client/components/counterparts/CounterpartTable";
 import { CounterpartFormDialog } from "@/client/components/counterparts/CounterpartFormDialog";
 import { PageHeader } from "@/client/components/layout/PageHeader";
+import { StaticPagination } from "@/client/components/ui/StaticPagination";
+import { Button, Input } from "@/client/components/ui";
 
 interface CounterpartMasterClientProps {
   initialCounterparts: CounterpartWithUsage[];
@@ -29,23 +32,18 @@ export function CounterpartMasterClient({
 
   const totalPages = Math.ceil(total / perPage);
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    const params = new URLSearchParams();
-    if (searchInput.trim()) {
-      params.set("q", searchInput.trim());
+  const buildUrl = (params: { q?: string; page: number }) => {
+    const urlParams = new URLSearchParams();
+    if (params.q?.trim()) {
+      urlParams.set("q", params.q.trim());
     }
-    params.set("page", "1");
-    router.push(`/counterparts?${params.toString()}`);
+    urlParams.set("page", params.page.toString());
+    return `/counterparts?${urlParams.toString()}`;
   };
 
-  const handlePageChange = (newPage: number) => {
-    const params = new URLSearchParams();
-    if (searchQuery) {
-      params.set("q", searchQuery);
-    }
-    params.set("page", newPage.toString());
-    router.push(`/counterparts?${params.toString()}`);
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    router.push(buildUrl({ q: searchInput, page: 1 }));
   };
 
   const handleUpdate = () => {
@@ -58,85 +56,59 @@ export function CounterpartMasterClient({
         label="Counterparts"
         title="取引先マスタ管理"
         actions={
-          <button
+          <Button
             type="button"
+            className="text-[13px] tracking-[0.06em]"
             onClick={() => setIsCreateDialogOpen(true)}
-            className="bg-primary text-primary-foreground border-0 rounded-lg px-4 py-2.5 font-medium hover:bg-primary-hover transition-colors duration-200 cursor-pointer"
           >
+            <Plus />
             新規作成
-          </button>
+          </Button>
         }
       />
 
-      <div className="bg-card rounded-xl p-4">
-        <form onSubmit={handleSearch} className="mb-6">
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-              placeholder="名前または住所で検索..."
-              aria-label="取引先を名前または住所で検索"
-              className="bg-input text-foreground border border-border rounded-lg px-3 py-2.5 flex-1 max-w-md transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary"
-            />
-            <button
-              type="submit"
-              className="bg-secondary text-secondary-foreground border border-border hover:bg-secondary/80 rounded-lg px-4 py-2.5 font-medium transition-colors duration-200 cursor-pointer"
+      <div className="rounded-lg border border-border bg-card p-6">
+        <form onSubmit={handleSearch} className="mb-2 flex flex-wrap gap-2">
+          <Input
+            type="text"
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            placeholder="名前または住所で検索..."
+            aria-label="取引先を名前または住所で検索"
+            className="min-w-[200px] max-w-[380px] flex-1 border-[1.5px] text-[13px]"
+          />
+          <Button type="submit" variant="outline" className="text-[13px]">
+            <MagnifyingGlass />
+            検索
+          </Button>
+          {searchQuery && (
+            <Button
+              type="button"
+              variant="outline"
+              className="text-[13px]"
+              onClick={() => {
+                setSearchInput("");
+                router.push("/counterparts");
+              }}
             >
-              検索
-            </button>
-            {searchQuery && (
-              <button
-                type="button"
-                onClick={() => {
-                  setSearchInput("");
-                  router.push("/counterparts");
-                }}
-                className="bg-secondary text-secondary-foreground border border-border hover:bg-secondary/80 rounded-lg px-4 py-2.5 font-medium transition-colors duration-200 cursor-pointer"
-              >
-                クリア
-              </button>
-            )}
-          </div>
+              クリア
+            </Button>
+          )}
         </form>
 
-        <div className="text-muted-foreground text-sm mb-4">
+        <p className="mb-3 text-[13px] text-muted-foreground">
           {total}件の取引先
           {searchQuery && <span> (検索: &quot;{searchQuery}&quot;)</span>}
-        </div>
+        </p>
 
         <CounterpartTable counterparts={initialCounterparts} onUpdate={handleUpdate} />
 
         {totalPages > 1 && (
-          <div className="flex justify-center items-center gap-2 mt-6">
-            <button
-              type="button"
-              onClick={() => handlePageChange(page - 1)}
-              disabled={page <= 1}
-              aria-label="前のページへ"
-              className={`bg-secondary text-secondary-foreground border border-border rounded-lg px-3 py-1.5 text-sm font-medium transition-colors duration-200 ${
-                page <= 1 ? "opacity-50 cursor-not-allowed" : "hover:bg-secondary/80 cursor-pointer"
-              }`}
-            >
-              前へ
-            </button>
-            <span className="text-foreground px-4">
-              {page} / {totalPages}
-            </span>
-            <button
-              type="button"
-              onClick={() => handlePageChange(page + 1)}
-              disabled={page >= totalPages}
-              aria-label="次のページへ"
-              className={`bg-secondary text-secondary-foreground border border-border rounded-lg px-3 py-1.5 text-sm font-medium transition-colors duration-200 ${
-                page >= totalPages
-                  ? "opacity-50 cursor-not-allowed"
-                  : "hover:bg-secondary/80 cursor-pointer"
-              }`}
-            >
-              次へ
-            </button>
-          </div>
+          <StaticPagination
+            currentPage={page}
+            totalPages={totalPages}
+            buildPageUrl={(nextPage) => buildUrl({ q: searchQuery, page: nextPage })}
+          />
         )}
 
         {isCreateDialogOpen && (

@@ -87,9 +87,12 @@ export function CounterpartFormContent({
   const loadingLabel = submitLabel ? `${submitLabel}中...` : defaultLoadingLabel;
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-5">
       {error && (
-        <div className="text-red-500 p-3 bg-red-900/20 rounded-lg border border-red-900/30">
+        <div
+          role="alert"
+          className="rounded-lg border border-destructive bg-destructive-hover p-3 text-sm text-destructive"
+        >
           {error}
         </div>
       )}
@@ -102,9 +105,9 @@ export function CounterpartFormContent({
       />
 
       {/* 目的フィールド: 社名入力 */}
-      <div>
+      <div className="space-y-2">
         <Label htmlFor={nameId}>
-          名前 <span className="text-red-500">*</span>
+          名前 <span className="text-destructive">*</span>
         </Label>
         <Input
           type="text"
@@ -119,7 +122,7 @@ export function CounterpartFormContent({
       </div>
 
       {/* 目的フィールド: 郵便番号入力 */}
-      <div>
+      <div className="space-y-2">
         <Label htmlFor={postalCodeId}>郵便番号</Label>
         <Input
           type="text"
@@ -133,7 +136,7 @@ export function CounterpartFormContent({
       </div>
 
       {/* 目的フィールド: 住所入力 */}
-      <div>
+      <div className="space-y-2">
         <Label htmlFor={addressId}>住所</Label>
         <Input
           type="text"
@@ -147,13 +150,14 @@ export function CounterpartFormContent({
       </div>
 
       {mode === "edit" && initialData?.usageCount !== undefined && (
-        <div className="text-muted-foreground text-sm">
-          使用状況: {initialData.usageCount}件のTransactionで使用中
-        </div>
+        <p className="text-[13px] text-muted-foreground">
+          使用状況: <span className="font-latin">{initialData.usageCount}</span>
+          件の取引で使用中
+        </p>
       )}
 
       {mode === "create" && (
-        <p className="text-muted-foreground text-sm">
+        <p className="text-[13px] text-muted-foreground">
           ※ 同じ名前・住所の組み合わせは登録できません
         </p>
       )}
