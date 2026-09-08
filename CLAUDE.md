@@ -84,6 +84,7 @@ webapp / admin のバックエンド実装に関する詳細なルールは [doc
 ## admin UI コンポーネント
 
 admin で UI コンポーネントを使用する際は [docs/admin-ui-guidelines.md](docs/admin-ui-guidelines.md) を参照すること。
+admin はライトモードのみ（ダークモード非対応）。
 
 ## ループエンジニアリング（AIによる自律実装）
 

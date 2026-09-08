@@ -4,6 +4,7 @@ admin アプリケーションで shadcn UI を使用する際のルールを定
 
 ## 原則
 
+- **admin はライトモードのみ**（ダークモードは提供しない）
 - **shadcn UI コンポーネントを使用する**（カスタム実装は非推奨）
 - **import は index.ts 経由**で行う
 - **CSS 変数と cn() を使う**（直書きスタイル禁止）
@@ -60,25 +61,18 @@ import { cn } from "@/client/lib";
    export { Tooltip, TooltipTrigger, TooltipContent } from "@/client/components/ui/tooltip";
    ```
 
-3. ダークモード対応を確認（後述）
+3. テーマ方針への適合を確認（後述）
 
 利用可能なコンポーネント一覧: https://ui.shadcn.com/docs/components
 
-### ダークモード対応
+### テーマ方針（ライトモードのみ）
 
-admin は **Dark Blue テーマ（ダークモード固定）** を採用している。
-テーマ定義は `admin/src/app/globals.css` の `@theme` ブロックにある。
+admin は **ライトモードのみ** で提供する。ダークモードは提供せず、
+`dark:` バリアントや `prefers-color-scheme` による切り替えは実装しない。
 
-shadcn コンポーネントの `dark:` プレフィックス付きクラスは自動適用されないため、
-コンポーネント追加時は `dark:` の値をデフォルトとして適用する。
-
-```tsx
-// 公式の定義
-"bg-transparent dark:bg-input/30"
-
-// admin での適用（dark: を除去してデフォルトに）
-"bg-input/30"
-```
+- shadcn コンポーネント追加時、公式定義に含まれる `dark:` プレフィックス付きクラスは削除する
+- 色・形状（デザイントークン、コンポーネントの見た目）の正は
+  デザインハンドオフ [docs/reference/design_handoff_admin_redesign/README.md](reference/design_handoff_admin_redesign/README.md) を参照する
 
 ## Toast 通知
 
