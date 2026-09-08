@@ -1,4 +1,5 @@
 import type { PoliticalOrganization } from "@/shared/models/political-organization";
+import { cn } from "@/client/lib";
 import {
   Label,
   Select,
@@ -15,6 +16,8 @@ interface PoliticalOrganizationSelectProps {
   required?: boolean;
   /** ラベルを描画せず aria-label で代替する（ツールバー等でインライン配置する場合） */
   hideLabel?: boolean;
+  /** SelectTrigger に追加するクラス（幅や枠線の太さを配置先に合わせる場合） */
+  className?: string;
 }
 
 export function PoliticalOrganizationSelect({
@@ -23,6 +26,7 @@ export function PoliticalOrganizationSelect({
   onValueChange,
   required,
   hideLabel = false,
+  className,
 }: PoliticalOrganizationSelectProps) {
   const options = organizations.map((org) => ({
     value: org.id,
@@ -35,7 +39,7 @@ export function PoliticalOrganizationSelect({
       <Select value={value} onValueChange={onValueChange} required={required}>
         <SelectTrigger
           aria-label={hideLabel ? "政治団体" : undefined}
-          className={hideLabel ? "border-[1.5px] text-[13px]" : undefined}
+          className={cn(hideLabel && "border-[1.5px] text-[13px]", className)}
         >
           <SelectValue placeholder="政治団体を選択してください" />
         </SelectTrigger>

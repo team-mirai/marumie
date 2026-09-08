@@ -1,245 +1,143 @@
 "use client";
 import "client-only";
 
-import { useEffect, useRef, useState } from "react";
+import { useState, type ReactNode } from "react";
 import type { PreviewMfCsvResult } from "@/server/contexts/data-import/presentation/types";
 import type { PreviewTransaction } from "@/server/contexts/data-import/domain/models/preview-transaction";
-import type { PreviewCsvRequest } from "@/server/contexts/data-import/presentation/actions/preview-csv";
-import TransactionRow from "./TransactionRow";
+import { Button, Table, TableBody, TableHead, TableHeader, TableRow } from "@/client/components/ui";
+import { cn, resolvePreviewStatusBadge } from "@/client/lib";
 import { ClientPagination } from "@/client/components/ui/ClientPagination";
-import StatisticsTable from "./StatisticsTable";
-import { Button } from "@/client/components/ui";
+import TransactionRow from "@/client/components/csv-import/TransactionRow";
+import StatisticsTable from "@/client/components/csv-import/StatisticsTable";
+
+type PreviewStatus = PreviewTransaction["status"];
+type PreviewTab = "all" | PreviewStatus;
+
+const TABS: PreviewTab[] = ["all", "insert", "update", "invalid", "skip"];
+const STATUS_ORDER: Record<PreviewStatus, number> = { insert: 1, update: 2, invalid: 3, skip: 4 };
+const PER_PAGE = 10;
 
 interface CsvPreviewProps {
-  file: File | null;
-  politicalOrganizationId: string;
-  onPreviewComplete?: (result: PreviewMfCsvResult) => void;
-  previewAction: (data: PreviewCsvRequest) => Promise<PreviewMfCsvResult>;
+  result: PreviewMfCsvResult;
+  /** カード右下に置くアクション（保存ボタンなど） */
+  footer?: ReactNode;
 }
 
-export default function CsvPreview({
-  file,
-  politicalOrganizationId,
-  onPreviewComplete,
-  previewAction,
-}: CsvPreviewProps) {
-  const [previewResult, setPreviewResult] = useState<PreviewMfCsvResult | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+function tabLabel(tab: PreviewTab): string {
+  return tab === "all" ? "全件" : resolvePreviewStatusBadge(tab).label;
+}
+
+/**
+ * CSV 取り込みプレビュー（白カード・テーブル罫線ルールは取引一覧と同一）。
+ * プレビューの取得は親（CsvUploadClient）が行い、本コンポーネントは表示のみを担う。
+ */
+export default function CsvPreview({ result, footer }: CsvPreviewProps) {
   const [currentPage, setCurrentPage] = useState(1);
-  const [activeTab, setActiveTab] = useState<"all" | "insert" | "update" | "invalid" | "skip">(
-    "all",
+  const [activeTab, setActiveTab] = useState<PreviewTab>("all");
+
+  const sortedTransactions = [...result.transactions].sort(
+    (a, b) => STATUS_ORDER[a.status] - STATUS_ORDER[b.status],
   );
-  const perPage = 10;
-  const onPreviewCompleteRef = useRef(onPreviewComplete);
-
-  // Always update the ref to the latest callback
-  onPreviewCompleteRef.current = onPreviewComplete;
-
-  useEffect(() => {
-    if (!file || !politicalOrganizationId) {
-      setPreviewResult(null);
-      setError(null);
-      setCurrentPage(1);
-      setActiveTab("all");
-      return;
-    }
-
-    const previewFile = async () => {
-      setLoading(true);
-      setError(null);
-      setCurrentPage(1);
-      setActiveTab("all");
-
-      try {
-        const result = await previewAction({
-          file,
-          politicalOrganizationId,
-        });
-
-        setPreviewResult(result);
-        onPreviewCompleteRef.current?.(result);
-      } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : "CSVのプレビューに失敗しました";
-        setError(errorMessage);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    previewFile();
-  }, [file, politicalOrganizationId, previewAction]);
+  const filteredTransactions =
+    activeTab === "all"
+      ? sortedTransactions
+      : sortedTransactions.filter((transaction) => transaction.status === activeTab);
+  const totalPages = Math.ceil(filteredTransactions.length / PER_PAGE);
+  const startIndex = (currentPage - 1) * PER_PAGE;
+  const currentRecords = filteredTransactions.slice(startIndex, startIndex + PER_PAGE);
 
   const handlePageChange = (page: number) => {
-    if (!previewResult) return;
-    const filteredTransactions = getFilteredTransactions();
-    const totalPages = Math.ceil(filteredTransactions.length / perPage);
     if (page >= 1 && page <= totalPages) {
       setCurrentPage(page);
     }
   };
 
-  const handleTabChange = (tab: "all" | "insert" | "update" | "invalid" | "skip") => {
+  const handleTabChange = (tab: PreviewTab) => {
     setActiveTab(tab);
     setCurrentPage(1);
   };
 
-  const getFilteredTransactions = (): PreviewTransaction[] => {
-    if (!previewResult) return [];
+  const tabCount = (tab: PreviewTab) =>
+    tab === "all"
+      ? result.summary.totalCount
+      : result.transactions.filter((t) => t.status === tab).length;
 
-    const sortedTransactions = getSortedTransactions();
-
-    if (activeTab === "all") {
-      return sortedTransactions;
-    }
-
-    return sortedTransactions.filter((transaction) => transaction.status === activeTab);
-  };
-
-  const getSortedTransactions = (): PreviewTransaction[] => {
-    if (!previewResult) return [];
-
-    const statusOrder = { insert: 1, update: 2, invalid: 3, skip: 4 };
-    return [...previewResult.transactions].sort((a, b) => {
-      const aOrder = statusOrder[a.status] || 4;
-      const bOrder = statusOrder[b.status] || 4;
-      return aOrder - bOrder;
-    });
-  };
-
-  const getCurrentPageRecords = (): PreviewTransaction[] => {
-    const filteredTransactions = getFilteredTransactions();
-    const startIndex = (currentPage - 1) * perPage;
-    const endIndex = startIndex + perPage;
-    return filteredTransactions.slice(startIndex, endIndex);
-  };
-
-  const totalPages = previewResult ? Math.ceil(getFilteredTransactions().length / perPage) : 0;
-
-  if (!file) return null;
-
-  if (loading) {
+  if (result.transactions.length === 0) {
     return (
-      <div className="bg-card rounded-xl p-4 mt-4">
-        <h3 className="text-lg font-medium text-foreground mb-2">CSVプレビュー</h3>
-        <p className="text-muted-foreground">ファイルを処理中...</p>
+      <div className="rounded-lg border border-border bg-card p-6">
+        <h2 className="text-base font-bold text-foreground">取り込みプレビュー</h2>
+        <p className="mt-2 text-sm text-muted-foreground">
+          取り込み対象の取引が見つかりませんでした。
+        </p>
       </div>
     );
   }
-
-  if (error) {
-    return (
-      <div className="bg-card rounded-xl p-4 mt-4">
-        <h3 className="text-lg font-medium text-foreground mb-2">CSVプレビュー</h3>
-        <div className="text-red-500 mt-2">エラー: {error}</div>
-      </div>
-    );
-  }
-
-  if (!previewResult || previewResult.transactions.length === 0) return null;
-
-  const currentRecords = getCurrentPageRecords();
-  const filteredTransactions = getFilteredTransactions();
-
-  const getTabCount = (tab: "all" | "insert" | "update" | "invalid" | "skip") => {
-    if (tab === "all") return previewResult.summary.totalCount;
-    return previewResult.transactions.filter((t) => t.status === tab).length;
-  };
-
-  const getTabLabel = (tab: "insert" | "update" | "invalid" | "skip") => {
-    switch (tab) {
-      case "insert":
-        return "挿入";
-      case "update":
-        return "更新";
-      case "invalid":
-        return "無効";
-      case "skip":
-        return "スキップ";
-    }
-  };
 
   return (
-    <div className="bg-card rounded-xl p-4 mt-4">
-      <h3 className="text-lg font-medium text-foreground mb-4">CSVプレビュー</h3>
+    <div className="rounded-lg border border-border bg-card p-6">
+      <h2 className="text-base font-bold text-foreground">取り込みプレビュー</h2>
 
-      <StatisticsTable statistics={previewResult.statistics} />
-
-      {/* タブフィルター */}
-      <div className="mb-4">
-        <div className="flex gap-2">
-          {[
-            { key: "all" as const, label: "全件", color: "text-foreground" },
-            { key: "insert" as const, label: "挿入", color: "text-green-500" },
-            { key: "update" as const, label: "更新", color: "text-primary-active" },
-            { key: "invalid" as const, label: "無効", color: "text-red-500" },
-            {
-              key: "skip" as const,
-              label: "スキップ",
-              color: "text-yellow-500",
-            },
-          ].map(({ key, label, color }) => (
-            <Button
-              type="button"
-              key={key}
-              variant={activeTab === key ? "outline" : "ghost"}
-              size="sm"
-              onClick={() => handleTabChange(key)}
-              className={activeTab === key ? `${color} border-white bg-white/10` : ""}
-            >
-              {label} ({getTabCount(key)})
-            </Button>
-          ))}
-        </div>
+      <div className="mt-4">
+        <StatisticsTable statistics={result.statistics} />
       </div>
 
-      <div className="mb-4">
-        <p className="text-muted-foreground">
-          {activeTab === "all" ? "全" : getTabLabel(activeTab)} {filteredTransactions.length} 件中{" "}
-          {filteredTransactions.length > 0 ? (currentPage - 1) * perPage + 1 : 0} -{" "}
-          {Math.min(currentPage * perPage, filteredTransactions.length)} 件を表示
+      <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap gap-2" role="tablist" aria-label="取り込み状態で絞り込み">
+          {TABS.map((tab) => {
+            const isActive = activeTab === tab;
+            return (
+              <Button
+                type="button"
+                key={tab}
+                role="tab"
+                aria-selected={isActive}
+                variant="outline"
+                size="sm"
+                onClick={() => handleTabChange(tab)}
+                className={cn(
+                  "text-xs",
+                  isActive && "border-primary-active bg-accent text-primary-active hover:bg-accent",
+                )}
+              >
+                {tabLabel(tab)}
+                <span className="font-latin">({tabCount(tab)})</span>
+              </Button>
+            );
+          })}
+        </div>
+        <p className="text-[13px] text-muted-foreground">
+          {activeTab === "all" ? "全" : tabLabel(activeTab)} {filteredTransactions.length} 件中{" "}
+          {filteredTransactions.length > 0 ? startIndex + 1 : 0} -{" "}
+          {Math.min(startIndex + PER_PAGE, filteredTransactions.length)} 件を表示
         </p>
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="w-full border-collapse">
-          <thead>
-            <tr className="border-b border-border">
-              <th className="px-2 py-3 text-left text-sm font-semibold text-foreground">状態</th>
-              <th className="px-2 py-3 text-left text-sm font-semibold text-foreground">取引日</th>
-              <th className="px-2 py-3 text-left text-sm font-semibold text-foreground">
-                借方勘定科目
-              </th>
-              <th className="px-2 py-3 text-right text-sm font-semibold text-foreground">
-                借方金額
-              </th>
-              <th className="px-2 py-3 text-left text-sm font-semibold text-foreground">
-                貸方勘定科目
-              </th>
-              <th className="px-2 py-3 text-right text-sm font-semibold text-foreground">
-                貸方金額
-              </th>
-              <th className="px-2 py-3 text-left text-sm font-semibold text-foreground">種別</th>
-              <th className="px-2 py-3 text-left text-sm font-semibold text-foreground">
-                カテゴリ
-              </th>
-              <th className="px-2 py-3 text-left text-sm font-semibold text-foreground">
-                摘要 <span className="text-xs font-normal">※サービスには表示されません</span>
-              </th>
-            </tr>
-          </thead>
-          <tbody>
+      <div className="mt-4">
+        <Table>
+          <TableHeader>
+            <TableRow className="hover:bg-transparent">
+              <TableHead>状態</TableHead>
+              <TableHead>取引日</TableHead>
+              <TableHead>借方勘定科目</TableHead>
+              <TableHead className="text-right">借方金額</TableHead>
+              <TableHead>貸方勘定科目</TableHead>
+              <TableHead className="text-right">貸方金額</TableHead>
+              <TableHead>種別</TableHead>
+              <TableHead>カテゴリ</TableHead>
+              <TableHead>
+                摘要{" "}
+                <span className="font-normal text-muted-foreground">
+                  ※サービスには表示されません
+                </span>
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {currentRecords.map((record, index) => (
-              <TransactionRow
-                key={`${(currentPage - 1) * perPage + index}-${record.transaction_date}-${record.debit_account}-${record.credit_account}-${record.debit_amount || 0}`}
-                record={record}
-                index={index}
-                currentPage={currentPage}
-                perPage={perPage}
-              />
+              <TransactionRow key={`${record.hash}-${startIndex + index}`} record={record} />
             ))}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
 
       <ClientPagination
@@ -247,6 +145,8 @@ export default function CsvPreview({
         totalPages={totalPages}
         onPageChange={handlePageChange}
       />
+
+      {footer && <div className="mt-6 flex justify-end">{footer}</div>}
     </div>
   );
 }

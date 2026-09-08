@@ -2,147 +2,79 @@
 import "client-only";
 
 import type { PreviewTransaction } from "@/server/contexts/data-import/domain/models/preview-transaction";
+import { TableCell, TableRow } from "@/client/components/ui";
+import { cn, formatAmount, formatDate, resolvePreviewStatusBadge } from "@/client/lib";
 import { CategoryPill } from "@/client/components/transactions/CategoryPill";
+import { TransactionTypeBadge } from "@/client/components/transactions/TransactionTypeBadge";
 
 interface TransactionRowProps {
   record: PreviewTransaction;
-  index: number;
-  currentPage: number;
-  perPage: number;
 }
 
-function getTypeLabel(type: string): string {
-  switch (type) {
-    case "income":
-      return "現金収入";
-    case "expense":
-      return "現金支出";
-    case "non_cash_journal":
-      return "非現金仕訳";
-    case "offset_income":
-      return "相殺収入";
-    case "offset_expense":
-      return "相殺支出";
-    case "invalid":
-      return "無効";
-    default:
-      return "不明";
-  }
-}
+/** 取り込みプレビューの 1 行。種別バッジ・カテゴリピル・日付・金額の見た目は取引一覧と同一。 */
+export default function TransactionRow({ record }: TransactionRowProps) {
+  const status = resolvePreviewStatusBadge(record.status);
 
-function getTypeBadgeClass(type: string): string {
-  switch (type) {
-    case "income":
-    case "offset_income":
-      return "bg-green-600";
-    case "expense":
-    case "offset_expense":
-      return "bg-red-600";
-    case "non_cash_journal":
-      return "bg-gray-500";
-    case "invalid":
-      return "bg-orange-600";
-    default:
-      return "bg-gray-600";
-  }
-}
-
-function getStatusBgClass(status: PreviewTransaction["status"]) {
-  switch (status) {
-    case "insert":
-      return "bg-green-600";
-    case "update":
-      return "bg-gray-500";
-    case "invalid":
-      return "bg-red-600";
-    case "skip":
-      return "bg-yellow-600";
-    default:
-      return "bg-gray-600";
-  }
-}
-
-function getStatusText(status: PreviewTransaction["status"]) {
-  switch (status) {
-    case "insert":
-      return "挿入";
-    case "update":
-      return "更新";
-    case "invalid":
-      return "無効";
-    case "skip":
-      return "スキップ";
-    default:
-      return "不明";
-  }
-}
-
-export default function TransactionRow({
-  record,
-  index,
-  currentPage,
-  perPage,
-}: TransactionRowProps) {
   return (
-    <tr
-      key={`${(currentPage - 1) * perPage + index}-${record.transaction_date}-${record.debit_account}-${record.credit_account}-${record.debit_amount || 0}`}
-      className="border-b border-border"
-    >
-      <td className="px-2 py-3 text-sm">
+    <TableRow>
+      <TableCell className="whitespace-normal align-top">
         <span
-          className={`px-2 py-1 rounded text-white text-xs font-semibold ${getStatusBgClass(record.status)}`}
+          className={cn(
+            "inline-block rounded-full border-[1.5px] px-3 py-[3px] text-[11px] font-bold leading-none tracking-[0.04em] whitespace-nowrap",
+            status.className,
+          )}
         >
-          {getStatusText(record.status)}
+          {status.label}
         </span>
         {record.errors.length > 0 && (
-          <div
-            className={`text-xs mt-1 ${
-              record.status === "skip" ? "text-yellow-500" : "text-red-500"
-            }`}
-          >
+          <div className={cn("mt-1.5 max-w-[240px] text-xs", status.messageClassName)}>
             {record.errors.map((error, errorIndex) => (
               <div key={`error-${errorIndex}-${error}`}>{error}</div>
             ))}
           </div>
         )}
-      </td>
-      <td className="px-2 py-3 text-sm text-foreground">
-        {new Date(record.transaction_date).toLocaleDateString("ja-JP")}
-      </td>
-      <td className="px-2 py-3 text-sm text-foreground">
+      </TableCell>
+      <TableCell className="font-latin text-[13px]">
+        {formatDate(record.transaction_date)}
+      </TableCell>
+      <TableCell className="text-[13px]">
         {record.debit_account}
         {record.debit_sub_account && (
-          <div className="text-muted-foreground text-xs">{record.debit_sub_account}</div>
+          <div className="text-xs text-muted-foreground">{record.debit_sub_account}</div>
         )}
-      </td>
-      <td className="px-2 py-3 text-sm text-right text-foreground">
-        {record.debit_amount ? `¥${record.debit_amount.toLocaleString()}` : "-"}
-      </td>
-      <td className="px-2 py-3 text-sm text-foreground">
+      </TableCell>
+      <TableCell className="font-latin text-right text-[13px] font-semibold">
+        {record.debit_amount ? formatAmount(record.debit_amount) : "-"}
+      </TableCell>
+      <TableCell className="text-[13px]">
         {record.credit_account}
         {record.credit_sub_account && (
-          <div className="text-muted-foreground text-xs">{record.credit_sub_account}</div>
+          <div className="text-xs text-muted-foreground">{record.credit_sub_account}</div>
         )}
-      </td>
-      <td className="px-2 py-3 text-sm text-right text-foreground">
-        {record.credit_amount ? `¥${record.credit_amount.toLocaleString()}` : "-"}
-      </td>
-      <td className="px-2 py-3 text-sm text-foreground">
-        <span
-          className={`px-2 py-1 rounded text-white text-xs font-medium ${getTypeBadgeClass(record.transaction_type || "unknown")}`}
-        >
-          {getTypeLabel(record.transaction_type || "unknown")}
-        </span>
-      </td>
-      <td className="px-2 py-3 text-sm text-foreground">
+      </TableCell>
+      <TableCell className="font-latin text-right text-[13px] font-semibold">
+        {record.credit_amount ? formatAmount(record.credit_amount) : "-"}
+      </TableCell>
+      <TableCell>
+        {record.transaction_type ? (
+          <TransactionTypeBadge type={record.transaction_type} />
+        ) : (
+          <span className="text-xs text-muted-foreground">-</span>
+        )}
+      </TableCell>
+      <TableCell>
         <CategoryPill transaction={record} />
-      </td>
-      <td className="px-2 py-3 text-sm text-foreground">
-        {record.description || "-"}
+      </TableCell>
+      <TableCell className="max-w-[200px] text-xs text-muted-foreground">
+        <div className="truncate" title={record.description || undefined}>
+          {record.description || "-"}
+        </div>
         {record.label && (
-          <div className="text-muted-foreground text-xs mt-1">ラベル: {record.label}</div>
+          <div className="mt-1 truncate" title={record.label}>
+            ラベル: {record.label}
+          </div>
         )}
-      </td>
-    </tr>
+      </TableCell>
+    </TableRow>
   );
 }
