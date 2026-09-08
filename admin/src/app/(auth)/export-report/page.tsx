@@ -11,8 +11,8 @@ export default async function ExportReportPage() {
     return (
       <div>
         <PageHeader label="Report Export" title="報告書エクスポート" />
-        <div className="bg-card rounded-xl p-4">
-          <p className="text-muted-foreground">
+        <div className="rounded-lg border border-border bg-card p-6">
+          <p className="text-sm text-muted-foreground">
             政治団体が登録されていません。先に政治団体を作成してください。
           </p>
         </div>

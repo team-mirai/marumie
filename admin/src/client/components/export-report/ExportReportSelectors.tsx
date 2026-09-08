@@ -4,8 +4,6 @@ import "client-only";
 import { useRouter } from "next/navigation";
 import type { PoliticalOrganization } from "@/shared/models/political-organization";
 import {
-  Card,
-  Label,
   Select,
   SelectContent,
   SelectItem,
@@ -38,35 +36,29 @@ export function ExportReportSelectors({
   }
 
   return (
-    <Card className="p-4">
-      <div className="flex flex-col md:flex-row md:items-end gap-4">
-        <div className="w-fit">
-          <PoliticalOrganizationSelect
-            organizations={organizations}
-            value={selectedOrgId}
-            onValueChange={handleOrganizationChange}
-            required
-          />
-        </div>
-        <div className="w-fit space-y-2">
-          <Label>報告年 (西暦)</Label>
-          <Select
-            value={selectedYear.toString()}
-            onValueChange={(v) => handleYearChange(Number.parseInt(v, 10))}
-          >
-            <SelectTrigger className="w-32">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {Array.from({ length: 10 }, (_, i) => currentYear - i).map((y) => (
-                <SelectItem key={y} value={y.toString()}>
-                  {y}年
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-    </Card>
+    <div className="flex flex-wrap items-center gap-3">
+      <PoliticalOrganizationSelect
+        organizations={organizations}
+        value={selectedOrgId}
+        onValueChange={handleOrganizationChange}
+        required
+        hideLabel
+      />
+      <Select
+        value={selectedYear.toString()}
+        onValueChange={(v) => handleYearChange(Number.parseInt(v, 10))}
+      >
+        <SelectTrigger aria-label="報告年 (西暦)" className="border-[1.5px] text-[13px]">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {Array.from({ length: 10 }, (_, i) => currentYear - i).map((y) => (
+            <SelectItem key={y} value={y.toString()}>
+              <span className="font-latin">{y}</span>年
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
   );
 }
