@@ -18,14 +18,12 @@ export default async function UsersPage() {
   return (
     <div>
       <PageHeader label="Users" title="ユーザー管理" />
-      <div className="bg-card rounded-xl p-4">
-        <UserManagement
-          users={users}
-          availableRoles={["user", "admin"]}
-          updateUserRoleAction={updateUserRole}
-          inviteUserAction={inviteUser}
-        />
-      </div>
+      <UserManagement
+        users={users}
+        availableRoles={["user", "admin"]}
+        updateUserRoleAction={updateUserRole}
+        inviteUserAction={inviteUser}
+      />
     </div>
   );
 }

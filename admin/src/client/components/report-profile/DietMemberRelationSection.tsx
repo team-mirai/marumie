@@ -1,6 +1,7 @@
 "use client";
 import "client-only";
 
+import { Plus } from "@phosphor-icons/react/dist/ssr";
 import type {
   DietMember,
   DietMemberPeriod,
@@ -15,6 +16,7 @@ import {
   Label,
   Input,
   Checkbox,
+  NativeSelect,
 } from "@/client/components/ui";
 
 interface DietMemberRelationSectionProps {
@@ -135,41 +137,48 @@ export function DietMemberRelationSection({
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label>団体区分</Label>
-            <select
+            <NativeSelect
               value={dietMemberRelation.type}
               onChange={(e) =>
                 updateDietMemberRelation({
                   type: e.target.value as "0" | "1" | "2" | "3",
                 })
               }
-              className="flex h-9 w-full rounded-md border border-border bg-input px-3 py-1 text-base shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm max-w-md"
+              wrapperClassName="w-full max-w-md"
             >
               <option value="1">1号団体</option>
               <option value="2">2号団体</option>
               <option value="3">両方</option>
-            </select>
+            </NativeSelect>
           </div>
 
           <div>
             <div className="flex justify-between items-center mb-2">
               <h3 className="text-md font-medium text-foreground">関係する国会議員（最大3名）</h3>
               {(dietMemberRelation.members?.length ?? 0) < 3 && (
-                <Button type="button" variant="ghost" size="sm" onClick={addMember}>
-                  + 追加
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="text-xs"
+                  onClick={addMember}
+                >
+                  <Plus />
+                  追加
                 </Button>
               )}
             </div>
             <div className="space-y-3">
               {(dietMemberRelation.members ?? []).map((member, index) => (
-                <div key={member.id} className="bg-card rounded-lg p-3 border border-border">
+                <div key={member.id} className="rounded-lg border border-border-soft bg-card p-3">
                   <div className="flex justify-between items-center mb-2">
                     <span className="text-sm text-muted-foreground">議員 {index + 1}</span>
                     <Button
                       type="button"
-                      variant="ghost"
+                      variant="destructive"
                       size="sm"
                       onClick={() => removeMember(index)}
-                      className="text-destructive hover:text-destructive"
+                      className="text-xs"
                     >
                       削除
                     </Button>
@@ -197,35 +206,35 @@ export function DietMemberRelationSection({
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-2">
                       <Label className="text-muted-foreground">院</Label>
-                      <select
+                      <NativeSelect
                         value={member.chamber}
                         onChange={(e) =>
                           updateMember(index, {
                             chamber: e.target.value as "1" | "2",
                           })
                         }
-                        className="flex h-9 w-full rounded-md border border-border bg-input px-3 py-1 text-base shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
+                        wrapperClassName="w-full"
                       >
                         <option value="1">衆議院議員</option>
                         <option value="2">参議院議員</option>
-                      </select>
+                      </NativeSelect>
                     </div>
                     <div className="space-y-2">
                       <Label className="text-muted-foreground">種別</Label>
-                      <select
+                      <NativeSelect
                         value={member.positionType}
                         onChange={(e) =>
                           updateMember(index, {
                             positionType: e.target.value as "1" | "2" | "3" | "4",
                           })
                         }
-                        className="flex h-9 w-full rounded-md border border-border bg-input px-3 py-1 text-base shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
+                        wrapperClassName="w-full"
                       >
                         <option value="1">現職</option>
                         <option value="2">候補者</option>
                         <option value="3">候補者となろうとする者</option>
                         <option value="4">候補者等</option>
-                      </select>
+                      </NativeSelect>
                     </div>
                   </div>
                 </div>
@@ -237,8 +246,15 @@ export function DietMemberRelationSection({
             <div className="flex justify-between items-center mb-2">
               <h3 className="text-md font-medium text-foreground">指定期間（最大3件）</h3>
               {(dietMemberRelation.periods?.length ?? 0) < 3 && (
-                <Button type="button" variant="ghost" size="sm" onClick={addPeriod}>
-                  + 追加
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="text-xs"
+                  onClick={addPeriod}
+                >
+                  <Plus />
+                  追加
                 </Button>
               )}
             </div>
@@ -264,10 +280,10 @@ export function DietMemberRelationSection({
                   />
                   <Button
                     type="button"
-                    variant="ghost"
+                    variant="destructive"
                     size="sm"
                     onClick={() => removePeriod(index)}
-                    className="text-destructive hover:text-destructive"
+                    className="text-xs"
                   >
                     削除
                   </Button>

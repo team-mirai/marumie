@@ -88,13 +88,13 @@ export function ReportProfileForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       {error && (
-        <div className="text-destructive p-3 bg-destructive/10 rounded-lg border border-destructive/30">
+        <div className="rounded-lg border border-destructive bg-destructive-hover p-3 text-sm text-destructive">
           {error}
         </div>
       )}
 
       {success && (
-        <div className="text-green-500 p-3 bg-green-900/20 rounded-lg border border-green-900/30">
+        <div className="rounded-lg border border-primary-active bg-accent p-3 text-sm text-accent-foreground">
           保存しました
         </div>
       )}

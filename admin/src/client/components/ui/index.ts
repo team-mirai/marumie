@@ -32,6 +32,7 @@ export {
   TableRow,
   TableCell,
 } from "@/client/components/ui/table";
+export { NativeSelect } from "@/client/components/ui/native-select";
 export { Textarea } from "@/client/components/ui/textarea";
 export { Checkbox } from "@/client/components/ui/checkbox";
 export {

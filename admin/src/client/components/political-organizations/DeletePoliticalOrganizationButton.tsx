@@ -45,6 +45,7 @@ export function DeletePoliticalOrganizationButton({
       type="button"
       variant="destructive"
       size="sm"
+      className="text-xs"
       onClick={handleDelete}
       disabled={deleting}
     >

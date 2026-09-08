@@ -1,6 +1,7 @@
 "use client";
 import "client-only";
 
+import { Plus } from "@phosphor-icons/react/dist/ssr";
 import type {
   FundManagement,
   FundManagementPeriod,
@@ -14,6 +15,7 @@ import {
   Label,
   Input,
   Checkbox,
+  NativeSelect,
 } from "@/client/components/ui";
 
 interface FundManagementSectionProps {
@@ -113,21 +115,21 @@ export function FundManagementSection({ details, updateDetails }: FundManagement
 
           <div className="space-y-2">
             <Label>公職の種別</Label>
-            <select
+            <NativeSelect
               value={fundManagement.publicPositionType ?? ""}
               onChange={(e) =>
                 updateFundManagement({
                   publicPositionType: e.target.value as "1" | "2" | "3" | "4" | undefined,
                 })
               }
-              className="flex h-9 w-full rounded-md border border-border bg-input px-3 py-1 text-base shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm max-w-md"
+              wrapperClassName="w-full max-w-md"
             >
               <option value="">選択してください</option>
               <option value="1">現職</option>
               <option value="2">候補者</option>
               <option value="3">候補者となろうとする者</option>
               <option value="4">候補者等</option>
-            </select>
+            </NativeSelect>
           </div>
 
           <div>
@@ -174,8 +176,15 @@ export function FundManagementSection({ details, updateDetails }: FundManagement
             <div className="flex justify-between items-center mb-2">
               <h3 className="text-md font-medium text-foreground">指定期間（最大3件）</h3>
               {(fundManagement.periods?.length ?? 0) < 3 && (
-                <Button type="button" variant="ghost" size="sm" onClick={addPeriod}>
-                  + 追加
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="text-xs"
+                  onClick={addPeriod}
+                >
+                  <Plus />
+                  追加
                 </Button>
               )}
             </div>
@@ -201,10 +210,10 @@ export function FundManagementSection({ details, updateDetails }: FundManagement
                   />
                   <Button
                     type="button"
-                    variant="ghost"
+                    variant="destructive"
                     size="sm"
                     onClick={() => removePeriod(index)}
-                    className="text-destructive hover:text-destructive"
+                    className="text-xs"
                   >
                     削除
                   </Button>

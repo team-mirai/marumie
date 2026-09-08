@@ -1,9 +1,11 @@
 import "server-only";
 
 import Link from "next/link";
+import { Plus } from "@phosphor-icons/react/dist/ssr";
 import { loadPoliticalOrganizationsData } from "@/server/contexts/shared/presentation/loaders/load-political-organizations-data";
-import { DeletePoliticalOrganizationButton } from "@/client/components/political-organizations/DeletePoliticalOrganizationButton";
+import { PoliticalOrganizationCard } from "@/client/components/political-organizations/PoliticalOrganizationCard";
 import { PageHeader } from "@/client/components/layout/PageHeader";
+import { Button } from "@/client/components/ui";
 
 export default async function PoliticalOrganizationsPage() {
   const organizations = await loadPoliticalOrganizationsData();
@@ -14,62 +16,32 @@ export default async function PoliticalOrganizationsPage() {
         label="Organizations"
         title="政治団体一覧"
         actions={
-          <Link
-            href="/political-organizations/new"
-            className="bg-primary text-primary-foreground border-0 rounded-lg px-4 py-2.5 font-medium no-underline hover:bg-primary-hover transition-colors duration-200"
-          >
-            新規作成
-          </Link>
+          <Button className="text-[13px] tracking-[0.06em]" asChild>
+            <Link href="/political-organizations/new">
+              <Plus />
+              新規作成
+            </Link>
+          </Button>
         }
       />
 
-      <div className="bg-card rounded-xl p-4">
-        {organizations.length === 0 && (
-          <div className="text-center py-10">
-            <p className="text-muted-foreground">政治団体が登録されていません</p>
-            <Link
-              href="/political-organizations/new"
-              className="bg-primary text-primary-foreground border-0 rounded-lg px-4 py-2.5 font-medium no-underline hover:bg-primary-hover transition-colors duration-200 mt-4 inline-block"
-            >
+      {organizations.length === 0 ? (
+        <div className="rounded-lg border border-border bg-card px-6 py-10 text-center">
+          <p className="text-sm text-muted-foreground">政治団体が登録されていません</p>
+          <Button className="mt-4" asChild>
+            <Link href="/political-organizations/new">
+              <Plus />
               最初の政治団体を作成
             </Link>
-          </div>
-        )}
-
-        {organizations.length > 0 && (
-          <div className="mt-5">
-            <div className="grid gap-4">
-              {organizations.map((org) => (
-                <div key={org.id} className="bg-card rounded-lg p-6 border border-border">
-                  <div className="flex justify-between items-start gap-4">
-                    <div className="flex-1 space-y-3">
-                      <h3 className="text-lg font-medium text-foreground">{org.displayName}</h3>
-                      {org.description && (
-                        <p className="text-muted-foreground">{org.description}</p>
-                      )}
-                      <div className="text-muted-foreground text-sm">
-                        作成日: {new Date(org.createdAt).toLocaleDateString("ja-JP")}
-                      </div>
-                    </div>
-                    <div className="flex gap-2">
-                      <Link
-                        href={`/political-organizations/${org.id}`}
-                        className="bg-secondary text-secondary-foreground no-underline text-sm px-4 py-2 rounded-lg hover:bg-secondary/80 transition-colors duration-200"
-                      >
-                        編集
-                      </Link>
-                      <DeletePoliticalOrganizationButton
-                        orgId={BigInt(org.id)}
-                        orgName={org.displayName}
-                      />
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
+          </Button>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-4">
+          {organizations.map((org) => (
+            <PoliticalOrganizationCard key={org.id} organization={org} />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
