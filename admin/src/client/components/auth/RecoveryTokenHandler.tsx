@@ -1,7 +1,7 @@
 "use client";
 import "client-only";
 import { useEffect, useState } from "react";
-import { Card, CardHeader, CardTitle, CardDescription } from "@/client/components/ui";
+import { ProcessingNotice } from "@/client/components/auth/ProcessingNotice";
 import { completeRecoverySession } from "@/server/contexts/auth/presentation/actions/complete-recovery-session";
 
 export default function RecoveryTokenHandler() {
@@ -43,11 +43,6 @@ export default function RecoveryTokenHandler() {
   if (!processing) return null;
 
   return (
-    <Card className="mt-4">
-      <CardHeader>
-        <CardTitle>パスワードリセット処理中...</CardTitle>
-        <CardDescription>しばらくお待ちください。</CardDescription>
-      </CardHeader>
-    </Card>
+    <ProcessingNotice title="パスワードリセット処理中..." description="しばらくお待ちください。" />
   );
 }

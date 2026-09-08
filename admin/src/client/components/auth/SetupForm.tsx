@@ -2,16 +2,7 @@
 import "client-only";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  Button,
-  Input,
-  Card,
-  CardHeader,
-  CardTitle,
-  CardContent,
-  CardDescription,
-  Label,
-} from "@/client/components/ui";
+import { Button, Input, Label } from "@/client/components/ui";
 
 interface SetupFormProps {
   userEmail: string;
@@ -20,6 +11,10 @@ interface SetupFormProps {
   ) => Promise<{ ok: boolean; error?: string; redirectTo?: string }>;
 }
 
+/**
+ * パスワード設定フォーム（初期セットアップ・パスワード再設定で共用）。
+ * カード・見出しは呼び出し側の PublicAuthCard が持ち、ここはフォーム本体のみを描く。
+ */
 export default function SetupForm({ userEmail, setupPasswordAction }: SetupFormProps) {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -63,47 +58,45 @@ export default function SetupForm({ userEmail, setupPasswordAction }: SetupFormP
   };
 
   return (
-    <Card className="w-full max-w-md">
-      <CardHeader>
-        <CardTitle className="text-2xl">アカウント設定</CardTitle>
-        <CardDescription>
-          アカウント設定中: <strong>{userEmail}</strong>
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form className="space-y-6" onSubmit={handleSubmit}>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="password">パスワード</Label>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                placeholder="パスワードを入力"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="confirmPassword">パスワード（確認）</Label>
-              <Input
-                id="confirmPassword"
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
-                placeholder="パスワードを再入力"
-              />
-            </div>
-          </div>
+    <form className="grid gap-4" onSubmit={handleSubmit}>
+      <p className="text-[13px] text-muted-foreground">
+        対象アカウント:{" "}
+        <span className="font-latin font-semibold text-foreground">{userEmail}</span>
+      </p>
+      <div className="space-y-2">
+        <Label htmlFor="password">パスワード</Label>
+        <Input
+          id="password"
+          type="password"
+          autoComplete="new-password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+          placeholder="パスワードを入力"
+        />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="confirmPassword">パスワード（確認）</Label>
+        <Input
+          id="confirmPassword"
+          type="password"
+          autoComplete="new-password"
+          value={confirmPassword}
+          onChange={(e) => setConfirmPassword(e.target.value)}
+          required
+          placeholder="パスワードを再入力"
+        />
+      </div>
 
-          {error && <div className="text-destructive text-sm text-center">{error}</div>}
+      {error && (
+        <p role="alert" className="text-center text-sm text-destructive">
+          {error}
+        </p>
+      )}
 
-          <Button type="submit" disabled={isLoading} className="w-full">
-            {isLoading ? "設定中..." : "設定完了"}
-          </Button>
-        </form>
-      </CardContent>
-    </Card>
+      <Button type="submit" disabled={isLoading} className="mt-2 w-full">
+        {isLoading ? "設定中..." : "設定完了"}
+      </Button>
+    </form>
   );
 }

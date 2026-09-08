@@ -19,7 +19,7 @@ export default async function LoginPage({
   const { showPasswordLogin, showGoogleLogin } = await loadLoginProviders();
 
   return (
-    <div className="h-full flex items-center justify-center">
+    <>
       {error && <ToastNotifier type="error" message={error} />}
       <LoginForm
         action={loginWithPassword}
@@ -32,6 +32,6 @@ export default async function LoginPage({
       <InviteTokenHandler />
       <RecoveryTokenHandler />
       <RecoveryCodeHandler />
-    </div>
+    </>
   );
 }
