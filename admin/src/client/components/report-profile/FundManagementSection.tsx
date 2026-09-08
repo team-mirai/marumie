@@ -120,7 +120,7 @@ export function FundManagementSection({ details, updateDetails }: FundManagement
                   publicPositionType: e.target.value as "1" | "2" | "3" | "4" | undefined,
                 })
               }
-              className="flex h-9 w-full rounded-md border border-input bg-input px-3 py-1 text-base shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm max-w-md"
+              className="flex h-9 w-full rounded-md border border-border bg-input px-3 py-1 text-base shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm max-w-md"
             >
               <option value="">選択してください</option>
               <option value="1">現職</option>

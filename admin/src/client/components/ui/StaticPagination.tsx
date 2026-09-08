@@ -27,8 +27,8 @@ export function StaticPagination({ currentPage, totalPages, basePath }: StaticPa
           href={generatePageUrl(page)}
           className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
             page === currentPage
-              ? "bg-primary text-white"
-              : "text-muted-foreground hover:bg-secondary hover:text-white"
+              ? "bg-primary text-primary-foreground"
+              : "text-muted-foreground hover:bg-accent hover:text-foreground"
           }`}
         >
           {page}
@@ -83,7 +83,7 @@ export function StaticPagination({ currentPage, totalPages, basePath }: StaticPa
       {currentPage > 1 && (
         <Link
           href={generatePageUrl(currentPage - 1)}
-          className="px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-secondary hover:text-white rounded-md transition-colors"
+          className="px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground rounded-md transition-colors"
         >
           ← 前
         </Link>
@@ -94,7 +94,7 @@ export function StaticPagination({ currentPage, totalPages, basePath }: StaticPa
       {currentPage < totalPages && (
         <Link
           href={generatePageUrl(currentPage + 1)}
-          className="px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-secondary hover:text-white rounded-md transition-colors"
+          className="px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground rounded-md transition-colors"
         >
           次 →
         </Link>

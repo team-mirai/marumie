@@ -121,7 +121,7 @@ export default function CsvPreview({
   if (loading) {
     return (
       <div className="bg-card rounded-xl p-4 mt-4">
-        <h3 className="text-lg font-medium text-white mb-2">CSVプレビュー</h3>
+        <h3 className="text-lg font-medium text-foreground mb-2">CSVプレビュー</h3>
         <p className="text-muted-foreground">ファイルを処理中...</p>
       </div>
     );
@@ -130,7 +130,7 @@ export default function CsvPreview({
   if (error) {
     return (
       <div className="bg-card rounded-xl p-4 mt-4">
-        <h3 className="text-lg font-medium text-white mb-2">CSVプレビュー</h3>
+        <h3 className="text-lg font-medium text-foreground mb-2">CSVプレビュー</h3>
         <div className="text-red-500 mt-2">エラー: {error}</div>
       </div>
     );
@@ -161,7 +161,7 @@ export default function CsvPreview({
 
   return (
     <div className="bg-card rounded-xl p-4 mt-4">
-      <h3 className="text-lg font-medium text-white mb-4">CSVプレビュー</h3>
+      <h3 className="text-lg font-medium text-foreground mb-4">CSVプレビュー</h3>
 
       <StatisticsTable statistics={previewResult.statistics} />
 
@@ -169,9 +169,9 @@ export default function CsvPreview({
       <div className="mb-4">
         <div className="flex gap-2">
           {[
-            { key: "all" as const, label: "全件", color: "text-white" },
+            { key: "all" as const, label: "全件", color: "text-foreground" },
             { key: "insert" as const, label: "挿入", color: "text-green-500" },
-            { key: "update" as const, label: "更新", color: "text-blue-500" },
+            { key: "update" as const, label: "更新", color: "text-primary-active" },
             { key: "invalid" as const, label: "無効", color: "text-red-500" },
             {
               key: "skip" as const,
@@ -205,15 +205,25 @@ export default function CsvPreview({
         <table className="w-full border-collapse">
           <thead>
             <tr className="border-b border-border">
-              <th className="px-2 py-3 text-left text-sm font-semibold text-white">状態</th>
-              <th className="px-2 py-3 text-left text-sm font-semibold text-white">取引日</th>
-              <th className="px-2 py-3 text-left text-sm font-semibold text-white">借方勘定科目</th>
-              <th className="px-2 py-3 text-right text-sm font-semibold text-white">借方金額</th>
-              <th className="px-2 py-3 text-left text-sm font-semibold text-white">貸方勘定科目</th>
-              <th className="px-2 py-3 text-right text-sm font-semibold text-white">貸方金額</th>
-              <th className="px-2 py-3 text-left text-sm font-semibold text-white">種別</th>
-              <th className="px-2 py-3 text-left text-sm font-semibold text-white">カテゴリ</th>
-              <th className="px-2 py-3 text-left text-sm font-semibold text-white">
+              <th className="px-2 py-3 text-left text-sm font-semibold text-foreground">状態</th>
+              <th className="px-2 py-3 text-left text-sm font-semibold text-foreground">取引日</th>
+              <th className="px-2 py-3 text-left text-sm font-semibold text-foreground">
+                借方勘定科目
+              </th>
+              <th className="px-2 py-3 text-right text-sm font-semibold text-foreground">
+                借方金額
+              </th>
+              <th className="px-2 py-3 text-left text-sm font-semibold text-foreground">
+                貸方勘定科目
+              </th>
+              <th className="px-2 py-3 text-right text-sm font-semibold text-foreground">
+                貸方金額
+              </th>
+              <th className="px-2 py-3 text-left text-sm font-semibold text-foreground">種別</th>
+              <th className="px-2 py-3 text-left text-sm font-semibold text-foreground">
+                カテゴリ
+              </th>
+              <th className="px-2 py-3 text-left text-sm font-semibold text-foreground">
                 摘要 <span className="text-xs font-normal">※サービスには表示されません</span>
               </th>
             </tr>

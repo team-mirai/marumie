@@ -38,38 +38,38 @@ export default function DonorCsvRow({ row }: DonorCsvRowProps) {
           {statusStyle.label}
         </span>
       </td>
-      <td className="px-2 py-3 text-sm text-white">{row.transactionNo || "-"}</td>
-      <td className="px-2 py-3 text-sm text-white">{row.name || "-"}</td>
-      <td className="px-2 py-3 text-sm text-white">
+      <td className="px-2 py-3 text-sm text-foreground">{row.transactionNo || "-"}</td>
+      <td className="px-2 py-3 text-sm text-foreground">{row.name || "-"}</td>
+      <td className="px-2 py-3 text-sm text-foreground">
         {row.donorType ? DONOR_TYPE_LABELS[row.donorType] : "-"}
       </td>
-      <td className="px-2 py-3 text-sm text-white">{row.address || "-"}</td>
-      <td className="px-2 py-3 text-sm text-white">{row.occupation || "-"}</td>
-      <td className="px-2 py-3 text-sm text-white">
+      <td className="px-2 py-3 text-sm text-foreground">{row.address || "-"}</td>
+      <td className="px-2 py-3 text-sm text-foreground">{row.occupation || "-"}</td>
+      <td className="px-2 py-3 text-sm text-foreground">
         {formatDate(row.transaction?.transactionDate)}
       </td>
-      <td className="px-2 py-3 text-sm text-white">
+      <td className="px-2 py-3 text-sm text-foreground">
         {row.transaction?.friendlyCategory || row.transaction?.categoryKey || "-"}
       </td>
-      <td className="px-2 py-3 text-sm text-white text-right">
+      <td className="px-2 py-3 text-sm text-foreground text-right">
         {formatAmount(row.transaction?.creditAmount)}
       </td>
       <td className="px-2 py-3 text-sm">
         {row.errors.length > 0 && (
-          <ul className="text-red-400 text-xs list-disc list-inside">
+          <ul className="text-destructive text-xs list-disc list-inside">
             {row.errors.map((error) => (
               <li key={error}>{error}</li>
             ))}
           </ul>
         )}
         {row.transaction?.existingDonor && (
-          <div className="text-yellow-400 text-xs mt-1">
+          <div className="text-yellow-600 text-xs mt-1">
             既存: {row.transaction.existingDonor.name} (
             {DONOR_TYPE_LABELS[row.transaction.existingDonor.donorType]})
           </div>
         )}
         {row.matchingDonor && (
-          <div className="text-blue-400 text-xs mt-1">一致: {row.matchingDonor.name}</div>
+          <div className="text-muted-foreground text-xs mt-1">一致: {row.matchingDonor.name}</div>
         )}
       </td>
     </tr>

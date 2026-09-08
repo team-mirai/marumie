@@ -24,11 +24,11 @@ interface AddressInputProps {
 function getConfidenceLabel(confidence: AddressCandidate["confidence"]) {
   switch (confidence) {
     case "high":
-      return { text: "高確度", className: "text-green-400" };
+      return { text: "高確度", className: "text-primary-hover" };
     case "medium":
-      return { text: "中確度", className: "text-yellow-400" };
+      return { text: "中確度", className: "text-yellow-600" };
     case "low":
-      return { text: "低確度", className: "text-red-400" };
+      return { text: "低確度", className: "text-destructive" };
   }
 }
 
@@ -130,7 +130,7 @@ export function AddressInput({
                 <div key={key} className="px-4 py-3">
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1 min-w-0">
-                      <div className="text-white font-medium">{candidate.companyName}</div>
+                      <div className="text-foreground font-medium">{candidate.companyName}</div>
                       <div className="text-muted-foreground text-sm mt-1">
                         {candidate.postalCode && (
                           <span className="mr-2">〒{candidate.postalCode.replace(/^〒/, "")}</span>

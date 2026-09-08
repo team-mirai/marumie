@@ -18,7 +18,7 @@ export function ReportDataPreview({ reportData, summaryData }: ReportDataPreview
   return (
     <div className="space-y-8">
       <div>
-        <h2 className="text-lg font-medium text-white mb-1">表形式プレビュー</h2>
+        <h2 className="text-lg font-medium text-foreground mb-1">表形式プレビュー</h2>
         <p className="text-sm text-muted-foreground">報告書データを表形式で確認できます。</p>
       </div>
 

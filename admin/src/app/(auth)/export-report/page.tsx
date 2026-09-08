@@ -9,7 +9,7 @@ export default async function ExportReportPage() {
   if (organizations.length === 0) {
     return (
       <div className="bg-card rounded-xl p-4">
-        <h1 className="text-2xl font-bold text-white mb-1">報告書エクスポート</h1>
+        <h1 className="text-2xl font-bold text-foreground mb-1">報告書エクスポート</h1>
         <p className="text-muted-foreground">
           政治団体が登録されていません。先に政治団体を作成してください。
         </p>

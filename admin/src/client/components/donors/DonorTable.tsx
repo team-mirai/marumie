@@ -44,17 +44,17 @@ export function DonorTable({ donors, onUpdate }: DonorTableProps) {
                 key={donor.id}
                 className="border-b border-border hover:bg-secondary/30 transition-colors"
               >
-                <td className="py-3 px-4 text-white">
+                <td className="py-3 px-4 text-foreground">
                   <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-secondary">
                     {DONOR_TYPE_LABELS[donor.donorType]}
                   </span>
                 </td>
-                <td className="py-3 px-4 text-white">{donor.name}</td>
-                <td className="py-3 px-4 text-white">{donor.address ?? "-"}</td>
-                <td className="py-3 px-4 text-white">
+                <td className="py-3 px-4 text-foreground">{donor.name}</td>
+                <td className="py-3 px-4 text-foreground">{donor.address ?? "-"}</td>
+                <td className="py-3 px-4 text-foreground">
                   {donor.donorType === "individual" ? (donor.occupation ?? "-") : "-"}
                 </td>
-                <td className="py-3 px-4 text-white text-right">{donor.usageCount}件</td>
+                <td className="py-3 px-4 text-foreground text-right">{donor.usageCount}件</td>
                 <td className="py-3 px-4 text-right">
                   <div className="flex gap-2 justify-end">
                     <Button

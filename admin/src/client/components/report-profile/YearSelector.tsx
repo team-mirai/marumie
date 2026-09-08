@@ -18,7 +18,7 @@ export function YearSelector({ orgId, financialYear, currentYear }: YearSelector
       <Label>報告年</Label>
       <select
         key={financialYear}
-        className="flex h-9 w-32 rounded-md border border-input bg-input px-3 py-1 text-base shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
+        className="flex h-9 w-32 rounded-md border border-border bg-input px-3 py-1 text-base shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
         defaultValue={financialYear}
         onChange={(e) => {
           router.push(`/political-organizations/${orgId}/report-profile?year=${e.target.value}`);

@@ -54,11 +54,11 @@ export function CounterpartMasterClient({
   return (
     <div className="bg-card rounded-xl p-4">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-white">取引先マスタ管理</h1>
+        <h1 className="text-2xl font-bold text-foreground">取引先マスタ管理</h1>
         <button
           type="button"
           onClick={() => setIsCreateDialogOpen(true)}
-          className="bg-primary text-white border-0 rounded-lg px-4 py-2.5 font-medium hover:bg-blue-600 transition-colors duration-200 cursor-pointer"
+          className="bg-primary text-primary-foreground border-0 rounded-lg px-4 py-2.5 font-medium hover:bg-primary-hover transition-colors duration-200 cursor-pointer"
         >
           新規作成
         </button>
@@ -72,11 +72,11 @@ export function CounterpartMasterClient({
             onChange={(e) => setSearchInput(e.target.value)}
             placeholder="名前または住所で検索..."
             aria-label="取引先を名前または住所で検索"
-            className="bg-input text-white border border-border rounded-lg px-3 py-2.5 flex-1 max-w-md transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary"
+            className="bg-input text-foreground border border-border rounded-lg px-3 py-2.5 flex-1 max-w-md transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary"
           />
           <button
             type="submit"
-            className="bg-secondary text-white border border-border hover:bg-secondary/80 rounded-lg px-4 py-2.5 font-medium transition-colors duration-200 cursor-pointer"
+            className="bg-secondary text-secondary-foreground border border-border hover:bg-secondary/80 rounded-lg px-4 py-2.5 font-medium transition-colors duration-200 cursor-pointer"
           >
             検索
           </button>
@@ -87,7 +87,7 @@ export function CounterpartMasterClient({
                 setSearchInput("");
                 router.push("/counterparts");
               }}
-              className="bg-secondary text-white border border-border hover:bg-secondary/80 rounded-lg px-4 py-2.5 font-medium transition-colors duration-200 cursor-pointer"
+              className="bg-secondary text-secondary-foreground border border-border hover:bg-secondary/80 rounded-lg px-4 py-2.5 font-medium transition-colors duration-200 cursor-pointer"
             >
               クリア
             </button>
@@ -109,13 +109,13 @@ export function CounterpartMasterClient({
             onClick={() => handlePageChange(page - 1)}
             disabled={page <= 1}
             aria-label="前のページへ"
-            className={`bg-secondary text-white border border-border rounded-lg px-3 py-1.5 text-sm font-medium transition-colors duration-200 ${
+            className={`bg-secondary text-secondary-foreground border border-border rounded-lg px-3 py-1.5 text-sm font-medium transition-colors duration-200 ${
               page <= 1 ? "opacity-50 cursor-not-allowed" : "hover:bg-secondary/80 cursor-pointer"
             }`}
           >
             前へ
           </button>
-          <span className="text-white px-4">
+          <span className="text-foreground px-4">
             {page} / {totalPages}
           </span>
           <button
@@ -123,7 +123,7 @@ export function CounterpartMasterClient({
             onClick={() => handlePageChange(page + 1)}
             disabled={page >= totalPages}
             aria-label="次のページへ"
-            className={`bg-secondary text-white border border-border rounded-lg px-3 py-1.5 text-sm font-medium transition-colors duration-200 ${
+            className={`bg-secondary text-secondary-foreground border border-border rounded-lg px-3 py-1.5 text-sm font-medium transition-colors duration-200 ${
               page >= totalPages
                 ? "opacity-50 cursor-not-allowed"
                 : "hover:bg-secondary/80 cursor-pointer"

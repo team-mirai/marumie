@@ -100,7 +100,7 @@ export default function BalanceSnapshotForm({
             className={`[color-scheme:dark] ${dateError ? "border-red-500 focus:ring-red-500" : ""}`}
             required
           />
-          {dateError && <p className="text-red-400 text-sm mt-1">{dateError}</p>}
+          {dateError && <p className="text-destructive text-sm mt-1">{dateError}</p>}
         </div>
 
         <div className="w-48">
@@ -123,7 +123,7 @@ export default function BalanceSnapshotForm({
         </div>
       </form>
 
-      {successMessage && <div className="mt-4 text-green-400 text-sm">{successMessage}</div>}
+      {successMessage && <div className="mt-4 text-primary-hover text-sm">{successMessage}</div>}
     </div>
   );
 }

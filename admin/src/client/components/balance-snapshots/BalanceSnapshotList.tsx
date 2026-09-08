@@ -47,19 +47,21 @@ export default function BalanceSnapshotList({ snapshots }: BalanceSnapshotListPr
       <table className="w-full border-collapse">
         <thead>
           <tr className="border-b border-border">
-            <th className="px-2 py-3 text-left text-sm font-semibold text-white">残高日付</th>
-            <th className="px-2 py-3 text-right text-sm font-semibold text-white">残高</th>
-            <th className="px-2 py-3 text-left text-sm font-semibold text-white">登録日時</th>
-            <th className="px-2 py-3 text-center text-sm font-semibold text-white w-20">操作</th>
+            <th className="px-2 py-3 text-left text-sm font-semibold text-foreground">残高日付</th>
+            <th className="px-2 py-3 text-right text-sm font-semibold text-foreground">残高</th>
+            <th className="px-2 py-3 text-left text-sm font-semibold text-foreground">登録日時</th>
+            <th className="px-2 py-3 text-center text-sm font-semibold text-foreground w-20">
+              操作
+            </th>
           </tr>
         </thead>
         <tbody>
           {snapshots.map((snapshot) => (
             <tr key={snapshot.id} className="border-b border-border">
-              <td className="px-2 py-3 text-sm text-white">
+              <td className="px-2 py-3 text-sm text-foreground">
                 {new Date(snapshot.snapshot_date).toLocaleDateString("ja-JP")}
               </td>
-              <td className="px-2 py-3 text-sm text-right text-white">
+              <td className="px-2 py-3 text-sm text-right text-foreground">
                 ¥{snapshot.balance.toLocaleString()}
               </td>
               <td className="px-2 py-3 text-sm text-muted-foreground">

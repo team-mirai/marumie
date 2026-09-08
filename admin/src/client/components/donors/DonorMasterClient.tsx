@@ -107,7 +107,7 @@ export function DonorMasterClient({
   return (
     <div className="bg-card rounded-xl p-4">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-white">寄付者マスタ管理</h1>
+        <h1 className="text-2xl font-bold text-foreground">寄付者マスタ管理</h1>
         <Button type="button" onClick={() => setIsCreateDialogOpen(true)}>
           新規作成
         </Button>
@@ -170,7 +170,7 @@ export function DonorMasterClient({
           >
             前へ
           </Button>
-          <span className="text-white px-4">
+          <span className="text-foreground px-4">
             {page} / {totalPages}
           </span>
           <Button

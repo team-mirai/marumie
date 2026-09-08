@@ -212,7 +212,9 @@ export function CounterpartAssignmentClient({
   if (organizations.length === 0) {
     return (
       <Card className="p-4">
-        <p className="text-white">政治団体が登録されていません。先に政治団体を作成してください。</p>
+        <p className="text-foreground">
+          政治団体が登録されていません。先に政治団体を作成してください。
+        </p>
       </Card>
     );
   }
@@ -221,14 +223,14 @@ export function CounterpartAssignmentClient({
     <div className="bg-card rounded-xl p-4 space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-white mb-1">取引先紐付け管理</h1>
+          <h1 className="text-2xl font-bold text-foreground mb-1">取引先紐付け管理</h1>
           <p className="text-muted-foreground">
             Transactionに対してCounterpart（取引先）を紐付けます
           </p>
         </div>
         <Link
           href="/counterparts"
-          className="bg-secondary text-white border border-border hover:bg-secondary rounded-lg px-4 py-2.5 font-medium transition-colors duration-200"
+          className="bg-secondary text-secondary-foreground border border-border hover:bg-secondary rounded-lg px-4 py-2.5 font-medium transition-colors duration-200"
         >
           マスタ管理へ
         </Link>
@@ -282,7 +284,7 @@ export function CounterpartAssignmentClient({
         </div>
 
         <div className="flex items-center gap-4 mb-4 p-3 bg-secondary/30 border border-border rounded-lg">
-          <span className="text-white text-sm">
+          <span className="text-foreground text-sm">
             選択中: <span className="font-medium">{selectedTransactions.length}件</span>
           </span>
           <Button

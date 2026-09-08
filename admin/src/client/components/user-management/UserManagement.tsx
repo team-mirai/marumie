@@ -100,7 +100,7 @@ export default function UserManagement({
     <div className="space-y-4">
       {/* Invite User Form */}
       <Card className="p-4">
-        <h2 className="text-lg font-medium text-white mb-4">新規ユーザー招待</h2>
+        <h2 className="text-lg font-medium text-foreground mb-4">新規ユーザー招待</h2>
         <form onSubmit={handleInviteUser} className="flex gap-4">
           <div className="flex-1">
             <Input
@@ -139,8 +139,10 @@ export default function UserManagement({
           <tbody className="bg-card divide-y divide-border">
             {users.map((user) => (
               <tr key={user.id}>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-white">{user.email}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-white">
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-foreground">
+                  {user.email}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-foreground">
                   <span
                     className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                       user.role === "admin"
@@ -159,7 +161,7 @@ export default function UserManagement({
                     value={user.role}
                     onChange={(e) => handleRoleChange(user.id, e.target.value as UserRole)}
                     disabled={isLoading}
-                    className="bg-input text-white border border-border rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                    className="bg-input text-foreground border border-border rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                   >
                     {availableRoles.map((role) => (
                       <option key={role} value={role}>

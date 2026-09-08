@@ -23,7 +23,7 @@ export function XmlPreview({ xml }: XmlPreviewProps) {
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-medium text-white">XMLプレビュー</h2>
+        <h2 className="text-lg font-medium text-foreground">XMLプレビュー</h2>
         <Button type="button" variant="outline" size="sm" onClick={handleCopy}>
           {copied ? "コピーしました" : "コピー"}
         </Button>

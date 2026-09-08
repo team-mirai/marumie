@@ -92,7 +92,7 @@ export default function BalanceSnapshotsClient({ organizations }: BalanceSnapsho
           <hr className="border-border" />
 
           <div>
-            <h3 className="text-lg font-medium text-white mb-4">残高を登録</h3>
+            <h3 className="text-lg font-medium text-foreground mb-4">残高を登録</h3>
             <BalanceSnapshotForm
               politicalOrganizationId={selectedOrgId}
               onSubmit={handleFormSubmit}

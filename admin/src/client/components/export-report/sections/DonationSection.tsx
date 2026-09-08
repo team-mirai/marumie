@@ -75,7 +75,7 @@ export function DonationSection({ personalDonations }: DonationSectionProps) {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-xl font-bold text-white">寄附 (SYUUSHI07_07)</h2>
+      <h2 className="text-xl font-bold text-foreground">寄附 (SYUUSHI07_07)</h2>
 
       <SectionWrapper
         title="個人からの寄附"

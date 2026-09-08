@@ -186,7 +186,7 @@ export function CounterpartDetailClient({
       <div className="flex items-center gap-4">
         <Link
           href="/counterparts"
-          className="text-muted-foreground hover:text-white transition-colors"
+          className="text-muted-foreground hover:text-foreground transition-colors"
         >
           ← 一覧に戻る
         </Link>
@@ -194,7 +194,7 @@ export function CounterpartDetailClient({
 
       <Card className="p-6">
         <div className="flex justify-between items-start mb-4">
-          <h2 className="text-lg font-semibold text-white">カウンターパート情報</h2>
+          <h2 className="text-lg font-semibold text-foreground">カウンターパート情報</h2>
           <Button
             type="button"
             variant="secondary"
@@ -208,29 +208,29 @@ export function CounterpartDetailClient({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <div className="text-muted-foreground text-sm mb-1">名前</div>
-            <div className="text-white font-medium">{counterpart.name}</div>
+            <div className="text-foreground font-medium">{counterpart.name}</div>
           </div>
           <div>
             <div className="text-muted-foreground text-sm mb-1">住所</div>
-            <div className="text-white">{counterpart.address || "-"}</div>
+            <div className="text-foreground">{counterpart.address || "-"}</div>
           </div>
           <div>
             <div className="text-muted-foreground text-sm mb-1">作成日</div>
-            <div className="text-white">{formatDate(counterpart.createdAt)}</div>
+            <div className="text-foreground">{formatDate(counterpart.createdAt)}</div>
           </div>
           <div>
             <div className="text-muted-foreground text-sm mb-1">更新日</div>
-            <div className="text-white">{formatDate(counterpart.updatedAt)}</div>
+            <div className="text-foreground">{formatDate(counterpart.updatedAt)}</div>
           </div>
           <div>
             <div className="text-muted-foreground text-sm mb-1">使用回数</div>
-            <div className="text-white">{counterpart.usageCount}件</div>
+            <div className="text-foreground">{counterpart.usageCount}件</div>
           </div>
         </div>
       </Card>
 
       <Card className="p-6">
-        <h2 className="text-lg font-semibold text-white mb-4">紐づいている取引</h2>
+        <h2 className="text-lg font-semibold text-foreground mb-4">紐づいている取引</h2>
 
         <div className="flex flex-col md:flex-row md:items-end gap-4 mb-6">
           <div className="w-fit">
@@ -261,7 +261,7 @@ export function CounterpartDetailClient({
 
         {selectedTransactions.length > 0 && (
           <div className="flex items-center gap-4 mb-4 p-3 bg-secondary/30 border border-border rounded-lg">
-            <span className="text-white text-sm">
+            <span className="text-foreground text-sm">
               選択中: <span className="font-medium">{selectedTransactions.length}件</span>
             </span>
             <Button type="button" size="sm" onClick={handleBulkAssignClick}>

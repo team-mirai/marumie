@@ -2,7 +2,7 @@
 import "client-only";
 
 import { useState } from "react";
-import { CircleHelp } from "lucide-react";
+import { Question } from "@phosphor-icons/react/dist/ssr";
 import {
   Input,
   Button,
@@ -119,7 +119,7 @@ export function CounterpartAssignmentFilters({
             取引先必須のみ表示
             <Tooltip>
               <TooltipTrigger asChild onClick={(e) => e.stopPropagation()}>
-                <CircleHelp className="size-4 hover:text-foreground cursor-help" />
+                <Question className="size-4 hover:text-foreground cursor-help" />
               </TooltipTrigger>
               <TooltipContent side="bottom" className="max-w-sm">
                 <div className="space-y-2 text-left">

@@ -112,7 +112,7 @@ function getTypeBadgeClass(type: string): string {
     case "offset_expense":
       return "bg-red-600";
     case "non_cash_journal":
-      return "bg-blue-600";
+      return "bg-gray-500";
     case "invalid":
       return "bg-orange-600";
     default:
@@ -125,7 +125,7 @@ function getStatusBgClass(status: PreviewTransaction["status"]) {
     case "insert":
       return "bg-green-600";
     case "update":
-      return "bg-blue-600";
+      return "bg-gray-500";
     case "invalid":
       return "bg-red-600";
     case "skip":
@@ -179,35 +179,35 @@ export default function TransactionRow({
           </div>
         )}
       </td>
-      <td className="px-2 py-3 text-sm text-white">
+      <td className="px-2 py-3 text-sm text-foreground">
         {new Date(record.transaction_date).toLocaleDateString("ja-JP")}
       </td>
-      <td className="px-2 py-3 text-sm text-white">
+      <td className="px-2 py-3 text-sm text-foreground">
         {record.debit_account}
         {record.debit_sub_account && (
           <div className="text-muted-foreground text-xs">{record.debit_sub_account}</div>
         )}
       </td>
-      <td className="px-2 py-3 text-sm text-right text-white">
+      <td className="px-2 py-3 text-sm text-right text-foreground">
         {record.debit_amount ? `¥${record.debit_amount.toLocaleString()}` : "-"}
       </td>
-      <td className="px-2 py-3 text-sm text-white">
+      <td className="px-2 py-3 text-sm text-foreground">
         {record.credit_account}
         {record.credit_sub_account && (
           <div className="text-muted-foreground text-xs">{record.credit_sub_account}</div>
         )}
       </td>
-      <td className="px-2 py-3 text-sm text-right text-white">
+      <td className="px-2 py-3 text-sm text-right text-foreground">
         {record.credit_amount ? `¥${record.credit_amount.toLocaleString()}` : "-"}
       </td>
-      <td className="px-2 py-3 text-sm text-white">
+      <td className="px-2 py-3 text-sm text-foreground">
         <span
           className={`px-2 py-1 rounded text-white text-xs font-medium ${getTypeBadgeClass(record.transaction_type || "unknown")}`}
         >
           {getTypeLabel(record.transaction_type || "unknown")}
         </span>
       </td>
-      <td className="px-2 py-3 text-sm text-white">
+      <td className="px-2 py-3 text-sm text-foreground">
         {(() => {
           const category = getTransactionCategory(record);
           return (
@@ -222,9 +222,11 @@ export default function TransactionRow({
           );
         })()}
       </td>
-      <td className="px-2 py-3 text-sm text-white">
+      <td className="px-2 py-3 text-sm text-foreground">
         {record.description || "-"}
-        {record.label && <div className="text-blue-400 text-xs mt-1">ラベル: {record.label}</div>}
+        {record.label && (
+          <div className="text-muted-foreground text-xs mt-1">ラベル: {record.label}</div>
+        )}
       </td>
     </tr>
   );

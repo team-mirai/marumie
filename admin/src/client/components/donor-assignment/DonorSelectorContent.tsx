@@ -73,7 +73,7 @@ export function DonorSelectorContent({
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <span className="text-white font-medium">{donor.name}</span>
+            <span className="text-foreground font-medium">{donor.name}</span>
             <span className="text-xs bg-secondary px-1.5 py-0.5 rounded text-muted-foreground">
               {DONOR_TYPE_LABELS[donor.donorType]}
             </span>
@@ -111,7 +111,7 @@ export function DonorSelectorContent({
         <div className="bg-primary/10 border border-primary rounded-lg p-3">
           <p className="text-xs text-muted-foreground mb-1">選択中:</p>
           <div className="flex items-center gap-2">
-            <p className="text-white font-medium">{selectedDonor.name}</p>
+            <p className="text-foreground font-medium">{selectedDonor.name}</p>
             <span className="text-xs bg-secondary px-1.5 py-0.5 rounded text-muted-foreground">
               {DONOR_TYPE_LABELS[selectedDonor.donorType]}
             </span>

@@ -142,7 +142,7 @@ export function DietMemberRelationSection({
                   type: e.target.value as "0" | "1" | "2" | "3",
                 })
               }
-              className="flex h-9 w-full rounded-md border border-input bg-input px-3 py-1 text-base shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm max-w-md"
+              className="flex h-9 w-full rounded-md border border-border bg-input px-3 py-1 text-base shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm max-w-md"
             >
               <option value="1">1号団体</option>
               <option value="2">2号団体</option>
@@ -204,7 +204,7 @@ export function DietMemberRelationSection({
                             chamber: e.target.value as "1" | "2",
                           })
                         }
-                        className="flex h-9 w-full rounded-md border border-input bg-input px-3 py-1 text-base shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
+                        className="flex h-9 w-full rounded-md border border-border bg-input px-3 py-1 text-base shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
                       >
                         <option value="1">衆議院議員</option>
                         <option value="2">参議院議員</option>
@@ -219,7 +219,7 @@ export function DietMemberRelationSection({
                             positionType: e.target.value as "1" | "2" | "3" | "4",
                           })
                         }
-                        className="flex h-9 w-full rounded-md border border-input bg-input px-3 py-1 text-base shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
+                        className="flex h-9 w-full rounded-md border border-border bg-input px-3 py-1 text-base shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
                       >
                         <option value="1">現職</option>
                         <option value="2">候補者</option>

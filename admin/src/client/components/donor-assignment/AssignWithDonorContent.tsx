@@ -97,7 +97,7 @@ export function AssignWithDonorContent({
   return (
     <div className="flex flex-col lg:flex-row gap-6 flex-1 min-h-0 overflow-hidden">
       <div className="lg:w-1/3 flex-shrink-0 flex flex-col min-h-0">
-        <div className="text-white font-medium mb-3">
+        <div className="text-foreground font-medium mb-3">
           {isBulk ? `選択中の取引 (${transactions.length}件)` : "取引情報"}
         </div>
 
@@ -106,7 +106,7 @@ export function AssignWithDonorContent({
             <div key={t.id} className="px-3 py-2 text-sm border-b border-border last:border-b-0">
               <div className="flex items-center gap-2">
                 <span className="text-muted-foreground">{formatDate(t.transactionDate)}</span>
-                <span className="text-white">{formatAmount(t.debitAmount)}</span>
+                <span className="text-foreground">{formatAmount(t.debitAmount)}</span>
               </div>
               <div className="text-muted-foreground text-xs truncate">{t.description || "-"}</div>
             </div>
@@ -121,7 +121,7 @@ export function AssignWithDonorContent({
         {allowedDonorTypes.length > 0 && allowedDonorTypes.length < 3 && (
           <div className="mt-3 p-2 bg-secondary/30 rounded-lg text-xs text-muted-foreground">
             選択された取引のカテゴリでは、以下の寄付者種別のみ紐付け可能です:
-            <span className="text-white ml-1">
+            <span className="text-foreground ml-1">
               {allowedDonorTypes
                 .map((t) =>
                   t === "individual" ? "個人" : t === "corporation" ? "法人" : "政治団体",

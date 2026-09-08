@@ -85,7 +85,7 @@ export function TransactionWithDonorTable({
           <button
             type="button"
             onClick={() => onSortChange("transactionDate")}
-            className="flex items-center gap-1 hover:text-white transition-colors cursor-pointer"
+            className="flex items-center gap-1 hover:text-foreground transition-colors cursor-pointer"
           >
             日付
             {sortField === "transactionDate" && (
@@ -100,7 +100,7 @@ export function TransactionWithDonorTable({
           <button
             type="button"
             onClick={() => onSortChange("debitAmount")}
-            className="flex items-center gap-1 hover:text-white transition-colors cursor-pointer"
+            className="flex items-center gap-1 hover:text-foreground transition-colors cursor-pointer"
           >
             金額
             {sortField === "debitAmount" && (
@@ -115,7 +115,7 @@ export function TransactionWithDonorTable({
           <button
             type="button"
             onClick={() => onSortChange("categoryKey")}
-            className="flex items-center gap-1 hover:text-white transition-colors cursor-pointer"
+            className="flex items-center gap-1 hover:text-foreground transition-colors cursor-pointer"
           >
             カテゴリ
             {sortField === "categoryKey" && (
@@ -161,7 +161,7 @@ export function TransactionWithDonorTable({
               {donor ? (
                 <div className="flex flex-col">
                   <div className="flex items-center gap-2">
-                    <span className="text-white font-medium truncate">{donor.name}</span>
+                    <span className="text-foreground font-medium truncate">{donor.name}</span>
                     <span className="text-xs bg-secondary px-1.5 py-0.5 rounded text-muted-foreground">
                       {DONOR_TYPE_LABELS[donor.donorType]}
                     </span>
@@ -171,7 +171,7 @@ export function TransactionWithDonorTable({
                   )}
                 </div>
               ) : (
-                <span className="text-yellow-400">未設定</span>
+                <span className="text-yellow-600">未設定</span>
               )}
             </button>
           );
@@ -234,7 +234,7 @@ export function TransactionWithDonorTable({
                 <td
                   key={cell.id}
                   className={cn(
-                    "py-2 px-4 text-white",
+                    "py-2 px-4 text-foreground",
                     cell.column.id !== "description" && "whitespace-nowrap",
                   )}
                 >
