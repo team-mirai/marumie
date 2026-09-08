@@ -11,7 +11,8 @@ test.describe("ユーザー情報", () => {
 		test("ログイン中のユーザーのメールアドレスが表示される", async ({ page }) => {
 			await page.goto("/user-info");
 
-			await expect(page.getByText("foo@example.com")).toBeVisible();
+			// サイドバーのフッターにもメールアドレスが表示されるため、本文領域にスコープする
+			await expect(page.getByRole("main").getByText("foo@example.com")).toBeVisible();
 		});
 
 		test("ロール情報が表示される", async ({ page }) => {
