@@ -4,101 +4,186 @@ import "client-only";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { UserRole } from "@prisma/client";
-import { Button } from "@/client/components/ui";
+import type { Icon } from "@phosphor-icons/react";
+import {
+  AddressBook,
+  Bank,
+  CaretDoubleLeft,
+  CaretDoubleRight,
+  Coins,
+  Export,
+  HandHeart,
+  Link as LinkIcon,
+  LinkSimple,
+  ListBullets,
+  SignOut,
+  Trash,
+  UploadSimple,
+  User,
+  UserCircle,
+  Users,
+} from "@phosphor-icons/react/dist/ssr";
+import { Button, Tooltip, TooltipContent, TooltipTrigger } from "@/client/components/ui";
+import { cn } from "@/client/lib/index";
+import {
+  getVisibleNavSections,
+  isNavItemActive,
+  type NavIconName,
+} from "@/client/components/layout/sidebar-nav";
 
-type NavItem = {
-  href: string;
+const NAV_ICONS: Record<NavIconName, Icon> = {
+  user: User,
+  bank: Bank,
+  users: Users,
+  "list-bullets": ListBullets,
+  trash: Trash,
+  "upload-simple": UploadSimple,
+  coins: Coins,
+  "address-book": AddressBook,
+  link: LinkIcon,
+  "hand-heart": HandHeart,
+  "link-simple": LinkSimple,
+  export: Export,
+};
+
+type SidebarProps = {
+  logoutAction: (formData: FormData) => Promise<void>;
+  userRole: UserRole | null;
+  userEmail: string;
+  collapsed: boolean;
+  onToggleCollapsed: () => void;
+};
+
+/**
+ * 折りたたみ時のみツールチップでラベルを補う（展開時はラベルが見えているので不要）
+ */
+function CollapsibleTooltip({
+  label,
+  collapsed,
+  children,
+}: {
   label: string;
-  adminOnly?: boolean;
-};
-
-type NavSection = {
-  title: string;
-  items: NavItem[];
-};
+  collapsed: boolean;
+  children: React.ReactElement;
+}) {
+  if (!collapsed) return children;
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>{children}</TooltipTrigger>
+      <TooltipContent side="right" sideOffset={8}>
+        {label}
+      </TooltipContent>
+    </Tooltip>
+  );
+}
 
 export default function Sidebar({
   logoutAction,
   userRole,
-}: {
-  logoutAction: (formData: FormData) => Promise<void>;
-  userRole: UserRole | null;
-}) {
+  userEmail,
+  collapsed,
+  onToggleCollapsed,
+}: SidebarProps) {
   const pathname = usePathname();
-
-  const isActive = (path: string) => {
-    if (path === "/") {
-      return pathname === "/";
-    }
-    return pathname.startsWith(path);
-  };
-
-  const navSections: NavSection[] = [
-    {
-      title: "基本情報",
-      items: [
-        { href: "/user-info", label: "ユーザー情報" },
-        { href: "/political-organizations", label: "政治団体" },
-        { href: "/users", label: "ユーザー管理", adminOnly: true },
-      ],
-    },
-    {
-      title: "データ取り込み",
-      items: [
-        { href: "/transactions", label: "取引一覧" },
-        { href: "/bulk-delete-transactions", label: "取引一括削除" },
-        { href: "/upload-csv", label: "CSVアップロード" },
-        { href: "/balance-snapshots", label: "残高登録" },
-      ],
-    },
-    {
-      title: "報告書",
-      items: [
-        { href: "/counterparts", label: "取引先マスタ" },
-        { href: "/assign/counterparts", label: "取引先紐付け" },
-        { href: "/donors", label: "寄付者マスタ" },
-        { href: "/assign/donors", label: "寄付者紐付け" },
-        { href: "/export-report", label: "報告書エクスポート" },
-      ],
-    },
-  ];
+  const navSections = getVisibleNavSections(userRole);
+  const ToggleIcon = collapsed ? CaretDoubleRight : CaretDoubleLeft;
+  const toggleLabel = collapsed ? "サイドバーを開く" : "サイドバーを折りたたむ";
 
   return (
-    <aside className="bg-card p-4 flex flex-col h-full">
-      <nav className="flex flex-col gap-6">
-        {navSections.map((section) => {
-          const visibleItems = section.items.filter(
-            (item) => !item.adminOnly || userRole === "admin",
-          );
-          if (visibleItems.length === 0) return null;
-
-          return (
-            <div key={section.title}>
-              <h3 className="text-muted-foreground text-xs font-medium uppercase tracking-wider mb-1 px-2.5">
-                {section.title}
-              </h3>
-              <div className="flex flex-col gap-0.5">
-                {visibleItems.map((item) => (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={`text-foreground no-underline px-2.5 py-2 rounded-lg transition-colors duration-200 ${
-                      isActive(item.href) ? "bg-secondary" : "hover:bg-secondary"
-                    }`}
-                  >
-                    {item.label}
-                  </Link>
-                ))}
-              </div>
+    <aside
+      data-collapsed={collapsed}
+      className="sticky top-0 flex h-screen flex-col overflow-y-auto border-r border-sidebar-border bg-sidebar px-3.5 pt-6 pb-5"
+    >
+      <div
+        className={cn(
+          "flex items-center gap-2 px-1.5 pb-5",
+          collapsed ? "justify-center" : "justify-between",
+        )}
+      >
+        {!collapsed && (
+          <div className="min-w-0">
+            <div className="whitespace-nowrap text-[13px] font-bold tracking-[0.06em] text-foreground">
+              みらいまる見え政治資金
             </div>
-          );
-        })}
+            <div className="mt-0.5 font-latin text-[10px] font-semibold tracking-[0.14em] text-primary-hover">
+              ADMIN CONSOLE
+            </div>
+          </div>
+        )}
+        <button
+          type="button"
+          onClick={onToggleCollapsed}
+          aria-label={toggleLabel}
+          aria-expanded={!collapsed}
+          title={toggleLabel}
+          className="inline-flex size-[26px] shrink-0 cursor-pointer items-center justify-center rounded-full border-none bg-transparent p-0 text-disabled-foreground transition-colors duration-150 ease-out outline-none hover:bg-secondary hover:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+        >
+          <ToggleIcon size={13} aria-hidden="true" />
+        </button>
+      </div>
+
+      <nav aria-label="メインナビゲーション" className="flex flex-1 flex-col gap-5">
+        {navSections.map((section) => (
+          <div key={section.title}>
+            {!collapsed && (
+              <div className="mx-3 mb-1.5 text-[11px] font-semibold tracking-[0.12em] text-subtle-foreground">
+                {section.title}
+              </div>
+            )}
+            <div className="flex flex-col gap-0.5">
+              {section.items.map((item) => {
+                const ItemIcon = NAV_ICONS[item.icon];
+                const active = isNavItemActive(pathname, item.href);
+                return (
+                  <CollapsibleTooltip key={item.href} label={item.label} collapsed={collapsed}>
+                    <Link
+                      href={item.href}
+                      aria-current={active ? "page" : undefined}
+                      className={cn(
+                        "flex items-center gap-2.5 whitespace-nowrap rounded-full text-[13px] no-underline outline-none transition-colors duration-150 ease-out hover:bg-sidebar-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                        collapsed ? "justify-center px-0 py-[9px]" : "px-3.5 py-2",
+                        active
+                          ? "bg-sidebar-accent font-bold text-sidebar-accent-foreground"
+                          : "font-medium text-sidebar-foreground",
+                      )}
+                    >
+                      <ItemIcon size={16} className="shrink-0" aria-hidden="true" />
+                      <span className={cn(collapsed && "sr-only")}>{item.label}</span>
+                    </Link>
+                  </CollapsibleTooltip>
+                );
+              })}
+            </div>
+          </div>
+        ))}
       </nav>
-      <div className="mt-auto pt-4">
+
+      <div className="mt-4 flex flex-col gap-2.5 border-t border-sidebar-border pt-4">
+        <div
+          className={cn("flex items-center gap-2 px-2.5", collapsed && "justify-center px-0")}
+          title={userEmail}
+        >
+          <UserCircle size={20} className="shrink-0 text-primary-active" aria-hidden="true" />
+          <span
+            className={cn(
+              "truncate font-latin text-xs text-muted-foreground",
+              collapsed && "sr-only",
+            )}
+          >
+            {userEmail}
+          </span>
+        </div>
         <form action={logoutAction}>
-          <Button type="submit" variant="destructive" className="w-full">
-            ログアウト
-          </Button>
+          <CollapsibleTooltip label="ログアウト" collapsed={collapsed}>
+            <Button
+              type="submit"
+              variant="secondary"
+              className={cn("w-full text-[13px] tracking-[0.06em]", collapsed && "px-0")}
+            >
+              <SignOut size={16} aria-hidden="true" />
+              <span className={cn(collapsed && "sr-only")}>ログアウト</span>
+            </Button>
+          </CollapsibleTooltip>
         </form>
       </div>
     </aside>

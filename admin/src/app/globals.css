@@ -21,6 +21,8 @@
 
   --color-muted: #f0f0f0;
   --color-muted-foreground: #666666;
+  /* セクション見出し・補足日付など、muted よりさらに控えめな文字色（--tm-gray-400） */
+  --color-subtle-foreground: #939393;
 
   --color-accent: #e2f6f3;
   --color-accent-foreground: #0f8472;
