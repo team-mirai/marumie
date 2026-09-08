@@ -197,7 +197,9 @@ export function DonorAssignmentClient({
   if (organizations.length === 0) {
     return (
       <Card className="p-4">
-        <p className="text-white">政治団体が登録されていません。先に政治団体を作成してください。</p>
+        <p className="text-foreground">
+          政治団体が登録されていません。先に政治団体を作成してください。
+        </p>
       </Card>
     );
   }
@@ -206,7 +208,7 @@ export function DonorAssignmentClient({
     <div className="bg-card rounded-xl p-4 space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-white mb-1">寄付者紐付け管理</h1>
+          <h1 className="text-2xl font-bold text-foreground mb-1">寄付者紐付け管理</h1>
           <p className="text-muted-foreground">Transactionに対してDonor（寄付者）を紐付けます</p>
         </div>
         <Button asChild variant="outline">
@@ -261,7 +263,7 @@ export function DonorAssignmentClient({
         </div>
 
         <div className="flex items-center gap-4 mb-4 p-3 bg-secondary/30 border border-border rounded-lg">
-          <span className="text-white text-sm">
+          <span className="text-foreground text-sm">
             選択中: <span className="font-medium">{selectedTransactions.length}件</span>
           </span>
           <Button

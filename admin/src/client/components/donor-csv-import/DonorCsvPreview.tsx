@@ -2,7 +2,7 @@
 import "client-only";
 
 import { useState } from "react";
-import { Loader2 } from "lucide-react";
+import { CircleNotch } from "@phosphor-icons/react/dist/ssr";
 import type { PreviewDonorCsvResult } from "@/server/contexts/report/presentation/types/preview-donor-csv-types";
 import type {
   PreviewDonorCsvRow,
@@ -28,7 +28,7 @@ interface TabDefinition {
 }
 
 const TABS: TabDefinition[] = [
-  { key: "all", label: "全件", color: "text-white" },
+  { key: "all", label: "全件", color: "text-foreground" },
   {
     key: "valid_new",
     label: "新規寄付者",
@@ -134,7 +134,7 @@ export default function DonorCsvPreview({
                 variant="outline"
                 size="sm"
                 onClick={() => handleTabChange(key)}
-                className={isActive ? color : "text-white/60"}
+                className={isActive ? color : "text-muted-foreground"}
               >
                 {label} ({getTabCount(key)})
               </Button>
@@ -165,17 +165,25 @@ export default function DonorCsvPreview({
         <table className="w-full border-collapse">
           <thead>
             <tr className="border-b border-border">
-              <th className="px-2 py-3 text-left text-sm font-semibold text-white">行番号</th>
-              <th className="px-2 py-3 text-left text-sm font-semibold text-white">ステータス</th>
-              <th className="px-2 py-3 text-left text-sm font-semibold text-white">取引No</th>
-              <th className="px-2 py-3 text-left text-sm font-semibold text-white">寄付者名</th>
-              <th className="px-2 py-3 text-left text-sm font-semibold text-white">寄付者種別</th>
-              <th className="px-2 py-3 text-left text-sm font-semibold text-white">住所</th>
-              <th className="px-2 py-3 text-left text-sm font-semibold text-white">職業</th>
-              <th className="px-2 py-3 text-left text-sm font-semibold text-white">取引日</th>
-              <th className="px-2 py-3 text-left text-sm font-semibold text-white">カテゴリ</th>
-              <th className="px-2 py-3 text-right text-sm font-semibold text-white">金額</th>
-              <th className="px-2 py-3 text-left text-sm font-semibold text-white">備考</th>
+              <th className="px-2 py-3 text-left text-sm font-semibold text-foreground">行番号</th>
+              <th className="px-2 py-3 text-left text-sm font-semibold text-foreground">
+                ステータス
+              </th>
+              <th className="px-2 py-3 text-left text-sm font-semibold text-foreground">取引No</th>
+              <th className="px-2 py-3 text-left text-sm font-semibold text-foreground">
+                寄付者名
+              </th>
+              <th className="px-2 py-3 text-left text-sm font-semibold text-foreground">
+                寄付者種別
+              </th>
+              <th className="px-2 py-3 text-left text-sm font-semibold text-foreground">住所</th>
+              <th className="px-2 py-3 text-left text-sm font-semibold text-foreground">職業</th>
+              <th className="px-2 py-3 text-left text-sm font-semibold text-foreground">取引日</th>
+              <th className="px-2 py-3 text-left text-sm font-semibold text-foreground">
+                カテゴリ
+              </th>
+              <th className="px-2 py-3 text-right text-sm font-semibold text-foreground">金額</th>
+              <th className="px-2 py-3 text-left text-sm font-semibold text-foreground">備考</th>
             </tr>
           </thead>
           <tbody>
@@ -205,7 +213,7 @@ export default function DonorCsvPreview({
           <Button type="button" onClick={onImport} disabled={validCount === 0 || isImporting}>
             {isImporting ? (
               <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <CircleNotch className="mr-2 h-4 w-4 animate-spin" />
                 インポート中...
               </>
             ) : (

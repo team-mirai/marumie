@@ -116,7 +116,9 @@ function ExpenseArraySubSection({ title, formId, sections }: ExpenseArraySubSect
             {sections.map((section, index) => (
               <div key={section.himoku || index}>
                 {section.himoku && (
-                  <h4 className="text-sm font-medium text-gray-300 mb-2">費目: {section.himoku}</h4>
+                  <h4 className="text-sm font-medium text-muted-foreground mb-2">
+                    費目: {section.himoku}
+                  </h4>
                 )}
                 <PoliticalActivityExpenseTable rows={section.rows} />
               </div>
@@ -145,7 +147,7 @@ export function PoliticalActivityExpenseSection({
 }: PoliticalActivityExpenseSectionProps) {
   return (
     <div className="space-y-6">
-      <h2 className="text-xl font-bold text-white">政治活動費 (SYUUSHI07_15)</h2>
+      <h2 className="text-xl font-bold text-foreground">政治活動費 (SYUUSHI07_15)</h2>
 
       <ExpenseArraySubSection title="組織活動費" formId="KUBUN1" sections={organizationExpenses} />
 

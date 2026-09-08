@@ -10,7 +10,7 @@ export default async function ImportDonorsPage() {
 
   return (
     <div className="bg-card rounded-xl p-4">
-      <h1 className="text-2xl font-bold text-white mb-6">寄付者一括インポート</h1>
+      <h1 className="text-2xl font-bold text-foreground mb-6">寄付者一括インポート</h1>
       <DonorCsvImportClient
         organizations={organizations}
         previewAction={previewDonorCsv}

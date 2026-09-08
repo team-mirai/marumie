@@ -2,7 +2,7 @@
 import "client-only";
 
 import { useState } from "react";
-import { Trash2 } from "lucide-react";
+import { Trash } from "@phosphor-icons/react/dist/ssr";
 import { toast } from "sonner";
 import { deleteTransactionAction } from "@/server/contexts/data-import/presentation/actions/delete-transaction";
 import {
@@ -60,7 +60,7 @@ export function DeleteTransactionButton({ transaction, onDeleted }: DeleteTransa
         className="h-8 w-8 text-muted-foreground hover:text-destructive"
         onClick={() => setOpen(true)}
       >
-        <Trash2 className="h-4 w-4" />
+        <Trash className="h-4 w-4" />
       </Button>
       <DialogContent className="max-w-md">
         <DialogHeader>

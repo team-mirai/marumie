@@ -45,13 +45,13 @@ export function CounterpartTable({ counterparts, onUpdate }: CounterpartTablePro
                 <td className="py-3 px-4">
                   <Link
                     href={`/counterparts/${counterpart.id}`}
-                    className="text-white hover:text-primary hover:underline transition-colors"
+                    className="text-foreground hover:text-primary hover:underline transition-colors"
                   >
                     {counterpart.name}
                   </Link>
                 </td>
-                <td className="py-3 px-4 text-white">{counterpart.address}</td>
-                <td className="py-3 px-4 text-white text-right">{counterpart.usageCount}件</td>
+                <td className="py-3 px-4 text-foreground">{counterpart.address}</td>
+                <td className="py-3 px-4 text-foreground text-right">{counterpart.usageCount}件</td>
                 <td className="py-3 px-4 text-right">
                   <div className="flex gap-2 justify-end">
                     <Button

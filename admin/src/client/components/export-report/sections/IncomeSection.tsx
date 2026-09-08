@@ -199,7 +199,7 @@ export function IncomeSection({
 
   return (
     <div className="space-y-6">
-      <h2 className="text-xl font-bold text-white">収入の部</h2>
+      <h2 className="text-xl font-bold text-foreground">収入の部</h2>
 
       <SectionWrapper
         title="事業による収入"

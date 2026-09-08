@@ -83,7 +83,7 @@ export function RegularExpenseSection({
 
   return (
     <div className="space-y-6">
-      <h2 className="text-xl font-bold text-white">経常経費 (SYUUSHI07_14)</h2>
+      <h2 className="text-xl font-bold text-foreground">経常経費 (SYUUSHI07_14)</h2>
 
       <SectionWrapper
         title="光熱水費"

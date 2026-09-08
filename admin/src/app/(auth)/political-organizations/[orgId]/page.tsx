@@ -48,11 +48,11 @@ export default async function EditPoliticalOrganizationPage({
       />
 
       <div className="bg-card rounded-xl p-4">
-        <h2 className="text-lg font-semibold text-white mb-3">関連機能</h2>
+        <h2 className="text-lg font-semibold text-foreground mb-3">関連機能</h2>
         <div className="flex gap-3">
           <Link
             href={`/political-organizations/${orgId}/report-profile`}
-            className="bg-secondary text-white border border-border rounded-lg px-4 py-2.5 hover:bg-primary transition-colors no-underline"
+            className="bg-secondary text-secondary-foreground border border-border rounded-lg px-4 py-2.5 hover:bg-accent transition-colors no-underline"
           >
             報告書プロフィール
           </Link>

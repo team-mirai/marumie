@@ -8,7 +8,7 @@ export default async function BalanceSnapshotsPage() {
 
   return (
     <div className="bg-card rounded-xl p-4">
-      <h1 className="text-2xl font-bold text-white mb-6">残高登録</h1>
+      <h1 className="text-2xl font-bold text-foreground mb-6">残高登録</h1>
       <BalanceSnapshotsClient organizations={organizations} />
     </div>
   );

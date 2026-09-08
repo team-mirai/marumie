@@ -81,7 +81,7 @@ export function CounterpartSelectorContent({
       {selectedCounterpart && (
         <div className="bg-primary/10 border border-primary rounded-lg p-3">
           <p className="text-xs text-muted-foreground mb-1">選択中:</p>
-          <p className="text-white font-medium">{selectedCounterpart.name}</p>
+          <p className="text-foreground font-medium">{selectedCounterpart.name}</p>
           {selectedCounterpart.address && (
             <p className="text-muted-foreground text-xs">{selectedCounterpart.address}</p>
           )}
@@ -119,7 +119,7 @@ export function CounterpartSelectorContent({
                     {isSelected && <div className="w-2 h-2 rounded-full bg-primary" />}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <span className="text-white font-medium block">
+                    <span className="text-foreground font-medium block">
                       {suggestion.counterpart.name}
                     </span>
                     {suggestion.counterpart.address && (
@@ -159,7 +159,7 @@ export function CounterpartSelectorContent({
                     {isSelected && <div className="w-2 h-2 rounded-full bg-primary" />}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <span className="text-white font-medium block">{cp.name}</span>
+                    <span className="text-foreground font-medium block">{cp.name}</span>
                     {cp.address && (
                       <span className="text-muted-foreground text-xs truncate block">
                         {cp.address}

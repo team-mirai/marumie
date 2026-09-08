@@ -111,7 +111,7 @@ function getTypeBadgeClass(type: string): string {
     case "offset_expense":
       return "bg-red-600";
     case "non_cash_journal":
-      return "bg-blue-600";
+      return "bg-gray-500";
     case "invalid":
       return "bg-orange-600";
     default:
@@ -126,37 +126,39 @@ export function TransactionRow({ transaction, onDeleted }: TransactionRowProps) 
 
   return (
     <tr className="border-b border-border">
-      <td className="px-2 py-3 text-sm text-white font-mono">{transaction.transaction_no}</td>
-      <td className="px-2 py-3 text-sm text-white">{formatDate(transaction.transaction_date)}</td>
-      <td className="px-2 py-3 text-sm text-white">
+      <td className="px-2 py-3 text-sm text-foreground font-mono">{transaction.transaction_no}</td>
+      <td className="px-2 py-3 text-sm text-foreground">
+        {formatDate(transaction.transaction_date)}
+      </td>
+      <td className="px-2 py-3 text-sm text-foreground">
         {transaction.political_organization_name || "-"}
       </td>
-      <td className="px-2 py-3 text-sm text-white">
+      <td className="px-2 py-3 text-sm text-foreground">
         {transaction.debit_account}
         {transaction.debit_sub_account && (
           <div className="text-muted-foreground text-xs">{transaction.debit_sub_account}</div>
         )}
       </td>
-      <td className="px-2 py-3 text-sm text-right text-white">
+      <td className="px-2 py-3 text-sm text-right text-foreground">
         ¥{transaction.debit_amount.toLocaleString()}
       </td>
-      <td className="px-2 py-3 text-sm text-white">
+      <td className="px-2 py-3 text-sm text-foreground">
         {transaction.credit_account}
         {transaction.credit_sub_account && (
           <div className="text-muted-foreground text-xs">{transaction.credit_sub_account}</div>
         )}
       </td>
-      <td className="px-2 py-3 text-sm text-right text-white">
+      <td className="px-2 py-3 text-sm text-right text-foreground">
         ¥{transaction.credit_amount.toLocaleString()}
       </td>
-      <td className="px-2 py-3 text-sm text-white">
+      <td className="px-2 py-3 text-sm text-foreground">
         <div
           className={`inline-block px-2 py-1 rounded text-white text-xs font-medium ${getTypeBadgeClass(transaction.transaction_type)}`}
         >
           {getTypeLabel(transaction.transaction_type)}
         </div>
       </td>
-      <td className="px-2 py-3 text-sm text-white">
+      <td className="px-2 py-3 text-sm text-foreground">
         {(() => {
           const category = getTransactionCategory(transaction);
           return (
@@ -164,7 +166,7 @@ export function TransactionRow({ transaction, onDeleted }: TransactionRowProps) 
               className={`inline-block px-2 py-1 rounded text-xs font-medium max-w-fit ${
                 category.type === "income" || category.type === "offset_income"
                   ? "text-black"
-                  : "text-white"
+                  : "text-foreground"
               }`}
               style={{ backgroundColor: category.color }}
             >
@@ -173,10 +175,10 @@ export function TransactionRow({ transaction, onDeleted }: TransactionRowProps) 
           );
         })()}
       </td>
-      <td className="px-2 py-3 text-sm text-white">
+      <td className="px-2 py-3 text-sm text-foreground">
         {transaction.description || "-"}
         {transaction.label && (
-          <div className="text-blue-400 text-xs mt-1">ラベル: {transaction.label}</div>
+          <div className="text-muted-foreground text-xs mt-1">ラベル: {transaction.label}</div>
         )}
       </td>
       <td className="px-2 py-3 text-sm text-center">

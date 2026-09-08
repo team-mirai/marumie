@@ -51,7 +51,7 @@ function SectionHeader({ title }: SectionHeaderProps) {
 export function SummarySection({ summaryData }: SummarySectionProps) {
   return (
     <div className="space-y-6">
-      <h2 className="text-xl font-bold text-white">収支総括表</h2>
+      <h2 className="text-xl font-bold text-foreground">収支総括表</h2>
 
       <div className="bg-white border border-black overflow-hidden">
         <div className="bg-gray-100 border-b border-black px-4 py-3">

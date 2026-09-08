@@ -88,7 +88,7 @@ export function DonorAssignmentFilters({
             checked={values.unassignedOnly}
             onCheckedChange={(checked) => onChange({ unassignedOnly: checked === true })}
           />
-          <Label htmlFor="unassigned-only" className="text-white text-sm cursor-pointer">
+          <Label htmlFor="unassigned-only" className="text-foreground text-sm cursor-pointer">
             未紐付けのみ表示
           </Label>
         </div>

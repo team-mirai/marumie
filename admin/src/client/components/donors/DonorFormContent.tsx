@@ -104,7 +104,7 @@ export function DonorFormContent({
           value={donorType}
           onChange={(e) => handleDonorTypeChange(e.target.value as DonorType)}
           disabled={isDisabled}
-          className="w-full bg-input text-white border border-border rounded-lg px-3 py-2.5 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full bg-input text-foreground border border-border rounded-lg px-3 py-2.5 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {VALID_DONOR_TYPES.map((type) => (
             <option key={type} value={type}>

@@ -77,7 +77,7 @@ export function ProfileSection({ profile }: ProfileSectionProps) {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-xl font-bold text-white">団体基本情報</h2>
+      <h2 className="text-xl font-bold text-foreground">団体基本情報</h2>
 
       <div className="bg-white border border-black overflow-hidden">
         <div className="bg-gray-100 border-b border-black px-4 py-3">

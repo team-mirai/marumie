@@ -88,7 +88,7 @@ export function TransactionsClient({ organizations }: TransactionsClientProps) {
   return (
     <div className="bg-card rounded-xl p-4">
       <div className="mb-4">
-        <h1 className="text-2xl font-bold text-white mb-4">取引一覧</h1>
+        <h1 className="text-2xl font-bold text-foreground mb-4">取引一覧</h1>
 
         {/* Organization Filter */}
         <div className="mb-4">
@@ -123,7 +123,7 @@ export function TransactionsClient({ organizations }: TransactionsClientProps) {
       {fetching && (
         <div className="text-center py-2 mb-4">
           <div className="flex items-center justify-center gap-2">
-            <div className="w-4 h-4 border-2 border-muted border-t-transparent rounded-full animate-spin"></div>
+            <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
             <p className="text-muted-foreground text-sm">取得中...</p>
           </div>
         </div>
@@ -151,27 +151,37 @@ export function TransactionsClient({ organizations }: TransactionsClientProps) {
             <table className="w-full border-collapse">
               <thead>
                 <tr className="border-b border-border">
-                  <th className="px-2 py-3 text-left text-sm font-semibold text-white">取引No</th>
-                  <th className="px-2 py-3 text-left text-sm font-semibold text-white">取引日</th>
-                  <th className="px-2 py-3 text-left text-sm font-semibold text-white">政治団体</th>
-                  <th className="px-2 py-3 text-left text-sm font-semibold text-white">
+                  <th className="px-2 py-3 text-left text-sm font-semibold text-foreground">
+                    取引No
+                  </th>
+                  <th className="px-2 py-3 text-left text-sm font-semibold text-foreground">
+                    取引日
+                  </th>
+                  <th className="px-2 py-3 text-left text-sm font-semibold text-foreground">
+                    政治団体
+                  </th>
+                  <th className="px-2 py-3 text-left text-sm font-semibold text-foreground">
                     借方勘定科目
                   </th>
-                  <th className="px-2 py-3 text-right text-sm font-semibold text-white">
+                  <th className="px-2 py-3 text-right text-sm font-semibold text-foreground">
                     借方金額
                   </th>
-                  <th className="px-2 py-3 text-left text-sm font-semibold text-white">
+                  <th className="px-2 py-3 text-left text-sm font-semibold text-foreground">
                     貸方勘定科目
                   </th>
-                  <th className="px-2 py-3 text-right text-sm font-semibold text-white">
+                  <th className="px-2 py-3 text-right text-sm font-semibold text-foreground">
                     貸方金額
                   </th>
-                  <th className="px-2 py-3 text-left text-sm font-semibold text-white">種別</th>
-                  <th className="px-2 py-3 text-left text-sm font-semibold text-white">カテゴリ</th>
-                  <th className="px-2 py-3 text-left text-sm font-semibold text-white">
+                  <th className="px-2 py-3 text-left text-sm font-semibold text-foreground">
+                    種別
+                  </th>
+                  <th className="px-2 py-3 text-left text-sm font-semibold text-foreground">
+                    カテゴリ
+                  </th>
+                  <th className="px-2 py-3 text-left text-sm font-semibold text-foreground">
                     摘要 <span className="text-xs font-normal">※サービスには表示されません</span>
                   </th>
-                  <th className="px-2 py-3 text-center text-sm font-semibold text-white w-16">
+                  <th className="px-2 py-3 text-center text-sm font-semibold text-foreground w-16">
                     操作
                   </th>
                 </tr>

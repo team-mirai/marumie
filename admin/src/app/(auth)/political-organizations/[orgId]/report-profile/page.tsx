@@ -45,13 +45,13 @@ export default async function ReportProfilePage({ params, searchParams }: Report
       <div className="mb-5">
         <Link
           href="/political-organizations"
-          className="text-muted-foreground no-underline hover:text-white transition-colors"
+          className="text-muted-foreground no-underline hover:text-foreground transition-colors"
         >
           ← 政治団体一覧に戻る
         </Link>
       </div>
 
-      <h1 className="text-2xl font-bold text-white mb-4">
+      <h1 className="text-2xl font-bold text-foreground mb-4">
         「{organization.displayName}」の報告書プロフィール
       </h1>
 

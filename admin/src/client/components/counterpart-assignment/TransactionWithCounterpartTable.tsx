@@ -122,7 +122,7 @@ export function TransactionWithCounterpartTable({
           <button
             type="button"
             onClick={() => onSortChange("transactionDate")}
-            className="flex items-center gap-1 hover:text-white transition-colors cursor-pointer"
+            className="flex items-center gap-1 hover:text-foreground transition-colors cursor-pointer"
           >
             日付
             {sortField === "transactionDate" && (
@@ -137,7 +137,7 @@ export function TransactionWithCounterpartTable({
           <button
             type="button"
             onClick={() => onSortChange("debitAmount")}
-            className="flex items-center gap-1 hover:text-white transition-colors cursor-pointer"
+            className="flex items-center gap-1 hover:text-foreground transition-colors cursor-pointer"
           >
             金額
             {sortField === "debitAmount" && (
@@ -165,7 +165,7 @@ export function TransactionWithCounterpartTable({
             <span>交付金</span>
             <Tooltip>
               <TooltipTrigger asChild>
-                <span className="cursor-help text-muted-foreground hover:text-white">
+                <span className="cursor-help text-muted-foreground hover:text-foreground">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     width="14"
@@ -214,7 +214,7 @@ export function TransactionWithCounterpartTable({
           <button
             type="button"
             onClick={() => onSortChange("categoryKey")}
-            className="flex items-center gap-1 hover:text-white transition-colors cursor-pointer"
+            className="flex items-center gap-1 hover:text-foreground transition-colors cursor-pointer"
           >
             カテゴリ
             {sortField === "categoryKey" && (
@@ -259,13 +259,13 @@ export function TransactionWithCounterpartTable({
             >
               {counterpart ? (
                 <div className="flex flex-col">
-                  <span className="text-white font-medium truncate">{counterpart.name}</span>
+                  <span className="text-foreground font-medium truncate">{counterpart.name}</span>
                   <span className="text-muted-foreground text-xs truncate">
                     {counterpart.address}
                   </span>
                 </div>
               ) : (
-                <span className="text-yellow-400">未設定</span>
+                <span className="text-yellow-600">未設定</span>
               )}
             </button>
           );
@@ -335,7 +335,7 @@ export function TransactionWithCounterpartTable({
                 <td
                   key={cell.id}
                   className={cn(
-                    "py-2 px-4 text-white",
+                    "py-2 px-4 text-foreground",
                     cell.column.id !== "description" && "whitespace-nowrap",
                   )}
                 >
