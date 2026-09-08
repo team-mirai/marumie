@@ -1,11 +1,11 @@
 /**
- * 日付を YYYY/MM/DD 形式でフォーマットする
+ * 日付を YYYY.MM.DD 形式でフォーマットする（Team Mirai ブランドの日付表記）
  * @param date - フォーマットする日付
- * @returns フォーマットされた日付文字列
+ * @returns フォーマットされた日付文字列（例: 2025.01.31）
  */
-export function formatDate(date: Date): string {
+export function formatDate(date: Date | string): string {
   const d = new Date(date);
-  return `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, "0")}/${String(d.getDate()).padStart(2, "0")}`;
+  return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, "0")}.${String(d.getDate()).padStart(2, "0")}`;
 }
 
 /**

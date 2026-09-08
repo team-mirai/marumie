@@ -2,17 +2,24 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { TransactionRow } from "./TransactionRow";
+import { TransactionRow } from "@/client/components/transactions/TransactionRow";
 import { StaticPagination } from "@/client/components/ui/StaticPagination";
-import { DeleteAllButton } from "./DeleteAllButton";
-import { ClearWebappCacheButton } from "./ClearWebappCacheButton";
+import { DeleteAllButton } from "@/client/components/transactions/DeleteAllButton";
+import { ClearWebappCacheButton } from "@/client/components/transactions/ClearWebappCacheButton";
 import { PoliticalOrganizationSelect } from "@/client/components/political-organizations/PoliticalOrganizationSelect";
 import { PageHeader } from "@/client/components/layout/PageHeader";
+import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/client/components/ui";
 import type { GetTransactionsResult } from "@/server/contexts/data-import/presentation/types";
 import type { PoliticalOrganization } from "@/shared/models/political-organization";
 
 interface TransactionsClientProps {
   organizations: PoliticalOrganization[];
+}
+
+function formatRangeText(data: GetTransactionsResult): string {
+  const start = data.total === 0 ? 0 : (data.page - 1) * data.perPage + 1;
+  const end = Math.min(data.page * data.perPage, data.total);
+  return `全 ${data.total.toLocaleString()} 件中 ${start.toLocaleString()} - ${end.toLocaleString()} 件を表示`;
 }
 
 export function TransactionsClient({ organizations }: TransactionsClientProps) {
@@ -86,117 +93,97 @@ export function TransactionsClient({ organizations }: TransactionsClientProps) {
     }
   };
 
+  const headerNote = (
+    <span className="ml-1 text-[10px] font-normal text-muted-foreground">
+      ※サービスには表示されません
+    </span>
+  );
+
   return (
     <div>
       <PageHeader label="Transactions" title="取引一覧" />
 
-      <div className="bg-card rounded-xl p-4">
-        {/* Organization Filter */}
-        <div className="mb-4">
-          <PoliticalOrganizationSelect
-            organizations={organizations}
-            value={selectedOrgId}
-            onValueChange={handleOrgFilterChange}
-          />
+      <div className="rounded-lg border border-border bg-card p-6">
+        {/* Toolbar */}
+        <div className="mb-[18px] flex flex-wrap items-center justify-between gap-4">
+          <div className="flex flex-wrap items-center gap-3">
+            <PoliticalOrganizationSelect
+              organizations={organizations}
+              value={selectedOrgId}
+              onValueChange={handleOrgFilterChange}
+              hideLabel
+            />
+            {!loading && data && (
+              <p className="text-[13px] text-muted-foreground">{formatRangeText(data)}</p>
+            )}
+          </div>
+          <div className="flex gap-2">
+            <ClearWebappCacheButton />
+            <DeleteAllButton
+              disabled={loading || !data || data.total === 0}
+              organizationId={selectedOrgId || undefined}
+              onDeleted={() => {
+                // データを再取得
+                window.location.reload();
+              }}
+            />
+          </div>
         </div>
 
-        {!loading && data && (
-          <div className="flex justify-between items-center mt-5 mb-4">
-            <p className="text-muted-foreground">
-              全 {data.total} 件中 {(data.page - 1) * data.perPage + 1} -{" "}
-              {Math.min(data.page * data.perPage, data.total)} 件を表示
-            </p>
-            <div className="flex gap-2">
-              <ClearWebappCacheButton />
-              <DeleteAllButton
-                disabled={data.total === 0}
-                organizationId={selectedOrgId || undefined}
-                onDeleted={() => {
-                  // データを再取得
-                  window.location.reload();
-                }}
-              />
-            </div>
-          </div>
-        )}
-
         {fetching && (
-          <div className="text-center py-2 mb-4">
-            <div className="flex items-center justify-center gap-2">
-              <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
-              <p className="text-muted-foreground text-sm">取得中...</p>
-            </div>
+          <div className="mb-4 flex items-center justify-center gap-2 py-2">
+            <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+            <p className="text-sm text-muted-foreground">取得中...</p>
           </div>
         )}
 
         {loading ? (
-          <div className="text-center py-10">
+          <div className="py-10 text-center">
             <p className="text-muted-foreground">読み込み中...</p>
           </div>
         ) : error ? (
-          <div className="text-center py-10">
-            <p className="text-red-500">エラー: {error}</p>
+          <div className="py-10 text-center">
+            <p className="text-destructive">エラー: {error}</p>
           </div>
         ) : !data ? (
-          <div className="text-center py-10">
+          <div className="py-10 text-center">
             <p className="text-muted-foreground">データがありません</p>
           </div>
         ) : data.transactions.length === 0 ? (
-          <div className="text-center py-10">
+          <div className="py-10 text-center">
             <p className="text-muted-foreground">トランザクションが登録されていません</p>
           </div>
         ) : (
           <>
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse">
-                <thead>
-                  <tr className="border-b border-border">
-                    <th className="px-2 py-3 text-left text-sm font-semibold text-foreground">
-                      取引No
-                    </th>
-                    <th className="px-2 py-3 text-left text-sm font-semibold text-foreground">
-                      取引日
-                    </th>
-                    <th className="px-2 py-3 text-left text-sm font-semibold text-foreground">
-                      政治団体
-                    </th>
-                    <th className="px-2 py-3 text-left text-sm font-semibold text-foreground">
-                      借方勘定科目
-                    </th>
-                    <th className="px-2 py-3 text-right text-sm font-semibold text-foreground">
-                      借方金額
-                    </th>
-                    <th className="px-2 py-3 text-left text-sm font-semibold text-foreground">
-                      貸方勘定科目
-                    </th>
-                    <th className="px-2 py-3 text-right text-sm font-semibold text-foreground">
-                      貸方金額
-                    </th>
-                    <th className="px-2 py-3 text-left text-sm font-semibold text-foreground">
-                      種別
-                    </th>
-                    <th className="px-2 py-3 text-left text-sm font-semibold text-foreground">
-                      カテゴリ
-                    </th>
-                    <th className="px-2 py-3 text-left text-sm font-semibold text-foreground">
-                      摘要 <span className="text-xs font-normal">※サービスには表示されません</span>
-                    </th>
-                    <th className="px-2 py-3 text-center text-sm font-semibold text-foreground w-16">
-                      操作
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {data.transactions.map((transaction) => (
-                    <TransactionRow
-                      key={transaction.id}
-                      transaction={transaction}
-                      onDeleted={() => fetchTransactions(selectedOrgId)}
-                    />
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <Table className="min-w-[980px]">
+              <TableHeader>
+                <TableRow className="hover:bg-transparent">
+                  <TableHead>取引No</TableHead>
+                  <TableHead>取引日</TableHead>
+                  <TableHead>政治団体</TableHead>
+                  <TableHead>借方勘定科目</TableHead>
+                  <TableHead className="text-right">借方金額</TableHead>
+                  <TableHead>貸方勘定科目</TableHead>
+                  <TableHead className="text-right">貸方金額</TableHead>
+                  <TableHead>種別</TableHead>
+                  <TableHead>カテゴリ</TableHead>
+                  <TableHead>
+                    摘要
+                    {headerNote}
+                  </TableHead>
+                  <TableHead className="w-16 text-center">操作</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {data.transactions.map((transaction) => (
+                  <TransactionRow
+                    key={transaction.id}
+                    transaction={transaction}
+                    onDeleted={() => fetchTransactions(selectedOrgId)}
+                  />
+                ))}
+              </TableBody>
+            </Table>
 
             <StaticPagination
               currentPage={data.page}
