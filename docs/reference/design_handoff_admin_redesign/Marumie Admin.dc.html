@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/team-mirai-design-system-remix-2a300789-1a0e-4f29-8893-6e06fbf24d63/colors_and_type.css">
+  <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
+  <script src="_ds/team-mirai-design-system-remix-2a300789-1a0e-4f29-8893-6e06fbf24d63/_ds_bundle.js"></script>
+  <style>
+    html, body { margin: 0; padding: 0; }
+    body { font-family: var(--tm-font-jp); color: var(--tm-fg); background: var(--tm-gray-50); -webkit-font-smoothing: antialiased; }
+    a { color: var(--tm-teal-deep); text-decoration: none; }
+    a:hover { color: var(--tm-teal-hover); text-decoration: underline; }
+    input::placeholder { color: var(--tm-gray-300); }
+    button { font-family: var(--tm-font-jp); }
+  </style>
+</helmet>
+<div style="display: grid; grid-template-columns: 236px minmax(0, 1fr); min-height: 100vh; background: var(--tm-gray-50); font-size: 14px; letter-spacing: 0.02em; line-height: 1.7; grid-template-columns: {{ gridCols }};">
+  <aside style="background: {{ sidebarBg }}; border-right: 1px solid var(--tm-gray-150); display: flex; flex-direction: column; padding: 24px 14px 20px; position: sticky; top: 0; height: 100vh; box-sizing: border-box; overflow-y: auto;">
+    <div style="display: flex; align-items: center; justify-content: {{ headJustify }}; gap: 8px; padding: 0 6px 20px;">
+      <div style="min-width: 0; display: {{ labelDisplay }};">
+        <div style="font-size: 13px; font-weight: 700; letter-spacing: 0.06em; white-space: nowrap;">みらいまる見え政治資金</div>
+        <div style="font-family: var(--tm-font-latin); font-size: 10px; font-weight: 600; letter-spacing: 0.14em; color: var(--tm-teal-hover); margin-top: 2px;">ADMIN CONSOLE</div>
+      </div>
+      <button onClick="{{ toggleSidebar }}" title="{{ toggleTitle }}" style="width: 26px; height: 26px; border-radius: 50%; border: none; background: transparent; color: var(--tm-gray-300); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; padding: 0; transition: color 150ms ease-out;" style-hover="color: var(--tm-gray-500); background: var(--tm-gray-50);"><i class="ph {{ toggleIcon }}" style="font-size: 13px;"></i></button>
+    </div>
+    <nav style="display: flex; flex-direction: column; gap: 20px; flex: 1;">
+      <sc-for list="{{ navSections }}" as="sec" hint-placeholder-count="3">
+        <div>
+          <div style="font-size: 11px; font-weight: 600; letter-spacing: 0.12em; color: var(--tm-gray-400); margin: 0 12px 6px; display: {{ labelDisplay }};">{{ sec.title }}</div>
+          <div style="display: flex; flex-direction: column; gap: 2px;">
+            <sc-for list="{{ sec.items }}" as="it" hint-placeholder-count="4">
+              <div onClick="{{ it.go }}" title="{{ it.label }}" style="cursor: pointer; padding: {{ navPad }}; border-radius: 9999px; font-size: 13px; font-weight: {{ it.weight }}; background: {{ it.bg }}; color: {{ it.color }}; transition: background 150ms ease-out; display: flex; align-items: center; gap: 10px; justify-content: {{ navJustify }}; white-space: nowrap;" style-hover="background: var(--tm-teal-100);"><i class="ph {{ it.icon }}" style="font-size: 16px; flex-shrink: 0;"></i><span style="display: {{ labelDisplay }};">{{ it.label }}</span></div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-for>
+    </nav>
+    <div style="border-top: 1px solid var(--tm-gray-150); padding-top: 16px; margin-top: 16px; display: flex; flex-direction: column; gap: 10px;">
+      <div style="display: flex; align-items: center; gap: 8px; padding: 0 10px; justify-content: {{ navJustify }};">
+        <i class="ph ph-user-circle" style="font-size: 20px; color: var(--tm-teal-deep); flex-shrink: 0;" title="admin@team-mir.ai"></i>
+        <span style="font-family: var(--tm-font-latin); font-size: 12px; color: var(--tm-gray-500); overflow: hidden; text-overflow: ellipsis; display: {{ labelDisplay }};">admin@team-mir.ai</span>
+      </div>
+      <button title="ログアウト" style="border-radius: 9999px; border: 1.5px solid var(--tm-black); background: var(--tm-white); color: var(--tm-black); font-size: 13px; font-weight: 700; letter-spacing: 0.06em; padding: {{ logoutPad }}; cursor: pointer; transition: all 150ms ease-out; display: inline-flex; align-items: center; justify-content: center; gap: 8px; white-space: nowrap;" style-hover="background: var(--tm-gray-50);"><i class="ph ph-sign-out" style="font-size: 15px;"></i><span style="display: {{ labelDisplay }};">ログアウト</span></button>
+    </div>
+  </aside>
+  <main style="padding: 36px 40px 60px; box-sizing: border-box;">
+    <div style="max-width: 1120px;">
+      <sc-if value="{{ showTransactions }}" hint-placeholder-val="{{ true }}">
+        <div>
+          <div style="font-family: var(--tm-font-latin); font-size: 13px; font-weight: 600; letter-spacing: 0.1em; color: var(--tm-teal-hover);">Transactions</div>
+          <h1 style="margin: 2px 0 24px; font-family: var(--tm-font-jp-display); font-size: 26px; font-weight: 700; letter-spacing: 0.06em; line-height: 1.4;"><span style="text-decoration: underline; text-decoration-color: var(--tm-teal-soft); text-decoration-thickness: 3px; text-underline-offset: 6px;">取引一覧</span></h1>
+          <div style="background: var(--tm-white); border: 1px solid var(--tm-black); border-radius: 8px; padding: 24px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 18px;">
+              <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                <select style="font-family: var(--tm-font-jp); font-size: 13px; padding: 9px 36px 9px 16px; border-radius: 9999px; border: 1.5px solid var(--tm-black); background: var(--tm-white); cursor: pointer; appearance: none; background-image: url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2210%22 height=%226%22><path d=%22M1 1l4 4 4-4%22 stroke=%22black%22 stroke-width=%221.5%22 fill=%22none%22/></svg>'); background-repeat: no-repeat; background-position: right 14px center;">
+                  <option>チームみらい</option>
+                  <option>デジタル政策研究会</option>
+                </select>
+                <span style="font-size: 13px; color: var(--tm-gray-500);">全 1,248 件中 1 - 8 件を表示</span>
+              </div>
+              <div style="display: flex; gap: 8px;">
+                <button style="border-radius: 9999px; border: 1.5px solid var(--tm-black); background: var(--tm-white); font-size: 12px; font-weight: 700; padding: 8px 16px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;" style-hover="background: var(--tm-gray-50);"><i class="ph ph-arrows-clockwise"></i>キャッシュクリア</button>
+                <button style="border-radius: 9999px; border: 1.5px solid var(--tm-red); background: var(--tm-white); color: var(--tm-red); font-size: 12px; font-weight: 700; padding: 8px 16px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;" style-hover="background: #FDF0F1;"><i class="ph ph-trash"></i>全件削除</button>
+              </div>
+            </div>
+            <div style="overflow-x: auto;">
+              <table style="width: 100%; border-collapse: collapse; min-width: 980px;">
+                <thead>
+                  <tr style="border-bottom: 1.5px solid var(--tm-black);">
+                    <th style="padding: {{ cellPad }}; text-align: left; font-size: 12px; font-weight: 700; letter-spacing: 0.04em; white-space: nowrap;">取引No</th>
+                    <th style="padding: {{ cellPad }}; text-align: left; font-size: 12px; font-weight: 700; white-space: nowrap;">取引日</th>
+                    <th style="padding: {{ cellPad }}; text-align: left; font-size: 12px; font-weight: 700; white-space: nowrap;">借方勘定科目</th>
+                    <th style="padding: {{ cellPad }}; text-align: right; font-size: 12px; font-weight: 700; white-space: nowrap;">借方金額</th>
+                    <th style="padding: {{ cellPad }}; text-align: left; font-size: 12px; font-weight: 700; white-space: nowrap;">貸方勘定科目</th>
+                    <th style="padding: {{ cellPad }}; text-align: right; font-size: 12px; font-weight: 700; white-space: nowrap;">貸方金額</th>
+                    <th style="padding: {{ cellPad }}; text-align: left; font-size: 12px; font-weight: 700; white-space: nowrap;">種別</th>
+                    <th style="padding: {{ cellPad }}; text-align: left; font-size: 12px; font-weight: 700; white-space: nowrap;">カテゴリ</th>
+                    <th style="padding: {{ cellPad }}; text-align: left; font-size: 12px; font-weight: 700; white-space: nowrap;">摘要</th>
+                    <th style="padding: {{ cellPad }}; text-align: center; font-size: 12px; font-weight: 700; white-space: nowrap;">操作</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <sc-for list="{{ transactions }}" as="tx" hint-placeholder-count="6">
+                    <tr style="border-bottom: 1px solid var(--tm-gray-150); background: {{ tx.rowBg }};">
+                      <td style="padding: {{ cellPad }}; font-family: var(--tm-font-latin); font-size: 12px; color: var(--tm-gray-500); white-space: nowrap;">{{ tx.no }}</td>
+                      <td style="padding: {{ cellPad }}; font-family: var(--tm-font-latin); font-size: 13px; white-space: nowrap;">{{ tx.date }}</td>
+                      <td style="padding: {{ cellPad }}; font-size: 13px; white-space: nowrap;">{{ tx.debit }}</td>
+                      <td style="padding: {{ cellPad }}; font-family: var(--tm-font-latin); font-size: 13px; font-weight: 600; text-align: right; white-space: nowrap;">{{ tx.debitAmount }}</td>
+                      <td style="padding: {{ cellPad }}; font-size: 13px; white-space: nowrap;">{{ tx.credit }}</td>
+                      <td style="padding: {{ cellPad }}; font-family: var(--tm-font-latin); font-size: 13px; font-weight: 600; text-align: right; white-space: nowrap;">{{ tx.creditAmount }}</td>
+                      <td style="padding: {{ cellPad }}; white-space: nowrap;"><span style="display: inline-block; padding: 3px 12px; border-radius: 9999px; border: 1.5px solid {{ tx.typeBorder }}; color: {{ tx.typeColor }}; background: {{ tx.typeBg }}; font-size: 11px; font-weight: 700; letter-spacing: 0.04em;">{{ tx.type }}</span></td>
+                      <td style="padding: {{ cellPad }}; white-space: nowrap;"><span style="display: inline-block; padding: 2px 12px; border-radius: 9999px; border: 1px solid {{ tx.catBorder }}; background: {{ tx.catBg }}; color: {{ tx.catColor }}; font-size: 12px; font-weight: 500; line-height: 1.67;">{{ tx.category }}</span></td>
+                      <td style="padding: {{ cellPad }}; font-size: 12px; color: var(--tm-gray-500); max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ tx.note }}</td>
+                      <td style="padding: {{ cellPad }}; text-align: center;"><i class="ph ph-trash" style="font-size: 16px; color: var(--tm-gray-400); cursor: pointer;"></i></td>
+                    </tr>
+                  </sc-for>
+                </tbody>
+              </table>
+            </div>
+            <div style="display: flex; justify-content: center; align-items: center; gap: 10px; margin-top: 22px;">
+              <button style="border-radius: 9999px; border: 1.5px solid var(--tm-gray-250); background: var(--tm-white); color: var(--tm-gray-300); font-size: 12px; font-weight: 700; padding: 7px 16px; cursor: not-allowed;">前へ</button>
+              <span style="font-family: var(--tm-font-latin); font-size: 13px; font-weight: 600;">1 / 25</span>
+              <button style="border-radius: 9999px; border: 1.5px solid var(--tm-black); background: var(--tm-white); font-size: 12px; font-weight: 700; padding: 7px 16px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;" style-hover="background: var(--tm-gray-50);">次へ<i class="ph ph-caret-right" style="font-size: 12px;"></i></button>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+      <sc-if value="{{ showOrgs }}" hint-placeholder-val="{{ false }}">
+        <div>
+          <div style="display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap; margin-bottom: 24px;">
+            <div>
+              <div style="font-family: var(--tm-font-latin); font-size: 13px; font-weight: 600; letter-spacing: 0.1em; color: var(--tm-teal-hover);">Organizations</div>
+              <h1 style="margin: 2px 0 0; font-family: var(--tm-font-jp-display); font-size: 26px; font-weight: 700; letter-spacing: 0.06em; line-height: 1.4;"><span style="text-decoration: underline; text-decoration-color: var(--tm-teal-soft); text-decoration-thickness: 3px; text-underline-offset: 6px;">政治団体一覧</span></h1>
+            </div>
+            <button style="border-radius: 9999px; border: 1.5px solid var(--tm-teal); background: var(--tm-teal); color: var(--tm-white); font-size: 13px; font-weight: 700; letter-spacing: 0.06em; padding: 11px 22px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: background 150ms ease-out;" style-hover="background: var(--tm-teal-hover); border-color: var(--tm-teal-hover);"><i class="ph ph-plus"></i>新規作成</button>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 16px;">
+            <sc-for list="{{ orgs }}" as="org" hint-placeholder-count="2">
+              <div style="background: var(--tm-white); border: 1px solid var(--tm-black); border-radius: 8px; padding: 22px 26px; display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; flex-wrap: wrap;">
+                <div style="min-width: 0;">
+                  <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                    <h3 style="margin: 0; font-size: 17px; font-weight: 700; letter-spacing: 0.04em;">{{ org.name }}</h3>
+                    <span style="display: inline-block; padding: 2px 12px; border-radius: 9999px; background: var(--tm-teal-100); color: var(--tm-teal-deep); font-size: 11px; font-weight: 700;">{{ org.kind }}</span>
+                  </div>
+                  <p style="margin: 8px 0 0; font-size: 13px; color: var(--tm-gray-500);">{{ org.desc }}</p>
+                  <div style="margin-top: 10px; font-family: var(--tm-font-latin); font-size: 12px; color: var(--tm-gray-400);">作成日: {{ org.created }}</div>
+                </div>
+                <div style="display: flex; gap: 8px; flex-shrink: 0;">
+                  <button style="border-radius: 9999px; border: 1.5px solid var(--tm-black); background: var(--tm-white); font-size: 12px; font-weight: 700; padding: 8px 18px; cursor: pointer; white-space: nowrap;" style-hover="background: var(--tm-gray-50);">編集</button>
+                  <button style="border-radius: 9999px; border: 1.5px solid var(--tm-red); background: var(--tm-white); color: var(--tm-red); font-size: 12px; font-weight: 700; padding: 8px 18px; cursor: pointer; white-space: nowrap;" style-hover="background: #FDF0F1;">削除</button>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+      <sc-if value="{{ showCounterparts }}" hint-placeholder-val="{{ false }}">
+        <div>
+          <div style="display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap; margin-bottom: 24px;">
+            <div>
+              <div style="font-family: var(--tm-font-latin); font-size: 13px; font-weight: 600; letter-spacing: 0.1em; color: var(--tm-teal-hover);">Counterparts</div>
+              <h1 style="margin: 2px 0 0; font-family: var(--tm-font-jp-display); font-size: 26px; font-weight: 700; letter-spacing: 0.06em; line-height: 1.4;"><span style="text-decoration: underline; text-decoration-color: var(--tm-teal-soft); text-decoration-thickness: 3px; text-underline-offset: 6px;">取引先マスタ管理</span></h1>
+            </div>
+            <button style="border-radius: 9999px; border: 1.5px solid var(--tm-teal); background: var(--tm-teal); color: var(--tm-white); font-size: 13px; font-weight: 700; letter-spacing: 0.06em; padding: 11px 22px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;" style-hover="background: var(--tm-teal-hover); border-color: var(--tm-teal-hover);"><i class="ph ph-plus"></i>新規作成</button>
+          </div>
+          <div style="background: var(--tm-white); border: 1px solid var(--tm-black); border-radius: 8px; padding: 24px;">
+            <div style="display: flex; gap: 8px; margin-bottom: 8px; flex-wrap: wrap;">
+              <input placeholder="名前または住所で検索..." style="font-family: var(--tm-font-jp); font-size: 13px; padding: 10px 18px; border-radius: 9999px; border: 1.5px solid var(--tm-black); background: var(--tm-white); flex: 1; max-width: 380px; min-width: 200px; outline: none;" style-focus="border-color: var(--tm-teal); box-shadow: 0 0 0 2px var(--tm-teal-100);">
+              <button style="border-radius: 9999px; border: 1.5px solid var(--tm-black); background: var(--tm-white); font-size: 13px; font-weight: 700; padding: 9px 20px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;" style-hover="background: var(--tm-gray-50);"><i class="ph ph-magnifying-glass"></i>検索</button>
+            </div>
+            <div style="font-size: 13px; color: var(--tm-gray-500); margin-bottom: 12px;">312件の取引先</div>
+            <table style="width: 100%; border-collapse: collapse;">
+              <thead>
+                <tr style="border-bottom: 1.5px solid var(--tm-black);">
+                  <th style="padding: 10px 12px; text-align: left; font-size: 12px; font-weight: 700;">名前</th>
+                  <th style="padding: 10px 12px; text-align: left; font-size: 12px; font-weight: 700;">住所</th>
+                  <th style="padding: 10px 12px; text-align: right; font-size: 12px; font-weight: 700; white-space: nowrap;">使用数</th>
+                  <th style="padding: 10px 12px; text-align: right; font-size: 12px; font-weight: 700;">操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                <sc-for list="{{ counterparts }}" as="cp" hint-placeholder-count="5">
+                  <tr style="border-bottom: 1px solid var(--tm-gray-150);">
+                    <td style="padding: 12px;"><a href="#" style="font-size: 13px; font-weight: 600;">{{ cp.name }}</a></td>
+                    <td style="padding: 12px; font-size: 13px; color: var(--tm-gray-500);">{{ cp.address }}</td>
+                    <td style="padding: 12px; font-family: var(--tm-font-latin); font-size: 13px; font-weight: 600; text-align: right;">{{ cp.usage }}件</td>
+                    <td style="padding: 12px; text-align: right;">
+                      <div style="display: flex; gap: 6px; justify-content: flex-end;">
+                        <button style="border-radius: 9999px; border: 1.5px solid var(--tm-black); background: var(--tm-white); font-size: 11px; font-weight: 700; padding: 5px 14px; cursor: pointer; white-space: nowrap; flex-shrink: 0;" style-hover="background: var(--tm-gray-50);">編集</button>
+                        <button style="border-radius: 9999px; border: 1.5px solid var(--tm-red); background: var(--tm-white); color: var(--tm-red); font-size: 11px; font-weight: 700; padding: 5px 14px; cursor: pointer; white-space: nowrap; flex-shrink: 0;" style-hover="background: #FDF0F1;">削除</button>
+                      </div>
+                    </td>
+                  </tr>
+                </sc-for>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </sc-if>
+      <sc-if value="{{ showUpload }}" hint-placeholder-val="{{ false }}">
+        <div>
+          <div style="font-family: var(--tm-font-latin); font-size: 13px; font-weight: 600; letter-spacing: 0.1em; color: var(--tm-teal-hover);">Data Import</div>
+          <h1 style="margin: 2px 0 24px; font-family: var(--tm-font-jp-display); font-size: 26px; font-weight: 700; letter-spacing: 0.06em; line-height: 1.4;"><span style="text-decoration: underline; text-decoration-color: var(--tm-teal-soft); text-decoration-thickness: 3px; text-underline-offset: 6px;">CSVアップロード</span></h1>
+          <div style="background: var(--tm-white); border: 1px solid var(--tm-black); border-radius: 8px; padding: 28px; max-width: 720px;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-bottom: 24px;">
+              <label style="display: flex; flex-direction: column; gap: 6px;">
+                <span style="font-size: 12px; font-weight: 700;">政治団体 <span style="color: var(--tm-red);">*</span></span>
+                <select style="font-family: var(--tm-font-jp); font-size: 13px; padding: 10px 16px; border-radius: 9999px; border: 1.5px solid var(--tm-black); background: var(--tm-white); cursor: pointer;">
+                  <option>チームみらい</option>
+                  <option>デジタル政策研究会</option>
+                </select>
+              </label>
+              <label style="display: flex; flex-direction: column; gap: 6px;">
+                <span style="font-size: 12px; font-weight: 700;">データソース <span style="color: var(--tm-red);">*</span></span>
+                <select style="font-family: var(--tm-font-jp); font-size: 13px; padding: 10px 16px; border-radius: 9999px; border: 1.5px solid var(--tm-black); background: var(--tm-white); cursor: pointer;">
+                  <option>MFクラウド会計</option>
+                  <option>freee会計</option>
+                </select>
+              </label>
+            </div>
+            <div style="border: 1.5px dashed var(--tm-teal); border-radius: 8px; background: var(--tm-teal-100); padding: 48px 24px; text-align: center;">
+              <i class="ph ph-upload-simple" style="font-size: 36px; color: var(--tm-teal-deep);"></i>
+              <div style="font-size: 14px; font-weight: 700; margin-top: 10px;">CSVファイルをドラッグ＆ドロップ</div>
+              <div style="font-size: 12px; color: var(--tm-gray-500); margin-top: 4px;">または</div>
+              <button style="margin-top: 14px; border-radius: 9999px; border: 1.5px solid var(--tm-black); background: var(--tm-white); font-size: 13px; font-weight: 700; padding: 10px 24px; cursor: pointer;" style-hover="background: var(--tm-gray-50);">ファイルを選択</button>
+              <div style="font-family: var(--tm-font-latin); font-size: 11px; color: var(--tm-gray-400); margin-top: 14px;">UTF-8 / Shift-JIS ・ 最大 10MB</div>
+            </div>
+            <div style="display: flex; justify-content: flex-end; margin-top: 24px;">
+              <button style="border-radius: 9999px; border: 1.5px solid var(--tm-teal); background: var(--tm-teal); color: var(--tm-white); font-size: 13px; font-weight: 700; letter-spacing: 0.06em; padding: 11px 26px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;" style-hover="background: var(--tm-teal-hover); border-color: var(--tm-teal-hover);">プレビューを表示<i class="ph ph-arrow-right"></i></button>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+      <sc-if value="{{ showPlaceholder }}" hint-placeholder-val="{{ false }}">
+        <div>
+          <h1 style="margin: 0 0 20px; font-family: var(--tm-font-jp-display); font-size: 26px; font-weight: 700; letter-spacing: 0.06em; line-height: 1.4;"><span style="text-decoration: underline; text-decoration-color: var(--tm-teal-soft); text-decoration-thickness: 3px; text-underline-offset: 6px;">{{ placeholderTitle }}</span></h1>
+          <div style="background: var(--tm-white); border: 1px solid var(--tm-black); border-radius: 8px; padding: 60px 24px; text-align: center;">
+            <i class="ph ph-squares-four" style="font-size: 32px; color: var(--tm-teal);"></i>
+            <p style="margin: 12px 0 0; font-size: 13px; color: var(--tm-gray-500);">このモックでは省略しています（同じスタイルで展開します）</p>
+          </div>
+        </div>
+      </sc-if>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{
+  &quot;sidebarTone&quot;: {&quot;editor&quot;: &quot;enum&quot;, &quot;options&quot;: [&quot;white&quot;, &quot;mint&quot;], &quot;default&quot;: &quot;white&quot;, &quot;tsType&quot;: &quot;string&quot;, &quot;section&quot;: &quot;レイアウト&quot;},
+  &quot;compact&quot;: {&quot;editor&quot;: &quot;boolean&quot;, &quot;default&quot;: false, &quot;tsType&quot;: &quot;boolean&quot;, &quot;section&quot;: &quot;レイアウト&quot;},
+  &quot;zebraRows&quot;: {&quot;editor&quot;: &quot;boolean&quot;, &quot;default&quot;: false, &quot;tsType&quot;: &quot;boolean&quot;, &quot;section&quot;: &quot;レイアウト&quot;}
+}">
+class Component extends DCLogic {
+  state = { screen: "transactions", collapsed: false };
+  renderVals() {
+    const compact = this.props.compact ?? false;
+    const zebra = this.props.zebraRows ?? false;
+    const sidebarTone = this.props.sidebarTone ?? "white";
+    const s = this.state.screen;
+    const built = ["transactions", "orgs", "counterparts", "upload"];
+    const sections = [
+      { title: "基本情報", items: [["user-info", "ユーザー情報"], ["orgs", "政治団体"], ["users", "ユーザー管理"]] },
+      { title: "データ取り込み", items: [["transactions", "取引一覧"], ["bulk-delete", "取引一括削除"], ["upload", "CSVアップロード"], ["balance", "残高登録"]] },
+      { title: "報告書", items: [["counterparts", "取引先マスタ"], ["assign-cp", "取引先紐付け"], ["donors", "寄付者マスタ"], ["assign-donors", "寄付者紐付け"], ["export", "報告書エクスポート"]] },
+    ];
+    const icons = { "user-info": "ph-user", orgs: "ph-bank", users: "ph-users", transactions: "ph-list-bullets", "bulk-delete": "ph-trash", upload: "ph-upload-simple", balance: "ph-coins", counterparts: "ph-address-book", "assign-cp": "ph-link", donors: "ph-hand-heart", "assign-donors": "ph-link-simple", export: "ph-export" };
+    const titles = { "user-info": "ユーザー情報", users: "ユーザー管理", "bulk-delete": "取引一括削除", balance: "残高登録", "assign-cp": "取引先紐付け", donors: "寄付者マスタ", "assign-donors": "寄付者紐付け", export: "報告書エクスポート" };
+    const navSections = sections.map((sec) => ({
+      title: sec.title,
+      items: sec.items.map(([key, label]) => {
+        const active = s === key;
+        return {
+          label, key, icon: icons[key],
+          go: () => this.setState({ screen: key }),
+          bg: active ? "var(--tm-teal-100)" : "transparent",
+          color: active ? "var(--tm-teal-deep)" : "var(--tm-ink)",
+          weight: active ? 700 : 500,
+        };
+      }),
+    }));
+    const typeStyles = {
+      income: { typeBorder: "var(--tm-teal-deep)", typeColor: "var(--tm-teal-deep)", typeBg: "var(--tm-teal-100)" },
+      expense: { typeBorder: "var(--tm-red)", typeColor: "var(--tm-red)", typeBg: "var(--tm-white)" },
+      journal: { typeBorder: "var(--tm-gray-400)", typeColor: "var(--tm-gray-500)", typeBg: "var(--tm-gray-50)" },
+    };
+    // shared/accounting/account-category.ts の PL_CATEGORIES と同じ色・略称
+    const PL = {
+      "個人の負担する党費又は会費": ["#FED7AA", "党費・会費", "income"],
+      "個人からの寄附": ["#BBF7D0", "個人寄附", "income"],
+      "法人その他の団体からの寄附": ["#FECACA", "法人寄附", "income"],
+      "政治団体からの寄附": ["#A5F3FC", "政党寄附", "income"],
+      "機関紙誌の発行その他の事業による収入": ["#FDE68A", "機関紙誌", "income"],
+      "借入金": ["#FECDD3", "借入金", "income"],
+      "本部又は支部から供与された交付金に係る収入": ["#99F6E4", "交付金", "income"],
+      "政治資金パーティーの対価に係る収入": ["#DDD6FE", "パーティー収入", "income"],
+      "その他の収入": ["#E2E8F0", "その他", "income"],
+      "人件費": ["#0369A1", "人件費", "expense"],
+      "光熱水費": ["#126C81", "光熱水費", "expense"],
+      "備品・消耗品費": ["#4D7C0F", "備品消耗品費", "expense"],
+      "事務所費": ["#047857", "事務所費", "expense"],
+      "組織活動費": ["#C2410C", "組織活動費", "expense"],
+      "選挙関係費": ["#DC2626", "選挙関係費", "expense"],
+      "機関紙誌の発行事業費": ["#A16207", "機関紙誌費", "expense"],
+      "宣伝事業費": ["#3856B1", "宣伝事業費", "expense"],
+      "政治資金パーティー開催事業費": ["#6D28D9", "政治資金パーティ費", "expense"],
+      "その他の事業費": ["#334155", "その他事業費", "expense"],
+      "調査研究費": ["#047857", "調査研究費", "expense"],
+      "寄附・交付金": ["#BE185D", "寄附・交付金", "expense"],
+      "その他の経費": ["#334155", "その他経費", "expense"],
+    };
+    const raw = [
+      ["2025-0142", "2025.02.05", "組織活動費", 4320, "普通預金", 4320, "現金支出", "expense", "組織活動費", "地方遊説 交通費"],
+      ["2025-0141", "2025.02.03", "普通預金", 30000, "個人からの寄附", 30000, "現金収入", "income", "個人からの寄附", "個人寄附（クレジット決済）"],
+      ["2025-0140", "2025.02.01", "事務所費", 150000, "未払金", 150000, "非現金仕訳", "journal", null, "2月分事務所賃料 計上"],
+      ["2025-0139", "2025.01.28", "宣伝事業費", 88000, "普通預金", 88000, "現金支出", "expense", "宣伝事業費", "SNS広告出稿（1月）"],
+      ["2025-0138", "2025.01.25", "普通預金", 500000, "機関紙誌の発行その他の事業による収入", 500000, "現金収入", "income", "機関紙誌の発行その他の事業による収入", "パンフレット頒布"],
+      ["2025-0137", "2025.01.22", "備品・消耗品費", 12540, "普通預金", 12540, "現金支出", "expense", "備品・消耗品費", "事務用品購入"],
+      ["2025-0136", "2025.01.18", "普通預金", 10000, "個人からの寄附", 10000, "現金収入", "income", "個人からの寄附", "個人寄附（銀行振込）"],
+      ["2025-0135", "2025.01.15", "人件費", 250000, "普通預金", 250000, "現金支出", "expense", "人件費", "1月分給与"],
+    ];
+    const yen = (n) => "¥" + n.toLocaleString("ja-JP");
+    const transactions = raw.map((r, i) => {
+      const cat = r[8] ? PL[r[8]] : null;
+      return {
+        no: r[0], date: r[1], debit: r[2], debitAmount: yen(r[3]), credit: r[4], creditAmount: yen(r[5]),
+        type: r[6], note: r[9],
+        // front（webapp TransactionTableRow）と同じルール: 収入=色塗り+#47474C文字 / 支出=白抜き+色文字色枠
+        category: cat ? cat[1] : "-",
+        catBg: cat ? (cat[2] === "income" ? cat[0] : "#FFFFFF") : "#FFFFFF",
+        catBorder: cat ? cat[0] : "var(--tm-gray-250)",
+        catColor: cat ? (cat[2] === "income" ? "#47474C" : cat[0]) : "var(--tm-gray-500)",
+        rowBg: zebra && i % 2 === 1 ? "var(--tm-gray-50)" : "transparent",
+        ...typeStyles[r[7]],
+      };
+    });
+    const collapsed = this.state.collapsed;
+    return {
+      navSections,
+      gridCols: collapsed ? "72px minmax(0, 1fr)" : "236px minmax(0, 1fr)",
+      labelDisplay: collapsed ? "none" : "block",
+      navPad: collapsed ? "9px 0" : "8px 14px",
+      navJustify: collapsed ? "center" : "flex-start",
+      headJustify: collapsed ? "center" : "space-between",
+      logoutPad: collapsed ? "9px 0" : "9px 18px",
+      toggleIcon: collapsed ? "ph-caret-double-right" : "ph-caret-double-left",
+      toggleTitle: collapsed ? "サイドバーを開く" : "サイドバーを折りたたむ",
+      toggleSidebar: () => this.setState((st) => ({ collapsed: !st.collapsed })),
+      cellPad: compact ? "6px 10px" : "10px 12px",
+      sidebarBg: sidebarTone === "mint" ? "var(--tm-teal-100)" : "var(--tm-white)",
+      showTransactions: s === "transactions",
+      showOrgs: s === "orgs",
+      showCounterparts: s === "counterparts",
+      showUpload: s === "upload",
+      showPlaceholder: !built.includes(s),
+      placeholderTitle: titles[s] || "",
+      transactions,
+      orgs: [
+        { name: "チームみらい", kind: "政党", desc: "国政政党。本部会計。", created: "2025.05.08" },
+        { name: "チームみらい東京都連合", kind: "政治団体", desc: "東京都内の支部会計。", created: "2025.06.12" },
+      ],
+      counterparts: [
+        { name: "株式会社みらい印刷", address: "東京都千代田区永田町1-2-3", usage: 42 },
+        { name: "合同会社シビックデザイン", address: "東京都渋谷区神南1-4-5", usage: 18 },
+        { name: "オフィスサポート株式会社", address: "東京都新宿区西新宿2-8-1", usage: 11 },
+        { name: "山田 太郎", address: "神奈川県横浜市中区日本大通1", usage: 6 },
+        { name: "株式会社データワークス", address: "大阪府大阪市北区梅田3-1-3", usage: 3 },
+      ],
+    };
+  }
+}
+</script>
+</body>
+</html>
