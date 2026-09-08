@@ -1,7 +1,8 @@
 "use client";
 
-import type { ReactNode } from "react";
 import Link from "next/link";
+import { CaretLeft, CaretRight } from "@phosphor-icons/react/dist/ssr";
+import { cn } from "@/client/lib";
 
 interface StaticPaginationProps {
   currentPage: number;
@@ -9,96 +10,52 @@ interface StaticPaginationProps {
   basePath: string;
 }
 
+const pillClass =
+  "inline-flex items-center gap-1.5 rounded-full border-[1.5px] bg-card px-4 py-[7px] text-xs font-bold transition-colors duration-150 ease-out";
+const enabledClass =
+  "border-border text-foreground hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2";
+const disabledClass = "border-disabled-border text-disabled-foreground cursor-not-allowed";
+
+/**
+ * URL の `?page=` で遷移する静的ページネーション。
+ * 「前へ / 次へ」の黒枠白ピルと、中央に Poppins の「現在 / 総数」表示。
+ */
 export function StaticPagination({ currentPage, totalPages, basePath }: StaticPaginationProps) {
-  const generatePageUrl = (page: number) => {
-    return `${basePath}?page=${page}`;
-  };
+  if (totalPages <= 0) return null;
 
-  const renderPageNumbers = () => {
-    if (totalPages <= 0) return null;
-
-    const pages: ReactNode[] = [];
-    const windowSize = 5;
-
-    const addPageLink = (page: number) => {
-      pages.push(
-        <Link
-          key={`page-${page}`}
-          href={generatePageUrl(page)}
-          className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
-            page === currentPage
-              ? "bg-primary text-primary-foreground"
-              : "text-muted-foreground hover:bg-accent hover:text-foreground"
-          }`}
-        >
-          {page}
-        </Link>,
-      );
-    };
-
-    const addEllipsis = (key: string) => {
-      pages.push(
-        <span key={`ellipsis-${key}`} className="px-2 text-muted-foreground select-none">
-          …
-        </span>,
-      );
-    };
-
-    if (totalPages <= windowSize + 2) {
-      for (let page = 1; page <= totalPages; page++) {
-        addPageLink(page);
-      }
-      return pages;
-    }
-
-    addPageLink(1);
-
-    let startPage = Math.max(2, currentPage - Math.floor(windowSize / 2));
-    let endPage = Math.min(totalPages - 1, startPage + windowSize - 1);
-
-    if (endPage >= totalPages) {
-      endPage = totalPages - 1;
-      startPage = endPage - windowSize + 1;
-    }
-
-    if (startPage > 2) {
-      addEllipsis("left");
-    }
-
-    for (let page = startPage; page <= endPage; page++) {
-      addPageLink(page);
-    }
-
-    if (endPage < totalPages - 1) {
-      addEllipsis("right");
-    }
-
-    addPageLink(totalPages);
-
-    return pages;
-  };
+  const generatePageUrl = (page: number) => `${basePath}?page=${page}`;
+  const hasPrev = currentPage > 1;
+  const hasNext = currentPage < totalPages;
 
   return (
-    <div className="flex justify-center items-center gap-2 mt-6">
-      {currentPage > 1 && (
-        <Link
-          href={generatePageUrl(currentPage - 1)}
-          className="px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground rounded-md transition-colors"
-        >
-          ← 前
+    <nav aria-label="pagination" className="mt-6 flex items-center justify-center gap-2.5">
+      {hasPrev ? (
+        <Link href={generatePageUrl(currentPage - 1)} className={cn(pillClass, enabledClass)}>
+          <CaretLeft className="size-3" />
+          前へ
         </Link>
+      ) : (
+        <span aria-disabled="true" className={cn(pillClass, disabledClass)}>
+          <CaretLeft className="size-3" />
+          前へ
+        </span>
       )}
 
-      {renderPageNumbers()}
+      <span className="font-latin text-[13px] font-semibold text-foreground">
+        {currentPage} / {totalPages}
+      </span>
 
-      {currentPage < totalPages && (
-        <Link
-          href={generatePageUrl(currentPage + 1)}
-          className="px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground rounded-md transition-colors"
-        >
-          次 →
+      {hasNext ? (
+        <Link href={generatePageUrl(currentPage + 1)} className={cn(pillClass, enabledClass)}>
+          次へ
+          <CaretRight className="size-3" />
         </Link>
+      ) : (
+        <span aria-disabled="true" className={cn(pillClass, disabledClass)}>
+          次へ
+          <CaretRight className="size-3" />
+        </span>
       )}
-    </div>
+    </nav>
   );
 }

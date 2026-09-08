@@ -2,8 +2,10 @@
 import "client-only";
 
 import type { TransactionWithOrganization } from "@/server/contexts/shared/domain/transaction";
-import { PL_CATEGORIES } from "@/shared/accounting/account-category";
-import type { TransactionType } from "@/shared/models/transaction";
+import { TableCell, TableRow } from "@/client/components/ui";
+import { formatAmount, formatDate } from "@/client/lib";
+import { CategoryPill } from "@/client/components/transactions/CategoryPill";
+import { TransactionTypeBadge } from "@/client/components/transactions/TransactionTypeBadge";
 import { DeleteTransactionButton } from "@/client/components/transactions/DeleteTransactionButton";
 
 interface TransactionRowProps {
@@ -11,179 +13,55 @@ interface TransactionRowProps {
   onDeleted?: () => void;
 }
 
-const DEFAULT_CATEGORY_COLOR = "#64748B"; // slate-500 as default fallback color
-
-function getCategoryInfoByAccount(accountName: string) {
-  return PL_CATEGORIES[accountName];
-}
-
-function getCategoryColor(accountName: string): string {
-  const categoryInfo = getCategoryInfoByAccount(accountName);
-  return categoryInfo?.color || DEFAULT_CATEGORY_COLOR;
-}
-
-function getCategoryLabel(accountName: string): string {
-  const categoryInfo = getCategoryInfoByAccount(accountName);
-  return categoryInfo?.shortLabel || accountName;
-}
-
-function getTransactionCategory(transaction: TransactionWithOrganization): {
-  account: string;
-  color: string;
-  label: string;
-  type: TransactionType;
-} {
-  // non_cash_journal取引の場合はカテゴリを表示しない
-  if (transaction.transaction_type === "non_cash_journal") {
-    return {
-      account: "non_cash_journal",
-      color: "#6B7280", // グレー
-      label: "-",
-      type: "non_cash_journal" as const,
-    };
-  }
-
-  // offset系の取引の場合
-  if (transaction.transaction_type === "offset_income") {
-    return {
-      account: transaction.credit_account,
-      color: getCategoryColor(transaction.credit_account),
-      label: getCategoryLabel(transaction.credit_account),
-      type: "offset_income" as const,
-    };
-  }
-
-  if (transaction.transaction_type === "offset_expense") {
-    return {
-      account: transaction.debit_account,
-      color: getCategoryColor(transaction.debit_account),
-      label: getCategoryLabel(transaction.debit_account),
-      type: "offset_expense" as const,
-    };
-  }
-
-  // 借方（debit）が費用系の場合は借方のカテゴリを、そうでなければ貸方のカテゴリを表示
-  const debitInfo = getCategoryInfoByAccount(transaction.debit_account);
-  const creditInfo = getCategoryInfoByAccount(transaction.credit_account);
-
-  if (debitInfo?.type === "expense") {
-    return {
-      account: transaction.debit_account,
-      color: getCategoryColor(transaction.debit_account),
-      label: getCategoryLabel(transaction.debit_account),
-      type: debitInfo.type,
-    };
-  } else {
-    return {
-      account: transaction.credit_account,
-      color: getCategoryColor(transaction.credit_account),
-      label: getCategoryLabel(transaction.credit_account),
-      type: creditInfo?.type || transaction.transaction_type,
-    };
-  }
-}
-
-function getTypeLabel(type: string): string {
-  switch (type) {
-    case "income":
-      return "現金収入";
-    case "expense":
-      return "現金支出";
-    case "non_cash_journal":
-      return "非現金仕訳";
-    case "offset_income":
-      return "相殺収入";
-    case "offset_expense":
-      return "相殺支出";
-    case "invalid":
-      return "無効";
-    default:
-      return "不明";
-  }
-}
-
-function getTypeBadgeClass(type: string): string {
-  switch (type) {
-    case "income":
-    case "offset_income":
-      return "bg-green-600";
-    case "expense":
-    case "offset_expense":
-      return "bg-red-600";
-    case "non_cash_journal":
-      return "bg-gray-500";
-    case "invalid":
-      return "bg-orange-600";
-    default:
-      return "bg-gray-600";
-  }
-}
-
 export function TransactionRow({ transaction, onDeleted }: TransactionRowProps) {
-  const formatDate = (date: Date | string) => {
-    return new Date(date).toLocaleDateString("ja-JP");
-  };
-
   return (
-    <tr className="border-b border-border">
-      <td className="px-2 py-3 text-sm text-foreground font-mono">{transaction.transaction_no}</td>
-      <td className="px-2 py-3 text-sm text-foreground">
+    <TableRow>
+      <TableCell className="font-latin text-xs text-muted-foreground">
+        {transaction.transaction_no}
+      </TableCell>
+      <TableCell className="font-latin text-[13px]">
         {formatDate(transaction.transaction_date)}
-      </td>
-      <td className="px-2 py-3 text-sm text-foreground">
+      </TableCell>
+      <TableCell className="text-[13px]">
         {transaction.political_organization_name || "-"}
-      </td>
-      <td className="px-2 py-3 text-sm text-foreground">
+      </TableCell>
+      <TableCell className="text-[13px]">
         {transaction.debit_account}
         {transaction.debit_sub_account && (
-          <div className="text-muted-foreground text-xs">{transaction.debit_sub_account}</div>
+          <div className="text-xs text-muted-foreground">{transaction.debit_sub_account}</div>
         )}
-      </td>
-      <td className="px-2 py-3 text-sm text-right text-foreground">
-        ¥{transaction.debit_amount.toLocaleString()}
-      </td>
-      <td className="px-2 py-3 text-sm text-foreground">
+      </TableCell>
+      <TableCell className="font-latin text-right text-[13px] font-semibold">
+        {formatAmount(transaction.debit_amount)}
+      </TableCell>
+      <TableCell className="text-[13px]">
         {transaction.credit_account}
         {transaction.credit_sub_account && (
-          <div className="text-muted-foreground text-xs">{transaction.credit_sub_account}</div>
+          <div className="text-xs text-muted-foreground">{transaction.credit_sub_account}</div>
         )}
-      </td>
-      <td className="px-2 py-3 text-sm text-right text-foreground">
-        ¥{transaction.credit_amount.toLocaleString()}
-      </td>
-      <td className="px-2 py-3 text-sm text-foreground">
-        <div
-          className={`inline-block px-2 py-1 rounded text-white text-xs font-medium ${getTypeBadgeClass(transaction.transaction_type)}`}
-        >
-          {getTypeLabel(transaction.transaction_type)}
+      </TableCell>
+      <TableCell className="font-latin text-right text-[13px] font-semibold">
+        {formatAmount(transaction.credit_amount)}
+      </TableCell>
+      <TableCell>
+        <TransactionTypeBadge type={transaction.transaction_type} />
+      </TableCell>
+      <TableCell>
+        <CategoryPill transaction={transaction} />
+      </TableCell>
+      <TableCell className="max-w-[200px] text-xs text-muted-foreground">
+        <div className="truncate" title={transaction.description || undefined}>
+          {transaction.description || "-"}
         </div>
-      </td>
-      <td className="px-2 py-3 text-sm text-foreground">
-        {(() => {
-          const category = getTransactionCategory(transaction);
-          return (
-            <div
-              className={`inline-block px-2 py-1 rounded text-xs font-medium max-w-fit ${
-                category.type === "income" || category.type === "offset_income"
-                  ? "text-black"
-                  : "text-foreground"
-              }`}
-              style={{ backgroundColor: category.color }}
-            >
-              {category.label}
-            </div>
-          );
-        })()}
-      </td>
-      <td className="px-2 py-3 text-sm text-foreground">
-        {transaction.description || "-"}
         {transaction.label && (
-          <div className="text-muted-foreground text-xs mt-1">ラベル: {transaction.label}</div>
+          <div className="mt-1 truncate" title={transaction.label}>
+            ラベル: {transaction.label}
+          </div>
         )}
-      </td>
-      <td className="px-2 py-3 text-sm text-center">
+      </TableCell>
+      <TableCell className="text-center">
         <DeleteTransactionButton transaction={transaction} onDeleted={onDeleted} />
-      </td>
-    </tr>
+      </TableCell>
+    </TableRow>
   );
 }

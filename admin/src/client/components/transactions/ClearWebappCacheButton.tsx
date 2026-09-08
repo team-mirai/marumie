@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { ArrowsClockwise } from "@phosphor-icons/react/dist/ssr";
 import { clearWebappCacheAction } from "@/server/contexts/shared/presentation/actions/clear-webapp-cache";
 import { Button } from "@/client/components/ui";
 
@@ -26,8 +27,17 @@ export function ClearWebappCacheButton() {
   };
 
   return (
-    <Button type="button" onClick={handleClearCache} disabled={clearing}>
-      {clearing ? "クリア中..." : "ウェブアプリのキャッシュをクリア"}
+    <Button
+      type="button"
+      variant="outline"
+      size="sm"
+      className="text-xs"
+      onClick={handleClearCache}
+      disabled={clearing}
+      title="ウェブアプリのキャッシュをクリア"
+    >
+      <ArrowsClockwise />
+      {clearing ? "クリア中..." : "キャッシュクリア"}
     </Button>
   );
 }

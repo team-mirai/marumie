@@ -5,34 +5,38 @@ import {
 } from "@/client/lib/format";
 
 describe("formatDate", () => {
-  it("formats date to YYYY/MM/DD format with zero-padding", () => {
-    expect(formatDate(new Date(2025, 0, 1))).toBe("2025/01/01");
-    expect(formatDate(new Date(2025, 11, 31))).toBe("2025/12/31");
+  it("formats date to YYYY.MM.DD format with zero-padding", () => {
+    expect(formatDate(new Date(2025, 0, 1))).toBe("2025.01.01");
+    expect(formatDate(new Date(2025, 11, 31))).toBe("2025.12.31");
   });
 
   it("pads single-digit months with zero", () => {
-    expect(formatDate(new Date(2025, 0, 15))).toBe("2025/01/15");
-    expect(formatDate(new Date(2025, 8, 5))).toBe("2025/09/05");
+    expect(formatDate(new Date(2025, 0, 15))).toBe("2025.01.15");
+    expect(formatDate(new Date(2025, 8, 5))).toBe("2025.09.05");
   });
 
   it("pads single-digit days with zero", () => {
-    expect(formatDate(new Date(2025, 5, 1))).toBe("2025/06/01");
-    expect(formatDate(new Date(2025, 10, 9))).toBe("2025/11/09");
+    expect(formatDate(new Date(2025, 5, 1))).toBe("2025.06.01");
+    expect(formatDate(new Date(2025, 10, 9))).toBe("2025.11.09");
   });
 
   it("handles various years", () => {
-    expect(formatDate(new Date(2000, 0, 1))).toBe("2000/01/01");
-    expect(formatDate(new Date(1999, 11, 31))).toBe("1999/12/31");
-    expect(formatDate(new Date(2030, 6, 15))).toBe("2030/07/15");
+    expect(formatDate(new Date(2000, 0, 1))).toBe("2000.01.01");
+    expect(formatDate(new Date(1999, 11, 31))).toBe("1999.12.31");
+    expect(formatDate(new Date(2030, 6, 15))).toBe("2030.07.15");
   });
 
   it("handles date strings passed as Date objects", () => {
     const dateFromString = new Date("2025-06-15T00:00:00");
-    expect(formatDate(dateFromString)).toBe("2025/06/15");
+    expect(formatDate(dateFromString)).toBe("2025.06.15");
   });
 
   it("handles leap year dates", () => {
-    expect(formatDate(new Date(2024, 1, 29))).toBe("2024/02/29");
+    expect(formatDate(new Date(2024, 1, 29))).toBe("2024.02.29");
+  });
+
+  it("accepts date strings", () => {
+    expect(formatDate("2025-06-15T00:00:00")).toBe("2025.06.15");
   });
 });
 
