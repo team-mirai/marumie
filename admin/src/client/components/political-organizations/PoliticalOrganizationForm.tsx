@@ -64,7 +64,7 @@ export function PoliticalOrganizationForm({
     <Card>
       <CardContent>
         {error && (
-          <div className="text-destructive mb-4 p-3 bg-destructive/10 rounded-lg border border-destructive/30">
+          <div className="mb-4 rounded-lg border border-destructive bg-destructive-hover p-3 text-sm text-destructive">
             {error}
           </div>
         )}

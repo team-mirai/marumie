@@ -3,7 +3,19 @@ import "client-only";
 import { useState } from "react";
 import type { ChangeEvent, FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { Button, Input, Card } from "../ui";
+import {
+  Button,
+  Input,
+  NativeSelect,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/client/components/ui";
+import { UserRoleBadge } from "@/client/components/user-management/UserRoleBadge";
+import { formatDate } from "@/client/lib";
 import type { UserRole } from "@/server/contexts/auth/domain/models/user-role";
 import type { User } from "@/server/contexts/shared/domain/repositories/user-repository.interface";
 
@@ -99,86 +111,72 @@ export default function UserManagement({
   return (
     <div className="space-y-4">
       {/* Invite User Form */}
-      <Card className="p-4">
-        <h2 className="text-lg font-medium text-foreground mb-4">新規ユーザー招待</h2>
-        <form onSubmit={handleInviteUser} className="flex gap-4">
-          <div className="flex-1">
-            <Input
-              type="email"
-              value={inviteEmail}
-              onChange={(e: ChangeEvent<HTMLInputElement>) => setInviteEmail(e.target.value)}
-              placeholder="メールアドレスを入力"
-              disabled={isInviting}
-              required
-            />
-          </div>
+      <div className="rounded-lg border border-border bg-card p-6">
+        <h2 className="mb-4 text-base font-bold text-foreground">新規ユーザー招待</h2>
+        <form onSubmit={handleInviteUser} className="flex flex-wrap gap-3">
+          <Input
+            type="email"
+            value={inviteEmail}
+            onChange={(e: ChangeEvent<HTMLInputElement>) => setInviteEmail(e.target.value)}
+            placeholder="メールアドレスを入力"
+            disabled={isInviting}
+            className="max-w-md flex-1"
+            required
+          />
           <Button type="submit" disabled={isInviting || !inviteEmail.trim()}>
             {isInviting ? "送信中..." : "招待を送信"}
           </Button>
         </form>
-      </Card>
+      </div>
 
-      <Card className="overflow-hidden p-0">
-        <table className="min-w-full divide-y divide-border">
-          <thead className="bg-secondary">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                メール
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                ロール
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                作成日
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                操作
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-card divide-y divide-border">
+      <div className="rounded-lg border border-border bg-card p-6">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>メール</TableHead>
+              <TableHead>ロール</TableHead>
+              <TableHead>作成日</TableHead>
+              <TableHead>操作</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {users.map((user) => (
-              <tr key={user.id}>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-foreground">
+              <TableRow key={user.id}>
+                <TableCell className="font-latin text-[13px] text-foreground">
                   {user.email}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-foreground">
-                  <span
-                    className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                      user.role === "admin"
-                        ? "bg-red-900 text-red-200"
-                        : "bg-green-900 text-green-200"
-                    }`}
-                  >
-                    {user.role}
-                  </span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
-                  {new Date(user.createdAt).toLocaleDateString()}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                  <select
+                </TableCell>
+                <TableCell>
+                  <UserRoleBadge role={user.role} />
+                </TableCell>
+                <TableCell className="font-latin text-[13px] text-muted-foreground">
+                  {formatDate(user.createdAt)}
+                </TableCell>
+                <TableCell>
+                  <NativeSelect
+                    aria-label={`${user.email} のロール`}
                     value={user.role}
                     onChange={(e) => handleRoleChange(user.id, e.target.value as UserRole)}
                     disabled={isLoading}
-                    className="bg-input text-foreground border border-border rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                    className="h-8 text-xs"
                   >
                     {availableRoles.map((role) => (
                       <option key={role} value={role}>
                         {role.charAt(0).toUpperCase() + role.slice(1)}
                       </option>
                     ))}
-                  </select>
-                </td>
-              </tr>
+                  </NativeSelect>
+                </TableCell>
+              </TableRow>
             ))}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
 
         {users.length === 0 && (
-          <div className="text-center py-8 text-muted-foreground">ユーザーが見つかりません</div>
+          <div className="py-8 text-center text-sm text-muted-foreground">
+            ユーザーが見つかりません
+          </div>
         )}
-      </Card>
+      </div>
     </div>
   );
 }

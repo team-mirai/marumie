@@ -2,7 +2,15 @@
 import "client-only";
 
 import type { OrganizationReportProfileDetails } from "@/server/contexts/report/domain/models/organization-report-profile";
-import { Card, CardHeader, CardTitle, CardContent, Label, Input } from "@/client/components/ui";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+  Label,
+  Input,
+  NativeSelect,
+} from "@/client/components/ui";
 
 interface OrganizationTypeSectionProps {
   details: OrganizationReportProfileDetails;
@@ -31,19 +39,19 @@ export function OrganizationTypeSection({ details, updateDetails }: Organization
 
         <div className="space-y-2">
           <Label>活動区域</Label>
-          <select
+          <NativeSelect
             value={details.activityArea ?? ""}
             onChange={(e) =>
               updateDetails({
                 activityArea: e.target.value as "1" | "2" | undefined,
               })
             }
-            className="flex h-9 w-full rounded-md border border-border bg-input px-3 py-1 text-base shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm"
+            wrapperClassName="w-full"
           >
             <option value="">選択してください</option>
             <option value="1">二以上の都道府県の区域</option>
             <option value="2">一つの都道府県の区域</option>
-          </select>
+          </NativeSelect>
         </div>
 
         <div className="space-y-2">

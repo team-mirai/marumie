@@ -25,10 +25,8 @@ test.describe("報告書プロフィール", () => {
 				page.getByRole("heading", { name: new RegExp(`${orgName}.*報告書プロフィール`) }),
 			).toBeVisible();
 
-			// YearSelector の select（Label「報告年」の直後の要素）
-			const yearSelect = page.locator(
-				'xpath=//label[normalize-space()="報告年"]/following-sibling::select[1]',
-			);
+			// YearSelector の select（Label「報告年」に htmlFor で紐付いている）
+			const yearSelect = page.getByLabel("報告年");
 
 			// YearSelector の選択肢は currentYear から過去10年。
 			// 実行年に依存しないよう、currentYear-1 と currentYear-2 を使う。
