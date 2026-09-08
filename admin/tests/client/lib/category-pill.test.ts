@@ -1,4 +1,4 @@
-import { resolveCategoryPill } from "@/client/lib/category-pill";
+import { resolveCategoryPill, resolveCategoryPillByKey } from "@/client/lib/category-pill";
 import { PL_CATEGORIES } from "@/shared/accounting/account-category";
 
 const INCOME_ACCOUNT = "個人からの寄附";
@@ -110,5 +110,38 @@ describe("resolveCategoryPill", () => {
 
     expect(pill.label).toBe(PL_CATEGORIES[INCOME_ACCOUNT].shortLabel);
     expect(pill.bgColor).toBe(PL_CATEGORIES[INCOME_ACCOUNT].color);
+  });
+});
+
+describe("resolveCategoryPillByKey", () => {
+  it("収入カテゴリのキーは resolveCategoryPill の収入ルールと同じピルになる", () => {
+    const mapping = PL_CATEGORIES[INCOME_ACCOUNT];
+    expect(resolveCategoryPillByKey(mapping.key)).toEqual(
+      resolveCategoryPill({
+        debit_account: "普通預金",
+        credit_account: INCOME_ACCOUNT,
+        transaction_type: "income",
+      }),
+    );
+  });
+
+  it("支出カテゴリのキーは resolveCategoryPill の支出ルールと同じピルになる", () => {
+    const mapping = PL_CATEGORIES[EXPENSE_ACCOUNT];
+    expect(resolveCategoryPillByKey(mapping.key)).toEqual(
+      resolveCategoryPill({
+        debit_account: EXPENSE_ACCOUNT,
+        credit_account: "普通預金",
+        transaction_type: "expense",
+      }),
+    );
+  });
+
+  it("未知のキーはキー文字列をラベルにしたフォールバック色（白地）で返す", () => {
+    expect(resolveCategoryPillByKey("unknown-key")).toEqual({
+      label: "unknown-key",
+      fontColor: "#47474C",
+      borderColor: "#99F6E4",
+      bgColor: "#FFFFFF",
+    });
   });
 });

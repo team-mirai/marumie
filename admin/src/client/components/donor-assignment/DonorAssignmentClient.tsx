@@ -4,6 +4,7 @@ import "client-only";
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { HandHeart, UploadSimple } from "@phosphor-icons/react/dist/ssr";
 import type { RowSelectionState } from "@tanstack/react-table";
 import type { PoliticalOrganization } from "@/shared/models/political-organization";
 import type { TransactionWithDonor } from "@/server/contexts/report/domain/models/transaction-with-donor";
@@ -12,11 +13,14 @@ import { TransactionWithDonorTable } from "./TransactionWithDonorTable";
 import { AssignDonorDialog } from "./AssignDonorDialog";
 import { DonorAssignmentFilters, type DonorAssignmentFilterValues } from "./DonorAssignmentFilters";
 import { ClientPagination } from "@/client/components/ui/ClientPagination";
-import { Card, Input, Button, Label } from "@/client/components/ui";
+import { Input, Button, Label } from "@/client/components/ui";
 import { PageHeader } from "@/client/components/layout/PageHeader";
 import { PoliticalOrganizationSelect } from "@/client/components/political-organizations/PoliticalOrganizationSelect";
+import { AssignmentSelectionBar } from "@/client/components/assignment/AssignmentSelectionBar";
 
 const ALL_CATEGORIES_VALUE = "__all__";
+
+type SortField = "transactionDate" | "debitAmount" | "categoryKey";
 
 interface DonorAssignmentClientProps {
   organizations: PoliticalOrganization[];
@@ -30,7 +34,7 @@ interface DonorAssignmentClientProps {
     unassignedOnly: boolean;
     categoryKey: string;
     searchQuery: string;
-    sortField: "transactionDate" | "debitAmount" | "categoryKey";
+    sortField: SortField;
     sortOrder: "asc" | "desc";
   };
   allDonors: Donor[];
@@ -177,7 +181,7 @@ export function DonorAssignmentClient({
     }
   };
 
-  const handleSortChange = (field: "transactionDate" | "debitAmount" | "categoryKey") => {
+  const handleSortChange = (field: SortField) => {
     let newOrder: "asc" | "desc" = "asc";
     if (sortField === field) {
       newOrder = sortOrder === "asc" ? "desc" : "asc";
@@ -199,11 +203,22 @@ export function DonorAssignmentClient({
     <PageHeader
       label="Donor Assignment"
       title="寄付者紐付け管理"
-      description="Transactionに対してDonor（寄付者）を紐付けます"
+      description="取引に対して寄付者を紐付けます"
       actions={
-        <Button asChild variant="outline">
-          <Link href="/import-donors">CSV一括登録</Link>
-        </Button>
+        <>
+          <Button asChild variant="outline" className="text-[13px]">
+            <Link href="/donors">
+              <HandHeart />
+              マスタ管理へ
+            </Link>
+          </Button>
+          <Button asChild variant="outline" className="text-[13px]">
+            <Link href="/import-donors">
+              <UploadSimple />
+              CSV一括登録
+            </Link>
+          </Button>
+        </>
       }
     />
   );
@@ -212,11 +227,11 @@ export function DonorAssignmentClient({
     return (
       <div>
         {header}
-        <Card className="p-4">
-          <p className="text-foreground">
+        <div className="rounded-lg border border-border bg-card p-6">
+          <p className="text-sm text-muted-foreground">
             政治団体が登録されていません。先に政治団体を作成してください。
           </p>
-        </Card>
+        </div>
       </div>
     );
   }
@@ -225,33 +240,32 @@ export function DonorAssignmentClient({
     <div>
       {header}
 
-      <div className="bg-card rounded-xl p-4 space-y-6">
-        <Card className="p-4">
-          <div className="flex flex-col md:flex-row md:items-end gap-4">
-            <div className="w-fit">
-              <PoliticalOrganizationSelect
-                organizations={organizations}
-                value={selectedOrganizationId}
-                onValueChange={handleOrganizationChange}
-                required
-              />
-            </div>
-            <div className="w-fit space-y-2">
-              <Label>報告年 (西暦)</Label>
-              <Input
-                type="number"
-                value={String(financialYear)}
-                onChange={handleYearChange}
-                min={1900}
-                max={2100}
-                required
-                className="w-24"
-              />
-            </div>
+      <div className="rounded-lg border border-border bg-card p-6">
+        {/* Toolbar: 団体・報告年 */}
+        <div className="mb-3 flex flex-wrap items-center gap-2">
+          <PoliticalOrganizationSelect
+            organizations={organizations}
+            value={selectedOrganizationId}
+            onValueChange={handleOrganizationChange}
+            required
+            hideLabel
+          />
+          <div className="flex items-center gap-2">
+            <Label htmlFor="financial-year" className="text-xs font-bold">
+              報告年
+            </Label>
+            <Input
+              id="financial-year"
+              type="number"
+              value={String(financialYear)}
+              onChange={handleYearChange}
+              min={1900}
+              max={2100}
+              required
+              className="font-latin w-[104px] border-[1.5px] text-[13px]"
+            />
           </div>
-        </Card>
-
-        <hr className="border-border" />
+        </div>
 
         <DonorAssignmentFilters
           values={{
@@ -263,56 +277,42 @@ export function DonorAssignmentClient({
           onChange={handleFilterChange}
         />
 
-        <Card className="p-4">
-          <div className="flex justify-between items-center mb-4">
-            <div className="text-muted-foreground text-sm">
-              {total}件のTransaction
-              {unassignedOnly && " (未紐付けのみ)"}
+        <div className="mt-5 mb-3 flex flex-wrap items-center justify-between gap-2">
+          <p className="text-[13px] text-muted-foreground">
+            <span className="font-latin">{total}</span>件の取引
+            {unassignedOnly && " (未紐付けのみ)"}
+          </p>
+          {isPending && (
+            <div className="flex items-center gap-2">
+              <div className="size-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+              <p className="text-[13px] text-muted-foreground">読み込み中...</p>
             </div>
-            {isPending && <div className="text-muted-foreground text-sm">読み込み中...</div>}
-          </div>
-
-          <div className="flex items-center gap-4 mb-4 p-3 bg-secondary/30 border border-border rounded-lg">
-            <span className="text-foreground text-sm">
-              選択中: <span className="font-medium">{selectedTransactions.length}件</span>
-            </span>
-            <Button
-              type="button"
-              size="sm"
-              onClick={handleBulkAssignClick}
-              disabled={selectedTransactions.length === 0}
-            >
-              一括紐付け
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => setRowSelection({})}
-              disabled={selectedTransactions.length === 0}
-            >
-              選択解除
-            </Button>
-          </div>
-
-          <TransactionWithDonorTable
-            transactions={initialTransactions}
-            sortField={sortField}
-            sortOrder={sortOrder}
-            onSortChange={handleSortChange}
-            rowSelection={rowSelection}
-            onRowSelectionChange={setRowSelection}
-            onAssignClick={handleAssignClick}
-          />
-
-          {totalPages > 1 && (
-            <ClientPagination
-              currentPage={page}
-              totalPages={totalPages}
-              onPageChange={handlePageChange}
-            />
           )}
-        </Card>
+        </div>
+
+        <AssignmentSelectionBar
+          selectedCount={selectedTransactions.length}
+          onBulkAssign={handleBulkAssignClick}
+          onClear={() => setRowSelection({})}
+        />
+
+        <TransactionWithDonorTable
+          transactions={initialTransactions}
+          sortField={sortField}
+          sortOrder={sortOrder}
+          onSortChange={handleSortChange}
+          rowSelection={rowSelection}
+          onRowSelectionChange={setRowSelection}
+          onAssignClick={handleAssignClick}
+        />
+
+        {totalPages > 1 && (
+          <ClientPagination
+            currentPage={page}
+            totalPages={totalPages}
+            onPageChange={handlePageChange}
+          />
+        )}
 
         <AssignDonorDialog
           isOpen={isAssignDialogOpen}

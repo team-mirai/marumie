@@ -88,3 +88,24 @@ export function resolveCategoryPill(source: CategoryPillSource): CategoryPillSty
     bgColor: isIncome ? FALLBACK_CATEGORY_COLOR : "#FFFFFF",
   };
 }
+
+/**
+ * カテゴリキー（`PL_CATEGORIES[*].key`。例: "individual-donations"）からカテゴリピルを解決する。
+ * 紐付け画面など、勘定科目名ではなくキーだけを持つ取引で使う。表示ルールは `resolveCategoryPill` と同一。
+ * 未知のキーはキー文字列をラベルにしたフォールバック色（支出扱い）で返す。
+ */
+export function resolveCategoryPillByKey(categoryKey: string): CategoryPillStyle {
+  const mapping = Object.values(PL_CATEGORIES).find((value) => value.key === categoryKey);
+  if (!mapping) {
+    return {
+      label: categoryKey,
+      fontColor: INCOME_FONT_COLOR,
+      borderColor: FALLBACK_CATEGORY_COLOR,
+      bgColor: "#FFFFFF",
+    };
+  }
+  const { color, shortLabel } = mapping;
+  return mapping.type === "income"
+    ? { label: shortLabel, fontColor: INCOME_FONT_COLOR, borderColor: color, bgColor: color }
+    : { label: shortLabel, fontColor: color, borderColor: color, bgColor: "#FFFFFF" };
+}

@@ -2,7 +2,7 @@
 import "client-only";
 
 import { useState } from "react";
-import { Question } from "@phosphor-icons/react/dist/ssr";
+import { MagnifyingGlass, Question } from "@phosphor-icons/react/dist/ssr";
 import {
   Input,
   Button,
@@ -11,14 +11,12 @@ import {
   Tooltip,
   TooltipTrigger,
   TooltipContent,
-} from "@/client/components/ui";
-import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/client/components/ui/select";
+} from "@/client/components/ui";
 
 export interface CounterpartAssignmentFilterValues {
   categoryKey: string;
@@ -33,6 +31,10 @@ interface CounterpartAssignmentFiltersProps {
   onChange: (values: Partial<CounterpartAssignmentFilterValues>) => void;
 }
 
+/**
+ * 取引先紐付け一覧の絞り込み。カテゴリ select・検索 input はピル（黒 1.5px 枠・13px）、
+ * チェックボックスは 2 行目にまとめる。
+ */
 export function CounterpartAssignmentFilters({
   values,
   categoryOptions,
@@ -51,62 +53,63 @@ export function CounterpartAssignmentFilters({
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-col md:flex-row gap-4">
-        <div className="flex-1 space-y-2">
-          <Label>カテゴリ</Label>
-          <Select
-            value={values.categoryKey}
-            onValueChange={(value) => onChange({ categoryKey: value })}
-          >
-            <SelectTrigger className="w-full md:w-64">
-              <SelectValue placeholder="カテゴリを選択" />
-            </SelectTrigger>
-            <SelectContent>
-              {categoryOptions.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+    <div className="space-y-3">
+      <div className="flex flex-wrap items-center gap-2">
+        <Select
+          value={values.categoryKey}
+          onValueChange={(value) => onChange({ categoryKey: value })}
+        >
+          <SelectTrigger className="w-[200px] border-[1.5px] text-[13px]" aria-label="カテゴリ">
+            <SelectValue placeholder="カテゴリを選択" />
+          </SelectTrigger>
+          <SelectContent>
+            {categoryOptions.map((option) => (
+              <SelectItem key={option.value} value={option.value}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
-        <form onSubmit={handleSearchSubmit} className="flex-1 space-y-2">
-          <Label>検索</Label>
-          <div className="flex gap-2">
-            <Input
-              type="text"
-              value={localSearchQuery}
-              onChange={(e) => setLocalSearchQuery(e.target.value)}
-              placeholder="摘要、メモ、相手先で検索..."
-              className="flex-1"
-            />
-            <Button type="submit" variant="secondary">
-              検索
+        <form onSubmit={handleSearchSubmit} className="flex flex-1 flex-wrap items-center gap-2">
+          <Input
+            type="text"
+            value={localSearchQuery}
+            onChange={(e) => setLocalSearchQuery(e.target.value)}
+            placeholder="摘要、メモ、相手先で検索..."
+            aria-label="摘要、メモ、相手先で検索"
+            className="min-w-[200px] max-w-[380px] flex-1 border-[1.5px] text-[13px]"
+          />
+          <Button type="submit" variant="outline" className="text-[13px]">
+            <MagnifyingGlass />
+            検索
+          </Button>
+          {values.searchQuery && (
+            <Button
+              type="button"
+              variant="outline"
+              className="text-[13px]"
+              onClick={handleSearchClear}
+            >
+              クリア
             </Button>
-            {values.searchQuery && (
-              <Button type="button" variant="ghost" onClick={handleSearchClear}>
-                クリア
-              </Button>
-            )}
-          </div>
+          )}
         </form>
       </div>
 
-      <div className="flex flex-wrap gap-4">
-        <div className="flex items-center gap-2 cursor-pointer">
+      <div className="flex flex-wrap gap-5">
+        <div className="flex items-center gap-2">
           <Checkbox
             id="unassigned-only"
             checked={values.unassignedOnly}
             onCheckedChange={(checked) => onChange({ unassignedOnly: checked === true })}
           />
-          <Label htmlFor="unassigned-only" className="text-foreground text-sm cursor-pointer">
+          <Label htmlFor="unassigned-only" className="cursor-pointer text-[13px] font-medium">
             未紐付けのみ表示
           </Label>
         </div>
 
-        <div className="flex items-center gap-2 cursor-pointer">
+        <div className="flex items-center gap-2">
           <Checkbox
             id="counterpart-required-only"
             checked={values.counterpartRequiredOnly}
@@ -114,12 +117,12 @@ export function CounterpartAssignmentFilters({
           />
           <Label
             htmlFor="counterpart-required-only"
-            className="text-foreground text-sm cursor-pointer flex items-center gap-1"
+            className="flex cursor-pointer items-center gap-1 text-[13px] font-medium"
           >
             取引先必須のみ表示
             <Tooltip>
               <TooltipTrigger asChild onClick={(e) => e.stopPropagation()}>
-                <Question className="size-4 hover:text-foreground cursor-help" />
+                <Question className="size-4 cursor-help text-subtle-foreground transition-colors duration-150 ease-out hover:text-foreground" />
               </TooltipTrigger>
               <TooltipContent side="bottom" className="max-w-sm">
                 <div className="space-y-2 text-left">
@@ -129,14 +132,14 @@ export function CounterpartAssignmentFilters({
                   </p>
                   <div className="space-y-1">
                     <p className="font-medium">【収入】全額記載必須</p>
-                    <ul className="list-disc list-inside text-xs">
+                    <ul className="list-inside list-disc text-xs">
                       <li>借入金</li>
                       <li>本部・支部交付金</li>
                     </ul>
                   </div>
                   <div className="space-y-1">
                     <p className="font-medium">【経常経費】5万円以上</p>
-                    <ul className="list-disc list-inside text-xs">
+                    <ul className="list-inside list-disc text-xs">
                       <li>光熱水費</li>
                       <li>備品・消耗品費</li>
                       <li>事務所費</li>
@@ -144,7 +147,7 @@ export function CounterpartAssignmentFilters({
                   </div>
                   <div className="space-y-1">
                     <p className="font-medium">【政治活動費】5万円以上</p>
-                    <ul className="list-disc list-inside text-xs">
+                    <ul className="list-inside list-disc text-xs">
                       <li>組織活動費、選挙関係費、機関紙誌の発行事業費 等</li>
                     </ul>
                   </div>

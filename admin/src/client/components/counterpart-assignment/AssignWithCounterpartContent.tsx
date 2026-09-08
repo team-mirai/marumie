@@ -3,11 +3,12 @@ import "client-only";
 
 import { useState, useTransition } from "react";
 import { Button, Tabs, TabsList, TabsTrigger, TabsContent } from "@/client/components/ui";
-import { formatDate, formatAmount } from "@/client/lib";
 import type { Counterpart } from "@/server/contexts/report/domain/models/counterpart";
 import type { TransactionWithCounterpart } from "@/server/contexts/report/domain/models/transaction-with-counterpart";
 import { CounterpartFormContent } from "@/client/components/counterparts/CounterpartFormContent";
 import { CounterpartSelectorContent } from "@/client/components/counterparts/CounterpartSelectorContent";
+import { SelectedTransactionsPanel } from "@/client/components/assignment/SelectedTransactionsPanel";
+import { FormErrorAlert } from "@/client/components/assignment/FormErrorAlert";
 import { createCounterpartAction } from "@/server/contexts/report/presentation/actions/create-counterpart";
 import { bulkAssignCounterpartAction } from "@/server/contexts/report/presentation/actions/bulk-assign-counterpart";
 
@@ -19,6 +20,10 @@ interface AssignWithCounterpartContentProps {
   onCancel: () => void;
 }
 
+/**
+ * 取引先紐付けダイアログの本体。左に選択中の取引、右に「既存から選択 / 新規作成」タブ。
+ * 確定は teal 塗り、キャンセルは黒枠白のピル。
+ */
 export function AssignWithCounterpartContent({
   transactions,
   allCounterparts,
@@ -79,54 +84,28 @@ export function AssignWithCounterpartContent({
     onSuccess(transactions.length);
   };
 
-  const getSelectButtonLabel = () => {
-    return `紐付け (${transactions.length}件)`;
-  };
-
   return (
-    <div className="flex flex-col lg:flex-row gap-6 flex-1 min-h-0 overflow-hidden">
-      <div className="lg:w-1/3 flex-shrink-0 flex flex-col min-h-0">
-        <div className="text-foreground font-medium mb-3">
-          {`選択中の取引 (${transactions.length}件)`}
-        </div>
+    <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-hidden lg:flex-row">
+      <SelectedTransactionsPanel
+        transactions={transactions}
+        title={`選択中の取引 (${transactions.length}件)`}
+      />
 
-        <div className="border border-border rounded-lg flex-1 overflow-y-auto">
-          {transactions.slice(0, 10).map((t) => (
-            <div key={t.id} className="px-3 py-2 text-sm border-b border-border last:border-b-0">
-              <div className="flex items-center gap-2">
-                <span className="text-muted-foreground">{formatDate(t.transactionDate)}</span>
-                <span className="text-foreground">{formatAmount(t.debitAmount)}</span>
-              </div>
-              <div className="text-muted-foreground text-xs truncate">{t.description || "-"}</div>
-            </div>
-          ))}
-          {transactions.length > 10 && (
-            <div className="px-3 py-2 text-sm text-muted-foreground text-center">
-              ...他 {transactions.length - 10}件
-            </div>
-          )}
-        </div>
-      </div>
-
-      <div className="lg:flex-1 flex flex-col min-h-0 min-w-0">
-        {error && (
-          <div className="text-red-500 p-3 bg-red-900/20 rounded-lg border border-red-900/30 mb-4 flex-shrink-0">
-            {error}
-          </div>
-        )}
+      <div className="flex min-h-0 min-w-0 flex-col lg:flex-1">
+        {error && <FormErrorAlert message={error} className="mb-4 shrink-0" />}
 
         <Tabs
           value={activeTab}
           onValueChange={(v) => setActiveTab(v as "select" | "create")}
-          className="flex flex-col flex-1 min-h-0"
+          className="flex min-h-0 flex-1 flex-col"
         >
-          <TabsList className="mb-4 flex-shrink-0">
+          <TabsList className="mb-4 shrink-0">
             <TabsTrigger value="select">既存から選択</TabsTrigger>
             <TabsTrigger value="create">新規作成</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="select" className="flex-1 flex flex-col min-h-0 mt-0">
-            <div className="flex-1 overflow-y-auto min-h-0">
+          <TabsContent value="select" className="mt-0 flex min-h-0 flex-1 flex-col">
+            <div className="min-h-0 flex-1 overflow-y-auto">
               <CounterpartSelectorContent
                 allCounterparts={allCounterparts}
                 selectedCounterpartId={selectedCounterpartId}
@@ -136,8 +115,8 @@ export function AssignWithCounterpartContent({
               />
             </div>
 
-            <div className="flex justify-end gap-2 pt-4 border-t border-border flex-shrink-0">
-              <Button type="button" variant="secondary" onClick={onCancel} disabled={isPending}>
+            <div className="flex shrink-0 justify-end gap-2 border-t border-border-soft pt-4">
+              <Button type="button" variant="outline" onClick={onCancel} disabled={isPending}>
                 キャンセル
               </Button>
               <Button
@@ -145,13 +124,13 @@ export function AssignWithCounterpartContent({
                 onClick={handleSelectExisting}
                 disabled={isPending || !selectedCounterpartId}
               >
-                {isPending ? "紐付け中..." : getSelectButtonLabel()}
+                {isPending ? "紐付け中..." : `紐付け (${transactions.length}件)`}
               </Button>
             </div>
           </TabsContent>
 
-          <TabsContent value="create" className="flex-1 flex flex-col min-h-0 mt-0">
-            <div className="flex-1 overflow-y-auto min-h-0">
+          <TabsContent value="create" className="mt-0 flex min-h-0 flex-1 flex-col">
+            <div className="min-h-0 flex-1 overflow-y-auto">
               <CounterpartFormContent
                 mode="create"
                 defaultSearchQuery={transactions[0]?.description ?? ""}
