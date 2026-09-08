@@ -1,5 +1,7 @@
 import "server-only";
 import { loginWithPassword } from "@/server/contexts/auth/presentation/actions/login";
+import { loginWithGoogle } from "@/server/contexts/auth/presentation/actions/login-with-google";
+import { loadLoginProviders } from "@/server/contexts/auth/presentation/loaders/load-login-providers";
 import LoginForm from "@/client/components/auth/LoginForm";
 import InviteTokenHandler from "./InviteTokenHandler";
 import RecoveryTokenHandler from "@/client/components/auth/RecoveryTokenHandler";
@@ -14,10 +16,19 @@ export default async function LoginPage({
   const params = await searchParams;
   const error = params?.error ?? "";
 
+  const { showPasswordLogin, showGoogleLogin } = await loadLoginProviders();
+
   return (
     <div className="h-full flex items-center justify-center">
       {error && <ToastNotifier type="error" message={error} />}
-      <LoginForm action={loginWithPassword} error={error} forgotPasswordHref="/forgot-password" />
+      <LoginForm
+        action={loginWithPassword}
+        googleAction={loginWithGoogle}
+        showPasswordLogin={showPasswordLogin}
+        showGoogleLogin={showGoogleLogin}
+        error={error}
+        forgotPasswordHref="/forgot-password"
+      />
       <InviteTokenHandler />
       <RecoveryTokenHandler />
       <RecoveryCodeHandler />

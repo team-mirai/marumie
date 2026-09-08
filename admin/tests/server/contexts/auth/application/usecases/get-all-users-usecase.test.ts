@@ -35,6 +35,7 @@ describe("GetAllUsersUsecase", () => {
       updateUser: jest.fn(),
       setSession: jest.fn(),
       exchangeCodeForSession: jest.fn(),
+      signInWithOAuth: jest.fn(),
       resetPasswordForEmail: jest.fn(),
     };
     mockUserRepository = {

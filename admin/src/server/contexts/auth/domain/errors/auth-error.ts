@@ -14,7 +14,9 @@ export type AuthErrorCode =
   | "INVALID_EMAIL"
   | "WEAK_PASSWORD"
   | "INVITE_FAILED"
-  | "RESET_EMAIL_FAILED";
+  | "RESET_EMAIL_FAILED"
+  | "DOMAIN_NOT_ALLOWED"
+  | "PROVIDER_DISABLED";
 
 /**
  * 認証エラークラス（単一クラス + code パターン）
@@ -45,4 +47,6 @@ export const AUTH_ERROR_MESSAGES: Record<AuthErrorCode, string> = {
   WEAK_PASSWORD: "パスワードは6文字以上で入力してください",
   INVITE_FAILED: "招待メールの送信に失敗しました",
   RESET_EMAIL_FAILED: "パスワードリセットメールの送信に失敗しました",
+  DOMAIN_NOT_ALLOWED: "このメールアドレスのドメインではログインできません",
+  PROVIDER_DISABLED: "この認証方式は現在利用できません",
 };

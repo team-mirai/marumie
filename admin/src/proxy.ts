@@ -114,6 +114,7 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     "/auth/callback",
     "/auth/setup",
     "/auth/reset-password",
+    "/api/auth/callback",
   ];
   const isPublicPath = publicPaths.some((path) => request.nextUrl.pathname.startsWith(path));
 

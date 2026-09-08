@@ -23,6 +23,7 @@ export const createMockSession = (
   accessToken: "access-token",
   refreshToken: "refresh-token",
   user: createMockSupabaseUser(),
+  signInProvider: null,
   ...overrides,
 });
 
@@ -43,6 +44,7 @@ export const createMockAuthProvider = (): jest.Mocked<AuthProvider> => ({
   updateUser: jest.fn(),
   setSession: jest.fn(),
   exchangeCodeForSession: jest.fn(),
+  signInWithOAuth: jest.fn(),
   resetPasswordForEmail: jest.fn(),
 });
 
