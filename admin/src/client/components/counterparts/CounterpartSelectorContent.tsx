@@ -7,6 +7,13 @@ import type { Counterpart } from "@/server/contexts/report/domain/models/counter
 import type { TransactionWithCounterpart } from "@/server/contexts/report/domain/models/transaction-with-counterpart";
 import { suggestCounterpartAction } from "@/server/contexts/report/presentation/actions/suggest-counterpart";
 import type { CounterpartSuggestion } from "@/server/contexts/report/presentation/types/counterpart-suggestion";
+import {
+  CandidateEmpty,
+  CandidateGroupLabel,
+  CandidateList,
+  CandidateListItem,
+} from "@/client/components/assignment/CandidateList";
+import { SelectedCandidateCard } from "@/client/components/assignment/SelectedCandidateCard";
 
 interface CounterpartSelectorContentProps {
   allCounterparts: Counterpart[];
@@ -16,6 +23,10 @@ interface CounterpartSelectorContentProps {
   politicalOrganizationId: string;
 }
 
+/**
+ * 紐付けダイアログの「既存から選択」タブ。検索 input + 候補一覧（提案 → すべて）。
+ * 候補行の見た目は寄付者側と共通（CandidateListItem）。
+ */
 export function CounterpartSelectorContent({
   allCounterparts,
   selectedCounterpartId,
@@ -64,121 +75,88 @@ export function CounterpartSelectorContent({
   }, [transactions, politicalOrganizationId]);
 
   const selectedCounterpart = allCounterparts.find((cp) => cp.id === selectedCounterpartId);
+  const showSuggestions = !isLoadingSuggestions && suggestions.length > 0 && !searchQuery.trim();
 
   return (
     <div className="space-y-4">
-      <div>
-        <Label htmlFor="counterpart-search">取引先を検索</Label>
+      <div className="space-y-2">
+        <Label htmlFor="counterpart-search" className="text-xs font-bold">
+          取引先を検索
+        </Label>
         <Input
           id="counterpart-search"
           type="text"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="名前または住所で検索..."
+          className="border-[1.5px] text-[13px]"
         />
       </div>
 
       {selectedCounterpart && (
-        <div className="bg-primary/10 border border-primary rounded-lg p-3">
-          <p className="text-xs text-muted-foreground mb-1">選択中:</p>
-          <p className="text-foreground font-medium">{selectedCounterpart.name}</p>
+        <SelectedCandidateCard>
+          <p className="text-[13px] font-semibold text-foreground">{selectedCounterpart.name}</p>
           {selectedCounterpart.address && (
-            <p className="text-muted-foreground text-xs">{selectedCounterpart.address}</p>
+            <p className="text-xs text-muted-foreground">{selectedCounterpart.address}</p>
           )}
-        </div>
+        </SelectedCandidateCard>
       )}
 
-      <div className="border border-border rounded-lg max-h-64 overflow-y-auto">
+      <CandidateList>
         {isLoadingSuggestions && (
-          <div className="px-3 py-2 text-muted-foreground text-sm">提案を読み込み中...</div>
+          <div className="px-3 py-2 text-sm text-muted-foreground">提案を読み込み中...</div>
         )}
 
-        {!isLoadingSuggestions && suggestions.length > 0 && !searchQuery.trim() && (
-          <div className="py-1 border-b border-border">
-            <div className="px-3 py-1 text-xs text-muted-foreground bg-secondary/30">
+        {showSuggestions && (
+          <div className="border-b border-border-soft">
+            <CandidateGroupLabel>
               {transactions.length === 1
-                ? "提案（このTransactionに基づく）"
-                : "提案（選択したTransactionに基づく）"}
-            </div>
-            {suggestions.map((suggestion) => {
-              const isSelected = selectedCounterpartId === suggestion.counterpart.id;
-              return (
-                <button
-                  key={suggestion.counterpart.id}
-                  type="button"
-                  onClick={() => onSelect(suggestion.counterpart.id)}
-                  className={`w-full text-left px-3 py-2 hover:bg-secondary transition-colors flex items-start gap-3 ${
-                    isSelected ? "bg-secondary" : ""
-                  }`}
-                >
-                  <div
-                    className={`w-4 h-4 rounded-full border-2 flex items-center justify-center mt-0.5 flex-shrink-0 ${
-                      isSelected ? "border-primary" : "border-gray-500"
-                    }`}
-                  >
-                    {isSelected && <div className="w-2 h-2 rounded-full bg-primary" />}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <span className="text-foreground font-medium block">
-                      {suggestion.counterpart.name}
-                    </span>
-                    {suggestion.counterpart.address && (
-                      <span className="text-muted-foreground text-xs truncate block">
-                        {suggestion.counterpart.address}
-                      </span>
-                    )}
-                    <span className="text-primary text-xs mt-0.5 block">{suggestion.reason}</span>
-                  </div>
-                </button>
-              );
-            })}
+                ? "提案（この取引に基づく）"
+                : "提案（選択した取引に基づく）"}
+            </CandidateGroupLabel>
+            {suggestions.map((suggestion) => (
+              <CandidateListItem
+                key={suggestion.counterpart.id}
+                selected={selectedCounterpartId === suggestion.counterpart.id}
+                onSelect={() => onSelect(suggestion.counterpart.id)}
+              >
+                <span className="block text-[13px] font-semibold text-foreground">
+                  {suggestion.counterpart.name}
+                </span>
+                {suggestion.counterpart.address && (
+                  <span className="block truncate text-xs text-muted-foreground">
+                    {suggestion.counterpart.address}
+                  </span>
+                )}
+                <span className="mt-0.5 block text-xs text-primary-active">
+                  {suggestion.reason}
+                </span>
+              </CandidateListItem>
+            ))}
           </div>
         )}
 
         {nonSuggestedCounterparts.length > 0 ? (
-          <div className="py-1">
-            <div className="px-3 py-1 text-xs text-muted-foreground bg-secondary/30">
-              すべての取引先
-            </div>
-            {nonSuggestedCounterparts.map((cp) => {
-              const isSelected = selectedCounterpartId === cp.id;
-              return (
-                <button
-                  key={cp.id}
-                  type="button"
-                  onClick={() => onSelect(cp.id)}
-                  className={`w-full text-left px-3 py-2 hover:bg-secondary transition-colors flex items-start gap-3 ${
-                    isSelected ? "bg-secondary" : ""
-                  }`}
-                >
-                  <div
-                    className={`w-4 h-4 rounded-full border-2 flex items-center justify-center mt-0.5 flex-shrink-0 ${
-                      isSelected ? "border-primary" : "border-gray-500"
-                    }`}
-                  >
-                    {isSelected && <div className="w-2 h-2 rounded-full bg-primary" />}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <span className="text-foreground font-medium block">{cp.name}</span>
-                    {cp.address && (
-                      <span className="text-muted-foreground text-xs truncate block">
-                        {cp.address}
-                      </span>
-                    )}
-                  </div>
-                </button>
-              );
-            })}
+          <div>
+            <CandidateGroupLabel>すべての取引先</CandidateGroupLabel>
+            {nonSuggestedCounterparts.map((cp) => (
+              <CandidateListItem
+                key={cp.id}
+                selected={selectedCounterpartId === cp.id}
+                onSelect={() => onSelect(cp.id)}
+              >
+                <span className="block text-[13px] font-semibold text-foreground">{cp.name}</span>
+                {cp.address && (
+                  <span className="block truncate text-xs text-muted-foreground">{cp.address}</span>
+                )}
+              </CandidateListItem>
+            ))}
           </div>
         ) : (
           !suggestions.length &&
-          !isLoadingSuggestions && (
-            <div className="px-3 py-4 text-center text-muted-foreground text-sm">
-              該当する取引先がありません
-            </div>
-          )
+          !isLoadingSuggestions && <CandidateEmpty>該当する取引先がありません</CandidateEmpty>
         )}
-      </div>
+      </CandidateList>
     </div>
   );
 }

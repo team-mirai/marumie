@@ -2,14 +2,17 @@
 import "client-only";
 
 import { useState, useId, useEffect } from "react";
-import { Button, Input, Label } from "@/client/components/ui";
 import {
+  Button,
+  Input,
+  Label,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/client/components/ui/select";
+} from "@/client/components/ui";
+import { FormErrorAlert } from "@/client/components/assignment/FormErrorAlert";
 import {
   MAX_NAME_LENGTH,
   MAX_OCCUPATION_LENGTH,
@@ -62,6 +65,7 @@ export function DonorFormContent({
   const [error, setError] = useState<string | null>(null);
 
   const nameId = useId();
+  const addressId = useId();
   const occupationId = useId();
   const donorTypeId = useId();
 
@@ -101,16 +105,12 @@ export function DonorFormContent({
   const loadingLabel = submitLabel ? `${submitLabel}中...` : defaultLoadingLabel;
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      {error && (
-        <div className="text-red-500 p-3 bg-red-900/20 rounded-lg border border-red-900/30">
-          {error}
-        </div>
-      )}
+    <form onSubmit={handleSubmit} className="space-y-5">
+      {error && <FormErrorAlert message={error} />}
 
-      <div>
+      <div className="space-y-2">
         <Label htmlFor={donorTypeId}>
-          寄付者種別 <span className="text-red-500">*</span>
+          寄付者種別 <span className="text-destructive">*</span>
         </Label>
         <Select
           value={donorType}
@@ -130,9 +130,9 @@ export function DonorFormContent({
         </Select>
       </div>
 
-      <div>
+      <div className="space-y-2">
         <Label htmlFor={nameId}>
-          名前 <span className="text-red-500">*</span>
+          名前 <span className="text-destructive">*</span>
         </Label>
         <Input
           type="text"
@@ -146,11 +146,11 @@ export function DonorFormContent({
         />
       </div>
 
-      <div>
-        <Label htmlFor="address">住所</Label>
+      <div className="space-y-2">
+        <Label htmlFor={addressId}>住所</Label>
         <Input
           type="text"
-          id="address"
+          id={addressId}
           value={address}
           onChange={(e) => setAddress(e.target.value)}
           maxLength={MAX_ADDRESS_LENGTH}
@@ -160,9 +160,9 @@ export function DonorFormContent({
       </div>
 
       {donorType === "individual" && (
-        <div>
+        <div className="space-y-2">
           <Label htmlFor={occupationId}>
-            職業 <span className="text-red-500">*</span>
+            職業 <span className="text-destructive">*</span>
           </Label>
           <Input
             type="text"
@@ -174,25 +174,26 @@ export function DonorFormContent({
             disabled={isDisabled}
             required
           />
-          <p className="text-muted-foreground text-xs mt-1">
+          <p className="text-xs text-muted-foreground">
             個人からの寄附の場合、職業の記載が必要です
           </p>
         </div>
       )}
 
       {mode === "edit" && initialData?.usageCount !== undefined && (
-        <div className="text-muted-foreground text-sm">
-          使用状況: {initialData.usageCount}件のTransactionで使用中
-        </div>
+        <p className="text-[13px] text-muted-foreground">
+          使用状況: <span className="font-latin">{initialData.usageCount}</span>
+          件の取引で使用中
+        </p>
       )}
 
       {mode === "create" && (
-        <p className="text-muted-foreground text-sm">
+        <p className="text-[13px] text-muted-foreground">
           ※ 同じ名前・住所・種別の組み合わせは登録できません
         </p>
       )}
 
-      <div className="flex justify-end gap-2 pt-2">
+      <div className="flex justify-end gap-2">
         <Button type="submit" disabled={isDisabled || !isFormValid}>
           {isSubmitting ? loadingLabel : buttonLabel}
         </Button>
