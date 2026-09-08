@@ -4,18 +4,21 @@ import { loadPoliticalOrganizationsData } from "@/server/contexts/shared/present
 import { uploadCsv } from "@/server/contexts/data-import/presentation/actions/upload-csv";
 import { previewCsv } from "@/server/contexts/data-import/presentation/actions/preview-csv";
 import CsvUploadClient from "@/client/components/csv-upload/CsvUploadClient";
+import { PageHeader } from "@/client/components/layout/PageHeader";
 
 export default async function UploadCsvPage() {
   const organizations = await loadPoliticalOrganizationsData();
 
   return (
-    <div className="bg-card rounded-xl p-4">
-      <h1 className="text-2xl font-bold text-foreground mb-6">CSVアップロード</h1>
-      <CsvUploadClient
-        organizations={organizations}
-        uploadAction={uploadCsv}
-        previewAction={previewCsv}
-      />
+    <div>
+      <PageHeader label="Data Import" title="CSVアップロード" />
+      <div className="bg-card rounded-xl p-4">
+        <CsvUploadClient
+          organizations={organizations}
+          uploadAction={uploadCsv}
+          previewAction={previewCsv}
+        />
+      </div>
     </div>
   );
 }

@@ -8,6 +8,7 @@ import type { ReportPreviewData } from "@/server/contexts/report/presentation/lo
 import { ExportReportSelectors } from "@/client/components/export-report/ExportReportSelectors";
 import { ExportReportPreview } from "@/client/components/export-report/ExportReportPreview";
 import { DownloadButton } from "@/client/components/export-report/DownloadButton";
+import { PageHeader } from "@/client/components/layout/PageHeader";
 
 interface ExportReportDetailPageProps {
   params: Promise<{
@@ -47,11 +48,14 @@ export default async function ExportReportDetailPage({ params }: ExportReportDet
   const currentYear = new Date().getFullYear();
 
   return (
-    <div className="bg-card rounded-xl p-4">
-      <h1 className="text-2xl font-bold text-foreground mb-1">報告書エクスポート</h1>
-      <p className="text-muted-foreground mb-6">政治資金報告書をエクスポートします</p>
+    <div>
+      <PageHeader
+        label="Report Export"
+        title="報告書エクスポート"
+        description="政治資金報告書をエクスポートします"
+      />
 
-      <div className="space-y-6">
+      <div className="bg-card rounded-xl p-4 space-y-6">
         <ExportReportSelectors
           organizations={organizations}
           selectedOrgId={orgId}

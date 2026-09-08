@@ -7,7 +7,7 @@ test.describe("ダッシュボード", () => {
 
 	test.describe("読み込み", () => {
 		test("ログイン後にダッシュボードが正常に表示される", async ({ page }) => {
-			await expect(page.getByRole("heading", { name: "Welcome" })).toBeVisible();
+			await expect(page.getByRole("heading", { name: "ダッシュボード" })).toBeVisible();
 		});
 
 		test("Welcomeメッセージが表示される", async ({ page }) => {

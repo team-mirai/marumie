@@ -5,6 +5,7 @@ import { loadPoliticalOrganizationData } from "@/server/contexts/shared/presenta
 import { loadOrganizationProfileData } from "@/server/contexts/report/presentation/loaders/organization-profile-loader";
 import { ReportProfileForm } from "@/client/components/report-profile/ReportProfileForm";
 import { YearSelector } from "@/client/components/report-profile/YearSelector";
+import { PageHeader } from "@/client/components/layout/PageHeader";
 
 interface ReportProfilePageProps {
   params: Promise<{ orgId: string }>;
@@ -41,8 +42,8 @@ export default async function ReportProfilePage({ params, searchParams }: Report
   }
 
   return (
-    <div className="bg-card rounded-xl p-4">
-      <div className="mb-5">
+    <div>
+      <div className="mb-4">
         <Link
           href="/political-organizations"
           className="text-muted-foreground no-underline hover:text-foreground transition-colors"
@@ -51,20 +52,23 @@ export default async function ReportProfilePage({ params, searchParams }: Report
         </Link>
       </div>
 
-      <h1 className="text-2xl font-bold text-foreground mb-4">
-        「{organization.displayName}」の報告書プロフィール
-      </h1>
-
-      <div className="block mb-4">
-        <YearSelector orgId={orgId} financialYear={financialYear} currentYear={currentYear} />
-      </div>
-
-      <ReportProfileForm
-        key={financialYear}
-        politicalOrganizationId={orgId}
-        financialYear={financialYear}
-        initialData={profile}
+      <PageHeader
+        label="Report Profile"
+        title={`「${organization.displayName}」の報告書プロフィール`}
       />
+
+      <div className="bg-card rounded-xl p-4">
+        <div className="block mb-4">
+          <YearSelector orgId={orgId} financialYear={financialYear} currentYear={currentYear} />
+        </div>
+
+        <ReportProfileForm
+          key={financialYear}
+          politicalOrganizationId={orgId}
+          financialYear={financialYear}
+          initialData={profile}
+        />
+      </div>
     </div>
   );
 }
