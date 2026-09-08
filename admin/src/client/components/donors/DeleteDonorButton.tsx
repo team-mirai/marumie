@@ -50,7 +50,7 @@ export function DeleteDonorButton({
     <Button
       type="button"
       variant="destructive"
-      size="sm"
+      size="xs"
       onClick={handleDelete}
       disabled={isDeleting}
     >

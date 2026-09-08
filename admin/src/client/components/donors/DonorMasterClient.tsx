@@ -3,11 +3,13 @@ import "client-only";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { MagnifyingGlass, Plus } from "@phosphor-icons/react/dist/ssr";
 import type { DonorWithUsage, DonorType } from "@/server/contexts/report/domain/models/donor";
 import { DONOR_TYPE_LABELS, VALID_DONOR_TYPES } from "@/server/contexts/report/domain/models/donor";
 import { DonorTable } from "@/client/components/donors/DonorTable";
 import { DonorFormDialog } from "@/client/components/donors/DonorFormDialog";
 import { PageHeader } from "@/client/components/layout/PageHeader";
+import { StaticPagination } from "@/client/components/ui/StaticPagination";
 import {
   Button,
   Input,
@@ -85,16 +87,6 @@ export function DonorMasterClient({
     );
   };
 
-  const handlePageChange = (newPage: number) => {
-    router.push(
-      buildUrl({
-        q: searchQuery,
-        type: donorType,
-        page: newPage.toString(),
-      }),
-    );
-  };
-
   const handleClear = () => {
     setSearchInput("");
     setSelectedType(ALL_TYPES_VALUE);
@@ -111,86 +103,73 @@ export function DonorMasterClient({
         label="Donors"
         title="寄付者マスタ管理"
         actions={
-          <Button type="button" onClick={() => setIsCreateDialogOpen(true)}>
+          <Button
+            type="button"
+            className="text-[13px] tracking-[0.06em]"
+            onClick={() => setIsCreateDialogOpen(true)}
+          >
+            <Plus />
             新規作成
           </Button>
         }
       />
 
-      <div className="bg-card rounded-xl p-4">
-        <form onSubmit={handleSearch} className="mb-6">
-          <div className="flex gap-2 flex-wrap">
-            <Input
-              type="text"
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-              placeholder="名前・住所・職業で検索..."
-              aria-label="寄付者を名前・住所・職業で検索"
-              className="flex-1 min-w-[200px] max-w-md"
-            />
-            <Select
-              value={selectedType}
-              onValueChange={(value) =>
-                handleTypeChange(value as DonorType | typeof ALL_TYPES_VALUE)
-              }
+      <div className="rounded-lg border border-border bg-card p-6">
+        <form onSubmit={handleSearch} className="mb-2 flex flex-wrap gap-2">
+          <Input
+            type="text"
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            placeholder="名前・住所・職業で検索..."
+            aria-label="寄付者を名前・住所・職業で検索"
+            className="min-w-[200px] max-w-[380px] flex-1 border-[1.5px] text-[13px]"
+          />
+          <Select
+            value={selectedType}
+            onValueChange={(value) => handleTypeChange(value as DonorType | typeof ALL_TYPES_VALUE)}
+          >
+            <SelectTrigger
+              className="w-[160px] border-[1.5px] text-[13px]"
+              aria-label="寄付者種別でフィルタ"
             >
-              <SelectTrigger className="w-[160px]" aria-label="寄付者種別でフィルタ">
-                <SelectValue placeholder="すべての種別" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={ALL_TYPES_VALUE}>すべての種別</SelectItem>
-                {VALID_DONOR_TYPES.map((type) => (
-                  <SelectItem key={type} value={type}>
-                    {DONOR_TYPE_LABELS[type]}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Button type="submit" variant="secondary">
-              検索
+              <SelectValue placeholder="すべての種別" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ALL_TYPES_VALUE}>すべての種別</SelectItem>
+              {VALID_DONOR_TYPES.map((type) => (
+                <SelectItem key={type} value={type}>
+                  {DONOR_TYPE_LABELS[type]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button type="submit" variant="outline" className="text-[13px]">
+            <MagnifyingGlass />
+            検索
+          </Button>
+          {(searchQuery || donorType) && (
+            <Button type="button" variant="outline" className="text-[13px]" onClick={handleClear}>
+              クリア
             </Button>
-            {(searchQuery || donorType) && (
-              <Button type="button" variant="secondary" onClick={handleClear}>
-                クリア
-              </Button>
-            )}
-          </div>
+          )}
         </form>
 
-        <div className="text-muted-foreground text-sm mb-4">
+        <p className="mb-3 text-[13px] text-muted-foreground">
           {total}件の寄付者
           {searchQuery && <span> (検索: &quot;{searchQuery}&quot;)</span>}
           {donorType && <span> (種別: {DONOR_TYPE_LABELS[donorType]})</span>}
-        </div>
+        </p>
 
         <DonorTable donors={initialDonors} onUpdate={handleUpdate} />
 
         {totalPages > 1 && (
-          <div className="flex justify-center items-center gap-2 mt-6">
-            <Button
-              type="button"
-              variant="secondary"
-              size="sm"
-              onClick={() => handlePageChange(page - 1)}
-              disabled={page <= 1}
-              aria-label="前のページへ"
-            >
-              前へ
-            </Button>
-            <span className="text-foreground px-4">
-              {page} / {totalPages}
-            </span>
-            <Button
-              type="button"
-              variant="secondary"
-              size="sm"
-              onClick={() => handlePageChange(page + 1)}
-              disabled={page >= totalPages}
-              aria-label="次のページへ"
-            >
-              次へ
-            </Button>
-          </div>
+          <StaticPagination
+            currentPage={page}
+            totalPages={totalPages}
+            buildPageUrl={(nextPage) =>
+              buildUrl({ q: searchQuery, type: donorType, page: nextPage.toString() })
+            }
+          />
         )}
 
         {isCreateDialogOpen && (

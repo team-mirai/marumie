@@ -2,7 +2,7 @@
 import "client-only";
 
 import { useState, useId } from "react";
-import { Button, Input, Label } from "@/client/components/ui";
+import { Button, Input, Label, NativeSelect } from "@/client/components/ui";
 import type { DonorType } from "@/server/contexts/report/domain/models/donor";
 import {
   MAX_NAME_LENGTH,
@@ -88,35 +88,38 @@ export function DonorFormContent({
   const loadingLabel = submitLabel ? `${submitLabel}中...` : defaultLoadingLabel;
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-5">
       {error && (
-        <div className="text-red-500 p-3 bg-red-900/20 rounded-lg border border-red-900/30">
+        <div
+          role="alert"
+          className="rounded-lg border border-destructive bg-destructive-hover p-3 text-sm text-destructive"
+        >
           {error}
         </div>
       )}
 
-      <div>
+      <div className="space-y-2">
         <Label htmlFor={donorTypeId}>
-          種別 <span className="text-red-500">*</span>
+          種別 <span className="text-destructive">*</span>
         </Label>
-        <select
+        <NativeSelect
           id={donorTypeId}
           value={donorType}
           onChange={(e) => handleDonorTypeChange(e.target.value as DonorType)}
           disabled={isDisabled}
-          className="w-full bg-input text-foreground border border-border rounded-lg px-3 py-2.5 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary disabled:opacity-50 disabled:cursor-not-allowed"
+          wrapperClassName="w-full"
         >
           {VALID_DONOR_TYPES.map((type) => (
             <option key={type} value={type}>
               {DONOR_TYPE_LABELS[type]}
             </option>
           ))}
-        </select>
+        </NativeSelect>
       </div>
 
-      <div>
+      <div className="space-y-2">
         <Label htmlFor={nameId}>
-          名前 <span className="text-red-500">*</span>
+          名前 <span className="text-destructive">*</span>
         </Label>
         <Input
           type="text"
@@ -130,7 +133,7 @@ export function DonorFormContent({
         />
       </div>
 
-      <div>
+      <div className="space-y-2">
         <Label htmlFor={addressId}>住所</Label>
         <Input
           type="text"
@@ -144,9 +147,9 @@ export function DonorFormContent({
       </div>
 
       {isIndividual && (
-        <div>
+        <div className="space-y-2">
           <Label htmlFor={occupationId}>
-            職業 <span className="text-red-500">*</span>
+            職業 <span className="text-destructive">*</span>
           </Label>
           <Input
             type="text"
@@ -162,13 +165,14 @@ export function DonorFormContent({
       )}
 
       {mode === "edit" && initialData?.usageCount !== undefined && (
-        <div className="text-muted-foreground text-sm">
-          使用状況: {initialData.usageCount}件のTransactionで使用中
-        </div>
+        <p className="text-[13px] text-muted-foreground">
+          使用状況: <span className="font-latin">{initialData.usageCount}</span>
+          件の取引で使用中
+        </p>
       )}
 
       {mode === "create" && (
-        <p className="text-muted-foreground text-sm">
+        <p className="text-[13px] text-muted-foreground">
           ※ 同じ名前・住所・種別の組み合わせは登録できません
         </p>
       )}

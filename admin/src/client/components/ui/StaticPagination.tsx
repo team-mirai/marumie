@@ -7,7 +7,10 @@ import { cn } from "@/client/lib";
 interface StaticPaginationProps {
   currentPage: number;
   totalPages: number;
-  basePath: string;
+  /** `${basePath}?page=N` 形式で遷移する。`buildPageUrl` を渡す場合は不要 */
+  basePath?: string;
+  /** 検索クエリなど他のパラメータを保持したい場合に、ページ番号から URL を組み立てる */
+  buildPageUrl?: (page: number) => string;
 }
 
 const pillClass =
@@ -20,10 +23,15 @@ const disabledClass = "border-disabled-border text-disabled-foreground cursor-no
  * URL の `?page=` で遷移する静的ページネーション。
  * 「前へ / 次へ」の黒枠白ピルと、中央に Poppins の「現在 / 総数」表示。
  */
-export function StaticPagination({ currentPage, totalPages, basePath }: StaticPaginationProps) {
+export function StaticPagination({
+  currentPage,
+  totalPages,
+  basePath = "",
+  buildPageUrl,
+}: StaticPaginationProps) {
   if (totalPages <= 0) return null;
 
-  const generatePageUrl = (page: number) => `${basePath}?page=${page}`;
+  const generatePageUrl = buildPageUrl ?? ((page: number) => `${basePath}?page=${page}`);
   const hasPrev = currentPage > 1;
   const hasNext = currentPage < totalPages;
 
