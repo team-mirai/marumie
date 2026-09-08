@@ -1,5 +1,8 @@
 import { test, expect } from "@playwright/test";
 
+// ログイン自体を検証するため、共通の認証済み storageState は使わない
+test.use({ storageState: { cookies: [], origins: [] } });
+
 test.describe("ログインページ", () => {
 	test("ログインページが正常に表示される", async ({ page }) => {
 		const response = await page.goto("/login");

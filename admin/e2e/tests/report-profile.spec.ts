@@ -1,14 +1,6 @@
 import { test, expect } from "@playwright/test";
 
 test.describe("報告書プロフィール", () => {
-	test.beforeEach(async ({ page }) => {
-		await page.goto("/login");
-		await page.getByLabel("Email").fill("foo@example.com");
-		await page.getByLabel("Password").fill("foo@example.com");
-		await page.getByRole("button", { name: "ログイン" }).click();
-		await expect(page).toHaveURL("/");
-	});
-
 	test.describe("年度切り替え", () => {
 		test("年度を切り替えてもフォームが正しく同期し、他の年度を上書きしない", async ({ page }) => {
 			// 既存シードや他テストと干渉しないよう、テスト専用の政治団体を作成
