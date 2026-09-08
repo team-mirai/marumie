@@ -276,6 +276,14 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-playwright-
 
+      # .next/cache にはコンパイラキャッシュに加えて Data Cache（fetch-cache、
+      # unstable_cache のエントリを含む）が永続化される。DB は毎ラン db:reset で
+      # リセットされ ID が再割り当てされるため、前ランの fetch-cache が残っていると
+      # キャッシュキーが衝突して前ランのデータが画面に表示されてしまう。
+      # コンパイラキャッシュだけを持ち越すよう、ビルド前に必ず削除する。
+      - name: Remove restored Next.js Data Cache
+        run: rm -rf admin/.next/cache/fetch-cache webapp/.next/cache/fetch-cache
+
       - name: Install dependencies
         run: pnpm install
 
