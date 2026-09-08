@@ -1,11 +1,11 @@
 import type { ReportData } from "@/server/contexts/report/domain/models/report-data";
 import type { SummaryData } from "@/server/contexts/report/domain/models/summary-data";
-import { DonationSection } from "./sections/DonationSection";
-import { IncomeSection } from "./sections/IncomeSection";
-import { PoliticalActivityExpenseSection } from "./sections/PoliticalActivityExpenseSection";
-import { ProfileSection } from "./sections/ProfileSection";
-import { RegularExpenseSection } from "./sections/RegularExpenseSection";
-import { SummarySection } from "./sections/SummarySection";
+import { DonationSection } from "@/client/components/export-report/sections/DonationSection";
+import { IncomeSection } from "@/client/components/export-report/sections/IncomeSection";
+import { PoliticalActivityExpenseSection } from "@/client/components/export-report/sections/PoliticalActivityExpenseSection";
+import { ProfileSection } from "@/client/components/export-report/sections/ProfileSection";
+import { RegularExpenseSection } from "@/client/components/export-report/sections/RegularExpenseSection";
+import { SummarySection } from "@/client/components/export-report/sections/SummarySection";
 
 interface ReportDataPreviewProps {
   reportData: ReportData;
@@ -18,8 +18,10 @@ export function ReportDataPreview({ reportData, summaryData }: ReportDataPreview
   return (
     <div className="space-y-8">
       <div>
-        <h2 className="text-lg font-medium text-foreground mb-1">表形式プレビュー</h2>
-        <p className="text-sm text-muted-foreground">報告書データを表形式で確認できます。</p>
+        <h2 className="text-base font-bold text-foreground">表形式プレビュー</h2>
+        <p className="mt-1 text-[13px] text-muted-foreground">
+          報告書データを表形式で確認できます。
+        </p>
       </div>
 
       <div className="space-y-8">

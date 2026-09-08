@@ -1,7 +1,9 @@
 "use client";
 import "client-only";
 
-import { useState, useTransition } from "react";
+import { useTransition } from "react";
+import { CircleNotch, DownloadSimple } from "@phosphor-icons/react/dist/ssr";
+import { toast } from "sonner";
 import { Button } from "@/client/components/ui";
 import { apiClient } from "@/client/lib/api-client";
 
@@ -12,10 +14,8 @@ interface DownloadButtonProps {
 
 export function DownloadButton({ politicalOrganizationId, financialYear }: DownloadButtonProps) {
   const [isDownloading, startDownloadTransition] = useTransition();
-  const [status, setStatus] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
   function handleDownload() {
-    setStatus(null);
     startDownloadTransition(async () => {
       try {
         const { blob, filename } = await apiClient.downloadReport({
@@ -33,37 +33,23 @@ export function DownloadButton({ politicalOrganizationId, financialYear }: Downl
         document.body.removeChild(link);
         setTimeout(() => window.URL.revokeObjectURL(url), 100);
 
-        setStatus({
-          type: "success",
-          message: "XMLファイルをダウンロードしました",
-        });
+        toast.success("XMLファイルをダウンロードしました");
       } catch (error) {
         console.error(error);
-        setStatus({
-          type: "error",
-          message: error instanceof Error ? error.message : "不明なエラーが発生しました",
-        });
+        toast.error(error instanceof Error ? error.message : "不明なエラーが発生しました");
       }
     });
   }
 
   return (
-    <div className="space-y-4">
-      <Button type="button" onClick={handleDownload} disabled={isDownloading}>
-        {isDownloading ? "ダウンロード中..." : "XMLをダウンロード"}
-      </Button>
-
-      {status && (
-        <div
-          className={`rounded-lg px-3 py-2 ${
-            status.type === "error"
-              ? "bg-red-500/20 text-red-200"
-              : "bg-green-500/20 text-green-200"
-          }`}
-        >
-          {status.message}
-        </div>
-      )}
-    </div>
+    <Button
+      type="button"
+      className="text-[13px] tracking-[0.06em]"
+      onClick={handleDownload}
+      disabled={isDownloading}
+    >
+      {isDownloading ? <CircleNotch className="animate-spin" /> : <DownloadSimple />}
+      {isDownloading ? "ダウンロード中..." : "XMLをダウンロード"}
+    </Button>
   );
 }

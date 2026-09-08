@@ -6,8 +6,17 @@ import {
   TableHeader,
   TableRow,
 } from "@/client/components/ui";
-import { formatCurrency } from "@/client/lib";
-import { SectionWrapper } from "./SectionWrapper";
+import { SectionHeading } from "@/client/components/export-report/sections/SectionHeading";
+import { SectionWrapper } from "@/client/components/export-report/sections/SectionWrapper";
+import {
+  AmountCell,
+  AmountHead,
+  DateCell,
+  DateHead,
+  EmptyMessage,
+  RowNumberCell,
+  RowNumberHead,
+} from "@/client/components/export-report/sections/ReportTableCells";
 import type {
   PersonalDonationSection,
   PersonalDonationRow,
@@ -17,51 +26,38 @@ interface DonationSectionProps {
   personalDonations: PersonalDonationSection;
 }
 
-function formatDate(date: Date | null): string {
-  if (!date) return "";
-  const d = new Date(date);
-  const year = d.getFullYear();
-  const month = d.getMonth() + 1;
-  const day = d.getDate();
-  return `${year}/${month}/${day}`;
-}
-
 interface PersonalDonationTableProps {
   rows: PersonalDonationRow[];
 }
 
 function PersonalDonationTable({ rows }: PersonalDonationTableProps) {
   if (rows.length === 0) {
-    return <p className="text-gray-500 text-sm">明細はありません</p>;
+    return <EmptyMessage>明細はありません</EmptyMessage>;
   }
 
   return (
-    <Table className="border-collapse border border-black">
+    <Table>
       <TableHeader>
-        <TableRow className="border border-black">
-          <TableHead className="w-[50px] text-black border border-black">行番号</TableHead>
-          <TableHead className="w-[150px] text-black border border-black">寄附者氏名</TableHead>
-          <TableHead className="w-[100px] text-right text-black border border-black">
-            金額
-          </TableHead>
-          <TableHead className="w-[100px] text-black border border-black">年月日</TableHead>
-          <TableHead className="w-[200px] text-black border border-black">住所</TableHead>
-          <TableHead className="w-[100px] text-black border border-black">職業</TableHead>
-          <TableHead className="w-[150px] text-black border border-black">備考</TableHead>
+        <TableRow>
+          <RowNumberHead />
+          <TableHead className="w-[150px]">寄附者氏名</TableHead>
+          <AmountHead />
+          <DateHead />
+          <TableHead className="w-[200px]">住所</TableHead>
+          <TableHead className="w-[100px]">職業</TableHead>
+          <TableHead className="w-[150px]">備考</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
         {rows.map((row) => (
-          <TableRow key={row.ichirenNo} className="border border-black">
-            <TableCell className="text-black border border-black">{row.ichirenNo}</TableCell>
-            <TableCell className="text-black border border-black">{row.kifusyaNm}</TableCell>
-            <TableCell className="text-right text-black border border-black">
-              {formatCurrency(row.kingaku)}
-            </TableCell>
-            <TableCell className="text-black border border-black">{formatDate(row.dt)}</TableCell>
-            <TableCell className="text-black border border-black">{row.adr}</TableCell>
-            <TableCell className="text-black border border-black">{row.syokugyo}</TableCell>
-            <TableCell className="text-black border border-black">{row.bikou || ""}</TableCell>
+          <TableRow key={row.ichirenNo}>
+            <RowNumberCell value={row.ichirenNo} />
+            <TableCell>{row.kifusyaNm}</TableCell>
+            <AmountCell value={row.kingaku} />
+            <DateCell value={row.dt} />
+            <TableCell>{row.adr}</TableCell>
+            <TableCell>{row.syokugyo}</TableCell>
+            <TableCell className="text-muted-foreground">{row.bikou || ""}</TableCell>
           </TableRow>
         ))}
       </TableBody>
@@ -74,8 +70,13 @@ export function DonationSection({ personalDonations }: DonationSectionProps) {
     personalDonations.rows.length > 0 || personalDonations.totalAmount > 0;
 
   return (
-    <div className="space-y-6">
-      <h2 className="text-xl font-bold text-foreground">寄附 (SYUUSHI07_07)</h2>
+    <div className="space-y-4">
+      <SectionHeading>
+        寄附{" "}
+        <span className="font-latin text-sm font-semibold text-subtle-foreground">
+          SYUUSHI07_07
+        </span>
+      </SectionHeading>
 
       <SectionWrapper
         title="個人からの寄附"
@@ -88,7 +89,7 @@ export function DonationSection({ personalDonations }: DonationSectionProps) {
         {hasPersonalDonationData ? (
           <PersonalDonationTable rows={personalDonations.rows} />
         ) : (
-          <p className="text-gray-500 text-sm">データなし</p>
+          <EmptyMessage>データなし</EmptyMessage>
         )}
       </SectionWrapper>
     </div>

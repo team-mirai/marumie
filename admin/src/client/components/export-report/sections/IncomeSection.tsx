@@ -6,8 +6,17 @@ import {
   TableHeader,
   TableRow,
 } from "@/client/components/ui";
-import { formatCurrency } from "@/client/lib";
-import { SectionWrapper } from "./SectionWrapper";
+import { SectionHeading } from "@/client/components/export-report/sections/SectionHeading";
+import { SectionWrapper } from "@/client/components/export-report/sections/SectionWrapper";
+import {
+  AmountCell,
+  AmountHead,
+  DateCell,
+  DateHead,
+  EmptyMessage,
+  RowNumberCell,
+  RowNumberHead,
+} from "@/client/components/export-report/sections/ReportTableCells";
 import type {
   BusinessIncomeSection,
   BusinessIncomeRow,
@@ -26,44 +35,32 @@ interface IncomeSectionProps {
   otherIncome: OtherIncomeSection;
 }
 
-function formatDate(date: Date): string {
-  const d = new Date(date);
-  const year = d.getFullYear();
-  const month = d.getMonth() + 1;
-  const day = d.getDate();
-  return `${year}/${month}/${day}`;
-}
-
 interface BusinessIncomeTableProps {
   rows: BusinessIncomeRow[];
 }
 
 function BusinessIncomeTable({ rows }: BusinessIncomeTableProps) {
   if (rows.length === 0) {
-    return <p className="text-gray-500 text-sm">明細はありません</p>;
+    return <EmptyMessage>明細はありません</EmptyMessage>;
   }
 
   return (
-    <Table className="border-collapse border border-black">
+    <Table>
       <TableHeader>
-        <TableRow className="border border-black">
-          <TableHead className="w-[50px] text-black border border-black">行番号</TableHead>
-          <TableHead className="w-[250px] text-black border border-black">事業の種類</TableHead>
-          <TableHead className="w-[100px] text-right text-black border border-black">
-            金額
-          </TableHead>
-          <TableHead className="w-[200px] text-black border border-black">備考</TableHead>
+        <TableRow>
+          <RowNumberHead />
+          <TableHead className="w-[250px]">事業の種類</TableHead>
+          <AmountHead />
+          <TableHead className="w-[200px]">備考</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
         {rows.map((row) => (
-          <TableRow key={row.ichirenNo} className="border border-black">
-            <TableCell className="text-black border border-black">{row.ichirenNo}</TableCell>
-            <TableCell className="text-black border border-black">{row.gigyouSyurui}</TableCell>
-            <TableCell className="text-right text-black border border-black">
-              {formatCurrency(row.kingaku)}
-            </TableCell>
-            <TableCell className="text-black border border-black">{row.bikou || ""}</TableCell>
+          <TableRow key={row.ichirenNo}>
+            <RowNumberCell value={row.ichirenNo} />
+            <TableCell>{row.gigyouSyurui}</TableCell>
+            <AmountCell value={row.kingaku} />
+            <TableCell className="text-muted-foreground">{row.bikou || ""}</TableCell>
           </TableRow>
         ))}
       </TableBody>
@@ -77,30 +74,26 @@ interface LoanIncomeTableProps {
 
 function LoanIncomeTable({ rows }: LoanIncomeTableProps) {
   if (rows.length === 0) {
-    return <p className="text-gray-500 text-sm">明細はありません</p>;
+    return <EmptyMessage>明細はありません</EmptyMessage>;
   }
 
   return (
-    <Table className="border-collapse border border-black">
+    <Table>
       <TableHeader>
-        <TableRow className="border border-black">
-          <TableHead className="w-[50px] text-black border border-black">行番号</TableHead>
-          <TableHead className="w-[250px] text-black border border-black">借入先</TableHead>
-          <TableHead className="w-[100px] text-right text-black border border-black">
-            金額
-          </TableHead>
-          <TableHead className="w-[200px] text-black border border-black">備考</TableHead>
+        <TableRow>
+          <RowNumberHead />
+          <TableHead className="w-[250px]">借入先</TableHead>
+          <AmountHead />
+          <TableHead className="w-[200px]">備考</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
         {rows.map((row) => (
-          <TableRow key={row.ichirenNo} className="border border-black">
-            <TableCell className="text-black border border-black">{row.ichirenNo}</TableCell>
-            <TableCell className="text-black border border-black">{row.kariiresaki}</TableCell>
-            <TableCell className="text-right text-black border border-black">
-              {formatCurrency(row.kingaku)}
-            </TableCell>
-            <TableCell className="text-black border border-black">{row.bikou || ""}</TableCell>
+          <TableRow key={row.ichirenNo}>
+            <RowNumberCell value={row.ichirenNo} />
+            <TableCell>{row.kariiresaki}</TableCell>
+            <AmountCell value={row.kingaku} />
+            <TableCell className="text-muted-foreground">{row.bikou || ""}</TableCell>
           </TableRow>
         ))}
       </TableBody>
@@ -114,34 +107,30 @@ interface GrantIncomeTableProps {
 
 function GrantIncomeTable({ rows }: GrantIncomeTableProps) {
   if (rows.length === 0) {
-    return <p className="text-gray-500 text-sm">明細はありません</p>;
+    return <EmptyMessage>明細はありません</EmptyMessage>;
   }
 
   return (
-    <Table className="border-collapse border border-black">
+    <Table>
       <TableHeader>
-        <TableRow className="border border-black">
-          <TableHead className="w-[50px] text-black border border-black">行番号</TableHead>
-          <TableHead className="w-[200px] text-black border border-black">本支部名称</TableHead>
-          <TableHead className="w-[100px] text-right text-black border border-black">
-            金額
-          </TableHead>
-          <TableHead className="w-[100px] text-black border border-black">年月日</TableHead>
-          <TableHead className="w-[200px] text-black border border-black">事務所所在地</TableHead>
-          <TableHead className="w-[150px] text-black border border-black">備考</TableHead>
+        <TableRow>
+          <RowNumberHead />
+          <TableHead className="w-[200px]">本支部名称</TableHead>
+          <AmountHead />
+          <DateHead />
+          <TableHead className="w-[200px]">事務所所在地</TableHead>
+          <TableHead className="w-[150px]">備考</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
         {rows.map((row) => (
-          <TableRow key={row.ichirenNo} className="border border-black">
-            <TableCell className="text-black border border-black">{row.ichirenNo}</TableCell>
-            <TableCell className="text-black border border-black">{row.honsibuNm}</TableCell>
-            <TableCell className="text-right text-black border border-black">
-              {formatCurrency(row.kingaku)}
-            </TableCell>
-            <TableCell className="text-black border border-black">{formatDate(row.dt)}</TableCell>
-            <TableCell className="text-black border border-black">{row.jimuAdr}</TableCell>
-            <TableCell className="text-black border border-black">{row.bikou || ""}</TableCell>
+          <TableRow key={row.ichirenNo}>
+            <RowNumberCell value={row.ichirenNo} />
+            <TableCell>{row.honsibuNm}</TableCell>
+            <AmountCell value={row.kingaku} />
+            <DateCell value={row.dt} />
+            <TableCell>{row.jimuAdr}</TableCell>
+            <TableCell className="text-muted-foreground">{row.bikou || ""}</TableCell>
           </TableRow>
         ))}
       </TableBody>
@@ -155,30 +144,26 @@ interface OtherIncomeTableProps {
 
 function OtherIncomeTable({ rows }: OtherIncomeTableProps) {
   if (rows.length === 0) {
-    return <p className="text-gray-500 text-sm">10万円以上の明細はありません</p>;
+    return <EmptyMessage>10万円以上の明細はありません</EmptyMessage>;
   }
 
   return (
-    <Table className="border-collapse border border-black">
+    <Table>
       <TableHeader>
-        <TableRow className="border border-black">
-          <TableHead className="w-[50px] text-black border border-black">行番号</TableHead>
-          <TableHead className="w-[250px] text-black border border-black">摘要</TableHead>
-          <TableHead className="w-[100px] text-right text-black border border-black">
-            金額
-          </TableHead>
-          <TableHead className="w-[200px] text-black border border-black">備考</TableHead>
+        <TableRow>
+          <RowNumberHead />
+          <TableHead className="w-[250px]">摘要</TableHead>
+          <AmountHead />
+          <TableHead className="w-[200px]">備考</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
         {rows.map((row) => (
-          <TableRow key={row.ichirenNo} className="border border-black">
-            <TableCell className="text-black border border-black">{row.ichirenNo}</TableCell>
-            <TableCell className="text-black border border-black">{row.tekiyou}</TableCell>
-            <TableCell className="text-right text-black border border-black">
-              {formatCurrency(row.kingaku)}
-            </TableCell>
-            <TableCell className="text-black border border-black">{row.bikou || ""}</TableCell>
+          <TableRow key={row.ichirenNo}>
+            <RowNumberCell value={row.ichirenNo} />
+            <TableCell>{row.tekiyou}</TableCell>
+            <AmountCell value={row.kingaku} />
+            <TableCell className="text-muted-foreground">{row.bikou || ""}</TableCell>
           </TableRow>
         ))}
       </TableBody>
@@ -198,8 +183,8 @@ export function IncomeSection({
   const hasOtherIncomeData = otherIncome.rows.length > 0 || otherIncome.totalAmount > 0;
 
   return (
-    <div className="space-y-6">
-      <h2 className="text-xl font-bold text-foreground">収入の部</h2>
+    <div className="space-y-4">
+      <SectionHeading>収入の部</SectionHeading>
 
       <SectionWrapper
         title="事業による収入"
@@ -210,7 +195,7 @@ export function IncomeSection({
         {hasBusinessIncomeData ? (
           <BusinessIncomeTable rows={businessIncome.rows} />
         ) : (
-          <p className="text-gray-500 text-sm">データなし</p>
+          <EmptyMessage>データなし</EmptyMessage>
         )}
       </SectionWrapper>
 
@@ -223,7 +208,7 @@ export function IncomeSection({
         {hasLoanIncomeData ? (
           <LoanIncomeTable rows={loanIncome.rows} />
         ) : (
-          <p className="text-gray-500 text-sm">データなし</p>
+          <EmptyMessage>データなし</EmptyMessage>
         )}
       </SectionWrapper>
 
@@ -236,7 +221,7 @@ export function IncomeSection({
         {hasGrantIncomeData ? (
           <GrantIncomeTable rows={grantIncome.rows} />
         ) : (
-          <p className="text-gray-500 text-sm">データなし</p>
+          <EmptyMessage>データなし</EmptyMessage>
         )}
       </SectionWrapper>
 
@@ -250,7 +235,7 @@ export function IncomeSection({
         {hasOtherIncomeData ? (
           <OtherIncomeTable rows={otherIncome.rows} />
         ) : (
-          <p className="text-gray-500 text-sm">データなし</p>
+          <EmptyMessage>データなし</EmptyMessage>
         )}
       </SectionWrapper>
     </div>
