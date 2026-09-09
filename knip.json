@@ -4,11 +4,12 @@
     "server-only",
     "client-only",
     "tailwindcss",
-    "critters"
+    "critters",
+    "tsx"
   ],
   "workspaces": {
     ".": {
-      "entry": ["shared/**/*.ts"],
+      "entry": ["shared/**/*.ts", "prisma/seed.ts"],
       "ignore": ["docs/**"]
     },
     "webapp": {

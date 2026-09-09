@@ -47,23 +47,21 @@ pnpm supabase:start
 
 #### 3. Supabase キー情報の取得と設定
 
+シード（`pnpm db:seed`）は起動中の Supabase から接続情報を自動取得するため、キーの設定は不要です。
+
+admin を `pnpm run dev` で起動するには `admin/.env.local` にキーが必要です。以下で取得します。
+
 ```bash
-npx supabase status --output json
+pnpm supabase:status -- --output json
 ```
 
-出力された JSON から以下のキーを取得し、`.env` ファイルに追記します。
+出力された JSON から以下のキーを取得し、`admin/.env.local` に設定します。
 
-| 取得するキー | .env に設定する変数名 |
-|-------------|---------------------|
-| `ANON_KEY` | `SUPABASE_ANON_KEY`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` |
+| 取得するキー | admin/.env.local に設定する変数名 |
+|-------------|---------------------------------|
+| `API_URL` | `SUPABASE_URL`（`http://127.0.0.1:54331`。Supabase デフォルトの 54321 ではない） |
+| `ANON_KEY` | `SUPABASE_ANON_KEY` |
 | `SERVICE_ROLE_KEY` | `SUPABASE_SERVICE_ROLE_KEY` |
-
-また、以下の固定値も追記します。
-
-```env
-SUPABASE_URL="http://127.0.0.1:54321"
-NEXT_PUBLIC_SUPABASE_URL="http://127.0.0.1:54321"
-```
 
 #### 4. データベースのセットアップ
 
