@@ -77,6 +77,13 @@ contexts/{コンテキスト名}/
 
 - TypeScript の import は `@/` から始まる絶対パスを使用する（相対パス禁止）
 
+### テストの配置
+
+- ユニットテストは `{webapp,admin}/tests/` に、`src/` と同じ階層構造で置く
+  （例: `src/client/lib/format.ts` → `tests/client/lib/format.test.ts`）
+- **`src/` 配下に `*.test.ts` / `*.test.tsx` を置かない**。jest の `roots` は `tests/` のみなので `src/` 配下のテストは実行されず、
+  落ちていても気づけない。dependency-cruiser（`pnpm depcruise`）が `src/` 配下のテストファイルを検出して CI を落とす
+
 ## バックエンドアーキテクチャガイド
 
 webapp / admin のバックエンド実装に関する詳細なルールは [docs/backend-architecture-guide.md](docs/backend-architecture-guide.md) を参照すること。
