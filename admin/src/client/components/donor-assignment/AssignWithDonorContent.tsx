@@ -6,8 +6,8 @@ import { Button, Tabs, TabsList, TabsTrigger, TabsContent } from "@/client/compo
 import type { Donor, DonorType } from "@/server/contexts/report/domain/models/donor";
 import { DONOR_TYPE_LABELS } from "@/server/contexts/report/domain/models/donor";
 import type { TransactionWithDonor } from "@/server/contexts/report/domain/models/transaction-with-donor";
-import { DonorFormContent } from "./DonorFormContent";
-import { DonorSelectorContent } from "./DonorSelectorContent";
+import { DonorFormContent } from "@/client/components/donors/DonorFormContent";
+import { DonorSelectorContent } from "@/client/components/donor-assignment/DonorSelectorContent";
 import { SelectedTransactionsPanel } from "@/client/components/assignment/SelectedTransactionsPanel";
 import { FormErrorAlert } from "@/client/components/assignment/FormErrorAlert";
 import { createDonorAction } from "@/server/contexts/report/presentation/actions/create-donor";
