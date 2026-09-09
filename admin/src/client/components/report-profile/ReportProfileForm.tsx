@@ -85,8 +85,11 @@ export function ReportProfileForm({
     }));
   };
 
+  // data-financial-year: このフォームがどの報告年に紐付いているかを DOM 上で示す。
+  // 年度切り替え時は key で再マウントされるため、E2E は URL ではなくこの属性で
+  // 「選択した年度のフォームが表示済み」であることを待つ。
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-6" data-financial-year={financialYear}>
       {error && (
         <div className="rounded-lg border border-destructive bg-destructive-hover p-3 text-sm text-destructive">
           {error}
