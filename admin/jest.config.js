@@ -4,6 +4,9 @@ module.exports = {
   // テストは tests/ に src/ と同じ階層で置く方針（src/ 配下の *.test.ts は意図的に収集しない）。
   // src/ 配下に置かれたテストは dependency-cruiser の no-tests-in-src ルールで検出される。
   roots: ["<rootDir>/tests"],
+  // 単発実行（CI / pnpm verify）では watchman の恩恵が無く、watchman が壊れた環境では
+  // jest がテストを 1 件も収集せず exit 0 で素通りするため、常に node crawler で収集する。
+  watchman: false,
   testMatch: ["**/*.test.ts"],
   moduleFileExtensions: ["ts", "tsx", "js", "jsx"],
   transform: {
