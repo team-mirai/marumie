@@ -13,11 +13,11 @@ env:
   # Supabase local development defaults
   # Note: SUPABASE_ANON_KEY and SUPABASE_SERVICE_ROLE_KEY are now dynamically generated
   # by Supabase CLI and will be extracted after `supabase start` in the e2e job
-  SUPABASE_URL: http://127.0.0.1:54321
-  # Note: CI uses default Supabase ports (54321 for API, 54322 for DB)
-  # Local development may use different ports - check supabase/config.toml
-  DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
-  DIRECT_URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
+  # ポートは supabase/config.toml（[api] 54331 / [db] 54332）に合わせる。
+  # ローカルと CI で同じ設定ファイルをそのまま使う（CI 用の書き換えはしない）。
+  SUPABASE_URL: http://127.0.0.1:54331
+  DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:54332/postgres
+  DIRECT_URL: postgresql://postgres:postgres@127.0.0.1:54332/postgres
 
 jobs:
   # コード関連のパスが変更されているかを判定する。
@@ -279,11 +279,6 @@ jobs:
       # 出力をファイルへリダイレクトしないとステップがプロセス終了まで待ってしまうため必ずリダイレクトする。
       - name: Start Supabase (background)
         run: |
-          # Enable API and use default ports for CI
-          sed -i 's/^\[api\]$/[api]/' supabase/config.toml
-          sed -i '/^\[api\]$/,/^\[/{s/^enabled = false$/enabled = true/}' supabase/config.toml
-          sed -i 's/^port = 54332$/port = 54322/' supabase/config.toml
-
           # admin E2E が必要とするのは db / kong / gotrue（認証）/ postgrest（疎通確認）と、
           # gotrue の SMTP 先である mailpit のみ。storage-api（pull が最も遅い）・realtime・
           # postgres-meta（studio 専用）・logflare（analytics）は使わないので除外する。
@@ -360,7 +355,7 @@ jobs:
 
           # Wait for Supabase API to be ready
           echo "Waiting for Supabase API..."
-          timeout 60 bash -c 'until curl -s http://127.0.0.1:54321/rest/v1/ > /dev/null 2>&1; do sleep 2; done'
+          timeout 60 bash -c 'until curl -s "$SUPABASE_URL/rest/v1/" > /dev/null 2>&1; do sleep 2; done'
           echo "Supabase is ready"
 
       - name: Get Supabase keys

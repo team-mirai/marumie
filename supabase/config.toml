@@ -5,8 +5,11 @@
 project_id = "marumie"
 
 [api]
-enabled = false
+enabled = true
 # Port to use for the API URL.
+# 同一ホストで別プロジェクトの supabase（デフォルト 54321）と衝突しないよう非デフォルトにしている。
+# CI も同じポートを使う（.github/workflows/ci.yml）。
+port = 54331
 
 [api.tls]
 # Enable HTTPS endpoints locally using a self-signed certificate.
@@ -70,7 +73,7 @@ enabled = true
 [studio]
 enabled = true
 # Port to use for Supabase Studio.
-port = 54323
+port = 54333
 # External URL of the API server that frontend connects to.
 api_url = "http://127.0.0.1"
 # OpenAI API Key to use for Supabase AI in the Supabase Studio.
@@ -81,7 +84,7 @@ openai_api_key = "env(OPENAI_API_KEY)"
 [inbucket]
 enabled = true
 # Port to use for the email testing server web interface.
-port = 54324
+port = 54334
 # Uncomment to expose additional ports for testing user applications that send emails.
 # smtp_port = 54325
 # pop3_port = 54326
@@ -307,7 +310,7 @@ deno_version = 1
 
 [analytics]
 enabled = true
-port = 54327
+port = 54337
 # Configure one of the supported backends: `postgres`, `bigquery`.
 backend = "postgres"
 
