@@ -268,6 +268,30 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
 
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      # Supabase の起動（docker イメージの pull + コンテナ起動）はこのジョブで最も時間がかかる。
+      # 依存インストール・Playwright ブラウザのインストール・Prisma Client 生成とは独立しているため、
+      # ここでバックグラウンドで開始し、それらの完了後に「Wait for Supabase」ステップで合流する。
+      # 出力をファイルへリダイレクトしないとステップがプロセス終了まで待ってしまうため必ずリダイレクトする。
+      - name: Start Supabase (background)
+        run: |
+          # Enable API and use default ports for CI
+          sed -i 's/^\[api\]$/[api]/' supabase/config.toml
+          sed -i '/^\[api\]$/,/^\[/{s/^enabled = false$/enabled = true/}' supabase/config.toml
+          sed -i 's/^port = 54332$/port = 54322/' supabase/config.toml
+
+          # admin E2E が必要とするのは db / kong / gotrue（認証）/ postgrest（疎通確認）と、
+          # gotrue の SMTP 先である mailpit のみ。storage-api（pull が最も遅い）・realtime・
+          # postgres-meta（studio 専用）・logflare（analytics）は使わないので除外する。
+          nohup bash -c '
+            supabase start --exclude imgproxy,edge-runtime,vector,studio,storage-api,realtime,postgres-meta,logflare
+            echo $? > /tmp/supabase-start.exit
+          ' > /tmp/supabase-start.log 2>&1 &
+
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
 
@@ -316,23 +340,23 @@ jobs:
       - name: Install Playwright browsers
         run: pnpm --filter admin exec playwright install chromium --with-deps
 
-      - name: Setup Supabase CLI
-        uses: supabase/setup-cli@v1
-        with:
-          version: latest
-
       - name: Generate Prisma Client
         run: pnpm db:generate
 
-      - name: Start Supabase
+      - name: Wait for Supabase
         run: |
-          # Enable API and use default ports for CI
-          sed -i 's/^\[api\]$/[api]/' supabase/config.toml
-          sed -i '/^\[api\]$/,/^\[/{s/^enabled = false$/enabled = true/}' supabase/config.toml
-          sed -i 's/^port = 54332$/port = 54322/' supabase/config.toml
+          # バックグラウンドの supabase start は子プロセスではないため wait できない。
+          # 終了コードを書き出すファイルの出現をポーリングして完了を待つ。
+          echo "Waiting for supabase start to finish..."
+          timeout 300 bash -c 'until [ -f /tmp/supabase-start.exit ]; do sleep 2; done' \
+            || { echo "::error::supabase start timed out"; cat /tmp/supabase-start.log; exit 1; }
 
-          # Start Supabase
-          supabase start --exclude imgproxy,edge-runtime,vector,studio
+          cat /tmp/supabase-start.log
+          exit_code=$(cat /tmp/supabase-start.exit)
+          if [ "$exit_code" != "0" ]; then
+            echo "::error::supabase start failed with exit code $exit_code"
+            exit "$exit_code"
+          fi
 
           # Wait for Supabase API to be ready
           echo "Waiting for Supabase API..."
