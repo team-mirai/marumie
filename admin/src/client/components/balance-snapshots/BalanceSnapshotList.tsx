@@ -3,12 +3,22 @@ import "client-only";
 
 import { useState } from "react";
 import type { BalanceSnapshot } from "@/server/contexts/shared/domain/models/balance-snapshot";
-import { Button } from "@/client/components/ui";
+import {
+  Button,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/client/components/ui";
+import { formatAmount, formatDate, formatDateTime } from "@/client/lib";
 
 interface BalanceSnapshotListProps {
   snapshots: BalanceSnapshot[];
 }
 
+/** 残高スナップショットの履歴一覧（テーブル罫線ルールは取引一覧と同一、日付は YYYY.MM.DD、金額は Poppins 右寄せ） */
 export default function BalanceSnapshotList({ snapshots }: BalanceSnapshotListProps) {
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
@@ -36,53 +46,49 @@ export default function BalanceSnapshotList({ snapshots }: BalanceSnapshotListPr
 
   if (snapshots.length === 0) {
     return (
-      <div className="text-center py-10">
-        <p className="text-muted-foreground">残高スナップショットはありません</p>
-      </div>
+      <p className="py-8 text-center text-sm text-muted-foreground">
+        残高スナップショットはありません
+      </p>
     );
   }
 
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full border-collapse">
-        <thead>
-          <tr className="border-b border-border">
-            <th className="px-2 py-3 text-left text-sm font-semibold text-foreground">残高日付</th>
-            <th className="px-2 py-3 text-right text-sm font-semibold text-foreground">残高</th>
-            <th className="px-2 py-3 text-left text-sm font-semibold text-foreground">登録日時</th>
-            <th className="px-2 py-3 text-center text-sm font-semibold text-foreground w-20">
-              操作
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {snapshots.map((snapshot) => (
-            <tr key={snapshot.id} className="border-b border-border">
-              <td className="px-2 py-3 text-sm text-foreground">
-                {new Date(snapshot.snapshot_date).toLocaleDateString("ja-JP")}
-              </td>
-              <td className="px-2 py-3 text-sm text-right text-foreground">
-                ¥{snapshot.balance.toLocaleString()}
-              </td>
-              <td className="px-2 py-3 text-sm text-muted-foreground">
-                {new Date(snapshot.created_at).toLocaleString("ja-JP")}
-              </td>
-              <td className="px-2 py-3 text-center">
-                <Button
-                  type="button"
-                  variant="destructive"
-                  size="sm"
-                  onClick={() => handleDelete(snapshot.id)}
-                  disabled={deletingId === snapshot.id}
-                  title="削除"
-                >
-                  {deletingId === snapshot.id ? "削除中..." : "削除"}
-                </Button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <Table>
+      <TableHeader>
+        <TableRow className="hover:bg-transparent">
+          <TableHead>残高日付</TableHead>
+          <TableHead className="text-right">残高</TableHead>
+          <TableHead>登録日時</TableHead>
+          <TableHead className="w-20 text-center">操作</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {snapshots.map((snapshot) => (
+          <TableRow key={snapshot.id}>
+            <TableCell className="font-latin text-[13px]">
+              {formatDate(snapshot.snapshot_date)}
+            </TableCell>
+            <TableCell className="font-latin text-right text-[13px] font-semibold">
+              {formatAmount(snapshot.balance)}
+            </TableCell>
+            <TableCell className="font-latin text-xs text-muted-foreground">
+              {formatDateTime(snapshot.created_at)}
+            </TableCell>
+            <TableCell className="text-center">
+              <Button
+                type="button"
+                variant="destructive"
+                size="xs"
+                onClick={() => handleDelete(snapshot.id)}
+                disabled={deletingId === snapshot.id}
+                title="削除"
+              >
+                {deletingId === snapshot.id ? "削除中..." : "削除"}
+              </Button>
+            </TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
   );
 }

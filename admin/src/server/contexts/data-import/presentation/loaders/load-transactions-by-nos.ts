@@ -11,6 +11,8 @@ export type BulkDeleteSearchResult = {
     description: string;
     debitAmount: number;
     creditAmount: number;
+    /** ISO 8601 文字列。表示側で YYYY.MM.DD に整形する */
+    /** ISO 8601 文字列。表示側で YYYY.MM.DD に整形する */
     transactionDate: string;
   }>;
   notFoundNos?: string[];
@@ -36,7 +38,7 @@ export async function loadTransactionsByNos(
         description: t.description || "",
         debitAmount: t.debit_amount,
         creditAmount: t.credit_amount,
-        transactionDate: new Date(t.transaction_date).toLocaleDateString("ja-JP"),
+        transactionDate: new Date(t.transaction_date).toISOString(),
       })),
       notFoundNos,
     };

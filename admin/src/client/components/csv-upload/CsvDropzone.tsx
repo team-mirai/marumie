@@ -1,7 +1,7 @@
 "use client";
 import "client-only";
 
-import { useId, useRef, useState, type DragEvent } from "react";
+import { useEffect, useId, useRef, useState, type DragEvent } from "react";
 import { UploadSimple } from "@phosphor-icons/react/dist/ssr";
 import { Button } from "@/client/components/ui";
 import { cn } from "@/client/lib";
@@ -28,6 +28,13 @@ export function CsvDropzone({ file, onFileChange, disabled = false, note }: CsvD
   const inputId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
+
+  // 親がファイルを破棄（取り込み完了など）したら hidden input も空にし、同じファイルを再選択できるようにする
+  useEffect(() => {
+    if (!file && inputRef.current) {
+      inputRef.current.value = "";
+    }
+  }, [file]);
 
   const handleDragOver = (e: DragEvent<HTMLDivElement>) => {
     e.preventDefault();

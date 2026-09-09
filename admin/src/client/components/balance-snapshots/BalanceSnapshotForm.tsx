@@ -3,6 +3,7 @@ import "client-only";
 
 import { useState, useId } from "react";
 import type { ChangeEvent, FormEvent } from "react";
+import { CircleNotch } from "@phosphor-icons/react/dist/ssr";
 import { Button, Input, Label } from "@/client/components/ui";
 
 interface BalanceSnapshotFormProps {
@@ -26,6 +27,7 @@ export default function BalanceSnapshotForm({
 
   const dateInputId = useId();
   const balanceInputId = useId();
+  const dateErrorId = useId();
 
   const validateDate = (dateValue: string) => {
     if (!dateValue) {
@@ -89,22 +91,32 @@ export default function BalanceSnapshotForm({
 
   return (
     <div>
-      <form onSubmit={handleSubmit} className="flex gap-4 items-start max-w-2xl">
-        <div className="w-48">
-          <Label htmlFor={dateInputId}>残高日付:</Label>
+      <form onSubmit={handleSubmit} className="flex flex-wrap items-start gap-4">
+        <div className="flex w-48 flex-col gap-1.5">
+          <Label htmlFor={dateInputId} className="text-xs font-bold">
+            残高日付 <span className="text-destructive">*</span>
+          </Label>
           <Input
             id={dateInputId}
             type="date"
             value={snapshotDate}
             onChange={handleDateChange}
-            className={`[color-scheme:dark] ${dateError ? "border-red-500 focus:ring-red-500" : ""}`}
+            className="font-latin text-[13px]"
+            aria-invalid={dateError ? true : undefined}
+            aria-describedby={dateError ? dateErrorId : undefined}
             required
           />
-          {dateError && <p className="text-destructive text-sm mt-1">{dateError}</p>}
+          {dateError && (
+            <p id={dateErrorId} className="text-xs text-destructive">
+              {dateError}
+            </p>
+          )}
         </div>
 
-        <div className="w-48">
-          <Label htmlFor={balanceInputId}>残高 (円):</Label>
+        <div className="flex w-48 flex-col gap-1.5">
+          <Label htmlFor={balanceInputId} className="text-xs font-bold">
+            残高 (円) <span className="text-destructive">*</span>
+          </Label>
           <Input
             id={balanceInputId}
             type="number"
@@ -112,18 +124,33 @@ export default function BalanceSnapshotForm({
             value={balance}
             onChange={(e) => setBalance(e.target.value)}
             placeholder="0"
+            className="font-latin text-[13px]"
             required
           />
         </div>
 
-        <div className="mt-7">
+        <div className="self-end">
           <Button type="submit" disabled={!snapshotDate || !balance || isSubmitting || !!dateError}>
-            {isSubmitting ? "登録中..." : "残高を登録"}
+            {isSubmitting ? (
+              <>
+                <CircleNotch aria-hidden className="animate-spin" />
+                登録中...
+              </>
+            ) : (
+              "残高を登録"
+            )}
           </Button>
         </div>
       </form>
 
-      {successMessage && <div className="mt-4 text-primary-hover text-sm">{successMessage}</div>}
+      {successMessage && (
+        <div
+          role="status"
+          className="mt-4 rounded-lg border border-primary-active bg-accent p-3 text-sm text-primary-active"
+        >
+          {successMessage}
+        </div>
+      )}
     </div>
   );
 }

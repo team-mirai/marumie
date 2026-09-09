@@ -12,13 +12,11 @@ export default async function ImportDonorsPage() {
   return (
     <div>
       <PageHeader label="Donor Import" title="寄付者一括インポート" />
-      <div className="bg-card rounded-xl p-4">
-        <DonorCsvImportClient
-          organizations={organizations}
-          previewAction={previewDonorCsv}
-          importAction={importDonorCsv}
-        />
-      </div>
+      <DonorCsvImportClient
+        organizations={organizations}
+        previewAction={previewDonorCsv}
+        importAction={importDonorCsv}
+      />
     </div>
   );
 }

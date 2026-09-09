@@ -10,7 +10,7 @@ test.describe("寄付者一括インポート", () => {
 				page.getByRole("heading", { name: "寄付者一括インポート" }),
 			).toBeVisible();
 			await expect(page.getByRole("combobox")).toBeVisible();
-			await expect(page.getByLabel("CSV File:")).toBeVisible();
+			await expect(page.getByLabel("CSVファイル", { exact: true })).toBeVisible();
 		});
 
 		test("政治団体セレクターが表示される", async ({ page }) => {
@@ -32,7 +32,7 @@ test.describe("寄付者一括インポート", () => {
 		}) => {
 			await page.goto("/import-donors");
 
-			const fileInput = page.getByLabel("CSV File:");
+			const fileInput = page.getByLabel("CSVファイル", { exact: true });
 			const csvPath = path.resolve(
 				process.cwd(),
 				"../data/sample_donor_import.csv",
@@ -60,7 +60,7 @@ test.describe("寄付者一括インポート", () => {
 		test("プレビューテーブルにデータが表示される", async ({ page }) => {
 			await page.goto("/import-donors");
 
-			const fileInput = page.getByLabel("CSV File:");
+			const fileInput = page.getByLabel("CSVファイル", { exact: true });
 			const csvPath = path.resolve(
 				process.cwd(),
 				"../data/sample_donor_import.csv",
@@ -97,7 +97,7 @@ test.describe("寄付者一括インポート", () => {
 		test("タブをクリックするとフィルタリングされる", async ({ page }) => {
 			await page.goto("/import-donors");
 
-			const fileInput = page.getByLabel("CSV File:");
+			const fileInput = page.getByLabel("CSVファイル", { exact: true });
 			const csvPath = path.resolve(
 				process.cwd(),
 				"../data/sample_donor_import.csv",
@@ -128,7 +128,7 @@ test.describe("寄付者一括インポート", () => {
 		test("ツールチップが表示される", async ({ page }) => {
 			await page.goto("/import-donors");
 
-			const fileInput = page.getByLabel("CSV File:");
+			const fileInput = page.getByLabel("CSVファイル", { exact: true });
 			const csvPath = path.resolve(
 				process.cwd(),
 				"../data/sample_donor_import.csv",
@@ -159,7 +159,7 @@ test.describe("寄付者一括インポート", () => {
 			}) => {
 				await page.goto("/import-donors");
 
-				const fileInput = page.getByLabel("CSV File:");
+				const fileInput = page.getByLabel("CSVファイル", { exact: true });
 				const csvPath = path.resolve(
 					process.cwd(),
 					"../data/sample_donor_import.csv",
@@ -180,7 +180,7 @@ test.describe("寄付者一括インポート", () => {
 			}) => {
 				await page.goto("/import-donors");
 
-				const fileInput = page.getByLabel("CSV File:");
+				const fileInput = page.getByLabel("CSVファイル", { exact: true });
 				const csvPath = path.resolve(
 					process.cwd(),
 					"../data/sample_donor_import.csv",
@@ -214,7 +214,7 @@ test.describe("寄付者一括インポート", () => {
 			}) => {
 				await page.goto("/import-donors");
 
-				const fileInput = page.getByLabel("CSV File:");
+				const fileInput = page.getByLabel("CSVファイル", { exact: true });
 				const csvPath = path.resolve(
 					process.cwd(),
 					"../data/sample_donor_import.csv",

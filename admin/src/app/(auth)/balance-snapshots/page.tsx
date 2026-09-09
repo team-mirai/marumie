@@ -10,9 +10,7 @@ export default async function BalanceSnapshotsPage() {
   return (
     <div>
       <PageHeader label="Balance Snapshots" title="残高登録" />
-      <div className="bg-card rounded-xl p-4">
-        <BalanceSnapshotsClient organizations={organizations} />
-      </div>
+      <BalanceSnapshotsClient organizations={organizations} />
     </div>
   );
 }
