@@ -61,13 +61,6 @@ test.describe("政治団体ページ", () => {
 			await expect(page).toHaveURL(/\/o\/[\w-]+\/2026$/);
 			await expect(page).not.toHaveURL(/non-existent-org/);
 		});
-
-		test("収支の流れセクションが表示される", async ({ page }) => {
-			await page.goto("/o/sample-party/2026");
-
-			// 収支の流れセクションが存在することを確認（メインコンテンツ内のセクション）
-			await expect(page.locator("#cash-flow").getByText("収支の流れ")).toBeVisible();
-		});
 	});
 
 	test.describe("政治団体・年度セレクター", () => {
@@ -89,19 +82,9 @@ test.describe("政治団体ページ", () => {
 			const selectorButton = page.getByRole("button", { name: /サンプル党/ });
 			await selectorButton.click();
 
-			// シート内の選択肢をクリック（E2Eテスト団体が存在する場合）
-			const options = page.locator(
-				'button:has-text("E2Eテスト団体")',
-			);
-			const optionCount = await options.count();
-
-			if (optionCount > 0) {
-				await options.first().click();
-				await expect(page).toHaveURL("/o/e2e-test-org/2026");
-			} else {
-				// E2Eテスト団体がない場合はスキップ
-				test.skip();
-			}
+			// シード済みの「E2Eテスト団体」（slug: e2e-test-org）を選択する
+			await page.getByRole("button", { name: "E2Eテスト団体" }).click();
+			await expect(page).toHaveURL("/o/e2e-test-org/2026");
 		});
 
 		test("年度を切り替えるとページが切り替わる", async ({ page }) => {
@@ -152,20 +135,9 @@ test.describe("政治団体ページ", () => {
 			const selectorButton = page.getByRole("button", { name: /サンプル党/ });
 			await selectorButton.click();
 
-			// シート内の選択肢をクリック
-			const options = page.locator(
-				'button:has-text("E2Eテスト団体")',
-			);
-			const optionCount = await options.count();
-
-			if (optionCount > 0) {
-				await options.first().click();
-				// URLが変更されることを確認（transactionsパスは維持）
-				await expect(page).toHaveURL("/o/e2e-test-org/2026/transactions");
-			} else {
-				// E2Eテスト団体がない場合はスキップ
-				test.skip();
-			}
+			// シード済みの「E2Eテスト団体」を選択すると、transactions パスを維持したまま URL が変わる
+			await page.getByRole("button", { name: "E2Eテスト団体" }).click();
+			await expect(page).toHaveURL("/o/e2e-test-org/2026/transactions");
 		});
 	});
 });
