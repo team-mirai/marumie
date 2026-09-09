@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Poppins:wght@600;700&display=swap">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
+<link rel="stylesheet" href="_ds/team-mirai-design-system-remix-2a300789-1a0e-4f29-8893-6e06fbf24d63/colors_and_type.css">
+<script src="_ds/team-mirai-design-system-remix-2a300789-1a0e-4f29-8893-6e06fbf24d63/_ds_bundle.js"></script>
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;background:linear-gradient(135deg,rgba(226,246,243,1) 0%,rgba(238,246,226,1) 100%);background-attachment:fixed}
+  a{color:#238778;text-decoration:none}
+  a:hover{color:#2aa693;text-decoration:underline}
+</style>
+</helmet>
+
+<div style="min-height:100vh;font-family:'Noto Sans JP','Hiragino Kaku Gothic ProN',sans-serif;color:#000;font-size:15px;line-height:1.8;-webkit-font-smoothing:antialiased">
+
+  <div style="position:sticky;top:0;z-index:40;background:rgba(255,255,255,0.97);border-bottom:1px solid #E1EAE8">
+    <div style="max-width:1280px;margin:0 auto;padding:12px 20px;display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+      <span style="width:10px;height:10px;border-radius:50%;background:#30BCA7;display:inline-block;flex-shrink:0"></span>
+      <span style="font-size:15px;font-weight:700;white-space:nowrap">みらい まる見え政治資金</span>
+      <span style="font-size:11.5px;font-weight:700;color:#238778;background:#E2F6F3;border-radius:999px;padding:3px 12px;white-space:nowrap">調研費 管理画面 設計（内部資料）</span>
+      <a href="調研費データモデル.dc.html" style="margin-left:auto;font-size:13px;white-space:nowrap">公開側データモデル ›</a>
+      <a href="調研費まる見え.dc.html" style="font-size:13px;white-space:nowrap">公開側プロトタイプ ›</a>
+    </div>
+  </div>
+
+  <main style="max-width:1280px;margin:0 auto;padding:28px 20px 90px">
+
+    <section style="background:#fff;border-radius:20px;padding:28px 32px;margin-bottom:22px;box-shadow:0 1px 3px rgba(16,48,42,0.06)">
+      <h1 style="margin:0;font-size:26px;font-weight:700;line-height:1.5">調研費 管理画面（/admin）の設計</h1>
+      <p style="margin:8px 0 0;font-size:14px;color:#5B6B67;line-height:1.9;max-width:900px">既存 admin（marumie/admin）に「調査研究費」セクションを追加する。データはご指定どおり<b>複式簿記</b>で持ち、入力は<b>スキャン（画像・PDF → Claude で構造化）</b>を主経路にする。公開側データモデル（単式案）は、この複式モデルからの導出ビューに置き換わる。</p>
+      <div style="margin-top:14px;font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:12px;color:#5B6B67;background:#F4F9F8;border-radius:10px;padding:10px 16px;overflow-x:auto;white-space:nowrap">parties ─&lt; memberships &gt;─ politicians ─&lt; books（年度のお財布）─&lt; { documents ／ scan_jobs ／ journal_entries ─&lt; journal_lines ／ expenditure_groups }</div>
+    </section>
+
+    <section style="background:#fff;border-radius:20px;padding:26px 32px;margin-bottom:22px;box-shadow:0 1px 3px rgba(16,48,42,0.06)">
+      <h2 style="margin:0 0 4px;font-size:19px;font-weight:700">データの流れ（週1回の運用を1本の線に）</h2>
+      <p style="margin:0 0 18px;font-size:13px;color:#85868e">領収書30枚をまとめて投げて、確認して、公開する。人の目を通るまで公開されない。</p>
+      <div style="display:flex;gap:0;flex-wrap:wrap;align-items:stretch">
+        <sc-for list="{{ flow }}" as="f" hint-placeholder-count="6">
+          <div style="display:flex;align-items:stretch;flex:1 1 150px;min-width:150px">
+            <div style="flex:1;border:1px solid #DDE7E5;border-radius:14px;padding:14px 16px;background:{{ f.bg }}">
+              <div style="display:flex;align-items:center;gap:8px">
+                <i class="{{ f.icon }}" style="font-size:19px;color:#238778"></i>
+                <span style="font-size:13.5px;font-weight:700">{{ f.t }}</span>
+              </div>
+              <div style="font-size:12px;color:#5B6B67;line-height:1.7;margin-top:6px">{{ f.d }}</div>
+              <div style="font-size:10.5px;font-weight:700;color:#238778;margin-top:8px;letter-spacing:0.04em">{{ f.state }}</div>
+            </div>
+            <sc-if value="{{ f.arrow }}" hint-placeholder-val="{{ true }}">
+              <div style="display:flex;align-items:center;padding:0 6px"><i class="ph ph-arrow-right" style="font-size:15px;color:#A7B3B1"></i></div>
+            </sc-if>
+          </div>
+        </sc-for>
+      </div>
+      <div style="margin-top:14px;font-size:12.5px;color:#8A6D1F;background:#FDF8E3;border-radius:10px;padding:9px 14px;line-height:1.7">収入（毎月100万円の支給）はスキャンを通らず、支給ジェネレータから <span style="font-family:ui-monospace,Menlo,monospace">source=grant</span> の仕訳として手動生成する。領収書が無い支出も <span style="font-family:ui-monospace,Menlo,monospace">source=manual</span> で個別作成できる。</div>
+    </section>
+
+    <section style="margin-bottom:22px">
+      <div style="font-size:12px;letter-spacing:0.1em;color:#238778;font-weight:700;margin-bottom:10px">テーブル設計（複式簿記＋スキャンパイプライン）</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));gap:14px">
+        <sc-for list="{{ tables }}" as="t" hint-placeholder-count="8">
+          <div style="background:#fff;border:1px solid #BFE5DE;border-radius:18px;padding:20px 22px;box-shadow:0 1px 3px rgba(16,48,42,0.06)">
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+              <span style="font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:14.5px;font-weight:700;overflow-wrap:anywhere">{{ t.name }}</span>
+              <span style="white-space:nowrap;font-size:11px;font-weight:700;color:#fff;background:{{ t.badgeBg }};border-radius:999px;padding:3px 10px;letter-spacing:0.05em">{{ t.badge }}</span>
+            </div>
+            <div style="font-size:12.5px;color:#85868e;margin-top:3px">{{ t.jp }}</div>
+            <div style="margin-top:12px">
+              <sc-for list="{{ t.cols }}" as="c" hint-placeholder-count="5">
+                <div style="display:grid;grid-template-columns:minmax(115px,168px) 92px 1fr;gap:10px;padding:6px 0;border-top:1px solid #F0F5F4;align-items:baseline">
+                  <span style="font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:12.5px;font-weight:600;overflow-wrap:anywhere">{{ c.n }}</span>
+                  <span style="font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:10.5px;color:#85868e">{{ c.t }}</span>
+                  <span style="font-size:12.5px;color:#4A5754;line-height:1.65">{{ c.d }}</span>
+                </div>
+              </sc-for>
+            </div>
+            <sc-if value="{{ t.note }}" hint-placeholder-val="{{ false }}">
+              <div style="font-size:12px;color:#8A6D1F;background:#FDF8E3;border-radius:10px;padding:8px 12px;margin-top:12px;line-height:1.7">{{ t.note }}</div>
+            </sc-if>
+          </div>
+        </sc-for>
+      </div>
+    </section>
+
+    <section style="background:#fff;border-radius:20px;padding:26px 32px;margin-bottom:22px;box-shadow:0 1px 3px rgba(16,48,42,0.06)">
+      <h2 style="margin:0 0 4px;font-size:19px;font-weight:700">仕訳の型（複式のパターンは3つだけ）</h2>
+      <p style="margin:0 0 16px;font-size:13px;color:#85868e">調研費専用の固定科目なので、事務所スタッフが借方・貸方を考える場面は作らない。UIは科目と金額を選ぶだけで、裏でこの型に落とす。</p>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px">
+        <sc-for list="{{ patterns }}" as="p" hint-placeholder-count="3">
+          <div style="border:1px solid #DDE7E5;border-radius:14px;padding:16px 18px">
+            <div style="font-size:13.5px;font-weight:700">{{ p.t }}</div>
+            <div style="font-size:11.5px;color:#85868e;margin-top:2px">{{ p.when }}</div>
+            <div style="margin-top:10px;display:grid;grid-template-columns:1fr 1fr;gap:8px">
+              <div style="background:#F4F9F8;border-radius:8px;padding:8px 10px">
+                <div style="font-size:10px;font-weight:700;color:#238778;letter-spacing:0.08em">借方</div>
+                <div style="font-size:12.5px;font-weight:600;margin-top:2px">{{ p.debit }}</div>
+              </div>
+              <div style="background:#F8F8F8;border-radius:8px;padding:8px 10px">
+                <div style="font-size:10px;font-weight:700;color:#85868e;letter-spacing:0.08em">貸方</div>
+                <div style="font-size:12.5px;font-weight:600;margin-top:2px">{{ p.credit }}</div>
+              </div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </section>
+
+    <section style="margin-bottom:22px">
+      <div style="font-size:12px;letter-spacing:0.1em;color:#238778;font-weight:700;margin-bottom:10px">ページ構造（サイドバーに「調査研究費」セクションを追加）</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));gap:14px">
+        <sc-for list="{{ pages }}" as="pg" hint-placeholder-count="8">
+          <div style="background:#fff;border:1px solid #E1EAE8;border-radius:18px;padding:20px 22px;box-shadow:0 1px 3px rgba(16,48,42,0.06)">
+            <div style="display:flex;align-items:center;gap:10px">
+              <span style="width:34px;height:34px;border-radius:10px;background:#E2F6F3;display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="{{ pg.icon }}" style="font-size:18px;color:#238778"></i></span>
+              <div style="min-width:0">
+                <div style="font-size:15px;font-weight:700">{{ pg.t }}</div>
+                <div style="font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:11px;color:#85868e">{{ pg.path }}</div>
+              </div>
+            </div>
+            <p style="margin:10px 0 0;font-size:13px;color:#4A5754;line-height:1.8">{{ pg.d }}</p>
+            <div style="margin-top:10px;display:grid;gap:5px">
+              <sc-for list="{{ pg.ui }}" as="u" hint-placeholder-count="3">
+                <div style="display:flex;gap:8px;align-items:baseline;font-size:12.5px;color:#4A5754;line-height:1.65"><span style="color:#30BCA7;flex-shrink:0">●</span><span>{{ u }}</span></div>
+              </sc-for>
+            </div>
+            <div style="margin-top:12px;display:flex;gap:6px;flex-wrap:wrap">
+              <sc-for list="{{ pg.reuse }}" as="r" hint-placeholder-count="2">
+                <span style="font-size:11px;color:#238778;background:#E2F6F3;border-radius:999px;padding:3px 10px;white-space:nowrap">{{ r }}</span>
+              </sc-for>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+      <div style="margin-top:14px;font-size:12.5px;color:#5B6B67;background:#fff;border:1px solid #E1EAE8;border-radius:12px;padding:10px 16px;line-height:1.8">流用バッジは既存 admin の実コンポーネント（PageHeader／Table／CsvDropzone／Dialog／NativeSelect ほか）。調研費だけ別の見た目にはしない。</div>
+    </section>
+
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    const col = (n, t, d) => ({ n, t, d: d || "" });
+    return {
+      flow: [
+        { t: "アップロード", icon: "ph ph-upload-simple", d: "領収書写真・PDFを最大30枚まとめて。1バッチ=1回の週次作業", state: "scan_batch 作成", bg: "#fff", arrow: true },
+        { t: "スキャンジョブ", icon: "ph ph-sparkle", d: "1書類=1ジョブで順次処理。議員室のプロンプト＋Claude（vercel ai経由）で構造化JSONに", state: "queued → running → done", bg: "#fff", arrow: true },
+        { t: "下書き仕訳", icon: "ph ph-file-dashed", d: "抽出結果から複式の仕訳を自動生成。1書類から複数明細もあり", state: "status=draft", bg: "#fff", arrow: true },
+        { t: "目視確認", icon: "ph ph-eye", d: "領収書画像と抽出フィールドを並べて確認・修正。ここまでは非公開", state: "draft → approved", bg: "#E2F6F3", arrow: true },
+        { t: "公開", icon: "ph ph-globe", d: "選択した仕訳の公開前後をサンキーの before / after でプレビューして公開", state: "approved → published", bg: "#E2F6F3", arrow: true },
+        { t: "フロント反映", icon: "ph ph-monitor", d: "公開済み仕訳だけが「調研費まる見え」に出る", state: "published のみ表示", bg: "#fff", arrow: false }
+      ],
+      tables: [
+        { name: "parties", jp: "政党（任意の親）", badge: "新規", badgeBg: "#30BCA7",
+          note: "議員は政党なしでも存在できる。紐づけは membership 側に切り出す（ご指定どおり）",
+          cols: [col("id","bigint PK"), col("name","varchar","チームみらい"), col("slug","varchar UQ")] },
+        { name: "politician_party_memberships", jp: "議員 ⇄ 政党", badge: "新規", badgeBg: "#30BCA7",
+          cols: [col("politician_id","bigint FK","→ politicians.id"), col("party_id","bigint FK","→ parties.id"), col("started_on","date"), col("ended_on","date ?","離党・移籍の履歴も残せる")] },
+        { name: "politicians", jp: "議員（データのルート）", badge: "新規", badgeBg: "#30BCA7",
+          cols: [col("id","bigint PK"), col("tenant_id","bigint FK","→ tenants.id（既存認証に相乗り）"), col("name","varchar","峰島侑也"), col("slug","varchar UQ","/choken/mineshima"), col("term_start","date","支給の起点"), col("display_order","int")] },
+        { name: "rf_books", jp: "年度帳簿（1年間のお財布）", badge: "新規", badgeBg: "#30BCA7",
+          note: "UNIQUE(politician_id, financial_year)。公開状況・活用方針など年度単位の属性もここ（旧 profiles を統合）",
+          cols: [col("id","bigint PK"), col("politician_id","bigint FK"), col("financial_year","int","2026"), col("status","enum","preparing ／ active ／ closed"), col("published_through","date ?","何月分まで公開"), col("as_of_date","date ?","「2026.8.20時点」"), col("details","jsonb","データについて（B-5）の説明文")] },
+        { name: "rf_accounts", jp: "勘定科目（調研費専用・固定）", badge: "新規", badgeBg: "#30BCA7",
+          note: "資産＝普通預金・現金／収入＝調査研究費収入（国庫）／費用＝詳細15分類。法定10費目は列で導出",
+          cols: [col("key","varchar PK","it-equipment など"), col("label","varchar","IT機器・周辺機器費"), col("type","enum","asset ／ income ／ expense"), col("legal_category_key","varchar ?","法定区分（費用のみ）"), col("legal_label","varchar ?","③ 備品・消耗品費"), col("display_order","int")] },
+        { name: "rf_journal_entries", jp: "仕訳（1件＝領収書1枚 or 手動1件）", badge: "複式の核", badgeBg: "#0F8472",
+          note: "公開側の research_fund_transactions（単式）は、この entries＋lines から費用行だけを射影したビューに置き換わる",
+          cols: [col("id","bigint PK"), col("book_id","bigint FK","→ rf_books.id"), col("entry_date","date"), col("description","varchar","公開用の項目名（タクシー代）"), col("status","enum","draft ／ approved ／ published"), col("source","enum","scan ／ manual ／ grant"), col("document_id","bigint FK ?","→ rf_documents（領収書なしは NULL）"), col("split_group","varchar ?","同一注文の行分割キー"), col("note","text ?","特記事項（公開される）"), col("memo","text ?","備考（公開されない・事務所内メモ）"), col("published_at","timestamptz ?")] },
+        { name: "rf_journal_lines", jp: "仕訳明細（借方・貸方）", badge: "複式の核", badgeBg: "#0F8472",
+          note: "CHECK: 仕訳ごとに借方合計＝貸方合計。通常支出は2行で済む",
+          cols: [col("id","bigint PK"), col("entry_id","bigint FK"), col("side","enum","debit ／ credit"), col("account_key","varchar FK","→ rf_accounts.key"), col("amount","decimal")] },
+        { name: "rf_documents", jp: "原本（領収書写真・PDF）", badge: "新規", badgeBg: "#30BCA7",
+          cols: [col("id","bigint PK"), col("book_id","bigint FK"), col("batch_id","bigint FK","→ rf_scan_batches"), col("storage_key","varchar","原本"), col("masked_key","varchar ?","公開用（マスキング済み）"), col("mime","varchar","image/jpeg ／ application/pdf"), col("original_filename","varchar")] },
+        { name: "rf_scan_batches ＋ rf_scan_jobs", jp: "スキャンの一括投入とジョブ", badge: "新規", badgeBg: "#30BCA7",
+          note: "ジョブ成功時に draft 仕訳を生成し、raw_json（Claude の出力）を監査用に保持。失敗は再実行できる",
+          cols: [col("batches.id","bigint PK","1バッチ=1回のアップロード"), col("batches.book_id","bigint FK"), col("jobs.document_id","bigint FK","1書類=1ジョブ"), col("jobs.status","enum","queued ／ running ／ succeeded ／ failed"), col("jobs.prompt_id","bigint FK","使った版を記録"), col("jobs.model","varchar","claude-opus-4-1 など"), col("jobs.raw_json","jsonb","構造化出力の原文"), col("jobs.error","text ?")] },
+        { name: "rf_prompts", jp: "読み取りプロンプト（議員室ごと）", badge: "新規", badgeBg: "#30BCA7",
+          note: "管理画面から編集。ジョブは使った版を参照するので、後から「どの版で読んだか」を追える",
+          cols: [col("id","bigint PK"), col("politician_id","bigint FK"), col("version","int"), col("body","text","整理プロンプト本文"), col("is_active","boolean"), col("updated_by","bigint FK","→ users.id")] },
+        { name: "rf_expenditure_groups", jp: "支出群（活用方針と主要な成果）", badge: "新規", badgeBg: "#30BCA7",
+          note: "公開側 B-3「主要な支出の成果」の編集元。金額・件数・期間は items の紐づけから自動集計（決定ポイント）",
+          cols: [col("id","bigint PK"), col("book_id","bigint FK"), col("title","varchar","ボネクタ利用料 など"), col("policy","text","活用方針（議員本人が書く1〜2行）"), col("description","text","使った目的と生まれたもの"), col("display_order","int")] },
+        { name: "rf_group_items ＋ rf_group_outcomes", jp: "支出群 ⇄ 仕訳／成果物", badge: "新規", badgeBg: "#30BCA7",
+          cols: [col("items.group_id","bigint FK"), col("items.entry_id","bigint FK","→ rf_journal_entries"), col("outcomes.label","varchar","動画／レポート／議事録"), col("outcomes.url","varchar ?","NULL なら「報告は準備中」")] }
+      ],
+      patterns: [
+        { t: "支給（収入）", when: "毎月固定日・ジェネレータで生成", debit: "普通預金 1,000,000", credit: "調査研究費収入 1,000,000" },
+        { t: "支出", when: "スキャン or 手動作成", debit: "費用科目（15分類） n円", credit: "普通預金 n円" },
+        { t: "年度末の未使用", when: "帳簿クローズ時に自動", debit: "調査研究費収入（返還） n円", credit: "普通預金 n円" }
+      ],
+      pages: [
+        { t: "議員", path: "/politicians", icon: "ph ph-identification-badge",
+          d: "議員の作成・編集。親政党は任意（プルダウン＋その場で政党を新規作成）。", 
+          ui: ["一覧カード（既存の政治団体一覧と同型）", "作成フォーム：氏名・slug・当選日・政党（任意）"],
+          reuse: ["PageHeader", "Card", "PoliticalOrganizationForm 同型"] },
+        { t: "年度帳簿", path: "/politicians/[id]/books", icon: "ph ph-notebook",
+          d: "議員 × 年度の「お財布」を作る。作成直後に最初のスキャンへ誘導する。",
+          ui: ["年度カード：公開状況・確認待ち件数・残高", "「帳簿を作る」→ 年度選択 → スキャンへ"],
+          reuse: ["Card", "Badge"] },
+        { t: "書類スキャン", path: "/choken/scan", icon: "ph ph-scan",
+          d: "画像・PDFを最大30枚ドロップ→ジョブキューが順次処理。週1回の入口。",
+          ui: ["帳簿セレクタ＋ドロップゾーン", "ジョブ表：サムネ・状態・抽出結果の要約・再実行", "完了分から「確認へ」導線"],
+          reuse: ["CsvDropzone 同型", "Table", "進捗スピナー"] },
+        { t: "仕訳の確認・編集", path: "/choken/entries", icon: "ph ph-list-checks",
+          d: "draft を目視確認して approved に。手動作成（領収書なし可）もここから。",
+          ui: ["フィルタ：状態・月・科目・source", "行選択で領収書画像＋抽出フィールドを並べて修正", "行分割（split_group）の束ね表示"],
+          reuse: ["Table", "CategoryPill", "Dialog"] },
+        { t: "支給の登録", path: "/choken/grants", icon: "ph ph-coins",
+          d: "毎月100万円の振込を手早く仕訳化。年度分をプレビューして一括生成。",
+          ui: ["支給日・金額のテンプレート", "月別の生成状況（済み／未）", "月途中当選の按分にも対応"],
+          reuse: ["Card", "Table"] },
+        { t: "公開", path: "/choken/publish", icon: "ph ph-globe",
+          d: "approved の仕訳を選択し、公開前 / 公開後のサンキーを並べて見てから公開。",
+          ui: ["未公開一覧（チェックボックス）", "before / after サンキープレビュー", "「n件を公開する」確定ボタン"],
+          reuse: ["Table", "SankeyChart（webapp流用）"] },
+        { t: "支出群と成果", path: "/choken/groups", icon: "ph ph-squares-four",
+          d: "支出をグループ化し、活用方針と主要な成果（B-3カード）を書く。",
+          ui: ["グループ一覧＋並び替え", "仕訳の紐づけピッカー（金額・件数は自動集計）", "成果物（ラベル＋URL）の管理"],
+          reuse: ["Card", "Dialog", "Table"] },
+        { t: "読み取りプロンプト", path: "/choken/prompt", icon: "ph ph-sparkle",
+          d: "議員室ごとの整理プロンプトを編集。ジョブがどの版を使ったか追跡できる。",
+          ui: ["本文エディタ＋保存で新しい版", "版履歴と有効版の切り替え", "（範囲は要確認）1枚流すテスト実行"],
+          reuse: ["Textarea", "Card"] }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>
