@@ -148,6 +148,12 @@ test.describe("寄付者一括インポート", () => {
 		});
 
 		test.describe("CSVインポート確定", () => {
+			// この describe 配下の 2 テストは同じ寄付者 CSV を実際に DB へ書き込む。
+			// fullyParallel のまま並列に走ると同じ寄付者を同時に createMany して
+			// 一意制約違反で失敗するため、describe 単位で fullyParallel を解除し
+			// 同一ワーカーで順番に実行する（serial と違い、1 件失敗しても以降は skip されない）。
+			test.describe.configure({ mode: "default" });
+
 			test("有効な行がある場合、インポートボタンが表示される", async ({
 				page,
 			}) => {
