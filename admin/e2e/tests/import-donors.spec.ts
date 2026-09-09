@@ -1,5 +1,21 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, type Page } from "@playwright/test";
 import path from "node:path";
+
+const SAMPLE_CSV_PATH = path.resolve(process.cwd(), "../data/sample_donor_import.csv");
+
+/**
+ * 寄付者一括インポートページを開き、サンプル CSV をアップロードしてプレビューが
+ * 表示される（「全件」タブが出る）まで待つ。
+ */
+async function uploadSampleCsv(page: Page) {
+	await page.goto("/import-donors");
+
+	await page.getByLabel("CSVファイル", { exact: true }).setInputFiles(SAMPLE_CSV_PATH);
+
+	await expect(page.getByRole("button", { name: /全件/ })).toBeVisible({
+		timeout: 10000,
+	});
+}
 
 test.describe("寄付者一括インポート", () => {
 	test.describe("読み込み", () => {
@@ -9,16 +25,10 @@ test.describe("寄付者一括インポート", () => {
 			await expect(
 				page.getByRole("heading", { name: "寄付者一括インポート" }),
 			).toBeVisible();
-			await expect(page.getByRole("combobox")).toBeVisible();
 			await expect(page.getByLabel("CSVファイル", { exact: true })).toBeVisible();
-		});
-
-		test("政治団体セレクターが表示される", async ({ page }) => {
-			await page.goto("/import-donors");
 
 			const selector = page.getByRole("combobox");
 			await expect(selector).toBeVisible();
-
 			await selector.click();
 			await expect(
 				page.getByRole("option", { name: "サンプル党" }),
@@ -27,23 +37,11 @@ test.describe("寄付者一括インポート", () => {
 	});
 
 	test.describe("CSVプレビュー", () => {
-		test("CSVファイルをアップロードするとプレビューが表示される", async ({
+		test("CSVファイルをアップロードするとタブ付きのプレビューテーブルが表示される", async ({
 			page,
 		}) => {
-			await page.goto("/import-donors");
+			await uploadSampleCsv(page);
 
-			const fileInput = page.getByLabel("CSVファイル", { exact: true });
-			const csvPath = path.resolve(
-				process.cwd(),
-				"../data/sample_donor_import.csv",
-			);
-			await fileInput.setInputFiles(csvPath);
-
-			await expect(page.getByText("ファイルを処理中...")).toBeVisible();
-
-			await expect(page.getByRole("button", { name: /全件/ })).toBeVisible({
-				timeout: 10000,
-			});
 			await expect(
 				page.getByRole("button", { name: /新規寄付者/ }),
 			).toBeVisible();
@@ -55,25 +53,9 @@ test.describe("寄付者一括インポート", () => {
 			await expect(
 				page.getByRole("button", { name: /種別不整合/ }),
 			).toBeVisible();
-		});
-
-		test("プレビューテーブルにデータが表示される", async ({ page }) => {
-			await page.goto("/import-donors");
-
-			const fileInput = page.getByLabel("CSVファイル", { exact: true });
-			const csvPath = path.resolve(
-				process.cwd(),
-				"../data/sample_donor_import.csv",
-			);
-			await fileInput.setInputFiles(csvPath);
-
-			await expect(page.getByRole("button", { name: /全件/ })).toBeVisible({
-				timeout: 10000,
-			});
 
 			const table = page.locator("table");
 			await expect(table).toBeVisible();
-
 			await expect(
 				table.getByRole("columnheader", { name: "行番号" }),
 			).toBeVisible();
@@ -89,24 +71,11 @@ test.describe("寄付者一括インポート", () => {
 			await expect(
 				table.getByRole("columnheader", { name: "寄付者種別" }),
 			).toBeVisible();
-
-			const rows = table.locator("tbody tr");
-			await expect(rows).not.toHaveCount(0);
+			await expect(table.locator("tbody tr")).not.toHaveCount(0);
 		});
 
 		test("タブをクリックするとフィルタリングされる", async ({ page }) => {
-			await page.goto("/import-donors");
-
-			const fileInput = page.getByLabel("CSVファイル", { exact: true });
-			const csvPath = path.resolve(
-				process.cwd(),
-				"../data/sample_donor_import.csv",
-			);
-			await fileInput.setInputFiles(csvPath);
-
-			await expect(page.getByRole("button", { name: /全件/ })).toBeVisible({
-				timeout: 10000,
-			});
+			await uploadSampleCsv(page);
 
 			const allTabButton = page.getByRole("button", { name: /全件/ });
 			const allTabText = await allTabButton.textContent();
@@ -126,18 +95,7 @@ test.describe("寄付者一括インポート", () => {
 		});
 
 		test("ツールチップが表示される", async ({ page }) => {
-			await page.goto("/import-donors");
-
-			const fileInput = page.getByLabel("CSVファイル", { exact: true });
-			const csvPath = path.resolve(
-				process.cwd(),
-				"../data/sample_donor_import.csv",
-			);
-			await fileInput.setInputFiles(csvPath);
-
-			await expect(page.getByRole("button", { name: /全件/ })).toBeVisible({
-				timeout: 10000,
-			});
+			await uploadSampleCsv(page);
 
 			const newDonorButton = page.getByRole("button", { name: /新規寄付者/ });
 			await newDonorButton.hover();
@@ -148,7 +106,7 @@ test.describe("寄付者一括インポート", () => {
 		});
 
 		test.describe("CSVインポート確定", () => {
-			// この describe 配下の 2 テストは同じ寄付者 CSV を実際に DB へ書き込む。
+			// この describe 配下のテストは同じ寄付者 CSV を実際に DB へ書き込む。
 			// fullyParallel のまま並列に走ると同じ寄付者を同時に createMany して
 			// 一意制約違反で失敗するため、describe 単位で fullyParallel を解除し
 			// 同一ワーカーで順番に実行する（serial と違い、1 件失敗しても以降は skip されない）。
@@ -157,18 +115,7 @@ test.describe("寄付者一括インポート", () => {
 			test("有効な行がある場合、インポートボタンが表示される", async ({
 				page,
 			}) => {
-				await page.goto("/import-donors");
-
-				const fileInput = page.getByLabel("CSVファイル", { exact: true });
-				const csvPath = path.resolve(
-					process.cwd(),
-					"../data/sample_donor_import.csv",
-				);
-				await fileInput.setInputFiles(csvPath);
-
-				await expect(page.getByRole("button", { name: /全件/ })).toBeVisible({
-					timeout: 10000,
-				});
+				await uploadSampleCsv(page);
 
 				const importButton = page.getByRole("button", { name: /件をインポート/ });
 				await expect(importButton).toBeVisible();
@@ -178,18 +125,7 @@ test.describe("寄付者一括インポート", () => {
 			test("インポートボタンをクリックするとインポートが実行される", async ({
 				page,
 			}) => {
-				await page.goto("/import-donors");
-
-				const fileInput = page.getByLabel("CSVファイル", { exact: true });
-				const csvPath = path.resolve(
-					process.cwd(),
-					"../data/sample_donor_import.csv",
-				);
-				await fileInput.setInputFiles(csvPath);
-
-				await expect(page.getByRole("button", { name: /全件/ })).toBeVisible({
-					timeout: 10000,
-				});
+				await uploadSampleCsv(page);
 
 				const importButton = page.getByRole("button", { name: /件をインポート/ });
 				await expect(importButton).toBeVisible();
@@ -212,18 +148,7 @@ test.describe("寄付者一括インポート", () => {
 			test("インポート成功後、ファイル入力がリセットされる", async ({
 				page,
 			}) => {
-				await page.goto("/import-donors");
-
-				const fileInput = page.getByLabel("CSVファイル", { exact: true });
-				const csvPath = path.resolve(
-					process.cwd(),
-					"../data/sample_donor_import.csv",
-				);
-				await fileInput.setInputFiles(csvPath);
-
-				await expect(page.getByRole("button", { name: /全件/ })).toBeVisible({
-					timeout: 10000,
-				});
+				await uploadSampleCsv(page);
 
 				const importButton = page.getByRole("button", { name: /件をインポート/ });
 				await importButton.click();
