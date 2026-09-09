@@ -14,6 +14,9 @@
  *
  * supabase が起動していない場合は、必要な環境変数がすべて既に設定されていればそのまま続行し、
  * そうでなければエラー終了する。
+ * ただし `SUPABASE_ENV_OPTIONAL=1` が指定されている場合は、環境変数が揃っていなくても
+ * 警告を出して続行する（CI の webapp ジョブなど、supabase 無しで seed を流す用途向け。
+ * seed 側は SERVICE_ROLE_KEY が無ければユーザー作成をスキップする）。
  */
 import { spawnSync } from "node:child_process";
 
@@ -73,14 +76,17 @@ if (result.ok) {
 	console.error(`🔑 supabase-env: ${resolved.SUPABASE_URL} の接続情報を使用します`);
 } else {
 	const alreadySet = REQUIRED_VARS.every((key) => env[key]);
-	if (!alreadySet) {
+	const optional = env.SUPABASE_ENV_OPTIONAL === "1";
+	if (!alreadySet && !optional) {
 		console.error("❌ supabase-env: ローカル supabase の状態を取得できませんでした。");
 		console.error("   `pnpm supabase:start` で起動してから再実行してください。");
 		if (result.error) console.error(`   (${result.error.split("\n")[0]})`);
 		process.exit(1);
 	}
 	console.error(
-		"⚠️  supabase-env: ローカル supabase が起動していないため、既存の環境変数をそのまま使用します。",
+		alreadySet
+			? "⚠️  supabase-env: ローカル supabase が起動していないため、既存の環境変数をそのまま使用します。"
+			: "⚠️  supabase-env: ローカル supabase が起動していません（SUPABASE_ENV_OPTIONAL=1 のため続行します）。",
 	);
 }
 

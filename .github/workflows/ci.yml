@@ -182,7 +182,12 @@ jobs:
       - name: Install Playwright browsers
         run: pnpm --filter webapp exec playwright install chromium --with-deps
 
+      # webapp ジョブは postgres コンテナのみで supabase を起動しない。
+      # seed は SERVICE_ROLE_KEY が無ければユーザー作成をスキップするため、
+      # supabase-env ラッパーの「未起動ならエラー」を SUPABASE_ENV_OPTIONAL で緩和する。
       - name: Run database migrations and seed
+        env:
+          SUPABASE_ENV_OPTIONAL: '1'
         run: |
           pnpm db:migrate:deploy
           pnpm db:seed
