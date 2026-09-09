@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { CaretLeft, CaretRight } from "@phosphor-icons/react/dist/ssr";
 import { Button } from "@/client/components/ui";
 
 interface ClientPaginationProps {
@@ -9,94 +9,46 @@ interface ClientPaginationProps {
   onPageChange: (page: number) => void;
 }
 
+/** 「前へ / 次へ」ピルを StaticPagination と同じ寸法（px-4 / py-7px / 12px 文字）に揃える */
+const pillButtonClass = "h-auto gap-1.5 px-4 py-[7px] text-xs has-[>svg]:px-4";
+
+/**
+ * クライアント側の状態でページを切り替えるページネーション。
+ * 見た目は `StaticPagination` に揃える（「前へ / 次へ」の黒枠白ピルと、中央に Poppins の「現在 / 総数」表示）。
+ */
 export function ClientPagination({ currentPage, totalPages, onPageChange }: ClientPaginationProps) {
-  const renderPageNumbers = () => {
-    if (totalPages <= 0) return null;
+  if (totalPages <= 0) return null;
 
-    const pages: ReactNode[] = [];
-    const windowSize = 5;
-
-    const addPageButton = (page: number) => {
-      pages.push(
-        <Button
-          type="button"
-          key={`page-${page}`}
-          variant={page === currentPage ? "default" : "ghost"}
-          size="sm"
-          onClick={() => onPageChange(page)}
-        >
-          {page}
-        </Button>,
-      );
-    };
-
-    const addEllipsis = (key: string) => {
-      pages.push(
-        <span key={`ellipsis-${key}`} className="px-2 text-muted-foreground select-none">
-          …
-        </span>,
-      );
-    };
-
-    if (totalPages <= windowSize + 2) {
-      for (let page = 1; page <= totalPages; page++) {
-        addPageButton(page);
-      }
-      return pages;
-    }
-
-    addPageButton(1);
-
-    let startPage = Math.max(2, currentPage - Math.floor(windowSize / 2));
-    let endPage = Math.min(totalPages - 1, startPage + windowSize - 1);
-
-    if (endPage >= totalPages) {
-      endPage = totalPages - 1;
-      startPage = endPage - windowSize + 1;
-    }
-
-    if (startPage > 2) {
-      addEllipsis("left");
-    }
-
-    for (let page = startPage; page <= endPage; page++) {
-      addPageButton(page);
-    }
-
-    if (endPage < totalPages - 1) {
-      addEllipsis("right");
-    }
-
-    addPageButton(totalPages);
-
-    return pages;
-  };
+  const hasPrev = currentPage > 1;
+  const hasNext = currentPage < totalPages;
 
   return (
-    <div className="flex justify-center items-center gap-2 mt-6">
-      {currentPage > 1 && (
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          onClick={() => onPageChange(currentPage - 1)}
-        >
-          ← 前
-        </Button>
-      )}
+    <nav aria-label="pagination" className="mt-6 flex items-center justify-center gap-2.5">
+      <Button
+        type="button"
+        variant="outline"
+        className={pillButtonClass}
+        disabled={!hasPrev}
+        onClick={() => onPageChange(currentPage - 1)}
+      >
+        <CaretLeft className="size-3" />
+        前へ
+      </Button>
 
-      {renderPageNumbers()}
+      <span className="font-latin text-[13px] font-semibold text-foreground">
+        {currentPage} / {totalPages}
+      </span>
 
-      {currentPage < totalPages && (
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          onClick={() => onPageChange(currentPage + 1)}
-        >
-          次 →
-        </Button>
-      )}
-    </div>
+      <Button
+        type="button"
+        variant="outline"
+        className={pillButtonClass}
+        disabled={!hasNext}
+        onClick={() => onPageChange(currentPage + 1)}
+      >
+        次へ
+        <CaretRight className="size-3" />
+      </Button>
+    </nav>
   );
 }
