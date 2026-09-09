@@ -309,6 +309,23 @@ Domain層でエラーを扱う場合は、拡張エラー型とエラーコー�
 - **actions**: 処理成功後に `revalidatePath`（キャッシュを残す場合はあわせて `revalidateTag`）で無効化
 - **外部キャッシュ**: インターフェース経由でベストエフォート無効化
 
+### 6.5 テストの配置
+
+- **原則**: ユニットテストは `{webapp,admin}/tests/` に、`src/` と同じ階層構造で置く。
+  クライアント側（`src/client/`）のロジックも同様に `tests/client/` へ置き、コンポーネントの隣には置かない
+
+  | 実装 | テスト |
+  |---|---|
+  | `src/client/lib/format.ts` | `tests/client/lib/format.test.ts` |
+  | `src/client/components/layout/sidebar-nav.ts` | `tests/client/components/layout/sidebar-nav.test.ts` |
+  | `src/server/contexts/report/domain/services/xxx.ts` | `tests/server/contexts/report/domain/services/xxx.test.ts` |
+
+- **`src/` 配下に `*.test.ts` / `*.test.tsx` を置かない**。jest の `roots` は `tests/` のみを対象にしているため、
+  `src/` 配下のテストは収集されず、落ちていても CI では気づけない
+- **自動検証**: dependency-cruiser の `no-tests-in-src` / `no-orphan-tests-in-src` ルールが `src/` 配下のテストファイルを検出し、
+  `pnpm depcruise`（`pnpm verify` および CI に含まれる）を失敗させる
+- テストが実際に収集されているかは `pnpm --filter admin test --listTests` で確認できる
+
 ---
 
 ## 7. チェックリスト
@@ -341,6 +358,7 @@ Domain層でエラーを扱う場合は、拡張エラー型とエラーコー�
 ### テスタビリティ
 - [ ] UsecaseはConstructor Injectionを使用している
 - [ ] インターフェースを通じて依存を注入できる
+- [ ] テストは `tests/` に `src/` と同じ階層で置かれている（`src/` 配下に `*.test.ts` を置いていない）
 
 ---
 
@@ -358,6 +376,7 @@ pnpm depcruise
 
 | ルール | 説明 |
 |--------|------|
+| no-tests-in-src / no-orphan-tests-in-src | `src/` 配下に `*.test.ts(x)` / `*.spec.ts(x)` を置くこと禁止（テストは `tests/` に置く。6.5 参照） |
 | no-client-to-infrastructure | Client → Infrastructure 禁止 |
 | no-client-to-application | Client → Application 禁止 |
 | no-presentation-to-client | Presentation → Client 禁止 |

@@ -2,6 +2,32 @@
 module.exports = {
   forbidden: [
     // ===========================================
+    // テストファイルの配置ルール (admin / webapp 共通)
+    // ===========================================
+    {
+      name: "no-tests-in-src",
+      comment:
+        "ユニットテストは src/ ではなく tests/ に src/ と同じ階層で置く（#1315）。" +
+        "jest の roots は tests/ のみなので、src/ 配下に置いたテストは実行されず、" +
+        "落ちていても気づけない。",
+      severity: "error",
+      from: { path: "^(admin|webapp)/src/.*\\.(test|spec)\\.tsx?$" },
+      to: {},
+    },
+    {
+      name: "no-orphan-tests-in-src",
+      comment:
+        "no-tests-in-src の補完。import を1つも持たないテストファイルは依存が無く" +
+        "上のルールに引っかからないため、orphan として別途検出する。",
+      severity: "error",
+      from: {
+        orphan: true,
+        path: "^(admin|webapp)/src/.*\\.(test|spec)\\.tsx?$",
+      },
+      to: {},
+    },
+
+    // ===========================================
     // Client層からの依存ルール (admin)
     // ===========================================
     {
