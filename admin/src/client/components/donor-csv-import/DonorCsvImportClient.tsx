@@ -1,7 +1,8 @@
 "use client";
 import "client-only";
 
-import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { CircleNotch } from "@phosphor-icons/react/dist/ssr";
 import { toast } from "sonner";
 import type { PoliticalOrganization } from "@/shared/models/political-organization";
 import type { PreviewDonorCsvResult } from "@/server/contexts/report/presentation/types/preview-donor-csv-types";
@@ -10,9 +11,10 @@ import type {
   ImportDonorCsvRequest,
   ImportDonorCsvResult,
 } from "@/server/contexts/report/presentation/actions/import-donor-csv";
-import DonorCsvPreview from "./DonorCsvPreview";
-import { Input, Label } from "@/client/components/ui";
+import DonorCsvPreview from "@/client/components/donor-csv-import/DonorCsvPreview";
+import { Label } from "@/client/components/ui";
 import { PoliticalOrganizationSelect } from "@/client/components/political-organizations/PoliticalOrganizationSelect";
+import { CsvDropzone } from "@/client/components/csv-upload/CsvDropzone";
 
 interface DonorCsvImportClientProps {
   organizations: PoliticalOrganization[];
@@ -20,13 +22,14 @@ interface DonorCsvImportClientProps {
   importAction: (data: ImportDonorCsvRequest) => Promise<ImportDonorCsvResult>;
 }
 
+/** 対応形式と上限サイズ（上限は next.config.ts の serverActions.bodySizeLimit に合わせる） */
+const FILE_NOTE = "UTF-8 ・ 最大 100MB";
+
 export default function DonorCsvImportClient({
   organizations,
   previewAction,
   importAction,
 }: DonorCsvImportClientProps) {
-  const csvFileInputId = useId();
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
   const [politicalOrganizationId, setPoliticalOrganizationId] = useState<string>("");
   const [previewResult, setPreviewResult] = useState<PreviewDonorCsvResult | null>(null);
@@ -56,6 +59,7 @@ export default function DonorCsvImportClient({
     [],
   );
 
+  // ファイルと政治団体が揃ったら自動でプレビューを取得する
   useEffect(() => {
     if (!file || !politicalOrganizationId) {
       setPreviewResult(null);
@@ -89,9 +93,6 @@ export default function DonorCsvImportClient({
     setFile(null);
     setPreviewResult(null);
     setError(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
   }, []);
 
   const handleImport = useCallback(async () => {
@@ -123,37 +124,52 @@ export default function DonorCsvImportClient({
   }, [file, politicalOrganizationId, resetFileInput]);
 
   return (
-    <div className="space-y-3">
-      <PoliticalOrganizationSelect
-        organizations={organizations}
-        value={politicalOrganizationId}
-        onValueChange={setPoliticalOrganizationId}
-        required
-      />
-      <div>
-        <Label htmlFor={csvFileInputId}>CSV File:</Label>
-        <Input
-          ref={fileInputRef}
-          id={csvFileInputId}
-          className="h-10 border-0 bg-transparent shadow-none file:mr-4 file:h-full file:px-6 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90 file:cursor-pointer"
-          type="file"
-          accept=".csv,text/csv"
-          onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-          required
-        />
+    <div className="space-y-6">
+      <div className="max-w-[720px] rounded-lg border border-border bg-card p-7">
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-4">
+          <div className="flex flex-col gap-1.5">
+            <Label className="text-xs font-bold">
+              政治団体 <span className="text-destructive">*</span>
+            </Label>
+            <PoliticalOrganizationSelect
+              organizations={organizations}
+              value={politicalOrganizationId}
+              onValueChange={setPoliticalOrganizationId}
+              required
+              hideLabel
+              className="w-full"
+            />
+          </div>
+        </div>
+
+        <div className="mt-6">
+          <CsvDropzone
+            file={file}
+            onFileChange={setFile}
+            disabled={loading || isImporting}
+            note={FILE_NOTE}
+          />
+        </div>
+
+        {loading && (
+          <div
+            role="status"
+            className="mt-4 flex items-center gap-2 rounded-lg border border-primary-active bg-accent p-3 text-sm text-primary-active"
+          >
+            <CircleNotch aria-hidden className="size-4 animate-spin" />
+            ファイルを処理中...
+          </div>
+        )}
+
+        {error && (
+          <div
+            role="alert"
+            className="mt-4 rounded-lg border border-destructive bg-destructive-hover p-3 text-sm text-destructive"
+          >
+            エラー: {error}
+          </div>
+        )}
       </div>
-
-      {loading && (
-        <div className="bg-card/50 rounded-lg p-4">
-          <p className="text-muted-foreground">ファイルを処理中...</p>
-        </div>
-      )}
-
-      {error && (
-        <div className="bg-red-500/20 rounded-lg p-4">
-          <p className="text-red-500">エラー: {error}</p>
-        </div>
-      )}
 
       {previewResult && !loading && (
         <DonorCsvPreview result={previewResult} onImport={handleImport} isImporting={isImporting} />

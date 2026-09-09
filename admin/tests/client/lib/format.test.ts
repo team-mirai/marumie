@@ -1,5 +1,6 @@
 import {
   formatDate,
+  formatDateTime,
   formatAmount,
   formatCurrency,
 } from "@/client/lib/format";
@@ -116,5 +117,16 @@ describe("formatAmount vs formatCurrency", () => {
     // For basic integer amounts, both should produce similar results
     expect(formatAmount(1000)).toBe(formatCurrency(1000));
     expect(formatAmount(0)).toBe(formatCurrency(0));
+  });
+});
+
+describe("formatDateTime", () => {
+  it("formats to YYYY.MM.DD HH:mm with zero-padding", () => {
+    expect(formatDateTime(new Date(2025, 0, 5, 9, 7))).toBe("2025.01.05 09:07");
+    expect(formatDateTime(new Date(2025, 11, 31, 23, 59))).toBe("2025.12.31 23:59");
+  });
+
+  it("accepts date strings", () => {
+    expect(formatDateTime("2025-06-15T14:30:00")).toBe("2025.06.15 14:30");
   });
 });

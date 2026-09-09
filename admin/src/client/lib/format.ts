@@ -27,3 +27,15 @@ export function formatAmount(amount: number): string {
 export function formatCurrency(amount: number): string {
   return `¥${amount.toLocaleString("ja-JP")}`;
 }
+
+/**
+ * 日時を YYYY.MM.DD HH:mm 形式でフォーマットする（登録日時など、時刻まで示す場合）
+ * @param date - フォーマットする日時
+ * @returns フォーマットされた日時文字列（例: 2025.01.31 09:05）
+ */
+export function formatDateTime(date: Date | string): string {
+  const d = new Date(date);
+  const hours = String(d.getHours()).padStart(2, "0");
+  const minutes = String(d.getMinutes()).padStart(2, "0");
+  return `${formatDate(d)} ${hours}:${minutes}`;
+}

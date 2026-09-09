@@ -8,9 +8,21 @@ import type {
   PreviewDonorCsvRow,
   PreviewDonorCsvRowStatus,
 } from "@/server/contexts/report/domain/models/preview-donor-csv-row";
-import DonorCsvRow from "./DonorCsvRow";
+import DonorCsvRow from "@/client/components/donor-csv-import/DonorCsvRow";
 import { ClientPagination } from "@/client/components/ui/ClientPagination";
-import { Button, Tooltip, TooltipTrigger, TooltipContent } from "@/client/components/ui";
+import {
+  Button,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/client/components/ui";
+import { cn, resolveDonorCsvStatusBadge } from "@/client/lib";
 
 interface DonorCsvPreviewProps {
   result: PreviewDonorCsvResult;
@@ -23,44 +35,44 @@ type TabKey = "all" | "valid_new" | "valid_existing" | PreviewDonorCsvRowStatus;
 interface TabDefinition {
   key: TabKey;
   label: string;
-  color: string;
   tooltip?: string;
 }
 
 const TABS: TabDefinition[] = [
-  { key: "all", label: "全件", color: "text-foreground" },
+  { key: "all", label: "全件" },
   {
     key: "valid_new",
     label: "新規寄付者",
-    color: "text-green-500",
     tooltip: "寄付者マスタに未登録の寄付者です。インポート時に新規登録されます",
   },
   {
     key: "valid_existing",
     label: "既存寄付者",
-    color: "text-emerald-400",
     tooltip: "寄付者マスタに登録済みの寄付者です。既存データに紐付けられます",
   },
   {
     key: "invalid",
-    label: "エラー",
-    color: "text-red-500",
+    label: resolveDonorCsvStatusBadge("invalid").label,
     tooltip: "CSVの入力値に問題があります（必須項目の欠落、フォーマット不正など）",
   },
   {
     key: "transaction_not_found",
-    label: "取引なし",
-    color: "text-yellow-500",
+    label: resolveDonorCsvStatusBadge("transaction_not_found").label,
     tooltip: "指定された取引Noに対応する取引データが見つかりません",
   },
   {
     key: "type_mismatch",
-    label: "種別不整合",
-    color: "text-orange-500",
+    label: resolveDonorCsvStatusBadge("type_mismatch").label,
     tooltip: "CSVの寄付者種別と取引のカテゴリ種別が一致しません",
   },
 ];
 
+const PER_PAGE = 10;
+
+/**
+ * 寄付者 CSV のプレビュー（白カード・テーブル罫線ルールは取引一覧と同一）。
+ * プレビューの取得は親（DonorCsvImportClient）が行い、本コンポーネントは表示と実行ボタンを担う。
+ */
 export default function DonorCsvPreview({
   result,
   onImport,
@@ -68,7 +80,6 @@ export default function DonorCsvPreview({
 }: DonorCsvPreviewProps) {
   const [activeTab, setActiveTab] = useState<TabKey>("all");
   const [currentPage, setCurrentPage] = useState(1);
-  const perPage = 10;
 
   const validCount = result.summary.valid;
 
@@ -86,8 +97,9 @@ export default function DonorCsvPreview({
   };
 
   const getTabCount = (tab: TabKey): number => {
-    if (tab === "all") return result.summary.total;
     switch (tab) {
+      case "all":
+        return result.summary.total;
       case "valid_new":
         return result.summary.validNew;
       case "valid_existing":
@@ -109,34 +121,40 @@ export default function DonorCsvPreview({
   };
 
   const handlePageChange = (page: number) => {
-    const filteredRows = getFilteredRows();
-    const totalPages = Math.ceil(filteredRows.length / perPage);
+    const totalPages = Math.ceil(getFilteredRows().length / PER_PAGE);
     if (page >= 1 && page <= totalPages) {
       setCurrentPage(page);
     }
   };
 
   const filteredRows = getFilteredRows();
-  const totalPages = Math.ceil(filteredRows.length / perPage);
-  const startIndex = (currentPage - 1) * perPage;
-  const endIndex = startIndex + perPage;
+  const totalPages = Math.ceil(filteredRows.length / PER_PAGE);
+  const startIndex = (currentPage - 1) * PER_PAGE;
+  const endIndex = startIndex + PER_PAGE;
   const currentRows = filteredRows.slice(startIndex, endIndex);
 
   return (
-    <div>
-      <div className="mb-4">
-        <div className="flex gap-2 flex-wrap">
-          {TABS.map(({ key, label, color, tooltip }) => {
+    <div className="rounded-lg border border-border bg-card p-6">
+      <h2 className="text-base font-bold text-foreground">取り込みプレビュー</h2>
+
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap gap-2">
+          {TABS.map(({ key, label, tooltip }) => {
             const isActive = activeTab === key;
             const button = (
               <Button
                 type="button"
+                aria-pressed={isActive}
                 variant="outline"
                 size="sm"
                 onClick={() => handleTabChange(key)}
-                className={isActive ? color : "text-muted-foreground"}
+                className={cn(
+                  "text-xs",
+                  isActive && "border-primary-active bg-accent text-primary-active hover:bg-accent",
+                )}
               >
-                {label} ({getTabCount(key)})
+                {label}
+                <span className="font-latin">({getTabCount(key)})</span>
               </Button>
             );
 
@@ -152,68 +170,55 @@ export default function DonorCsvPreview({
             return <span key={key}>{button}</span>;
           })}
         </div>
-      </div>
-
-      <div className="mb-4">
-        <p className="text-muted-foreground text-sm">
+        <p className="text-[13px] text-muted-foreground">
           {filteredRows.length} 件中 {filteredRows.length > 0 ? startIndex + 1 : 0} -{" "}
           {Math.min(endIndex, filteredRows.length)} 件を表示
         </p>
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="w-full border-collapse">
-          <thead>
-            <tr className="border-b border-border">
-              <th className="px-2 py-3 text-left text-sm font-semibold text-foreground">行番号</th>
-              <th className="px-2 py-3 text-left text-sm font-semibold text-foreground">
-                ステータス
-              </th>
-              <th className="px-2 py-3 text-left text-sm font-semibold text-foreground">取引No</th>
-              <th className="px-2 py-3 text-left text-sm font-semibold text-foreground">
-                寄付者名
-              </th>
-              <th className="px-2 py-3 text-left text-sm font-semibold text-foreground">
-                寄付者種別
-              </th>
-              <th className="px-2 py-3 text-left text-sm font-semibold text-foreground">住所</th>
-              <th className="px-2 py-3 text-left text-sm font-semibold text-foreground">職業</th>
-              <th className="px-2 py-3 text-left text-sm font-semibold text-foreground">取引日</th>
-              <th className="px-2 py-3 text-left text-sm font-semibold text-foreground">
-                カテゴリ
-              </th>
-              <th className="px-2 py-3 text-right text-sm font-semibold text-foreground">金額</th>
-              <th className="px-2 py-3 text-left text-sm font-semibold text-foreground">備考</th>
-            </tr>
-          </thead>
-          <tbody>
+      <div className="mt-4">
+        <Table>
+          <TableHeader>
+            <TableRow className="hover:bg-transparent">
+              <TableHead>行番号</TableHead>
+              <TableHead>ステータス</TableHead>
+              <TableHead>取引No</TableHead>
+              <TableHead>寄付者名</TableHead>
+              <TableHead>寄付者種別</TableHead>
+              <TableHead>住所</TableHead>
+              <TableHead>職業</TableHead>
+              <TableHead>取引日</TableHead>
+              <TableHead>カテゴリ</TableHead>
+              <TableHead className="text-right">金額</TableHead>
+              <TableHead>備考</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {currentRows.length === 0 ? (
-              <tr>
-                <td colSpan={11} className="px-2 py-8 text-center text-muted-foreground">
+              <TableRow className="hover:bg-transparent">
+                <TableCell colSpan={11} className="py-8 text-center text-sm text-muted-foreground">
                   表示するデータがありません
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             ) : (
               currentRows.map((row) => <DonorCsvRow key={row.rowNumber} row={row} />)
             )}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
 
-      {totalPages > 1 && (
-        <ClientPagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={handlePageChange}
-        />
-      )}
+      <ClientPagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={handlePageChange}
+      />
 
       {onImport && (
         <div className="mt-6 flex justify-end">
           <Button type="button" onClick={onImport} disabled={validCount === 0 || isImporting}>
             {isImporting ? (
               <>
-                <CircleNotch className="mr-2 h-4 w-4 animate-spin" />
+                <CircleNotch aria-hidden className="animate-spin" />
                 インポート中...
               </>
             ) : (

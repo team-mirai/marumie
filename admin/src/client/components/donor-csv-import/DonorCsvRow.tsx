@@ -1,77 +1,73 @@
 import type { PreviewDonorCsvRow } from "@/server/contexts/report/domain/models/preview-donor-csv-row";
 import { DONOR_TYPE_LABELS } from "@/server/contexts/report/domain/models/donor";
+import { TableCell, TableRow } from "@/client/components/ui";
+import { cn, formatAmount, formatDate, resolveDonorCsvStatusBadge } from "@/client/lib";
+import { CategoryPill } from "@/client/components/transactions/CategoryPill";
 
 interface DonorCsvRowProps {
   row: PreviewDonorCsvRow;
 }
 
-const STATUS_STYLES: Record<
-  PreviewDonorCsvRow["status"],
-  { bg: string; text: string; label: string }
-> = {
-  valid: { bg: "bg-green-500/20", text: "text-green-500", label: "正常" },
-  invalid: { bg: "bg-red-500/20", text: "text-red-500", label: "エラー" },
-  transaction_not_found: { bg: "bg-yellow-500/20", text: "text-yellow-500", label: "取引なし" },
-  type_mismatch: { bg: "bg-orange-500/20", text: "text-orange-500", label: "種別不整合" },
-};
-
+/** 寄付者 CSV プレビューの 1 行。日付は YYYY.MM.DD、金額は Poppins 右寄せ、カテゴリは取引一覧と同じピル。 */
 export default function DonorCsvRow({ row }: DonorCsvRowProps) {
-  const statusStyle = STATUS_STYLES[row.status];
-
-  const formatDate = (date: Date | null | undefined) => {
-    if (!date) return "-";
-    return new Date(date).toLocaleDateString("ja-JP");
-  };
-
-  const formatAmount = (amount: number | null | undefined) => {
-    if (amount === null || amount === undefined) return "-";
-    return amount.toLocaleString("ja-JP");
-  };
+  const badge = resolveDonorCsvStatusBadge(row.status);
+  const transaction = row.transaction;
 
   return (
-    <tr className="border-b border-border hover:bg-white/5">
-      <td className="px-2 py-3 text-sm">{row.rowNumber}</td>
-      <td className="px-2 py-3">
+    <TableRow>
+      <TableCell className="font-latin text-xs text-muted-foreground">{row.rowNumber}</TableCell>
+      <TableCell>
         <span
-          className={`px-2 py-1 rounded text-xs font-medium ${statusStyle.bg} ${statusStyle.text}`}
+          className={cn(
+            "inline-block rounded-full border-[1.5px] px-3 py-[3px] text-[11px] font-bold leading-none tracking-[0.04em] whitespace-nowrap",
+            badge.className,
+          )}
         >
-          {statusStyle.label}
+          {badge.label}
         </span>
-      </td>
-      <td className="px-2 py-3 text-sm text-foreground">{row.transactionNo || "-"}</td>
-      <td className="px-2 py-3 text-sm text-foreground">{row.name || "-"}</td>
-      <td className="px-2 py-3 text-sm text-foreground">
+      </TableCell>
+      <TableCell className="font-latin text-xs text-muted-foreground">
+        {row.transactionNo || "-"}
+      </TableCell>
+      <TableCell className="text-[13px] font-medium">{row.name || "-"}</TableCell>
+      <TableCell className="text-[13px]">
         {row.donorType ? DONOR_TYPE_LABELS[row.donorType] : "-"}
-      </td>
-      <td className="px-2 py-3 text-sm text-foreground">{row.address || "-"}</td>
-      <td className="px-2 py-3 text-sm text-foreground">{row.occupation || "-"}</td>
-      <td className="px-2 py-3 text-sm text-foreground">
-        {formatDate(row.transaction?.transactionDate)}
-      </td>
-      <td className="px-2 py-3 text-sm text-foreground">
-        {row.transaction?.friendlyCategory || row.transaction?.categoryKey || "-"}
-      </td>
-      <td className="px-2 py-3 text-sm text-foreground text-right">
-        {formatAmount(row.transaction?.creditAmount)}
-      </td>
-      <td className="px-2 py-3 text-sm">
+      </TableCell>
+      <TableCell className="max-w-[200px] truncate text-xs text-muted-foreground">
+        {row.address || "-"}
+      </TableCell>
+      <TableCell className="text-xs text-muted-foreground">{row.occupation || "-"}</TableCell>
+      <TableCell className="font-latin text-[13px]">
+        {transaction ? formatDate(transaction.transactionDate) : "-"}
+      </TableCell>
+      <TableCell>
+        {transaction ? (
+          <CategoryPill categoryKey={transaction.categoryKey} />
+        ) : (
+          <span className="text-xs text-muted-foreground">-</span>
+        )}
+      </TableCell>
+      <TableCell className="font-latin text-right text-[13px] font-semibold">
+        {transaction ? formatAmount(transaction.creditAmount) : "-"}
+      </TableCell>
+      <TableCell className="whitespace-normal align-top text-xs">
         {row.errors.length > 0 && (
-          <ul className="text-destructive text-xs list-disc list-inside">
+          <ul className="list-inside list-disc text-destructive">
             {row.errors.map((error) => (
               <li key={error}>{error}</li>
             ))}
           </ul>
         )}
-        {row.transaction?.existingDonor && (
-          <div className="text-yellow-600 text-xs mt-1">
-            既存: {row.transaction.existingDonor.name} (
-            {DONOR_TYPE_LABELS[row.transaction.existingDonor.donorType]})
+        {transaction?.existingDonor && (
+          <div className="mt-1 text-muted-foreground">
+            既存: {transaction.existingDonor.name} (
+            {DONOR_TYPE_LABELS[transaction.existingDonor.donorType]})
           </div>
         )}
         {row.matchingDonor && (
-          <div className="text-muted-foreground text-xs mt-1">一致: {row.matchingDonor.name}</div>
+          <div className="mt-1 text-muted-foreground">一致: {row.matchingDonor.name}</div>
         )}
-      </td>
-    </tr>
+      </TableCell>
+    </TableRow>
   );
 }
