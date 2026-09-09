@@ -93,7 +93,7 @@ export default function BalanceSnapshotForm({
     <div>
       <form onSubmit={handleSubmit} className="flex flex-wrap items-start gap-4">
         <div className="flex w-48 flex-col gap-1.5">
-          <Label htmlFor={dateInputId} className="text-xs font-bold">
+          <Label htmlFor={dateInputId}>
             残高日付 <span className="text-destructive">*</span>
           </Label>
           <Input
@@ -114,7 +114,7 @@ export default function BalanceSnapshotForm({
         </div>
 
         <div className="flex w-48 flex-col gap-1.5">
-          <Label htmlFor={balanceInputId} className="text-xs font-bold">
+          <Label htmlFor={balanceInputId}>
             残高 (円) <span className="text-destructive">*</span>
           </Label>
           <Input

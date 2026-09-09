@@ -98,7 +98,7 @@ export function BulkDeleteTransactionsClient({
           <h2 className="text-base font-bold text-foreground">検索条件</h2>
           <div className="mt-4 grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-4">
             <div className="flex flex-col gap-1.5">
-              <Label className="text-xs font-bold">
+              <Label>
                 政治団体 <span className="text-destructive">*</span>
               </Label>
               <PoliticalOrganizationSelect
@@ -114,7 +114,7 @@ export function BulkDeleteTransactionsClient({
               />
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor={transactionNosInputId} className="text-xs font-bold">
+              <Label htmlFor={transactionNosInputId}>
                 取引番号（カンマ区切り） <span className="text-destructive">*</span>
               </Label>
               <Input

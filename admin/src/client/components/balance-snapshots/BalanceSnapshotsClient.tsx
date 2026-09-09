@@ -83,7 +83,7 @@ export default function BalanceSnapshotsClient({ organizations }: BalanceSnapsho
       <div className="grid grid-cols-[repeat(auto-fit,minmax(320px,1fr))] gap-6">
         <div className="rounded-lg border border-border bg-card p-6">
           <div className="flex max-w-[360px] flex-col gap-1.5">
-            <Label className="text-xs font-bold">
+            <Label>
               政治団体 <span className="text-destructive">*</span>
             </Label>
             <PoliticalOrganizationSelect

@@ -71,9 +71,7 @@ export function DonorSelectorContent({
   return (
     <div className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="donor-search" className="text-xs font-bold">
-          寄付者を検索
-        </Label>
+        <Label htmlFor="donor-search">寄付者を検索</Label>
         <Input
           id="donor-search"
           type="text"

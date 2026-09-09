@@ -128,7 +128,7 @@ export default function DonorCsvImportClient({
       <div className="max-w-[720px] rounded-lg border border-border bg-card p-7">
         <div className="grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-4">
           <div className="flex flex-col gap-1.5">
-            <Label className="text-xs font-bold">
+            <Label>
               政治団体 <span className="text-destructive">*</span>
             </Label>
             <PoliticalOrganizationSelect
