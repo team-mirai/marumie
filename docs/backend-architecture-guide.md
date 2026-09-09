@@ -134,9 +134,11 @@ contexts/{コンテキスト名}/
 ### 4.1 Presentation層（loaders / actions）
 
 #### loaders
-- **責務**: サーバーコンポーネントからのデータ取得、キャッシング
-- **実装**: `unstable_cache` でラップし、リポジトリとUsecaseを組み立てる
-- **キャッシュキー**: 明示的に指定する
+- **責務**: サーバーコンポーネントからのデータ取得（必要な場合のみキャッシング）
+- **実装**: リポジトリとUsecaseを組み立てて呼び出す
+- **キャッシュ**: admin（認証必須・低トラフィック）では原則 `unstable_cache` を使わず DB を直接読む。
+  webapp（公開・高トラフィック）などでキャッシュが本当に必要な場合のみ `unstable_cache` でラップし、
+  キャッシュキーと `tags` を明示する（詳細は [6.4 キャッシング](#64-キャッシング)）
 
 #### actions
 - **責務**: フォーム送信、データ更新、バリデーション、キャッシュ無効化
@@ -299,8 +301,12 @@ Domain層でエラーを扱う場合は、拡張エラー型とエラーコー�
 
 ### 6.4 キャッシング
 
-- **loaders**: `unstable_cache` でラップ、キャッシュキーとtagsを明示
-- **actions**: 処理成功後に `revalidateTag`/`revalidatePath` で無効化
+- **原則**: admin の loaders は `unstable_cache` を使わない。認証必須・低トラフィックの管理画面では
+  60秒キャッシュの利益がほぼ無く、更新直後に古いデータが表示される実バグの温床になる
+- **キャッシュする場合**（webapp の公開ページなど）: `unstable_cache` に必ず `tags` を付与し、
+  対応する更新アクションで `revalidateTag` を呼んで整合させる。
+  `revalidatePath` は `unstable_cache` のエントリを無効化しない（無効化は tag か revalidate 時間経過のみ）
+- **actions**: 処理成功後に `revalidatePath`（キャッシュを残す場合はあわせて `revalidateTag`）で無効化
 - **外部キャッシュ**: インターフェース経由でベストエフォート無効化
 
 ---
@@ -328,7 +334,7 @@ Domain層でエラーを扱う場合は、拡張エラー型とエラーコー�
 - [ ] 単一エンティティのロジックはDomain Modelに、複数エンティティのロジックはDomain Serviceに分けられている
 
 ### キャッシング
-- [ ] loadersで`unstable_cache`を使用している
+- [ ] admin の loaders で `unstable_cache` を使っていない（使う場合は `tags` を付与し、更新アクションの `revalidateTag` と整合している）
 - [ ] actionsで適切に`revalidateTag`/`revalidatePath`を呼び出している
 - [ ] 外部キャッシュの無効化はインターフェース経由で行っている
 
