@@ -74,7 +74,7 @@ export function AddressInput({
         <p className="text-xs font-bold text-foreground">AI検索で入力を補助</p>
 
         <div className="space-y-1.5">
-          <Label htmlFor={searchQueryId} className="text-xs text-muted-foreground">
+          <Label htmlFor={searchQueryId} className="text-muted-foreground">
             会社名
           </Label>
           <Input
@@ -88,7 +88,7 @@ export function AddressInput({
         </div>
 
         <div className="space-y-1.5">
-          <Label htmlFor={hintId} className="text-xs text-muted-foreground">
+          <Label htmlFor={hintId} className="text-muted-foreground">
             検索ヒント（任意）
           </Label>
           <Input

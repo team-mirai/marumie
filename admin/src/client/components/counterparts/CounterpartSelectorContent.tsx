@@ -80,9 +80,7 @@ export function CounterpartSelectorContent({
   return (
     <div className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="counterpart-search" className="text-xs font-bold">
-          取引先を検索
-        </Label>
+        <Label htmlFor="counterpart-search">取引先を検索</Label>
         <Input
           id="counterpart-search"
           type="text"

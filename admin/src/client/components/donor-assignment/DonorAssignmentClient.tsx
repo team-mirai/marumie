@@ -251,9 +251,7 @@ export function DonorAssignmentClient({
             hideLabel
           />
           <div className="flex items-center gap-2">
-            <Label htmlFor="financial-year" className="text-xs font-bold">
-              報告年
-            </Label>
+            <Label htmlFor="financial-year">報告年</Label>
             <Input
               id="financial-year"
               type="number"

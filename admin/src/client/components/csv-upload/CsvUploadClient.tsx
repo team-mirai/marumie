@@ -156,7 +156,7 @@ export default function CsvUploadClient({
       >
         <div className="grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-4">
           <div className="flex flex-col gap-1.5">
-            <Label className="text-xs font-bold">
+            <Label>
               政治団体 <span className="text-destructive">*</span>
             </Label>
             <PoliticalOrganizationSelect
@@ -169,7 +169,7 @@ export default function CsvUploadClient({
             />
           </div>
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor={dataSourceSelectId} className="text-xs font-bold">
+            <Label htmlFor={dataSourceSelectId}>
               データソース <span className="text-destructive">*</span>
             </Label>
             <NativeSelect

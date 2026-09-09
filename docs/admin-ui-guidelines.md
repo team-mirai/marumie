@@ -40,6 +40,7 @@ import { Button, Input, Label } from "@/client/components/ui";
 
 ### フォーム・フォーカスリング
 
+- フォームラベル（`Label`）は 12px/700（`text-xs font-bold`）が既定。必須は `<span className="text-destructive">*</span>` を付ける。使用側で `text-xs font-bold` を重ねて指定しない
 - input / select はピル形状・黒枠・白地。placeholder は `#B1B1B1`（`text-disabled-foreground`）
 - focus 時は枠が teal + `0 0 0 2px #E2F6F3` のリング（`focus-visible:border-ring focus-visible:ring-[2px] focus-visible:ring-ring-soft`）
 - ボタンの focus-visible は `ring-2 ring-ring ring-offset-2`

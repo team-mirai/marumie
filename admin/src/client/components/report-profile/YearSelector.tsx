@@ -15,9 +15,7 @@ export function YearSelector({ orgId, financialYear, currentYear }: YearSelector
 
   return (
     <div className="flex items-center gap-3">
-      <Label htmlFor="financial-year" className="text-xs font-bold">
-        報告年
-      </Label>
+      <Label htmlFor="financial-year">報告年</Label>
       <NativeSelect
         id="financial-year"
         key={financialYear}
