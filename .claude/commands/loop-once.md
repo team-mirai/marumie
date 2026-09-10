@@ -169,24 +169,33 @@ CodeRabbit は「自分のスレッドがすべて resolve され、最新コミ
 
 ### 手順
 
-**(a) 最新コミットに対するレビューが届くまで待つ**（最大12分）:
+**(a) 最新コミットの CodeRabbit コミットステータスの完了を待つ**（最大12分）:
+
+CodeRabbit の増分レビューは、新しい指摘が無いとレビューオブジェクトを作らず、コミットステータスだけを更新することがある。
+レビュー完了は head コミットの context `CodeRabbit` で判定する。ステータスが未作成または `pending` なら待機し、
+`success` / `failure` / `error` なら待機を終える。`success` はレビュー処理の完了を示すが、指摘や Request changes が無いことまでは意味しない。
 
 ```bash
 head=$(gh pr view <N> --json headRefOid --jq .headRefOid)
+coderabbit_status=""
 for i in $(seq 1 12); do
-  state=$(gh api "repos/{owner}/{repo}/pulls/<N>/reviews" \
-    --jq "[.[] | select(.user.login == \"coderabbitai[bot]\" and .commit_id == \"$head\")] | last | .state // empty")
-  [[ -n "$state" ]] && break
+  coderabbit_status=$(gh api "repos/{owner}/{repo}/commits/$head/status" \
+    --jq '[.statuses[] | select(.context == "CodeRabbit")] | first | .state // empty')
+  case "$coderabbit_status" in
+    success|failure|error) break ;;
+  esac
   sleep 60
 done
-echo "coderabbit: ${state:-timeout}"
+echo "coderabbit: ${coderabbit_status:-missing}"
 ```
 
-- 12分待っても届かなければ、`gh pr comment <N> --body "@coderabbitai review"` で一度だけレビューを促し、もう12分待つ。
-  それでも届かなければ（CodeRabbit の障害など）エスカレーションする: PR は open のまま残し
-  （auto-merge 予約も残してよい。CodeRabbit のステータスが必須チェックなのでレビュー完了前にマージされることはない）、
-  Issue を `loop:wip` から `loop:human` に付け替え、`LOOP_RESULT: BLOCKED issue=#<N> reason=coderabbit-timeout` で終了する
-- `APPROVED` なら指摘なし。次の手順へ
+- 12分待っても未作成または `pending` のままなら、再レビュー要求は行わずエスカレーションする。
+  PR は open のまま残し（auto-merge 予約も残してよい）、Issue を `loop:wip` から `loop:human` に付け替え、
+  (g) の結果記録とエスカレーション手順に従い `LOOP_RESULT: BLOCKED issue=#<N> reason=coderabbit-timeout` で終了する。
+- `failure` / `error` なら承認済みとは扱わず、ステータスの説明と未解決スレッドを確認する。
+  指摘なら (b) 以降で処理し、CodeRabbit の障害などループで解消できない場合は (g) に記録して `loop:human` にエスカレーションする。
+- `success` でも (b) で未解決スレッドを取得する。承認の確認は (f) の `reviewDecision` で行う。
+- 修正 push 後は先に (e) の返信・resolve を行い、その後にこの待機を実行する。
 
 **(b) 未解決スレッドを取得する:**
 
@@ -212,13 +221,13 @@ CodeRabbit の各コメントの1行目には `_カテゴリ_ | _重要度（�
 **(d) 修正する指摘をまとめて直す:**
 
 - 修正後にローカルCI（`pnpm verify`、必要なら E2E）を通し、`fix: CodeRabbit の指摘に対応（<要約>）` でコミットして push する
-- push すると CodeRabbit が新しいコミットを再レビューするので、**(a) に戻って新しい head に対するレビューを待ち、(b) で新規スレッドの有無を確認してから (e) に進む**
-  （CodeRabbit の承認条件に「最新コミットをレビュー済み」が含まれるため、再レビュー前に resolve しても承認されない）
+- push したら **直ちに (e) に進み、対応した各スレッドへ返信して resolve する**。再レビューの完了を待って返信・resolve を保留しない。
+  その後 (f) で新しい head のコミットステータス完了 → 新規スレッドの有無 → `reviewDecision` の順に確認する
 - **修正の push は 2 ラウンドまで**。
   2ラウンド目の再レビューで出た新しい指摘は (c) で判定するが、さらに修正が必要なものは「Issue化する」に倒して PR を肥大化させない
   （ただし 🔴 Critical / セキュリティ / 規約違反は例外。それでも直しきれなければエスカレーション）
 
-**(e) 各スレッドに返信して resolve する。** 修正したものも含め、CodeRabbit のスレッドは自動では閉じないので全件ループが閉じる:
+**(e) 各スレッドに返信して resolve する（修正 push 後は直ちに実行）。** 修正したものも含め、CodeRabbit のスレッドは自動では閉じないので全件ループが閉じる:
 
 ```bash
 # 返信（databaseId は (b) で取得した最初のコメントのもの）
@@ -233,20 +242,23 @@ gh api graphql -f query='mutation { resolveReviewThread(input: {threadId: "<thre
 - 返信なしの resolve、`@coderabbitai resolve`（全件一括 resolve）、CodeRabbit のレビュー自体の dismiss は**禁止**。
   退けた根拠がスレッドに残らず、人間が監査できなくなるため
 
-**(f) 承認を確認する。** 全スレッドが resolve され最新コミットがレビュー済みなら、CodeRabbit は数十秒で APPROVED に切り替え、
+**(f) ステータス完了・新規スレッド・承認を順に確認する。** 全スレッドが resolve され最新コミットがレビュー済みなら、CodeRabbit は APPROVED に切り替え、
 auto-merge が CI green を待ってマージする。修理モードでは以下の上限内で承認を確認する:
 
+- 修正 push を行った場合は、(e) の返信・resolve が済んだ後で (a) の待機を実行し、**新しい head の CodeRabbit コミットステータス**の完了を確認する。
+  待機上限・異常時の扱いも (a) に従う。
 - (b) をもう一度実行して未解決スレッドが増えていないことを確認する。増えていれば (b) に戻る（ラウンド上限に注意）。
-- 修理が完了したかを確認するため最大5分待つ:
+- 新規スレッドが無ければ、承認を最大5分待つ:
   ```bash
   for i in $(seq 1 5); do
     decision=$(gh pr view <N> --json reviewDecision --jq '.reviewDecision')
-    [[ "$decision" != "CHANGES_REQUESTED" ]] && break
+    [[ "$decision" == "APPROVED" ]] && break
     sleep 60
   done
   ```
-  未解決スレッドが無いのに CHANGES_REQUESTED のままなら、`gh pr comment <N> --body "@coderabbitai review"` で再レビューを促してもう一度だけ (a) から待つ。
-  それでも解けなければエスカレーション（PRは open のまま残す）
+  空の `reviewDecision` や `REVIEW_REQUIRED` は承認とみなさない。
+  未解決スレッドが無くても上限内に APPROVED にならなければ、再レビュー要求は行わず、
+  (g) に結果を記録して `loop:human` にエスカレーションする（PR は open のまま残す）。
 
 **(g) 対応結果を記録する。** 成功・エスカレーションのどちらの場合も、結果出力の前にPRへコメントする
 （人間がマージ後に読み、退けた指摘の妥当性を監査するため）:
@@ -258,7 +270,7 @@ auto-merge が CI green を待ってマージする。修理モードでは以�
 - Issue化: #<M> <タイトル>
 ```
 
-指摘が1件もなかった場合や、CodeRabbit のレビューが上限時間内に届かなかった場合もその旨を書く。
+指摘が1件もなかった場合や、CodeRabbit のコミットステータスが上限時間内に完了しなかった場合もその旨を書く。
 成功時は手順2-3に戻って auto-merge の予約を確認し、結果を出力する。
 エスカレーション時は後述のラベル変更・状況コメントを行い、BLOCKED の結果を出力する。
 
