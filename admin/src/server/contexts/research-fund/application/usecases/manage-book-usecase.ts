@@ -1,9 +1,10 @@
 import "server-only";
+import { BookError } from "@/server/contexts/research-fund/domain/types/book-error";
 import { Book, type BookMetadata } from "@/server/contexts/research-fund/domain/models/book";
 import type { IBookRepository } from "@/server/contexts/research-fund/domain/repositories/book-repository.interface";
 import { aggregateResearchFund } from "@/shared/research-fund/aggregation";
 function validateId(id: string) {
-  if (!/^[1-9]\d*$/.test(id)) throw new Error("IDが不正です");
+  if (!/^[1-9]\d*$/.test(id)) throw new BookError("INVALID_ID", "IDが不正です");
 }
 export class ManageBookUsecase {
   constructor(private repository: IBookRepository) {}
@@ -20,14 +21,16 @@ export class ManageBookUsecase {
   async create(politicianId: string, year: number) {
     validateId(politicianId);
     const validation = Book.validateYear(year);
-    if (validation.status === "invalid") throw new Error(validation.errors[0].message);
+    if (validation.status === "invalid")
+      throw new BookError(validation.errors[0].code, validation.errors[0].message);
     await this.repository.create(politicianId, year);
   }
   async update(politicianId: string, bookId: string, input: BookMetadata) {
     validateId(politicianId);
     validateId(bookId);
     const validation = Book.validateMetadata(input);
-    if (validation.status === "invalid") throw new Error(validation.errors[0].message);
+    if (validation.status === "invalid")
+      throw new BookError(validation.errors[0].code, validation.errors[0].message);
     await this.repository.update(politicianId, bookId, {
       asOfDate: input.asOfDate,
       nextUpdateNote: input.nextUpdateNote.trim(),

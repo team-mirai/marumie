@@ -1,4 +1,5 @@
 import "server-only";
+import { BookError } from "@/server/contexts/research-fund/domain/types/book-error";
 import { Prisma, type PrismaClient } from "@prisma/client";
 import type { BookMetadata } from "@/server/contexts/research-fund/domain/models/book";
 import type {
@@ -59,7 +60,7 @@ export class PrismaBookRepository implements IBookRepository {
       });
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002")
-        throw new Error("この議員の年度帳簿は既に存在します");
+        throw new BookError("DUPLICATE_BOOK", "この議員の年度帳簿は既に存在します");
       throw new Error("帳簿の作成に失敗しました。議員を確認して再度お試しください");
     }
   }

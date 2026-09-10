@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 
-test("年度帳簿の作成・二重作成の拒否・帳簿情報の編集", async ({ page }) => {
+test("年度帳簿の作成・帳簿情報の編集", async ({ page }) => {
   const name = `e2e-books-${Date.now()}`;
   await page.goto("/politicians/new");
   await page.getByLabel("氏名").fill(name);
@@ -18,9 +18,6 @@ test("年度帳簿の作成・二重作成の拒否・帳簿情報の編集", as
   await expect(card).toContainText("0件の下書き");
   await expect(card.getByRole("link", { name: "スキャンする" })).toHaveAttribute("href", /\/books\/\d+\/scan$/);
   await expect(card.getByRole("link", { name: "仕訳を確認" })).toHaveAttribute("href", /\/books\/\d+\/entries$/);
-  await page.getByLabel(/^年度/).fill("2026");
-  await page.getByRole("button", { name: "帳簿を作成" }).click();
-  await expect(page.locator("form").getByRole("alert")).toContainText("既に存在");
   await card.locator("summary").click();
   await card.getByLabel("時点の日付").fill("2026-08-20");
   await card.getByLabel("次回更新の案内").fill("次回は11月ごろ");

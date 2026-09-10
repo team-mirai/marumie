@@ -39,12 +39,15 @@ export function BookForm({
             : await createBook(politicianId, Number(year));
           if (!result.success) {
             setError(result.error);
+            toast.error(result.error);
             return;
           }
           toast.success(book ? "帳簿情報を保存しました" : "帳簿を作成しました");
           router.refresh();
         } catch {
-          setError("保存に失敗しました。もう一度お試しください");
+          const message = "保存に失敗しました。もう一度お試しください";
+          setError(message);
+          toast.error(message);
         } finally {
           setBusy(false);
         }
