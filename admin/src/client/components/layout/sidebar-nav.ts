@@ -1,3 +1,4 @@
+import type { AdminTarget } from "@/server/contexts/shared/domain/models/admin-target";
 import type { UserRole } from "@prisma/client";
 
 /**
@@ -24,6 +25,7 @@ type NavItem = {
   label: string;
   icon: NavIconName;
   adminOnly?: boolean;
+  badge?: number;
 };
 
 type NavSection = {
@@ -34,7 +36,7 @@ type NavSection = {
 // アイコン対応表はデザインハンドオフ README「1. サイドバー」節が正
 const NAV_SECTIONS: NavSection[] = [
   {
-    title: "基本情報",
+    title: "政治団体",
     items: [
       { href: "/politicians", label: "議員", icon: "user" },
       { href: "/user-info", label: "ユーザー情報", icon: "user" },
@@ -67,11 +69,59 @@ const NAV_SECTIONS: NavSection[] = [
  * ユーザーのロールに応じて表示可能な nav セクションを返す。
  * adminOnly の項目は admin ロールにのみ表示し、項目が空になったセクションは除外する。
  */
-export function getVisibleNavSections(userRole: UserRole | null): NavSection[] {
-  return NAV_SECTIONS.map((section) => ({
-    ...section,
-    items: section.items.filter((item) => !item.adminOnly || userRole === "admin"),
-  })).filter((section) => section.items.length > 0);
+export function getVisibleNavSections(
+  userRole: UserRole | null,
+  target: AdminTarget | null = null,
+): NavSection[] {
+  const base = target?.kind === "research-fund" ? `/politicians/${target.politicianId}/books` : "";
+  const sections: NavSection[] =
+    target?.kind === "research-fund"
+      ? [
+          {
+            title: "議員室",
+            items: [
+              { href: "/politicians", label: "議員", icon: "user" },
+              { href: base, label: "年度帳簿", icon: "bank" },
+              { href: "/user-info", label: "ユーザー情報", icon: "user" },
+              { href: "/users", label: "ユーザー管理", icon: "users", adminOnly: true },
+            ],
+          },
+          {
+            title: "調査研究費",
+            items: [
+              {
+                href: `${base}/${target.bookId}/scan`,
+                label: "書類スキャン",
+                icon: "upload-simple",
+              },
+              {
+                href: `${base}/${target.bookId}/entries`,
+                label: "仕訳の確認・編集",
+                icon: "list-bullets",
+                badge: target.draftCount,
+              },
+              { href: `${base}/${target.bookId}/grants`, label: "支給の登録", icon: "coins" },
+              { href: `${base}/${target.bookId}/publish`, label: "公開", icon: "export" },
+              {
+                href: `${base}/${target.bookId}/expenditure-groups`,
+                label: "支出群と成果",
+                icon: "hand-heart",
+              },
+              {
+                href: `${base}/${target.bookId}/prompts`,
+                label: "読み取りプロンプト",
+                icon: "list-bullets",
+              },
+            ],
+          },
+        ]
+      : NAV_SECTIONS;
+  return sections
+    .map((section) => ({
+      ...section,
+      items: section.items.filter((item) => !item.adminOnly || userRole === "admin"),
+    }))
+    .filter((section) => section.items.length > 0);
 }
 
 /**
@@ -79,6 +129,13 @@ export function getVisibleNavSections(userRole: UserRole | null): NavSection[] {
  * ルート以外は前方一致（配下の詳細画面でも親項目をアクティブにする）。
  */
 export function isNavItemActive(pathname: string, href: string): boolean {
+  if (href === "/politicians")
+    return (
+      pathname === href ||
+      pathname === `${href}/new` ||
+      /^\/politicians\/[^/]+\/edit$/.test(pathname)
+    );
+  if (/^\/politicians\/[^/]+\/books$/.test(href)) return pathname === href;
   if (href === "/") {
     return pathname === "/";
   }

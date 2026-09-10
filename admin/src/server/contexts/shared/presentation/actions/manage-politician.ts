@@ -10,7 +10,7 @@ export async function savePolitician(id: string | null, input: PoliticianInput) 
   await requireAuth();
   try {
     await new ManagePoliticianUsecase(new PrismaPoliticianRepository(prisma)).save(id, input);
-    revalidatePath("/politicians", "layout");
+    revalidatePath("/(auth)", "layout");
     return { success: true as const };
   } catch (error) {
     return {
@@ -23,7 +23,7 @@ export async function deletePolitician(id: string) {
   await requireAuth();
   try {
     await new ManagePoliticianUsecase(new PrismaPoliticianRepository(prisma)).delete(id);
-    revalidatePath("/politicians", "layout");
+    revalidatePath("/(auth)", "layout");
     return { success: true as const };
   } catch {
     return { success: false as const, error: "削除に失敗しました。もう一度お試しください" };

@@ -29,7 +29,7 @@ test("年度帳簿の作成・帳簿情報の編集", async ({ page }) => {
   await expect(card.getByLabel("時点の日付")).toHaveValue("2026-08-20");
   await expect(card.getByLabel("次回更新の案内")).toHaveValue("次回は11月ごろ");
   await expect(card.getByLabel("活用方針")).toHaveValue("調査研究に活用します");
-  await page.getByRole("link", { name: "別の議員に切り替え" }).click();
+  await page.getByRole("link", { name: "議員一覧へ" }).click();
   await politicianCard.getByRole("button", { name: "削除", exact: true }).click();
   await page.getByRole("button", { name: "削除する", exact: true }).click();
   await expect(politicianCard).toHaveCount(0);

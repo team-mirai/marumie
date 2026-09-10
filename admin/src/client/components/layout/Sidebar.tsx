@@ -1,6 +1,8 @@
 "use client";
 import "client-only";
 
+import { TargetSelector } from "@/client/components/layout/TargetSelector";
+import { useAdminTarget } from "@/client/components/layout/AdminTargetProvider";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { UserRole } from "@prisma/client";
@@ -86,7 +88,8 @@ export default function Sidebar({
   onToggleCollapsed,
 }: SidebarProps) {
   const pathname = usePathname();
-  const navSections = getVisibleNavSections(userRole);
+  const { currentTarget } = useAdminTarget();
+  const navSections = getVisibleNavSections(userRole, currentTarget);
   const ToggleIcon = collapsed ? CaretDoubleRight : CaretDoubleLeft;
   const toggleLabel = collapsed ? "サイドバーを開く" : "サイドバーを折りたたむ";
 
@@ -113,6 +116,8 @@ export default function Sidebar({
           <ToggleIcon size={13} aria-hidden="true" />
         </button>
       </div>
+
+      <TargetSelector collapsed={collapsed} />
 
       <nav aria-label="メインナビゲーション" className="flex flex-1 flex-col gap-5">
         {navSections.map((section) => (
@@ -141,6 +146,18 @@ export default function Sidebar({
                     >
                       <ItemIcon size={16} className="shrink-0" aria-hidden="true" />
                       <span className={cn(collapsed && "sr-only")}>{item.label}</span>
+                      {item.badge !== undefined && item.badge > 0 && (
+                        <span
+                          className={cn(
+                            "ml-auto rounded-full bg-destructive px-1.5 py-0.5 font-latin text-[10px] font-bold text-white",
+                            collapsed && "sr-only",
+                          )}
+                        >
+                          <span className="sr-only">下書き</span>
+                          {item.badge}
+                          <span className="sr-only">件</span>
+                        </span>
+                      )}
                     </Link>
                   </CollapsibleTooltip>
                 );

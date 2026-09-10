@@ -8,7 +8,7 @@ describe("getVisibleNavSections", () => {
     const sections = getVisibleNavSections("admin");
     const hrefs = sections.flatMap((s) => s.items.map((i) => i.href));
 
-    expect(sections.map((s) => s.title)).toEqual(["基本情報", "データ取り込み", "報告書"]);
+    expect(sections.map((s) => s.title)).toEqual(["政治団体", "データ取り込み", "報告書"]);
     expect(hrefs).toContain("/users");
     expect(hrefs).toHaveLength(13);
   });
@@ -74,5 +74,31 @@ describe("isNavItemActive", () => {
   it("ルート（/）は完全一致のみでアクティブになる", () => {
     expect(isNavItemActive("/", "/")).toBe(true);
     expect(isNavItemActive("/transactions", "/")).toBe(false);
+  });
+});
+
+
+describe("議員室モード", () => {
+  const target = { kind: "research-fund" as const, key: "book:7", name: "議員A", year: 2026, politicianId: "3", bookId: "7", draftCount: 4 };
+  it("選択した議員・帳簿のリンクと下書き件数を使う", () => {
+    const sections = getVisibleNavSections("user", target);
+    expect(sections.map((s) => s.title)).toEqual(["議員室", "調査研究費"]);
+    expect(sections[0].items.map((i) => i.href)).toEqual(["/politicians", "/politicians/3/books", "/user-info"]);
+    expect(sections[1].items).toHaveLength(6);
+    expect(sections[1].items.every((i) => i.href.startsWith("/politicians/3/books/7/"))).toBe(true);
+    expect(sections[1].items.find((i) => i.label === "仕訳の確認・編集")?.badge).toBe(4);
+  });
+  it("議員室モードでもユーザー管理は admin のみ表示する", () => {
+    expect(getVisibleNavSections("admin", target)[0].items.map((i) => i.href)).toContain("/users");
+    expect(getVisibleNavSections(null, target)[0].items.map((i) => i.href)).not.toContain("/users");
+  });
+  it("下書きが0件の場合も0を返し、他の帳簿の件数と混ざらない", () => {
+    expect(getVisibleNavSections("user", { ...target, bookId: "8", draftCount: 0 })[1].items[1]).toMatchObject({ href: "/politicians/3/books/8/entries", badge: 0 });
+  });
+  it("帳簿や仕訳画面で議員リンクを二重にアクティブにしない", () => {
+    expect(isNavItemActive("/politicians/3/books", "/politicians")).toBe(false);
+    expect(isNavItemActive("/politicians/3/edit", "/politicians")).toBe(true);
+    expect(isNavItemActive("/politicians/3/books/7/entries", "/politicians/3/books")).toBe(false);
+    expect(isNavItemActive("/politicians/3/books/7/entries", "/politicians/3/books/7/entries")).toBe(true);
   });
 });

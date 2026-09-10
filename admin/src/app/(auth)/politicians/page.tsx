@@ -1,4 +1,5 @@
 import "server-only";
+import { loadAdminTargets } from "@/server/contexts/shared/presentation/loaders/load-admin-targets";
 import Link from "next/link";
 import { Plus } from "@phosphor-icons/react/dist/ssr";
 import { PageHeader } from "@/client/components/layout/PageHeader";
@@ -8,7 +9,10 @@ import { DeletePoliticianButton } from "@/client/components/politicians/DeletePo
 import { loadPoliticians } from "@/server/contexts/shared/presentation/loaders/load-politicians";
 
 export default async function PoliticiansPage() {
-  const politicians = await loadPoliticians();
+  const [politicians, { currentTarget }] = await Promise.all([
+    loadPoliticians(),
+    loadAdminTargets(),
+  ]);
   return (
     <div>
       <PageHeader
@@ -28,10 +32,23 @@ export default async function PoliticiansPage() {
       ) : (
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-3">
           {politicians.map((p) => (
-            <Card key={p.id}>
+            <Card
+              key={p.id}
+              className={cn(
+                currentTarget?.kind === "research-fund" &&
+                  currentTarget.politicianId === p.id &&
+                  "border-ring bg-accent",
+              )}
+            >
               <CardContent className="space-y-4">
                 <div>
                   <h2 className="text-lg font-bold">{p.name}</h2>
+                  {currentTarget?.kind === "research-fund" &&
+                    currentTarget.politicianId === p.id && (
+                      <p className="text-xs font-bold text-primary-active">
+                        現在の対象：{currentTarget.year}年度
+                      </p>
+                    )}
                   <p className="font-latin text-sm text-muted-foreground">/{p.slug}</p>
                 </div>
                 <span

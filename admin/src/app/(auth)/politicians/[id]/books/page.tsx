@@ -1,4 +1,7 @@
 import "server-only";
+import { loadAdminTargets } from "@/server/contexts/shared/presentation/loaders/load-admin-targets";
+import { ChangeTargetButton } from "@/client/components/layout/TargetSelector";
+import { cn } from "@/client/lib";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PlusCircle } from "@phosphor-icons/react/dist/ssr";
@@ -12,14 +15,15 @@ export default async function BooksPage({ params }: { params: Promise<{ id: stri
   const { id } = await params;
   const politician = await loadPolitician(id);
   if (!politician) notFound();
-  const books = await loadBooks(id);
+  const [books, { currentTarget }] = await Promise.all([loadBooks(id), loadAdminTargets()]);
   return (
     <div>
       <PageHeader label="Books" title="年度帳簿" />
       <div className="mb-4 flex flex-wrap items-center gap-3">
         <h2 className="font-bold">{politician.name}の帳簿一覧</h2>
+        <ChangeTargetButton />
         <Link href="/politicians" className="text-sm text-primary-active underline">
-          別の議員に切り替え
+          議員一覧へ
         </Link>
       </div>
       <p className="mb-4 text-sm text-muted-foreground">
@@ -27,10 +31,16 @@ export default async function BooksPage({ params }: { params: Promise<{ id: stri
       </p>
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-3">
         {books.map((book) => (
-          <Card key={book.id}>
+          <Card
+            key={book.id}
+            className={cn(currentTarget?.key === `book:${book.id}` && "border-ring bg-accent")}
+          >
             <CardContent className="space-y-4">
               <div className="flex items-center gap-3">
                 <h3 className="font-latin text-xl font-bold">{book.financialYear}年度</h3>
+                {currentTarget?.key === `book:${book.id}` && (
+                  <span className="text-xs font-bold text-primary-active">現在の対象</span>
+                )}
                 {book.publishedThrough && (
                   <span className="rounded-full bg-primary px-3 py-1 text-xs font-bold text-primary-foreground">
                     公開中
