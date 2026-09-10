@@ -11,7 +11,7 @@ AIエージェント（Claude Code）に実装を自律的に回してもらう�
 
 **1ループ = 1 Issue = 1 PR = 1セッション。**
 セッションを使い捨てることでコンテキスト膨張による品質劣化を防ぐ。
-1ループは「Issue選択 → 実装 → ローカルCI → PR（auto-merge予約）」で完結し、
+1ループは「Issue選択 → 実装 → ローカルCI → PR → CodeRabbit の指摘処理 → auto-merge予約」で完結し、
 CIがgreenになれば自動マージされIssueが閉じる。
 
 **新規タスクより既存成果物の健全性が優先。**
@@ -49,11 +49,14 @@ Issueの起票・コメントは誰でもできるが、ラベル付与は write
 新たに起票する**（元Issueにリンクする）。これは体裁の問題ではなく、
 `--dangerously-skip-permissions` で動くエージェントに未検証の文章を渡さないための手順。
 
-**3. CIが唯一の門番。**
+**3. CI と CodeRabbit が門番。**
 main のブランチ保護で `ci-complete` を必須チェックにしてあり、auto-mergeはこれがgreenになるまで待つ。
 `ci-complete` は [ci.yml](../.github/workflows/ci.yml) の全ジョブの結果を集約するジョブで、
 docsのみの変更などで個別ジョブがスキップされても必ず報告される（必須チェックがpendingのまま
 ブロックされるのを防ぐため、CI自体は paths で起動抑止していない）。
+加えてブランチ保護がPRレビューを要求しているため、CodeRabbit（[.coderabbit.yml](../.coderabbit.yml) で
+`request_changes_workflow: true`）が出す Request changes も auto-merge をブロックする。
+ループはこれを「規約レビュー」として扱い、指摘を処理してからauto-mergeを予約する（後述）。
 
 **4. マージは本番デプロイを起こさない。**
 本番デプロイは `Deploy Production` ワークフローの手動実行のみ
@@ -77,6 +80,22 @@ docsのみの変更などで個別ジョブがスキップされても必ず報�
 
 これにより1つのPRが肥大化せず自動マージ可能なサイズを保て、
 発見した課題がタスク管理上に必ず残り、人間がやるべきことが `loop:human` に集約される。
+
+## CodeRabbit の指摘の扱い
+
+このプロダクトは公開されているので一定の品質を保ちたい。CodeRabbit は規約違反（レイヤー境界、import 規約、
+テスト配置など）を概ね検知してくれるため、ループのPRでも**無視はしない**。
+一方で付き合うとキリがない細かい指摘も多いので、**ループ自身が妥当性を判断して「修正する / 退ける / Issue化する」に振り分ける**。
+
+- CI と CodeRabbit のレビューはレース（CIは約3分、CodeRabbitは約4〜7分）になるため、
+  ループは PR 作成直後には auto-merge を予約せず、CodeRabbit のレビューが届いてから指摘を処理し、承認後に予約する
+- 退ける場合は必ずスレッドに `🤖` で始まる理由を返信してから resolve する。黙って resolve すること、
+  `@coderabbitai resolve` での一括 resolve、レビュー自体の dismiss は禁止（人間が後から監査できなくなる）
+- 修正の push は 2 ラウンドまで、全体で 30 分まで。超えたら PR を open のまま `loop:human` にエスカレーションする
+- ループが自動処理するのは `coderabbitai[bot]` のスレッドだけ。人間のレビューは人間の管轄
+- 判定基準と手順の実体は [loop-once.md の「CodeRabbit レビューの取り扱い」](../.claude/commands/loop-once.md)
+
+Request changes で止まっている loop PR は、次のループが修理モードで拾う（CI失敗・コンフリクトと同じ扱い）。
 
 ## ラベル運用
 
@@ -131,7 +150,7 @@ astra は Codex CLI（`codex exec --model gpt-6-astra`。要 `npm install -g @op
 
 ```bash
 gh pr list --state merged --limit 20   # マージされたPR → コードを読んで理解する
-gh pr list --state open                # 未マージのPR → CI失敗/コンフリクトの確認
+gh pr list --state open --json number,title,mergeStateStatus,reviewDecision   # 未マージのPR → CI失敗/コンフリクト/Request changes の確認
 gh issue list --label loop:blocked     # 技術的ブロッカー → 解消して loop:ready に戻す
 gh issue list --label loop:human       # 判断待ち → 判断してIssue更新
 gh issue list --label loop:wip         # 残っていたら異常終了の痕跡。状況確認して戻す
@@ -140,6 +159,8 @@ git stash list | grep loop-abandoned   # 中断ループの退避作業（あれ
 
 **マージされたPRも必ず読むこと。** 自動マージは「CIが通った」ことしか保証しない。
 コードを読まずに積み上げると理解の負債（Comprehension Debt）が溜まり、いずれ設計判断ができなくなる。
+あわせて、ループが CodeRabbit の指摘を**退けた理由**（PRコメントの「🤖 CodeRabbit レビュー対応」と各スレッドの `🤖` 返信）にも目を通し、
+判断が甘ければ [loop-once.md](../.claude/commands/loop-once.md) の判定基準を直す。
 
 ## 注意事項
 
