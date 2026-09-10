@@ -28,7 +28,7 @@ export async function createBook(politicianId: string, year: number) {
   await requireAuth();
   try {
     await new ManageBookUsecase(new PrismaBookRepository(prisma)).create(politicianId, year);
-    revalidatePath(`/politicians/${politicianId}/books`);
+    revalidatePath("/(auth)", "layout");
     return { success: true as const };
   } catch (error) {
     return {
@@ -45,7 +45,7 @@ export async function updateBook(politicianId: string, bookId: string, input: Bo
       bookId,
       input,
     );
-    revalidatePath(`/politicians/${politicianId}/books`);
+    revalidatePath("/(auth)", "layout");
     return { success: true as const };
   } catch (error) {
     return {

@@ -1,5 +1,6 @@
 import "server-only";
 import { redirect } from "next/navigation";
+import { loadAdminTargets } from "@/server/contexts/shared/presentation/loaders/load-admin-targets";
 import AuthShell from "@/client/components/layout/AuthShell";
 import { logout } from "@/server/contexts/auth/presentation/actions/logout";
 import { getCurrentUser } from "@/server/contexts/auth/presentation/loaders/load-current-user";
@@ -14,8 +15,17 @@ export default async function AuthLayout({ children }: { children: React.ReactNo
     redirect("/login");
   }
 
+  const { targets, currentTarget, cookieName } = await loadAdminTargets();
+
   return (
-    <AuthShell logoutAction={logout} userRole={user.role} userEmail={user.email}>
+    <AuthShell
+      logoutAction={logout}
+      userRole={user.role}
+      userEmail={user.email}
+      targets={targets}
+      currentTarget={currentTarget}
+      syncKey={cookieName}
+    >
       {children}
     </AuthShell>
   );

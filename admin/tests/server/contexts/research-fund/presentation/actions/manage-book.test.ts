@@ -21,7 +21,7 @@ describe.each([
     await expect(run()).resolves.toEqual({ success: true });
     expect(requireAuth).toHaveBeenCalledTimes(1);
     expect(execute).toHaveBeenCalledTimes(1);
-    expect(revalidatePath).toHaveBeenCalledWith("/politicians/1/books");
+    expect(revalidatePath).toHaveBeenCalledWith("/(auth)", "layout");
   });
 
   test.each([
