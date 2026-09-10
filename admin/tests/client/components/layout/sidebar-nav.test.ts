@@ -10,7 +10,7 @@ describe("getVisibleNavSections", () => {
 
     expect(sections.map((s) => s.title)).toEqual(["基本情報", "データ取り込み", "報告書"]);
     expect(hrefs).toContain("/users");
-    expect(hrefs).toHaveLength(12);
+    expect(hrefs).toHaveLength(13);
   });
 
   it("admin 以外のロールには adminOnly の項目を表示しない", () => {
@@ -18,7 +18,7 @@ describe("getVisibleNavSections", () => {
     const hrefs = sections.flatMap((s) => s.items.map((i) => i.href));
 
     expect(hrefs).not.toContain("/users");
-    expect(hrefs).toHaveLength(11);
+    expect(hrefs).toHaveLength(12);
   });
 
   it("ロール不明（null）の場合も adminOnly の項目を表示しない", () => {
@@ -33,6 +33,7 @@ describe("getVisibleNavSections", () => {
     );
 
     expect(iconByHref).toEqual({
+      "/politicians": "user",
       "/user-info": "user",
       "/political-organizations": "bank",
       "/users": "users",
