@@ -11,11 +11,12 @@ AIエージェント（Claude Code）に実装を自律的に回してもらう�
 
 **1ループ = 1 Issue = 1 PR = 1セッション。**
 セッションを使い捨てることでコンテキスト膨張による品質劣化を防ぐ。
-1ループは「Issue選択 → 実装 → ローカルCI → PR（auto-merge予約）→ CodeRabbit の指摘処理」で完結し、
-CI と CodeRabbit が両方greenになれば自動マージされIssueが閉じる。
+新規Issueの1ループは「Issue選択 → 実装 → ローカルCI → PR作成 → auto-merge予約 → Issueにコメント → 結果出力」で完結する。
+PRを出したループは CodeRabbit のレビューを待たずに終了し、CI と CodeRabbit が両方greenになれば自動マージされIssueが閉じる。
+CodeRabbit の Request changes で止まったPRは、次のループが修理モードで処理する。
 
 **新規タスクより既存成果物の健全性が優先。**
-mainのCIが落ちている、あるいはloop PRがCI失敗・コンフリクトしているなら、
+mainのCIが落ちている、あるいはloop PRがCI失敗・コンフリクト・CodeRabbit の Request changes で止まっているなら、
 そのループは新規Issueではなく修理に充てる。壊れた土台の上に積み上げない。
 
 **詰まったら止まる。**
@@ -91,11 +92,14 @@ CodeRabbit のコミットステータス（`CodeRabbit`）も必須チェック
 
 - CI（`ci-complete`）と CodeRabbit のステータスの両方が必須チェックなので、ループは PR 作成直後に auto-merge を予約してよい
   （CodeRabbit のレビュー完了前にマージされることはない）。Request changes が付くとマージされないので、
-  ループはレビューが届くのを待って指摘を処理し、スレッドを閉じる。承認とマージは auto-merge に任せて終了できる
+  PRを作ったループは待たずに終了し、次のループが新規タスクより優先して修理モードで指摘を処理する。
+  CodeRabbit がまだレビュー中（reviewDecision が空）のPRは、CI失敗・コンフリクトがなければ健全として対象外にする
+- 修理モードでは別セッションでの対応となるため、Issue本文（Out of scope を含む）とPR差分を読み直してから指摘を判定する。
+  修正push後は最新コミットの再レビューを待ち、各スレッドへの返信・resolve、上限内での承認確認、対応結果のPRコメントを行う
 - 退ける場合は必ずスレッドに `🤖` で始まる理由を返信してから resolve する。黙って resolve すること、
   `@coderabbitai resolve` での一括 resolve、レビュー自体の dismiss は禁止（人間が後から監査できなくなる）
-- 修正の push は 2 ラウンドまで、全体で 30 分まで。超えたら PR を open のまま `loop:human` にエスカレーションする。
-  CodeRabbit のレビューが届かない場合（障害など）も同様にエスカレーションし、人間に知らせる
+- 修理モードでの修正の push は 2 ラウンドまで、全体で 30 分まで。超えたら PR を open のまま `loop:human` にエスカレーションする。
+  修理モードで CodeRabbit の再レビューが届かない場合（障害など）も同様にエスカレーションし、人間に知らせる
 - エスカレーション済みの PR（Issue が `loop:human` / `loop:blocked`）は、メンテナが `loop:ready` に戻すまで次のループも触らない
 - ループが自動処理するのは `coderabbitai[bot]` のスレッドだけ。人間のレビューは人間の管轄
 - 判定基準と手順の実体は [loop-once.md の「CodeRabbit レビューの取り扱い」](../.claude/commands/loop-once.md)
