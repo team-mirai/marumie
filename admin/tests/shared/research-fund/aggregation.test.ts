@@ -117,6 +117,29 @@ describe("公開プレビュー用の調研費集計", () => {
     },
   );
 
+  it.each([null, undefined, 123, {}, [], "", "   "])(
+    "不正な区分ラベル%pは例外ではなく構造化エラーを返す",
+    (label) => {
+      for (const mode of ["detailed", "legal"] as const) {
+        const category =
+          mode === "detailed"
+            ? { label: label as string, legalLabel: "交通費" }
+            : { label: "タクシー", legalLabel: label as string };
+        expect(aggregateResearchFund([expense], { taxi: category }, mode)).toEqual({
+          status: "invalid",
+          errors: [
+            {
+              path: "rows.0.accountKey",
+              code: "RF_AGGREGATION_MISSING_CATEGORY",
+              message: "支出科目の区分対応が見つかりません",
+              severity: "error",
+            },
+          ],
+        });
+      }
+    },
+  );
+
   it("法定区分の欠落と未知の支給/支出区分を検出する", () => {
     expect(
       aggregateResearchFund(

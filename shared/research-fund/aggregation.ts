@@ -101,7 +101,13 @@ export function aggregateResearchFund(
       const account = Object.prototype.hasOwnProperty.call(accounts, row.accountKey)
         ? accounts[row.accountKey]
         : undefined;
-      if (!account?.label.trim() || (mode === "legal" && !account.legalLabel?.trim())) {
+      if (
+        !account ||
+        typeof account.label !== "string" ||
+        !account.label.trim() ||
+        (mode === "legal" &&
+          (typeof account.legalLabel !== "string" || !account.legalLabel.trim()))
+      ) {
         return invalid(
           `${path}.accountKey`,
           ERROR_CODES.MISSING_CATEGORY,
