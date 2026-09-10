@@ -67,7 +67,8 @@ description: loop:ready のIssueを1つ選び、実装→ローカルCI→PR作�
    （「現在の状況」の reviewDecision が CHANGES_REQUESTED で、チェックは failure でもコンフリクトでもない）:
    - `gh api repos/{owner}/{repo}/pulls/<N>/reviews --jq '.[] | select(.state == "CHANGES_REQUESTED") | .user.login'` で誰の Request changes かを確認する。
      **人間のレビューが含まれていたら触らない**（人間の管轄。修理対象から除外して次の候補へ）。CodeRabbit だけなら番号最小の1件を修理する
-   - `gh pr checkout <N>` でブランチに乗り、後述の「CodeRabbit レビューの取り扱い」に従って指摘を処理する
+   - 新規PRを作ったループはレビューを待たずに終了するため、CodeRabbit の指摘はこの修理モードで処理するのが通常の経路となる。CodeRabbit がまだレビュー中（reviewDecision が空）のPRは、チェック失敗・コンフリクトがなければ健全として対象外にする
+   - `gh pr checkout <N>` でブランチに乗り、後述の「CodeRabbit レビューの取り扱い（修理モード専用）」に従って指摘を処理し、対応結果をPRにコメントする
    - 処理後、auto-merge 予約が生きているか `gh pr view <N> --json autoMergeRequest --jq '.autoMergeRequest != null'` で確認し、無ければ `gh pr merge --auto --squash` で予約する
    - 上限（後述）を超えても CodeRabbit の承認が得られなければ、PRは open のまま残し、Issueを `loop:wip` から `loop:human` に付け替えて状況をコメントし、`LOOP_RESULT: BLOCKED issue=#<N> reason=coderabbit-unresolved` で終了する
    - 修理が完了したら `LOOP_RESULT: SUCCESS issue=#<関連Issue番号> pr=<PR URL>` で終了する（このループでは新規Issueに進まない）
@@ -136,28 +137,13 @@ pnpm verify   # test / typecheck / lint / knip / depcruise
 - auto-mergeを予約する: `gh pr merge --auto --squash`。
   main の必須チェックは CI（`ci-complete`）と CodeRabbit のステータス（`CodeRabbit`）の両方なので、
   予約しておけば「全部 green で自動マージ」になり、CodeRabbit のレビュー完了前にマージされることはない。
-  ただし CodeRabbit の Request changes が付いたままだとマージされないので、次の手順で指摘を処理する
+  CodeRabbit の Request changes が付いた場合は、次のループが新規タスクより優先して修理モード（手順2-3）で指摘を処理する
 - Issueにコメント: `gh issue comment <N> --body "🤖 PR作成: <PR URL>"`
   - `loop:wip` ラベルはそのまま残す（PRマージでIssueが自動クローズされるまでの「in-flight」表示）
 
-### 8. CodeRabbit レビュー対応
+- ここで新規Issueの作業は完了。CodeRabbit のレビュー到着・指摘処理・承認を待たず、手順8の結果出力で終了する。
 
-後述の「CodeRabbit レビューの取り扱い」に従い、指摘を **修正する / 退ける / Issue化する** のいずれかに振り分けて処理する。
-CodeRabbit の全スレッドを resolve する（または待機の上限に達する）まで完了しない。
-承認とマージは auto-merge が待ってくれるので、承認そのものをこのループで待つ必要はない。
-
-### 9. 対応結果の記録
-
-- PRにコメントで CodeRabbit 対応の結果を残す（人間がマージ後に読む。退けた指摘の妥当性を人間が監査できるようにするため）:
-  ```
-  🤖 CodeRabbit レビュー対応: 修正 <a> 件 / 退け <b> 件 / Issue化 <c> 件
-  - 修正: <要約>（<commit>）
-  - 退け: <要約> — <理由>
-  - Issue化: #<M> <タイトル>
-  ```
-  指摘が1件もなかった場合や、CodeRabbit のレビューが上限時間内に届かなかった場合もその旨を書く
-
-### 10. 結果出力
+### 8. 結果出力
 
 ループの最後に、**必ず1行**、以下の形式で出力する:
 
@@ -166,7 +152,11 @@ CodeRabbit の全スレッドを resolve する（または待機の上限に達
 - エスカレーション: `LOOP_RESULT: BLOCKED issue=#<N> reason=<短い理由>`
 - その他失敗: `LOOP_RESULT: FAILED reason=<短い理由>`
 
-## CodeRabbit レビューの取り扱い
+## CodeRabbit レビューの取り扱い（修理モード専用）
+
+この節は手順2-3の修理モードでのみ実行する。新規PRを作成したループでは実行しない。
+別セッションでの対応となるため、開始時に `gh issue view <関連Issue番号> --json body,comments` と
+`gh pr diff <N>` で Issue 本文・コメント（Out of scope を含む）と PR 差分を読み直し、目的と変更範囲を把握する。
 
 CodeRabbit（`.coderabbit.yml` で `request_changes_workflow: true`）は指摘があると **Request changes** を出し、
 main のブランチ保護がレビューを要求しているため、これが auto-merge をブロックする。
@@ -244,11 +234,10 @@ gh api graphql -f query='mutation { resolveReviewThread(input: {threadId: "<thre
   退けた根拠がスレッドに残らず、人間が監査できなくなるため
 
 **(f) 承認を確認する。** 全スレッドが resolve され最新コミットがレビュー済みなら、CodeRabbit は数十秒で APPROVED に切り替え、
-auto-merge が CI green を待ってマージする。このループが承認を待ち続ける必要はない:
+auto-merge が CI green を待ってマージする。修理モードでは以下の上限内で承認を確認する:
 
-- **新規PRのループ（手順8）では**: (b) をもう一度実行して未解決スレッドが増えていないことを確認したら完了。
-  増えていれば (b) に戻る（ラウンド上限に注意）。CHANGES_REQUESTED が残ったとしても次のループの修理モードが拾う
-- **修理モード（手順2-3）では**: 直っているかを確認するため最大5分待つ:
+- (b) をもう一度実行して未解決スレッドが増えていないことを確認する。増えていれば (b) に戻る（ラウンド上限に注意）。
+- 修理が完了したかを確認するため最大5分待つ:
   ```bash
   for i in $(seq 1 5); do
     decision=$(gh pr view <N> --json reviewDecision --jq '.reviewDecision')
@@ -258,6 +247,20 @@ auto-merge が CI green を待ってマージする。このループが承認�
   ```
   未解決スレッドが無いのに CHANGES_REQUESTED のままなら、`gh pr comment <N> --body "@coderabbitai review"` で再レビューを促してもう一度だけ (a) から待つ。
   それでも解けなければエスカレーション（PRは open のまま残す）
+
+**(g) 対応結果を記録する。** 成功・エスカレーションのどちらの場合も、結果出力の前にPRへコメントする
+（人間がマージ後に読み、退けた指摘の妥当性を監査するため）:
+
+```text
+🤖 CodeRabbit レビュー対応: 修正 <a> 件 / 退け <b> 件 / Issue化 <c> 件
+- 修正: <要約>（<commit>）
+- 退け: <要約> — <理由>
+- Issue化: #<M> <タイトル>
+```
+
+指摘が1件もなかった場合や、CodeRabbit のレビューが上限時間内に届かなかった場合もその旨を書く。
+成功時は手順2-3に戻って auto-merge の予約を確認し、結果を出力する。
+エスカレーション時は後述のラベル変更・状況コメントを行い、BLOCKED の結果を出力する。
 
 ### 上限
 
