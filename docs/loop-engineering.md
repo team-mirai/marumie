@@ -117,11 +117,13 @@ Claude Code 内で `/loop-issue <やりたいことの概要>` を実行する�
 ## コマンド
 
 ```bash
-./scripts/loop-once.sh    # 1回だけループを実行
-./scripts/loop.sh 10      # 最大10回ループを実行（夜間バッチ向け）
+./scripts/loop-once.sh        # 1回だけループを実行
+./scripts/loop.sh 10          # 最大10回ループを実行（夜間バッチ向け）
+./scripts/loop.sh 10 astra    # モデルを指定して実行（opus / fable / astra、デフォルト: opus）
 ```
 
-各イテレーションは `claude -p "/loop-once"` で**毎回新規セッション**を起動する。
+各イテレーションは**毎回新規セッション**を起動する。opus / fable は Claude Code（`claude -p "/loop-once" --model <モデル>`）、
+astra は Codex CLI（`codex exec --model gpt-6-astra`。要 `npm install -g @openai/codex`）で実行する。
 対話セッション内で試したい場合は Claude Code 内で `/loop-once` を実行してもよい。
 ログは `.loop/logs/` に残る（gitignore済み）。
 

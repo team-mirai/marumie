@@ -2,11 +2,15 @@
 #
 # ループエンジニアリング: 1回だけループを実行する
 #
-# 毎回まっさらな Claude Code セッション（claude -p）で /loop-once を実行する。
-# 手順の実体は .claude/commands/loop-once.md にある。
+# 毎回まっさらなエージェントセッションで手順書（.claude/commands/loop-once.md）を実行する。
 #
 # 使い方:
-#   ./scripts/loop-once.sh
+#   ./scripts/loop-once.sh [モデル]
+#
+# モデル:
+#   opus   (デフォルト) Claude Code (claude -p /loop-once --model opus)
+#   fable  Claude Code (claude -p /loop-once --model fable)
+#   astra  Codex CLI (codex exec --model gpt-6-astra)
 #
 # 環境変数:
 #   LOOP_LOG_FILE  ログの出力先（未指定なら .loop/logs/single-<時刻>.log）
@@ -23,6 +27,22 @@ set -uo pipefail
 # 実行中にこのファイル自体が書き換わっても、読み込み済みの定義で最後まで走る。
 main() {
   cd "$(cd "$(dirname "$0")/.." && pwd)"
+
+  # --- 引数: モデルの検証 ---
+  model="${1:-opus}"
+  case "$model" in
+    opus|fable) ;;
+    astra)
+      if ! command -v codex >/dev/null 2>&1; then
+        echo "[loop-once] astra には Codex CLI が必要です (npm install -g @openai/codex)。中断します。" >&2
+        exit 1
+      fi
+      ;;
+    *)
+      echo "usage: $0 [opus|fable|astra]" >&2
+      exit 1
+      ;;
+  esac
 
   # --- 前処理: 作業ツリーの状態確認 ---
   if [[ -n "$(git status --porcelain)" ]]; then
@@ -48,8 +68,29 @@ main() {
   log_file="${LOOP_LOG_FILE:-.loop/logs/single-$(date +%Y%m%d-%H%M%S).log}"
   mkdir -p "$(dirname "$log_file")"
 
-  echo "[loop-once] 開始 (残タスク: $ready_count 件) → $log_file"
+  echo "[loop-once] 開始 (モデル: $model, 残タスク: $ready_count 件) → $log_file"
 
+  if [[ "$model" == "astra" ]]; then
+    run_astra
+  else
+    run_claude "$model"
+  fi
+
+  result="$(grep -Eo 'LOOP_RESULT: [A-Z_]+[^\r]*' "$log_file" | tail -1 || true)"
+  if [[ -z "$result" ]]; then
+    result="LOOP_RESULT: FAILED reason=no-result-line"
+  fi
+  echo "[loop-once] $result"
+
+  case "$result" in
+    "LOOP_RESULT: SUCCESS"*) exit 0 ;;
+    "LOOP_RESULT: NO_TASK"*) exit 2 ;;
+    "LOOP_RESULT: BLOCKED"*) exit 3 ;;
+    *) exit 1 ;;
+  esac
+}
+
+run_claude() { # $1: claudeのモデルエイリアス (opus / fable)
   # stream-json をjqで進捗行に整形して流す（そのままだと完了まで無出力で不安になる）。
   # 整形後のテキストをログに残すので、LOOP_RESULT のgrepは従来どおり効く。
   local jq_progress='
@@ -74,27 +115,29 @@ main() {
       end'
 
   if command -v jq >/dev/null 2>&1; then
-    claude -p "/loop-once" --dangerously-skip-permissions \
+    claude -p "/loop-once" --model "$1" --dangerously-skip-permissions \
       --verbose --output-format stream-json 2>&1 \
       | jq --unbuffered -Rr "$jq_progress" \
       | tee "$log_file"
   else
     echo "[loop-once] jq が見つからないため進捗表示なしで実行します" >&2
-    claude -p "/loop-once" --dangerously-skip-permissions 2>&1 | tee "$log_file"
+    claude -p "/loop-once" --model "$1" --dangerously-skip-permissions 2>&1 | tee "$log_file"
   fi
+}
 
-  result="$(grep -Eo 'LOOP_RESULT: [A-Z_]+[^\r]*' "$log_file" | tail -1 || true)"
-  if [[ -z "$result" ]]; then
-    result="LOOP_RESULT: FAILED reason=no-result-line"
-  fi
-  echo "[loop-once] $result"
+run_astra() {
+  # /loop-once は Claude Code のスラッシュコマンドなので、Codex には手順書を読んで従うよう指示する。
+  # 手順書中の frontmatter や !`コマンド` 展開は Claude Code 専用機能のため、扱い方を明示する。
+  local prompt='あなたはループエンジニアリングの1イテレーションを実行するエージェントです。
+.claude/commands/loop-once.md を読み、その手順に従って1イテレーションを実行してください。
 
-  case "$result" in
-    "LOOP_RESULT: SUCCESS"*) exit 0 ;;
-    "LOOP_RESULT: NO_TASK"*) exit 2 ;;
-    "LOOP_RESULT: BLOCKED"*) exit 3 ;;
-    *) exit 1 ;;
-  esac
+- ファイル冒頭の frontmatter（allowed-tools 等）は Claude Code 用の設定なので無視してよい
+- 「現在の状況」セクションの !`コマンド` は自動展開されないので、各コマンドを自分で実行して状況を把握すること
+- 最後に必ず LOOP_RESULT 行を出力すること'
+
+  # stdin を閉じて渡す: codex exec は stdin がTTYでないと追加入力として読み込もうとする
+  codex exec --model gpt-6-astra --dangerously-bypass-approvals-and-sandbox \
+    "$prompt" </dev/null 2>&1 | tee "$log_file"
 }
 
 main "$@"
