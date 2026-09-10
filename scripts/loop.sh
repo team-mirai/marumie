@@ -5,7 +5,8 @@
 # for文で scripts/loop-once.sh を繰り返し呼び、停止条件を管理する。
 #
 # 使い方:
-#   ./scripts/loop.sh 10     # 最大10回ループ（夜間バッチ向け）
+#   ./scripts/loop.sh 10        # 最大10回ループ（夜間バッチ向け）
+#   ./scripts/loop.sh 10 astra  # モデルを指定（opus / fable / astra、デフォルト: opus）
 #
 # 停止条件:
 #   - loop:ready のIssueがなくなった (NO_TASK)
@@ -20,8 +21,9 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$SCRIPT_DIR/.."
 
 COUNT="${1:-1}"
-if ! [[ "$COUNT" =~ ^[1-9][0-9]*$ ]]; then
-  echo "usage: $0 [回数(正の整数)]" >&2
+MODEL="${2:-opus}"
+if ! [[ "$COUNT" =~ ^[1-9][0-9]*$ ]] || ! [[ "$MODEL" =~ ^(opus|fable|astra)$ ]]; then
+  echo "usage: $0 [回数(正の整数)] [opus|fable|astra]" >&2
   exit 1
 fi
 
@@ -30,7 +32,7 @@ RUN_ID="$(date +%Y%m%d-%H%M%S)"
 LOG_DIR=".loop/logs/$RUN_ID"
 mkdir -p "$LOG_DIR"
 
-echo "== loop run $RUN_ID: 最大 $COUNT 回 (ログ: $LOG_DIR) =="
+echo "== loop run $RUN_ID: 最大 $COUNT 回, モデル: $MODEL (ログ: $LOG_DIR) =="
 
 consecutive_failures=0
 results=()
@@ -40,7 +42,7 @@ for ((i = 1; i <= COUNT; i++)); do
   echo ""
   echo "[loop $i/$COUNT] 開始"
 
-  LOOP_LOG_FILE="$log_file" "$SCRIPT_DIR/loop-once.sh"
+  LOOP_LOG_FILE="$log_file" "$SCRIPT_DIR/loop-once.sh" "$MODEL"
   status=$?
 
   result="$(grep -Eo 'LOOP_RESULT: [A-Z_]+[^\r]*' "$log_file" 2>/dev/null | tail -1 || true)"
