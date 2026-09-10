@@ -75,6 +75,11 @@ description: loop:ready のIssueを1つ選び、実装→ローカルCI→PR作�
 **`loop/` で始まらないブランチのPR（外部コントリビュータのPR、renovateのPRなど）には触らない。**
 それらは人間のレビュー対象であり、ループの守備範囲外。
 
+**エスカレーション済みのPRにも触らない。** 修理対象にしてよいのは、紐づくIssue
+（`gh pr view <N> --json closingIssuesReferences --jq '.closingIssuesReferences[].number'`）のラベルが `loop:wip` のものだけ。
+Issueが `loop:human` / `loop:blocked` に付け替え済みのPRは前のループがエスカレーションしたものなので、
+メンテナが `loop:ready` に戻すまで対象外にする（同じPRを毎ループ修理しようとして詰まるのを防ぐ）。
+
 いずれも問題なければ次のステップへ。
 
 ### 3. Issue選択とクレーム
@@ -128,20 +133,21 @@ pnpm verify   # test / typecheck / lint / knip / depcruise
   - `Closes #<N>`
   - ローカルCIの実行結果
   - スコープアウトして起票したIssueの一覧（あれば）
-- **この時点では auto-merge を予約しない。** CI（約3分）と CodeRabbit のレビュー（約4〜7分）はレースになり、
-  先に予約すると CI が勝った場合に指摘を読まずにマージされ、CodeRabbit が勝った場合に Request changes で PR が止まる。
-  予約は次の手順で CodeRabbit の指摘を処理してから行う
+- auto-mergeを予約する: `gh pr merge --auto --squash`。
+  main の必須チェックは CI（`ci-complete`）と CodeRabbit のステータス（`CodeRabbit`）の両方なので、
+  予約しておけば「全部 green で自動マージ」になり、CodeRabbit のレビュー完了前にマージされることはない。
+  ただし CodeRabbit の Request changes が付いたままだとマージされないので、次の手順で指摘を処理する
 - Issueにコメント: `gh issue comment <N> --body "🤖 PR作成: <PR URL>"`
   - `loop:wip` ラベルはそのまま残す（PRマージでIssueが自動クローズされるまでの「in-flight」表示）
 
 ### 8. CodeRabbit レビュー対応
 
 後述の「CodeRabbit レビューの取り扱い」に従い、指摘を **修正する / 退ける / Issue化する** のいずれかに振り分けて処理する。
-CodeRabbit が APPROVED になる（または待機の上限に達する）まで完了しない。
+CodeRabbit の全スレッドを resolve する（または待機の上限に達する）まで完了しない。
+承認とマージは auto-merge が待ってくれるので、承認そのものをこのループで待つ必要はない。
 
-### 9. auto-merge 予約
+### 9. 対応結果の記録
 
-- `gh pr merge --auto --squash` で予約する
 - PRにコメントで CodeRabbit 対応の結果を残す（人間がマージ後に読む。退けた指摘の妥当性を人間が監査できるようにするため）:
   ```
   🤖 CodeRabbit レビュー対応: 修正 <a> 件 / 退け <b> 件 / Issue化 <c> 件
@@ -164,6 +170,7 @@ CodeRabbit が APPROVED になる（または待機の上限に達する）ま�
 
 CodeRabbit（`.coderabbit.yml` で `request_changes_workflow: true`）は指摘があると **Request changes** を出し、
 main のブランチ保護がレビューを要求しているため、これが auto-merge をブロックする。
+また CodeRabbit のコミットステータス（`CodeRabbit`）は main の必須チェックなので、auto-merge はレビュー完了まで待つ（CI とのレースは起きない）。
 CodeRabbit は「自分のスレッドがすべて resolve され、最新コミットをレビュー済み」になると自動で APPROVED に切り替わる。
 したがって、指摘を **修正して resolve する** か、**理由を返信して resolve する** かのどちらかを全スレッドに対して行えばブロックは解ける。
 
@@ -185,8 +192,10 @@ done
 echo "coderabbit: ${state:-timeout}"
 ```
 
-- 12分待っても届かなければ（CodeRabbit の障害など）、待つのをやめて次の手順（auto-merge 予約）に進む。PRコメントに「CodeRabbit のレビューが届かなかったため未対応」と書く。
-  遅れて Request changes が付いた場合は次のループの修理モードが拾う
+- 12分待っても届かなければ、`gh pr comment <N> --body "@coderabbitai review"` で一度だけレビューを促し、もう12分待つ。
+  それでも届かなければ（CodeRabbit の障害など）エスカレーションする: PR は open のまま残し
+  （auto-merge 予約も残してよい。CodeRabbit のステータスが必須チェックなのでレビュー完了前にマージされることはない）、
+  Issue を `loop:wip` から `loop:human` に付け替え、`LOOP_RESULT: BLOCKED issue=#<N> reason=coderabbit-timeout` で終了する
 - `APPROVED` なら指摘なし。次の手順へ
 
 **(b) 未解決スレッドを取得する:**
@@ -234,18 +243,20 @@ gh api graphql -f query='mutation { resolveReviewThread(input: {threadId: "<thre
 - 返信なしの resolve、`@coderabbitai resolve`（全件一括 resolve）、CodeRabbit のレビュー自体の dismiss は**禁止**。
   退けた根拠がスレッドに残らず、人間が監査できなくなるため
 
-**(f) 承認を待つ**（最大5分）:
+**(f) 承認を確認する。** 全スレッドが resolve され最新コミットがレビュー済みなら、CodeRabbit は数十秒で APPROVED に切り替え、
+auto-merge が CI green を待ってマージする。このループが承認を待ち続ける必要はない:
 
-```bash
-for i in $(seq 1 5); do
-  decision=$(gh pr view <N> --json reviewDecision --jq '.reviewDecision')
-  [[ "$decision" != "CHANGES_REQUESTED" ]] && break
-  sleep 60
-done
-```
-
-- 承認されれば完了。新しい未解決スレッドが増えていたら (b) に戻る（ラウンド上限に注意）
-- 未解決スレッドが無いのに 5 分経っても CHANGES_REQUESTED のままなら、`gh pr comment <N> --body "@coderabbitai review"` で再レビューを促してもう一度だけ (a) から待つ。
+- **新規PRのループ（手順8）では**: (b) をもう一度実行して未解決スレッドが増えていないことを確認したら完了。
+  増えていれば (b) に戻る（ラウンド上限に注意）。CHANGES_REQUESTED が残ったとしても次のループの修理モードが拾う
+- **修理モード（手順2-3）では**: 直っているかを確認するため最大5分待つ:
+  ```bash
+  for i in $(seq 1 5); do
+    decision=$(gh pr view <N> --json reviewDecision --jq '.reviewDecision')
+    [[ "$decision" != "CHANGES_REQUESTED" ]] && break
+    sleep 60
+  done
+  ```
+  未解決スレッドが無いのに CHANGES_REQUESTED のままなら、`gh pr comment <N> --body "@coderabbitai review"` で再レビューを促してもう一度だけ (a) から待つ。
   それでも解けなければエスカレーション（PRは open のまま残す）
 
 ### 上限

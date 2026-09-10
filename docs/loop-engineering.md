@@ -11,8 +11,8 @@ AIエージェント（Claude Code）に実装を自律的に回してもらう�
 
 **1ループ = 1 Issue = 1 PR = 1セッション。**
 セッションを使い捨てることでコンテキスト膨張による品質劣化を防ぐ。
-1ループは「Issue選択 → 実装 → ローカルCI → PR → CodeRabbit の指摘処理 → auto-merge予約」で完結し、
-CIがgreenになれば自動マージされIssueが閉じる。
+1ループは「Issue選択 → 実装 → ローカルCI → PR（auto-merge予約）→ CodeRabbit の指摘処理」で完結し、
+CI と CodeRabbit が両方greenになれば自動マージされIssueが閉じる。
 
 **新規タスクより既存成果物の健全性が優先。**
 mainのCIが落ちている、あるいはloop PRがCI失敗・コンフリクトしているなら、
@@ -54,9 +54,11 @@ main のブランチ保護で `ci-complete` を必須チェックにしてあり
 `ci-complete` は [ci.yml](../.github/workflows/ci.yml) の全ジョブの結果を集約するジョブで、
 docsのみの変更などで個別ジョブがスキップされても必ず報告される（必須チェックがpendingのまま
 ブロックされるのを防ぐため、CI自体は paths で起動抑止していない）。
+CodeRabbit のコミットステータス（`CodeRabbit`）も必須チェックにしてあるため、auto-merge は CodeRabbit のレビュー完了も待つ。
 加えてブランチ保護がPRレビューを要求しているため、CodeRabbit（[.coderabbit.yml](../.coderabbit.yml) で
 `request_changes_workflow: true`）が出す Request changes も auto-merge をブロックする。
-ループはこれを「規約レビュー」として扱い、指摘を処理してからauto-mergeを予約する（後述）。
+つまり「CI と CodeRabbit が両方 green で、Request changes が残っていなければマージ」が唯一の条件で、
+ループはこれを「規約レビュー」として扱い、指摘を処理してスレッドを閉じる（後述）。
 
 **4. マージは本番デプロイを起こさない。**
 本番デプロイは `Deploy Production` ワークフローの手動実行のみ
@@ -87,11 +89,14 @@ docsのみの変更などで個別ジョブがスキップされても必ず報�
 テスト配置など）を概ね検知してくれるため、ループのPRでも**無視はしない**。
 一方で付き合うとキリがない細かい指摘も多いので、**ループ自身が妥当性を判断して「修正する / 退ける / Issue化する」に振り分ける**。
 
-- CI と CodeRabbit のレビューはレース（CIは約3分、CodeRabbitは約4〜7分）になるため、
-  ループは PR 作成直後には auto-merge を予約せず、CodeRabbit のレビューが届いてから指摘を処理し、承認後に予約する
+- CI（`ci-complete`）と CodeRabbit のステータスの両方が必須チェックなので、ループは PR 作成直後に auto-merge を予約してよい
+  （CodeRabbit のレビュー完了前にマージされることはない）。Request changes が付くとマージされないので、
+  ループはレビューが届くのを待って指摘を処理し、スレッドを閉じる。承認とマージは auto-merge に任せて終了できる
 - 退ける場合は必ずスレッドに `🤖` で始まる理由を返信してから resolve する。黙って resolve すること、
   `@coderabbitai resolve` での一括 resolve、レビュー自体の dismiss は禁止（人間が後から監査できなくなる）
-- 修正の push は 2 ラウンドまで、全体で 30 分まで。超えたら PR を open のまま `loop:human` にエスカレーションする
+- 修正の push は 2 ラウンドまで、全体で 30 分まで。超えたら PR を open のまま `loop:human` にエスカレーションする。
+  CodeRabbit のレビューが届かない場合（障害など）も同様にエスカレーションし、人間に知らせる
+- エスカレーション済みの PR（Issue が `loop:human` / `loop:blocked`）は、メンテナが `loop:ready` に戻すまで次のループも触らない
 - ループが自動処理するのは `coderabbitai[bot]` のスレッドだけ。人間のレビューは人間の管轄
 - 判定基準と手順の実体は [loop-once.md の「CodeRabbit レビューの取り扱い」](../.claude/commands/loop-once.md)
 
@@ -150,7 +155,7 @@ astra は Codex CLI（`codex exec --model gpt-6-astra`。要 `npm install -g @op
 
 ```bash
 gh pr list --state merged --limit 20   # マージされたPR → コードを読んで理解する
-gh pr list --state open --json number,title,mergeStateStatus,reviewDecision   # 未マージのPR → CI失敗/コンフリクト/Request changes の確認
+gh pr list --state open --json number,title,headRefName,mergeStateStatus,reviewDecision   # 未マージのPR → CI失敗/コンフリクト/Request changes の確認（loop/ ブランチがループのPR）
 gh issue list --label loop:blocked     # 技術的ブロッカー → 解消して loop:ready に戻す
 gh issue list --label loop:human       # 判断待ち → 判断してIssue更新
 gh issue list --label loop:wip         # 残っていたら異常終了の痕跡。状況確認して戻す
