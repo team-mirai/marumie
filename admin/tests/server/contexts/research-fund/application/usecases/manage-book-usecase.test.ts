@@ -1,4 +1,5 @@
 import { ManageBookUsecase } from "@/server/contexts/research-fund/application/usecases/manage-book-usecase";
+import type { BookMetadata } from "@/server/contexts/research-fund/domain/models/book";
 const metadata = { asOfDate: "2026-08-20", nextUpdateNote: " 11月ごろ ", policyComment: " 方針 " };
 function setup() {
   const repository = { list: jest.fn(), create: jest.fn(), update: jest.fn() };
@@ -49,4 +50,30 @@ test("集計サービスで帳簿ごとの累計を求め、空の帳簿はゼ�
     { id: "1", draftCount: 3, granted: 1000000, spent: 1200 },
     { id: "2", draftCount: 0, granted: 0, spent: 0 },
   ]);
+});
+
+test.each([
+  null,
+  { ...metadata, asOfDate: 20260820 },
+  { ...metadata, nextUpdateNote: null },
+  { ...metadata, policyComment: false },
+])("実行時に型が不正なメタデータは保存しない: %j", async (input) => {
+  const { repository, usecase } = setup();
+  await expect(usecase.update("1", "2", input as unknown as BookMetadata)).rejects.toThrow(
+    "帳簿情報の入力が不正",
+  );
+  expect(repository.update).not.toHaveBeenCalled();
+});
+
+test("集計できない金額があれば誤った累計を返さずエラーを伝える", async () => {
+  const { repository, usecase } = setup();
+  repository.list.mockResolvedValue([
+    {
+      book: { id: "1" },
+      draftCount: 0,
+      rows: [{ date: "2026-08-01", accountKey: "grant-income", amount: -1, type: "grant" }],
+      accounts: {},
+    },
+  ]);
+  await expect(usecase.list("1")).rejects.toThrow("金額は安全な範囲の0以上の整数円");
 });

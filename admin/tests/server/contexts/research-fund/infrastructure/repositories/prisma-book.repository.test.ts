@@ -51,3 +51,33 @@ test("内部の保存エラーは公開しない", async () => {
   await expect(repository.create("1", 2026)).rejects.toThrow("帳簿の作成に失敗");
   await expect(repository.update("1", "2", { asOfDate: "", nextUpdateNote: "", policyComment: "" })).rejects.toThrow("帳簿の保存に失敗");
 });
+
+test("未公開の帳簿と任意項目を一覧表示用に変換し、法定区分なしの科目も保持する", async () => {
+  const { table, repository } = setup();
+  const expenseLine = line("taxi", "expense", "debit", 1200);
+  table.findMany.mockResolvedValue([{
+    id: BigInt(3), financialYear: 2025, status: "preparing", publishedThrough: null,
+    asOfDate: new Date("2025-12-31"), nextUpdateNote: "来月更新", policyComment: null,
+    journalEntries: [{
+      status: "approved", entryDate: new Date("2025-12-01"),
+      lines: [{ ...expenseLine, account: { ...expenseLine.account, legalLabel: null } }],
+    }],
+  }]);
+  await expect(repository.list("1")).resolves.toEqual([{
+    book: {
+      id: "3", financialYear: 2025, status: "preparing", publishedThrough: null,
+      asOfDate: "2025-12-31", nextUpdateNote: "来月更新", policyComment: "",
+    },
+    draftCount: 0,
+    rows: [{ date: "2025-12-01", accountKey: "taxi", amount: 1200, type: "expense" }],
+    accounts: { taxi: { label: "taxi", legalLabel: "" } },
+  }]);
+});
+
+test("一意制約以外のPrismaエラーは重複と誤認せず作成失敗を返す", async () => {
+  const { table, repository } = setup();
+  table.create.mockRejectedValue(new Prisma.PrismaClientKnownRequestError("foreign key", {
+    code: "P2003", clientVersion: "test",
+  }));
+  await expect(repository.create("1", 2026)).rejects.toThrow("帳簿の作成に失敗");
+});
