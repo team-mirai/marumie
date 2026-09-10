@@ -1,3 +1,4 @@
+import "server-only";
 import { Politician, type PoliticianInput } from "@/shared/models/politician";
 import type { IPoliticianRepository } from "@/server/contexts/shared/domain/repositories/politician-repository.interface";
 

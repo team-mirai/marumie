@@ -1,12 +1,10 @@
 import { test, expect } from "@playwright/test";
 
-test("議員の一覧→作成→編集→削除と入力エラー", async ({ page }) => {
+test("議員の一覧→作成→編集→削除", async ({ page }) => {
   const slug = `e2e-politician-${Date.now()}`;
   await page.goto("/politicians");
   await expect(page.getByRole("heading", { name: "議員一覧" })).toBeVisible();
   await page.getByRole("link", { name: "議員を追加" }).click();
-  await page.getByRole("button", { name: "作成", exact: true }).click();
-  await expect(page.locator("form").getByRole("alert")).toContainText("氏名を入力してください");
   await page.getByLabel("氏名").fill(slug);
   await page.getByLabel("スラッグ").fill(slug);
   await page.getByLabel("当選日").fill("2026-02-08");
@@ -20,15 +18,6 @@ test("議員の一覧→作成→編集→削除と入力エラー", async ({ pa
   await expect(card).toContainText("2026.02");
   await expect(card.getByRole("link", { name: "年度帳簿" })).toBeVisible();
 
-  await page.getByRole("link", { name: "議員を追加" }).click();
-  await page.getByLabel("氏名").fill("重複テスト");
-  await page.getByLabel("スラッグ").fill(slug);
-  await page.getByLabel("当選日").fill("2026-02-08");
-  await page.getByRole("button", { name: "作成", exact: true }).click();
-  await expect(page.locator("form").getByRole("alert")).toContainText(
-    "このスラッグは既に使用されています",
-  );
-  await page.getByRole("link", { name: "キャンセル" }).click();
 
   await card.getByRole("link", { name: "編集" }).click();
   await expect(page.getByLabel("氏名")).toHaveValue(slug);

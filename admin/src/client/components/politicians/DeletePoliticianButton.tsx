@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import {
   Button,
@@ -61,12 +62,16 @@ export function DeletePoliticianButton({ id, name }: { id: string; name: string 
                   const result = await deletePolitician(id);
                   if (!result.success) {
                     setError(result.error);
+                    toast.error(result.error);
                     return;
                   }
+                  toast.success("議員を削除しました");
                   setOpen(false);
                   router.refresh();
                 } catch {
-                  setError("削除に失敗しました。もう一度お試しください");
+                  const message = "削除に失敗しました。もう一度お試しください";
+                  setError(message);
+                  toast.error(message);
                 } finally {
                   setBusy(false);
                 }

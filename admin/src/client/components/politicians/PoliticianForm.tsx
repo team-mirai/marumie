@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { toast } from "sonner";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button, Card, CardContent, Input, Label, NativeSelect } from "@/client/components/ui";
@@ -33,12 +34,16 @@ export function PoliticianForm({
               const result = await savePolitician(politician?.id ?? null, data);
               if (!result.success) {
                 setError(result.error);
+                toast.error(result.error);
                 return;
               }
+              toast.success(politician ? "議員を更新しました" : "議員を作成しました");
               router.push("/politicians");
               router.refresh();
             } catch {
-              setError("保存に失敗しました。もう一度お試しください");
+              const message = "保存に失敗しました。もう一度お試しください";
+              setError(message);
+              toast.error(message);
             } finally {
               setBusy(false);
             }
