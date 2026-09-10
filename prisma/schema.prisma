@@ -18,6 +18,10 @@ model User {
 
   tenantMemberships UserTenantMembership[]
 
+  researchFundJournalEntriesCreated ResearchFundJournalEntry[]
+  researchFundScanBatchesUploaded   ResearchFundScanBatch[]
+  researchFundPromptsUpdated        ResearchFundPrompt[]
+
   @@map("users")
 }
 
@@ -33,6 +37,7 @@ model Tenant {
   counterparts           Counterpart[]
   donors                 Donor[]
   memberships            UserTenantMembership[]
+  politicians            Politician[]
 
   @@map("tenants")
 }
@@ -69,6 +74,7 @@ model PoliticalOrganization {
   balanceSnapshots BalanceSnapshot[]
   reportProfiles   OrganizationReportProfile[]
   transactions     Transaction[]
+  politicianMemberships PoliticianOrgMembership[]
 
   @@index([tenantId])
   @@map("political_organizations")
@@ -212,6 +218,312 @@ model OrganizationReportProfile {
 
   @@unique([politicalOrganizationId, financialYear])
   @@map("organization_report_profiles")
+}
+
+// =====================================================================
+// 調査研究費（調研費）
+// 設計の正: docs/reference/design_handoff_choken/01_データモデル.md
+// 既存 transactions（政治資金）とは完全に別系統。counterpart/donor の
+// DB トリガーが transactions の category_key 語彙に依存しているため触らない。
+// =====================================================================
+
+// 議員。政党テーブルは新設せず、所属は PoliticianOrgMembership 経由で
+// 既存 political_organizations を参照する（所属なしでも存在できる）。
+// tenant_id は既存 political_organizations と同じく nullable（テナント強制は #1112）。
+model Politician {
+  id           BigInt   @id @default(autoincrement())
+  name         String   @db.VarChar(255)
+  slug         String   @unique @db.VarChar(255)
+  termStart    DateTime @map("term_start") @db.Date // 支給の起点（当選日）
+  displayOrder Int      @default(0) @map("display_order")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  tenantId BigInt? @map("tenant_id")
+  tenant   Tenant? @relation(fields: [tenantId], references: [id])
+
+  memberships PoliticianOrgMembership[]
+  books       ResearchFundBook[]
+  prompts     ResearchFundPrompt[]
+
+  @@index([tenantId])
+  @@map("politicians")
+}
+
+// 議員と政治団体（政党）の所属履歴。離党・移籍は ended_on で残す。
+model PoliticianOrgMembership {
+  id                      BigInt    @id @default(autoincrement())
+  politicianId            BigInt    @map("politician_id")
+  politicalOrganizationId BigInt    @map("political_organization_id")
+  startedOn               DateTime  @map("started_on") @db.Date
+  endedOn                 DateTime? @map("ended_on") @db.Date
+  createdAt               DateTime  @default(now()) @map("created_at")
+  updatedAt               DateTime  @updatedAt @map("updated_at")
+
+  politician            Politician            @relation(fields: [politicianId], references: [id], onDelete: Cascade)
+  politicalOrganization PoliticalOrganization @relation(fields: [politicalOrganizationId], references: [id], onDelete: Cascade)
+
+  @@index([politicianId])
+  @@index([politicalOrganizationId])
+  @@map("politician_org_memberships")
+}
+
+// 議員 × 年度 = 1年間のお財布
+model ResearchFundBook {
+  id               BigInt                 @id @default(autoincrement())
+  politicianId     BigInt                 @map("politician_id")
+  financialYear    Int                    @map("financial_year")
+  status           ResearchFundBookStatus @default(preparing)
+  publishedThrough DateTime?              @map("published_through") @db.Date // 何月分まで公開（例: 2026-08-31）
+  asOfDate         DateTime?              @map("as_of_date") @db.Date // 「2026.8.20時点」
+  nextUpdateNote   String?                @map("next_update_note") // 「次回更新 11月ごろ」
+  policyComment    String?                @map("policy_comment") // 活用方針（議員本人が書く1〜2行）
+  details          Json? // B-5「データについて」の説明文
+  createdAt        DateTime               @default(now()) @map("created_at")
+  updatedAt        DateTime               @updatedAt @map("updated_at")
+
+  politician Politician @relation(fields: [politicianId], references: [id], onDelete: Cascade)
+
+  journalEntries    ResearchFundJournalEntry[]
+  documents         ResearchFundDocument[]
+  scanBatches       ResearchFundScanBatch[]
+  expenditureGroups ResearchFundExpenditureGroup[]
+
+  @@unique([politicianId, financialYear])
+  @@map("research_fund_books")
+}
+
+// 科目マスタ（固定）。シードは prisma/seeds/researchFundAccounts.ts
+model ResearchFundAccount {
+  key              String                  @id @db.VarChar(50) // "taxi" など
+  label            String                  @db.VarChar(100) // "タクシー代"
+  type             ResearchFundAccountType
+  legalCategoryKey String?                 @map("legal_category_key") @db.VarChar(50) // 法定区分キー（expense のみ）
+  legalLabel       String?                 @map("legal_label") @db.VarChar(100) // "③ 備品・消耗品費"
+  displayOrder     Int                     @default(0) @map("display_order")
+  createdAt        DateTime                @default(now()) @map("created_at")
+  updatedAt        DateTime                @updatedAt @map("updated_at")
+
+  journalLines ResearchFundJournalLine[]
+
+  @@map("research_fund_accounts")
+}
+
+// 仕訳（複式）。借方合計 = 貸方合計 はドメイン層で検証する。
+model ResearchFundJournalEntry {
+  id          BigInt                  @id @default(autoincrement())
+  bookId      BigInt                  @map("book_id")
+  entryDate   DateTime                @map("entry_date") @db.Date
+  description String                  @db.VarChar(255) // 公開用の項目名（店名でなく何に使ったか）
+  status      ResearchFundEntryStatus @default(draft)
+  source      ResearchFundEntrySource
+  documentId  BigInt?                 @map("document_id") // 領収書。徴し難かった場合は NULL
+  splitGroup  String?                 @map("split_group") @db.VarChar(255) // 同一注文の行分割キー
+  note        String? // 特記事項（公開される）
+  memo        String? // 備考（公開されない事務所内メモ）
+  publishedAt DateTime?               @map("published_at")
+  createdById String?                 @map("created_by_id")
+  hash        String                  @default("") @db.VarChar(255) // 再取込・二重登録の重複検知
+  createdAt   DateTime                @default(now()) @map("created_at")
+  updatedAt   DateTime                @updatedAt @map("updated_at")
+
+  book      ResearchFundBook      @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  document  ResearchFundDocument? @relation(fields: [documentId], references: [id], onDelete: SetNull)
+  createdBy User?                 @relation(fields: [createdById], references: [id], onDelete: SetNull)
+
+  lines      ResearchFundJournalLine[]
+  groupItems ResearchFundGroupItem[]
+
+  @@index([bookId, status, entryDate(sort: Desc)])
+  @@index([bookId, hash])
+  @@index([documentId])
+  @@map("research_fund_journal_entries")
+}
+
+model ResearchFundJournalLine {
+  id         BigInt                  @id @default(autoincrement())
+  entryId    BigInt                  @map("entry_id")
+  side       ResearchFundJournalSide
+  accountKey String                  @map("account_key") @db.VarChar(50)
+  amount     Decimal                 @db.Decimal(12, 0) // 円・整数
+  createdAt  DateTime                @default(now()) @map("created_at")
+  updatedAt  DateTime                @updatedAt @map("updated_at")
+
+  entry   ResearchFundJournalEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  account ResearchFundAccount      @relation(fields: [accountKey], references: [key])
+
+  @@index([entryId])
+  @@index([accountKey])
+  @@map("research_fund_journal_lines")
+}
+
+// 領収書などの書類。原本は Supabase Storage（非公開バケット）。
+model ResearchFundDocument {
+  id               BigInt   @id @default(autoincrement())
+  bookId           BigInt   @map("book_id")
+  batchId          BigInt?  @map("batch_id")
+  storageKey       String   @map("storage_key") @db.VarChar(255) // 原本
+  maskedKey        String?  @map("masked_key") @db.VarChar(255) // 公開用マスキング済み（当面は未使用＝原本公開）
+  mime             String   @db.VarChar(100) // image/jpeg | image/png | application/pdf
+  originalFilename String   @map("original_filename") @db.VarChar(255)
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  book  ResearchFundBook       @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  batch ResearchFundScanBatch? @relation(fields: [batchId], references: [id], onDelete: SetNull)
+
+  journalEntries ResearchFundJournalEntry[]
+  scanJobs       ResearchFundScanJob[]
+
+  @@index([bookId])
+  @@index([batchId])
+  @@map("research_fund_documents")
+}
+
+model ResearchFundScanBatch {
+  id           BigInt   @id @default(autoincrement())
+  bookId       BigInt   @map("book_id")
+  uploadedById String?  @map("uploaded_by_id")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  book       ResearchFundBook @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  uploadedBy User?            @relation(fields: [uploadedById], references: [id], onDelete: SetNull)
+
+  documents ResearchFundDocument[]
+  jobs      ResearchFundScanJob[]
+
+  @@index([bookId])
+  @@map("research_fund_scan_batches")
+}
+
+// 1書類 = 1ジョブ
+model ResearchFundScanJob {
+  id         BigInt                    @id @default(autoincrement())
+  batchId    BigInt                    @map("batch_id")
+  documentId BigInt                    @map("document_id")
+  status     ResearchFundScanJobStatus @default(queued)
+  promptId   BigInt                    @map("prompt_id") // 使った版を記録
+  model      String                    @db.VarChar(100) // "claude-opus-4-1" など
+  rawJson    Json?                     @map("raw_json") // LLM の構造化出力の原文（監査用）
+  error      String?
+  startedAt  DateTime?                 @map("started_at")
+  finishedAt DateTime?                 @map("finished_at")
+  createdAt  DateTime                  @default(now()) @map("created_at")
+  updatedAt  DateTime                  @updatedAt @map("updated_at")
+
+  batch    ResearchFundScanBatch @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  document ResearchFundDocument  @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  prompt   ResearchFundPrompt    @relation(fields: [promptId], references: [id])
+
+  @@index([batchId, status])
+  @@index([documentId])
+  @@index([promptId])
+  @@map("research_fund_scan_jobs")
+}
+
+// 読み取りプロンプト（議員室ごと・版管理）
+model ResearchFundPrompt {
+  id           BigInt   @id @default(autoincrement())
+  politicianId BigInt   @map("politician_id")
+  version      Int
+  body         String
+  isActive     Boolean  @default(false) @map("is_active")
+  updatedById  String?  @map("updated_by_id")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  politician Politician @relation(fields: [politicianId], references: [id], onDelete: Cascade)
+  updatedBy  User?      @relation(fields: [updatedById], references: [id], onDelete: SetNull)
+
+  scanJobs ResearchFundScanJob[]
+
+  @@unique([politicianId, version])
+  @@index([politicianId, isActive])
+  @@map("research_fund_prompts")
+}
+
+// 支出群（主要な支出の成果）。金額・件数・期間は items から自動集計する。
+model ResearchFundExpenditureGroup {
+  id           BigInt   @id @default(autoincrement())
+  bookId       BigInt   @map("book_id")
+  title        String   @db.VarChar(255)
+  description  String // 使った目的と、そこから生まれたもの
+  displayOrder Int      @default(0) @map("display_order")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  book ResearchFundBook @relation(fields: [bookId], references: [id], onDelete: Cascade)
+
+  items    ResearchFundGroupItem[]
+  outcomes ResearchFundGroupOutcome[]
+
+  @@index([bookId])
+  @@map("research_fund_expenditure_groups")
+}
+
+model ResearchFundGroupItem {
+  groupId   BigInt   @map("group_id")
+  entryId   BigInt   @map("entry_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  group ResearchFundExpenditureGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  entry ResearchFundJournalEntry     @relation(fields: [entryId], references: [id], onDelete: Cascade)
+
+  @@id([groupId, entryId])
+  @@index([entryId])
+  @@map("research_fund_group_items")
+}
+
+model ResearchFundGroupOutcome {
+  id           BigInt   @id @default(autoincrement())
+  groupId      BigInt   @map("group_id")
+  label        String   @db.VarChar(255) // "質問主意書（公開）" "議事録" など
+  url          String?  @db.VarChar(2048) // NULL なら公開側で「報告は準備中」表示
+  displayOrder Int      @default(0) @map("display_order")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  group ResearchFundExpenditureGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@index([groupId])
+  @@map("research_fund_group_outcomes")
+}
+
+enum ResearchFundBookStatus {
+  preparing
+  active
+  closed
+}
+
+enum ResearchFundAccountType {
+  asset
+  income
+  expense
+}
+
+enum ResearchFundEntryStatus {
+  draft
+  approved
+  published
+}
+
+enum ResearchFundEntrySource {
+  scan
+  manual
+  grant
+}
+
+enum ResearchFundJournalSide {
+  debit
+  credit
+}
+
+enum ResearchFundScanJobStatus {
+  queued
+  running
+  succeeded
+  failed
 }
 
 enum TransactionType {
