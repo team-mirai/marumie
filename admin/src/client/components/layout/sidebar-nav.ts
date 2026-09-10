@@ -36,6 +36,7 @@ const NAV_SECTIONS: NavSection[] = [
   {
     title: "基本情報",
     items: [
+      { href: "/politicians", label: "議員", icon: "user" },
       { href: "/user-info", label: "ユーザー情報", icon: "user" },
       { href: "/political-organizations", label: "政治団体", icon: "bank" },
       { href: "/users", label: "ユーザー管理", icon: "users", adminOnly: true },
