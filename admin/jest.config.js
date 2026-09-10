@@ -13,6 +13,7 @@ module.exports = {
     "^.+\\.ts$": "ts-jest",
   },
   moduleNameMapper: {
+    "^@/prisma/(.*)$": "<rootDir>/../prisma/$1",
     "^@/shared/(.*)$": "<rootDir>/../shared/$1",
     "^@/(.*)$": "<rootDir>/src/$1",
     "^server-only$": "<rootDir>/tests/mocks/server-only.ts",
