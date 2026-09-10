@@ -20,6 +20,7 @@
 #   1 = FAILED（環境起因などの失敗）
 #   2 = NO_TASK（loop:ready のIssueがない）
 #   3 = BLOCKED（Issue側にエスカレーション済み。次のタスクには進める）
+#   4 = WAITING（着手できるIssueは無いが、依存先のPRがマージされれば着手できる。ランナーが待って再実行する）
 
 set -uo pipefail
 
@@ -86,6 +87,7 @@ main() {
     "LOOP_RESULT: SUCCESS"*) exit 0 ;;
     "LOOP_RESULT: NO_TASK"*) exit 2 ;;
     "LOOP_RESULT: BLOCKED"*) exit 3 ;;
+    "LOOP_RESULT: WAITING"*) exit 4 ;;
     *) exit 1 ;;
   esac
 }

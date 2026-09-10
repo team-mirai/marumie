@@ -91,7 +91,18 @@ Issueが `loop:human` / `loop:blocked` に付け替え済みのPRは前のルー
 - 絶対ルール2の通り、作者の関係性が OWNER / MEMBER / COLLABORATOR でないIssueは対象外
   （`gh issue edit <N> --remove-label "loop:ready" --add-label "loop:human"` に付け替え、
   理由をコメントしてから次の候補へ）。
-- 対象がなければ `LOOP_RESULT: NO_TASK` を出力して終了する。
+- **依存チェック（クレームの前に行う）**: Issue 本文に「#X のマージ後に着手」があれば、
+  `gh issue view <X> --json state --jq .state` で #X の状態を確認する。
+  #X が CLOSED でなければ（open で未着手、`loop:wip` で PR がレビュー・CI 待ち、`loop:blocked` / `loop:human` のいずれでも）
+  その Issue は**まだ着手できない**ので、**ラベルを触らず・コメントも残さず**読み飛ばして次の候補へ進む。
+  依存待ちは順番待ちであって異常ではないので、`loop:blocked` にしない（後続 Issue が連鎖して blocked になり、ループ全体が止まる）。
+  - 依存の根拠は本文に明記された「#X のマージ後に着手」だけ。本文に無い依存を推測して読み飛ばしたり `loop:blocked` にしたりしない
+    （着手後に前提が足りないと判明した場合の扱いは手順5を参照）
+  - 複数の依存が書かれていれば、全てが CLOSED になっているときだけ着手できる
+- 対象がなければ:
+  - 依存待ちで読み飛ばした Issue が1件でもあれば `LOOP_RESULT: WAITING deps=#X,#Y`（待っている依存先の Issue 番号を列挙）を出力して終了する。
+    ランナーが一定時間待ってから再実行するので、依存先の PR がレビュー中・CI 待ちでもループは終わらない
+  - 読み飛ばしが無ければ `LOOP_RESULT: NO_TASK` を出力して終了する
 - 選んだら直ちにクレームする（二重着手防止）:
   - `gh issue edit <N> --remove-label "loop:ready" --add-label "loop:wip"`
   - `gh issue comment <N> --body "🤖 ループ着手します"`
@@ -109,6 +120,12 @@ Issueが `loop:human` / `loop:blocked` に付け替え済みのPRは前のルー
 - Bounded Context とレイヤードアーキテクチャの境界を守る。import は `@/` の絶対パスを使う。
 - テストを書く（domain / application → ユニット、infrastructure → リポジトリのテスト）。
 - **スコープアウトの原則を徹底する**。PRが大きくなりそうだと感じたら、それはスコープを切り出すシグナル。
+- **着手後に、本文に書かれていない前提（別 Issue の未マージ機能）が無いと完了条件を満たせないと判明した場合**は、
+  `loop:blocked` にせず順番待ちに戻す:
+  1. その前提が open な Issue（または loop PR）として存在することを確認する。存在しない、あるいは人間の判断が要るなら通常のエスカレーション（`loop:human`）
+  2. Issue 本文の末尾に `🤖 #X のマージ後に着手（<理由を1行>）` を追記する（`gh issue edit <N> --body-file`。本文の他の部分は変えない）
+  3. ラベルを `loop:wip` から `loop:ready` に戻し、追記した旨と理由をコメントする
+  4. 変更を破棄して `git checkout main` に戻り、`LOOP_RESULT: WAITING deps=#X` で終了する（依存先がマージされれば次のループが手順3で拾う）
 
 ### 6. ローカルCI
 
@@ -149,6 +166,7 @@ pnpm verify   # test / typecheck / lint / knip / depcruise
 
 - 成功: `LOOP_RESULT: SUCCESS issue=#<N> pr=<PR URL>`
 - タスクなし: `LOOP_RESULT: NO_TASK`
+- 依存待ち: `LOOP_RESULT: WAITING deps=#<X>,#<Y>`（着手できる Issue は無いが、依存先のマージを待てば着手できるものがある。ラベルは変えない）
 - エスカレーション: `LOOP_RESULT: BLOCKED issue=#<N> reason=<短い理由>`
 - その他失敗: `LOOP_RESULT: FAILED reason=<短い理由>`
 
@@ -286,7 +304,8 @@ auto-merge が CI green を待ってマージする。修理モードでは以�
 
 1. Issueに状況を詳細にコメントする（何を試し、何で詰まったか。次の人/ループが再開できる情報を残す）
 2. ラベルを付け替える:
-   - 技術的ブロッカー（依存関係、環境、外部要因）→ `loop:wip` を外し `loop:blocked`
+   - 技術的ブロッカー（環境、外部要因）→ `loop:wip` を外し `loop:blocked`。
+     **別 Issue のマージ待ちはブロッカーではない**。手順3（依存チェック）・手順5（着手後に判明した前提）に従い、ラベルを戻して WAITING で終了する
    - 人間の判断・意思決定が必要 → `loop:wip` を外し `loop:human`
 3. 中途半端な変更はコミットせず、`git checkout main` に戻す（作業内容を残したい場合はWIPコミットをプッシュし、ドラフトPRにしてIssueからリンクする）。
    ただし **PR作成済みで CodeRabbit 対応だけが残っている場合は PR を open のまま残す**（実装は完了しており、人間が指摘の判断をすれば auto-merge に進めるため）
