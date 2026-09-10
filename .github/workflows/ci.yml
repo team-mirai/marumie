@@ -277,6 +277,8 @@ jobs:
         uses: supabase/setup-cli@v1
         with:
           version: latest
+          # 最新版取得時の未認証 GitHub API レート制限を避ける。
+          github-token: ${{ github.token }}
 
       # Supabase の起動（docker イメージの pull + コンテナ起動）はこのジョブで最も時間がかかる。
       # 依存インストール・Playwright ブラウザのインストール・Prisma Client 生成とは独立しているため、
