@@ -5,7 +5,10 @@ import { balanceSnapshotsSeeder } from './seeds/balanceSnapshots';
 import { counterpartsSeeder } from './seeds/counterparts';
 import { donorsSeeder } from './seeds/donors';
 import { politicalOrganizationsSeeder } from './seeds/politicalOrganizations';
+import { politiciansSeeder } from './seeds/politicians';
 import { reportProfilesSeeder } from './seeds/reportProfiles';
+import { researchFundAccountsSeeder } from './seeds/researchFundAccounts';
+import { researchFundBooksSeeder } from './seeds/researchFundBooks';
 import { tenantsSeeder } from './seeds/tenants';
 import { transactionsSeeder } from './seeds/transactions';
 import { usersSeeder } from './seeds/users';
@@ -23,6 +26,10 @@ const seeders: Seeder[] = [
   donorsSeeder,
   transactionsSeeder,
   balanceSnapshotsSeeder,
+  // 調研費: 科目マスタ → 議員（所属は既存 political_organizations を参照） → 年度帳簿
+  researchFundAccountsSeeder,
+  politiciansSeeder,
+  researchFundBooksSeeder,
 ];
 
 async function main() {
