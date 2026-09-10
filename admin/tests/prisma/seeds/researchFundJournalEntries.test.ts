@@ -69,10 +69,9 @@ describe("research fund journal seed", () => {
     expect(expenses.find((entry) => entry.description === "宿泊取消料")?.note).toBe(
       "JR東日本ホテルメッツ プレミア札幌（2026/07/30チェックイン分）キャンセル・不課税",
     );
-    expect(new Set(expenses.map((entry) => entry.status))).toEqual(
-      new Set(["published", "approved", "draft"]),
-    );
-    expect(expenses.filter((entry) => entry.status === "published").length).toBeGreaterThan(270);
+    expect(expenses.filter((entry) => entry.status === "published")).toHaveLength(281);
+    expect(expenses.filter((entry) => entry.status === "approved")).toHaveLength(3);
+    expect(expenses.filter((entry) => entry.status === "draft")).toHaveLength(12);
     for (const entry of expenses.filter((entry) => entry.status !== "published")) {
       expect(new Date(entry.entryDate).getUTCMonth()).toBe(7);
       expect(entry.publishedAt).toBeNull();
