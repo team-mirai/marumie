@@ -62,6 +62,7 @@ export function buildExpenseViews(
         detailed: { label: account?.label || UNKNOWN_CATEGORY_LABEL, color },
         legal: { label: account?.legalLabel || UNKNOWN_CATEGORY_LABEL, color },
         note: mergeNotes(expense.note, splitCount > 1 ? splitGroupNote(splitCount) : null),
+        splitGroup: expense.splitGroup,
         hasReceipt: expense.hasReceipt,
       };
     });

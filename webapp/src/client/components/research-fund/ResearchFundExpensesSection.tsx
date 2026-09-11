@@ -7,6 +7,7 @@ import MainColumnCard from "@/client/components/layout/MainColumnCard";
 import CategoryModeTabs from "@/client/components/research-fund/CategoryModeTabs";
 import ReceiptModal from "@/client/components/research-fund/ReceiptModal";
 import ResearchFundCategoryPill from "@/client/components/research-fund/ResearchFundCategoryPill";
+import ResearchFundCsvDownloadLink from "@/client/components/research-fund/ResearchFundCsvDownloadLink";
 import type {
   ResearchFundCategoryMode,
   ResearchFundExpenseView,
@@ -139,10 +140,20 @@ export default function ResearchFundExpensesSection({ data, updatedAt }: Props) 
               );
             })}
 
-            <p className="mt-5 text-center text-sm font-medium text-[#6A7383]">
-              {Number(month.slice(5, 7))}月の支出 {rows.length}件・合計{" "}
-              {total.toLocaleString("ja-JP")}円
-            </p>
+            <div className="mt-5 flex flex-col items-end gap-3 md:grid md:grid-cols-[1fr_auto_1fr] md:items-center">
+              <div className="hidden md:block" />
+              <p className="w-full text-center text-sm font-medium text-[#6A7383] md:w-auto">
+                {Number(month.slice(5, 7))}月の支出 {rows.length}件・合計{" "}
+                {total.toLocaleString("ja-JP")}円
+              </p>
+              {/* 月切り替えとは独立に、その年度の公開中の支出を全件出す */}
+              <div className="md:flex md:justify-end">
+                <ResearchFundCsvDownloadLink
+                  slug={data.politician.slug}
+                  financialYear={data.financialYear}
+                />
+              </div>
+            </div>
           </div>
         </>
       )}
