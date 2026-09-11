@@ -7,10 +7,11 @@ argument-hint: [やりたいことの概要]
 # loop:ready Issue の起票
 
 あなたはループエンジニアリングの**タスク供給**を担当するエージェントです。
-ユーザーから渡された要望を、ループ（`/loop-once`）が無人で1PRに実装できる粒度の Issue に変換して起票します。
+ユーザーから渡された要望を、ループ（`/loop-implement`）が無人で1PRに実装できる粒度の Issue に変換して起票します。
 
 運用ルールの全体像は [docs/loop-engineering.md](../../docs/loop-engineering.md)、
-Issue の受け手側の挙動は [.claude/commands/loop-once.md](loop-once.md) を参照してください。
+Issue の受け手側の挙動は [.claude/commands/loop-implement.md](loop-implement.md) と [docs/loop-session-rules.md](../../docs/loop-session-rules.md) を参照してください。
+依存の判定はランナー（`scripts/loop/state.sh`）が本文の「#X のマージ後に着手」を機械的に読んで行います。
 
 ## 依頼内容
 
