@@ -102,4 +102,17 @@ describe("buildExpenseViews", () => {
     expect(view.detailed.label).toBe("その他");
     expect(view.legal.label).toBe("その他");
   });
+
+  it("分割グループをそのまま渡す（CSV が注文単位に束ね直せるように）", () => {
+    const views = buildExpenseViews(
+      [
+        expense({ id: "1", entryId: "1", splitGroup: "order-1" }),
+        expense({ id: "2", entryId: "2", splitGroup: null }),
+      ],
+      accounts,
+    );
+
+    expect(views.find((view) => view.id === "1")?.splitGroup).toBe("order-1");
+    expect(views.find((view) => view.id === "2")?.splitGroup).toBeNull();
+  });
 });
