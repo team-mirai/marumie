@@ -49,6 +49,9 @@ const data: ResearchFundAccountSeedData[] = [
   { key: 'cash', label: '現金', type: 'asset' },
   { key: 'grant-income', label: '調査研究費収入', type: 'income' },
 
+  // 未確定の下書き用。確認済にする前に21分類のいずれかへ変更する。
+  { key: 'needs-review', label: '要確認', type: 'expense' },
+
   // 費用（調研費カテゴリ 21分類）
   { key: 'pc-electronics', label: 'PC・電子機器', type: 'expense', legalCategoryKey: 'equipment-supplies' },
   { key: 'stationery-supplies', label: '文房具・備品', type: 'expense', legalCategoryKey: 'equipment-supplies' },
