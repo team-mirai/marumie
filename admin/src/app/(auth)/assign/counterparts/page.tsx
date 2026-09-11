@@ -1,9 +1,10 @@
 import "server-only";
 
-import { loadPoliticalOrganizationsData } from "@/server/contexts/shared/presentation/loaders/load-political-organizations-data";
+import { loadCurrentOrganizationTarget } from "@/server/contexts/shared/presentation/loaders/load-current-organization-target";
 import { loadTransactionsWithCounterpartsData } from "@/server/contexts/report/presentation/loaders/transactions-with-counterparts-loader";
 import { loadAllCounterpartsData } from "@/server/contexts/report/presentation/loaders/counterparts-loader";
 import { CounterpartAssignmentClient } from "@/client/components/counterpart-assignment/CounterpartAssignmentClient";
+import { TargetRequiredNotice } from "@/client/components/layout/TargetRequiredNotice";
 import {
   COUNTERPART_REQUIRED_INCOME_CATEGORIES,
   COUNTERPART_REQUIRED_EXPENSE_CATEGORIES,
@@ -29,8 +30,6 @@ function buildCategoryOptions(): { value: string; label: string }[] {
 
 interface CounterpartAssignmentPageProps {
   searchParams: Promise<{
-    orgId?: string;
-    year?: string;
     unassigned?: string;
     counterpartRequired?: string;
     category?: string;
@@ -44,39 +43,16 @@ interface CounterpartAssignmentPageProps {
 export default async function CounterpartAssignmentPage({
   searchParams,
 }: CounterpartAssignmentPageProps) {
-  const params = await searchParams;
-  const organizations = await loadPoliticalOrganizationsData();
+  const target = await loadCurrentOrganizationTarget();
 
-  const allCounterparts = await loadAllCounterpartsData();
-
-  const categoryOptions = buildCategoryOptions();
-
-  if (organizations.length === 0) {
-    return (
-      <CounterpartAssignmentClient
-        organizations={[]}
-        initialTransactions={[]}
-        total={0}
-        page={1}
-        perPage={50}
-        initialFilters={{
-          politicalOrganizationId: "",
-          financialYear: new Date().getFullYear(),
-          unassignedOnly: false,
-          counterpartRequiredOnly: false,
-          categoryKey: "",
-          searchQuery: "",
-          sortField: "transactionDate",
-          sortOrder: "asc",
-        }}
-        allCounterparts={allCounterparts}
-        categoryOptions={categoryOptions}
-      />
-    );
+  if (!target) {
+    return <TargetRequiredNotice label="Counterpart Assignment" title="取引先紐付け管理" />;
   }
 
-  const politicalOrganizationId = params.orgId || organizations[0].id;
-  const financialYear = params.year ? Number.parseInt(params.year, 10) : new Date().getFullYear();
+  const params = await searchParams;
+  const allCounterparts = await loadAllCounterpartsData();
+  const categoryOptions = buildCategoryOptions();
+
   const unassignedOnly = params.unassigned !== "false";
   const counterpartRequiredOnly = params.counterpartRequired !== "false";
   const categoryKey = params.category || "";
@@ -89,8 +65,8 @@ export default async function CounterpartAssignmentPage({
   const perPage = 50;
 
   const data = await loadTransactionsWithCounterpartsData({
-    politicalOrganizationId,
-    financialYear,
+    politicalOrganizationId: target.organizationId,
+    financialYear: target.year,
     unassignedOnly,
     requiresCounterpartOnly: counterpartRequiredOnly,
     categoryKey: categoryKey || undefined,
@@ -103,14 +79,13 @@ export default async function CounterpartAssignmentPage({
 
   return (
     <CounterpartAssignmentClient
-      organizations={organizations}
+      key={`${target.organizationId}:${target.year}`}
+      target={target}
       initialTransactions={data.transactions}
       total={data.total}
       page={data.page}
       perPage={data.perPage}
       initialFilters={{
-        politicalOrganizationId,
-        financialYear,
         unassignedOnly,
         counterpartRequiredOnly,
         categoryKey,

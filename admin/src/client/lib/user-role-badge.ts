@@ -8,7 +8,7 @@ interface UserRoleBadge {
 
 /**
  * ユーザーロールをバッジ表示用のラベルと色クラスに解決する。
- * ユーザー情報画面とユーザー管理画面で同じ見た目を共有するための単一の変換点。
+ * サイドバー下部とユーザー管理画面で同じ見た目を共有するための単一の変換点。
  */
 export function resolveUserRoleBadge(role: UserRole): UserRoleBadge {
   switch (role) {

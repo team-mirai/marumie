@@ -2,16 +2,14 @@ import { test, expect } from "@playwright/test";
 
 test.describe("取引一覧", () => {
 	test.describe("読み込み", () => {
-		test("取引一覧ページにシードデータの取引が表示される", async ({ page }) => {
+		test("取引一覧ページにグローバル対象のシードデータの取引が表示される", async ({ page }) => {
 			await page.goto("/transactions");
 
 			await expect(page.getByRole("heading", { name: "取引一覧" })).toBeVisible();
 
-			const selector = page.getByRole("combobox");
-			await expect(selector).toBeVisible();
-			await selector.click();
-			await expect(page.getByRole("option", { name: "サンプル党" })).toBeVisible();
-			await page.keyboard.press("Escape");
+			// ページ内の政治団体セレクタは廃止し、サイドバー上部で選んだ対象に追従する
+			await expect(page.getByRole("main")).toContainText("サンプル党／2025年度");
+			await expect(page.getByRole("main").getByRole("combobox")).toHaveCount(0);
 
 			const table = page.locator("table");
 			await expect(table).toBeVisible();
@@ -21,7 +19,7 @@ test.describe("取引一覧", () => {
 		});
 
 		test("次のページに遷移できる", async ({ page }) => {
-			// シードの sample-party の取引は 1 ページ（50 件）を超えるため、
+			// シードの sample-party の 2025 年度の取引は 1 ページ（50 件）を超えるため、
 			// 「次へ」が必ず表示される前提で決定的に検証する
 			await page.goto("/transactions");
 

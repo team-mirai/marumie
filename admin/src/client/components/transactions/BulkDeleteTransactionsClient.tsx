@@ -4,9 +4,9 @@ import "client-only";
 import { useId, useState } from "react";
 import { CircleNotch, MagnifyingGlass, Trash } from "@phosphor-icons/react/dist/ssr";
 import { toast } from "sonner";
-import type { PoliticalOrganization } from "@/shared/models/political-organization";
-import { PoliticalOrganizationSelect } from "@/client/components/political-organizations/PoliticalOrganizationSelect";
+import type { OrganizationTarget } from "@/server/contexts/shared/domain/models/admin-target";
 import { PageHeader } from "@/client/components/layout/PageHeader";
+import { CurrentTargetBar } from "@/client/components/layout/CurrentTargetBar";
 import {
   Button,
   Input,
@@ -28,13 +28,8 @@ import { formatAmount, formatDate } from "@/client/lib";
 import { bulkDeleteTransactionsAction } from "@/server/contexts/data-import/presentation/actions/bulk-delete-transactions";
 import type { BulkDeleteSearchResult } from "@/server/contexts/data-import/presentation/types";
 
-export function BulkDeleteTransactionsClient({
-  organizations,
-}: {
-  organizations: PoliticalOrganization[];
-}) {
+export function BulkDeleteTransactionsClient({ target }: { target: OrganizationTarget }) {
   const transactionNosInputId = useId();
-  const [selectedOrgId, setSelectedOrgId] = useState("");
   const [transactionNosInput, setTransactionNosInput] = useState("");
   const [searchResult, setSearchResult] = useState<BulkDeleteSearchResult | null>(null);
   const [isSearching, setIsSearching] = useState(false);
@@ -43,7 +38,7 @@ export function BulkDeleteTransactionsClient({
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedOrgId || !transactionNosInput.trim()) return;
+    if (!transactionNosInput.trim()) return;
 
     const nos = transactionNosInput
       .split(",")
@@ -56,7 +51,7 @@ export function BulkDeleteTransactionsClient({
     setSearchResult(null);
 
     const params = new URLSearchParams({
-      orgId: selectedOrgId,
+      orgId: target.organizationId,
       nos: nos.join(","),
     });
     const response = await fetch(`/api/transactions/search-by-nos?${params}`);
@@ -90,6 +85,8 @@ export function BulkDeleteTransactionsClient({
     <div>
       <PageHeader label="Bulk Delete" title="取引一括削除" />
 
+      <CurrentTargetBar target={target} note="の取引を削除します" />
+
       <div className="space-y-6">
         <form
           onSubmit={handleSearch}
@@ -97,22 +94,6 @@ export function BulkDeleteTransactionsClient({
         >
           <h2 className="text-base font-bold text-foreground">検索条件</h2>
           <div className="mt-4 grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-4">
-            <div className="flex flex-col gap-1.5">
-              <Label>
-                政治団体 <span className="text-destructive">*</span>
-              </Label>
-              <PoliticalOrganizationSelect
-                organizations={organizations}
-                value={selectedOrgId}
-                onValueChange={(value) => {
-                  setSelectedOrgId(value);
-                  setSearchResult(null);
-                }}
-                required
-                hideLabel
-                className="w-full"
-              />
-            </div>
             <div className="flex flex-col gap-1.5">
               <Label htmlFor={transactionNosInputId}>
                 取引番号（カンマ区切り） <span className="text-destructive">*</span>
@@ -132,7 +113,7 @@ export function BulkDeleteTransactionsClient({
               type="submit"
               variant="outline"
               className="text-[13px]"
-              disabled={!selectedOrgId || !transactionNosInput.trim() || isSearching}
+              disabled={!transactionNosInput.trim() || isSearching}
             >
               {isSearching ? (
                 <>

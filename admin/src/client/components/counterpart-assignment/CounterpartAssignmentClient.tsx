@@ -7,7 +7,7 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { AddressBook } from "@phosphor-icons/react/dist/ssr";
 import type { RowSelectionState } from "@tanstack/react-table";
-import type { PoliticalOrganization } from "@/shared/models/political-organization";
+import type { OrganizationTarget } from "@/server/contexts/shared/domain/models/admin-target";
 import type { TransactionWithCounterpart } from "@/server/contexts/report/domain/models/transaction-with-counterpart";
 import type { Counterpart } from "@/server/contexts/report/domain/models/counterpart";
 import { TransactionWithCounterpartTable } from "./TransactionWithCounterpartTable";
@@ -17,9 +17,9 @@ import {
   type CounterpartAssignmentFilterValues,
 } from "./CounterpartAssignmentFilters";
 import { ClientPagination } from "@/client/components/ui/ClientPagination";
-import { Input, Button, Label } from "@/client/components/ui";
+import { Button } from "@/client/components/ui";
 import { PageHeader } from "@/client/components/layout/PageHeader";
-import { PoliticalOrganizationSelect } from "@/client/components/political-organizations/PoliticalOrganizationSelect";
+import { CurrentTargetBar } from "@/client/components/layout/CurrentTargetBar";
 import { AssignmentSelectionBar } from "@/client/components/assignment/AssignmentSelectionBar";
 
 const ALL_CATEGORIES_VALUE = "__all__";
@@ -27,14 +27,12 @@ const ALL_CATEGORIES_VALUE = "__all__";
 type SortField = "transactionDate" | "debitAmount" | "categoryKey";
 
 interface CounterpartAssignmentClientProps {
-  organizations: PoliticalOrganization[];
+  target: OrganizationTarget;
   initialTransactions: TransactionWithCounterpart[];
   total: number;
   page: number;
   perPage: number;
   initialFilters: {
-    politicalOrganizationId: string;
-    financialYear: number;
     unassignedOnly: boolean;
     counterpartRequiredOnly: boolean;
     categoryKey: string;
@@ -47,7 +45,7 @@ interface CounterpartAssignmentClientProps {
 }
 
 export function CounterpartAssignmentClient({
-  organizations,
+  target,
   initialTransactions,
   total,
   page,
@@ -59,14 +57,6 @@ export function CounterpartAssignmentClient({
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
-  const initialFinancialYear = useMemo(() => new Date().getFullYear(), []);
-
-  const [selectedOrganizationId, setSelectedOrganizationId] = useState(
-    initialFilters.politicalOrganizationId || organizations[0]?.id || "",
-  );
-  const [financialYear, setFinancialYear] = useState(
-    initialFilters.financialYear || initialFinancialYear,
-  );
   const [unassignedOnly, setUnassignedOnly] = useState(initialFilters.unassignedOnly);
   const [counterpartRequiredOnly, setCounterpartRequiredOnly] = useState(
     initialFilters.counterpartRequiredOnly,
@@ -120,8 +110,6 @@ export function CounterpartAssignmentClient({
   const totalPages = Math.ceil(total / perPage);
 
   const buildUrl = (params: {
-    orgId?: string;
-    year?: number;
     unassigned?: boolean;
     counterpartRequired?: boolean;
     category?: string;
@@ -131,8 +119,6 @@ export function CounterpartAssignmentClient({
     page?: number;
   }) => {
     const searchParams = new URLSearchParams();
-    searchParams.set("orgId", params.orgId ?? selectedOrganizationId);
-    searchParams.set("year", String(params.year ?? financialYear));
     searchParams.set("unassigned", String(params.unassigned ?? unassignedOnly));
     searchParams.set(
       "counterpartRequired",
@@ -179,23 +165,6 @@ export function CounterpartAssignmentClient({
     });
   };
 
-  const handleOrganizationChange = (value: string) => {
-    setSelectedOrganizationId(value);
-    startTransition(() => {
-      router.push(buildUrl({ orgId: value, page: 1 }));
-    });
-  };
-
-  const handleYearChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const year = Number.parseInt(e.target.value, 10);
-    if (!Number.isNaN(year)) {
-      setFinancialYear(year);
-      startTransition(() => {
-        router.push(buildUrl({ year, page: 1 }));
-      });
-    }
-  };
-
   const handleSortChange = (field: SortField) => {
     let newOrder: "asc" | "desc" = "asc";
     if (sortField === field) {
@@ -230,48 +199,13 @@ export function CounterpartAssignmentClient({
     />
   );
 
-  if (organizations.length === 0) {
-    return (
-      <div>
-        {header}
-        <div className="rounded-lg border border-border bg-card p-6">
-          <p className="text-sm text-muted-foreground">
-            政治団体が登録されていません。先に政治団体を作成してください。
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div>
       {header}
 
-      <div className="rounded-lg border border-border bg-card p-6">
-        {/* Toolbar: 団体・報告年 */}
-        <div className="mb-3 flex flex-wrap items-center gap-2">
-          <PoliticalOrganizationSelect
-            organizations={organizations}
-            value={selectedOrganizationId}
-            onValueChange={handleOrganizationChange}
-            required
-            hideLabel
-          />
-          <div className="flex items-center gap-2">
-            <Label htmlFor="financial-year">報告年</Label>
-            <Input
-              id="financial-year"
-              type="number"
-              value={String(financialYear)}
-              onChange={handleYearChange}
-              min={1900}
-              max={2100}
-              required
-              className="font-latin w-[104px] border-[1.5px] text-[13px]"
-            />
-          </div>
-        </div>
+      <CurrentTargetBar target={target} note="の取引を紐付けます" />
 
+      <div className="rounded-lg border border-border bg-card p-6">
         <CounterpartAssignmentFilters
           values={{
             categoryKey,
@@ -324,7 +258,7 @@ export function CounterpartAssignmentClient({
           isOpen={isAssignDialogOpen}
           transactions={assignDialogTransactions}
           allCounterparts={allCounterparts}
-          politicalOrganizationId={selectedOrganizationId}
+          politicalOrganizationId={target.organizationId}
           onClose={handleAssignDialogClose}
           onSuccess={handleAssignSuccess}
         />

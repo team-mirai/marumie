@@ -6,16 +6,16 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { HandHeart, UploadSimple } from "@phosphor-icons/react/dist/ssr";
 import type { RowSelectionState } from "@tanstack/react-table";
-import type { PoliticalOrganization } from "@/shared/models/political-organization";
+import type { OrganizationTarget } from "@/server/contexts/shared/domain/models/admin-target";
 import type { TransactionWithDonor } from "@/server/contexts/report/domain/models/transaction-with-donor";
 import type { Donor } from "@/server/contexts/report/domain/models/donor";
 import { TransactionWithDonorTable } from "./TransactionWithDonorTable";
 import { AssignDonorDialog } from "./AssignDonorDialog";
 import { DonorAssignmentFilters, type DonorAssignmentFilterValues } from "./DonorAssignmentFilters";
 import { ClientPagination } from "@/client/components/ui/ClientPagination";
-import { Input, Button, Label } from "@/client/components/ui";
+import { Button } from "@/client/components/ui";
 import { PageHeader } from "@/client/components/layout/PageHeader";
-import { PoliticalOrganizationSelect } from "@/client/components/political-organizations/PoliticalOrganizationSelect";
+import { CurrentTargetBar } from "@/client/components/layout/CurrentTargetBar";
 import { AssignmentSelectionBar } from "@/client/components/assignment/AssignmentSelectionBar";
 
 const ALL_CATEGORIES_VALUE = "__all__";
@@ -23,14 +23,12 @@ const ALL_CATEGORIES_VALUE = "__all__";
 type SortField = "transactionDate" | "debitAmount" | "categoryKey";
 
 interface DonorAssignmentClientProps {
-  organizations: PoliticalOrganization[];
+  target: OrganizationTarget;
   initialTransactions: TransactionWithDonor[];
   total: number;
   page: number;
   perPage: number;
   initialFilters: {
-    politicalOrganizationId: string;
-    financialYear: number;
     unassignedOnly: boolean;
     categoryKey: string;
     searchQuery: string;
@@ -42,7 +40,7 @@ interface DonorAssignmentClientProps {
 }
 
 export function DonorAssignmentClient({
-  organizations,
+  target,
   initialTransactions,
   total,
   page,
@@ -54,14 +52,6 @@ export function DonorAssignmentClient({
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
-  const initialFinancialYear = useMemo(() => new Date().getFullYear(), []);
-
-  const [selectedOrganizationId, setSelectedOrganizationId] = useState(
-    initialFilters.politicalOrganizationId || organizations[0]?.id || "",
-  );
-  const [financialYear, setFinancialYear] = useState(
-    initialFilters.financialYear || initialFinancialYear,
-  );
   const [unassignedOnly, setUnassignedOnly] = useState(initialFilters.unassignedOnly);
   const [categoryKey, setCategoryKey] = useState(
     initialFilters.categoryKey || ALL_CATEGORIES_VALUE,
@@ -111,8 +101,6 @@ export function DonorAssignmentClient({
   const totalPages = Math.ceil(total / perPage);
 
   const buildUrl = (params: {
-    orgId?: string;
-    year?: number;
     unassigned?: boolean;
     category?: string;
     search?: string;
@@ -121,8 +109,6 @@ export function DonorAssignmentClient({
     page?: number;
   }) => {
     const searchParams = new URLSearchParams();
-    searchParams.set("orgId", params.orgId ?? selectedOrganizationId);
-    searchParams.set("year", String(params.year ?? financialYear));
     searchParams.set("unassigned", String(params.unassigned ?? unassignedOnly));
     if (params.category ?? categoryKey) {
       searchParams.set("category", params.category ?? categoryKey);
@@ -162,23 +148,6 @@ export function DonorAssignmentClient({
         }),
       );
     });
-  };
-
-  const handleOrganizationChange = (value: string) => {
-    setSelectedOrganizationId(value);
-    startTransition(() => {
-      router.push(buildUrl({ orgId: value, page: 1 }));
-    });
-  };
-
-  const handleYearChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const year = Number.parseInt(e.target.value, 10);
-    if (!Number.isNaN(year)) {
-      setFinancialYear(year);
-      startTransition(() => {
-        router.push(buildUrl({ year, page: 1 }));
-      });
-    }
   };
 
   const handleSortChange = (field: SortField) => {
@@ -223,48 +192,13 @@ export function DonorAssignmentClient({
     />
   );
 
-  if (organizations.length === 0) {
-    return (
-      <div>
-        {header}
-        <div className="rounded-lg border border-border bg-card p-6">
-          <p className="text-sm text-muted-foreground">
-            政治団体が登録されていません。先に政治団体を作成してください。
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div>
       {header}
 
-      <div className="rounded-lg border border-border bg-card p-6">
-        {/* Toolbar: 団体・報告年 */}
-        <div className="mb-3 flex flex-wrap items-center gap-2">
-          <PoliticalOrganizationSelect
-            organizations={organizations}
-            value={selectedOrganizationId}
-            onValueChange={handleOrganizationChange}
-            required
-            hideLabel
-          />
-          <div className="flex items-center gap-2">
-            <Label htmlFor="financial-year">報告年</Label>
-            <Input
-              id="financial-year"
-              type="number"
-              value={String(financialYear)}
-              onChange={handleYearChange}
-              min={1900}
-              max={2100}
-              required
-              className="font-latin w-[104px] border-[1.5px] text-[13px]"
-            />
-          </div>
-        </div>
+      <CurrentTargetBar target={target} note="の取引を紐付けます" />
 
+      <div className="rounded-lg border border-border bg-card p-6">
         <DonorAssignmentFilters
           values={{
             categoryKey,

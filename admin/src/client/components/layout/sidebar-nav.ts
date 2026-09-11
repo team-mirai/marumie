@@ -39,7 +39,6 @@ const NAV_SECTIONS: NavSection[] = [
     title: "政治団体",
     items: [
       { href: "/politicians", label: "議員", icon: "user" },
-      { href: "/user-info", label: "ユーザー情報", icon: "user" },
       { href: "/political-organizations", label: "政治団体", icon: "bank" },
       { href: "/users", label: "ユーザー管理", icon: "users", adminOnly: true },
     ],
@@ -82,7 +81,6 @@ export function getVisibleNavSections(
             items: [
               { href: "/politicians", label: "議員", icon: "user" },
               { href: base, label: "年度帳簿", icon: "bank" },
-              { href: "/user-info", label: "ユーザー情報", icon: "user" },
               { href: "/users", label: "ユーザー管理", icon: "users", adminOnly: true },
             ],
           },

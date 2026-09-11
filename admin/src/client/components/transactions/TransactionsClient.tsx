@@ -6,14 +6,14 @@ import { TransactionRow } from "@/client/components/transactions/TransactionRow"
 import { StaticPagination } from "@/client/components/ui/StaticPagination";
 import { DeleteAllButton } from "@/client/components/transactions/DeleteAllButton";
 import { ClearWebappCacheButton } from "@/client/components/transactions/ClearWebappCacheButton";
-import { PoliticalOrganizationSelect } from "@/client/components/political-organizations/PoliticalOrganizationSelect";
 import { PageHeader } from "@/client/components/layout/PageHeader";
+import { CurrentTargetBar } from "@/client/components/layout/CurrentTargetBar";
 import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/client/components/ui";
 import type { GetTransactionsResult } from "@/server/contexts/data-import/presentation/types";
-import type { PoliticalOrganization } from "@/shared/models/political-organization";
+import type { OrganizationTarget } from "@/server/contexts/shared/domain/models/admin-target";
 
 interface TransactionsClientProps {
-  organizations: PoliticalOrganization[];
+  target: OrganizationTarget;
 }
 
 function formatRangeText(data: GetTransactionsResult): string {
@@ -22,76 +22,63 @@ function formatRangeText(data: GetTransactionsResult): string {
   return `全 ${data.total.toLocaleString()} 件中 ${start.toLocaleString()} - ${end.toLocaleString()} 件を表示`;
 }
 
-export function TransactionsClient({ organizations }: TransactionsClientProps) {
+export function TransactionsClient({ target }: TransactionsClientProps) {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [data, setData] = useState<GetTransactionsResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [fetching, setFetching] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [selectedOrgId, setSelectedOrgId] = useState<string>(organizations[0]?.id ?? "");
   const isInitialLoad = useRef(true);
 
+  const { organizationId, year } = target;
   const currentPage = parseInt(searchParams.get("page") || "1", 10);
   const perPage = 50;
 
-  const fetchTransactions = useCallback(
-    async (orgId: string) => {
-      try {
-        // 初回ロードはloading、以降はfetching
-        if (isInitialLoad.current) {
-          setLoading(true);
-          isInitialLoad.current = false;
-        } else {
-          setFetching(true);
-        }
-
-        const params = new URLSearchParams({
-          page: currentPage.toString(),
-          perPage: perPage.toString(),
-        });
-
-        if (orgId) {
-          params.set("orgIds", orgId);
-        }
-
-        const response = await fetch(`/api/transactions?${params}`);
-        if (!response.ok) {
-          throw new Error("Failed to fetch transactions");
-        }
-
-        const result: GetTransactionsResult = await response.json();
-
-        // 最終ページの最後の1件を削除した場合、前のページに補正
-        if (result.transactions.length === 0 && result.total > 0 && currentPage > 1) {
-          const correctedPage = Math.min(currentPage, result.totalPages) || 1;
-          router.replace(`/transactions?page=${correctedPage}`);
-          return;
-        }
-
-        setData(result);
-        setError(null);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Unknown error");
-      } finally {
-        setLoading(false);
-        setFetching(false);
+  const fetchTransactions = useCallback(async () => {
+    try {
+      // 初回ロードはloading、以降はfetching
+      if (isInitialLoad.current) {
+        setLoading(true);
+        isInitialLoad.current = false;
+      } else {
+        setFetching(true);
       }
-    },
-    [currentPage, router],
-  );
+
+      const params = new URLSearchParams({
+        page: currentPage.toString(),
+        perPage: perPage.toString(),
+        orgIds: organizationId,
+        financialYear: String(year),
+      });
+
+      const response = await fetch(`/api/transactions?${params}`);
+      if (!response.ok) {
+        throw new Error("Failed to fetch transactions");
+      }
+
+      const result: GetTransactionsResult = await response.json();
+
+      // 最終ページの最後の1件を削除した場合、前のページに補正
+      if (result.transactions.length === 0 && result.total > 0 && currentPage > 1) {
+        const correctedPage = Math.min(currentPage, result.totalPages) || 1;
+        router.replace(`/transactions?page=${correctedPage}`);
+        return;
+      }
+
+      setData(result);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unknown error");
+    } finally {
+      setLoading(false);
+      setFetching(false);
+    }
+  }, [currentPage, router, organizationId, year]);
 
   useEffect(() => {
-    fetchTransactions(selectedOrgId);
-  }, [fetchTransactions, selectedOrgId]);
-
-  const handleOrgFilterChange = (orgId: string) => {
-    setSelectedOrgId(orgId);
-    // Reset to first page when filter changes
-    if (currentPage > 1) {
-      router.push("/transactions?page=1");
-    }
-  };
+    fetchTransactions();
+  }, [fetchTransactions]);
 
   const headerNote = (
     <span className="ml-1 text-[10px] font-normal text-muted-foreground">
@@ -103,16 +90,12 @@ export function TransactionsClient({ organizations }: TransactionsClientProps) {
     <div>
       <PageHeader label="Transactions" title="取引一覧" />
 
+      <CurrentTargetBar target={target} note="の取引を表示しています" />
+
       <div className="rounded-lg border border-border bg-card p-6">
         {/* Toolbar */}
         <div className="mb-[18px] flex flex-wrap items-center justify-between gap-4">
           <div className="flex flex-wrap items-center gap-3">
-            <PoliticalOrganizationSelect
-              organizations={organizations}
-              value={selectedOrgId}
-              onValueChange={handleOrgFilterChange}
-              hideLabel
-            />
             {!loading && data && (
               <p className="text-[13px] text-muted-foreground">{formatRangeText(data)}</p>
             )}
@@ -121,7 +104,7 @@ export function TransactionsClient({ organizations }: TransactionsClientProps) {
             <ClearWebappCacheButton />
             <DeleteAllButton
               disabled={loading || !data || data.total === 0}
-              organizationId={selectedOrgId || undefined}
+              organizationId={organizationId}
               onDeleted={() => {
                 // データを再取得
                 window.location.reload();
@@ -179,7 +162,7 @@ export function TransactionsClient({ organizations }: TransactionsClientProps) {
                   <TransactionRow
                     key={transaction.id}
                     transaction={transaction}
-                    onDeleted={() => fetchTransactions(selectedOrgId)}
+                    onDeleted={() => fetchTransactions()}
                   />
                 ))}
               </TableBody>
