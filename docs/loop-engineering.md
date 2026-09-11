@@ -117,7 +117,9 @@ docsのみの変更などで個別ジョブがスキップされても必ず報�
   上限に当たると head のコミットステータスは `success` のまま説明文が「Review rate limited」になり、そのコミットは**未レビュー**なので
   承認は永遠に来ない。`state.sh` はこれを `RATE_LIMITED` として区別し、未解決スレッドが無ければランナーが `@coderabbitai review` を
   投げて再レビューを促す（head ごとに 1 回、`LOOP_NUDGE_INTERVAL_MINUTES`（既定 20 分）経っても未レビューなら再送）。
-  1 Issue で「PR 作成 + 修正 push」の 2 回を使うので、上限がループのスループットの上限にもなる
+  1 Issue で「PR 作成時の 1 回 + 修正 push の最大 2 ラウンド」の最大 3 回を使う。上限を超えたレビューを
+  usage-based add-on で継続できない構成（このリポジトリはこれに当たる）では、この最大 3 回が上限に制約されるため、
+  上限がループのスループットの上限にもなる
 - ループが自動処理するのは `coderabbitai` のスレッドだけ。人間のレビュースレッドがある PR はランナーが即 `loop:human` に付け替える
 - エスカレーション済みの PR（Issue が `loop:human` / `loop:blocked`）は、メンテナが `loop:ready` に戻すまでランナーの対象外
 - 判定基準の実体は [loop-resolve-coderabbit.md](../.claude/commands/loop-resolve-coderabbit.md)
