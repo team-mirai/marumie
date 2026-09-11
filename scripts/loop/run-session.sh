@@ -53,7 +53,7 @@ run_codex() {
   prompt="あなたはループエンジニアリングの 1 セッションを実行するエージェントです。
 まず docs/loop-session-rules.md を読み、次に .claude/commands/$command_name.md を読んで、その手順を実行してください。
 
-- 手順書中の \$ARGUMENTS は「$argument」に読み替えること
+- 手順書中の \$ARGUMENTS は「${argument}」に読み替えること
 - ファイル冒頭の frontmatter（allowed-tools 等）は Claude Code 用の設定なので無視してよい
 - 「現在の状況」セクションの !\`コマンド\` は自動展開されないので、各コマンドを自分で実行して状況を把握すること
 - 最後に必ず LOOP_RESULT 行を出力すること"

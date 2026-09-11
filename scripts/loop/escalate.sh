@@ -22,12 +22,12 @@ while IFS=$'\t' read -r pr issue reason; do
     budget-exceeded)
       body="🤖 CodeRabbit 対応の修正ラウンドが上限（LOOP_MAX_FIX_ROUNDS）に達しても未解決の指摘が残っているため、この PR はループの対象から外し人間に引き継ぎます。残った指摘の判断をお願いします。PR は open のまま、auto-merge の予約も残しています。" ;;
     *)
-      body="🤖 ループの対象から外し人間に引き継ぎます（reason=$reason）。" ;;
+      body="🤖 ループの対象から外し人間に引き継ぎます（reason=${reason}）。" ;;
   esac
   gh pr comment "$pr" --body "$body" >/dev/null
   if [[ -n "$issue" && "$issue" != "null" ]]; then
     gh issue edit "$issue" --remove-label "loop:wip" --add-label "loop:human" >/dev/null
-    gh issue comment "$issue" --body "🤖 PR #$pr を人間に引き継ぎました（reason=$reason）。詳細は PR のコメントを参照してください。" >/dev/null
+    gh issue comment "$issue" --body "🤖 PR #${pr} を人間に引き継ぎました（reason=${reason}）。詳細は PR のコメントを参照してください。" >/dev/null
   fi
   echo "[escalate] PR #$pr (issue #$issue) → loop:human reason=$reason" >&2
   escalated=$((escalated + 1))
@@ -41,7 +41,7 @@ while IFS=$'\t' read -r issue reason; do
     dead-dependency)
       body="🤖 本文の「#X のマージ後に着手」で指定された依存先が、main にマージされないまま閉じています。待っても成果物が来ないため \`loop:human\` に切り替えました。依存の記述を直すか、依存先を再度進めてから \`loop:ready\` に戻してください。" ;;
     *)
-      body="🤖 ループの対象から外しました（reason=$reason）。" ;;
+      body="🤖 ループの対象から外しました（reason=${reason}）。" ;;
   esac
   gh issue edit "$issue" --remove-label "loop:ready" --add-label "loop:human" >/dev/null
   gh issue comment "$issue" --body "$body" >/dev/null
