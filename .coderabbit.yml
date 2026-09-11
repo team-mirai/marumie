@@ -19,7 +19,7 @@ reviews:
   high_level_summary_placeholder: "@coderabbitai summary"
 
   # レビュースタイル
-  profile: assertive
+  profile: chill
 
   # レビュー強化機能
   auto_apply_labels: true
