@@ -10,7 +10,7 @@ data/reports/*
 !data/reports/donation-aggregation-sample.xml
 */.next/*
 .next
-prompts
+/prompts
 
 # dependencies
 /node_modules
