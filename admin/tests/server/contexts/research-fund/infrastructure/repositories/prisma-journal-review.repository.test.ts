@@ -35,11 +35,17 @@ test("手動作成の source と帳簿、作成者、行を保存する", async 
   const { repository, tx } = setup(); await expect(repository.create("1", input, "user")).resolves.toBe(entry.id);
   expect(tx.researchFundJournalEntry.create).toHaveBeenCalledWith({ data: expect.objectContaining({ bookId: BigInt(1), createdById: "user", source: "manual", lines: { create: input.lines } }) });
 });
-test("一覧は帳簿内の支出に限定し、BigInt/Decimal/Dateとスキャン情報を変換", async () => {
+test("一覧は帳簿内の支出と支給に限定し、BigInt/Decimal/Dateとスキャン情報を変換", async () => {
   const { repository, tx } = setup();
   tx.researchFundJournalEntry.findMany.mockResolvedValue([{ id: BigInt(entry.id), entryDate: new Date(input.entryDate), createdAt: new Date("2026-08-02"), updatedAt: new Date(entry.updatedAt), description: "移動", note: "公開", memo: "非公開", source: "scan", status: "draft", splitGroup: "split", documentId: BigInt(3), lines: [{ side: "debit", accountKey: "taxi", account: { type: "expense" }, amount: new Prisma.Decimal(1200) }, { side: "credit", accountKey: "bank", account: { type: "asset" }, amount: new Prisma.Decimal(1200) }], document: { scanJobs: [{ createdAt: new Date("2026-08-03"), model: "later", prompt: { version: 2 } }, { createdAt: new Date("2026-08-01"), model: "original", prompt: { version: 1 } }] } }]);
   const rows = await repository.list("1"); expect(rows[0]).toMatchObject({ id: entry.id, amount: 1200, documentId: "3", memo: "非公開", model: "original", promptVersion: 1 });
-  expect(tx.researchFundJournalEntry.findMany.mock.calls[0][0].where).toMatchObject({ bookId: BigInt(1), lines: { some: { side: "debit", account: { type: "expense" } } } });
+  expect(tx.researchFundJournalEntry.findMany.mock.calls[0][0].where).toMatchObject({ bookId: BigInt(1), OR: [{ source: { in: ["manual", "scan"] }, lines: { some: { side: "debit", account: { type: "expense" } } } }, { source: "grant", lines: { some: { side: "credit", accountKey: "grant-income" } } }] });
+});
+
+test("支給は貸方の調査研究費収入から金額を取り、確認済として一覧に並ぶ", async () => {
+  const { repository, tx } = setup();
+  tx.researchFundJournalEntry.findMany.mockResolvedValue([{ id: BigInt(entry.id), entryDate: new Date("2026-05-01"), createdAt: new Date("2026-05-01"), updatedAt: new Date(entry.updatedAt), description: "調査研究費 5月分", note: null, memo: null, source: "grant", status: "approved", splitGroup: null, documentId: null, document: null, lines: [{ side: "debit", accountKey: "bank", account: { type: "asset" }, amount: new Prisma.Decimal(1000000) }, { side: "credit", accountKey: "grant-income", account: { type: "income" }, amount: new Prisma.Decimal(1000000) }] }]);
+  await expect(repository.list("1")).resolves.toEqual([expect.objectContaining({ id: entry.id, entryDate: "2026-05-01", description: "調査研究費 5月分", amount: 1000000, accountKey: "grant-income", source: "grant", status: "approved", documentId: null })]);
 });
 
 test("手動仕訳を取得し、書類・メモの欠損値を表示用に変換する", async () => {
