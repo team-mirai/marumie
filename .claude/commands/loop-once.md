@@ -92,17 +92,22 @@ Issueが `loop:human` / `loop:blocked` に付け替え済みのPRは前のルー
   （`gh issue edit <N> --remove-label "loop:ready" --add-label "loop:human"` に付け替え、
   理由をコメントしてから次の候補へ）。
 - **依存チェック（クレームの前に行う）**: Issue 本文に「#X のマージ後に着手」があれば、
-  `gh issue view <X> --json state --jq .state` で #X の状態を確認する。
-  #X が CLOSED でなければ（open で未着手、`loop:wip` で PR がレビュー・CI 待ち、`loop:blocked` / `loop:human` のいずれでも）
-  その Issue は**まだ着手できない**ので、**ラベルを触らず・コメントも残さず**読み飛ばして次の候補へ進む。
-  依存待ちは順番待ちであって異常ではないので、`loop:blocked` にしない（後続 Issue が連鎖して blocked になり、ループ全体が止まる）。
+  `gh issue view <X> --json state,stateReason --jq '[.state, .stateReason] | @tsv'` で #X の状態を確認する。
+  判定の実体は**依存先の成果物が main にマージ済みか**で、Issue の閉じ方でそれを見分ける:
+  - `CLOSED` + `COMPLETED`（PR のマージで閉じた／人間が完了として閉じた） → **着手できる**
+  - `OPEN`（未着手、`loop:wip` で PR がレビュー・CI 待ち、`loop:blocked` / `loop:human` のいずれでも） → **まだ着手できない**ので、
+    **ラベルを触らず・コメントも残さず**読み飛ばして次の候補へ進む。
+    依存待ちは順番待ちであって異常ではないので、`loop:blocked` にしない（後続 Issue が連鎖して blocked になり、ループ全体が止まる）
+  - `CLOSED` + `NOT_PLANNED`（PR が未マージのまま「やらない」として閉じた） → 依存先の成果物は永久に来ないので順番待ちではない。
+    待っている側の Issue を `loop:ready` から `loop:human` に付け替え、依存先が NOT_PLANNED で閉じている旨をコメントして次の候補へ進む
   - 依存の根拠は本文に明記された「#X のマージ後に着手」だけ。本文に無い依存を推測して読み飛ばしたり `loop:blocked` にしたりしない
     （着手後に前提が足りないと判明した場合の扱いは手順5を参照）
-  - 複数の依存が書かれていれば、全てが CLOSED になっているときだけ着手できる
+  - 複数の依存が書かれていれば、全てが「マージ済み（CLOSED + COMPLETED）」のときだけ着手できる
 - 対象がなければ:
-  - 依存待ちで読み飛ばした Issue が1件でもあれば `LOOP_RESULT: WAITING deps=#X,#Y`（待っている依存先の Issue 番号を列挙）を出力して終了する。
+  - 依存待ち（OPEN な依存先）で読み飛ばした Issue が1件でもあれば `LOOP_RESULT: WAITING deps=#X,#Y`（待っている依存先の Issue 番号を列挙）を出力して終了する。
     ランナーが一定時間待ってから再実行するので、依存先の PR がレビュー中・CI 待ちでもループは終わらない
-  - 読み飛ばしが無ければ `LOOP_RESULT: NO_TASK` を出力して終了する
+  - 依存待ちでの読み飛ばしが無ければ `LOOP_RESULT: NO_TASK` を出力して終了する
+    （候補が0件の場合も、作者検証や NOT_PLANNED 依存で `loop:human` に退避しただけの場合も `NO_TASK`。`WAITING` を出すのは依存待ちのときだけ）
 - 選んだら直ちにクレームする（二重着手防止）:
   - `gh issue edit <N> --remove-label "loop:ready" --add-label "loop:wip"`
   - `gh issue comment <N> --body "🤖 ループ着手します"`

@@ -8,12 +8,16 @@
 #   ./scripts/loop.sh 10        # 最大10回ループ（夜間バッチ向け）
 #   ./scripts/loop.sh 10 astra  # モデルを指定（opus / fable / astra、デフォルト: opus）
 #
-# 停止条件:
-#   - loop:ready のIssueがなくなった (NO_TASK)
-#   - 連続 MAX_CONSECUTIVE_FAILURES 回失敗した (FAILED)
-#   - 連続 MAX_CONSECUTIVE_BLOCKED 回エスカレーションした (BLOCKED)
-#   - 依存先のPRのマージ待ち (WAITING) が LOOP_MAX_WAIT_SECONDS を超えて続いた
-#   - 指定回数に達した（WAITING は回数に数えない）
+# 停止条件と終端結果（最後に LOOP_RUN_RESULT 行として出力する）:
+#   COMPLETED     指定回数に達した（WAITING は回数に数えない）
+#   NO_TASK       loop:ready のIssueがなくなった
+#   FAILED_LIMIT  連続 MAX_CONSECUTIVE_FAILURES 回失敗した
+#   BLOCKED_LIMIT 連続 MAX_CONSECUTIVE_BLOCKED 回エスカレーションした
+#   WAIT_TIMEOUT  依存先のマージ待ちの累計が LOOP_MAX_WAIT_SECONDS を超えた
+#
+# 連続カウンタ（consecutive_failures / consecutive_blocked）と待機累計（waited_seconds）は、
+# 別の結果が出た時点でリセットする＝「連続」を文字どおりに数える。
+# 待機累計は loop.sh 1回の実行内でのみ保持され、再実行すると 0 から数え直す。
 #
 # WAITING は「着手できるIssueは無いが、レビュー中・CI待ちのPRがマージされれば着手できる」状態。
 # LOOP_WAIT_SECONDS（デフォルト 300）待ってから再実行する。再実行時は修理モードが先に走るので、
@@ -52,6 +56,7 @@ consecutive_blocked=0
 waited_seconds=0
 completed=0
 attempt=0
+stop_reason="COMPLETED"
 results=()
 
 while ((completed < COUNT)); do
@@ -83,6 +88,7 @@ while ((completed < COUNT)); do
       ;;
     2) # NO_TASK
       echo "[loop] タスクがなくなりました。終了します。"
+      stop_reason="NO_TASK"
       break
       ;;
     3) # BLOCKED
@@ -94,6 +100,7 @@ while ((completed < COUNT)); do
       completed=$((completed + 1))
       if ((consecutive_blocked >= MAX_CONSECUTIVE_BLOCKED)); then
         echo "連続 $consecutive_blocked 回エスカレーションしたため中断します。" >&2
+        stop_reason="BLOCKED_LIMIT blocked=$consecutive_blocked"
         break
       fi
       ;;
@@ -103,6 +110,7 @@ while ((completed < COUNT)); do
       consecutive_failures=0
       if ((waited_seconds >= MAX_WAIT_SECONDS)); then
         echo "依存先のマージ待ちが $((waited_seconds / 60)) 分を超えたため中断します（${result}）。" >&2
+        stop_reason="WAIT_TIMEOUT waited=$((waited_seconds / 60))m"
         break
       fi
       echo "[loop] 依存先のマージ待ち: ${result}。${WAIT_SECONDS}秒待って再実行します（累計 $((waited_seconds / 60)) 分）"
@@ -111,10 +119,13 @@ while ((completed < COUNT)); do
       ;;
     *) # FAILED(1)
       # 環境起因の失敗が続く場合は無駄な消費を防ぐため停止する
+      consecutive_blocked=0
+      waited_seconds=0
       consecutive_failures=$((consecutive_failures + 1))
       completed=$((completed + 1))
       if ((consecutive_failures >= MAX_CONSECUTIVE_FAILURES)); then
         echo "連続 $consecutive_failures 回失敗したため中断します。" >&2
+        stop_reason="FAILED_LIMIT failures=$consecutive_failures"
         break
       fi
       ;;
@@ -141,6 +152,8 @@ fi
 echo ""
 echo "== loop run $RUN_ID サマリ =="
 printf '%s\n' "${results[@]}"
+echo ""
+echo "LOOP_RUN_RESULT: $stop_reason completed=$completed/$COUNT attempts=$attempt"
 echo ""
 echo "確認コマンド:"
 echo "  gh pr list --state open                  # 未マージのPR"

@@ -26,8 +26,9 @@ CI修正の試行回数には上限を設け、超えたらIssueにラベルを�
 一方、Issue 間の依存（本文の「#X のマージ後に着手」）は順番待ちであってブロッカーではない。
 番号順＝依存順で起票する運用上、PR を出した直後の次のループはほぼ必ず「直前の PR のマージ待ち」の Issue に当たるので、
 これを `loop:blocked` にすると依存チェーンのリンクごとに人間の手作業が要り、後続 Issue が連鎖して blocked になってループが止まる。
-依存先が未マージの Issue はラベルを変えずに読み飛ばし、着手できる Issue が無ければ `WAITING` を返してランナーが一定間隔で再実行する
-（再実行ではまず修理モードが走るので、待っている間に CodeRabbit の Request changes が付けばそこで処理される）。
+依存先が未マージの Issue はラベルを変えずに読み飛ばし、**候補があり、そのすべてを依存待ちで読み飛ばした場合だけ** `WAITING` を返して
+ランナーが一定間隔で再実行する（再実行ではまず修理モードが走るので、待っている間に CodeRabbit の Request changes が付けばそこで処理される）。
+候補が存在しない場合は `NO_TASK`、技術的ブロッカーは `BLOCKED`、処理失敗は `FAILED` で、いずれも `WAITING` とは区別する。
 
 手順の実体は [.claude/commands/loop-once.md](../.claude/commands/loop-once.md)（この文書は手順を再掲しない）。
 
@@ -125,10 +126,28 @@ Request changes で止まっている loop PR は、次のループが修理モ�
 | `loop:blocked` | 技術的ブロッカーで停止（環境・外部要因。別 Issue のマージ待ちは含まない） | ループ |
 | `loop:human` | 人間の判断・作業が必要 | メンテナ / ループ |
 
-状態遷移: `loop:ready → loop:wip → (PRマージでクローズ | loop:blocked | loop:human)`
+状態遷移:
 
-依存待ち（本文に「#X のマージ後に着手」があり #X が open）は状態遷移を起こさない。ループはその Issue をラベルを変えずに読み飛ばし、
-#X が閉じた後の実行で拾う。着手後に本文に無い前提が判明した場合も、ループが本文に依存を追記して `loop:ready` に戻す（`loop:blocked` にはしない）。
+| 遷移 | 契機 | 成果物の扱い |
+|------|------|-------------|
+| `loop:ready → loop:wip` | ループが着手（クレーム） | `loop/issue-<N>-*` ブランチを切る |
+| `loop:wip →`（クローズ） | PR がマージされた | PR の `Closes #N` で自動クローズ |
+| `loop:wip → loop:ready` | 着手後に本文に無い依存が判明した | 本文に `🤖 #X のマージ後に着手` を追記し、作業中の変更は破棄して `main` に戻り `WAITING` を出力 |
+| `loop:wip → loop:blocked` | 技術的ブロッカー（環境・外部要因） | PR があれば open のまま残す |
+| `loop:wip → loop:human` | 人間の判断が必要 | PR があれば open のまま残す |
+
+依存待ち（本文に「#X のマージ後に着手」があり #X が未マージ）は状態遷移を起こさない。ループはその Issue をラベルを変えずに読み飛ばし、
+#X がマージされた後の実行で拾う。
+
+依存の完了条件は**依存先の成果物が main にマージ済みであること**で、Issue の閉じ方でそれを判定する
+（`gh issue view <X> --json state,stateReason`）:
+
+- `CLOSED` + `COMPLETED` … マージ済みとみなして着手できる
+- `OPEN` … 順番待ち。ラベルを変えずに読み飛ばし、`WAITING` の対象にする
+- `CLOSED` + `NOT_PLANNED` … PR が未マージのまま取り下げられており、待っても成果物は来ない。
+  順番待ちではないので、待っている側の Issue を `loop:human` にエスカレーションする
+
+`loop.sh` / `loop-once.sh` の `WAITING` 契約もこの判定に揃えてある（`WAITING` は「依存先が OPEN」の場合にだけ出る）。
 
 `loop:blocked` / `loop:human` を解消したら、メンテナが `loop:ready` に戻すことで再びループの対象になる。
 
@@ -162,9 +181,26 @@ Claude Code 内で `/loop-issue <やりたいことの概要>` を実行する�
 ./scripts/loop.sh 10 astra    # モデルを指定して実行（opus / fable / astra、デフォルト: opus）
 ```
 
-`loop.sh` は 1 回の実行結果（SUCCESS / NO_TASK / BLOCKED / WAITING / FAILED）で継続を判断する。
+`loop.sh` は 1 回の実行結果（`loop-once.sh` の終了コード）で継続を判断する。
+
+| 1回の結果 | exit | 回数に数える | カウンタの扱い | 停止条件 |
+|-----------|------|-------------|---------------|---------|
+| SUCCESS | 0 | ○ | 失敗・エスカレーション・待機の各カウンタをリセット | — |
+| NO_TASK | 2 | — | — | 即終了 |
+| BLOCKED | 3 | ○ | エスカレーション +1／失敗・待機をリセット | 連続 3 回で終了 |
+| WAITING | 4 | ✕ | 失敗をリセット／待機に `LOOP_WAIT_SECONDS` を加算 | 待機累計が `LOOP_MAX_WAIT_SECONDS` 超で終了 |
+| FAILED | 上記以外 | ○ | 失敗 +1／エスカレーション・待機をリセット | 連続 2 回で終了 |
+
+「連続」は文字どおりで、別の結果が出た時点でカウンタは 0 に戻る。
 WAITING（依存先のマージ待ち）は回数に数えず、`LOOP_WAIT_SECONDS`（デフォルト 300 秒）待って再実行する。
-連続待機が `LOOP_MAX_WAIT_SECONDS`（デフォルト 2 時間）を超えたら、依存先の PR が人間のレビューなどで止まっているとみなして終了する。
+待機の累計が `LOOP_MAX_WAIT_SECONDS`（デフォルト 2 時間）を超えたら、依存先の PR が人間のレビューなどで止まっているとみなして終了する。
+待機累計は `loop.sh` 1 回の実行内でのみ保持され、再実行すると 0 から数え直す（上限に達したら人間が状況を確認してから再実行する想定）。
+
+終了時は必ず終端結果を 1 行出力する（ログから停止理由を判別するため）:
+
+```
+LOOP_RUN_RESULT: <COMPLETED | NO_TASK | BLOCKED_LIMIT | FAILED_LIMIT | WAIT_TIMEOUT> completed=<n>/<N> attempts=<n>
+```
 
 各イテレーションは**毎回新規セッション**を起動する。opus / fable は Claude Code（`claude -p "/loop-once" --model <モデル>`）、
 astra は Codex CLI（`codex exec --model gpt-6-astra`。要 `npm install -g @openai/codex`）で実行する。
