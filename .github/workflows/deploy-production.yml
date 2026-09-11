@@ -3,6 +3,10 @@ name: Deploy Production
 on:
   workflow_dispatch:
 
+# デプロイ成功時に release tag を push するため contents: write が必要
+permissions:
+  contents: write
+
 concurrency:
   group: deploy-production
   cancel-in-progress: false
@@ -56,3 +60,15 @@ jobs:
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_ADMIN }}
+
+      # webapp / admin の両方のデプロイが成功したときだけタグを付ける
+      # （途中のステップが失敗するとこのステップは実行されない）
+      #
+      # タグ名は JST の日時から自動生成する。名前順に並べるとデプロイ順になり、
+      # 名前だけでいつのデプロイか分かる
+      - name: Create release tag
+        run: |
+          TAG="release-$(TZ=Asia/Tokyo date '+%Y%m%d-%H%M%S')"
+          git tag "$TAG" "$GITHUB_SHA"
+          git push origin "$TAG"
+          echo "Created release tag: $TAG ($GITHUB_SHA)" >> "$GITHUB_STEP_SUMMARY"

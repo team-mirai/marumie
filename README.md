@@ -87,6 +87,21 @@ marumie/
 
 ローカル開発環境のセットアップ手順は [開発環境セットアップガイド](docs/getting-started.md) を参照してください。
 
+## 本番デプロイとリリースタグ
+
+本番デプロイは GitHub Actions の **Deploy Production** ワークフローを `main` から手動実行して行います。
+webapp / admin の両方のデプロイが成功すると、デプロイしたコミットに release tag が自動で作成・push されます（どちらかが失敗した場合はタグは付きません）。
+
+- タグ名の形式: `release-YYYYMMDD-HHMMSS`（日本時間。例: `release-20260911-153012`）
+- 名前順に並べるとデプロイ順になります
+
+現在本番に出ているコミットは、最新の release tag で確認できます。
+
+```bash
+git fetch --tags
+git log -1 "$(git tag -l 'release-*' --sort=-refname | head -n 1)"
+```
+
 ## ライセンス
 
 このプロジェクトは [GNU Affero General Public License v3.0](LICENSE) の下でライセンスされています。
