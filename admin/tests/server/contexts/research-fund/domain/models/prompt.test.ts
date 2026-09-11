@@ -18,6 +18,9 @@ test.each([
   ["a\nb\nc", "a\nb", "+1行"],
   ["a", "a\nb\nc", "−2行"],
   ["a\nx", "a\nb\nc", "+1行・−2行"],
+  ["a\na", "a", "+1行"],
+  ["a", "a\na", "−1行"],
+  ["a\n\nb", "a\nb", "+1行"],
 ])("前版との行差分を変更要旨にする: %j", (body, previous, expected) => {
   expect(summarizePromptChange(body, previous)).toBe(expected);
 });

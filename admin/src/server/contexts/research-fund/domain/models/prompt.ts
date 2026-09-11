@@ -44,6 +44,13 @@ export function normalizePromptBody(body: unknown): string {
   return normalized;
 }
 
+/** 行ごとの出現回数。同じ行が複数回現れる本文でも増減を数えられるようにする */
+function countLines(body: string): Map<string, number> {
+  const counts = new Map<string, number>();
+  for (const line of body.split("\n")) counts.set(line, (counts.get(line) ?? 0) + 1);
+  return counts;
+}
+
 /**
  * 版履歴に出す変更要旨。
  * 変更要旨を保存する列は無いため、前版との行差分から機械的に導出する。
@@ -51,10 +58,15 @@ export function normalizePromptBody(body: unknown): string {
 export function summarizePromptChange(body: string, previousBody: string | null): string {
   if (previousBody === null) return "初版";
   if (previousBody === body) return "本文の変更なし";
-  const previousLines = previousBody.split("\n");
-  const lines = body.split("\n");
-  const added = lines.filter((line) => !previousLines.includes(line)).length;
-  const removed = previousLines.filter((line) => !lines.includes(line)).length;
+  const previousCounts = countLines(previousBody);
+  const counts = countLines(body);
+  let added = 0;
+  let removed = 0;
+  for (const line of new Set([...previousCounts.keys(), ...counts.keys()])) {
+    const diff = (counts.get(line) ?? 0) - (previousCounts.get(line) ?? 0);
+    if (diff > 0) added += diff;
+    else removed -= diff;
+  }
   if (added === 0 && removed === 0) return "行の並び替え";
   return [added > 0 && `+${added}行`, removed > 0 && `−${removed}行`].filter(Boolean).join("・");
 }
