@@ -1,4 +1,5 @@
 "use server";
+import "server-only";
 import { revalidatePath } from "next/cache";
 import { requireAuth } from "@/server/contexts/auth/presentation/loaders/require-auth";
 import { requireJournalTarget } from "@/server/contexts/research-fund/presentation/loaders/load-journal-review";

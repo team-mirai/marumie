@@ -1,5 +1,5 @@
 "use client";
-import { useId, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { Button, Input, Label, NativeSelect, Textarea } from "@/client/components/ui";
 import type {
   JournalEdit,
@@ -36,6 +36,15 @@ export function JournalEditor({
     },
   );
   const [dirty, setDirty] = useState(false);
+  useEffect(() => {
+    if (!dirty) return;
+    function onBeforeUnload(event: BeforeUnloadEvent) {
+      event.preventDefault();
+      event.returnValue = "";
+    }
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => window.removeEventListener("beforeunload", onBeforeUnload);
+  }, [dirty]);
   const published = entry?.status === "published";
   function change<K extends keyof JournalEdit>(key: K, value: JournalEdit[K]) {
     setDirty(true);

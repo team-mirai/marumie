@@ -35,6 +35,12 @@ test("手動作成→一覧選択→編集→確認済、月絞り込みと破�
   await row.click();
   await expect(page.getByLabel("項目名", { exact: true })).toHaveValue("視察先への移動");
   await page.getByLabel("金額", { exact: true }).fill("1500");
+  const leaveDialog = page.waitForEvent("dialog");
+  await page.evaluate(() => { setTimeout(() => window.location.reload(), 0); });
+  const dialog = await leaveDialog;
+  expect(dialog.type()).toBe("beforeunload");
+  await dialog.dismiss();
+  await expect(page.getByLabel("金額", { exact: true })).toHaveValue("1500");
   await page.getByLabel("特記事項（公開される）").fill("視察のため");
   await page.getByLabel("備考", { exact: true }).fill("事務所内の確認メモ");
   await page.getByLabel("備考", { exact: true }).press("ArrowUp");

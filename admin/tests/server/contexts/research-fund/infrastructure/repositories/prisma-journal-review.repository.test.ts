@@ -3,8 +3,17 @@ import { PrismaJournalReviewRepository } from "@/server/contexts/research-fund/i
 import type { JournalWrite, ReviewEntry } from "@/server/contexts/research-fund/domain/models/journal-review";
 const entry = { id: "9007199254740993", updatedAt: "2026-08-01T00:00:00.000Z" } as ReviewEntry;
 const input: JournalWrite = { entryDate: "2026-08-01", description: "移動", amount: 1200, accountKey: "taxi", note: "公開", memo: "非公開", hash: "hash", status: "approved", lines: [{ side: "debit", accountKey: "taxi", amount: 1200 }, { side: "credit", accountKey: "bank", amount: 1200 }] };
+function rowWithLines(lines = input.lines) {
+  return {
+    id: BigInt(entry.id), entryDate: new Date(input.entryDate), createdAt: new Date(input.entryDate),
+    updatedAt: new Date(entry.updatedAt), description: input.description, note: null, memo: null,
+    status: "draft", source: "manual", documentId: null, splitGroup: null, document: null,
+    lines: lines.map(line => ({ ...line, amount: new Prisma.Decimal(line.amount),
+      account: { type: line.side === "debit" ? "expense" : "asset" } })),
+  };
+}
 function setup(count = 1) {
-  const tx = { researchFundJournalEntry: { updateMany: jest.fn().mockResolvedValue({ count }), deleteMany: jest.fn().mockResolvedValue({ count }), findMany: jest.fn(), findFirst: jest.fn(), create: jest.fn().mockResolvedValue({ id: BigInt(entry.id) }) }, researchFundJournalLine: { deleteMany: jest.fn(), createMany: jest.fn() }, researchFundAccount: { findMany: jest.fn() }, researchFundBook: { findUnique: jest.fn() } };
+  const tx = { researchFundJournalEntry: { updateMany: jest.fn().mockResolvedValue({ count }), deleteMany: jest.fn().mockResolvedValue({ count }), findMany: jest.fn(), findFirst: jest.fn().mockResolvedValue(rowWithLines()), create: jest.fn().mockResolvedValue({ id: BigInt(entry.id) }) }, researchFundJournalLine: { deleteMany: jest.fn(), createMany: jest.fn() }, researchFundAccount: { findMany: jest.fn() }, researchFundBook: { findUnique: jest.fn() } };
   const transaction = jest.fn(async fn => fn(tx));
   const repository = new PrismaJournalReviewRepository({ ...tx, $transaction: transaction } as unknown as PrismaClient);
   return { repository, tx, transaction };
@@ -28,7 +37,7 @@ test("手動作成の source と帳簿、作成者、行を保存する", async 
 });
 test("一覧は帳簿内の支出に限定し、BigInt/Decimal/Dateとスキャン情報を変換", async () => {
   const { repository, tx } = setup();
-  tx.researchFundJournalEntry.findMany.mockResolvedValue([{ id: BigInt(entry.id), entryDate: new Date(input.entryDate), createdAt: new Date("2026-08-02"), updatedAt: new Date(entry.updatedAt), description: "移動", note: "公開", memo: "非公開", source: "scan", status: "draft", splitGroup: "split", documentId: BigInt(3), lines: [{ side: "debit", accountKey: "taxi", account: { type: "expense" }, amount: new Prisma.Decimal(1200) }], document: { scanJobs: [{ createdAt: new Date("2026-08-03"), model: "later", prompt: { version: 2 } }, { createdAt: new Date("2026-08-01"), model: "original", prompt: { version: 1 } }] } }]);
+  tx.researchFundJournalEntry.findMany.mockResolvedValue([{ id: BigInt(entry.id), entryDate: new Date(input.entryDate), createdAt: new Date("2026-08-02"), updatedAt: new Date(entry.updatedAt), description: "移動", note: "公開", memo: "非公開", source: "scan", status: "draft", splitGroup: "split", documentId: BigInt(3), lines: [{ side: "debit", accountKey: "taxi", account: { type: "expense" }, amount: new Prisma.Decimal(1200) }, { side: "credit", accountKey: "bank", account: { type: "asset" }, amount: new Prisma.Decimal(1200) }], document: { scanJobs: [{ createdAt: new Date("2026-08-03"), model: "later", prompt: { version: 2 } }, { createdAt: new Date("2026-08-01"), model: "original", prompt: { version: 1 } }] } }]);
   const rows = await repository.list("1"); expect(rows[0]).toMatchObject({ id: entry.id, amount: 1200, documentId: "3", memo: "非公開", model: "original", promptVersion: 1 });
   expect(tx.researchFundJournalEntry.findMany.mock.calls[0][0].where).toMatchObject({ bookId: BigInt(1), lines: { some: { side: "debit", account: { type: "expense" } } } });
 });
@@ -76,4 +85,23 @@ test("空の公開・非公開メモはNULLで保存し、破棄でも競合条�
     status: { in: ["draft", "approved"] }, source: { in: ["manual", "scan"] },
     lines: { some: { side: "debit", account: { type: "expense" } } },
   } });
+});
+
+
+test.each([
+  ["複数の費用借方", [{ side: "debit", accountKey: "taxi", amount: 500 }, { side: "debit", accountKey: "books-newspapers", amount: 700 }, { side: "credit", accountKey: "bank", amount: 1200 }]],
+  ["複数の貸方", [{ side: "debit", accountKey: "taxi", amount: 1200 }, { side: "credit", accountKey: "bank", amount: 500 }, { side: "credit", accountKey: "cash", amount: 700 }]],
+  ["現金決済", [{ side: "debit", accountKey: "taxi", amount: 1200 }, { side: "credit", accountKey: "cash", amount: 1200 }]],
+  ["貸借不一致", [{ side: "debit", accountKey: "taxi", amount: 1200 }, { side: "credit", accountKey: "bank", amount: 500 }]],
+  ["借方のみ", [{ side: "debit", accountKey: "taxi", amount: 1200 }]],
+] as const)("%sは一覧・取得から除外し、更新時も既存行を保持する", async (_name, lines) => {
+  const { repository, tx } = setup();
+  const unsupported = rowWithLines([...lines]);
+  tx.researchFundJournalEntry.findMany.mockResolvedValue([unsupported, rowWithLines()]);
+  await expect(repository.list("1")).resolves.toHaveLength(1);
+  tx.researchFundJournalEntry.findFirst.mockResolvedValue(unsupported);
+  await expect(repository.find("1", entry.id)).resolves.toBeNull();
+  await expect(repository.update("1", entry, input)).rejects.toThrow("この形式の仕訳は編集できません");
+  expect(tx.researchFundJournalLine.deleteMany).not.toHaveBeenCalled();
+  expect(tx.researchFundJournalLine.createMany).not.toHaveBeenCalled();
 });

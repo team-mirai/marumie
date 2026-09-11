@@ -24,16 +24,22 @@ const expenseWhere = {
   source: { in: ["manual", "scan"] },
   lines: { some: { side: "debit", account: { type: "expense" } } },
 } satisfies Prisma.ResearchFundJournalEntryWhereInput;
-function model(row: Row): ReviewEntry {
+function model(row: Row): ReviewEntry | null {
   const expense = row.lines.find((l) => l.side === "debit" && l.account.type === "expense");
+  const bank = row.lines.find(
+    (l) => l.side === "credit" && l.accountKey === "bank" && l.account.type === "asset",
+  );
+  // このフォームが損失なく再生成できる「費用1行／普通預金1行」だけを扱う。
+  if (row.lines.length !== 2 || !expense || !bank || !expense.amount.equals(bank.amount))
+    return null;
   // 書類の再スキャンで過去の仕訳に別のモデル・版を表示しない。
   const job = row.document?.scanJobs.find((j) => j.createdAt <= row.createdAt);
   return {
     id: String(row.id),
     entryDate: row.entryDate.toISOString().slice(0, 10),
     description: row.description,
-    amount: expense?.amount.toNumber() ?? 0,
-    accountKey: expense?.accountKey ?? "needs-review",
+    amount: expense.amount.toNumber(),
+    accountKey: expense.accountKey,
     note: row.note ?? "",
     memo: row.memo ?? "",
     status: row.status,
@@ -73,7 +79,9 @@ export class PrismaJournalReviewRepository implements JournalReviewRepository {
         include,
         orderBy: [{ entryDate: "desc" }, { id: "asc" }],
       })
-    ).map(model);
+    )
+      .map(model)
+      .filter((entry): entry is ReviewEntry => entry !== null);
   }
   async accounts() {
     return this.prisma.researchFundAccount.findMany({ orderBy: { displayOrder: "asc" } });
@@ -111,6 +119,11 @@ export class PrismaJournalReviewRepository implements JournalReviewRepository {
       });
       if (result.count !== 1)
         throw new JournalReviewError("仕訳が更新・公開されました。画面を再読み込みしてください");
+      const row = await tx.researchFundJournalEntry.findFirst({
+        where: { id: BigInt(entry.id), bookId: BigInt(bookId) },
+        include,
+      });
+      if (!row || !model(row)) throw new JournalReviewError("この形式の仕訳は編集できません");
       await tx.researchFundJournalLine.deleteMany({ where: { entryId: BigInt(entry.id) } });
       await tx.researchFundJournalLine.createMany({
         data: input.lines.map((l) => ({ ...l, entryId: BigInt(entry.id) })),
