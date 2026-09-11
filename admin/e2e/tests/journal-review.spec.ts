@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { clickUntil } from "../helpers/interactions";
 
 test("手動作成→一覧選択→編集→確認済、月絞り込みと破棄", async ({ page }) => {
   const name = `e2e-journal-${Date.now()}`;
@@ -21,8 +22,10 @@ test("手動作成→一覧選択→編集→確認済、月絞り込みと破�
   await page.getByRole("link", { name: "仕訳の確認・編集" }).click();
   await expect(page.getByRole("heading", { name: "仕訳の確認・編集" })).toBeVisible();
   for (const [description, date] of [["視察先への移動", "2026-08-01"], ["会議への移動", "2026-09-01"]]) {
-    await page.getByRole("button", { name: "手動で仕訳を作成" }).click();
     const dialog = page.getByRole("dialog");
+    await clickUntil(page.getByRole("button", { name: "手動で仕訳を作成" }), (options) =>
+      expect(dialog.getByLabel("日付", { exact: true })).toBeVisible(options),
+    );
     await dialog.getByLabel("日付", { exact: true }).fill(date);
     await dialog.getByLabel("金額", { exact: true }).fill("1200");
     await dialog.getByLabel("項目名", { exact: true }).fill(description);
