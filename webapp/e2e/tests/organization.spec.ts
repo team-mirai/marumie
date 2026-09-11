@@ -2,9 +2,21 @@ import { test, expect } from "@playwright/test";
 
 test.describe("政治団体ページ", () => {
 	test.describe("読み込み", () => {
+		// ルートのリダイレクト先はDB上の政治団体一覧の先頭（表示名の降順）で決まるため、
+		// admin の E2E が作った団体が遷移先になることがある。
+		// ここではリダイレクトが起きることだけを検証し、ページの中身の検証は
+		// シードで作られた sample-party を明示的に指定するテストで行う。
 		test("ルートにアクセスすると政治団体ページにリダイレクトされる", async ({
 			page,
 		}) => {
+			await page.goto("/");
+
+			// /o/{slug}/{year} にリダイレクトされることを確認
+			await expect(page).toHaveURL(/\/o\/[\w-]+\/\d{4}$/);
+			await expect(page).toHaveTitle(/みらいまる見え政治資金/);
+		});
+
+		test("政治団体ページが正常に表示される", async ({ page }) => {
 			const errors: string[] = [];
 
 			// ページ内で発生する未キャッチ例外を収集
@@ -14,11 +26,10 @@ test.describe("政治団体ページ", () => {
 				);
 			});
 
-			await page.goto("/");
+			const response = await page.goto("/o/sample-party/2026");
 
-			// /o/{slug}/{year} にリダイレクトされることを確認
-			await expect(page).toHaveURL(/\/o\/[\w-]+\/\d{4}$/);
-			await expect(page).toHaveTitle(/みらいまる見え政治資金/);
+			expect(response?.status()).toBe(200);
+			await expect(page).toHaveTitle(/サンプル党.*みらいまる見え政治資金/);
 
 			// 収支の流れセクションが描画されるまで待機（networkidle依存を避ける）
 			await expect(
@@ -34,13 +45,6 @@ test.describe("政治団体ページ", () => {
 				errors,
 				`以下のエラーが発生しました:\n${errors.join("\n")}`,
 			).toHaveLength(0);
-		});
-
-		test("政治団体ページが正常に表示される", async ({ page }) => {
-			const response = await page.goto("/o/sample-party/2026");
-
-			expect(response?.status()).toBe(200);
-			await expect(page).toHaveTitle(/サンプル党.*みらいまる見え政治資金/);
 		});
 
 		test("年度なしのURLはデフォルト年度にリダイレクトされる", async ({
