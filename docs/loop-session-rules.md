@@ -73,8 +73,19 @@ pnpm supabase:start && pnpm db:reset && pnpm test:e2e
      `🤖 #X のマージ後に着手（<理由を 1 行>）` を追記し（`gh issue edit <N> --body-file`。他の部分は変えない）、
      ラベルを `loop:ready` に戻し、下記 3 の手順で変更を破棄して `LOOP_RESULT: BLOCKED issue=#<N> reason=dependency-added` で終了する。
      ランナーが依存の解消を待って再び拾う
-3. 中途半端な変更はコミットしない。破棄する場合は現在のブランチで `git restore --source=HEAD --staged --worktree . && git clean -fd` を実行し、
-   `git status --short` が空であることを確認してから `git switch main` に戻る（`git checkout main` は変更を破棄せず持ち越すので使わない）。
+3. 中途半端な変更はコミットしない。破棄する場合は、**絶対ルール 5 の保護対象を除いた自分の変更だけ**を現在のブランチで戻す:
+
+   ```bash
+   git restore --source=HEAD --staged --worktree -- . \
+     ':!scripts/loop-once.sh' ':!scripts/loop.sh' ':!scripts/loop/' \
+     ':!.claude/commands/loop-*.md' ':!docs/loop-session-rules.md' ':!docs/loop-engineering.md'
+   git clean -fd -e scripts/loop/
+   git status --short   # 残るのは保護対象の差分だけ（無いのが通常）
+   git switch main
+   ```
+
+   `git checkout main` は変更を破棄せず持ち越すので使わない。保護対象に差分が現れていても復元せずそのまま持ち越す
+   （次の tick のランナーが作業ツリーの汚れを検知して停止し、人間に知らせる。その旨を Issue のコメントにも書く）。
    作業内容を残したい場合は WIP コミットを push してドラフト PR にし、Issue からリンクする。
    **PR 作成済みでレビュー対応だけが残っている場合は PR を open のまま残す**（実装は完了しており、人間が判断すれば auto-merge に進める）
 4. `LOOP_RESULT: BLOCKED issue=#<N> reason=<短い理由>` を出力して終了する
