@@ -150,23 +150,27 @@ export class PrismaExpenditureGroupRepository implements ExpenditureGroupReposit
   }
 
   async reorder(bookId: string, groupIds: readonly string[]) {
-    await this.prisma.$transaction(async (tx) => {
-      const rows = await tx.researchFundExpenditureGroup.findMany({
-        where: { bookId: BigInt(bookId) },
-        select: { id: true },
-      });
-      // 一覧を開いたまま他所で追加・削除されていたら、歯抜けの順序を書き込まずに諦めてもらう。
-      const current = new Set(rows.map((row) => String(row.id)));
-      if (current.size !== groupIds.length || groupIds.some((groupId) => !current.has(groupId)))
-        throw new ExpenditureGroupError(
-          "一覧が更新されています。再読み込みしてから並べ替えてください",
-        );
-      for (const [displayOrder, groupId] of groupIds.entries())
-        await tx.researchFundExpenditureGroup.update({
-          where: { id: BigInt(groupId) },
-          data: { displayOrder },
+    // READ COMMITTED だと findMany の後に別トランザクションが追加・削除しても
+    // 古い current の検証を通ってしまうため、create / update と同じく直列化する。
+    await serializable(() =>
+      this.prisma.$transaction(async (tx) => {
+        const rows = await tx.researchFundExpenditureGroup.findMany({
+          where: { bookId: BigInt(bookId) },
+          select: { id: true },
         });
-    });
+        // 一覧を開いたまま他所で追加・削除されていたら、歯抜けの順序を書き込まずに諦めてもらう。
+        const current = new Set(rows.map((row) => String(row.id)));
+        if (current.size !== groupIds.length || groupIds.some((groupId) => !current.has(groupId)))
+          throw new ExpenditureGroupError(
+            "一覧が更新されています。再読み込みしてから並べ替えてください",
+          );
+        for (const [displayOrder, groupId] of groupIds.entries())
+          await tx.researchFundExpenditureGroup.update({
+            where: { id: BigInt(groupId) },
+            data: { displayOrder },
+          });
+      }, serializableOptions),
+    );
   }
 
   /**
