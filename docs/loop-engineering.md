@@ -139,13 +139,18 @@ Request changes で止まっている loop PR は、次のループが修理モ�
 依存待ち（本文に「#X のマージ後に着手」があり #X が未マージ）は状態遷移を起こさない。ループはその Issue をラベルを変えずに読み飛ばし、
 #X がマージされた後の実行で拾う。
 
-依存の完了条件は**依存先の成果物が main にマージ済みであること**で、Issue の閉じ方でそれを判定する
-（`gh issue view <X> --json state,stateReason`）:
+依存の完了条件は**依存先の成果物が main にマージ済みであること**。Issue のクローズは PR のマージを保証しない
+（人間が手動で閉じることもある）ため、Issue の状態だけでなく**対応する PR のマージ状態まで**確認する:
 
-- `CLOSED` + `COMPLETED` … マージ済みとみなして着手できる
-- `OPEN` … 順番待ち。ラベルを変えずに読み飛ばし、`WAITING` の対象にする
-- `CLOSED` + `NOT_PLANNED` … PR が未マージのまま取り下げられており、待っても成果物は来ない。
-  順番待ちではないので、待っている側の Issue を `loop:human` にエスカレーションする
+| 依存先 #X の状態 | 判定 | ループの動き |
+|-----------------|------|-------------|
+| `OPEN` | 順番待ち | ラベルを変えずに読み飛ばし、`WAITING` の対象にする |
+| `CLOSED` かつ、#X を閉じた PR に `mergedAt` があり `baseRefName` が `main` | マージ済み | 着手できる |
+| `CLOSED` だがマージ済みの PR が無い（`NOT_PLANNED`、PR が close されただけ、PR の無い手動クローズ） | 成果物が来ない | 順番待ちではないので、待っている側の Issue を `loop:human` にエスカレーションする |
+| 状態を取得できない / 未知の状態 | 判定不能 | 依存を満たしたとみなさず `FAILED reason=dependency-state` で終了する |
+
+判定に使うコマンドは `gh issue view <X> --json state,stateReason,closedByPullRequestsReferences` と
+`gh pr view <PR番号> --json state,mergedAt,baseRefName`。
 
 `loop.sh` / `loop-once.sh` の `WAITING` 契約もこの判定に揃えてある（`WAITING` は「依存先が OPEN」の場合にだけ出る）。
 
