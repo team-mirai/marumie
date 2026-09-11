@@ -2,6 +2,7 @@ import type {
   PublishedPartyResearchFund,
   PublishedReceipt,
   PublishedResearchFund,
+  PublishedResearchFundPageRef,
 } from "@/server/contexts/research-fund/domain/models/published-research-fund";
 import type { ResearchFundPoliticianSource } from "@/server/contexts/research-fund/domain/models/research-fund-politician-list";
 
@@ -23,6 +24,9 @@ export interface ResearchFundRepository {
    * 公開状況（ready / statusLabel）の判定は usecase が行う。
    */
   findPoliticians(financialYear: number): Promise<ResearchFundPoliticianSource[]>;
+
+  /** 公開ページが成立する議員×年度の一覧（sitemap 用）。published の仕訳を 1 件以上持つ帳簿だけ */
+  findPublishedPageRefs(): Promise<PublishedResearchFundPageRef[]>;
 
   /** published の仕訳に紐づく領収書だけを返す。未公開の仕訳の領収書は返さない。 */
   findPublishedReceipt(entryId: string): Promise<PublishedReceipt | null>;

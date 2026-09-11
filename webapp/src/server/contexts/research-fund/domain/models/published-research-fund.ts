@@ -93,3 +93,9 @@ export interface PublishedPartyResearchFund {
   /** 当選期順（display_order）。準備中の議員も含む。 */
   politicians: PublishedPoliticianResearchFund[];
 }
+
+/** sitemap に載せる公開ページの所在（議員の slug と年度）。 */
+export interface PublishedResearchFundPageRef {
+  slug: string;
+  financialYear: number;
+}

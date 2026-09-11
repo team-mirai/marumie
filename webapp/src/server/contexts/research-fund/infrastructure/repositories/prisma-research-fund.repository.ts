@@ -7,6 +7,7 @@ import type {
   PublishedPartyResearchFund,
   PublishedPoliticianResearchFund,
   PublishedResearchFund,
+  PublishedResearchFundPageRef,
 } from "@/server/contexts/research-fund/domain/models/published-research-fund";
 import type { ResearchFundPoliticianSource } from "@/server/contexts/research-fund/domain/models/research-fund-politician-list";
 import type { ResearchFundRepository } from "@/server/contexts/research-fund/domain/repositories/research-fund-repository.interface";
@@ -301,6 +302,20 @@ export class PrismaResearchFundRepository implements ResearchFundRepository {
         publishedThrough: book?.publishedThrough ? dateOf(book.publishedThrough).slice(0, 7) : null,
       };
     });
+  }
+
+  async findPublishedPageRefs(): Promise<PublishedResearchFundPageRef[]> {
+    // 公開する仕訳が 1 件も無い帳簿はページとして中身が無いので sitemap に載せない。
+    const books = await this.prisma.researchFundBook.findMany({
+      where: { journalEntries: { some: { status: "published" } } },
+      select: { financialYear: true, politician: { select: { slug: true } } },
+      orderBy: [{ politicianId: "asc" }, { financialYear: "asc" }],
+    });
+
+    return books.map((book) => ({
+      slug: book.politician.slug,
+      financialYear: book.financialYear,
+    }));
   }
 
   async findPublishedReceipt(entryId: string) {

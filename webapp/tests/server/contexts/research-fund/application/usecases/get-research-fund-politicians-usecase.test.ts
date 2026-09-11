@@ -7,6 +7,7 @@ function build(politicians: ResearchFundPoliticianSource[]) {
     findPublished: jest.fn().mockResolvedValue(null),
     findPublishedByOrganization: jest.fn().mockResolvedValue(null),
     findPoliticians: jest.fn().mockResolvedValue(politicians),
+    findPublishedPageRefs: jest.fn().mockResolvedValue([]),
     findPublishedReceipt: jest.fn().mockResolvedValue(null),
   };
   return { usecase: new GetResearchFundPoliticiansUsecase(repository), repository };

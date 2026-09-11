@@ -7,6 +7,7 @@ function build(receipt: { storageKey: string } | null) {
     findPublished: jest.fn().mockResolvedValue(null),
     findPublishedByOrganization: jest.fn().mockResolvedValue(null),
     findPoliticians: jest.fn().mockResolvedValue([]),
+    findPublishedPageRefs: jest.fn().mockResolvedValue([]),
     findPublishedReceipt: jest.fn().mockResolvedValue(receipt),
   };
   const storage: ReceiptStorage = {
