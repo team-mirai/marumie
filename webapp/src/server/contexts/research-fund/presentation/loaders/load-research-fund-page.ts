@@ -7,7 +7,10 @@ import {
 } from "@/server/contexts/research-fund/application/usecases/get-research-fund-page-usecase";
 import { PrismaResearchFundRepository } from "@/server/contexts/research-fund/infrastructure/repositories/prisma-research-fund.repository";
 import { prisma } from "@/server/contexts/shared/infrastructure/prisma";
-import { CACHE_REVALIDATE_SECONDS, RESEARCH_FUND_CACHE_TAG } from "./constants";
+import {
+  CACHE_REVALIDATE_SECONDS,
+  RESEARCH_FUND_CACHE_TAG,
+} from "@/server/contexts/research-fund/presentation/loaders/constants";
 
 export const loadResearchFundPage = unstable_cache(
   async (params: GetResearchFundPageParams) => {

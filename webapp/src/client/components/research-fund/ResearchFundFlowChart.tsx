@@ -22,7 +22,11 @@ export default function ResearchFundFlowChart({
       <CategoryModeTabs value={mode} onChange={setMode} />
       <div className="md:mx-0 -mx-3 mb-0">
         {data.nodes.length > 0 ? (
-          <SankeyChart data={data} ariaLabel="調査研究費の使いみちの流れ図" />
+          <SankeyChart
+            data={data}
+            ariaLabel="調査研究費の使いみちの流れ図"
+            ariaDescription="調査研究費の支給から使いみちへのお金の流れを示すサンキーダイアグラムです。"
+          />
         ) : (
           <div className="mx-4 text-gray-500">公開中の調査研究費のデータがありません</div>
         )}

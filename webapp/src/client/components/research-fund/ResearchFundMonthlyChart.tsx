@@ -51,6 +51,7 @@ export default function ResearchFundMonthlyChart({
       aria-label="月ごとの調査研究費の支給と支出"
     >
       <title>月ごとの調査研究費の支給と支出</title>
+      {/* ticks はゼロ線の下側を負の座標で持つが、支出額そのものは非負なのでラベルに符号は出さない。 */}
       {ticks.map((value) => (
         <text
           key={`tick-${value}`}
@@ -62,7 +63,7 @@ export default function ResearchFundMonthlyChart({
           fontWeight={500}
           fill={LABEL_COLOR}
         >
-          {formatMan(value)}
+          {formatMan(Math.abs(value))}
         </text>
       ))}
       <line

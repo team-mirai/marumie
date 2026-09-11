@@ -45,7 +45,7 @@ export function buildExpenseViews(
       (a, b) =>
         compare(b.date, a.date) ||
         // 同一注文の行が他の支出に割り込まれないよう、日付の中では注文ごとにまとめる。
-        compare(a.splitGroup ?? a.id, b.splitGroup ?? b.id) ||
+        compare(a.splitGroup ?? "", b.splitGroup ?? "") ||
         compareIds(a.id, b.id),
     )
     .map((expense) => {

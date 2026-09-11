@@ -1,6 +1,7 @@
 /**
  * Sankeyダイアグラムの最終出力を表現するドメインモデル
  *
+ * public-finance と research-fund の双方が使うため shared に置く（コンテキスト間の直接依存を避ける）。
  * UIコンポーネントからも参照されるため、server-onlyは含めない
  */
 
