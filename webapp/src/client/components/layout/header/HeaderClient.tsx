@@ -4,43 +4,11 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import OrganizationYearSheet from "@/client/components/layout/header/OrganizationYearSheet";
+import { getHeaderNavigation } from "@/client/lib/header-navigation";
 import type { OrganizationsResponse } from "@/types/organization";
 
 const DEFAULT_YEAR = 2026;
-
-const getNavigationItems = (currentSlug: string, currentYear: number) => [
-  { href: `/o/${currentSlug}/${currentYear}/`, label: "トップ", desktopLabel: null },
-  {
-    href: `/o/${currentSlug}/${currentYear}/#cash-flow`,
-    label: "チームみらいの収支の流れ",
-    desktopLabel: "収支の流れ",
-  },
-  {
-    href: `/o/${currentSlug}/${currentYear}/#monthly-trends`,
-    label: "１年間の収支推移",
-    desktopLabel: "1年間の推移",
-  },
-  {
-    href: `/o/${currentSlug}/${currentYear}/#balance-sheet`,
-    label: "貸借対照表",
-    desktopLabel: "貸借対照表",
-  },
-  {
-    href: `/o/${currentSlug}/${currentYear}/#transactions`,
-    label: "すべての出入金",
-    desktopLabel: "すべての出入金",
-  },
-  {
-    href: `/o/${currentSlug}/${currentYear}/#explanation`,
-    label: "データについて",
-    desktopLabel: "データについて",
-  },
-  {
-    href: "https://team-mirai.notion.site/FAQ-27ef6f56bae180c085e9f97d05a5d59c",
-    label: "よくあるご質問",
-    desktopLabel: "よくあるご質問",
-  },
-];
+const AVAILABLE_YEARS = [2025, 2026];
 
 interface HeaderClientProps {
   organizations: OrganizationsResponse;
@@ -49,18 +17,29 @@ interface HeaderClientProps {
 export default function HeaderClient({ organizations }: HeaderClientProps) {
   const pathname = usePathname();
 
-  // 現在のslugとyearを取得（/o/[slug]/[year]/... の形式の場合）
+  // 現在のslugとyearを取得（/o/[slug]/[year]/... または /p/[slug]/[year]/... の形式の場合）
   const pathSegments = pathname.split("/");
-  const slugFromPath = pathSegments[1] === "o" ? pathSegments[2] : null;
-  const yearFromPath =
-    pathSegments[1] === "o" && pathSegments[3] ? parseInt(pathSegments[3], 10) : null;
+  const rootSegment = pathSegments[1];
+  const isPoliticianPage = rootSegment === "p";
+  const isPageWithSlug = rootSegment === "o" || isPoliticianPage;
+  const slugFromPath = isPageWithSlug ? pathSegments[2] : null;
+  const yearFromPath = isPageWithSlug && pathSegments[3] ? parseInt(pathSegments[3], 10) : null;
 
-  const currentSlug = slugFromPath ?? organizations.default;
   const currentYear =
-    yearFromPath && [2025, 2026].includes(yearFromPath) ? yearFromPath : DEFAULT_YEAR;
+    yearFromPath && AVAILABLE_YEARS.includes(yearFromPath) ? yearFromPath : DEFAULT_YEAR;
 
-  const logoHref = currentSlug ? `/o/${currentSlug}/${currentYear}/` : "/";
-  const navigationItems = currentSlug ? getNavigationItems(currentSlug, currentYear) : [];
+  // ナビとロゴは今いるページ（議員ページならそのページ自身）を指す。
+  const navSlug = slugFromPath ?? organizations.default;
+  const navigation = navSlug
+    ? getHeaderNavigation(isPoliticianPage ? "politician" : "organization", navSlug, currentYear)
+    : null;
+  const logoHref = navigation?.homeHref ?? "/";
+  const navigationItems = navigation?.items ?? [];
+
+  // 団体セレクタは政治団体しか扱えないので、議員ページでは既定の団体を初期値にする（2グループ化は #1361）。
+  const currentOrganizationSlug = isPoliticianPage
+    ? organizations.default
+    : (slugFromPath ?? organizations.default);
 
   return (
     <header className="fixed top-0 left-0 right-0 z-40 px-2.5 py-3 xl:px-6 xl:py-4">
@@ -116,29 +95,27 @@ export default function HeaderClient({ organizations }: HeaderClientProps) {
               className="hidden lg:flex items-center gap-6 flex-shrink-0"
               aria-label="メインナビゲーション"
             >
-              {navigationItems
-                .filter((item) => item.desktopLabel)
-                .map((item) => {
-                  const isExternal = item.href.startsWith("http");
-                  return (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      className="text-sm font-bold text-black hover:text-teal-600 transition-colors whitespace-nowrap cursor-pointer"
-                      {...(isExternal && {
-                        target: "_blank",
-                        rel: "noopener noreferrer",
-                      })}
-                    >
-                      {item.desktopLabel}
-                    </Link>
-                  );
-                })}
+              {navigationItems.map((item) => {
+                const isExternal = item.href.startsWith("http");
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className="text-sm font-bold text-black hover:text-teal-600 transition-colors whitespace-nowrap cursor-pointer"
+                    {...(isExternal && {
+                      target: "_blank",
+                      rel: "noopener noreferrer",
+                    })}
+                  >
+                    {item.label}
+                  </Link>
+                );
+              })}
             </nav>
             <div className="flex items-center w-full max-w-[217px] min-w-0 h-12 flex-shrink">
               <OrganizationYearSheet
                 organizations={organizations}
-                initialSlug={currentSlug ?? undefined}
+                initialSlug={currentOrganizationSlug ?? undefined}
                 initialYear={currentYear}
               />
             </div>

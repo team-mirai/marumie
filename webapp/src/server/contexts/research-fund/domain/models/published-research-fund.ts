@@ -71,3 +71,9 @@ export interface PublishedResearchFund {
 export interface PublishedReceipt {
   storageKey: string;
 }
+
+/** sitemap に載せる公開ページの所在（議員の slug と年度）。 */
+export interface PublishedResearchFundPageRef {
+  slug: string;
+  financialYear: number;
+}

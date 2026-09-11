@@ -5,6 +5,7 @@ import type { ResearchFundRepository } from "@/server/contexts/research-fund/dom
 function build(receipt: { storageKey: string } | null) {
   const repository: ResearchFundRepository = {
     findPublished: jest.fn().mockResolvedValue(null),
+    findPublishedPageRefs: jest.fn().mockResolvedValue([]),
     findPublishedReceipt: jest.fn().mockResolvedValue(receipt),
   };
   const storage: ReceiptStorage = {

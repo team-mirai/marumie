@@ -105,6 +105,27 @@ test.describe("調査研究費 議員ページ", () => {
 		}).toPass();
 	});
 
+	test("ヘッダーのナビが同じ議員ページ内のセクションを指す", async ({ page }) => {
+		await page.goto(PAGE_URL);
+
+		const nav = page.getByRole("navigation", { name: "メインナビゲーション" });
+
+		// 政治団体ページ（/o/...）へ飛ばず、B-1〜B-5 のアンカーを指す。
+		// next/link は末尾スラッシュを落とすので href は /p/[slug]/[year]#... になる。
+		for (const section of [
+			"cash-flow",
+			"highlights",
+			"monthly-trends",
+			"transactions",
+			"explanation",
+		]) {
+			await expect(
+				nav.locator(`a[href="/p/sample-taro/2026#${section}"]`),
+			).toHaveCount(1);
+		}
+		await expect(nav.locator('a[href*="/o/"]')).toHaveCount(0);
+	});
+
 	test("存在しない議員のページは政治団体ページに寄せられる", async ({ page }) => {
 		await page.goto("/p/no-such-politician/2026");
 
