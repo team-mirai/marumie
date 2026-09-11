@@ -10,6 +10,7 @@ describe("getHeaderNavigation", () => {
       "/o/team-mirai/2025/#monthly-trends",
       "/o/team-mirai/2025/#balance-sheet",
       "/o/team-mirai/2025/#transactions",
+      "/o/team-mirai/2025/#research-fund",
       "/o/team-mirai/2025/#explanation",
       "https://team-mirai.notion.site/FAQ-27ef6f56bae180c085e9f97d05a5d59c",
     ]);

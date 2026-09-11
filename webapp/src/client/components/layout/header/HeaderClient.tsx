@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import OrganizationYearSheet from "@/client/components/layout/header/OrganizationYearSheet";
 import { getHeaderNavigation } from "@/client/lib/header-navigation";
+import type { ResearchFundPoliticianEntry } from "@/server/contexts/research-fund/domain/models/research-fund-politician-list";
 import type { OrganizationsResponse } from "@/types/organization";
 
 const DEFAULT_YEAR = 2026;
@@ -12,9 +13,11 @@ const AVAILABLE_YEARS = [2025, 2026];
 
 interface HeaderClientProps {
   organizations: OrganizationsResponse;
+  /** 年度ごとの議員一覧。年度を切り替えると出す一覧も切り替える */
+  politiciansByYear: Record<number, ResearchFundPoliticianEntry[]>;
 }
 
-export default function HeaderClient({ organizations }: HeaderClientProps) {
+export default function HeaderClient({ organizations, politiciansByYear }: HeaderClientProps) {
   const pathname = usePathname();
 
   // 現在のslugとyearを取得（/o/[slug]/[year]/... または /p/[slug]/[year]/... の形式の場合）
@@ -40,6 +43,7 @@ export default function HeaderClient({ organizations }: HeaderClientProps) {
   const currentOrganizationSlug = isPoliticianPage
     ? organizations.default
     : (slugFromPath ?? organizations.default);
+  const currentPoliticianSlug = isPoliticianPage ? slugFromPath : null;
 
   return (
     <header className="fixed top-0 left-0 right-0 z-40 px-2.5 py-3 xl:px-6 xl:py-4">
@@ -115,7 +119,9 @@ export default function HeaderClient({ organizations }: HeaderClientProps) {
             <div className="flex items-center w-full max-w-[217px] min-w-0 h-12 flex-shrink">
               <OrganizationYearSheet
                 organizations={organizations}
+                politiciansByYear={politiciansByYear}
                 initialSlug={currentOrganizationSlug ?? undefined}
+                initialPoliticianSlug={currentPoliticianSlug ?? undefined}
                 initialYear={currentYear}
               />
             </div>

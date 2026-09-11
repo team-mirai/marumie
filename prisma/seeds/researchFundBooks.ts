@@ -30,6 +30,7 @@ const data: ResearchFundBookSeedData[] = [
     },
   },
   { politicianSlug: 'sample-hanako', financialYear: 2026, status: 'preparing' },
+  { politicianSlug: 'sample-jiro', financialYear: 2026, status: 'preparing' },
   { politicianSlug: 'e2e-politician', financialYear: 2026, status: 'active' },
 ];
 

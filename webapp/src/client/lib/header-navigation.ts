@@ -24,6 +24,7 @@ const ORGANIZATION_SECTIONS: HeaderNavigationItem[] = [
   { href: "#monthly-trends", label: "1年間の推移" },
   { href: "#balance-sheet", label: "貸借対照表" },
   { href: "#transactions", label: "すべての出入金" },
+  { href: "#research-fund", label: "調査研究費" },
   { href: "#explanation", label: "データについて" },
 ];
 

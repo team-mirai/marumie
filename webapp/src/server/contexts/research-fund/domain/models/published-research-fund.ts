@@ -72,6 +72,28 @@ export interface PublishedReceipt {
   storageKey: string;
 }
 
+/** 政党ページ A-6 が読む、議員1人分の published 射影。 */
+export interface PublishedPoliticianResearchFund {
+  politician: { name: string; slug: string };
+  /** 「2026.8.20時点」。未設定なら null */
+  asOfDate: string | null;
+  /** 何月分まで公開したか（YYYY-MM-DD）。未設定なら null */
+  publishedThrough: string | null;
+  /** 集計に渡す行（支給と支出）。published の仕訳が無ければ空配列。 */
+  rows: ResearchFundRow[];
+  accounts: Record<string, PublishedAccount>;
+  /** published の支出の件数（B-4 の行数と同じ数え方）。 */
+  expenseCount: number;
+}
+
+/** 政党ページ A-6 が読む、所属議員全員分の published 射影。 */
+export interface PublishedPartyResearchFund {
+  organization: { slug: string; displayName: string };
+  financialYear: number;
+  /** 当選期順（display_order）。準備中の議員も含む。 */
+  politicians: PublishedPoliticianResearchFund[];
+}
+
 /** sitemap に載せる公開ページの所在（議員の slug と年度）。 */
 export interface PublishedResearchFundPageRef {
   slug: string;

@@ -10,10 +10,12 @@ import MainColumn from "@/client/components/layout/MainColumn";
 import BalanceSheetSection from "@/client/components/top-page/BalanceSheetSection";
 import CashFlowSection from "@/client/components/top-page/CashFlowSection";
 import MonthlyTrendsSection from "@/client/components/top-page/MonthlyTrendsSection";
+import ResearchFundPartySection from "@/client/components/research-fund/ResearchFundPartySection";
 import ProgressSection from "@/client/components/top-page/ProgressSection";
 import TransactionsSection from "@/client/components/top-page/TransactionsSection";
 import { loadTopPageData } from "@/server/contexts/public-finance/presentation/loaders/load-top-page-data";
 import { loadOrganizations } from "@/server/contexts/public-finance/presentation/loaders/load-organizations";
+import { loadResearchFundPartySummary } from "@/server/contexts/research-fund/presentation/loaders/load-research-fund-party-summary";
 import { formatUpdatedAt } from "@/client/lib/format-date";
 
 export const revalidate = 300; // 5 minutes
@@ -79,6 +81,14 @@ export default async function OrgPage({ params }: OrgPageProps) {
     return null;
   });
 
+  // A-6 調査研究費。所属議員がいない政治団体では null になり、セクションごと出さない。
+  const researchFund = await loadResearchFundPartySummary({ slug, financialYear }).catch(
+    (error) => {
+      console.error("loadResearchFundPartySummary error:", error);
+      return null;
+    },
+  );
+
   const updatedAt = formatUpdatedAt(data?.transactionData?.lastUpdatedAt ?? null);
 
   return (
@@ -107,6 +117,12 @@ export default async function OrgPage({ params }: OrgPageProps) {
         year={financialYear}
         organizationName={currentOrganization?.displayName}
       />
+      {researchFund && (
+        <ResearchFundPartySection
+          data={researchFund}
+          updatedAt={formatUpdatedAt(researchFund.asOfDate)}
+        />
+      )}
       <AnotherPageLinkSection currentSlug={slug} year={financialYear} />
       <ProgressSection />
       <ExplanationSection />

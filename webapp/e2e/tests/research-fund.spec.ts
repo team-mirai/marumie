@@ -142,3 +142,114 @@ async function selectMonth(section: Locator, label: string) {
 		await expect(button).toHaveAttribute("aria-pressed", "true");
 	}).toPass();
 }
+
+test.describe("調査研究費 政党ページのサマリー（A-6）", () => {
+	const ORG_URL = "/o/sample-party/2026";
+
+	test("A-6 が表示され、実行時エラーが発生しないこと", async ({ page }) => {
+		const errors: string[] = [];
+		page.on("pageerror", (error) => {
+			errors.push(`${error.name}: ${error.message}`);
+		});
+
+		await page.goto(ORG_URL);
+		const section = page.locator("#research-fund");
+
+		// 見出し・リード・公開範囲
+		await expect(
+			section.getByRole("heading", { name: /議員\d+人の調査研究費サマリー/ }),
+		).toBeVisible();
+		await expect(
+			section.getByText("国会議員に毎月支給される公費を、何に使ったか"),
+		).toBeVisible();
+		await expect(section.getByText(/分を公開中/).first()).toBeVisible();
+
+		// 「調査研究費とは」コラプスは初期状態で閉じている
+		const collapse = section.getByText("調査研究費とは");
+		await expect(collapse).toBeVisible();
+		await expect(
+			section.getByText(/政党を通らず国から議員に対して毎月直接支給される公費/),
+		).toBeHidden();
+
+		// KPI 2枚
+		await expect(section.getByText(/^支給された/)).toBeVisible();
+		await expect(section.getByText("議員活動に使った")).toBeVisible();
+
+		// 議員リスト（公開中の議員と準備中の議員が両方並ぶ）
+		await expect(
+			section.getByRole("button", { name: /サンプル 太郎/ }),
+		).toBeVisible();
+		await expect(section.getByText("準備中").first()).toBeVisible();
+
+		expect(
+			errors,
+			`以下のエラーが発生しました:\n${errors.join("\n")}`,
+		).toHaveLength(0);
+	});
+
+	test("準備中の議員の行を選ぶとグラフの代わりに準備中の案内が出る", async ({
+		page,
+	}) => {
+		await page.goto(ORG_URL);
+		const section = page.locator("#research-fund");
+
+		const row = section.getByRole("button", { name: /サンプル 次郎/ });
+		await expect(async () => {
+			await row.click();
+			await expect(row).toHaveAttribute("aria-pressed", "true");
+		}).toPass();
+
+		await expect(
+			section.getByText(/サンプル 次郎の調査研究費は現在準備中です。/),
+		).toBeVisible();
+		await expect(section.getByText("議員活動に使った")).toBeHidden();
+	});
+
+	test("詳細ボタンから議員ページに遷移する", async ({ page }) => {
+		await page.goto(ORG_URL);
+
+		await page
+			.locator("#research-fund")
+			.getByRole("link", { name: /詳細/ })
+			.first()
+			.click();
+
+		await expect(page).toHaveURL(/\/p\/sample-taro\/2026$/);
+	});
+
+	test("グローバルナビに「調査研究費」がある", async ({ page }) => {
+		await page.goto(ORG_URL);
+
+		await expect(
+			page
+				.getByRole("navigation", { name: "メインナビゲーション" })
+				.getByRole("link", { name: "調査研究費" }),
+		).toHaveAttribute("href", /#research-fund$/);
+	});
+
+	test("A-7 データについて に調研費の記載がある", async ({ page }) => {
+		await page.goto(ORG_URL);
+
+		await expect(
+			page.locator("#explanation").getByText("調査研究費について"),
+		).toBeVisible();
+	});
+
+	test("組織セレクタが政治資金と調査研究費の2グループになる", async ({
+		page,
+	}) => {
+		await page.goto(ORG_URL);
+
+		await page.getByRole("button", { name: /サンプル党/ }).first().click();
+
+		await expect(page.getByText(/^政治資金 \d+団体$/)).toBeVisible();
+		await expect(page.getByText(/^調査研究費 議員\d+人$/)).toBeVisible();
+
+		// 議員を選ぶと議員ページに遷移する（A-6 の議員リストと取り違えないよう
+		// 調査研究費グループの中だけを探す）
+		await page
+			.getByRole("button", { name: /サンプル 太郎 2026年/ })
+			.click();
+		await expect(page).toHaveURL(/\/p\/sample-taro\/2026$/);
+	});
+});
