@@ -239,8 +239,12 @@ pnpm supabase:start && pnpm db:reset && pnpm test:e2e
 - `pnpm test:e2e` は webapp → admin の順に実行します。admin だけ回すなら `pnpm test:e2e:admin`
 - `pnpm test:e2e:admin` / `pnpm test:e2e:ui` は起動中の Supabase から接続情報を自動取得するため、
   `admin/.env.local` のキー設定は不要です（`pnpm --filter admin test:e2e` と直接呼ぶ場合は自動取得されません）
-- ポート 3001 で admin の開発サーバーが既に動いている場合はそれを再利用します。
-  環境変数を変えた直後や挙動が怪しいときは、その開発サーバーを止めてから実行してください
+- admin の E2E は CI と同じ本番ビルド（`next build` → `next start --port 3001`）を自動で起動します。
+  ポート 3001 で開発サーバーが動いていると起動できないので、先に止めてください
+  （dev サーバーは並行実行中に Fast Refresh で RSC ストリームが切れ、
+  ハイドレーション前のクリックが握り潰されて E2E が不安定になるため使いません）
+- デバッグ目的で dev サーバーに当てたいときは `E2E_DEV_SERVER=1 pnpm test:e2e:admin`。
+  この場合は起動中の開発サーバーを再利用します（結果は CI と一致しないことがあります）
 
 ```bash
 pnpm test:e2e:admin                    # admin の E2E（ヘッドレス）
