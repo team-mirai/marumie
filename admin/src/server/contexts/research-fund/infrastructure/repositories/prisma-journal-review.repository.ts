@@ -24,13 +24,31 @@ const expenseWhere = {
   source: { in: ["manual", "scan"] },
   lines: { some: { side: "debit", account: { type: "expense" } } },
 } satisfies Prisma.ResearchFundJournalEntryWhereInput;
+// 支給は支給の登録画面で作るが、確認済の収入として一覧にも並べる（編集はさせない）。
+const grantWhere = {
+  source: "grant",
+  lines: { some: { side: "credit", accountKey: "grant-income" } },
+} satisfies Prisma.ResearchFundJournalEntryWhereInput;
+const listWhere = {
+  OR: [expenseWhere, grantWhere],
+} satisfies Prisma.ResearchFundJournalEntryWhereInput;
 function model(row: Row): ReviewEntry | null {
-  const expense = row.lines.find((l) => l.side === "debit" && l.account.type === "expense");
-  const bank = row.lines.find(
-    (l) => l.side === "credit" && l.accountKey === "bank" && l.account.type === "asset",
-  );
-  // このフォームが損失なく再生成できる「費用1行／普通預金1行」だけを扱う。
-  if (row.lines.length !== 2 || !expense || !bank || !expense.amount.equals(bank.amount))
+  const grant = row.source === "grant";
+  const amountLine = grant
+    ? row.lines.find((l) => l.side === "credit" && l.accountKey === "grant-income")
+    : row.lines.find((l) => l.side === "debit" && l.account.type === "expense");
+  const assetLine = grant
+    ? row.lines.find((l) => l.side === "debit" && l.accountKey === "bank")
+    : row.lines.find(
+        (l) => l.side === "credit" && l.accountKey === "bank" && l.account.type === "asset",
+      );
+  // このフォームが損失なく再生成できる「費用1行／普通預金1行」（支給は貸借が逆）だけを扱う。
+  if (
+    row.lines.length !== 2 ||
+    !amountLine ||
+    !assetLine ||
+    !amountLine.amount.equals(assetLine.amount)
+  )
     return null;
   // 書類の再スキャンで過去の仕訳に別のモデル・版を表示しない。
   const job = row.document?.scanJobs.find((j) => j.createdAt <= row.createdAt);
@@ -38,8 +56,8 @@ function model(row: Row): ReviewEntry | null {
     id: String(row.id),
     entryDate: row.entryDate.toISOString().slice(0, 10),
     description: row.description,
-    amount: expense.amount.toNumber(),
-    accountKey: expense.accountKey,
+    amount: amountLine.amount.toNumber(),
+    accountKey: amountLine.accountKey,
     note: row.note ?? "",
     memo: row.memo ?? "",
     status: row.status,
@@ -75,7 +93,7 @@ export class PrismaJournalReviewRepository implements JournalReviewRepository {
   async list(bookId: string) {
     return (
       await this.prisma.researchFundJournalEntry.findMany({
-        where: { bookId: BigInt(bookId), ...expenseWhere },
+        where: { bookId: BigInt(bookId), ...listWhere },
         include,
         orderBy: [{ entryDate: "desc" }, { id: "asc" }],
       })

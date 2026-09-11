@@ -55,8 +55,10 @@ export function JournalReview({
   const [pending, startTransition] = useTransition();
   const monthly = entries.filter((e) => !month || e.entryDate.slice(5, 7) === month);
   const visible = monthly.filter((e) => status === "all" || e.status === status);
-  const selected = visible.find((e) => e.id === selectedId) ?? visible[0] ?? null;
-  const index = visible.findIndex((e) => e.id === selected?.id);
+  // 支給は支給の登録画面で扱うため、一覧には並べるが選択・編集の対象から外す。
+  const selectable = visible.filter((e) => e.source !== "grant");
+  const selected = selectable.find((e) => e.id === selectedId) ?? selectable[0] ?? null;
+  const index = selectable.findIndex((e) => e.id === selected?.id);
   function allowLeave() {
     return (
       !document.querySelector('[data-journal-dirty="true"]') ||
@@ -87,7 +89,7 @@ export function JournalReview({
         )
       )
         return;
-      const next = visible[index + (event.key === "ArrowDown" ? 1 : -1)];
+      const next = selectable[index + (event.key === "ArrowDown" ? 1 : -1)];
       if (next) {
         event.preventDefault();
         select(next.id);
@@ -233,20 +235,21 @@ export function JournalReview({
                           e.splitGroup === entry.splitGroup && e.documentId === entry.documentId,
                       )
                     : [];
+                  const grant = entry.source === "grant";
                   return (
                     <TableRow
                       key={entry.id}
-                      tabIndex={0}
+                      tabIndex={grant ? undefined : 0}
                       aria-selected={entry.id === selected?.id}
-                      onClick={() => select(entry.id)}
+                      onClick={grant ? undefined : () => select(entry.id)}
                       onKeyDown={(event) => {
-                        if (event.key === "Enter" || event.key === " ") {
+                        if (!grant && (event.key === "Enter" || event.key === " ")) {
                           event.preventDefault();
                           select(entry.id);
                         }
                       }}
                       className={cn(
-                        "cursor-pointer",
+                        !grant && "cursor-pointer",
                         entry.id === selected?.id && "bg-accent",
                         entry.accountKey === "needs-review" && "border-l-4 border-l-destructive",
                       )}
@@ -255,7 +258,13 @@ export function JournalReview({
                         {entry.entryDate.replaceAll("-", ".")}
                       </TableCell>
                       <TableCell>
-                        <ResearchFundCategoryPill accountKey={entry.accountKey} />
+                        {grant ? (
+                          <span className="inline-block whitespace-nowrap rounded-full border bg-accent px-3 py-0.5 text-xs font-medium text-accent-foreground">
+                            支給
+                          </span>
+                        ) : (
+                          <ResearchFundCategoryPill accountKey={entry.accountKey} />
+                        )}
                       </TableCell>
                       <TableCell>
                         <span>{entry.description}</span>
@@ -309,14 +318,14 @@ export function JournalReview({
                     <Button
                       variant="outline"
                       disabled={pending || index <= 0}
-                      onClick={() => select(visible[index - 1].id)}
+                      onClick={() => select(selectable[index - 1].id)}
                     >
                       前へ
                     </Button>
                     <Button
                       variant="outline"
-                      disabled={pending || index >= visible.length - 1}
-                      onClick={() => select(visible[index + 1].id)}
+                      disabled={pending || index >= selectable.length - 1}
+                      onClick={() => select(selectable[index + 1].id)}
                     >
                       次へ
                     </Button>

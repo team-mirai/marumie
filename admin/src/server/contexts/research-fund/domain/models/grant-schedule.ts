@@ -14,7 +14,7 @@ export interface GrantSchedule {
   registeredMonths: readonly string[];
 }
 
-interface ScheduledGrant {
+export interface ScheduledGrant {
   month: string;
   amount: number;
   status: "registered" | "available" | "upcoming";
