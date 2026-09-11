@@ -1,12 +1,10 @@
 "use client";
 import "client-only";
 
-import { useEffect, useId, useState } from "react";
+import { useId, useState } from "react";
 import { ArrowRight, CircleNotch } from "@phosphor-icons/react/dist/ssr";
-import type { PoliticalOrganization } from "@/shared/models/political-organization";
 import { Button, Label, NativeSelect } from "@/client/components/ui";
 import { cn } from "@/client/lib";
-import { PoliticalOrganizationSelect } from "@/client/components/political-organizations/PoliticalOrganizationSelect";
 import { CsvDropzone } from "@/client/components/csv-upload/CsvDropzone";
 import CsvPreview from "@/client/components/csv-import/CsvPreview";
 import type { PreviewMfCsvResult } from "@/server/contexts/data-import/presentation/types";
@@ -17,7 +15,8 @@ import type {
 import type { PreviewCsvRequest } from "@/server/contexts/data-import/presentation/actions/preview-csv";
 
 interface CsvUploadClientProps {
-  organizations: PoliticalOrganization[];
+  /** グローバル対象（サイドバー上部）で選択中の政治団体 */
+  politicalOrganizationId: string;
   uploadAction: (data: UploadCsvRequest) => Promise<UploadCsvResponse>;
   previewAction: (data: PreviewCsvRequest) => Promise<PreviewMfCsvResult>;
 }
@@ -29,13 +28,12 @@ const DATA_SOURCES = [{ value: "mf", label: "MFクラウド会計" }] as const;
 const FILE_NOTE = "UTF-8 / Shift-JIS ・ 最大 100MB";
 
 export default function CsvUploadClient({
-  organizations,
+  politicalOrganizationId,
   uploadAction,
   previewAction,
 }: CsvUploadClientProps) {
   const dataSourceSelectId = useId();
   const [file, setFile] = useState<File | null>(null);
-  const [politicalOrganizationId, setPoliticalOrganizationId] = useState<string>("");
   const [dataSource, setDataSource] = useState<string>(DATA_SOURCES[0].value);
   const [message, setMessage] = useState<string>("");
   const [errors, setErrors] = useState<string[]>([]);
@@ -45,14 +43,7 @@ export default function CsvUploadClient({
   const [uploading, setUploading] = useState(false);
   const [previewResult, setPreviewResult] = useState<PreviewMfCsvResult | null>(null);
 
-  // 最初の組織を自動選択
-  useEffect(() => {
-    if (organizations.length > 0 && !politicalOrganizationId) {
-      setPoliticalOrganizationId(organizations[0].id);
-    }
-  }, [organizations, politicalOrganizationId]);
-
-  // ファイルや政治団体が変わったら、古いプレビューは破棄する
+  // ファイルが変わったら、古いプレビューは破棄する
   const resetPreview = () => {
     setPreviewResult(null);
     setPreviewError(null);
@@ -63,11 +54,6 @@ export default function CsvUploadClient({
     setMessage("");
     setErrors([]);
     setHasError(false);
-    resetPreview();
-  };
-
-  const handleOrganizationChange = (next: string) => {
-    setPoliticalOrganizationId(next);
     resetPreview();
   };
 
@@ -155,19 +141,6 @@ export default function CsvUploadClient({
         className="max-w-[720px] rounded-lg border border-border bg-card p-7"
       >
         <div className="grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-4">
-          <div className="flex flex-col gap-1.5">
-            <Label>
-              政治団体 <span className="text-destructive">*</span>
-            </Label>
-            <PoliticalOrganizationSelect
-              organizations={organizations}
-              value={politicalOrganizationId}
-              onValueChange={handleOrganizationChange}
-              required
-              hideLabel
-              className="w-full"
-            />
-          </div>
           <div className="flex flex-col gap-1.5">
             <Label htmlFor={dataSourceSelectId}>
               データソース <span className="text-destructive">*</span>

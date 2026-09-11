@@ -27,6 +27,7 @@ import {
 } from "@phosphor-icons/react/dist/ssr";
 import { Button, Tooltip, TooltipContent, TooltipTrigger } from "@/client/components/ui";
 import { BrandWordmark } from "@/client/components/layout/BrandWordmark";
+import { UserRoleBadge } from "@/client/components/user-management/UserRoleBadge";
 import { cn } from "@/client/lib/index";
 import {
   getVisibleNavSections,
@@ -182,6 +183,12 @@ export default function Sidebar({
             {userEmail}
           </span>
         </div>
+        {/* 「ユーザー情報」ページを廃止したため、メールとロールはここだけで確認する */}
+        {userRole && !collapsed && (
+          <div className="px-2.5">
+            <UserRoleBadge role={userRole} />
+          </div>
+        )}
         <form action={logoutAction}>
           <CollapsibleTooltip label="ログアウト" collapsed={collapsed}>
             <Button

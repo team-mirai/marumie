@@ -5,10 +5,13 @@ test.describe("サイドバー", () => {
 		await page.goto("/");
 	});
 
-	test("ログインユーザーのメールアドレスとログアウトボタンが表示される", async ({ page }) => {
+	test("ログインユーザーのメールアドレス・ロールとログアウトボタンが表示される", async ({ page }) => {
 		const sidebar = page.getByRole("complementary");
 
 		await expect(sidebar.getByText("foo@example.com")).toBeVisible();
+		// 「ユーザー情報」ページは廃止したので、メールとロールはここだけで確認する
+		await expect(sidebar.getByRole("link", { name: "ユーザー情報" })).toHaveCount(0);
+		await expect(sidebar.getByText("admin", { exact: true })).toBeVisible();
 		await expect(sidebar.getByRole("button", { name: "ログアウト" })).toBeVisible();
 	});
 
@@ -84,7 +87,7 @@ test.describe("サイドバー", () => {
     await otherTab.close();
   });
 
-  test("未選択でも議員管理に進め、折りたたんだ状態でも対象を選択できる", async ({ page }) => {
+  test("政治団体モードからでも議員管理に進め、折りたたんだ状態でも対象を選択できる", async ({ page }) => {
     await page.goto("/");
     const sidebar = page.getByRole("complementary");
     await sidebar.getByRole("link", { name: "議員", exact: true }).click();

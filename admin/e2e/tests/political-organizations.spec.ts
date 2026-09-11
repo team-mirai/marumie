@@ -12,7 +12,8 @@ test.describe("政治団体管理", () => {
 		test("既存の政治団体が一覧に表示される", async ({ page }) => {
 			await page.goto("/political-organizations");
 
-			await expect(page.getByText("サンプル党")).toBeVisible();
+			// サイドバー上部のグローバル対象にも団体名が出るため、本文領域にスコープする
+			await expect(page.getByRole("main").getByText("サンプル党")).toBeVisible();
 		});
 
 		test("政治団体の編集ページが正常に表示される", async ({ page }) => {

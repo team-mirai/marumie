@@ -4,7 +4,6 @@ import "client-only";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { CircleNotch } from "@phosphor-icons/react/dist/ssr";
 import { toast } from "sonner";
-import type { PoliticalOrganization } from "@/shared/models/political-organization";
 import type { PreviewDonorCsvResult } from "@/server/contexts/report/presentation/types/preview-donor-csv-types";
 import type { PreviewDonorCsvRequest } from "@/server/contexts/report/presentation/actions/preview-donor-csv";
 import type {
@@ -12,12 +11,11 @@ import type {
   ImportDonorCsvResult,
 } from "@/server/contexts/report/presentation/actions/import-donor-csv";
 import DonorCsvPreview from "@/client/components/donor-csv-import/DonorCsvPreview";
-import { Label } from "@/client/components/ui";
-import { PoliticalOrganizationSelect } from "@/client/components/political-organizations/PoliticalOrganizationSelect";
 import { CsvDropzone } from "@/client/components/csv-upload/CsvDropzone";
 
 interface DonorCsvImportClientProps {
-  organizations: PoliticalOrganization[];
+  /** グローバル対象（サイドバー上部）で選択中の政治団体 */
+  politicalOrganizationId: string;
   previewAction: (data: PreviewDonorCsvRequest) => Promise<PreviewDonorCsvResult>;
   importAction: (data: ImportDonorCsvRequest) => Promise<ImportDonorCsvResult>;
 }
@@ -26,25 +24,17 @@ interface DonorCsvImportClientProps {
 const FILE_NOTE = "UTF-8 ・ 最大 100MB";
 
 export default function DonorCsvImportClient({
-  organizations,
+  politicalOrganizationId,
   previewAction,
   importAction,
 }: DonorCsvImportClientProps) {
   const [file, setFile] = useState<File | null>(null);
-  const [politicalOrganizationId, setPoliticalOrganizationId] = useState<string>("");
   const [previewResult, setPreviewResult] = useState<PreviewDonorCsvResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const previewActionRef = useRef(previewAction);
   const importActionRef = useRef(importAction);
-
-  // 最初の組織を自動選択
-  useEffect(() => {
-    if (organizations.length > 0 && !politicalOrganizationId) {
-      setPoliticalOrganizationId(organizations[0].id);
-    }
-  }, [organizations, politicalOrganizationId]);
 
   useEffect(() => {
     previewActionRef.current = previewAction;
@@ -126,23 +116,7 @@ export default function DonorCsvImportClient({
   return (
     <div className="space-y-6">
       <div className="max-w-[720px] rounded-lg border border-border bg-card p-7">
-        <div className="grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-4">
-          <div className="flex flex-col gap-1.5">
-            <Label>
-              政治団体 <span className="text-destructive">*</span>
-            </Label>
-            <PoliticalOrganizationSelect
-              organizations={organizations}
-              value={politicalOrganizationId}
-              onValueChange={setPoliticalOrganizationId}
-              required
-              hideLabel
-              className="w-full"
-            />
-          </div>
-        </div>
-
-        <div className="mt-6">
+        <div>
           <CsvDropzone
             file={file}
             onFileChange={setFile}

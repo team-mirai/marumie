@@ -1,9 +1,10 @@
 import "server-only";
 
-import { loadPoliticalOrganizationsData } from "@/server/contexts/shared/presentation/loaders/load-political-organizations-data";
+import { loadCurrentOrganizationTarget } from "@/server/contexts/shared/presentation/loaders/load-current-organization-target";
 import { loadTransactionsWithDonorsData } from "@/server/contexts/report/presentation/loaders/transactions-with-donors-loader";
 import { loadAllDonorsData } from "@/server/contexts/report/presentation/loaders/donors-loader";
 import { DonorAssignmentClient } from "@/client/components/donor-assignment/DonorAssignmentClient";
+import { TargetRequiredNotice } from "@/client/components/layout/TargetRequiredNotice";
 import { DONOR_REQUIRED_CATEGORIES } from "@/server/contexts/report/domain/models/donor-assignment-rules";
 import { PL_CATEGORIES } from "@/shared/accounting/account-category";
 
@@ -20,8 +21,6 @@ function buildCategoryOptions(): { value: string; label: string }[] {
 
 interface DonorAssignmentPageProps {
   searchParams: Promise<{
-    orgId?: string;
-    year?: string;
     unassigned?: string;
     category?: string;
     search?: string;
@@ -32,38 +31,16 @@ interface DonorAssignmentPageProps {
 }
 
 export default async function DonorAssignmentPage({ searchParams }: DonorAssignmentPageProps) {
-  const params = await searchParams;
-  const organizations = await loadPoliticalOrganizationsData();
+  const target = await loadCurrentOrganizationTarget();
 
-  const allDonors = await loadAllDonorsData();
-
-  const categoryOptions = buildCategoryOptions();
-
-  if (organizations.length === 0) {
-    return (
-      <DonorAssignmentClient
-        organizations={[]}
-        initialTransactions={[]}
-        total={0}
-        page={1}
-        perPage={50}
-        initialFilters={{
-          politicalOrganizationId: "",
-          financialYear: new Date().getFullYear(),
-          unassignedOnly: false,
-          categoryKey: "",
-          searchQuery: "",
-          sortField: "transactionDate",
-          sortOrder: "asc",
-        }}
-        allDonors={allDonors}
-        categoryOptions={categoryOptions}
-      />
-    );
+  if (!target) {
+    return <TargetRequiredNotice label="Donor Assignment" title="寄付者紐付け管理" />;
   }
 
-  const politicalOrganizationId = params.orgId || organizations[0].id;
-  const financialYear = params.year ? Number.parseInt(params.year, 10) : new Date().getFullYear();
+  const params = await searchParams;
+  const allDonors = await loadAllDonorsData();
+  const categoryOptions = buildCategoryOptions();
+
   const unassignedOnly = params.unassigned !== "false";
   const categoryKey = params.category || "";
   const searchQuery = params.search || "";
@@ -75,8 +52,8 @@ export default async function DonorAssignmentPage({ searchParams }: DonorAssignm
   const perPage = 50;
 
   const data = await loadTransactionsWithDonorsData({
-    politicalOrganizationId,
-    financialYear,
+    politicalOrganizationId: target.organizationId,
+    financialYear: target.year,
     unassignedOnly,
     categoryKey: categoryKey || undefined,
     searchQuery: searchQuery || undefined,
@@ -88,14 +65,13 @@ export default async function DonorAssignmentPage({ searchParams }: DonorAssignm
 
   return (
     <DonorAssignmentClient
-      organizations={organizations}
+      key={`${target.organizationId}:${target.year}`}
+      target={target}
       initialTransactions={data.transactions}
       total={data.total}
       page={data.page}
       perPage={data.perPage}
       initialFilters={{
-        politicalOrganizationId,
-        financialYear,
         unassignedOnly,
         categoryKey,
         searchQuery,

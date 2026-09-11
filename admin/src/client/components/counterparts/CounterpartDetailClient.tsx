@@ -1,11 +1,11 @@
 "use client";
 import "client-only";
 
-import { useId, useMemo, useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { PencilSimple } from "@phosphor-icons/react/dist/ssr";
 import type { RowSelectionState } from "@tanstack/react-table";
-import type { PoliticalOrganization } from "@/shared/models/political-organization";
+import type { OrganizationTarget } from "@/server/contexts/shared/domain/models/admin-target";
 import type { TransactionWithCounterpart } from "@/server/contexts/report/domain/models/transaction-with-counterpart";
 import type {
   Counterpart,
@@ -16,10 +16,10 @@ import { AssignCounterpartDialog } from "@/client/components/counterpart-assignm
 import { CounterpartFormDialog } from "@/client/components/counterparts/CounterpartFormDialog";
 import { PageHeader } from "@/client/components/layout/PageHeader";
 import { BackLink } from "@/client/components/layout/BackLink";
+import { CurrentTargetBar } from "@/client/components/layout/CurrentTargetBar";
 import { StaticPagination } from "@/client/components/ui/StaticPagination";
-import { Input, Button, Label } from "@/client/components/ui";
+import { Button } from "@/client/components/ui";
 import { formatDate } from "@/client/lib";
-import { PoliticalOrganizationSelect } from "@/client/components/political-organizations/PoliticalOrganizationSelect";
 import { bulkUnassignCounterpartAction } from "@/server/contexts/report/presentation/actions/bulk-unassign-counterpart";
 
 interface CounterpartDetailClientProps {
@@ -28,11 +28,9 @@ interface CounterpartDetailClientProps {
   total: number;
   page: number;
   perPage: number;
-  organizations: PoliticalOrganization[];
+  target: OrganizationTarget;
   allCounterparts: Counterpart[];
   initialFilters: {
-    politicalOrganizationId: string;
-    financialYear: number;
     sortField: "transactionDate" | "debitAmount" | "categoryKey";
     sortOrder: "asc" | "desc";
   };
@@ -44,22 +42,13 @@ export function CounterpartDetailClient({
   total,
   page,
   perPage,
-  organizations,
+  target,
   allCounterparts,
   initialFilters,
 }: CounterpartDetailClientProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-  const yearInputId = useId();
 
-  const initialFinancialYear = useMemo(() => new Date().getFullYear(), []);
-
-  const [selectedOrganizationId, setSelectedOrganizationId] = useState(
-    initialFilters.politicalOrganizationId || "",
-  );
-  const [financialYear, setFinancialYear] = useState(
-    initialFilters.financialYear || initialFinancialYear,
-  );
   const [sortField, setSortField] = useState(initialFilters.sortField);
   const [sortOrder, setSortOrder] = useState(initialFilters.sortOrder);
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
@@ -126,39 +115,12 @@ export function CounterpartDetailClient({
 
   const totalPages = Math.ceil(total / perPage);
 
-  const buildUrl = (params: {
-    orgId?: string;
-    year?: number;
-    sort?: string;
-    order?: string;
-    page?: number;
-  }) => {
+  const buildUrl = (params: { sort?: string; order?: string; page?: number }) => {
     const searchParams = new URLSearchParams();
-    if (params.orgId ?? selectedOrganizationId) {
-      searchParams.set("orgId", params.orgId ?? selectedOrganizationId);
-    }
-    searchParams.set("year", String(params.year ?? financialYear));
     searchParams.set("sort", params.sort ?? sortField);
     searchParams.set("order", params.order ?? sortOrder);
     searchParams.set("page", String(params.page ?? 1));
     return `/counterparts/${counterpart.id}?${searchParams.toString()}`;
-  };
-
-  const handleOrganizationChange = (value: string) => {
-    setSelectedOrganizationId(value);
-    startTransition(() => {
-      router.push(buildUrl({ orgId: value, page: 1 }));
-    });
-  };
-
-  const handleYearChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const year = Number.parseInt(e.target.value, 10);
-    if (!Number.isNaN(year)) {
-      setFinancialYear(year);
-      startTransition(() => {
-        router.push(buildUrl({ year, page: 1 }));
-      });
-    }
   };
 
   const handleSortChange = (field: "transactionDate" | "debitAmount" | "categoryKey") => {
@@ -239,28 +201,7 @@ export function CounterpartDetailClient({
             紐づいている取引
           </h2>
 
-          <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-end">
-            <div className="w-fit">
-              <PoliticalOrganizationSelect
-                organizations={organizations}
-                value={selectedOrganizationId}
-                onValueChange={handleOrganizationChange}
-              />
-            </div>
-            <div className="w-fit space-y-2">
-              <Label htmlFor={yearInputId}>報告年 (西暦)</Label>
-              <Input
-                id={yearInputId}
-                type="number"
-                value={String(financialYear)}
-                onChange={handleYearChange}
-                min={1900}
-                max={2100}
-                required
-                className="font-latin w-28"
-              />
-            </div>
-          </div>
+          <CurrentTargetBar target={target} note="の取引を表示しています" />
 
           <div className="mb-3 flex items-center justify-between">
             <p className="text-[13px] text-muted-foreground">{total}件の取引</p>
@@ -323,7 +264,7 @@ export function CounterpartDetailClient({
           isOpen={isAssignDialogOpen}
           transactions={assignDialogTransactions}
           allCounterparts={allCounterparts}
-          politicalOrganizationId={selectedOrganizationId || organizations[0]?.id || ""}
+          politicalOrganizationId={target.organizationId}
           onClose={handleAssignDialogClose}
           onSuccess={handleAssignSuccess}
         />

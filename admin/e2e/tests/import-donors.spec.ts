@@ -27,12 +27,9 @@ test.describe("寄付者一括インポート", () => {
 			).toBeVisible();
 			await expect(page.getByLabel("CSVファイル", { exact: true })).toBeVisible();
 
-			const selector = page.getByRole("combobox");
-			await expect(selector).toBeVisible();
-			await selector.click();
-			await expect(
-				page.getByRole("option", { name: "サンプル党" }),
-			).toBeVisible();
+			// ページ内の政治団体セレクタは廃止し、サイドバー上部で選んだ対象に追従する
+			await expect(page.getByRole("main")).toContainText("サンプル党／2025年度");
+			await expect(page.getByRole("main").getByRole("combobox")).toHaveCount(0);
 		});
 	});
 

@@ -4,13 +4,20 @@ import {
 } from "@/client/components/layout/sidebar-nav";
 
 describe("getVisibleNavSections", () => {
+  it("「ユーザー情報」ページは廃止したのでどちらのモードにも出さない", () => {
+    const hrefs = (role: "admin" | "user") =>
+      getVisibleNavSections(role).flatMap((s) => s.items.map((i) => i.href));
+    expect(hrefs("admin")).not.toContain("/user-info");
+    expect(hrefs("user")).not.toContain("/user-info");
+  });
+
   it("admin ロールにはすべての項目（ユーザー管理を含む）を表示する", () => {
     const sections = getVisibleNavSections("admin");
     const hrefs = sections.flatMap((s) => s.items.map((i) => i.href));
 
     expect(sections.map((s) => s.title)).toEqual(["政治団体", "データ取り込み", "報告書"]);
     expect(hrefs).toContain("/users");
-    expect(hrefs).toHaveLength(13);
+    expect(hrefs).toHaveLength(12);
   });
 
   it("admin 以外のロールには adminOnly の項目を表示しない", () => {
@@ -18,7 +25,7 @@ describe("getVisibleNavSections", () => {
     const hrefs = sections.flatMap((s) => s.items.map((i) => i.href));
 
     expect(hrefs).not.toContain("/users");
-    expect(hrefs).toHaveLength(12);
+    expect(hrefs).toHaveLength(11);
   });
 
   it("ロール不明（null）の場合も adminOnly の項目を表示しない", () => {
@@ -34,7 +41,6 @@ describe("getVisibleNavSections", () => {
 
     expect(iconByHref).toEqual({
       "/politicians": "user",
-      "/user-info": "user",
       "/political-organizations": "bank",
       "/users": "users",
       "/transactions": "list-bullets",
@@ -62,7 +68,6 @@ describe("isNavItemActive", () => {
   });
 
   it("前方が同じだけの別パスはアクティブにならない", () => {
-    expect(isNavItemActive("/user-info", "/users")).toBe(false);
     expect(isNavItemActive("/users-archive", "/users")).toBe(false);
   });
 
@@ -83,7 +88,7 @@ describe("議員室モード", () => {
   it("選択した議員・帳簿のリンクと下書き件数を使う", () => {
     const sections = getVisibleNavSections("user", target);
     expect(sections.map((s) => s.title)).toEqual(["議員室", "調査研究費"]);
-    expect(sections[0].items.map((i) => i.href)).toEqual(["/politicians", "/politicians/3/books", "/user-info"]);
+    expect(sections[0].items.map((i) => i.href)).toEqual(["/politicians", "/politicians/3/books"]);
     expect(sections[1].items).toHaveLength(6);
     expect(sections[1].items.every((i) => i.href.startsWith("/politicians/3/books/7/"))).toBe(true);
     expect(sections[1].items.find((i) => i.label === "仕訳の確認・編集")?.badge).toBe(4);
