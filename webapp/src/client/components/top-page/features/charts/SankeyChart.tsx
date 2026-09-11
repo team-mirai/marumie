@@ -88,6 +88,8 @@ interface SankeyNodeWithPosition {
 
 interface SankeyChartProps {
   data: SankeyData;
+  /** 図の内容を説明する読み上げ用のラベル。政治資金以外の図でも使えるように差し替えられる。 */
+  ariaLabel?: string;
 }
 
 const getNodeWidth = (nodeType: string | undefined, isMobile: boolean) => {
@@ -489,7 +491,10 @@ const CustomLabelsLayer = ({ nodes }: { nodes: readonly SankeyNodeWithPosition[]
   );
 };
 
-export default function SankeyChart({ data }: SankeyChartProps) {
+export default function SankeyChart({
+  data,
+  ariaLabel = "政治資金の収支フロー図",
+}: SankeyChartProps) {
   const isMobile = useMobileDetection();
   const { getNodeColor } = useNodeColors();
 
@@ -535,7 +540,7 @@ export default function SankeyChart({ data }: SankeyChartProps) {
       }}
       className="sankey-container !mb-0"
       role="img"
-      aria-label="政治資金の収支フロー図"
+      aria-label={ariaLabel}
       aria-describedby="sankey-chart-description"
     >
       <div id="sankey-chart-description" className="sr-only">

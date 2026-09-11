@@ -21,7 +21,15 @@ const COLORS = {
   PROCESSING_ERROR: "#F87171", // (仕訳中)のエラー色
   PROCESSING_LIGHT: "#FFF2F2", // (仕訳中)の薄い色
   PERCENTAGE_DARK: "#111827", // パーセンテージ表記の濃い色（収支・昨年残高用）
+  UNUSED_BOX: "#6B7280", // 調研費の未使用分（他の帯より後退させる）
+  UNUSED_LIGHT: "#E5E7EB", // 調研費の未使用分の薄い色
 } as const;
+
+/**
+ * 調研費の未使用分。支出の費目と同じ右端に並ぶが、使った額と同列に見せないよう
+ * 淡色にして末尾に固定する。年度途中は返還額が確定しないため「国庫へ返還」とは呼ばない。
+ */
+const UNUSED_LABEL = "未使用";
 
 // モバイル検知のカスタムフック
 export function useMobileDetection() {
@@ -65,6 +73,10 @@ export function useNodeColors() {
 
       if (nodeLabel === "未払費用") {
         return variant === "light" ? COLORS.PROCESSING_LIGHT : COLORS.PROCESSING_ERROR;
+      }
+
+      if (nodeLabel === UNUSED_LABEL) {
+        return variant === "light" ? COLORS.UNUSED_LIGHT : COLORS.UNUSED_BOX;
       }
 
       // 通常のノードタイプ判定
@@ -200,8 +212,9 @@ export function useSankeySorting(data: SankeyData) {
         const aValue = calculateNodeValue(a.id, data.links);
         const bValue = calculateNodeValue(b.id, data.links);
 
-        const aIsCarryover = a.label === "現金残高";
-        const bIsCarryover = b.label === "現金残高";
+        // 現金残高（政治資金）と未使用（調研費）はどちらも末尾に置く。
+        const aIsCarryover = a.label === "現金残高" || a.label === UNUSED_LABEL;
+        const bIsCarryover = b.label === "現金残高" || b.label === UNUSED_LABEL;
         const aIsProcessing = a.label === "(仕訳中)";
         const bIsProcessing = b.label === "(仕訳中)";
 

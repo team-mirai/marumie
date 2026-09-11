@@ -10,6 +10,7 @@ import { reportProfilesSeeder } from './seeds/reportProfiles';
 import { researchFundAccountsSeeder } from './seeds/researchFundAccounts';
 import { researchFundJournalEntriesSeeder } from '@/prisma/seeds/researchFundJournalEntries';
 import { researchFundBooksSeeder } from './seeds/researchFundBooks';
+import { researchFundExpenditureGroupsSeeder } from './seeds/researchFundExpenditureGroups';
 import { tenantsSeeder } from './seeds/tenants';
 import { transactionsSeeder } from './seeds/transactions';
 import { usersSeeder } from './seeds/users';
@@ -32,6 +33,7 @@ const seeders: Seeder[] = [
   politiciansSeeder,
   researchFundBooksSeeder,
   researchFundJournalEntriesSeeder,
+  researchFundExpenditureGroupsSeeder,
 ];
 
 async function main() {
