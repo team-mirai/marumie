@@ -1,6 +1,7 @@
 import "server-only";
 import type { Prisma, PrismaClient } from "@prisma/client";
 import {
+  Publication,
   PublicationError,
   type PublicationSnapshot,
   type PublishCandidate,
@@ -60,7 +61,7 @@ export class PrismaPublicationRepository implements PublicationRepository {
         continue;
       }
       // 「費用1行／収入1行」に射影できる仕訳だけを公開の候補にする（それ以外はこの画面で扱えない）。
-      if (rows.length !== 1) continue;
+      if (!Publication.isPublishable(rows.length)) continue;
       candidates.push({ ...rows[0], id: String(entry.id), description: entry.description });
     }
     return {
@@ -79,13 +80,15 @@ export class PrismaPublicationRepository implements PublicationRepository {
     if (!book) return null;
     const entries = await this.prisma.researchFundJournalEntry.findMany({
       where: { bookId: BigInt(bookId), id: { in: ids.map((id) => BigInt(id)) } },
-      select: { id: true, status: true, entryDate: true },
+      include,
     });
     return {
       entries: entries.map((entry) => ({
         id: String(entry.id),
         status: entry.status,
         entryDate: entry.entryDate.toISOString().slice(0, 10),
+        // 候補の適格性は画面と同じ射影で測る（画面に出ない仕訳を公開させない）。
+        rowCount: rowsOf(entry).length,
       })),
       publishedThrough: book.publishedThrough?.toISOString().slice(0, 10) ?? null,
     };
@@ -104,9 +107,16 @@ export class PrismaPublicationRepository implements PublicationRepository {
       });
       if (result.count !== ids.length)
         throw new PublicationError("仕訳の状態が変わりました。画面を再読み込みしてください");
+      // 並行して別の月を公開しても公開範囲が後退しないよう、既存値より新しいときだけ前進させる。
       if (publishedThrough)
-        await tx.researchFundBook.update({
-          where: { id: BigInt(bookId) },
+        await tx.researchFundBook.updateMany({
+          where: {
+            id: BigInt(bookId),
+            OR: [
+              { publishedThrough: null },
+              { publishedThrough: { lt: new Date(publishedThrough) } },
+            ],
+          },
           data: { publishedThrough: new Date(publishedThrough) },
         });
     });

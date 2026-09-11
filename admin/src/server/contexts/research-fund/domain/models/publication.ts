@@ -19,6 +19,8 @@ export interface PublicationSnapshot {
 export interface PublishableEntry extends JournalEntry {
   id: string;
   entryDate: string;
+  /** 集計行に射影したときの行数。公開の候補かどうかの判定に使う。 */
+  rowCount: number;
 }
 
 export class PublicationError extends Error {}
@@ -29,6 +31,14 @@ function monthEnd(date: string): string {
 }
 
 export const Publication = {
+  /**
+   * 公開の候補にできるのは「費用1行／収入1行」に射影できる仕訳だけ。
+   * それ以外はこの画面の before / after に表せないため、候補に出さず公開もさせない。
+   */
+  isPublishable(rowCount: number): boolean {
+    return rowCount === 1;
+  },
+
   /**
    * 公開範囲（published_through）を、公開した仕訳の最新月末まで進める。
    * 既に先まで公開している場合は後退させない（過去分の追加公開で表記が戻らないように）。

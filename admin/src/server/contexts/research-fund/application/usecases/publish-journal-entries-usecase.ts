@@ -33,6 +33,11 @@ export class PublishJournalEntriesUsecase {
         throw new PublicationError(
           "確認済の仕訳だけを公開できます。下書きは先に確認済にしてください",
         );
+      // 画面のチェックリストに出ない仕訳は before / after で確認できないので公開させない。
+      if (!Publication.isPublishable(entry.rowCount))
+        throw new PublicationError(
+          "この画面で公開できない仕訳が含まれています。画面を再読み込みしてください",
+        );
     }
     const publishedThrough = Publication.advancePublishedThrough(
       target.publishedThrough,

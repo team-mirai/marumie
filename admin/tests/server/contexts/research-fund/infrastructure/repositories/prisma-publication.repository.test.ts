@@ -28,7 +28,7 @@ function setup(journalEntries: ReturnType<typeof entry>[], publishedThrough: Dat
     },
     researchFundBook: {
       findUnique: jest.fn().mockResolvedValue({ publishedThrough, journalEntries }),
-      update: jest.fn().mockResolvedValue({}),
+      updateMany: jest.fn().mockResolvedValue({ count: 1 }),
     },
   };
   const repository = new PrismaPublicationRepository({
@@ -96,7 +96,7 @@ test("帳簿が無ければ null を返す", async () => {
 test("公開対象の現在の状態と帳簿の公開範囲を返す", async () => {
   const { repository, tx } = setup([entry({})], new Date("2026-07-31T00:00:00.000Z"));
   await expect(repository.pending("1", ["1"])).resolves.toEqual({
-    entries: [{ id: "1", status: "approved", entryDate: "2026-08-13" }],
+    entries: [{ id: "1", status: "approved", entryDate: "2026-08-13", rowCount: 1 }],
     publishedThrough: "2026-07-31",
   });
   expect(tx.researchFundJournalEntry.findMany).toHaveBeenCalledWith(
@@ -104,15 +104,33 @@ test("公開対象の現在の状態と帳簿の公開範囲を返す", async ()
   );
 });
 
-test("確認済だけを公開済みにし、公開範囲を更新する", async () => {
+test("候補にできない仕訳の行数もそのまま返し、公開の可否はユースケースが判定できる", async () => {
+  const { repository } = setup([
+    entry({
+      lines: [
+        line("debit", "taxi", 1000, "expense"),
+        line("debit", "postage", 500, "expense"),
+        line("credit", "bank", 1500, "asset"),
+      ],
+    }),
+  ]);
+  await expect(repository.pending("1", ["1"])).resolves.toMatchObject({
+    entries: [{ id: "1", rowCount: 2 }],
+  });
+});
+
+test("確認済だけを公開済みにし、公開範囲は既存値より新しいときだけ前進させる", async () => {
   const { repository, tx } = setup([entry({})]);
   await repository.publish("1", ["1"], "2026-08-31");
   expect(tx.researchFundJournalEntry.updateMany).toHaveBeenCalledWith({
     where: { bookId: BigInt(1), id: { in: [BigInt(1)] }, status: "approved" },
     data: { status: "published", publishedAt: expect.any(Date) },
   });
-  expect(tx.researchFundBook.update).toHaveBeenCalledWith({
-    where: { id: BigInt(1) },
+  expect(tx.researchFundBook.updateMany).toHaveBeenCalledWith({
+    where: {
+      id: BigInt(1),
+      OR: [{ publishedThrough: null }, { publishedThrough: { lt: new Date("2026-08-31") } }],
+    },
     data: { publishedThrough: new Date("2026-08-31") },
   });
 });
@@ -123,5 +141,5 @@ test("状態が変わって更新できなかった仕訳があればロール�
   await expect(repository.publish("1", ["1"], "2026-08-31")).rejects.toThrow(
     "仕訳の状態が変わりました",
   );
-  expect(tx.researchFundBook.update).not.toHaveBeenCalled();
+  expect(tx.researchFundBook.updateMany).not.toHaveBeenCalled();
 });
