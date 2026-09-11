@@ -96,5 +96,6 @@ admin はライトモードのみ（ダークモード非対応）。
 ## ループエンジニアリング（AIによる自律実装）
 
 `loop:ready` ラベルの付いたIssueをAIエージェントが自律実装し、CI green で自動マージする運用を行っている。
-運用ルールは [docs/loop-engineering.md](docs/loop-engineering.md)、1イテレーションの手順は [.claude/commands/loop-once.md](.claude/commands/loop-once.md)、
+運用ルールは [docs/loop-engineering.md](docs/loop-engineering.md)、セッション共通の規則は [docs/loop-session-rules.md](docs/loop-session-rules.md)、
+各セッションの手順は `.claude/commands/loop-implement.md` / `loop-fix-ci.md` / `loop-fix-main.md` / `loop-resolve-coderabbit.md`、
 ループ向け Issue の起票手順は [.claude/commands/loop-issue.md](.claude/commands/loop-issue.md) を参照すること。

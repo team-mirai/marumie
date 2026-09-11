@@ -18,7 +18,8 @@
 |---------|------|---------|
 | [backend-architecture-guide.md](backend-architecture-guide.md) | webapp / admin のバックエンド実装ルール（Bounded Context・レイヤードアーキテクチャ） | 実装者・AIエージェント |
 | [admin-ui-guidelines.md](admin-ui-guidelines.md) | admin の UI コンポーネント利用ルール | 実装者・AIエージェント |
-| [loop-engineering.md](loop-engineering.md) | AIエージェントによる自律実装と、次のループでのPR修理・CodeRabbitのステータス完了判定とスレッド解決の運用ルール | メンテナ・AIエージェント |
+| [loop-engineering.md](loop-engineering.md) | AIエージェントによる自律実装（ループ）の運用ルール。ランナーの判定順・ラベル・CodeRabbit の扱い | メンテナ・AIエージェント |
+| [loop-session-rules.md](loop-session-rules.md) | ループの各セッション（実装・CI修理・CodeRabbit対応）に共通する規則。信頼境界・スコープアウト・結果行 | AIエージェント |
 | [getting-started.md](getting-started.md) | ローカル開発環境のセットアップ手順 | 新規参加者 |
 | [devin-feature-recording-guide.md](devin-feature-recording-guide.md) | 実装結果の動画撮影・報告手順 | Devin |
 
