@@ -21,6 +21,8 @@ export async function POST(request: NextRequest) {
     revalidateTag("transactions-for-csv", "max");
     revalidateTag("top-page-data", "max");
     revalidateTag("organizations", "max");
+    // 調研費（admin の公開画面から呼ばれる）。公開ページの loader がこのタグでキャッシュする。
+    revalidateTag("research-fund-page-data", "max");
 
     return NextResponse.json({
       success: true,
