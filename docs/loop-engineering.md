@@ -56,7 +56,8 @@ Issueの起票・コメントは誰でもできるが、ラベル付与は write
 
 - [.github/workflows/loop-label-guard.yml](../.github/workflows/loop-label-guard.yml) が、
   メンテナ以外が起票したIssueから `loop:ready` を自動で剥がす
-- ランナー（`state.sh` / `decide.sh`）が起票者の関係性を見て、メンバー以外の Issue は `loop:human` に付け替える
+- ランナー（`state.sh` / `decide.sh`）が起票者の `author_association` を見て、**OWNER / MEMBER / COLLABORATOR 以外**の Issue は `loop:human` に付け替える
+  （`docs/loop-session-rules.md` の信頼境界と同じ許可集合）
 - セッション自身も着手前に起票者を再確認する
 
 外部からの良い提案を回したい場合は、**メンテナが内容を確認して自分の言葉で書き直したIssueを
@@ -235,8 +236,9 @@ git stash list | grep loop-abandoned   # 中断セッションの退避作業（
 
 ## ループ機構そのものの変更
 
-`scripts/loop*.sh`、`scripts/loop/`、`.claude/commands/loop-*.md`、`docs/loop-session-rules.md` の変更は、
-ループに自律実装させず人間が行う（`loop:human`）。手順書に書いたコマンドが実行環境で動くかは CI では検証されないため、
+`scripts/loop*.sh`、`scripts/loop/`、`.claude/commands/loop-*.md`、`docs/loop-session-rules.md`、そしてこの文書 `docs/loop-engineering.md` の変更は、
+ループに自律実装させず人間が行う（`loop:human`）。セッションが自分の判定順序や信頼境界を書き換えられないよう、
+`docs/loop-session-rules.md` の絶対ルールでもこれらのファイルの編集を禁止している。手順書に書いたコマンドが実行環境で動くかは CI では検証されないため、
 変更したら必ずランナーのマシンで `./scripts/loop/state.sh | ./scripts/loop/decide.sh` を実行して裏を取る。
 
 ## 注意事項

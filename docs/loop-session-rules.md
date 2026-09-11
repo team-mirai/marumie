@@ -30,8 +30,10 @@
    - 人間の判断・作業が必要なら `loop:human`
    - 本文には「なぜ必要か」「完了条件」「気づいた経緯（どの Issue / PR の作業中か）」を書く
 4. **Prisma のマイグレーションは実装しない。** schema 変更が必要だと判明したら止めて `loop:human` にエスカレーションする（本番 DB に影響するため人間が確認する）。
-5. **`scripts/loop-once.sh`、`scripts/loop.sh`、`scripts/loop/` には一切触れない**（編集・restore・checkout での復元を含む）。
-   いま実行中のランナー自身であり、書き換えると壊れる。変更が必要なら Issue として起票する。差分が「現れた」場合も放置してよい（コミットに含めないだけでよい）。
+5. **ループ機構そのものには一切触れない。** 対象は `scripts/loop-once.sh`、`scripts/loop.sh`、`scripts/loop/`（いま実行中のランナー自身。書き換えると壊れる）と、
+   `.claude/commands/loop-*.md`、`docs/loop-session-rules.md`、`docs/loop-engineering.md`（ループの判定順序と信頼境界を定める正本。
+   セッションが自分の規則を書き換えると後続セッションがそれに従ってしまう）。編集・restore・checkout での復元を含めて行わない。
+   変更が必要なら `loop:human` の Issue として起票する。差分が「現れた」場合も放置してよい（コミットに含めないだけでよい）。
 6. **ユーザーへの質問はできない**（無人実行）。判断に迷ったらエスカレーションする。
 7. **最後に必ず結果行を 1 行出力する**（後述）。ランナーがこれを解析する。
 
@@ -69,9 +71,11 @@ pnpm supabase:start && pnpm db:reset && pnpm test:e2e
    - 人間の判断・意思決定が必要 → `loop:human`
    - **別 Issue のマージ待ちはブロッカーではない。** 着手後に本文に無い依存が判明した場合は、Issue 本文の末尾に
      `🤖 #X のマージ後に着手（<理由を 1 行>）` を追記し（`gh issue edit <N> --body-file`。他の部分は変えない）、
-     ラベルを `loop:ready` に戻し、変更を破棄して `LOOP_RESULT: BLOCKED issue=#<N> reason=dependency-added` で終了する。
+     ラベルを `loop:ready` に戻し、下記 3 の手順で変更を破棄して `LOOP_RESULT: BLOCKED issue=#<N> reason=dependency-added` で終了する。
      ランナーが依存の解消を待って再び拾う
-3. 中途半端な変更はコミットせず `git checkout main` に戻す（作業内容を残したい場合は WIP コミットを push してドラフト PR にし、Issue からリンクする）。
+3. 中途半端な変更はコミットしない。破棄する場合は現在のブランチで `git restore --source=HEAD --staged --worktree . && git clean -fd` を実行し、
+   `git status --short` が空であることを確認してから `git switch main` に戻る（`git checkout main` は変更を破棄せず持ち越すので使わない）。
+   作業内容を残したい場合は WIP コミットを push してドラフト PR にし、Issue からリンクする。
    **PR 作成済みでレビュー対応だけが残っている場合は PR を open のまま残す**（実装は完了しており、人間が判断すれば auto-merge に進める）
 4. `LOOP_RESULT: BLOCKED issue=#<N> reason=<短い理由>` を出力して終了する
 
