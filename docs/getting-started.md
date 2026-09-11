@@ -228,7 +228,7 @@ pnpm run typecheck     # 型チェック
 pnpm run test          # テスト実行
 ```
 
-### E2Eテスト（admin）
+### E2Eテスト（webapp / admin）
 
 E2E はローカルの Supabase（認証）とシードデータに依存するため、プロジェクトルートから以下の順で実行します：
 
@@ -236,17 +236,20 @@ E2E はローカルの Supabase（認証）とシードデータに依存する�
 pnpm supabase:start && pnpm db:reset && pnpm test:e2e
 ```
 
-- `pnpm test:e2e` は webapp → admin の順に実行します。admin だけ回すなら `pnpm test:e2e:admin`
+- `pnpm test:e2e` は webapp → admin の順に実行します。片方だけ回すなら `pnpm test:e2e:webapp` / `pnpm test:e2e:admin`
 - `pnpm test:e2e:admin` / `pnpm test:e2e:ui` は起動中の Supabase から接続情報を自動取得するため、
   `admin/.env.local` のキー設定は不要です（`pnpm --filter admin test:e2e` と直接呼ぶ場合は自動取得されません）
-- admin の E2E は CI と同じ本番ビルド（`next build` → `next start --port 3001`）を自動で起動します。
-  ポート 3001 で開発サーバーが動いていると起動できないので、先に止めてください
-  （dev サーバーは並行実行中に Fast Refresh で RSC ストリームが切れ、
-  ハイドレーション前のクリックが握り潰されて E2E が不安定になるため使いません）
-- デバッグ目的で dev サーバーに当てたいときは `E2E_DEV_SERVER=1 pnpm test:e2e:admin`。
-  この場合は起動中の開発サーバーを再利用します（結果は CI と一致しないことがあります）
+- webapp / admin とも、E2E は CI と同じ本番ビルド（`next build` → `next start`）を自動で起動します
+  （webapp はポート 3000、admin はポート 3001）。該当ポートで開発サーバーが動いていると起動できないので、
+  先に止めてください（dev サーバーは並行実行中に Fast Refresh で RSC ストリームが切れ、
+  ハイドレーション前のクリックが握り潰されて E2E が不安定になるため使いません）。
+  ビルドから走るので初回は数分かかります
+- デバッグ目的で dev サーバーに当てたいときは `E2E_DEV_SERVER=1 pnpm test:e2e:webapp` /
+  `E2E_DEV_SERVER=1 pnpm test:e2e:admin`。この場合は起動中の開発サーバーを再利用します
+  （結果は CI と一致しないことがあります）
 
 ```bash
+pnpm test:e2e:webapp                   # webapp の E2E（ヘッドレス）
 pnpm test:e2e:admin                    # admin の E2E（ヘッドレス）
 pnpm test:e2e:ui                       # UIモードで実行（デバッグ用）
 pnpm --filter admin test:e2e:headed    # ブラウザを表示して実行（キーは admin/.env.local から）
