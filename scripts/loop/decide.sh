@@ -12,21 +12,26 @@
 # セッションを起動せずにランナーが行うラベル操作は escalations / flags に列挙する:
 #   escalations: 人間のレビュースレッドがある PR、修正ラウンドの予算を超えた PR → 紐づく Issue を loop:human に
 #   flags:       起票者が信頼境界の外の Issue、依存先が未マージのまま閉じた Issue → loop:human に
+#   nudges:      CodeRabbit がレート制限で head を未レビューのままの PR → `@coderabbitai review` を投げて再レビューを促す
+#                （head ごとに 1 回。LOOP_NUDGE_INTERVAL_MINUTES 経っても未レビューなら再度）
 #
 # 出力の形:
 # { "action": "fix-main|fix-ci|resolve-coderabbit|implement|wait|none", "target": <番号|null>, "reason": "...",
 #   "escalations": [ { "pr", "issue", "reason": "human-review|budget-exceeded" } ],
 #   "flags":       [ { "issue", "reason": "untrusted-author|dead-dependency" } ],
+#   "nudges":      [ <PR番号> ],
 #   "waiting_on":  { "prs": [...], "issues": [...] } }
 #
 # 環境変数:
-#   LOOP_MAX_FIX_ROUNDS  CodeRabbit 対応の修正 push を何ラウンドまで許すか（デフォルト 2）
+#   LOOP_MAX_FIX_ROUNDS           CodeRabbit 対応の修正 push を何ラウンドまで許すか（デフォルト 2）
+#   LOOP_NUDGE_INTERVAL_MINUTES   レート制限中の PR に再レビューを促す間隔（デフォルト 20）
 
 set -euo pipefail
 
 max_rounds="${LOOP_MAX_FIX_ROUNDS:-2}"
+nudge_interval="${LOOP_NUDGE_INTERVAL_MINUTES:-20}"
 
-jq --argjson max_rounds "$max_rounds" '
+jq --argjson max_rounds "$max_rounds" --argjson nudge_interval "$nudge_interval" '
   # エスカレーション済み（Issue が loop:human / loop:blocked）の PR はループの対象外
   (.prs | map(select(.issue == null or (.issue.escalated | not)))) as $prs
 
@@ -46,7 +51,7 @@ jq --argjson max_rounds "$max_rounds" '
         | {action: "fix-ci", target: .number,
            reason: (if .merge_state == "DIRTY" then "conflict with main" else "ci-complete failed" end)} ]
       + [ $live[] | select(.ci_complete != "FAILURE" and .merge_state != "DIRTY"
-                           and (.coderabbit | IN("SUCCESS", "FAILURE", "ERROR"))
+                           and (.coderabbit | IN("SUCCESS", "FAILURE", "ERROR", "RATE_LIMITED"))
                            and .threads.coderabbit_unresolved > 0)
         | {action: "resolve-coderabbit", target: .number,
            reason: "\(.threads.coderabbit_unresolved) unresolved CodeRabbit thread(s) on reviewed head"} ]
@@ -54,6 +59,11 @@ jq --argjson max_rounds "$max_rounds" '
     ) as $pr_actions
   | ($pr_actions | map(.target)) as $action_prs
   | ($live | map(select(.number as $n | ($action_prs | index($n)) == null)) | map(.number)) as $inflight
+
+  # レート制限で head が未レビューのままの PR: 再レビューを促す（head ごとに 1 回、間隔を空けて再送）
+  | ([ $live[] | select(.coderabbit == "RATE_LIMITED" and .threads.coderabbit_unresolved == 0
+                        and (.nudged_at == null or ((now - (.nudged_at | fromdateiso8601)) / 60) >= $nudge_interval))
+        | .number ]) as $nudges
 
   | (
       [ .issues[] | select(.trusted | not) | {issue: .number, reason: "untrusted-author"} ]
@@ -80,6 +90,7 @@ jq --argjson max_rounds "$max_rounds" '
   | $decision + {
       escalations: $escalations,
       flags: $flags,
+      nudges: $nudges,
       waiting_on: {prs: $inflight, issues: $waiting_issues}
     }
 '

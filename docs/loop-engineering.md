@@ -20,8 +20,9 @@ AIエージェント（Claude Code / Codex）に実装を自律的に回して�
 
 1. **main の CI が赤** → `loop-fix-main`
 2. **いま動かせる loop PR がある** → 必須チェック失敗・コンフリクトなら `loop-fix-ci`、
-   CodeRabbit が最新コミットをレビュー済みで未解決スレッドが残っていれば `loop-resolve-coderabbit`。
-   人間のレビュースレッドがある PR と修正ラウンドの予算を超えた PR は、セッションを起動せずランナーが `loop:human` に付け替える
+   CodeRabbit が最新コミットをレビュー済み（またはレート制限で止まっている）で未解決スレッドが残っていれば `loop-resolve-coderabbit`。
+   人間のレビュースレッドがある PR と修正ラウンドの予算を超えた PR は、セッションを起動せずランナーが `loop:human` に付け替える。
+   レート制限で最新コミットが未レビューのままの PR には、ランナーが `@coderabbitai review` を投げる
 3. **いま着手できる Issue がある** → `loop-implement`（`loop:unblock` 優先、次に番号最小。依存待ちの Issue は読み飛ばすだけで状態を変えない）
 4. **in-flight の PR（CI 実行中・レビュー中・承認済みでマージ待ち）か依存待ちの Issue しか無い** → `WAITING`。
    ランナーが状態だけを取り直し、変化した時点で次の tick を回す
@@ -112,6 +113,13 @@ docsのみの変更などで個別ジョブがスキップされても必ず報�
   `@coderabbitai resolve` での一括 resolve、レビュー自体の dismiss は禁止（人間が後から監査できなくなる）
 - 修正 push は **2 ラウンドまで**（`LOOP_MAX_FIX_ROUNDS`）。ランナーが `fix: CodeRabbit` で始まるコミット数で数え、
   超えてもまだ未解決の指摘があれば、セッションを起動せずに PR を open のまま Issue を `loop:human` に付け替える
+- **CodeRabbit にはプランごとに 1 時間あたりのレビュー回数の上限がある**（push ごとの増分レビューも 1 回に数える）。
+  上限に当たると head のコミットステータスは `success` のまま説明文が「Review rate limited」になり、そのコミットは**未レビュー**なので
+  承認は永遠に来ない。`state.sh` はこれを `RATE_LIMITED` として区別し、未解決スレッドが無ければランナーが `@coderabbitai review` を
+  投げて再レビューを促す（head ごとに 1 回、`LOOP_NUDGE_INTERVAL_MINUTES`（既定 20 分）経っても未レビューなら再送）。
+  1 Issue で「PR 作成時の 1 回 + 修正 push の最大 2 ラウンド」の最大 3 回を使う。上限を超えたレビューを
+  usage-based add-on で継続できない構成（このリポジトリはこれに当たる）では、この最大 3 回が上限に制約されるため、
+  上限がループのスループットの上限にもなる
 - ループが自動処理するのは `coderabbitai` のスレッドだけ。人間のレビュースレッドがある PR はランナーが即 `loop:human` に付け替える
 - エスカレーション済みの PR（Issue が `loop:human` / `loop:blocked`）は、メンテナが `loop:ready` に戻すまでランナーの対象外
 - 判定基準の実体は [loop-resolve-coderabbit.md](../.claude/commands/loop-resolve-coderabbit.md)

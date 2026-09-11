@@ -108,7 +108,8 @@ main() {
     exit 1
   }
   local escalated_any=false
-  [[ "$esc_summary" != "escalated=0 flagged=0" ]] && escalated_any=true
+  [[ "$esc_summary" != escalated=0\ flagged=0* ]] && escalated_any=true
+  [[ "$esc_summary" == *nudged=[1-9]* ]] && echo "[loop-once] $esc_summary"
 
   # --- セッションを起動しない結果 ---
   case "$action" in

@@ -14,7 +14,11 @@
 #       "review_decision": "|APPROVED|CHANGES_REQUESTED|REVIEW_REQUIRED",
 #       "auto_merge": true|false,
 #       "ci_complete": "SUCCESS|FAILURE|PENDING|MISSING|...",   # 必須チェック（CheckRun）
-#       "coderabbit":  "SUCCESS|FAILURE|ERROR|PENDING|MISSING", # 必須チェック（head のコミットステータス）
+#       "coderabbit":  "SUCCESS|FAILURE|ERROR|PENDING|RATE_LIMITED|MISSING", # head のコミットステータス。
+#                      # state が success でも説明が "rate limited" なら未レビューなので RATE_LIMITED にする
+#       "coderabbit_note": "<コミットステータスの説明文>",
+#       "head_committed_at": "<ISO8601>",
+#       "nudged_at": "<head 以降に @coderabbitai review を投げた最新時刻>" | null,
 #       "fix_rounds": <"fix: CodeRabbit" で始まるコミット数>,
 #       "issue": { "number", "labels": [...], "escalated": true|false } | null,   # Closes で紐づく Issue
 #       "threads": { "coderabbit_unresolved": n, "human_unresolved": n }
@@ -60,14 +64,24 @@ if [[ -n "$pr_numbers" ]]; then
     q+=" pr$n: pullRequest(number: $n) {"
     q+="   closingIssuesReferences(first: 5) { nodes { number labels(first: 30) { nodes { name } } } }"
     q+="   reviewThreads(first: 100) { nodes { isResolved comments(first: 1) { nodes { author { login } } } } }"
-    q+="   commits(last: 100) { nodes { commit { messageHeadline } } }"
+    q+="   commits(last: 100) { nodes { commit { messageHeadline committedDate } } }"
+    q+="   comments(last: 30) { nodes { body createdAt } }"
     q+=" }"
   done
   q+=" } }"
   pr_extra="$(gh api graphql -f query="$q" --jq '.data.repository')"
 fi
 
-prs_json="$(jq --argjson extra "$pr_extra" '
+# head の CodeRabbit コミットステータス（説明文が要る。レート制限時も state は success になる）
+cr_status='{}'
+for n in $pr_numbers; do
+  head="$(jq -r --argjson n "$n" '.[] | select(.number == $n) | .headRefOid' <<<"$prs_raw")"
+  st="$(gh api "repos/$repo/commits/$head/status" \
+    --jq '[.statuses[] | select(.context == "CodeRabbit")] | first // {} | {state, description, updated_at}' 2>/dev/null || echo '{}')"
+  cr_status="$(jq --argjson n "$n" --argjson st "$st" '. + {("pr\($n)"): $st}' <<<"$cr_status")"
+done
+
+prs_json="$(jq --argjson extra "$pr_extra" --argjson cr "$cr_status" '
   def check(nm):
     ([.statusCheckRollup[]? | select((.name // .context) == nm)] | first) as $c
     | if $c == null then "MISSING"
@@ -76,8 +90,11 @@ prs_json="$(jq --argjson extra "$pr_extra" '
       else ($c.state // "MISSING") end;
   map(
     ($extra["pr\(.number)"] // {}) as $x
+    | ($cr["pr\(.number)"] // {}) as $st
     | ($x.closingIssuesReferences.nodes // [] | first) as $iss
     | ($x.reviewThreads.nodes // [] | map(select(.isResolved == false))) as $open
+    | ($x.commits.nodes // [] | last | .commit.committedDate // null) as $head_at
+    | ([$x.comments.nodes[]? | select((.body | test("@coderabbitai review")) and $head_at != null and .createdAt > $head_at) | .createdAt] | max) as $nudged
     | {
         number, title,
         branch: .headRefName,
@@ -87,7 +104,12 @@ prs_json="$(jq --argjson extra "$pr_extra" '
         review_decision: .reviewDecision,
         auto_merge: (.autoMergeRequest != null),
         ci_complete: check("ci-complete"),
-        coderabbit: check("CodeRabbit"),
+        coderabbit: (if ($st.description // "" | test("rate limit"; "i")) then "RATE_LIMITED"
+                     elif ($st.state // "") != "" then ($st.state | ascii_upcase)
+                     else check("CodeRabbit") end),
+        coderabbit_note: ($st.description // ""),
+        head_committed_at: $head_at,
+        nudged_at: $nudged,
         fix_rounds: ([$x.commits.nodes[]? | select(.commit.messageHeadline | startswith("fix: CodeRabbit"))] | length),
         issue: (if $iss == null then null else {
           number: $iss.number,
