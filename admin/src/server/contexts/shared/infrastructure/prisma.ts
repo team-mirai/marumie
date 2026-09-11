@@ -1,15 +1,18 @@
 import "server-only";
 
-import { PrismaClient } from "@prisma/client";
+import { type Prisma, PrismaClient } from "@prisma/client";
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };
 
+// 本番では公開ページのアクセスごとに実行 SQL が標準出力へ出てしまうため、クエリログは開発・テストだけで有効にする。
+const logLevels: Prisma.LogLevel[] = process.env.NODE_ENV === "production" ? [] : ["query"];
+
 export const prisma =
   globalForPrisma.prisma ??
   new PrismaClient({
-    log: ["query"],
+    log: logLevels,
   });
 
 if (process.env.NODE_ENV !== "production") {
