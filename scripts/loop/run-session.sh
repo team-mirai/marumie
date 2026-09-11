@@ -35,7 +35,9 @@ run_claude() {
             end
          ] | select(length > 0) | join("\n"))
       elif $e.type == "result" then
-        "[\(ts)] セッション終了 (turns: \($e.num_turns // "?"), cost: $\($e.total_cost_usd // 0))\n\($e.result // "")"
+        "[\(ts)] セッション終了 (subtype: \($e.subtype // "?"), turns: \($e.num_turns // "?"), cost: $\($e.total_cost_usd // 0))"
+        + (if ($e.errors // []) | length > 0 then "\nerrors: \($e.errors | tojson)" else "" end)
+        + "\n\($e.result // "")"
       else empty
       end'
 

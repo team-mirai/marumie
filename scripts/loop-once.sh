@@ -140,6 +140,12 @@ main() {
   local result
   result="$(grep -Eo 'LOOP_RESULT: [A-Z_]+[^\r]*' "$log_file" | tail -1 || true)"
   if [[ -z "$result" ]]; then
+    if grep -q 'セッション終了 (subtype: [a-z_]*, turns: 0,' "$log_file"; then
+      # モデルが一度も呼ばれていない = スラッシュコマンドの ! 展開が失敗した等、再実行しても直らない
+      echo "[loop-once] セッションが 0 ターンで終了しました。コマンド定義（.claude/commands/$command_name.md）の ! 展開が失敗している可能性があります" >&2
+      echo "[loop-once] LOOP_RESULT: FAILED kind=deterministic reason=session-not-started"
+      exit 5
+    fi
     echo "[loop-once] LOOP_RESULT: FAILED kind=transient reason=no-result-line"
     exit 1
   fi

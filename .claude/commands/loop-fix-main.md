@@ -13,7 +13,7 @@ description: main の CI 失敗を直す PR を作る（結果は待たない）
 
 - 現在のブランチ: !`git branch --show-current`
 - main の最新 CI: !`gh run list --branch main --workflow ci.yml --limit 1 --json databaseId,conclusion,displayTitle,url --jq '.[] | "\(.conclusion // "実行中") run=\(.databaseId) \(.displayTitle) \(.url)"'`
-- 失敗ジョブ: !`gh run list --branch main --workflow ci.yml --limit 1 --json databaseId --jq '.[0].databaseId' | xargs -I{} gh run view {} --json jobs --jq '.jobs[] | select(.conclusion == "failure") | .name' 2>/dev/null || echo "(取得できず)"`
+- 失敗ジョブ: !`gh run view "$(gh run list --branch main --workflow ci.yml --limit 1 --json databaseId --jq '.[0].databaseId')" --json jobs --jq '.jobs[] | select(.conclusion == "failure") | .name' 2>/dev/null || echo "(取得できず)"`
 
 ## 手順
 
