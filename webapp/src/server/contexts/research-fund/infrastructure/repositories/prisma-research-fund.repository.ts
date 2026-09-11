@@ -8,9 +8,8 @@ import type {
   PublishedPoliticianResearchFund,
   PublishedResearchFund,
 } from "@/server/contexts/research-fund/domain/models/published-research-fund";
-import type { ResearchFundPoliticianEntry } from "@/server/contexts/research-fund/domain/models/research-fund-politician-list";
+import type { ResearchFundPoliticianSource } from "@/server/contexts/research-fund/domain/models/research-fund-politician-list";
 import type { ResearchFundRepository } from "@/server/contexts/research-fund/domain/repositories/research-fund-repository.interface";
-import { buildCoverageLabel } from "@/server/contexts/research-fund/domain/services/research-fund-coverage";
 import type { ResearchFundRow } from "@/shared/research-fund/aggregation";
 
 /**
@@ -269,7 +268,7 @@ export class PrismaResearchFundRepository implements ResearchFundRepository {
     };
   }
 
-  async findPoliticians(financialYear: number): Promise<ResearchFundPoliticianEntry[]> {
+  async findPoliticians(financialYear: number): Promise<ResearchFundPoliticianSource[]> {
     const politicians = await this.prisma.politician.findMany({
       // 帳簿の無い議員はセレクタに出さない（開いても中身が無いため）。
       where: { books: { some: { financialYear } } },
@@ -293,24 +292,13 @@ export class PrismaResearchFundRepository implements ResearchFundRepository {
 
     return politicians.map((politician) => {
       const book = politician.books[0];
-      const months = (book?.journalEntries ?? []).map((entry) =>
-        dateOf(entry.entryDate).slice(0, 7),
-      );
       return {
         slug: politician.slug,
         name: politician.name,
-        ready: months.length > 0,
-        statusLabel:
-          months.length > 0
-            ? buildCoverageLabel([
-                {
-                  months,
-                  publishedThrough: book?.publishedThrough
-                    ? dateOf(book.publishedThrough).slice(0, 7)
-                    : null,
-                },
-              ])
-            : "準備中",
+        publishedMonths: (book?.journalEntries ?? []).map((entry) =>
+          dateOf(entry.entryDate).slice(0, 7),
+        ),
+        publishedThrough: book?.publishedThrough ? dateOf(book.publishedThrough).slice(0, 7) : null,
       };
     });
   }

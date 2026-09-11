@@ -11,7 +11,8 @@ const DEFAULT_YEAR = 2026;
 
 interface OrganizationYearSheetProps {
   organizations: OrganizationsResponse;
-  politicians: ResearchFundPoliticianEntry[];
+  /** 年度ごとの議員一覧。選択中の年度に帳簿がある議員だけを出す */
+  politiciansByYear: Record<number, ResearchFundPoliticianEntry[]>;
   initialSlug?: string;
   /** 議員ページを開いているときの議員 slug。政治団体ページでは undefined */
   initialPoliticianSlug?: string;
@@ -20,7 +21,7 @@ interface OrganizationYearSheetProps {
 
 export default function OrganizationYearSheet({
   organizations,
-  politicians,
+  politiciansByYear,
   initialSlug,
   initialPoliticianSlug,
   initialYear,
@@ -53,6 +54,7 @@ export default function OrganizationYearSheet({
   }, [pathname]);
 
   const currentOrganization = organizations.organizations.find((org) => org.slug === currentSlug);
+  const politicians = politiciansByYear[currentYear] ?? [];
   const currentPolitician = politicians.find(
     (politician) => politician.slug === currentPoliticianSlug,
   );
@@ -82,7 +84,11 @@ export default function OrganizationYearSheet({
   };
 
   const handleYearSelect = (year: number) => {
-    if (currentPoliticianSlug) {
+    // その年度に帳簿が無い議員ページへ送ると 404 になるので、政治団体ページに戻す。
+    const hasBook = (politiciansByYear[year] ?? []).some(
+      (politician) => politician.slug === currentPoliticianSlug,
+    );
+    if (currentPoliticianSlug && hasBook) {
       router.push(`/p/${encodeURIComponent(currentPoliticianSlug)}/${year}`);
       return;
     }

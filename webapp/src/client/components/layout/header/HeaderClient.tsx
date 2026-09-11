@@ -50,10 +50,11 @@ const getNavigationItems = (currentSlug: string, currentYear: number) => [
 
 interface HeaderClientProps {
   organizations: OrganizationsResponse;
-  politicians: ResearchFundPoliticianEntry[];
+  /** 年度ごとの議員一覧。年度を切り替えると出す一覧も切り替える */
+  politiciansByYear: Record<number, ResearchFundPoliticianEntry[]>;
 }
 
-export default function HeaderClient({ organizations, politicians }: HeaderClientProps) {
+export default function HeaderClient({ organizations, politiciansByYear }: HeaderClientProps) {
   const pathname = usePathname();
 
   // 現在のslugとyearを取得（/o/[slug]/[year]/... と /p/[slug]/[year] の形式）
@@ -150,7 +151,7 @@ export default function HeaderClient({ organizations, politicians }: HeaderClien
             <div className="flex items-center w-full max-w-[217px] min-w-0 h-12 flex-shrink">
               <OrganizationYearSheet
                 organizations={organizations}
-                politicians={politicians}
+                politiciansByYear={politiciansByYear}
                 initialSlug={currentSlug ?? undefined}
                 initialPoliticianSlug={currentPoliticianSlug ?? undefined}
                 initialYear={currentYear}
