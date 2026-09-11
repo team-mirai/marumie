@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { CaretLeft, Plus, X } from "@phosphor-icons/react/dist/ssr";
 import { toast } from "sonner";
 import { PageHeader } from "@/client/components/layout/PageHeader";
+import { DeleteExpenditureGroupButton } from "@/client/components/research-fund/DeleteExpenditureGroupButton";
 import {
   Button,
   Card,
@@ -205,6 +206,13 @@ export function ExpenditureGroupForm({
               <Button asChild variant="outline">
                 <Link href={listPath}>キャンセル</Link>
               </Button>
+              {group && (
+                <DeleteExpenditureGroupButton
+                  groupId={group.id}
+                  title={group.title}
+                  target={target}
+                />
+              )}
             </div>
           </CardContent>
         </Card>

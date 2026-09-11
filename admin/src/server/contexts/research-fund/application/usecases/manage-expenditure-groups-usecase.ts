@@ -75,6 +75,22 @@ export class ManageExpenditureGroupsUsecase {
     return groupId;
   }
 
+  async remove(bookId: string, groupId: string) {
+    validateId(bookId);
+    validateId(groupId);
+    await this.repository.remove(bookId, groupId);
+  }
+
+  /** 一覧に出ている支出群を過不足なく、表示したい順に渡す */
+  async reorder(bookId: string, groupIds: readonly string[]) {
+    validateId(bookId);
+    for (const groupId of groupIds) validateId(groupId);
+    if (new Set(groupIds).size !== groupIds.length)
+      throw new ExpenditureGroupError("並び順の指定が重複しています");
+    if (groupIds.length === 0) return;
+    await this.repository.reorder(bookId, groupIds);
+  }
+
   private async prepare(
     bookId: string,
     groupId: string | null,

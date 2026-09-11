@@ -19,4 +19,11 @@ export interface ExpenditureGroupRepository {
   create(bookId: string, input: ExpenditureGroupWrite): Promise<string>;
   /** create と同じ保証で、既存の紐づけ・成果物を入れ替える */
   update(bookId: string, groupId: string, input: ExpenditureGroupWrite): Promise<void>;
+  /** 支出群を消す。紐づけと成果物は onDelete: Cascade で一緒に消える */
+  remove(bookId: string, groupId: string): Promise<void>;
+  /**
+   * 渡された順に displayOrder を 0 から振り直す。
+   * 帳簿の支出群と過不足があれば（一覧が古いなら）ExpenditureGroupError を投げ、何も変えない。
+   */
+  reorder(bookId: string, groupIds: readonly string[]): Promise<void>;
 }

@@ -53,3 +53,14 @@ test("同時保存の直列化衝突は保存し直せるエラーに変換す�
     isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
   });
 });
+
+test("並べ替えも直列化トランザクションで行い、衝突は保存し直せるエラーに変換する", async () => {
+  const { $transaction, repository } = setup();
+  $transaction.mockRejectedValue(
+    new Prisma.PrismaClientKnownRequestError("write conflict", { code: "P2034", clientVersion: "test" }),
+  );
+  await expect(repository.reorder("3", ["2", "1"])).rejects.toThrow("他の操作と競合しました");
+  expect($transaction).toHaveBeenCalledWith(expect.any(Function), {
+    isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+  });
+});

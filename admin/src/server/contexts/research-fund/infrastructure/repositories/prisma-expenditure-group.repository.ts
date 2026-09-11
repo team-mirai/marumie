@@ -141,6 +141,38 @@ export class PrismaExpenditureGroupRepository implements ExpenditureGroupReposit
     );
   }
 
+  async remove(bookId: string, groupId: string) {
+    // 紐づけ（research_fund_group_items）と成果物は onDelete: Cascade で一緒に消える。
+    const result = await this.prisma.researchFundExpenditureGroup.deleteMany({
+      where: { id: BigInt(groupId), bookId: BigInt(bookId) },
+    });
+    if (result.count !== 1) throw new ExpenditureGroupError("支出群が見つかりません");
+  }
+
+  async reorder(bookId: string, groupIds: readonly string[]) {
+    // READ COMMITTED だと findMany の後に別トランザクションが追加・削除しても
+    // 古い current の検証を通ってしまうため、create / update と同じく直列化する。
+    await serializable(() =>
+      this.prisma.$transaction(async (tx) => {
+        const rows = await tx.researchFundExpenditureGroup.findMany({
+          where: { bookId: BigInt(bookId) },
+          select: { id: true },
+        });
+        // 一覧を開いたまま他所で追加・削除されていたら、歯抜けの順序を書き込まずに諦めてもらう。
+        const current = new Set(rows.map((row) => String(row.id)));
+        if (current.size !== groupIds.length || groupIds.some((groupId) => !current.has(groupId)))
+          throw new ExpenditureGroupError(
+            "一覧が更新されています。再読み込みしてから並べ替えてください",
+          );
+        for (const [displayOrder, groupId] of groupIds.entries())
+          await tx.researchFundExpenditureGroup.update({
+            where: { id: BigInt(groupId) },
+            data: { displayOrder },
+          });
+      }, serializableOptions),
+    );
+  }
+
   /**
    * 紐づけと成果物を作り直す。トランザクション内で呼ぶ前提で、
    * 帳簿外・他の支出群の仕訳が混ざっていれば投げて丸ごと巻き戻す。
