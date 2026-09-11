@@ -14,6 +14,8 @@ function setup() {
     entries: jest.fn(),
     create: jest.fn(),
     update: jest.fn(),
+    remove: jest.fn(),
+    reorder: jest.fn(),
   };
   repository.book.mockResolvedValue({ policyComment: "方針" });
   repository.list.mockResolvedValue([]);
@@ -177,6 +179,30 @@ test.each(["example.com", "javascript:alert(1)", "ftp://example.com/a"])(
   },
 );
 
+test("削除は帳簿と支出群のIDをそのままリポジトリに渡す", async () => {
+  const { repository, usecase } = setup();
+  await usecase.remove("3", "1");
+  expect(repository.remove).toHaveBeenCalledWith("3", "1");
+});
+
+test("並べ替えは渡された順をそのままリポジトリに渡す", async () => {
+  const { repository, usecase } = setup();
+  await usecase.reorder("3", ["2", "1", "3"]);
+  expect(repository.reorder).toHaveBeenCalledWith("3", ["2", "1", "3"]);
+});
+
+test("空の並びではリポジトリを呼ばない", async () => {
+  const { repository, usecase } = setup();
+  await usecase.reorder("3", []);
+  expect(repository.reorder).not.toHaveBeenCalled();
+});
+
+test("同じ支出群が2回出てくる並びは保存しない", async () => {
+  const { repository, usecase } = setup();
+  await expect(usecase.reorder("3", ["1", "2", "1"])).rejects.toThrow("重複");
+  expect(repository.reorder).not.toHaveBeenCalled();
+});
+
 test.each(["", "0", "-1", "abc"])("不正なIDではリポジトリを呼ばない: %j", async (id) => {
   const { repository, usecase } = setup();
   await expect(usecase.list(id)).rejects.toThrow("ID");
@@ -185,7 +211,13 @@ test.each(["", "0", "-1", "abc"])("不正なIDではリポジトリを呼ばな�
   await expect(usecase.savePolicyComment(id, "方針")).rejects.toThrow("ID");
   await expect(usecase.save(id, null, edit)).rejects.toThrow("ID");
   await expect(usecase.save("3", id, edit)).rejects.toThrow("ID");
+  await expect(usecase.remove(id, "1")).rejects.toThrow("ID");
+  await expect(usecase.remove("3", id)).rejects.toThrow("ID");
+  await expect(usecase.reorder(id, ["1"])).rejects.toThrow("ID");
+  await expect(usecase.reorder("3", ["1", id])).rejects.toThrow("ID");
   expect(repository.create).not.toHaveBeenCalled();
   expect(repository.update).not.toHaveBeenCalled();
   expect(repository.savePolicyComment).not.toHaveBeenCalled();
+  expect(repository.remove).not.toHaveBeenCalled();
+  expect(repository.reorder).not.toHaveBeenCalled();
 });

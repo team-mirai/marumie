@@ -99,7 +99,34 @@ test("活用方針を保存し、仕訳を束ねた支出群を作って編集�
   await expect(edited).toContainText("1件");
   await expect(edited).toContainText("2026.03.01");
 
-  // 外した仕訳は別の支出群で選べるようになる
+  // 外した仕訳は別の支出群で選べるようになる。そのまま 2 つ目の支出群にする
+  await page.getByRole("link", { name: "支出群を作る" }).click();
+  const printed = page.getByRole("listitem").filter({ hasText: "資料の印刷" }).getByRole("checkbox");
+  await expect(printed).toBeEnabled();
+  await page.getByLabel("タイトル").fill("視察のまとめ");
+  await page.getByLabel("使った目的と、そこから生まれたもの").fill("視察の記録を残した。");
+  await printed.check();
+  await page.getByRole("button", { name: "作成する" }).click();
+  await expect(page).toHaveURL(/expenditure-groups$/);
+
+  // 並べ替えは display_order に保存され、再読み込みしても残る
+  const titles = page.locator('[data-slot="card"]:has(h2) h2');
+  await expect(titles).toHaveText(["議会質問づくりの相棒（改）", "視察のまとめ"]);
+  await page.getByRole("button", { name: "視察のまとめを前に移動" }).click();
+  await expect(titles).toHaveText(["視察のまとめ", "議会質問づくりの相棒（改）"]);
+  await page.reload();
+  await expect(titles).toHaveText(["視察のまとめ", "議会質問づくりの相棒（改）"]);
+
+  // 編集ページから削除すると、紐づいていた仕訳は他の支出群で選べるようになる
+  const doomed = page
+    .locator('[data-slot="card"]')
+    .filter({ has: page.getByRole("heading", { name: "視察のまとめ" }) });
+  await doomed.getByRole("link", { name: "編集" }).click();
+  await page.getByRole("button", { name: "この支出群を削除" }).click();
+  await page.getByRole("button", { name: "削除する", exact: true }).click();
+  await expect(page.getByText("支出群を削除しました")).toBeVisible();
+  await expect(page).toHaveURL(/expenditure-groups$/);
+  await expect(titles).toHaveText(["議会質問づくりの相棒（改）"]);
   await page.getByRole("link", { name: "支出群を作る" }).click();
   await expect(
     page.getByRole("listitem").filter({ hasText: "資料の印刷" }).getByRole("checkbox"),
