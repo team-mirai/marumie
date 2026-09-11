@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { clickUntil } from "../helpers/interactions";
 
 test("支給をテンプレートから1クリックで確認済登録し、二重生成を拒み、仕訳一覧に並べる", async ({ page }) => {
   const year = new Date().getFullYear();
@@ -28,8 +29,9 @@ test("支給をテンプレートから1クリックで確認済登録し、二�
 
   const january = page.getByRole("listitem").filter({ hasText: "1月" }).first();
   await expect(january).toContainText("¥1,000,000");
-  await january.getByRole("button", { name: "この月を登録" }).click();
-  await expect(january).toContainText("登録済み");
+  await clickUntil(january.getByRole("button", { name: "この月を登録" }), (options) =>
+    expect(january).toContainText("登録済み", options),
+  );
   // 同月の二重生成は拒否される（登録済みの月にボタンは出ない）
   await expect(january.getByRole("button", { name: "この月を登録" })).toHaveCount(0);
   await page.reload();

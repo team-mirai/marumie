@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { clickUntil } from "../helpers/interactions";
 
 test("デフォルトから初版を保存し、編集して版を重ね、巻き戻す", async ({ page }) => {
   const name = `e2e-prompt-${Date.now()}`;
@@ -31,8 +32,9 @@ test("デフォルトから初版を保存し、編集して版を重ね、巻�
   await expect(details).toBeVisible();
   await expect(page.getByText("領収書の抽出結果を次のJSONスキーマに従って")).toBeVisible();
 
-  await page.getByRole("button", { name: "保存して v1 にする" }).click();
-  await expect(page.getByText("v1 有効")).toBeVisible();
+  await clickUntil(page.getByRole("button", { name: "保存して v1 にする" }), (options) =>
+    expect(page.getByText("v1 有効")).toBeVisible(options),
+  );
   const history = page.locator('[data-slot="card"]').filter({ has: page.getByRole("heading", { name: "版履歴" }) }).getByRole("listitem");
   await expect(history).toHaveCount(1);
   await expect(history.first()).toContainText("初版");

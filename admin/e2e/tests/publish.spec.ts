@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { clickUntil } from "../helpers/interactions";
 
 test("確認済の仕訳を選んでbefore/afterを見比べ、公開して公開範囲を更新する", async ({ page }) => {
   const year = new Date().getFullYear();
@@ -23,12 +24,16 @@ test("確認済の仕訳を選んでbefore/afterを見比べ、公開して公�
   // 公開できる材料をつくる: 支給1件（確認済）と、確認済にした支出1件
   await page.getByRole("link", { name: "支給の登録" }).click();
   await expect(page.getByRole("heading", { name: "支給の登録" })).toBeVisible();
-  await page.getByRole("listitem").filter({ hasText: "1月" }).first().getByRole("button", { name: "この月を登録" }).click();
-  await expect(page.getByRole("listitem").filter({ hasText: "1月" }).first()).toContainText("登録済み");
+  const january = page.getByRole("listitem").filter({ hasText: "1月" }).first();
+  await clickUntil(january.getByRole("button", { name: "この月を登録" }), (options) =>
+    expect(january).toContainText("登録済み", options),
+  );
   await page.getByRole("link", { name: "仕訳の確認・編集" }).click();
   await expect(page.getByRole("heading", { name: "仕訳の確認・編集" })).toBeVisible();
-  await page.getByRole("button", { name: "手動で仕訳を作成" }).click();
   const dialog = page.getByRole("dialog");
+  await clickUntil(page.getByRole("button", { name: "手動で仕訳を作成" }), (options) =>
+    expect(dialog.getByLabel("日付", { exact: true })).toBeVisible(options),
+  );
   await dialog.getByLabel("日付", { exact: true }).fill(`${year}-03-15`);
   await dialog.getByLabel("金額", { exact: true }).fill("1500");
   await dialog.getByLabel("項目名", { exact: true }).fill("視察先への移動");
