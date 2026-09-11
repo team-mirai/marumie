@@ -18,7 +18,7 @@ description: ループを 1 tick 実行する（状態収集 → 判定 → 該�
 ## 手順
 
 1. 作業ツリーが汚れていれば何もせず `LOOP_RESULT: FAILED kind=deterministic reason=dirty-tree` で終了する。`git checkout main && git pull origin main`。
-2. 「判定結果」の `escalations` / `flags` が空でなければ、`./scripts/loop/state.sh | ./scripts/loop/decide.sh | ./scripts/loop/escalate.sh` で GitHub に反映する（ランナー側のラベル操作。セッションの仕事ではない）。
+2. 「判定結果」の `escalations` / `flags` / `nudges` / `unblocks` が空でなければ、`./scripts/loop/state.sh | ./scripts/loop/decide.sh | ./scripts/loop/escalate.sh` で GitHub に反映する（ランナー側のラベル操作。セッションの仕事ではない）。
 3. `action` に応じて、対応するコマンドを**このセッションで**実行する（Skill ツールで `/loop-implement <target>` のように呼ぶ。手順書を自分で読み直して真似しない）:
 
    | action | 実行するコマンド |

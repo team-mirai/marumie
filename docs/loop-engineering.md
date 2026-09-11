@@ -21,8 +21,9 @@ AIエージェント（Claude Code / Codex）に実装を自律的に回して�
 1. **main の CI が赤** → `loop-fix-main`
 2. **いま動かせる loop PR がある** → 必須チェック失敗・コンフリクトなら `loop-fix-ci`、
    CodeRabbit が最新コミットをレビュー済み（またはレート制限で止まっている）で未解決スレッドが残っていれば `loop-resolve-coderabbit`。
-   人間のレビュースレッドがある PR と修正ラウンドの予算を超えた PR は、セッションを起動せずランナーが `loop:human` に付け替える。
-   レート制限で最新コミットが未レビューのままの PR には、ランナーが `@coderabbitai review` を投げる
+   人間のレビュースレッドがある PR と、修正ラウンドの予算を超えても未解決の指摘が残る PR は、セッションを起動せずランナーが `loop:human` に付け替える。
+   レート制限で最新コミットが未レビューのままの PR には、ランナーが `@coderabbitai review` を投げる。
+   最新コミットがレビュー済みで未解決スレッドも無いのに Request changes が残っている PR は、ランナーがそのレビューを取り下げる
 3. **いま着手できる Issue がある** → `loop-implement`（`loop:unblock` 優先、次に番号最小。依存待ちの Issue は読み飛ばすだけで状態を変えない）
 4. **in-flight の PR（CI 実行中・レビュー中・承認済みでマージ待ち）か依存待ちの Issue しか無い** → `WAITING`。
    ランナーが状態だけを取り直し、変化した時点で次の tick を回す
@@ -110,9 +111,16 @@ docsのみの変更などで個別ジョブがスキップされても必ず報�
 - セッションは Issue 本文（Out of scope を含む）と PR 差分を読み直してから指摘を判定し、修正があれば
   `fix: CodeRabbit の指摘に対応（…）` で push し、**全スレッドに返信して resolve** してから終了する。承認は待たない
 - 退ける場合は必ずスレッドに `🤖` で始まる理由を返信してから resolve する。黙って resolve すること、
-  `@coderabbitai resolve` での一括 resolve、レビュー自体の dismiss は禁止（人間が後から監査できなくなる）
+  `@coderabbitai resolve` での一括 resolve、セッションがレビュー自体を dismiss することは禁止（人間が後から監査できなくなる）
 - 修正 push は **2 ラウンドまで**（`LOOP_MAX_FIX_ROUNDS`）。ランナーが `fix: CodeRabbit` で始まるコミット数で数え、
-  超えてもまだ未解決の指摘があれば、セッションを起動せずに PR を open のまま Issue を `loop:human` に付け替える
+  超えてもまだ**未解決の指摘が残っていれば**、セッションを起動せずに PR を open のまま Issue を `loop:human` に付け替える。
+  指摘を全部裁いたあとに Request changes だけが残っている状態は予算超過ではなく、次の 2 項でランナーが解く
+- **全スレッドを resolve しても Request changes が自動で APPROVED に切り替わらないことがある。**
+  CodeRabbit は最新コミットの再レビュー時に切り替えるが、再レビューが走らない・走っても切り替わらないと、
+  auto-merge は Request changes に阻まれて永遠に止まる。最新コミットがレビュー済み（コミットステータスが完了）で
+  未解決スレッドが無く、head が `LOOP_STALE_REVIEW_MINUTES`（既定 20 分）以上前のものなら、
+  ランナーがその Request changes を dismiss して PR に理由をコメントする（`stale-changes-requested`）。
+  退けた根拠は各スレッドの `🤖` 返信に残っているので、監査は dismiss 後も可能
 - **CodeRabbit にはプランごとに 1 時間あたりのレビュー回数の上限がある**（push ごとの増分レビューも 1 回に数える）。
   上限に当たると head のコミットステータスは `success` のまま説明文が「Review rate limited」になり、そのコミットは**未レビュー**なので
   承認は永遠に来ない。`state.sh` はこれを `RATE_LIMITED` として区別し、未解決スレッドが無ければランナーが `@coderabbitai review` を

@@ -20,6 +20,7 @@
 #   LOOP_LOG_FILE        ログの出力先（未指定なら .loop/logs/single-<時刻>.log）。
 #                        同じ basename で <log>.state.json / <log>.decision.json も残す
 #   LOOP_MAX_FIX_ROUNDS  CodeRabbit 対応の修正 push を何ラウンドまで許すか（decide.sh、デフォルト 2）
+#   LOOP_NUDGE_INTERVAL_MINUTES / LOOP_STALE_REVIEW_MINUTES  CodeRabbit の再レビュー催促・取り残しの判定（decide.sh）
 #
 # 終了コード（loop.sh が読む）:
 #   0 = SUCCESS     セッションが 1 つの仕事を終えた（PR 作成 / 修正 push / 指摘の処理）
@@ -109,7 +110,7 @@ main() {
   }
   local escalated_any=false
   [[ "$esc_summary" != escalated=0\ flagged=0* ]] && escalated_any=true
-  [[ "$esc_summary" == *nudged=[1-9]* ]] && echo "[loop-once] $esc_summary"
+  [[ "$esc_summary" == *nudged=[1-9]* || "$esc_summary" == *unblocked=[1-9]* ]] && echo "[loop-once] $esc_summary"
 
   # --- セッションを起動しない結果 ---
   case "$action" in

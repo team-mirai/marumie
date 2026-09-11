@@ -1,13 +1,14 @@
 #!/usr/bin/env bash
 #
-# decide.sh の JSON（標準入力）にある escalations / flags を GitHub に反映する。
+# decide.sh の JSON（標準入力）にある escalations / flags / nudges / unblocks を GitHub に反映する。
 # LLM セッションを起動せずにランナーが行う唯一の書き込み。
 #
 #   escalations: PR にコメントし、紐づく Issue を loop:wip → loop:human に付け替える
 #   flags:       Issue を loop:ready → loop:human に付け替えて理由をコメントする
 #   nudges:      レート制限で未レビューのままの PR に `@coderabbitai review` を投げる
+#   unblocks:    取り残された CodeRabbit の Request changes を dismiss し、PR に理由をコメントする
 #
-# 標準出力に反映した件数を "escalated=<n> flagged=<m> nudged=<k>" の形で 1 行出力する。
+# 標準出力に反映した件数を "escalated=<n> flagged=<m> nudged=<k> unblocked=<j>" の形で 1 行出力する。
 
 set -euo pipefail
 
@@ -15,6 +16,7 @@ decision="$(cat)"
 escalated=0
 flagged=0
 nudged=0
+unblocked=0
 
 while IFS=$'\t' read -r pr issue reason; do
   [[ -z "$pr" ]] && continue
@@ -58,4 +60,23 @@ while read -r pr; do
   nudged=$((nudged + 1))
 done < <(jq -r '.nudges[]?' <<<"$decision")
 
-echo "escalated=$escalated flagged=$flagged nudged=$nudged"
+# 取り残された Request changes の dismiss。
+# セッションには dismiss を禁じている（退けた根拠がスレッドに残らなくなるため）。ここで dismiss するのは
+# 「指摘スレッドが全件 resolve 済みで、head に対する CodeRabbit のレビューも完了している」レビューだけで、
+# 監査に必要な返信はスレッドに残っており、dismiss の理由も PR のコメントとして記録する。
+if jq -e '(.unblocks // []) | length > 0' <<<"$decision" >/dev/null; then
+  repo="$(gh repo view --json nameWithOwner --jq .nameWithOwner)"
+  while IFS=$'\t' read -r pr review_id review_commit head reason; do
+    [[ -z "$pr" ]] && continue
+    message="🤖 ループが取り下げ: 指摘スレッドは全件返信・resolve 済みで、head ${head:0:8} に対する CodeRabbit のレビューも完了しています（新しい指摘なし）。レビュー時点の commit は ${review_commit:0:8}。"
+    if ! gh api -X PUT "repos/${repo}/pulls/${pr}/reviews/${review_id}/dismissals" -f message="$message" >/dev/null; then
+      echo "[escalate] PR #$pr の Request changes（review ${review_id}）を dismiss できませんでした" >&2
+      continue
+    fi
+    gh pr comment "$pr" --body "🤖 CodeRabbit の Request changes（commit ${review_commit:0:8} 時点）をランナーが取り下げました。指摘スレッドは全件返信・resolve 済みで、head ${head:0:8} に対する CodeRabbit のレビューも完了していますが（新しい指摘なし）、APPROVED への切り替えが行われず auto-merge が止まっていたためです。退けた指摘の根拠は各スレッドの 🤖 返信を参照してください。" >/dev/null
+    echo "[escalate] PR #$pr Request changes を dismiss reason=$reason" >&2
+    unblocked=$((unblocked + 1))
+  done < <(jq -r '.unblocks[]? | [.pr, .review_id, (.review_commit // ""), (.head // ""), .reason] | @tsv' <<<"$decision")
+fi
+
+echo "escalated=$escalated flagged=$flagged nudged=$nudged unblocked=$unblocked"
