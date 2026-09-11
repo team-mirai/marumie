@@ -14,7 +14,7 @@ description: loop:ready の Issue を 1 つ実装し、PR 作成と auto-merge �
 - 現在のブランチ: !`git branch --show-current`
 - 変更状態: !`git status --short`
 - 対象 Issue: !`gh issue view $ARGUMENTS --json number,title,labels,author --jq '"#\(.number) \(.title) [\(.author.login)] labels=\([.labels[].name] | join(","))"'`
-- 起票者の関係性: !`gh api repos/{owner}/{repo}/issues/$ARGUMENTS --jq .author_association`
+- 起票者の関係性: !`gh api "repos/{owner}/{repo}/issues/$ARGUMENTS" --jq .author_association`
 
 ## 手順
 

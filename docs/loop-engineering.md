@@ -240,6 +240,10 @@ git stash list | grep loop-abandoned   # 中断セッションの退避作業（
 ループに自律実装させず人間が行う（`loop:human`）。セッションが自分の判定順序や信頼境界を書き換えられないよう、
 `docs/loop-session-rules.md` の絶対ルールでもこれらのファイルの編集を禁止している。手順書に書いたコマンドが実行環境で動くかは CI では検証されないため、
 変更したら必ずランナーのマシンで `./scripts/loop/state.sh | ./scripts/loop/decide.sh` を実行して裏を取る。
+コマンド定義（`.claude/commands/loop-*.md`）の「現在の状況」にある `!` コマンドは、1 つでも失敗すると Claude が 0 ターンで終了する
+（ランナーは `FAILED kind=deterministic reason=session-not-started` で止まる）。`!` コマンドを変えたら
+`claude -p "/loop-<cmd> <引数>" --max-turns 1` で展開が通ることを確認する。`{owner}/{repo}` を含む `gh api` のパスは
+シェルの波括弧展開を避けるため必ず引用符で囲む。
 
 ## 注意事項
 
