@@ -5,14 +5,16 @@
 #
 #   escalations: PR にコメントし、紐づく Issue を loop:wip → loop:human に付け替える
 #   flags:       Issue を loop:ready → loop:human に付け替えて理由をコメントする
+#   nudges:      レート制限で未レビューのままの PR に `@coderabbitai review` を投げる
 #
-# 標準出力に反映した件数を "escalated=<n> flagged=<m>" の形で 1 行出力する。
+# 標準出力に反映した件数を "escalated=<n> flagged=<m> nudged=<k>" の形で 1 行出力する。
 
 set -euo pipefail
 
 decision="$(cat)"
 escalated=0
 flagged=0
+nudged=0
 
 while IFS=$'\t' read -r pr issue reason; do
   [[ -z "$pr" ]] && continue
@@ -49,4 +51,11 @@ while IFS=$'\t' read -r issue reason; do
   flagged=$((flagged + 1))
 done < <(jq -r '.flags[]? | [.issue, .reason] | @tsv' <<<"$decision")
 
-echo "escalated=$escalated flagged=$flagged"
+while read -r pr; do
+  [[ -z "$pr" ]] && continue
+  gh pr comment "$pr" --body "@coderabbitai review" >/dev/null
+  echo "[escalate] PR #$pr → @coderabbitai review（レート制限で head が未レビューのため再レビューを依頼）" >&2
+  nudged=$((nudged + 1))
+done < <(jq -r '.nudges[]?' <<<"$decision")
+
+echo "escalated=$escalated flagged=$flagged nudged=$nudged"
