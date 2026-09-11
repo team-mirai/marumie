@@ -1,6 +1,7 @@
 import "server-only";
 import { notFound } from "next/navigation";
 import { ManageExpenditureGroupsUsecase } from "@/server/contexts/research-fund/application/usecases/manage-expenditure-groups-usecase";
+import { ExpenditureGroupError } from "@/server/contexts/research-fund/domain/models/expenditure-group";
 import { PrismaExpenditureGroupRepository } from "@/server/contexts/research-fund/infrastructure/repositories/prisma-expenditure-group.repository";
 import { requireJournalTarget } from "@/server/contexts/research-fund/presentation/loaders/load-journal-review";
 import { prisma } from "@/server/contexts/shared/infrastructure/prisma";
@@ -25,7 +26,9 @@ export async function loadExpenditureGroupForm(
   if (!target) notFound();
   try {
     return { ...(await usecase().form(bookId, groupId)), target };
-  } catch {
-    notFound();
+  } catch (error) {
+    // DB 障害やプログラムエラーを 404 に化けさせず、監視に届かせる。
+    if (error instanceof ExpenditureGroupError) notFound();
+    throw error;
   }
 }

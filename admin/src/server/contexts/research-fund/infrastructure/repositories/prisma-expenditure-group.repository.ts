@@ -1,5 +1,5 @@
 import "server-only";
-import type { Prisma, PrismaClient } from "@prisma/client";
+import { Prisma, type PrismaClient } from "@prisma/client";
 import {
   ExpenditureGroupError,
   type ExpenditureGroupRecord,
@@ -27,6 +27,22 @@ function model(row: Row): ExpenditureGroupRecord {
     outcomes: row.outcomes.map((outcome) => ({ label: outcome.label, url: outcome.url })),
     entryIds: row.items.map((item) => String(item.entryId)),
   };
+}
+
+// 「1 仕訳は 1 つの支出群だけ」は (groupId, entryId) の複合主キーでは守れないため、
+// 同じ仕訳を別の支出群へ同時保存した場合は直列化の衝突として弾く。
+const serializableOptions = {
+  isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+};
+
+async function serializable<T>(run: () => Promise<T>): Promise<T> {
+  try {
+    return await run();
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2034")
+      throw new ExpenditureGroupError("他の操作と競合しました。もう一度保存してください");
+    throw error;
+  }
 }
 
 export class PrismaExpenditureGroupRepository implements ExpenditureGroupRepository {
@@ -75,14 +91,15 @@ export class PrismaExpenditureGroupRepository implements ExpenditureGroupReposit
       orderBy: [{ entryDate: "asc" }, { id: "asc" }],
     });
     return rows.flatMap((row) => {
-      const expenseLine = row.lines.find((line) => line.account.type === "expense");
-      if (!expenseLine) return [];
+      // 1 仕訳に費用の借方が複数あることがある（取得済みの明細は借方だけ）。全部足す。
+      const expenseLines = row.lines.filter((line) => line.account.type === "expense");
+      if (expenseLines.length === 0) return [];
       return [
         {
           id: String(row.id),
           entryDate: row.entryDate.toISOString().slice(0, 10),
           description: row.description,
-          amount: expenseLine.amount.toNumber(),
+          amount: expenseLines.reduce((total, line) => total + line.amount.toNumber(), 0),
           groupId: row.groupItems[0] ? String(row.groupItems[0].groupId) : null,
         },
       ];
@@ -90,34 +107,38 @@ export class PrismaExpenditureGroupRepository implements ExpenditureGroupReposit
   }
 
   async create(bookId: string, input: ExpenditureGroupWrite) {
-    return this.prisma.$transaction(async (tx) => {
-      const displayOrder = await tx.researchFundExpenditureGroup.count({
-        where: { bookId: BigInt(bookId) },
-      });
-      const row = await tx.researchFundExpenditureGroup.create({
-        data: {
-          bookId: BigInt(bookId),
-          title: input.title,
-          description: input.description,
-          displayOrder,
-        },
-      });
-      await this.replaceLinks(tx, bookId, row.id, input);
-      return String(row.id);
-    });
+    return serializable(() =>
+      this.prisma.$transaction(async (tx) => {
+        const displayOrder = await tx.researchFundExpenditureGroup.count({
+          where: { bookId: BigInt(bookId) },
+        });
+        const row = await tx.researchFundExpenditureGroup.create({
+          data: {
+            bookId: BigInt(bookId),
+            title: input.title,
+            description: input.description,
+            displayOrder,
+          },
+        });
+        await this.replaceLinks(tx, bookId, row.id, input);
+        return String(row.id);
+      }, serializableOptions),
+    );
   }
 
   async update(bookId: string, groupId: string, input: ExpenditureGroupWrite) {
-    await this.prisma.$transaction(async (tx) => {
-      const result = await tx.researchFundExpenditureGroup.updateMany({
-        where: { id: BigInt(groupId), bookId: BigInt(bookId) },
-        data: { title: input.title, description: input.description },
-      });
-      if (result.count !== 1) throw new ExpenditureGroupError("支出群が見つかりません");
-      await tx.researchFundGroupItem.deleteMany({ where: { groupId: BigInt(groupId) } });
-      await tx.researchFundGroupOutcome.deleteMany({ where: { groupId: BigInt(groupId) } });
-      await this.replaceLinks(tx, bookId, BigInt(groupId), input);
-    });
+    await serializable(() =>
+      this.prisma.$transaction(async (tx) => {
+        const result = await tx.researchFundExpenditureGroup.updateMany({
+          where: { id: BigInt(groupId), bookId: BigInt(bookId) },
+          data: { title: input.title, description: input.description },
+        });
+        if (result.count !== 1) throw new ExpenditureGroupError("支出群が見つかりません");
+        await tx.researchFundGroupItem.deleteMany({ where: { groupId: BigInt(groupId) } });
+        await tx.researchFundGroupOutcome.deleteMany({ where: { groupId: BigInt(groupId) } });
+        await this.replaceLinks(tx, bookId, BigInt(groupId), input);
+      }, serializableOptions),
+    );
   }
 
   /**
