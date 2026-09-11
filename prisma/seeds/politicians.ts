@@ -31,6 +31,16 @@ const data: PoliticianSeedData[] = [
     organizationSlug: null, // 無所属（所属なしでも議員は存在できることの確認用）
   },
   {
+    // 政党ページ A-6 の「準備中の議員もグレーで表示する」を確認するための所属議員。
+    name: 'サンプル 次郎',
+    slug: 'sample-jiro',
+    termStart: '2025-07-21',
+    displayOrder: 3,
+    tenantSlug: 'sample-party',
+    organizationSlug: 'sample-party',
+    startedOn: '2025-07-21',
+  },
+  {
     name: 'E2E 議員',
     slug: 'e2e-politician',
     termStart: '2025-07-21',

@@ -44,6 +44,15 @@ export default function ExplanationSection() {
 
         <div>
           <h3 className="text-base sm:text-lg font-bold text-gray-800 mb-3 font-japanese">
+            調査研究費について
+          </h3>
+          <p className="text-[11px] sm:text-[15px] leading-[1.82] sm:leading-[1.87] tracking-[0.01em] text-gray-500 sm:text-gray-800 font-medium sm:font-normal font-japanese">
+            調査研究費（正式名称：調査研究広報滞在費）は、政党を通らず国から国会議員に対して毎月直接支給される公費です。政党を経由しないため、上記の政治資金とは別のお金として、議員ごとに公開しています。金額にかかわらず、公開の準備が整った月の支出を1件ずつ、領収書つきで掲載しています。整理が完了していない議員・月は「準備中」と表示され、順次公開していきます。余った分は国庫に返すため、年末時点で確定します。
+          </p>
+        </div>
+
+        <div>
+          <h3 className="text-base sm:text-lg font-bold text-gray-800 mb-3 font-japanese">
             免責事項
           </h3>
           <p className="text-[11px] sm:text-[15px] leading-[1.82] sm:leading-[1.87] tracking-[0.01em] text-gray-500 sm:text-gray-800 font-medium sm:font-normal font-japanese">

@@ -84,6 +84,8 @@ function published(overrides: Partial<PublishedResearchFund> = {}): PublishedRes
 function usecaseWith(value: PublishedResearchFund | null) {
   const repository: ResearchFundRepository = {
     findPublished: jest.fn().mockResolvedValue(value),
+    findPublishedByOrganization: jest.fn().mockResolvedValue(null),
+    findPoliticians: jest.fn().mockResolvedValue([]),
     findPublishedReceipt: jest.fn().mockResolvedValue(null),
   };
   return { usecase: new GetResearchFundPageUsecase(repository), repository };

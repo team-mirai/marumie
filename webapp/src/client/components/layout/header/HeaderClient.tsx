@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import OrganizationYearSheet from "@/client/components/layout/header/OrganizationYearSheet";
+import type { ResearchFundPoliticianEntry } from "@/server/contexts/research-fund/domain/models/research-fund-politician-list";
 import type { OrganizationsResponse } from "@/types/organization";
 
 const DEFAULT_YEAR = 2026;
@@ -31,6 +32,11 @@ const getNavigationItems = (currentSlug: string, currentYear: number) => [
     desktopLabel: "すべての出入金",
   },
   {
+    href: `/o/${currentSlug}/${currentYear}/#research-fund`,
+    label: "調査研究費",
+    desktopLabel: "調査研究費",
+  },
+  {
     href: `/o/${currentSlug}/${currentYear}/#explanation`,
     label: "データについて",
     desktopLabel: "データについて",
@@ -44,18 +50,24 @@ const getNavigationItems = (currentSlug: string, currentYear: number) => [
 
 interface HeaderClientProps {
   organizations: OrganizationsResponse;
+  politicians: ResearchFundPoliticianEntry[];
 }
 
-export default function HeaderClient({ organizations }: HeaderClientProps) {
+export default function HeaderClient({ organizations, politicians }: HeaderClientProps) {
   const pathname = usePathname();
 
-  // 現在のslugとyearを取得（/o/[slug]/[year]/... の形式の場合）
+  // 現在のslugとyearを取得（/o/[slug]/[year]/... と /p/[slug]/[year] の形式）
   const pathSegments = pathname.split("/");
-  const slugFromPath = pathSegments[1] === "o" ? pathSegments[2] : null;
-  const yearFromPath =
-    pathSegments[1] === "o" && pathSegments[3] ? parseInt(pathSegments[3], 10) : null;
+  const isPoliticianPath = pathSegments[1] === "p";
+  const slugFromPath =
+    pathSegments[1] === "o" || isPoliticianPath ? (pathSegments[2] ?? null) : null;
+  const yearFromPath = slugFromPath && pathSegments[3] ? parseInt(pathSegments[3], 10) : null;
 
-  const currentSlug = slugFromPath ?? organizations.default;
+  // 議員ページではナビの遷移先に議員の slug を使えないので、既定の政治団体に寄せる。
+  const currentSlug = isPoliticianPath
+    ? organizations.default
+    : (slugFromPath ?? organizations.default);
+  const currentPoliticianSlug = isPoliticianPath ? slugFromPath : null;
   const currentYear =
     yearFromPath && [2025, 2026].includes(yearFromPath) ? yearFromPath : DEFAULT_YEAR;
 
@@ -138,7 +150,9 @@ export default function HeaderClient({ organizations }: HeaderClientProps) {
             <div className="flex items-center w-full max-w-[217px] min-w-0 h-12 flex-shrink">
               <OrganizationYearSheet
                 organizations={organizations}
+                politicians={politicians}
                 initialSlug={currentSlug ?? undefined}
+                initialPoliticianSlug={currentPoliticianSlug ?? undefined}
                 initialYear={currentYear}
               />
             </div>

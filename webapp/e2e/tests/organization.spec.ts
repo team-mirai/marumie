@@ -75,8 +75,8 @@ test.describe("政治団体ページ", () => {
 			const selectorButton = page.getByRole("button", { name: /サンプル党/ });
 			await selectorButton.click();
 
-			// ドロップダウンが開いて選択肢が表示される
-			await expect(page.getByText("表示する団体名")).toBeVisible();
+			// ドロップダウンが開いて選択肢が表示される（政治資金／調査研究費の2グループ）
+			await expect(page.getByText(/^政治資金 \d+団体$/)).toBeVisible();
 		});
 
 		test("別の政治団体を選択するとページが切り替わる", async ({ page }) => {

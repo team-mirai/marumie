@@ -4,9 +4,13 @@ import type {
   PublishedAccount,
   PublishedExpenditureGroup,
   PublishedExpense,
+  PublishedPartyResearchFund,
+  PublishedPoliticianResearchFund,
   PublishedResearchFund,
 } from "@/server/contexts/research-fund/domain/models/published-research-fund";
+import type { ResearchFundPoliticianEntry } from "@/server/contexts/research-fund/domain/models/research-fund-politician-list";
 import type { ResearchFundRepository } from "@/server/contexts/research-fund/domain/repositories/research-fund-repository.interface";
+import { buildCoverageLabel } from "@/server/contexts/research-fund/domain/services/research-fund-coverage";
 import type { ResearchFundRow } from "@/shared/research-fund/aggregation";
 
 /**
@@ -36,12 +40,33 @@ const entrySelect = {
   },
 } satisfies Prisma.ResearchFundJournalEntrySelect;
 
-type Entry = Prisma.ResearchFundJournalEntryGetPayload<{ select: typeof entrySelect }>;
-type Line = Entry["lines"][number];
+/**
+ * 政党ページ A-6 は横棒グラフと KPI しか描かないので、明細（項目名・特記事項・領収書）は取らない。
+ * 議員が増えるほど行数が効くため、必要な列だけに絞る。
+ */
+const summaryEntrySelect = {
+  entryDate: true,
+  lines: {
+    select: {
+      side: true,
+      accountKey: true,
+      amount: true,
+      account: {
+        select: { type: true, label: true, legalLabel: true, legalCategoryKey: true },
+      },
+    },
+  },
+} satisfies Prisma.ResearchFundJournalEntrySelect;
+
+type SummaryLine = Prisma.ResearchFundJournalEntryGetPayload<{
+  select: typeof summaryEntrySelect;
+}>["lines"][number];
 
 /** 公開の集計に使うのは「借方の費用」と「貸方の調査研究費収入」だけ。相手勘定の普通預金は数えない。 */
-const isExpenseLine = (line: Line) => line.side === "debit" && line.account.type === "expense";
-const isGrantLine = (line: Line) => line.side === "credit" && line.accountKey === "grant-income";
+const isExpenseLine = <T extends SummaryLine>(line: T) =>
+  line.side === "debit" && line.account.type === "expense";
+const isGrantLine = <T extends SummaryLine>(line: T) =>
+  line.side === "credit" && line.accountKey === "grant-income";
 
 function dateOf(date: Date): string {
   return date.toISOString().slice(0, 10);
@@ -157,6 +182,139 @@ export class PrismaResearchFundRepository implements ResearchFundRepository {
     };
   }
 
+  async findPublishedByOrganization(
+    slug: string,
+    financialYear: number,
+  ): Promise<PublishedPartyResearchFund | null> {
+    const organization = await this.prisma.politicalOrganization.findUnique({
+      where: { slug },
+      select: {
+        slug: true,
+        displayName: true,
+        politicianMemberships: {
+          // 現在所属している議員だけを出す（ended_on が入っていれば離党・任期満了）。
+          where: { endedOn: null },
+          orderBy: [{ politician: { displayOrder: "asc" } }, { politicianId: "asc" }],
+          select: {
+            politician: {
+              select: {
+                name: true,
+                slug: true,
+                books: {
+                  where: { financialYear },
+                  select: {
+                    asOfDate: true,
+                    publishedThrough: true,
+                    journalEntries: {
+                      where: { status: "published" },
+                      select: summaryEntrySelect,
+                      orderBy: [{ entryDate: "asc" }, { id: "asc" }],
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+    if (!organization || organization.politicianMemberships.length === 0) return null;
+
+    const politicians: PublishedPoliticianResearchFund[] = organization.politicianMemberships.map(
+      ({ politician }) => {
+        const book = politician.books[0];
+        const rows: ResearchFundRow[] = [];
+        const accounts: Record<string, PublishedAccount> = {};
+        let expenseCount = 0;
+
+        for (const entry of book?.journalEntries ?? []) {
+          const date = dateOf(entry.entryDate);
+          for (const line of entry.lines) {
+            if (isGrantLine(line)) {
+              rows.push({
+                date,
+                accountKey: line.accountKey,
+                amount: line.amount.toNumber(),
+                type: "grant",
+              });
+              continue;
+            }
+            if (!isExpenseLine(line)) continue;
+            accounts[line.accountKey] = accountOf(line);
+            rows.push({
+              date,
+              accountKey: line.accountKey,
+              amount: line.amount.toNumber(),
+              type: "expense",
+            });
+            expenseCount += 1;
+          }
+        }
+
+        return {
+          politician: { name: politician.name, slug: politician.slug },
+          asOfDate: book?.asOfDate ? dateOf(book.asOfDate) : null,
+          publishedThrough: book?.publishedThrough ? dateOf(book.publishedThrough) : null,
+          rows,
+          accounts,
+          expenseCount,
+        };
+      },
+    );
+
+    return {
+      organization: { slug: organization.slug, displayName: organization.displayName },
+      financialYear,
+      politicians,
+    };
+  }
+
+  async findPoliticians(financialYear: number): Promise<ResearchFundPoliticianEntry[]> {
+    const politicians = await this.prisma.politician.findMany({
+      // 帳簿の無い議員はセレクタに出さない（開いても中身が無いため）。
+      where: { books: { some: { financialYear } } },
+      orderBy: [{ displayOrder: "asc" }, { id: "asc" }],
+      select: {
+        name: true,
+        slug: true,
+        books: {
+          where: { financialYear },
+          select: {
+            publishedThrough: true,
+            journalEntries: {
+              where: { status: "published" },
+              select: { entryDate: true },
+              orderBy: { entryDate: "asc" },
+            },
+          },
+        },
+      },
+    });
+
+    return politicians.map((politician) => {
+      const book = politician.books[0];
+      const months = (book?.journalEntries ?? []).map((entry) =>
+        dateOf(entry.entryDate).slice(0, 7),
+      );
+      return {
+        slug: politician.slug,
+        name: politician.name,
+        ready: months.length > 0,
+        statusLabel:
+          months.length > 0
+            ? buildCoverageLabel([
+                {
+                  months,
+                  publishedThrough: book?.publishedThrough
+                    ? dateOf(book.publishedThrough).slice(0, 7)
+                    : null,
+                },
+              ])
+            : "準備中",
+      };
+    });
+  }
+
   async findPublishedReceipt(entryId: string) {
     const entry = await this.prisma.researchFundJournalEntry.findFirst({
       where: { id: BigInt(entryId), status: "published" },
@@ -170,7 +328,7 @@ export class PrismaResearchFundRepository implements ResearchFundRepository {
  * 法定区分が未設定の科目（下書き用の「要確認」など）でも法律上の区分に切り替えられるよう、
  * 法定ラベルが空なら科目名で代用する。公開前に21分類へ直す運用なので通常は発生しない。
  */
-function accountOf(line: Line): PublishedAccount {
+function accountOf(line: SummaryLine): PublishedAccount {
   return {
     label: line.account.label,
     legalLabel: line.account.legalLabel || line.account.label,
