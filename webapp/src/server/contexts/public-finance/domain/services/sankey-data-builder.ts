@@ -13,7 +13,7 @@ import type {
   SankeyData,
   SankeyLink,
   SankeyNode,
-} from "@/server/contexts/public-finance/domain/models/sankey-data";
+} from "@/server/contexts/shared/domain/models/sankey-data";
 
 /**
  * SankeyDataを構築するビルダークラス
