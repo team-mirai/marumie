@@ -6,3 +6,6 @@ export const CACHE_REVALIDATE_SECONDS = process.env.VERCEL_ENV === "production" 
  * admin の公開アクションが webapp の /api/refresh を叩き、このタグを無効化する。
  */
 export const RESEARCH_FUND_CACHE_TAG = "research-fund-page-data";
+
+/** CSV のキャッシュキー。無効化は RESEARCH_FUND_CACHE_TAG で公開ページとまとめて行う。 */
+export const RESEARCH_FUND_CSV_CACHE_KEY = "research-fund-csv";

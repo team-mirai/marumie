@@ -105,6 +105,34 @@ test.describe("調査研究費 議員ページ", () => {
 		}).toPass();
 	});
 
+	test("公開中の全支出を CSV でダウンロードできる", async ({ page }) => {
+		await page.goto(PAGE_URL);
+		await expect(
+			page
+				.locator("#transactions")
+				.getByRole("link", { name: "すべての支出をCSVでダウンロード" }),
+		).toBeVisible();
+
+		const response = await page.request.get("/api/research-fund/csv/sample-taro/2026");
+
+		expect(response.status()).toBe(200);
+		expect(response.headers()["content-type"]).toContain("text/csv");
+		expect(response.headers()["content-disposition"]).toContain(
+			"research_fund_sample-taro_2026_",
+		);
+
+		const body = await response.text();
+		// Excel で文字化けしないよう BOM つきの UTF-8 で配信する。
+		expect(body.startsWith("\uFEFF")).toBe(true);
+		const [header, ...rows] = body.slice(1).split("\n");
+		expect(header).toBe(
+			'"日付","カテゴリー","法定区分","項目","金額","特記事項","分割グループ","領収書"',
+		);
+		expect(rows.length).toBeGreaterThan(0);
+		// シードでは 8/10 以降が未公開（確認済・下書き）。CSV にも含まれない。
+		expect(rows.filter((row) => /^"2026-08-(1|2|3)\d"/.test(row))).toHaveLength(0);
+	});
+
 	test("存在しない議員のページは政治団体ページに寄せられる", async ({ page }) => {
 		await page.goto("/p/no-such-politician/2026");
 

@@ -6,7 +6,7 @@ import type { ResearchFundExpenseView } from "@/server/contexts/research-fund/do
 import { researchFundCategoryColor } from "@/server/contexts/research-fund/domain/services/research-fund-category-color";
 
 /** 科目マスタに無い科目のラベル（要確認の仕訳は公開されない想定だが、表示は落とさない）。 */
-const UNKNOWN_CATEGORY_LABEL = "その他";
+export const UNKNOWN_CATEGORY_LABEL = "その他";
 
 /**
  * 同一注文の分割行につける説明。
@@ -40,31 +40,35 @@ export function buildExpenseViews(
     splitCounts.set(expense.splitGroup, (splitCounts.get(expense.splitGroup) ?? 0) + 1);
   }
 
-  return [...expenses]
-    .sort(
-      (a, b) =>
-        compare(b.date, a.date) ||
-        // 同一注文の行が他の支出に割り込まれないよう、日付の中では注文ごとにまとめる。
-        compare(a.splitGroup ?? "", b.splitGroup ?? "") ||
-        compareIds(a.id, b.id),
-    )
-    .map((expense) => {
-      const account = accounts[expense.accountKey];
-      const color = researchFundCategoryColor(account?.legalCategoryKey ?? "");
-      const splitCount = expense.splitGroup ? (splitCounts.get(expense.splitGroup) ?? 1) : 1;
-      return {
-        id: expense.id,
-        entryId: expense.entryId,
-        date: expense.date,
-        month: expense.date.slice(0, 7),
-        description: expense.description,
-        amount: expense.amount,
-        detailed: { label: account?.label || UNKNOWN_CATEGORY_LABEL, color },
-        legal: { label: account?.legalLabel || UNKNOWN_CATEGORY_LABEL, color },
-        note: mergeNotes(expense.note, splitCount > 1 ? splitGroupNote(splitCount) : null),
-        hasReceipt: expense.hasReceipt,
-      };
-    });
+  return [...expenses].sort(compareExpenseOrder).map((expense) => {
+    const account = accounts[expense.accountKey];
+    const color = researchFundCategoryColor(account?.legalCategoryKey ?? "");
+    const splitCount = expense.splitGroup ? (splitCounts.get(expense.splitGroup) ?? 1) : 1;
+    return {
+      id: expense.id,
+      entryId: expense.entryId,
+      date: expense.date,
+      month: expense.date.slice(0, 7),
+      description: expense.description,
+      amount: expense.amount,
+      detailed: { label: account?.label || UNKNOWN_CATEGORY_LABEL, color },
+      legal: { label: account?.legalLabel || UNKNOWN_CATEGORY_LABEL, color },
+      note: mergeNotes(expense.note, splitCount > 1 ? splitGroupNote(splitCount) : null),
+      hasReceipt: expense.hasReceipt,
+    };
+  });
+}
+
+/**
+ * 画面（B-4）と CSV で共通の並び順。日付の新しい順に並べ、
+ * 同一注文（split_group）の行が他の支出に割り込まれないよう日付の中で注文ごとにまとめる。
+ */
+export function compareExpenseOrder(a: PublishedExpense, b: PublishedExpense): number {
+  return (
+    compare(b.date, a.date) ||
+    compare(a.splitGroup ?? "", b.splitGroup ?? "") ||
+    compareIds(a.id, b.id)
+  );
 }
 
 function compare(a: string, b: string): number {

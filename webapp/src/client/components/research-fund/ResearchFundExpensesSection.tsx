@@ -143,6 +143,17 @@ export default function ResearchFundExpensesSection({ data, updatedAt }: Props) 
               {Number(month.slice(5, 7))}月の支出 {rows.length}件・合計{" "}
               {total.toLocaleString("ja-JP")}円
             </p>
+
+            {/* 月の切り替えとは独立に、公開中の全支出をまとめて持ち帰れるようにする。 */}
+            <div className="mt-3 text-right">
+              <a
+                href={`/api/research-fund/csv/${data.politician.slug}/${data.financialYear}`}
+                download
+                className="text-sm font-bold text-[#238778] hover:bg-gray-50 transition-all cursor-pointer"
+              >
+                すべての支出をCSVでダウンロード
+              </a>
+            </div>
           </div>
         </>
       )}
