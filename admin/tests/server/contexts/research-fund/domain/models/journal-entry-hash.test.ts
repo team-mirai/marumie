@@ -87,4 +87,28 @@ describe("JournalEntryHash.generate", () => {
       errors: [{ code: "RF_INVALID_DOCUMENT" }],
     });
   });
+
+  it("keeps the hash unchanged when no discriminator is given", () => {
+    expect(JournalEntryHash.generate({ ...content, discriminator: null })).toEqual(
+      JournalEntryHash.generate(content),
+    );
+  });
+
+  it("separates entries that differ only by discriminator", () => {
+    expect(JournalEntryHash.generate({ ...content, discriminator: 1 })).not.toEqual(
+      JournalEntryHash.generate(content),
+    );
+    expect(JournalEntryHash.generate({ ...content, discriminator: 1 })).not.toEqual(
+      JournalEntryHash.generate({ ...content, discriminator: 2 }),
+    );
+  });
+
+  it("rejects a discriminator that is not a positive integer", () => {
+    expect(JournalEntryHash.generate({ ...content, discriminator: 0 })).toMatchObject({
+      status: "invalid",
+    });
+    expect(JournalEntryHash.generate({ ...content, discriminator: 1.5 })).toMatchObject({
+      status: "invalid",
+    });
+  });
 });

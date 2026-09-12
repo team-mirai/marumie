@@ -64,7 +64,7 @@ describe("buildScanDraftEntries", () => {
     );
     expect(result.status).toBe("valid");
     if (result.status !== "valid") return;
-    expect(result.value.map((entry) => entry.splitGroup)).toEqual(["doc-42:a", "doc-42:a"]);
+    expect(result.value.map((entry) => entry.splitGroup)).toEqual(["doc-42", "doc-42"]);
     expect(result.value[0].note).toBe("打合せ");
   });
 
@@ -75,8 +75,8 @@ describe("buildScanDraftEntries", () => {
     ];
     const first = buildScanDraftEntries(receipt(items), { documentId: "1", accounts });
     const second = buildScanDraftEntries(receipt(items), { documentId: "2", accounts });
-    expect(first.status === "valid" && first.value[0].splitGroup).toBe("doc-1:a");
-    expect(second.status === "valid" && second.value[0].splitGroup).toBe("doc-2:a");
+    expect(first.status === "valid" && first.value[0].splitGroup).toBe("doc-1");
+    expect(second.status === "valid" && second.value[0].splitGroup).toBe("doc-2");
   });
 
   it("falls back to a document-wide group when the model gave no split key", () => {
@@ -111,6 +111,63 @@ describe("buildScanDraftEntries", () => {
     expect(expected.status === "valid" && first.status === "valid").toBe(true);
     if (expected.status === "valid" && first.status === "valid")
       expect(first.value[0].hash).toBe(expected.value);
+  });
+
+  it("keeps identical items distinct so a duplicate line is not dropped", () => {
+    const item = {
+      item: "書籍",
+      amount: 3000,
+      category_key: "meetings" as const,
+      note: null,
+      split_group: null,
+    };
+    const result = buildScanDraftEntries(receipt([item, item, item]), {
+      documentId: "42",
+      accounts,
+    });
+    expect(result.status).toBe("valid");
+    if (result.status !== "valid") return;
+    expect(new Set(result.value.map((e) => e.hash)).size).toBe(3);
+    // 1 件目は連番なしの hash のまま（既存データとの互換を保つ）
+    const plain = JournalEntryHash.generate({
+      entryDate: "2026-04-01",
+      amount: 3000,
+      description: "書籍",
+      documentId: "42",
+    });
+    expect(plain.status === "valid" && result.value[0].hash).toBe(
+      plain.status === "valid" ? plain.value : null,
+    );
+  });
+
+  it("produces the same hashes when the same multi-item document is reprocessed", () => {
+    const item = {
+      item: "書籍",
+      amount: 3000,
+      category_key: "meetings" as const,
+      note: null,
+      split_group: null,
+    };
+    const input = receipt([item, item]);
+    const first = buildScanDraftEntries(input, { documentId: "42", accounts });
+    const second = buildScanDraftEntries(input, { documentId: "42", accounts });
+    expect(first.status === "valid" && first.value.map((e) => e.hash)).toEqual(
+      second.status === "valid" ? second.value.map((e) => e.hash) : null,
+    );
+  });
+
+  it("groups every item of a document under one splitGroup even if keys disagree", () => {
+    const result = buildScanDraftEntries(
+      receipt([
+        { item: "資料A", amount: 1000, category_key: "meetings", note: null, split_group: "a" },
+        { item: "資料B", amount: 2000, category_key: "meetings", note: null, split_group: "b" },
+      ]),
+      { documentId: "42", accounts },
+    );
+    expect(result.status === "valid" && result.value.map((e) => e.splitGroup)).toEqual([
+      "doc-42",
+      "doc-42",
+    ]);
   });
 
   it("gives different documents different hashes for the same receipt content", () => {

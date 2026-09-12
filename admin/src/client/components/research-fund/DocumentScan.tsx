@@ -87,6 +87,9 @@ export function DocumentScan({
     (job) => job.status === "queued" || job.status === "running",
   ).length;
   const succeeded = jobs.filter((job) => job.status === "succeeded").length;
+  // 「処理する」を押してからこれまでに失敗した件数。通知の時点では router.refresh() の
+  // 反映が間に合わないため、props の件数ではなく自前で数える。
+  const failedInRun = useRef(0);
 
   /**
    * 待機中のジョブを少数だけ処理する。残りがあれば自動で次を呼ぶ（キュー基盤を持たないため、
@@ -101,10 +104,14 @@ export function DocumentScan({
         setAutoRun(false);
         return;
       }
+      failedInRun.current += result.failed;
       router.refresh();
       if (!result.hasMore) {
         setAutoRun(false);
-        toast.success("読み取りが完了しました");
+        // 失敗したジョブがあれば「完了」と断定しない。再実行の導線は一覧の各行にある。
+        if (failedInRun.current > 0)
+          toast.error(`読み取りを終えましたが、${failedInRun.current}件が失敗しました`);
+        else toast.success("読み取りが完了しました");
       }
     } catch {
       toast.error("通信に失敗しました。再度お試しください");
@@ -130,6 +137,7 @@ export function DocumentScan({
 
   function start() {
     if (processing || unfinished === 0) return;
+    failedInRun.current = 0;
     setAutoRun(true);
     void process();
   }

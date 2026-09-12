@@ -51,7 +51,7 @@ export function JournalReview({
 }) {
   const router = useRouter();
   const [status, setStatus] = useState(
-    initialStatus && initialStatus in statuses ? initialStatus : "all",
+    initialStatus && Object.hasOwn(statuses, initialStatus) ? initialStatus : "all",
   );
   const [month, setMonth] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
