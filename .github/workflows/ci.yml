@@ -287,10 +287,10 @@ jobs:
       - name: Start Supabase (background)
         run: |
           # admin E2E が必要とするのは db / kong / gotrue（認証）/ postgrest（疎通確認）と、
-          # gotrue の SMTP 先である mailpit のみ。storage-api（pull が最も遅い）・realtime・
-          # postgres-meta（studio 専用）・logflare（analytics）は使わないので除外する。
+          # gotrue の SMTP 先である mailpit、書類スキャンが原本を置く storage-api のみ。
+          # imgproxy・realtime・postgres-meta（studio 専用）・logflare（analytics）は使わないので除外する。
           nohup bash -c '
-            supabase start --exclude imgproxy,edge-runtime,vector,studio,storage-api,realtime,postgres-meta,logflare
+            supabase start --exclude imgproxy,edge-runtime,vector,studio,realtime,postgres-meta,logflare
             echo $? > /tmp/supabase-start.exit
           ' > /tmp/supabase-start.log 2>&1 &
 
