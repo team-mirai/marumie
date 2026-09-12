@@ -9,38 +9,69 @@
 #   4. in-flight の PR か依存待ちの Issue がある → wait
 #   5. それ以外            → none
 #
-# セッションを起動せずにランナーが行うラベル操作は escalations / flags に列挙する:
-#   escalations: 人間のレビュースレッドがある PR、修正ラウンドの予算を超えた PR → 紐づく Issue を loop:human に
+# セッションを起動せずにランナーが行う GitHub への書き込みは escalations / flags / nudges / unblocks に列挙する:
+#   escalations: 人間のレビュースレッドがある PR、修正ラウンドの予算を超えても未解決の指摘が残る PR → 紐づく Issue を loop:human に
 #   flags:       起票者が信頼境界の外の Issue、依存先が未マージのまま閉じた Issue → loop:human に
 #   nudges:      CodeRabbit がレート制限で head を未レビューのままの PR → `@coderabbitai review` を投げて再レビューを促す
 #                （head ごとに 1 回。LOOP_NUDGE_INTERVAL_MINUTES 経っても未レビューなら再度）
+#   unblocks:    CodeRabbit が head をレビューし終えて未解決スレッドも無いのに Request changes が立ったままの PR
+#                → そのレビューを dismiss して auto-merge を通す（stale-changes-requested）。
+#                本来は再レビューで APPROVED に切り替わるが、切り替わらないと auto-merge が永遠に止まる。
+#                head と対象レビューのどちらかが LOOP_STALE_REVIEW_MINUTES より新しいうちは切り替わりを待つ
 #
 # 出力の形:
 # { "action": "fix-main|fix-ci|resolve-coderabbit|implement|wait|none", "target": <番号|null>, "reason": "...",
 #   "escalations": [ { "pr", "issue", "reason": "human-review|budget-exceeded" } ],
 #   "flags":       [ { "issue", "reason": "untrusted-author|dead-dependency" } ],
 #   "nudges":      [ <PR番号> ],
+#   "unblocks":    [ { "pr", "review_id", "review_commit", "review_submitted_at", "head",
+#                      "reason": "stale-changes-requested" } ],
 #   "waiting_on":  { "prs": [...], "issues": [...] } }
 #
 # 環境変数:
 #   LOOP_MAX_FIX_ROUNDS           CodeRabbit 対応の修正 push を何ラウンドまで許すか（デフォルト 2）
 #   LOOP_NUDGE_INTERVAL_MINUTES   レート制限中の PR に再レビューを促す間隔（デフォルト 20）
+#   LOOP_STALE_REVIEW_MINUTES     head がレビュー済みなのに Request changes が残るとき、dismiss するまで待つ時間（デフォルト 20）
+#                                 head のコミット時刻・対象レビューの投稿時刻の両方がこれ以上前であることを要求する
 
 set -euo pipefail
 
 max_rounds="${LOOP_MAX_FIX_ROUNDS:-2}"
 nudge_interval="${LOOP_NUDGE_INTERVAL_MINUTES:-20}"
+stale_minutes="${LOOP_STALE_REVIEW_MINUTES:-20}"
 
-jq --argjson max_rounds "$max_rounds" --argjson nudge_interval "$nudge_interval" '
+jq --argjson max_rounds "$max_rounds" --argjson nudge_interval "$nudge_interval" --argjson stale_minutes "$stale_minutes" '
+  def elapsed_minutes($t): (now - ($t | fromdateiso8601)) / 60;
+
+  # 取り残された Request changes:
+  #   coderabbitai の有効な Request changes がある / 未解決スレッドが 1 つも無い / head の CodeRabbit レビューが完了している
+  #   （レート制限なら nudges、レビュー中なら待つ）/ head も対象レビューも LOOP_STALE_REVIEW_MINUTES 以上前 / 他に直すものが無い
+  #
+  #   時刻は head と対象レビューの両方を見る。head だけだと、古い head に新しいレビューが付いてスレッドを resolve した直後でも
+  #   「head が古い」だけで dismiss してしまう。レビューだけだと、直後の push で切り替わる余地を待たずに dismiss してしまう
+  def stale_changes_requested:
+    .coderabbit_review != null
+    and .review_decision == "CHANGES_REQUESTED"
+    and .threads.coderabbit_unresolved == 0
+    and .threads.human_unresolved == 0
+    and (.coderabbit | IN("SUCCESS", "FAILURE", "ERROR"))
+    and .ci_complete != "FAILURE"
+    and .merge_state != "DIRTY"
+    and (.head_committed_at != null and elapsed_minutes(.head_committed_at) >= $stale_minutes)
+    and (.coderabbit_review.submitted_at != null
+         and elapsed_minutes(.coderabbit_review.submitted_at) >= $stale_minutes);
+
   # エスカレーション済み（Issue が loop:human / loop:blocked）の PR はループの対象外
   (.prs | map(select(.issue == null or (.issue.escalated | not)))) as $prs
 
+  # 予算超過は「未解決の指摘が残っている」ときだけ。指摘を全部裁いたあとに Request changes だけが残る状態は
+  # レート制限（nudges）か取り残し（unblocks）であり、人間に渡す理由にはならない
   | (
       [ $prs[] | select(.threads.human_unresolved > 0)
         | {pr: .number, issue: .issue.number, reason: "human-review"} ]
       + [ $prs[] | select(.threads.human_unresolved == 0
                           and .fix_rounds >= $max_rounds
-                          and (.threads.coderabbit_unresolved > 0 or .review_decision == "CHANGES_REQUESTED"))
+                          and .threads.coderabbit_unresolved > 0)
         | {pr: .number, issue: .issue.number, reason: "budget-exceeded"} ]
     ) as $escalations
   | ($escalations | map(.pr)) as $esc_prs
@@ -64,6 +95,12 @@ jq --argjson max_rounds "$max_rounds" --argjson nudge_interval "$nudge_interval"
   | ([ $live[] | select(.coderabbit == "RATE_LIMITED" and .threads.coderabbit_unresolved == 0
                         and (.nudged_at == null or ((now - (.nudged_at | fromdateiso8601)) / 60) >= $nudge_interval))
         | .number ]) as $nudges
+
+  # head はレビュー済み・指摘も全部裁いたのに Request changes が残っている PR: dismiss して auto-merge を通す
+  | ([ $live[] | select(stale_changes_requested)
+        | {pr: .number, review_id: .coderabbit_review.id, review_commit: .coderabbit_review.commit,
+           review_submitted_at: .coderabbit_review.submitted_at,
+           head: .head, reason: "stale-changes-requested"} ]) as $unblocks
 
   | (
       [ .issues[] | select(.trusted | not) | {issue: .number, reason: "untrusted-author"} ]
@@ -91,6 +128,7 @@ jq --argjson max_rounds "$max_rounds" --argjson nudge_interval "$nudge_interval"
       escalations: $escalations,
       flags: $flags,
       nudges: $nudges,
+      unblocks: $unblocks,
       waiting_on: {prs: $inflight, issues: $waiting_issues}
     }
 '
