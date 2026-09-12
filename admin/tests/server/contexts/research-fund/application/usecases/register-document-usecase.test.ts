@@ -3,7 +3,11 @@ import type { DocumentRepository } from "@/server/contexts/research-fund/domain/
 import type { DocumentStorage } from "@/server/contexts/research-fund/domain/repositories/document-storage.interface";
 
 describe("RegisterDocumentUsecase", () => {
-  const repository: jest.Mocked<DocumentRepository> = { create: jest.fn(), findById: jest.fn() };
+  const repository: jest.Mocked<DocumentRepository> = {
+    create: jest.fn(),
+    findById: jest.fn(),
+    listByBook: jest.fn(),
+  };
   const storage: jest.Mocked<DocumentStorage> = {
     upload: jest.fn(),
     download: jest.fn(),

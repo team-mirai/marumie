@@ -32,6 +32,11 @@ test("デフォルトから初版を保存し、編集して版を重ね、巻�
   await expect(details).toBeVisible();
   await expect(page.getByText("領収書の抽出結果を次のJSONスキーマに従って")).toBeVisible();
 
+  // 書類が無い帳簿ではテスト実行の select を出さず、アップロードへ促す
+  await expect(page.getByRole("heading", { name: "テスト実行" })).toBeVisible();
+  await expect(page.getByText("この帳簿にはまだ書類がありません")).toBeVisible();
+  await expect(page.getByRole("button", { name: "テスト実行" })).toBeHidden();
+
   await clickUntil(page.getByRole("button", { name: "保存して v1 にする" }), (options) =>
     expect(page.getByText("v1 有効")).toBeVisible(options),
   );

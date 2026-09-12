@@ -29,6 +29,13 @@ export interface PromptOverview {
   automaticPrompt: string;
 }
 
+/** テスト実行の書類 select に出す 1 件（原本は署名 URL 無しでサーバー側だけが読む） */
+export interface PromptTestDocument {
+  id: string;
+  originalFilename: string;
+  mime: string;
+}
+
 export class PromptError extends Error {}
 
 /**

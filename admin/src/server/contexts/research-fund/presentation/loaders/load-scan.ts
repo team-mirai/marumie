@@ -11,7 +11,7 @@ import { researchFundDocumentBucket } from "@/server/contexts/research-fund/infr
 import { requireJournalTarget } from "@/server/contexts/research-fund/presentation/loaders/load-journal-review";
 import { prisma } from "@/server/contexts/shared/infrastructure/prisma";
 
-function buildDocumentStorage(): SupabaseDocumentStorage {
+export function buildDocumentStorage(): SupabaseDocumentStorage {
   const url = process.env.SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !key) throw new Error("領収書ストレージが未設定です");
