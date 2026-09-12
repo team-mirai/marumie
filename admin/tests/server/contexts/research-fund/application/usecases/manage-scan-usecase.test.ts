@@ -2,6 +2,7 @@ import { ManageScanUsecase } from "@/server/contexts/research-fund/application/u
 import type { DocumentStorage } from "@/server/contexts/research-fund/domain/repositories/document-storage.interface";
 import type { PromptRepository } from "@/server/contexts/research-fund/domain/repositories/prompt-repository.interface";
 import type { ScanRepository } from "@/server/contexts/research-fund/domain/repositories/scan-repository.interface";
+import { RF_ERROR_CODES } from "@/server/contexts/research-fund/domain/types/validation";
 
 const ACTIVE_PROMPT = {
   id: "7",
@@ -124,6 +125,28 @@ describe("ManageScanUsecase", () => {
         .mockResolvedValueOnce({ status: "valid", value: "key-1" })
         .mockRejectedValueOnce(new Error("upload failed"));
       await expect(usecase.createBatch(input)).rejects.toThrow("upload failed");
+      expect(storage.remove).toHaveBeenCalledWith("key-1");
+      expect(scanRepository.createBatch).not.toHaveBeenCalled();
+    });
+
+    it("does not remove an original twice when the invalid-upload cleanup fails", async () => {
+      storage.upload.mockReset();
+      storage.upload
+        .mockResolvedValueOnce({ status: "valid", value: "key-1" })
+        .mockResolvedValueOnce({
+          status: "invalid",
+          errors: [
+            {
+              path: "documents",
+              code: RF_ERROR_CODES.INVALID_DOCUMENT,
+              message: "保存に失敗しました",
+              severity: "error" as const,
+            },
+          ],
+        });
+      storage.remove.mockRejectedValue(new Error("cleanup failed"));
+      await expect(usecase.createBatch(input)).rejects.toBeInstanceOf(AggregateError);
+      expect(storage.remove).toHaveBeenCalledTimes(1);
       expect(storage.remove).toHaveBeenCalledWith("key-1");
       expect(scanRepository.createBatch).not.toHaveBeenCalled();
     });

@@ -64,12 +64,14 @@ export class ManageScanUsecase {
       );
 
     const uploaded: string[] = [];
+    let cleanedUp = false;
     try {
       const documents = [];
       for (const document of input.documents) {
         const result = await this.storage.upload(document.bytes, document.mime);
         // 事前検証を通ったので通常は起きないが、起きたら残りをアップロードせず片付ける
         if (result.status === "invalid") {
+          cleanedUp = true;
           await this.discard(uploaded, new ScanBatchError("書類のアップロードに失敗しました"));
           return result;
         }
@@ -89,8 +91,8 @@ export class ManageScanUsecase {
       });
       return { status: "valid", value: { batchId } };
     } catch (error) {
-      // 保存に失敗したら、先にアップロードした原本を残さない
-      await this.discard(uploaded, error);
+      // 保存に失敗したら、先にアップロードした原本を残さない（片付け済みなら再実行しない）
+      if (!cleanedUp) await this.discard(uploaded, error);
       throw error;
     }
   }
