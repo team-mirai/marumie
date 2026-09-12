@@ -22,7 +22,8 @@
 #       "fix_rounds": <"fix: CodeRabbit" で始まるコミット数>,
 #       "issue": { "number", "labels": [...], "escalated": true|false } | null,   # Closes で紐づく Issue
 #       "threads": { "coderabbit_unresolved": n, "human_unresolved": n },
-#       "coderabbit_review": { "id": <review の databaseId>, "commit": "<レビュー時点の head>" } | null
+#       "coderabbit_review": { "id": <review の databaseId>, "commit": "<レビュー時点の head>",
+#                              "submitted_at": "<ISO8601>" } | null
 #                      # coderabbitai が出した有効な（dismiss されていない）Request changes
 #   } ],
 #   "issues": [ {                                   # open な loop:ready Issue
@@ -66,7 +67,7 @@ if [[ -n "$pr_numbers" ]]; then
     q+=" pr$n: pullRequest(number: $n) {"
     q+="   closingIssuesReferences(first: 5) { nodes { number labels(first: 30) { nodes { name } } } }"
     q+="   reviewThreads(first: 100) { nodes { isResolved comments(first: 1) { nodes { author { login } } } } }"
-    q+="   reviews(last: 20, states: [CHANGES_REQUESTED]) { nodes { databaseId author { login } commit { oid } } }"
+    q+="   reviews(last: 20, states: [CHANGES_REQUESTED]) { nodes { databaseId author { login } submittedAt commit { oid } } }"
     q+="   commits(last: 100) { nodes { commit { messageHeadline committedDate } } }"
     q+="   comments(last: 30) { nodes { body createdAt } }"
     q+=" }"
@@ -126,7 +127,8 @@ prs_json="$(jq --argjson extra "$pr_extra" --argjson cr "$cr_status" '
         },
         coderabbit_review: (if $cr_review == null then null else {
           id: $cr_review.databaseId,
-          commit: ($cr_review.commit.oid // "")
+          commit: ($cr_review.commit.oid // ""),
+          submitted_at: ($cr_review.submittedAt // null)
         } end)
       }
   ) | sort_by(.number)

@@ -118,7 +118,8 @@ docsのみの変更などで個別ジョブがスキップされても必ず報�
 - **全スレッドを resolve しても Request changes が自動で APPROVED に切り替わらないことがある。**
   CodeRabbit は最新コミットの再レビュー時に切り替えるが、再レビューが走らない・走っても切り替わらないと、
   auto-merge は Request changes に阻まれて永遠に止まる。最新コミットがレビュー済み（コミットステータスが完了）で
-  未解決スレッドが無く、head が `LOOP_STALE_REVIEW_MINUTES`（既定 20 分）以上前のものなら、
+  未解決スレッドが無く、head のコミット時刻と**その Request changes の投稿時刻**がどちらも
+  `LOOP_STALE_REVIEW_MINUTES`（既定 20 分）以上前なら、
   ランナーがその Request changes を dismiss して PR に理由をコメントする（`stale-changes-requested`）。
   退けた根拠は各スレッドの `🤖` 返信に残っているので、監査は dismiss 後も可能
 - **CodeRabbit にはプランごとに 1 時間あたりのレビュー回数の上限がある**（push ごとの増分レビューも 1 回に数える）。
