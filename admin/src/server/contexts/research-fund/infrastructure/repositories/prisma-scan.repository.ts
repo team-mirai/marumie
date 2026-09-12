@@ -134,32 +134,34 @@ export class PrismaScanRepository implements ScanRepository {
     userId: string;
   }): Promise<void> {
     const bookId = BigInt(input.bookId);
+    // 同じ抽出結果に同じ hash の明細が並んでも 1 件にする（先勝ち）。
+    const entries = new Map<string, ScanDraftEntry>();
+    for (const entry of input.entries) if (!entries.has(entry.hash)) entries.set(entry.hash, entry);
     await this.prisma.$transaction(async (tx) => {
       // 同じ書類を読み直しても仕訳を二重に作らない。hash は日付・金額・項目名・書類IDから作る。
-      const existing = await tx.researchFundJournalEntry.findMany({
-        where: { bookId, hash: { in: input.entries.map((entry) => entry.hash) } },
-        select: { hash: true },
+      // (book_id, hash) の一意制約に任せて既存分は読み飛ばす（ON CONFLICT DO NOTHING）ので、
+      // 同じ書類の処理が同時に走っても二重登録にならず、ジョブの完了も続行できる。
+      const created = await tx.researchFundJournalEntry.createManyAndReturn({
+        data: [...entries.values()].map((entry) => ({
+          bookId,
+          entryDate: new Date(`${entry.entryDate}T00:00:00.000Z`),
+          description: entry.description,
+          status: "draft",
+          source: "scan",
+          documentId: BigInt(input.documentId),
+          splitGroup: entry.splitGroup,
+          note: entry.note,
+          hash: entry.hash,
+          createdById: input.userId,
+        })),
+        skipDuplicates: true,
+        select: { id: true, hash: true },
       });
-      const known = new Set(existing.map((entry) => entry.hash));
-      for (const entry of input.entries) {
-        if (known.has(entry.hash)) continue;
-        known.add(entry.hash);
-        await tx.researchFundJournalEntry.create({
-          data: {
-            bookId,
-            entryDate: new Date(`${entry.entryDate}T00:00:00.000Z`),
-            description: entry.description,
-            status: "draft",
-            source: "scan",
-            documentId: BigInt(input.documentId),
-            splitGroup: entry.splitGroup,
-            note: entry.note,
-            hash: entry.hash,
-            createdById: input.userId,
-            lines: { create: entry.lines.map((line) => ({ ...line })) },
-          },
-        });
-      }
+      // 明細は新しく作れた仕訳にだけ付ける。読み飛ばした既存の仕訳は明細ごと既にある。
+      const lines = created.flatMap((row) =>
+        (entries.get(row.hash)?.lines ?? []).map((line) => ({ ...line, entryId: row.id })),
+      );
+      if (lines.length > 0) await tx.researchFundJournalLine.createMany({ data: lines });
       await tx.researchFundScanJob.update({
         where: { id: BigInt(input.jobId) },
         data: {

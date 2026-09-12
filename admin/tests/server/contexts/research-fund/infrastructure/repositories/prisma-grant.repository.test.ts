@@ -1,4 +1,4 @@
-import type { PrismaClient } from "@prisma/client";
+import { Prisma, type PrismaClient } from "@prisma/client";
 import { PrismaGrantRepository } from "@/server/contexts/research-fund/infrastructure/repositories/prisma-grant.repository";
 import type { GrantWrite } from "@/server/contexts/research-fund/domain/models/grant-registration";
 
@@ -30,11 +30,12 @@ function setup(duplicates = 0) {
     },
     researchFundAccount: { findMany: jest.fn().mockResolvedValue([]) },
   };
+  const transaction = jest.fn(async (fn: (client: unknown) => unknown) => fn(tx));
   const repository = new PrismaGrantRepository({
     ...tx,
-    $transaction: jest.fn(async (fn: (client: unknown) => unknown) => fn(tx)),
+    $transaction: transaction,
   } as unknown as PrismaClient);
-  return { repository, tx };
+  return { repository, tx, transaction };
 }
 
 test("帳簿から年度と議員の当選日を暦日で取り出す", async () => {
@@ -88,6 +89,31 @@ test("同一トランザクション内で同月の二重生成を拒否する",
   const { repository, tx } = setup(1);
   await expect(repository.create("1", "2026-05", input, "user")).rejects.toThrow("すでに登録");
   expect(tx.researchFundJournalEntry.create).not.toHaveBeenCalled();
+});
+
+test("同月の判定と作成は直列化トランザクションで行い、衝突はやり直せるエラーに変換する", async () => {
+  const { repository, transaction } = setup();
+  transaction.mockRejectedValueOnce(
+    new Prisma.PrismaClientKnownRequestError("write conflict", { code: "P2034", clientVersion: "test" }),
+  );
+  await expect(repository.create("1", "2026-05", input, "user")).rejects.toThrow("競合しました");
+  expect(transaction).toHaveBeenCalledWith(expect.any(Function), {
+    isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+  });
+});
+
+test("同月の判定をすり抜けて同時に登録された一意制約違反も、すでに登録済みのエラーにする", async () => {
+  const { repository, tx } = setup();
+  tx.researchFundJournalEntry.create.mockRejectedValue(
+    new Prisma.PrismaClientKnownRequestError("duplicate", { code: "P2002", clientVersion: "test" }),
+  );
+  await expect(repository.create("1", "2026-05", input, "user")).rejects.toThrow("すでに登録");
+});
+
+test("一意制約以外のエラーはそのまま投げる", async () => {
+  const { repository, tx } = setup();
+  tx.researchFundJournalEntry.create.mockRejectedValue(new Error("connection lost"));
+  await expect(repository.create("1", "2026-05", input, "user")).rejects.toThrow("connection lost");
 });
 
 test("12月の支給は翌年1月との境界で判定する", async () => {

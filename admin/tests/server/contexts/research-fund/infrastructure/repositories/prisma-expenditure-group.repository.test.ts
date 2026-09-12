@@ -54,6 +54,24 @@ test("同時保存の直列化衝突は保存し直せるエラーに変換す�
   });
 });
 
+test("同じ仕訳が別の支出群へ同時に紐づけられたら entry_id の一意制約違反を選べないエラーに変換する", async () => {
+  const { $transaction, repository } = setup();
+  $transaction.mockRejectedValue(
+    new Prisma.PrismaClientKnownRequestError("duplicate", { code: "P2002", clientVersion: "test" }),
+  );
+  await expect(
+    repository.update("3", "5", { title: "t", description: "d", outcomes: [], entryIds: ["1"] }),
+  ).rejects.toThrow("他の支出群に紐づいている仕訳は選べません");
+});
+
+test("一意制約と直列化以外のエラーはそのまま投げる", async () => {
+  const { $transaction, repository } = setup();
+  $transaction.mockRejectedValue(new Error("connection lost"));
+  await expect(
+    repository.create("3", { title: "t", description: "d", outcomes: [], entryIds: [] }),
+  ).rejects.toThrow("connection lost");
+});
+
 test("並べ替えも直列化トランザクションで行い、衝突は保存し直せるエラーに変換する", async () => {
   const { $transaction, repository } = setup();
   $transaction.mockRejectedValue(

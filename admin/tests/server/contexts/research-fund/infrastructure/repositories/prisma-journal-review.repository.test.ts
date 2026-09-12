@@ -35,6 +35,20 @@ test("手動作成の source と帳簿、作成者、行を保存する", async 
   const { repository, tx } = setup(); await expect(repository.create("1", input, "user")).resolves.toBe(entry.id);
   expect(tx.researchFundJournalEntry.create).toHaveBeenCalledWith({ data: expect.objectContaining({ bookId: BigInt(1), createdById: "user", source: "manual", lines: { create: input.lines } }) });
 });
+test("同じ日付・金額・項目名の仕訳がある一意制約違反は、作成・更新とも登録済みのエラーにする", async () => {
+  const { repository, tx } = setup();
+  const duplicate = new Prisma.PrismaClientKnownRequestError("duplicate", { code: "P2002", clientVersion: "test" });
+  tx.researchFundJournalEntry.create.mockRejectedValue(duplicate);
+  await expect(repository.create("1", input, "user")).rejects.toThrow("すでに登録されています");
+  tx.researchFundJournalEntry.updateMany.mockRejectedValue(duplicate);
+  await expect(repository.update("1", entry, input)).rejects.toThrow("すでに登録されています");
+  expect(tx.researchFundJournalLine.createMany).not.toHaveBeenCalled();
+});
+test("一意制約以外のエラーはそのまま投げる", async () => {
+  const { repository, tx } = setup();
+  tx.researchFundJournalEntry.create.mockRejectedValue(new Error("connection lost"));
+  await expect(repository.create("1", input, "user")).rejects.toThrow("connection lost");
+});
 test("一覧は帳簿内の支出と支給に限定し、BigInt/Decimal/Dateとスキャン情報を変換", async () => {
   const { repository, tx } = setup();
   tx.researchFundJournalEntry.findMany.mockResolvedValue([{ id: BigInt(entry.id), entryDate: new Date(input.entryDate), createdAt: new Date("2026-08-02"), updatedAt: new Date(entry.updatedAt), description: "移動", note: "公開", memo: "非公開", source: "scan", status: "draft", splitGroup: "split", documentId: BigInt(3), lines: [{ side: "debit", accountKey: "taxi", account: { type: "expense" }, amount: new Prisma.Decimal(1200) }, { side: "credit", accountKey: "bank", account: { type: "asset" }, amount: new Prisma.Decimal(1200) }], document: { scanJobs: [{ createdAt: new Date("2026-08-03"), model: "later", prompt: { version: 2 } }, { createdAt: new Date("2026-08-01"), model: "original", prompt: { version: 1 } }] } }]);
