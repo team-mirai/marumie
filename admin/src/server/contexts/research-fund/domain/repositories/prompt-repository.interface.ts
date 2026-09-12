@@ -7,4 +7,6 @@ export interface PromptRepository {
   create(politicianId: string, body: string, userId: string): Promise<number>;
   /** 既存の版を有効版にする（新しい版は作らない） */
   activate(politicianId: string, version: number): Promise<void>;
+  /** 有効版を返す。1 版も保存されていなければ null */
+  findActive(politicianId: string): Promise<PromptRecord | null>;
 }

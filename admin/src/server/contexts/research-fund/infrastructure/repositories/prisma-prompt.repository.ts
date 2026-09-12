@@ -1,5 +1,5 @@
 import "server-only";
-import { Prisma, type PrismaClient } from "@prisma/client";
+import { Prisma, type PrismaClient, type ResearchFundPrompt } from "@prisma/client";
 import {
   PromptError,
   type PromptRecord,
@@ -15,14 +15,7 @@ export class PrismaPromptRepository implements PromptRepository {
       orderBy: { version: "desc" },
       include: { _count: { select: { scanJobs: true } } },
     });
-    return rows.map((row) => ({
-      id: String(row.id),
-      version: row.version,
-      body: row.body,
-      isActive: row.isActive,
-      updatedAt: row.updatedAt.toISOString(),
-      jobCount: row._count.scanJobs,
-    }));
+    return rows.map(toPromptRecord);
   }
 
   async create(politicianId: string, body: string, userId: string): Promise<number> {
@@ -67,4 +60,26 @@ export class PrismaPromptRepository implements PromptRepository {
       await tx.researchFundPrompt.update({ where: { id: target.id }, data: { isActive: true } });
     });
   }
+
+  async findActive(politicianId: string): Promise<PromptRecord | null> {
+    const row = await this.prisma.researchFundPrompt.findFirst({
+      where: { politicianId: BigInt(politicianId), isActive: true },
+      orderBy: { version: "desc" },
+      include: { _count: { select: { scanJobs: true } } },
+    });
+    return row ? toPromptRecord(row) : null;
+  }
+}
+
+type PromptRow = ResearchFundPrompt & { _count: { scanJobs: number } };
+
+function toPromptRecord(row: PromptRow): PromptRecord {
+  return {
+    id: String(row.id),
+    version: row.version,
+    body: row.body,
+    isActive: row.isActive,
+    updatedAt: row.updatedAt.toISOString(),
+    jobCount: row._count.scanJobs,
+  };
 }
