@@ -30,11 +30,12 @@ function setup(duplicates = 0) {
     },
     researchFundAccount: { findMany: jest.fn().mockResolvedValue([]) },
   };
+  const transaction = jest.fn(async (fn: (client: unknown) => unknown) => fn(tx));
   const repository = new PrismaGrantRepository({
     ...tx,
-    $transaction: jest.fn(async (fn: (client: unknown) => unknown) => fn(tx)),
+    $transaction: transaction,
   } as unknown as PrismaClient);
-  return { repository, tx };
+  return { repository, tx, transaction };
 }
 
 test("帳簿から年度と議員の当選日を暦日で取り出す", async () => {
@@ -88,6 +89,17 @@ test("同一トランザクション内で同月の二重生成を拒否する",
   const { repository, tx } = setup(1);
   await expect(repository.create("1", "2026-05", input, "user")).rejects.toThrow("すでに登録");
   expect(tx.researchFundJournalEntry.create).not.toHaveBeenCalled();
+});
+
+test("同月の判定と作成は直列化トランザクションで行い、衝突はやり直せるエラーに変換する", async () => {
+  const { repository, transaction } = setup();
+  transaction.mockRejectedValueOnce(
+    new Prisma.PrismaClientKnownRequestError("write conflict", { code: "P2034", clientVersion: "test" }),
+  );
+  await expect(repository.create("1", "2026-05", input, "user")).rejects.toThrow("競合しました");
+  expect(transaction).toHaveBeenCalledWith(expect.any(Function), {
+    isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+  });
 });
 
 test("同月の判定をすり抜けて同時に登録された一意制約違反も、すでに登録済みのエラーにする", async () => {
