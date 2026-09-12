@@ -2,11 +2,16 @@
 import { useId, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Button, Card, CardContent, Label, Textarea } from "@/client/components/ui";
+import { CircleNotch, Play } from "@phosphor-icons/react/dist/ssr";
+import { Button, Card, CardContent, Label, NativeSelect, Textarea } from "@/client/components/ui";
 import { PageHeader } from "@/client/components/layout/PageHeader";
 import { cn } from "@/client/lib";
-import type { PromptOverview } from "@/server/contexts/research-fund/domain/models/prompt";
+import type {
+  PromptOverview,
+  PromptTestDocument,
+} from "@/server/contexts/research-fund/domain/models/prompt";
 import { mutatePrompt } from "@/server/contexts/research-fund/presentation/actions/manage-prompt";
+import { testPrompt } from "@/server/contexts/research-fund/presentation/actions/test-prompt";
 import type { AdminTarget } from "@/server/contexts/shared/domain/models/admin-target";
 
 function formatDate(isoDate: string) {
@@ -19,12 +24,20 @@ export function PromptEditor({
   activeVersion,
   nextVersion,
   automaticPrompt,
+  testDocuments,
   target,
-}: PromptOverview & { target: Extract<AdminTarget, { kind: "research-fund" }> }) {
+}: PromptOverview & {
+  testDocuments: PromptTestDocument[];
+  target: Extract<AdminTarget, { kind: "research-fund" }>;
+}) {
   const router = useRouter();
   const fieldId = useId();
+  const testDocumentId = useId();
   const [body, setBody] = useState(savedBody);
   const [pending, startTransition] = useTransition();
+  const [selectedDocumentId, setSelectedDocumentId] = useState(testDocuments[0]?.id ?? "");
+  const [testing, startTesting] = useTransition();
+  const [testResult, setTestResult] = useState<{ json: string } | { error: string } | null>(null);
   const dirty = body !== savedBody;
   // 版が 1 つも無いうちは、デフォルトテンプレートのまま保存して v1 を作れるようにする
   const savable = body.trim().length > 0 && (dirty || activeVersion === null);
@@ -49,6 +62,25 @@ export function PromptEditor({
     });
   }
 
+  function runTest() {
+    setTestResult(null);
+    startTesting(async () => {
+      try {
+        const result = await testPrompt(target.politicianId, target.bookId, {
+          documentId: selectedDocumentId,
+          body,
+        });
+        setTestResult(
+          result.success
+            ? { json: JSON.stringify(result.extracted, null, 2) }
+            : { error: result.error },
+        );
+      } catch {
+        setTestResult({ error: "通信に失敗しました。再度お試しください" });
+      }
+    });
+  }
+
   return (
     <>
       <PageHeader
@@ -57,65 +89,128 @@ export function PromptEditor({
         description={`${target.name}の議員室のスキャンで使う整理プロンプト。保存すると新しい版になり、各ジョブは使った版を記録します。`}
       />
       <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1.5fr)_minmax(300px,1fr)]">
-        <Card>
-          <CardContent className="p-5">
-            <details className="mb-4 rounded-lg border border-border-soft">
-              <summary className="cursor-pointer list-none px-4 py-3 text-sm font-bold">
-                自動で付加される部分を見る（出力スキーマ・費用カテゴリの語彙と定義）
-              </summary>
-              <div className="border-t border-border-soft px-4 py-3">
-                <p className="mb-2 text-xs text-muted-foreground">
-                  システムが自動で付加します。この画面からは編集できません。
-                </p>
-                <pre className="max-h-64 overflow-auto whitespace-pre-wrap break-all rounded-lg bg-background p-3 text-xs">
-                  {automaticPrompt}
-                </pre>
+        <div className="flex flex-col gap-5">
+          <Card>
+            <CardContent className="p-5">
+              <details className="mb-4 rounded-lg border border-border-soft">
+                <summary className="cursor-pointer list-none px-4 py-3 text-sm font-bold">
+                  自動で付加される部分を見る（出力スキーマ・費用カテゴリの語彙と定義）
+                </summary>
+                <div className="border-t border-border-soft px-4 py-3">
+                  <p className="mb-2 text-xs text-muted-foreground">
+                    システムが自動で付加します。この画面からは編集できません。
+                  </p>
+                  <pre className="max-h-64 overflow-auto whitespace-pre-wrap break-all rounded-lg bg-background p-3 text-xs">
+                    {automaticPrompt}
+                  </pre>
+                </div>
+              </details>
+              <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                <Label htmlFor={fieldId}>プロンプト本文</Label>
+                <span
+                  className={cn(
+                    "rounded-full border px-3 py-1 text-xs font-latin",
+                    activeVersion === null
+                      ? "text-muted-foreground"
+                      : "border-ring bg-accent text-accent-foreground",
+                  )}
+                >
+                  {activeVersion === null ? "未保存（デフォルト）" : `v${activeVersion} 有効`}
+                </span>
               </div>
-            </details>
-            <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-              <Label htmlFor={fieldId}>プロンプト本文</Label>
-              <span
-                className={cn(
-                  "rounded-full border px-3 py-1 text-xs font-latin",
-                  activeVersion === null
-                    ? "text-muted-foreground"
-                    : "border-ring bg-accent text-accent-foreground",
-                )}
-              >
-                {activeVersion === null ? "未保存（デフォルト）" : `v${activeVersion} 有効`}
-              </span>
-            </div>
-            <Textarea
-              id={fieldId}
-              rows={16}
-              className="min-h-80 font-mono text-sm"
-              value={body}
-              disabled={pending}
-              onChange={(event) => setBody(event.target.value)}
-            />
-            <div className="mt-4 flex flex-wrap gap-2">
-              <Button
-                disabled={pending || !savable}
-                onClick={() => run({ type: "save", body }, (message) => toast.success(message))}
-              >
-                保存して v{nextVersion} にする
-              </Button>
-              <Button
-                variant="outline"
-                disabled={pending || !dirty}
-                onClick={() => setBody(savedBody)}
-              >
-                変更を破棄
-              </Button>
-            </div>
-            {activeVersion === null && (
-              <p className="mt-3 text-xs text-muted-foreground">
-                まだ版がありません。デフォルトテンプレートを下敷きに編集し、保存すると v1
-                になります。
+              <Textarea
+                id={fieldId}
+                rows={16}
+                className="min-h-80 font-mono text-sm"
+                value={body}
+                disabled={pending || testing}
+                onChange={(event) => {
+                  setBody(event.target.value);
+                  setTestResult(null);
+                }}
+              />
+              <div className="mt-4 flex flex-wrap gap-2">
+                <Button
+                  disabled={pending || !savable}
+                  onClick={() => run({ type: "save", body }, (message) => toast.success(message))}
+                >
+                  保存して v{nextVersion} にする
+                </Button>
+                <Button
+                  variant="outline"
+                  disabled={pending || !dirty}
+                  onClick={() => {
+                    setBody(savedBody);
+                    setTestResult(null);
+                  }}
+                >
+                  変更を破棄
+                </Button>
+              </div>
+              {activeVersion === null && (
+                <p className="mt-3 text-xs text-muted-foreground">
+                  まだ版がありません。デフォルトテンプレートを下敷きに編集し、保存すると v1
+                  になります。
+                </p>
+              )}
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-5">
+              <h2 className="font-bold">テスト実行</h2>
+              <p className="mt-1 mb-3 text-sm text-muted-foreground">
+                編集中の本文（未保存でよい）で書類1枚だけを読み取り、結果を確認できます。仕訳・ジョブは作られません。
               </p>
-            )}
-          </CardContent>
-        </Card>
+              {testDocuments.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  この帳簿にはまだ書類がありません。「書類スキャン」からアップロードすると選べるようになります。
+                </p>
+              ) : (
+                <div className="flex flex-wrap items-end gap-3">
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor={testDocumentId}>書類</Label>
+                    <NativeSelect
+                      id={testDocumentId}
+                      className="w-60"
+                      value={selectedDocumentId}
+                      disabled={testing}
+                      onChange={(event) => {
+                        setSelectedDocumentId(event.target.value);
+                        setTestResult(null);
+                      }}
+                    >
+                      {testDocuments.map((document) => (
+                        <option key={document.id} value={document.id}>
+                          {document.originalFilename}
+                        </option>
+                      ))}
+                    </NativeSelect>
+                  </div>
+                  <Button
+                    variant="outline"
+                    disabled={testing || body.trim().length === 0 || !selectedDocumentId}
+                    onClick={runTest}
+                  >
+                    {testing ? (
+                      <CircleNotch aria-hidden className="size-4 animate-spin" />
+                    ) : (
+                      <Play aria-hidden className="size-4" />
+                    )}
+                    {testing ? "読み取り中…" : "テスト実行"}
+                  </Button>
+                </div>
+              )}
+              {testResult !== null &&
+                ("json" in testResult ? (
+                  <pre className="mt-4 max-h-80 overflow-auto whitespace-pre-wrap break-all rounded-lg bg-accent p-4 font-mono text-xs">
+                    {testResult.json}
+                  </pre>
+                ) : (
+                  <p className="mt-4 text-sm text-destructive">{testResult.error}</p>
+                ))}
+            </CardContent>
+          </Card>
+        </div>
         <Card className="xl:sticky xl:top-6">
           <CardContent className="p-5">
             <h2 className="mb-3 font-bold">版履歴</h2>

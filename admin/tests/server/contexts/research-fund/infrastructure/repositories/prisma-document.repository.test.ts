@@ -2,7 +2,7 @@ import type { PrismaClient } from "@prisma/client";
 import { PrismaDocumentRepository } from "@/server/contexts/research-fund/infrastructure/repositories/prisma-document.repository";
 
 describe("PrismaDocumentRepository", () => {
-  const delegate = { create: jest.fn(), findFirst: jest.fn() };
+  const delegate = { create: jest.fn(), findFirst: jest.fn(), findMany: jest.fn() };
   const repository = new PrismaDocumentRepository({
     researchFundDocument: delegate,
   } as unknown as PrismaClient);
@@ -44,6 +44,17 @@ describe("PrismaDocumentRepository", () => {
     expect(await repository.findById("13", "9007199254740993")).toBeNull();
     expect(delegate.findFirst).toHaveBeenLastCalledWith({
       where: { id: BigInt("9007199254740993"), bookId: BigInt("13") },
+    });
+  });
+  it("lists the book's documents newest first within the limit", async () => {
+    delegate.findMany.mockResolvedValue([row]);
+    expect(await repository.listByBook("12", 50)).toEqual([
+      expect.objectContaining({ id: "9007199254740993", bookId: "12" }),
+    ]);
+    expect(delegate.findMany).toHaveBeenCalledWith({
+      where: { bookId: BigInt("12") },
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      take: 50,
     });
   });
   it("propagates database errors", async () => {
