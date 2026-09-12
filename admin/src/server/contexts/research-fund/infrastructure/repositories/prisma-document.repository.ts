@@ -25,7 +25,7 @@ export class PrismaDocumentRepository implements DocumentRepository {
   async listByBook(bookId: string, limit: number): Promise<ResearchFundDocument[]> {
     const rows = await this.prisma.researchFundDocument.findMany({
       where: { bookId: BigInt(bookId) },
-      orderBy: { id: "desc" },
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
       take: limit,
     });
     return rows.map((row) => this.toModel(row));

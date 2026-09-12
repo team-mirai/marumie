@@ -2,7 +2,7 @@
 import { useId, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Play } from "@phosphor-icons/react/dist/ssr";
+import { CircleNotch, Play } from "@phosphor-icons/react/dist/ssr";
 import { Button, Card, CardContent, Label, NativeSelect, Textarea } from "@/client/components/ui";
 import { PageHeader } from "@/client/components/layout/PageHeader";
 import { cn } from "@/client/lib";
@@ -123,8 +123,11 @@ export function PromptEditor({
                 rows={16}
                 className="min-h-80 font-mono text-sm"
                 value={body}
-                disabled={pending}
-                onChange={(event) => setBody(event.target.value)}
+                disabled={pending || testing}
+                onChange={(event) => {
+                  setBody(event.target.value);
+                  setTestResult(null);
+                }}
               />
               <div className="mt-4 flex flex-wrap gap-2">
                 <Button
@@ -136,7 +139,10 @@ export function PromptEditor({
                 <Button
                   variant="outline"
                   disabled={pending || !dirty}
-                  onClick={() => setBody(savedBody)}
+                  onClick={() => {
+                    setBody(savedBody);
+                    setTestResult(null);
+                  }}
                 >
                   変更を破棄
                 </Button>
@@ -168,7 +174,10 @@ export function PromptEditor({
                       className="w-60"
                       value={selectedDocumentId}
                       disabled={testing}
-                      onChange={(event) => setSelectedDocumentId(event.target.value)}
+                      onChange={(event) => {
+                        setSelectedDocumentId(event.target.value);
+                        setTestResult(null);
+                      }}
                     >
                       {testDocuments.map((document) => (
                         <option key={document.id} value={document.id}>
@@ -182,7 +191,11 @@ export function PromptEditor({
                     disabled={testing || body.trim().length === 0 || !selectedDocumentId}
                     onClick={runTest}
                   >
-                    <Play aria-hidden className="size-4" />
+                    {testing ? (
+                      <CircleNotch aria-hidden className="size-4 animate-spin" />
+                    ) : (
+                      <Play aria-hidden className="size-4" />
+                    )}
                     {testing ? "読み取り中…" : "テスト実行"}
                   </Button>
                 </div>

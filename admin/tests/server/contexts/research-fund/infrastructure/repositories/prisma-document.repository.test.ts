@@ -53,7 +53,7 @@ describe("PrismaDocumentRepository", () => {
     ]);
     expect(delegate.findMany).toHaveBeenCalledWith({
       where: { bookId: BigInt("12") },
-      orderBy: { id: "desc" },
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
       take: 50,
     });
   });
