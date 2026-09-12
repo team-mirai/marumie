@@ -6,6 +6,7 @@ describe("GetDocumentUsecase", () => {
   const repository: jest.Mocked<DocumentRepository> = { create: jest.fn(), findById: jest.fn() };
   const storage: jest.Mocked<DocumentStorage> = {
     upload: jest.fn(),
+    download: jest.fn(),
     createSignedUrl: jest.fn(),
     remove: jest.fn(),
   };

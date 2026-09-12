@@ -2,7 +2,12 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { SupabaseDocumentStorage } from "@/server/contexts/research-fund/infrastructure/storage/supabase-document-storage";
 
 describe("SupabaseDocumentStorage", () => {
-  const bucket = { upload: jest.fn(), createSignedUrl: jest.fn(), remove: jest.fn() };
+  const bucket = {
+    upload: jest.fn(),
+    download: jest.fn(),
+    createSignedUrl: jest.fn(),
+    remove: jest.fn(),
+  };
   const from = jest.fn(() => bucket);
   const client = { storage: { from } } as unknown as SupabaseClient;
   const storage = new SupabaseDocumentStorage(client, "private-receipts");
@@ -14,6 +19,10 @@ describe("SupabaseDocumentStorage", () => {
       error: null,
     });
     bucket.remove.mockResolvedValue({ data: [], error: null });
+    bucket.download.mockResolvedValue({
+      data: new Blob([new Uint8Array([1, 2, 3])]),
+      error: null,
+    });
   });
   it.each(["image/jpeg", "image/png", "application/pdf"])(
     "uploads %s without overwriting existing objects",
@@ -56,6 +65,20 @@ describe("SupabaseDocumentStorage", () => {
   it("rejects invalid expiry without contacting storage", async () => {
     expect(await storage.createSignedUrl("key", 0)).toMatchObject({ status: "invalid" });
     expect(from).not.toHaveBeenCalled();
+  });
+  it("downloads the original bytes for extraction", async () => {
+    expect(await storage.download("key")).toEqual({
+      status: "valid",
+      value: new Uint8Array([1, 2, 3]),
+    });
+    expect(bucket.download).toHaveBeenCalledWith("key");
+  });
+  it.each([
+    { data: null, error: new Error("denied") },
+    { data: null, error: null },
+  ])("reports download failures", async (response) => {
+    bucket.download.mockResolvedValue(response);
+    await expect(storage.download("key")).rejects.toThrow("原本");
   });
   it("removes only the requested key", async () => {
     await storage.remove("key");

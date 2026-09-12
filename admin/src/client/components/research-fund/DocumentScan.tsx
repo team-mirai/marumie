@@ -1,7 +1,10 @@
 "use client";
-import { useRef, useState, useTransition, type DragEvent } from "react";
+import { useCallback, useEffect, useRef, useState, useTransition, type DragEvent } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
+  ArrowClockwise,
+  ArrowRight,
   FileArrowUp,
   FilePdf,
   Image as ImageIcon,
@@ -28,6 +31,8 @@ import {
   type ScanOverview,
 } from "@/server/contexts/research-fund/domain/models/scan-batch";
 import { createScanBatch } from "@/server/contexts/research-fund/presentation/actions/create-scan-batch";
+import { processScanJobs } from "@/server/contexts/research-fund/presentation/actions/process-scan-jobs";
+import { retryScanJob } from "@/server/contexts/research-fund/presentation/actions/retry-scan-job";
 import type { AdminTarget } from "@/server/contexts/shared/domain/models/admin-target";
 
 const STATUS_LABELS: Record<ScanJobStatus, string> = {
@@ -43,6 +48,9 @@ const STATUS_STYLES: Record<ScanJobStatus, string> = {
   succeeded: "border-primary bg-primary text-primary-foreground",
   failed: "border-destructive bg-destructive text-white",
 };
+
+/** 未処理が残っている間、次の処理を呼ぶまでの間隔（ミリ秒） */
+const POLL_INTERVAL_MS = 1500;
 
 function formatDate(isoDate: string) {
   return isoDate.slice(0, 10).replaceAll("-", ".");
@@ -71,7 +79,84 @@ export function DocumentScan({
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
   const [pending, startTransition] = useTransition();
+  const [processing, setProcessing] = useState(false);
+  const [autoRun, setAutoRun] = useState(false);
   const ready = activePromptVersion !== null;
+  const jobs = batches.flatMap((batch) => batch.jobs);
+  const unfinished = jobs.filter(
+    (job) => job.status === "queued" || job.status === "running",
+  ).length;
+  const succeeded = jobs.filter((job) => job.status === "succeeded").length;
+  // 「処理する」を押してからこれまでに失敗した件数。通知の時点では router.refresh() の
+  // 反映が間に合わないため、props の件数ではなく自前で数える。
+  const failedInRun = useRef(0);
+
+  /**
+   * 待機中のジョブを少数だけ処理する。残りがあれば自動で次を呼ぶ（キュー基盤を持たないため、
+   * 画面が呼び出し役を兼ねる）。実行中は再入しない。
+   */
+  const process = useCallback(async () => {
+    setProcessing(true);
+    try {
+      const result = await processScanJobs(target.politicianId, target.bookId);
+      if (!result.success) {
+        toast.error(result.error);
+        setAutoRun(false);
+        return;
+      }
+      failedInRun.current += result.failed;
+      router.refresh();
+      if (!result.hasMore) {
+        setAutoRun(false);
+        // 失敗したジョブがあれば「完了」と断定しない。再実行の導線は一覧の各行にある。
+        if (failedInRun.current > 0)
+          toast.error(`読み取りを終えましたが、${failedInRun.current}件が失敗しました`);
+        else toast.success("読み取りが完了しました");
+      }
+    } catch {
+      toast.error("通信に失敗しました。再度お試しください");
+      setAutoRun(false);
+    } finally {
+      setProcessing(false);
+    }
+  }, [router, target.politicianId, target.bookId]);
+
+  // 未処理が残っている間、一定間隔で処理を呼び続ける。1 回の呼び出しは少数しか進めない。
+  useEffect(() => {
+    if (!autoRun || processing || unfinished === 0) return;
+    const timer = setTimeout(() => {
+      void process();
+    }, POLL_INTERVAL_MS);
+    return () => clearTimeout(timer);
+  }, [autoRun, processing, unfinished, process]);
+
+  // 処理し切ったら自動実行を止める（失敗だけが残った場合もここで止まる）
+  useEffect(() => {
+    if (unfinished === 0) setAutoRun(false);
+  }, [unfinished]);
+
+  function start() {
+    if (processing || unfinished === 0) return;
+    failedInRun.current = 0;
+    setAutoRun(true);
+    void process();
+  }
+
+  function retry(jobId: string) {
+    startTransition(async () => {
+      try {
+        const result = await retryScanJob(target.politicianId, target.bookId, jobId);
+        if (!result.success) {
+          toast.error(result.error);
+          return;
+        }
+        router.refresh();
+        setAutoRun(true);
+      } catch {
+        toast.error("通信に失敗しました。再度お試しください");
+      }
+    });
+  }
 
   function upload(files: File[]) {
     if (inputRef.current) inputRef.current.value = "";
@@ -91,6 +176,7 @@ export function DocumentScan({
         }
         toast.success(`${result.count}件の書類を読み取り待ちに追加しました`);
         router.refresh();
+        setAutoRun(true);
       } catch {
         toast.error("通信に失敗しました。再度お試しください");
       }
@@ -169,6 +255,32 @@ export function DocumentScan({
           </CardContent>
         </Card>
 
+        {batches.length > 0 && (
+          <div className="flex flex-wrap items-center gap-3">
+            <Button
+              type="button"
+              disabled={processing || pending || unfinished === 0}
+              onClick={start}
+            >
+              {processing || autoRun
+                ? `読み取り中… 残り${unfinished}件`
+                : unfinished === 0
+                  ? "未処理の書類はありません"
+                  : `処理する（${unfinished}件）`}
+            </Button>
+            {succeeded > 0 && (
+              <Button asChild variant="outline">
+                <Link
+                  href={`/politicians/${target.politicianId}/books/${target.bookId}/entries?status=draft`}
+                >
+                  完了分を確認へ
+                  <ArrowRight aria-hidden className="size-4" />
+                </Link>
+              </Button>
+            )}
+          </div>
+        )}
+
         {batches.length === 0 ? (
           <p className="text-sm text-muted-foreground">
             まだバッチがありません。書類をアップロードするとここに並びます。
@@ -205,6 +317,7 @@ export function DocumentScan({
                       <TableHead>ファイル</TableHead>
                       <TableHead>状態</TableHead>
                       <TableHead>抽出結果</TableHead>
+                      <TableHead className="w-24" />
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -239,6 +352,20 @@ export function DocumentScan({
                           {job.status === "failed"
                             ? (job.error ?? "読み取りに失敗しました")
                             : (job.summary ?? "—")}
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap">
+                          {job.status === "failed" && (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              className="text-xs"
+                              disabled={pending || processing}
+                              onClick={() => retry(job.id)}
+                            >
+                              <ArrowClockwise aria-hidden className="size-4" />
+                              再実行
+                            </Button>
+                          )}
                         </TableCell>
                       </TableRow>
                     ))}

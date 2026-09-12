@@ -41,13 +41,18 @@ export function JournalReview({
   entries,
   accounts,
   target,
+  initialStatus,
 }: {
   entries: ReviewEntry[];
   accounts: ReviewAccount[];
   target: Extract<AdminTarget, { kind: "research-fund" }>;
+  /** スキャン画面の「完了分を確認へ」から下書きタブを開くための初期値 */
+  initialStatus?: string;
 }) {
   const router = useRouter();
-  const [status, setStatus] = useState("all");
+  const [status, setStatus] = useState(
+    initialStatus && Object.hasOwn(statuses, initialStatus) ? initialStatus : "all",
+  );
   const [month, setMonth] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
