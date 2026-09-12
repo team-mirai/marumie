@@ -17,6 +17,13 @@ describe("ManageScanUsecase", () => {
   const scanRepository: jest.Mocked<ScanRepository> = {
     createBatch: jest.fn(),
     listBatches: jest.fn(),
+    countUnfinished: jest.fn(),
+    claimJobs: jest.fn(),
+    releaseStaleJobs: jest.fn(),
+    completeJob: jest.fn(),
+    failJob: jest.fn(),
+    requeueJob: jest.fn(),
+    accounts: jest.fn(),
   };
   const promptRepository: jest.Mocked<PromptRepository> = {
     list: jest.fn(),
@@ -26,6 +33,7 @@ describe("ManageScanUsecase", () => {
   };
   const storage: jest.Mocked<DocumentStorage> = {
     upload: jest.fn(),
+    download: jest.fn(),
     createSignedUrl: jest.fn(),
     remove: jest.fn(),
   };

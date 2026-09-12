@@ -25,6 +25,12 @@ export class SupabaseDocumentStorage implements DocumentStorage {
     return { status: "valid", value: storageKey };
   }
 
+  async download(storageKey: string): Promise<ResearchFundResult<Uint8Array>> {
+    const { data, error } = await this.client.storage.from(this.bucket).download(storageKey);
+    if (error || !data) throw new Error("領収書の原本の取得に失敗しました", { cause: error });
+    return { status: "valid", value: new Uint8Array(await data.arrayBuffer()) };
+  }
+
   async createSignedUrl(
     storageKey: string,
     expiresIn: number,

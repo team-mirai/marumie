@@ -1,13 +1,16 @@
 import "server-only";
-import type { PrismaClient } from "@prisma/client";
+import type { Prisma, PrismaClient } from "@prisma/client";
 import type {
   ScanBatchView,
   ScanJobStatus,
 } from "@/server/contexts/research-fund/domain/models/scan-batch";
 import type {
+  ClaimedScanJob,
   CreateScanBatchInput,
   ScanRepository,
 } from "@/server/contexts/research-fund/domain/repositories/scan-repository.interface";
+import type { ResearchFundAccount } from "@/server/contexts/research-fund/domain/models/journal-posting";
+import type { ScanDraftEntry } from "@/server/contexts/research-fund/domain/services/scan-journal-builder";
 
 export class PrismaScanRepository implements ScanRepository {
   constructor(private prisma: PrismaClient) {}
@@ -67,6 +70,134 @@ export class PrismaScanRepository implements ScanRepository {
         error: job.error,
       })),
     }));
+  }
+
+  async countUnfinished(bookId: string): Promise<{ queued: number; running: number }> {
+    const rows = await this.prisma.researchFundScanJob.groupBy({
+      by: ["status"],
+      where: { batch: { bookId: BigInt(bookId) }, status: { in: ["queued", "running"] } },
+      _count: { _all: true },
+    });
+    const count = (status: "queued" | "running") =>
+      rows.find((row) => row.status === status)?._count._all ?? 0;
+    return { queued: count("queued"), running: count("running") };
+  }
+
+  async claimJobs(bookId: string, limit: number): Promise<ClaimedScanJob[]> {
+    const candidates = await this.prisma.researchFundScanJob.findMany({
+      where: { batch: { bookId: BigInt(bookId) }, status: "queued" },
+      orderBy: { id: "asc" },
+      take: limit,
+      include: {
+        document: { select: { id: true, storageKey: true, mime: true, originalFilename: true } },
+        prompt: { select: { body: true } },
+      },
+    });
+    const claimed: ClaimedScanJob[] = [];
+    for (const job of candidates) {
+      // 同時に走った別の実行が先に掴んでいたら count は 0 になる。その分は諦めて次へ。
+      const result = await this.prisma.researchFundScanJob.updateMany({
+        where: { id: job.id, status: "queued" },
+        data: { status: "running", startedAt: new Date(), error: null },
+      });
+      if (result.count !== 1) continue;
+      claimed.push({
+        id: job.id.toString(),
+        documentId: job.document.id.toString(),
+        storageKey: job.document.storageKey,
+        mime: job.document.mime,
+        originalFilename: job.document.originalFilename,
+        officePrompt: job.prompt.body,
+      });
+    }
+    return claimed;
+  }
+
+  async releaseStaleJobs(bookId: string, staleBefore: Date): Promise<number> {
+    const result = await this.prisma.researchFundScanJob.updateMany({
+      where: {
+        batch: { bookId: BigInt(bookId) },
+        status: "running",
+        OR: [{ startedAt: null }, { startedAt: { lt: staleBefore } }],
+      },
+      data: { status: "queued", startedAt: null },
+    });
+    return result.count;
+  }
+
+  async completeJob(input: {
+    bookId: string;
+    jobId: string;
+    documentId: string;
+    rawJson: unknown;
+    entries: ScanDraftEntry[];
+    userId: string;
+  }): Promise<void> {
+    const bookId = BigInt(input.bookId);
+    await this.prisma.$transaction(async (tx) => {
+      // 同じ書類を読み直しても仕訳を二重に作らない。hash は日付・金額・項目名・書類IDから作る。
+      const existing = await tx.researchFundJournalEntry.findMany({
+        where: { bookId, hash: { in: input.entries.map((entry) => entry.hash) } },
+        select: { hash: true },
+      });
+      const known = new Set(existing.map((entry) => entry.hash));
+      for (const entry of input.entries) {
+        if (known.has(entry.hash)) continue;
+        known.add(entry.hash);
+        await tx.researchFundJournalEntry.create({
+          data: {
+            bookId,
+            entryDate: new Date(`${entry.entryDate}T00:00:00.000Z`),
+            description: entry.description,
+            status: "draft",
+            source: "scan",
+            documentId: BigInt(input.documentId),
+            splitGroup: entry.splitGroup,
+            note: entry.note,
+            hash: entry.hash,
+            createdById: input.userId,
+            lines: { create: entry.lines.map((line) => ({ ...line })) },
+          },
+        });
+      }
+      await tx.researchFundScanJob.update({
+        where: { id: BigInt(input.jobId) },
+        data: {
+          status: "succeeded",
+          rawJson: input.rawJson as Prisma.InputJsonValue,
+          error: null,
+          finishedAt: new Date(),
+        },
+      });
+    });
+  }
+
+  async failJob(jobId: string, error: string, rawJson?: unknown): Promise<void> {
+    await this.prisma.researchFundScanJob.update({
+      where: { id: BigInt(jobId) },
+      data: {
+        status: "failed",
+        error: error.slice(0, 500),
+        finishedAt: new Date(),
+        ...(rawJson === undefined ? {} : { rawJson: rawJson as Prisma.InputJsonValue }),
+      },
+    });
+  }
+
+  async requeueJob(bookId: string, jobId: string): Promise<boolean> {
+    const result = await this.prisma.researchFundScanJob.updateMany({
+      where: { id: BigInt(jobId), batch: { bookId: BigInt(bookId) }, status: "failed" },
+      data: { status: "queued", error: null, startedAt: null, finishedAt: null },
+    });
+    return result.count === 1;
+  }
+
+  async accounts(): Promise<ResearchFundAccount[]> {
+    const rows = await this.prisma.researchFundAccount.findMany({
+      select: { key: true, type: true },
+      orderBy: { displayOrder: "asc" },
+    });
+    return rows.map((row) => ({ key: row.key, type: row.type }));
   }
 }
 
