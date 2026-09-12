@@ -56,7 +56,7 @@ importers:
     dependencies:
       '@ai-sdk/anthropic':
         specifier: ^3.0.2
-        version: 3.0.118(zod@4.3.6)
+        version: 3.0.118(zod@4.6.2)
       '@phosphor-icons/react':
         specifier: ^2.1.10
         version: 2.1.10(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
@@ -101,7 +101,7 @@ importers:
         version: 1.3.1(next@16.3.5(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(@types/node@25.5.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(react@19.3.0)
       ai:
         specifier: ^6.0.6
-        version: 6.0.281(zod@4.3.6)
+        version: 6.0.281(zod@4.6.2)
       class-variance-authority:
         specifier: ^0.7.1
         version: 0.7.1
@@ -131,7 +131,7 @@ importers:
         version: 4.0.3
       zod:
         specifier: ^4.3.4
-        version: 4.3.6
+        version: 4.6.2
     devDependencies:
       '@playwright/test':
         specifier: ^1.57.0
@@ -4036,28 +4036,31 @@ packages:
   zod@4.3.6:
     resolution: {integrity: sha512-rftlrkhHZOcjDwkGlnUtZZkvaPHCsDATp4pGpuOOMDaTdDDXF91wuVDJoWoPsKX/3YPQ5fHuF3STjcYyKr+Qhg==}
 
+  zod@4.6.2:
+    resolution: {integrity: sha512-lh5RCAGFa1Cm2hjtNwLQhSs/AsqdWnTQaBER9fEwN/88pSh7KOtJavtBx/0VlkN/uFd61SwYmljLMDAsHlvzBQ==}
+
 snapshots:
 
-  '@ai-sdk/anthropic@3.0.118(zod@4.3.6)':
+  '@ai-sdk/anthropic@3.0.118(zod@4.6.2)':
     dependencies:
       '@ai-sdk/provider': 3.0.16
-      '@ai-sdk/provider-utils': 4.0.51(zod@4.3.6)
-      zod: 4.3.6
+      '@ai-sdk/provider-utils': 4.0.51(zod@4.6.2)
+      zod: 4.6.2
 
-  '@ai-sdk/gateway@3.0.192(zod@4.3.6)':
+  '@ai-sdk/gateway@3.0.192(zod@4.6.2)':
     dependencies:
       '@ai-sdk/provider': 3.0.16
-      '@ai-sdk/provider-utils': 4.0.51(zod@4.3.6)
+      '@ai-sdk/provider-utils': 4.0.51(zod@4.6.2)
       '@vercel/oidc': 3.2.0
-      zod: 4.3.6
+      zod: 4.6.2
 
-  '@ai-sdk/provider-utils@4.0.51(zod@4.3.6)':
+  '@ai-sdk/provider-utils@4.0.51(zod@4.6.2)':
     dependencies:
       '@ai-sdk/provider': 3.0.16
       '@standard-schema/spec': 1.1.0
       eventsource-parser: 3.1.1
       undici: 6.28.1
-      zod: 4.3.6
+      zod: 4.6.2
 
   '@ai-sdk/provider@3.0.16':
     dependencies:
@@ -5850,13 +5853,13 @@ snapshots:
 
   acorn@8.16.0: {}
 
-  ai@6.0.281(zod@4.3.6):
+  ai@6.0.281(zod@4.6.2):
     dependencies:
-      '@ai-sdk/gateway': 3.0.192(zod@4.3.6)
+      '@ai-sdk/gateway': 3.0.192(zod@4.6.2)
       '@ai-sdk/provider': 3.0.16
-      '@ai-sdk/provider-utils': 4.0.51(zod@4.3.6)
+      '@ai-sdk/provider-utils': 4.0.51(zod@4.6.2)
       '@opentelemetry/api': 1.9.1
-      zod: 4.3.6
+      zod: 4.6.2
 
   ansi-escapes@4.3.2:
     dependencies:
@@ -7840,3 +7843,5 @@ snapshots:
   yocto-queue@0.1.0: {}
 
   zod@4.3.6: {}
+
+  zod@4.6.2: {}
