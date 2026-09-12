@@ -107,6 +107,13 @@ file_size_limit = "50MiB"
 # allowed_mime_types = ["image/png", "image/jpeg"]
 # objects_path = "./images"
 
+# 調査研究費の領収書原本（非公開）。admin の RESEARCH_FUND_DOCUMENT_BUCKET の既定値と揃える。
+# 本番バケットは Supabase のダッシュボードで用意する（#1346）。
+[storage.buckets.private-receipts]
+public = false
+file_size_limit = "50MiB"
+allowed_mime_types = ["image/jpeg", "image/png", "application/pdf"]
+
 [auth]
 enabled = true
 # The base URL of your website. Used as an allow-list for redirects and for constructing URLs used

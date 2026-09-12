@@ -3,7 +3,7 @@ import type { PromptRecord } from "@/server/contexts/research-fund/domain/models
 import type { PromptRepository } from "@/server/contexts/research-fund/domain/repositories/prompt-repository.interface";
 import { DEFAULT_OFFICE_PROMPT, buildAutomaticReceiptPrompt } from "@/server/contexts/research-fund/domain/services/receipt-extraction-prompt";
 function setup() {
-  const repository: jest.Mocked<PromptRepository> = { list: jest.fn(), create: jest.fn(), activate: jest.fn() };
+  const repository: jest.Mocked<PromptRepository> = { list: jest.fn(), create: jest.fn(), activate: jest.fn(), findActive: jest.fn() };
   return { repository, usecase: new ManagePromptUsecase(repository) };
 }
 function record(version: number, body: string, isActive: boolean): PromptRecord {
