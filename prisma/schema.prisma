@@ -335,7 +335,7 @@ model ResearchFundJournalEntry {
   groupItems ResearchFundGroupItem[]
 
   @@index([bookId, status, entryDate(sort: Desc)])
-  @@index([bookId, hash])
+  @@unique([bookId, hash]) // 再取込・二重登録の重複検知を DB 側でも保証する
   @@index([documentId])
   @@map("research_fund_journal_entries")
 }
@@ -464,14 +464,13 @@ model ResearchFundExpenditureGroup {
 
 model ResearchFundGroupItem {
   groupId   BigInt   @map("group_id")
-  entryId   BigInt   @map("entry_id")
+  entryId   BigInt   @unique @map("entry_id") // 1 仕訳は 1 つの支出群にしか属せない
   createdAt DateTime @default(now()) @map("created_at")
 
   group ResearchFundExpenditureGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
   entry ResearchFundJournalEntry     @relation(fields: [entryId], references: [id], onDelete: Cascade)
 
   @@id([groupId, entryId])
-  @@index([entryId])
   @@map("research_fund_group_items")
 }
 

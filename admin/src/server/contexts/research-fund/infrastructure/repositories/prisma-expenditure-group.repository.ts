@@ -29,8 +29,8 @@ function model(row: Row): ExpenditureGroupRecord {
   };
 }
 
-// 「1 仕訳は 1 つの支出群だけ」は (groupId, entryId) の複合主キーでは守れないため、
-// 同じ仕訳を別の支出群へ同時保存した場合は直列化の衝突として弾く。
+// 「1 仕訳は 1 つの支出群だけ」は research_fund_group_items.entry_id の一意制約で守る。
+// 直列化は、表示順の採番（create）と並べ替えの検証（reorder）が読んだ値のまま書き込むために残す。
 const serializableOptions = {
   isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
 };
@@ -39,8 +39,13 @@ async function serializable<T>(run: () => Promise<T>): Promise<T> {
   try {
     return await run();
   } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2034")
-      throw new ExpenditureGroupError("他の操作と競合しました。もう一度保存してください");
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      // 事前チェックをすり抜けて同じ仕訳が別の支出群へ同時に紐づけられた（entry_id の一意制約）
+      if (error.code === "P2002")
+        throw new ExpenditureGroupError("他の支出群に紐づいている仕訳は選べません");
+      if (error.code === "P2034")
+        throw new ExpenditureGroupError("他の操作と競合しました。もう一度保存してください");
+    }
     throw error;
   }
 }
@@ -190,6 +195,7 @@ export class PrismaExpenditureGroupRepository implements ExpenditureGroupReposit
       });
       if (belonging !== ids.length)
         throw new ExpenditureGroupError("この帳簿にない仕訳は紐づけられません");
+      // 一意制約に当たる前に同じ文言で断る。同時保存ですり抜けた分は P2002 で同じエラーになる。
       const taken = await tx.researchFundGroupItem.count({
         where: { entryId: { in: ids }, groupId: { not: groupId } },
       });

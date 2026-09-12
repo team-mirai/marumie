@@ -36,7 +36,10 @@ export interface ScanRepository {
   claimJobs(bookId: string, limit: number): Promise<ClaimedScanJob[]>;
   /** running のまま失効したジョブを queued に戻す。戻した件数を返す */
   releaseStaleJobs(bookId: string, staleBefore: Date): Promise<number>;
-  /** 下書き仕訳と原文 JSON を保存し、ジョブを succeeded にする（1 トランザクション） */
+  /**
+   * 下書き仕訳と原文 JSON を保存し、ジョブを succeeded にする（1 トランザクション）。
+   * 同じ hash の仕訳が既にあれば（同時実行を含む）その明細は読み飛ばし、ジョブの完了は続行する。
+   */
   completeJob(input: {
     bookId: string;
     jobId: string;

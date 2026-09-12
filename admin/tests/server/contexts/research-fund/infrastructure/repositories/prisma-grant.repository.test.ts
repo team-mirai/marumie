@@ -1,4 +1,4 @@
-import type { PrismaClient } from "@prisma/client";
+import { Prisma, type PrismaClient } from "@prisma/client";
 import { PrismaGrantRepository } from "@/server/contexts/research-fund/infrastructure/repositories/prisma-grant.repository";
 import type { GrantWrite } from "@/server/contexts/research-fund/domain/models/grant-registration";
 
@@ -88,6 +88,20 @@ test("同一トランザクション内で同月の二重生成を拒否する",
   const { repository, tx } = setup(1);
   await expect(repository.create("1", "2026-05", input, "user")).rejects.toThrow("すでに登録");
   expect(tx.researchFundJournalEntry.create).not.toHaveBeenCalled();
+});
+
+test("同月の判定をすり抜けて同時に登録された一意制約違反も、すでに登録済みのエラーにする", async () => {
+  const { repository, tx } = setup();
+  tx.researchFundJournalEntry.create.mockRejectedValue(
+    new Prisma.PrismaClientKnownRequestError("duplicate", { code: "P2002", clientVersion: "test" }),
+  );
+  await expect(repository.create("1", "2026-05", input, "user")).rejects.toThrow("すでに登録");
+});
+
+test("一意制約以外のエラーはそのまま投げる", async () => {
+  const { repository, tx } = setup();
+  tx.researchFundJournalEntry.create.mockRejectedValue(new Error("connection lost"));
+  await expect(repository.create("1", "2026-05", input, "user")).rejects.toThrow("connection lost");
 });
 
 test("12月の支給は翌年1月との境界で判定する", async () => {

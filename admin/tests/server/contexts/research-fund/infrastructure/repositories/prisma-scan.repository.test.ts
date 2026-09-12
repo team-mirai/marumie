@@ -11,13 +11,15 @@ function setup() {
     updateMany: jest.fn(),
     groupBy: jest.fn(),
   };
-  const entry = { create: jest.fn(), findMany: jest.fn() };
+  const entry = { createManyAndReturn: jest.fn() };
+  const line = { createMany: jest.fn() };
   const account = { findMany: jest.fn() };
   const tx = {
     researchFundScanBatch: batch,
     researchFundDocument: document,
     researchFundScanJob: job,
     researchFundJournalEntry: entry,
+    researchFundJournalLine: line,
     researchFundAccount: account,
   };
   const client = {
@@ -29,6 +31,7 @@ function setup() {
     document,
     job,
     entry,
+    line,
     account,
     client,
     repository: new PrismaScanRepository(client as unknown as PrismaClient),
@@ -254,21 +257,30 @@ const COMPLETE_INPUT = {
 };
 
 test("下書き仕訳と原文JSONを保存してジョブを完了にする", async () => {
-  const { entry, job, client, repository } = setup();
-  entry.findMany.mockResolvedValue([]);
+  const { entry, line, job, client, repository } = setup();
+  entry.createManyAndReturn.mockResolvedValue([{ id: BigInt(101), hash: "hash-a" }]);
   await repository.completeJob(COMPLETE_INPUT);
   expect(client.$transaction).toHaveBeenCalled();
-  expect(entry.create).toHaveBeenCalledWith({
-    data: expect.objectContaining({
-      bookId: BigInt(12),
-      description: "タクシー代",
-      status: "draft",
-      source: "scan",
-      documentId: BigInt(42),
-      hash: "hash-a",
-      createdById: "user-1",
-      lines: { create: COMPLETE_INPUT.entries[0].lines },
-    }),
+  // 既にある hash は (book_id, hash) の一意制約に任せて読み飛ばす
+  expect(entry.createManyAndReturn).toHaveBeenCalledWith({
+    data: [
+      expect.objectContaining({
+        bookId: BigInt(12),
+        entryDate: new Date("2026-04-01T00:00:00.000Z"),
+        description: "タクシー代",
+        status: "draft",
+        source: "scan",
+        documentId: BigInt(42),
+        hash: "hash-a",
+        createdById: "user-1",
+      }),
+    ],
+    skipDuplicates: true,
+    select: { id: true, hash: true },
+  });
+  // 明細は作れた仕訳の id に付ける
+  expect(line.createMany).toHaveBeenCalledWith({
+    data: COMPLETE_INPUT.entries[0].lines.map((l) => ({ ...l, entryId: BigInt(101) })),
   });
   expect(job.update).toHaveBeenCalledWith({
     where: { id: BigInt(11) },
@@ -276,11 +288,11 @@ test("下書き仕訳と原文JSONを保存してジョブを完了にする", a
   });
 });
 
-test("同じhashの仕訳が既にあれば作り直さない（再処理で二重にしない）", async () => {
-  const { entry, job, repository } = setup();
-  entry.findMany.mockResolvedValue([{ hash: "hash-a" }]);
+test("同じhashの仕訳が既にあれば明細を作らずジョブだけ完了にする（再処理で二重にしない）", async () => {
+  const { entry, line, job, repository } = setup();
+  entry.createManyAndReturn.mockResolvedValue([]);
   await repository.completeJob(COMPLETE_INPUT);
-  expect(entry.create).not.toHaveBeenCalled();
+  expect(line.createMany).not.toHaveBeenCalled();
   // 仕訳を作らなくてもジョブ自体は完了させる
   expect(job.update).toHaveBeenCalledWith(
     expect.objectContaining({ data: expect.objectContaining({ status: "succeeded" }) }),
@@ -289,12 +301,33 @@ test("同じhashの仕訳が既にあれば作り直さない（再処理で二�
 
 test("同じ抽出結果に同じhashの明細が並んでも1件しか作らない", async () => {
   const { entry, repository } = setup();
-  entry.findMany.mockResolvedValue([]);
+  entry.createManyAndReturn.mockResolvedValue([]);
   await repository.completeJob({
     ...COMPLETE_INPUT,
     entries: [COMPLETE_INPUT.entries[0], { ...COMPLETE_INPUT.entries[0] }],
   });
-  expect(entry.create).toHaveBeenCalledTimes(1);
+  expect(entry.createManyAndReturn.mock.calls[0][0].data).toHaveLength(1);
+});
+
+test("一部の仕訳だけ既にある場合は新しく作れた分にだけ明細を付ける", async () => {
+  const { entry, line, repository } = setup();
+  const second = {
+    ...COMPLETE_INPUT.entries[0],
+    description: "書籍代",
+    hash: "hash-b",
+    lines: [
+      { side: "debit" as const, accountKey: "books-newspapers", amount: 1200 },
+      { side: "credit" as const, accountKey: "bank", amount: 1200 },
+    ],
+  };
+  entry.createManyAndReturn.mockResolvedValue([{ id: BigInt(102), hash: "hash-b" }]);
+  await repository.completeJob({
+    ...COMPLETE_INPUT,
+    entries: [COMPLETE_INPUT.entries[0], second],
+  });
+  expect(line.createMany).toHaveBeenCalledWith({
+    data: second.lines.map((l) => ({ ...l, entryId: BigInt(102) })),
+  });
 });
 
 test("ジョブを失敗にしてエラーを記録する", async () => {

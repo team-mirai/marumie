@@ -1,5 +1,5 @@
 import "server-only";
-import type { Prisma, PrismaClient } from "@prisma/client";
+import { Prisma, type PrismaClient } from "@prisma/client";
 import {
   JournalReviewError,
   type JournalWrite,
@@ -79,6 +79,16 @@ function data(input: JournalWrite) {
     hash: input.hash,
   };
 }
+// 同じ日付・金額・項目名・書類の仕訳は (book_id, hash) の一意制約で二重登録にならない。
+async function unique<T>(run: () => Promise<T>): Promise<T> {
+  try {
+    return await run();
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002")
+      throw new JournalReviewError("同じ日付・金額・項目名の仕訳がすでに登録されています");
+    throw error;
+  }
+}
 function guard(bookId: string, entry: ReviewEntry) {
   return {
     id: BigInt(entry.id),
@@ -118,35 +128,39 @@ export class PrismaJournalReviewRepository implements JournalReviewRepository {
     );
   }
   async create(bookId: string, input: JournalWrite, userId: string) {
-    const row = await this.prisma.researchFundJournalEntry.create({
-      data: {
-        ...data(input),
-        bookId: BigInt(bookId),
-        source: "manual",
-        createdById: userId,
-        lines: { create: input.lines.map((l) => ({ ...l })) },
-      },
-    });
+    const row = await unique(() =>
+      this.prisma.researchFundJournalEntry.create({
+        data: {
+          ...data(input),
+          bookId: BigInt(bookId),
+          source: "manual",
+          createdById: userId,
+          lines: { create: input.lines.map((l) => ({ ...l })) },
+        },
+      }),
+    );
     return String(row.id);
   }
   async update(bookId: string, entry: ReviewEntry, input: JournalWrite) {
-    await this.prisma.$transaction(async (tx) => {
-      const result = await tx.researchFundJournalEntry.updateMany({
-        where: guard(bookId, entry),
-        data: data(input),
-      });
-      if (result.count !== 1)
-        throw new JournalReviewError("仕訳が更新・公開されました。画面を再読み込みしてください");
-      const row = await tx.researchFundJournalEntry.findFirst({
-        where: { id: BigInt(entry.id), bookId: BigInt(bookId) },
-        include,
-      });
-      if (!row || !model(row)) throw new JournalReviewError("この形式の仕訳は編集できません");
-      await tx.researchFundJournalLine.deleteMany({ where: { entryId: BigInt(entry.id) } });
-      await tx.researchFundJournalLine.createMany({
-        data: input.lines.map((l) => ({ ...l, entryId: BigInt(entry.id) })),
-      });
-    });
+    await unique(() =>
+      this.prisma.$transaction(async (tx) => {
+        const result = await tx.researchFundJournalEntry.updateMany({
+          where: guard(bookId, entry),
+          data: data(input),
+        });
+        if (result.count !== 1)
+          throw new JournalReviewError("仕訳が更新・公開されました。画面を再読み込みしてください");
+        const row = await tx.researchFundJournalEntry.findFirst({
+          where: { id: BigInt(entry.id), bookId: BigInt(bookId) },
+          include,
+        });
+        if (!row || !model(row)) throw new JournalReviewError("この形式の仕訳は編集できません");
+        await tx.researchFundJournalLine.deleteMany({ where: { entryId: BigInt(entry.id) } });
+        await tx.researchFundJournalLine.createMany({
+          data: input.lines.map((l) => ({ ...l, entryId: BigInt(entry.id) })),
+        });
+      }),
+    );
   }
   async discard(bookId: string, entry: ReviewEntry) {
     const result = await this.prisma.researchFundJournalEntry.deleteMany({
