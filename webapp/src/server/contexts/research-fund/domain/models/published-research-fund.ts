@@ -29,6 +29,8 @@ export interface PublishedExpense {
   note: string | null;
   splitGroup: string | null;
   hasReceipt: boolean;
+  /** 領収書の書類の MIME（image/jpeg | image/png | application/pdf）。領収書が無ければ null */
+  receiptMime: string | null;
 }
 
 /** 成果物。url が無ければ公開側は「報告は準備中」と表示する。 */

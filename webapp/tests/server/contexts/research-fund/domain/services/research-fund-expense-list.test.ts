@@ -27,6 +27,7 @@ function expense(overrides: Partial<PublishedExpense> = {}): PublishedExpense {
     note: null,
     splitGroup: null,
     hasReceipt: false,
+    receiptMime: null,
     ...overrides,
   };
 }
@@ -114,5 +115,20 @@ describe("buildExpenseViews", () => {
 
     expect(views.find((view) => view.id === "1")?.splitGroup).toBe("order-1");
     expect(views.find((view) => view.id === "2")?.splitGroup).toBeNull();
+  });
+
+  it("領収書の MIME から表示の種類を決める", () => {
+    const views = buildExpenseViews(
+      [
+        expense({ id: "1", entryId: "1", hasReceipt: true, receiptMime: "image/png" }),
+        expense({ id: "2", entryId: "2", hasReceipt: true, receiptMime: "application/pdf" }),
+        expense({ id: "3", entryId: "3", hasReceipt: false, receiptMime: null }),
+      ],
+      accounts,
+    );
+
+    expect(views.find((view) => view.id === "1")?.receiptKind).toBe("image");
+    expect(views.find((view) => view.id === "2")?.receiptKind).toBe("pdf");
+    expect(views.find((view) => view.id === "3")?.receiptKind).toBeNull();
   });
 });

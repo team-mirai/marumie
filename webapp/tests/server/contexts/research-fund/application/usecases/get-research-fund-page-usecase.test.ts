@@ -44,6 +44,7 @@ function published(overrides: Partial<PublishedResearchFund> = {}): PublishedRes
         note: null,
         splitGroup: null,
         hasReceipt: true,
+        receiptMime: "image/jpeg",
       },
       {
         id: "2",
@@ -55,6 +56,7 @@ function published(overrides: Partial<PublishedResearchFund> = {}): PublishedRes
         note: null,
         splitGroup: null,
         hasReceipt: false,
+        receiptMime: null,
       },
       {
         id: "3",
@@ -66,6 +68,7 @@ function published(overrides: Partial<PublishedResearchFund> = {}): PublishedRes
         note: null,
         splitGroup: null,
         hasReceipt: false,
+        receiptMime: null,
       },
     ],
     groups: [
