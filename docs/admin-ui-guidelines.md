@@ -38,6 +38,18 @@ import { Button, Input, Label } from "@/client/components/ui";
 
 - disabled は枠 `#CCC`・文字 `#B1B1B1`・`cursor: not-allowed`（**opacity で薄くしない**）
 
+### タブ（Tabs）
+
+`TabsList` はピル形の `bg-muted` トラック、`TabsTrigger` はその中のピル。
+**アクティブタブはサイドバーのアクティブ nav と同じ teal 系の語彙で示す**（ハンドオフの「アクティブ: 背景 teal-100 / 文字 teal-deep / weight 700」に揃える）。
+
+| 状態 | 見た目 |
+|---|---|
+| アクティブ | 背景 `bg-accent`（teal-100 `#E2F6F3`）+ 文字 `text-accent-foreground`（teal-deep `#0F8472`）+ 枠 `border-primary-active` + `font-bold` |
+| 非アクティブ | 背景透過 + 文字 `text-muted-foreground` + 枠なし |
+
+- このルールは `ui/tabs.tsx` に実装済み。**使用側でアクティブ状態の className を上書きしない**
+
 ### フォーム・フォーカスリング
 
 - フォームラベル（`Label`）は 12px/700（`text-xs font-bold`）が既定。必須は `<span className="text-destructive">*</span>` を付ける。使用側で `text-xs font-bold` を重ねて指定しない
