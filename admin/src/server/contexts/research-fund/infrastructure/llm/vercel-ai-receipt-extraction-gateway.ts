@@ -1,6 +1,6 @@
 import "server-only";
 import { anthropic } from "@ai-sdk/anthropic";
-import { generateText, jsonSchema, NoObjectGeneratedError, Output } from "ai";
+import { generateText, jsonSchema, LoadAPIKeyError, NoObjectGeneratedError, Output } from "ai";
 import { z } from "zod";
 import {
   ExtractedReceipt,
@@ -58,11 +58,22 @@ export class VercelAIReceiptExtractionGateway implements ReceiptExtractionGatewa
       });
       return ExtractedReceipt.normalize(output);
     } catch (error) {
+      // 失敗理由の切り分けはサーバーログだけで行う。呼び出し元へ返す結果には
+      // プロバイダの内部情報（レスポンス本文・キーなど）を載せない
+      console.error("Receipt extraction failed:", error);
       if (NoObjectGeneratedError.isInstance(error)) {
         return invalidResearchFundResult(
           "",
           RF_ERROR_CODES.INVALID_EXTRACTION_OUTPUT,
           "領収書の構造化出力を取得できませんでした",
+        );
+      }
+      // API キー未設定は環境設定の不備であり、画面から原因が分かるようにする
+      if (LoadAPIKeyError.isInstance(error)) {
+        return invalidResearchFundResult(
+          "",
+          RF_ERROR_CODES.EXTRACTION_API_KEY_MISSING,
+          "LLMのAPIキーが未設定です。ANTHROPIC_API_KEYを設定してください",
         );
       }
       return invalidResearchFundResult(
