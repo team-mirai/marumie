@@ -59,6 +59,7 @@ export function JournalReview({
   const [checked, setChecked] = useState<readonly string[]>([]);
   const [creating, setCreating] = useState(false);
   const [discarding, setDiscarding] = useState(false);
+  const [unpublishing, setUnpublishing] = useState(false);
   const [pending, startTransition] = useTransition();
   const monthly = entries.filter((e) => !month || e.entryDate.slice(5, 7) === month);
   const visible = monthly.filter((e) => status === "all" || e.status === status);
@@ -85,6 +86,7 @@ export function JournalReview({
         pending ||
         creating ||
         discarding ||
+        unpublishing ||
         event.defaultPrevented ||
         event.altKey ||
         event.ctrlKey ||
@@ -164,6 +166,31 @@ export function JournalReview({
           setChecked([]);
         }
         setCreating(false);
+        router.refresh();
+      } catch {
+        toast.error("通信に失敗しました。再度お試しください");
+      }
+    });
+  }
+  function unpublish() {
+    if (!selected) return;
+    startTransition(async () => {
+      try {
+        const result = await mutateJournalReview(target.politicianId, target.bookId, {
+          type: "unpublish",
+          id: selected.id,
+          updatedAt: selected.updatedAt,
+        });
+        if (!result.success) {
+          toast.error(result.error);
+          return;
+        }
+        toast.success("確認済に戻しました。修正して改めて公開できます");
+        if (result.cacheWarning)
+          toast.warning(
+            `確認済に戻しましたが、まる見えの更新に失敗しました: ${result.cacheWarning}`,
+          );
+        setUnpublishing(false);
         router.refresh();
       } catch {
         toast.error("通信に失敗しました。再度お試しください");
@@ -417,6 +444,7 @@ export function JournalReview({
                   pending={pending}
                   onSave={save}
                   onDiscard={() => setDiscarding(true)}
+                  onUnpublish={() => setUnpublishing(true)}
                 />
               </>
             ) : (
@@ -445,7 +473,32 @@ export function JournalReview({
             pending={pending}
             onSave={save}
             onDiscard={() => {}}
+            onUnpublish={() => {}}
           />
+        </DialogContent>
+      </Dialog>
+      <Dialog
+        open={unpublishing}
+        onOpenChange={(open) => {
+          if (!pending) setUnpublishing(open);
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>確認済に戻しますか？</DialogTitle>
+            <DialogDescription>
+              「{selected?.description}」は「調研費まる見え」の公開ページから消えます。
+              修正したあと、公開画面から改めて公開してください。
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" disabled={pending} onClick={() => setUnpublishing(false)}>
+              キャンセル
+            </Button>
+            <Button disabled={pending} onClick={unpublish}>
+              確認済に戻す
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
       <Dialog

@@ -15,6 +15,7 @@ export function JournalEditor({
   pending,
   onSave,
   onDiscard,
+  onUnpublish,
 }: {
   entry: ReviewEntry | null;
   accounts: ReviewAccount[];
@@ -23,6 +24,7 @@ export function JournalEditor({
   pending: boolean;
   onSave: (input: JournalEdit, approve: boolean) => void;
   onDiscard: () => void;
+  onUnpublish: () => void;
 }) {
   const fieldId = useId();
   const [input, setInput] = useState<JournalEdit>(
@@ -82,7 +84,14 @@ export function JournalEditor({
         </div>
       )}
       {published && (
-        <p className="text-sm font-bold text-primary-active">公開中の仕訳は編集・破棄できません</p>
+        <div className="space-y-2">
+          <p className="text-sm font-bold text-primary-active">
+            公開中の仕訳は編集・破棄できません。修正するには確認済に戻してください
+          </p>
+          <Button type="button" variant="outline" disabled={pending} onClick={onUnpublish}>
+            確認済に戻す
+          </Button>
+        </div>
       )}
       <fieldset disabled={pending || published} className="space-y-4">
         <div className="grid grid-cols-2 gap-3">

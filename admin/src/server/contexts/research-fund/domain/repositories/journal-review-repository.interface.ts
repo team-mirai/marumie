@@ -13,4 +13,6 @@ export interface JournalReviewRepository {
   update(bookId: string, entry: ReviewEntry, input: JournalWrite): Promise<void>;
   discard(bookId: string, entry: ReviewEntry): Promise<void>;
   approveMany(bookId: string, entries: readonly ReviewEntry[]): Promise<void>;
+  /** 公開中の仕訳を確認済に戻す（帳簿の公開範囲は変えない）。 */
+  unpublish(bookId: string, entry: ReviewEntry): Promise<void>;
 }

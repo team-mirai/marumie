@@ -71,6 +71,29 @@ test("確認済の仕訳を選んでbefore/afterを見比べ、公開して公�
   await page.getByRole("link", { name: "仕訳の確認・編集" }).click();
   await expect(page.getByRole("heading", { name: "仕訳の確認・編集" })).toBeVisible();
   await expect(page.getByRole("row").filter({ hasText: "視察先への移動" })).toContainText("公開中");
+
+  // 公開中の仕訳を確認済に戻すと、修正できるようになり、公開の候補に戻る
+  const publishedRow = page.getByRole("row").filter({ hasText: "視察先への移動" });
+  await publishedRow.click();
+  await expect(page.getByLabel("金額", { exact: true })).toBeDisabled();
+  const unpublishDialog = page.getByRole("dialog");
+  await clickUntil(page.getByRole("button", { name: "確認済に戻す", exact: true }).first(), (options) =>
+    expect(unpublishDialog.getByText("確認済に戻しますか？")).toBeVisible(options),
+  );
+  await unpublishDialog.getByRole("button", { name: "確認済に戻す", exact: true }).click();
+  await expect(unpublishDialog).toBeHidden();
+  await expect(publishedRow).toContainText("確認済");
+  await publishedRow.click();
+  await page.getByLabel("金額", { exact: true }).fill("1800");
+  await page.getByRole("button", { name: "保存", exact: true }).click();
+  await expect(publishedRow).toContainText("1,800");
+
+  await page.getByRole("link", { name: "公開", exact: true }).click();
+  await expect(page.getByText("確認済・未公開 1件")).toBeVisible();
+  await expect(page.getByRole("checkbox", { name: "視察先への移動を公開対象にする" })).toBeVisible();
+  // 取り下げても公開範囲は後退しない（公開済みの支出額だけが減る）
+  await expect(page.getByText(`現在の公開状態（〜${year}.03.31・¥0）`)).toBeVisible();
+
   await page.getByRole("link", { name: "年度帳簿" }).click();
   const bookCard = page.locator('[data-slot="card"]').filter({ has: page.getByRole("heading", { name: `${year}年度` }) });
   await expect(bookCard).toContainText("公開中");
