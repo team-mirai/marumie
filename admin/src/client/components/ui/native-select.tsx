@@ -4,9 +4,9 @@ import { CaretDown } from "@phosphor-icons/react/dist/ssr";
 import { cn } from "@/client/lib/index";
 
 /**
- * ネイティブ `<select>` のピル版。
+ * ネイティブ `<select>` の admin スタイル版。
  * Radix Select（`Select` / `SelectTrigger`）を使えない箇所（フォーム送信でそのまま値を扱いたい、
- * E2E が `getByLabel` で直接 select を取りたい等）向けに、ピル形状・黒枠・teal フォーカスリングを揃える。
+ * E2E が `getByLabel` で直接 select を取りたい等）向けに、小さい角丸・黒枠・teal フォーカスリングを揃える。
  * `className` は select 本体に、`wrapperClassName` は外側の相対配置ラッパーに当たる。
  */
 function NativeSelect({
@@ -18,7 +18,7 @@ function NativeSelect({
     <div data-slot="native-select" className={cn("relative inline-flex w-fit", wrapperClassName)}>
       <select
         className={cn(
-          "bg-input border-border text-foreground h-9 w-full min-w-0 appearance-none rounded-full border py-1 pr-10 pl-4 text-sm transition-[color,border-color,box-shadow] duration-150 ease-out outline-none",
+          "bg-input border-border text-foreground h-9 w-full min-w-0 appearance-none rounded-md border py-1 pr-9 pl-3 text-sm transition-[color,border-color,box-shadow] duration-150 ease-out outline-none",
           "focus-visible:border-ring focus-visible:ring-ring-soft focus-visible:ring-[2px]",
           "disabled:cursor-not-allowed disabled:border-disabled-border disabled:text-disabled-foreground",
           className,
@@ -27,7 +27,7 @@ function NativeSelect({
       />
       <CaretDown
         aria-hidden
-        className="text-muted-foreground pointer-events-none absolute top-1/2 right-4 size-4 -translate-y-1/2"
+        className="text-muted-foreground pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2"
       />
     </div>
   );
