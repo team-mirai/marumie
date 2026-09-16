@@ -9,7 +9,8 @@ describe("JournalEntry.transition", () => {
         const result = JournalEntry.transition(entry, nextStatus);
         if (
           (status === "draft" && nextStatus === "approved") ||
-          (status === "approved" && nextStatus === "published")
+          (status === "approved" && nextStatus === "published") ||
+          (status === "published" && nextStatus === "approved")
         ) {
           expect(result).toEqual({ status: "valid", value: { status: nextStatus } });
         } else {

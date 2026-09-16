@@ -3,8 +3,9 @@ import type { JournalEdit, ReviewEntry } from "@/server/contexts/research-fund/d
 const input: JournalEdit = { entryDate: "2026-08-01", description: "視察の移動", amount: 1200, accountKey: "taxi", note: "公開メモ", memo: "内部メモ" };
 const entry: ReviewEntry = { ...input, id: "2", source: "scan", documentId: "3", splitGroup: "group", status: "draft", updatedAt: "2026-08-01T12:00:00.000Z", model: "test-model", promptVersion: 1 };
 function setup(overrides: Partial<ReviewEntry> = {}) {
-  const repository = { list: jest.fn().mockResolvedValue([entry]), find: jest.fn().mockResolvedValue({ ...entry, ...overrides }), findMany: jest.fn().mockResolvedValue([{ ...entry, ...overrides }]), approveMany: jest.fn(), accounts: jest.fn().mockResolvedValue([{ key: "taxi", label: "タクシー代", type: "expense" }, { key: "needs-review", label: "要確認", type: "expense" }, { key: "bank", label: "普通預金", type: "asset" }]), year: jest.fn().mockResolvedValue(2026), create: jest.fn().mockResolvedValue("10"), update: jest.fn(), discard: jest.fn() };
-  return { repository, usecase: new ManageJournalReviewUsecase(repository) };
+  const repository = { list: jest.fn().mockResolvedValue([entry]), find: jest.fn().mockResolvedValue({ ...entry, ...overrides }), findMany: jest.fn().mockResolvedValue([{ ...entry, ...overrides }]), approveMany: jest.fn(), unpublish: jest.fn(), accounts: jest.fn().mockResolvedValue([{ key: "taxi", label: "タクシー代", type: "expense" }, { key: "needs-review", label: "要確認", type: "expense" }, { key: "bank", label: "普通預金", type: "asset" }]), year: jest.fn().mockResolvedValue(2026), create: jest.fn().mockResolvedValue("10"), update: jest.fn(), discard: jest.fn() };
+  const cacheInvalidator = { invalidateWebappCache: jest.fn().mockResolvedValue(undefined) };
+  return { repository, cacheInvalidator, usecase: new ManageJournalReviewUsecase(repository, cacheInvalidator) };
 }
 test("手動作成は下書き・複式の行・hashを保存する", async () => {
   const { repository, usecase } = setup();
@@ -84,4 +85,32 @@ test.each([[[]], [[{ id: "0", updatedAt: entry.updatedAt }]], [[{ id: "a", updat
   const { repository, usecase } = setup();
   await expect(usecase.approveMany("1", targets)).rejects.toThrow();
   expect(repository.findMany).not.toHaveBeenCalled(); expect(repository.approveMany).not.toHaveBeenCalled();
+});
+
+test("公開中の仕訳を確認済に戻し、webappのキャッシュを無効化する", async () => {
+  const { repository, cacheInvalidator, usecase } = setup({ status: "published" });
+  await expect(usecase.unpublish("1", "2", entry.updatedAt)).resolves.toEqual({ cacheWarning: null });
+  expect(repository.unpublish).toHaveBeenCalledWith("1", { ...entry, status: "published" });
+  expect(cacheInvalidator.invalidateWebappCache).toHaveBeenCalledTimes(1);
+});
+test.each([
+  [{ status: "draft" as const }, "公開中の仕訳だけを確認済に戻せます"],
+  [{ status: "approved" as const }, "公開中の仕訳だけを確認済に戻せます"],
+  [{ status: "published" as const, source: "grant" as const }, "支給は支給の登録画面で扱います"],
+  [{ status: "published" as const, updatedAt: "2026-09-01T00:00:00.000Z" }, "別の操作で更新されました"],
+])("戻せない仕訳は状態を変えずキャッシュにも触らない %j", async (overrides, message) => {
+  const { repository, cacheInvalidator, usecase } = setup(overrides);
+  await expect(usecase.unpublish("1", "2", entry.updatedAt)).rejects.toThrow(message);
+  expect(repository.unpublish).not.toHaveBeenCalled();
+  expect(cacheInvalidator.invalidateWebappCache).not.toHaveBeenCalled();
+});
+test("存在しない仕訳は戻せない", async () => {
+  const { repository, usecase } = setup(); repository.find.mockResolvedValue(null);
+  await expect(usecase.unpublish("1", "2", entry.updatedAt)).rejects.toThrow("見つかりません");
+  expect(repository.unpublish).not.toHaveBeenCalled();
+});
+test("取り下げは確定済みなので、キャッシュ無効化の失敗は警告として返す", async () => {
+  const { cacheInvalidator, usecase } = setup({ status: "published" });
+  cacheInvalidator.invalidateWebappCache.mockRejectedValue(new Error("接続に失敗しました"));
+  await expect(usecase.unpublish("1", "2", entry.updatedAt)).resolves.toEqual({ cacheWarning: "接続に失敗しました" });
 });

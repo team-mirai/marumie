@@ -147,3 +147,17 @@ test("複数取得は帳簿と支出の形式で絞り、扱えない形式は�
   await expect(repository.findMany("1", [entry.id, "5"])).resolves.toHaveLength(1);
   expect(tx.researchFundJournalEntry.findMany).toHaveBeenCalledWith(expect.objectContaining({ where: { bookId: BigInt(1), id: { in: [BigInt(entry.id), BigInt(5)] }, source: { in: ["manual", "scan"] }, lines: { some: { side: "debit", account: { type: "expense" } } } } }));
 });
+
+test("取り下げは公開中・更新日時を照合して確認済に戻し、公開日時を消す", async () => {
+  const { repository, tx } = setup();
+  await repository.unpublish("1", entry);
+  expect(tx.researchFundJournalEntry.updateMany).toHaveBeenCalledWith({ where: {
+    id: BigInt(entry.id), bookId: BigInt(1), status: { in: ["published"] }, updatedAt: new Date(entry.updatedAt),
+    source: { in: ["manual", "scan"] }, lines: { some: { side: "debit", account: { type: "expense" } } },
+  }, data: { status: "approved", publishedAt: null } });
+  expect(tx.researchFundBook.findUnique).not.toHaveBeenCalled();
+});
+test("すでに確認済に戻っているなど競合したら取り下げを拒否する", async () => {
+  const { repository } = setup(0);
+  await expect(repository.unpublish("1", entry)).rejects.toThrow("状態が変わりました");
+});

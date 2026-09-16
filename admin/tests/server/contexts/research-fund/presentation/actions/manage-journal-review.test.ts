@@ -70,3 +70,15 @@ test("一括の確認済が拒否されたら理由を返し、再検証しな�
   await expect(mutateJournalReview("2", "1", { type: "approve-many", targets: [{ id: "3", updatedAt: "date" }] })).resolves.toEqual({ success: false, error: "「移動」は科目が未確定です" });
   expect(revalidatePath).not.toHaveBeenCalled();
 });
+
+test("取り下げは対象帳簿・更新日時を渡し、キャッシュの警告をそのまま返す", async () => {
+  const unpublish = jest.spyOn(ManageJournalReviewUsecase.prototype, "unpublish").mockResolvedValue({ cacheWarning: "接続に失敗しました" });
+  await expect(mutateJournalReview("2", "1", { type: "unpublish", id: "3", updatedAt: "date" })).resolves.toEqual({ success: true, cacheWarning: "接続に失敗しました" });
+  expect(unpublish).toHaveBeenCalledWith("1", "3", "date");
+  expect(revalidatePath).toHaveBeenCalledWith("/(auth)", "layout");
+});
+test("取り下げが拒否されたら理由を返し、再検証しない", async () => {
+  jest.spyOn(ManageJournalReviewUsecase.prototype, "unpublish").mockRejectedValue(new JournalReviewError("公開中の仕訳だけを確認済に戻せます"));
+  await expect(mutateJournalReview("2", "1", { type: "unpublish", id: "3", updatedAt: "date" })).resolves.toEqual({ success: false, error: "公開中の仕訳だけを確認済に戻せます" });
+  expect(revalidatePath).not.toHaveBeenCalled();
+});

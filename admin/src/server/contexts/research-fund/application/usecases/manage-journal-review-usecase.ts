@@ -10,9 +10,13 @@ import {
   type ReviewEntry,
 } from "@/server/contexts/research-fund/domain/models/journal-review";
 import type { JournalReviewRepository } from "@/server/contexts/research-fund/domain/repositories/journal-review-repository.interface";
+import type { ICacheInvalidator } from "@/server/contexts/shared/domain/services/cache-invalidator.interface";
 
 export class ManageJournalReviewUsecase {
-  constructor(private repository: JournalReviewRepository) {}
+  constructor(
+    private repository: JournalReviewRepository,
+    private cacheInvalidator: ICacheInvalidator,
+  ) {}
   async list(bookId: string) {
     return {
       entries: await this.repository.list(bookId),
@@ -125,6 +129,32 @@ export class ManageJournalReviewUsecase {
     }
     await this.repository.approveMany(bookId, approving);
     return approving.length;
+  }
+  /**
+   * 公開中の仕訳を確認済に戻し、公開ページから取り下げる。
+   * 帳簿の公開範囲（publishedThrough）は後退させない。同じ月の他の仕訳は公開中のまま残るうえ、
+   * 戻した仕訳は修正して再公開する運用を想定しているため。
+   */
+  async unpublish(bookId: string, id: string, updatedAt: string) {
+    const entry = await this.repository.find(bookId, id);
+    if (!entry) throw new JournalReviewError("仕訳が見つかりません");
+    if (entry.source === "grant") throw new JournalReviewError("支給は支給の登録画面で扱います");
+    if (entry.status !== "published")
+      throw new JournalReviewError("公開中の仕訳だけを確認済に戻せます");
+    if (entry.updatedAt !== updatedAt)
+      throw new JournalReviewError("別の操作で更新されました。画面を再読み込みしてください");
+    const result = JournalEntry.transition(entry, "approved");
+    if (result.status === "invalid") throw new JournalReviewError(result.errors[0].message);
+    await this.repository.unpublish(bookId, entry);
+    // 取り下げ自体は確定しているので、キャッシュ無効化の失敗は警告として返す（公開と同じ扱い）。
+    let cacheWarning: string | null = null;
+    try {
+      await this.cacheInvalidator.invalidateWebappCache();
+    } catch (error) {
+      cacheWarning =
+        error instanceof Error ? error.message : "ウェブアプリのキャッシュを更新できませんでした";
+    }
+    return { cacheWarning };
   }
   async discard(bookId: string, id: string, updatedAt: string) {
     await this.repository.discard(bookId, await this.editable(bookId, id, updatedAt));

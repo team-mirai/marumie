@@ -10,12 +10,14 @@ import {
   type JournalEdit,
 } from "@/server/contexts/research-fund/domain/models/journal-review";
 import { prisma } from "@/server/contexts/shared/infrastructure/prisma";
+import { WebappCacheInvalidator } from "@/server/contexts/shared/infrastructure/services/webapp-cache-invalidator";
 
 type Mutation =
   | { type: "create"; input: JournalEdit }
   | { type: "save"; id: string; updatedAt: string; input: JournalEdit; approve: boolean }
   | { type: "discard"; id: string; updatedAt: string }
-  | { type: "approve-many"; targets: readonly { id: string; updatedAt: string }[] };
+  | { type: "approve-many"; targets: readonly { id: string; updatedAt: string }[] }
+  | { type: "unpublish"; id: string; updatedAt: string };
 export async function mutateJournalReview(
   politicianId: string,
   bookId: string,
@@ -25,9 +27,13 @@ export async function mutateJournalReview(
   if (!(await requireJournalTarget(politicianId, bookId)))
     return { success: false as const, error: "現在の対象帳簿を選択し直してください" };
   try {
-    const usecase = new ManageJournalReviewUsecase(new PrismaJournalReviewRepository(prisma));
+    const usecase = new ManageJournalReviewUsecase(
+      new PrismaJournalReviewRepository(prisma),
+      new WebappCacheInvalidator(),
+    );
     let id: string | undefined;
     let count: number | undefined;
+    let cacheWarning: string | null | undefined;
     if (mutation.type === "create") id = await usecase.create(bookId, mutation.input, user.id);
     else if (mutation.type === "save")
       await usecase.save(bookId, mutation.id, mutation.updatedAt, mutation.input, mutation.approve);
@@ -35,9 +41,11 @@ export async function mutateJournalReview(
       await usecase.discard(bookId, mutation.id, mutation.updatedAt);
     else if (mutation.type === "approve-many")
       count = await usecase.approveMany(bookId, mutation.targets);
+    else if (mutation.type === "unpublish")
+      ({ cacheWarning } = await usecase.unpublish(bookId, mutation.id, mutation.updatedAt));
     else throw new JournalReviewError("操作が不正です");
     revalidatePath("/(auth)", "layout");
-    return { success: true as const, id, count };
+    return { success: true as const, id, count, cacheWarning };
   } catch (error) {
     return {
       success: false as const,

@@ -89,11 +89,16 @@ async function unique<T>(run: () => Promise<T>): Promise<T> {
     throw error;
   }
 }
-function guard(bookId: string, entry: ReviewEntry) {
+type EditableStatus = "draft" | "approved" | "published";
+function guard(
+  bookId: string,
+  entry: ReviewEntry,
+  statuses: EditableStatus[] = ["draft", "approved"],
+) {
   return {
     id: BigInt(entry.id),
     bookId: BigInt(bookId),
-    status: { in: ["draft", "approved"] as ("draft" | "approved")[] },
+    status: { in: statuses },
     updatedAt: new Date(entry.updatedAt),
     ...expenseWhere,
   };
@@ -185,6 +190,16 @@ export class PrismaJournalReviewRepository implements JournalReviewRepository {
           throw new JournalReviewError("仕訳が更新・公開されました。画面を再読み込みしてください");
       }
     });
+  }
+  // 取り下げは内容を変えないので状態だけを戻し、公開日時も消す（再公開で入れ直す）。
+  // 帳簿の published_through は後退させない。
+  async unpublish(bookId: string, entry: ReviewEntry) {
+    const result = await this.prisma.researchFundJournalEntry.updateMany({
+      where: guard(bookId, entry, ["published"]),
+      data: { status: "approved", publishedAt: null },
+    });
+    if (result.count !== 1)
+      throw new JournalReviewError("仕訳の状態が変わりました。画面を再読み込みしてください");
   }
   async discard(bookId: string, entry: ReviewEntry) {
     const result = await this.prisma.researchFundJournalEntry.deleteMany({
