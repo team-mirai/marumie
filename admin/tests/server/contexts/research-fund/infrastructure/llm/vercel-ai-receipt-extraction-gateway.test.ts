@@ -1,4 +1,5 @@
 import { anthropic } from "@ai-sdk/anthropic";
+import { LoadAPIKeyError } from "ai";
 import { MockLanguageModelV3 } from "ai/test";
 import { VercelAIReceiptExtractionGateway } from "@/server/contexts/research-fund/infrastructure/llm/vercel-ai-receipt-extraction-gateway";
 import type { ReceiptExtractionParams } from "@/server/contexts/research-fund/domain/repositories/receipt-extraction-gateway.interface";
@@ -34,9 +35,14 @@ function mockOutput(text: string) {
 
 describe("VercelAIReceiptExtractionGateway（LLMのみモック、SDKの構造化出力は実行）", () => {
   const originalModel = process.env.RESEARCH_FUND_EXTRACTION_MODEL;
+  let errorLog: jest.SpyInstance;
   beforeEach(() => {
     jest.clearAllMocks();
+    errorLog = jest.spyOn(console, "error").mockImplementation(() => {});
     delete process.env.RESEARCH_FUND_EXTRACTION_MODEL;
+  });
+  afterEach(() => {
+    errorLog.mockRestore();
   });
   afterAll(() => {
     if (originalModel === undefined) delete process.env.RESEARCH_FUND_EXTRACTION_MODEL;
@@ -92,12 +98,13 @@ describe("VercelAIReceiptExtractionGateway（LLMのみモック、SDKの構造�
     "{}",
     JSON.stringify({ ...valid, items: [{ ...valid.items[0], category_key: "invented" }] }),
     JSON.stringify({ ...valid, items: [{ ...valid.items[0], amount: "1,20" }] }),
-  ])("SDKの出力検証失敗をRFエラーにする", async (text) => {
+  ])("SDKの出力検証失敗をRFエラーにし、原因をログに残す", async (text) => {
     mockOutput(text);
     expect(await gateway.extract(params)).toMatchObject({
       status: "invalid",
       errors: [{ code: "RF_INVALID_EXTRACTION_OUTPUT" }],
     });
+    expect(errorLog).toHaveBeenCalledWith("Receipt extraction failed:", expect.any(Error));
   });
 
   it.each([new Error("provider private details"), new DOMException("timeout", "TimeoutError")])(
@@ -116,8 +123,34 @@ describe("VercelAIReceiptExtractionGateway（LLMのみモック、SDKの構造�
       });
       expect(JSON.stringify(result)).not.toContain(error.message);
       expect(model.doGenerateCalls).toHaveLength(1);
+      expect(errorLog).toHaveBeenCalledWith("Receipt extraction failed:", error);
     },
   );
+
+  it("APIキー未設定は原因が分かる文言のRFエラーにし、元の例外をログに残す", async () => {
+    const error = new LoadAPIKeyError({
+      message: "Anthropic API key is missing. Pass it using the 'apiKey' parameter",
+    });
+    jest.mocked(anthropic).mockReturnValue(
+      new MockLanguageModelV3({
+        doGenerate: async () => {
+          throw error;
+        },
+      }),
+    );
+    const result = await gateway.extract(params);
+    expect(result).toMatchObject({
+      status: "invalid",
+      errors: [
+        {
+          code: "RF_EXTRACTION_API_KEY_MISSING",
+          message: "LLMのAPIキーが未設定です。ANTHROPIC_API_KEYを設定してください",
+        },
+      ],
+    });
+    expect(JSON.stringify(result)).not.toContain(error.message);
+    expect(errorLog).toHaveBeenCalledWith("Receipt extraction failed:", error);
+  });
 
   it.each([
     { bytes: new Uint8Array(), mime: "image/png" },
