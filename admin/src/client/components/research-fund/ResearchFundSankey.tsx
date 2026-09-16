@@ -25,14 +25,16 @@ export function ResearchFundSankey({
     <div className="flex gap-2 pb-6">
       <div className="@container relative min-w-0 flex-1">
         {/*
-          高さは幅なり（viewBox の縦横比 168/412 = 40.78%）だが、カードが狭いときは図が潰れて
-          ラベルが重なるので 200px を下限にする。下限に当たったときだけ縦に伸ばすため
-          preserveAspectRatio は none にする（ノードの幅は横方向の倍率で決まるので変わらない）。
+          高さは幅なり（viewBox の縦横比 168/412 = 40.78%）だが、カードが狭いと図が潰れて
+          末端のラベルが重なるので、layout が費目数から出した下限（px）までしか縮めない。
+          下限に当たったときだけ縦に伸ばすため preserveAspectRatio は none にする
+          （ノードの幅は横方向の倍率で決まるので変わらない）。
         */}
         <svg
           viewBox={layout.viewBox}
           preserveAspectRatio="none"
-          className="block h-[max(200px,40.78cqw)] w-full"
+          className="block w-full"
+          style={{ height: `max(${layout.minHeight}px, 40.78cqw)` }}
           role="img"
           aria-label={`支給 ${formatCurrency(granted)} の使いみち`}
         >
@@ -63,18 +65,24 @@ export function ResearchFundSankey({
           支給 <span className="font-latin">{formatCurrency(granted)}</span>
         </p>
       </div>
-      <ul className="relative w-32 shrink-0 text-[11px] leading-tight">
+      {/*
+        ラベルは必ず 1 行に収める（費目名が長ければ省略する）。折り返して 2 行になると
+        layoutResearchFundSankey が前提にしている 1 行分の最小間隔では足りず、また重なってしまうため。
+      */}
+      <ul className="relative w-40 shrink-0 text-[11px] leading-tight">
         {layout.bands.map((band) => (
           <li
             key={band.key}
             className={cn(
-              "absolute -translate-y-1/2",
+              "absolute flex w-full -translate-y-1/2 items-baseline gap-1",
               band.kind === "unused" ? "text-muted-foreground" : "text-foreground",
             )}
             style={{ top: `${band.labelTopPercent}%` }}
           >
-            {band.label}{" "}
-            <span className="font-latin whitespace-nowrap">{formatCurrency(band.amount)}</span>
+            <span className="min-w-0 truncate" title={band.label}>
+              {band.label}
+            </span>
+            <span className="font-latin shrink-0">{formatCurrency(band.amount)}</span>
           </li>
         ))}
       </ul>
