@@ -61,6 +61,31 @@ test("手動作成→一覧選択→編集→確認済、月絞り込みと破�
   await page.getByRole("button", { name: "破棄", exact: true }).click();
   await page.getByRole("button", { name: "破棄する", exact: true }).click();
   await expect(row).toHaveCount(0);
+  // 下書きを複数選んでまとめて確認済にする
+  await page.getByLabel("月", { exact: true }).selectOption("");
+  for (const [description, date] of [["資料の購入", "2026-10-01"], ["書籍の購入", "2026-10-02"]]) {
+    const createDialog = page.getByRole("dialog");
+    await clickUntil(page.getByRole("button", { name: "手動で仕訳を作成" }), (options) =>
+      expect(createDialog.getByLabel("日付", { exact: true })).toBeVisible(options),
+    );
+    await createDialog.getByLabel("日付", { exact: true }).fill(date);
+    await createDialog.getByLabel("金額", { exact: true }).fill("800");
+    await createDialog.getByLabel("項目名", { exact: true }).fill(description);
+    await createDialog.getByLabel("科目", { exact: true }).selectOption("books-newspapers");
+    await createDialog.getByRole("button", { name: "下書きを作成" }).click();
+    await expect(createDialog).toBeHidden();
+  }
+  await page.getByRole("tab", { name: /^下書き（3）$/ }).click();
+  await page.getByRole("checkbox", { name: "表示中の下書きをすべて選択" }).click();
+  await expect(page.getByText("3件の下書きを選択中")).toBeVisible();
+  // 選択を 1 件外すと、外した仕訳は下書きのまま残る
+  await page.getByRole("checkbox", { name: "会議への移動を選択" }).click();
+  await page.getByRole("button", { name: "まとめて確認済にする" }).click();
+  await expect(page.getByRole("tab", { name: /^確認済（2）$/ })).toBeVisible();
+  await expect(page.getByRole("tab", { name: /^下書き（1）$/ })).toBeVisible();
+  await page.getByRole("tab", { name: /^確認済（2）$/ }).click();
+  for (const description of ["資料の購入", "書籍の購入"])
+    await expect(page.getByRole("row").filter({ hasText: description })).toContainText("確認済");
   await page.goto("/politicians");
   await politicianCard.getByRole("button", { name: "削除", exact: true }).click();
   await page.getByRole("button", { name: "削除する", exact: true }).click();

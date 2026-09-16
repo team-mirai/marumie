@@ -14,7 +14,8 @@ import { prisma } from "@/server/contexts/shared/infrastructure/prisma";
 type Mutation =
   | { type: "create"; input: JournalEdit }
   | { type: "save"; id: string; updatedAt: string; input: JournalEdit; approve: boolean }
-  | { type: "discard"; id: string; updatedAt: string };
+  | { type: "discard"; id: string; updatedAt: string }
+  | { type: "approve-many"; targets: readonly { id: string; updatedAt: string }[] };
 export async function mutateJournalReview(
   politicianId: string,
   bookId: string,
@@ -26,14 +27,17 @@ export async function mutateJournalReview(
   try {
     const usecase = new ManageJournalReviewUsecase(new PrismaJournalReviewRepository(prisma));
     let id: string | undefined;
+    let count: number | undefined;
     if (mutation.type === "create") id = await usecase.create(bookId, mutation.input, user.id);
     else if (mutation.type === "save")
       await usecase.save(bookId, mutation.id, mutation.updatedAt, mutation.input, mutation.approve);
     else if (mutation.type === "discard")
       await usecase.discard(bookId, mutation.id, mutation.updatedAt);
+    else if (mutation.type === "approve-many")
+      count = await usecase.approveMany(bookId, mutation.targets);
     else throw new JournalReviewError("操作が不正です");
     revalidatePath("/(auth)", "layout");
-    return { success: true as const, id };
+    return { success: true as const, id, count };
   } catch (error) {
     return {
       success: false as const,

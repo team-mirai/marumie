@@ -121,6 +121,16 @@ export class PrismaJournalReviewRepository implements JournalReviewRepository {
     });
     return row ? model(row) : null;
   }
+  async findMany(bookId: string, ids: readonly string[]) {
+    return (
+      await this.prisma.researchFundJournalEntry.findMany({
+        where: { bookId: BigInt(bookId), id: { in: ids.map((id) => BigInt(id)) }, ...expenseWhere },
+        include,
+      })
+    )
+      .map(model)
+      .filter((entry): entry is ReviewEntry => entry !== null);
+  }
   async year(bookId: string) {
     return (
       (await this.prisma.researchFundBook.findUnique({ where: { id: BigInt(bookId) } }))
@@ -161,6 +171,20 @@ export class PrismaJournalReviewRepository implements JournalReviewRepository {
         });
       }),
     );
+  }
+  // 一括の確認済は内容を変えないので、複式行と hash は再生成せず状態だけを進める。
+  // 1 件でも競合していたらトランザクションごと巻き戻し、中途半端に一部だけ確認済にしない。
+  async approveMany(bookId: string, entries: readonly ReviewEntry[]) {
+    await this.prisma.$transaction(async (tx) => {
+      for (const entry of entries) {
+        const result = await tx.researchFundJournalEntry.updateMany({
+          where: { ...guard(bookId, entry), status: "draft" as const },
+          data: { status: "approved" },
+        });
+        if (result.count !== 1)
+          throw new JournalReviewError("仕訳が更新・公開されました。画面を再読み込みしてください");
+      }
+    });
   }
   async discard(bookId: string, entry: ReviewEntry) {
     const result = await this.prisma.researchFundJournalEntry.deleteMany({

@@ -7,8 +7,10 @@ export interface JournalReviewRepository {
   list(bookId: string): Promise<ReviewEntry[]>;
   accounts(): Promise<ReviewAccount[]>;
   find(bookId: string, id: string): Promise<ReviewEntry | null>;
+  findMany(bookId: string, ids: readonly string[]): Promise<ReviewEntry[]>;
   year(bookId: string): Promise<number | null>;
   create(bookId: string, input: JournalWrite, userId: string): Promise<string>;
   update(bookId: string, entry: ReviewEntry, input: JournalWrite): Promise<void>;
   discard(bookId: string, entry: ReviewEntry): Promise<void>;
+  approveMany(bookId: string, entries: readonly ReviewEntry[]): Promise<void>;
 }
