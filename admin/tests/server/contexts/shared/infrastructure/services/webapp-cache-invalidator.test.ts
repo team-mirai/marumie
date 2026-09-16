@@ -9,7 +9,7 @@ describe("WebappCacheInvalidator", () => {
   });
 
   it("refreshToken が未設定の場合、エラーを投げる", async () => {
-    const invalidator = new WebappCacheInvalidator("http://webapp.test", undefined);
+    const invalidator = new WebappCacheInvalidator("https://webapp.test", undefined);
     const fetchSpy = jest.fn();
     global.fetch = fetchSpy as unknown as typeof fetch;
 
@@ -26,11 +26,11 @@ describe("WebappCacheInvalidator", () => {
       status: 200,
     }) as unknown as typeof fetch;
 
-    const invalidator = new WebappCacheInvalidator("http://webapp.test", "token");
+    const invalidator = new WebappCacheInvalidator("https://webapp.test", "token");
 
     await expect(invalidator.invalidateWebappCache()).resolves.toBeUndefined();
     expect(global.fetch).toHaveBeenCalledWith(
-      "http://webapp.test/api/refresh",
+      "https://webapp.test/api/refresh",
       expect.objectContaining({
         method: "POST",
         headers: { "x-refresh-token": "token" },
@@ -45,7 +45,7 @@ describe("WebappCacheInvalidator", () => {
       text: jest.fn().mockResolvedValue("Unauthorized"),
     }) as unknown as typeof fetch;
 
-    const invalidator = new WebappCacheInvalidator("http://webapp.test", "token");
+    const invalidator = new WebappCacheInvalidator("https://webapp.test", "token");
 
     await expect(invalidator.invalidateWebappCache()).rejects.toThrow(
       /HTTP 401.*Unauthorized/,
@@ -57,7 +57,7 @@ describe("WebappCacheInvalidator", () => {
       .fn()
       .mockRejectedValue(new Error("ECONNREFUSED")) as unknown as typeof fetch;
 
-    const invalidator = new WebappCacheInvalidator("http://webapp.test", "token");
+    const invalidator = new WebappCacheInvalidator("https://webapp.test", "token");
 
     await expect(invalidator.invalidateWebappCache()).rejects.toThrow(
       /接続に失敗しました.*ECONNREFUSED/,
@@ -71,10 +71,66 @@ describe("WebappCacheInvalidator", () => {
       .fn()
       .mockRejectedValue(abortError) as unknown as typeof fetch;
 
-    const invalidator = new WebappCacheInvalidator("http://webapp.test", "token");
+    const invalidator = new WebappCacheInvalidator("https://webapp.test", "token");
 
     await expect(invalidator.invalidateWebappCache()).rejects.toThrow(
       /タイムアウト/,
     );
+  });
+
+  describe("WEBAPP_URL のスキーム検証", () => {
+    it.each(["http://localhost:3000", "http://127.0.0.1:3000", "http://[::1]:3000"])(
+      "開発用 loopback の http (%s) は許可する",
+      async (webappUrl) => {
+        global.fetch = jest.fn().mockResolvedValue({
+          ok: true,
+          status: 200,
+        }) as unknown as typeof fetch;
+
+        const invalidator = new WebappCacheInvalidator(webappUrl, "token");
+
+        await expect(invalidator.invalidateWebappCache()).resolves.toBeUndefined();
+        expect(global.fetch).toHaveBeenCalledWith(
+          `${webappUrl}/api/refresh`,
+          expect.objectContaining({ headers: { "x-refresh-token": "token" } }),
+        );
+      },
+    );
+
+    it("loopback 以外の http の場合、トークンを送信せずエラーを投げる", async () => {
+      const fetchSpy = jest.fn();
+      global.fetch = fetchSpy as unknown as typeof fetch;
+
+      const invalidator = new WebappCacheInvalidator("http://webapp.example.com", "token");
+
+      await expect(invalidator.invalidateWebappCache()).rejects.toThrow(
+        /https ではないため/,
+      );
+      expect(fetchSpy).not.toHaveBeenCalled();
+    });
+
+    it("http / https 以外のスキームの場合、トークンを送信せずエラーを投げる", async () => {
+      const fetchSpy = jest.fn();
+      global.fetch = fetchSpy as unknown as typeof fetch;
+
+      const invalidator = new WebappCacheInvalidator("ftp://webapp.example.com", "token");
+
+      await expect(invalidator.invalidateWebappCache()).rejects.toThrow(
+        /https ではないため/,
+      );
+      expect(fetchSpy).not.toHaveBeenCalled();
+    });
+
+    it("URL として解釈できない場合、トークンを送信せずエラーを投げる", async () => {
+      const fetchSpy = jest.fn();
+      global.fetch = fetchSpy as unknown as typeof fetch;
+
+      const invalidator = new WebappCacheInvalidator("not a url", "token");
+
+      await expect(invalidator.invalidateWebappCache()).rejects.toThrow(
+        /URL として解釈できない/,
+      );
+      expect(fetchSpy).not.toHaveBeenCalled();
+    });
   });
 });
