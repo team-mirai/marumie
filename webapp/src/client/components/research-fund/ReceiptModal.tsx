@@ -67,12 +67,31 @@ export default function ReceiptModal({ expense, category, onClose }: Props) {
           <dd className="leading-[1.7]">{expense.note ?? "特記事項はありません"}</dd>
         </dl>
 
-        {/* 署名URLへのリダイレクトを返すエンドポイントなので、next/image の最適化は使えない */}
-        <img
-          src={receiptUrl(expense.entryId)}
-          alt={`${expense.description}の領収書`}
-          className="w-full rounded-2xl border border-[#E5E7EB] bg-[#F9FAFB]"
-        />
+        {expense.receiptKind === "image" ? (
+          /* 署名URLへのリダイレクトを返すエンドポイントなので、next/image の最適化は使えない */
+          <img
+            src={receiptUrl(expense.entryId)}
+            alt={`${expense.description}の領収書`}
+            className="w-full rounded-2xl border border-[#E5E7EB] bg-[#F9FAFB]"
+          />
+        ) : (
+          <div className="flex flex-col items-center gap-3 rounded-2xl border border-[#E5E7EB] bg-[#F9FAFB] p-6 text-center">
+            <p className="text-sm text-[#6B7280]">
+              {expense.receiptKind === "pdf"
+                ? "PDF形式の領収書です。別のタブで開いて確認できます。"
+                : "この形式の領収書はここでは表示できません。別のタブで開いて確認できます。"}
+            </p>
+            <a
+              href={receiptUrl(expense.entryId)}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={`${expense.description}の領収書を開く`}
+              className="inline-flex h-9 items-center rounded-full border border-[#238778] px-4 text-sm font-bold text-[#238778] hover:bg-[#E2F6F3]"
+            >
+              領収書を開く
+            </a>
+          </div>
+        )}
       </div>
     </div>
   );

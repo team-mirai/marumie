@@ -4,6 +4,7 @@ import type {
 } from "@/server/contexts/research-fund/domain/models/published-research-fund";
 import type { ResearchFundExpenseView } from "@/server/contexts/research-fund/domain/models/research-fund-page";
 import { researchFundCategoryColor } from "@/server/contexts/research-fund/domain/services/research-fund-category-color";
+import { receiptKindOf } from "@/server/contexts/research-fund/domain/services/research-fund-receipt-kind";
 
 /** 科目マスタに無い科目のラベル（要確認の仕訳は公開されない想定だが、表示は落とさない）。 */
 const UNKNOWN_CATEGORY_LABEL = "その他";
@@ -64,6 +65,7 @@ export function buildExpenseViews(
         note: mergeNotes(expense.note, splitCount > 1 ? splitGroupNote(splitCount) : null),
         splitGroup: expense.splitGroup,
         hasReceipt: expense.hasReceipt,
+        receiptKind: expense.hasReceipt ? receiptKindOf(expense.receiptMime) : null,
       };
     });
 }

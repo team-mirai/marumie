@@ -26,6 +26,8 @@ const entrySelect = {
   note: true,
   splitGroup: true,
   documentId: true,
+  // PDF の領収書を画像タグで描かないよう、表示の出し分けに書類の MIME を渡す。
+  document: { select: { mime: true } },
   lines: {
     select: {
       id: true,
@@ -146,6 +148,7 @@ export class PrismaResearchFundRepository implements ResearchFundRepository {
           note: entry.note,
           splitGroup: entry.splitGroup,
           hasReceipt: entry.documentId !== null,
+          receiptMime: entry.document?.mime ?? null,
         });
       }
     }

@@ -4,6 +4,7 @@
  * published の仕訳だけから作る。区分トグル（詳細／法律上）はクライアント側で
  * 切り替えるだけで済むよう、両方の区分を先に組み立てて渡す。
  */
+import type { ResearchFundReceiptKind } from "@/server/contexts/research-fund/domain/services/research-fund-receipt-kind";
 import type { SankeyData } from "@/types/sankey";
 
 /** 区分トグルの値。既存の収支の流れと同じ2択。 */
@@ -35,6 +36,8 @@ export interface ResearchFundExpenseView {
   /** 同一注文の分割グループ。単独の支出は null。CSV で注文単位に束ね直すのに使う。 */
   splitGroup: string | null;
   hasReceipt: boolean;
+  /** 領収書の表示の種類。領収書が無い・種類が判定できない場合は null */
+  receiptKind: ResearchFundReceiptKind | null;
 }
 
 /** B-2 の1か月分。未公開の月は published が false になり、点線の空枠で描く。 */
