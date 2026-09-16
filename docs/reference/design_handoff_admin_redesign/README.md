@@ -2,6 +2,10 @@
 
 marumie（team-mirai/marumie）の管理画面を、Team Mirai デザインシステム（team-mir.ai のブランド）に合わせてリスタイルするためのハンドオフです。
 
+> **注記（実装後の変更）**: 入力系（Input / Textarea / Select / NativeSelect）はピルではなく**小さい角丸**に変更済みです。
+> 本ハンドオフは作成時点のスナップショットのため以下の本文では「入力もピル」と記述していますが、
+> 現行ルールは [docs/admin-ui-guidelines.md](../../admin-ui-guidelines.md) を参照してください。
+
 ## Overview
 
 現状の admin はダーク系の shadcn デフォルトに近い見た目で、ブランドとの一貫性がない。

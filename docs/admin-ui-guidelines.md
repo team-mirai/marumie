@@ -6,7 +6,10 @@ admin アプリケーションで UI コンポーネントを使用する際の�
 
 - **admin はライトモードのみ**（ダークモードは提供しない）
 - **Team Mirai ブランド（白ベース + Mirai Teal + 黒1pxボーダー + ピル形状）に従う**
-  （正は [デザインハンドオフ](reference/design_handoff_admin_redesign/README.md)）
+  （デザイントークンの出典は [デザインハンドオフ](reference/design_handoff_admin_redesign/README.md)。
+  ただしハンドオフは作成時点のスナップショットなので、**食い違ったらこのガイドラインが正**）
+- **入力系（Input / Textarea / Select / NativeSelect）はピルにしない。小さい角丸（`rounded-md`）で統一する**
+  （ピルはボタン・バッジ・タブ・ページネーションなどに限る）
 - **shadcn UI ベースの `ui/*` コンポーネントを使用する**（カスタム実装は非推奨）
 - **import は index.ts 経由**で行う
 - **CSS 変数と cn() を使う**（直書きスタイル禁止）
@@ -19,7 +22,9 @@ import { Button, Input, Label } from "@/client/components/ui";
 
 - ブランド色は **Mirai Teal `#30BCA7` のみ**。青・紫・オレンジは使わない
 - ページ背景 `#F8F8F8`（`bg-background`）、カードは白（`bg-card`）+ 黒1px枠 + 角丸8px
-- **ピル（`rounded-full`）が署名形状**: ボタン・input・select はすべてピル
+- **ピル（`rounded-full`）が署名形状**: ボタン・タブ・バッジ / カテゴリピル・ページネーションはピル。
+  **入力系（Input / Textarea / Select / NativeSelect）はピルにせず `rounded-md`（6px）+ 左右パディング `px-3`(12px) で統一する**
+  （入力欄は角丸が大きいと文字の始点が掴みにくく、左右の余白も入力の邪魔になるため）
 - 罫線は黒1px（強調は1.5px）。テーブルの行罫線など弱い線は `border-border-soft`（`#E5E5E5`）
 - 数字・日付・英字は Poppins（`font-latin`）、日本語は Hiragino Kaku Gothic → Noto Sans（`font-sans`、body 既定）
 - 日付表記は `YYYY.MM.DD`（ピリオド区切り）
@@ -53,7 +58,8 @@ import { Button, Input, Label } from "@/client/components/ui";
 ### フォーム・フォーカスリング
 
 - フォームラベル（`Label`）は 12px/700（`text-xs font-bold`）が既定。必須は `<span className="text-destructive">*</span>` を付ける。使用側で `text-xs font-bold` を重ねて指定しない
-- input / select はピル形状・黒枠・白地。placeholder は `#B1B1B1`（`text-disabled-foreground`）
+- input / select は**小さい角丸（`rounded-md`）**・黒枠・白地。placeholder は `#B1B1B1`（`text-disabled-foreground`）。
+  角丸・パディングは `ui/*` の既定に任せ、**使用側で上書きしない**
 - focus 時は枠が teal + `0 0 0 2px #E2F6F3` のリング（`focus-visible:border-ring focus-visible:ring-[2px] focus-visible:ring-ring-soft`）
 - ボタンの focus-visible は `ring-2 ring-ring ring-offset-2`
 
@@ -139,10 +145,12 @@ admin は **ライトモードのみ** で提供する。ダークモードは�
 `dark:` バリアントや `prefers-color-scheme` による切り替えは実装しない。
 
 - shadcn コンポーネント追加時、公式定義に含まれる `dark:` プレフィックス付きクラスは削除する
-- あわせて既存の `ui/*` に倣い、ピル形状・黒枠・teal フォーカスリング・disabled ルール（opacity 不使用）へ調整する
+- あわせて既存の `ui/*` に倣い、形状（入力系は `rounded-md`、それ以外はピル）・黒枠・teal フォーカスリング・
+  disabled ルール（opacity 不使用）へ調整する
 - アイコンが含まれる場合は lucide-react を Phosphor Icons に置き換える
-- 色・形状（デザイントークン、コンポーネントの見た目）の正は
-  デザインハンドオフ [docs/reference/design_handoff_admin_redesign/README.md](reference/design_handoff_admin_redesign/README.md) を参照する
+- 色・フォントなどのデザイントークンは
+  デザインハンドオフ [docs/reference/design_handoff_admin_redesign/README.md](reference/design_handoff_admin_redesign/README.md) を参照する。
+  **形状（角丸）は上記「デザイン言語」の記述が正**（入力系はピルではなく `rounded-md`）
 
 ## Toast 通知
 
