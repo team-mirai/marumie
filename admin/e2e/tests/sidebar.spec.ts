@@ -5,6 +5,16 @@ test.describe("サイドバー", () => {
 		await page.goto("/");
 	});
 
+	test("対象を選んでいるときは対象の管理・データ取り込み・報告書が並ぶ", async ({ page }) => {
+		const sidebar = page.getByRole("complementary");
+
+		await expect(sidebar.getByText("対象の管理")).toBeVisible();
+		await expect(sidebar.getByText("データ取り込み")).toBeVisible();
+		await expect(sidebar.getByText("報告書", { exact: true })).toBeVisible();
+		await expect(sidebar.getByRole("link", { name: "政治団体" })).toBeVisible();
+		await expect(sidebar.getByRole("link", { name: "議員", exact: true })).toBeVisible();
+	});
+
 	test("ログインユーザーのメールアドレス・ロールとログアウトボタンが表示される", async ({ page }) => {
 		const sidebar = page.getByRole("complementary");
 
@@ -37,7 +47,6 @@ test.describe("サイドバー", () => {
 		await expect(sidebar.getByText("ADMIN CONSOLE")).toBeVisible();
 	});
 });
-
 	test("対象の選択をリロードと別タブで保持し、明示切り替えで議員室メニューに変わる", async ({ page, context }) => {
     await page.goto("/");
     const selector = page.getByRole("button", { name: "現在の対象を切り替え" });
@@ -98,3 +107,22 @@ test.describe("サイドバー", () => {
     await expect(page.getByRole("dialog")).toHaveCount(0);
     await expect(page.getByRole("heading", { name: "議員一覧" })).toBeVisible();
   });
+
+test.describe("サイドバー（対象が未選択）", () => {
+	test("対象の管理だけを出し、データ取り込み・報告書は出さない", async ({ page, context }) => {
+		await context.clearCookies({ name: /^admin-target-/ });
+		await page.goto("/");
+		const sidebar = page.getByRole("complementary");
+
+		await expect(sidebar.getByText("対象の管理")).toBeVisible();
+		await expect(sidebar.getByText("データ取り込み")).toHaveCount(0);
+		await expect(sidebar.getByText("報告書", { exact: true })).toHaveCount(0);
+		await expect(sidebar.getByRole("link", { name: "取引一覧" })).toHaveCount(0);
+		await expect(sidebar.getByRole("link", { name: "取引先マスタ" })).toHaveCount(0);
+		await expect(sidebar.getByRole("link", { name: "報告書エクスポート" })).toHaveCount(0);
+
+		// 「まず対象を選ぶ／作る」ための入口は政治団体・議員の順で残る
+		const navLinks = sidebar.getByRole("navigation").getByRole("link");
+		await expect(navLinks).toHaveText(["政治団体", "議員", "ユーザー管理"]);
+	});
+});
