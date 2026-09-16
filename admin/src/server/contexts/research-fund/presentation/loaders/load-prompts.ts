@@ -6,7 +6,7 @@ import { VercelAIReceiptExtractionGateway } from "@/server/contexts/research-fun
 import { PrismaDocumentRepository } from "@/server/contexts/research-fund/infrastructure/repositories/prisma-document.repository";
 import { PrismaPromptRepository } from "@/server/contexts/research-fund/infrastructure/repositories/prisma-prompt.repository";
 import { requireJournalTarget } from "@/server/contexts/research-fund/presentation/loaders/load-journal-review";
-import { buildDocumentStorage } from "@/server/contexts/research-fund/presentation/loaders/load-scan";
+import { buildDocumentStorage } from "@/server/contexts/research-fund/infrastructure/storage/build-document-storage";
 import { prisma } from "@/server/contexts/shared/infrastructure/prisma";
 
 export function buildTestPromptUsecase(): TestPromptUsecase {
