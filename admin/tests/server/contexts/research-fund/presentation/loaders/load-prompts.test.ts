@@ -8,7 +8,7 @@ jest.mock("next/navigation", () => ({ notFound: jest.fn(() => { throw new Error(
 jest.mock("@/server/contexts/research-fund/presentation/loaders/load-journal-review", () => ({ requireJournalTarget: jest.fn() }));
 jest.mock("@/server/contexts/shared/infrastructure/prisma", () => ({ prisma: {} }));
 // テスト実行の usecase は Supabase の環境変数を要求するストレージを組み立てるため、組み立てだけ差し替える
-jest.mock("@/server/contexts/research-fund/presentation/loaders/load-scan", () => ({ buildDocumentStorage: jest.fn() }));
+jest.mock("@/server/contexts/research-fund/infrastructure/storage/build-document-storage", () => ({ buildDocumentStorage: jest.fn() }));
 const target: Extract<AdminTarget, { kind: "research-fund" }> = { kind: "research-fund", key: "book:1", name: "議員", year: 2026, politicianId: "2", bookId: "1", draftCount: 0 };
 beforeEach(() => jest.clearAllMocks());
 afterEach(() => jest.restoreAllMocks());

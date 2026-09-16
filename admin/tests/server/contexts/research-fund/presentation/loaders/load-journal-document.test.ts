@@ -1,12 +1,18 @@
 import { createClient } from "@supabase/supabase-js";
 import { GetDocumentUsecase } from "@/server/contexts/research-fund/application/usecases/get-document-usecase";
+import { PrismaDocumentRepository } from "@/server/contexts/research-fund/infrastructure/repositories/prisma-document.repository";
 import { requireJournalTarget } from "@/server/contexts/research-fund/presentation/loaders/load-journal-review";
 import { loadJournalDocument } from "@/server/contexts/research-fund/presentation/loaders/load-journal-document";
-jest.mock("@supabase/supabase-js", () => ({ createClient: jest.fn(() => ({})) }));
+jest.mock("@supabase/supabase-js", () => ({ createClient: jest.fn() }));
 jest.mock("@/server/contexts/research-fund/presentation/loaders/load-journal-review", () => ({ requireJournalTarget: jest.fn() }));
 jest.mock("@/server/contexts/shared/infrastructure/prisma", () => ({ prisma: {} }));
+const from = jest.fn();
 beforeEach(() => {
   jest.clearAllMocks();
+  from.mockReturnValue({
+    createSignedUrl: jest.fn().mockResolvedValue({ data: { signedUrl: "https://storage.example.test/signed-receipt" }, error: null }),
+  });
+  jest.mocked(createClient).mockReturnValue({ storage: { from } } as never);
   jest.replaceProperty(process, "env", { ...process.env, SUPABASE_URL: "https://storage.example.test", SUPABASE_SERVICE_ROLE_KEY: "test-key", RESEARCH_FUND_DOCUMENT_BUCKET: "receipts" });
   jest.mocked(requireJournalTarget).mockResolvedValue({ kind: "research-fund", key: "book:1", name: "議員", year: 2026, politicianId: "2", bookId: "1", draftCount: 0 });
 });
@@ -19,7 +25,7 @@ test("対象が不一致ならストレージにも書類にもアクセスし�
   expect(createClient).not.toHaveBeenCalled();
   expect(execute).not.toHaveBeenCalled();
 });
-test.each(["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY", "RESEARCH_FUND_DOCUMENT_BUCKET"])("%s がなければ署名URLを生成しない", async key => {
+test.each(["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"])("%s がなければ署名URLを生成しない", async key => {
   delete process.env[key];
   await expect(loadJournalDocument("2", "1", "3")).rejects.toThrow("領収書ストレージが未設定です");
   expect(createClient).not.toHaveBeenCalled();
@@ -35,4 +41,13 @@ test("検証した帳簿で5分有効の署名URLを取得する", async () => {
 test("書類が取得できない場合はURLを返さない", async () => {
   jest.spyOn(GetDocumentUsecase.prototype, "execute").mockResolvedValue({ status: "invalid", errors: [] });
   await expect(loadJournalDocument("2", "1", "3")).resolves.toBeNull();
+});
+test("バケット名が未設定でも既定バケットの署名URLを返す", async () => {
+  jest.replaceProperty(process, "env", { ...process.env, SUPABASE_URL: "https://storage.example.test", SUPABASE_SERVICE_ROLE_KEY: "test-key", RESEARCH_FUND_DOCUMENT_BUCKET: "" });
+  jest.spyOn(PrismaDocumentRepository.prototype, "findById").mockResolvedValue({
+    id: "3", bookId: "1", storageKey: "receipts/3", mime: "image/png", originalFilename: "receipt.png", createdAt: new Date("2026-08-01"),
+  });
+  await expect(loadJournalDocument("2", "1", "3")).resolves.toEqual({ signedUrl: "https://storage.example.test/signed-receipt" });
+  // 保存側（#1439 のアップロード）と同じ既定バケットを引く
+  expect(from).toHaveBeenCalledWith("private-receipts");
 });
