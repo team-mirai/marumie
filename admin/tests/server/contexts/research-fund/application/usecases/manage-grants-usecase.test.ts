@@ -82,3 +82,55 @@ test("帳簿・科目が見つからない場合は作成しない", async () =>
   ).rejects.toThrow("科目が見つかりません");
   expect(missingAccount.repository.create).not.toHaveBeenCalled();
 });
+
+test("手入力の支給日をその日付のまま仕訳日にする", async () => {
+  const { repository, usecase } = setup();
+  await usecase.register("1", "2026-05", "user", "2026-09-10", "2026-05-21");
+  expect(repository.create.mock.calls[0][2]).toMatchObject({ entryDate: "2026-05-21" });
+});
+
+test("支給日を省略すると既定日（当選月は当選日、それ以外は1日）で登録する", async () => {
+  const { repository, usecase } = setup();
+  await usecase.register("1", "2026-05", "user", "2026-09-10");
+  expect(repository.create.mock.calls[0][2]).toMatchObject({ entryDate: "2026-05-01" });
+});
+
+test.each([
+  ["2026-06-01", "その月の日付"],
+  ["2026-04-30", "その月の日付"],
+  ["2026-05-32", "実在する日"],
+  ["", "実在する日"],
+])("画面を経由しない不正な支給日 %s を拒否する", async (entryDate, message) => {
+  const { repository, usecase } = setup();
+  await expect(
+    usecase.register("1", "2026-05", "user", "2026-09-10", entryDate),
+  ).rejects.toThrow(message);
+  expect(repository.create).not.toHaveBeenCalled();
+});
+
+test("当選月は当選日より前の支給日を拒否する", async () => {
+  const { repository, usecase } = setup();
+  await expect(usecase.register("1", "2026-02", "user", "2026-09-10", "2026-02-07")).rejects.toThrow(
+    "当選日以降",
+  );
+  expect(repository.create).not.toHaveBeenCalled();
+  // 当選日以降なら手入力できる
+  await usecase.register("1", "2026-02", "user", "2026-09-10", "2026-02-25");
+  expect(repository.create.mock.calls[0][2]).toMatchObject({
+    entryDate: "2026-02-25",
+    amount: 750_000,
+  });
+});
+
+test("登録済み・未到来の判定は支給日を変えても変わらない", async () => {
+  const registered = setup({ registeredMonths: ["2026-05"] });
+  await expect(
+    registered.usecase.register("1", "2026-05", "user", "2026-09-10", "2026-05-20"),
+  ).rejects.toThrow("すでに登録");
+  const upcoming = setup();
+  await expect(
+    upcoming.usecase.register("1", "2026-10", "user", "2026-09-10", "2026-10-15"),
+  ).rejects.toThrow("到来");
+  expect(registered.repository.create).not.toHaveBeenCalled();
+  expect(upcoming.repository.create).not.toHaveBeenCalled();
+});

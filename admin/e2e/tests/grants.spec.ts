@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { clickUntil } from "../helpers/interactions";
 
-test("支給をテンプレートから1クリックで確認済登録し、二重生成を拒み、仕訳一覧に並べる", async ({ page }) => {
+test("支給日を指定して確認済登録し、二重生成を拒み、仕訳一覧に並べる", async ({ page }) => {
   const year = new Date().getFullYear();
   const currentMonth = new Date().getMonth() + 1;
   const name = `e2e-grant-${Date.now()}`;
@@ -29,6 +29,11 @@ test("支給をテンプレートから1クリックで確認済登録し、二�
 
   const january = page.getByRole("listitem").filter({ hasText: "1月" }).first();
   await expect(january).toContainText("¥1,000,000");
+  // 支給日の初期値はその月の1日（当選日が1/1なので当選月も1日）
+  const januaryDate = january.getByLabel("1月分の支給日");
+  await expect(januaryDate).toHaveValue(`${year}-01-01`);
+  // 実際の入金日に合わせて変更して登録する
+  await januaryDate.fill(`${year}-01-15`);
   await clickUntil(january.getByRole("button", { name: "この月を登録" }), (options) =>
     expect(january).toContainText("登録済み", options),
   );
@@ -42,6 +47,8 @@ test("支給をテンプレートから1クリックで確認済登録し、二�
 
   await page.getByRole("link", { name: "仕訳の確認・編集" }).click();
   const grantRow = page.getByRole("row").filter({ hasText: "調査研究費 1月分" });
+  // 手入力した支給日が仕訳日として保存されている
+  await expect(grantRow).toContainText(`${year}.01.15`);
   await expect(grantRow).toContainText("確認済");
   await expect(grantRow).toContainText("支給");
   await expect(grantRow).toContainText("1,000,000");

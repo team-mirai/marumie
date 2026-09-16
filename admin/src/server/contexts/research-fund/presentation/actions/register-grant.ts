@@ -8,7 +8,12 @@ import { PrismaGrantRepository } from "@/server/contexts/research-fund/infrastru
 import { requireJournalTarget } from "@/server/contexts/research-fund/presentation/loaders/load-journal-review";
 import { prisma } from "@/server/contexts/shared/infrastructure/prisma";
 
-export async function registerGrant(politicianId: string, bookId: string, month: string) {
+export async function registerGrant(
+  politicianId: string,
+  bookId: string,
+  month: string,
+  entryDate: string,
+) {
   const user = await requireAuth();
   if (!(await requireJournalTarget(politicianId, bookId)))
     return { success: false as const, error: "現在の対象帳簿を選択し直してください" };
@@ -17,6 +22,8 @@ export async function registerGrant(politicianId: string, bookId: string, month:
       bookId,
       month,
       user.id,
+      undefined,
+      entryDate,
     );
     revalidatePath("/(auth)", "layout");
     return { success: true as const };
