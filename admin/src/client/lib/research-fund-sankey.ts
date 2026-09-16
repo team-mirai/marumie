@@ -9,6 +9,20 @@ const NODE = { width: 12, leftX: 30, rightX: 400, gap: 4 } as const;
 const BODY = { top: 8, height: 160 } as const;
 const VIEW = { width: NODE.rightX + NODE.width, height: BODY.top + BODY.height } as const;
 
+/**
+ * 末端ラベル 1 行分の高さ（11px / leading-tight）、行どうしに空けたい余白、図の高さの下限。
+ * ラベルの位置は % で返すので、重ならないことを保証するには基準になる高さが要る。
+ * 図は幅なりに伸びるが高さには下限があるので、その下限を基準に % を出しておけば、
+ * 図がそれより高いときは実寸の間隔がさらに広がる（= どの幅でも重ならない）。
+ */
+const LABEL = { lineHeight: 14, gap: 2, minHeight: 200 } as const;
+
+/** 費目数ぶんのラベルを 1 行ずつ重ねずに並べられる、図の高さの下限（px） */
+function minHeightFor(labelCount: number): number {
+  const needed = Math.max(0, labelCount - 1) * (LABEL.lineHeight + LABEL.gap) + LABEL.lineHeight;
+  return Math.max(LABEL.minHeight, needed);
+}
+
 interface SankeyRect {
   x: number;
   y: number;
@@ -26,12 +40,20 @@ interface ResearchFundSankeyBand {
   ribbon: string;
   /** 右端のノード */
   node: SankeyRect;
-  /** ラベルの縦中心。描画域の高さに対する % なので、SVG の拡大率に依らず HTML 側で使える */
+  /**
+   * ラベルの縦中心。描画域の高さに対する % なので、SVG の拡大率に依らず HTML 側で使える。
+   * 金額の小さい費目が続くとノードの中心どうしが数 px しか離れないため、重ならないよう押し下げてある。
+   */
   labelTopPercent: number;
 }
 
 interface ResearchFundSankeyLayout {
   viewBox: string;
+  /**
+   * 図の高さの下限（px）。幅が狭いときにここまでしか縮まないので、
+   * labelTopPercent はこの高さでもラベルが重ならないように決めてある。
+   */
+  minHeight: number;
   /** 左端のノード（支給） */
   grantNode: SankeyRect;
   /** 「支給 ¥…」ラベルの左端。描画域の幅に対する % */
@@ -49,6 +71,35 @@ function ribbon(leftY: number, leftHeight: number, rightY: number, rightHeight: 
     `C ${c2} ${rightY + rightHeight}, ${c1} ${leftY + leftHeight}, ${x1} ${leftY + leftHeight}`,
     "Z",
   ].join(" ");
+}
+
+/**
+ * 昇順に並んだラベルの中心位置を、最小間隔 `minSpacing` を空けつつ `range` の内側に収まるよう押し下げる。
+ * 入力の順序はそのまま保つので、ラベルと費目の対応は崩れない。
+ * 単位は呼び出し側に委ねる（このファイルでは描画域の高さに対する %）。
+ */
+export function spreadLabelCenters(
+  centers: readonly number[],
+  minSpacing: number,
+  range: { min: number; max: number },
+): number[] {
+  const span = range.max - range.min;
+  // 最小間隔で詰めても入りきらないときは、等間隔に散らして重なりを最小限にする。
+  if (centers.length > 1 && minSpacing * (centers.length - 1) > span) {
+    return centers.map((_, index) => range.min + (span * index) / (centers.length - 1));
+  }
+
+  const spread = [...centers];
+  // 上から順に最小間隔まで押し下げ、下端をはみ出した分を下から順に押し上げて戻す。
+  for (let index = 0; index < spread.length; index++) {
+    const floor = index === 0 ? range.min : spread[index - 1] + minSpacing;
+    spread[index] = Math.max(spread[index], floor);
+  }
+  for (let index = spread.length - 1; index >= 0; index--) {
+    const ceiling = index === spread.length - 1 ? range.max : spread[index + 1] - minSpacing;
+    spread[index] = Math.min(spread[index], ceiling);
+  }
+  return spread;
 }
 
 /**
@@ -82,14 +133,21 @@ export function layoutResearchFundSankey(
       amount: category.totalAmount,
       ribbon: ribbon(leftY, leftHeight, y, height),
       node: { x: NODE.rightX, y, width: NODE.width, height },
-      labelTopPercent: ((y + height / 2) / VIEW.height) * 100,
     };
   });
+  const minHeight = minHeightFor(bands.length);
+  const edgePercent = (LABEL.lineHeight / 2 / minHeight) * 100;
+  const labelTops = spreadLabelCenters(
+    bands.map((band) => ((band.node.y + band.node.height / 2) / VIEW.height) * 100),
+    ((LABEL.lineHeight + LABEL.gap) / minHeight) * 100,
+    { min: edgePercent, max: 100 - edgePercent },
+  );
 
   return {
     viewBox: `0 0 ${VIEW.width} ${VIEW.height}`,
+    minHeight,
     grantNode: { x: NODE.leftX, y: BODY.top, width: NODE.width, height: BODY.height },
     grantLabelLeftPercent: (NODE.leftX / VIEW.width) * 100,
-    bands,
+    bands: bands.map((band, index) => ({ ...band, labelTopPercent: labelTops[index] })),
   };
 }
