@@ -57,3 +57,16 @@ test("不正な操作を拒否して再検証しない", async () => {
   await expect(mutateJournalReview("2", "1", { type: "unknown" } as never)).resolves.toEqual({ success: false, error: "操作が不正です" });
   expect(revalidatePath).not.toHaveBeenCalled();
 });
+
+test("一括の確認済は対象帳簿を検証して件数を返し、成功後に再検証する", async () => {
+  const approveMany = jest.spyOn(ManageJournalReviewUsecase.prototype, "approveMany").mockResolvedValue(2);
+  const targets = [{ id: "3", updatedAt: "date" }, { id: "4", updatedAt: "date2" }];
+  await expect(mutateJournalReview("2", "1", { type: "approve-many", targets })).resolves.toEqual({ success: true, count: 2 });
+  expect(approveMany).toHaveBeenCalledWith("1", targets);
+  expect(revalidatePath).toHaveBeenCalledWith("/(auth)", "layout");
+});
+test("一括の確認済が拒否されたら理由を返し、再検証しない", async () => {
+  jest.spyOn(ManageJournalReviewUsecase.prototype, "approveMany").mockRejectedValue(new JournalReviewError("「移動」は科目が未確定です"));
+  await expect(mutateJournalReview("2", "1", { type: "approve-many", targets: [{ id: "3", updatedAt: "date" }] })).resolves.toEqual({ success: false, error: "「移動」は科目が未確定です" });
+  expect(revalidatePath).not.toHaveBeenCalled();
+});

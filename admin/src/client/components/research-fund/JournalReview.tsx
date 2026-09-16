@@ -6,6 +6,7 @@ import {
   Button,
   Card,
   CardContent,
+  Checkbox,
   Dialog,
   DialogContent,
   DialogHeader,
@@ -55,6 +56,7 @@ export function JournalReview({
   );
   const [month, setMonth] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [checked, setChecked] = useState<readonly string[]>([]);
   const [creating, setCreating] = useState(false);
   const [discarding, setDiscarding] = useState(false);
   const [pending, startTransition] = useTransition();
@@ -64,6 +66,10 @@ export function JournalReview({
   const selectable = visible.filter((e) => e.source !== "grant");
   const selected = selectable.find((e) => e.id === selectedId) ?? selectable[0] ?? null;
   const index = selectable.findIndex((e) => e.id === selected?.id);
+  // まとめて確認済にできるのは、いま表示している下書きだけ（支給と公開中は対象外）。
+  const checkable = selectable.filter((e) => e.status === "draft");
+  const checkedEntries = checkable.filter((e) => checked.includes(e.id));
+  const allChecked = checkable.length > 0 && checkedEntries.length === checkable.length;
   function allowLeave() {
     return (
       !document.querySelector('[data-journal-dirty="true"]') ||
@@ -103,6 +109,31 @@ export function JournalReview({
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   });
+  function toggle(id: string) {
+    setChecked((current) =>
+      current.includes(id) ? current.filter((value) => value !== id) : [...current, id],
+    );
+  }
+  function approveChecked() {
+    const targets = checkedEntries.map((e) => ({ id: e.id, updatedAt: e.updatedAt }));
+    startTransition(async () => {
+      try {
+        const result = await mutateJournalReview(target.politicianId, target.bookId, {
+          type: "approve-many",
+          targets,
+        });
+        if (!result.success) {
+          toast.error(result.error);
+          return;
+        }
+        toast.success(`${result.count}件を確認済にしました`);
+        setChecked([]);
+        router.refresh();
+      } catch {
+        toast.error("通信に失敗しました。再度お試しください");
+      }
+    });
+  }
   function save(input: JournalEdit, approve: boolean) {
     startTransition(async () => {
       try {
@@ -130,6 +161,7 @@ export function JournalReview({
           setStatus("all");
           setMonth("");
           setSelectedId(result.id);
+          setChecked([]);
         }
         setCreating(false);
         router.refresh();
@@ -186,6 +218,7 @@ export function JournalReview({
             if (!pending && allowLeave()) {
               setStatus(value);
               setSelectedId(null);
+              setChecked([]);
             }
           }}
         >
@@ -207,6 +240,7 @@ export function JournalReview({
               if (allowLeave()) {
                 setMonth(e.target.value);
                 setSelectedId(null);
+                setChecked([]);
               }
             }}
           >
@@ -219,12 +253,37 @@ export function JournalReview({
           </NativeSelect>
         </div>
       </div>
+      {checkedEntries.length > 0 && (
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-accent px-4 py-3">
+          <span className="text-sm font-bold text-accent-foreground">
+            <span className="font-latin">{checkedEntries.length}</span>件の下書きを選択中
+          </span>
+          <div className="flex gap-2">
+            <Button variant="outline" disabled={pending} onClick={() => setChecked([])}>
+              選択を解除
+            </Button>
+            <Button disabled={pending} onClick={approveChecked}>
+              まとめて確認済にする
+            </Button>
+          </div>
+        </div>
+      )}
       <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,3fr)_minmax(360px,2fr)]">
         <Card>
           <CardContent className="p-0">
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-10">
+                    <Checkbox
+                      checked={allChecked}
+                      disabled={pending || checkable.length === 0}
+                      onCheckedChange={() =>
+                        setChecked(allChecked ? [] : checkable.map((e) => e.id))
+                      }
+                      aria-label="表示中の下書きをすべて選択"
+                    />
+                  </TableHead>
                   <TableHead>日付</TableHead>
                   <TableHead>カテゴリー</TableHead>
                   <TableHead>項目</TableHead>
@@ -259,6 +318,19 @@ export function JournalReview({
                         entry.accountKey === "needs-review" && "border-l-4 border-l-destructive",
                       )}
                     >
+                      <TableCell
+                        onClick={(event) => event.stopPropagation()}
+                        onKeyDown={(event) => event.stopPropagation()}
+                      >
+                        {entry.status === "draft" && !grant && (
+                          <Checkbox
+                            checked={checked.includes(entry.id)}
+                            disabled={pending}
+                            onCheckedChange={() => toggle(entry.id)}
+                            aria-label={`${entry.description}を選択`}
+                          />
+                        )}
+                      </TableCell>
                       <TableCell className="font-latin whitespace-nowrap">
                         {entry.entryDate.replaceAll("-", ".")}
                       </TableCell>
@@ -304,7 +376,7 @@ export function JournalReview({
                 })}
                 {visible.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={5} className="p-8 text-center text-muted-foreground">
+                    <TableCell colSpan={6} className="p-8 text-center text-muted-foreground">
                       該当する仕訳はありません
                     </TableCell>
                   </TableRow>
