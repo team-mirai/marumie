@@ -3,25 +3,58 @@ import {
   isNavItemActive,
 } from "@/client/components/layout/sidebar-nav";
 
+const organizationTarget = {
+  kind: "political-organization" as const,
+  key: "org:1",
+  name: "サンプル党",
+  year: 2025,
+  organizationId: "1",
+};
+
 describe("getVisibleNavSections", () => {
   it("「ユーザー情報」ページは廃止したのでどちらのモードにも出さない", () => {
     const hrefs = (role: "admin" | "user") =>
-      getVisibleNavSections(role).flatMap((s) => s.items.map((i) => i.href));
+      getVisibleNavSections(role, organizationTarget).flatMap((s) => s.items.map((i) => i.href));
     expect(hrefs("admin")).not.toContain("/user-info");
     expect(hrefs("user")).not.toContain("/user-info");
   });
 
   it("admin ロールにはすべての項目（ユーザー管理を含む）を表示する", () => {
-    const sections = getVisibleNavSections("admin");
+    const sections = getVisibleNavSections("admin", organizationTarget);
     const hrefs = sections.flatMap((s) => s.items.map((i) => i.href));
 
-    expect(sections.map((s) => s.title)).toEqual(["政治団体", "データ取り込み", "報告書"]);
+    expect(sections.map((s) => s.title)).toEqual(["対象の管理", "データ取り込み", "報告書"]);
     expect(hrefs).toContain("/users");
     expect(hrefs).toHaveLength(12);
   });
 
+  it("対象の管理は政治団体・議員の順に並べる", () => {
+    const [first] = getVisibleNavSections("admin", organizationTarget);
+
+    expect(first.title).toBe("対象の管理");
+    expect(first.items.map((i) => i.href)).toEqual([
+      "/political-organizations",
+      "/politicians",
+      "/users",
+    ]);
+  });
+
+  it("対象が未選択なら対象の管理だけを出し、データ取り込み・報告書は出さない", () => {
+    const sections = getVisibleNavSections("admin", null);
+    const hrefs = sections.flatMap((s) => s.items.map((i) => i.href));
+
+    expect(sections.map((s) => s.title)).toEqual(["対象の管理"]);
+    expect(hrefs).toEqual(["/political-organizations", "/politicians", "/users"]);
+  });
+
+  it("対象が未選択でも adminOnly の項目のロール判定は変わらない", () => {
+    const hrefs = getVisibleNavSections("user", null).flatMap((s) => s.items.map((i) => i.href));
+
+    expect(hrefs).toEqual(["/political-organizations", "/politicians"]);
+  });
+
   it("admin 以外のロールには adminOnly の項目を表示しない", () => {
-    const sections = getVisibleNavSections("user");
+    const sections = getVisibleNavSections("user", organizationTarget);
     const hrefs = sections.flatMap((s) => s.items.map((i) => i.href));
 
     expect(hrefs).not.toContain("/users");
@@ -29,14 +62,18 @@ describe("getVisibleNavSections", () => {
   });
 
   it("ロール不明（null）の場合も adminOnly の項目を表示しない", () => {
-    const hrefs = getVisibleNavSections(null).flatMap((s) => s.items.map((i) => i.href));
+    const hrefs = getVisibleNavSections(null, organizationTarget).flatMap((s) =>
+      s.items.map((i) => i.href),
+    );
 
     expect(hrefs).not.toContain("/users");
   });
 
   it("各項目にハンドオフ対応表どおりのアイコン識別子が設定されている", () => {
     const iconByHref = Object.fromEntries(
-      getVisibleNavSections("admin").flatMap((s) => s.items.map((i) => [i.href, i.icon])),
+      getVisibleNavSections("admin", organizationTarget).flatMap((s) =>
+        s.items.map((i) => [i.href, i.icon]),
+      ),
     );
 
     expect(iconByHref).toEqual({

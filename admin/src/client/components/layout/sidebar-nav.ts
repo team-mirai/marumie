@@ -34,15 +34,19 @@ type NavSection = {
 };
 
 // アイコン対応表はデザインハンドオフ README「1. サイドバー」節が正
-const NAV_SECTIONS: NavSection[] = [
-  {
-    title: "政治団体",
-    items: [
-      { href: "/politicians", label: "議員", icon: "user" },
-      { href: "/political-organizations", label: "政治団体", icon: "bank" },
-      { href: "/users", label: "ユーザー管理", icon: "users", adminOnly: true },
-    ],
-  },
+
+/** 対象が未選択でも操作できる「まず対象を選ぶ／作る」ための入口。 */
+const TARGET_MANAGEMENT_SECTION: NavSection = {
+  title: "対象の管理",
+  items: [
+    { href: "/political-organizations", label: "政治団体", icon: "bank" },
+    { href: "/politicians", label: "議員", icon: "user" },
+    { href: "/users", label: "ユーザー管理", icon: "users", adminOnly: true },
+  ],
+};
+
+/** 政治団体（× 年度）が選ばれていて初めて操作できるセクション。 */
+const ORGANIZATION_SECTIONS: NavSection[] = [
   {
     title: "データ取り込み",
     items: [
@@ -65,8 +69,10 @@ const NAV_SECTIONS: NavSection[] = [
 ];
 
 /**
- * ユーザーのロールに応じて表示可能な nav セクションを返す。
+ * ユーザーのロールと現在のグローバル対象に応じて表示可能な nav セクションを返す。
  * adminOnly の項目は admin ロールにのみ表示し、項目が空になったセクションは除外する。
+ * 対象が未選択のときは、開いても「政治団体が選択されていません」としか言えない
+ * データ取り込み・報告書のセクションを出さず、対象の管理だけに絞る。
  */
 export function getVisibleNavSections(
   userRole: UserRole | null,
@@ -113,7 +119,9 @@ export function getVisibleNavSections(
             ],
           },
         ]
-      : NAV_SECTIONS;
+      : target === null
+        ? [TARGET_MANAGEMENT_SECTION]
+        : [TARGET_MANAGEMENT_SECTION, ...ORGANIZATION_SECTIONS];
   return sections
     .map((section) => ({
       ...section,
