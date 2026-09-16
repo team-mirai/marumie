@@ -15,4 +15,5 @@ export {
 } from "./donor-form";
 export type { DonorFormValues, DonorFormSubmitData } from "./donor-form";
 export { describePublishDelta } from "./research-fund-publish";
+export { layoutResearchFundSankey } from "./research-fund-sankey";
 export { formatLinkedPeriod } from "./research-fund-groups";
