@@ -5,6 +5,7 @@ import {
   grantEntryDate,
   isGrantMonth,
   japanCalendarDate,
+  validateGrantEntryDate,
 } from "@/server/contexts/research-fund/domain/models/grant-registration";
 import { GrantSchedule } from "@/server/contexts/research-fund/domain/models/grant-schedule";
 import { JournalEntryHash } from "@/server/contexts/research-fund/domain/models/journal-entry-hash";
@@ -33,6 +34,8 @@ export class ManageGrantsUsecase {
     month: string,
     userId: string,
     referenceDate: string = japanCalendarDate(),
+    /** 手入力された支給日。省略時はその月の既定日（当選月は当選日）。 */
+    inputEntryDate?: string,
   ) {
     if (!isGrantMonth(month)) throw new GrantRegistrationError("月はYYYY-MM形式で指定してください");
     const { grants, termStart } = await this.list(bookId, referenceDate);
@@ -41,6 +44,12 @@ export class ManageGrantsUsecase {
     if (grant.status === "registered")
       throw new GrantRegistrationError("この月の支給はすでに登録されています");
     if (grant.status === "upcoming") throw new GrantRegistrationError("支給日が到来していません");
+
+    // 画面を経由しない呼び出しも同じ判定で弾く。
+    const entryDate = inputEntryDate ?? grantEntryDate(month, termStart);
+    const validatedEntryDate = validateGrantEntryDate(month, termStart, entryDate);
+    if (validatedEntryDate.status === "invalid")
+      throw new GrantRegistrationError(validatedEntryDate.errors[0].message);
 
     const accounts = await this.repository.accounts();
     const account = accounts.find((candidate) => candidate.key === "grant-income");
@@ -55,7 +64,6 @@ export class ManageGrantsUsecase {
     });
     if (posting.status === "invalid") throw new GrantRegistrationError(posting.errors[0].message);
 
-    const entryDate = grantEntryDate(month, termStart);
     const description = grantDescription(month);
     const hash = JournalEntryHash.generate({
       entryDate,
