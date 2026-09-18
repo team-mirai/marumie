@@ -7,7 +7,6 @@ import { donorsSeeder } from './seeds/donors';
 import { politicalOrganizationsSeeder } from './seeds/politicalOrganizations';
 import { politiciansSeeder } from './seeds/politicians';
 import { reportProfilesSeeder } from './seeds/reportProfiles';
-import { researchFundAccountsSeeder } from './seeds/researchFundAccounts';
 import { researchFundJournalEntriesSeeder } from '@/prisma/seeds/researchFundJournalEntries';
 import { researchFundBooksSeeder } from './seeds/researchFundBooks';
 import { researchFundExpenditureGroupsSeeder } from './seeds/researchFundExpenditureGroups';
@@ -28,8 +27,8 @@ const seeders: Seeder[] = [
   donorsSeeder,
   transactionsSeeder,
   balanceSnapshotsSeeder,
-  // 調研費: 科目マスタ → 議員（所属は既存 political_organizations を参照） → 年度帳簿
-  researchFundAccountsSeeder,
+  // 調研費: 議員（所属は既存 political_organizations を参照） → 年度帳簿
+  // 科目マスタはマイグレーション（20260916170000_seed_research_fund_accounts）で投入済み
   politiciansSeeder,
   researchFundBooksSeeder,
   researchFundJournalEntriesSeeder,
