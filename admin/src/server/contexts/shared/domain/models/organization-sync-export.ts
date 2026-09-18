@@ -15,14 +15,14 @@
 export const SYNC_EXPORT_FORMAT_VERSION = 1;
 
 /** 取引先（counterparts）。自然キーは name + address。 */
-interface SyncExportCounterpart {
+export interface SyncExportCounterpart {
   name: string;
   postalCode: string | null;
   address: string | null;
 }
 
 /** 寄付者（donors）。自然キーは name + address + donorType。 */
-interface SyncExportDonor {
+export interface SyncExportDonor {
   donorType: string;
   name: string;
   address: string | null;
@@ -33,7 +33,7 @@ interface SyncExportDonor {
  * 取引（transactions）1 件。DB の ID（id / political_organization_id）は含めない。
  * 金額は精度を落とさない文字列、`@db.Date` の日付は `YYYY-MM-DD` の文字列。
  */
-interface SyncExportTransaction {
+export interface SyncExportTransaction {
   transactionNo: string;
   transactionDate: string;
   financialYear: number;
@@ -64,7 +64,7 @@ interface SyncExportTransaction {
 }
 
 /** 残高（balance_snapshots）1 件。 */
-interface SyncExportBalanceSnapshot {
+export interface SyncExportBalanceSnapshot {
   snapshotDate: string;
   balance: string;
   createdAt: string;
@@ -72,7 +72,7 @@ interface SyncExportBalanceSnapshot {
 }
 
 /** 報告書プロフィール（organization_report_profiles）1 件。自然キーは financialYear。 */
-interface SyncExportReportProfile {
+export interface SyncExportReportProfile {
   financialYear: number;
   officialName: string | null;
   officialNameKana: string | null;

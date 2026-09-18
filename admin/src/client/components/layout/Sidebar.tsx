@@ -56,6 +56,8 @@ type SidebarProps = {
   logoutAction: (formData: FormData) => Promise<void>;
   userRole: UserRole | null;
   userEmail: string;
+  /** 同期用インポートが利用できる環境か（サーバー側で判定した結果） */
+  syncImportEnabled: boolean;
   collapsed: boolean;
   onToggleCollapsed: () => void;
 };
@@ -87,12 +89,13 @@ export default function Sidebar({
   logoutAction,
   userRole,
   userEmail,
+  syncImportEnabled,
   collapsed,
   onToggleCollapsed,
 }: SidebarProps) {
   const pathname = usePathname();
   const { currentTarget } = useAdminTarget();
-  const navSections = getVisibleNavSections(userRole, currentTarget);
+  const navSections = getVisibleNavSections(userRole, currentTarget, { syncImportEnabled });
   const ToggleIcon = collapsed ? CaretDoubleRight : CaretDoubleLeft;
   const toggleLabel = collapsed ? "サイドバーを開く" : "サイドバーを折りたたむ";
 

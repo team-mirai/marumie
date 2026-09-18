@@ -78,6 +78,22 @@ describe("getVisibleNavSections", () => {
     expect(titlesFor("user")).not.toContain("データ同期");
   });
 
+  it("同期用インポートは、有効な環境の admin にだけ出す", () => {
+    const hrefsFor = (
+      role: "admin" | "user",
+      environment?: { syncImportEnabled?: boolean },
+    ) =>
+      getVisibleNavSections(role, organizationTarget, environment).flatMap((s) =>
+        s.items.map((i) => i.href),
+      );
+
+    // 既定（本番・フラグ未設定）では admin にも出さない
+    expect(hrefsFor("admin")).not.toContain("/sync-import");
+    expect(hrefsFor("admin", { syncImportEnabled: false })).not.toContain("/sync-import");
+    expect(hrefsFor("admin", { syncImportEnabled: true })).toContain("/sync-import");
+    expect(hrefsFor("user", { syncImportEnabled: true })).not.toContain("/sync-import");
+  });
+
   it("ロール不明（null）の場合も adminOnly の項目を表示しない", () => {
     const hrefs = getVisibleNavSections(null, organizationTarget).flatMap((s) =>
       s.items.map((i) => i.href),

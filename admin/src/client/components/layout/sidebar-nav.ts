@@ -26,6 +26,8 @@ type NavItem = {
   label: string;
   icon: NavIconName;
   adminOnly?: boolean;
+  /** 同期用インポートが有効な環境（非本番 かつ DATA_SYNC_IMPORT_ENABLED=true）でのみ表示する */
+  syncImportOnly?: boolean;
   badge?: number;
 };
 
@@ -71,9 +73,22 @@ const ORGANIZATION_SECTIONS: NavSection[] = [
     title: "データ同期",
     items: [
       { href: "/sync-export", label: "同期用エクスポート", icon: "database", adminOnly: true },
+      {
+        href: "/sync-import",
+        label: "同期用インポート",
+        icon: "database",
+        adminOnly: true,
+        syncImportOnly: true,
+      },
     ],
   },
 ];
+
+/** 環境によって出し分ける nav 項目の可否。サーバー側で判定した結果を渡す。 */
+type NavEnvironment = {
+  /** 同期用インポートが利用できる環境か（既定は不可。本番では必ず false） */
+  syncImportEnabled?: boolean;
+};
 
 /**
  * ユーザーのロールと現在のグローバル対象に応じて表示可能な nav セクションを返す。
@@ -84,6 +99,7 @@ const ORGANIZATION_SECTIONS: NavSection[] = [
 export function getVisibleNavSections(
   userRole: UserRole | null,
   target: AdminTarget | null = null,
+  environment: NavEnvironment = {},
 ): NavSection[] {
   const base = target?.kind === "research-fund" ? `/politicians/${target.politicianId}/books` : "";
   const sections: NavSection[] =
@@ -132,7 +148,11 @@ export function getVisibleNavSections(
   return sections
     .map((section) => ({
       ...section,
-      items: section.items.filter((item) => !item.adminOnly || userRole === "admin"),
+      items: section.items.filter(
+        (item) =>
+          (!item.adminOnly || userRole === "admin") &&
+          (!item.syncImportOnly || environment.syncImportEnabled === true),
+      ),
     }))
     .filter((section) => section.items.length > 0);
 }

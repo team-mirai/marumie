@@ -11,7 +11,7 @@ import type {
   ImportDonorCsvResult,
 } from "@/server/contexts/report/presentation/actions/import-donor-csv";
 import DonorCsvPreview from "@/client/components/donor-csv-import/DonorCsvPreview";
-import { CsvDropzone } from "@/client/components/csv-upload/CsvDropzone";
+import { FileDropzone } from "@/client/components/common/FileDropzone";
 
 interface DonorCsvImportClientProps {
   /** グローバル対象（サイドバー上部）で選択中の政治団体 */
@@ -117,7 +117,7 @@ export default function DonorCsvImportClient({
     <div className="space-y-6">
       <div className="max-w-[720px] rounded-lg border border-border bg-card p-7">
         <div>
-          <CsvDropzone
+          <FileDropzone
             file={file}
             onFileChange={setFile}
             disabled={loading || isImporting}

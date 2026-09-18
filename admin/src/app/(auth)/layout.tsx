@@ -4,6 +4,7 @@ import { loadAdminTargets } from "@/server/contexts/shared/presentation/loaders/
 import AuthShell from "@/client/components/layout/AuthShell";
 import { logout } from "@/server/contexts/auth/presentation/actions/logout";
 import { getCurrentUser } from "@/server/contexts/auth/presentation/loaders/load-current-user";
+import { isSyncImportAvailable } from "@/server/contexts/data-import/presentation/loaders/read-sync-import-environment";
 
 // 認証チェックでcookiesを使用するため動的レンダリングを強制
 export const dynamic = "force-dynamic";
@@ -22,6 +23,7 @@ export default async function AuthLayout({ children }: { children: React.ReactNo
       logoutAction={logout}
       userRole={user.role}
       userEmail={user.email}
+      syncImportEnabled={isSyncImportAvailable()}
       targets={targets}
       currentTarget={currentTarget}
       syncKey={cookieName}
