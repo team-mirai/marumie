@@ -36,6 +36,21 @@ function buildTransaction(overrides: Record<string, unknown> = {}) {
   };
 }
 
+/** 書き出し側と同じく、取引にネストした取引先・寄付者を自然キーで重複排除して数える。 */
+function countDistinct(
+  transactions: unknown[],
+  key: "counterpart" | "donor",
+  // biome-ignore lint/suspicious/noExplicitAny: テストのファイル組み立て用
+  toKey: (value: any) => (string | null)[],
+): number {
+  const keys = new Set<string>();
+  for (const transaction of transactions) {
+    const value = (transaction as Record<string, unknown>)[key];
+    if (value) keys.add(JSON.stringify(toKey(value)));
+  }
+  return keys.size;
+}
+
 function buildFile(overrides: Record<string, unknown> = {}) {
   const transactions = (overrides.transactions as unknown[]) ?? [buildTransaction()];
   const balanceSnapshots = (overrides.balanceSnapshots as unknown[]) ?? [];
@@ -50,8 +65,8 @@ function buildFile(overrides: Record<string, unknown> = {}) {
       organizationSlug: "team-mirai",
       counts: {
         transactions: transactions.length,
-        counterparts: 0,
-        donors: 0,
+        counterparts: countDistinct(transactions, "counterpart", (c) => [c.name, c.address]),
+        donors: countDistinct(transactions, "donor", (d) => [d.donorType, d.name, d.address]),
         balanceSnapshots: balanceSnapshots.length,
         organizationReportProfiles: organizationReportProfiles.length,
       },
@@ -210,6 +225,70 @@ describe("parseOrganizationSyncImportFile", () => {
     expect(() =>
       parse(buildFile({ transactions: [buildTransaction({ debitAmount: 1000 })] })),
     ).toThrow(/文字列である必要があります/);
+  });
+
+  it("実在しない日付を拒否する（Date.parse が別の日付に正規化してしまうため）", () => {
+    expect(() =>
+      parse(buildFile({ transactions: [buildTransaction({ transactionDate: "2026-02-30" })] })),
+    ).toThrow(/実在する YYYY-MM-DD/);
+    expect(() =>
+      parse(buildFile({ transactions: [buildTransaction({ transactionDate: "2026-13-01" })] })),
+    ).toThrow(/実在する YYYY-MM-DD/);
+    expect(
+      parse(buildFile({ transactions: [buildTransaction({ transactionDate: "2024-02-29" })] }))
+        .transactions[0].transactionDate,
+    ).toBe("2024-02-29");
+  });
+
+  it("Decimal(15, 2) に収まらない金額を拒否する", () => {
+    expect(() =>
+      parse(buildFile({ transactions: [buildTransaction({ debitAmount: "1000.999" })] })),
+    ).toThrow(/数値の文字列である必要があります/);
+    expect(() =>
+      parse(
+        buildFile({ transactions: [buildTransaction({ creditAmount: "12345678901234.00" })] }),
+      ),
+    ).toThrow(/数値の文字列である必要があります/);
+  });
+
+  it("meta に知らないカラムがあれば拒否する", () => {
+    expect(() => parse(buildFile({ meta: { newMetaColumn: "x" } }))).toThrow(/知らないカラム/);
+  });
+
+  it("取引先・寄付者の件数が meta とずれていれば拒否する（ネストした値が欠けたファイル）", () => {
+    const file = buildFile({
+      transactions: [
+        buildTransaction({
+          counterpart: { name: "株式会社A", postalCode: null, address: "東京都千代田区" },
+        }),
+      ],
+    });
+    // 取引先が落ちたファイル（トップレベルの配列長は一致したまま）
+    file.transactions = [buildTransaction()];
+
+    expect(() => parse(file)).toThrow(/counterparts の件数が meta と一致しません/);
+  });
+
+  it("寄付者の件数も自然キーで重複排除して照合する", () => {
+    const donor = {
+      donorType: "individual",
+      name: "山田太郎",
+      address: "東京都港区",
+      occupation: "会社員",
+    };
+    const file = buildFile({
+      transactions: [
+        buildTransaction({ transactionNo: "1", donor }),
+        buildTransaction({ transactionNo: "2", donor }),
+      ],
+    });
+
+    // 同じ寄付者なので meta は 1 件。取引 2 件でも通る。
+    expect(file.meta.counts.donors).toBe(1);
+    expect(parse(file).transactions).toHaveLength(2);
+
+    file.meta.counts.donors = 2;
+    expect(() => parse(file)).toThrow(/donors の件数が meta と一致しません/);
   });
 
   it("meta の件数と実際の件数がずれていれば拒否する（途中で欠けたファイル）", () => {

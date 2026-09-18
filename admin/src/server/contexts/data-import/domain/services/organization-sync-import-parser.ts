@@ -8,6 +8,7 @@ import type {
   SyncExportTransaction,
 } from "@/server/contexts/shared/domain/models/organization-sync-export";
 import {
+  collectDistinctCounterpartsAndDonors,
   SYNC_IMPORT_SUPPORTED_FORMAT_VERSIONS,
   SyncImportValidationError,
 } from "@/server/contexts/data-import/domain/models/organization-sync-import";
@@ -26,8 +27,11 @@ const DONOR_TYPES: readonly string[] = Object.values(DonorType);
 
 /** `@db.Date` のカラムの表記。 */
 const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
-/** Decimal(15, 2) のカラムの表記（精度を落とさないよう文字列で持つ）。 */
-const DECIMAL_PATTERN = /^-?\d+(\.\d+)?$/;
+/**
+ * Decimal(15, 2) のカラムの表記（精度を落とさないよう文字列で持つ）。
+ * 整数部 13 桁・小数部 2 桁を超える値は DB で丸められるか桁あふれするので、ここで弾く。
+ */
+const DECIMAL_PATTERN = /^-?\d{1,13}(\.\d{1,2})?$/;
 
 function fail(message: string): never {
   throw new SyncImportValidationError(message);
@@ -128,10 +132,21 @@ function requiredDecimal(record: Record<string, unknown>, key: string, path: str
   return value;
 }
 
+/**
+ * 実在する日付かを確かめる。
+ * `Date.parse` は 2026-02-30 のような実在しない日付を別の日付へ正規化してしまうので、
+ * 解析結果を `YYYY-MM-DD` に戻して入力と一致することまで見る。
+ */
+function isRealDateOnly(value: string): boolean {
+  const parsed = new Date(`${value}T00:00:00.000Z`);
+  if (Number.isNaN(parsed.getTime())) return false;
+  return parsed.toISOString().slice(0, 10) === value;
+}
+
 function requiredDateOnly(record: Record<string, unknown>, key: string, path: string): string {
   const value = requiredString(record, key, path);
-  if (!DATE_ONLY_PATTERN.test(value) || Number.isNaN(Date.parse(`${value}T00:00:00.000Z`))) {
-    fail(`${path}.${key} は YYYY-MM-DD 形式の日付である必要があります`);
+  if (!DATE_ONLY_PATTERN.test(value) || !isRealDateOnly(value)) {
+    fail(`${path}.${key} は実在する YYYY-MM-DD 形式の日付である必要があります`);
   }
   return value;
 }
@@ -299,6 +314,15 @@ function parseReportProfile(
   };
 }
 
+const META_KEYS = [
+  "formatVersion",
+  "exportedAt",
+  "sourceEnvironment",
+  "latestMigrationName",
+  "organizationSlug",
+  "counts",
+] as const;
+
 const COUNTS_KEYS = [
   "transactions",
   "counterparts",
@@ -310,6 +334,7 @@ const COUNTS_KEYS = [
 function parseMeta(value: unknown): OrganizationSyncExport["meta"] {
   const path = "meta";
   const record = readObject(value, path);
+  assertKnownKeys(record, META_KEYS, path);
 
   const formatVersion = requiredInteger(record, "formatVersion", path);
   if (!SYNC_IMPORT_SUPPORTED_FORMAT_VERSIONS.includes(formatVersion)) {
@@ -342,10 +367,18 @@ function parseMeta(value: unknown): OrganizationSyncExport["meta"] {
   };
 }
 
-/** meta の件数と実際の配列長がずれていたら、ファイルが途中で欠けている。 */
+/**
+ * meta の件数と実際の件数がずれていたら、ファイルが途中で欠けている。
+ * 取引先・寄付者は取引にネストしているので、書き出し側と同じ自然キーで重複排除して数える
+ * （ネストした値だけが欠けたファイルは、配列長だけ見ていても気づけない）。
+ */
 function assertCountsMatch(parsed: OrganizationSyncExport): void {
+  const { counterparts, donors } = collectDistinctCounterpartsAndDonors(parsed);
+
   const checks: [string, number, number][] = [
     ["transactions", parsed.meta.counts.transactions, parsed.transactions.length],
+    ["counterparts", parsed.meta.counts.counterparts, counterparts.length],
+    ["donors", parsed.meta.counts.donors, donors.length],
     ["balanceSnapshots", parsed.meta.counts.balanceSnapshots, parsed.balanceSnapshots.length],
     [
       "organizationReportProfiles",

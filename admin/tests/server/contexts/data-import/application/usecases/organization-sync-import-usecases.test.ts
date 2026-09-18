@@ -36,6 +36,18 @@ function buildTransaction(
   };
 }
 
+/** 書き出し側と同じく、取引にネストした値を自然キーで重複排除して数える。 */
+function countDistinct(transactions: unknown[], toKey: (t: Transaction) => string | null): number {
+  const keys = new Set<string>();
+  for (const transaction of transactions) {
+    const key = toKey(transaction as Transaction);
+    if (key !== null) keys.add(key);
+  }
+  return keys.size;
+}
+
+type Transaction = ReturnType<typeof buildTransaction>;
+
 function buildFileText(transactions: unknown[] = []) {
   return JSON.stringify({
     meta: {
@@ -46,8 +58,12 @@ function buildFileText(transactions: unknown[] = []) {
       organizationSlug: "team-mirai",
       counts: {
         transactions: transactions.length,
-        counterparts: 0,
-        donors: 0,
+        counterparts: countDistinct(transactions, (t) =>
+          t.counterpart ? JSON.stringify([t.counterpart.name, t.counterpart.address]) : null,
+        ),
+        donors: countDistinct(transactions, (t) =>
+          t.donor ? JSON.stringify([t.donor.donorType, t.donor.name, t.donor.address]) : null,
+        ),
         balanceSnapshots: 0,
         organizationReportProfiles: 0,
       },

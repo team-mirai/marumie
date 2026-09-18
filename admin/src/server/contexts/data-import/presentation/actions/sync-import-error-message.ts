@@ -20,6 +20,8 @@ export function toSyncImportErrorMessage(error: unknown, context: string): strin
     return error.message;
   }
 
+  // 想定外のエラーは取引番号・取引先名や Prisma の制約名などの内部情報を含みうるので、
+  // 応答には出さずログにだけ残す。
   console.error(`${context}:`, error);
-  return error instanceof Error ? error.message : "サーバー内部エラーが発生しました";
+  return "サーバー内部エラーが発生しました";
 }

@@ -40,10 +40,15 @@ export async function runSyncImport(data: {
       environment: readSyncImportEnvironment(),
     });
 
-    // admin 側のデータキャッシュも無効化して取引一覧を更新する
-    // （webapp のキャッシュ無効化は usecase が行う）。
-    updateTag("transactions-data");
-    updateTag("transactions-for-csv");
+    // ここまで来れば DB の置き換えは確定している。admin 側のデータキャッシュ無効化
+    // （webapp のキャッシュ無効化は usecase が行う）に失敗しても、取り込みを失敗扱いにはしない。
+    // 失敗扱いにすると管理者が再実行し、成功済みの置換をもう一度走らせてしまう。
+    try {
+      updateTag("transactions-data");
+      updateTag("transactions-for-csv");
+    } catch (error) {
+      console.error("Run sync import cache invalidation error:", error);
+    }
 
     return { ok: true, result };
   } catch (error) {
