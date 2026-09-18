@@ -22,7 +22,15 @@ export class SankeyDataBuilder {
   /**
    * CategoryAggregationからSankeyDataを構築
    */
-  build(aggregation: CategoryAggregation): SankeyData {
+  build(rawAggregation: CategoryAggregation): SankeyData {
+    // 返金を正味で集計した結果、正味が0以下になった項目は描画しない。
+    // Sankeyのリンクは負の値を取れず、0のリンクも意味を持たないため。
+    // （正味がマイナスになった場合の見せ方は未決。#1476 / #1404）
+    const aggregation: CategoryAggregation = {
+      income: rawAggregation.income.filter((item) => item.totalAmount > 0),
+      expense: rawAggregation.expense.filter((item) => item.totalAmount > 0),
+    };
+
     const nodes: SankeyNode[] = [];
     const links: SankeyLink[] = [];
     const nodeIds = new Set<string>();

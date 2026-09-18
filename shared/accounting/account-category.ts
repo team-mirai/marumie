@@ -246,3 +246,17 @@ export const BS_CATEGORIES: Record<string, { type: "asset" | "liability" | "net_
  * 現金類の科目
  */
 export const CASH_ACCOUNTS = new Set(["現金", "普通預金"]);
+
+/**
+ * 収入科目（PL科目のうち type が income のもの）
+ */
+export const INCOME_ACCOUNTS: string[] = Object.entries(PL_CATEGORIES)
+  .filter(([, mapping]) => mapping.type === "income")
+  .map(([account]) => account);
+
+/**
+ * 支出科目（PL科目のうち type が expense のもの）
+ */
+export const EXPENSE_ACCOUNTS: string[] = Object.entries(PL_CATEGORIES)
+  .filter(([, mapping]) => mapping.type === "expense")
+  .map(([account]) => account);
