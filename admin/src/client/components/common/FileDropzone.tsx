@@ -6,12 +6,18 @@ import { UploadSimple } from "@phosphor-icons/react/dist/ssr";
 import { Button } from "@/client/components/ui";
 import { cn } from "@/client/lib";
 
-interface CsvDropzoneProps {
+interface FileDropzoneProps {
   file: File | null;
   onFileChange: (file: File | null) => void;
   disabled?: boolean;
   /** 対応形式・上限サイズなどの注記（Poppins 11px） */
   note: string;
+  /** 見出し。既定は CSV アップロード向けの文言 */
+  title?: string;
+  /** input の accept 属性 */
+  accept?: string;
+  /** input のアクセシブルな名前 */
+  inputLabel?: string;
 }
 
 function formatFileSize(bytes: number): string {
@@ -21,10 +27,18 @@ function formatFileSize(bytes: number): string {
 }
 
 /**
- * CSV ファイルのドロップゾーン（ハンドオフ「5. CSVアップロード」）。
+ * 単一ファイルのドロップゾーン（ハンドオフ「5. CSVアップロード」の見た目が基準）。
  * ドラッグ＆ドロップと「ファイルを選択」ボタンの両方で同じ hidden input に載せる。
  */
-export function CsvDropzone({ file, onFileChange, disabled = false, note }: CsvDropzoneProps) {
+export function FileDropzone({
+  file,
+  onFileChange,
+  disabled = false,
+  note,
+  title = "CSVファイルをドラッグ＆ドロップ",
+  accept = ".csv,text/csv",
+  inputLabel = "CSVファイル",
+}: FileDropzoneProps) {
   const inputId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -62,7 +76,7 @@ export function CsvDropzone({ file, onFileChange, disabled = false, note }: CsvD
   return (
     // biome-ignore lint/a11y/noStaticElementInteractions: ドロップ先の領域。操作は内側の button / input が担う
     <div
-      data-slot="csv-dropzone"
+      data-slot="file-dropzone"
       data-dragging={isDragging || undefined}
       onDragOver={handleDragOver}
       onDragEnter={handleDragOver}
@@ -75,7 +89,7 @@ export function CsvDropzone({ file, onFileChange, disabled = false, note }: CsvD
       )}
     >
       <UploadSimple aria-hidden className="size-9 text-primary-active" />
-      <p className="mt-2.5 text-sm font-bold text-foreground">CSVファイルをドラッグ＆ドロップ</p>
+      <p className="mt-2.5 text-sm font-bold text-foreground">{title}</p>
       <p className="mt-1 text-xs text-muted-foreground">または</p>
       <Button
         type="button"
@@ -90,15 +104,15 @@ export function CsvDropzone({ file, onFileChange, disabled = false, note }: CsvD
         ref={inputRef}
         id={inputId}
         type="file"
-        accept=".csv,text/csv"
-        aria-label="CSVファイル"
+        accept={accept}
+        aria-label={inputLabel}
         className="sr-only"
         disabled={disabled}
         onChange={(e) => onFileChange(e.target.files?.[0] ?? null)}
       />
       <p className="font-latin mt-3.5 text-[11px] text-subtle-foreground">{note}</p>
       {file && (
-        <p className="mt-3 text-[13px] text-foreground" data-slot="csv-dropzone-file">
+        <p className="mt-3 text-[13px] text-foreground" data-slot="file-dropzone-file">
           <span className="font-bold">{file.name}</span>
           <span className="font-latin ml-2 text-xs text-muted-foreground">
             {formatFileSize(file.size)}

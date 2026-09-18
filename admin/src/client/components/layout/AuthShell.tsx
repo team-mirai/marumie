@@ -12,6 +12,8 @@ type AuthShellProps = {
   logoutAction: (formData: FormData) => Promise<void>;
   userRole: UserRole | null;
   userEmail: string;
+  /** 同期用インポートが利用できる環境か（サーバー側で判定した結果） */
+  syncImportEnabled: boolean;
   children: React.ReactNode;
   targets: AdminTarget[];
   currentTarget: AdminTarget | null;
@@ -27,6 +29,7 @@ export default function AuthShell({
   logoutAction,
   userRole,
   userEmail,
+  syncImportEnabled,
   children,
   targets,
   currentTarget,
@@ -46,6 +49,7 @@ export default function AuthShell({
           logoutAction={logoutAction}
           userRole={userRole}
           userEmail={userEmail}
+          syncImportEnabled={syncImportEnabled}
           collapsed={collapsed}
           onToggleCollapsed={() => setCollapsed((prev) => !prev)}
         />

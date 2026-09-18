@@ -5,7 +5,7 @@ import { useId, useState } from "react";
 import { ArrowRight, CircleNotch } from "@phosphor-icons/react/dist/ssr";
 import { Button, Label, NativeSelect } from "@/client/components/ui";
 import { cn } from "@/client/lib";
-import { CsvDropzone } from "@/client/components/csv-upload/CsvDropzone";
+import { FileDropzone } from "@/client/components/common/FileDropzone";
 import CsvPreview from "@/client/components/csv-import/CsvPreview";
 import type { PreviewMfCsvResult } from "@/server/contexts/data-import/presentation/types";
 import type {
@@ -163,7 +163,7 @@ export default function CsvUploadClient({
         </div>
 
         <div className="mt-6">
-          <CsvDropzone
+          <FileDropzone
             file={file}
             onFileChange={handleFileChange}
             disabled={previewing || uploading}
