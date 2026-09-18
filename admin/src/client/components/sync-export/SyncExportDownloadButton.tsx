@@ -8,29 +8,24 @@ import { Button } from "@/client/components/ui";
 import { apiClient } from "@/client/lib/api-client";
 import { saveBlobAsFile } from "@/client/lib";
 
-interface DownloadButtonProps {
+interface SyncExportDownloadButtonProps {
   politicalOrganizationId: string;
-  financialYear: number;
 }
 
-export function DownloadButton({ politicalOrganizationId, financialYear }: DownloadButtonProps) {
+export function SyncExportDownloadButton({
+  politicalOrganizationId,
+}: SyncExportDownloadButtonProps) {
   const [isDownloading, startDownloadTransition] = useTransition();
 
   function handleDownload() {
     startDownloadTransition(async () => {
       try {
-        const { blob, filename } = await apiClient.downloadReport({
-          politicalOrganizationId,
-          financialYear: financialYear.toString(),
-          sections: ["SYUUSHI07_06"],
-        });
+        const { blob, filename } =
+          await apiClient.downloadOrganizationSync(politicalOrganizationId);
 
-        saveBlobAsFile(
-          blob,
-          filename || `marumie_xml_${politicalOrganizationId}_${financialYear}.xml`,
-        );
+        saveBlobAsFile(blob, filename || `marumie-sync_${politicalOrganizationId}.json`);
 
-        toast.success("XMLファイルをダウンロードしました");
+        toast.success("同期用JSONをダウンロードしました");
       } catch (error) {
         console.error(error);
         toast.error(error instanceof Error ? error.message : "不明なエラーが発生しました");
@@ -46,7 +41,7 @@ export function DownloadButton({ politicalOrganizationId, financialYear }: Downl
       disabled={isDownloading}
     >
       {isDownloading ? <CircleNotch className="animate-spin" /> : <DownloadSimple />}
-      {isDownloading ? "ダウンロード中..." : "XMLをダウンロード"}
+      {isDownloading ? "書き出し中..." : "同期用JSONをダウンロード"}
     </Button>
   );
 }
