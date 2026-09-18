@@ -23,9 +23,14 @@ describe("getVisibleNavSections", () => {
     const sections = getVisibleNavSections("admin", organizationTarget);
     const hrefs = sections.flatMap((s) => s.items.map((i) => i.href));
 
-    expect(sections.map((s) => s.title)).toEqual(["対象の管理", "データ取り込み", "報告書"]);
+    expect(sections.map((s) => s.title)).toEqual([
+      "対象の管理",
+      "データ取り込み",
+      "報告書",
+      "データ同期",
+    ]);
     expect(hrefs).toContain("/users");
-    expect(hrefs).toHaveLength(12);
+    expect(hrefs).toHaveLength(13);
   });
 
   it("対象の管理は政治団体・議員の順に並べる", () => {
@@ -61,6 +66,18 @@ describe("getVisibleNavSections", () => {
     expect(hrefs).toHaveLength(11);
   });
 
+  it("同期用エクスポートは admin にだけ出し、非 admin にはセクションごと出さない", () => {
+    const titlesFor = (role: "admin" | "user" | null) =>
+      getVisibleNavSections(role, organizationTarget).map((s) => s.title);
+    const hrefsFor = (role: "admin" | "user" | null) =>
+      getVisibleNavSections(role, organizationTarget).flatMap((s) => s.items.map((i) => i.href));
+
+    expect(hrefsFor("admin")).toContain("/sync-export");
+    expect(hrefsFor("user")).not.toContain("/sync-export");
+    expect(hrefsFor(null)).not.toContain("/sync-export");
+    expect(titlesFor("user")).not.toContain("データ同期");
+  });
+
   it("ロール不明（null）の場合も adminOnly の項目を表示しない", () => {
     const hrefs = getVisibleNavSections(null, organizationTarget).flatMap((s) =>
       s.items.map((i) => i.href),
@@ -89,6 +106,7 @@ describe("getVisibleNavSections", () => {
       "/donors": "hand-heart",
       "/assign/donors": "link-simple",
       "/export-report": "export",
+      "/sync-export": "database",
     });
   });
 });

@@ -18,7 +18,8 @@ export type NavIconName =
   | "link"
   | "hand-heart"
   | "link-simple"
-  | "export";
+  | "export"
+  | "database";
 
 type NavItem = {
   href: string;
@@ -64,6 +65,12 @@ const ORGANIZATION_SECTIONS: NavSection[] = [
       { href: "/donors", label: "寄付者マスタ", icon: "hand-heart" },
       { href: "/assign/donors", label: "寄付者紐付け", icon: "link-simple" },
       { href: "/export-report", label: "報告書エクスポート", icon: "export" },
+    ],
+  },
+  {
+    title: "データ同期",
+    items: [
+      { href: "/sync-export", label: "同期用エクスポート", icon: "database", adminOnly: true },
     ],
   },
 ];

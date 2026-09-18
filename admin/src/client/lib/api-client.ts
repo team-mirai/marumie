@@ -49,7 +49,20 @@ class ApiClient {
       financialYear: params.financialYear,
       sections: params.sections.join(","),
     });
-    const response = await fetch(`${this.baseUrl}/api/export-report?${searchParams.toString()}`);
+    return this.downloadFile(`/api/export-report?${searchParams.toString()}`);
+  }
+
+  /** 政治団体 1 件分の環境間同期用 JSON をダウンロードする（admin ロールのみ） */
+  async downloadOrganizationSync(
+    politicalOrganizationId: string,
+  ): Promise<{ blob: Blob; filename: string | null }> {
+    const searchParams = new URLSearchParams({ politicalOrganizationId });
+
+    return this.downloadFile(`/api/export-organization-sync?${searchParams.toString()}`);
+  }
+
+  private async downloadFile(url: string): Promise<{ blob: Blob; filename: string | null }> {
+    const response = await fetch(`${this.baseUrl}${url}`);
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));

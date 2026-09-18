@@ -13,6 +13,7 @@ import {
   CaretDoubleLeft,
   CaretDoubleRight,
   Coins,
+  Database,
   Export,
   HandHeart,
   Link as LinkIcon,
@@ -48,6 +49,7 @@ const NAV_ICONS: Record<NavIconName, Icon> = {
   "hand-heart": HandHeart,
   "link-simple": LinkSimple,
   export: Export,
+  database: Database,
 };
 
 type SidebarProps = {
