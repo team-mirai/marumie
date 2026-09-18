@@ -124,3 +124,6 @@ export function buildSyncExportFilename(organizationSlug: string, exportedAt: Da
   const safeSlug = organizationSlug.replace(/[^A-Za-z0-9._-]/g, "_");
   return `marumie-sync_${safeSlug}_${timestamp}.json`;
 }
+
+/** 書き出し対象の政治団体が見つからないとき。呼び出し元は 404 に変換する。 */
+export class OrganizationSyncExportNotFoundError extends Error {}

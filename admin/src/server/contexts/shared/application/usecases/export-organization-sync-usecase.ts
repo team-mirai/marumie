@@ -1,4 +1,9 @@
-import type { OrganizationSyncExport } from "@/server/contexts/shared/domain/models/organization-sync-export";
+import "server-only";
+
+import {
+  type OrganizationSyncExport,
+  OrganizationSyncExportNotFoundError,
+} from "@/server/contexts/shared/domain/models/organization-sync-export";
 import type { IDatabaseMigrationRepository } from "@/server/contexts/shared/domain/repositories/database-migration-repository.interface";
 import type { IOrganizationSyncExportRepository } from "@/server/contexts/shared/domain/repositories/organization-sync-export-repository.interface";
 import { buildOrganizationSyncExport } from "@/server/contexts/shared/domain/services/organization-sync-export-builder";
@@ -23,7 +28,9 @@ export class ExportOrganizationSyncUsecase {
     );
 
     if (!source) {
-      throw new Error(`Political organization not found: ${input.politicalOrganizationId}`);
+      throw new OrganizationSyncExportNotFoundError(
+        `Political organization not found: ${input.politicalOrganizationId}`,
+      );
     }
 
     const latestMigrationName = await this.migrationRepository.findLatestAppliedMigrationName();
