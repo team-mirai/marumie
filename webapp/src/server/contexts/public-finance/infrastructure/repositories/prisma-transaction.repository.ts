@@ -3,15 +3,14 @@ import type { Prisma, PrismaClient, Transaction as PrismaTransaction } from "@pr
 import type { Transaction, TransactionType } from "@/shared/models/transaction";
 import type { TransactionFilters } from "@/types/transaction-filters";
 import type { DisplayTransactionType } from "@/server/contexts/public-finance/domain/models/display-transaction";
-import { PL_CATEGORIES, BS_CATEGORIES } from "@/shared/accounting/account-category";
 import type {
   ITransactionRepository,
   PaginatedResult,
   PaginationOptions,
   SankeyCategoryAggregationResult,
-  TransactionCategoryAggregation,
 } from "@/server/contexts/public-finance/domain/repositories/transaction-repository.interface";
 import type { ITransactionListRepository } from "@/server/contexts/public-finance/domain/repositories/transaction-list-repository.interface";
+import { buildNetCategoryAggregation } from "@/server/contexts/public-finance/domain/services/net-category-aggregator";
 
 export class PrismaTransactionRepository
   implements ITransactionRepository, ITransactionListRepository
@@ -80,106 +79,83 @@ export class PrismaTransactionRepository
       return this.getCategoryAggregationWithTag(politicalOrganizationIds, financialYear);
     }
 
-    // デフォルト: politicalカテゴリーの場合は、従来通りmainCategory + subCategoryでグループ化
-    const baseWhere = {
-      politicalOrganizationId: {
-        in: politicalOrganizationIds.map((id) => BigInt(id)),
-      },
-      financialYear,
-    };
+    // デフォルト: politicalカテゴリーの場合は、accountからcategory/subcategoryにマッピングして集計
+    const baseWhere = this.buildSankeyBaseWhere(politicalOrganizationIds, financialYear);
 
-    const incomeAggregation = await this.prisma.transaction.groupBy({
-      by: ["creditAccount"],
-      where: {
-        ...baseWhere,
-        transactionType: "income",
-      },
-      _sum: {
-        creditAmount: true,
-      },
-    });
+    // 返金（収入科目が借方／支出科目が貸方に来る仕訳）を正味として集計するため、
+    // transactionType ではなく勘定科目の借方・貸方の合計から収支を判定する
+    const [creditAggregation, debitAggregation] = await Promise.all([
+      this.prisma.transaction.groupBy({
+        by: ["creditAccount"],
+        where: baseWhere,
+        _sum: { creditAmount: true },
+      }),
+      this.prisma.transaction.groupBy({
+        by: ["debitAccount"],
+        where: baseWhere,
+        _sum: { debitAmount: true },
+      }),
+    ]);
 
-    const expenseAggregation = await this.prisma.transaction.groupBy({
-      by: ["debitAccount"],
-      where: {
-        ...baseWhere,
-        transactionType: "expense",
-      },
-      _sum: {
-        debitAmount: true,
-      },
-    });
-
-    // accountからcategory/subcategoryにマッピングして集計
-    const income = this.aggregateByCategory(
-      incomeAggregation.map((item) => ({
+    return buildNetCategoryAggregation(
+      creditAggregation.map((item) => ({
         account: item.creditAccount || "",
         amount: Number(item._sum.creditAmount || 0),
       })),
-    );
-
-    const expense = this.aggregateByCategory(
-      expenseAggregation.map((item) => ({
+      debitAggregation.map((item) => ({
         account: item.debitAccount || "",
         amount: Number(item._sum.debitAmount || 0),
       })),
     );
-
-    return { income, expense };
   }
 
   async getCategoryAggregationWithTag(
     politicalOrganizationIds: string[],
     financialYear: number,
   ): Promise<SankeyCategoryAggregationResult> {
-    const baseWhere = {
-      politicalOrganizationId: {
-        in: politicalOrganizationIds.map((id) => BigInt(id)),
-      },
-      financialYear,
-    };
+    const baseWhere = this.buildSankeyBaseWhere(politicalOrganizationIds, financialYear);
 
     // friendlyカテゴリーの場合は、mainCategory + tagでグループ化
-    const incomeAggregation = await this.prisma.transaction.groupBy({
-      by: ["creditAccount", "friendlyCategory"],
-      where: {
-        ...baseWhere,
-        transactionType: "income",
-      },
-      _sum: {
-        creditAmount: true,
-      },
-    });
+    const [creditAggregation, debitAggregation] = await Promise.all([
+      this.prisma.transaction.groupBy({
+        by: ["creditAccount", "friendlyCategory"],
+        where: baseWhere,
+        _sum: { creditAmount: true },
+      }),
+      this.prisma.transaction.groupBy({
+        by: ["debitAccount", "friendlyCategory"],
+        where: baseWhere,
+        _sum: { debitAmount: true },
+      }),
+    ]);
 
-    const expenseAggregation = await this.prisma.transaction.groupBy({
-      by: ["debitAccount", "friendlyCategory"],
-      where: {
-        ...baseWhere,
-        transactionType: "expense",
-      },
-      _sum: {
-        debitAmount: true,
-      },
-    });
-
-    // accountとtagでグループ化
-    const income = this.aggregateByCategoryWithTag(
-      incomeAggregation.map((item) => ({
+    return buildNetCategoryAggregation(
+      creditAggregation.map((item) => ({
         account: item.creditAccount || "",
         tag: item.friendlyCategory || "",
         amount: Number(item._sum.creditAmount || 0),
       })),
-    );
-
-    const expense = this.aggregateByCategoryWithTag(
-      expenseAggregation.map((item) => ({
+      debitAggregation.map((item) => ({
         account: item.debitAccount || "",
         tag: item.friendlyCategory || "",
         amount: Number(item._sum.debitAmount || 0),
       })),
+      { useTagAsSubcategory: true },
     );
+  }
 
-    return { income, expense };
+  private buildSankeyBaseWhere(
+    politicalOrganizationIds: string[],
+    financialYear: number,
+  ): Prisma.TransactionWhereInput {
+    return {
+      politicalOrganizationId: {
+        in: politicalOrganizationIds.map((id) => BigInt(id)),
+      },
+      financialYear,
+      // 相殺項目（offset_income / offset_expense）は収支として表示しない
+      transactionType: { in: ["income", "expense"] as DisplayTransactionType[] },
+    };
   }
 
   async getLastUpdatedAt(): Promise<Date | null> {
@@ -214,84 +190,6 @@ export class PrismaTransactionRepository
       ...this.mapToTransaction(transaction),
       political_organization_name: transaction.politicalOrganization.displayName,
     }));
-  }
-
-  private aggregateByCategory(
-    accountData: Array<{ account: string; amount: number }>,
-  ): TransactionCategoryAggregation[] {
-    const categoryMap = new Map<
-      string,
-      { category: string; subcategory?: string; totalAmount: number }
-    >();
-
-    for (const item of accountData) {
-      // BS科目（仮払金・立替金など）は収入・支出ノードとして表示しない。
-      // 未払費用などBS科目の特別表示は別途 adjustWithBalance で行う。
-      if (Object.hasOwn(BS_CATEGORIES, item.account)) {
-        continue;
-      }
-      const mapping: { category: string; subcategory?: string } = Object.hasOwn(
-        PL_CATEGORIES,
-        item.account,
-      )
-        ? PL_CATEGORIES[item.account]
-        : { category: item.account };
-      const key = mapping.subcategory
-        ? `${mapping.category}|${mapping.subcategory}`
-        : mapping.category;
-
-      const existing = categoryMap.get(key);
-      if (existing) {
-        existing.totalAmount += item.amount;
-      } else {
-        categoryMap.set(key, {
-          category: mapping.category,
-          subcategory: mapping.subcategory,
-          totalAmount: item.amount,
-        });
-      }
-    }
-
-    return Array.from(categoryMap.values());
-  }
-
-  private aggregateByCategoryWithTag(
-    accountData: Array<{ account: string; tag: string; amount: number }>,
-  ): TransactionCategoryAggregation[] {
-    const categoryMap = new Map<
-      string,
-      { category: string; subcategory?: string; totalAmount: number }
-    >();
-
-    for (const item of accountData) {
-      // BS科目（仮払金・立替金など）は収入・支出ノードとして表示しない。
-      // 未払費用などBS科目の特別表示は別途 adjustWithBalance で行う。
-      if (Object.hasOwn(BS_CATEGORIES, item.account)) {
-        continue;
-      }
-      const mapping: { category: string; subcategory?: string } = Object.hasOwn(
-        PL_CATEGORIES,
-        item.account,
-      )
-        ? PL_CATEGORIES[item.account]
-        : { category: item.account };
-      // friendlyカテゴリーの場合は、subcategoryをtagに置き換える
-      const subcategory = item.tag || undefined;
-      const key = subcategory ? `${mapping.category}|${subcategory}` : mapping.category;
-
-      const existing = categoryMap.get(key);
-      if (existing) {
-        existing.totalAmount += item.amount;
-      } else {
-        categoryMap.set(key, {
-          category: mapping.category,
-          subcategory: subcategory,
-          totalAmount: item.amount,
-        });
-      }
-    }
-
-    return Array.from(categoryMap.values());
   }
 
   private buildWhereClause(filters?: TransactionFilters): Prisma.TransactionWhereInput {
