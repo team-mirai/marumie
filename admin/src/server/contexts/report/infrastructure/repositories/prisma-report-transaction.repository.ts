@@ -50,7 +50,6 @@ const CATEGORY_KEYS = {
   OTHER: PL_CATEGORIES["その他の収入"].key,
   // biome-ignore lint/complexity/useLiteralKeys: 日本語キー
   UTILITIES: PL_CATEGORIES["光熱水費"].key,
-  // biome-ignore lint/complexity/useLiteralKeys: 日本語キー
   EQUIPMENT_SUPPLIES: PL_CATEGORIES["備品・消耗品費"].key,
   // biome-ignore lint/complexity/useLiteralKeys: 日本語キー
   OFFICE_EXPENSES: PL_CATEGORIES["事務所費"].key,
@@ -69,7 +68,6 @@ const CATEGORY_KEYS = {
   OTHER_BUSINESS_EXPENSES: PL_CATEGORIES["その他の事業費"].key,
   // biome-ignore lint/complexity/useLiteralKeys: 日本語キー
   RESEARCH_EXPENSES: PL_CATEGORIES["調査研究費"].key,
-  // biome-ignore lint/complexity/useLiteralKeys: 日本語キー
   DONATIONS_GRANTS_EXPENSES: PL_CATEGORIES["寄附・交付金"].key,
   // biome-ignore lint/complexity/useLiteralKeys: 日本語キー
   POLITICAL_ACTIVITY_OTHER_EXPENSES: PL_CATEGORIES["その他の経費"].key,

@@ -111,7 +111,7 @@ export default function MonthlyChart({ data }: MonthlyChartProps) {
         enabled: false,
       },
       events: {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // biome-ignore lint/suspicious/noExplicitAny: ApexChartsの型定義に実行時プロパティのelが含まれていないため
         beforeMount: (chart: any) => {
           // チャートコンテナのタッチイベントを親要素に委譲
           if (typeof window !== "undefined" && "ontouchstart" in window) {

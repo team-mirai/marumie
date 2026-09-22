@@ -499,7 +499,7 @@ export default function SankeyChart({ data }: SankeyChartProps) {
   const { sortNodes, sortLinks } = useSankeySorting(safeData);
 
   // データが空または不正な場合の早期リターン
-  if (!data || !data.nodes || !data.links || data.nodes.length === 0 || data.links.length === 0) {
+  if (!data?.nodes || !data.links || data.nodes.length === 0 || data.links.length === 0) {
     return (
       <div
         style={{
