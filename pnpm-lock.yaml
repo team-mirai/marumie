@@ -187,9 +187,6 @@ importers:
       apexcharts:
         specifier: ^5.3.6
         version: 5.16.0
-      critters:
-        specifier: ^0.0.25
-        version: 0.0.25
       next:
         specifier: 16.3.5
         version: 16.3.5(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(@types/node@25.5.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
@@ -2442,10 +2439,6 @@ packages:
     resolution: {integrity: sha512-ei8Aos7ja0weRpFzJnEA9UHJ/7XQmqglbRwnf2ATjcB9Wq874VKH9kfjjirM6UhU2/E5fFYadylyhFldcqSidQ==}
     engines: {node: '>=18'}
 
-  critters@0.0.25:
-    resolution: {integrity: sha512-ROF/tjJyyRdM8/6W0VqoN5Ql05xAGnkf5b7f3sTEl1bI5jTQQf8O918RD/V9tEb9pRY/TKcvJekDbJtniHyPtQ==}
-    deprecated: Ownership of Critters has moved to the Nuxt team, who will be maintaining the project going forward. If you'd like to keep using Critters, please switch to the actively-maintained fork at https://github.com/danielroe/beasties
-
   cross-spawn@7.0.6:
     resolution: {integrity: sha512-uV2QOWP2nWzsy2aMp8aRibhi9dlzF5Hgh5SHaB9OiTGEyDTiJJyx0uy51QXdyWbtAHNua4XJzUKca3OzKUd3vA==}
     engines: {node: '>= 8'}
@@ -2818,9 +2811,6 @@ packages:
 
   html-escaper@2.0.2:
     resolution: {integrity: sha512-H2iMtd0I4Mt5eYiapRdIDjp+XzelXQ0tFE4JS7YFwFevXXMmOp9myNrUvCg0D6ws8iqkRPBfKHgbwig1SmlLfg==}
-
-  htmlparser2@8.0.2:
-    resolution: {integrity: sha512-GYdjWKDkbRLkZ5geuHs5NY1puJ+PXwP7+fHPRz06Eirsb9ugf6d8kkXav6ADhcODhFFPMIXyxkxSuMf3D6NCFA==}
 
   human-signals@2.1.0:
     resolution: {integrity: sha512-B4FFZ6q/T2jhhksgkbEW3HBvWIfDW85snkQgawt07S7J5QXTk6BkNV+0yAeZrM5QpMAdYlocGoljn0sJ/WQkFw==}
@@ -3467,9 +3457,6 @@ packages:
     resolution: {integrity: sha512-+7ziBLidS4NaNCdt57SUDT+wYmmd5fmiQejUic/kb+YsYSCPyOOE9sebzMjNmQrsnNpDJqd4WHvV/8lfKfUDUg==}
     engines: {node: '>=20'}
     hasBin: true
-
-  postcss-media-query-parser@0.2.3:
-    resolution: {integrity: sha512-3sOlxmbKcSHMjlUXQZKQ06jOswE7oVkXPxmZdoB1r5l0q6gTFTQSHxNxOrCccElbW7dxNytifNEo8qidX2Vsig==}
 
   postcss@8.5.23:
     resolution: {integrity: sha512-g50586zr4bZmwFiTlflMu8E0bDTb5I5gertgwAKmsdUlTQIhZtunzUlD1WSzwcVWPoAVpsrA6vlfCD7oXvRwgg==}
@@ -6078,16 +6065,6 @@ snapshots:
 
   cookie@1.1.1: {}
 
-  critters@0.0.25:
-    dependencies:
-      chalk: 4.1.2
-      css-select: 5.2.2
-      dom-serializer: 2.0.0
-      domhandler: 5.0.3
-      htmlparser2: 8.0.2
-      postcss: 8.5.28
-      postcss-media-query-parser: 0.2.3
-
   cross-spawn@7.0.6:
     dependencies:
       path-key: 3.1.1
@@ -6482,13 +6459,6 @@ snapshots:
       function-bind: 1.1.2
 
   html-escaper@2.0.2: {}
-
-  htmlparser2@8.0.2:
-    dependencies:
-      domelementtype: 2.3.0
-      domhandler: 5.0.3
-      domutils: 3.2.2
-      entities: 4.5.0
 
   human-signals@2.1.0: {}
 
@@ -7287,8 +7257,6 @@ snapshots:
   playwright@1.63.0:
     dependencies:
       playwright-core: 1.63.0
-
-  postcss-media-query-parser@0.2.3: {}
 
   postcss@8.5.23:
     dependencies:

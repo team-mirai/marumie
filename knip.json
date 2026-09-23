@@ -4,7 +4,6 @@
     "server-only",
     "client-only",
     "tailwindcss",
-    "critters",
     "tsx"
   ],
   "workspaces": {
