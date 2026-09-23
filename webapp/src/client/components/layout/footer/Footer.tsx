@@ -92,7 +92,7 @@ const socialLinks = [
   },
   {
     name: "TikTok",
-    href: "https://www.tiktok.com/@annotakahiro2024",
+    href: "https://www.tiktok.com/@team_mirai_jp",
     icon: "icon-tiktok.svg",
   },
   {
