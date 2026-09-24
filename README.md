@@ -92,6 +92,9 @@ marumie/
 本番デプロイは GitHub Actions の **Deploy Production** ワークフローを `main` から手動実行して行います。
 webapp / admin の両方のデプロイが成功すると、デプロイしたコミットに release tag が自動で作成・push されます（どちらかが失敗した場合はタグは付きません）。
 
+デプロイは「ビルド → `vercel promote` で本番ドメインを付け替え → ドメインが今回のデプロイを指したか検証」の順に行います（[scripts/vercel-deploy-production.sh](scripts/vercel-deploy-production.sh)）。
+CLI からのデプロイは本番ドメインが自動では付け替わらないため、promote と検証まで通って初めてデプロイ成功とみなします。
+
 - タグ名の形式: `release-YYYYMMDD-HHMMSS`（日本時間。例: `release-20260911-153012`）
 - 名前順に並べるとデプロイ順になります
 

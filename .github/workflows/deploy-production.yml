@@ -35,28 +35,19 @@ jobs:
       - name: Install Vercel CLI
         run: npm install --global vercel@latest
 
+      # デプロイ・本番ドメインの付け替え（promote）・付け替え結果の検証までを
+      # スクリプト側で行う。詳細は scripts/vercel-deploy-production.sh を参照
+      #
       # webapp のビルドに prisma migrate deploy が含まれるため、
       # 先に webapp をデプロイして本番DBのスキーマを更新する
-      #
-      # Root Directory (webapp / admin) は Vercel のプロジェクト設定側で
-      # 適用されるため --cwd は指定しない（指定するとパスが二重になる）
-      #
-      # --build-env MANUAL_DEPLOY=1 が ignoreCommand の条件を満たし、
-      # Git 連携によるビルドはスキップしたまま CLI からのデプロイのみ通す
       - name: Deploy webapp
-        run: |
-          vercel deploy --prod --yes \
-            --build-env MANUAL_DEPLOY=1 \
-            --token "$VERCEL_TOKEN"
+        run: ./scripts/vercel-deploy-production.sh webapp marumie.team-mir.ai
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_WEBAPP }}
 
       - name: Deploy admin
-        run: |
-          vercel deploy --prod --yes \
-            --build-env MANUAL_DEPLOY=1 \
-            --token "$VERCEL_TOKEN"
+        run: ./scripts/vercel-deploy-production.sh admin admin.marumie.team-mir.ai
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_ADMIN }}
