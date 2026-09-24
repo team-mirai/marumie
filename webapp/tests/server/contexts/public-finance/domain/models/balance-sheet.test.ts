@@ -4,7 +4,8 @@ describe("BalanceSheet domain model", () => {
   describe("fromInput", () => {
     it("純資産ありの場合", () => {
       const result = BalanceSheet.fromInput({
-        currentAssets: 1_000_000,
+        cashBalance: 1_000_000,
+        receivables: 0,
         borrowingIncome: 500_000,
         borrowingExpense: 200_000,
         currentLiabilities: 100_000,
@@ -20,7 +21,8 @@ describe("BalanceSheet domain model", () => {
 
     it("債務超過の場合", () => {
       const result = BalanceSheet.fromInput({
-        currentAssets: 100_000,
+        cashBalance: 100_000,
+        receivables: 0,
         borrowingIncome: 1_000_000,
         borrowingExpense: 0,
         currentLiabilities: 200_000,
@@ -36,7 +38,8 @@ describe("BalanceSheet domain model", () => {
 
     it("資産と負債が等しい場合", () => {
       const result = BalanceSheet.fromInput({
-        currentAssets: 500_000,
+        cashBalance: 500_000,
+        receivables: 0,
         borrowingIncome: 300_000,
         borrowingExpense: 0,
         currentLiabilities: 200_000,
@@ -51,7 +54,8 @@ describe("BalanceSheet domain model", () => {
 
     it("すべてゼロの場合", () => {
       const result = BalanceSheet.fromInput({
-        currentAssets: 0,
+        cashBalance: 0,
+        receivables: 0,
         borrowingIncome: 0,
         borrowingExpense: 0,
         currentLiabilities: 0,
@@ -63,6 +67,31 @@ describe("BalanceSheet domain model", () => {
       expect(result.right.currentLiabilities).toBe(0);
       expect(result.right.netAssets).toBe(0);
       expect(result.left.debtExcess).toBe(0);
+    });
+
+    it("債権残高（未収入金）は流動資産に加算される", () => {
+      const result = BalanceSheet.fromInput({
+        cashBalance: 1_000_000,
+        receivables: 200_000,
+        borrowingIncome: 0,
+        borrowingExpense: 0,
+        currentLiabilities: 300_000,
+      });
+
+      expect(result.left.currentAssets).toBe(1_200_000);
+      expect(result.right.currentLiabilities).toBe(300_000);
+      expect(result.right.netAssets).toBe(900_000);
+      expect(result.left.debtExcess).toBe(0);
+    });
+  });
+
+  describe("calculateCurrentAssets", () => {
+    it("現金類の残高と債権残高の合計を返す", () => {
+      expect(BalanceSheet.calculateCurrentAssets(1_000_000, 200_000)).toBe(1_200_000);
+    });
+
+    it("債権残高がない場合は現金類の残高をそのまま返す", () => {
+      expect(BalanceSheet.calculateCurrentAssets(1_000_000, 0)).toBe(1_000_000);
     });
   });
 

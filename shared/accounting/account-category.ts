@@ -234,7 +234,13 @@ export const BS_CATEGORIES: Record<string, { type: "asset" | "liability" | "net_
   "立替金": {
     type: "asset"
   },
-  "未払金/未払費用": {
+  "未収入金": {
+    type: "asset"
+  },
+  "未払金": {
+    type: "liability"
+  },
+  "未払費用": {
     type: "liability"
   },
   "仮受金": {
@@ -246,6 +252,14 @@ export const BS_CATEGORIES: Record<string, { type: "asset" | "liability" | "net_
  * 現金類の科目
  */
 export const CASH_ACCOUNTS = new Set(["現金", "普通預金"]);
+
+/**
+ * 債権科目（未収入金など）
+ *
+ * 現金類でない資産科目のうち、貸借対照表の流動資産に取引の残高（借方 − 貸方）で計上するもの。
+ * 現金類は残高スナップショットで計上する。仮払金・立替金は現金の一時的な振替として扱い、残高は計上しない。
+ */
+export const RECEIVABLE_ACCOUNTS = new Set(["未収入金"]);
 
 /**
  * 収入科目（PL科目のうち type が income のもの）

@@ -11,8 +11,10 @@ import type { BalanceSheetData } from "@/types/balance-sheet";
  * 貸借対照表ドメインモデルの入力データ
  */
 export interface BalanceSheet {
-  /** 流動資産（最新残高スナップショットの合計） */
-  currentAssets: number;
+  /** 現金類の残高（最新残高スナップショットの合計） */
+  cashBalance: number;
+  /** 債権残高（未収入金など債権科目の借方 - 貸方） */
+  receivables: number;
   /** 借入金収入（借入金勘定の貸方合計） */
   borrowingIncome: number;
   /** 借入金支出（借入金勘定の借方合計） */
@@ -24,11 +26,13 @@ export interface BalanceSheet {
 export const BalanceSheet = {
   /**
    * 入力データから貸借対照表を生成
+   * - 流動資産 = 現金類の残高 + 債権残高
    * - 固定資産は0（現時点で未対応）
    * - 固定負債 = 借入金収入 - 借入金支出
    * - 純資産/債務超過 = 資産合計 - 負債合計
    */
   fromInput(input: BalanceSheet): BalanceSheetData {
+    const currentAssets = BalanceSheet.calculateCurrentAssets(input.cashBalance, input.receivables);
     const fixedAssets = 0;
     const fixedLiabilities = BalanceSheet.calculateFixedLiabilities(
       input.borrowingIncome,
@@ -36,7 +40,7 @@ export const BalanceSheet = {
     );
 
     const [netAssets, debtExcess] = BalanceSheet.calculateNetAssetsAndDebtExcess(
-      input.currentAssets,
+      currentAssets,
       fixedAssets,
       input.currentLiabilities,
       fixedLiabilities,
@@ -44,7 +48,7 @@ export const BalanceSheet = {
 
     return {
       left: {
-        currentAssets: input.currentAssets,
+        currentAssets,
         fixedAssets,
         debtExcess,
       },
@@ -54,6 +58,14 @@ export const BalanceSheet = {
         netAssets,
       },
     };
+  },
+
+  /**
+   * 流動資産を計算
+   * 現金類の残高 + 債権残高（未収入金など）
+   */
+  calculateCurrentAssets(cashBalance: number, receivables: number): number {
+    return cashBalance + receivables;
   },
 
   /**

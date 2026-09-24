@@ -84,6 +84,51 @@ describe("TransactionValidator", () => {
       }
     });
 
+    it("should accept 未払金 / 未払費用 / 未収入金 as valid BS accounts", () => {
+      const transactions = [
+        createMockTransaction({
+          debit_account: "備品・消耗品費",
+          credit_account: "未払金",
+        }),
+        createMockTransaction({
+          debit_account: "事務所費",
+          credit_account: "未払費用",
+        }),
+        createMockTransaction({
+          debit_account: "未収入金",
+          credit_account: "個人からの寄附",
+          transaction_type: "income",
+        }),
+      ];
+
+      const result = validator.validatePreviewTransactions(transactions);
+
+      for (const transaction of result) {
+        expect(transaction.status).toBe("insert");
+        expect(transaction.errors).toHaveLength(0);
+      }
+    });
+
+    it("should mark the legacy account 未払金/未払費用 as invalid", () => {
+      const transactions = [
+        createMockTransaction({
+          debit_account: "事務所費",
+          credit_account: "未払金/未払費用",
+        }),
+        createMockTransaction({
+          debit_account: "未払金/未払費用",
+          credit_account: "事務所費",
+        }),
+      ];
+
+      const result = validator.validatePreviewTransactions(transactions);
+
+      expect(result[0].status).toBe("invalid");
+      expect(result[0].errors).toContain('無効な貸方科目: "未払金/未払費用"');
+      expect(result[1].status).toBe("invalid");
+      expect(result[1].errors).toContain('無効な借方科目: "未払金/未払費用"');
+    });
+
     it("should mark transactions as skip when duplicate", () => {
       const transactions = [
         createMockTransaction({

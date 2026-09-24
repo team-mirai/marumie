@@ -38,16 +38,18 @@ export class GetBalanceSheetUsecase {
 
       const orgIds = organizations.map((org) => org.id);
 
-      const [currentAssets, borrowingIncome, borrowingExpense, currentLiabilities] =
+      const [cashBalance, receivables, borrowingIncome, borrowingExpense, currentLiabilities] =
         await Promise.all([
-          this.balanceSheetRepository.getCurrentAssets(orgIds),
+          this.balanceSheetRepository.getCashBalance(orgIds),
+          this.balanceSheetRepository.getReceivables(orgIds, params.financialYear),
           this.balanceSheetRepository.getBorrowingIncome(orgIds),
           this.balanceSheetRepository.getBorrowingExpense(orgIds),
           this.balanceSheetRepository.getCurrentLiabilities(orgIds, params.financialYear),
         ]);
 
       const balanceSheetData = BalanceSheet.fromInput({
-        currentAssets,
+        cashBalance,
+        receivables,
         borrowingIncome,
         borrowingExpense,
         currentLiabilities,

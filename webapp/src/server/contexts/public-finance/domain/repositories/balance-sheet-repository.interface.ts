@@ -6,9 +6,14 @@
  */
 export interface IBalanceSheetRepository {
   /**
-   * 流動資産を取得（各組織の最新残高スナップショットの合計）
+   * 現金類の残高を取得（各組織の最新残高スナップショットの合計）
    */
-  getCurrentAssets(organizationIds: string[]): Promise<number>;
+  getCashBalance(organizationIds: string[]): Promise<number>;
+
+  /**
+   * 債権残高を取得（指定年度の債権科目（未収入金など）の借方 - 貸方）
+   */
+  getReceivables(organizationIds: string[], financialYear: number): Promise<number>;
 
   /**
    * 借入金収入を取得（全期間の借入金勘定の貸方合計）
