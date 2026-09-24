@@ -92,11 +92,13 @@ describe("buildNetCategoryAggregation", () => {
       const result = buildNetCategoryAggregation(
         [
           { account: "普通預金", amount: 100000 },
-          { account: "未払金/未払費用", amount: 30000 },
+          { account: "未払金", amount: 30000 },
+          { account: "未払費用", amount: 20000 },
         ],
         [
           { account: "仮払金", amount: 100000 },
           { account: "立替金", amount: 30000 },
+          { account: "未収入金", amount: 20000 },
         ],
       );
 

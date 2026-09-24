@@ -3,7 +3,8 @@ import type { IBalanceSheetRepository } from "@/server/contexts/public-finance/d
 import type { IPoliticalOrganizationRepository } from "@/server/contexts/public-finance/domain/repositories/political-organization-repository.interface";
 
 const mockBalanceSheetRepository = {
-  getCurrentAssets: jest.fn(),
+  getCashBalance: jest.fn(),
+  getReceivables: jest.fn(),
   getBorrowingIncome: jest.fn(),
   getBorrowingExpense: jest.fn(),
   getCurrentLiabilities: jest.fn(),
@@ -18,10 +19,33 @@ describe("GetBalanceSheetUsecase", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    (mockBalanceSheetRepository.getReceivables as jest.Mock).mockResolvedValue(0);
     usecase = new GetBalanceSheetUsecase(
       mockBalanceSheetRepository,
       mockPoliticalOrganizationRepository,
     );
+  });
+
+  it("should add receivables to current assets", async () => {
+    const mockOrganizations = [{ id: "1", slug: "test-org" }];
+
+    (mockPoliticalOrganizationRepository.findBySlugs as jest.Mock).mockResolvedValue(
+      mockOrganizations,
+    );
+    (mockBalanceSheetRepository.getCashBalance as jest.Mock).mockResolvedValue(1000000);
+    (mockBalanceSheetRepository.getReceivables as jest.Mock).mockResolvedValue(250000);
+    (mockBalanceSheetRepository.getBorrowingIncome as jest.Mock).mockResolvedValue(0);
+    (mockBalanceSheetRepository.getBorrowingExpense as jest.Mock).mockResolvedValue(0);
+    (mockBalanceSheetRepository.getCurrentLiabilities as jest.Mock).mockResolvedValue(100000);
+
+    const result = await usecase.execute({
+      slugs: ["test-org"],
+      financialYear: 2025,
+    });
+
+    expect(mockBalanceSheetRepository.getReceivables).toHaveBeenCalledWith(["1"], 2025);
+    expect(result.balanceSheetData.left.currentAssets).toBe(1250000);
+    expect(result.balanceSheetData.right.netAssets).toBe(1150000);
   });
 
   it("should return balance sheet data with positive net assets", async () => {
@@ -30,7 +54,7 @@ describe("GetBalanceSheetUsecase", () => {
     (mockPoliticalOrganizationRepository.findBySlugs as jest.Mock).mockResolvedValue(
       mockOrganizations,
     );
-    (mockBalanceSheetRepository.getCurrentAssets as jest.Mock).mockResolvedValue(1000000);
+    (mockBalanceSheetRepository.getCashBalance as jest.Mock).mockResolvedValue(1000000);
     (mockBalanceSheetRepository.getBorrowingIncome as jest.Mock).mockResolvedValue(500000);
     (mockBalanceSheetRepository.getBorrowingExpense as jest.Mock).mockResolvedValue(200000);
     (mockBalanceSheetRepository.getCurrentLiabilities as jest.Mock).mockResolvedValue(100000);
@@ -54,7 +78,7 @@ describe("GetBalanceSheetUsecase", () => {
     (mockPoliticalOrganizationRepository.findBySlugs as jest.Mock).mockResolvedValue(
       mockOrganizations,
     );
-    (mockBalanceSheetRepository.getCurrentAssets as jest.Mock).mockResolvedValue(100000);
+    (mockBalanceSheetRepository.getCashBalance as jest.Mock).mockResolvedValue(100000);
     (mockBalanceSheetRepository.getBorrowingIncome as jest.Mock).mockResolvedValue(1000000);
     (mockBalanceSheetRepository.getBorrowingExpense as jest.Mock).mockResolvedValue(0);
     (mockBalanceSheetRepository.getCurrentLiabilities as jest.Mock).mockResolvedValue(200000);
@@ -78,7 +102,7 @@ describe("GetBalanceSheetUsecase", () => {
     (mockPoliticalOrganizationRepository.findBySlugs as jest.Mock).mockResolvedValue(
       mockOrganizations,
     );
-    (mockBalanceSheetRepository.getCurrentAssets as jest.Mock).mockResolvedValue(500000);
+    (mockBalanceSheetRepository.getCashBalance as jest.Mock).mockResolvedValue(500000);
     (mockBalanceSheetRepository.getBorrowingIncome as jest.Mock).mockResolvedValue(500000);
     (mockBalanceSheetRepository.getBorrowingExpense as jest.Mock).mockResolvedValue(0);
     (mockBalanceSheetRepository.getCurrentLiabilities as jest.Mock).mockResolvedValue(0);
@@ -101,7 +125,7 @@ describe("GetBalanceSheetUsecase", () => {
     (mockPoliticalOrganizationRepository.findBySlugs as jest.Mock).mockResolvedValue(
       mockOrganizations,
     );
-    (mockBalanceSheetRepository.getCurrentAssets as jest.Mock).mockResolvedValue(2000000);
+    (mockBalanceSheetRepository.getCashBalance as jest.Mock).mockResolvedValue(2000000);
     (mockBalanceSheetRepository.getBorrowingIncome as jest.Mock).mockResolvedValue(0);
     (mockBalanceSheetRepository.getBorrowingExpense as jest.Mock).mockResolvedValue(0);
     (mockBalanceSheetRepository.getCurrentLiabilities as jest.Mock).mockResolvedValue(0);
@@ -112,7 +136,8 @@ describe("GetBalanceSheetUsecase", () => {
     });
 
     expect(result.balanceSheetData.left.currentAssets).toBe(2000000);
-    expect(mockBalanceSheetRepository.getCurrentAssets).toHaveBeenCalledWith(["1", "2"]);
+    expect(mockBalanceSheetRepository.getCashBalance).toHaveBeenCalledWith(["1", "2"]);
+    expect(mockBalanceSheetRepository.getReceivables).toHaveBeenCalledWith(["1", "2"], 2025);
   });
 
   it("should throw error when organization is not found", async () => {

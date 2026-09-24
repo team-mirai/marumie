@@ -96,9 +96,12 @@ export class TransactionValidator {
     const isOffsetTransaction =
       transaction.debit_account === OFFSET_EXPENSE_ACCOUNT ||
       transaction.credit_account === OFFSET_INCOME_ACCOUNT;
+    // 非現金仕訳（BS科目同士の仕訳）は収支として表示されないため、独自のカテゴリを必須にしない
+    const isNonCashJournal = transaction.transaction_type === "non_cash_journal";
 
     if (
       !isOffsetTransaction &&
+      !isNonCashJournal &&
       (!transaction.friendly_category || transaction.friendly_category.trim() === "")
     ) {
       return "独自のカテゴリが設定されていません";

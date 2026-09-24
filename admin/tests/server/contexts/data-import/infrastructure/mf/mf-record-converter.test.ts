@@ -179,21 +179,23 @@ describe("MfRecordConverter", () => {
       expect(result.friendly_category).toBe("テストタグ");
     });
 
-    it("should set transaction_type to null when both accounts are BS categories", () => {
+    it("should set transaction_type to non_cash_journal when both accounts are BS categories (未払費用の支払)", () => {
       const record = createMockRecord({
-        debit_account: "普通預金",
-        credit_account: "未払金/未払費用",
+        debit_account: "未払費用",
+        credit_account: "普通預金",
       });
 
       const result = converter.convertRow(record, "test-org-id");
 
-      expect(result.transaction_type).toBe(null);
+      expect(result.transaction_type).toBe("non_cash_journal");
+      expect(result.status).toBe("insert");
+      expect(result.category_key).toBe("undefined");
     });
 
     it("should set transaction_type to expense when PL expense account is debit and non-cash BS account is credit", () => {
       const record = createMockRecord({
         debit_account: "事務所費",
-        credit_account: "未払金/未払費用",
+        credit_account: "未払費用",
       });
 
       const result = converter.convertRow(record, "test-org-id");
@@ -210,6 +212,65 @@ describe("MfRecordConverter", () => {
       const result = converter.convertRow(record, "test-org-id");
 
       expect(result.transaction_type).toBe("income");
+    });
+
+    it("should set transaction_type to expense when PL expense account is debit and 未払金 is credit", () => {
+      const record = createMockRecord({
+        debit_account: "備品・消耗品費",
+        credit_account: "未払金",
+      });
+
+      const result = converter.convertRow(record, "test-org-id");
+
+      expect(result.transaction_type).toBe("expense");
+      expect(result.status).toBe("insert");
+    });
+
+    it("should set transaction_type to expense when 未払費用 is debit and PL expense account is credit (未払の反対取引)", () => {
+      const record = createMockRecord({
+        debit_account: "未払費用",
+        credit_account: "宣伝事業費",
+      });
+
+      const result = converter.convertRow(record, "test-org-id");
+
+      expect(result.transaction_type).toBe("expense");
+    });
+
+    it("should set transaction_type to income when 未収入金 is debit and PL income account is credit (未収の計上)", () => {
+      const record = createMockRecord({
+        debit_account: "未収入金",
+        credit_account: "個人からの寄附",
+      });
+
+      const result = converter.convertRow(record, "test-org-id");
+
+      expect(result.transaction_type).toBe("income");
+      expect(result.status).toBe("insert");
+    });
+
+    it("should set transaction_type to non_cash_journal when 未収入金 is settled against 普通預金 (未収の回収)", () => {
+      const record = createMockRecord({
+        debit_account: "普通預金",
+        credit_account: "未収入金",
+      });
+
+      const result = converter.convertRow(record, "test-org-id");
+
+      expect(result.transaction_type).toBe("non_cash_journal");
+      expect(result.status).toBe("insert");
+    });
+
+    it("should set transaction_type to null for the legacy account 未払金/未払費用", () => {
+      const record = createMockRecord({
+        debit_account: "事務所費",
+        credit_account: "未払金/未払費用",
+      });
+
+      const result = converter.convertRow(record, "test-org-id");
+
+      expect(result.transaction_type).toBe(null);
+      expect(result.status).toBe("invalid");
     });
 
     it("should set transaction_type to expense when PL expense account is debit and 仮払金 is credit", () => {
@@ -234,15 +295,15 @@ describe("MfRecordConverter", () => {
       expect(result.transaction_type).toBe("expense");
     });
 
-    it("should set transaction_type to null when both accounts are non-cash BS categories", () => {
+    it("should set transaction_type to non_cash_journal when both accounts are non-cash BS categories", () => {
       const record = createMockRecord({
         debit_account: "仮払金",
-        credit_account: "未払金/未払費用",
+        credit_account: "未払費用",
       });
 
       const result = converter.convertRow(record, "test-org-id");
 
-      expect(result.transaction_type).toBe(null);
+      expect(result.transaction_type).toBe("non_cash_journal");
     });
 
     it("should set transaction_type to income when debit_account is 現金 and credit_account is PL category", () => {
