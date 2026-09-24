@@ -109,6 +109,46 @@ describe("TransactionValidator", () => {
       }
     });
 
+    it("should allow empty friendly_category for non-cash journals (BS/BS)", () => {
+      const transactions = [
+        createMockTransaction({
+          debit_account: "普通預金",
+          credit_account: "未収入金",
+          friendly_category: "",
+          transaction_type: "non_cash_journal",
+        }),
+        createMockTransaction({
+          debit_account: "未払費用",
+          credit_account: "普通預金",
+          friendly_category: "",
+          transaction_type: "non_cash_journal",
+        }),
+      ];
+
+      const result = validator.validatePreviewTransactions(transactions);
+
+      for (const transaction of result) {
+        expect(transaction.status).toBe("insert");
+        expect(transaction.errors).toHaveLength(0);
+      }
+    });
+
+    it("should still require friendly_category for cash transactions", () => {
+      const transactions = [
+        createMockTransaction({
+          debit_account: "未収入金",
+          credit_account: "個人からの寄附",
+          friendly_category: "",
+          transaction_type: "income",
+        }),
+      ];
+
+      const result = validator.validatePreviewTransactions(transactions);
+
+      expect(result[0].status).toBe("invalid");
+      expect(result[0].errors).toContain("独自のカテゴリが設定されていません");
+    });
+
     it("should mark the legacy account 未払金/未払費用 as invalid", () => {
       const transactions = [
         createMockTransaction({

@@ -151,6 +151,11 @@ export class MfRecordConverter implements IMfRecordConverter {
     if (isDebitBS && isCreditPL) {
       return PL_CATEGORIES[creditAccount]?.type === "expense" ? "expense" : "income";
     }
+    // BS科目同士の仕訳（未収入金の回収、未払金・未払費用の支払など）は収支ではないが、
+    // 貸借対照表の債権・負債残高の集計に必要なため、非現金仕訳として取り込む
+    if (isDebitBS && isCreditBS) {
+      return "non_cash_journal";
+    }
 
     return null;
   }
