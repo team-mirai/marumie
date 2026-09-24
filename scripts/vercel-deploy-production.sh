@@ -41,12 +41,16 @@ vercel promote "$deployment_url" --yes --no-color --scope "$VERCEL_SCOPE" --toke
 # promote の反映を待ちつつ、本番ドメインの現在のデプロイを確認する。
 # `vercel inspect <ドメイン>` はそのドメインが指すデプロイの情報を返し、
 # General セクションの `url` 行がデプロイ URL になる
+#
+# 出力は一旦すべて変数に取ってから解析する。CLI の出力を直接 awk にパイプして
+# 途中で打ち切ると、書き込み先を失った CLI が EPIPE で異常終了する（exit 134）
 current=""
+inspect_output=""
 for attempt in 1 2 3; do
-  current="$(
-    vercel inspect "https://${domain}" --no-color --scope "$VERCEL_SCOPE" --token "$VERCEL_TOKEN" 2>&1 |
-      awk '$1 == "url" { print $2; exit }'
+  inspect_output="$(
+    vercel inspect "https://${domain}" --no-color --scope "$VERCEL_SCOPE" --token "$VERCEL_TOKEN" 2>&1 || true
   )"
+  current="$(awk '$1 == "url" { print $2; exit }' <<<"$inspect_output")"
   if [ "$current" = "$deployment_url" ]; then
     echo "${app}: https://${domain} -> ${deployment_url}"
     if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
@@ -59,4 +63,7 @@ for attempt in 1 2 3; do
 done
 
 echo "::error::${app}: promote 後も https://${domain} が ${deployment_url} を指していません（現在: '${current:-unknown}'）"
+# 判定に使えなかった場合の原因調査用に、最後の inspect の出力を残す
+echo "--- vercel inspect https://${domain} ---"
+echo "$inspect_output"
 exit 1
