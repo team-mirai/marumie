@@ -4,6 +4,14 @@ import "client-only";
 import type { ApexOptions } from "apexcharts";
 import dynamic from "next/dynamic";
 
+import {
+  type AmountUnit,
+  calcSymmetricYAxisScale,
+  formatAmountIn,
+  MAN_YEN,
+  pickAmountUnit,
+} from "@/client/lib/chart-axis";
+
 // ApexChartsを動的インポート（SSR対応）
 const Chart = dynamic(() => import("react-apexcharts"), {
   ssr: false,
@@ -51,29 +59,13 @@ export default function MonthlyChart({ data }: MonthlyChartProps) {
   const balanceData = data.map((item) => item.income - item.expense);
 
   // データの最大絶対値を取得してY軸の範囲を動的に設定
+  // 刻み幅は桁数（log10）から決めるため、金額が小さくてもレンジが 0 に潰れない
   const allValues = [...incomeData, ...expenseData, ...balanceData];
   const maxAbsValue = Math.max(...allValues.map((val) => Math.abs(val)));
-  const maxWithMargin = maxAbsValue * 1.2; // 20%のマージンを追加
+  const { min: yAxisMin, max: yAxisMax, tickInterval } = calcSymmetricYAxisScale(maxAbsValue);
 
-  // maxAbsValueに応じて刻み幅を決定し、四捨五入
-  let yAxisMax: number;
-  let tickInterval: number;
-  if (maxAbsValue > 500000000) {
-    // 5億円より大きい場合は1億円刻み
-    tickInterval = 100000000;
-    yAxisMax = Math.round(maxWithMargin / tickInterval) * tickInterval;
-  } else {
-    // 5億円以下の場合は1000万円刻み
-    tickInterval = 10000000;
-    yAxisMax = Math.round(maxWithMargin / tickInterval) * tickInterval;
-  }
-  const yAxisMin = -yAxisMax;
-
-  // 明示的な目盛り位置を生成
-  const tickValues: number[] = [];
-  for (let i = yAxisMin; i <= yAxisMax; i += tickInterval) {
-    tickValues.push(i);
-  }
+  // 軸ラベルの単位は刻み幅にあわせて統一する（刻みが1万円未満なら円表示）
+  const yAxisUnit = pickAmountUnit(tickInterval);
 
   // ApexChartsのseries設定
   const series = [
@@ -162,15 +154,7 @@ export default function MonthlyChart({ data }: MonthlyChartProps) {
           text: undefined,
         },
         labels: {
-          formatter: (val: number) => {
-            if (val === 0) return "0万円";
-            const manEn = val / 10000; // 円を万円に変換
-            const absManEn = Math.abs(manEn);
-            if (absManEn >= 10000) {
-              return `${(manEn / 10000).toFixed(0)}億円`;
-            }
-            return `${manEn.toFixed(0)}万円`;
-          },
+          formatter: (val: number) => `${formatAmountIn(val, yAxisUnit)}${yAxisUnit}`,
           style: {
             colors: "#4B5563",
             fontSize: "14px",
@@ -237,28 +221,28 @@ export default function MonthlyChart({ data }: MonthlyChartProps) {
         const expense = Math.abs(series[1][dataPointIndex]); // 正の値に変換
         const balance = series[2][dataPointIndex];
 
-        const incomeManEn = (income / 10000).toFixed(0);
-        const expenseManEn = (expense / 10000).toFixed(0);
-        const balanceManEn = (balance / 10000).toFixed(0);
+        // 3つの値の最大値で単位を揃える。1万円未満しかない月は円表示にする
+        const maxAbs = Math.max(Math.abs(income), Math.abs(expense), Math.abs(balance));
+        const unit: AmountUnit = maxAbs < MAN_YEN ? "円" : "万円";
 
-        const formattedIncome = parseInt(incomeManEn, 10).toLocaleString();
-        const formattedExpense = parseInt(expenseManEn, 10).toLocaleString();
-        const formattedBalance = parseInt(balanceManEn, 10).toLocaleString();
+        const formattedIncome = formatAmountIn(income, unit);
+        const formattedExpense = formatAmountIn(expense, unit);
+        const formattedBalance = formatAmountIn(balance, unit);
         const balanceSign = balance >= 0 ? "+" : "";
 
         return `
           <div class="monthly-tooltip">
             <div class="tooltip-row">
               <span class="tooltip-label">収入</span>
-              <span class="tooltip-value income-value">${formattedIncome}<span class="tooltip-unit">万円</span></span>
+              <span class="tooltip-value income-value">${formattedIncome}<span class="tooltip-unit">${unit}</span></span>
             </div>
             <div class="tooltip-row">
               <span class="tooltip-label">支出</span>
-              <span class="tooltip-value expense-value">${formattedExpense}<span class="tooltip-unit">万円</span></span>
+              <span class="tooltip-value expense-value">${formattedExpense}<span class="tooltip-unit">${unit}</span></span>
             </div>
             <div class="tooltip-row">
               <span class="tooltip-label">収支</span>
-              <span class="tooltip-value balance-value">${balanceSign}${formattedBalance}<span class="tooltip-unit">万円</span></span>
+              <span class="tooltip-value balance-value">${balanceSign}${formattedBalance}<span class="tooltip-unit">${unit}</span></span>
             </div>
           </div>
         `;
