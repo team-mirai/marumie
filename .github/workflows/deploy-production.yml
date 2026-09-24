@@ -18,6 +18,8 @@ jobs:
 
     env:
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      # promote / inspect 用のチームスコープ（機密ではない。Vercel の URL に出ているスラッグ）
+      VERCEL_SCOPE: team-mirai
 
     steps:
       # workflow_dispatch は任意の ref を選択できるため、
