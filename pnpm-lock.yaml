@@ -101,7 +101,7 @@ importers:
         version: 1.3.1(next@16.3.5(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(@types/node@25.5.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(react@19.3.0)
       ai:
         specifier: ^6.0.6
-        version: 6.0.290(zod@4.6.2)
+        version: 6.0.292(zod@4.6.2)
       class-variance-authority:
         specifier: ^0.7.1
         version: 0.7.1
@@ -245,8 +245,8 @@ packages:
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
 
-  '@ai-sdk/gateway@3.0.200':
-    resolution: {integrity: sha512-4I7lWtXixOV0Dh9cWqBD4BRiTA7iBCfGoBRcsyv0GE35xPSh3vYkOyA8/kOEzcQ8PPiUipbRi2Vzudu5AkD/FQ==}
+  '@ai-sdk/gateway@3.0.202':
+    resolution: {integrity: sha512-Ronhnf8CD4r1etZ37foVj+1klJfipLIcIYWH7/+WsotBrB64JdVzz2iC3PpzYYOcqKVcN1gvJPBYeJTCGfStRQ==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
@@ -2215,8 +2215,8 @@ packages:
     engines: {node: '>=0.4.0'}
     hasBin: true
 
-  ai@6.0.290:
-    resolution: {integrity: sha512-DK+7M/L4mz+W7oO9v0i1ZLmaEDOArELQHUUbZkhSJxomHVu1k6AMc/QITltbEaXgd+cIPjBqqbmsKrQeUO43Qg==}
+  ai@6.0.292:
+    resolution: {integrity: sha512-bWHUQhqCoHUj+KGSmU6u5ikZY+3zbsLEBNGOxIYH8D+MLzWO/iuvFjeacE45ekfuBLX8Z1DqDnZsPL/to8pTiw==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
@@ -3906,8 +3906,8 @@ packages:
   undici-types@8.3.0:
     resolution: {integrity: sha512-j375ScV60dom+YkPFIfTLcOiPxkN/buHz5GobjLhixFuANaNs3C9l4GmrWqejgXWJ7BbJcFYpTEUkS1Ge8bpZQ==}
 
-  undici@6.28.1:
-    resolution: {integrity: sha512-zWpdTVD54H48CIybL0rWQ3ukpb9d23wM7eH5RtfdmeP70cWHNjtfo7P4vZX+5CoDcO53J4Pu5uXp7lNfjc6DRA==}
+  undici@6.29.0:
+    resolution: {integrity: sha512-R+RODBqp6i2pPflGdq+xIOUkl+RNfGgHwoinecKu/JCuf2uO06cOKoDbI2P7Dn6KcswdKwrczbU6IYJ6K8X+wg==}
     engines: {node: '>=18.17'}
 
   unrs-resolver@1.12.2:
@@ -4028,7 +4028,7 @@ snapshots:
       '@ai-sdk/provider-utils': 4.0.54(zod@4.6.2)
       zod: 4.6.2
 
-  '@ai-sdk/gateway@3.0.200(zod@4.6.2)':
+  '@ai-sdk/gateway@3.0.202(zod@4.6.2)':
     dependencies:
       '@ai-sdk/provider': 3.0.17
       '@ai-sdk/provider-utils': 4.0.54(zod@4.6.2)
@@ -4040,7 +4040,7 @@ snapshots:
       '@ai-sdk/provider': 3.0.17
       '@standard-schema/spec': 1.1.0
       eventsource-parser: 3.1.1
-      undici: 6.28.1
+      undici: 6.29.0
       zod: 4.6.2
 
   '@ai-sdk/provider@3.0.17':
@@ -5834,9 +5834,9 @@ snapshots:
 
   acorn@8.16.0: {}
 
-  ai@6.0.290(zod@4.6.2):
+  ai@6.0.292(zod@4.6.2):
     dependencies:
-      '@ai-sdk/gateway': 3.0.200(zod@4.6.2)
+      '@ai-sdk/gateway': 3.0.202(zod@4.6.2)
       '@ai-sdk/provider': 3.0.17
       '@ai-sdk/provider-utils': 4.0.54(zod@4.6.2)
       '@opentelemetry/api': 1.9.1
@@ -7667,7 +7667,7 @@ snapshots:
 
   undici-types@8.3.0: {}
 
-  undici@6.28.1: {}
+  undici@6.29.0: {}
 
   unrs-resolver@1.12.2:
     dependencies:
