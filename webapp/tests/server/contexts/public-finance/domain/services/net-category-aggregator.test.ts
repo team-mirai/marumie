@@ -87,6 +87,59 @@ describe("buildNetCategoryAggregation", () => {
     });
   });
 
+  describe("借入金", () => {
+    it("貸方の借入金（借入れ）は収入に集計する", () => {
+      const result = buildNetCategoryAggregation(
+        [{ account: "借入金", amount: 20000000 }],
+        [{ account: "普通預金", amount: 20000000 }],
+      );
+
+      expect(result.income).toEqual([{ category: "借入金", totalAmount: 20000000 }]);
+      expect(result.expense).toEqual([]);
+    });
+
+    it("借方の借入金（返済）は収入から差し引かず、借入金返済として支出に集計する", () => {
+      const result = buildNetCategoryAggregation(
+        [
+          { account: "個人からの寄附", amount: 17000000 },
+          { account: "普通預金", amount: 20683013 },
+        ],
+        [
+          { account: "普通預金", amount: 17000000 },
+          { account: "借入金", amount: 20683013 },
+        ],
+      );
+
+      expect(result.income).toEqual([
+        { category: "寄附", subcategory: "個人からの寄附", totalAmount: 17000000 },
+      ]);
+      expect(result.expense).toEqual([{ category: "借入金返済", totalAmount: 20683013 }]);
+    });
+
+    it("同じ年度に借入れと返済がある場合も相殺せず、収入と支出の両方に計上する", () => {
+      const result = buildNetCategoryAggregation(
+        [{ account: "借入金", amount: 5000000 }],
+        [{ account: "借入金", amount: 3000000 }],
+      );
+
+      expect(result.income).toEqual([{ category: "借入金", totalAmount: 5000000 }]);
+      expect(result.expense).toEqual([{ category: "借入金返済", totalAmount: 3000000 }]);
+    });
+
+    it("friendly-category モードでは返済もタグを subcategory にする", () => {
+      const result = buildNetCategoryAggregation(
+        [{ account: "普通預金", tag: "", amount: 20683013 }],
+        [{ account: "借入金", tag: "借入返済", amount: 20683013 }],
+        { useTagAsSubcategory: true },
+      );
+
+      expect(result.income).toEqual([]);
+      expect(result.expense).toEqual([
+        { category: "借入金返済", subcategory: "借入返済", totalAmount: 20683013 },
+      ]);
+    });
+  });
+
   describe("BS科目", () => {
     it("BS科目は収入・支出のどちらにも現れない", () => {
       const result = buildNetCategoryAggregation(

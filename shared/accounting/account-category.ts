@@ -269,6 +269,21 @@ export const INCOME_ACCOUNTS: string[] = Object.entries(PL_CATEGORIES)
   .map(([account]) => account);
 
 /**
+ * 借入金の科目名
+ *
+ * 政治資金収支報告書では借入れを収入に、返済を支出（借入金返済）に計上する。
+ * 借方に来た借入金は収入の返金ではなく返済なので、収入から差し引かず支出として扱う。
+ */
+export const LOAN_ACCOUNT = "借入金";
+
+/**
+ * 借方に来たときに収入の返金として収入から差し引く科目（借入金を除く収入科目）
+ */
+export const REFUNDABLE_INCOME_ACCOUNTS: string[] = INCOME_ACCOUNTS.filter(
+  (account) => account !== LOAN_ACCOUNT,
+);
+
+/**
  * 支出科目（PL科目のうち type が expense のもの）
  */
 export const EXPENSE_ACCOUNTS: string[] = Object.entries(PL_CATEGORIES)
