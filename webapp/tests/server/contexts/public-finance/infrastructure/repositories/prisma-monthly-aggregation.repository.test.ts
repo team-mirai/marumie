@@ -41,6 +41,16 @@ describe("PrismaMonthlyAggregationRepository", () => {
       expect(countValue(sql, "個人からの寄附")).toBe(2);
     });
 
+    it("貸方の加算と借方の差し引きを別々の CASE で評価して合算する", async () => {
+      const { prisma, queryRaw } = createPrismaMock();
+      const repository = new PrismaMonthlyAggregationRepository(prisma);
+
+      await repository.getIncomeByOrganizationIds(["1"], 2026);
+
+      const sql = toSql(queryRaw.mock.calls[0]);
+      expect(sql.text).toMatch(/THEN credit_amount\s+ELSE 0\s+END\s+\+ CASE\s+WHEN debit_account IN/);
+    });
+
     it("SQL の結果を年・月・合計に変換して返す", async () => {
       const { prisma } = createPrismaMock();
       const repository = new PrismaMonthlyAggregationRepository(prisma);
@@ -61,6 +71,19 @@ describe("PrismaMonthlyAggregationRepository", () => {
       const sql = toSql(queryRaw.mock.calls[0]);
       expect(countValue(sql, "借入金")).toBe(1);
       expect(sql.text).toMatch(/WHEN debit_account = \$\d+ THEN debit_amount/);
+    });
+
+    it("借方の加算と貸方の差し引きを別々の CASE で評価して合算する", async () => {
+      const { prisma, queryRaw } = createPrismaMock();
+      const repository = new PrismaMonthlyAggregationRepository(prisma);
+
+      await repository.getExpenseByOrganizationIds(["1"], 2026);
+
+      const sql = toSql(queryRaw.mock.calls[0]);
+      // 借方が借入金・貸方が支出科目の仕訳でも、返済の加算と返金の差し引きの両方が効く
+      expect(sql.text).toMatch(
+        /WHEN debit_account = \$\d+ THEN debit_amount\s+ELSE 0\s+END\s+\+ CASE\s+WHEN credit_account IN/,
+      );
     });
   });
 });
