@@ -22,6 +22,8 @@ export interface SankeyNode {
   id: string;
   label?: string;
   nodeType?: SankeyNodeType;
+  /** 費目に含まれる取引の件数（調研費）。あればツールチップに「費目　n件」と出す。 */
+  count?: number;
   /** 複数の費目をまとめたノード（調研費の「その他」）の内訳。ツールチップに出す。 */
   breakdown?: SankeyNodeBreakdownItem[];
 }

@@ -18,6 +18,8 @@ export interface ResearchFundCategoryTotal {
   label: string;
   kind: "expense" | "unused";
   totalAmount: number;
+  /** 支出の件数。未使用は支出ではないので常に0。 */
+  count: number;
 }
 
 export interface ResearchFundAggregation {
@@ -120,8 +122,10 @@ export function aggregateResearchFund(
         label: mode === "legal" ? account.legalLabel : account.label,
         kind: "expense" as const,
         totalAmount: 0,
+        count: 0,
       };
       category.totalAmount += row.amount;
+      category.count += 1;
       categories.set(key, category);
       spent += row.amount;
       monthTotal.spent += row.amount;
@@ -144,7 +148,7 @@ export function aggregateResearchFund(
         ...Array.from(categories.values())
           .filter((category) => category.totalAmount !== 0)
           .sort((a, b) => compareKeys(a.key, b.key)),
-        { key: "unused", label: "未使用", kind: "unused", totalAmount: unused },
+        { key: "unused", label: "未使用", kind: "unused", totalAmount: unused, count: 0 },
       ],
       monthly: Array.from(monthly.values()).sort((a, b) => compareKeys(a.month, b.month)),
       kpi: { granted, spent },

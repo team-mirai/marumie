@@ -22,10 +22,10 @@ describe("公開ページ用の調研費集計", () => {
       status: "valid",
       value: {
         categories: [
-          { key: "books", label: "書籍", kind: "expense", totalAmount: 4_000 },
-          { key: "taxi", label: "タクシー", kind: "expense", totalAmount: 4_000 },
-          { key: "train", label: "鉄道", kind: "expense", totalAmount: 2_000 },
-          { key: "unused", label: "未使用", kind: "unused", totalAmount: 1_990_000 },
+          { key: "books", label: "書籍", kind: "expense", totalAmount: 4_000, count: 1 },
+          { key: "taxi", label: "タクシー", kind: "expense", totalAmount: 4_000, count: 2 },
+          { key: "train", label: "鉄道", kind: "expense", totalAmount: 2_000, count: 1 },
+          { key: "unused", label: "未使用", kind: "unused", totalAmount: 1_990_000, count: 0 },
         ],
         monthly: [
           { month: "2026-02", granted: 1_000_000, spent: 4_000 },
@@ -42,9 +42,9 @@ describe("公開ページ用の調研費集計", () => {
     const legal = aggregateResearchFund(rows, accounts, "legal");
     if (detailed.status !== "valid" || legal.status !== "valid") throw new Error("集計失敗");
     expect(legal.value.categories).toEqual([
-      { key: "交通費", label: "交通費", kind: "expense", totalAmount: 6_000 },
-      { key: "資料購入費", label: "資料購入費", kind: "expense", totalAmount: 4_000 },
-      { key: "unused", label: "未使用", kind: "unused", totalAmount: 1_990_000 },
+      { key: "交通費", label: "交通費", kind: "expense", totalAmount: 6_000, count: 3 },
+      { key: "資料購入費", label: "資料購入費", kind: "expense", totalAmount: 4_000, count: 1 },
+      { key: "unused", label: "未使用", kind: "unused", totalAmount: 1_990_000, count: 0 },
     ]);
     expect(legal.value.kpi).toEqual(detailed.value.kpi);
     expect(legal.value.monthly).toEqual(detailed.value.monthly);
@@ -74,6 +74,7 @@ describe("公開ページ用の調研費集計", () => {
         label: `区分${i}`,
         kind: "expense",
         totalAmount: 700,
+        count: 7,
       })),
     );
   });

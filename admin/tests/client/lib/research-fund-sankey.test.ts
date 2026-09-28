@@ -6,7 +6,7 @@ function category(
   totalAmount: number,
   kind: ResearchFundCategoryTotal["kind"] = "expense",
 ): ResearchFundCategoryTotal {
-  return { key, label: key === "unused" ? "未使用" : key, kind, totalAmount };
+  return { key, label: key === "unused" ? "未使用" : key, kind, totalAmount, count: 0 };
 }
 
 test("描くものが無ければ null を返す", () => {

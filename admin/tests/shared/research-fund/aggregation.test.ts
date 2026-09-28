@@ -13,7 +13,7 @@ describe("公開プレビュー用の調研費集計", () => {
     expect(aggregateResearchFund([], {})).toEqual({
       status: "valid",
       value: {
-        categories: [{ key: "unused", label: "未使用", kind: "unused", totalAmount: 0 }],
+        categories: [{ key: "unused", label: "未使用", kind: "unused", totalAmount: 0, count: 0 }],
         monthly: [],
         kpi: { granted: 0, spent: 0 },
         unused: 0,
@@ -34,6 +34,7 @@ describe("公開プレビュー用の調研費集計", () => {
       label: "未使用",
       kind: "unused",
       totalAmount: amount - 100,
+      count: 0,
     });
   });
 

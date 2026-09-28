@@ -21,6 +21,7 @@ const TOTAL_NODE_ID = "total";
 interface SankeyItem {
   label: string;
   amount: number;
+  count?: number;
   breakdown?: SankeyNodeBreakdownItem[];
 }
 
@@ -53,6 +54,7 @@ export function buildResearchFundSankey(aggregation: ResearchFundAggregation): S
         id: `expense-${index}`,
         label: item.label,
         nodeType: "expense" as const,
+        ...(item.count !== undefined ? { count: item.count } : {}),
         ...(item.breakdown ? { breakdown: item.breakdown } : {}),
       })),
     ],
@@ -81,7 +83,7 @@ function groupSmallExpenses(
     category.totalAmount < granted * OTHER_THRESHOLD_RATIO;
   const small = sorted.filter(isSmall);
   if (small.length < 2) {
-    return sorted.map((category) => ({ label: category.label, amount: category.totalAmount }));
+    return sorted.map(toItem);
   }
 
   const grouped = sorted.filter(
@@ -89,14 +91,19 @@ function groupSmallExpenses(
   );
   const rest = sorted.filter((category) => !grouped.includes(category));
   return [
-    ...rest.map((category) => ({ label: category.label, amount: category.totalAmount })),
+    ...rest.map(toItem),
     {
       label: SANKEY_OTHER_LABEL,
       amount: grouped.reduce((sum, category) => sum + category.totalAmount, 0),
+      count: grouped.reduce((sum, category) => sum + category.count, 0),
       breakdown: grouped.map((category) => ({
         label: category.label,
         amount: category.totalAmount,
       })),
     },
   ];
+}
+
+function toItem(category: ResearchFundCategoryTotal): SankeyItem {
+  return { label: category.label, amount: category.totalAmount, count: category.count };
 }

@@ -79,6 +79,7 @@ interface SankeyNodeWithPosition {
   label?: string;
   nodeType?: string;
   value?: number;
+  count?: number;
   breakdown?: SankeyNodeBreakdownItem[];
   x: number;
   y: number;
@@ -214,6 +215,7 @@ const CustomNodesLayer = ({ nodes }: { nodes: readonly SankeyNodeWithPosition[] 
           >
             <div style={{ marginBottom: "3px", fontWeight: "700" }}>
               {tooltip.node.label || tooltip.node.id}
+              {tooltip.node.count !== undefined && `　${tooltip.node.count}件`}
             </div>
             <div style={{ fontSize: "14px", fontWeight: "700", color: "#1E293B" }}>
               ¥{Math.round(tooltip.node.value || 0).toLocaleString("ja-JP")}
