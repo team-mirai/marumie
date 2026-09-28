@@ -5,6 +5,7 @@ import { ResponsiveSankey } from "@nivo/sankey";
 import { useState } from "react";
 import type { MouseEvent } from "react";
 import { createPortal } from "react-dom";
+import { getSankeyHorizontalMargin } from "@/client/lib/sankey-label-margin";
 import { formatSankeyPercentage } from "@/client/lib/sankey-percentage";
 import type { SankeyData, SankeyNodeBreakdownItem } from "@/types/sankey";
 import InteractiveRect from "./InteractiveRect";
@@ -37,6 +38,8 @@ const DIMENSIONS = {
   MULTI_LINE_OFFSET: 6,
 
   // フォントサイズ
+  FONT_SIZE_DESKTOP_PX: 14.5,
+  FONT_SIZE_MOBILE_PX: 7,
   FONT_SIZE_DESKTOP: "14.5px",
   FONT_SIZE_MOBILE: "7px",
   FONT_SIZE_SUB_DESKTOP: "11px",
@@ -63,8 +66,17 @@ const TEXT_CONFIG = {
 const CHART_CONFIG = {
   MARGIN_TOP_DESKTOP: 40,
   MARGIN_TOP_MOBILE: 20,
-  MARGIN_HORIZONTAL_DESKTOP: 100,
-  MARGIN_HORIZONTAL_MOBILE: 48,
+  // 左右端のノードでも1行ぶん（最大文字数）のラベルが見切れない余白
+  MARGIN_HORIZONTAL_DESKTOP: getSankeyHorizontalMargin(
+    DIMENSIONS.LABEL_OFFSET_DESKTOP,
+    DIMENSIONS.FONT_SIZE_DESKTOP_PX,
+    TEXT_CONFIG.MAX_CHARS_PER_LINE,
+  ),
+  MARGIN_HORIZONTAL_MOBILE: getSankeyHorizontalMargin(
+    DIMENSIONS.LABEL_OFFSET_MOBILE,
+    DIMENSIONS.FONT_SIZE_MOBILE_PX,
+    TEXT_CONFIG.MAX_CHARS_PER_LINE,
+  ),
   MARGIN_BOTTOM: 30,
   NODE_THICKNESS: 12,
   NODE_SPACING_DESKTOP: 20,
