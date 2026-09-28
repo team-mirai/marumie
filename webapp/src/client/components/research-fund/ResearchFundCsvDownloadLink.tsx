@@ -8,6 +8,8 @@ interface Props {
   slug: string;
   financialYear: number;
   className?: string;
+  /** 全件ページは「出入金履歴をCSVでダウンロード」と出す */
+  label?: string;
 }
 
 /**
@@ -19,6 +21,7 @@ export default function ResearchFundCsvDownloadLink({
   slug,
   financialYear,
   className = "",
+  label = "すべての支出をCSVでダウンロード",
 }: Props) {
   const [isDownloading, setIsDownloading] = useState(false);
 
@@ -61,7 +64,7 @@ export default function ResearchFundCsvDownloadLink({
       disabled={isDownloading}
       className={`cursor-pointer rounded-md bg-white px-4 py-3 text-sm font-bold text-[#238778] transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
     >
-      {isDownloading ? "ダウンロード中..." : "すべての支出をCSVでダウンロード"}
+      {isDownloading ? "ダウンロード中..." : label}
     </button>
   );
 }

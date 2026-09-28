@@ -9,19 +9,12 @@ import type { ResearchFundExpenseView } from "@/server/contexts/research-fund/do
  */
 export const RESEARCH_FUND_CSV_HEADERS = [
   "日付",
-  "カテゴリー",
-  "法定区分",
+  "詳細の区分",
+  "法律上の区分",
   "項目",
   "金額",
   "特記事項",
-  "分割グループ",
-  "領収書",
 ] as const;
-
-/** 領収書の有無は URL ではなく有無だけを載せる（配信は認可付きの API 経由のため）。 */
-function receiptLabel(hasReceipt: boolean): string {
-  return hasReceipt ? "あり" : "なし";
-}
 
 function escapeCell(value: string | number): string {
   return `"${String(value).replace(/"/g, '""')}"`;
@@ -38,9 +31,8 @@ export function buildResearchFundCsv(expenses: readonly ResearchFundExpenseView[
         expense.legal.label,
         expense.description,
         expense.amount,
+        // 同一注文の分割行は、特記事項に「同一注文でN点購入」を含めて1点ずつ出す
         expense.note ?? "",
-        expense.splitGroup ?? "",
-        receiptLabel(expense.hasReceipt),
       ]
         .map(escapeCell)
         .join(","),

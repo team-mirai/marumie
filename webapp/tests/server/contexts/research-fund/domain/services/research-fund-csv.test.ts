@@ -28,9 +28,8 @@ describe("buildResearchFundCsv", () => {
     const [header] = buildResearchFundCsv([]).split("\n");
 
     expect(header).toBe(
-      '"日付","カテゴリー","法定区分","項目","金額","特記事項","分割グループ","領収書"',
-    );
-    expect(RESEARCH_FUND_CSV_HEADERS).toHaveLength(8);
+      '"日付","詳細の区分","法律上の区分","項目","金額","特記事項"');
+    expect(RESEARCH_FUND_CSV_HEADERS).toHaveLength(6);
   });
 
   it("支出1件を1行に書き出す", () => {
@@ -41,22 +40,22 @@ describe("buildResearchFundCsv", () => {
         legal: { label: "③ 備品・消耗品費", color: "#111111" },
         description: "ボールペン",
         amount: 330,
-        note: "同一注文で3点購入",
+        note: "同一注文で3点購入。1点ずつ行を分けて計上しています",
         splitGroup: "order-1",
         hasReceipt: true,
       }),
     ]);
 
     expect(csv.split("\n")[1]).toBe(
-      '"2026-04-23","文房具・備品","③ 備品・消耗品費","ボールペン","330","同一注文で3点購入","order-1","あり"',
+      '"2026-04-23","文房具・備品","③ 備品・消耗品費","ボールペン","330","同一注文で3点購入。1点ずつ行を分けて計上しています"',
     );
   });
 
-  it("特記事項と分割グループが無ければ空欄にし、領収書の有無を出す", () => {
-    const csv = buildResearchFundCsv([view({ note: null, splitGroup: null, hasReceipt: false })]);
+  it("特記事項が無ければ空欄にする", () => {
+    const csv = buildResearchFundCsv([view({ note: null })]);
 
     expect(csv.split("\n")[1]).toBe(
-      '"2026-04-23","タクシー代","⑨ 滞在費","タクシー代","1200","","","なし"',
+      '"2026-04-23","タクシー代","⑨ 滞在費","タクシー代","1200",""',
     );
   });
 
@@ -70,7 +69,7 @@ describe("buildResearchFundCsv", () => {
     const csv = buildResearchFundCsv([view({ note: "打ち合わせ, 資料作成" })]);
 
     expect(csv.split("\n")[1]).toContain('"打ち合わせ, 資料作成"');
-    // 区切りのカンマだけで数えると列が増えてしまうので、引用の外のカンマは7個のまま
+    // 区切りのカンマだけで数えると列が増えてしまうので、行は増えない
     expect(csv.split("\n")).toHaveLength(2);
   });
 
