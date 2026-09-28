@@ -23,7 +23,7 @@ function published(overrides: Partial<PublishedResearchFund> = {}): PublishedRes
     asOfDate: "2026-08-20",
     nextUpdateNote: "11月ごろ",
     policyComment: "事務所の立ち上げに使っています",
-    details: { dataNote: "仕訳が完了した支出を掲載しています" },
+    details: { dataNote: "仕訳が完了した支出を掲載しています。" },
     publishedThrough: "2026-08-31",
     rows: [
       { date: "2026-02-01", accountKey: "grant-income", amount: 1_000_000, type: "grant" },
@@ -33,6 +33,7 @@ function published(overrides: Partial<PublishedResearchFund> = {}): PublishedRes
       { date: "2026-03-11", accountKey: "printing-pr", amount: 99_000, type: "expense" },
     ],
     accounts,
+    expenseCategoryCount: 21,
     expenses: [
       {
         id: "1",
@@ -160,7 +161,9 @@ describe("GetResearchFundPageUsecase", () => {
     expect(data?.grantPeriodLabel).toBe("2026年2月〜8月支給分");
     expect(data?.nextUpdateNote).toBe("11月ごろ");
     expect(data?.policyComment).toBe("事務所の立ち上げに使っています");
-    expect(data?.dataNote).toBe("仕訳が完了した支出を掲載しています");
+    expect(data?.dataNote).toBe(
+      "仕訳が完了した支出を掲載しています。更新は不定期で、次回は11月ごろの予定です。使わなかった分（2ヶ月分で190万円）は年末時点で確定し、国庫に返還します。",
+    );
   });
 
   it("集計できない行があれば黙って表示せず失敗させる", async () => {

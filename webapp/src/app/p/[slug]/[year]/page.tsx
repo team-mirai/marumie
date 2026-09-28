@@ -3,12 +3,14 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import AboutSection from "@/client/components/common/AboutSection";
 import LinkCardsSection from "@/client/components/common/LinkCardsSection";
+import TransparencySection from "@/client/components/common/TransparencySection";
 import MainColumn from "@/client/components/layout/MainColumn";
 import ResearchFundAboutSection from "@/client/components/research-fund/ResearchFundAboutSection";
 import ResearchFundExpensesSection from "@/client/components/research-fund/ResearchFundExpensesSection";
 import ResearchFundFlowSection from "@/client/components/research-fund/ResearchFundFlowSection";
 import ResearchFundHighlightsSection from "@/client/components/research-fund/ResearchFundHighlightsSection";
 import ResearchFundMonthlySection from "@/client/components/research-fund/ResearchFundMonthlySection";
+import ResearchFundPartyLinkSection from "@/client/components/research-fund/ResearchFundPartyLinkSection";
 import { formatUpdatedAt } from "@/client/lib/format-date";
 import { loadResearchFundPage } from "@/server/contexts/research-fund/presentation/loaders/load-research-fund-page";
 
@@ -30,7 +32,7 @@ export async function generateMetadata({ params }: PoliticianPageProps): Promise
 
   return {
     title: data
-      ? `${data.politician.name}の調査研究費 - みらいまる見え政治資金`
+      ? `${data.politician.name}の調研費 - みらいまる見え政治資金`
       : "みらいまる見え政治資金",
   };
 }
@@ -49,9 +51,14 @@ export default async function PoliticianPage({ params }: PoliticianPageProps) {
     <MainColumn>
       <ResearchFundFlowSection data={data} updatedAt={updatedAt} />
       {hasHighlights && <ResearchFundHighlightsSection data={data} updatedAt={updatedAt} />}
+      <TransparencySection
+        title="調研費もまるごと公開。意味ある使い方か、検証できるように👀"
+        intro="議員一人ひとりに支給される調研費の原資は、大切な税金。だから、使わせていただいた分はしっかり成果を示し、使途も領収書まで含めてまるごと公開しています。チームみらいがなぜここまでオープンにするのか、"
+      />
       <ResearchFundMonthlySection data={data} updatedAt={updatedAt} />
       <ResearchFundExpensesSection data={data} updatedAt={updatedAt} />
       <ResearchFundAboutSection data={data} />
+      <ResearchFundPartyLinkSection />
       <AboutSection />
       <LinkCardsSection />
     </MainColumn>

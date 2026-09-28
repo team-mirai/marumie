@@ -10,6 +10,7 @@ import type {
 } from "@/server/contexts/research-fund/domain/models/research-fund-page";
 import type { ResearchFundRepository } from "@/server/contexts/research-fund/domain/repositories/research-fund-repository.interface";
 import { buildGrantPeriodLabel } from "@/server/contexts/research-fund/domain/services/research-fund-coverage";
+import { buildResearchFundDataNote } from "@/server/contexts/research-fund/domain/services/research-fund-data-note";
 import { researchFundCategoryColor } from "@/server/contexts/research-fund/domain/services/research-fund-category-color";
 import { parseResearchFundDetails } from "@/server/contexts/research-fund/domain/services/research-fund-details";
 import { buildExpenseViews } from "@/server/contexts/research-fund/domain/services/research-fund-expense-list";
@@ -38,6 +39,11 @@ export class GetResearchFundPageUsecase {
     const detailed = aggregate(published.rows, published.accounts, "detailed");
     const legal = aggregate(published.rows, published.accounts, "legal");
     const details = parseResearchFundDetails(published.details);
+    const monthly = buildMonthlyViews(
+      detailed.monthly,
+      published.financialYear,
+      published.publishedThrough,
+    );
 
     return {
       politician: published.politician,
@@ -49,18 +55,20 @@ export class GetResearchFundPageUsecase {
       }),
       nextUpdateNote: published.nextUpdateNote,
       policyComment: published.policyComment,
-      dataNote: details.dataNote,
+      dataNote: buildResearchFundDataNote({
+        dataNote: details.dataNote,
+        expenseCategoryCount: published.expenseCategoryCount,
+        nextUpdateNote: published.nextUpdateNote,
+        monthly,
+        unused: detailed.unused,
+      }),
       kpi: detailed.kpi,
       unused: detailed.unused,
       sankey: {
         detailed: buildResearchFundSankey(detailed),
         legal: buildResearchFundSankey(legal),
       },
-      monthly: buildMonthlyViews(
-        detailed.monthly,
-        published.financialYear,
-        published.publishedThrough,
-      ),
+      monthly,
       expenses: buildExpenseViews(published.expenses, published.accounts),
       groups: published.groups.map((group) => buildGroupView(group, published.accounts)),
     };

@@ -65,6 +65,8 @@ export interface PublishedResearchFund {
   /** 集計に渡す行（支給と支出）。 */
   rows: ResearchFundRow[];
   accounts: Record<string, PublishedAccount>;
+  /** 科目マスタの費用の分類数（法定区分が決まっている科目。下書き用の「要確認」は数えない） */
+  expenseCategoryCount: number;
   expenses: PublishedExpense[];
   groups: PublishedExpenditureGroup[];
 }

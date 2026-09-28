@@ -14,7 +14,7 @@ test.describe("調査研究費 議員ページ", () => {
 
 		expect(response?.status()).toBe(200);
 		await expect(page).toHaveTitle(
-			/サンプル 太郎の調査研究費.*みらいまる見え政治資金/,
+			/サンプル 太郎の調研費.*みらいまる見え政治資金/,
 		);
 
 		// 収支の流れ（KPI2枚＋サンキー）
@@ -47,9 +47,25 @@ test.describe("調査研究費 議員ページ", () => {
 			page.locator("#transactions").getByRole("heading", { name: /すべての支出/ }),
 		).toBeVisible();
 
+		// 透明性バンド
+		await expect(
+			page.getByRole("heading", { name: /調研費もまるごと公開/ }),
+		).toBeVisible();
+		await expect(page.getByRole("link", { name: "こちらのnote" })).toHaveAttribute(
+			"href",
+			"https://note.com/team_mirai_jp/n/n58fca6f9e4e8",
+		);
+
 		// B-5 データについて
-		await expect(page.getByText("調査研究費のデータについて")).toBeVisible();
-		await expect(page.getByText(/余った分：.*は使っていません/)).toBeVisible();
+		await expect(page.getByText("調研費のデータについて")).toBeVisible();
+		await expect(
+			page.getByText(/使わなかった分（.*）は年末時点で確定し、国庫に返還します。/),
+		).toBeVisible();
+
+		// 政党ページへの導線
+		await expect(
+			page.getByRole("link", { name: /政党・チームみらいの「まる見え政治資金」も公開中/ }),
+		).toHaveAttribute("href", "/o/team-mirai");
 
 		expect(errors, `以下のエラーが発生しました:\n${errors.join("\n")}`).toHaveLength(0);
 	});

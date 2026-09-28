@@ -114,6 +114,10 @@ export class PrismaResearchFundRepository implements ResearchFundRepository {
     });
     if (!book) return null;
 
+    const expenseCategoryCount = await this.prisma.researchFundAccount.count({
+      where: { type: "expense", legalCategoryKey: { not: null } },
+    });
+
     const rows: ResearchFundRow[] = [];
     const expenses: PublishedExpense[] = [];
     const accounts: Record<string, PublishedAccount> = {};
@@ -180,6 +184,7 @@ export class PrismaResearchFundRepository implements ResearchFundRepository {
       publishedThrough: book.publishedThrough ? dateOf(book.publishedThrough) : null,
       rows,
       accounts,
+      expenseCategoryCount,
       expenses,
       groups,
     };

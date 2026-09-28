@@ -7,28 +7,8 @@ const BODY_CLASS =
   "text-[11px] sm:text-[15px] leading-[1.82] sm:leading-[1.87] tracking-[0.01em] text-gray-500 sm:text-gray-800 font-medium sm:font-normal font-japanese";
 const HEADING_CLASS = "text-base sm:text-lg font-bold text-gray-800 mb-3 font-japanese";
 
-function formatMan(amount: number): string {
-  return `${Math.round(amount / 10000).toLocaleString("ja-JP")}万円`;
-}
-
-/**
- * 未使用分の説明。返還額を成績のように見せないため、数字を出すのは
- * サンキーの最終帯とこの文の2箇所だけにする（デザイン仕様 §5）。
- */
-function unusedSentence(data: ResearchFundPageData): string {
-  const grantedMonths = data.monthly.filter((month) => month.granted > 0).length;
-  const period = grantedMonths > 0 ? `${grantedMonths}ヶ月分・` : "";
-  return `余った分：${formatMan(data.kpi.spent)}を使い、${formatMan(
-    data.unused,
-  )}は使っていません（${period}年末時点で確定します）。`;
-}
-
 /** B-5 データについて。既存の「データについて」と同構成に、調研費の記載を足す。 */
 export default function ResearchFundAboutSection({ data }: { data: ResearchFundPageData }) {
-  const updateNote = data.nextUpdateNote
-    ? `更新は不定期で、次回は${data.nextUpdateNote}の予定です。`
-    : "更新は不定期です。";
-
   return (
     <MainColumnCard id="explanation">
       <div className="space-y-9">
@@ -58,13 +38,8 @@ export default function ResearchFundAboutSection({ data }: { data: ResearchFundP
         </div>
 
         <div>
-          <h3 className={HEADING_CLASS}>調査研究費のデータについて</h3>
-          <p className={BODY_CLASS}>
-            {data.dataNote ??
-              `${data.financialYear}年に${data.politician.name}に支給された調査研究費のうち、仕訳が完了し公開した支出を1件ずつ掲載しています。費目はチームみらい独自の詳細区分にマッピングし、使途等報告書で定められた法律上の区分にも切り替えて表示できます。`}
-            {updateNote}
-            {unusedSentence(data)}
-          </p>
+          <h3 className={HEADING_CLASS}>調研費のデータについて</h3>
+          <p className={BODY_CLASS}>{data.dataNote}</p>
         </div>
 
         <div>

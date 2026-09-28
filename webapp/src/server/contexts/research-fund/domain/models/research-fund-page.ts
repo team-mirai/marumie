@@ -70,8 +70,8 @@ export interface ResearchFundPageData {
   grantPeriodLabel: string | null;
   nextUpdateNote: string | null;
   policyComment: string | null;
-  /** B-5「調査研究費のデータについて」の本文。未設定なら null */
-  dataNote: string | null;
+  /** B-5「調研費のデータについて」の本文。帳簿の説明文と次回更新・未使用額から組み立て済み */
+  dataNote: string;
   kpi: { granted: number; spent: number };
   /** 支給されて、まだ使っていない額。「国庫へ返還」とは呼ばない。 */
   unused: number;
