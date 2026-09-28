@@ -40,7 +40,7 @@ export interface ResearchFundExpenseView {
   receiptKind: ResearchFundReceiptKind | null;
 }
 
-/** B-2 の1か月分。未公開の月は published が false になり、点線の空枠で描く。 */
+/** B-2 の1か月分。データのない月は published が false になり、棒を描かず月ラベルを薄くする。 */
 export interface ResearchFundMonthView {
   /** YYYY-MM */
   month: string;

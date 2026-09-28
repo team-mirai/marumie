@@ -13,7 +13,6 @@ interface Props {
 const LEGEND = [
   { label: "支給", color: "#2AA693" },
   { label: "支出", color: "#DC2626" },
-  { label: "未公開", color: null },
 ];
 
 /** B-2 1年間の推移。 */
@@ -22,7 +21,7 @@ export default function ResearchFundMonthlySection({ data, updatedAt }: Props) {
     <MainColumnCard id="monthly-trends">
       <CardHeader
         icon={<Image src="/icons/icon-barchart.svg" alt="Bar chart icon" width={30} height={30} />}
-        organizationName={data.politician.name}
+        organizationName={`${data.politician.name}・調研費`}
         title="月ごとの支出の推移"
         updatedAt={updatedAt}
         subtitle="今年の月ごとの支給と支出"
@@ -37,14 +36,7 @@ export default function ResearchFundMonthlySection({ data, updatedAt }: Props) {
       <div className="-mt-4 flex flex-wrap justify-end gap-3 text-sm font-bold text-[#4B5563]">
         {LEGEND.map((item) => (
           <span key={item.label} className="flex items-center gap-1.5">
-            <span
-              className="inline-block h-3 w-3"
-              style={
-                item.color
-                  ? { background: item.color }
-                  : { border: "1px dashed #C3C8D0", background: "transparent" }
-              }
-            />
+            <span className="inline-block h-3 w-3" style={{ background: item.color }} />
             {item.label}
           </span>
         ))}

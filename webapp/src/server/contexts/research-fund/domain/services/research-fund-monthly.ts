@@ -5,7 +5,7 @@ import type { ResearchFundAggregation } from "@/shared/research-fund/aggregation
  * B-2 の1年分（1月〜12月）を組み立てる。
  *
  * 公開範囲（published_through）より後の月は「まだ公開していない」ことが伝わるよう
- * 空欄にし、描画側が点線の空枠で描く。公開範囲の中にある月は、支出が無くても
+ * 空欄にし、描画側は棒を描かず月ラベルを薄くする。公開範囲の中にある月は、支出が無くても
  * 0円として実線で描く（データが無いのではなく、使っていないという意味）。
  */
 export function buildMonthlyViews(

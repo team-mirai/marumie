@@ -1,132 +1,210 @@
+"use client";
+import "client-only";
+
+import { useState } from "react";
+import {
+  type AmountUnit,
+  calcSymmetricYAxisScale,
+  formatAmountIn,
+  MAN_YEN,
+  pickAmountUnit,
+} from "@/client/lib/chart-axis";
 import type { ResearchFundMonthView } from "@/server/contexts/research-fund/domain/models/research-fund-page";
 
 const WIDTH = 936;
-const HEIGHT = 420;
+const HEIGHT = 462;
 const MARGIN = { top: 20, right: 24, bottom: 44, left: 88 };
 const PLOT_HEIGHT = HEIGHT - MARGIN.top - MARGIN.bottom;
 const ZERO_Y = MARGIN.top + PLOT_HEIGHT / 2;
-const BAR_WIDTH = 40;
+const MAX_BAR_WIDTH = 52.5;
 
 const GRANT_COLOR = "#2AA693";
 const SPEND_COLOR = "#DC2626";
 const AXIS_COLOR = "#E2E8F0";
+const ZERO_LINE_COLOR = "#4B5563";
 const LABEL_COLOR = "#4B5563";
+const EMPTY_MONTH_LABEL_COLOR = "#B6BCC6";
 
-/** 目盛りの候補。ラベルが6本を超えない一番細かい刻みを選ぶ。 */
-const TICK_CANDIDATES = [100_000, 500_000, 1_000_000, 5_000_000, 10_000_000, 50_000_000];
-
-function formatMan(amount: number): string {
-  return `${Math.round(amount / 10000).toLocaleString("ja-JP")}万円`;
+interface MonthlyChartScale {
+  /** 下から上へ並んだ目盛りの値（0を挟んで上下対称） */
+  ticks: number[];
+  unit: AmountUnit;
+  yMax: number;
 }
 
-function scaleOf(monthly: readonly ResearchFundMonthView[]) {
-  const maxAbs = Math.max(1, ...monthly.map((month) => Math.max(month.granted, month.spent)));
-  const target = maxAbs * 1.2;
-  const tick =
-    TICK_CANDIDATES.find((candidate) => target / candidate <= 6) ??
-    TICK_CANDIDATES[TICK_CANDIDATES.length - 1];
-  const yMax = Math.max(tick, Math.ceil(target / tick) * tick);
-  return { tick, yMax, pixelsPerYen: PLOT_HEIGHT / 2 / yMax };
+/**
+ * Y軸の目盛りと単位。政治団体ページの月次グラフ（MonthlyChart）と同じく
+ * chart-axis の規則（1/2/5×10ⁿ 刻み・0を挟んで対称・刻み幅に合わせた単位）で決める。
+ * 未公開の月は金額が 0 なので、公開済みの月だけを対象にする。
+ */
+export function calcResearchFundMonthlyScale(
+  monthly: readonly ResearchFundMonthView[],
+): MonthlyChartScale {
+  const maxAbsValue = Math.max(
+    0,
+    ...monthly
+      .filter((month) => month.published)
+      .map((month) => Math.max(month.granted, month.spent)),
+  );
+  const { max, tickInterval } = calcSymmetricYAxisScale(maxAbsValue);
+  return {
+    ticks: [-2, -1, 0, 1, 2].map((step) => step * tickInterval),
+    unit: pickAmountUnit(tickInterval),
+    yMax: max,
+  };
+}
+
+/** ツールチップの単位。1万円未満しかない月は円で出す（MonthlyChart と同じ）。 */
+function tooltipUnit(month: ResearchFundMonthView): AmountUnit {
+  return Math.max(month.granted, month.spent) < MAN_YEN ? "円" : "万円";
+}
+
+interface TooltipState {
+  index: number;
+  x: number;
+  y: number;
 }
 
 /**
  * B-2 1年間の推移。中央のゼロ線から上が支給、下が支出の上下対向の棒グラフ。
- * まだ公開していない月は、データが無いのではないことが伝わるよう点線の空枠で描く。
+ * データのない月（当選前・未到来）は棒を描かず、月ラベルを薄くして表す。
  */
 export default function ResearchFundMonthlyChart({
   monthly,
 }: {
   monthly: ResearchFundMonthView[];
 }) {
-  const { tick, yMax, pixelsPerYen } = scaleOf(monthly);
+  const [tooltip, setTooltip] = useState<TooltipState | null>(null);
+  const { ticks, unit, yMax } = calcResearchFundMonthlyScale(monthly);
+  const pixelsPerYen = PLOT_HEIGHT / 2 / yMax;
   const step = (WIDTH - MARGIN.left - MARGIN.right) / Math.max(monthly.length, 1);
-  const ticks: number[] = [];
-  for (let value = -yMax; value <= yMax; value += tick) ticks.push(value);
+  const barWidth = Math.min(MAX_BAR_WIDTH, step * 0.62);
+  const tooltipMonth = tooltip ? monthly[tooltip.index] : null;
+  const tooltipRowUnit = tooltipMonth ? tooltipUnit(tooltipMonth) : "万円";
 
   return (
-    <svg
-      viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
-      width="100%"
-      role="img"
-      aria-label="月ごとの調査研究費の支給と支出"
-    >
-      <title>月ごとの調査研究費の支給と支出</title>
-      {/* ticks はゼロ線の下側を負の座標で持つが、支出額そのものは非負なのでラベルに符号は出さない。 */}
-      {ticks.map((value) => (
-        <text
-          key={`tick-${value}`}
-          x={MARGIN.left - 12}
-          y={ZERO_Y - value * pixelsPerYen}
-          textAnchor="end"
-          dominantBaseline="middle"
-          fontSize={14}
-          fontWeight={500}
-          fill={LABEL_COLOR}
+    <div className="relative">
+      <svg
+        viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
+        width="100%"
+        role="img"
+        aria-label="月ごとの調査研究費の支給と支出"
+        onMouseMove={(event) => {
+          const rect = event.currentTarget.getBoundingClientRect();
+          const viewBoxX = ((event.clientX - rect.left) / rect.width) * WIDTH;
+          const index = Math.floor((viewBoxX - MARGIN.left) / step);
+          setTooltip(
+            monthly[index]?.published
+              ? { index, x: event.clientX - rect.left, y: event.clientY - rect.top }
+              : null,
+          );
+        }}
+        onMouseLeave={() => setTooltip(null)}
+      >
+        <title>月ごとの調査研究費の支給と支出</title>
+        {ticks.map((value) => (
+          <text
+            key={`tick-${value}`}
+            x={MARGIN.left - 12}
+            y={ZERO_Y - value * pixelsPerYen}
+            textAnchor="end"
+            dominantBaseline="middle"
+            fontSize={14}
+            fontWeight={500}
+            fill={LABEL_COLOR}
+          >
+            {`${formatAmountIn(value, unit)}${unit}`}
+          </text>
+        ))}
+        <line
+          x1={MARGIN.left}
+          y1={MARGIN.top}
+          x2={MARGIN.left}
+          y2={MARGIN.top + PLOT_HEIGHT}
+          stroke={AXIS_COLOR}
+        />
+        <line
+          x1={MARGIN.left}
+          y1={MARGIN.top + PLOT_HEIGHT}
+          x2={WIDTH - MARGIN.right}
+          y2={MARGIN.top + PLOT_HEIGHT}
+          stroke={AXIS_COLOR}
+        />
+        {monthly.map((month, index) => {
+          const centerX = MARGIN.left + step * index + step / 2;
+          const x = centerX - barWidth / 2;
+          const monthLabel = `${Number(month.month.slice(5, 7))}月`;
+          return (
+            <g key={month.month}>
+              {month.published && (
+                <g className="cursor-pointer">
+                  <rect
+                    x={MARGIN.left + step * index}
+                    y={MARGIN.top}
+                    width={step}
+                    height={PLOT_HEIGHT}
+                    fill="transparent"
+                  />
+                  <rect
+                    x={x}
+                    y={ZERO_Y - month.granted * pixelsPerYen}
+                    width={barWidth}
+                    height={month.granted * pixelsPerYen}
+                    fill={GRANT_COLOR}
+                  />
+                  <rect
+                    x={x}
+                    y={ZERO_Y}
+                    width={barWidth}
+                    height={month.spent * pixelsPerYen}
+                    fill={SPEND_COLOR}
+                  />
+                </g>
+              )}
+              <text
+                x={centerX}
+                y={MARGIN.top + PLOT_HEIGHT + 24}
+                textAnchor="middle"
+                fontSize={13}
+                fontWeight={500}
+                fill={month.published ? LABEL_COLOR : EMPTY_MONTH_LABEL_COLOR}
+              >
+                {monthLabel}
+              </text>
+            </g>
+          );
+        })}
+        <line
+          x1={MARGIN.left}
+          y1={ZERO_Y}
+          x2={WIDTH - MARGIN.right}
+          y2={ZERO_Y}
+          stroke={ZERO_LINE_COLOR}
+          strokeWidth={1}
+        />
+      </svg>
+
+      {tooltip && tooltipMonth && (
+        <div
+          className="pointer-events-none absolute z-10 min-w-max rounded-[6px] border border-[#64748B] bg-white/85 px-[22px] py-[11px] shadow-md"
+          style={{ left: tooltip.x + 12, top: tooltip.y + 12 }}
         >
-          {formatMan(Math.abs(value))}
-        </text>
-      ))}
-      <line
-        x1={MARGIN.left}
-        y1={MARGIN.top}
-        x2={MARGIN.left}
-        y2={MARGIN.top + PLOT_HEIGHT}
-        stroke={AXIS_COLOR}
-      />
-      {monthly.map((month, index) => {
-        const centerX = MARGIN.left + step * index + step / 2;
-        const x = centerX - BAR_WIDTH / 2;
-        const monthLabel = `${Number(month.month.slice(5, 7))}月`;
-        return (
-          <g key={month.month}>
-            {month.published ? (
-              <>
-                <rect
-                  x={x}
-                  y={ZERO_Y - month.granted * pixelsPerYen}
-                  width={BAR_WIDTH}
-                  height={month.granted * pixelsPerYen}
-                  fill={GRANT_COLOR}
-                />
-                <rect
-                  x={x}
-                  y={ZERO_Y}
-                  width={BAR_WIDTH}
-                  height={month.spent * pixelsPerYen}
-                  fill={SPEND_COLOR}
-                />
-              </>
-            ) : (
-              <rect
-                x={x}
-                y={ZERO_Y - tick * pixelsPerYen}
-                width={BAR_WIDTH}
-                height={tick * pixelsPerYen}
-                fill="none"
-                stroke="#C3C8D0"
-                strokeDasharray="4 4"
-              />
-            )}
-            <text
-              x={centerX}
-              y={MARGIN.top + PLOT_HEIGHT + 24}
-              textAnchor="middle"
-              fontSize={14}
-              fontWeight={500}
-              fill={month.published ? LABEL_COLOR : "#9CA3AF"}
-            >
-              {monthLabel}
-            </text>
-          </g>
-        );
-      })}
-      <line
-        x1={MARGIN.left}
-        y1={ZERO_Y}
-        x2={WIDTH - MARGIN.right}
-        y2={ZERO_Y}
-        stroke={LABEL_COLOR}
-      />
-    </svg>
+          {[
+            { label: "支給", value: tooltipMonth.granted, color: "#238778" },
+            { label: "支出", value: tooltipMonth.spent, color: SPEND_COLOR },
+          ].map((row) => (
+            <div key={row.label} className="flex items-center justify-between gap-4">
+              <span className="text-[13px] font-bold leading-[1.31] text-[#4B5563]">
+                {row.label}
+              </span>
+              <span className="text-sm font-bold leading-normal" style={{ color: row.color }}>
+                {formatAmountIn(row.value, tooltipRowUnit)}
+                <span className="text-[13px] leading-[1.31]">{tooltipRowUnit}</span>
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
