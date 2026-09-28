@@ -31,9 +31,9 @@ test.describe("調査研究費 議員ページ", () => {
 			page.locator('#monthly-trends [role="img"][aria-label="月ごとの調査研究費の支給と支出"]'),
 		).toBeVisible();
 
-		// B-3 活用方針と主要な成果
+		// B-3 活用方針と主な用途
 		await expect(
-			page.locator("#highlights").getByText("サンプル 太郎の調査研究費の活用方針"),
+			page.locator("#highlights").getByText("サンプル 太郎の調研費の活用方針"),
 		).toBeVisible();
 		await expect(page.getByText("タウンミーティングの開催")).toBeVisible();
 		// URL の無い成果物は「報告は準備中」と出す

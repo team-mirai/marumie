@@ -25,22 +25,40 @@ function formatPeriod(period: ResearchFundGroupView["period"]): string {
     : `${formatDate(period.start)}〜${formatDate(period.end)}`;
 }
 
-/** B-3 主要な支出の成果。活用方針と、支出群ごとの成果カード。 */
+function StarIcon() {
+  return (
+    <svg
+      width="12"
+      height="12"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M12 2l2.4 6.6L21 9l-5.2 4.3L17.5 21 12 17.3 6.5 21l1.7-7.7L3 9l6.6-.4z" />
+    </svg>
+  );
+}
+
+/** 活用方針と主な用途。活用方針と、支出群ごとの用途カード。 */
 export default function ResearchFundHighlightsSection({ data, updatedAt }: Props) {
   return (
     <MainColumnCard id="highlights">
       <CardHeader
         icon={<Image src="/icons/icon-heart-handshake.svg" alt="" width={30} height={30} />}
-        organizationName={data.politician.name}
-        title="活用方針と主要な成果"
+        organizationName={`${data.politician.name}・調研費`}
+        title="活用方針と主な用途"
         updatedAt={updatedAt}
-        subtitle="調査研究費の使用方針と、主要な支出に対する成果"
+        subtitle="調研費の活用方針と、主要な支出の目的"
       />
 
       {data.policyComment && (
-        <div className="border-l-4 border-[#9CA3AF] bg-[#F3F4F6] px-6 py-5">
+        <div className="rounded-2xl border border-[#E5E7EB] bg-gradient-to-br from-[#E2F6F3] to-[#EEF6E2] p-6">
           <div className="text-base font-bold text-gray-800">
-            {data.politician.name}の調査研究費の活用方針
+            {data.politician.name}の調研費の活用方針
           </div>
           <p className="mt-2 text-[15px] leading-[1.87] tracking-[0.01em] text-gray-800">
             {data.policyComment}
@@ -49,20 +67,32 @@ export default function ResearchFundHighlightsSection({ data, updatedAt }: Props
       )}
 
       {data.groups.length > 0 && (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(280px,1fr))] gap-4">
           {data.groups.map((group, index) => (
             <div
               key={group.id}
               id={`highlight-${group.id}`}
-              className="flex flex-col gap-3 rounded-2xl border border-[#E5E7EB] p-5"
+              // ヘッダーが固定表示なので、ページ内リンクで飛んだときにカードが隠れないよう上を空ける。
+              className="flex scroll-mt-[120px] flex-col gap-3 rounded-2xl border border-[#E5E7EB] p-6"
             >
               <div className="flex flex-wrap items-center gap-2">
-                <span className="inline-flex h-5 items-center rounded-full bg-[#E2F6F3] px-2 text-[11px] font-bold text-[#238778]">
-                  成果{index + 1}
+                <span className="inline-flex h-5 items-center gap-[3px] whitespace-nowrap rounded-full bg-[#E2F6F3] px-2 text-[11px] font-bold text-[#238778]">
+                  <StarIcon />
+                  用途{index + 1}
                 </span>
                 <span className="text-xs text-[#4B5563]">
                   {formatPeriod(group.period)}
-                  {group.count > 0 && `　${group.count}件`}
+                  {group.count > 0 && (
+                    <>
+                      {"　"}
+                      <a
+                        href="#transactions"
+                        className="font-bold text-[#238778] underline underline-offset-2 hover:no-underline"
+                      >
+                        {group.count}件
+                      </a>
+                    </>
+                  )}
                 </span>
               </div>
 
@@ -82,7 +112,9 @@ export default function ResearchFundHighlightsSection({ data, updatedAt }: Props
                 </div>
               )}
 
-              <p className="text-sm leading-[1.87] text-gray-800">{group.description}</p>
+              <p className="text-sm leading-[1.87] text-gray-800 text-pretty">
+                {group.description}
+              </p>
 
               {group.outcomes.map((outcome) =>
                 outcome.url ? (
