@@ -2,7 +2,7 @@
 import "client-only";
 
 import { ResponsiveSankey } from "@nivo/sankey";
-import { useState } from "react";
+import { createContext, useContext, useState } from "react";
 import type { MouseEvent } from "react";
 import { createPortal } from "react-dom";
 import { getSankeyHorizontalMargin } from "@/client/lib/sankey-label-margin";
@@ -43,6 +43,7 @@ const DIMENSIONS = {
   FONT_SIZE_DESKTOP: "14.5px",
   FONT_SIZE_MOBILE: "7px",
   FONT_SIZE_SUB_DESKTOP: "11px",
+  FONT_SIZE_SUB_MOBILE_PX: 6,
   FONT_SIZE_SUB_MOBILE: "6px",
 
   // その他
@@ -77,6 +78,12 @@ const CHART_CONFIG = {
     DIMENSIONS.FONT_SIZE_MOBILE_PX,
     TEXT_CONFIG.MAX_CHARS_PER_LINE,
   ),
+  // 両端が小項目と同じ文字サイズのとき（compactMobileLabels）の SP の余白
+  MARGIN_HORIZONTAL_MOBILE_COMPACT: getSankeyHorizontalMargin(
+    DIMENSIONS.LABEL_OFFSET_MOBILE,
+    DIMENSIONS.FONT_SIZE_SUB_MOBILE_PX,
+    TEXT_CONFIG.MAX_CHARS_PER_LINE,
+  ),
   MARGIN_BOTTOM: 30,
   NODE_THICKNESS: 12,
   NODE_SPACING_DESKTOP: 20,
@@ -85,6 +92,19 @@ const CHART_CONFIG = {
   LINK_HOVER_OPACITY: 0.8,
   HOVER_OPACITY: 0.9,
 } as const;
+
+// SP の割合・合計ラベルの文字サイズ。compact は両端のラベルを小項目の大きさにそろえたときに使う
+const MOBILE_FIGURE_TEXT = {
+  REGULAR: {
+    FONT_SIZE: "8px",
+    TSPAN_DY: DIMENSIONS.TSPAN_DY_MOBILE,
+    TOP_OFFSET: DIMENSIONS.TOTAL_LABEL_TOP_OFFSET_MOBILE,
+  },
+  COMPACT: { FONT_SIZE: "7px", TSPAN_DY: 9, TOP_OFFSET: 11 },
+} as const;
+
+/** 両端（大項目）のラベルも SP で小項目と同じ文字サイズにするか。列の少ない図で文字が目立ちすぎないようにする。 */
+const CompactMobileLabelsContext = createContext(false);
 
 interface SankeyNodeWithPosition {
   id: string;
@@ -105,6 +125,11 @@ interface SankeyChartProps {
   ariaLabel?: string;
   /** 図の詳細を説明する読み上げ用テキスト。ariaLabel と食い違わないよう合わせて差し替える。 */
   ariaDescription?: string;
+  /**
+   * SP で両端のノード名を小項目と同じ文字サイズにし、割合・合計もそれに合わせて小さくする。
+   * 小項目の列が無い（両端が大項目になる）図で、文字が帯より目立たないようにするために使う。
+   */
+  compactMobileLabels?: boolean;
 }
 
 const getNodeWidth = (nodeType: string | undefined, isMobile: boolean) => {
@@ -261,8 +286,10 @@ const renderTotalNodeLabels = (
   _boxColor: string,
   percentageY: number,
   isMobile: boolean,
+  compactMobileLabels: boolean,
 ) => {
   const elements = [];
+  const mobileText = compactMobileLabels ? MOBILE_FIGURE_TEXT.COMPACT : MOBILE_FIGURE_TEXT.REGULAR;
 
   // 上のラベル：「収入支出\n100%」
   elements.push(
@@ -271,14 +298,12 @@ const renderTotalNodeLabels = (
       x={node.x + node.width / 2}
       y={
         percentageY -
-        (!isMobile
-          ? DIMENSIONS.TOTAL_LABEL_TOP_OFFSET_DESKTOP
-          : DIMENSIONS.TOTAL_LABEL_TOP_OFFSET_MOBILE)
+        (!isMobile ? DIMENSIONS.TOTAL_LABEL_TOP_OFFSET_DESKTOP : mobileText.TOP_OFFSET)
       }
       textAnchor="middle"
       dominantBaseline="text-after-edge"
       fill={TEXT}
-      fontSize={!isMobile ? "14.5px" : "8px"}
+      fontSize={!isMobile ? "14.5px" : mobileText.FONT_SIZE}
       fontWeight="bold"
     >
       <tspan x={node.x + node.width / 2} dy="0">
@@ -286,7 +311,7 @@ const renderTotalNodeLabels = (
       </tspan>
       <tspan
         x={node.x + node.width / 2}
-        dy={!isMobile ? DIMENSIONS.TSPAN_DY_DESKTOP : DIMENSIONS.TSPAN_DY_MOBILE}
+        dy={!isMobile ? DIMENSIONS.TSPAN_DY_DESKTOP : mobileText.TSPAN_DY}
       >
         {TEXT_CONFIG.TOTAL_LABEL_PERCENTAGE}
       </tspan>
@@ -308,7 +333,7 @@ const renderTotalNodeLabels = (
         textAnchor="middle"
         dominantBaseline="text-before-edge"
         fill={TEXT}
-        fontSize={!isMobile ? "14.5px" : "8px"}
+        fontSize={!isMobile ? "14.5px" : mobileText.FONT_SIZE}
         fontWeight="bold"
       >
         {amountText}
@@ -367,6 +392,7 @@ const renderPercentageLabel = (
   boxColor: string,
   percentageY: number,
   isMobile: boolean,
+  compactMobileLabels: boolean,
   getPercentageTextColor: (nodeLabel?: string, boxColor?: string) => string,
 ) => {
   if (!percentageText) {
@@ -383,7 +409,13 @@ const renderPercentageLabel = (
       textAnchor="middle"
       dominantBaseline="text-after-edge"
       fill={textColor}
-      fontSize={!isMobile ? "14.5px" : "8px"}
+      fontSize={
+        !isMobile
+          ? "14.5px"
+          : compactMobileLabels
+            ? MOBILE_FIGURE_TEXT.COMPACT.FONT_SIZE
+            : MOBILE_FIGURE_TEXT.REGULAR.FONT_SIZE
+      }
       fontWeight="bold"
     >
       {percentageText}
@@ -396,15 +428,18 @@ const renderPrimaryLabel = (
   x: number,
   textAnchor: "start" | "middle" | "end" | "inherit",
   isMobile: boolean,
+  compactMobileLabels: boolean,
 ) => {
   const label = node.label || node.id;
   const isSubcategory = node.nodeType === "income-sub" || node.nodeType === "expense-sub";
+  // 文字サイズ・行間だけ小項目にそろえる（1行の文字数＝折り返しは大項目のまま）
+  const useSubTextSize = isSubcategory || (isMobile && compactMobileLabels);
 
   const fontSize = !isMobile
     ? isSubcategory
       ? DIMENSIONS.FONT_SIZE_SUB_DESKTOP
       : DIMENSIONS.FONT_SIZE_DESKTOP
-    : isSubcategory
+    : useSubTextSize
       ? DIMENSIONS.FONT_SIZE_SUB_MOBILE
       : DIMENSIONS.FONT_SIZE_MOBILE;
 
@@ -433,7 +468,7 @@ const renderPrimaryLabel = (
   }
 
   // 複数行の場合
-  const lineHeight = isSubcategory
+  const lineHeight = useSubTextSize
     ? isMobile
       ? DIMENSIONS.LINE_HEIGHT_SUB_MOBILE
       : DIMENSIONS.LINE_HEIGHT
@@ -465,6 +500,7 @@ const renderPrimaryLabel = (
 // カスタムラベルレイヤー（プライマリ + セカンダリ）
 const CustomLabelsLayer = ({ nodes }: { nodes: readonly SankeyNodeWithPosition[] }) => {
   const isMobile = useMobileDetection();
+  const compactMobileLabels = useContext(CompactMobileLabelsContext);
   const { getNodeColor, getPercentageTextColor } = useNodeColors();
 
   // 全体の合計値を計算（合計ノードの値を使用）
@@ -487,7 +523,9 @@ const CustomLabelsLayer = ({ nodes }: { nodes: readonly SankeyNodeWithPosition[]
         const elements = [];
 
         if (node.nodeType === "total") {
-          elements.push(...renderTotalNodeLabels(node, boxColor, percentageY, isMobile));
+          elements.push(
+            ...renderTotalNodeLabels(node, boxColor, percentageY, isMobile, compactMobileLabels),
+          );
         } else if (percentageText) {
           const percentageLabel = renderPercentageLabel(
             node,
@@ -495,6 +533,7 @@ const CustomLabelsLayer = ({ nodes }: { nodes: readonly SankeyNodeWithPosition[]
             boxColor,
             percentageY,
             isMobile,
+            compactMobileLabels,
             getPercentageTextColor,
           );
           if (percentageLabel) {
@@ -503,7 +542,7 @@ const CustomLabelsLayer = ({ nodes }: { nodes: readonly SankeyNodeWithPosition[]
         }
 
         if (node.nodeType !== "total") {
-          elements.push(renderPrimaryLabel(node, x, textAnchor, isMobile));
+          elements.push(renderPrimaryLabel(node, x, textAnchor, isMobile, compactMobileLabels));
         }
 
         return elements;
@@ -516,6 +555,7 @@ export default function SankeyChart({
   data,
   ariaLabel = "政治資金の収支フロー図",
   ariaDescription = "政治資金の収入から支出へのお金の流れを示すサンキーダイアグラムです。",
+  compactMobileLabels = false,
 }: SankeyChartProps) {
   const isMobile = useMobileDetection();
   const { getNodeColor } = useNodeColors();
@@ -555,6 +595,12 @@ export default function SankeyChart({
     links: sortedLinks,
   };
 
+  const horizontalMargin = !isMobile
+    ? CHART_CONFIG.MARGIN_HORIZONTAL_DESKTOP
+    : compactMobileLabels
+      ? CHART_CONFIG.MARGIN_HORIZONTAL_MOBILE_COMPACT
+      : CHART_CONFIG.MARGIN_HORIZONTAL_MOBILE;
+
   return (
     <div
       style={{
@@ -576,52 +622,50 @@ export default function SankeyChart({
           white-space: pre-line;
         }
       `}</style>
-      <ResponsiveSankey
-        data={processedData}
-        label={(node) => {
-          return (node as { label?: string; id: string }).label || (node as { id: string }).id;
-        }}
-        margin={{
-          top: !isMobile ? CHART_CONFIG.MARGIN_TOP_DESKTOP : CHART_CONFIG.MARGIN_TOP_MOBILE,
-          right: !isMobile
-            ? CHART_CONFIG.MARGIN_HORIZONTAL_DESKTOP
-            : CHART_CONFIG.MARGIN_HORIZONTAL_MOBILE,
-          bottom: CHART_CONFIG.MARGIN_BOTTOM,
-          left: !isMobile
-            ? CHART_CONFIG.MARGIN_HORIZONTAL_DESKTOP
-            : CHART_CONFIG.MARGIN_HORIZONTAL_MOBILE,
-        }}
-        align="center"
-        colors={(node) =>
-          getNodeColor(
-            (node as { nodeType?: string }).nodeType,
-            "light",
-            (node as { label?: string }).label,
-          )
-        }
-        valueFormat={(v) => `¥${Math.round(v as number).toLocaleString("ja-JP")}`}
-        nodeOpacity={1}
-        nodeBorderWidth={0}
-        nodeThickness={CHART_CONFIG.NODE_THICKNESS}
-        nodeSpacing={
-          !isMobile ? CHART_CONFIG.NODE_SPACING_DESKTOP : CHART_CONFIG.NODE_SPACING_MOBILE
-        }
-        sort="input"
-        linkOpacity={CHART_CONFIG.LINK_OPACITY}
-        linkHoverOpacity={CHART_CONFIG.LINK_OPACITY}
-        enableLinkGradient={true}
-        enableLabels={false}
-        isInteractive={false}
-        layers={["links", CustomNodesLayer, CustomLabelsLayer]}
-        theme={{
-          labels: {
-            text: {
-              fontSize: !isMobile ? DIMENSIONS.FONT_SIZE_DESKTOP : DIMENSIONS.FONT_SIZE_MOBILE,
-              fontWeight: "bold",
+      <CompactMobileLabelsContext.Provider value={compactMobileLabels}>
+        <ResponsiveSankey
+          data={processedData}
+          label={(node) => {
+            return (node as { label?: string; id: string }).label || (node as { id: string }).id;
+          }}
+          margin={{
+            top: !isMobile ? CHART_CONFIG.MARGIN_TOP_DESKTOP : CHART_CONFIG.MARGIN_TOP_MOBILE,
+            right: horizontalMargin,
+            bottom: CHART_CONFIG.MARGIN_BOTTOM,
+            left: horizontalMargin,
+          }}
+          align="center"
+          colors={(node) =>
+            getNodeColor(
+              (node as { nodeType?: string }).nodeType,
+              "light",
+              (node as { label?: string }).label,
+            )
+          }
+          valueFormat={(v) => `¥${Math.round(v as number).toLocaleString("ja-JP")}`}
+          nodeOpacity={1}
+          nodeBorderWidth={0}
+          nodeThickness={CHART_CONFIG.NODE_THICKNESS}
+          nodeSpacing={
+            !isMobile ? CHART_CONFIG.NODE_SPACING_DESKTOP : CHART_CONFIG.NODE_SPACING_MOBILE
+          }
+          sort="input"
+          linkOpacity={CHART_CONFIG.LINK_OPACITY}
+          linkHoverOpacity={CHART_CONFIG.LINK_OPACITY}
+          enableLinkGradient={true}
+          enableLabels={false}
+          isInteractive={false}
+          layers={["links", CustomNodesLayer, CustomLabelsLayer]}
+          theme={{
+            labels: {
+              text: {
+                fontSize: !isMobile ? DIMENSIONS.FONT_SIZE_DESKTOP : DIMENSIONS.FONT_SIZE_MOBILE,
+                fontWeight: "bold",
+              },
             },
-          },
-        }}
-      />
+          }}
+        />
+      </CompactMobileLabelsContext.Provider>
     </div>
   );
 }
