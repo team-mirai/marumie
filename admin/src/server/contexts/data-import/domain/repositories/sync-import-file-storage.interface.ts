@@ -1,3 +1,5 @@
+import type { SyncImportStoredFile } from "@/server/contexts/data-import/domain/models/organization-sync-import";
+
 /** ブラウザがファイル本体を直接置くための、一度きりのアップロード先。 */
 export interface SyncImportUploadTarget {
   /** 確認・取り込みのときにサーバーへ渡すキー。 */
@@ -16,4 +18,8 @@ export interface ISyncImportFileStorage {
   /** 置かれたファイルを文字列として読み出す。無ければ SyncImportStorageError。 */
   readText(storageKey: string): Promise<string>;
   remove(storageKey: string): Promise<void>;
+  /** 置かれている同期用 JSON の一覧。取り込まれずに残ったファイルを消すために使う。 */
+  list(): Promise<SyncImportStoredFile[]>;
+  /** まとめて消す。 */
+  removeMany(storageKeys: readonly string[]): Promise<void>;
 }

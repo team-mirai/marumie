@@ -1,5 +1,6 @@
 import {
   isSyncImportStorageKey,
+  selectStaleSyncImportStorageKeys,
   SYNC_IMPORT_MAX_FILE_BYTES,
   validateSyncImportFileSize,
 } from "@/server/contexts/data-import/domain/models/organization-sync-import";
@@ -28,5 +29,29 @@ describe("isSyncImportStorageKey", () => {
     expect(isSyncImportStorageKey("../private-receipts/0f8fad5b.json")).toBe(false);
     expect(isSyncImportStorageKey("0f8fad5b-d9cb-469f-a165-70867728950e.json/x")).toBe(false);
     expect(isSyncImportStorageKey("")).toBe(false);
+  });
+});
+
+describe("selectStaleSyncImportStorageKeys", () => {
+  const now = new Date("2026-09-28T12:00:00.000Z");
+
+  it("24 時間以上経ったファイルを選び、それより新しいファイルは残す", () => {
+    const files = [
+      { storageKey: "11111111-1111-4111-8111-111111111111.json", createdAt: new Date("2026-09-27T12:00:00.000Z") },
+      { storageKey: "22222222-2222-4222-8222-222222222222.json", createdAt: new Date("2026-09-27T12:00:00.001Z") },
+    ];
+
+    expect(selectStaleSyncImportStorageKeys(files, now)).toEqual([
+      "11111111-1111-4111-8111-111111111111.json",
+    ]);
+  });
+
+  it("サーバーが発行した形でないキーは古くても選ばない", () => {
+    const files = [
+      { storageKey: ".emptyFolderPlaceholder", createdAt: new Date("2026-01-01T00:00:00.000Z") },
+      { storageKey: "manual-backup.json", createdAt: new Date("2026-01-01T00:00:00.000Z") },
+    ];
+
+    expect(selectStaleSyncImportStorageKeys(files, now)).toEqual([]);
   });
 });

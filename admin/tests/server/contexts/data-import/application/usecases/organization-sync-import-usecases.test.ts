@@ -109,6 +109,8 @@ function buildFileStorage(fileText: string = buildFileText()): ISyncImportFileSt
     })),
     readText: jest.fn(async () => fileText),
     remove: jest.fn(async () => undefined),
+    list: jest.fn(async () => []),
+    removeMany: jest.fn(async () => undefined),
   };
 }
 
@@ -147,6 +149,51 @@ describe("PrepareSyncImportUploadUsecase", () => {
       }),
     ).rejects.toThrow(SyncImportForbiddenError);
     expect(fileStorage.createUploadTarget).not.toHaveBeenCalled();
+  });
+
+  it("取り込まれずに 24 時間以上経った同期用JSONだけを消してから発行する", async () => {
+    const now = new Date("2026-09-28T12:00:00.000Z");
+    const staleKey = "11111111-1111-4111-8111-111111111111.json";
+    const recentKey = "22222222-2222-4222-8222-222222222222.json";
+    const fileStorage = buildFileStorage();
+    fileStorage.list = jest.fn(async () => [
+      { storageKey: staleKey, createdAt: new Date("2026-09-27T11:59:59.000Z") },
+      { storageKey: recentKey, createdAt: new Date("2026-09-27T12:00:01.000Z") },
+      { storageKey: ".emptyFolderPlaceholder", createdAt: new Date("2026-01-01T00:00:00.000Z") },
+    ]);
+    const usecase = new PrepareSyncImportUploadUsecase(fileStorage, () => now);
+
+    await usecase.execute({ fileSize: 1024, environment: ALLOWED_ENVIRONMENT });
+
+    expect(fileStorage.removeMany).toHaveBeenCalledWith([staleKey]);
+    expect(fileStorage.createUploadTarget).toHaveBeenCalled();
+  });
+
+  it("古いファイルを消せなくてもアップロード先は発行する", async () => {
+    const fileStorage = buildFileStorage();
+    fileStorage.list = jest.fn(async () => {
+      throw new Error("list failed");
+    });
+    const consoleError = jest.spyOn(console, "error").mockImplementation(() => undefined);
+    const usecase = new PrepareSyncImportUploadUsecase(fileStorage);
+
+    const target = await usecase.execute({ fileSize: 1024, environment: ALLOWED_ENVIRONMENT });
+
+    expect(target.storageKey).toBe(STORAGE_KEY);
+    consoleError.mockRestore();
+  });
+
+  it("許可されない環境では古いファイルの片付けもしない", async () => {
+    const fileStorage = buildFileStorage();
+    const usecase = new PrepareSyncImportUploadUsecase(fileStorage);
+
+    await expect(
+      usecase.execute({
+        fileSize: 1024,
+        environment: { dataSyncImportEnabled: "true", vercelEnv: "production" },
+      }),
+    ).rejects.toThrow(SyncImportForbiddenError);
+    expect(fileStorage.list).not.toHaveBeenCalled();
   });
 });
 

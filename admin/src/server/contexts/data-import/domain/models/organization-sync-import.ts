@@ -168,3 +168,30 @@ const SYNC_IMPORT_STORAGE_KEY_PATTERN =
 export function isSyncImportStorageKey(value: string): boolean {
   return SYNC_IMPORT_STORAGE_KEY_PATTERN.test(value);
 }
+
+/**
+ * 取り込まれずにストレージに残った同期用 JSON を消すまでの時間。
+ * 確認を見てから取り込むまでの間に消してしまわないよう、画面での作業時間より十分長くとる。
+ */
+const SYNC_IMPORT_STALE_FILE_AGE_MS = 24 * 60 * 60 * 1000;
+
+/** ストレージに置かれている同期用 JSON 1 件。 */
+export interface SyncImportStoredFile {
+  storageKey: string;
+  createdAt: Date;
+}
+
+/**
+ * 取り込まれずに {@link SYNC_IMPORT_STALE_FILE_AGE_MS} 以上経った同期用 JSON のキーを選ぶ。
+ * サーバーが発行した形のキーだけを対象にし、バケットに置かれた他のものには触れない。
+ */
+export function selectStaleSyncImportStorageKeys(
+  files: readonly SyncImportStoredFile[],
+  now: Date,
+): string[] {
+  const cutoff = now.getTime() - SYNC_IMPORT_STALE_FILE_AGE_MS;
+  return files
+    .filter((file) => isSyncImportStorageKey(file.storageKey))
+    .filter((file) => file.createdAt.getTime() <= cutoff)
+    .map((file) => file.storageKey);
+}
