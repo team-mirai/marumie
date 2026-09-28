@@ -24,6 +24,7 @@ import {
   Tabs,
   TabsList,
   TabsTrigger,
+  Textarea,
 } from "@/client/components/ui";
 import { PageHeader } from "@/client/components/layout/PageHeader";
 import { JournalEditor } from "@/client/components/research-fund/JournalEditor";
@@ -35,8 +36,13 @@ import {
   type ReviewAccount,
   type ReviewEntry,
 } from "@/server/contexts/research-fund/domain/models/journal-review";
+import {
+  previewReread,
+  REREAD_INSTRUCTION_MAX_LENGTH,
+} from "@/server/contexts/research-fund/domain/models/scan-reread";
 import type { AdminTarget } from "@/server/contexts/shared/domain/models/admin-target";
 import { mutateJournalReview } from "@/server/contexts/research-fund/presentation/actions/manage-journal-review";
+import { rereadScanDocuments } from "@/server/contexts/research-fund/presentation/actions/reread-scan-documents";
 import { cn } from "@/client/lib";
 
 const statuses = { all: "すべて", draft: "下書き", approved: "確認済", published: "公開中" };
@@ -62,6 +68,8 @@ export function JournalReview({
   const [creating, setCreating] = useState(false);
   const [discarding, setDiscarding] = useState(false);
   const [unpublishing, setUnpublishing] = useState(false);
+  const [rereading, setRereading] = useState(false);
+  const [instruction, setInstruction] = useState("");
   const [pending, startTransition] = useTransition();
   const monthly = entries.filter((e) => !month || e.entryDate.slice(5, 7) === month);
   const visible = monthly.filter((e) => status === "all" || e.status === status);
@@ -72,6 +80,8 @@ export function JournalReview({
   const checkable = visible.filter((e) => e.status === "draft" && e.source !== "grant");
   const checkedEntries = checkable.filter((e) => checked.includes(e.id));
   const allChecked = checkable.length > 0 && checkedEntries.length === checkable.length;
+  // 読み直しは書類単位。選んでいない同じ書類の下書きも作り直し、確認済・公開中を含む書類は外す。
+  const reread = previewReread(checkedEntries, entries);
   function allowLeave() {
     return (
       !document.querySelector('[data-journal-dirty="true"]') ||
@@ -86,6 +96,7 @@ export function JournalReview({
       if (
         pending ||
         creating ||
+        rereading ||
         discarding ||
         unpublishing ||
         event.defaultPrevented ||
@@ -137,6 +148,33 @@ export function JournalReview({
         );
         setChecked([]);
         router.refresh();
+      } catch {
+        toast.error("通信に失敗しました。再度お試しください");
+      }
+    });
+  }
+  function rereadChecked() {
+    const entryIds = checkedEntries.map((e) => e.id);
+    startTransition(async () => {
+      try {
+        const result = await rereadScanDocuments(target.politicianId, target.bookId, {
+          entryIds,
+          instruction,
+        });
+        if (!result.success) {
+          toast.error(result.error);
+          return;
+        }
+        toast.success(
+          result.excludedCount > 0
+            ? `${result.documentCount}件の書類を読み直し待ちに追加しました（確認済・公開中の仕訳を含む${result.excludedCount}件の書類は対象外です）`
+            : `${result.documentCount}件の書類を読み直し待ちに追加しました`,
+          { description: "スキャン画面の「処理する」で読み直しが進みます" },
+        );
+        setRereading(false);
+        setInstruction("");
+        setChecked([]);
+        router.push(`/politicians/${target.politicianId}/books/${target.bookId}/scan`);
       } catch {
         toast.error("通信に失敗しました。再度お試しください");
       }
@@ -294,6 +332,15 @@ export function JournalReview({
           <div className="flex gap-2">
             <Button variant="outline" disabled={pending} onClick={() => setChecked([])}>
               選択を解除
+            </Button>
+            <Button
+              variant="outline"
+              disabled={pending}
+              onClick={() => {
+                if (allowLeave()) setRereading(true);
+              }}
+            >
+              LLMで読み直す
             </Button>
             <Button disabled={pending} onClick={approveChecked}>
               まとめて確認済にする
@@ -487,6 +534,68 @@ export function JournalReview({
             onDiscard={() => {}}
             onUnpublish={() => {}}
           />
+        </DialogContent>
+      </Dialog>
+      <Dialog
+        open={rereading}
+        onOpenChange={(open) => {
+          if (!pending) setRereading(open);
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>LLMで読み直しますか？</DialogTitle>
+            <DialogDescription>
+              選んだ下書きの書類を、指示を添えて読み直します。読み直しは書類ごとに行い、
+              その書類から作られた下書きはすべて、読み直した結果に置き換わります（選んでいない下書きも含みます）。
+              備考・特記事項や支出群への所属は引き継がれません。
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="reread-instruction">どう読み直すか</Label>
+            <Textarea
+              id="reread-instruction"
+              value={instruction}
+              maxLength={REREAD_INSTRUCTION_MAX_LENGTH}
+              rows={4}
+              disabled={pending}
+              placeholder="例：タクシー代と駐車場代は異なるから、これらは別の科目として入れ直してください"
+              onChange={(e) => setInstruction(e.target.value)}
+            />
+          </div>
+          <ul className="list-disc pl-5 text-sm text-muted-foreground">
+            <li>
+              読み直す書類：<span className="font-latin">{reread.documentCount}</span>
+              件（作り直す下書き
+              <span className="font-latin">{reread.draftCount}</span>件）
+            </li>
+            {reread.excludedDocumentCount > 0 && (
+              <li className="text-destructive">
+                確認済・公開中の仕訳を含む書類
+                <span className="font-latin">{reread.excludedDocumentCount}</span>
+                件は対象外です（その仕訳は消えません）
+              </li>
+            )}
+            {reread.withoutDocumentCount > 0 && (
+              <li>
+                書類の紐づかない下書き
+                <span className="font-latin">{reread.withoutDocumentCount}</span>
+                件は対象外です
+              </li>
+            )}
+            <li>読み直しはスキャン画面で進み、失敗したときは元の下書きが残ります</li>
+          </ul>
+          <DialogFooter>
+            <Button variant="outline" disabled={pending} onClick={() => setRereading(false)}>
+              キャンセル
+            </Button>
+            <Button
+              disabled={pending || reread.documentCount === 0 || instruction.trim().length === 0}
+              onClick={rereadChecked}
+            >
+              読み直す
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
       <Dialog

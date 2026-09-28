@@ -1,11 +1,15 @@
 import { ProcessScanJobsUsecase } from "@/server/contexts/research-fund/application/usecases/process-scan-jobs-usecase";
-import { SCAN_JOB_BATCH_SIZE } from "@/server/contexts/research-fund/domain/models/scan-job";
+import {
+  SCAN_JOB_BATCH_SIZE,
+  ScanJobError,
+} from "@/server/contexts/research-fund/domain/models/scan-job";
 import type { DocumentStorage } from "@/server/contexts/research-fund/domain/repositories/document-storage.interface";
 import type { ReceiptExtractionGateway } from "@/server/contexts/research-fund/domain/repositories/receipt-extraction-gateway.interface";
 import type {
   ClaimedScanJob,
   ScanRepository,
 } from "@/server/contexts/research-fund/domain/repositories/scan-repository.interface";
+import type { ExtractedReceipt } from "@/server/contexts/research-fund/domain/models/extracted-receipt";
 import { RF_ERROR_CODES } from "@/server/contexts/research-fund/domain/types/validation";
 
 const JOB: ClaimedScanJob = {
@@ -15,6 +19,7 @@ const JOB: ClaimedScanJob = {
   mime: "image/jpeg",
   originalFilename: "IMG_1.jpg",
   officePrompt: "議員室プロンプト",
+  rereadInstruction: null,
 };
 
 const RECEIPT = {
@@ -27,6 +32,8 @@ const RECEIPT = {
 describe("ProcessScanJobsUsecase", () => {
   const scanRepository: jest.Mocked<ScanRepository> = {
     createBatch: jest.fn(),
+    createRereadBatch: jest.fn(),
+    findRereadCandidates: jest.fn(),
     listBatches: jest.fn(),
     countUnfinished: jest.fn(),
     claimJobs: jest.fn(),
@@ -69,10 +76,13 @@ describe("ProcessScanJobsUsecase", () => {
       expect(gateway.extract).toHaveBeenCalledWith({
         document: { bytes: new Uint8Array([1, 2]), mime: "image/jpeg" },
         officePrompt: "議員室プロンプト",
+        rereadInstruction: null,
       });
       expect(scanRepository.completeJob).toHaveBeenCalledWith(
         expect.objectContaining({
           bookId: "12",
+          // 通常のスキャンは既存の下書きを置き換えない
+          replaceDrafts: false,
           jobId: "11",
           documentId: "42",
           rawJson: expect.objectContaining({ date: "2026-04-01" }),
@@ -184,6 +194,90 @@ describe("ProcessScanJobsUsecase", () => {
       );
       expect(scanRepository.completeJob).toHaveBeenCalledTimes(1);
       expect(result).toMatchObject({ processed: 2, succeeded: 1, failed: 1 });
+    });
+
+    describe("reread jobs", () => {
+      const REREAD_JOB: ClaimedScanJob = {
+        ...JOB,
+        rereadInstruction: "タクシー代と駐車場代は別の科目として入れ直してください",
+      };
+      const SPLIT_RECEIPT: ExtractedReceipt = {
+        date: "2026-04-01",
+        items: [
+          { item: "タクシー代", amount: 1200, category_key: "taxi", note: null, split_group: "g1" },
+          { item: "駐車場代", amount: 800, category_key: "tolls-parking", note: null, split_group: "g1" },
+        ],
+      };
+
+      beforeEach(() => {
+        scanRepository.claimJobs.mockResolvedValue([REREAD_JOB]);
+        scanRepository.accounts.mockResolvedValue([
+          { key: "bank", type: "asset" },
+          { key: "taxi", type: "expense" },
+          { key: "tolls-parking", type: "expense" },
+        ]);
+      });
+
+      it("passes the instruction to the LLM and replaces the document's drafts with the result", async () => {
+        gateway.extract.mockResolvedValue({ status: "valid", value: SPLIT_RECEIPT });
+
+        const result = await usecase.execute(input);
+
+        expect(gateway.extract).toHaveBeenCalledWith(
+          expect.objectContaining({
+            officePrompt: "議員室プロンプト",
+            rereadInstruction: "タクシー代と駐車場代は別の科目として入れ直してください",
+          }),
+        );
+        expect(scanRepository.completeJob).toHaveBeenCalledWith(
+          expect.objectContaining({
+            documentId: "42",
+            replaceDrafts: true,
+            entries: [
+              expect.objectContaining({ accountKey: "taxi", amount: 1200 }),
+              expect.objectContaining({ accountKey: "tolls-parking", amount: 800 }),
+            ],
+          }),
+        );
+        expect(result).toMatchObject({ succeeded: 1, failed: 0 });
+      });
+
+      it("keeps the original drafts when the reread fails", async () => {
+        gateway.extract.mockResolvedValue({
+          status: "invalid",
+          errors: [
+            {
+              path: "",
+              code: RF_ERROR_CODES.EXTRACTION_FAILED,
+              message: "領収書の読み取りに失敗しました",
+              severity: "error",
+            },
+          ],
+        });
+
+        const result = await usecase.execute(input);
+
+        // 置き換え（completeJob）は読み取りに成功したときだけ起きる
+        expect(scanRepository.completeJob).not.toHaveBeenCalled();
+        expect(scanRepository.failJob).toHaveBeenCalledWith("11", "領収書の読み取りに失敗しました");
+        expect(result).toMatchObject({ succeeded: 0, failed: 1 });
+      });
+
+      it("fails the job without replacing anything when the document now has reviewed entries", async () => {
+        gateway.extract.mockResolvedValue({ status: "valid", value: SPLIT_RECEIPT });
+        scanRepository.completeJob.mockRejectedValue(
+          new ScanJobError("確認済・公開中の仕訳があるため、読み直した結果で置き換えませんでした"),
+        );
+
+        const result = await usecase.execute(input);
+
+        expect(scanRepository.failJob).toHaveBeenCalledWith(
+          "11",
+          "確認済・公開中の仕訳があるため、読み直した結果で置き換えませんでした",
+          expect.objectContaining({ date: "2026-04-01" }),
+        );
+        expect(result).toMatchObject({ succeeded: 0, failed: 1 });
+      });
     });
 
     it("rejects a book id that is not a valid identifier", async () => {

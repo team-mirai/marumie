@@ -24,3 +24,6 @@ export const ScanJob = {
     return new Date(now.getTime() - SCAN_JOB_STALE_MS);
   },
 };
+
+/** ジョブの処理を続けられない理由。メッセージはジョブの error にそのまま残し、画面に出す */
+export class ScanJobError extends Error {}

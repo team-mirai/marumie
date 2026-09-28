@@ -86,6 +86,15 @@ describe("VercelAIReceiptExtractionGateway（LLMのみモック、SDKの構造�
     },
   );
 
+  it("読み直しの指示をシステムプロンプトに添える", async () => {
+    const model = mockOutput(JSON.stringify(valid));
+    await gateway.extract({ ...params, rereadInstruction: "駐車場代は別の科目にしてください" });
+    expect(model.doGenerateCalls[0].prompt[0]).toEqual({
+      role: "system",
+      content: buildReceiptExtractionPrompt(params.officePrompt, "駐車場代は別の科目にしてください"),
+    });
+  });
+
   it("環境変数でモデルを差し替えられる", async () => {
     mockOutput(JSON.stringify(valid));
     process.env.RESEARCH_FUND_EXTRACTION_MODEL = " custom-model ";

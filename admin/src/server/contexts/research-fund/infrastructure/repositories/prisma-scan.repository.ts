@@ -4,8 +4,11 @@ import type {
   ScanBatchView,
   ScanJobStatus,
 } from "@/server/contexts/research-fund/domain/models/scan-batch";
+import { ScanJobError } from "@/server/contexts/research-fund/domain/models/scan-job";
+import type { RereadCandidate } from "@/server/contexts/research-fund/domain/models/scan-reread";
 import type {
   ClaimedScanJob,
+  CreateRereadBatchInput,
   CreateScanBatchInput,
   ScanRepository,
 } from "@/server/contexts/research-fund/domain/repositories/scan-repository.interface";
@@ -43,6 +46,57 @@ export class PrismaScanRepository implements ScanRepository {
       }
       return batch.id.toString();
     });
+  }
+
+  async createRereadBatch(input: CreateRereadBatchInput): Promise<string> {
+    const bookId = BigInt(input.bookId);
+    return await this.prisma.$transaction(async (tx) => {
+      const batch = await tx.researchFundScanBatch.create({
+        data: { bookId, uploadedById: input.uploadedById },
+      });
+      await tx.researchFundScanJob.createMany({
+        data: input.documentIds.map((documentId) => ({
+          batchId: batch.id,
+          documentId: BigInt(documentId),
+          promptId: BigInt(input.promptId),
+          model: input.model,
+          rereadInstruction: input.instruction,
+        })),
+      });
+      return batch.id.toString();
+    });
+  }
+
+  async findRereadCandidates(bookId: string, entryIds: string[]): Promise<RereadCandidate[]> {
+    const selected = await this.prisma.researchFundJournalEntry.findMany({
+      where: {
+        bookId: BigInt(bookId),
+        id: { in: entryIds.map((id) => BigInt(id)) },
+        status: "draft",
+        documentId: { not: null },
+      },
+      select: { documentId: true },
+      distinct: ["documentId"],
+      orderBy: { documentId: "asc" },
+    });
+    const documentIds = selected.flatMap((row) =>
+      row.documentId === null ? [] : [row.documentId],
+    );
+    if (documentIds.length === 0) return [];
+    const reviewed = await this.prisma.researchFundJournalEntry.findMany({
+      where: {
+        bookId: BigInt(bookId),
+        documentId: { in: documentIds },
+        status: { not: "draft" },
+      },
+      select: { documentId: true },
+      distinct: ["documentId"],
+    });
+    const reviewedIds = new Set(reviewed.map((row) => row.documentId?.toString()));
+    return documentIds.map((documentId) => ({
+      documentId: documentId.toString(),
+      hasReviewedEntries: reviewedIds.has(documentId.toString()),
+    }));
   }
 
   async listBatches(bookId: string): Promise<ScanBatchView[]> {
@@ -108,6 +162,7 @@ export class PrismaScanRepository implements ScanRepository {
         mime: job.document.mime,
         originalFilename: job.document.originalFilename,
         officePrompt: job.prompt.body,
+        rereadInstruction: job.rereadInstruction,
       });
     }
     return claimed;
@@ -132,12 +187,29 @@ export class PrismaScanRepository implements ScanRepository {
     rawJson: unknown;
     entries: ScanDraftEntry[];
     userId: string;
+    replaceDrafts: boolean;
   }): Promise<void> {
     const bookId = BigInt(input.bookId);
+    const documentId = BigInt(input.documentId);
     // 同じ抽出結果に同じ hash の明細が並んでも 1 件にする（先勝ち）。
     const entries = new Map<string, ScanDraftEntry>();
     for (const entry of input.entries) if (!entries.has(entry.hash)) entries.set(entry.hash, entry);
     await this.prisma.$transaction(async (tx) => {
+      if (input.replaceDrafts) {
+        // 読み直しは書類単位で下書きを置き換える。確認済・公開中の仕訳がある書類は
+        // （依頼の後に確認済にされた場合も）置き換えず、元の仕訳をそのまま残す。
+        const reviewed = await tx.researchFundJournalEntry.count({
+          where: { bookId, documentId, status: { not: "draft" } },
+        });
+        if (reviewed > 0)
+          throw new ScanJobError(
+            "確認済・公開中の仕訳があるため、読み直した結果で置き換えませんでした",
+          );
+        // 明細・支出群への所属は外部キーの cascade で一緒に消える（引き継がない）
+        await tx.researchFundJournalEntry.deleteMany({
+          where: { bookId, documentId, status: "draft" },
+        });
+      }
       // 同じ書類を読み直しても仕訳を二重に作らない。hash は日付・金額・項目名・書類IDから作る。
       // (book_id, hash) の一意制約に任せて既存分は読み飛ばす（ON CONFLICT DO NOTHING）ので、
       // 同じ書類の処理が同時に走っても二重登録にならず、ジョブの完了も続行できる。
@@ -148,7 +220,7 @@ export class PrismaScanRepository implements ScanRepository {
           description: entry.description,
           status: "draft",
           source: "scan",
-          documentId: BigInt(input.documentId),
+          documentId,
           splitGroup: entry.splitGroup,
           note: entry.note,
           hash: entry.hash,

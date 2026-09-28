@@ -19,7 +19,7 @@ import {
 
 export class VercelAIReceiptExtractionGateway implements ReceiptExtractionGateway {
   async extract(params: ReceiptExtractionParams): Promise<ResearchFundResult<ExtractedReceipt>> {
-    const { document, officePrompt } = params;
+    const { document, officePrompt, rereadInstruction } = params;
     if (
       !document.bytes.length ||
       !["image/jpeg", "image/png", "application/pdf"].includes(document.mime)
@@ -33,7 +33,7 @@ export class VercelAIReceiptExtractionGateway implements ReceiptExtractionGatewa
     try {
       const { output } = await generateText({
         model: anthropic(process.env.RESEARCH_FUND_EXTRACTION_MODEL?.trim() || "claude-sonnet-5"),
-        system: buildReceiptExtractionPrompt(officePrompt),
+        system: buildReceiptExtractionPrompt(officePrompt, rereadInstruction ?? null),
         messages: [
           {
             role: "user",

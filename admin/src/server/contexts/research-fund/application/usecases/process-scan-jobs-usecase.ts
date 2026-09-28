@@ -92,6 +92,7 @@ export class ProcessScanJobsUsecase {
       const extracted = await this.gateway.extract({
         document: { bytes: bytes.value, mime: job.mime as ExtractableMime },
         officePrompt: job.officePrompt,
+        rereadInstruction: job.rereadInstruction,
       });
       if (extracted.status === "invalid") {
         await this.scanRepository.failJob(job.id, extracted.errors[0].message);
@@ -114,6 +115,9 @@ export class ProcessScanJobsUsecase {
         rawJson: extracted.value,
         entries: entries.value,
         userId: input.userId,
+        // 読み直しジョブは、読み取りに成功したときだけ書類の下書きを置き換える。
+        // ここまでの失敗はすべて failJob で終わるので、元の下書きは残る。
+        replaceDrafts: job.rereadInstruction !== null,
       });
       return true;
     } catch (error) {

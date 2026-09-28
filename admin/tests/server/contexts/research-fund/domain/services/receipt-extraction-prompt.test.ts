@@ -39,4 +39,19 @@ describe("領収書抽出プロンプト", () => {
       expect(buildReceiptExtractionPrompt(officePrompt)).not.toContain(DEFAULT_OFFICE_PROMPT);
     },
   );
+
+  it("読み直しの指示があれば議員室プロンプトの後ろに添える", () => {
+    const prompt = buildReceiptExtractionPrompt("議員室の方針", "駐車場代は別の科目にしてください");
+    expect(prompt.startsWith(buildReceiptExtractionPrompt("議員室の方針"))).toBe(true);
+    expect(prompt).toContain("読み直しの指示");
+    expect(prompt.indexOf("議員室の方針")).toBeLessThan(
+      prompt.indexOf("駐車場代は別の科目にしてください"),
+    );
+  });
+
+  it("読み直しの指示がなければ通常の読み取りと同じ", () => {
+    expect(buildReceiptExtractionPrompt("議員室の方針", null)).toBe(
+      buildReceiptExtractionPrompt("議員室の方針"),
+    );
+  });
 });
