@@ -76,10 +76,6 @@ test("手動仕訳を取得し、書類・メモの欠損値を表示用に変�
     note: "", memo: "", status: "draft", source: "manual", documentId: null, splitGroup: null,
     model: null, promptVersion: null, amount: 1200, accountKey: "taxi",
   });
-  expect(tx.researchFundJournalEntry.findFirst).toHaveBeenCalledWith(expect.objectContaining({
-    where: { id: BigInt(entry.id), bookId: BigInt(1), source: { in: ["manual", "scan"] },
-      lines: { some: { side: "debit", account: { type: "expense" } } } },
-  }));
   tx.researchFundJournalEntry.findFirst.mockResolvedValue(null);
   await expect(repository.find("9", entry.id)).resolves.toBeNull();
 });
@@ -160,4 +156,28 @@ test("取り下げは公開中・更新日時を照合して確認済に戻し�
 test("すでに確認済に戻っているなど競合したら取り下げを拒否する", async () => {
   const { repository } = setup(0);
   await expect(repository.unpublish("1", entry)).rejects.toThrow("状態が変わりました");
+});
+
+const grantWhere = { source: "grant", lines: { some: { side: "credit", accountKey: "grant-income" } } };
+test("取得は支出と支給の両方を対象にする", async () => {
+  const { repository, tx } = setup();
+  await repository.find("1", entry.id);
+  expect(tx.researchFundJournalEntry.findFirst).toHaveBeenCalledWith(expect.objectContaining({ where: { bookId: BigInt(1), id: BigInt(entry.id), OR: [{ source: { in: ["manual", "scan"] }, lines: { some: { side: "debit", account: { type: "expense" } } } }, grantWhere] } }));
+});
+test("支給の更新・取り下げは支給の形式と更新日時で照合する", async () => {
+  const { repository, tx } = setup();
+  const grant = { ...entry, source: "grant" } as ReviewEntry;
+  tx.researchFundJournalEntry.findFirst.mockResolvedValue({ ...rowWithLines([{ side: "debit", accountKey: "bank", amount: 1200 }, { side: "credit", accountKey: "grant-income", amount: 1200 }]), source: "grant" });
+  await repository.update("1", grant, { ...input, lines: [{ side: "debit", accountKey: "bank", amount: 1200 }, { side: "credit", accountKey: "grant-income", amount: 1200 }] });
+  expect(tx.researchFundJournalEntry.updateMany).toHaveBeenCalledWith(expect.objectContaining({ where: { id: BigInt(entry.id), bookId: BigInt(1), status: { in: ["draft", "approved"] }, updatedAt: new Date(entry.updatedAt), ...grantWhere } }));
+  expect(tx.researchFundJournalLine.createMany).toHaveBeenCalled();
+  await repository.unpublish("1", grant);
+  expect(tx.researchFundJournalEntry.updateMany).toHaveBeenLastCalledWith({ where: { id: BigInt(entry.id), bookId: BigInt(1), status: { in: ["published"] }, updatedAt: new Date(entry.updatedAt), ...grantWhere }, data: { status: "approved", publishedAt: null } });
+});
+test("当選日は帳簿の議員から YYYY-MM-DD で返し、帳簿が無ければ null", async () => {
+  const { repository, tx } = setup();
+  tx.researchFundBook.findUnique.mockResolvedValue({ politician: { termStart: new Date("2026-07-15T00:00:00.000Z") } });
+  await expect(repository.termStart("1")).resolves.toBe("2026-07-15");
+  tx.researchFundBook.findUnique.mockResolvedValue(null);
+  await expect(repository.termStart("1")).resolves.toBeNull();
 });

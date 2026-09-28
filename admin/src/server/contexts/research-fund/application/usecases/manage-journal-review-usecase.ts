@@ -1,4 +1,5 @@
 import "server-only";
+import { validateGrantEntryDate } from "@/server/contexts/research-fund/domain/models/grant-registration";
 import { JournalEntry } from "@/server/contexts/research-fund/domain/models/journal-entry";
 import { JournalEntryHash } from "@/server/contexts/research-fund/domain/models/journal-entry-hash";
 import { JournalPosting } from "@/server/contexts/research-fund/domain/models/journal-posting";
@@ -28,7 +29,6 @@ export class ManageJournalReviewUsecase {
     if (!entry) throw new JournalReviewError("仕訳が見つかりません");
     if (entry.status === "published")
       throw new JournalReviewError("公開中の仕訳は編集・破棄できません");
-    if (entry.source === "grant") throw new JournalReviewError("支給は支給の登録画面で扱います");
     if (entry.updatedAt !== updatedAt)
       throw new JournalReviewError("別の操作で更新されました。画面を再読み込みしてください");
     return entry;
@@ -74,6 +74,11 @@ export class ManageJournalReviewUsecase {
   }
   async save(bookId: string, id: string, updatedAt: string, input: JournalEdit, approve: boolean) {
     const entry = await this.editable(bookId, id, updatedAt);
+    if (entry.source === "grant") {
+      if (approve) throw new JournalReviewError("支給はすでに確認済です");
+      await this.repository.update(bookId, entry, await this.prepareGrant(bookId, entry, input));
+      return;
+    }
     let status = entry.status;
     if (approve) {
       const result = JournalEntry.transition(entry, "approved");
@@ -88,6 +93,59 @@ export class ManageJournalReviewUsecase {
       status,
     );
     await this.repository.update(bookId, entry, write);
+  }
+  /**
+   * 支給は支給日だけを直せる。金額・項目名・科目は支給の登録時に月から決まるため受け付けない。
+   * 支給の「どの月の分か」は仕訳日から判定するので、月をまたぐと同じ月を二重登録できてしまう。
+   * そのため支給の登録と同じ検証（その月の中・当選月は当選日以降）をここでも行う。
+   */
+  private async prepareGrant(
+    bookId: string,
+    entry: ReviewEntry,
+    raw: JournalEdit,
+  ): Promise<JournalWrite> {
+    const parsed = journalEditSchema.safeParse(raw);
+    if (!parsed.success) throw new JournalReviewError("支給日を正しく入力してください");
+    const input = parsed.data;
+    if (
+      input.amount !== entry.amount ||
+      input.description !== entry.description ||
+      input.accountKey !== entry.accountKey ||
+      input.note !== entry.note ||
+      input.memo !== entry.memo
+    )
+      throw new JournalReviewError("支給は支給日だけを変更できます");
+    const termStart = await this.repository.termStart(bookId);
+    if (!termStart) throw new JournalReviewError("帳簿が見つかりません");
+    const date = validateGrantEntryDate(entry.entryDate.slice(0, 7), termStart, input.entryDate);
+    if (date.status === "invalid") throw new JournalReviewError(date.errors[0].message);
+    const accounts = await this.repository.accounts();
+    const account = accounts.find((a) => a.key === "grant-income");
+    const assetAccount = accounts.find((a) => a.key === "bank");
+    if (!account || !assetAccount) throw new JournalReviewError("科目が見つかりません");
+    const posting = JournalPosting.generate({
+      pattern: "grant",
+      source: "grant",
+      amount: entry.amount,
+      account,
+      assetAccount,
+    });
+    if (posting.status === "invalid") throw new JournalReviewError(posting.errors[0].message);
+    // hash は日付を含むので、支給の登録時と同じ組み立てで作り直す。
+    const hash = JournalEntryHash.generate({
+      entryDate: date.value,
+      amount: entry.amount,
+      description: entry.description,
+      documentId: null,
+    });
+    if (hash.status === "invalid") throw new JournalReviewError(hash.errors[0].message);
+    return {
+      ...input,
+      entryDate: date.value,
+      status: entry.status,
+      hash: hash.value,
+      lines: posting.value.lines,
+    };
   }
   /**
    * 選んだ下書きをまとめて確認済にする。1 件ずつの「確認済にする」と同じ業務ルール
@@ -143,7 +201,6 @@ export class ManageJournalReviewUsecase {
   async unpublish(bookId: string, id: string, updatedAt: string) {
     const entry = await this.repository.find(bookId, id);
     if (!entry) throw new JournalReviewError("仕訳が見つかりません");
-    if (entry.source === "grant") throw new JournalReviewError("支給は支給の登録画面で扱います");
     if (entry.status !== "published")
       throw new JournalReviewError("公開中の仕訳だけを確認済に戻せます");
     if (entry.updatedAt !== updatedAt)
@@ -162,6 +219,8 @@ export class ManageJournalReviewUsecase {
     return { cacheWarning };
   }
   async discard(bookId: string, id: string, updatedAt: string) {
-    await this.repository.discard(bookId, await this.editable(bookId, id, updatedAt));
+    const entry = await this.editable(bookId, id, updatedAt);
+    if (entry.source === "grant") throw new JournalReviewError("支給は破棄できません");
+    await this.repository.discard(bookId, entry);
   }
 }

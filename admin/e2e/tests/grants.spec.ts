@@ -53,6 +53,15 @@ test("支給日を指定して確認済登録し、二重生成を拒み、仕�
   await expect(grantRow).toContainText("支給");
   await expect(grantRow).toContainText("1,000,000");
 
+  // 支給も選んで支給日だけを直せる（金額・項目名は変えられない）
+  await grantRow.click();
+  await expect(page.getByLabel("金額", { exact: true })).toBeDisabled();
+  await expect(page.getByLabel("項目名", { exact: true })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "破棄" })).toHaveCount(0);
+  await page.getByLabel("日付", { exact: true }).fill(`${year}-01-20`);
+  await page.getByRole("button", { name: "保存", exact: true }).click();
+  await expect(grantRow).toContainText(`${year}.01.20`);
+
   await page.goto("/politicians");
   await politicianCard.getByRole("button", { name: "削除", exact: true }).click();
   await page.getByRole("button", { name: "削除する", exact: true }).click();

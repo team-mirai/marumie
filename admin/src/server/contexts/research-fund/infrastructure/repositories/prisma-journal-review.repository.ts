@@ -24,7 +24,7 @@ const expenseWhere = {
   source: { in: ["manual", "scan"] },
   lines: { some: { side: "debit", account: { type: "expense" } } },
 } satisfies Prisma.ResearchFundJournalEntryWhereInput;
-// 支給は支給の登録画面で作るが、確認済の収入として一覧にも並べる（編集はさせない）。
+// 支給は支給の登録画面で作るが、確認済の収入として一覧にも並べ、支給日の修正と取り下げはこの画面で行う。
 const grantWhere = {
   source: "grant",
   lines: { some: { side: "credit", accountKey: "grant-income" } },
@@ -100,7 +100,7 @@ function guard(
     bookId: BigInt(bookId),
     status: { in: statuses },
     updatedAt: new Date(entry.updatedAt),
-    ...expenseWhere,
+    ...(entry.source === "grant" ? grantWhere : expenseWhere),
   };
 }
 export class PrismaJournalReviewRepository implements JournalReviewRepository {
@@ -116,12 +116,19 @@ export class PrismaJournalReviewRepository implements JournalReviewRepository {
       .map(model)
       .filter((entry): entry is ReviewEntry => entry !== null);
   }
+  async termStart(bookId: string) {
+    const row = await this.prisma.researchFundBook.findUnique({
+      where: { id: BigInt(bookId) },
+      select: { politician: { select: { termStart: true } } },
+    });
+    return row ? row.politician.termStart.toISOString().slice(0, 10) : null;
+  }
   async accounts() {
     return this.prisma.researchFundAccount.findMany({ orderBy: { displayOrder: "asc" } });
   }
   async find(bookId: string, id: string) {
     const row = await this.prisma.researchFundJournalEntry.findFirst({
-      where: { bookId: BigInt(bookId), id: BigInt(id), ...expenseWhere },
+      where: { bookId: BigInt(bookId), id: BigInt(id), ...listWhere },
       include,
     });
     return row ? model(row) : null;

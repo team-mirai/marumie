@@ -9,6 +9,14 @@ import {
   type ReviewEntry,
 } from "@/server/contexts/research-fund/domain/models/journal-review";
 
+/** 支給日はその支給の月の中でだけ動かせる。当選月の下限（当選日）はサーバーで検証する。 */
+function monthRange(entryDate: string) {
+  const [year, month] = entryDate.split("-").map(Number);
+  const lastDay = new Date(Date.UTC(year, month, 0)).getUTCDate();
+  const prefix = entryDate.slice(0, 7);
+  return { min: `${prefix}-01`, max: `${prefix}-${String(lastDay).padStart(2, "0")}` };
+}
+
 export function JournalEditor({
   entry,
   accounts,
@@ -50,6 +58,8 @@ export function JournalEditor({
     return () => window.removeEventListener("beforeunload", onBeforeUnload);
   }, [dirty]);
   const published = entry?.status === "published";
+  const grant = entry?.source === "grant";
+  const dateRange = entry && grant ? monthRange(entry.entryDate) : null;
   function change<K extends keyof JournalEdit>(key: K, value: JournalEdit[K]) {
     setDirty(true);
     setInput((old) => ({ ...old, [key]: value }));
@@ -63,7 +73,11 @@ export function JournalEditor({
       className="space-y-4"
       data-journal-dirty={dirty}
     >
-      {documentUrl ? (
+      {grant ? (
+        <div className="rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground">
+          支給（金額・項目名は支給の月から決まるため変更できません）
+        </div>
+      ) : documentUrl ? (
         <div className="space-y-2">
           <iframe
             key={documentUrl}
@@ -103,8 +117,8 @@ export function JournalEditor({
               id={`${fieldId}-date`}
               type="date"
               required
-              min={`${year}-01-01`}
-              max={`${year}-12-31`}
+              min={dateRange?.min ?? `${year}-01-01`}
+              max={dateRange?.max ?? `${year}-12-31`}
               value={input.entryDate}
               onChange={(e) => change("entryDate", e.target.value)}
             />
@@ -118,6 +132,7 @@ export function JournalEditor({
               max="999999999999"
               step="1"
               required
+              disabled={grant}
               value={input.amount || ""}
               onChange={(e) => change("amount", Number(e.target.value))}
             />
@@ -129,59 +144,68 @@ export function JournalEditor({
             id={`${fieldId}-description`}
             required
             maxLength={255}
+            disabled={grant}
             value={input.description}
             onChange={(e) => change("description", e.target.value)}
           />
         </div>
-        <div>
-          <Label htmlFor={`${fieldId}-account`}>科目</Label>
-          <NativeSelect
-            id={`${fieldId}-account`}
-            required
-            value={input.accountKey}
-            onChange={(e) => change("accountKey", e.target.value)}
-            wrapperClassName="w-full"
-          >
-            <option value="">科目を選択</option>
-            {accounts.map((a) => (
-              <option key={a.key} value={a.key}>
-                {a.label}
-              </option>
-            ))}
-          </NativeSelect>
-          <LegalCategoryLabel
-            legalLabel={legalLabelOf(accounts, input.accountKey)}
-            className="mt-1 block"
-          />
-          {input.accountKey === "needs-review" && (
-            <p className="text-sm font-bold text-destructive">要確認：科目を確定してください</p>
-          )}
-        </div>
-        <p className="text-xs text-muted-foreground">
-          複式の仕訳（借方 {accounts.find((a) => a.key === input.accountKey)?.label ?? "科目"}／貸方
-          普通預金）は自動で作られます
-        </p>
-        <div>
-          <Label htmlFor={`${fieldId}-note`}>特記事項（公開される）</Label>
-          <Textarea
-            id={`${fieldId}-note`}
-            value={input.note}
-            onChange={(e) => change("note", e.target.value)}
-          />
-        </div>
-        <div className="rounded-lg bg-background p-3">
-          <div className="mb-2 flex items-center gap-2">
-            <Label htmlFor={`${fieldId}-memo`}>備考</Label>
-            <span className="rounded-full border px-2 text-xs text-muted-foreground">
-              公開されない
-            </span>
-          </div>
-          <Textarea
-            id={`${fieldId}-memo`}
-            value={input.memo}
-            onChange={(e) => change("memo", e.target.value)}
-          />
-        </div>
+        {grant ? (
+          <p className="text-xs text-muted-foreground">
+            支給日はその月の中の日付だけを指定できます（当選月は当選日以降）
+          </p>
+        ) : (
+          <>
+            <div>
+              <Label htmlFor={`${fieldId}-account`}>科目</Label>
+              <NativeSelect
+                id={`${fieldId}-account`}
+                required
+                value={input.accountKey}
+                onChange={(e) => change("accountKey", e.target.value)}
+                wrapperClassName="w-full"
+              >
+                <option value="">科目を選択</option>
+                {accounts.map((a) => (
+                  <option key={a.key} value={a.key}>
+                    {a.label}
+                  </option>
+                ))}
+              </NativeSelect>
+              <LegalCategoryLabel
+                legalLabel={legalLabelOf(accounts, input.accountKey)}
+                className="mt-1 block"
+              />
+              {input.accountKey === "needs-review" && (
+                <p className="text-sm font-bold text-destructive">要確認：科目を確定してください</p>
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              複式の仕訳（借方 {accounts.find((a) => a.key === input.accountKey)?.label ?? "科目"}
+              ／貸方 普通預金）は自動で作られます
+            </p>
+            <div>
+              <Label htmlFor={`${fieldId}-note`}>特記事項（公開される）</Label>
+              <Textarea
+                id={`${fieldId}-note`}
+                value={input.note}
+                onChange={(e) => change("note", e.target.value)}
+              />
+            </div>
+            <div className="rounded-lg bg-background p-3">
+              <div className="mb-2 flex items-center gap-2">
+                <Label htmlFor={`${fieldId}-memo`}>備考</Label>
+                <span className="rounded-full border px-2 text-xs text-muted-foreground">
+                  公開されない
+                </span>
+              </div>
+              <Textarea
+                id={`${fieldId}-memo`}
+                value={input.memo}
+                onChange={(e) => change("memo", e.target.value)}
+              />
+            </div>
+          </>
+        )}
         {!published && (
           <div className="flex flex-wrap gap-2">
             <Button type="submit" variant={entry ? "outline" : "default"}>
@@ -201,7 +225,7 @@ export function JournalEditor({
                 確認済にする
               </Button>
             )}
-            {entry && (
+            {entry && !grant && (
               <Button type="button" variant="destructive" onClick={onDiscard}>
                 破棄
               </Button>

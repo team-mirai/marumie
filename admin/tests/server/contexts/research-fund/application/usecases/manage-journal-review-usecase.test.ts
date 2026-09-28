@@ -3,7 +3,7 @@ import type { JournalEdit, ReviewEntry } from "@/server/contexts/research-fund/d
 const input: JournalEdit = { entryDate: "2026-08-01", description: "視察の移動", amount: 1200, accountKey: "taxi", note: "公開メモ", memo: "内部メモ" };
 const entry: ReviewEntry = { ...input, id: "2", source: "scan", documentId: "3", splitGroup: "group", status: "draft", updatedAt: "2026-08-01T12:00:00.000Z", model: "test-model", promptVersion: 1 };
 function setup(overrides: Partial<ReviewEntry> = {}) {
-  const repository = { list: jest.fn().mockResolvedValue([entry]), find: jest.fn().mockResolvedValue({ ...entry, ...overrides }), findMany: jest.fn().mockResolvedValue([{ ...entry, ...overrides }]), approveMany: jest.fn(), unpublish: jest.fn(), accounts: jest.fn().mockResolvedValue([{ key: "taxi", label: "タクシー代", type: "expense" }, { key: "needs-review", label: "要確認", type: "expense" }, { key: "bank", label: "普通預金", type: "asset" }]), year: jest.fn().mockResolvedValue(2026), create: jest.fn().mockResolvedValue("10"), update: jest.fn(), discard: jest.fn() };
+  const repository = { list: jest.fn().mockResolvedValue([entry]), find: jest.fn().mockResolvedValue({ ...entry, ...overrides }), findMany: jest.fn().mockResolvedValue([{ ...entry, ...overrides }]), approveMany: jest.fn(), unpublish: jest.fn(), accounts: jest.fn().mockResolvedValue([{ key: "taxi", label: "タクシー代", type: "expense" }, { key: "needs-review", label: "要確認", type: "expense" }, { key: "bank", label: "普通預金", type: "asset" }, { key: "grant-income", label: "調査研究費収入", type: "income" }]), year: jest.fn().mockResolvedValue(2026), termStart: jest.fn().mockResolvedValue("2026-07-15"), create: jest.fn().mockResolvedValue("10"), update: jest.fn(), discard: jest.fn() };
   const cacheInvalidator = { invalidateWebappCache: jest.fn().mockResolvedValue(undefined) };
   return { repository, cacheInvalidator, usecase: new ManageJournalReviewUsecase(repository, cacheInvalidator) };
 }
@@ -24,7 +24,7 @@ test.each(["draft", "approved"] as const)("%s を保存・破棄できる", asyn
   await usecase.discard("1", "2", entry.updatedAt);
   expect(repository.discard).toHaveBeenCalled();
 });
-test.each([{ status: "published" as const }, { source: "grant" as const }, { updatedAt: "new" }])("公開・支給・同時編集は保存と破棄を拒否 %j", async overrides => {
+test.each([{ status: "published" as const }, { updatedAt: "new" }])("公開・同時編集は保存と破棄を拒否 %j", async overrides => {
   const { repository, usecase } = setup(overrides);
   await expect(usecase.save("1", "2", entry.updatedAt, input, false)).rejects.toThrow();
   await expect(usecase.discard("1", "2", entry.updatedAt)).rejects.toThrow();
@@ -51,6 +51,57 @@ test("一覧には費用科目だけを渡す", async () => {
   const { usecase } = setup();
   const data = await usecase.list("1");
   expect(data.entries).toEqual([entry]); expect(data.accounts.map(a => a.key)).toEqual(["taxi", "needs-review"]);
+});
+
+const grantInput: JournalEdit = { entryDate: "2026-08-01", description: "調査研究費 8月分", amount: 1_000_000, accountKey: "grant-income", note: "", memo: "" };
+const grant = { ...grantInput, source: "grant" as const, documentId: null, splitGroup: null, status: "approved" as const, model: null, promptVersion: null };
+test("確認済の支給は月内の支給日に直せ、hash を作り直す。金額・項目名・科目は変わらない", async () => {
+  const { repository, usecase } = setup(grant);
+  await usecase.save("1", "2", entry.updatedAt, { ...grantInput, entryDate: "2026-08-20" }, false);
+  expect(repository.termStart).toHaveBeenCalledWith("1");
+  const write = repository.update.mock.calls[0][2];
+  expect(write).toMatchObject({ entryDate: "2026-08-20", amount: 1_000_000, description: "調査研究費 8月分", accountKey: "grant-income", status: "approved", lines: [{ side: "debit", accountKey: "bank", amount: 1_000_000 }, { side: "credit", accountKey: "grant-income", amount: 1_000_000 }] });
+  await usecase.save("1", "2", entry.updatedAt, grantInput, false);
+  expect(repository.update.mock.calls[1][2].hash).not.toBe(write.hash);
+});
+test.each([
+  [{ entryDate: "2026-09-01" }, "その月の日付"],
+  [{ entryDate: "2026-07-31" }, "その月の日付"],
+  [{ entryDate: "2026-08-32" }, "支給日"],
+  [{ amount: 2_000_000 }, "支給日だけ"],
+  [{ description: "別の項目" }, "支給日だけ"],
+  [{ accountKey: "taxi" }, "支給日だけ"],
+  [{ note: "公開メモ" }, "支給日だけ"],
+])("支給の月外の日付や、日付以外の変更は保存しない %j", async (override, message) => {
+  const { repository, usecase } = setup(grant);
+  await expect(usecase.save("1", "2", entry.updatedAt, { ...grantInput, ...override }, false)).rejects.toThrow(message);
+  expect(repository.update).not.toHaveBeenCalled();
+});
+test("当選月の支給は当選日より前の日付にできない", async () => {
+  const { repository, usecase } = setup({ ...grant, entryDate: "2026-07-15", description: "調査研究費 7月分" });
+  await expect(usecase.save("1", "2", entry.updatedAt, { ...grantInput, entryDate: "2026-07-14", description: "調査研究費 7月分" }, false)).rejects.toThrow("当選日以降");
+  await usecase.save("1", "2", entry.updatedAt, { ...grantInput, entryDate: "2026-07-31", description: "調査研究費 7月分" }, false);
+  expect(repository.update.mock.calls[0][2].entryDate).toBe("2026-07-31");
+});
+test.each([
+  [{ status: "published" as const }, "公開中"],
+  [{ updatedAt: "new" }, "別の操作で更新されました"],
+])("公開中・同時更新された支給は日付を直せない %j", async (overrides, message) => {
+  const { repository, usecase } = setup({ ...grant, ...overrides });
+  await expect(usecase.save("1", "2", entry.updatedAt, { ...grantInput, entryDate: "2026-08-20" }, false)).rejects.toThrow(message);
+  expect(repository.update).not.toHaveBeenCalled();
+});
+test("支給は確認済にする操作・破棄を受け付けない", async () => {
+  const { repository, usecase } = setup(grant);
+  await expect(usecase.save("1", "2", entry.updatedAt, grantInput, true)).rejects.toThrow("すでに確認済");
+  await expect(usecase.discard("1", "2", entry.updatedAt)).rejects.toThrow("破棄できません");
+  expect(repository.update).not.toHaveBeenCalled(); expect(repository.discard).not.toHaveBeenCalled();
+});
+test("公開中の支給も確認済に戻し、webappのキャッシュを無効化する", async () => {
+  const { repository, cacheInvalidator, usecase } = setup({ ...grant, status: "published" });
+  await expect(usecase.unpublish("1", "2", entry.updatedAt)).resolves.toEqual({ cacheWarning: null });
+  expect(repository.unpublish).toHaveBeenCalledWith("1", expect.objectContaining({ source: "grant", status: "published" }));
+  expect(cacheInvalidator.invalidateWebappCache).toHaveBeenCalledTimes(1);
 });
 
 const target = { id: entry.id, updatedAt: entry.updatedAt };
@@ -109,7 +160,6 @@ test("公開中の仕訳を確認済に戻し、webappのキャッシュを無�
 test.each([
   [{ status: "draft" as const }, "公開中の仕訳だけを確認済に戻せます"],
   [{ status: "approved" as const }, "公開中の仕訳だけを確認済に戻せます"],
-  [{ status: "published" as const, source: "grant" as const }, "支給は支給の登録画面で扱います"],
   [{ status: "published" as const, updatedAt: "2026-09-01T00:00:00.000Z" }, "別の操作で更新されました"],
 ])("戻せない仕訳は状態を変えずキャッシュにも触らない %j", async (overrides, message) => {
   const { repository, cacheInvalidator, usecase } = setup(overrides);
