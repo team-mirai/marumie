@@ -183,7 +183,9 @@ export default function ResearchFundTransactionsTable({ slug, financialYear, exp
         </div>
 
         {current.rows.length === 0 ? (
-          <p className="py-6 text-center text-gray-500">該当する支出はありません</p>
+          <p role="status" className="py-6 text-center text-gray-500">
+            該当する支出はありません
+          </p>
         ) : (
           current.rows.map((row) => (
             <div
@@ -274,7 +276,10 @@ export default function ResearchFundTransactionsTable({ slug, financialYear, exp
         </div>
       </div>
 
-      <p className="text-center text-sm leading-5 font-medium tracking-[0.005em] text-[#6A7383]">
+      <p
+        role="status"
+        className="text-center text-sm leading-5 font-medium tracking-[0.005em] text-[#6A7383]"
+      >
         {researchFundTransactionsSummary({
           from: current.from,
           to: current.to,
