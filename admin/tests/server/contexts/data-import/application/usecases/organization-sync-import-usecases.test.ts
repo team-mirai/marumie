@@ -198,15 +198,53 @@ describe("PreviewOrganizationSyncImportUsecase", () => {
     expect(repository.findOrganizationBySlug).not.toHaveBeenCalled();
   });
 
-  it("slug に一致する政治団体が無ければエラーにする", async () => {
+  it("slug に一致する政治団体が無ければエラーにし、置かれたファイルを消す", async () => {
+    const fileStorage = buildFileStorage();
     const usecase = new PreviewOrganizationSyncImportUsecase(
       buildRepository({ findOrganizationBySlug: jest.fn(async () => null) }),
-      buildFileStorage(),
+      fileStorage,
     );
 
     await expect(
       usecase.execute({ storageKey: STORAGE_KEY, environment: ALLOWED_ENVIRONMENT }),
     ).rejects.toThrow(SyncImportOrganizationNotFoundError);
+    expect(fileStorage.remove).toHaveBeenCalledWith(STORAGE_KEY);
+  });
+
+  it("ファイルの内容が不正ならエラーにし、置かれたファイルを消す", async () => {
+    const fileStorage = buildFileStorage("not json");
+    const usecase = new PreviewOrganizationSyncImportUsecase(buildRepository(), fileStorage);
+
+    await expect(
+      usecase.execute({ storageKey: STORAGE_KEY, environment: ALLOWED_ENVIRONMENT }),
+    ).rejects.toThrow(SyncImportValidationError);
+    expect(fileStorage.remove).toHaveBeenCalledWith(STORAGE_KEY);
+  });
+
+  it("ファイルを消せなくても元のエラーを返す", async () => {
+    const fileStorage = buildFileStorage();
+    fileStorage.remove = jest.fn(async () => {
+      throw new Error("storage down");
+    });
+    const consoleError = jest.spyOn(console, "error").mockImplementation(() => undefined);
+    const usecase = new PreviewOrganizationSyncImportUsecase(
+      buildRepository({ findOrganizationBySlug: jest.fn(async () => null) }),
+      fileStorage,
+    );
+
+    await expect(
+      usecase.execute({ storageKey: STORAGE_KEY, environment: ALLOWED_ENVIRONMENT }),
+    ).rejects.toThrow(SyncImportOrganizationNotFoundError);
+    consoleError.mockRestore();
+  });
+
+  it("確認できた場合はファイルを取り込み用に残す", async () => {
+    const fileStorage = buildFileStorage();
+    const usecase = new PreviewOrganizationSyncImportUsecase(buildRepository(), fileStorage);
+
+    await usecase.execute({ storageKey: STORAGE_KEY, environment: ALLOWED_ENVIRONMENT });
+
+    expect(fileStorage.remove).not.toHaveBeenCalled();
   });
 
   it("サーバーが発行した形でないキーではストレージを読まない", async () => {
@@ -217,6 +255,7 @@ describe("PreviewOrganizationSyncImportUsecase", () => {
       usecase.execute({ storageKey: "../private-receipts/x.pdf", environment: ALLOWED_ENVIRONMENT }),
     ).rejects.toThrow(SyncImportValidationError);
     expect(fileStorage.readText).not.toHaveBeenCalled();
+    expect(fileStorage.remove).not.toHaveBeenCalled();
   });
 });
 

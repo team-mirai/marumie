@@ -2,6 +2,7 @@ import "server-only";
 
 import {
   collectDistinctCounterpartsAndDonors,
+  isSyncImportStorageKey,
   type OrganizationSyncImportPlan,
   SyncImportOrganizationNotFoundError,
   toCounterpartKey,
@@ -35,8 +36,23 @@ export class PreviewOrganizationSyncImportUsecase {
   async execute(input: PreviewOrganizationSyncImportInput): Promise<OrganizationSyncImportPlan> {
     assertSyncImportAllowed(input.environment);
 
+    try {
+      return await this.buildPlan(input.storageKey);
+    } catch (error) {
+      // 確認で弾かれたファイルは画面側でもキーを捨てるので、取り込みに使われることはない。
+      // ストレージに残さないよう消しておく（消せなくても元のエラーを優先して返す）。
+      if (isSyncImportStorageKey(input.storageKey)) {
+        await this.fileStorage.remove(input.storageKey).catch((removeError: unknown) => {
+          console.error("Sync import file cleanup error:", removeError);
+        });
+      }
+      throw error;
+    }
+  }
+
+  private async buildPlan(storageKey: string): Promise<OrganizationSyncImportPlan> {
     const file = parseOrganizationSyncImportFile(
-      await readSyncImportFileText(this.fileStorage, input.storageKey),
+      await readSyncImportFileText(this.fileStorage, storageKey),
     );
 
     const organization = await this.repository.findOrganizationBySlug(file.meta.organizationSlug);
