@@ -88,13 +88,109 @@ test.describe("調査研究費 議員ページ", () => {
 		const section = page.locator("#transactions");
 
 		await expect(section.locator('[id^="tx-"]')).toHaveCount(6);
-		// 月切り替え・区分タブ・領収書は出さない
+		// 月切り替え・区分タブは出さない
 		await expect(section.getByRole("button", { name: "8月", exact: true })).toHaveCount(0);
 		await expect(section.getByRole("button", { name: "法律上の区分" })).toHaveCount(0);
-		await expect(section.getByRole("button", { name: "領収書" })).toHaveCount(0);
 
 		await section.getByRole("link", { name: "もっと見る" }).click();
 		await expect(page).toHaveURL(/\/p\/sample-taro\/2026\/transactions$/);
+	});
+
+	test("領収書のある行だけに「領収書」ピルが出て、押すとモーダルで開ける", async ({
+		page,
+	}) => {
+		await page.goto(PAGE_URL);
+		const section = page.locator("#transactions");
+		const rows = section.locator('[id^="tx-"]');
+
+		// シードでは 8/2 イヤホン代（画像）と 8/1 新聞購読料（PDF）にだけ領収書がある
+		await expect(section.getByRole("button", { name: "領収書を見る" })).toHaveCount(2);
+		await expect(
+			rows.filter({ hasText: "イヤホン代" }).getByRole("button", { name: "領収書を見る" }),
+		).toBeVisible();
+		await expect(
+			rows.filter({ hasNotText: /イヤホン代|新聞購読料/ }).getByRole("button", {
+				name: "領収書を見る",
+			}),
+		).toHaveCount(0);
+
+		// 画像の領収書はモーダルの中に出す。ハイドレーション前のクリックを取りこぼさないよう押し直す。
+		const dialog = page.getByRole("dialog", { name: "領収書" });
+		await expect(async () => {
+			await rows
+				.filter({ hasText: "イヤホン代" })
+				.getByRole("button", { name: "領収書を見る" })
+				.click();
+			await expect(dialog).toBeVisible({ timeout: 1_000 });
+		}).toPass();
+		await expect(dialog.getByRole("img", { name: "イヤホン代の領収書" })).toBeAttached();
+		await dialog.getByRole("button", { name: "閉じる", exact: true }).click();
+		await expect(dialog).toHaveCount(0);
+
+		// PDF は別タブで原本を開くリンクを出す。Esc で閉じる
+		await rows
+			.filter({ hasText: "新聞購読料" })
+			.getByRole("button", { name: "領収書を見る" })
+			.click();
+		await expect(dialog.getByRole("link", { name: "新聞購読料の領収書を開く" })).toHaveAttribute(
+			"target",
+			"_blank",
+		);
+		await page.keyboard.press("Escape");
+		await expect(dialog).toHaveCount(0);
+	});
+
+	test("「用途N」のある行では「領収書」ピルと並んで出る", async ({ page }) => {
+		await page.goto(PAGE_URL);
+		const section = page.locator("#transactions");
+		const card = page
+			.locator('[id^="highlight-"]')
+			.filter({ hasText: "意見受付窓口の開設" });
+
+		await expect(async () => {
+			await card.getByRole("button", { name: "1件" }).click();
+			await expect(section.getByRole("button", { name: "用途1を見る" })).toBeVisible({
+				timeout: 1_000,
+			});
+		}).toPass();
+		const row = section.locator('[id^="tx-"]').filter({ hasText: "ボネクタ利用料" });
+		await expect(row.getByRole("button", { name: "領収書を見る" })).toBeVisible();
+		await expect(row.getByRole("button", { name: "用途1を見る" })).toBeVisible();
+	});
+
+	test("SP 幅でも「領収書」ピルが見えて押せる", async ({ page }) => {
+		await page.setViewportSize({ width: 390, height: 844 });
+		await page.goto(PAGE_URL);
+		const pill = page
+			.locator("#transactions")
+			.locator('[id^="tx-"]')
+			.filter({ hasText: "イヤホン代" })
+			.getByRole("button", { name: "領収書を見る" });
+
+		await expect(pill).toBeVisible();
+		const dialog = page.getByRole("dialog", { name: "領収書" });
+		await expect(async () => {
+			await pill.click();
+			await expect(dialog).toBeVisible({ timeout: 1_000 });
+		}).toPass();
+		// 背景を押して閉じる
+		await page.mouse.click(10, 835);
+		await expect(dialog).toHaveCount(0);
+	});
+
+	test("全件ページでも領収書のある行に「領収書」ピルが出て、モーダルで開ける", async ({
+		page,
+	}) => {
+		await page.goto(`${PAGE_URL}/transactions`);
+		const pill = page.getByRole("button", { name: "領収書を見る" });
+
+		await expect(pill).toHaveCount(3);
+		const dialog = page.getByRole("dialog", { name: "領収書" });
+		await expect(async () => {
+			await pill.first().click();
+			await expect(dialog).toBeVisible({ timeout: 1_000 });
+		}).toPass();
+		await expect(dialog.getByText("イヤホン代")).toBeVisible();
 	});
 
 	test("特記事項はⓘで開かず、項目名の下に常に出る", async ({ page }) => {

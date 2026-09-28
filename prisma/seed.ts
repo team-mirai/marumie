@@ -9,6 +9,7 @@ import { politiciansSeeder } from './seeds/politicians';
 import { reportProfilesSeeder } from './seeds/reportProfiles';
 import { researchFundJournalEntriesSeeder } from '@/prisma/seeds/researchFundJournalEntries';
 import { researchFundBooksSeeder } from './seeds/researchFundBooks';
+import { researchFundDocumentsSeeder } from './seeds/researchFundDocuments';
 import { researchFundExpenditureGroupsSeeder } from './seeds/researchFundExpenditureGroups';
 import { tenantsSeeder } from './seeds/tenants';
 import { transactionsSeeder } from './seeds/transactions';
@@ -32,6 +33,7 @@ const seeders: Seeder[] = [
   politiciansSeeder,
   researchFundBooksSeeder,
   researchFundJournalEntriesSeeder,
+  researchFundDocumentsSeeder,
   researchFundExpenditureGroupsSeeder,
 ];
 

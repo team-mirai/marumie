@@ -5,8 +5,10 @@ import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import CardHeader from "@/client/components/layout/CardHeader";
 import MainColumnCard from "@/client/components/layout/MainColumnCard";
+import ReceiptModal from "@/client/components/research-fund/ReceiptModal";
 import ResearchFundCategoryPill from "@/client/components/research-fund/ResearchFundCategoryPill";
 import { useResearchFundCrossLink } from "@/client/components/research-fund/ResearchFundCrossLink";
+import ResearchFundReceiptPill from "@/client/components/research-fund/ResearchFundReceiptPill";
 import {
   formatResearchFundDate,
   RESEARCH_FUND_PREVIEW_COUNT,
@@ -61,12 +63,13 @@ function Amount({ amount, className }: { amount: number; className: string }) {
  *
  * 日付の新しい順に先頭6件だけを出し、続きは「もっと見る」から全件ページで見る。
  * 用途カードに紐づく行は「★ 用途N」から該当カードへ飛べ、カードの「N件」からは該当行まで一覧を広げる。
- * 領収書は第一弾では公開しないので、ボタンもモーダルも出さない。
+ * 領収書のある行は「領収書」ピルから原本をモーダルで見られる。
  */
 export default function ResearchFundExpensesSection({ data, updatedAt }: Props) {
   const { rowsRequest, showCard } = useResearchFundCrossLink();
   const [shown, setShown] = useState(RESEARCH_FUND_PREVIEW_COUNT);
   const [flashedGroupId, setFlashedGroupId] = useState<string | null>(null);
+  const [receipt, setReceipt] = useState<ResearchFundExpenseView | null>(null);
   const scrollTargetId = useRef<string | null>(null);
   const flashTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -127,6 +130,18 @@ export default function ResearchFundExpensesSection({ data, updatedAt }: Props) 
     );
   };
 
+  // 項目名の右（SP ではカテゴリーの右）に並べるピル。領収書 → 用途N の順。
+  const badges = (row: ResearchFundExpenseView) => {
+    const link = groupLink(row);
+    if (!row.hasReceipt && !link) return null;
+    return (
+      <>
+        {row.hasReceipt && <ResearchFundReceiptPill onClick={() => setReceipt(row)} />}
+        {link}
+      </>
+    );
+  };
+
   return (
     <MainColumnCard id="transactions">
       <CardHeader
@@ -151,7 +166,7 @@ export default function ResearchFundExpensesSection({ data, updatedAt }: Props) 
           </div>
 
           {rows.map((row) => {
-            const link = groupLink(row);
+            const rowBadges = badges(row);
             return (
               <div
                 key={row.id}
@@ -164,14 +179,20 @@ export default function ResearchFundExpensesSection({ data, updatedAt }: Props) 
                 </div>
                 <div className="order-3 flex flex-wrap items-center gap-2 min-[761px]:order-none min-[761px]:pl-4">
                   <ResearchFundCategoryPill category={row.detailed} />
-                  {link && <span className="min-[761px]:hidden">{link}</span>}
+                  {rowBadges && (
+                    <span className="flex items-center gap-2 min-[761px]:hidden">{rowBadges}</span>
+                  )}
                 </div>
                 <div className="order-2 flex items-baseline justify-between gap-3 min-[761px]:order-none min-[761px]:block min-[761px]:py-3">
                   <span className="flex items-center gap-2">
                     <span className="text-sm font-bold text-gray-800 min-[761px]:text-base">
                       {row.description}
                     </span>
-                    {link && <span className="hidden min-[761px]:inline-flex">{link}</span>}
+                    {rowBadges && (
+                      <span className="hidden items-center gap-2 min-[761px]:inline-flex">
+                        {rowBadges}
+                      </span>
+                    )}
                   </span>
                   <Amount amount={row.amount} className="text-base min-[761px]:hidden" />
                   {row.note && (
@@ -210,6 +231,14 @@ export default function ResearchFundExpensesSection({ data, updatedAt }: Props) 
             </div>
           )}
         </div>
+      )}
+
+      {receipt && (
+        <ReceiptModal
+          expense={receipt}
+          category={receipt.detailed}
+          onClose={() => setReceipt(null)}
+        />
       )}
     </MainColumnCard>
   );

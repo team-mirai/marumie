@@ -2,9 +2,11 @@
 import "client-only";
 
 import { useMemo, useState } from "react";
+import ReceiptModal from "@/client/components/research-fund/ReceiptModal";
 import ResearchFundCategoryFilter from "@/client/components/research-fund/ResearchFundCategoryFilter";
 import ResearchFundCategoryPill from "@/client/components/research-fund/ResearchFundCategoryPill";
 import ResearchFundCsvDownloadLink from "@/client/components/research-fund/ResearchFundCsvDownloadLink";
+import ResearchFundReceiptPill from "@/client/components/research-fund/ResearchFundReceiptPill";
 import {
   filterResearchFundExpenses,
   formatResearchFundDate,
@@ -83,13 +85,14 @@ function PagerButton({
  * 調研費の「すべての出入金」全件ページの表。
  *
  * 1議員・1年度の公開中の支出は数百件なので、全件をサーバーで読み込んだうえで
- * 並び替え・絞り込み・ページングをクライアントで行う。
+ * 並び替え・絞り込み・ページングをクライアントで行う。領収書のある行は「領収書」ピルからモーダルで原本を見られる。
  */
 export default function ResearchFundTransactionsTable({ slug, financialYear, expenses }: Props) {
   const [sort, setSort] = useState<ResearchFundTransactionSort>("new");
   const [categories, setCategories] = useState<string[]>([]);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [page, setPage] = useState(1);
+  const [receipt, setReceipt] = useState<ResearchFundExpenseView | null>(null);
 
   const options = useMemo(() => researchFundCategoryOptions(expenses), [expenses]);
   const filtered = useMemo(
@@ -195,12 +198,24 @@ export default function ResearchFundTransactionsTable({ slug, financialYear, exp
               <div className="text-xs text-[#4B5563] min-[761px]:px-4 min-[761px]:text-base min-[761px]:font-bold min-[761px]:text-gray-800">
                 {formatResearchFundDate(row.date)}
               </div>
-              <div className="order-3 min-[761px]:order-none min-[761px]:pl-4">
+              <div className="order-3 flex flex-wrap items-center gap-2 min-[761px]:order-none min-[761px]:pl-4">
                 <ResearchFundCategoryPill category={row.detailed} />
+                {row.hasReceipt && (
+                  <span className="min-[761px]:hidden">
+                    <ResearchFundReceiptPill onClick={() => setReceipt(row)} />
+                  </span>
+                )}
               </div>
               <div className="order-2 flex items-baseline justify-between gap-3 min-[761px]:order-none min-[761px]:block min-[761px]:py-3">
-                <span className="text-sm font-bold text-gray-800 min-[761px]:text-base">
-                  {row.description}
+                <span className="flex items-center gap-2">
+                  <span className="text-sm font-bold text-gray-800 min-[761px]:text-base">
+                    {row.description}
+                  </span>
+                  {row.hasReceipt && (
+                    <span className="hidden min-[761px]:inline-flex">
+                      <ResearchFundReceiptPill onClick={() => setReceipt(row)} />
+                    </span>
+                  )}
                 </span>
                 <span className="whitespace-nowrap text-base font-bold text-[#DC2626] min-[761px]:hidden">
                   -{row.amount.toLocaleString("ja-JP")}
@@ -288,6 +303,14 @@ export default function ResearchFundTransactionsTable({ slug, financialYear, exp
           filtered: categories.length > 0,
         })}
       </p>
+
+      {receipt && (
+        <ReceiptModal
+          expense={receipt}
+          category={receipt.detailed}
+          onClose={() => setReceipt(null)}
+        />
+      )}
     </div>
   );
 }

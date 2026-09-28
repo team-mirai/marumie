@@ -16,7 +16,7 @@
 - `design/調研費まる見え_最終.dc.html` をブラウザで直接開くと動く（同階層の `support.js`・`choken-data.js`・`assets/` を参照）
 - 初期表示は調研費ページ。ヘッダー右の組織セレクタで「政党・チームみらい」を選ぶとトップページ追加分に切り替わる
 - **inline style を移植しない**。既存コンポーネント（`MainColumnCard` / `CardHeader` / `MainButton` / `SankeyChart` / `MonthlyChart` / `TransactionTableRow` / `InteractiveTransactionTable` / `ExplanationSection` / `TransparencySection` / `AboutSection` / `LinkCardsSection` / `Footer`）を再利用・拡張する。プロトタイプはこれらの実装値を写して作ってある
-- ファイル内の Tweaks（`summaryLayout` / `soloUpcoming` / `partyChart` / `detailButton` / `receiptStyle`）は検討用の切替。**最終案は下記「確定した選択」のみ**。それ以外の分岐（`layB` `layC` `layCurrent` `soloB` `soloC` `partyBar` `btnTopLink` `btnBottom`、領収書リンク4種、`receiptOpen` モーダル）は実装しない
+- ファイル内の Tweaks（`summaryLayout` / `soloUpcoming` / `partyChart` / `detailButton` / `receiptStyle`）は検討用の切替。**最終案は下記「確定した選択」のみ**。それ以外の分岐（`layB` `layC` `layCurrent` `soloB` `soloC` `partyBar` `btnTopLink` `btnBottom`、`receiptStyle` の「ピル」以外の領収書リンク）は実装しない
 
 ## Fidelity
 
@@ -30,7 +30,7 @@
 | 公開議員が1名だけの間の表現 | **A 今後の公開予定チップ**（「峰島侑也」塗りチップ＋「他議員も今後追加」破線チップ） |
 | トップページの内訳グラフ | **サンキーチャート**（詳細の区分／法律上の区分タブつき） |
 | 詳細ページへの導線 | **見出し右：ボタン**「峰島侑也の調研費を詳しく ›」 |
-| 領収書リンク | **非表示（第一弾）**。モーダルも出さない |
+| 領収書リンク | **ピル**（`receiptLink` の「ピル」分岐）。領収書のある行の項目名の右に出し、押すと領収書モーダルで原本を見せる（#1542 で第一弾の「非表示」から変更） |
 
 ---
 
@@ -250,4 +250,4 @@ URL 案 `/choken/[slug]/[year]`（全件は `/choken/[slug]/[year]/transactions`
 1. 「調研費とは」の自主基準の一文がページ間で異なる（上記）
 2. 「調研費のデータについて」の「15分類」表記 → マスタの分類数に合わせる
 3. トップページでの議員サマリーセクションの挿入位置
-4. 領収書の公開（第一弾は非表示。admin 側は原本保存済み）
+4. ~~領収書の公開~~ → #1542 で「ピル」＋モーダルで公開することに決定
