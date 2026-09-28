@@ -13,24 +13,22 @@ export interface GetResearchFundPoliticiansParams {
 export class GetResearchFundPoliticiansUsecase {
   constructor(private repository: ResearchFundRepository) {}
 
-  /** 組織セレクタの「調査研究費」グループに並べる議員。準備中の議員も隠さない。 */
+  /**
+   * 組織セレクタの「調査研究費」グループに並べる議員。
+   * 帳簿があっても published の仕訳が1件も無い議員（入力途中など）は、中身が無いので出さない。
+   */
   async execute(params: GetResearchFundPoliticiansParams): Promise<ResearchFundPoliticianEntry[]> {
     const politicians = await this.repository.findPoliticians(params.financialYear);
-    return politicians.map(toEntry);
+    return politicians.filter((source) => source.publishedMonths.length > 0).map(toEntry);
   }
 }
 
-/** published の仕訳が1件も無い議員は「準備中」。行は隠さずグレーで残す。 */
 function toEntry(source: ResearchFundPoliticianSource): ResearchFundPoliticianEntry {
-  const ready = source.publishedMonths.length > 0;
   return {
     slug: source.slug,
     name: source.name,
-    ready,
-    statusLabel: ready
-      ? buildCoverageLabel([
-          { months: source.publishedMonths, publishedThrough: source.publishedThrough },
-        ])
-      : "準備中",
+    statusLabel: buildCoverageLabel([
+      { months: source.publishedMonths, publishedThrough: source.publishedThrough },
+    ]),
   };
 }

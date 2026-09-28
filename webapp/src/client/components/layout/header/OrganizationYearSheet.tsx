@@ -3,10 +3,7 @@ import "client-only";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import {
-  formatResearchFundSelectorLabel,
-  groupResearchFundPoliticians,
-} from "@/client/lib/organization-selector";
+import { formatResearchFundSelectorLabel } from "@/client/lib/organization-selector";
 import type { ResearchFundPoliticianEntry } from "@/server/contexts/research-fund/domain/models/research-fund-politician-list";
 import type { OrganizationsResponse } from "@/types/organization";
 
@@ -15,7 +12,7 @@ const DEFAULT_YEAR = 2026;
 
 interface OrganizationYearSheetProps {
   organizations: OrganizationsResponse;
-  /** 年度ごとの議員一覧。選択中の年度に帳簿がある議員だけを出す */
+  /** 年度ごとの議員一覧。選択中の年度に公開済みの仕訳がある議員だけを出す */
   politiciansByYear: Record<number, ResearchFundPoliticianEntry[]>;
   initialSlug?: string;
   /** 議員ページを開いているときの議員 slug。政治団体ページでは undefined */
@@ -62,8 +59,6 @@ export default function OrganizationYearSheet({
   const currentPolitician = politicians.find(
     (politician) => politician.slug === currentPoliticianSlug,
   );
-  const { selectable: selectablePoliticians, upcomingLabel } =
-    groupResearchFundPoliticians(politicians);
 
   const handleSelect = (slug: string, year: number) => {
     const pathSegments = pathname.split("/");
@@ -90,11 +85,11 @@ export default function OrganizationYearSheet({
   };
 
   const handleYearSelect = (year: number) => {
-    // その年度に帳簿が無い議員ページへ送ると 404 になるので、政治団体ページに戻す。
-    const hasBook = (politiciansByYear[year] ?? []).some(
+    // その年度に公開済みの仕訳が無い議員ページへは送らず、政治団体ページに戻す。
+    const isPublished = (politiciansByYear[year] ?? []).some(
       (politician) => politician.slug === currentPoliticianSlug,
     );
-    if (currentPoliticianSlug && hasBook) {
+    if (currentPoliticianSlug && isPublished) {
       router.push(`/p/${encodeURIComponent(currentPoliticianSlug)}/${year}`);
       return;
     }
@@ -177,7 +172,7 @@ export default function OrganizationYearSheet({
                 <div className="px-4 flex flex-col gap-1">
                   <p className="text-[11px] text-[#5a5a5a]">調研費（議員別）</p>
                   <div className="flex flex-col">
-                    {selectablePoliticians.map((politician) => (
+                    {politicians.map((politician) => (
                       <button
                         key={politician.slug}
                         type="button"
@@ -195,16 +190,6 @@ export default function OrganizationYearSheet({
                         </span>
                       </button>
                     ))}
-                    {/* 準備中の議員は1行にまとめ、選択できないグレーの行にする */}
-                    {upcomingLabel && (
-                      <div className="flex items-center gap-2 min-h-9 py-2 pl-6 rounded-md text-[#9CA3AF]">
-                        <span className="w-3" />
-                        <span className="flex flex-col gap-0.5">
-                          <span className="text-xs">{upcomingLabel}</span>
-                          <span className="text-[10px]">準備中</span>
-                        </span>
-                      </div>
-                    )}
                   </div>
                 </div>
               </>

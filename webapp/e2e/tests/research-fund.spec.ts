@@ -449,4 +449,23 @@ test.describe("調査研究費 政党トップページのサマリー", () => {
 			.click();
 		await expect(page).toHaveURL(/\/p\/sample-taro\/2026$/);
 	});
+
+	test("組織セレクタの調研費（議員別）には公開済みの仕訳がある議員だけが出る", async ({
+		page,
+	}) => {
+		// 政党ページの A-6 には準備中の議員が出るので、A-6 の無い議員ページで確かめる
+		await page.goto("/p/sample-taro/2026");
+
+		await page.getByRole("button", { name: /サンプル 太郎（調研費）/ }).click();
+
+		await expect(page.getByText("調研費（議員別）", { exact: true })).toBeVisible();
+		await expect(
+			page.getByRole("button", { name: /サンプル 太郎 2026年/ }),
+		).toBeVisible();
+		// サンプル 花子・次郎は帳簿はあるが公開済みの仕訳が無いので、
+		// 「〇〇 ほか N人」の準備中の行としても出ない
+		await expect(page.getByText(/サンプル 花子/)).toHaveCount(0);
+		await expect(page.getByText(/サンプル 次郎/)).toHaveCount(0);
+		await expect(page.getByText(/ほか\d+人/)).toHaveCount(0);
+	});
 });

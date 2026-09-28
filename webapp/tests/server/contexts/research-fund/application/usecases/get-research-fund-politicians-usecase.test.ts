@@ -28,21 +28,34 @@ describe("GetResearchFundPoliticiansUsecase", () => {
       {
         slug: "sample-taro",
         name: "サンプル 太郎",
-        ready: true,
         statusLabel: "2026年2月〜8月分を公開中",
       },
     ]);
     expect(repository.findPoliticians).toHaveBeenCalledWith(2026);
   });
 
-  it("公開済みの仕訳が無い議員も隠さず「準備中」で返す", async () => {
+  it("帳簿はあっても公開済みの仕訳が無い議員は返さない", async () => {
+    const { usecase } = build([
+      {
+        slug: "sample-taro",
+        name: "サンプル 太郎",
+        publishedMonths: ["2026-02"],
+        publishedThrough: null,
+      },
+      { slug: "sample-jiro", name: "サンプル 次郎", publishedMonths: [], publishedThrough: "2026-08" },
+    ]);
+
+    expect((await usecase.execute({ financialYear: 2026 })).map((entry) => entry.slug)).toEqual([
+      "sample-taro",
+    ]);
+  });
+
+  it("公開済みの仕訳がある議員が1人もいなければ空で返す", async () => {
     const { usecase } = build([
       { slug: "sample-jiro", name: "サンプル 次郎", publishedMonths: [], publishedThrough: null },
     ]);
 
-    expect(await usecase.execute({ financialYear: 2026 })).toEqual([
-      { slug: "sample-jiro", name: "サンプル 次郎", ready: false, statusLabel: "準備中" },
-    ]);
+    expect(await usecase.execute({ financialYear: 2026 })).toEqual([]);
   });
 
   it("公開範囲が未設定なら実データの月だけでラベルを作る", async () => {
