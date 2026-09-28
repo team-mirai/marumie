@@ -399,18 +399,19 @@ model ResearchFundScanBatch {
 
 // 1書類 = 1ジョブ
 model ResearchFundScanJob {
-  id         BigInt                    @id @default(autoincrement())
-  batchId    BigInt                    @map("batch_id")
-  documentId BigInt                    @map("document_id")
-  status     ResearchFundScanJobStatus @default(queued)
-  promptId   BigInt                    @map("prompt_id") // 使った版を記録
-  model      String                    @db.VarChar(100) // "claude-opus-4-1" など
-  rawJson    Json?                     @map("raw_json") // LLM の構造化出力の原文（監査用）
-  error      String?
-  startedAt  DateTime?                 @map("started_at")
-  finishedAt DateTime?                 @map("finished_at")
-  createdAt  DateTime                  @default(now()) @map("created_at")
-  updatedAt  DateTime                  @updatedAt @map("updated_at")
+  id                BigInt                    @id @default(autoincrement())
+  batchId           BigInt                    @map("batch_id")
+  documentId        BigInt                    @map("document_id")
+  status            ResearchFundScanJobStatus @default(queued)
+  promptId          BigInt                    @map("prompt_id") // 使った版を記録
+  model             String                    @db.VarChar(100) // "claude-opus-4-1" など
+  rawJson           Json?                     @map("raw_json") // LLM の構造化出力の原文（監査用）
+  rereadInstruction String?                   @map("reread_instruction") // 読み直し時のフリーテキスト指示（通常スキャンでは null。監査用に残す）
+  error             String?
+  startedAt         DateTime?                 @map("started_at")
+  finishedAt        DateTime?                 @map("finished_at")
+  createdAt         DateTime                  @default(now()) @map("created_at")
+  updatedAt         DateTime                  @updatedAt @map("updated_at")
 
   batch    ResearchFundScanBatch @relation(fields: [batchId], references: [id], onDelete: Cascade)
   document ResearchFundDocument  @relation(fields: [documentId], references: [id], onDelete: Cascade)
