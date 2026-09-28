@@ -1,4 +1,4 @@
-import { test, expect, type Locator } from "@playwright/test";
+import { test, expect } from "@playwright/test";
 
 // シードで公開済みの調研費データを持つ議員（prisma/seeds/researchFundJournalEntries.ts）。
 const PAGE_URL = "/p/sample-taro/2026";
@@ -42,9 +42,11 @@ test.describe("調査研究費 議員ページ", () => {
 		// URL の無い成果物は「報告は準備中」と出す
 		await expect(page.getByText("開催報告：報告は準備中")).toBeVisible();
 
-		// B-4 すべての支出
+		// B-4 すべての出入金
 		await expect(
-			page.locator("#transactions").getByRole("heading", { name: /すべての支出/ }),
+			page
+				.locator("#transactions")
+				.getByRole("heading", { name: /サンプル 太郎・調研費.*すべての出入金/ }),
 		).toBeVisible();
 
 		// 透明性バンド
@@ -72,56 +74,78 @@ test.describe("調査研究費 議員ページ", () => {
 
 	test("未公開（下書き・確認済）の仕訳は表示されない", async ({ page }) => {
 		await page.goto(PAGE_URL);
+		const section = page.locator("#transactions");
 
-		await selectMonth(page.locator("#transactions"), "8月");
+		// シードでは 8/10 以降が未公開（確認済・下書き）。新しい順の先頭は公開済みの 8/2 になる。
+		await expect(section.getByText(/^2026\.8\.(1|2|3)\d$/)).toHaveCount(0);
+		await expect(section.locator('[id^="tx-"]').first()).toContainText("2026.8.2");
+	});
 
-		// シードでは 8/10 以降が未公開（確認済・下書き）。8月を開いても出てこない。
+	test("新しい順に先頭6件だけが出て、もっと見るで全件ページに遷移する", async ({
+		page,
+	}) => {
+		await page.goto(PAGE_URL);
+		const section = page.locator("#transactions");
+
+		await expect(section.locator('[id^="tx-"]')).toHaveCount(6);
+		// 月切り替え・区分タブ・領収書は出さない
+		await expect(section.getByRole("button", { name: "8月", exact: true })).toHaveCount(0);
+		await expect(section.getByRole("button", { name: "法律上の区分" })).toHaveCount(0);
+		await expect(section.getByRole("button", { name: "領収書" })).toHaveCount(0);
+
+		await section.getByRole("link", { name: "もっと見る" }).click();
+		await expect(page).toHaveURL(/\/p\/sample-taro\/2026\/transactions$/);
+	});
+
+	test("特記事項はⓘで開かず、項目名の下に常に出る", async ({ page }) => {
+		await page.goto(PAGE_URL);
+		const section = page.locator("#transactions");
+
+		await expect(section.getByRole("button", { name: /の特記事項$/ })).toHaveCount(0);
 		await expect(
-			page.locator("#transactions").getByText(/^2026\.08\.(1|2|3)\d$/),
-		).toHaveCount(0);
-		await expect(
-			page.locator("#transactions").getByText("2026.08.02").first(),
+			section.getByText("日経電子版 個人プラン 8月分サービス利用料").first(),
 		).toBeVisible();
 	});
 
-	test("月を切り替えるとその月の支出だけが表示される", async ({ page }) => {
+	test("用途カードの件数を押すと、該当行まで一覧が広がって目立つ", async ({
+		page,
+	}) => {
 		await page.goto(PAGE_URL);
 		const section = page.locator("#transactions");
+		const card = page
+			.locator('[id^="highlight-"]')
+			.filter({ hasText: "タウンミーティングの開催" });
 
-		await selectMonth(section, "4月");
-		await expect(section.getByText(/^4月の支出 \d+件・合計/)).toBeVisible();
-		await expect(section.getByText(/^2026\.05\./)).toHaveCount(0);
+		// 会場費（4/10）は先頭6件の外にある。ハイドレーション前のクリックを取りこぼさないよう押し直す。
+		await expect(async () => {
+			await card.getByRole("button", { name: "3件" }).click();
+			await expect(section.locator('[data-flashed="true"]')).toHaveCount(3, {
+				timeout: 1_000,
+			});
+		}).toPass();
+		await expect(section.locator('[data-flashed="true"]').last()).toContainText(
+			"会場費",
+		);
 	});
 
-	test("区分トグルで法律上の区分に切り替えられる", async ({ page }) => {
+	test("明細の「用途N」を押すと、該当の用途カードが目立つ", async ({
+		page,
+	}) => {
 		await page.goto(PAGE_URL);
 		const section = page.locator("#transactions");
-		const legalTab = section.getByRole("button", { name: "法律上の区分" });
+		const card = page
+			.locator('[id^="highlight-"]')
+			.filter({ hasText: "意見受付窓口の開設" });
 
+		// 紐づく行（ボネクタ利用料）を件数リンクで一覧に出してから、行の「用途1」を押す。
 		await expect(async () => {
-			await legalTab.click();
-			await expect(legalTab).toHaveAttribute("aria-pressed", "true");
+			await card.getByRole("button", { name: "1件" }).click();
+			await expect(section.getByRole("button", { name: "用途1を見る" })).toBeVisible({
+				timeout: 1_000,
+			});
 		}).toPass();
-
-		await expect(section.getByText(/^[①-⑩]\s/).first()).toBeVisible();
-	});
-
-	test("特記事項のⓘを押すと注記が開く", async ({ page }) => {
-		await page.goto(PAGE_URL);
-		const section = page.locator("#transactions");
-
-		await selectMonth(section, "5月");
-		const infoButton = section
-			.getByRole("button", { name: /の特記事項$/ })
-			.first();
-		await expect(infoButton).toBeVisible();
-
-		await expect(async () => {
-			if ((await infoButton.getAttribute("aria-expanded")) !== "true") {
-				await infoButton.click();
-			}
-			await expect(infoButton).toHaveAttribute("aria-expanded", "true");
-		}).toPass();
+		await section.getByRole("button", { name: "用途1を見る" }).click();
+		await expect(card).toHaveClass(/border-\[#2AA693\]/);
 	});
 
 	test("ヘッダーのナビが同じ議員ページ内のセクションを指す", async ({ page }) => {
@@ -177,16 +201,6 @@ test.describe("調査研究費 議員ページ", () => {
 		await expect(page).toHaveURL(/\/o\/[\w-]+/);
 	});
 });
-
-/** ハイドレーション前のクリックを取りこぼさないよう、選択が反映されるまで押す。 */
-async function selectMonth(section: Locator, label: string) {
-	const button = section.getByRole("button", { name: label, exact: true });
-	await expect(button).toBeVisible();
-	await expect(async () => {
-		await button.click();
-		await expect(button).toHaveAttribute("aria-pressed", "true");
-	}).toPass();
-}
 
 test.describe("調査研究費 政党トップページのサマリー", () => {
 	const ORG_URL = "/o/sample-party/2026";

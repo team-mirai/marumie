@@ -78,7 +78,9 @@ function published(overrides: Partial<PublishedResearchFund> = {}): PublishedRes
         title: "広報活動",
         description: "チラシを配りました",
         outcomes: [{ label: "配布報告", url: null }],
-        entries: [{ entryDate: "2026-03-11", amount: 99_000, accountKey: "printing-pr" }],
+        entries: [
+          { entryId: "3", entryDate: "2026-03-11", amount: 99_000, accountKey: "printing-pr" },
+        ],
       },
     ],
     ...overrides,
@@ -150,6 +152,18 @@ describe("GetResearchFundPageUsecase", () => {
       categories: [{ label: "印刷・広報費", color: "#A16207" }],
       outcomes: [{ label: "配布報告", url: null }],
     });
+  });
+
+  it("用途カードに紐づいた明細に支出群のIDを添える", async () => {
+    const { usecase } = usecaseWith(published());
+
+    const data = await usecase.execute({ slug: "sample-taro", financialYear: 2026 });
+
+    expect(data?.expenses.map((expense) => [expense.id, expense.groupId])).toEqual([
+      ["3", "7"],
+      ["2", null],
+      ["1", null],
+    ]);
   });
 
   it("帳簿の公開用メタ情報をそのまま渡す", async () => {

@@ -30,10 +30,13 @@ function mergeNotes(note: string | null, splitNote: string | null): string | nul
  * 並びは日付の新しい順。同一注文（split_group）の行は必ず隣り合わせにし、
  * 何点で1注文かを特記事項に添えることで「同じものを何度も買っている」と
  * 読まれないようにする。
+ *
+ * groupIdByEntryId は仕訳ID → 支出群ID。用途カードと明細を相互にリンクするのに使う。
  */
 export function buildExpenseViews(
   expenses: readonly PublishedExpense[],
   accounts: Readonly<Record<string, PublishedAccount>>,
+  groupIdByEntryId: ReadonlyMap<string, string> = new Map(),
 ): ResearchFundExpenseView[] {
   const splitCounts = new Map<string, number>();
   for (const expense of expenses) {
@@ -64,6 +67,7 @@ export function buildExpenseViews(
         legal: { label: account?.legalLabel || UNKNOWN_CATEGORY_LABEL, color },
         note: mergeNotes(expense.note, splitCount > 1 ? splitGroupNote(splitCount) : null),
         splitGroup: expense.splitGroup,
+        groupId: groupIdByEntryId.get(expense.entryId) ?? null,
         hasReceipt: expense.hasReceipt,
         receiptKind: expense.hasReceipt ? receiptKindOf(expense.receiptMime) : null,
       };

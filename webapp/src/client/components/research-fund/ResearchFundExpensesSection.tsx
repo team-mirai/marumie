@@ -1,15 +1,18 @@
 "use client";
 import "client-only";
 import Image from "next/image";
-import { useMemo, useState } from "react";
+import Link from "next/link";
+import { useEffect, useMemo, useRef, useState } from "react";
 import CardHeader from "@/client/components/layout/CardHeader";
 import MainColumnCard from "@/client/components/layout/MainColumnCard";
-import CategoryModeTabs from "@/client/components/research-fund/CategoryModeTabs";
-import ReceiptModal from "@/client/components/research-fund/ReceiptModal";
 import ResearchFundCategoryPill from "@/client/components/research-fund/ResearchFundCategoryPill";
-import ResearchFundCsvDownloadLink from "@/client/components/research-fund/ResearchFundCsvDownloadLink";
+import { useResearchFundCrossLink } from "@/client/components/research-fund/ResearchFundCrossLink";
+import {
+  formatResearchFundDate,
+  RESEARCH_FUND_PREVIEW_COUNT,
+  revealResearchFundGroupRows,
+} from "@/client/lib/research-fund-transactions";
 import type {
-  ResearchFundCategoryMode,
   ResearchFundExpenseView,
   ResearchFundPageData,
 } from "@/server/contexts/research-fund/domain/models/research-fund-page";
@@ -19,147 +22,187 @@ interface Props {
   updatedAt: string;
 }
 
-const ROW_GRID = "md:grid-cols-[140px_200px_1fr_180px]";
+/** SP（≤760px）ではヘッダー行を隠し、1行を縦積みにする（全件ページの表と同じ）。 */
+const ROW_GRID = "min-[761px]:grid-cols-[140px_200px_1fr_180px]";
+/** 用途カードの「N件」から飛んできた行を目立たせておく時間 */
+const ROWS_FLASH_MS = 2500;
+/** 固定ヘッダーに隠れないよう、明細の先頭行へ飛ぶときに上を空ける量 */
+const ROWS_SCROLL_OFFSET = 140;
+
+function StarIcon() {
+  return (
+    <svg
+      width="12"
+      height="12"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M12 2l2.4 6.6L21 9l-5.2 4.3L17.5 21 12 17.3 6.5 21l1.7-7.7L3 9l6.6-.4z" />
+    </svg>
+  );
+}
+
+function Amount({ amount, className }: { amount: number; className: string }) {
+  return (
+    <span className={`whitespace-nowrap font-bold text-[#DC2626] ${className}`}>
+      -{amount.toLocaleString("ja-JP")}
+      <span className="text-xs font-normal text-[#4B5563]"> 円</span>
+    </span>
+  );
+}
 
 /**
- * B-4 すべての支出。
+ * B-4 すべての出入金。
  *
- * 4月だけで99件になる月があるため、月切り替えを必須にしている。
+ * 日付の新しい順に先頭6件だけを出し、続きは「もっと見る」から全件ページで見る。
+ * 用途カードに紐づく行は「★ 用途N」から該当カードへ飛べ、カードの「N件」からは該当行まで一覧を広げる。
+ * 領収書は第一弾では公開しないので、ボタンもモーダルも出さない。
  */
 export default function ResearchFundExpensesSection({ data, updatedAt }: Props) {
-  const months = useMemo(
-    () => [...new Set(data.expenses.map((expense) => expense.month))].sort(),
-    [data.expenses],
-  );
-  const [month, setMonth] = useState(() => months[months.length - 1] ?? "");
-  const [mode, setMode] = useState<ResearchFundCategoryMode>("detailed");
-  const [openNoteId, setOpenNoteId] = useState<string | null>(null);
-  const [receipt, setReceipt] = useState<ResearchFundExpenseView | null>(null);
+  const { rowsRequest, showCard } = useResearchFundCrossLink();
+  const [shown, setShown] = useState(RESEARCH_FUND_PREVIEW_COUNT);
+  const [flashedGroupId, setFlashedGroupId] = useState<string | null>(null);
+  const scrollTargetId = useRef<string | null>(null);
+  const flashTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const rows = useMemo(
-    () => data.expenses.filter((expense) => expense.month === month),
-    [data.expenses, month],
+  // 「用途N」の番号は用途カードの並び順
+  const groupNumbers = useMemo(
+    () => new Map(data.groups.map((group, index) => [group.id, index + 1])),
+    [data.groups],
   );
-  const total = rows.reduce((sum, row) => sum + row.amount, 0);
+
+  useEffect(() => {
+    if (!rowsRequest) return;
+    const reveal = revealResearchFundGroupRows(data.expenses, rowsRequest.groupId);
+    if (!reveal) return;
+    setShown((current) => Math.max(current, reveal.minShown));
+    setFlashedGroupId(rowsRequest.groupId);
+    scrollTargetId.current = reveal.firstId;
+    if (flashTimer.current) clearTimeout(flashTimer.current);
+    flashTimer.current = setTimeout(() => setFlashedGroupId(null), ROWS_FLASH_MS);
+  }, [rowsRequest, data.expenses]);
+
+  // 一覧を広げた描画のあとで、先頭行へスクロールする。
+  useEffect(() => {
+    const id = scrollTargetId.current;
+    if (!id) return;
+    scrollTargetId.current = null;
+    const row = document.getElementById(`tx-${id}`);
+    if (!row) return;
+    window.scrollTo({
+      top: row.getBoundingClientRect().top + window.scrollY - ROWS_SCROLL_OFFSET,
+      behavior: "smooth",
+    });
+  });
+
+  useEffect(
+    () => () => {
+      if (flashTimer.current) clearTimeout(flashTimer.current);
+    },
+    [],
+  );
+
+  const rows = data.expenses.slice(0, shown);
+  const hasMore = data.expenses.length > rows.length;
+
+  const groupLink = (row: ResearchFundExpenseView) => {
+    const number = row.groupId ? groupNumbers.get(row.groupId) : undefined;
+    if (!row.groupId || number === undefined) return null;
+    const groupId = row.groupId;
+    return (
+      <button
+        type="button"
+        onClick={() => showCard(groupId)}
+        aria-label={`用途${number}を見る`}
+        className="inline-flex h-5 shrink-0 cursor-pointer items-center gap-[3px] whitespace-nowrap rounded-full bg-[#E2F6F3] px-2 text-[11px] font-bold text-[#238778]"
+      >
+        <StarIcon />
+        用途{number}
+      </button>
+    );
+  };
 
   return (
     <MainColumnCard id="transactions">
       <CardHeader
         icon={<Image src="/icons/icon-cashback.svg" alt="Cash move icon" width={30} height={30} />}
-        organizationName={data.politician.name}
-        title="すべての支出"
+        organizationName={`${data.politician.name}・調研費`}
+        title="すべての出入金"
         updatedAt={updatedAt}
-        subtitle="金額にかかわらず、すべての支出を1件ずつ、領収書つきで公開しています"
+        subtitle="これまでにデータ連携された出入金の明細"
       />
 
-      {months.length === 0 ? (
+      {rows.length === 0 ? (
         <p className="text-gray-500">公開中の支出はまだありません</p>
       ) : (
-        <>
-          <fieldset className="flex flex-wrap gap-2">
-            <legend className="sr-only">月の切り替え</legend>
-            {months.map((value) => (
-              <button
-                key={value}
-                type="button"
-                onClick={() => {
-                  setMonth(value);
-                  setOpenNoteId(null);
-                }}
-                aria-pressed={value === month}
-                className={`cursor-pointer rounded-full border px-4 py-1 text-sm font-bold transition-colors ${
-                  value === month
-                    ? "border-[#238778] bg-[#238778] text-white"
-                    : "border-[#D1D5DB] bg-white text-[#4B5563] hover:bg-[#F9FAFB]"
-                }`}
+        <div className="relative">
+          <div
+            className={`hidden h-12 items-center border-b border-[#D5DBE1] text-sm font-bold text-gray-800 min-[761px]:grid ${ROW_GRID}`}
+          >
+            <div className="px-4">日付</div>
+            <div className="pl-4">カテゴリー</div>
+            <div className="tracking-[0.071em]">項目</div>
+            <div className="pr-6 text-right">金額</div>
+          </div>
+
+          {rows.map((row) => {
+            const link = groupLink(row);
+            return (
+              <div
+                key={row.id}
+                id={`tx-${row.id}`}
+                data-flashed={flashedGroupId !== null && row.groupId === flashedGroupId}
+                className={`grid grid-cols-1 gap-1 border-b border-[#D5DBE1] py-3 transition-colors duration-400 data-[flashed=true]:bg-[#E2F6F3] min-[761px]:min-h-16 min-[761px]:items-center min-[761px]:gap-0 min-[761px]:py-0 ${ROW_GRID}`}
               >
-                {Number(value.slice(5, 7))}月
-              </button>
-            ))}
-          </fieldset>
-
-          <div>
-            <CategoryModeTabs value={mode} onChange={setMode} />
-
-            <div
-              className={`hidden border-b border-[#D5DBE1] pb-3 text-sm font-bold text-gray-800 md:grid ${ROW_GRID}`}
-            >
-              <div className="px-4">日付</div>
-              <div className="pl-4">カテゴリー</div>
-              <div>項目</div>
-              <div className="pr-6 text-right">金額</div>
-            </div>
-
-            {rows.map((row) => {
-              const category = row[mode];
-              return (
-                <div key={row.id} className="border-b border-[#D5DBE1] py-3 md:py-0">
-                  <div className={`grid grid-cols-1 gap-1 md:items-center md:gap-0 ${ROW_GRID}`}>
-                    <div className="text-xs font-bold text-[#4B5563] md:px-4 md:py-5 md:text-base md:text-gray-800">
-                      {row.date.replace(/-/g, ".")}
-                    </div>
-                    <div className="md:pl-4">
-                      <ResearchFundCategoryPill category={category} />
-                    </div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="text-sm font-bold text-gray-800 md:text-base">
-                        {row.description}
-                      </span>
-                      {row.note && (
-                        <button
-                          type="button"
-                          onClick={() => setOpenNoteId(openNoteId === row.id ? null : row.id)}
-                          aria-expanded={openNoteId === row.id}
-                          aria-label={`${row.description}の特記事項`}
-                          className="inline-flex h-5 w-5 cursor-pointer items-center justify-center rounded-full border border-[#9CA3AF] text-[11px] font-bold text-[#6B7280] hover:bg-[#F3F4F6]"
-                        >
-                          i
-                        </button>
-                      )}
-                      {row.hasReceipt && (
-                        <button
-                          type="button"
-                          onClick={() => setReceipt(row)}
-                          className="inline-flex h-[22px] cursor-pointer items-center rounded-full border border-[#238778] px-2.5 text-xs font-bold text-[#238778] hover:bg-[#E2F6F3]"
-                        >
-                          領収書
-                        </button>
-                      )}
-                    </div>
-                    <div className="whitespace-nowrap text-base font-bold text-[#DC2626] md:pr-6 md:text-right md:text-xl">
-                      -{row.amount.toLocaleString("ja-JP")}
-                      <span className="text-xs font-normal text-[#4B5563]"> 円</span>
-                    </div>
-                  </div>
-                  {openNoteId === row.id && row.note && (
-                    <p className="pb-3 text-xs leading-relaxed text-[#6B7280] md:pb-4">
+                <div className="text-xs text-[#4B5563] min-[761px]:px-4 min-[761px]:text-base min-[761px]:font-bold min-[761px]:text-gray-800">
+                  {formatResearchFundDate(row.date)}
+                </div>
+                <div className="order-3 flex flex-wrap items-center gap-2 min-[761px]:order-none min-[761px]:pl-4">
+                  <ResearchFundCategoryPill category={row.detailed} />
+                  {link && <span className="min-[761px]:hidden">{link}</span>}
+                </div>
+                <div className="order-2 flex items-baseline justify-between gap-3 min-[761px]:order-none min-[761px]:block min-[761px]:py-3">
+                  <span className="flex items-center gap-2">
+                    <span className="text-sm font-bold text-gray-800 min-[761px]:text-base">
+                      {row.description}
+                    </span>
+                    {link && <span className="hidden min-[761px]:inline-flex">{link}</span>}
+                  </span>
+                  <Amount amount={row.amount} className="text-base min-[761px]:hidden" />
+                  {row.note && (
+                    <p className="mt-0.5 hidden text-xs leading-relaxed text-[#6B7280] min-[761px]:block">
                       {row.note}
                     </p>
                   )}
                 </div>
-              );
-            })}
-
-            <div className="mt-5 flex flex-col items-end gap-3 md:grid md:grid-cols-[1fr_auto_1fr] md:items-center">
-              <div className="hidden md:block" />
-              <p className="w-full text-center text-sm font-medium text-[#6A7383] md:w-auto">
-                {Number(month.slice(5, 7))}月の支出 {rows.length}件・合計{" "}
-                {total.toLocaleString("ja-JP")}円
-              </p>
-              {/* 月切り替えとは独立に、その年度の公開中の支出を全件出す */}
-              <div className="md:flex md:justify-end">
-                <ResearchFundCsvDownloadLink
-                  slug={data.politician.slug}
-                  financialYear={data.financialYear}
-                />
+                <div className="hidden pr-6 text-right min-[761px]:block">
+                  <Amount amount={row.amount} className="text-xl" />
+                </div>
+                {row.note && (
+                  <p className="order-4 text-xs leading-relaxed text-[#6B7280] min-[761px]:hidden">
+                    {row.note}
+                  </p>
+                )}
               </div>
-            </div>
-          </div>
-        </>
-      )}
+            );
+          })}
 
-      {receipt && (
-        <ReceiptModal expense={receipt} category={receipt[mode]} onClose={() => setReceipt(null)} />
+          {hasMore && (
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 flex h-[108px] items-end justify-center bg-[linear-gradient(180deg,rgba(255,255,255,0)_0%,rgba(255,255,255,0.3)_34%,rgba(255,255,255,0.8)_66%,#fff_90%)] pb-[5px]">
+              <Link
+                href={`/p/${data.politician.slug}/${data.financialYear}/transactions`}
+                className="pointer-events-auto inline-flex h-12 w-[270px] items-center justify-center gap-2.5 rounded-[6px] border border-[#1F2937] bg-white px-6 py-2 text-base font-bold text-[#1F2937] transition-colors duration-150 hover:bg-[#F9FAFB]"
+              >
+                もっと見る
+              </Link>
+            </div>
+          )}
+        </div>
       )}
     </MainColumnCard>
   );

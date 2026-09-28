@@ -3,6 +3,10 @@ import Image from "next/image";
 import CardHeader from "@/client/components/layout/CardHeader";
 import MainColumnCard from "@/client/components/layout/MainColumnCard";
 import ResearchFundCategoryPill from "@/client/components/research-fund/ResearchFundCategoryPill";
+import {
+  ResearchFundGroupRowsLink,
+  ResearchFundHighlightCard,
+} from "@/client/components/research-fund/ResearchFundCrossLink";
 import type {
   ResearchFundGroupView,
   ResearchFundPageData,
@@ -69,11 +73,11 @@ export default function ResearchFundHighlightsSection({ data, updatedAt }: Props
       {data.groups.length > 0 && (
         <div className="grid grid-cols-[repeat(auto-fit,minmax(280px,1fr))] gap-4">
           {data.groups.map((group, index) => (
-            <div
+            <ResearchFundHighlightCard
               key={group.id}
-              id={`highlight-${group.id}`}
+              groupId={group.id}
               // ヘッダーが固定表示なので、ページ内リンクで飛んだときにカードが隠れないよう上を空ける。
-              className="flex scroll-mt-[120px] flex-col gap-3 rounded-2xl border border-[#E5E7EB] p-6"
+              className="flex scroll-mt-[120px] flex-col gap-3 rounded-2xl border p-6"
             >
               <div className="flex flex-wrap items-center gap-2">
                 <span className="inline-flex h-5 items-center gap-[3px] whitespace-nowrap rounded-full bg-[#E2F6F3] px-2 text-[11px] font-bold text-[#238778]">
@@ -85,12 +89,12 @@ export default function ResearchFundHighlightsSection({ data, updatedAt }: Props
                   {group.count > 0 && (
                     <>
                       {"　"}
-                      <a
-                        href="#transactions"
+                      <ResearchFundGroupRowsLink
+                        groupId={group.id}
                         className="font-bold text-[#238778] underline underline-offset-2 hover:no-underline"
                       >
                         {group.count}件
-                      </a>
+                      </ResearchFundGroupRowsLink>
                     </>
                   )}
                 </span>
@@ -135,7 +139,7 @@ export default function ResearchFundHighlightsSection({ data, updatedAt }: Props
                   </span>
                 ),
               )}
-            </div>
+            </ResearchFundHighlightCard>
           ))}
         </div>
       )}

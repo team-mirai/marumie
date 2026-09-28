@@ -35,6 +35,8 @@ export interface ResearchFundExpenseView {
   note: string | null;
   /** 同一注文の分割グループ。単独の支出は null。CSV で注文単位に束ね直すのに使う。 */
   splitGroup: string | null;
+  /** 紐づいた支出群（用途カード）のID。1仕訳は1つの支出群にしか属さない。紐づけが無ければ null */
+  groupId: string | null;
   hasReceipt: boolean;
   /** 領収書の表示の種類。領収書が無い・種類が判定できない場合は null */
   receiptKind: ResearchFundReceiptKind | null;

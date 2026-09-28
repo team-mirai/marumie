@@ -5,6 +5,7 @@ import {
   researchFundCategoryOptions,
   researchFundPagerItems,
   researchFundTransactionsSummary,
+  revealResearchFundGroupRows,
   sortResearchFundExpenses,
   toggleAmountSort,
   toggleDateSort,
@@ -23,6 +24,7 @@ function view(overrides: Partial<ResearchFundExpenseView> = {}): ResearchFundExp
     legal: { label: "⑨ 滞在費", color: "#0369A1" },
     note: null,
     splitGroup: null,
+    groupId: null,
     hasReceipt: false,
     receiptKind: null,
     ...overrides,
@@ -186,5 +188,24 @@ describe("researchFundTransactionsSummary", () => {
     expect(
       researchFundTransactionsSummary({ from: 1, to: 3, total: 3, amount: 900, filtered: true }),
     ).toBe("1〜3 / 3件を表示中　合計 900円（絞り込み中）");
+  });
+});
+
+describe("revealResearchFundGroupRows", () => {
+  const expenses = [
+    view({ id: "a" }),
+    view({ id: "b", groupId: "7" }),
+    view({ id: "c" }),
+    view({ id: "d", groupId: "7" }),
+    view({ id: "e", groupId: "8" }),
+  ];
+
+  it("紐づいた行の最後までが見える件数と、先頭行のIDを返す", () => {
+    expect(revealResearchFundGroupRows(expenses, "7")).toEqual({ minShown: 4, firstId: "b" });
+    expect(revealResearchFundGroupRows(expenses, "8")).toEqual({ minShown: 5, firstId: "e" });
+  });
+
+  it("紐づく行が無ければ null を返す", () => {
+    expect(revealResearchFundGroupRows(expenses, "9")).toBeNull();
   });
 });

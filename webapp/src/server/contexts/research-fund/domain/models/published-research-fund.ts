@@ -46,7 +46,7 @@ export interface PublishedExpenditureGroup {
   description: string;
   outcomes: PublishedOutcome[];
   /** 紐づいた published の仕訳。未公開の仕訳は含めない。 */
-  entries: { entryDate: string; amount: number; accountKey: string }[];
+  entries: { entryId: string; entryDate: string; amount: number; accountKey: string }[];
 }
 
 export interface PublishedResearchFund {

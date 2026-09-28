@@ -46,6 +46,19 @@ describe("buildExpenseViews", () => {
     expect(views.map((view) => view.month)).toEqual(["2026-05", "2026-04"]);
   });
 
+  it("仕訳IDから紐づいた支出群のIDを引き、紐づけが無ければ null にする", () => {
+    const views = buildExpenseViews(
+      [
+        expense({ id: "1", entryId: "1", date: "2026-04-02" }),
+        expense({ id: "2", entryId: "2", date: "2026-04-01" }),
+      ],
+      accounts,
+      new Map([["1", "7"]]),
+    );
+
+    expect(views.map((view) => view.groupId)).toEqual(["7", null]);
+  });
+
   it("同一注文の分割行を隣り合わせにし、何点で1注文かを特記事項に添える", () => {
     const views = buildExpenseViews(
       [

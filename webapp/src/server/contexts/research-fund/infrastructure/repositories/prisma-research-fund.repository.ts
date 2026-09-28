@@ -166,6 +166,7 @@ export class PrismaResearchFundRepository implements ResearchFundRepository {
         entry.lines.filter(isExpenseLine).map((line) => {
           accounts[line.accountKey] = accountOf(line);
           return {
+            entryId: String(entry.id),
             entryDate: dateOf(entry.entryDate),
             amount: line.amount.toNumber(),
             accountKey: line.accountKey,

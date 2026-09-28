@@ -69,7 +69,11 @@ export class GetResearchFundPageUsecase {
         legal: buildResearchFundSankey(legal),
       },
       monthly,
-      expenses: buildExpenseViews(published.expenses, published.accounts),
+      expenses: buildExpenseViews(
+        published.expenses,
+        published.accounts,
+        groupIdByEntryId(published.groups),
+      ),
       groups: published.groups.map((group) => buildGroupView(group, published.accounts)),
     };
   }
@@ -86,6 +90,14 @@ function aggregate(
       `調研費の集計に失敗しました: ${result.errors.map((error) => `${error.path} ${error.message}`).join(", ")}`,
     );
   return result.value;
+}
+
+function groupIdByEntryId(groups: readonly PublishedExpenditureGroup[]): Map<string, string> {
+  const map = new Map<string, string>();
+  for (const group of groups) {
+    for (const entry of group.entries) map.set(entry.entryId, group.id);
+  }
+  return map;
 }
 
 function buildGroupView(

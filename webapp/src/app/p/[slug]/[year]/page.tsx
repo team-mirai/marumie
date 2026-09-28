@@ -6,6 +6,7 @@ import LinkCardsSection from "@/client/components/common/LinkCardsSection";
 import TransparencySection from "@/client/components/common/TransparencySection";
 import MainColumn from "@/client/components/layout/MainColumn";
 import ResearchFundAboutSection from "@/client/components/research-fund/ResearchFundAboutSection";
+import { ResearchFundCrossLinkProvider } from "@/client/components/research-fund/ResearchFundCrossLink";
 import ResearchFundExpensesSection from "@/client/components/research-fund/ResearchFundExpensesSection";
 import ResearchFundFlowSection from "@/client/components/research-fund/ResearchFundFlowSection";
 import ResearchFundHighlightsSection from "@/client/components/research-fund/ResearchFundHighlightsSection";
@@ -50,13 +51,16 @@ export default async function PoliticianPage({ params }: PoliticianPageProps) {
   return (
     <MainColumn>
       <ResearchFundFlowSection data={data} updatedAt={updatedAt} />
-      {hasHighlights && <ResearchFundHighlightsSection data={data} updatedAt={updatedAt} />}
-      <TransparencySection
-        title="調研費もまるごと公開。意味ある使い方か、検証できるように👀"
-        intro="議員一人ひとりに支給される調研費の原資は、大切な税金。だから、使わせていただいた分はしっかり成果を示し、使途も領収書まで含めてまるごと公開しています。チームみらいがなぜここまでオープンにするのか、"
-      />
-      <ResearchFundMonthlySection data={data} updatedAt={updatedAt} />
-      <ResearchFundExpensesSection data={data} updatedAt={updatedAt} />
+      {/* 用途カードと「すべての出入金」が相互にジャンプするので、その間をまとめて包む */}
+      <ResearchFundCrossLinkProvider>
+        {hasHighlights && <ResearchFundHighlightsSection data={data} updatedAt={updatedAt} />}
+        <TransparencySection
+          title="調研費もまるごと公開。意味ある使い方か、検証できるように👀"
+          intro="議員一人ひとりに支給される調研費の原資は、大切な税金。だから、使わせていただいた分はしっかり成果を示し、使途も領収書まで含めてまるごと公開しています。チームみらいがなぜここまでオープンにするのか、"
+        />
+        <ResearchFundMonthlySection data={data} updatedAt={updatedAt} />
+        <ResearchFundExpensesSection data={data} updatedAt={updatedAt} />
+      </ResearchFundCrossLinkProvider>
       <ResearchFundAboutSection data={data} />
       <ResearchFundPartyLinkSection />
       <AboutSection />

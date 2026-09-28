@@ -17,6 +17,7 @@ function view(overrides: Partial<ResearchFundExpenseView> = {}): ResearchFundExp
     legal: { label: "⑨ 滞在費", color: "#111111" },
     note: null,
     splitGroup: null,
+    groupId: null,
     hasReceipt: false,
     receiptKind: null,
     ...overrides,

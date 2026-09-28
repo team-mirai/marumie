@@ -21,6 +21,7 @@ function expense(
     legal: { label: "⑨ 滞在費", color: "#111111" },
     note: null,
     splitGroup: null,
+    groupId: null,
     hasReceipt: true,
     receiptKind: "image",
     ...overrides,
