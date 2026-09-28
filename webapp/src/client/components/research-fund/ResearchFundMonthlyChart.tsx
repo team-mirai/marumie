@@ -63,6 +63,23 @@ interface TooltipState {
   index: number;
   x: number;
   y: number;
+  /** ホバー時点の描画サイズ。端の月でツールチップを内側へ反転させるのに使う */
+  width: number;
+  height: number;
+}
+
+const TOOLTIP_OFFSET = 12;
+
+/** カーソルが右半分・下半分にあるときは、表示領域からはみ出さないよう左側・上側に出す。 */
+function tooltipPosition({ x, y, width, height }: TooltipState) {
+  return {
+    ...(x > width / 2 ? { right: width - x + TOOLTIP_OFFSET } : { left: x + TOOLTIP_OFFSET }),
+    ...(y > height / 2 ? { bottom: height - y + TOOLTIP_OFFSET } : { top: y + TOOLTIP_OFFSET }),
+  };
+}
+
+function amountText(value: number, unit: AmountUnit): string {
+  return `${formatAmountIn(value, unit)}${unit}`;
 }
 
 /**
@@ -95,7 +112,13 @@ export default function ResearchFundMonthlyChart({
           const index = Math.floor((viewBoxX - MARGIN.left) / step);
           setTooltip(
             monthly[index]?.published
-              ? { index, x: event.clientX - rect.left, y: event.clientY - rect.top }
+              ? {
+                  index,
+                  x: event.clientX - rect.left,
+                  y: event.clientY - rect.top,
+                  width: rect.width,
+                  height: rect.height,
+                }
               : null,
           );
         }}
@@ -113,7 +136,7 @@ export default function ResearchFundMonthlyChart({
             fontWeight={500}
             fill={LABEL_COLOR}
           >
-            {`${formatAmountIn(value, unit)}${unit}`}
+            {amountText(value, unit)}
           </text>
         ))}
         <line
@@ -184,10 +207,34 @@ export default function ResearchFundMonthlyChart({
         />
       </svg>
 
+      {/* SVG は role="img" で1枚の画像として読まれるため、月別の金額は表で読み上げられるようにする。 */}
+      <table className="sr-only">
+        <caption>月ごとの調査研究費の支給と支出</caption>
+        <thead>
+          <tr>
+            <th scope="col">月</th>
+            <th scope="col">支給</th>
+            <th scope="col">支出</th>
+          </tr>
+        </thead>
+        <tbody>
+          {monthly.map((month) => {
+            const rowUnit = tooltipUnit(month);
+            return (
+              <tr key={month.month}>
+                <th scope="row">{`${Number(month.month.slice(5, 7))}月`}</th>
+                <td>{month.published ? amountText(month.granted, rowUnit) : "データなし"}</td>
+                <td>{month.published ? amountText(month.spent, rowUnit) : "データなし"}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+
       {tooltip && tooltipMonth && (
         <div
           className="pointer-events-none absolute z-10 min-w-max rounded-[6px] border border-[#64748B] bg-white/85 px-[22px] py-[11px] shadow-md"
-          style={{ left: tooltip.x + 12, top: tooltip.y + 12 }}
+          style={tooltipPosition(tooltip)}
         >
           {[
             { label: "支給", value: tooltipMonth.granted, color: "#238778" },

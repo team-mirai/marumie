@@ -67,4 +67,10 @@ describe("ResearchFundMonthlyChart", () => {
     expect(markup).toContain(">-100万円<");
     expect(markup).toContain(">0万円<");
   });
+
+  it("月別の金額を支援技術向けの表でも提供する", () => {
+    expect(markup).toContain('<table class="sr-only">');
+    expect(markup).toContain("<th scope=\"row\">2月</th><td>100万円</td><td>30万円</td>");
+    expect(markup).toContain("<th scope=\"row\">1月</th><td>データなし</td><td>データなし</td>");
+  });
 });
