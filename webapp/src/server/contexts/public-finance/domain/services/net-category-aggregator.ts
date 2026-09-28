@@ -11,7 +11,7 @@
  * - 支出の正味 = 支出科目の借方合計 − 支出科目の貸方合計
  *
  * ただし借入金は例外で、借方に来たもの（返済）は収入の返金ではないため、
- * 収入から差し引かず「借入金返済」として支出に集計する。
+ * 収入から差し引かず、政治資金収支報告書と同じく「政治活動費 / その他の経費」として支出に集計する。
  */
 
 import { BS_CATEGORIES, LOAN_ACCOUNT, PL_CATEGORIES } from "@/shared/accounting/account-category";
@@ -38,9 +38,11 @@ interface BuildOptions {
 type AccountKind = "income" | "expense" | "balance-sheet" | "unknown";
 
 /**
- * 借方に来た借入金（返済）を集計する支出カテゴリ名
+ * 借方に来た借入金（返済）を集計する支出科目
+ *
+ * 政治資金収支報告書では借入金の返済を「（6）その他の経費」に計上する。
  */
-const LOAN_REPAYMENT_CATEGORY = "借入金返済";
+const LOAN_REPAYMENT_EXPENSE_ACCOUNT = "その他の経費";
 
 /**
  * 借方・貸方の科目別合計から、収入・支出の正味集計を組み立てる
@@ -78,7 +80,12 @@ export function buildNetCategoryAggregation(
     }
     if (item.account === LOAN_ACCOUNT) {
       // 借方に来た借入金は返済。収入の返金ではないので支出に積む
-      accumulate(expense, item, item.amount, options, { category: LOAN_REPAYMENT_CATEGORY });
+      accumulate(
+        expense,
+        { ...item, account: LOAN_REPAYMENT_EXPENSE_ACCOUNT },
+        item.amount,
+        options,
+      );
       continue;
     }
     if (kind === "income") {
@@ -110,13 +117,13 @@ function accumulate(
   item: AccountSideTotal,
   amount: number,
   options: BuildOptions,
-  mappingOverride?: { category: string; subcategory?: string },
 ): void {
-  const mapping: { category: string; subcategory?: string } =
-    mappingOverride ??
-    (Object.hasOwn(PL_CATEGORIES, item.account)
-      ? PL_CATEGORIES[item.account]
-      : { category: item.account });
+  const mapping: { category: string; subcategory?: string } = Object.hasOwn(
+    PL_CATEGORIES,
+    item.account,
+  )
+    ? PL_CATEGORIES[item.account]
+    : { category: item.account };
 
   const subcategory = options.useTagAsSubcategory ? item.tag || undefined : mapping.subcategory;
   const key = subcategory ? `${mapping.category}|${subcategory}` : mapping.category;
