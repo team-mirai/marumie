@@ -1,4 +1,8 @@
-import { describePublishDelta } from "@/client/lib/research-fund-publish";
+import {
+  describePublishDelta,
+  publishSelectionOf,
+  toggleAllPublishCandidates,
+} from "@/client/lib/research-fund-publish";
 import { aggregateResearchFund, type ResearchFundRow } from "@/shared/research-fund/aggregation";
 
 const accounts = {
@@ -49,4 +53,35 @@ test("支給を公開すると未使用が増える", () => {
 
 test("変化が無ければ何も返さない", () => {
   expect(describePublishDelta(aggregate([grant]), aggregate([grant]))).toBeNull();
+});
+
+describe("公開候補のまとめて選択", () => {
+  const ids = ["a", "b", "c"];
+
+  test("チェックの数に応じて、なし・一部・すべてを区別する", () => {
+    expect(publishSelectionOf(ids, [])).toBe("none");
+    expect(publishSelectionOf(ids, ["b"])).toBe("some");
+    expect(publishSelectionOf(ids, ["c", "a", "b"])).toBe("all");
+  });
+
+  test("候補にない ID のチェックは数えない", () => {
+    expect(publishSelectionOf(ids, ["a", "b", "gone"])).toBe("some");
+    expect(publishSelectionOf(ids, ["gone"])).toBe("none");
+  });
+
+  test("候補が0件のときは、すべて選択済みとは扱わない", () => {
+    expect(publishSelectionOf([], [])).toBe("none");
+  });
+
+  test("何も選んでいないときは、すべての候補を選ぶ", () => {
+    expect(toggleAllPublishCandidates(ids, [])).toEqual(ids);
+  });
+
+  test("一部だけ選んでいるときは、すべての候補を選ぶ", () => {
+    expect(toggleAllPublishCandidates(ids, ["b"])).toEqual(ids);
+  });
+
+  test("すべて選んでいるときは、すべてのチェックを外す", () => {
+    expect(toggleAllPublishCandidates(ids, ["a", "b", "c"])).toEqual([]);
+  });
 });

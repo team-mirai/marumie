@@ -32,3 +32,23 @@ export function describePublishDelta(
   if (unused !== 0) parts.push(`未使用 ${signed(unused)}`);
   return parts.length === 0 ? null : `公開すると：${parts.join("・")}`;
 }
+
+type PublishSelection = "none" | "some" | "all";
+
+/** 公開候補のうち何件がチェックされているかを「なし・一部・すべて」で返す。 */
+export function publishSelectionOf(
+  candidateIds: readonly string[],
+  checked: readonly string[],
+): PublishSelection {
+  const count = candidateIds.filter((id) => checked.includes(id)).length;
+  if (count === 0) return "none";
+  return count === candidateIds.length ? "all" : "some";
+}
+
+/** すべて選択済みならすべて外し、そうでなければ（一部選択中も含めて）すべてを選ぶ。 */
+export function toggleAllPublishCandidates(
+  candidateIds: readonly string[],
+  checked: readonly string[],
+): readonly string[] {
+  return publishSelectionOf(candidateIds, checked) === "all" ? [] : [...candidateIds];
+}

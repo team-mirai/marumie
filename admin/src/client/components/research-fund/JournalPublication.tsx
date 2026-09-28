@@ -6,7 +6,13 @@ import { toast } from "sonner";
 import { PageHeader } from "@/client/components/layout/PageHeader";
 import { ResearchFundSankey } from "@/client/components/research-fund/ResearchFundSankey";
 import { Button, Card, CardContent, Checkbox } from "@/client/components/ui";
-import { cn, describePublishDelta, formatCurrency } from "@/client/lib";
+import {
+  cn,
+  describePublishDelta,
+  formatCurrency,
+  publishSelectionOf,
+  toggleAllPublishCandidates,
+} from "@/client/lib";
 import type {
   PublicationSnapshot,
   PublishCandidate,
@@ -81,6 +87,8 @@ export function JournalPublication({
     [published, accounts, candidates, checked],
   );
   const delta = before && after ? describePublishDelta(before, after) : null;
+  const candidateIds = candidates.map((candidate) => candidate.id);
+  const selection = publishSelectionOf(candidateIds, checked);
 
   function toggle(candidate: PublishCandidate) {
     setChecked((current) =>
@@ -120,9 +128,31 @@ export function JournalPublication({
       <div className="grid grid-cols-1 items-start gap-4 xl:grid-cols-[minmax(280px,380px)_minmax(0,1fr)]">
         <Card>
           <CardContent className="p-5">
-            <div className="mb-2.5 text-sm font-bold">
-              確認済・未公開{" "}
-              <span className="font-latin text-primary-hover">{candidates.length}</span>件
+            <div className="mb-2.5 flex items-center justify-between gap-2">
+              <div className="text-sm font-bold">
+                確認済・未公開{" "}
+                <span className="font-latin text-primary-hover">{candidates.length}</span>件
+              </div>
+              <label
+                htmlFor="publish-all"
+                className={cn(
+                  "flex items-center gap-2 px-2.5 text-[12.5px] text-muted-foreground",
+                  candidates.length > 0 && !pending ? "cursor-pointer" : "cursor-not-allowed",
+                )}
+              >
+                <Checkbox
+                  id="publish-all"
+                  checked={
+                    selection === "all" ? true : selection === "some" ? "indeterminate" : false
+                  }
+                  disabled={pending || candidates.length === 0}
+                  onCheckedChange={() =>
+                    setChecked((current) => toggleAllPublishCandidates(candidateIds, current))
+                  }
+                  aria-label="確認済・未公開の仕訳をすべて選択"
+                />
+                すべて選択
+              </label>
             </div>
             <ul className="grid gap-0.5">
               {candidates.map((candidate) => (
