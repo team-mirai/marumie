@@ -146,10 +146,10 @@ async function selectMonth(section: Locator, label: string) {
 	}).toPass();
 }
 
-test.describe("調査研究費 政党ページのサマリー（A-6）", () => {
+test.describe("調査研究費 政党トップページのサマリー", () => {
 	const ORG_URL = "/o/sample-party/2026";
 
-	test("A-6 が表示され、実行時エラーが発生しないこと", async ({ page }) => {
+	test("調研費のサマリーが表示され、実行時エラーが発生しないこと", async ({ page }) => {
 		const errors: string[] = [];
 		page.on("pageerror", (error) => {
 			errors.push(`${error.name}: ${error.message}`);
@@ -158,31 +158,38 @@ test.describe("調査研究費 政党ページのサマリー（A-6）", () => {
 		await page.goto(ORG_URL);
 		const section = page.locator("#research-fund");
 
-		// 見出し・リード・公開範囲
+		// 見出し・サブ
 		await expect(
-			section.getByRole("heading", { name: /議員\d+人の調査研究費サマリー/ }),
+			section.getByRole("heading", { name: /所属議員.*調研費のサマリー/ }),
 		).toBeVisible();
 		await expect(
-			section.getByText("国会議員に毎月支給される公費を、何に使ったか"),
+			section.getByText("議員に毎月100万円支給される公費を、何に使ったか"),
 		).toBeVisible();
-		await expect(section.getByText(/分を公開中/).first()).toBeVisible();
 
-		// 「調査研究費とは」コラプスは初期状態で閉じている
-		const collapse = section.getByText("調査研究費とは");
-		await expect(collapse).toBeVisible();
+		// 「調研費とは」コラプスは初期状態で閉じている
+		await expect(section.getByText("調研費とは")).toBeVisible();
 		await expect(
-			section.getByText(/政党を通らず国から議員に対して毎月直接支給される公費/),
+			section.getByText(/第三者による承認を自主基準として定めています/),
 		).toBeHidden();
 
-		// KPI 2枚
-		await expect(section.getByText(/^支給された/)).toBeVisible();
-		await expect(section.getByText("議員活動に使った")).toBeVisible();
-
-		// 議員リスト（公開中の議員と準備中の議員が両方並ぶ）
+		// 公開中の議員が1名だけなので、その議員のチップと「他議員も今後追加」が並ぶ
 		await expect(
-			section.getByRole("button", { name: /サンプル 太郎/ }),
+			section.getByText("他議員も今後追加", { exact: true }),
 		).toBeVisible();
-		await expect(section.getByText("準備中").first()).toBeVisible();
+		await expect(section.getByText("試験公開中")).toBeVisible();
+		await expect(section.getByText(/分を公開中$/)).toBeVisible();
+
+		// KPI 2枚とサンキー
+		await expect(section.getByText("支給総額")).toBeVisible();
+		await expect(section.getByText("支出総額")).toBeVisible();
+		await expect(
+			section.locator(
+				'[role="img"][aria-label="調査研究費の使いみちの流れ図"]',
+			),
+		).toBeVisible();
+		await expect(
+			section.getByText("支給額の1%未満の費目は「その他」にまとめています。"),
+		).toBeVisible();
 
 		expect(
 			errors,
@@ -190,31 +197,14 @@ test.describe("調査研究費 政党ページのサマリー（A-6）", () => {
 		).toHaveLength(0);
 	});
 
-	test("準備中の議員の行を選ぶとグラフの代わりに準備中の案内が出る", async ({
+	test("「{氏名}の調研費を詳しく」から議員ページに遷移する", async ({
 		page,
 	}) => {
-		await page.goto(ORG_URL);
-		const section = page.locator("#research-fund");
-
-		const row = section.getByRole("button", { name: /サンプル 次郎/ });
-		await expect(async () => {
-			await row.click();
-			await expect(row).toHaveAttribute("aria-pressed", "true");
-		}).toPass();
-
-		await expect(
-			section.getByText(/サンプル 次郎の調査研究費は現在準備中です。/),
-		).toBeVisible();
-		await expect(section.getByText("議員活動に使った")).toBeHidden();
-	});
-
-	test("詳細ボタンから議員ページに遷移する", async ({ page }) => {
 		await page.goto(ORG_URL);
 
 		await page
 			.locator("#research-fund")
-			.getByRole("link", { name: /詳細/ })
-			.first()
+			.getByRole("link", { name: "サンプル 太郎の調研費を詳しく" })
 			.click();
 
 		await expect(page).toHaveURL(/\/p\/sample-taro\/2026$/);

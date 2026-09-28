@@ -77,7 +77,7 @@ function usecaseWith(value: PublishedPartyResearchFund | null) {
 }
 
 describe("GetResearchFundPartySummaryUsecase", () => {
-  it("所属議員がいなければ null を返す（A-6 を出さない）", async () => {
+  it("所属議員がいなければ null を返す（セクションを出さない）", async () => {
     const { usecase } = usecaseWith(null);
 
     expect(await usecase.execute({ slug: "no-members", financialYear: 2026 })).toBeNull();
@@ -89,27 +89,28 @@ describe("GetResearchFundPartySummaryUsecase", () => {
     const data = await usecase.execute({ slug: "sample-party", financialYear: 2026 });
 
     expect(data?.politicians[0].kpi).toEqual({ granted: 2_000_000, spent: 104_000 });
-    expect(data?.politicians[0].count).toBe(3);
   });
 
-  it("横棒グラフは金額の多い順で、未使用分を含めない", async () => {
+  it("サンキーは費目の多い順に並べ、1%未満の費目を「その他」にまとめ、末尾に未使用分を置く", async () => {
     const { usecase } = usecaseWith(party([publishedPolitician()]));
 
     const data = await usecase.execute({ slug: "sample-party", financialYear: 2026 });
 
-    expect(data?.politicians[0].bars.detailed).toEqual([
-      { key: "printing-pr", label: "印刷・広報費", amount: 99_000 },
-      { key: "taxi", label: "タクシー代", amount: 3_000 },
-      { key: "public-transport", label: "電車・バス代", amount: 2_000 },
-    ]);
-    // 法律上の区分ではタクシー代と電車・バス代が ⑨ 滞在費 に統合される
-    expect(data?.politicians[0].bars.legal).toEqual([
-      { key: "⑥ 広報紙誌の発行その他の事業費", label: "⑥ 広報紙誌の発行その他の事業費", amount: 99_000 },
-      { key: "⑨ 滞在費", label: "⑨ 滞在費", amount: 5_000 },
+    // 支給 200万円の 1% = 2万円未満のタクシー代・電車・バス代は「その他」にまとまる
+    const expenseLabels = (mode: "detailed" | "legal") =>
+      data?.politicians[0].sankey[mode].nodes
+        .filter((node) => node.nodeType === "expense")
+        .map((node) => node.label);
+    expect(expenseLabels("detailed")).toEqual(["印刷・広報費", "その他", "未使用・未処理"]);
+    // 法律上の区分では両者が ⑨ 滞在費 に統合され、1%未満が1つだけなのでまとめない
+    expect(expenseLabels("legal")).toEqual([
+      "⑥ 広報紙誌の発行その他の事業費",
+      "⑨ 滞在費",
+      "未使用・未処理",
     ]);
   });
 
-  it("準備中の議員も隠さず、グラフのない行として返す", async () => {
+  it("準備中の議員も隠さず、グラフのない議員として返す", async () => {
     const { usecase } = usecaseWith(party([publishedPolitician(), preparingPolitician()]));
 
     const data = await usecase.execute({ slug: "sample-party", financialYear: 2026 });
@@ -121,27 +122,28 @@ describe("GetResearchFundPartySummaryUsecase", () => {
       ready: false,
       statusLabel: "準備中",
       kpi: { granted: 0, spent: 0 },
-      count: 0,
-      bars: { detailed: [], legal: [] },
+      sankey: { detailed: { nodes: [], links: [] }, legal: { nodes: [], links: [] } },
     });
   });
 
-  it("公開範囲を議員ごと・政党全体の両方でラベルにする", async () => {
-    const { usecase } = usecaseWith(party([publishedPolitician(), preparingPolitician()]));
+  it("議員ごとの公開状況と、公開中の議員全員分の支給期間をラベルにする", async () => {
+    const { usecase } = usecaseWith(
+      party([
+        publishedPolitician(),
+        publishedPolitician({
+          politician: { name: "サンプル 花子", slug: "sample-hanako" },
+          publishedThrough: "2026-09-30",
+        }),
+        // 準備中の議員は支給期間に含めない
+        preparingPolitician({ publishedThrough: "2026-12-31" }),
+      ]),
+    );
 
     const data = await usecase.execute({ slug: "sample-party", financialYear: 2026 });
 
     expect(data?.politicians[0].statusLabel).toBe("2026年2月〜8月分を公開中");
-    // 一部の議員しか公開していないことが分かるようにする
-    expect(data?.coverageLabel).toBe("2026年2月〜8月分を公開中（サンプル 太郎のみ）");
-  });
-
-  it("所属議員全員が公開していれば政党全体のラベルに「のみ」を付けない", async () => {
-    const { usecase } = usecaseWith(party([publishedPolitician()]));
-
-    const data = await usecase.execute({ slug: "sample-party", financialYear: 2026 });
-
-    expect(data?.coverageLabel).toBe("2026年2月〜8月分を公開中");
+    expect(data?.politicians[2].statusLabel).toBe("準備中");
+    expect(data?.grantPeriodLabel).toBe("2026年2月〜9月支給分");
   });
 
   it("誰も公開していなければ準備中として扱う", async () => {
@@ -149,7 +151,7 @@ describe("GetResearchFundPartySummaryUsecase", () => {
 
     const data = await usecase.execute({ slug: "sample-party", financialYear: 2026 });
 
-    expect(data?.coverageLabel).toBe("準備中");
+    expect(data?.grantPeriodLabel).toBeNull();
     expect(data?.asOfDate).toBeNull();
   });
 
