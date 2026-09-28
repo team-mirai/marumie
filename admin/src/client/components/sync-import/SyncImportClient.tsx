@@ -6,24 +6,61 @@ import { ArrowRight, CircleNotch, Warning } from "@phosphor-icons/react/dist/ssr
 import { FileDropzone } from "@/client/components/common/FileDropzone";
 import { SyncImportPlanCard } from "@/client/components/sync-import/SyncImportPlanCard";
 import { Button, Input, Label } from "@/client/components/ui";
-import type {
-  OrganizationSyncImportPlan,
-  OrganizationSyncImportResult,
+import {
+  type OrganizationSyncImportPlan,
+  type OrganizationSyncImportResult,
+  SYNC_IMPORT_MAX_FILE_SIZE_LABEL,
+  validateSyncImportFileSize,
 } from "@/server/contexts/data-import/domain/models/organization-sync-import";
+import type { PrepareSyncImportUploadResponse } from "@/server/contexts/data-import/presentation/actions/prepare-sync-import-upload";
 import type { PreviewSyncImportResponse } from "@/server/contexts/data-import/presentation/actions/preview-sync-import";
 import type { RunSyncImportResponse } from "@/server/contexts/data-import/presentation/actions/run-sync-import";
 
-/** 上限は next.config.ts の serverActions.bodySizeLimit に合わせる */
-const FILE_NOTE = "同期用エクスポートのJSON ・ 最大 100MB";
+/** 上限はストレージのバケット（supabase/config.toml の sync-imports）の上限と同じ */
+const FILE_NOTE = `同期用エクスポートのJSON ・ 最大 ${SYNC_IMPORT_MAX_FILE_SIZE_LABEL}`;
 
-interface SyncImportClientProps {
-  previewAction: (data: { file: File }) => Promise<PreviewSyncImportResponse>;
-  importAction: (data: { file: File; confirmationSlug: string }) => Promise<RunSyncImportResponse>;
+/**
+ * Server Action がエラーページ（HTML）を受け取ったときなどに Next.js が投げる汎用メッセージを、
+ * 原因の見当が付く文言に置き換える。関数の実行時間・メモリの上限で打ち切られたときに起きる。
+ */
+function toUnexpectedErrorMessage(error: unknown, fallback: string): string {
+  const message = error instanceof Error ? error.message : "";
+  if (!message || message.includes("An unexpected response was received from the server")) {
+    return `${fallback}。サーバーから応答がありませんでした（処理時間やメモリの上限を超えた可能性があります）`;
+  }
+  return `${fallback}: ${message}`;
 }
 
-export function SyncImportClient({ previewAction, importAction }: SyncImportClientProps) {
+/** ストレージが返すエラー本文（JSON の message）を取り出す。読めなければ HTTP ステータスだけ返す。 */
+async function describeUploadFailure(response: Response): Promise<string> {
+  const body = await response.text().catch(() => "");
+  try {
+    const parsed = JSON.parse(body) as { message?: unknown };
+    if (typeof parsed.message === "string") return `${response.status}: ${parsed.message}`;
+  } catch {
+    // JSON でなければステータスだけ見せる
+  }
+  return String(response.status);
+}
+
+interface SyncImportClientProps {
+  prepareUploadAction: (data: { fileSize: number }) => Promise<PrepareSyncImportUploadResponse>;
+  previewAction: (data: { storageKey: string }) => Promise<PreviewSyncImportResponse>;
+  importAction: (data: {
+    storageKey: string;
+    confirmationSlug: string;
+  }) => Promise<RunSyncImportResponse>;
+}
+
+export function SyncImportClient({
+  prepareUploadAction,
+  previewAction,
+  importAction,
+}: SyncImportClientProps) {
   const confirmationInputId = useId();
   const [file, setFile] = useState<File | null>(null);
+  /** ストレージに置いたファイルのキー。確認と取り込みで同じファイルを指す。 */
+  const [storageKey, setStorageKey] = useState<string | null>(null);
   const [plan, setPlan] = useState<OrganizationSyncImportPlan | null>(null);
   const [confirmationSlug, setConfirmationSlug] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -33,6 +70,7 @@ export function SyncImportClient({ previewAction, importAction }: SyncImportClie
 
   const handleFileChange = (next: File | null) => {
     setFile(next);
+    setStorageKey(null);
     setPlan(null);
     setConfirmationSlug("");
     setError(null);
@@ -47,40 +85,69 @@ export function SyncImportClient({ previewAction, importAction }: SyncImportClie
     setError(null);
     setResult(null);
 
+    setPlan(null);
+    setStorageKey(null);
+
     try {
-      const response = await previewAction({ file });
+      const sizeError = validateSyncImportFileSize(file.size);
+      if (sizeError) {
+        setError(sizeError);
+        return;
+      }
+
+      // ファイル本体は Vercel の関数（リクエストボディ 4.5MB 上限）を通さず、
+      // 署名付き URL でストレージへ直接置く。サーバーにはキーだけを渡す。
+      const prepared = await prepareUploadAction({ fileSize: file.size });
+      if (!prepared.ok) {
+        setError(prepared.error);
+        return;
+      }
+
+      const uploadResponse = await fetch(prepared.target.uploadUrl, {
+        method: "PUT",
+        headers: { "content-type": "application/json", "x-upsert": "false" },
+        body: file,
+      });
+      if (!uploadResponse.ok) {
+        setError(
+          `ファイルのアップロードに失敗しました（${await describeUploadFailure(uploadResponse)}）`,
+        );
+        return;
+      }
+
+      const response = await previewAction({ storageKey: prepared.target.storageKey });
       if (response.ok) {
+        setStorageKey(prepared.target.storageKey);
         setPlan(response.plan);
       } else {
-        setPlan(null);
         setError(response.error);
       }
     } catch (err) {
-      setPlan(null);
-      setError(err instanceof Error ? err.message : "確認内容の作成に失敗しました");
+      setError(toUnexpectedErrorMessage(err, "確認内容の作成に失敗しました"));
     } finally {
       setPreviewing(false);
     }
   }
 
   async function onImport() {
-    if (!file || !plan) return;
+    if (!file || !plan || !storageKey) return;
 
     setImporting(true);
     setError(null);
 
     try {
-      const response = await importAction({ file, confirmationSlug });
+      const response = await importAction({ storageKey, confirmationSlug });
       if (response.ok) {
         setResult(response.result);
         setFile(null);
+        setStorageKey(null);
         setPlan(null);
         setConfirmationSlug("");
       } else {
         setError(response.error);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "取り込みに失敗しました");
+      setError(toUnexpectedErrorMessage(err, "取り込みに失敗しました"));
     } finally {
       setImporting(false);
     }

@@ -94,7 +94,8 @@ port = 54334
 [storage]
 enabled = true
 # The maximum file size allowed (e.g. "5MB", "500KB").
-file_size_limit = "50MiB"
+# 同期用JSON（sync-imports）の上限に合わせる。各バケットの上限はこれを超えられない。
+file_size_limit = "200MiB"
 
 # Image transformation API is available to Supabase Pro plan.
 # [storage.image_transformation]
@@ -113,6 +114,14 @@ file_size_limit = "50MiB"
 public = false
 file_size_limit = "50MiB"
 allowed_mime_types = ["image/jpeg", "image/png", "application/pdf"]
+
+# 環境間同期用JSONの取り込み（/sync-import）でブラウザが直接置くファイル（非公開）。
+# admin の DATA_SYNC_IMPORT_BUCKET の既定値と、上限は SYNC_IMPORT_MAX_FILE_BYTES と揃える。
+# ステージングのバケットは Supabase のダッシュボードで用意する（#1497）。
+[storage.buckets.sync-imports]
+public = false
+file_size_limit = "200MiB"
+allowed_mime_types = ["application/json"]
 
 [auth]
 enabled = true

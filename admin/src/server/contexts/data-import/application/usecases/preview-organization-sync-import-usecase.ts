@@ -8,14 +8,17 @@ import {
   toDonorKey,
 } from "@/server/contexts/data-import/domain/models/organization-sync-import";
 import type { IOrganizationSyncImportRepository } from "@/server/contexts/data-import/domain/repositories/organization-sync-import-repository.interface";
+import type { ISyncImportFileStorage } from "@/server/contexts/data-import/domain/repositories/sync-import-file-storage.interface";
 import { parseOrganizationSyncImportFile } from "@/server/contexts/data-import/domain/services/organization-sync-import-parser";
 import {
   assertSyncImportAllowed,
   type SyncImportEnvironment,
 } from "@/server/contexts/data-import/domain/services/sync-import-availability";
+import { readSyncImportFileText } from "@/server/contexts/data-import/application/usecases/read-sync-import-file-text";
 
 interface PreviewOrganizationSyncImportInput {
-  fileText: string;
+  /** ブラウザがストレージに置いた同期用 JSON のキー（{@link PrepareSyncImportUploadUsecase} が発行）。 */
+  storageKey: string;
   environment: SyncImportEnvironment;
 }
 
@@ -24,12 +27,17 @@ interface PreviewOrganizationSyncImportInput {
  * 置き換えは取り返しがつかないので、実行前に必ずこれを見せる。
  */
 export class PreviewOrganizationSyncImportUsecase {
-  constructor(private readonly repository: IOrganizationSyncImportRepository) {}
+  constructor(
+    private readonly repository: IOrganizationSyncImportRepository,
+    private readonly fileStorage: ISyncImportFileStorage,
+  ) {}
 
   async execute(input: PreviewOrganizationSyncImportInput): Promise<OrganizationSyncImportPlan> {
     assertSyncImportAllowed(input.environment);
 
-    const file = parseOrganizationSyncImportFile(input.fileText);
+    const file = parseOrganizationSyncImportFile(
+      await readSyncImportFileText(this.fileStorage, input.storageKey),
+    );
 
     const organization = await this.repository.findOrganizationBySlug(file.meta.organizationSlug);
     if (!organization) {

@@ -3,6 +3,8 @@ import "server-only";
 import {
   SyncImportForbiddenError,
   SyncImportOrganizationNotFoundError,
+  SyncImportStorageError,
+  SyncImportTimeoutError,
   SyncImportValidationError,
 } from "@/server/contexts/data-import/domain/models/organization-sync-import";
 
@@ -15,7 +17,9 @@ export function toSyncImportErrorMessage(error: unknown, context: string): strin
   if (
     error instanceof SyncImportForbiddenError ||
     error instanceof SyncImportValidationError ||
-    error instanceof SyncImportOrganizationNotFoundError
+    error instanceof SyncImportOrganizationNotFoundError ||
+    error instanceof SyncImportStorageError ||
+    error instanceof SyncImportTimeoutError
   ) {
     return error.message;
   }

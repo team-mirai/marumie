@@ -1,3 +1,4 @@
+import { PrepareSyncImportUploadUsecase } from "@/server/contexts/data-import/application/usecases/prepare-sync-import-upload-usecase";
 import { ImportOrganizationSyncUsecase } from "@/server/contexts/data-import/application/usecases/import-organization-sync-usecase";
 import { PreviewOrganizationSyncImportUsecase } from "@/server/contexts/data-import/application/usecases/preview-organization-sync-import-usecase";
 import {
@@ -9,10 +10,12 @@ import type {
   IOrganizationSyncImportRepository,
   ReplaceOrganizationSyncDataResult,
 } from "@/server/contexts/data-import/domain/repositories/organization-sync-import-repository.interface";
+import type { ISyncImportFileStorage } from "@/server/contexts/data-import/domain/repositories/sync-import-file-storage.interface";
 import type { ICacheInvalidator } from "@/server/contexts/shared/domain/services/cache-invalidator.interface";
 
 const ALLOWED_ENVIRONMENT = { dataSyncImportEnabled: "true", vercelEnv: "preview" };
 const EXPORTED_AT = "2026-09-18T01:23:45.678Z";
+const STORAGE_KEY = "0f8fad5b-d9cb-469f-a165-70867728950e.json";
 
 function buildTransaction(
   transactionNo: string,
@@ -97,21 +100,76 @@ function buildRepository(
   };
 }
 
+/** ストレージに fileText が置かれている状態を作る。 */
+function buildFileStorage(fileText: string = buildFileText()): ISyncImportFileStorage {
+  return {
+    createUploadTarget: jest.fn(async () => ({
+      storageKey: STORAGE_KEY,
+      uploadUrl: "http://127.0.0.1:54331/storage/v1/object/upload/sign/sync-imports/x",
+    })),
+    readText: jest.fn(async () => fileText),
+    remove: jest.fn(async () => undefined),
+  };
+}
+
+describe("PrepareSyncImportUploadUsecase", () => {
+  it("上限以内のサイズならアップロード先を発行する", async () => {
+    const fileStorage = buildFileStorage();
+    const usecase = new PrepareSyncImportUploadUsecase(fileStorage);
+
+    const target = await usecase.execute({
+      fileSize: 73 * 1024 * 1024,
+      environment: ALLOWED_ENVIRONMENT,
+    });
+
+    expect(target.storageKey).toBe(STORAGE_KEY);
+    expect(fileStorage.createUploadTarget).toHaveBeenCalled();
+  });
+
+  it("上限を超えるサイズならアップロード先を発行しない", async () => {
+    const fileStorage = buildFileStorage();
+    const usecase = new PrepareSyncImportUploadUsecase(fileStorage);
+
+    await expect(
+      usecase.execute({ fileSize: 201 * 1024 * 1024, environment: ALLOWED_ENVIRONMENT }),
+    ).rejects.toThrow("取り込めるのは 200MB までです");
+    expect(fileStorage.createUploadTarget).not.toHaveBeenCalled();
+  });
+
+  it("許可されない環境ではアップロード先を発行しない", async () => {
+    const fileStorage = buildFileStorage();
+    const usecase = new PrepareSyncImportUploadUsecase(fileStorage);
+
+    await expect(
+      usecase.execute({
+        fileSize: 1024,
+        environment: { dataSyncImportEnabled: "true", vercelEnv: "production" },
+      }),
+    ).rejects.toThrow(SyncImportForbiddenError);
+    expect(fileStorage.createUploadTarget).not.toHaveBeenCalled();
+  });
+});
+
 describe("PreviewOrganizationSyncImportUsecase", () => {
   it("削除される件数・取り込まれる件数・新規作成される件数を返す", async () => {
     const repository = buildRepository({
       // 「株式会社A」だけ既にこの環境にある
       findExistingCounterpartKeys: jest.fn(async () => [{ name: "株式会社A", address: null }]),
     });
-    const usecase = new PreviewOrganizationSyncImportUsecase(repository);
+    const usecase = new PreviewOrganizationSyncImportUsecase(
+      repository,
+      buildFileStorage(
+        buildFileText([
+          buildTransaction("1", "株式会社A", "山田太郎"),
+          buildTransaction("2", "株式会社B", "山田太郎"),
+          // 同じ取引先・寄付者は自然キーで重複排除される
+          buildTransaction("3", "株式会社B", "山田太郎"),
+        ]),
+      ),
+    );
 
     const plan = await usecase.execute({
-      fileText: buildFileText([
-        buildTransaction("1", "株式会社A", "山田太郎"),
-        buildTransaction("2", "株式会社B", "山田太郎"),
-        // 同じ取引先・寄付者は自然キーで重複排除される
-        buildTransaction("3", "株式会社B", "山田太郎"),
-      ]),
+      storageKey: STORAGE_KEY,
       environment: ALLOWED_ENVIRONMENT,
     });
 
@@ -129,11 +187,11 @@ describe("PreviewOrganizationSyncImportUsecase", () => {
 
   it("許可されない環境では DB を触らずに拒否する", async () => {
     const repository = buildRepository();
-    const usecase = new PreviewOrganizationSyncImportUsecase(repository);
+    const usecase = new PreviewOrganizationSyncImportUsecase(repository, buildFileStorage());
 
     await expect(
       usecase.execute({
-        fileText: buildFileText(),
+        storageKey: STORAGE_KEY,
         environment: { dataSyncImportEnabled: "true", vercelEnv: "production" },
       }),
     ).rejects.toThrow(SyncImportForbiddenError);
@@ -143,11 +201,22 @@ describe("PreviewOrganizationSyncImportUsecase", () => {
   it("slug に一致する政治団体が無ければエラーにする", async () => {
     const usecase = new PreviewOrganizationSyncImportUsecase(
       buildRepository({ findOrganizationBySlug: jest.fn(async () => null) }),
+      buildFileStorage(),
     );
 
     await expect(
-      usecase.execute({ fileText: buildFileText(), environment: ALLOWED_ENVIRONMENT }),
+      usecase.execute({ storageKey: STORAGE_KEY, environment: ALLOWED_ENVIRONMENT }),
     ).rejects.toThrow(SyncImportOrganizationNotFoundError);
+  });
+
+  it("サーバーが発行した形でないキーではストレージを読まない", async () => {
+    const fileStorage = buildFileStorage();
+    const usecase = new PreviewOrganizationSyncImportUsecase(buildRepository(), fileStorage);
+
+    await expect(
+      usecase.execute({ storageKey: "../private-receipts/x.pdf", environment: ALLOWED_ENVIRONMENT }),
+    ).rejects.toThrow(SyncImportValidationError);
+    expect(fileStorage.readText).not.toHaveBeenCalled();
   });
 });
 
@@ -159,10 +228,11 @@ describe("ImportOrganizationSyncUsecase", () => {
   it("確認入力がファイルの slug と一致すれば置き換えてキャッシュを無効化する", async () => {
     const repository = buildRepository();
     const cacheInvalidator = buildCacheInvalidator();
-    const usecase = new ImportOrganizationSyncUsecase(repository, cacheInvalidator);
+    const fileStorage = buildFileStorage(buildFileText([buildTransaction("1", null, null)]));
+    const usecase = new ImportOrganizationSyncUsecase(repository, cacheInvalidator, fileStorage);
 
     const result = await usecase.execute({
-      fileText: buildFileText([buildTransaction("1", null, null)]),
+      storageKey: STORAGE_KEY,
       confirmationSlug: " team-mirai ",
       environment: ALLOWED_ENVIRONMENT,
     });
@@ -171,6 +241,8 @@ describe("ImportOrganizationSyncUsecase", () => {
       expect.objectContaining({ politicalOrganizationId: "7" }),
     );
     expect(cacheInvalidator.invalidateWebappCache).toHaveBeenCalled();
+    // 取り込み済みのファイルはストレージから消す
+    expect(fileStorage.remove).toHaveBeenCalledWith(STORAGE_KEY);
     expect(result).toMatchObject({
       organizationSlug: "team-mirai",
       deletedTransactionCount: 5,
@@ -180,11 +252,15 @@ describe("ImportOrganizationSyncUsecase", () => {
 
   it("確認入力が一致しなければ置き換えない", async () => {
     const repository = buildRepository();
-    const usecase = new ImportOrganizationSyncUsecase(repository, buildCacheInvalidator());
+    const usecase = new ImportOrganizationSyncUsecase(
+      repository,
+      buildCacheInvalidator(),
+      buildFileStorage(),
+    );
 
     await expect(
       usecase.execute({
-        fileText: buildFileText(),
+        storageKey: STORAGE_KEY,
         confirmationSlug: "other-slug",
         environment: ALLOWED_ENVIRONMENT,
       }),
@@ -194,11 +270,15 @@ describe("ImportOrganizationSyncUsecase", () => {
 
   it("許可されない環境では置き換えない", async () => {
     const repository = buildRepository();
-    const usecase = new ImportOrganizationSyncUsecase(repository, buildCacheInvalidator());
+    const usecase = new ImportOrganizationSyncUsecase(
+      repository,
+      buildCacheInvalidator(),
+      buildFileStorage(),
+    );
 
     await expect(
       usecase.execute({
-        fileText: buildFileText(),
+        storageKey: STORAGE_KEY,
         confirmationSlug: "team-mirai",
         environment: { dataSyncImportEnabled: undefined, vercelEnv: "preview" },
       }),
@@ -211,14 +291,36 @@ describe("ImportOrganizationSyncUsecase", () => {
       invalidateWebappCache: jest.fn(async () => {
         throw new Error("webapp に接続できませんでした");
       }),
-    });
+    }, buildFileStorage());
 
     const result = await usecase.execute({
-      fileText: buildFileText(),
+      storageKey: STORAGE_KEY,
       confirmationSlug: "team-mirai",
       environment: ALLOWED_ENVIRONMENT,
     });
 
     expect(result.cacheInvalidationError).toBe("webapp に接続できませんでした");
+  });
+
+  it("ストレージのファイルを消せなくても取り込み自体は成功として返す", async () => {
+    const fileStorage = buildFileStorage();
+    fileStorage.remove = jest.fn(async () => {
+      throw new Error("削除に失敗しました");
+    });
+    const errorSpy = jest.spyOn(console, "error").mockImplementation(() => undefined);
+    const usecase = new ImportOrganizationSyncUsecase(
+      buildRepository(),
+      buildCacheInvalidator(),
+      fileStorage,
+    );
+
+    const result = await usecase.execute({
+      storageKey: STORAGE_KEY,
+      confirmationSlug: "team-mirai",
+      environment: ALLOWED_ENVIRONMENT,
+    });
+
+    expect(result.organizationSlug).toBe("team-mirai");
+    errorSpy.mockRestore();
   });
 });

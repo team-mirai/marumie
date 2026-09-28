@@ -6,15 +6,18 @@ import {
   SyncImportValidationError,
 } from "@/server/contexts/data-import/domain/models/organization-sync-import";
 import type { IOrganizationSyncImportRepository } from "@/server/contexts/data-import/domain/repositories/organization-sync-import-repository.interface";
+import type { ISyncImportFileStorage } from "@/server/contexts/data-import/domain/repositories/sync-import-file-storage.interface";
 import { parseOrganizationSyncImportFile } from "@/server/contexts/data-import/domain/services/organization-sync-import-parser";
 import {
   assertSyncImportAllowed,
   type SyncImportEnvironment,
 } from "@/server/contexts/data-import/domain/services/sync-import-availability";
+import { readSyncImportFileText } from "@/server/contexts/data-import/application/usecases/read-sync-import-file-text";
 import type { ICacheInvalidator } from "@/server/contexts/shared/domain/services/cache-invalidator.interface";
 
 interface ImportOrganizationSyncInput {
-  fileText: string;
+  /** ブラウザがストレージに置いた同期用 JSON のキー（{@link PrepareSyncImportUploadUsecase} が発行）。 */
+  storageKey: string;
   /** 画面で入力させる団体 slug。ファイルの slug と一致しなければ実行しない。 */
   confirmationSlug: string;
   environment: SyncImportEnvironment;
@@ -30,12 +33,15 @@ export class ImportOrganizationSyncUsecase {
   constructor(
     private readonly repository: IOrganizationSyncImportRepository,
     private readonly cacheInvalidator: ICacheInvalidator,
+    private readonly fileStorage: ISyncImportFileStorage,
   ) {}
 
   async execute(input: ImportOrganizationSyncInput): Promise<OrganizationSyncImportResult> {
     assertSyncImportAllowed(input.environment);
 
-    const file = parseOrganizationSyncImportFile(input.fileText);
+    const file = parseOrganizationSyncImportFile(
+      await readSyncImportFileText(this.fileStorage, input.storageKey),
+    );
 
     if (input.confirmationSlug.trim() !== file.meta.organizationSlug) {
       throw new SyncImportValidationError(
@@ -62,6 +68,13 @@ export class ImportOrganizationSyncUsecase {
       await this.cacheInvalidator.invalidateWebappCache();
     } catch (error) {
       cacheInvalidationError = error instanceof Error ? error.message : String(error);
+    }
+
+    // 取り込み済みのファイルは不要なので消す。消せなくても取り込みは成功しているので失敗扱いにしない。
+    try {
+      await this.fileStorage.remove(input.storageKey);
+    } catch (error) {
+      console.error("Sync import file cleanup error:", error);
     }
 
     return {

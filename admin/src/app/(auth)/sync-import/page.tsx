@@ -2,11 +2,16 @@ import "server-only";
 
 import { UserRoleModel } from "@/server/contexts/auth/domain/models/user-role";
 import { getCurrentUser } from "@/server/contexts/auth/presentation/loaders/load-current-user";
+import { prepareSyncImportUpload } from "@/server/contexts/data-import/presentation/actions/prepare-sync-import-upload";
 import { previewSyncImport } from "@/server/contexts/data-import/presentation/actions/preview-sync-import";
 import { runSyncImport } from "@/server/contexts/data-import/presentation/actions/run-sync-import";
 import { isSyncImportAvailable } from "@/server/contexts/data-import/presentation/loaders/read-sync-import-environment";
 import { PageHeader } from "@/client/components/layout/PageHeader";
 import { SyncImportClient } from "@/client/components/sync-import/SyncImportClient";
+
+// 数万件の置き換えは既定の実行時間では終わらないので、関数の上限（300 秒）まで使う。
+// 置き換えのトランザクション自体も同じ 300 秒で打ち切られ、取り消される。
+export const maxDuration = 300;
 
 const LABEL = "Sync Import";
 const TITLE = "同期用インポート";
@@ -44,7 +49,11 @@ export default async function SyncImportPage() {
         description="同期用エクスポートのJSONを取り込み、政治団体1件分の政治資金データを丸ごと置き換えます"
       />
 
-      <SyncImportClient previewAction={previewSyncImport} importAction={runSyncImport} />
+      <SyncImportClient
+        prepareUploadAction={prepareSyncImportUpload}
+        previewAction={previewSyncImport}
+        importAction={runSyncImport}
+      />
     </div>
   );
 }

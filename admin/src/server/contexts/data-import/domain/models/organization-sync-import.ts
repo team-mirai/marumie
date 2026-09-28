@@ -128,3 +128,43 @@ export class SyncImportOrganizationNotFoundError extends Error {}
 
 /** この環境では取り込みが許可されていないとき（フラグ未設定 / 本番）。 */
 export class SyncImportForbiddenError extends Error {}
+
+/**
+ * 置き換えが制限時間内に終わらなかったとき。トランザクションごと取り消されており、DB は元のまま。
+ * 途中で黙って切れたのではないことを画面で伝える。
+ */
+export class SyncImportTimeoutError extends Error {}
+
+/** 取り込み元のストレージにファイルを置けない・読めないとき（バケット未作成、置いたファイルが無い など）。 */
+export class SyncImportStorageError extends Error {}
+
+/**
+ * 受け付ける同期用 JSON の最大サイズ。
+ * ファイルは Vercel の関数（リクエストボディ 4.5MB 上限）を通さずストレージへ直接置くので、
+ * 上限はストレージのバケットの上限（supabase/config.toml の sync-imports）に揃える。
+ * 取り込み時は関数のメモリ（2GB）にファイル全体を読み込むので、それに収まる大きさに留める。
+ */
+export const SYNC_IMPORT_MAX_FILE_BYTES = 200 * 1024 * 1024;
+
+/** {@link SYNC_IMPORT_MAX_FILE_BYTES} を画面に出すときの表記。 */
+export const SYNC_IMPORT_MAX_FILE_SIZE_LABEL = "200MB";
+
+/** 選ばれたファイルの大きさを受け付けられるか確かめる。受け付けられなければ理由を返す。 */
+export function validateSyncImportFileSize(fileSize: number): string | null {
+  if (!Number.isFinite(fileSize) || fileSize <= 0) {
+    return "ファイルが空です";
+  }
+  if (fileSize > SYNC_IMPORT_MAX_FILE_BYTES) {
+    const megabytes = (fileSize / 1024 / 1024).toFixed(1);
+    return `ファイルが大きすぎます（${megabytes}MB）。取り込めるのは ${SYNC_IMPORT_MAX_FILE_SIZE_LABEL} までです`;
+  }
+  return null;
+}
+
+/** ストレージに置いた同期用 JSON のキー。サーバーが発行した形（UUID + .json）だけを受け付ける。 */
+const SYNC_IMPORT_STORAGE_KEY_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.json$/;
+
+export function isSyncImportStorageKey(value: string): boolean {
+  return SYNC_IMPORT_STORAGE_KEY_PATTERN.test(value);
+}

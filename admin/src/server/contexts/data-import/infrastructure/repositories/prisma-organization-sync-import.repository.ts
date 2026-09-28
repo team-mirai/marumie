@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { DonorType, Prisma, PrismaClient, TransactionType } from "@prisma/client";
+import { type DonorType, Prisma, type PrismaClient, type TransactionType } from "@prisma/client";
 import type {
   SyncExportCounterpart,
   SyncExportDonor,
@@ -11,6 +11,7 @@ import {
   serializeCounterpartKey,
   serializeDonorKey,
   SyncImportOrganizationNotFoundError,
+  SyncImportTimeoutError,
   type SyncImportCounterpartKey,
   type SyncImportDonorKey,
   toCounterpartKey,
@@ -137,6 +138,16 @@ export class PrismaOrganizationSyncImportRepository implements IOrganizationSync
   }
 
   async replaceOrganizationSyncData(
+    input: ReplaceOrganizationSyncDataInput,
+  ): Promise<ReplaceOrganizationSyncDataResult> {
+    try {
+      return await this.replaceInTransaction(input);
+    } catch (error) {
+      throw toTimeoutErrorIfExpired(error);
+    }
+  }
+
+  private async replaceInTransaction(
     input: ReplaceOrganizationSyncDataInput,
   ): Promise<ReplaceOrganizationSyncDataResult> {
     const { file } = input;
@@ -289,6 +300,20 @@ export class PrismaOrganizationSyncImportRepository implements IOrganizationSync
       },
     );
   }
+}
+
+/**
+ * トランザクションが制限時間を超えて取り消された（P2028）ことを、画面に出せるエラーにする。
+ * それ以外のエラーはそのまま返す。
+ */
+function toTimeoutErrorIfExpired(error: unknown): unknown {
+  if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2028") {
+    return new SyncImportTimeoutError(
+      `取り込みが制限時間（${REPLACE_TRANSACTION_TIMEOUT_MS / 1000} 秒）内に終わらなかったため中止しました。変更はすべて取り消されています`,
+      { cause: error },
+    );
+  }
+  return error;
 }
 
 /**

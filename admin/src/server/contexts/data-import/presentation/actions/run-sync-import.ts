@@ -6,6 +6,7 @@ import { ImportOrganizationSyncUsecase } from "@/server/contexts/data-import/app
 import type { OrganizationSyncImportResult } from "@/server/contexts/data-import/domain/models/organization-sync-import";
 import { prisma } from "@/server/contexts/shared/infrastructure/prisma";
 import { PrismaOrganizationSyncImportRepository } from "@/server/contexts/data-import/infrastructure/repositories/prisma-organization-sync-import.repository";
+import { buildSyncImportFileStorage } from "@/server/contexts/data-import/infrastructure/storage/build-sync-import-file-storage";
 import { WebappCacheInvalidator } from "@/server/contexts/shared/infrastructure/services/webapp-cache-invalidator";
 import { toSyncImportErrorMessage } from "@/server/contexts/data-import/presentation/actions/sync-import-error-message";
 import { readSyncImportEnvironment } from "@/server/contexts/data-import/presentation/loaders/read-sync-import-environment";
@@ -15,27 +16,24 @@ export type RunSyncImportResponse =
   | { ok: false; error: string };
 
 /**
- * 同期用 JSON を取り込み、政治団体 1 件分の政治資金データを置き換える。
+ * ストレージに置かれた同期用 JSON を取り込み、政治団体 1 件分の政治資金データを置き換える。
  * 取り返しがつかない操作なので、画面で入力された slug がファイルと一致するときだけ実行する。
  */
 export async function runSyncImport(data: {
-  file: File;
+  storageKey: string;
   confirmationSlug: string;
 }): Promise<RunSyncImportResponse> {
   await requireAdmin();
 
   try {
-    if (!data.file) {
-      return { ok: false, error: "ファイルが選択されていません" };
-    }
-
     const usecase = new ImportOrganizationSyncUsecase(
       new PrismaOrganizationSyncImportRepository(prisma),
       new WebappCacheInvalidator(),
+      buildSyncImportFileStorage(),
     );
 
     const result = await usecase.execute({
-      fileText: await data.file.text(),
+      storageKey: data.storageKey,
       confirmationSlug: data.confirmationSlug,
       environment: readSyncImportEnvironment(),
     });
