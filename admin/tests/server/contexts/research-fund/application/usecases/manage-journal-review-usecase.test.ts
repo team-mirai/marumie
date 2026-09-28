@@ -56,14 +56,15 @@ test("一覧には費用科目だけを渡す", async () => {
 const target = { id: entry.id, updatedAt: entry.updatedAt };
 test("選んだ下書きをまとめて確認済にし、重複した指定は1件に畳む", async () => {
   const { repository, usecase } = setup();
-  await expect(usecase.approveMany("1", [target, target])).resolves.toBe(1);
+  await expect(usecase.approveMany("1", [target, target])).resolves.toEqual({ approved: 1, skipped: 0 });
   expect(repository.findMany).toHaveBeenCalledWith("1", [entry.id]);
   expect(repository.approveMany).toHaveBeenCalledWith("1", [entry]);
 });
 test.each([
   [{ status: "published" as const }, "公開中"],
   [{ status: "approved" as const }, "下書きではありません"],
-  [{ accountKey: "needs-review" }, "科目が未確定"],
+  [{ status: "approved" as const, accountKey: "needs-review" }, "下書きではありません"],
+  [{ accountKey: "needs-review", updatedAt: "2026-09-01T00:00:00.000Z" }, "別の操作で更新されました"],
   [{ updatedAt: "2026-09-01T00:00:00.000Z" }, "別の操作で更新されました"],
 ])("確認済にできない仕訳が混ざっていたら理由を示して1件も変更しない %j", async (overrides, message) => {
   const { repository, usecase } = setup(overrides);
@@ -75,10 +76,22 @@ test("支給・別帳簿など取得できない仕訳は黙って除外せず�
   await expect(usecase.approveMany("1", [target])).rejects.toThrow("この画面で扱えない仕訳");
   expect(repository.approveMany).not.toHaveBeenCalled();
 });
-test("処理できる仕訳があっても、できない仕訳が1件でもあれば全体を中止する", async () => {
+test("処理できる仕訳があっても、要確認以外の理由でできない仕訳が1件でもあれば全体を中止する", async () => {
   const { repository, usecase } = setup();
-  repository.findMany.mockResolvedValue([entry, { ...entry, id: "3", description: "要確認の支出", accountKey: "needs-review" }]);
-  await expect(usecase.approveMany("1", [target, { id: "3", updatedAt: entry.updatedAt }])).rejects.toThrow("「要確認の支出」は科目が未確定です");
+  repository.findMany.mockResolvedValue([entry, { ...entry, id: "3", description: "公開中の支出", status: "published" }, { ...entry, id: "4", accountKey: "needs-review" }]);
+  await expect(usecase.approveMany("1", [target, { id: "3", updatedAt: entry.updatedAt }, { id: "4", updatedAt: entry.updatedAt }])).rejects.toThrow("「公開中の支出」は公開中です");
+  expect(repository.approveMany).not.toHaveBeenCalled();
+});
+test("科目が要確認の下書きは除外し、残りを確認済にして除外件数を返す", async () => {
+  const { repository, usecase } = setup();
+  const needsReview = { ...entry, id: "3", description: "要確認の支出", accountKey: "needs-review" };
+  repository.findMany.mockResolvedValue([entry, needsReview]);
+  await expect(usecase.approveMany("1", [target, { id: "3", updatedAt: entry.updatedAt }])).resolves.toEqual({ approved: 1, skipped: 1 });
+  expect(repository.approveMany).toHaveBeenCalledWith("1", [entry]);
+});
+test("選んだ下書きがすべて要確認なら何も変更せず、確認済にできる仕訳がないと伝える", async () => {
+  const { repository, usecase } = setup({ accountKey: "needs-review" });
+  await expect(usecase.approveMany("1", [target])).rejects.toThrow("確認済にできる仕訳がありません");
   expect(repository.approveMany).not.toHaveBeenCalled();
 });
 test.each([[[]], [[{ id: "0", updatedAt: entry.updatedAt }]], [[{ id: "a", updatedAt: entry.updatedAt }]]])("選択なし・不正なIDは取得もしない %j", async targets => {

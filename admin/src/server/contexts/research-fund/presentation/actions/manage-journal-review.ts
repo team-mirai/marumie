@@ -32,7 +32,7 @@ export async function mutateJournalReview(
       new WebappCacheInvalidator(),
     );
     let id: string | undefined;
-    let count: number | undefined;
+    let approved: { approved: number; skipped: number } | undefined;
     let cacheWarning: string | null | undefined;
     if (mutation.type === "create") id = await usecase.create(bookId, mutation.input, user.id);
     else if (mutation.type === "save")
@@ -40,12 +40,12 @@ export async function mutateJournalReview(
     else if (mutation.type === "discard")
       await usecase.discard(bookId, mutation.id, mutation.updatedAt);
     else if (mutation.type === "approve-many")
-      count = await usecase.approveMany(bookId, mutation.targets);
+      approved = await usecase.approveMany(bookId, mutation.targets);
     else if (mutation.type === "unpublish")
       ({ cacheWarning } = await usecase.unpublish(bookId, mutation.id, mutation.updatedAt));
     else throw new JournalReviewError("操作が不正です");
     revalidatePath("/(auth)", "layout");
-    return { success: true as const, id, count, cacheWarning };
+    return { success: true as const, id, approved, cacheWarning };
   } catch (error) {
     return {
       success: false as const,

@@ -91,8 +91,9 @@ export class ManageJournalReviewUsecase {
   }
   /**
    * 選んだ下書きをまとめて確認済にする。1 件ずつの「確認済にする」と同じ業務ルール
-   * （科目が確定済・下書きからの遷移・同時更新の検出）を全件に適用し、
-   * 1 件でも通らなければ何も変更せず、理由を利用者に返す。
+   * （科目が確定済・下書きからの遷移・同時更新の検出）を全件に適用する。
+   * 科目が未確定（要確認）の下書きは除外して残りを確認済にし、除外した件数を返す。
+   * それ以外の理由で通らない仕訳が 1 件でもあれば何も変更せず、理由を利用者に返す。
    */
   async approveMany(bookId: string, targets: readonly { id: string; updatedAt: string }[]) {
     const unique = [...new Map(targets.map((target) => [target.id, target])).values()];
@@ -106,6 +107,7 @@ export class ManageJournalReviewUsecase {
     const found = new Map(entries.map((entry) => [entry.id, entry]));
     const approving: ReviewEntry[] = [];
     const rejected: string[] = [];
+    let skipped = 0;
     for (const target of unique) {
       const entry = found.get(target.id);
       // 支給とこの画面で扱えない形式の仕訳は findMany が返さない。
@@ -113,10 +115,9 @@ export class ManageJournalReviewUsecase {
       else if (entry.status === "published") rejected.push(`「${entry.description}」は公開中です`);
       else if (entry.updatedAt !== target.updatedAt)
         rejected.push(`「${entry.description}」は別の操作で更新されました`);
-      else if (entry.accountKey === "needs-review")
-        rejected.push(`「${entry.description}」は科目が未確定です`);
       else if (JournalEntry.transition(entry, "approved").status === "invalid")
         rejected.push(`「${entry.description}」は下書きではありません`);
+      else if (entry.accountKey === "needs-review") skipped++;
       else approving.push(entry);
     }
     if (rejected.length > 0) {
@@ -127,8 +128,12 @@ export class ManageJournalReviewUsecase {
         `確認済にできない仕訳があるため、まとめて確認済にしませんでした: ${listed}${rest}。画面を再読み込みしてください`,
       );
     }
+    if (approving.length === 0)
+      throw new JournalReviewError(
+        "選んだ仕訳はすべて科目が要確認のため、確認済にできる仕訳がありません。科目を確定してください",
+      );
     await this.repository.approveMany(bookId, approving);
-    return approving.length;
+    return { approved: approving.length, skipped };
   }
   /**
    * 公開中の仕訳を確認済に戻し、公開ページから取り下げる。

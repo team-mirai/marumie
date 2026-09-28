@@ -59,9 +59,9 @@ test("不正な操作を拒否して再検証しない", async () => {
 });
 
 test("一括の確認済は対象帳簿を検証して件数を返し、成功後に再検証する", async () => {
-  const approveMany = jest.spyOn(ManageJournalReviewUsecase.prototype, "approveMany").mockResolvedValue(2);
+  const approveMany = jest.spyOn(ManageJournalReviewUsecase.prototype, "approveMany").mockResolvedValue({ approved: 2, skipped: 1 });
   const targets = [{ id: "3", updatedAt: "date" }, { id: "4", updatedAt: "date2" }];
-  await expect(mutateJournalReview("2", "1", { type: "approve-many", targets })).resolves.toEqual({ success: true, count: 2 });
+  await expect(mutateJournalReview("2", "1", { type: "approve-many", targets })).resolves.toEqual({ success: true, approved: { approved: 2, skipped: 1 } });
   expect(approveMany).toHaveBeenCalledWith("1", targets);
   expect(revalidatePath).toHaveBeenCalledWith("/(auth)", "layout");
 });

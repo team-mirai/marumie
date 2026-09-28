@@ -130,7 +130,12 @@ export function JournalReview({
           toast.error(result.error);
           return;
         }
-        toast.success(`${result.count}件を確認済にしました`);
+        const { approved = 0, skipped = 0 } = result.approved ?? {};
+        toast.success(
+          skipped > 0
+            ? `${approved}件を確認済にしました（科目が要確認の${skipped}件は下書きのまま残しました）`
+            : `${approved}件を確認済にしました`,
+        );
         setChecked([]);
         router.refresh();
       } catch {
