@@ -1,5 +1,11 @@
 import { useState, useEffect, useCallback } from "react";
-import type { SankeyData, SankeyLink, SankeyNode } from "@/types/sankey";
+import {
+  SANKEY_OTHER_LABEL,
+  SANKEY_UNUSED_LABEL,
+  type SankeyData,
+  type SankeyLink,
+  type SankeyNode,
+} from "@/types/sankey";
 
 const BREAKPOINT = {
   MOBILE: 768,
@@ -27,9 +33,9 @@ const COLORS = {
 
 /**
  * 調研費の未使用分。支出の費目と同じ右端に並ぶが、使った額と同列に見せないよう
- * 淡色にして末尾に固定する。年度途中は返還額が確定しないため「国庫へ返還」とは呼ばない。
+ * 淡色にして末尾に固定する。
  */
-const UNUSED_LABEL = "未使用";
+const UNUSED_LABEL = SANKEY_UNUSED_LABEL;
 
 // モバイル検知のカスタムフック
 export function useMobileDetection() {
@@ -217,6 +223,9 @@ export function useSankeySorting(data: SankeyData) {
         const bIsCarryover = b.label === "現金残高" || b.label === UNUSED_LABEL;
         const aIsProcessing = a.label === "(仕訳中)";
         const bIsProcessing = b.label === "(仕訳中)";
+        // 調研費で小さな費目をまとめた「その他」は、金額によらず未使用分の手前に置く。
+        const aIsOther = a.label === SANKEY_OTHER_LABEL;
+        const bIsOther = b.label === SANKEY_OTHER_LABEL;
 
         // 現金残高を最後に
         if (aIsCarryover && !bIsCarryover) return 1;
@@ -225,6 +234,10 @@ export function useSankeySorting(data: SankeyData) {
         // (仕訳中)を後に（現金残高以外）
         if (aIsProcessing && !bIsProcessing && !bIsCarryover) return 1;
         if (bIsProcessing && !aIsProcessing && !aIsCarryover) return -1;
+
+        // 「その他」を後に（現金残高・未使用以外）
+        if (aIsOther && !bIsOther && !bIsCarryover) return 1;
+        if (bIsOther && !aIsOther && !aIsCarryover) return -1;
 
         return bValue - aValue; // 大きい順
       });

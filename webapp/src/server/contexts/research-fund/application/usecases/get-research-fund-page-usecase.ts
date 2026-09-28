@@ -9,6 +9,7 @@ import type {
   ResearchFundPageData,
 } from "@/server/contexts/research-fund/domain/models/research-fund-page";
 import type { ResearchFundRepository } from "@/server/contexts/research-fund/domain/repositories/research-fund-repository.interface";
+import { buildGrantPeriodLabel } from "@/server/contexts/research-fund/domain/services/research-fund-coverage";
 import { researchFundCategoryColor } from "@/server/contexts/research-fund/domain/services/research-fund-category-color";
 import { parseResearchFundDetails } from "@/server/contexts/research-fund/domain/services/research-fund-details";
 import { buildExpenseViews } from "@/server/contexts/research-fund/domain/services/research-fund-expense-list";
@@ -42,6 +43,10 @@ export class GetResearchFundPageUsecase {
       politician: published.politician,
       financialYear: published.financialYear,
       asOfDate: published.asOfDate,
+      grantPeriodLabel: buildGrantPeriodLabel({
+        months: published.rows.map((row) => row.date.slice(0, 7)),
+        publishedThrough: published.publishedThrough?.slice(0, 7) ?? null,
+      }),
       nextUpdateNote: published.nextUpdateNote,
       policyComment: published.policyComment,
       dataNote: details.dataNote,

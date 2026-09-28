@@ -22,7 +22,24 @@ export interface SankeyNode {
   id: string;
   label?: string;
   nodeType?: SankeyNodeType;
+  /** 複数の費目をまとめたノード（調研費の「その他」）の内訳。ツールチップに出す。 */
+  breakdown?: SankeyNodeBreakdownItem[];
 }
+
+/** まとめたノードの内訳1件分。 */
+export interface SankeyNodeBreakdownItem {
+  label: string;
+  amount: number;
+}
+
+/**
+ * 調研費の未使用分のノードラベル。描画側はこのラベルで淡色・末尾固定を判定する。
+ * 年度途中は返還額が確定しないため「国庫へ返還」とは呼ばない。
+ */
+export const SANKEY_UNUSED_LABEL = "未使用・未処理";
+
+/** 調研費で小さな費目をまとめたノードのラベル。描画側は未使用分の手前に置く。 */
+export const SANKEY_OTHER_LABEL = "その他";
 
 /**
  * Sankeyダイアグラムのリンク（ノード間の接続）

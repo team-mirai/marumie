@@ -17,11 +17,14 @@ test.describe("調査研究費 議員ページ", () => {
 			/サンプル 太郎の調査研究費.*みらいまる見え政治資金/,
 		);
 
-		// B-1 使いみちの流れ（KPI2枚＋サンキー）
-		await expect(page.locator("#cash-flow").getByText("支給された")).toBeVisible();
+		// 収支の流れ（KPI2枚＋サンキー）
 		await expect(
-			page.locator("#cash-flow").getByText("議員活動に使った"),
+			page
+				.locator("#cash-flow")
+				.getByRole("heading", { name: /サンプル 太郎・調研費.*収支の流れ/ }),
 		).toBeVisible();
+		await expect(page.locator("#cash-flow").getByText("支給総額")).toBeVisible();
+		await expect(page.locator("#cash-flow").getByText("支出総額")).toBeVisible();
 		await expect(
 			page.locator('[role="img"][aria-label="調査研究費の使いみちの流れ図"]'),
 		).toBeVisible();

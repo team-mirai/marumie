@@ -5,7 +5,8 @@ import { ResponsiveSankey } from "@nivo/sankey";
 import { useState } from "react";
 import type { MouseEvent } from "react";
 import { createPortal } from "react-dom";
-import type { SankeyData } from "@/types/sankey";
+import { formatSankeyPercentage } from "@/client/lib/sankey-percentage";
+import type { SankeyData, SankeyNodeBreakdownItem } from "@/types/sankey";
 import InteractiveRect from "./InteractiveRect";
 import {
   useMobileDetection,
@@ -55,8 +56,6 @@ const TEXT_CONFIG = {
   TOTAL_NODE_ID: "合計",
   TOTAL_LABEL_TOP: "収入支出",
   TOTAL_LABEL_PERCENTAGE: "100%",
-  PERCENTAGE_THRESHOLD: 1,
-  PERCENTAGE_UNDER_ONE: "<1%",
   CURRENCY_DIVIDER: 10000,
   CURRENCY_UNIT: "万円",
 } as const;
@@ -80,6 +79,7 @@ interface SankeyNodeWithPosition {
   label?: string;
   nodeType?: string;
   value?: number;
+  breakdown?: SankeyNodeBreakdownItem[];
   x: number;
   y: number;
   width: number;
@@ -218,23 +218,28 @@ const CustomNodesLayer = ({ nodes }: { nodes: readonly SankeyNodeWithPosition[] 
             <div style={{ fontSize: "14px", fontWeight: "700", color: "#1E293B" }}>
               ¥{Math.round(tooltip.node.value || 0).toLocaleString("ja-JP")}
             </div>
+            {tooltip.node.breakdown && tooltip.node.breakdown.length > 0 && (
+              <ul
+                style={{
+                  marginTop: "6px",
+                  fontSize: "12px",
+                  fontWeight: "500",
+                  lineHeight: "1.5",
+                  color: "#4B5563",
+                }}
+              >
+                {tooltip.node.breakdown.map((item) => (
+                  <li key={item.label}>
+                    {item.label}　¥{Math.round(item.amount).toLocaleString("ja-JP")}
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>,
           document.body,
         )}
     </>
   );
-};
-
-// カスタムラベルレイヤー（プライマリ + セカンダリ）
-const calculatePercentageText = (nodeValue?: number, totalValue?: number) => {
-  if (!nodeValue || !totalValue || totalValue === 0) {
-    return "";
-  }
-
-  const percentage = (nodeValue / totalValue) * 100;
-  return percentage < TEXT_CONFIG.PERCENTAGE_THRESHOLD
-    ? TEXT_CONFIG.PERCENTAGE_UNDER_ONE
-    : `${Math.round(percentage)}%`;
 };
 
 const renderTotalNodeLabels = (
@@ -463,7 +468,7 @@ const CustomLabelsLayer = ({ nodes }: { nodes: readonly SankeyNodeWithPosition[]
             (!isMobile ? DIMENSIONS.LABEL_OFFSET_DESKTOP : DIMENSIONS.LABEL_OFFSET_MOBILE);
         const textAnchor = isLeft ? "end" : "start";
         const percentageY = node.y - DIMENSIONS.PERCENTAGE_OFFSET;
-        const percentageText = calculatePercentageText(node.value, totalValue);
+        const percentageText = formatSankeyPercentage(node.value, totalValue);
         const boxColor = getNodeColor(node.nodeType, "box", node.label);
         const elements = [];
 

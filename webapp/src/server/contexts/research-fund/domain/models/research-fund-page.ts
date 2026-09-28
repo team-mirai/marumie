@@ -66,6 +66,8 @@ export interface ResearchFundPageData {
   politician: { name: string; slug: string };
   financialYear: number;
   asOfDate: string | null;
+  /** 更新日に添える公開範囲「2026年2月〜8月支給分」。公開月が無ければ null */
+  grantPeriodLabel: string | null;
   nextUpdateNote: string | null;
   policyComment: string | null;
   /** B-5「調査研究費のデータについて」の本文。未設定なら null */

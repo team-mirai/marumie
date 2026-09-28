@@ -5,6 +5,8 @@ interface CardHeaderProps {
   title: string;
   organizationName?: string;
   updatedAt: string;
+  /** 更新時刻の下に添える2行目（例: 調研費の「2026年2月〜8月支給分」）。SPでは非表示 */
+  updatedAtNote?: string;
   subtitle: string;
 }
 
@@ -13,6 +15,7 @@ export default function CardHeader({
   title,
   organizationName,
   updatedAt,
+  updatedAtNote,
   subtitle,
 }: CardHeaderProps) {
   return (
@@ -44,10 +47,15 @@ export default function CardHeader({
 
       {/* 右側：更新時刻（SPでは非表示） */}
       {updatedAt && (
-        <div className="hidden md:flex flex-shrink-0 self-end md:self-start">
+        <div className="hidden md:flex md:flex-col md:items-end md:gap-1 flex-shrink-0 self-end md:self-start">
           <span className="text-[11px] md:text-[13px] font-bold text-[#9CA3AF] leading-[1.31]">
             {updatedAt}
           </span>
+          {updatedAtNote && (
+            <span className="text-[13px] font-bold text-[#9CA3AF] leading-[1.31] whitespace-nowrap">
+              {updatedAtNote}
+            </span>
+          )}
         </div>
       )}
     </div>

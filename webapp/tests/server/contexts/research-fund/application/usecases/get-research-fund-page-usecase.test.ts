@@ -116,21 +116,21 @@ describe("GetResearchFundPageUsecase", () => {
 
     const data = await usecase.execute({ slug: "sample-taro", financialYear: 2026 });
 
+    // 支給額（200万円）の1%未満のタクシー代と電車・バス代は「その他」にまとまる
     expect(data?.sankey.detailed.nodes.map((node) => node.label)).toEqual([
       "公費から支給",
       "合計",
       "印刷・広報費",
-      "電車・バス代",
-      "タクシー代",
-      "未使用",
+      "その他",
+      "未使用・未処理",
     ]);
-    // 法律上の区分では ⑨ 滞在費 にタクシー代と電車・バス代が統合される
+    // 法律上の区分では ⑨ 滞在費 にタクシー代と電車・バス代が統合される（1%未満が1つだけなのでまとめない）
     expect(data?.sankey.legal.nodes.map((node) => node.label)).toEqual([
       "公費から支給",
       "合計",
       "⑥ 広報紙誌の発行その他の事業費",
       "⑨ 滞在費",
-      "未使用",
+      "未使用・未処理",
     ]);
   });
 
@@ -157,6 +157,7 @@ describe("GetResearchFundPageUsecase", () => {
     const data = await usecase.execute({ slug: "sample-taro", financialYear: 2026 });
 
     expect(data?.asOfDate).toBe("2026-08-20");
+    expect(data?.grantPeriodLabel).toBe("2026年2月〜8月支給分");
     expect(data?.nextUpdateNote).toBe("11月ごろ");
     expect(data?.policyComment).toBe("事務所の立ち上げに使っています");
     expect(data?.dataNote).toBe("仕訳が完了した支出を掲載しています");
