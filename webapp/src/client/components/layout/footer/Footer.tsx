@@ -3,58 +3,7 @@ import "client-only";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-
-// テキストリンク集
-const getTextLinks = (currentSlug: string) => [
-  {
-    label: "TOP",
-    href: `/o/${currentSlug}/#top`,
-  },
-  {
-    label: "収支の流れ",
-    href: `/o/${currentSlug}/#cash-flow`,
-  },
-  {
-    label: "月ごとの収支推移",
-    href: `/o/${currentSlug}/#monthly-trends`,
-  },
-  {
-    label: "貸借対照表",
-    href: `/o/${currentSlug}/#balance-sheet`,
-  },
-  {
-    label: "すべての出入金",
-    href: `/o/${currentSlug}/#transactions`,
-  },
-  {
-    label: "データについて",
-    href: `/o/${currentSlug}/#explanation`,
-  },
-  {
-    label: "チームみらいについて",
-    href: `/o/${currentSlug}/#about`,
-  },
-  {
-    label: "寄附で応援する",
-    href: "https://team-mir.ai/support/donation",
-  },
-  {
-    label: "チームみらい党員になる",
-    href: "https://team-mir.ai/support/membership",
-  },
-  {
-    label: "よくあるご質問",
-    href: "https://team-mirai.notion.site/FAQ-27ef6f56bae180c085e9f97d05a5d59c",
-  },
-  {
-    label: "利用規約",
-    href: "/terms",
-  },
-  {
-    label: "プライバシーポリシー",
-    href: "/privacy",
-  },
-];
+import { type FooterTextLink, getFooterTextLinks } from "@/client/lib/footer-navigation";
 
 // SNSリンク集
 const socialLinks = [
@@ -105,12 +54,9 @@ const socialLinks = [
 export default function Footer() {
   const pathname = usePathname();
 
-  // 現在のslugを取得（/o/[slug]/... の形式の場合、なければdefaultを使用）
-  const currentSlug = pathname.startsWith("/o/") ? pathname.split("/")[2] : "team-mirai";
+  const textLinks = getFooterTextLinks(pathname);
 
-  const textLinks = getTextLinks(currentSlug);
-
-  const renderTextLink = (link: (typeof textLinks)[0]) => {
+  const renderTextLink = (link: FooterTextLink) => {
     const isExternal = link.href.startsWith("http");
     return (
       <Link

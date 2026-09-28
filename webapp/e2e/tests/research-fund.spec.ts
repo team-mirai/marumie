@@ -113,11 +113,10 @@ test.describe("調査研究費 議員ページ", () => {
 
 		const nav = page.getByRole("navigation", { name: "メインナビゲーション" });
 
-		// 政治団体ページ（/o/...）へ飛ばず、B-1〜B-5 のアンカーを指す。
+		// 政治団体ページ（/o/...）へ飛ばず、調研費ページ内のセクションを指す。
 		// next/link は末尾スラッシュを落とすので href は /p/[slug]/[year]#... になる。
 		for (const section of [
 			"cash-flow",
-			"highlights",
 			"monthly-trends",
 			"transactions",
 			"explanation",
@@ -127,6 +126,33 @@ test.describe("調査研究費 議員ページ", () => {
 			).toHaveCount(1);
 		}
 		await expect(nav.locator('a[href*="/o/"]')).toHaveCount(0);
+	});
+
+	test("フッターのアンカーが同じ議員ページ内のセクションを指す", async ({
+		page,
+	}) => {
+		await page.goto(PAGE_URL);
+
+		const footer = page.locator("footer");
+		for (const [label, section] of [
+			["収支の流れ", "cash-flow"],
+			["月ごとの収支推移", "monthly-trends"],
+			["すべての出入金", "transactions"],
+			["データについて", "explanation"],
+			["チームみらいについて", "about"],
+		]) {
+			await expect(
+				footer.getByRole("link", { name: label, exact: true }).first(),
+			).toHaveAttribute("href", `/p/sample-taro/2026#${section}`);
+		}
+	});
+
+	test("組織セレクタの表示名が「{氏名}（調研費）」になる", async ({ page }) => {
+		await page.goto(PAGE_URL);
+
+		await expect(
+			page.getByRole("button", { name: /サンプル 太郎（調研費）/ }),
+		).toBeVisible();
 	});
 
 	test("存在しない議員のページは政治団体ページに寄せられる", async ({ page }) => {
@@ -238,15 +264,16 @@ test.describe("調査研究費 政党ページのサマリー（A-6）", () => {
 		).toBeVisible();
 	});
 
-	test("組織セレクタが政治資金と調査研究費の2グループになる", async ({
+	test("組織セレクタが団体と調研費（議員別）のグループになる", async ({
 		page,
 	}) => {
 		await page.goto(ORG_URL);
 
 		await page.getByRole("button", { name: /サンプル党/ }).first().click();
 
-		await expect(page.getByText(/^政治資金 \d+団体$/)).toBeVisible();
-		await expect(page.getByText(/^調査研究費 議員\d+人$/)).toBeVisible();
+		await expect(page.getByText("表示する団体名", { exact: true })).toBeVisible();
+		await expect(page.getByText("調研費（議員別）", { exact: true })).toBeVisible();
+		await expect(page.getByText("対象年", { exact: true })).toBeVisible();
 
 		// 議員を選ぶと議員ページに遷移する（A-6 の議員リストと取り違えないよう
 		// 調査研究費グループの中だけを探す）

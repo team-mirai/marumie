@@ -3,6 +3,10 @@ import "client-only";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import {
+  formatResearchFundSelectorLabel,
+  groupResearchFundPoliticians,
+} from "@/client/lib/organization-selector";
 import type { ResearchFundPoliticianEntry } from "@/server/contexts/research-fund/domain/models/research-fund-politician-list";
 import type { OrganizationsResponse } from "@/types/organization";
 
@@ -58,6 +62,8 @@ export default function OrganizationYearSheet({
   const currentPolitician = politicians.find(
     (politician) => politician.slug === currentPoliticianSlug,
   );
+  const { selectable: selectablePoliticians, upcomingLabel } =
+    groupResearchFundPoliticians(politicians);
 
   const handleSelect = (slug: string, year: number) => {
     const pathSegments = pathname.split("/");
@@ -95,8 +101,9 @@ export default function OrganizationYearSheet({
     handleSelect(currentSlug, year);
   };
 
-  const triggerLabel =
-    currentPolitician?.name ?? currentOrganization?.displayName ?? "政治団体を選択";
+  const triggerLabel = currentPolitician
+    ? formatResearchFundSelectorLabel(currentPolitician.name)
+    : (currentOrganization?.displayName ?? "政治団体を選択");
 
   return (
     <div className="relative w-full min-w-0 max-w-full">
@@ -114,7 +121,7 @@ export default function OrganizationYearSheet({
           <span className="text-[14px] leading-none text-black truncate w-full text-left">
             {triggerLabel}
           </span>
-          <span className="text-[9px] leading-none text-[#238778]">{currentYear}年</span>
+          <span className="text-xs leading-none text-[#238778]">{currentYear}年</span>
         </span>
         <Image
           src="/icons/icon-chevron-down.svg"
@@ -140,16 +147,14 @@ export default function OrganizationYearSheet({
           <div className="absolute right-0 top-full mt-1 z-50 w-68 bg-white rounded-lg border border-black/50 shadow-lg py-3 max-h-[70vh] overflow-y-auto">
             {/* Organization Selection */}
             <div className="px-4 flex flex-col gap-1">
-              <p className="text-[11px] text-[#5a5a5a]">
-                政治資金 {organizations.organizations.length}団体
-              </p>
+              <p className="text-[11px] text-[#5a5a5a]">表示する団体名</p>
               <div className="flex flex-col">
                 {organizations.organizations.map((org) => (
                   <button
                     key={org.slug}
                     type="button"
                     onClick={() => handleOrganizationSelect(org.slug)}
-                    className="flex items-center gap-2 h-9 pl-6 text-left cursor-pointer rounded-md hover:bg-gray-100 transition-colors"
+                    className="flex items-center gap-2 min-h-9 py-2 pl-6 text-left cursor-pointer rounded-md hover:bg-gray-100 transition-colors"
                   >
                     <span className="w-3 flex items-center justify-center">
                       {!currentPoliticianSlug && currentSlug === org.slug && <SelectedMark />}
@@ -157,7 +162,7 @@ export default function OrganizationYearSheet({
                     <span className="flex flex-col gap-0.5">
                       <span className="text-xs text-gray-900">{org.displayName}</span>
                       {org.orgName && (
-                        <span className="text-[8px] text-[#6a6a6a]">{org.orgName}</span>
+                        <span className="text-[10px] text-[#6a6a6a]">{org.orgName}</span>
                       )}
                     </span>
                   </button>
@@ -170,35 +175,36 @@ export default function OrganizationYearSheet({
               <>
                 <hr className="my-2 border-gray-200" />
                 <div className="px-4 flex flex-col gap-1">
-                  <p className="text-[11px] text-[#5a5a5a]">
-                    調査研究費 議員{politicians.length}人
-                  </p>
+                  <p className="text-[11px] text-[#5a5a5a]">調研費（議員別）</p>
                   <div className="flex flex-col">
-                    {politicians.map((politician) => (
+                    {selectablePoliticians.map((politician) => (
                       <button
                         key={politician.slug}
                         type="button"
                         onClick={() => handlePoliticianSelect(politician.slug)}
-                        // 準備中の議員も隠さず、押せる状態のままグレーで並べる（デザイン仕様 §5）
-                        className="flex items-center gap-2 min-h-9 py-1 pl-6 text-left cursor-pointer rounded-md hover:bg-gray-100 transition-colors"
+                        className="flex items-center gap-2 min-h-9 py-2 pl-6 text-left cursor-pointer rounded-md hover:bg-gray-100 transition-colors"
                       >
                         <span className="w-3 flex items-center justify-center">
                           {currentPoliticianSlug === politician.slug && <SelectedMark />}
                         </span>
                         <span className="flex flex-col gap-0.5">
-                          <span
-                            className={`text-xs ${
-                              politician.ready ? "text-gray-900" : "text-[#9CA3AF]"
-                            }`}
-                          >
-                            {politician.name}
-                          </span>
-                          <span className="text-[8px] text-[#6a6a6a]">
+                          <span className="text-xs text-gray-900">{politician.name}</span>
+                          <span className="text-[10px] text-[#6a6a6a]">
                             {politician.statusLabel}
                           </span>
                         </span>
                       </button>
                     ))}
+                    {/* 準備中の議員は1行にまとめ、選択できないグレーの行にする */}
+                    {upcomingLabel && (
+                      <div className="flex items-center gap-2 min-h-9 py-2 pl-6 rounded-md text-[#9CA3AF]">
+                        <span className="w-3" />
+                        <span className="flex flex-col gap-0.5">
+                          <span className="text-xs">{upcomingLabel}</span>
+                          <span className="text-[10px]">準備中</span>
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
               </>
@@ -254,24 +260,11 @@ export default function OrganizationYearSheet({
   );
 }
 
+/** 選択中の ✓（デザインの「ヘッダー」節の #238778・太字） */
 function SelectedMark() {
   return (
-    <svg
-      width="13"
-      height="11"
-      viewBox="0 0 13 11"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      aria-hidden="true"
-    >
-      <title>選択中</title>
-      <path
-        d="M1 5.5L5 9.5L12 1.5"
-        stroke="#238778"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
+    <span className="text-[11px] font-bold leading-none text-[#238778]" aria-hidden="true">
+      ✓
+    </span>
   );
 }

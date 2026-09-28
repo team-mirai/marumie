@@ -16,17 +16,19 @@ describe("getHeaderNavigation", () => {
     ]);
   });
 
-  it("議員ページでは同じページ内のセクション（B-1〜B-5）を指す", () => {
+  it("調研費ページでは同じページ内のセクションを指す", () => {
     const { homeHref, items } = getHeaderNavigation("politician", "sample-taro", 2026);
 
     expect(homeHref).toBe("/p/sample-taro/2026/");
-    expect(items.map((item) => item.href)).toEqual([
-      "/p/sample-taro/2026/#cash-flow",
-      "/p/sample-taro/2026/#highlights",
-      "/p/sample-taro/2026/#monthly-trends",
-      "/p/sample-taro/2026/#transactions",
-      "/p/sample-taro/2026/#explanation",
-      "https://team-mirai.notion.site/FAQ-27ef6f56bae180c085e9f97d05a5d59c",
+    expect(items).toEqual([
+      { href: "/p/sample-taro/2026/#cash-flow", label: "収支の流れ" },
+      { href: "/p/sample-taro/2026/#monthly-trends", label: "1年間の推移" },
+      { href: "/p/sample-taro/2026/#transactions", label: "すべての出入金" },
+      { href: "/p/sample-taro/2026/#explanation", label: "データについて" },
+      {
+        href: "https://team-mirai.notion.site/FAQ-27ef6f56bae180c085e9f97d05a5d59c",
+        label: "よくあるご質問",
+      },
     ]);
   });
 

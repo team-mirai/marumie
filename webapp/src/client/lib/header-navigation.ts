@@ -28,12 +28,11 @@ const ORGANIZATION_SECTIONS: HeaderNavigationItem[] = [
   { href: "#explanation", label: "データについて" },
 ];
 
-/** 議員ページのセクション（B-1〜B-5）。 */
+/** 調研費ページのセクション（最終デザインの「ヘッダー」節）。 */
 const POLITICIAN_SECTIONS: HeaderNavigationItem[] = [
-  { href: "#cash-flow", label: "使いみち" },
-  { href: "#highlights", label: "活用方針と成果" },
+  { href: "#cash-flow", label: "収支の流れ" },
   { href: "#monthly-trends", label: "1年間の推移" },
-  { href: "#transactions", label: "すべての支出" },
+  { href: "#transactions", label: "すべての出入金" },
   { href: "#explanation", label: "データについて" },
 ];
 
