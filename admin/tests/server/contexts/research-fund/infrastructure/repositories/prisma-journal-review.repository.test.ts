@@ -85,7 +85,7 @@ test("手動仕訳を取得し、書類・メモの欠損値を表示用に変�
 });
 test("科目は表示順に取得し、帳簿が存在しなければ年度を返さない", async () => {
   const { repository, tx } = setup();
-  const accounts = [{ key: "taxi", label: "タクシー代", type: "expense" }];
+  const accounts = [{ key: "taxi", label: "タクシー代", type: "expense", legalLabel: "⑨ 滞在費" }];
   tx.researchFundAccount.findMany.mockResolvedValue(accounts);
   await expect(repository.accounts()).resolves.toEqual(accounts);
   expect(tx.researchFundAccount.findMany).toHaveBeenCalledWith({ orderBy: { displayOrder: "asc" } });

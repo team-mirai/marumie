@@ -16,6 +16,16 @@ export const journalEditSchema = z.object({
 export type JournalEdit = z.infer<typeof journalEditSchema>;
 export interface ReviewAccount extends ResearchFundAccount {
   label: string;
+  /** 法律上の区分（法定区分）。科目マスタで科目ごとに一意に決まる。要確認など区分を持たない科目は null */
+  legalLabel: string | null;
+}
+/** 科目に対応する法律上の区分。科目が未確定（要確認・未選択）か区分を持たない科目なら null（未定） */
+export function legalLabelOf(
+  accounts: readonly ReviewAccount[],
+  accountKey: string,
+): string | null {
+  if (accountKey === "needs-review") return null;
+  return accounts.find((a) => a.key === accountKey)?.legalLabel ?? null;
 }
 export interface ReviewEntry extends JournalEdit, JournalEntry {
   id: string;

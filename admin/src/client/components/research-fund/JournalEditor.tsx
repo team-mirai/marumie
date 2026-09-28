@@ -1,10 +1,12 @@
 "use client";
 import { useEffect, useId, useState } from "react";
 import { Button, Input, Label, NativeSelect, Textarea } from "@/client/components/ui";
-import type {
-  JournalEdit,
-  ReviewAccount,
-  ReviewEntry,
+import { LegalCategoryLabel } from "@/client/components/research-fund/LegalCategoryLabel";
+import {
+  legalLabelOf,
+  type JournalEdit,
+  type ReviewAccount,
+  type ReviewEntry,
 } from "@/server/contexts/research-fund/domain/models/journal-review";
 
 export function JournalEditor({
@@ -147,6 +149,10 @@ export function JournalEditor({
               </option>
             ))}
           </NativeSelect>
+          <LegalCategoryLabel
+            legalLabel={legalLabelOf(accounts, input.accountKey)}
+            className="mt-1 block"
+          />
           {input.accountKey === "needs-review" && (
             <p className="text-sm font-bold text-destructive">要確認：科目を確定してください</p>
           )}

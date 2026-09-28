@@ -27,11 +27,13 @@ import {
 } from "@/client/components/ui";
 import { PageHeader } from "@/client/components/layout/PageHeader";
 import { JournalEditor } from "@/client/components/research-fund/JournalEditor";
+import { LegalCategoryLabel } from "@/client/components/research-fund/LegalCategoryLabel";
 import { ResearchFundCategoryPill } from "@/client/components/research-fund/ResearchFundCategoryPill";
-import type {
-  JournalEdit,
-  ReviewAccount,
-  ReviewEntry,
+import {
+  legalLabelOf,
+  type JournalEdit,
+  type ReviewAccount,
+  type ReviewEntry,
 } from "@/server/contexts/research-fund/domain/models/journal-review";
 import type { AdminTarget } from "@/server/contexts/shared/domain/models/admin-target";
 import { mutateJournalReview } from "@/server/contexts/research-fund/presentation/actions/manage-journal-review";
@@ -367,7 +369,13 @@ export function JournalReview({
                             支給
                           </span>
                         ) : (
-                          <ResearchFundCategoryPill accountKey={entry.accountKey} />
+                          <>
+                            <ResearchFundCategoryPill accountKey={entry.accountKey} />
+                            <LegalCategoryLabel
+                              legalLabel={legalLabelOf(accounts, entry.accountKey)}
+                              className="mt-1 block"
+                            />
+                          </>
                         )}
                       </TableCell>
                       <TableCell>
