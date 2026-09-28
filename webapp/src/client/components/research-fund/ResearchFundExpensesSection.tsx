@@ -192,8 +192,15 @@ export default function ResearchFundExpensesSection({ data, updatedAt }: Props) 
             );
           })}
 
+          {/* 白グラデのフェードは先頭6件のときだけ。用途カードから広げたあとは、該当行を隠さないようボタンを行の下に置く */}
           {hasMore && (
-            <div className="pointer-events-none absolute inset-x-0 bottom-0 flex h-[108px] items-end justify-center bg-[linear-gradient(180deg,rgba(255,255,255,0)_0%,rgba(255,255,255,0.3)_34%,rgba(255,255,255,0.8)_66%,#fff_90%)] pb-[5px]">
+            <div
+              className={
+                shown > RESEARCH_FUND_PREVIEW_COUNT
+                  ? "flex justify-center pt-6"
+                  : "pointer-events-none absolute inset-x-0 bottom-0 flex h-[108px] items-end justify-center bg-[linear-gradient(180deg,rgba(255,255,255,0)_0%,rgba(255,255,255,0.3)_34%,rgba(255,255,255,0.8)_66%,#fff_90%)] pb-[5px]"
+              }
+            >
               <Link
                 href={`/p/${data.politician.slug}/${data.financialYear}/transactions`}
                 className="pointer-events-auto inline-flex h-12 w-[270px] items-center justify-center gap-2.5 rounded-[6px] border border-[#1F2937] bg-white px-6 py-2 text-base font-bold text-[#1F2937] transition-colors duration-150 hover:bg-[#F9FAFB]"
