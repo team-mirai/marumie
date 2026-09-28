@@ -201,6 +201,9 @@ export class PrismaScanRepository implements ScanRepository {
         // 先に下書きを消して行ロックを取ってから数える。消した下書きを並行して確認済にする更新は
         // このトランザクションの終了まで待たされ、消す前に確認済になった分はここで数えられる。
         // 明細・支出群への所属は外部キーの cascade で一緒に消える（引き継がない）
+        // 同じ書類の読み直しが並行して完了しても、書類の行ロックで直列化する。後続は先行の
+        // 新しい下書きがコミットされてから消すので、両方の結果が並んで残らない
+        await tx.$queryRaw`SELECT id FROM research_fund_documents WHERE id = ${documentId} FOR UPDATE`;
         await tx.researchFundJournalEntry.deleteMany({
           where: { bookId, documentId, status: "draft" },
         });

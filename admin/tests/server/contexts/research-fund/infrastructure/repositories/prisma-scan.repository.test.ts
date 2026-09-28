@@ -28,12 +28,14 @@ function setup() {
     researchFundJournalEntry: entry,
     researchFundJournalLine: line,
     researchFundAccount: account,
+    $queryRaw: jest.fn(),
   };
   const client = {
     ...tx,
     $transaction: jest.fn((run: (tx: unknown) => unknown) => run(tx)),
   };
   return {
+    tx,
     batch,
     document,
     job,
@@ -349,7 +351,7 @@ test("通常のスキャンでは既存の仕訳を消さない", async () => {
 });
 
 test("読み直しでは書類の下書きを消してから新しい下書きを作る（同じトランザクション）", async () => {
-  const { entry, line, job, client, repository } = setup();
+  const { tx, entry, line, job, client, repository } = setup();
   entry.count.mockResolvedValue(0);
   entry.deleteMany.mockResolvedValue({ count: 1 });
   entry.createManyAndReturn.mockResolvedValue([{ id: BigInt(101), hash: "hash-a" }]);
@@ -361,6 +363,13 @@ test("読み直しでは書類の下書きを消してから新しい下書き�
   expect(entry.deleteMany).toHaveBeenCalledWith({
     where: { bookId: BigInt(12), documentId: BigInt(42), status: "draft" },
   });
+  // 同じ書類の読み直しと直列化するため、消す前に書類の行をロックする
+  const [sql, ...values] = tx.$queryRaw.mock.calls[0];
+  expect(sql.join("?")).toContain("FOR UPDATE");
+  expect(values).toEqual([BigInt(42)]);
+  expect(tx.$queryRaw.mock.invocationCallOrder[0]).toBeLessThan(
+    entry.deleteMany.mock.invocationCallOrder[0],
+  );
   // 消して行ロックを取ってから数えるので、並行して確認済にされた仕訳を見落とさない
   expect(entry.deleteMany.mock.invocationCallOrder[0]).toBeLessThan(
     entry.count.mock.invocationCallOrder[0],
