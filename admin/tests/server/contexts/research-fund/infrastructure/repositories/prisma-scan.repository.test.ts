@@ -361,6 +361,10 @@ test("読み直しでは書類の下書きを消してから新しい下書き�
   expect(entry.deleteMany).toHaveBeenCalledWith({
     where: { bookId: BigInt(12), documentId: BigInt(42), status: "draft" },
   });
+  // 消して行ロックを取ってから数えるので、並行して確認済にされた仕訳を見落とさない
+  expect(entry.deleteMany.mock.invocationCallOrder[0]).toBeLessThan(
+    entry.count.mock.invocationCallOrder[0],
+  );
   // 消したあとに作るので、元の下書きと同じ hash でも読み飛ばされず二重にもならない
   expect(entry.deleteMany.mock.invocationCallOrder[0]).toBeLessThan(
     entry.createManyAndReturn.mock.invocationCallOrder[0],
@@ -371,13 +375,14 @@ test("読み直しでは書類の下書きを消してから新しい下書き�
   );
 });
 
-test("読み直しの時点で確認済・公開中の仕訳がある書類は何も変えずに失敗させる", async () => {
+test("読み直しの時点で確認済・公開中の仕訳がある書類は、新しい下書きを作らずに失敗させる", async () => {
   const { entry, job, repository } = setup();
+  entry.deleteMany.mockResolvedValue({ count: 1 });
   entry.count.mockResolvedValue(1);
+  // 例外でトランザクションが巻き戻るので、先に消した下書きも元に戻る
   await expect(repository.completeJob({ ...COMPLETE_INPUT, replaceDrafts: true })).rejects.toThrow(
     ScanJobError,
   );
-  expect(entry.deleteMany).not.toHaveBeenCalled();
   expect(entry.createManyAndReturn).not.toHaveBeenCalled();
   expect(job.update).not.toHaveBeenCalled();
 });

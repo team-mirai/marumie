@@ -198,17 +198,20 @@ export class PrismaScanRepository implements ScanRepository {
       if (input.replaceDrafts) {
         // 読み直しは書類単位で下書きを置き換える。確認済・公開中の仕訳がある書類は
         // （依頼の後に確認済にされた場合も）置き換えず、元の仕訳をそのまま残す。
-        const reviewed = await tx.researchFundJournalEntry.count({
-          where: { bookId, documentId, status: { not: "draft" } },
-        });
-        if (reviewed > 0)
-          throw new ScanJobError(
-            "確認済・公開中の仕訳があるため、読み直した結果で置き換えませんでした",
-          );
+        // 先に下書きを消して行ロックを取ってから数える。消した下書きを並行して確認済にする更新は
+        // このトランザクションの終了まで待たされ、消す前に確認済になった分はここで数えられる。
         // 明細・支出群への所属は外部キーの cascade で一緒に消える（引き継がない）
         await tx.researchFundJournalEntry.deleteMany({
           where: { bookId, documentId, status: "draft" },
         });
+        const reviewed = await tx.researchFundJournalEntry.count({
+          where: { bookId, documentId, status: { not: "draft" } },
+        });
+        // 投げるとトランザクションごと巻き戻り、消した下書きも元に戻る
+        if (reviewed > 0)
+          throw new ScanJobError(
+            "確認済・公開中の仕訳があるため、読み直した結果で置き換えませんでした",
+          );
       }
       // 同じ書類を読み直しても仕訳を二重に作らない。hash は日付・金額・項目名・書類IDから作る。
       // (book_id, hash) の一意制約に任せて既存分は読み飛ばす（ON CONFLICT DO NOTHING）ので、
