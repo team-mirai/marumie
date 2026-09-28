@@ -244,6 +244,36 @@ test.describe("調査研究費 議員ページ", () => {
 		await expect(pill).toBeFocused();
 	});
 
+	test("全件ページの SP 幅でも、タブで並び替えてカテゴリーで絞り込める", async ({ page }) => {
+		await page.setViewportSize({ width: 390, height: 844 });
+		await page.goto(`${PAGE_URL}/transactions`);
+		const table = page.locator("#transactions");
+		const toTime = (text: string) => {
+			const [y, m, d] = text.split(".").map(Number);
+			return new Date(y, m - 1, d).getTime();
+		};
+		const firstDate = () => table.getByText(/^\d{4}\.\d{1,2}\.\d{1,2}$/).first().innerText();
+
+		// PC のヘッダー行は隠れ、SP のタブで操作する
+		await expect(table.getByRole("button", { name: "日付で並び替え" })).toBeHidden();
+		await expect(table.getByRole("button", { name: "新しい順" })).toHaveAttribute("aria-pressed", "true");
+		const newest = toTime(await firstDate());
+
+		const oldTab = table.getByRole("button", { name: "古い順" });
+		await expect(async () => {
+			await oldTab.click();
+			await expect(oldTab).toHaveAttribute("aria-pressed", "true", { timeout: 1_000 });
+		}).toPass();
+		expect(toTime(await firstDate())).toBeLessThan(newest);
+
+		const filterButton = table.getByRole("button", { name: "カテゴリーで絞り込む" });
+		await filterButton.click();
+		await table.getByRole("button", { name: "（すべて選択）" }).click();
+		await table.getByRole("button", { name: "OK" }).click();
+		await expect(table.getByRole("status").filter({ hasText: "（絞り込み中）" })).toBeVisible();
+		await expect(filterButton).not.toHaveText("");
+	});
+
 	test("特記事項はⓘで開かず、項目名の下に常に出る", async ({ page }) => {
 		await page.goto(PAGE_URL);
 		const section = page.locator("#transactions");

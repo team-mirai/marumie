@@ -28,8 +28,56 @@ interface Props {
   expenses: ResearchFundExpenseView[];
 }
 
-/** SP（≤760px）ではヘッダー行を隠し、1行を縦積みにする。 */
+/** SP（≤760px）ではヘッダー行の代わりに並び替えタブと絞り込みボタンを出し、1行を縦積みにする。 */
 const ROW_GRID = "min-[761px]:grid-cols-[140px_200px_1fr_180px]";
+
+/** SP の並び替えタブ。政治団体の全件ページ（TransactionTableMobileHeader）と同じ見た目で、支出だけなので収入の並びは持たない。 */
+const MOBILE_SORT_TABS: { id: ResearchFundTransactionSort; label: string }[] = [
+  { id: "new", label: "新しい順" },
+  { id: "old", label: "古い順" },
+  { id: "amountDesc", label: "支出が多い順" },
+  { id: "amountAsc", label: "支出が少ない順" },
+];
+
+/** カテゴリー絞り込みを開くボタン。絞り込み中は件数を出す。 */
+function CategoryFilterButton({
+  count,
+  expanded,
+  onClick,
+}: {
+  count: number;
+  expanded: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label="カテゴリーで絞り込む"
+      aria-expanded={expanded}
+      className={`inline-flex h-6 min-w-6 flex-shrink-0 cursor-pointer items-center justify-center gap-[3px] rounded-[6px] text-[11px] font-bold text-[#238778] ${
+        count > 0 ? "bg-[#E2F6F3] px-1.5" : ""
+      }`}
+    >
+      <svg
+        width="19"
+        height="19"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+      >
+        <line x1="4" y1="6" x2="20" y2="6" />
+        <line x1="7" y1="12" x2="17" y2="12" />
+        <line x1="10" y1="18" x2="14" y2="18" />
+      </svg>
+      {count > 0 && count}
+    </button>
+  );
+}
 
 function SortChevron({ flipped }: { flipped: boolean }) {
   return (
@@ -90,7 +138,7 @@ function PagerButton({
 export default function ResearchFundTransactionsTable({ slug, financialYear, expenses }: Props) {
   const [sort, setSort] = useState<ResearchFundTransactionSort>("new");
   const [categories, setCategories] = useState<string[]>([]);
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [openFilter, setOpenFilter] = useState<"pc" | "sp" | null>(null);
   const [page, setPage] = useState(1);
   const [receipt, setReceipt] = useState<ResearchFundExpenseView | null>(null);
 
@@ -108,6 +156,14 @@ export default function ResearchFundTransactionsTable({ slug, financialYear, exp
     setPage(1);
   };
 
+  const toggleFilter = (at: "pc" | "sp") => setOpenFilter((open) => (open === at ? null : at));
+
+  const applyCategories = (next: string[]) => {
+    setCategories(next);
+    setOpenFilter(null);
+    setPage(1);
+  };
+
   const goToPage = (next: number) => {
     setPage(next);
     window.scrollTo(0, 0);
@@ -116,6 +172,48 @@ export default function ResearchFundTransactionsTable({ slug, financialYear, exp
   return (
     <div className="flex flex-col gap-5">
       <div>
+        <div className="relative flex items-center gap-4 min-[761px]:hidden">
+          <fieldset className="m-0 flex min-w-0 flex-1 gap-6 overflow-x-auto border-0 p-0 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <legend className="sr-only">並び順</legend>
+            {MOBILE_SORT_TABS.map((tab) => {
+              const isActive = sort === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => changeSort(tab.id)}
+                  aria-pressed={isActive}
+                  className="relative flex cursor-pointer touch-manipulation flex-col items-center justify-center whitespace-nowrap px-0 py-2"
+                >
+                  <span
+                    className={`text-sm font-bold leading-[1.2857142857142858em] ${
+                      isActive ? "text-[#2AA693]" : "text-[#9CA3AF]"
+                    }`}
+                  >
+                    {tab.label}
+                  </span>
+                  {isActive && (
+                    <span className="absolute right-0 bottom-0 left-0 h-[2px] bg-[#2AA693]" />
+                  )}
+                </button>
+              );
+            })}
+          </fieldset>
+          <CategoryFilterButton
+            count={categories.length}
+            expanded={openFilter === "sp"}
+            onClick={() => toggleFilter("sp")}
+          />
+          {openFilter === "sp" && (
+            <ResearchFundCategoryFilter
+              options={options}
+              selected={categories}
+              onCancel={() => setOpenFilter(null)}
+              onApply={applyCategories}
+              align="right"
+            />
+          )}
+        </div>
         <div
           className={`hidden h-12 items-center border-b border-[#D5DBE1] text-sm font-bold text-gray-800 min-[761px]:grid ${ROW_GRID}`}
         >
@@ -132,42 +230,17 @@ export default function ResearchFundTransactionsTable({ slug, financialYear, exp
           </div>
           <div className="relative flex items-center gap-1 pl-4">
             カテゴリー
-            <button
-              type="button"
-              onClick={() => setIsFilterOpen((open) => !open)}
-              aria-label="カテゴリーで絞り込む"
-              aria-expanded={isFilterOpen}
-              className={`inline-flex h-6 min-w-6 cursor-pointer items-center justify-center gap-[3px] rounded-[6px] text-[11px] font-bold text-[#238778] ${
-                categories.length > 0 ? "bg-[#E2F6F3] px-1.5" : ""
-              }`}
-            >
-              <svg
-                width="19"
-                height="19"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
-              >
-                <line x1="4" y1="6" x2="20" y2="6" />
-                <line x1="7" y1="12" x2="17" y2="12" />
-                <line x1="10" y1="18" x2="14" y2="18" />
-              </svg>
-              {categories.length > 0 && categories.length}
-            </button>
-            {isFilterOpen && (
+            <CategoryFilterButton
+              count={categories.length}
+              expanded={openFilter === "pc"}
+              onClick={() => toggleFilter("pc")}
+            />
+            {openFilter === "pc" && (
               <ResearchFundCategoryFilter
                 options={options}
                 selected={categories}
-                onCancel={() => setIsFilterOpen(false)}
-                onApply={(next) => {
-                  setCategories(next);
-                  setIsFilterOpen(false);
-                  setPage(1);
-                }}
+                onCancel={() => setOpenFilter(null)}
+                onApply={applyCategories}
               />
             )}
           </div>
