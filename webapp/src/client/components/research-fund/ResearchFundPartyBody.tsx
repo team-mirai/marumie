@@ -71,7 +71,8 @@ export default function ResearchFundPartyBody({ politicians, financialYear }: Pr
 
       <div className="-mt-3 flex flex-col gap-4">
         <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="flex flex-col gap-1">
+          {/* 議員を切り替えたとき、氏名と公開状況（準備中を含む）を読み上げる */}
+          <div role="status" className="flex flex-col gap-1">
             <span className="inline-flex flex-wrap items-center gap-2.5">
               <span className="text-xl font-bold text-[#1F2937]">{selected.name}</span>
               {selected.ready && (
