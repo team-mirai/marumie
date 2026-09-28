@@ -1,6 +1,6 @@
 "use client";
 import "client-only";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import ResearchFundCategoryPill from "@/client/components/research-fund/ResearchFundCategoryPill";
 import type {
   ResearchFundCategoryView,
@@ -13,15 +13,49 @@ interface Props {
   onClose: () => void;
 }
 
+const FOCUSABLE_SELECTOR =
+  'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
 /** 領収書の原本。署名URLはリクエストのたびに発行するので、画像はこのエンドポイント経由で読む。 */
 function receiptUrl(entryId: string): string {
   return `/api/research-fund/receipts/${encodeURIComponent(entryId)}`;
 }
 
 export default function ReceiptModal({ expense, category, onClose }: Props) {
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+
+  // 開いたら「閉じる」へフォーカスを移し、閉じたら（どの閉じ方でもアンマウントされる）開く前の要素（「領収書」ピル）へ戻す。
+  // onClose は親の再描画のたびに変わるので、フォーカスの移動は Esc の購読とは別にマウント時だけ行う。
+  useEffect(() => {
+    const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    closeButtonRef.current?.focus();
+    return () => opener?.focus();
+  }, []);
+
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
+      if (event.key === "Escape") {
+        onClose();
+        return;
+      }
+      if (event.key !== "Tab" || !dialogRef.current) return;
+      // Tab / Shift+Tab でダイアログの外へ出ないよう、端で反対側へ循環させる
+      const focusables = Array.from(
+        dialogRef.current.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR),
+      );
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      if (!first || !last) return;
+      const active = document.activeElement;
+      const inside = active instanceof Node && dialogRef.current.contains(active);
+      if (event.shiftKey && (active === first || !inside)) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && (active === last || !inside)) {
+        event.preventDefault();
+        first.focus();
+      }
     };
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
@@ -32,10 +66,12 @@ export default function ReceiptModal({ expense, category, onClose }: Props) {
       <button
         type="button"
         aria-label="閉じる"
+        tabIndex={-1}
         onClick={onClose}
         className="absolute inset-0 cursor-default bg-black/40"
       />
       <div
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-label="領収書"
@@ -44,6 +80,7 @@ export default function ReceiptModal({ expense, category, onClose }: Props) {
         <div className="flex items-center justify-between gap-3">
           <span className="text-xl font-bold text-gray-800">領収書</span>
           <button
+            ref={closeButtonRef}
             type="button"
             onClick={onClose}
             className="cursor-pointer text-[15px] font-bold text-[#238778]"

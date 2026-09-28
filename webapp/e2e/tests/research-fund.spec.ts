@@ -140,6 +140,40 @@ test.describe("調査研究費 議員ページ", () => {
 		await expect(dialog).toHaveCount(0);
 	});
 
+	test("キーボードで「領収書」ピルから開くと、フォーカスがモーダル内に移って閉じるとピルに戻る", async ({
+		page,
+	}) => {
+		await page.goto(PAGE_URL);
+		const pill = page
+			.locator("#transactions")
+			.locator('[id^="tx-"]')
+			.filter({ hasText: "新聞購読料" })
+			.getByRole("button", { name: "領収書を見る" });
+		const dialog = page.getByRole("dialog", { name: "領収書" });
+		const closeButton = dialog.getByRole("button", { name: "閉じる", exact: true });
+		const openLink = dialog.getByRole("link", { name: "新聞購読料の領収書を開く" });
+
+		// ハイドレーション前のキー入力を取りこぼさないよう押し直す
+		await expect(async () => {
+			await pill.focus();
+			await page.keyboard.press("Enter");
+			await expect(dialog).toBeVisible({ timeout: 1_000 });
+		}).toPass();
+		await expect(closeButton).toBeFocused();
+
+		// Tab / Shift+Tab はダイアログ内を循環する
+		await page.keyboard.press("Tab");
+		await expect(openLink).toBeFocused();
+		await page.keyboard.press("Tab");
+		await expect(closeButton).toBeFocused();
+		await page.keyboard.press("Shift+Tab");
+		await expect(openLink).toBeFocused();
+
+		await page.keyboard.press("Escape");
+		await expect(dialog).toHaveCount(0);
+		await expect(pill).toBeFocused();
+	});
+
 	test("「用途N」のある行では「領収書」ピルと並んで出る", async ({ page }) => {
 		await page.goto(PAGE_URL);
 		const section = page.locator("#transactions");
@@ -191,6 +225,23 @@ test.describe("調査研究費 議員ページ", () => {
 			await expect(dialog).toBeVisible({ timeout: 1_000 });
 		}).toPass();
 		await expect(dialog.getByText("イヤホン代")).toBeVisible();
+	});
+
+	test("全件ページでもキーボードで開いて Esc で閉じると、フォーカスがピルに戻る", async ({ page }) => {
+		await page.goto(`${PAGE_URL}/transactions`);
+		const pill = page.getByRole("button", { name: "領収書を見る" }).first();
+		const dialog = page.getByRole("dialog", { name: "領収書" });
+
+		await expect(async () => {
+			await pill.focus();
+			await page.keyboard.press("Enter");
+			await expect(dialog).toBeVisible({ timeout: 1_000 });
+		}).toPass();
+		await expect(dialog.getByRole("button", { name: "閉じる", exact: true })).toBeFocused();
+
+		await page.keyboard.press("Escape");
+		await expect(dialog).toHaveCount(0);
+		await expect(pill).toBeFocused();
 	});
 
 	test("特記事項はⓘで開かず、項目名の下に常に出る", async ({ page }) => {
