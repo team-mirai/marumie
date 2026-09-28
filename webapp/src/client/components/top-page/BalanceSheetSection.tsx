@@ -7,12 +7,14 @@ import BalanceSheetChart from "./features/charts/BalanceSheetChart";
 
 interface BalanceSheetSectionProps {
   data?: BalanceSheetData;
+  title: string;
   updatedAt: string;
   organizationName?: string;
 }
 
 export default function BalanceSheetSection({
   data,
+  title,
   updatedAt,
   organizationName,
 }: BalanceSheetSectionProps) {
@@ -21,7 +23,7 @@ export default function BalanceSheetSection({
       <CardHeader
         icon={<Image src="/icons/balance.svg" alt="Balance sheet icon" width={30} height={30} />}
         organizationName={organizationName || "未登録の政治団体"}
-        title="現時点での貸借対照表"
+        title={title}
         updatedAt={updatedAt}
         subtitle="資産と負債の状況"
       />

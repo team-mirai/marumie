@@ -17,8 +17,9 @@ interface GetBalanceSheetResult {
 /**
  * 貸借対照表を取得するユースケース
  *
- * リポジトリから生データを取得し、
+ * 指定年度末（12/31）時点の累積残高をリポジトリから取得し、
  * ドメインモデルで貸借対照表を生成する。
+ * 現在年度では翌年度以降のデータが存在しないため、結果として最新時点の残高になる。
  */
 export class GetBalanceSheetUsecase {
   constructor(
@@ -40,11 +41,11 @@ export class GetBalanceSheetUsecase {
 
       const [cashBalance, receivables, borrowingIncome, borrowingExpense, currentLiabilities] =
         await Promise.all([
-          this.balanceSheetRepository.getCashBalance(orgIds),
+          this.balanceSheetRepository.getCashBalance(orgIds, params.financialYear),
           this.balanceSheetRepository.getReceivables(orgIds, params.financialYear),
-          this.balanceSheetRepository.getBorrowingIncome(orgIds),
-          this.balanceSheetRepository.getBorrowingExpense(orgIds),
-          this.balanceSheetRepository.getCurrentLiabilities(orgIds, params.financialYear),
+          this.balanceSheetRepository.getBorrowingIncome(orgIds, params.financialYear),
+          this.balanceSheetRepository.getBorrowingExpense(orgIds, params.financialYear),
+          this.balanceSheetRepository.getCurrentLiabilitiesBalance(orgIds, params.financialYear),
         ]);
 
       const balanceSheetData = BalanceSheet.fromInput({

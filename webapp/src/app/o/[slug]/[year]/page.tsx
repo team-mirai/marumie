@@ -17,6 +17,7 @@ import { loadTopPageData } from "@/server/contexts/public-finance/presentation/l
 import { loadOrganizations } from "@/server/contexts/public-finance/presentation/loaders/load-organizations";
 import { loadResearchFundPartySummary } from "@/server/contexts/research-fund/presentation/loaders/load-research-fund-party-summary";
 import { formatUpdatedAt } from "@/client/lib/format-date";
+import { getBalanceSheetHeading } from "@/client/lib/balance-sheet-heading";
 
 export const revalidate = 300; // 5 minutes
 
@@ -90,6 +91,7 @@ export default async function OrgPage({ params }: OrgPageProps) {
   );
 
   const updatedAt = formatUpdatedAt(data?.transactionData?.lastUpdatedAt ?? null);
+  const balanceSheetHeading = getBalanceSheetHeading(financialYear, updatedAt);
 
   return (
     <MainColumn>
@@ -107,7 +109,8 @@ export default async function OrgPage({ params }: OrgPageProps) {
       <TransparencySection title="党首もこれを見て、お金をやりくりしています👀" />
       <BalanceSheetSection
         data={data?.balanceSheetData}
-        updatedAt={updatedAt}
+        title={balanceSheetHeading.title}
+        updatedAt={balanceSheetHeading.updatedAt}
         organizationName={currentOrganization?.displayName}
       />
       <TransactionsSection

@@ -11,15 +11,15 @@ import type { BalanceSheetData } from "@/types/balance-sheet";
  * 貸借対照表ドメインモデルの入力データ
  */
 export interface BalanceSheet {
-  /** 現金類の残高（最新残高スナップショットの合計） */
+  /** 現金類の残高（年度末までで最新の残高スナップショットの合計） */
   cashBalance: number;
-  /** 債権残高（未収入金など債権科目の借方 - 貸方） */
+  /** 債権残高（年度末までの未収入金など債権科目の借方 - 貸方） */
   receivables: number;
-  /** 借入金収入（借入金勘定の貸方合計） */
+  /** 借入金収入（年度末までの借入金勘定の貸方合計） */
   borrowingIncome: number;
-  /** 借入金支出（借入金勘定の借方合計） */
+  /** 借入金支出（年度末までの借入金勘定の借方合計） */
   borrowingExpense: number;
-  /** 流動負債（負債勘定の貸方 - 借方） */
+  /** 流動負債（年度末までの負債勘定の貸方 - 借方） */
   currentLiabilities: number;
 }
 

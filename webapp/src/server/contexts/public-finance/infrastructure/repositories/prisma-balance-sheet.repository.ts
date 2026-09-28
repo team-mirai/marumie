@@ -43,7 +43,7 @@ const RECEIVABLE_ACCOUNT_LIST = Array.from(RECEIVABLE_ACCOUNTS);
 export class PrismaBalanceSheetRepository implements IBalanceSheetRepository {
   constructor(private prisma: PrismaClient) {}
 
-  async getCashBalance(organizationIds: string[]): Promise<number> {
+  async getCashBalance(organizationIds: string[], asOfFinancialYear: number): Promise<number> {
     if (organizationIds.length === 0) {
       return 0;
     }
@@ -59,6 +59,7 @@ export class PrismaBalanceSheetRepository implements IBalanceSheetRepository {
           balance
         FROM balance_snapshots
         WHERE political_organization_id = ANY(${organizationIds.map((id) => BigInt(id))})
+          AND EXTRACT(YEAR FROM snapshot_date) <= ${asOfFinancialYear}
         ORDER BY political_organization_id, snapshot_date DESC, updated_at DESC
       ) as latest_balances
     `;
@@ -66,7 +67,7 @@ export class PrismaBalanceSheetRepository implements IBalanceSheetRepository {
     return Number(result[0]?.total_balance || 0);
   }
 
-  async getReceivables(organizationIds: string[], financialYear: number): Promise<number> {
+  async getReceivables(organizationIds: string[], asOfFinancialYear: number): Promise<number> {
     if (RECEIVABLE_ACCOUNT_LIST.length === 0) {
       return 0;
     }
@@ -74,13 +75,13 @@ export class PrismaBalanceSheetRepository implements IBalanceSheetRepository {
     const { debitTotal, creditTotal } = await this.sumDebitAndCredit(
       organizationIds,
       RECEIVABLE_ACCOUNT_LIST,
-      financialYear,
+      { lte: asOfFinancialYear },
     );
 
     return debitTotal - creditTotal;
   }
 
-  async getBorrowingIncome(organizationIds: string[]): Promise<number> {
+  async getBorrowingIncome(organizationIds: string[], asOfFinancialYear: number): Promise<number> {
     const result = await this.prisma.transaction.aggregate({
       _sum: {
         creditAmount: true,
@@ -91,13 +92,14 @@ export class PrismaBalanceSheetRepository implements IBalanceSheetRepository {
         },
         creditAccount: ACCOUNT_NAMES.LOAN,
         transactionType: "income",
+        financialYear: { lte: asOfFinancialYear },
       },
     });
 
     return Number(result._sum.creditAmount) || 0;
   }
 
-  async getBorrowingExpense(organizationIds: string[]): Promise<number> {
+  async getBorrowingExpense(organizationIds: string[], asOfFinancialYear: number): Promise<number> {
     const result = await this.prisma.transaction.aggregate({
       _sum: {
         debitAmount: true,
@@ -108,6 +110,7 @@ export class PrismaBalanceSheetRepository implements IBalanceSheetRepository {
         },
         debitAccount: ACCOUNT_NAMES.LOAN,
         transactionType: "expense",
+        financialYear: { lte: asOfFinancialYear },
       },
     });
 
@@ -128,13 +131,30 @@ export class PrismaBalanceSheetRepository implements IBalanceSheetRepository {
     return creditTotal - debitTotal;
   }
 
+  async getCurrentLiabilitiesBalance(
+    organizationIds: string[],
+    asOfFinancialYear: number,
+  ): Promise<number> {
+    if (LIABILITY_ACCOUNTS.length === 0) {
+      return 0;
+    }
+
+    const { debitTotal, creditTotal } = await this.sumDebitAndCredit(
+      organizationIds,
+      LIABILITY_ACCOUNTS,
+      { lte: asOfFinancialYear },
+    );
+
+    return creditTotal - debitTotal;
+  }
+
   /**
-   * 指定年度の取引について、対象科目の借方合計と貸方合計をそれぞれ集計する
+   * 対象年度（単年度 or 年度末までの累積）の取引について、対象科目の借方合計と貸方合計をそれぞれ集計する
    */
   private async sumDebitAndCredit(
     organizationIds: string[],
     accounts: string[],
-    financialYear: number,
+    financialYear: number | { lte: number },
   ): Promise<{ debitTotal: number; creditTotal: number }> {
     const orgIds = organizationIds.map((id) => BigInt(id));
 
