@@ -25,7 +25,7 @@ const JOB: ClaimedScanJob = {
 const RECEIPT = {
   date: "2026-04-01",
   items: [
-    { item: "タクシー代", amount: 1200, category_key: "transportation", note: null, memo: null, split_group: null },
+    { item: "タクシー代", amount: 1200, category_key: "transportation", note: null, memo: null, date: null, split_group: null },
   ],
 } as const;
 
@@ -204,8 +204,8 @@ describe("ProcessScanJobsUsecase", () => {
       const SPLIT_RECEIPT: ExtractedReceipt = {
         date: "2026-04-01",
         items: [
-          { item: "タクシー代", amount: 1200, category_key: "transportation", note: null, memo: null, split_group: "g1" },
-          { item: "資料の印刷代", amount: 800, category_key: "printing", note: null, memo: "印刷の領収書は別紙", split_group: "g1" },
+          { item: "タクシー代", amount: 1200, category_key: "transportation", note: null, memo: null, date: null, split_group: "g1" },
+          { item: "資料の印刷代", amount: 800, category_key: "printing", note: null, memo: "印刷の領収書は別紙", date: null, split_group: "g1" },
         ],
       };
 

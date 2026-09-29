@@ -24,6 +24,12 @@ describe("領収書抽出プロンプト", () => {
     expect(prompt).toContain("備考。公開されない、確認担当者向けのメモ");
   });
 
+  it("利用日の異なる取引が並ぶ書類では、明細ごとの利用日を items の date に入れるよう伝える", () => {
+    const prompt = buildAutomaticReceiptPrompt();
+    expect(prompt).toContain("明細の利用日（YYYY-MM-DD）");
+    expect(prompt).toContain("明細ごとの利用日を items の date に入れてください");
+  });
+
   it("分割粒度と迷った際のポリシーは編集可能なテンプレートだけに含める", () => {
     for (const policy of [
       "カテゴリ・項目が異なる明細は行を分けてください",

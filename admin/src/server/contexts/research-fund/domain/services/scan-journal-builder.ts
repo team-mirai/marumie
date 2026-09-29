@@ -35,6 +35,7 @@ export interface ScanDraftEntry {
  * - 明細ごとに 1 仕訳（費用 / 普通預金の 2 行）を作る
  * - 科目が確定していない明細（category_key = needs-review）も needs-review 科目のまま下書きにする
  * - 1 書類から複数明細が出たら、その書類の全明細に同じ split_group を振る
+ * - 仕訳の日付は明細の利用日。明細に日付が読み取られていなければ書類の日付を使う
  * - hash は「日付・金額・項目名・書類ID」から作る。同じ書類の再処理で同じ hash になり、重複検知に使える。
  *   同じ書類にそこまで同一の明細が複数あるときは出現順の連番で区別し、正当な明細が重複扱いで落ちないようにする
  */
@@ -72,10 +73,12 @@ export function buildScanDraftEntries(
       assetAccount,
     });
     if (posting.status === "invalid") return posting;
-    const occurrence = (seen.get(itemKey(receipt.date, item.amount, item.item)) ?? 0) + 1;
-    seen.set(itemKey(receipt.date, item.amount, item.item), occurrence);
+    const entryDate = item.date ?? receipt.date;
+    const key = itemKey(entryDate, item.amount, item.item);
+    const occurrence = (seen.get(key) ?? 0) + 1;
+    seen.set(key, occurrence);
     const hash = JournalEntryHash.generate({
-      entryDate: receipt.date,
+      entryDate,
       amount: item.amount,
       description: item.item,
       documentId: context.documentId,
@@ -83,7 +86,7 @@ export function buildScanDraftEntries(
     });
     if (hash.status === "invalid") return hash;
     entries.push({
-      entryDate: receipt.date,
+      entryDate,
       description: item.item,
       accountKey: account.key,
       amount: item.amount,

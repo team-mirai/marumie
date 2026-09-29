@@ -29,7 +29,7 @@ describe("ExtractedReceipt.normalize", () => {
         status: "valid",
         value: {
           date: "2026-09-10",
-          items: [{ ...receipt.items[0], note: null, memo: null, split_group: null }],
+          items: [{ ...receipt.items[0], date: null, note: null, memo: null, split_group: null }],
         },
       });
     },
@@ -51,8 +51,8 @@ describe("ExtractedReceipt.normalize", () => {
       value: {
         date: receipt.date,
         items: [
-          { ...items[0], note: "調査用", memo: null, split_group: "order-1" },
-          { ...items[1], memo: null },
+          { ...items[0], date: null, note: "調査用", memo: null, split_group: "order-1" },
+          { ...items[1], date: null, memo: null },
         ],
       },
     });
@@ -79,6 +79,26 @@ describe("ExtractedReceipt.normalize", () => {
     expect(
       ExtractedReceipt.normalize({ ...receipt, items: [{ ...receipt.items[0], ...memo }] }),
     ).toMatchObject({ status: "valid", value: { items: [{ memo: null }] } });
+  });
+
+  it("明細ごとの利用日を保持する", () => {
+    expect(
+      ExtractedReceipt.normalize({
+        ...receipt,
+        items: [{ ...receipt.items[0], date: " 2026-02-12 " }],
+      }),
+    ).toMatchObject({ status: "valid", value: { items: [{ date: "2026-02-12" }] } });
+  });
+
+  it.each([
+    ["キー欠落", {}],
+    ["null", { date: null }],
+    ["空文字", { date: "" }],
+    ["空白のみ", { date: "  " }],
+  ])("明細の日付を出さない古い形式の読み取り結果（%s）も書類の日付に任せて受け付ける", (_, date) => {
+    expect(
+      ExtractedReceipt.normalize({ ...receipt, items: [{ ...receipt.items[0], ...date }] }),
+    ).toMatchObject({ status: "valid", value: { items: [{ date: null }] } });
   });
 
   it.each([
@@ -123,6 +143,8 @@ describe("ExtractedReceipt.normalize", () => {
     { ...receipt, items: [{ ...receipt.items[0], item: " " }] },
     { ...receipt, items: [{ ...receipt.items[0], note: 12 }] },
     { ...receipt, items: [{ ...receipt.items[0], memo: 12 }] },
+    { ...receipt, items: [{ ...receipt.items[0], date: "2026-02-30" }] },
+    { ...receipt, items: [{ ...receipt.items[0], date: "02/12" }] },
   ])("欠損や不正な抽出結果を拒否する: %j", (input) => {
     expect(ExtractedReceipt.normalize(input)).toMatchObject({
       status: "invalid",

@@ -11,6 +11,12 @@ export const extractedReceiptSchema = z.object({
     .array(
       z.object({
         item: z.string().min(1).describe("明細の項目名"),
+        date: z.iso
+          .date()
+          .nullable()
+          .describe(
+            "明細の利用日（YYYY-MM-DD）。1枚の書類に利用日の異なる取引が並ぶとき（配車アプリの月次一括領収書など）に明細ごとの利用日を書く。書類の日付と同じならば null",
+          ),
         amount: z.number().int().positive().max(999_999_999_999).describe("金額（円の整数）"),
         category_key: z
           .enum([
@@ -78,6 +84,8 @@ export const ExtractedReceipt = {
                   ? {
                       ...item,
                       item: trimText(item.item),
+                      // 明細の日付を出さない古い形式の読み取り結果も受け付ける。空文字は書かなかったものとみなす
+                      date: trimText(item.date) || null,
                       amount: normalizeAmount(item.amount),
                       category_key: normalizeCategory(item.category_key),
                       note: trimText(item.note) ?? null,
