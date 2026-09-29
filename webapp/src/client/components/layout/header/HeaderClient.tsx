@@ -15,9 +15,15 @@ interface HeaderClientProps {
   organizations: OrganizationsResponse;
   /** 年度ごとの議員一覧。年度を切り替えると出す一覧も切り替える */
   politiciansByYear: Record<number, ResearchFundPoliticianEntry[]>;
+  /** 政治団体ページのナビに「調査研究費」を出すか */
+  showResearchFundNavigation: boolean;
 }
 
-export default function HeaderClient({ organizations, politiciansByYear }: HeaderClientProps) {
+export default function HeaderClient({
+  organizations,
+  politiciansByYear,
+  showResearchFundNavigation,
+}: HeaderClientProps) {
   const pathname = usePathname();
 
   // 現在のslugとyearを取得（/o/[slug]/[year]/... または /p/[slug]/[year]/... の形式の場合）
@@ -34,7 +40,9 @@ export default function HeaderClient({ organizations, politiciansByYear }: Heade
   // ナビとロゴは今いるページ（議員ページならそのページ自身）を指す。
   const navSlug = slugFromPath ?? organizations.default;
   const navigation = navSlug
-    ? getHeaderNavigation(isPoliticianPage ? "politician" : "organization", navSlug, currentYear)
+    ? getHeaderNavigation(isPoliticianPage ? "politician" : "organization", navSlug, currentYear, {
+        showResearchFund: showResearchFundNavigation,
+      })
     : null;
   const logoHref = navigation?.homeHref ?? "/";
   const navigationItems = navigation?.items ?? [];

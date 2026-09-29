@@ -16,6 +16,21 @@ describe("getHeaderNavigation", () => {
     ]);
   });
 
+  it("調研費の導線を隠す設定なら、政治団体ページのナビに調査研究費を出さない", () => {
+    const { items } = getHeaderNavigation("organization", "team-mirai", 2025, {
+      showResearchFund: false,
+    });
+
+    expect(items.map((item) => item.label)).toEqual([
+      "収支の流れ",
+      "1年間の推移",
+      "貸借対照表",
+      "すべての出入金",
+      "データについて",
+      "よくあるご質問",
+    ]);
+  });
+
   it("調研費ページでは同じページ内のセクションを指す", () => {
     const { homeHref, items } = getHeaderNavigation("politician", "sample-taro", 2026);
 

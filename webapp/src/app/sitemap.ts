@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { loadOrganizations } from "@/server/contexts/public-finance/presentation/loaders/load-organizations";
 import { loadPublishedResearchFundPages } from "@/server/contexts/research-fund/presentation/loaders/load-published-research-fund-pages";
+import { isResearchFundEntryHidden } from "@/server/contexts/research-fund/presentation/loaders/research-fund-entry-visibility";
 
 export const dynamic = "force-static";
 
@@ -8,9 +9,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = process.env.WEBAPP_URL || "https://marumie.team-mir.ai";
 
   // 組織データと調研費の公開ページを取得（0件の場合は空配列が返される）
+  // 調研費の導線を隠す設定のときは、議員ページを sitemap に載せない。
   const [{ organizations }, researchFundPages] = await Promise.all([
     loadOrganizations(),
-    loadPublishedResearchFundPages(),
+    isResearchFundEntryHidden() ? Promise.resolve([]) : loadPublishedResearchFundPages(),
   ]);
 
   const sitemap: MetadataRoute.Sitemap = [

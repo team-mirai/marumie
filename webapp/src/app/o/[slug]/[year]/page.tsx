@@ -16,6 +16,7 @@ import TransactionsSection from "@/client/components/top-page/TransactionsSectio
 import { loadTopPageData } from "@/server/contexts/public-finance/presentation/loaders/load-top-page-data";
 import { loadOrganizations } from "@/server/contexts/public-finance/presentation/loaders/load-organizations";
 import { loadResearchFundPartySummary } from "@/server/contexts/research-fund/presentation/loaders/load-research-fund-party-summary";
+import { isResearchFundEntryHidden } from "@/server/contexts/research-fund/presentation/loaders/research-fund-entry-visibility";
 import { formatUpdatedAt } from "@/client/lib/format-date";
 import { getBalanceSheetHeading } from "@/client/lib/balance-sheet-heading";
 
@@ -82,13 +83,13 @@ export default async function OrgPage({ params }: OrgPageProps) {
     return null;
   });
 
-  // A-6 調査研究費。所属議員がいない政治団体では null になり、セクションごと出さない。
-  const researchFund = await loadResearchFundPartySummary({ slug, financialYear }).catch(
-    (error) => {
-      console.error("loadResearchFundPartySummary error:", error);
-      return null;
-    },
-  );
+  // A-6 調査研究費。所属議員がいない政治団体や、調研費の導線を隠す設定のときは null になり、セクションごと出さない。
+  const researchFund = isResearchFundEntryHidden()
+    ? null
+    : await loadResearchFundPartySummary({ slug, financialYear }).catch((error) => {
+        console.error("loadResearchFundPartySummary error:", error);
+        return null;
+      });
 
   const updatedAt = formatUpdatedAt(data?.transactionData?.lastUpdatedAt ?? null);
   const balanceSheetHeading = getBalanceSheetHeading(financialYear, updatedAt);

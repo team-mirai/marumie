@@ -18,13 +18,15 @@ interface HeaderNavigation {
   items: HeaderNavigationItem[];
 }
 
+const RESEARCH_FUND_SECTION_HREF = "#research-fund";
+
 /** 政治団体ページのセクション（/o/[slug]/[year]）。 */
 const ORGANIZATION_SECTIONS: HeaderNavigationItem[] = [
   { href: "#cash-flow", label: "収支の流れ" },
   { href: "#monthly-trends", label: "1年間の推移" },
   { href: "#balance-sheet", label: "貸借対照表" },
   { href: "#transactions", label: "すべての出入金" },
-  { href: "#research-fund", label: "調査研究費" },
+  { href: RESEARCH_FUND_SECTION_HREF, label: "調査研究費" },
   { href: "#explanation", label: "データについて" },
 ];
 
@@ -36,6 +38,11 @@ const POLITICIAN_SECTIONS: HeaderNavigationItem[] = [
   { href: "#explanation", label: "データについて" },
 ];
 
+interface HeaderNavigationOptions {
+  /** 政治団体ページのナビに「調査研究費」を出すか（調研費の導線を隠す設定では false） */
+  showResearchFund?: boolean;
+}
+
 /**
  * ヘッダーのナビの行き先を組み立てる。
  * アンカーは今いるページ自身を基準にするので、議員ページで押しても政治団体ページに飛ばない。
@@ -44,12 +51,18 @@ export function getHeaderNavigation(
   kind: HeaderPageKind,
   slug: string,
   year: number,
+  { showResearchFund = true }: HeaderNavigationOptions = {},
 ): HeaderNavigation {
   const homeHref =
     kind === "politician"
       ? `/p/${encodeURIComponent(slug)}/${year}/`
       : `/o/${encodeURIComponent(slug)}/${year}/`;
-  const sections = kind === "politician" ? POLITICIAN_SECTIONS : ORGANIZATION_SECTIONS;
+  const sections =
+    kind === "politician"
+      ? POLITICIAN_SECTIONS
+      : ORGANIZATION_SECTIONS.filter(
+          (section) => showResearchFund || section.href !== RESEARCH_FUND_SECTION_HREF,
+        );
 
   return {
     homeHref,
