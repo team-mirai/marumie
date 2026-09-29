@@ -67,6 +67,7 @@ export function JournalReview({
   const [checked, setChecked] = useState<readonly string[]>([]);
   const [creating, setCreating] = useState(false);
   const [discarding, setDiscarding] = useState(false);
+  const [discardingChecked, setDiscardingChecked] = useState(false);
   const [unpublishing, setUnpublishing] = useState(false);
   const [rereading, setRereading] = useState(false);
   const [instruction, setInstruction] = useState("");
@@ -98,6 +99,7 @@ export function JournalReview({
         creating ||
         rereading ||
         discarding ||
+        discardingChecked ||
         unpublishing ||
         event.defaultPrevented ||
         event.altKey ||
@@ -146,6 +148,27 @@ export function JournalReview({
             ? `${approved}件を確認済にしました（科目が要確認の${skipped}件は下書きのまま残しました）`
             : `${approved}件を確認済にしました`,
         );
+        setChecked([]);
+        router.refresh();
+      } catch {
+        toast.error("通信に失敗しました。再度お試しください");
+      }
+    });
+  }
+  function discardChecked() {
+    const targets = checkedEntries.map((e) => ({ id: e.id, updatedAt: e.updatedAt }));
+    startTransition(async () => {
+      try {
+        const result = await mutateJournalReview(target.politicianId, target.bookId, {
+          type: "discard-many",
+          targets,
+        });
+        if (!result.success) {
+          toast.error(result.error);
+          return;
+        }
+        toast.success(`${result.discarded ?? 0}件の仕訳を破棄しました`);
+        setDiscardingChecked(false);
         setChecked([]);
         router.refresh();
       } catch {
@@ -361,6 +384,15 @@ export function JournalReview({
               }}
             >
               LLMで読み直す
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={pending}
+              onClick={() => {
+                if (allowLeave()) setDiscardingChecked(true);
+              }}
+            >
+              まとめて破棄
             </Button>
             <Button disabled={pending} onClick={approveChecked}>
               まとめて確認済にする
@@ -662,6 +694,33 @@ export function JournalReview({
               キャンセル
             </Button>
             <Button variant="destructive" disabled={pending} onClick={discard}>
+              破棄する
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog
+        open={discardingChecked}
+        onOpenChange={(open) => {
+          if (!pending) setDiscardingChecked(open);
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>選んだ下書きを破棄しますか？</DialogTitle>
+            <DialogDescription>
+              選択中の{checkedEntries.length}件の下書きを削除します。この操作は取り消せません。
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              disabled={pending}
+              onClick={() => setDiscardingChecked(false)}
+            >
+              キャンセル
+            </Button>
+            <Button variant="destructive" disabled={pending} onClick={discardChecked}>
               破棄する
             </Button>
           </DialogFooter>

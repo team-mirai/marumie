@@ -71,6 +71,19 @@ test("一括の確認済が拒否されたら理由を返し、再検証しな�
   expect(revalidatePath).not.toHaveBeenCalled();
 });
 
+test("一括の破棄は対象帳簿を検証して件数を返し、成功後に再検証する", async () => {
+  const discardMany = jest.spyOn(ManageJournalReviewUsecase.prototype, "discardMany").mockResolvedValue({ discarded: 2 });
+  const targets = [{ id: "3", updatedAt: "date" }, { id: "4", updatedAt: "date2" }];
+  await expect(mutateJournalReview("2", "1", { type: "discard-many", targets })).resolves.toEqual({ success: true, discarded: 2 });
+  expect(discardMany).toHaveBeenCalledWith("1", targets);
+  expect(revalidatePath).toHaveBeenCalledWith("/(auth)", "layout");
+});
+test("一括の破棄が拒否されたら理由を返し、再検証しない", async () => {
+  jest.spyOn(ManageJournalReviewUsecase.prototype, "discardMany").mockRejectedValue(new JournalReviewError("「移動」は公開中です"));
+  await expect(mutateJournalReview("2", "1", { type: "discard-many", targets: [{ id: "3", updatedAt: "date" }] })).resolves.toEqual({ success: false, error: "「移動」は公開中です" });
+  expect(revalidatePath).not.toHaveBeenCalled();
+});
+
 test("取り下げは対象帳簿・更新日時を渡し、キャッシュの警告をそのまま返す", async () => {
   const unpublish = jest.spyOn(ManageJournalReviewUsecase.prototype, "unpublish").mockResolvedValue({ cacheWarning: "接続に失敗しました" });
   await expect(mutateJournalReview("2", "1", { type: "unpublish", id: "3", updatedAt: "date" })).resolves.toEqual({ success: true, cacheWarning: "接続に失敗しました" });

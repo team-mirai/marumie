@@ -147,6 +147,22 @@ export class ManageJournalReviewUsecase {
       lines: posting.value.lines,
     };
   }
+  /** まとめて操作する仕訳を重複を畳んで取得する。支給とこの画面で扱えない形式は found に含まれない。 */
+  private async findTargets(
+    bookId: string,
+    targets: readonly { id: string; updatedAt: string }[],
+    action: string,
+  ) {
+    const unique = [...new Map(targets.map((target) => [target.id, target])).values()];
+    if (unique.length === 0) throw new JournalReviewError(`${action}仕訳を選んでください`);
+    if (unique.some((target) => !/^[1-9]\d*$/.test(target.id)))
+      throw new JournalReviewError("仕訳IDが不正です");
+    const entries = await this.repository.findMany(
+      bookId,
+      unique.map((target) => target.id),
+    );
+    return { unique, found: new Map(entries.map((entry) => [entry.id, entry])) };
+  }
   /**
    * 選んだ下書きをまとめて確認済にする。1 件ずつの「確認済にする」と同じ業務ルール
    * （科目が確定済・下書きからの遷移・同時更新の検出）を全件に適用する。
@@ -154,15 +170,7 @@ export class ManageJournalReviewUsecase {
    * それ以外の理由で通らない仕訳が 1 件でもあれば何も変更せず、理由を利用者に返す。
    */
   async approveMany(bookId: string, targets: readonly { id: string; updatedAt: string }[]) {
-    const unique = [...new Map(targets.map((target) => [target.id, target])).values()];
-    if (unique.length === 0) throw new JournalReviewError("確認済にする仕訳を選んでください");
-    if (unique.some((target) => !/^[1-9]\d*$/.test(target.id)))
-      throw new JournalReviewError("仕訳IDが不正です");
-    const entries = await this.repository.findMany(
-      bookId,
-      unique.map((target) => target.id),
-    );
-    const found = new Map(entries.map((entry) => [entry.id, entry]));
+    const { unique, found } = await this.findTargets(bookId, targets, "確認済にする");
     const approving: ReviewEntry[] = [];
     const rejected: string[] = [];
     let skipped = 0;
@@ -178,14 +186,7 @@ export class ManageJournalReviewUsecase {
       else if (entry.accountKey === "needs-review") skipped++;
       else approving.push(entry);
     }
-    if (rejected.length > 0) {
-      const reasons = [...new Set(rejected)];
-      const listed = reasons.slice(0, 5).join(" / ");
-      const rest = reasons.length > 5 ? ` 他${reasons.length - 5}件` : "";
-      throw new JournalReviewError(
-        `確認済にできない仕訳があるため、まとめて確認済にしませんでした: ${listed}${rest}。画面を再読み込みしてください`,
-      );
-    }
+    if (rejected.length > 0) throw rejectMany(rejected, "確認済に");
     if (approving.length === 0)
       throw new JournalReviewError(
         "選んだ仕訳はすべて科目が要確認のため、確認済にできる仕訳がありません。科目を確定してください",
@@ -235,9 +236,39 @@ export class ManageJournalReviewUsecase {
     if (result.status === "invalid") throw new JournalReviewError(result.errors[0].message);
     await this.repository.revertToDraft(bookId, entry);
   }
+  /**
+   * 選んだ下書きをまとめて破棄する。確認済・公開中・支給・同時更新された仕訳が 1 件でもあれば
+   * 何も削除せず、理由を利用者に返す（一部だけ消える中途半端な状態にしない）。
+   */
+  async discardMany(bookId: string, targets: readonly { id: string; updatedAt: string }[]) {
+    const { unique, found } = await this.findTargets(bookId, targets, "破棄する");
+    const discarding: ReviewEntry[] = [];
+    const rejected: string[] = [];
+    for (const target of unique) {
+      const entry = found.get(target.id);
+      if (!entry) rejected.push("この画面で扱えない仕訳が選ばれています");
+      else if (entry.status === "published") rejected.push(`「${entry.description}」は公開中です`);
+      else if (entry.updatedAt !== target.updatedAt)
+        rejected.push(`「${entry.description}」は別の操作で更新されました`);
+      else if (entry.status !== "draft")
+        rejected.push(`「${entry.description}」は下書きではありません`);
+      else discarding.push(entry);
+    }
+    if (rejected.length > 0) throw rejectMany(rejected, "破棄");
+    await this.repository.discardMany(bookId, discarding);
+    return { discarded: discarding.length };
+  }
   async discard(bookId: string, id: string, updatedAt: string) {
     const entry = await this.editable(bookId, id, updatedAt);
     if (entry.source === "grant") throw new JournalReviewError("支給は破棄できません");
     await this.repository.discard(bookId, entry);
   }
+}
+function rejectMany(rejected: readonly string[], action: string) {
+  const reasons = [...new Set(rejected)];
+  const listed = reasons.slice(0, 5).join(" / ");
+  const rest = reasons.length > 5 ? ` 他${reasons.length - 5}件` : "";
+  return new JournalReviewError(
+    `${action}できない仕訳があるため、まとめて${action}しませんでした: ${listed}${rest}。画面を再読み込みしてください`,
+  );
 }

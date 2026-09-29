@@ -86,6 +86,20 @@ test("手動作成→一覧選択→編集→確認済、月絞り込みと破�
   await page.getByRole("tab", { name: /^確認済（2）$/ }).click();
   for (const description of ["資料の購入", "書籍の購入"])
     await expect(page.getByRole("row").filter({ hasText: description })).toContainText("確認済");
+  // 選んだ下書きをまとめて破棄する。キャンセルすれば何も消えず選択も残る
+  await page.getByRole("tab", { name: /^下書き（1）$/ }).click();
+  await page.getByRole("checkbox", { name: "会議への移動を選択" }).click();
+  await page.getByRole("button", { name: "まとめて破棄" }).click();
+  const discardDialog = page.getByRole("dialog");
+  await expect(discardDialog).toContainText("1件の下書きを削除します。この操作は取り消せません。");
+  await discardDialog.getByRole("button", { name: "キャンセル" }).click();
+  await expect(discardDialog).toBeHidden();
+  await expect(page.getByText("1件の下書きを選択中")).toBeVisible();
+  await page.getByRole("button", { name: "まとめて破棄" }).click();
+  await discardDialog.getByRole("button", { name: "破棄する", exact: true }).click();
+  await expect(page.getByText("1件の仕訳を破棄しました")).toBeVisible();
+  await expect(page.getByRole("tab", { name: /^下書き（0）$/ })).toBeVisible();
+  await expect(page.getByRole("row").filter({ hasText: "会議への移動" })).toHaveCount(0);
   await page.goto("/politicians");
   await politicianCard.getByRole("button", { name: "削除", exact: true }).click();
   await page.getByRole("button", { name: "削除する", exact: true }).click();
