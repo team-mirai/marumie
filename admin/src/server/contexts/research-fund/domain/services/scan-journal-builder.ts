@@ -21,6 +21,8 @@ export interface ScanDraftEntry {
   accountKey: string;
   amount: number;
   note: string | null;
+  /** 公開されない備考。LLM が確認担当者向けに書いたメモ */
+  memo: string | null;
   /** 1書類から複数明細が出たとき、同一注文をまとめるキー。1明細なら null */
   splitGroup: string | null;
   hash: string;
@@ -86,6 +88,7 @@ export function buildScanDraftEntries(
       accountKey: account.key,
       amount: item.amount,
       note: item.note,
+      memo: item.memo,
       splitGroup: resolveSplitGroup(receipt.items.length, context.documentId),
       hash: hash.value,
       lines: posting.value.lines,

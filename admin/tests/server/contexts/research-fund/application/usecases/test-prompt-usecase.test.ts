@@ -21,7 +21,7 @@ const DOCUMENT: ResearchFundDocument = {
 const RECEIPT = {
   date: "2026-04-01",
   items: [
-    { item: "タクシー代", amount: 1200, category_key: "taxi", note: null, split_group: null },
+    { item: "タクシー代", amount: 1200, category_key: "taxi", note: null, memo: null, split_group: null },
   ],
 } as const;
 

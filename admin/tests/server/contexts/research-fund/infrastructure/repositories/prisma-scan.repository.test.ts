@@ -258,6 +258,7 @@ const COMPLETE_INPUT = {
       accountKey: "taxi",
       amount: 1200,
       note: null,
+      memo: null,
       splitGroup: null,
       hash: "hash-a",
       lines: [
@@ -298,6 +299,18 @@ test("下書き仕訳と原文JSONを保存してジョブを完了にする", a
     where: { id: BigInt(11) },
     data: expect.objectContaining({ status: "succeeded", rawJson: { date: "2026-04-01" } }),
   });
+});
+
+test("特記事項（note）と備考（memo）を別のカラムに保存する", async () => {
+  const { entry, repository } = setup();
+  entry.createManyAndReturn.mockResolvedValue([]);
+  await repository.completeJob({
+    ...COMPLETE_INPUT,
+    entries: [{ ...COMPLETE_INPUT.entries[0], note: "調査用", memo: "領収書ではない" }],
+  });
+  expect(entry.createManyAndReturn.mock.calls[0][0].data).toEqual([
+    expect.objectContaining({ note: "調査用", memo: "領収書ではない" }),
+  ]);
 });
 
 test("同じhashの仕訳が既にあれば明細を作らずジョブだけ完了にする（再処理で二重にしない）", async () => {

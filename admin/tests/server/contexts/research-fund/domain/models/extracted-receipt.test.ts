@@ -29,7 +29,7 @@ describe("ExtractedReceipt.normalize", () => {
         status: "valid",
         value: {
           date: "2026-09-10",
-          items: [{ ...receipt.items[0], note: null, split_group: null }],
+          items: [{ ...receipt.items[0], note: null, memo: null, split_group: null }],
         },
       });
     },
@@ -50,9 +50,35 @@ describe("ExtractedReceipt.normalize", () => {
       status: "valid",
       value: {
         date: receipt.date,
-        items: [{ ...items[0], note: "調査用", split_group: "order-1" }, items[1]],
+        items: [
+          { ...items[0], note: "調査用", memo: null, split_group: "order-1" },
+          { ...items[1], memo: null },
+        ],
       },
     });
+  });
+
+  it("公開されない備考（memo）を特記事項（note）と分けて保持する", () => {
+    expect(
+      ExtractedReceipt.normalize({
+        ...receipt,
+        items: [{ ...receipt.items[0], note: "調査用", memo: " 領収書ではない（出荷明細書） " }],
+      }),
+    ).toMatchObject({
+      status: "valid",
+      value: { items: [{ note: "調査用", memo: "領収書ではない（出荷明細書）" }] },
+    });
+  });
+
+  it.each([
+    ["キー欠落", {}],
+    ["null", { memo: null }],
+    ["空文字", { memo: "" }],
+    ["空白のみ", { memo: "  " }],
+  ])("memo を出さない古い形式の読み取り結果（%s）も備考なしで受け付ける", (_, memo) => {
+    expect(
+      ExtractedReceipt.normalize({ ...receipt, items: [{ ...receipt.items[0], ...memo }] }),
+    ).toMatchObject({ status: "valid", value: { items: [{ memo: null }] } });
   });
 
   it.each([
@@ -96,6 +122,7 @@ describe("ExtractedReceipt.normalize", () => {
     })),
     { ...receipt, items: [{ ...receipt.items[0], item: " " }] },
     { ...receipt, items: [{ ...receipt.items[0], note: 12 }] },
+    { ...receipt, items: [{ ...receipt.items[0], memo: 12 }] },
   ])("欠損や不正な抽出結果を拒否する: %j", (input) => {
     expect(ExtractedReceipt.normalize(input)).toMatchObject({
       status: "invalid",

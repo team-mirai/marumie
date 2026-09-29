@@ -19,7 +19,7 @@ describe("buildScanDraftEntries", () => {
   it("creates one balanced expense entry per item", () => {
     const result = buildScanDraftEntries(
       receipt([
-        { item: "タクシー代", amount: 1200, category_key: "taxi", note: null, split_group: null },
+        { item: "タクシー代", amount: 1200, category_key: "taxi", note: null, memo: null, split_group: null },
       ]),
       { documentId: "42", accounts },
     );
@@ -42,10 +42,30 @@ describe("buildScanDraftEntries", () => {
     ]);
   });
 
+  it("keeps the public note and the private memo apart on the draft", () => {
+    const result = buildScanDraftEntries(
+      receipt([
+        {
+          item: "書籍",
+          amount: 1200,
+          category_key: "taxi",
+          note: "調査用",
+          memo: "領収書ではない（出荷明細書）",
+          split_group: null,
+        },
+      ]),
+      { documentId: "42", accounts },
+    );
+    expect(result).toMatchObject({
+      status: "valid",
+      value: [{ note: "調査用", memo: "領収書ではない（出荷明細書）" }],
+    });
+  });
+
   it("keeps an unresolved category as needs-review instead of guessing", () => {
     const result = buildScanDraftEntries(
       receipt([
-        { item: "用途不明", amount: 500, category_key: "needs-review", note: null, split_group: null },
+        { item: "用途不明", amount: 500, category_key: "needs-review", note: null, memo: null, split_group: null },
       ]),
       { documentId: "42", accounts },
     );
@@ -57,8 +77,8 @@ describe("buildScanDraftEntries", () => {
   it("groups every item of a multi-item document under one split group", () => {
     const result = buildScanDraftEntries(
       receipt([
-        { item: "会議費", amount: 3000, category_key: "meetings", note: "打合せ", split_group: "a" },
-        { item: "タクシー代", amount: 900, category_key: "taxi", note: null, split_group: "a" },
+        { item: "会議費", amount: 3000, category_key: "meetings", note: "打合せ", memo: null, split_group: "a" },
+        { item: "タクシー代", amount: 900, category_key: "taxi", note: null, memo: null, split_group: "a" },
       ]),
       { documentId: "42", accounts },
     );
@@ -70,8 +90,8 @@ describe("buildScanDraftEntries", () => {
 
   it("namespaces the split group by document so two documents never collide", () => {
     const items: ExtractedReceipt["items"] = [
-      { item: "会議費", amount: 3000, category_key: "meetings", note: null, split_group: "a" },
-      { item: "タクシー代", amount: 900, category_key: "taxi", note: null, split_group: "a" },
+      { item: "会議費", amount: 3000, category_key: "meetings", note: null, memo: null, split_group: "a" },
+      { item: "タクシー代", amount: 900, category_key: "taxi", note: null, memo: null, split_group: "a" },
     ];
     const first = buildScanDraftEntries(receipt(items), { documentId: "1", accounts });
     const second = buildScanDraftEntries(receipt(items), { documentId: "2", accounts });
@@ -82,8 +102,8 @@ describe("buildScanDraftEntries", () => {
   it("falls back to a document-wide group when the model gave no split key", () => {
     const result = buildScanDraftEntries(
       receipt([
-        { item: "会議費", amount: 3000, category_key: "meetings", note: null, split_group: null },
-        { item: "タクシー代", amount: 900, category_key: "taxi", note: null, split_group: null },
+        { item: "会議費", amount: 3000, category_key: "meetings", note: null, memo: null, split_group: null },
+        { item: "タクシー代", amount: 900, category_key: "taxi", note: null, memo: null, split_group: null },
       ]),
       { documentId: "42", accounts },
     );
@@ -95,7 +115,7 @@ describe("buildScanDraftEntries", () => {
 
   it("produces the same hash for the same document so a reprocess can be detected", () => {
     const input = receipt([
-      { item: "タクシー代", amount: 1200, category_key: "taxi", note: null, split_group: null },
+      { item: "タクシー代", amount: 1200, category_key: "taxi", note: null, memo: null, split_group: null },
     ]);
     const first = buildScanDraftEntries(input, { documentId: "42", accounts });
     const second = buildScanDraftEntries(input, { documentId: "42", accounts });
@@ -119,6 +139,7 @@ describe("buildScanDraftEntries", () => {
       amount: 3000,
       category_key: "meetings" as const,
       note: null,
+      memo: null,
       split_group: null,
     };
     const result = buildScanDraftEntries(receipt([item, item, item]), {
@@ -146,6 +167,7 @@ describe("buildScanDraftEntries", () => {
       amount: 3000,
       category_key: "meetings" as const,
       note: null,
+      memo: null,
       split_group: null,
     };
     const input = receipt([item, item]);
@@ -159,8 +181,8 @@ describe("buildScanDraftEntries", () => {
   it("groups every item of a document under one splitGroup even if keys disagree", () => {
     const result = buildScanDraftEntries(
       receipt([
-        { item: "資料A", amount: 1000, category_key: "meetings", note: null, split_group: "a" },
-        { item: "資料B", amount: 2000, category_key: "meetings", note: null, split_group: "b" },
+        { item: "資料A", amount: 1000, category_key: "meetings", note: null, memo: null, split_group: "a" },
+        { item: "資料B", amount: 2000, category_key: "meetings", note: null, memo: null, split_group: "b" },
       ]),
       { documentId: "42", accounts },
     );
@@ -172,7 +194,7 @@ describe("buildScanDraftEntries", () => {
 
   it("gives different documents different hashes for the same receipt content", () => {
     const input = receipt([
-      { item: "タクシー代", amount: 1200, category_key: "taxi", note: null, split_group: null },
+      { item: "タクシー代", amount: 1200, category_key: "taxi", note: null, memo: null, split_group: null },
     ]);
     const first = buildScanDraftEntries(input, { documentId: "1", accounts });
     const second = buildScanDraftEntries(input, { documentId: "2", accounts });
@@ -184,8 +206,8 @@ describe("buildScanDraftEntries", () => {
   it("reports an unknown category instead of creating an entry with no account", () => {
     const result = buildScanDraftEntries(
       receipt([
-        { item: "謎", amount: 100, category_key: "taxi", note: null, split_group: null },
-        { item: "謎2", amount: 100, category_key: "donation", note: null, split_group: null },
+        { item: "謎", amount: 100, category_key: "taxi", note: null, memo: null, split_group: null },
+        { item: "謎2", amount: 100, category_key: "donation", note: null, memo: null, split_group: null },
       ]),
       { documentId: "42", accounts },
     );
@@ -200,7 +222,7 @@ describe("buildScanDraftEntries", () => {
   it("reports a missing settlement account rather than building an unbalanced entry", () => {
     const result = buildScanDraftEntries(
       receipt([
-        { item: "タクシー代", amount: 1200, category_key: "taxi", note: null, split_group: null },
+        { item: "タクシー代", amount: 1200, category_key: "taxi", note: null, memo: null, split_group: null },
       ]),
       { documentId: "42", accounts: accounts.filter((account) => account.key !== "bank") },
     );

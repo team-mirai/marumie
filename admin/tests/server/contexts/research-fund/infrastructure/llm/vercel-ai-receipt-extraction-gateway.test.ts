@@ -64,6 +64,7 @@ describe("VercelAIReceiptExtractionGateway（LLMのみモック、SDKの構造�
               amount: 1200,
               category_key: "books-newspapers",
               note: null,
+              memo: null,
               split_group: null,
             },
           ],

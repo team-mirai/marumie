@@ -229,6 +229,7 @@ export class PrismaScanRepository implements ScanRepository {
           documentId,
           splitGroup: entry.splitGroup,
           note: entry.note,
+          memo: entry.memo,
           hash: entry.hash,
           createdById: input.userId,
         })),

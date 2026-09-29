@@ -25,7 +25,7 @@ const JOB: ClaimedScanJob = {
 const RECEIPT = {
   date: "2026-04-01",
   items: [
-    { item: "タクシー代", amount: 1200, category_key: "taxi", note: null, split_group: null },
+    { item: "タクシー代", amount: 1200, category_key: "taxi", note: null, memo: null, split_group: null },
   ],
 } as const;
 
@@ -204,8 +204,8 @@ describe("ProcessScanJobsUsecase", () => {
       const SPLIT_RECEIPT: ExtractedReceipt = {
         date: "2026-04-01",
         items: [
-          { item: "タクシー代", amount: 1200, category_key: "taxi", note: null, split_group: "g1" },
-          { item: "駐車場代", amount: 800, category_key: "tolls-parking", note: null, split_group: "g1" },
+          { item: "タクシー代", amount: 1200, category_key: "taxi", note: null, memo: null, split_group: "g1" },
+          { item: "駐車場代", amount: 800, category_key: "tolls-parking", note: null, memo: "駐車場の領収書は別紙", split_group: "g1" },
         ],
       };
 
@@ -235,7 +235,11 @@ describe("ProcessScanJobsUsecase", () => {
             replaceDrafts: true,
             entries: [
               expect.objectContaining({ accountKey: "taxi", amount: 1200 }),
-              expect.objectContaining({ accountKey: "tolls-parking", amount: 800 }),
+              expect.objectContaining({
+                accountKey: "tolls-parking",
+                amount: 800,
+                memo: "駐車場の領収書は別紙",
+              }),
             ],
           }),
         );

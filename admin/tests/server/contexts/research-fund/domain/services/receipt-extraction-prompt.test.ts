@@ -18,6 +18,12 @@ describe("領収書抽出プロンプト", () => {
     expect(prompt).toContain("needs-review: 科目未確定");
   });
 
+  it("出力スキーマの説明で、公開される note と公開されない memo の違いを伝える", () => {
+    const prompt = buildAutomaticReceiptPrompt();
+    expect(prompt).toContain("特記事項。一般に公開される");
+    expect(prompt).toContain("備考。公開されない、確認担当者向けのメモ");
+  });
+
   it("分割粒度と迷った際のポリシーは編集可能なテンプレートだけに含める", () => {
     for (const policy of [
       "カテゴリ・項目が異なる明細は行を分けてください",

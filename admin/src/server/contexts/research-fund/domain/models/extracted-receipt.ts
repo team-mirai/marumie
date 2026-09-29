@@ -18,7 +18,18 @@ export const extractedReceiptSchema = z.object({
             ...(Object.keys(RECEIPT_CATEGORIES) as Array<keyof typeof RECEIPT_CATEGORIES>),
           ])
           .describe("費用カテゴリキー、または未確定を表す needs-review"),
-        note: z.string().nullable().describe("公開される特記事項。なければ null"),
+        note: z
+          .string()
+          .nullable()
+          .describe(
+            "特記事項。一般に公開される。確認担当者への申し送りは書かず memo に書く。なければ null",
+          ),
+        memo: z
+          .string()
+          .nullable()
+          .describe(
+            "備考。公開されない、確認担当者向けのメモ（領収書ではない書類である、needs-review の理由など）。なければ null",
+          ),
         split_group: z
           .string()
           .nullable()
@@ -70,6 +81,8 @@ export const ExtractedReceipt = {
                       amount: normalizeAmount(item.amount),
                       category_key: normalizeCategory(item.category_key),
                       note: trimText(item.note) ?? null,
+                      // memo を出さない古い形式の読み取り結果も受け付ける。空文字は書かなかったものとみなす
+                      memo: trimText(item.memo) || null,
                       split_group: trimText(item.split_group) ?? null,
                     }
                   : item,
