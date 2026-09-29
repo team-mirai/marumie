@@ -25,7 +25,7 @@ const JOB: ClaimedScanJob = {
 const RECEIPT = {
   date: "2026-04-01",
   items: [
-    { item: "タクシー代", amount: 1200, category_key: "taxi", note: null, memo: null, split_group: null },
+    { item: "タクシー代", amount: 1200, category_key: "transportation", note: null, memo: null, split_group: null },
   ],
 } as const;
 
@@ -62,7 +62,7 @@ describe("ProcessScanJobsUsecase", () => {
     scanRepository.claimJobs.mockResolvedValue([JOB]);
     scanRepository.accounts.mockResolvedValue([
       { key: "bank", type: "asset" },
-      { key: "taxi", type: "expense" },
+      { key: "transportation", type: "expense" },
       { key: "needs-review", type: "expense" },
     ]);
     storage.download.mockResolvedValue({ status: "valid", value: new Uint8Array([1, 2]) });
@@ -91,7 +91,7 @@ describe("ProcessScanJobsUsecase", () => {
             expect.objectContaining({
               entryDate: "2026-04-01",
               description: "タクシー代",
-              accountKey: "taxi",
+              accountKey: "transportation",
               amount: 1200,
             }),
           ],
@@ -135,7 +135,7 @@ describe("ProcessScanJobsUsecase", () => {
       scanRepository.claimJobs.mockResolvedValue([JOB]);
       scanRepository.accounts.mockResolvedValue([
         { key: "bank", type: "asset" },
-        { key: "taxi", type: "expense" },
+        { key: "transportation", type: "expense" },
       ]);
       storage.download.mockResolvedValue({ status: "valid", value: new Uint8Array([1]) });
       gateway.extract.mockResolvedValue({
@@ -173,7 +173,7 @@ describe("ProcessScanJobsUsecase", () => {
 
       expect(scanRepository.failJob).toHaveBeenCalledWith(
         "11",
-        expect.stringContaining("taxi"),
+        expect.stringContaining("transportation"),
         expect.objectContaining({ date: "2026-04-01" }),
       );
     });
@@ -199,13 +199,13 @@ describe("ProcessScanJobsUsecase", () => {
     describe("reread jobs", () => {
       const REREAD_JOB: ClaimedScanJob = {
         ...JOB,
-        rereadInstruction: "タクシー代と駐車場代は別の科目として入れ直してください",
+        rereadInstruction: "タクシー代と資料の印刷代は別の科目として入れ直してください",
       };
       const SPLIT_RECEIPT: ExtractedReceipt = {
         date: "2026-04-01",
         items: [
-          { item: "タクシー代", amount: 1200, category_key: "taxi", note: null, memo: null, split_group: "g1" },
-          { item: "駐車場代", amount: 800, category_key: "tolls-parking", note: null, memo: "駐車場の領収書は別紙", split_group: "g1" },
+          { item: "タクシー代", amount: 1200, category_key: "transportation", note: null, memo: null, split_group: "g1" },
+          { item: "資料の印刷代", amount: 800, category_key: "printing", note: null, memo: "印刷の領収書は別紙", split_group: "g1" },
         ],
       };
 
@@ -213,8 +213,8 @@ describe("ProcessScanJobsUsecase", () => {
         scanRepository.claimJobs.mockResolvedValue([REREAD_JOB]);
         scanRepository.accounts.mockResolvedValue([
           { key: "bank", type: "asset" },
-          { key: "taxi", type: "expense" },
-          { key: "tolls-parking", type: "expense" },
+          { key: "transportation", type: "expense" },
+          { key: "printing", type: "expense" },
         ]);
       });
 
@@ -226,7 +226,7 @@ describe("ProcessScanJobsUsecase", () => {
         expect(gateway.extract).toHaveBeenCalledWith(
           expect.objectContaining({
             officePrompt: "議員室プロンプト",
-            rereadInstruction: "タクシー代と駐車場代は別の科目として入れ直してください",
+            rereadInstruction: "タクシー代と資料の印刷代は別の科目として入れ直してください",
           }),
         );
         expect(scanRepository.completeJob).toHaveBeenCalledWith(
@@ -234,11 +234,11 @@ describe("ProcessScanJobsUsecase", () => {
             documentId: "42",
             replaceDrafts: true,
             entries: [
-              expect.objectContaining({ accountKey: "taxi", amount: 1200 }),
+              expect.objectContaining({ accountKey: "transportation", amount: 1200 }),
               expect.objectContaining({
-                accountKey: "tolls-parking",
+                accountKey: "printing",
                 amount: 800,
-                memo: "駐車場の領収書は別紙",
+                memo: "印刷の領収書は別紙",
               }),
             ],
           }),

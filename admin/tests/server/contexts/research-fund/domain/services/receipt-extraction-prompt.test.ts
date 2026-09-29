@@ -8,9 +8,9 @@ import {
 } from "@/server/contexts/research-fund/domain/services/receipt-extraction-prompt";
 
 describe("領収書抽出プロンプト", () => {
-  it("Zodスキーマと21分類すべての定義から自動生成する", () => {
+  it("Zodスキーマと20分類すべての定義から自動生成する", () => {
     const prompt = buildAutomaticReceiptPrompt();
-    expect(Object.keys(RECEIPT_CATEGORIES)).toHaveLength(21);
+    expect(Object.keys(RECEIPT_CATEGORIES)).toHaveLength(20);
     expect(prompt).toContain(JSON.stringify(z.toJSONSchema(extractedReceiptSchema), null, 2));
     for (const [key, { label, definition }] of Object.entries(RECEIPT_CATEGORIES)) {
       expect(prompt).toContain(`${key}（${label}）: ${definition}`);

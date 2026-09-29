@@ -34,7 +34,7 @@ test("活用方針を保存し、仕訳を束ねた支出群を作って編集�
     await dialog.getByLabel("日付", { exact: true }).fill(date);
     await dialog.getByLabel("金額", { exact: true }).fill(amount);
     await dialog.getByLabel("項目名", { exact: true }).fill(description);
-    await dialog.getByLabel("科目", { exact: true }).selectOption("taxi");
+    await dialog.getByLabel("科目", { exact: true }).selectOption("transportation");
     await dialog.getByRole("button", { name: "下書きを作成" }).click();
     await expect(dialog).toBeHidden();
   }

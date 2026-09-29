@@ -559,7 +559,7 @@ export function JournalReview({
               maxLength={REREAD_INSTRUCTION_MAX_LENGTH}
               rows={4}
               disabled={pending}
-              placeholder="例：タクシー代と駐車場代は異なるから、これらは別の科目として入れ直してください"
+              placeholder="例：会議室代と来客用のお茶代は異なるから、これらは別の科目として入れ直してください"
               onChange={(e) => setInstruction(e.target.value)}
             />
           </div>

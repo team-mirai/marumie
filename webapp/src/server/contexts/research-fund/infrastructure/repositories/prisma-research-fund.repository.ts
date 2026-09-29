@@ -352,7 +352,7 @@ export class PrismaResearchFundRepository implements ResearchFundRepository {
 
 /**
  * 法定区分が未設定の科目（下書き用の「要確認」など）でも法律上の区分に切り替えられるよう、
- * 法定ラベルが空なら科目名で代用する。公開前に21分類へ直す運用なので通常は発生しない。
+ * 法定ラベルが空なら科目名で代用する。公開前に20分類へ直す運用なので通常は発生しない。
  */
 function accountOf(line: SummaryLine): PublishedAccount {
   return {

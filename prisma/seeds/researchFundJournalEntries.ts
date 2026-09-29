@@ -6,19 +6,19 @@ import { JournalPosting } from "@/server/contexts/research-fund/domain/models/jo
 
 type SourceRow = [string, number, string, number, number?, string?];
 
-// 旧分類 → 21分類の対応表。項目で判別できるものは下の関数で細分化する。
-// 0 交通費 → taxi / public-transport
+// 旧分類 → 20分類の対応表。項目で判別できるものは下の関数で細分化する。
+// 0 交通費 → transportation
 // 1 システム・サーバ利用料 → telecom-it
 // 2 調査研究費 → books-newspapers（入館料は misc）
 // 3 文具・事務用消耗品費 → stationery-supplies
-// 4 交流費 → hospitality（会場・会議室は meetings、のぼりは printing-pr、電報は postage）
+// 4 交流費 → hospitality（会場・会議室は meetings、のぼりは advertising、電報は postage）
 // 5 日用消耗品費 → stationery-supplies（来客用飲食物は hospitality）
 // 6 IT機器・周辺機器費 → pc-electronics（バッグ・テレビ台は stationery-supplies）
 // 7 住居費 → housing / lodging
-// 8 通信費 → telecom-it、9 光熱水費 → utilities、10 広報費 → printing-pr
+// 8 通信費 → telecom-it、9 光熱水費 → utilities、10 広報費 → advertising
 // 判別できない分類は misc。
 const categoryKeys = [
-  "taxi",
+  "transportation",
   "telecom-it",
   "books-newspapers",
   "stationery-supplies",
@@ -28,15 +28,14 @@ const categoryKeys = [
   "housing",
   "telecom-it",
   "utilities",
-  "printing-pr",
+  "advertising",
 ];
 
 function accountKey(category: number, description: string): string {
-  if (category === 0 && description === "電車代") return "public-transport";
   if (category === 2 && description === "入館料") return "misc";
   if (category === 4) {
     if (["会場費", "会議室利用料"].includes(description)) return "meetings";
-    if (description === "のぼり代") return "printing-pr";
+    if (description === "のぼり代") return "advertising";
     if (description === "電報代") return "postage";
   }
   if (category === 5 && (description.startsWith("来客用") || description === "飲料水代")) {

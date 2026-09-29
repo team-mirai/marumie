@@ -79,8 +79,8 @@ describe("research fund journal seed", () => {
   });
 
   it.each([
-    ["タクシー代", "taxi"],
-    ["電車代", "public-transport"],
+    ["タクシー代", "transportation"],
+    ["電車代", "transportation"],
     ["書籍代", "books-newspapers"],
     ["入館料", "misc"],
     ["トナー代", "stationery-supplies"],
@@ -89,7 +89,7 @@ describe("research fund journal seed", () => {
     ["宿舎使用料", "housing"],
     ["宿泊費", "lodging"],
     ["会議室利用料", "meetings"],
-    ["のぼり代", "printing-pr"],
+    ["のぼり代", "advertising"],
     ["電報代", "postage"],
     ["ChatGPT利用料", "telecom-it"],
     ["電気代", "utilities"],

@@ -29,7 +29,7 @@ test("手動作成→一覧選択→編集→確認済、月絞り込みと破�
     await dialog.getByLabel("日付", { exact: true }).fill(date);
     await dialog.getByLabel("金額", { exact: true }).fill("1200");
     await dialog.getByLabel("項目名", { exact: true }).fill(description);
-    await dialog.getByLabel("科目", { exact: true }).selectOption("taxi");
+    await dialog.getByLabel("科目", { exact: true }).selectOption("transportation");
     await dialog.getByRole("button", { name: "下書きを作成" }).click();
     await expect(dialog).toBeHidden();
     await expect(page.getByRole("row").filter({ hasText: description })).toBeVisible();

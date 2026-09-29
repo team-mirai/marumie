@@ -37,7 +37,7 @@ test("確認済の仕訳を選んでbefore/afterを見比べ、公開して公�
   await dialog.getByLabel("日付", { exact: true }).fill(`${year}-03-15`);
   await dialog.getByLabel("金額", { exact: true }).fill("1500");
   await dialog.getByLabel("項目名", { exact: true }).fill("視察先への移動");
-  await dialog.getByLabel("科目", { exact: true }).selectOption("taxi");
+  await dialog.getByLabel("科目", { exact: true }).selectOption("transportation");
   await dialog.getByRole("button", { name: "下書きを作成" }).click();
   await expect(dialog).toBeHidden();
   await page.getByRole("row").filter({ hasText: "視察先への移動" }).click();
@@ -59,7 +59,7 @@ test("確認済の仕訳を選んでbefore/afterを見比べ、公開して公�
   // 一部だけ選んでいるときは、すべて選択済とは見えない
   await expect(selectAll).toBeChecked({ indeterminate: true });
   await page.getByRole("checkbox", { name: "視察先への移動を公開対象にする" }).click();
-  await expect(page.getByText("公開すると：タクシー代 +¥1,500・未使用 +¥998,500")).toBeVisible();
+  await expect(page.getByText("公開すると：交通費 +¥1,500・未使用 +¥998,500")).toBeVisible();
   await expect(page.getByText("選択中の 2件 を公開した場合")).toBeVisible();
   await expect(selectAll).toBeChecked();
 
@@ -70,7 +70,7 @@ test("確認済の仕訳を選んでbefore/afterを見比べ、公開して公�
   await expect(page.getByText("仕訳を選ぶとこちらが変化します")).toBeVisible();
   await selectAll.click();
   await expect(page.getByRole("checkbox", { name: "調査研究費 1月分を公開対象にする" })).toBeChecked();
-  await expect(page.getByText("公開すると：タクシー代 +¥1,500・未使用 +¥998,500")).toBeVisible();
+  await expect(page.getByText("公開すると：交通費 +¥1,500・未使用 +¥998,500")).toBeVisible();
   await expect(page.getByText("選択中の 2件 を公開した場合")).toBeVisible();
 
   const publishButton = page.getByRole("button", { name: "2件（¥1,001,500）を公開する" });
