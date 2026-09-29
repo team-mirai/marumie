@@ -19,6 +19,7 @@ import type {
   ResearchFundExpenseView,
   ResearchFundPageData,
 } from "@/server/contexts/research-fund/domain/models/research-fund-page";
+import { RESEARCH_FUND_RECEIPTS_PUBLISHED } from "@/server/contexts/research-fund/domain/models/research-fund-receipt-publication";
 
 interface Props {
   data: ResearchFundPageData;
@@ -55,7 +56,7 @@ function StarIcon() {
  *
  * 支給（入金）と支出（出金）を日付の新しい順に混ぜ、先頭6件だけを出し、続きは「もっと見る」から全件ページで見る。
  * 用途カードに紐づく行は「★ 用途N」から該当カードへ飛べ、カードの「N件」からは該当行まで一覧を広げる。
- * 領収書のある行は「領収書」ピルから原本をモーダルで見られる。
+ * 領収書を公開している間は、領収書のある行の「領収書」ピルから原本をモーダルで見られる。
  */
 export default function ResearchFundExpensesSection({ data, updatedAt }: Props) {
   const { rowsRequest, showCard } = useResearchFundCrossLink();
@@ -125,10 +126,11 @@ export default function ResearchFundExpensesSection({ data, updatedAt }: Props) 
   // 項目名の右（SP ではカテゴリーの右）に並べるピル。領収書 → 用途N の順。
   const badges = (row: ResearchFundExpenseView) => {
     const link = groupLink(row);
-    if (!row.hasReceipt && !link) return null;
+    const hasReceipt = RESEARCH_FUND_RECEIPTS_PUBLISHED && row.hasReceipt;
+    if (!hasReceipt && !link) return null;
     return (
       <>
-        {row.hasReceipt && <ResearchFundReceiptPill onClick={() => setReceipt(row)} />}
+        {hasReceipt && <ResearchFundReceiptPill onClick={() => setReceipt(row)} />}
         {link}
       </>
     );

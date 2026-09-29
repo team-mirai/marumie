@@ -22,6 +22,7 @@ import {
   type ResearchFundTransactionSort,
 } from "@/client/lib/research-fund-transactions";
 import type { ResearchFundExpenseView } from "@/server/contexts/research-fund/domain/models/research-fund-page";
+import { RESEARCH_FUND_RECEIPTS_PUBLISHED } from "@/server/contexts/research-fund/domain/models/research-fund-receipt-publication";
 
 interface Props {
   slug: string;
@@ -135,7 +136,7 @@ function PagerButton({
  * 調研費の「すべての出入金」全件ページの表。
  *
  * 1議員・1年度の公開中の出入金（支給と支出）は数百件なので、全件をサーバーで読み込んだうえで
- * 並び替え・絞り込み・ページングをクライアントで行う。領収書のある行は「領収書」ピルからモーダルで原本を見られる。
+ * 並び替え・絞り込み・ページングをクライアントで行う。領収書を公開している間は、領収書のある行の「領収書」ピルからモーダルで原本を見られる。
  */
 export default function ResearchFundTransactionsTable({ slug, financialYear, expenses }: Props) {
   const [sort, setSort] = useState<ResearchFundTransactionSort>("new");
@@ -275,7 +276,7 @@ export default function ResearchFundTransactionsTable({ slug, financialYear, exp
               </div>
               <div className="order-3 flex flex-wrap items-center gap-2 min-[761px]:order-none min-[761px]:pl-4">
                 <ResearchFundCategoryPill category={row.detailed} />
-                {row.hasReceipt && (
+                {RESEARCH_FUND_RECEIPTS_PUBLISHED && row.hasReceipt && (
                   <span className="min-[761px]:hidden">
                     <ResearchFundReceiptPill onClick={() => setReceipt(row)} />
                   </span>
@@ -286,7 +287,7 @@ export default function ResearchFundTransactionsTable({ slug, financialYear, exp
                   <span className="text-sm font-bold text-gray-800 min-[761px]:text-base">
                     {row.description}
                   </span>
-                  {row.hasReceipt && (
+                  {RESEARCH_FUND_RECEIPTS_PUBLISHED && row.hasReceipt && (
                     <span className="hidden min-[761px]:inline-flex">
                       <ResearchFundReceiptPill onClick={() => setReceipt(row)} />
                     </span>
