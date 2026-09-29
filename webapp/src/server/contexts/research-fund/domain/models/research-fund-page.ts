@@ -15,6 +15,8 @@ export interface ResearchFundCategoryView {
   label: string;
   /** 白背景・この色の枠と文字（既存の支出ピルと同じ形式） */
   color: string;
+  /** ピルの情報アイコンから出す説明。説明を持つ科目（交通費）だけに付く */
+  description?: string;
 }
 
 /** B-4 の明細1行（支給または支出）。区分トグルで detailed / legal を出し分ける。 */

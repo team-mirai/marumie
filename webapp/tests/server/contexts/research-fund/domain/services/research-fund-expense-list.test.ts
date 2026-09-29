@@ -9,6 +9,7 @@ import {
 
 const accounts: Record<string, PublishedAccount> = {
   taxi: { label: "タクシー代", legalLabel: "⑨ 滞在費", legalCategoryKey: "stay" },
+  transportation: { label: "交通費", legalLabel: "⑨ 滞在費", legalCategoryKey: "stay" },
   "stationery-supplies": {
     label: "文房具・備品",
     legalLabel: "③ 備品・消耗品費",
@@ -109,6 +110,20 @@ describe("buildExpenseViews", () => {
     expect(view.detailed.label).toBe("文房具・備品");
     expect(view.legal.label).toBe("③ 備品・消耗品費");
     expect(view.detailed.color).toBe(view.legal.color);
+  });
+
+  it("交通費の詳細の区分にだけ説明を持たせる", () => {
+    const [taxi, transportation] = buildExpenseViews(
+      [
+        expense({ id: "2", entryId: "2", accountKey: "transportation" }),
+        expense({ id: "1", entryId: "1", accountKey: "taxi" }),
+      ],
+      accounts,
+    );
+
+    expect(transportation.detailed.description).toBe("航空券をのぞく電車・バス・タクシー代");
+    expect(transportation.legal.description).toBeUndefined();
+    expect(taxi.detailed).toEqual({ label: "タクシー代", color: taxi.legal.color });
   });
 
   it("科目マスタに無い科目でも行を落とさない", () => {

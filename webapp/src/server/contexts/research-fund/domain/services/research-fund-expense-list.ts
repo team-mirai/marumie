@@ -7,6 +7,7 @@ import type {
   ResearchFundExpenseView,
 } from "@/server/contexts/research-fund/domain/models/research-fund-page";
 import { researchFundCategoryColor } from "@/server/contexts/research-fund/domain/services/research-fund-category-color";
+import { researchFundCategoryDescription } from "@/server/contexts/research-fund/domain/services/research-fund-category-description";
 import { receiptKindOf } from "@/server/contexts/research-fund/domain/services/research-fund-receipt-kind";
 
 /** 科目マスタに無い科目のラベル（要確認の仕訳は公開されない想定だが、表示は落とさない）。 */
@@ -83,6 +84,7 @@ export function buildExpenseViews(
       }
       const account = accounts[expense.accountKey];
       const color = researchFundCategoryColor(account?.legalCategoryKey ?? "");
+      const description = researchFundCategoryDescription(expense.accountKey);
       const splitCount = expense.splitGroup ? (splitCounts.get(expense.splitGroup) ?? 1) : 1;
       return {
         kind: expense.kind,
@@ -92,7 +94,11 @@ export function buildExpenseViews(
         month: expense.date.slice(0, 7),
         description: expense.description,
         amount: expense.amount,
-        detailed: { label: account?.label || UNKNOWN_CATEGORY_LABEL, color },
+        detailed: {
+          label: account?.label || UNKNOWN_CATEGORY_LABEL,
+          color,
+          ...(description && { description }),
+        },
         legal: { label: account?.legalLabel || UNKNOWN_CATEGORY_LABEL, color },
         note: mergeNotes(expense.note, splitCount > 1 ? splitGroupNote(splitCount) : null),
         splitGroup: expense.splitGroup,

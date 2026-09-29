@@ -12,6 +12,7 @@ import type { ResearchFundRepository } from "@/server/contexts/research-fund/dom
 import { buildGrantPeriodLabel } from "@/server/contexts/research-fund/domain/services/research-fund-coverage";
 import { buildResearchFundDataNote } from "@/server/contexts/research-fund/domain/services/research-fund-data-note";
 import { researchFundCategoryColor } from "@/server/contexts/research-fund/domain/services/research-fund-category-color";
+import { researchFundCategoryDescription } from "@/server/contexts/research-fund/domain/services/research-fund-category-description";
 import { parseResearchFundDetails } from "@/server/contexts/research-fund/domain/services/research-fund-details";
 import { buildExpenseViews } from "@/server/contexts/research-fund/domain/services/research-fund-expense-list";
 import { buildMonthlyViews } from "@/server/contexts/research-fund/domain/services/research-fund-monthly";
@@ -110,9 +111,11 @@ function buildGroupView(
   for (const entry of group.entries) {
     const account = accounts[entry.accountKey];
     if (!account || categories.has(entry.accountKey)) continue;
+    const description = researchFundCategoryDescription(entry.accountKey);
     categories.set(entry.accountKey, {
       label: account.label,
       color: researchFundCategoryColor(account.legalCategoryKey),
+      ...(description && { description }),
     });
   }
   return {
