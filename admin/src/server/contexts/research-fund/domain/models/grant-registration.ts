@@ -90,5 +90,5 @@ function isRealCalendarDate(value: string): boolean {
 }
 
 export function grantDescription(month: string): string {
-  return `調査研究費 ${Number(month.slice(5, 7))}月分`;
+  return `調査研究広報滞在費 ${Number(month.slice(5, 7))}月分`;
 }

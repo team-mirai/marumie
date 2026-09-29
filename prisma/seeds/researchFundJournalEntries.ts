@@ -94,7 +94,7 @@ export function buildResearchFundJournalEntries(): Prisma.ResearchFundJournalEnt
   for (let month = 2; month <= 8; month++) {
     entries.push({
       entryDate: new Date(Date.UTC(2026, month - 1, 1)),
-      description: `2026年${month}月分 調査研究費支給`,
+      description: `調査研究広報滞在費 ${month}月分`,
       source: "grant",
       status: "published",
       hash: `seed:choken:2026:grant:${month}`,

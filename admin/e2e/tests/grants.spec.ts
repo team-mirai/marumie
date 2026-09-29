@@ -53,7 +53,7 @@ test("支給日と金額を指定して確認済登録し、二重生成を拒�
   }
 
   await page.getByRole("link", { name: "仕訳の確認・編集" }).click();
-  const grantRow = page.getByRole("row").filter({ hasText: "調査研究費 1月分" });
+  const grantRow = page.getByRole("row").filter({ hasText: "調査研究広報滞在費 1月分" });
   // 手入力した支給日が仕訳日として保存されている
   await expect(grantRow).toContainText(`${year}.01.15`);
   await expect(grantRow).toContainText("確認済");

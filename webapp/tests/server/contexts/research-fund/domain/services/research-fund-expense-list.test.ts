@@ -171,7 +171,7 @@ describe("buildExpenseViews", () => {
           entryId: "2",
           date: "2026-05-01",
           accountKey: "grant-income",
-          description: "2026年5月分 調査研究費支給",
+          description: "調査研究広報滞在費 5月分",
           amount: 1_000_000,
         }),
         expense({ id: "3", entryId: "3", date: "2026-05-10" }),

@@ -30,8 +30,8 @@ test("当選月は当選日、以降は毎月1日を仕訳日にする", () => {
 });
 
 test("項目名は公開用に月を示す", () => {
-  expect(grantDescription("2026-05")).toBe("調査研究費 5月分");
-  expect(grantDescription("2026-12")).toBe("調査研究費 12月分");
+  expect(grantDescription("2026-05")).toBe("調査研究広報滞在費 5月分");
+  expect(grantDescription("2026-12")).toBe("調査研究広報滞在費 12月分");
 });
 
 describe("validateGrantEntryDate", () => {

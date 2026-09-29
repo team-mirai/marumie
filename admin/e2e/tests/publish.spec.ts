@@ -54,7 +54,7 @@ test("確認済の仕訳を選んでbefore/afterを見比べ、公開して公�
   // チェックすると after と差分文が即時に変わる
   const selectAll = page.getByRole("checkbox", { name: "確認済・未公開の仕訳をすべて選択" });
   await expect(selectAll).not.toBeChecked();
-  await page.getByRole("checkbox", { name: "調査研究費 1月分を公開対象にする" }).click();
+  await page.getByRole("checkbox", { name: "調査研究広報滞在費 1月分を公開対象にする" }).click();
   await expect(page.getByText("公開すると：未使用 +¥1,000,000")).toBeVisible();
   // 一部だけ選んでいるときは、すべて選択済とは見えない
   await expect(selectAll).toBeChecked({ indeterminate: true });
@@ -69,7 +69,7 @@ test("確認済の仕訳を選んでbefore/afterを見比べ、公開して公�
   await expect(page.getByRole("button", { name: "公開する仕訳を選んでください" })).toBeDisabled();
   await expect(page.getByText("仕訳を選ぶとこちらが変化します")).toBeVisible();
   await selectAll.click();
-  await expect(page.getByRole("checkbox", { name: "調査研究費 1月分を公開対象にする" })).toBeChecked();
+  await expect(page.getByRole("checkbox", { name: "調査研究広報滞在費 1月分を公開対象にする" })).toBeChecked();
   await expect(page.getByText("公開すると：交通費 +¥1,500・未使用 +¥998,500")).toBeVisible();
   await expect(page.getByText("選択中の 2件 を公開した場合")).toBeVisible();
 

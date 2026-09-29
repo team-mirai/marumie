@@ -45,7 +45,7 @@ test("公開済みは集計行に、確認済は公開の候補に振り分け�
       id: BigInt(2),
       status: "approved",
       entryDate: new Date("2026-09-01T00:00:00.000Z"),
-      description: "調査研究費 9月分",
+      description: "調査研究広報滞在費 9月分",
       lines: [
         line("debit", "bank", 1_000_000, "asset"),
         line("credit", "grant-income", 1_000_000, "income"),
@@ -57,7 +57,7 @@ test("公開済みは集計行に、確認済は公開の候補に振り分け�
     candidates: [
       {
         id: "2",
-        description: "調査研究費 9月分",
+        description: "調査研究広報滞在費 9月分",
         date: "2026-09-01",
         accountKey: "grant-income",
         amount: 1_000_000,

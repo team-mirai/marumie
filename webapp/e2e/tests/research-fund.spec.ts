@@ -182,7 +182,7 @@ test.describe("調査研究費 議員ページ", () => {
 		// シードでは 2〜8 月の 1 日に公開済みの支給が 100 万円ずつある
 		const grantRow = table
 			.locator("div.grid")
-			.filter({ hasText: "2026年8月分 調査研究費支給" });
+			.filter({ hasText: "調査研究広報滞在費 8月分" });
 		await expect(grantRow).toHaveCount(1);
 		await expect(grantRow.getByText("支給（入金）")).toBeVisible();
 		await expect(grantRow).toContainText("+1,000,000");

@@ -38,7 +38,7 @@ test("支給は下書きを経ず確認済で、借方 普通預金／貸方 調
     "2026-05",
     {
       entryDate: "2026-05-01",
-      description: "調査研究費 5月分",
+      description: "調査研究広報滞在費 5月分",
       amount: 1_000_000,
       hash: expect.stringMatching(/^[a-f0-9]{64}$/),
       lines: [

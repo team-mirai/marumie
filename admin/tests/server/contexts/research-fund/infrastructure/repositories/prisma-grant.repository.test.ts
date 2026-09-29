@@ -4,7 +4,7 @@ import type { GrantWrite } from "@/server/contexts/research-fund/domain/models/g
 
 const input: GrantWrite = {
   entryDate: "2026-05-01",
-  description: "調査研究費 5月分",
+  description: "調査研究広報滞在費 5月分",
   amount: 1_000_000,
   hash: "hash",
   lines: [

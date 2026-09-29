@@ -58,8 +58,8 @@ test("一覧は帳簿内の支出と支給に限定し、BigInt/Decimal/Dateと�
 
 test("支給は貸方の調査研究費収入から金額を取り、確認済として一覧に並ぶ", async () => {
   const { repository, tx } = setup();
-  tx.researchFundJournalEntry.findMany.mockResolvedValue([{ id: BigInt(entry.id), entryDate: new Date("2026-05-01"), createdAt: new Date("2026-05-01"), updatedAt: new Date(entry.updatedAt), description: "調査研究費 5月分", note: null, memo: null, source: "grant", status: "approved", splitGroup: null, documentId: null, document: null, lines: [{ side: "debit", accountKey: "bank", account: { type: "asset" }, amount: new Prisma.Decimal(1000000) }, { side: "credit", accountKey: "grant-income", account: { type: "income" }, amount: new Prisma.Decimal(1000000) }] }]);
-  await expect(repository.list("1")).resolves.toEqual([expect.objectContaining({ id: entry.id, entryDate: "2026-05-01", description: "調査研究費 5月分", amount: 1000000, accountKey: "grant-income", source: "grant", status: "approved", documentId: null })]);
+  tx.researchFundJournalEntry.findMany.mockResolvedValue([{ id: BigInt(entry.id), entryDate: new Date("2026-05-01"), createdAt: new Date("2026-05-01"), updatedAt: new Date(entry.updatedAt), description: "調査研究広報滞在費 5月分", note: null, memo: null, source: "grant", status: "approved", splitGroup: null, documentId: null, document: null, lines: [{ side: "debit", accountKey: "bank", account: { type: "asset" }, amount: new Prisma.Decimal(1000000) }, { side: "credit", accountKey: "grant-income", account: { type: "income" }, amount: new Prisma.Decimal(1000000) }] }]);
+  await expect(repository.list("1")).resolves.toEqual([expect.objectContaining({ id: entry.id, entryDate: "2026-05-01", description: "調査研究広報滞在費 5月分", amount: 1000000, accountKey: "grant-income", source: "grant", status: "approved", documentId: null })]);
 });
 
 test("手動仕訳を取得し、書類・メモの欠損値を表示用に変換する", async () => {

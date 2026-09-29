@@ -53,14 +53,14 @@ test("一覧には費用科目だけを渡す", async () => {
   expect(data.entries).toEqual([entry]); expect(data.accounts.map(a => a.key)).toEqual(["taxi", "needs-review"]);
 });
 
-const grantInput: JournalEdit = { entryDate: "2026-08-01", description: "調査研究費 8月分", amount: 1_000_000, accountKey: "grant-income", note: "", memo: "" };
+const grantInput: JournalEdit = { entryDate: "2026-08-01", description: "調査研究広報滞在費 8月分", amount: 1_000_000, accountKey: "grant-income", note: "", memo: "" };
 const grant = { ...grantInput, source: "grant" as const, documentId: null, splitGroup: null, status: "approved" as const, model: null, promptVersion: null };
 test("確認済の支給は月内の支給日に直せ、hash を作り直す。金額・項目名・科目は変わらない", async () => {
   const { repository, usecase } = setup(grant);
   await usecase.save("1", "2", entry.updatedAt, { ...grantInput, entryDate: "2026-08-20" }, false);
   expect(repository.termStart).toHaveBeenCalledWith("1");
   const write = repository.update.mock.calls[0][2];
-  expect(write).toMatchObject({ entryDate: "2026-08-20", amount: 1_000_000, description: "調査研究費 8月分", accountKey: "grant-income", status: "approved", lines: [{ side: "debit", accountKey: "bank", amount: 1_000_000 }, { side: "credit", accountKey: "grant-income", amount: 1_000_000 }] });
+  expect(write).toMatchObject({ entryDate: "2026-08-20", amount: 1_000_000, description: "調査研究広報滞在費 8月分", accountKey: "grant-income", status: "approved", lines: [{ side: "debit", accountKey: "bank", amount: 1_000_000 }, { side: "credit", accountKey: "grant-income", amount: 1_000_000 }] });
   await usecase.save("1", "2", entry.updatedAt, grantInput, false);
   expect(repository.update.mock.calls[1][2].hash).not.toBe(write.hash);
 });
@@ -78,9 +78,9 @@ test.each([
   expect(repository.update).not.toHaveBeenCalled();
 });
 test("当選月の支給は当選日より前の日付にできない", async () => {
-  const { repository, usecase } = setup({ ...grant, entryDate: "2026-07-15", description: "調査研究費 7月分" });
-  await expect(usecase.save("1", "2", entry.updatedAt, { ...grantInput, entryDate: "2026-07-14", description: "調査研究費 7月分" }, false)).rejects.toThrow("当選日以降");
-  await usecase.save("1", "2", entry.updatedAt, { ...grantInput, entryDate: "2026-07-31", description: "調査研究費 7月分" }, false);
+  const { repository, usecase } = setup({ ...grant, entryDate: "2026-07-15", description: "調査研究広報滞在費 7月分" });
+  await expect(usecase.save("1", "2", entry.updatedAt, { ...grantInput, entryDate: "2026-07-14", description: "調査研究広報滞在費 7月分" }, false)).rejects.toThrow("当選日以降");
+  await usecase.save("1", "2", entry.updatedAt, { ...grantInput, entryDate: "2026-07-31", description: "調査研究広報滞在費 7月分" }, false);
   expect(repository.update.mock.calls[0][2].entryDate).toBe("2026-07-31");
 });
 test.each([
