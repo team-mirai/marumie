@@ -3,7 +3,7 @@ import type { JournalEdit, ReviewEntry } from "@/server/contexts/research-fund/d
 const input: JournalEdit = { entryDate: "2026-08-01", description: "視察の移動", amount: 1200, accountKey: "taxi", note: "公開メモ", memo: "内部メモ" };
 const entry: ReviewEntry = { ...input, id: "2", source: "scan", documentId: "3", splitGroup: "group", status: "draft", updatedAt: "2026-08-01T12:00:00.000Z", model: "test-model", promptVersion: 1 };
 function setup(overrides: Partial<ReviewEntry> = {}) {
-  const repository = { list: jest.fn().mockResolvedValue([entry]), find: jest.fn().mockResolvedValue({ ...entry, ...overrides }), findMany: jest.fn().mockResolvedValue([{ ...entry, ...overrides }]), approveMany: jest.fn(), discardMany: jest.fn(), unpublish: jest.fn(), revertToDraft: jest.fn(), accounts: jest.fn().mockResolvedValue([{ key: "taxi", label: "タクシー代", type: "expense" }, { key: "needs-review", label: "要確認", type: "expense" }, { key: "bank", label: "普通預金", type: "asset" }, { key: "grant-income", label: "調査研究費収入", type: "income" }]), year: jest.fn().mockResolvedValue(2026), termStart: jest.fn().mockResolvedValue("2026-07-15"), create: jest.fn().mockResolvedValue("10"), update: jest.fn(), discard: jest.fn() };
+  const repository = { list: jest.fn().mockResolvedValue([entry]), find: jest.fn().mockResolvedValue({ ...entry, ...overrides }), findMany: jest.fn().mockResolvedValue([{ ...entry, ...overrides }]), approveMany: jest.fn(), discardMany: jest.fn(), revertManyToDraft: jest.fn(), unpublish: jest.fn(), revertToDraft: jest.fn(), accounts: jest.fn().mockResolvedValue([{ key: "taxi", label: "タクシー代", type: "expense" }, { key: "needs-review", label: "要確認", type: "expense" }, { key: "bank", label: "普通預金", type: "asset" }, { key: "grant-income", label: "調査研究費収入", type: "income" }]), year: jest.fn().mockResolvedValue(2026), termStart: jest.fn().mockResolvedValue("2026-07-15"), create: jest.fn().mockResolvedValue("10"), update: jest.fn(), discard: jest.fn() };
   const cacheInvalidator = { invalidateWebappCache: jest.fn().mockResolvedValue(undefined) };
   return { repository, cacheInvalidator, usecase: new ManageJournalReviewUsecase(repository, cacheInvalidator) };
 }
@@ -159,7 +159,6 @@ test("選んだ下書きをまとめて破棄し、重複した指定は1件に�
 });
 test.each([
   [{ status: "published" as const }, "公開中"],
-  [{ status: "approved" as const }, "下書きではありません"],
   [{ updatedAt: "2026-09-01T00:00:00.000Z" }, "別の操作で更新されました"],
 ])("破棄できない仕訳が混ざっていたら理由と再読み込みを示して1件も削除しない %j", async (overrides, message) => {
   const { repository, usecase } = setup(overrides);
@@ -174,10 +173,17 @@ test("まとめて破棄は、支給など取得できない仕訳が1件でも�
   await expect(usecase.discardMany("1", [target, { id: "3", updatedAt: entry.updatedAt }])).rejects.toThrow("この画面で扱えない仕訳");
   expect(repository.discardMany).not.toHaveBeenCalled();
 });
-test("まとめて破棄は、確認済が1件でも混ざっていれば下書きも削除しない", async () => {
+test("まとめて破棄は、下書きと確認済を混ぜて選んでもまとめて削除する", async () => {
   const { repository, usecase } = setup();
-  repository.findMany.mockResolvedValue([entry, { ...entry, id: "3", description: "確認済の支出", status: "approved" }]);
-  await expect(usecase.discardMany("1", [target, { id: "3", updatedAt: entry.updatedAt }])).rejects.toThrow("「確認済の支出」は下書きではありません");
+  const approved = { ...entry, id: "3", description: "確認済の支出", status: "approved" as const };
+  repository.findMany.mockResolvedValue([entry, approved]);
+  await expect(usecase.discardMany("1", [target, { id: "3", updatedAt: entry.updatedAt }])).resolves.toEqual({ discarded: 2 });
+  expect(repository.discardMany).toHaveBeenCalledWith("1", [entry, approved]);
+});
+test("まとめて破棄は、公開中が1件でも混ざっていれば確認済も削除しない", async () => {
+  const { repository, usecase } = setup();
+  repository.findMany.mockResolvedValue([{ ...entry, status: "approved" }, { ...entry, id: "3", description: "公開中の支出", status: "published" }]);
+  await expect(usecase.discardMany("1", [target, { id: "3", updatedAt: entry.updatedAt }])).rejects.toThrow("「公開中の支出」は公開中です");
   expect(repository.discardMany).not.toHaveBeenCalled();
 });
 test.each([[[]], [[{ id: "0", updatedAt: entry.updatedAt }]], [[{ id: "a", updatedAt: entry.updatedAt }]]])("まとめて破棄は選択なし・不正なIDなら取得もしない %j", async targets => {
@@ -228,6 +234,47 @@ test.each([
   const { repository, usecase } = setup(overrides);
   await expect(usecase.revertToDraft("1", "2", entry.updatedAt)).rejects.toThrow(message);
   expect(repository.revertToDraft).not.toHaveBeenCalled();
+});
+test("選んだ確認済をまとめて下書きに戻し、重複した指定は1件に畳んで件数を返す", async () => {
+  const { repository, cacheInvalidator, usecase } = setup({ status: "approved" });
+  await expect(usecase.revertManyToDraft("1", [target, target])).resolves.toEqual({ reverted: 1 });
+  expect(repository.findMany).toHaveBeenCalledWith("1", [entry.id]);
+  expect(repository.revertManyToDraft).toHaveBeenCalledWith("1", [{ ...entry, status: "approved" }]);
+  expect(cacheInvalidator.invalidateWebappCache).not.toHaveBeenCalled();
+});
+test.each([
+  [{ status: "draft" as const }, "確認済ではありません"],
+  [{ status: "published" as const }, "公開中"],
+  [{ status: "approved" as const, updatedAt: "2026-09-01T00:00:00.000Z" }, "別の操作で更新されました"],
+])("下書きに戻せない仕訳が混ざっていたら理由と再読み込みを示して1件も変更しない %j", async (overrides, message) => {
+  const { repository, usecase } = setup(overrides);
+  await expect(usecase.revertManyToDraft("1", [target])).rejects.toThrow(message);
+  await expect(usecase.revertManyToDraft("1", [target])).rejects.toThrow("まとめて下書きに戻しませんでした");
+  await expect(usecase.revertManyToDraft("1", [target])).rejects.toThrow("再読み込み");
+  expect(repository.revertManyToDraft).not.toHaveBeenCalled();
+});
+test("まとめて下書きに戻すのは、下書きが1件でも混ざっていれば確認済も変更しない", async () => {
+  const { repository, usecase } = setup();
+  repository.findMany.mockResolvedValue([{ ...entry, status: "approved" }, { ...entry, id: "3", description: "下書きの支出" }]);
+  await expect(usecase.revertManyToDraft("1", [target, { id: "3", updatedAt: entry.updatedAt }])).rejects.toThrow("「下書きの支出」は確認済ではありません");
+  expect(repository.revertManyToDraft).not.toHaveBeenCalled();
+});
+test("まとめて下書きに戻すのは、支給など取得できない仕訳が1件でもあれば全体を中止する", async () => {
+  const { repository, usecase } = setup();
+  repository.findMany.mockResolvedValue([{ ...entry, status: "approved" }]);
+  await expect(usecase.revertManyToDraft("1", [target, { id: "3", updatedAt: entry.updatedAt }])).rejects.toThrow("この画面で扱えない仕訳");
+  expect(repository.revertManyToDraft).not.toHaveBeenCalled();
+});
+test.each([[[]], [[{ id: "0", updatedAt: entry.updatedAt }]], [[{ id: "a", updatedAt: entry.updatedAt }]]])("まとめて下書きに戻すのは選択なし・不正なIDなら取得もしない %j", async targets => {
+  const { repository, usecase } = setup();
+  await expect(usecase.revertManyToDraft("1", targets)).rejects.toThrow();
+  expect(repository.findMany).not.toHaveBeenCalled(); expect(repository.revertManyToDraft).not.toHaveBeenCalled();
+});
+test("まとめて確認済にするのは、確認済が1件でも混ざっていれば下書きも変更しない", async () => {
+  const { repository, usecase } = setup();
+  repository.findMany.mockResolvedValue([entry, { ...entry, id: "3", description: "確認済の支出", status: "approved" }]);
+  await expect(usecase.approveMany("1", [target, { id: "3", updatedAt: entry.updatedAt }])).rejects.toThrow("「確認済の支出」は下書きではありません");
+  expect(repository.approveMany).not.toHaveBeenCalled();
 });
 test("存在しない仕訳は下書きに戻せない", async () => {
   const { repository, usecase } = setup(); repository.find.mockResolvedValue(null);

@@ -186,7 +186,8 @@ export class ManageJournalReviewUsecase {
       else if (entry.accountKey === "needs-review") skipped++;
       else approving.push(entry);
     }
-    if (rejected.length > 0) throw rejectMany(rejected, "確認済に");
+    if (rejected.length > 0)
+      throw rejectMany(rejected, "確認済にできない", "確認済にしませんでした");
     if (approving.length === 0)
       throw new JournalReviewError(
         "選んだ仕訳はすべて科目が要確認のため、確認済にできる仕訳がありません。科目を確定してください",
@@ -237,8 +238,35 @@ export class ManageJournalReviewUsecase {
     await this.repository.revertToDraft(bookId, entry);
   }
   /**
-   * 選んだ下書きをまとめて破棄する。確認済・公開中・支給・同時更新された仕訳が 1 件でもあれば
+   * 選んだ確認済の仕訳をまとめて下書きに戻す。1 件ずつの「下書きに戻す」と同じ業務ルール
+   * （支給は戻さない・確認済からの遷移・同時更新の検出）を全件に適用する。
+   * 下書き・公開中・支給・同時更新された仕訳が 1 件でもあれば何も変更せず、理由を利用者に返す。
+   * 確認済は公開ページに出ないので、webapp のキャッシュは無効化しない。
+   */
+  async revertManyToDraft(bookId: string, targets: readonly { id: string; updatedAt: string }[]) {
+    const { unique, found } = await this.findTargets(bookId, targets, "下書きに戻す");
+    const reverting: ReviewEntry[] = [];
+    const rejected: string[] = [];
+    for (const target of unique) {
+      const entry = found.get(target.id);
+      // 支給とこの画面で扱えない形式の仕訳は findMany が返さない。
+      if (!entry) rejected.push("この画面で扱えない仕訳が選ばれています");
+      else if (entry.status === "published") rejected.push(`「${entry.description}」は公開中です`);
+      else if (entry.updatedAt !== target.updatedAt)
+        rejected.push(`「${entry.description}」は別の操作で更新されました`);
+      else if (JournalEntry.transition(entry, "draft").status === "invalid")
+        rejected.push(`「${entry.description}」は確認済ではありません`);
+      else reverting.push(entry);
+    }
+    if (rejected.length > 0)
+      throw rejectMany(rejected, "下書きに戻せない", "下書きに戻しませんでした");
+    await this.repository.revertManyToDraft(bookId, reverting);
+    return { reverted: reverting.length };
+  }
+  /**
+   * 選んだ下書き・確認済の仕訳をまとめて破棄する。公開中・支給・同時更新された仕訳が 1 件でもあれば
    * 何も削除せず、理由を利用者に返す（一部だけ消える中途半端な状態にしない）。
+   * 確認済は公開ページに出ないので、webapp のキャッシュは無効化しない。
    */
   async discardMany(bookId: string, targets: readonly { id: string; updatedAt: string }[]) {
     const { unique, found } = await this.findTargets(bookId, targets, "破棄する");
@@ -250,11 +278,9 @@ export class ManageJournalReviewUsecase {
       else if (entry.status === "published") rejected.push(`「${entry.description}」は公開中です`);
       else if (entry.updatedAt !== target.updatedAt)
         rejected.push(`「${entry.description}」は別の操作で更新されました`);
-      else if (entry.status !== "draft")
-        rejected.push(`「${entry.description}」は下書きではありません`);
       else discarding.push(entry);
     }
-    if (rejected.length > 0) throw rejectMany(rejected, "破棄");
+    if (rejected.length > 0) throw rejectMany(rejected, "破棄できない", "破棄しませんでした");
     await this.repository.discardMany(bookId, discarding);
     return { discarded: discarding.length };
   }
@@ -264,11 +290,11 @@ export class ManageJournalReviewUsecase {
     await this.repository.discard(bookId, entry);
   }
 }
-function rejectMany(rejected: readonly string[], action: string) {
+function rejectMany(rejected: readonly string[], cannot: string, notDone: string) {
   const reasons = [...new Set(rejected)];
   const listed = reasons.slice(0, 5).join(" / ");
   const rest = reasons.length > 5 ? ` 他${reasons.length - 5}件` : "";
   return new JournalReviewError(
-    `${action}できない仕訳があるため、まとめて${action}しませんでした: ${listed}${rest}。画面を再読み込みしてください`,
+    `${cannot}仕訳があるため、まとめて${notDone}: ${listed}${rest}。画面を再読み込みしてください`,
   );
 }

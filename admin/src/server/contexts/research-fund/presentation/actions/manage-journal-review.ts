@@ -18,6 +18,7 @@ type Mutation =
   | { type: "discard"; id: string; updatedAt: string }
   | { type: "approve-many"; targets: readonly { id: string; updatedAt: string }[] }
   | { type: "discard-many"; targets: readonly { id: string; updatedAt: string }[] }
+  | { type: "revert-many-to-draft"; targets: readonly { id: string; updatedAt: string }[] }
   | { type: "unpublish"; id: string; updatedAt: string }
   | { type: "revert-to-draft"; id: string; updatedAt: string };
 export async function mutateJournalReview(
@@ -36,6 +37,7 @@ export async function mutateJournalReview(
     let id: string | undefined;
     let approved: { approved: number; skipped: number } | undefined;
     let discarded: number | undefined;
+    let reverted: number | undefined;
     let cacheWarning: string | null | undefined;
     if (mutation.type === "create") id = await usecase.create(bookId, mutation.input, user.id);
     else if (mutation.type === "save")
@@ -46,13 +48,15 @@ export async function mutateJournalReview(
       approved = await usecase.approveMany(bookId, mutation.targets);
     else if (mutation.type === "discard-many")
       ({ discarded } = await usecase.discardMany(bookId, mutation.targets));
+    else if (mutation.type === "revert-many-to-draft")
+      ({ reverted } = await usecase.revertManyToDraft(bookId, mutation.targets));
     else if (mutation.type === "unpublish")
       ({ cacheWarning } = await usecase.unpublish(bookId, mutation.id, mutation.updatedAt));
     else if (mutation.type === "revert-to-draft")
       await usecase.revertToDraft(bookId, mutation.id, mutation.updatedAt);
     else throw new JournalReviewError("操作が不正です");
     revalidatePath("/(auth)", "layout");
-    return { success: true as const, id, approved, discarded, cacheWarning };
+    return { success: true as const, id, approved, discarded, reverted, cacheWarning };
   } catch (error) {
     return {
       success: false as const,

@@ -142,13 +142,26 @@ test("一括の破棄は下書きの支出だけを1トランザクションで�
   const other = { id: "5", updatedAt: "2026-08-02T00:00:00.000Z" } as ReviewEntry;
   await repository.discardMany("1", [entry, other]);
   expect(transaction).toHaveBeenCalledTimes(1);
-  expect(tx.researchFundJournalEntry.deleteMany).toHaveBeenNthCalledWith(1, { where: { id: BigInt(entry.id), bookId: BigInt(1), status: { in: ["draft"] }, updatedAt: new Date(entry.updatedAt), source: { in: ["manual", "scan"] }, lines: { some: { side: "debit", account: { type: "expense" } } } } });
+  expect(tx.researchFundJournalEntry.deleteMany).toHaveBeenNthCalledWith(1, { where: { id: BigInt(entry.id), bookId: BigInt(1), status: { in: ["draft", "approved"] }, updatedAt: new Date(entry.updatedAt), source: { in: ["manual", "scan"] }, lines: { some: { side: "debit", account: { type: "expense" } } } } });
   expect(tx.researchFundJournalEntry.deleteMany).toHaveBeenNthCalledWith(2, expect.objectContaining({ where: expect.objectContaining({ id: BigInt(other.id), updatedAt: new Date(other.updatedAt) }) }));
 });
 test("一括の破棄は1件でも競合したらトランザクションを中止する", async () => {
   const { repository, tx } = setup();
   tx.researchFundJournalEntry.deleteMany.mockResolvedValueOnce({ count: 1 }).mockResolvedValueOnce({ count: 0 });
   await expect(repository.discardMany("1", [entry, { id: "5", updatedAt: entry.updatedAt } as ReviewEntry])).rejects.toThrow("更新・公開");
+});
+test("一括で下書きに戻すのは1つのトランザクションで確認済の支出・更新日時を照合して状態だけを戻す", async () => {
+  const { repository, tx, transaction } = setup();
+  const other = { id: "5", updatedAt: "2026-08-02T00:00:00.000Z" } as ReviewEntry;
+  await repository.revertManyToDraft("1", [entry, other]);
+  expect(transaction).toHaveBeenCalledTimes(1);
+  expect(tx.researchFundJournalEntry.updateMany).toHaveBeenNthCalledWith(1, { where: { id: BigInt(entry.id), bookId: BigInt(1), status: { in: ["approved"] }, updatedAt: new Date(entry.updatedAt), source: { in: ["manual", "scan"] }, lines: { some: { side: "debit", account: { type: "expense" } } } }, data: { status: "draft" } });
+  expect(tx.researchFundJournalEntry.updateMany).toHaveBeenNthCalledWith(2, expect.objectContaining({ where: expect.objectContaining({ id: BigInt(other.id), updatedAt: new Date(other.updatedAt) }) }));
+});
+test("一括で下書きに戻すのは1件でも競合したらトランザクションを中止する", async () => {
+  const { repository, tx } = setup();
+  tx.researchFundJournalEntry.updateMany.mockResolvedValueOnce({ count: 1 }).mockResolvedValueOnce({ count: 0 });
+  await expect(repository.revertManyToDraft("1", [entry, { id: "5", updatedAt: entry.updatedAt } as ReviewEntry])).rejects.toThrow("更新・公開");
 });
 test("複数取得は帳簿と支出の形式で絞り、扱えない形式は除外する", async () => {
   const { repository, tx } = setup();

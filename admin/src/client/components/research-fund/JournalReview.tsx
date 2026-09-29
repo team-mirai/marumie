@@ -77,10 +77,20 @@ export function JournalReview({
   // 支給も支出と同じく選べる。支給日の修正と確認済に戻す操作だけを許す（詳細側で制限する）。
   const selected = visible.find((e) => e.id === selectedId) ?? visible[0] ?? null;
   const index = visible.findIndex((e) => e.id === selected?.id);
-  // まとめて確認済にできるのは、いま表示している下書きだけ（支給と公開中は対象外）。
-  const checkable = visible.filter((e) => e.status === "draft" && e.source !== "grant");
+  // まとめて操作できるのは、いま表示している下書きと確認済の支出だけ。
+  // 公開中はまとめて扱うとミスが起こりやすいので 1 件ずつ扱い、支給は対象外。
+  const checkable = visible.filter(
+    (e) => (e.status === "draft" || e.status === "approved") && e.source !== "grant",
+  );
   const checkedEntries = checkable.filter((e) => checked.includes(e.id));
   const allChecked = checkable.length > 0 && checkedEntries.length === checkable.length;
+  // 確認済にする・読み直すは下書きだけ、下書きに戻すは確認済だけに使える。
+  // 混ぜて選んだときは一部だけに適用されないよう、両方に使える破棄だけを許す。
+  const checkedKind = checkedEntries.every((e) => e.status === "draft")
+    ? "draft"
+    : checkedEntries.every((e) => e.status === "approved")
+      ? "approved"
+      : "mixed";
   // 読み直しは書類単位。選んでいない同じ書類の下書きも作り直し、確認済・公開中を含む書類は外す。
   const reread = previewReread(checkedEntries, entries);
   function allowLeave() {
@@ -169,6 +179,26 @@ export function JournalReview({
         }
         toast.success(`${result.discarded ?? 0}件の仕訳を破棄しました`);
         setDiscardingChecked(false);
+        setChecked([]);
+        router.refresh();
+      } catch {
+        toast.error("通信に失敗しました。再度お試しください");
+      }
+    });
+  }
+  function revertChecked() {
+    const targets = checkedEntries.map((e) => ({ id: e.id, updatedAt: e.updatedAt }));
+    startTransition(async () => {
+      try {
+        const result = await mutateJournalReview(target.politicianId, target.bookId, {
+          type: "revert-many-to-draft",
+          targets,
+        });
+        if (!result.success) {
+          toast.error(result.error);
+          return;
+        }
+        toast.success(`${result.reverted ?? 0}件の仕訳を下書きに戻しました`);
         setChecked([]);
         router.refresh();
       } catch {
@@ -370,21 +400,30 @@ export function JournalReview({
       {checkedEntries.length > 0 && (
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-accent px-4 py-3">
           <span className="text-sm font-bold text-accent-foreground">
-            <span className="font-latin">{checkedEntries.length}</span>件の下書きを選択中
+            <span className="font-latin">{checkedEntries.length}</span>件の
+            {checkedKind === "draft" ? "下書き" : checkedKind === "approved" ? "確認済" : "仕訳"}
+            を選択中
+            {checkedKind === "mixed" && (
+              <span className="ml-2 font-normal">
+                （下書きと確認済が混ざっているため、まとめて破棄だけができます）
+              </span>
+            )}
           </span>
           <div className="flex gap-2">
             <Button variant="outline" disabled={pending} onClick={() => setChecked([])}>
               選択を解除
             </Button>
-            <Button
-              variant="outline"
-              disabled={pending}
-              onClick={() => {
-                if (allowLeave()) setRereading(true);
-              }}
-            >
-              LLMで読み直す
-            </Button>
+            {checkedKind === "draft" && (
+              <Button
+                variant="outline"
+                disabled={pending}
+                onClick={() => {
+                  if (allowLeave()) setRereading(true);
+                }}
+              >
+                LLMで読み直す
+              </Button>
+            )}
             <Button
               variant="destructive"
               disabled={pending}
@@ -394,9 +433,21 @@ export function JournalReview({
             >
               まとめて破棄
             </Button>
-            <Button disabled={pending} onClick={approveChecked}>
-              まとめて確認済にする
-            </Button>
+            {checkedKind === "draft" && (
+              <Button disabled={pending} onClick={approveChecked}>
+                まとめて確認済にする
+              </Button>
+            )}
+            {checkedKind === "approved" && (
+              <Button
+                disabled={pending}
+                onClick={() => {
+                  if (allowLeave()) revertChecked();
+                }}
+              >
+                まとめて下書きに戻す
+              </Button>
+            )}
           </div>
         </div>
       )}
@@ -413,7 +464,7 @@ export function JournalReview({
                       onCheckedChange={() =>
                         setChecked(allChecked ? [] : checkable.map((e) => e.id))
                       }
-                      aria-label="表示中の下書きをすべて選択"
+                      aria-label="表示中の下書き・確認済をすべて選択"
                     />
                   </TableHead>
                   <TableHead>日付</TableHead>
@@ -454,7 +505,7 @@ export function JournalReview({
                         onClick={(event) => event.stopPropagation()}
                         onKeyDown={(event) => event.stopPropagation()}
                       >
-                        {entry.status === "draft" && !grant && (
+                        {(entry.status === "draft" || entry.status === "approved") && !grant && (
                           <Checkbox
                             checked={checked.includes(entry.id)}
                             disabled={pending}
@@ -707,9 +758,9 @@ export function JournalReview({
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>選んだ下書きを破棄しますか？</DialogTitle>
+            <DialogTitle>選んだ仕訳を破棄しますか？</DialogTitle>
             <DialogDescription>
-              選択中の{checkedEntries.length}件の下書きを削除します。この操作は取り消せません。
+              選択中の{checkedEntries.length}件の仕訳を削除します。この操作は取り消せません。
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

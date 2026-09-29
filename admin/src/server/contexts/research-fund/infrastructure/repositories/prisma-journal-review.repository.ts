@@ -198,12 +198,25 @@ export class PrismaJournalReviewRepository implements JournalReviewRepository {
       }
     });
   }
-  // 一括の破棄は下書きの支出だけを対象にし、1 件でも競合していたらトランザクションごと巻き戻す。
+  // 一括の破棄は下書き・確認済の支出だけを対象にし、1 件でも競合していたらトランザクションごと巻き戻す。
   async discardMany(bookId: string, entries: readonly ReviewEntry[]) {
     await this.prisma.$transaction(async (tx) => {
       for (const entry of entries) {
         const result = await tx.researchFundJournalEntry.deleteMany({
-          where: { ...guard(bookId, entry, ["draft"]), ...expenseWhere },
+          where: { ...guard(bookId, entry), ...expenseWhere },
+        });
+        if (result.count !== 1)
+          throw new JournalReviewError("仕訳が更新・公開されました。画面を再読み込みしてください");
+      }
+    });
+  }
+  // 一括で下書きに戻すのも内容を変えないので状態だけを戻す。1 件でも競合していたら巻き戻す。
+  async revertManyToDraft(bookId: string, entries: readonly ReviewEntry[]) {
+    await this.prisma.$transaction(async (tx) => {
+      for (const entry of entries) {
+        const result = await tx.researchFundJournalEntry.updateMany({
+          where: { ...guard(bookId, entry, ["approved"]), ...expenseWhere },
+          data: { status: "draft" },
         });
         if (result.count !== 1)
           throw new JournalReviewError("仕訳が更新・公開されました。画面を再読み込みしてください");

@@ -17,8 +17,10 @@ export interface JournalReviewRepository {
   update(bookId: string, entry: ReviewEntry, input: JournalWrite): Promise<void>;
   discard(bookId: string, entry: ReviewEntry): Promise<void>;
   approveMany(bookId: string, entries: readonly ReviewEntry[]): Promise<void>;
-  /** 下書きの支出の仕訳をまとめて削除する。1 件でも競合したら何も削除しない。 */
+  /** 下書き・確認済の支出の仕訳をまとめて削除する。1 件でも競合したら何も削除しない。 */
   discardMany(bookId: string, entries: readonly ReviewEntry[]): Promise<void>;
+  /** 確認済の支出の仕訳をまとめて下書きに戻す。1 件でも競合したら何も変更しない。 */
+  revertManyToDraft(bookId: string, entries: readonly ReviewEntry[]): Promise<void>;
   /** 公開中の仕訳を確認済に戻す（帳簿の公開範囲は変えない）。 */
   unpublish(bookId: string, entry: ReviewEntry): Promise<void>;
   /** 確認済の支出の仕訳を下書きに戻す（支給は対象にしない）。 */
