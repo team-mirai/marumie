@@ -523,7 +523,7 @@ export function JournalReview({
             </Table>
           </CardContent>
         </Card>
-        <Card className="xl:sticky xl:top-6">
+        <Card className="xl:sticky xl:top-6 xl:max-h-[calc(100vh-3rem)] xl:overflow-y-auto">
           <CardContent className="p-5">
             {selected ? (
               <>
