@@ -145,6 +145,8 @@ describe("ExtractedReceipt.normalize", () => {
     { ...receipt, items: [{ ...receipt.items[0], memo: 12 }] },
     { ...receipt, items: [{ ...receipt.items[0], date: "2026-02-30" }] },
     { ...receipt, items: [{ ...receipt.items[0], date: "02/12" }] },
+    { ...receipt, items: [{ ...receipt.items[0], date: 0 }] },
+    { ...receipt, items: [{ ...receipt.items[0], date: false }] },
   ])("欠損や不正な抽出結果を拒否する: %j", (input) => {
     expect(ExtractedReceipt.normalize(input)).toMatchObject({
       status: "invalid",

@@ -68,6 +68,12 @@ function trimText(value: unknown): unknown {
   return typeof value === "string" ? value.trim() : value;
 }
 
+// 欠落・空白のみの文字列だけを「書かなかった」とみなし、それ以外の値はスキーマの検証に任せる
+function blankToNull(value: unknown): unknown {
+  const text = trimText(value);
+  return text === undefined || text === "" ? null : text;
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
@@ -85,7 +91,7 @@ export const ExtractedReceipt = {
                       ...item,
                       item: trimText(item.item),
                       // 明細の日付を出さない古い形式の読み取り結果も受け付ける。空文字は書かなかったものとみなす
-                      date: trimText(item.date) || null,
+                      date: blankToNull(item.date),
                       amount: normalizeAmount(item.amount),
                       category_key: normalizeCategory(item.category_key),
                       note: trimText(item.note) ?? null,
