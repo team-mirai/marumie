@@ -69,8 +69,13 @@ describe("ResearchFundMonthlyChart", () => {
   });
 
   it("月別の金額を支援技術向けの表でも提供する", () => {
-    expect(markup).toContain('<table class="sr-only">');
+    expect(markup).toContain('<div class="sr-only"><table>');
     expect(markup).toContain("<th scope=\"row\">2月</th><td>100万円</td><td>30万円</td>");
     expect(markup).toContain("<th scope=\"row\">1月</th><td>データなし</td><td>データなし</td>");
+  });
+
+  it("読み上げ用の表は表要素ではなく div に sr-only を付けて隠す", () => {
+    // 表要素には height / overflow が効かず、横スクロール用のラッパーに縦スクロールを生むため
+    expect(markup).not.toContain('<table class="sr-only">');
   });
 });

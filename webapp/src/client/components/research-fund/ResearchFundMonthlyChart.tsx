@@ -207,29 +207,33 @@ export default function ResearchFundMonthlyChart({
         />
       </svg>
 
-      {/* SVG は role="img" で1枚の画像として読まれるため、月別の金額は表で読み上げられるようにする。 */}
-      <table className="sr-only">
-        <caption>月ごとの調査研究費の支給と支出</caption>
-        <thead>
-          <tr>
-            <th scope="col">月</th>
-            <th scope="col">支給</th>
-            <th scope="col">支出</th>
-          </tr>
-        </thead>
-        <tbody>
-          {monthly.map((month) => {
-            const rowUnit = tooltipUnit(month);
-            return (
-              <tr key={month.month}>
-                <th scope="row">{`${Number(month.month.slice(5, 7))}月`}</th>
-                <td>{month.published ? amountText(month.granted, rowUnit) : "データなし"}</td>
-                <td>{month.published ? amountText(month.spent, rowUnit) : "データなし"}</td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+      {/* SVG は role="img" で1枚の画像として読まれるため、月別の金額は表で読み上げられるようにする。
+          表要素には height / overflow が効かず、sr-only を直接付けると13行分の高さが残って
+          横スクロール用のラッパーに縦スクロールが出るので、div で包んで隠す。 */}
+      <div className="sr-only">
+        <table>
+          <caption>月ごとの調査研究費の支給と支出</caption>
+          <thead>
+            <tr>
+              <th scope="col">月</th>
+              <th scope="col">支給</th>
+              <th scope="col">支出</th>
+            </tr>
+          </thead>
+          <tbody>
+            {monthly.map((month) => {
+              const rowUnit = tooltipUnit(month);
+              return (
+                <tr key={month.month}>
+                  <th scope="row">{`${Number(month.month.slice(5, 7))}月`}</th>
+                  <td>{month.published ? amountText(month.granted, rowUnit) : "データなし"}</td>
+                  <td>{month.published ? amountText(month.spent, rowUnit) : "データなし"}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
 
       {tooltip && tooltipMonth && (
         <div

@@ -72,6 +72,38 @@ test.describe("調査研究費 議員ページ", () => {
 		expect(errors, `以下のエラーが発生しました:\n${errors.join("\n")}`).toHaveLength(0);
 	});
 
+	for (const { label, viewport } of [
+		{ label: "PC", viewport: { width: 1280, height: 800 } },
+		{ label: "SP", viewport: { width: 390, height: 844 } },
+	]) {
+		test(`${label} 幅で月次グラフの領域に縦スクロールが出ない`, async ({ page }) => {
+			await page.setViewportSize(viewport);
+			await page.goto(PAGE_URL);
+			const chart = page.locator(
+				'#monthly-trends [role="img"][aria-label="月ごとの調査研究費の支給と支出"]',
+			);
+			await expect(chart).toBeVisible();
+
+			// 横スクロール用のラッパー（overflow-x: auto）が縦方向にはみ出していないこと
+			const overflow = await chart.evaluate((svg) => {
+				let node = svg.parentElement;
+				while (node && getComputedStyle(node).overflowX !== "auto") {
+					node = node.parentElement;
+				}
+				if (!node) throw new Error("横スクロール用のラッパーが見つからない");
+				return { scrollHeight: node.scrollHeight, clientHeight: node.clientHeight };
+			});
+			expect(overflow.scrollHeight).toBeLessThanOrEqual(overflow.clientHeight);
+
+			// 読み上げ用の月別金額は引き続き支援技術に公開されている
+			await expect(
+				page.locator("#monthly-trends").getByRole("table", {
+					name: "月ごとの調査研究費の支給と支出",
+				}),
+			).toHaveCount(1);
+		});
+	}
+
 	test("未公開（下書き・確認済）の仕訳は表示されない", async ({ page }) => {
 		await page.goto(PAGE_URL);
 		const section = page.locator("#transactions");
