@@ -1,14 +1,15 @@
 import type { ResearchFundExpenseView } from "@/server/contexts/research-fund/domain/models/research-fund-page";
 
 /**
- * 調研費の支出 CSV。
+ * 調研費の出入金 CSV。
  *
- * 画面（B-4）が月ごとに区切って見せるのに対し、CSV はその年度の published の支出を
- * 全件そのまま渡す。表示用の view から作るので、未公開の仕訳と備考（memo）は
+ * 画面（B-4）が先頭だけを見せるのに対し、CSV はその年度の published の支給と支出を
+ * 全件そのまま渡す。金額は正の数のまま出し、入金か出金かは「入出金」列で見分ける。表示用の view から作るので、未公開の仕訳と備考（memo）は
  * 構造上ここに入り込まない。
  */
 export const RESEARCH_FUND_CSV_HEADERS = [
   "日付",
+  "入出金",
   "詳細の区分",
   "法律上の区分",
   "項目",
@@ -27,6 +28,7 @@ export function buildResearchFundCsv(expenses: readonly ResearchFundExpenseView[
     ...expenses.map((expense) =>
       [
         expense.date,
+        expense.kind === "grant" ? "入金" : "出金",
         expense.detailed.label,
         expense.legal.label,
         expense.description,

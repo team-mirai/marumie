@@ -7,6 +7,7 @@ import {
   researchFundTransactionsSummary,
   revealResearchFundGroupRows,
   sortResearchFundExpenses,
+  sumResearchFundTransactions,
   toggleAmountSort,
   toggleDateSort,
 } from "@/client/lib/research-fund-transactions";
@@ -14,6 +15,7 @@ import type { ResearchFundExpenseView } from "@/server/contexts/research-fund/do
 
 function view(overrides: Partial<ResearchFundExpenseView> = {}): ResearchFundExpenseView {
   return {
+    kind: "expense",
     id: "1",
     entryId: "1",
     date: "2026-04-23",
@@ -82,6 +84,19 @@ describe("sortResearchFundExpenses", () => {
   });
 });
 
+describe("sortResearchFundExpenses（入出金の混在）", () => {
+  it("金額順は入金・出金を区別せず額の大きさで並べる", () => {
+    const rows = [
+      view({ id: "1", amount: 1200 }),
+      view({ id: "2", kind: "grant", amount: 1_000_000 }),
+      view({ id: "3", amount: 99_000 }),
+    ];
+
+    expect(ids(sortResearchFundExpenses(rows, "amountDesc"))).toEqual(["2", "3", "1"]);
+    expect(ids(sortResearchFundExpenses(rows, "amountAsc"))).toEqual(["1", "3", "2"]);
+  });
+});
+
 describe("filterResearchFundExpenses", () => {
   const rows = [
     view({ id: "1", detailed: { label: "交通費", color: "#000" } }),
@@ -117,6 +132,19 @@ describe("researchFundCategoryOptions", () => {
       "交通費",
       "その他",
     ]);
+  });
+
+  it("支給（入金）の区分は支出の区分より前に出す", () => {
+    const options = researchFundCategoryOptions([
+      view({ detailed: { label: "交通費", color: "#000" }, legal: { label: "⑨ 滞在費", color: "#000" } }),
+      view({
+        kind: "grant",
+        detailed: { label: "支給（入金）", color: "#000" },
+        legal: { label: "支給（入金）", color: "#000" },
+      }),
+    ]);
+
+    expect(options.map((option) => option.label)).toEqual(["支給（入金）", "交通費"]);
   });
 });
 
@@ -171,23 +199,44 @@ describe("researchFundPagerItems", () => {
   });
 });
 
+describe("sumResearchFundTransactions", () => {
+  it("入金（支給）と出金（支出）の合計を別々に出す", () => {
+    expect(
+      sumResearchFundTransactions([
+        view({ kind: "grant", amount: 1_000_000 }),
+        view({ amount: 1200 }),
+        view({ amount: 800 }),
+        view({ kind: "grant", amount: 1_000_000 }),
+      ]),
+    ).toEqual({ income: 2_000_000, expense: 2000 });
+  });
+});
+
 describe("researchFundTransactionsSummary", () => {
-  it("表示範囲・件数・合計を出す", () => {
+  it("表示範囲・件数と、入金・出金それぞれの合計を出す", () => {
     expect(
       researchFundTransactionsSummary({
         from: 1,
         to: 50,
-        total: 296,
-        amount: 2212581,
+        total: 303,
+        income: 7_000_000,
+        expense: 2212581,
         filtered: false,
       }),
-    ).toBe("1〜50 / 296件を表示中　合計 2,212,581円");
+    ).toBe("1〜50 / 303件を表示中　入金 7,000,000円・出金 2,212,581円");
   });
 
   it("絞り込み中はその旨を添える", () => {
     expect(
-      researchFundTransactionsSummary({ from: 1, to: 3, total: 3, amount: 900, filtered: true }),
-    ).toBe("1〜3 / 3件を表示中　合計 900円（絞り込み中）");
+      researchFundTransactionsSummary({
+        from: 1,
+        to: 3,
+        total: 3,
+        income: 0,
+        expense: 900,
+        filtered: true,
+      }),
+    ).toBe("1〜3 / 3件を表示中　入金 0円・出金 900円（絞り込み中）");
   });
 });
 

@@ -12,10 +12,13 @@ export interface PublishedAccount extends ResearchFundCategory {
 }
 
 /**
- * 公開された支出1行（仕訳の借方・費用行1つ）。
+ * 「すべての出入金」に並べる公開済みの1行。
+ * 支出は仕訳の借方・費用行1つ、支給は貸方の調査研究費収入の行1つ。
  * 同一注文の分割行は splitGroup が同じになる。
  */
 export interface PublishedExpense {
+  /** grant は支給（入金）、expense は支出（出金） */
+  kind: "grant" | "expense";
   /** 行の一意キー（仕訳明細のID） */
   id: string;
   /** 領収書の取得に使う仕訳のID */
@@ -67,6 +70,7 @@ export interface PublishedResearchFund {
   accounts: Record<string, PublishedAccount>;
   /** 科目マスタの費用の分類数（法定区分が決まっている科目。下書き用の「要確認」は数えない） */
   expenseCategoryCount: number;
+  /** 明細に並べる支給と支出 */
   expenses: PublishedExpense[];
   groups: PublishedExpenditureGroup[];
 }

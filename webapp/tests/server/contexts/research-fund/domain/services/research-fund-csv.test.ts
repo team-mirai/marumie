@@ -7,6 +7,7 @@ import {
 
 function view(overrides: Partial<ResearchFundExpenseView> = {}): ResearchFundExpenseView {
   return {
+    kind: "expense",
     id: "1",
     entryId: "1",
     date: "2026-04-23",
@@ -29,8 +30,8 @@ describe("buildResearchFundCsv", () => {
     const [header] = buildResearchFundCsv([]).split("\n");
 
     expect(header).toBe(
-      '"日付","詳細の区分","法律上の区分","項目","金額","特記事項"');
-    expect(RESEARCH_FUND_CSV_HEADERS).toHaveLength(6);
+      '"日付","入出金","詳細の区分","法律上の区分","項目","金額","特記事項"');
+    expect(RESEARCH_FUND_CSV_HEADERS).toHaveLength(7);
   });
 
   it("支出1件を1行に書き出す", () => {
@@ -48,7 +49,7 @@ describe("buildResearchFundCsv", () => {
     ]);
 
     expect(csv.split("\n")[1]).toBe(
-      '"2026-04-23","文房具・備品","③ 備品・消耗品費","ボールペン","330","同一注文で3点購入。1点ずつ行を分けて計上しています"',
+      '"2026-04-23","出金","文房具・備品","③ 備品・消耗品費","ボールペン","330","同一注文で3点購入。1点ずつ行を分けて計上しています"',
     );
   });
 
@@ -56,7 +57,24 @@ describe("buildResearchFundCsv", () => {
     const csv = buildResearchFundCsv([view({ note: null })]);
 
     expect(csv.split("\n")[1]).toBe(
-      '"2026-04-23","タクシー代","⑨ 滞在費","タクシー代","1200",""',
+      '"2026-04-23","出金","タクシー代","⑨ 滞在費","タクシー代","1200",""',
+    );
+  });
+
+  it("支給は「入金」として書き出し、CSV だけで入金か出金かを見分けられる", () => {
+    const csv = buildResearchFundCsv([
+      view({
+        kind: "grant",
+        date: "2026-05-01",
+        detailed: { label: "支給（入金）", color: "#238778" },
+        legal: { label: "支給（入金）", color: "#238778" },
+        description: "2026年5月分 調査研究費支給",
+        amount: 1_000_000,
+      }),
+    ]);
+
+    expect(csv.split("\n")[1]).toBe(
+      '"2026-05-01","入金","支給（入金）","支給（入金）","2026年5月分 調査研究費支給","1000000",""',
     );
   });
 

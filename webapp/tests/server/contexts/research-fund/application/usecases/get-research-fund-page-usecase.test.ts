@@ -36,6 +36,7 @@ function published(overrides: Partial<PublishedResearchFund> = {}): PublishedRes
     expenseCategoryCount: 21,
     expenses: [
       {
+        kind: "expense",
         id: "1",
         entryId: "1",
         date: "2026-02-10",
@@ -48,6 +49,7 @@ function published(overrides: Partial<PublishedResearchFund> = {}): PublishedRes
         receiptMime: "image/jpeg",
       },
       {
+        kind: "expense",
         id: "2",
         entryId: "2",
         date: "2026-03-10",
@@ -60,6 +62,7 @@ function published(overrides: Partial<PublishedResearchFund> = {}): PublishedRes
         receiptMime: null,
       },
       {
+        kind: "expense",
         id: "3",
         entryId: "3",
         date: "2026-03-11",

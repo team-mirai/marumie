@@ -18,6 +18,7 @@ const accounts: Record<string, PublishedAccount> = {
 
 function expense(overrides: Partial<PublishedExpense> = {}): PublishedExpense {
   return {
+    kind: "expense",
     id: "1",
     entryId: "1",
     date: "2026-04-23",
@@ -143,5 +144,36 @@ describe("buildExpenseViews", () => {
     expect(views.find((view) => view.id === "1")?.receiptKind).toBe("image");
     expect(views.find((view) => view.id === "2")?.receiptKind).toBe("pdf");
     expect(views.find((view) => view.id === "3")?.receiptKind).toBeNull();
+  });
+
+  it("支給（入金）の行は支出と同じ一覧に日付順で混ぜ、どちらの区分でも入金と分かる名前にする", () => {
+    const views = buildExpenseViews(
+      [
+        expense({ id: "1", entryId: "1", date: "2026-04-23" }),
+        expense({
+          kind: "grant",
+          id: "2",
+          entryId: "2",
+          date: "2026-05-01",
+          accountKey: "grant-income",
+          description: "2026年5月分 調査研究費支給",
+          amount: 1_000_000,
+        }),
+        expense({ id: "3", entryId: "3", date: "2026-05-10" }),
+      ],
+      accounts,
+      new Map([["2", "7"]]),
+    );
+
+    expect(views.map((view) => [view.id, view.kind])).toEqual([
+      ["3", "expense"],
+      ["2", "grant"],
+      ["1", "expense"],
+    ]);
+    const grant = views[1];
+    expect(grant.detailed.label).toBe("支給（入金）");
+    expect(grant.legal.label).toBe("支給（入金）");
+    // 用途カードは支出だけを束ねる
+    expect(grant.groupId).toBeNull();
   });
 });

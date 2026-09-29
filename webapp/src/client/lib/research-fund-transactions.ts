@@ -59,23 +59,32 @@ export function filterResearchFundExpenses(
 /**
  * 絞り込みの選択肢（詳細の区分）。
  *
- * 公開中の支出に出てくる区分だけを、法律上の区分（①〜⑨、その他）の順にまとめて並べる。
+ * 公開中の出入金に出てくる区分だけを、支給（入金）を先頭に、支出は法律上の区分（①〜⑨、その他）の順にまとめて並べる。
  */
 export function researchFundCategoryOptions(
   rows: readonly ResearchFundExpenseView[],
 ): ResearchFundCategoryView[] {
-  const options = new Map<string, { category: ResearchFundCategoryView; legal: string }>();
+  const options = new Map<
+    string,
+    { category: ResearchFundCategoryView; legal: string; isGrant: boolean }
+  >();
   for (const row of rows) {
     if (!options.has(row.detailed.label)) {
-      options.set(row.detailed.label, { category: row.detailed, legal: row.legal.label });
+      options.set(row.detailed.label, {
+        category: row.detailed,
+        legal: row.legal.label,
+        isGrant: row.kind === "grant",
+      });
     }
   }
-  return (
-    [...options.values()]
-      // 丸数字（①〜⑨）はコードポイント順に並び、「その他」はその後ろに来る。
-      .sort((a, b) => (a.legal < b.legal ? -1 : a.legal > b.legal ? 1 : 0))
-      .map((option) => option.category)
-  );
+  return [...options.values()]
+    .sort(
+      (a, b) =>
+        Number(b.isGrant) - Number(a.isGrant) ||
+        // 丸数字（①〜⑨）はコードポイント順に並び、「その他」はその後ろに来る。
+        (a.legal < b.legal ? -1 : a.legal > b.legal ? 1 : 0),
+    )
+    .map((option) => option.category);
 }
 
 interface ResearchFundTransactionsPage {
@@ -122,21 +131,37 @@ export function researchFundPagerItems(current: number, totalPages: number): (nu
   return items;
 }
 
-/** 表の下の件数表示。「1〜50 / 296件を表示中　合計 2,212,581円」 */
+/** 入金（支給）と出金（支出）の合計を別々に出す。足し合わせると意味のない数字になるため。 */
+export function sumResearchFundTransactions(rows: readonly ResearchFundExpenseView[]): {
+  income: number;
+  expense: number;
+} {
+  let income = 0;
+  let expense = 0;
+  for (const row of rows) {
+    if (row.kind === "grant") income += row.amount;
+    else expense += row.amount;
+  }
+  return { income, expense };
+}
+
+/** 表の下の件数表示。「1〜50 / 303件を表示中　入金 7,000,000円・出金 2,212,581円」 */
 export function researchFundTransactionsSummary({
   from,
   to,
   total,
-  amount,
+  income,
+  expense,
   filtered,
 }: {
   from: number;
   to: number;
   total: number;
-  amount: number;
+  income: number;
+  expense: number;
   filtered: boolean;
 }): string {
-  return `${from}〜${to} / ${total}件を表示中　合計 ${amount.toLocaleString("ja-JP")}円${
+  return `${from}〜${to} / ${total}件を表示中　入金 ${income.toLocaleString("ja-JP")}円・出金 ${expense.toLocaleString("ja-JP")}円${
     filtered ? "（絞り込み中）" : ""
   }`;
 }

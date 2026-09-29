@@ -132,6 +132,19 @@ export class PrismaResearchFundRepository implements ResearchFundRepository {
             amount: line.amount.toNumber(),
             type: "grant",
           });
+          expenses.push({
+            kind: "grant",
+            id: String(line.id),
+            entryId: String(entry.id),
+            date,
+            accountKey: line.accountKey,
+            description: entry.description,
+            amount: line.amount.toNumber(),
+            note: entry.note,
+            splitGroup: null,
+            hasReceipt: entry.documentId !== null,
+            receiptMime: entry.document?.mime ?? null,
+          });
           continue;
         }
         if (!isExpenseLine(line)) continue;
@@ -143,6 +156,7 @@ export class PrismaResearchFundRepository implements ResearchFundRepository {
           type: "expense",
         });
         expenses.push({
+          kind: "expense",
           id: String(line.id),
           entryId: String(entry.id),
           date,

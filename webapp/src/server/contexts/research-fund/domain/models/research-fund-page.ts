@@ -17,8 +17,10 @@ export interface ResearchFundCategoryView {
   color: string;
 }
 
-/** B-4 の明細1行。区分トグルで detailed / legal を出し分ける。 */
+/** B-4 の明細1行（支給または支出）。区分トグルで detailed / legal を出し分ける。 */
 export interface ResearchFundExpenseView {
+  /** grant は支給（入金）、expense は支出（出金）。金額の符号と色を出し分ける */
+  kind: "grant" | "expense";
   /** 行の一意キー */
   id: string;
   /** 領収書の取得に使う仕訳のID */
@@ -79,6 +81,7 @@ export interface ResearchFundPageData {
   unused: number;
   sankey: Record<ResearchFundCategoryMode, SankeyData>;
   monthly: ResearchFundMonthView[];
+  /** B-4 の明細。支給（入金）と支出（出金）を日付の新しい順に混ぜて並べる */
   expenses: ResearchFundExpenseView[];
   groups: ResearchFundGroupView[];
 }

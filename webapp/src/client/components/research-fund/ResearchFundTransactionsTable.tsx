@@ -3,6 +3,7 @@ import "client-only";
 
 import { useMemo, useState } from "react";
 import ReceiptModal from "@/client/components/research-fund/ReceiptModal";
+import ResearchFundAmount from "@/client/components/research-fund/ResearchFundAmount";
 import ResearchFundCategoryFilter from "@/client/components/research-fund/ResearchFundCategoryFilter";
 import ResearchFundCategoryPill from "@/client/components/research-fund/ResearchFundCategoryPill";
 import ResearchFundCsvDownloadLink from "@/client/components/research-fund/ResearchFundCsvDownloadLink";
@@ -15,6 +16,7 @@ import {
   researchFundPagerItems,
   researchFundTransactionsSummary,
   sortResearchFundExpenses,
+  sumResearchFundTransactions,
   toggleAmountSort,
   toggleDateSort,
   type ResearchFundTransactionSort,
@@ -31,12 +33,12 @@ interface Props {
 /** SP（≤760px）ではヘッダー行の代わりに並び替えタブと絞り込みボタンを出し、1行を縦積みにする。 */
 const ROW_GRID = "min-[761px]:grid-cols-[140px_200px_1fr_180px]";
 
-/** SP の並び替えタブ。政治団体の全件ページ（TransactionTableMobileHeader）と同じ見た目で、支出だけなので収入の並びは持たない。 */
+/** SP の並び替えタブ。政治団体の全件ページ（TransactionTableMobileHeader）と同じ見た目。金額順は入金・出金を区別せず額の大きさで並べる。 */
 const MOBILE_SORT_TABS: { id: ResearchFundTransactionSort; label: string }[] = [
   { id: "new", label: "新しい順" },
   { id: "old", label: "古い順" },
-  { id: "amountDesc", label: "支出が多い順" },
-  { id: "amountAsc", label: "支出が少ない順" },
+  { id: "amountDesc", label: "金額が多い順" },
+  { id: "amountAsc", label: "金額が少ない順" },
 ];
 
 /** カテゴリー絞り込みを開くボタン。絞り込み中は件数を出す。 */
@@ -132,7 +134,7 @@ function PagerButton({
 /**
  * 調研費の「すべての出入金」全件ページの表。
  *
- * 1議員・1年度の公開中の支出は数百件なので、全件をサーバーで読み込んだうえで
+ * 1議員・1年度の公開中の出入金（支給と支出）は数百件なので、全件をサーバーで読み込んだうえで
  * 並び替え・絞り込み・ページングをクライアントで行う。領収書のある行は「領収書」ピルからモーダルで原本を見られる。
  */
 export default function ResearchFundTransactionsTable({ slug, financialYear, expenses }: Props) {
@@ -149,7 +151,7 @@ export default function ResearchFundTransactionsTable({ slug, financialYear, exp
   );
   const current = paginateResearchFundExpenses(filtered, page);
   const pagerItems = researchFundPagerItems(current.page, current.totalPages);
-  const amount = filtered.reduce((sum, row) => sum + row.amount, 0);
+  const totals = sumResearchFundTransactions(filtered);
 
   const changeSort = (next: ResearchFundTransactionSort) => {
     setSort(next);
@@ -260,7 +262,7 @@ export default function ResearchFundTransactionsTable({ slug, financialYear, exp
 
         {current.rows.length === 0 ? (
           <p role="status" className="py-6 text-center text-gray-500">
-            該当する支出はありません
+            該当する出入金はありません
           </p>
         ) : (
           current.rows.map((row) => (
@@ -290,19 +292,15 @@ export default function ResearchFundTransactionsTable({ slug, financialYear, exp
                     </span>
                   )}
                 </span>
-                <span className="whitespace-nowrap text-base font-bold text-[#DC2626] min-[761px]:hidden">
-                  -{row.amount.toLocaleString("ja-JP")}
-                  <span className="text-xs font-normal text-[#4B5563]"> 円</span>
-                </span>
+                <ResearchFundAmount row={row} className="text-base min-[761px]:hidden" />
                 {row.note && (
                   <p className="mt-0.5 hidden text-xs leading-relaxed text-[#6B7280] min-[761px]:block">
                     {row.note}
                   </p>
                 )}
               </div>
-              <div className="hidden whitespace-nowrap pr-6 text-right text-xl font-bold text-[#DC2626] min-[761px]:block">
-                -{row.amount.toLocaleString("ja-JP")}
-                <span className="text-xs font-normal text-[#4B5563]"> 円</span>
+              <div className="hidden pr-6 text-right min-[761px]:block">
+                <ResearchFundAmount row={row} className="text-xl" />
               </div>
               {row.note && (
                 <p className="order-4 text-xs leading-relaxed text-[#6B7280] min-[761px]:hidden">
@@ -372,7 +370,8 @@ export default function ResearchFundTransactionsTable({ slug, financialYear, exp
           from: current.from,
           to: current.to,
           total: filtered.length,
-          amount,
+          income: totals.income,
+          expense: totals.expense,
           filtered: categories.length > 0,
         })}
       </p>

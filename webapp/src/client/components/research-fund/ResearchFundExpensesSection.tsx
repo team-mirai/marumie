@@ -6,6 +6,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import CardHeader from "@/client/components/layout/CardHeader";
 import MainColumnCard from "@/client/components/layout/MainColumnCard";
 import ReceiptModal from "@/client/components/research-fund/ReceiptModal";
+import ResearchFundAmount from "@/client/components/research-fund/ResearchFundAmount";
 import ResearchFundCategoryPill from "@/client/components/research-fund/ResearchFundCategoryPill";
 import { useResearchFundCrossLink } from "@/client/components/research-fund/ResearchFundCrossLink";
 import ResearchFundReceiptPill from "@/client/components/research-fund/ResearchFundReceiptPill";
@@ -49,19 +50,10 @@ function StarIcon() {
   );
 }
 
-function Amount({ amount, className }: { amount: number; className: string }) {
-  return (
-    <span className={`whitespace-nowrap font-bold text-[#DC2626] ${className}`}>
-      -{amount.toLocaleString("ja-JP")}
-      <span className="text-xs font-normal text-[#4B5563]"> 円</span>
-    </span>
-  );
-}
-
 /**
  * B-4 すべての出入金。
  *
- * 日付の新しい順に先頭6件だけを出し、続きは「もっと見る」から全件ページで見る。
+ * 支給（入金）と支出（出金）を日付の新しい順に混ぜ、先頭6件だけを出し、続きは「もっと見る」から全件ページで見る。
  * 用途カードに紐づく行は「★ 用途N」から該当カードへ飛べ、カードの「N件」からは該当行まで一覧を広げる。
  * 領収書のある行は「領収書」ピルから原本をモーダルで見られる。
  */
@@ -153,7 +145,7 @@ export default function ResearchFundExpensesSection({ data, updatedAt }: Props) 
       />
 
       {rows.length === 0 ? (
-        <p className="text-gray-500">公開中の支出はまだありません</p>
+        <p className="text-gray-500">公開中の出入金はまだありません</p>
       ) : (
         <div className="relative">
           <div
@@ -194,7 +186,7 @@ export default function ResearchFundExpensesSection({ data, updatedAt }: Props) 
                       </span>
                     )}
                   </span>
-                  <Amount amount={row.amount} className="text-base min-[761px]:hidden" />
+                  <ResearchFundAmount row={row} className="text-base min-[761px]:hidden" />
                   {row.note && (
                     <p className="mt-0.5 hidden text-xs leading-relaxed text-[#6B7280] min-[761px]:block">
                       {row.note}
@@ -202,7 +194,7 @@ export default function ResearchFundExpensesSection({ data, updatedAt }: Props) 
                   )}
                 </div>
                 <div className="hidden pr-6 text-right min-[761px]:block">
-                  <Amount amount={row.amount} className="text-xl" />
+                  <ResearchFundAmount row={row} className="text-xl" />
                 </div>
                 {row.note && (
                   <p className="order-4 text-xs leading-relaxed text-[#6B7280] min-[761px]:hidden">

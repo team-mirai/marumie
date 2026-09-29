@@ -2,12 +2,21 @@ import type {
   PublishedAccount,
   PublishedExpense,
 } from "@/server/contexts/research-fund/domain/models/published-research-fund";
-import type { ResearchFundExpenseView } from "@/server/contexts/research-fund/domain/models/research-fund-page";
+import type {
+  ResearchFundCategoryView,
+  ResearchFundExpenseView,
+} from "@/server/contexts/research-fund/domain/models/research-fund-page";
 import { researchFundCategoryColor } from "@/server/contexts/research-fund/domain/services/research-fund-category-color";
 import { receiptKindOf } from "@/server/contexts/research-fund/domain/services/research-fund-receipt-kind";
 
 /** 科目マスタに無い科目のラベル（要確認の仕訳は公開されない想定だが、表示は落とさない）。 */
 const UNKNOWN_CATEGORY_LABEL = "その他";
+
+/**
+ * 支給（入金）の行のカテゴリー。区分トグル（詳細／法律上）のどちらでも入金と分かるよう同じ名前にし、
+ * 色は政治団体の出入金明細の入金と同じ緑にする。
+ */
+const GRANT_CATEGORY: ResearchFundCategoryView = { label: "支給（入金）", color: "#238778" };
 
 /**
  * 同一注文の分割行につける説明。
@@ -25,7 +34,7 @@ function mergeNotes(note: string | null, splitNote: string | null): string | nul
 }
 
 /**
- * B-4 の明細行を組み立てる。
+ * B-4 の明細行を組み立てる。支給（入金）と支出（出金）を同じ一覧に混ぜる。
  *
  * 並びは日付の新しい順。同一注文（split_group）の行は必ず隣り合わせにし、
  * 何点で1注文かを特記事項に添えることで「同じものを何度も買っている」と
@@ -53,10 +62,30 @@ export function buildExpenseViews(
         compareIds(a.id, b.id),
     )
     .map((expense) => {
+      if (expense.kind === "grant") {
+        return {
+          kind: expense.kind,
+          id: expense.id,
+          entryId: expense.entryId,
+          date: expense.date,
+          month: expense.date.slice(0, 7),
+          description: expense.description,
+          amount: expense.amount,
+          detailed: GRANT_CATEGORY,
+          legal: GRANT_CATEGORY,
+          note: mergeNotes(expense.note, null),
+          splitGroup: null,
+          // 用途カードは支出だけを束ねるので、支給は紐づけない。
+          groupId: null,
+          hasReceipt: expense.hasReceipt,
+          receiptKind: expense.hasReceipt ? receiptKindOf(expense.receiptMime) : null,
+        };
+      }
       const account = accounts[expense.accountKey];
       const color = researchFundCategoryColor(account?.legalCategoryKey ?? "");
       const splitCount = expense.splitGroup ? (splitCounts.get(expense.splitGroup) ?? 1) : 1;
       return {
+        kind: expense.kind,
         id: expense.id,
         entryId: expense.entryId,
         date: expense.date,

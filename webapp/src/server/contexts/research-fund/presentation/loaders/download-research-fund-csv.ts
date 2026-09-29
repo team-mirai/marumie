@@ -16,9 +16,9 @@ interface DownloadResearchFundCsvResult {
 }
 
 /**
- * 議員ページの支出を CSV にして返す。
+ * 議員ページの出入金（支給と支出）を CSV にして返す。
  *
- * 画面が読むのと同じ loader を使うので、published の支出だけが対象になり、
+ * 画面が読むのと同じ loader を使うので、published の支給と支出だけが対象になり、
  * 備考（memo）や未公開の仕訳は含まれない。
  */
 export async function downloadResearchFundCsv(

@@ -274,6 +274,38 @@ test.describe("調査研究費 議員ページ", () => {
 		await expect(filterButton).not.toHaveText("");
 	});
 
+	test("公開済みの支給が入金の行として出金と同じ一覧に並ぶ", async ({ page }) => {
+		await page.goto(`${PAGE_URL}/transactions`);
+		const table = page.locator("#transactions");
+
+		// シードでは 2〜8 月の 1 日に公開済みの支給が 100 万円ずつある
+		const grantRow = table
+			.locator("div.grid")
+			.filter({ hasText: "2026年8月分 調査研究費支給" });
+		await expect(grantRow).toHaveCount(1);
+		await expect(grantRow.getByText("支給（入金）")).toBeVisible();
+		await expect(grantRow).toContainText("+1,000,000");
+
+		// 入金と出金の合計は足し合わせず、別々に出す
+		const summary = table.getByRole("status").filter({ hasText: "件を表示中" });
+		await expect(summary).toContainText("入金 7,000,000円");
+		await expect(summary).toContainText("出金");
+
+		// カテゴリー絞り込みで入金だけに絞れる。ハイドレーション前のクリックを取りこぼさないよう押し直す。
+		const filterButton = table.getByRole("button", { name: "カテゴリーで絞り込む" });
+		await expect(async () => {
+			await filterButton.click();
+			await expect(table.getByRole("button", { name: "支給（入金）" })).toBeVisible({
+				timeout: 1_000,
+			});
+		}).toPass();
+		await table.getByRole("button", { name: "支給（入金）" }).click();
+		await table.getByRole("button", { name: "OK" }).click();
+		await expect(summary).toHaveText(
+			"1〜7 / 7件を表示中　入金 7,000,000円・出金 0円（絞り込み中）",
+		);
+	});
+
 	test("特記事項はⓘで開かず、項目名の下に常に出る", async ({ page }) => {
 		await page.goto(PAGE_URL);
 		const section = page.locator("#transactions");

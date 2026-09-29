@@ -11,6 +11,7 @@ function expense(
   overrides: Partial<ResearchFundExpenseView> = {},
 ): ResearchFundExpenseView {
   return {
+    kind: "expense",
     id: "1",
     entryId: "12",
     date: "2026-04-23",

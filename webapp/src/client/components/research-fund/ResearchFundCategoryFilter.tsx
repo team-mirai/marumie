@@ -81,7 +81,7 @@ export default function ResearchFundCategoryFilter({
       className={`absolute top-full ${align === "right" ? "right-0" : "left-4"} z-[9999] mt-1 flex flex-col gap-4 rounded bg-white p-4 shadow-[2px_4px_8px_0px_rgba(0,0,0,0.1)]`}
     >
       <div className="flex flex-col gap-1">
-        <span className="text-sm leading-[1.67] font-medium text-gray-600">支出カテゴリー</span>
+        <span className="text-sm leading-[1.67] font-medium text-gray-600">カテゴリー</span>
         <div className="flex flex-col">
           <CheckRow
             label="（すべて選択）"

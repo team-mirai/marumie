@@ -37,7 +37,7 @@ export async function generateMetadata({
   };
 }
 
-/** 調研費の「すべての出入金」全件ページ。議員ページと同じ loader の published の支出だけを出す。 */
+/** 調研費の「すべての出入金」全件ページ。議員ページと同じ loader の published の支給と支出だけを出す。 */
 export default async function PoliticianTransactionsPage({
   params,
 }: PoliticianTransactionsPageProps) {

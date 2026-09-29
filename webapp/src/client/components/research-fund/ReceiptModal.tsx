@@ -99,7 +99,12 @@ export default function ReceiptModal({ expense, category, onClose }: Props) {
           <dt className="font-bold text-[#6B7280]">項目</dt>
           <dd className="font-bold">{expense.description}</dd>
           <dt className="font-bold text-[#6B7280]">金額</dt>
-          <dd className="font-bold text-[#DC2626]">-{expense.amount.toLocaleString("ja-JP")} 円</dd>
+          <dd
+            className={`font-bold ${expense.kind === "grant" ? "text-[#238778]" : "text-[#DC2626]"}`}
+          >
+            {expense.kind === "grant" ? "+" : "-"}
+            {expense.amount.toLocaleString("ja-JP")} 円
+          </dd>
           <dt className="font-bold text-[#6B7280]">特記事項</dt>
           <dd className="leading-[1.7]">{expense.note ?? "特記事項はありません"}</dd>
         </dl>
