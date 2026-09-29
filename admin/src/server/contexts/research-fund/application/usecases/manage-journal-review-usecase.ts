@@ -218,6 +218,23 @@ export class ManageJournalReviewUsecase {
     }
     return { cacheWarning };
   }
+  /**
+   * 確認済の支出の仕訳を下書きに戻し、確認待ちとして扱い直せるようにする。
+   * 支給は下書きを経ずに確認済で作る仕様なので戻さない。公開中の仕訳は先に確認済に戻す。
+   * 確認済は公開ページに出ないので、webapp のキャッシュは無効化しない。
+   */
+  async revertToDraft(bookId: string, id: string, updatedAt: string) {
+    const entry = await this.repository.find(bookId, id);
+    if (!entry) throw new JournalReviewError("仕訳が見つかりません");
+    if (entry.source === "grant") throw new JournalReviewError("支給は下書きに戻せません");
+    if (entry.status !== "approved")
+      throw new JournalReviewError("確認済の仕訳だけを下書きに戻せます");
+    if (entry.updatedAt !== updatedAt)
+      throw new JournalReviewError("別の操作で更新されました。画面を再読み込みしてください");
+    const result = JournalEntry.transition(entry, "draft");
+    if (result.status === "invalid") throw new JournalReviewError(result.errors[0].message);
+    await this.repository.revertToDraft(bookId, entry);
+  }
   async discard(bookId: string, id: string, updatedAt: string) {
     const entry = await this.editable(bookId, id, updatedAt);
     if (entry.source === "grant") throw new JournalReviewError("支給は破棄できません");

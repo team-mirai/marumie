@@ -82,3 +82,15 @@ test("取り下げが拒否されたら理由を返し、再検証しない", as
   await expect(mutateJournalReview("2", "1", { type: "unpublish", id: "3", updatedAt: "date" })).resolves.toEqual({ success: false, error: "公開中の仕訳だけを確認済に戻せます" });
   expect(revalidatePath).not.toHaveBeenCalled();
 });
+
+test("下書きに戻す操作は対象帳簿・更新日時を渡し、成功後に再検証する", async () => {
+  const revertToDraft = jest.spyOn(ManageJournalReviewUsecase.prototype, "revertToDraft").mockResolvedValue();
+  await expect(mutateJournalReview("2", "1", { type: "revert-to-draft", id: "3", updatedAt: "date" })).resolves.toEqual({ success: true });
+  expect(revertToDraft).toHaveBeenCalledWith("1", "3", "date");
+  expect(revalidatePath).toHaveBeenCalledWith("/(auth)", "layout");
+});
+test("下書きに戻す操作が拒否されたら理由を返し、再検証しない", async () => {
+  jest.spyOn(ManageJournalReviewUsecase.prototype, "revertToDraft").mockRejectedValue(new JournalReviewError("支給は下書きに戻せません"));
+  await expect(mutateJournalReview("2", "1", { type: "revert-to-draft", id: "3", updatedAt: "date" })).resolves.toEqual({ success: false, error: "支給は下書きに戻せません" });
+  expect(revalidatePath).not.toHaveBeenCalled();
+});

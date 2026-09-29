@@ -157,6 +157,23 @@ test("すでに確認済に戻っているなど競合したら取り下げを�
   const { repository } = setup(0);
   await expect(repository.unpublish("1", entry)).rejects.toThrow("状態が変わりました");
 });
+test("下書きに戻すのは確認済の支出・更新日時を照合して状態だけを戻す", async () => {
+  const { repository, tx } = setup();
+  await repository.revertToDraft("1", entry);
+  expect(tx.researchFundJournalEntry.updateMany).toHaveBeenCalledWith({ where: {
+    id: BigInt(entry.id), bookId: BigInt(1), status: { in: ["approved"] }, updatedAt: new Date(entry.updatedAt),
+    source: { in: ["manual", "scan"] }, lines: { some: { side: "debit", account: { type: "expense" } } },
+  }, data: { status: "draft" } });
+});
+test("支給は支出の形式で照合するため下書きに戻らない", async () => {
+  const { repository, tx } = setup();
+  await repository.revertToDraft("1", { ...entry, source: "grant" } as ReviewEntry);
+  expect(tx.researchFundJournalEntry.updateMany).toHaveBeenCalledWith(expect.objectContaining({ where: expect.objectContaining({ source: { in: ["manual", "scan"] } }) }));
+});
+test("別の操作で更新・公開されていたら下書きに戻すのを拒否する", async () => {
+  const { repository } = setup(0);
+  await expect(repository.revertToDraft("1", entry)).rejects.toThrow("画面を再読み込み");
+});
 
 const grantWhere = { source: "grant", lines: { some: { side: "credit", accountKey: "grant-income" } } };
 test("取得は支出と支給の両方を対象にする", async () => {

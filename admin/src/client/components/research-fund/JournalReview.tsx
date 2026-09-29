@@ -241,6 +241,26 @@ export function JournalReview({
       }
     });
   }
+  function revertToDraft() {
+    if (!selected || !allowLeave()) return;
+    startTransition(async () => {
+      try {
+        const result = await mutateJournalReview(target.politicianId, target.bookId, {
+          type: "revert-to-draft",
+          id: selected.id,
+          updatedAt: selected.updatedAt,
+        });
+        if (!result.success) {
+          toast.error(result.error);
+          return;
+        }
+        toast.success("下書きに戻しました");
+        router.refresh();
+      } catch {
+        toast.error("通信に失敗しました。再度お試しください");
+      }
+    });
+  }
   function discard() {
     if (!selected) return;
     startTransition(async () => {
@@ -504,6 +524,7 @@ export function JournalReview({
                   onSave={save}
                   onDiscard={() => setDiscarding(true)}
                   onUnpublish={() => setUnpublishing(true)}
+                  onRevertToDraft={revertToDraft}
                 />
               </>
             ) : (
@@ -533,6 +554,7 @@ export function JournalReview({
             onSave={save}
             onDiscard={() => {}}
             onUnpublish={() => {}}
+            onRevertToDraft={() => {}}
           />
         </DialogContent>
       </Dialog>

@@ -26,6 +26,7 @@ export function JournalEditor({
   onSave,
   onDiscard,
   onUnpublish,
+  onRevertToDraft,
 }: {
   entry: ReviewEntry | null;
   accounts: ReviewAccount[];
@@ -35,6 +36,7 @@ export function JournalEditor({
   onSave: (input: JournalEdit, approve: boolean) => void;
   onDiscard: () => void;
   onUnpublish: () => void;
+  onRevertToDraft: () => void;
 }) {
   const fieldId = useId();
   const [input, setInput] = useState<JournalEdit>(
@@ -223,6 +225,11 @@ export function JournalEditor({
                 }}
               >
                 確認済にする
+              </Button>
+            )}
+            {entry?.status === "approved" && !grant && (
+              <Button type="button" variant="outline" onClick={onRevertToDraft}>
+                下書きに戻す
               </Button>
             )}
             {entry && !grant && (

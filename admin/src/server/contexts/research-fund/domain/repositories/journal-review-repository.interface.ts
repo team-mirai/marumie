@@ -19,4 +19,6 @@ export interface JournalReviewRepository {
   approveMany(bookId: string, entries: readonly ReviewEntry[]): Promise<void>;
   /** 公開中の仕訳を確認済に戻す（帳簿の公開範囲は変えない）。 */
   unpublish(bookId: string, entry: ReviewEntry): Promise<void>;
+  /** 確認済の支出の仕訳を下書きに戻す（支給は対象にしない）。 */
+  revertToDraft(bookId: string, entry: ReviewEntry): Promise<void>;
 }

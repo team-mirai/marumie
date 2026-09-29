@@ -9,6 +9,7 @@ describe("JournalEntry.transition", () => {
         const result = JournalEntry.transition(entry, nextStatus);
         if (
           (status === "draft" && nextStatus === "approved") ||
+          (status === "approved" && nextStatus === "draft") ||
           (status === "approved" && nextStatus === "published") ||
           (status === "published" && nextStatus === "approved")
         ) {

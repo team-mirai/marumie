@@ -17,7 +17,8 @@ type Mutation =
   | { type: "save"; id: string; updatedAt: string; input: JournalEdit; approve: boolean }
   | { type: "discard"; id: string; updatedAt: string }
   | { type: "approve-many"; targets: readonly { id: string; updatedAt: string }[] }
-  | { type: "unpublish"; id: string; updatedAt: string };
+  | { type: "unpublish"; id: string; updatedAt: string }
+  | { type: "revert-to-draft"; id: string; updatedAt: string };
 export async function mutateJournalReview(
   politicianId: string,
   bookId: string,
@@ -43,6 +44,8 @@ export async function mutateJournalReview(
       approved = await usecase.approveMany(bookId, mutation.targets);
     else if (mutation.type === "unpublish")
       ({ cacheWarning } = await usecase.unpublish(bookId, mutation.id, mutation.updatedAt));
+    else if (mutation.type === "revert-to-draft")
+      await usecase.revertToDraft(bookId, mutation.id, mutation.updatedAt);
     else throw new JournalReviewError("操作が不正です");
     revalidatePath("/(auth)", "layout");
     return { success: true as const, id, approved, cacheWarning };

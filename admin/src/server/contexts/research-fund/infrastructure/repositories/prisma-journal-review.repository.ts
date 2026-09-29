@@ -208,6 +208,16 @@ export class PrismaJournalReviewRepository implements JournalReviewRepository {
     if (result.count !== 1)
       throw new JournalReviewError("仕訳の状態が変わりました。画面を再読み込みしてください");
   }
+  // 下書きに戻すのは内容を変えないので状態だけを戻す。支給は下書きを経ない仕様なので、
+  // 支出の形式に限って照合する。
+  async revertToDraft(bookId: string, entry: ReviewEntry) {
+    const result = await this.prisma.researchFundJournalEntry.updateMany({
+      where: { ...guard(bookId, entry, ["approved"]), ...expenseWhere },
+      data: { status: "draft" },
+    });
+    if (result.count !== 1)
+      throw new JournalReviewError("仕訳が更新・公開されました。画面を再読み込みしてください");
+  }
   async discard(bookId: string, entry: ReviewEntry) {
     const result = await this.prisma.researchFundJournalEntry.deleteMany({
       where: guard(bookId, entry),
