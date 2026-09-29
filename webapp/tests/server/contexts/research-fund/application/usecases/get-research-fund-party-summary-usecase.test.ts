@@ -155,7 +155,7 @@ describe("GetResearchFundPartySummaryUsecase", () => {
     expect(data?.asOfDate).toBeNull();
   });
 
-  it("「◯◯時点」は公開中の議員のうち最も新しい日付を使う", async () => {
+  it("「◯◯更新」は公開中の議員のうち最も新しい日付を使う", async () => {
     const { usecase } = usecaseWith(
       party([
         publishedPolitician({ asOfDate: "2026-07-31" }),

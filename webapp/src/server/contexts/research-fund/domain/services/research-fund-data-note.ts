@@ -3,8 +3,6 @@ import type { ResearchFundMonthView } from "@/server/contexts/research-fund/doma
 interface DataNoteSource {
   /** 帳簿の説明文（details.dataNote）。未設定なら null */
   dataNote: string | null;
-  /** 科目マスタの費用の分類数 */
-  expenseCategoryCount: number;
   nextUpdateNote: string | null;
   monthly: readonly ResearchFundMonthView[];
   unused: number;
@@ -24,7 +22,7 @@ function scopeSentence(data: DataNoteSource): string {
   if (data.dataNote) return data.dataNote;
   const firstGranted = data.monthly.find((month) => month.granted > 0);
   const since = firstGranted ? `${monthLabel(firstGranted.month)}の当選以降、` : "";
-  return `${since}仕訳が完了した支出を掲載しています。費目はチームみらい独自の詳細区分${data.expenseCategoryCount}分類にマッピングし、使途等報告書で定められた法律上の区分にも切り替えて表示できます。`;
+  return `${since}仕訳が完了した支出を掲載しています。費目は使途等報告書で定められた法律上の区分に加えて、チームみらい独自の詳細区分で表示することができます。現時点では峰島侑也議員事務所のみの試験公開ですが、今後他の所属議員の調研費も公開予定です。`;
 }
 
 function updateSentence(data: DataNoteSource): string {

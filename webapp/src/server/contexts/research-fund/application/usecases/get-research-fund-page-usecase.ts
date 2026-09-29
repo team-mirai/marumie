@@ -58,7 +58,6 @@ export class GetResearchFundPageUsecase {
       policyComment: published.policyComment,
       dataNote: buildResearchFundDataNote({
         dataNote: details.dataNote,
-        expenseCategoryCount: published.expenseCategoryCount,
         nextUpdateNote: published.nextUpdateNote,
         monthly,
         unused: detailed.unused,

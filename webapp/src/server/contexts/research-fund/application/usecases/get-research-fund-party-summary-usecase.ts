@@ -121,7 +121,7 @@ function aggregate(
   return result.value;
 }
 
-/** 「2026.8.20時点」。公開中の議員のうち最も新しい as_of_date を代表に使う。 */
+/** 「2026.8.20更新」。公開中の議員のうち最も新しい as_of_date を代表に使う。 */
 function latestAsOfDate(politicians: readonly PublishedPoliticianResearchFund[]): string | null {
   const dates = politicians
     .filter((item) => item.rows.length > 0)

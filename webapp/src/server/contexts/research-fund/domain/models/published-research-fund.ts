@@ -55,7 +55,7 @@ export interface PublishedExpenditureGroup {
 export interface PublishedResearchFund {
   politician: { name: string; slug: string };
   financialYear: number;
-  /** 「2026.8.20時点」。未設定なら null */
+  /** 「2026.8.20更新」。未設定なら null */
   asOfDate: string | null;
   /** 「次回更新 11月ごろ」。未設定なら null */
   nextUpdateNote: string | null;
@@ -68,8 +68,6 @@ export interface PublishedResearchFund {
   /** 集計に渡す行（支給と支出）。 */
   rows: ResearchFundRow[];
   accounts: Record<string, PublishedAccount>;
-  /** 科目マスタの費用の分類数（法定区分が決まっている科目。下書き用の「要確認」は数えない） */
-  expenseCategoryCount: number;
   /** 明細に並べる支給と支出 */
   expenses: PublishedExpense[];
   groups: PublishedExpenditureGroup[];
@@ -83,7 +81,7 @@ export interface PublishedReceipt {
 /** 政党ページ A-6 が読む、議員1人分の published 射影。 */
 export interface PublishedPoliticianResearchFund {
   politician: { name: string; slug: string };
-  /** 「2026.8.20時点」。未設定なら null */
+  /** 「2026.8.20更新」。未設定なら null */
   asOfDate: string | null;
   /** 何月分まで公開したか（YYYY-MM-DD）。未設定なら null */
   publishedThrough: string | null;

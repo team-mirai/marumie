@@ -44,7 +44,7 @@ export default async function PoliticianPage({ params }: PoliticianPageProps) {
   const data = financialYear ? await loadResearchFundPage({ slug, financialYear }) : null;
   if (!data) notFound();
 
-  // 「2026.8.20時点」。未設定なら公開範囲の最終日で代用する。
+  // 「2026.8.20更新」。未設定なら公開範囲の最終日で代用する。
   const updatedAt = formatUpdatedAt(data.asOfDate ?? null);
   const hasHighlights = data.policyComment !== null || data.groups.length > 0;
 
@@ -56,7 +56,7 @@ export default async function PoliticianPage({ params }: PoliticianPageProps) {
         {hasHighlights && <ResearchFundHighlightsSection data={data} updatedAt={updatedAt} />}
         <TransparencySection
           title="調研費もまるごと公開。意味ある使い方か、検証できるように👀"
-          intro="議員一人ひとりに支給される調研費の原資は、大切な税金。だから、使わせていただいた分はしっかり成果を示し、使途も領収書まで含めてまるごと公開しています。チームみらいがなぜここまでオープンにするのか、"
+          intro="議員一人ひとりに支給される調研費の原資は、大切な税金。だから使わせていただいた分は1件ずつ公開し、その使用方針や主要な用途もわかりやすく伝えていくことが重要だと考えています。"
         />
         <ResearchFundMonthlySection data={data} updatedAt={updatedAt} />
         <ResearchFundExpensesSection data={data} updatedAt={updatedAt} />

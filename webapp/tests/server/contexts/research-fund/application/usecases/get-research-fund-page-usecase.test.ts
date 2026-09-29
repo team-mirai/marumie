@@ -33,7 +33,6 @@ function published(overrides: Partial<PublishedResearchFund> = {}): PublishedRes
       { date: "2026-03-11", accountKey: "printing-pr", amount: 99_000, type: "expense" },
     ],
     accounts,
-    expenseCategoryCount: 21,
     expenses: [
       {
         kind: "expense",

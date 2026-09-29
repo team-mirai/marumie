@@ -9,7 +9,6 @@ const monthly = Array.from({ length: 12 }, (_, index) => {
 function source(overrides: Partial<Parameters<typeof buildResearchFundDataNote>[0]> = {}) {
   return {
     dataNote: null,
-    expenseCategoryCount: 21,
     nextUpdateNote: "11月ごろ",
     monthly,
     unused: 4_790_000,
@@ -18,15 +17,9 @@ function source(overrides: Partial<Parameters<typeof buildResearchFundDataNote>[
 }
 
 describe("buildResearchFundDataNote", () => {
-  it("説明文が無ければ掲載範囲・分類数・次回更新・未使用額をデータから埋めた既定文にする", () => {
+  it("説明文が無ければ掲載範囲・次回更新・未使用額をデータから埋めた既定文にする", () => {
     expect(buildResearchFundDataNote(source())).toBe(
-      "2026年2月の当選以降、仕訳が完了した支出を掲載しています。費目はチームみらい独自の詳細区分21分類にマッピングし、使途等報告書で定められた法律上の区分にも切り替えて表示できます。更新は不定期で、次回は11月ごろの予定です。使わなかった分（7ヶ月分で479万円）は年末時点で確定し、国庫に返還します。",
-    );
-  });
-
-  it("分類数は科目マスタの数に従う", () => {
-    expect(buildResearchFundDataNote(source({ expenseCategoryCount: 22 }))).toContain(
-      "詳細区分22分類",
+      "2026年2月の当選以降、仕訳が完了した支出を掲載しています。費目は使途等報告書で定められた法律上の区分に加えて、チームみらい独自の詳細区分で表示することができます。現時点では峰島侑也議員事務所のみの試験公開ですが、今後他の所属議員の調研費も公開予定です。更新は不定期で、次回は11月ごろの予定です。使わなかった分（7ヶ月分で479万円）は年末時点で確定し、国庫に返還します。",
     );
   });
 
@@ -45,7 +38,7 @@ describe("buildResearchFundDataNote", () => {
       }),
     );
     expect(note).toBe(
-      "仕訳が完了した支出を掲載しています。費目はチームみらい独自の詳細区分21分類にマッピングし、使途等報告書で定められた法律上の区分にも切り替えて表示できます。更新は不定期です。使わなかった分（0万円）は年末時点で確定し、国庫に返還します。",
+      "仕訳が完了した支出を掲載しています。費目は使途等報告書で定められた法律上の区分に加えて、チームみらい独自の詳細区分で表示することができます。現時点では峰島侑也議員事務所のみの試験公開ですが、今後他の所属議員の調研費も公開予定です。更新は不定期です。使わなかった分（0万円）は年末時点で確定し、国庫に返還します。",
     );
   });
 });

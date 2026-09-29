@@ -24,7 +24,7 @@ export interface ResearchFundPartyPoliticianView {
 export interface ResearchFundPartySummaryData {
   organization: { slug: string; displayName: string };
   financialYear: number;
-  /** 「2026.8.20時点」。公開中の議員の as_of_date のうち最も新しいもの。未設定なら null */
+  /** 「2026.8.20更新」。公開中の議員の as_of_date のうち最も新しいもの。未設定なら null */
   asOfDate: string | null;
   /** SP の末尾に添える「2026年2月〜8月支給分」。公開中の議員全員分の範囲。公開月が無ければ null */
   grantPeriodLabel: string | null;
