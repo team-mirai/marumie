@@ -18,8 +18,14 @@ function setup(duplicates = 0) {
       count: jest.fn().mockResolvedValue(duplicates),
       create: jest.fn().mockResolvedValue({ id: BigInt("9007199254740993") }),
       findMany: jest.fn().mockResolvedValue([
-        { entryDate: new Date("2026-02-08T00:00:00.000Z") },
-        { entryDate: new Date("2026-03-01T00:00:00.000Z") },
+        {
+          entryDate: new Date("2026-02-08T00:00:00.000Z"),
+          lines: [{ amount: new Prisma.Decimal(750_000) }],
+        },
+        {
+          entryDate: new Date("2026-03-01T00:00:00.000Z"),
+          lines: [{ amount: new Prisma.Decimal(980_000) }],
+        },
       ]),
     },
     researchFundBook: {
@@ -51,12 +57,19 @@ test("帳簿から年度と議員の当選日を暦日で取り出す", async ()
   await expect(repository.book("1")).resolves.toBeNull();
 });
 
-test("登録済みの支給を年月で返す", async () => {
+test("登録済みの支給を年月と、調査研究費収入に計上した金額で返す", async () => {
   const { repository, tx } = setup();
-  await expect(repository.registeredMonths("1")).resolves.toEqual(["2026-02", "2026-03"]);
-  expect(tx.researchFundJournalEntry.findMany).toHaveBeenCalledWith(
-    expect.objectContaining({ where: { bookId: BigInt(1), source: "grant" } }),
-  );
+  await expect(repository.registeredGrants("1")).resolves.toEqual([
+    { month: "2026-02", amount: 750_000 },
+    { month: "2026-03", amount: 980_000 },
+  ]);
+  expect(tx.researchFundJournalEntry.findMany).toHaveBeenCalledWith({
+    where: { bookId: BigInt(1), source: "grant" },
+    select: {
+      entryDate: true,
+      lines: { where: { side: "credit", accountKey: "grant-income" }, select: { amount: true } },
+    },
+  });
 });
 
 test("同月の支給が無ければ確認済の支給仕訳を複式行つきで作る", async () => {

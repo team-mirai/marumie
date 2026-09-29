@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { clickUntil } from "../helpers/interactions";
 
-test("支給日を指定して確認済登録し、二重生成を拒み、仕訳一覧に並べる", async ({ page }) => {
+test("支給日と金額を指定して確認済登録し、二重生成を拒み、仕訳一覧に並べる", async ({ page }) => {
   const year = new Date().getFullYear();
   const currentMonth = new Date().getMonth() + 1;
   const name = `e2e-grant-${Date.now()}`;
@@ -28,19 +28,26 @@ test("支給日を指定して確認済登録し、二重生成を拒み、仕�
   await expect(page.getByText("下書きを経ずに「確認済」で作成されます")).toBeVisible();
 
   const january = page.getByRole("listitem").filter({ hasText: "1月" }).first();
-  await expect(january).toContainText("¥1,000,000");
+  // 金額の初期値は自動計算の額（当選日が1/1なので当選月も満額）
+  const januaryAmount = january.getByLabel("1月分の金額");
+  await expect(januaryAmount).toHaveValue("1000000");
   // 支給日の初期値はその月の1日（当選日が1/1なので当選月も1日）
   const januaryDate = january.getByLabel("1月分の支給日");
   await expect(januaryDate).toHaveValue(`${year}-01-01`);
   // 実際の入金日に合わせて変更して登録する
   await januaryDate.fill(`${year}-01-15`);
+  // 実際の振込額に合わせて金額も変更して登録する
+  await januaryAmount.fill("980000");
   await clickUntil(january.getByRole("button", { name: "この月を登録" }), (options) =>
     expect(january).toContainText("登録済み", options),
   );
   // 同月の二重生成は拒否される（登録済みの月にボタンは出ない）
   await expect(january.getByRole("button", { name: "この月を登録" })).toHaveCount(0);
   await page.reload();
-  await expect(page.getByRole("listitem").filter({ hasText: "1月" }).first()).toContainText("登録済み");
+  const registeredJanuary = page.getByRole("listitem").filter({ hasText: "1月" }).first();
+  await expect(registeredJanuary).toContainText("登録済み");
+  // 登録済みの月は入力した金額で表示される
+  await expect(registeredJanuary).toContainText("¥980,000");
   if (currentMonth < 12) {
     await expect(page.getByRole("listitem").filter({ hasText: "12月" }).first()).toContainText("未到来");
   }
@@ -51,7 +58,7 @@ test("支給日を指定して確認済登録し、二重生成を拒み、仕�
   await expect(grantRow).toContainText(`${year}.01.15`);
   await expect(grantRow).toContainText("確認済");
   await expect(grantRow).toContainText("支給");
-  await expect(grantRow).toContainText("1,000,000");
+  await expect(grantRow).toContainText("980,000");
 
   // 支給も選んで支給日だけを直せる（金額・項目名は変えられない）
   await grantRow.click();

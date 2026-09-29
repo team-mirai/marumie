@@ -7,10 +7,16 @@ export interface GrantBook {
   termStart: string;
 }
 
+export interface RegisteredGrant {
+  month: string;
+  /** 登録時に入力された金額。自動計算の額と異なることがある。 */
+  amount: number;
+}
+
 export interface GrantRepository {
   book(bookId: string): Promise<GrantBook | null>;
-  /** 支給として登録済みの年月（YYYY-MM）。重複は呼び出し側で吸収する。 */
-  registeredMonths(bookId: string): Promise<string[]>;
+  /** 支給として登録済みの年月（YYYY-MM）と登録した金額。重複は呼び出し側で吸収する。 */
+  registeredGrants(bookId: string): Promise<RegisteredGrant[]>;
   accounts(): Promise<ResearchFundAccount[]>;
   /** 同月の支給が既にあれば作成せず GrantRegistrationError を投げる。 */
   create(bookId: string, month: string, input: GrantWrite, userId: string): Promise<string>;

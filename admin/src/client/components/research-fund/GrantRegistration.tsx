@@ -20,7 +20,7 @@ function lastDayOf(month: string) {
 function noteOf(grant: ScheduledGrant, termStart: string) {
   if (grant.month === termStart.slice(0, 7))
     return `${termStart.replaceAll("-", ".")} 当選・初月分${grant.amount < 1_000_000 ? "（日割）" : ""}`;
-  return grant.status === "available" ? "振込を確認したら支給日を入れて登録" : "";
+  return grant.status === "available" ? "振込を確認したら支給日と金額を入れて登録" : "";
 }
 
 export function GrantRegistration({
@@ -37,13 +37,22 @@ export function GrantRegistration({
   const [pendingMonth, setPendingMonth] = useState<string | null>(null);
   // 支給日を変えた月だけ持つ。未入力の月は既定日（当選月は当選日、それ以外は1日）で登録する。
   const [entryDates, setEntryDates] = useState<Record<string, string>>({});
+  // 金額を変えた月だけ持つ。未入力の月は自動計算の額（当選月は日割）で登録する。
+  const [amounts, setAmounts] = useState<Record<string, string>>({});
   const [pending, startTransition] = useTransition();
 
-  function register(month: string, entryDate: string) {
+  function register(month: string, entryDate: string, amount: string) {
     setPendingMonth(month);
     startTransition(async () => {
       try {
-        const result = await registerGrant(target.politicianId, target.bookId, month, entryDate);
+        const result = await registerGrant(
+          target.politicianId,
+          target.bookId,
+          month,
+          entryDate,
+          // 空欄は 0 になりサーバー側の検証で弾かれる。
+          Number(amount),
+        );
         if (!result.success) {
           toast.error(result.error);
           return;
@@ -63,7 +72,7 @@ export function GrantRegistration({
       <PageHeader
         label="Grants"
         title="支給の登録"
-        description={`${target.name}・${target.year}年 — 毎月振り込まれる100万円を、支給日を指定して収入仕訳にします。`}
+        description={`${target.name}・${target.year}年 — 毎月振り込まれる調査研究費を、支給日と金額を指定して収入仕訳にします。`}
       />
       <Card className="mb-4 max-w-3xl">
         <CardContent className="flex flex-wrap items-center gap-x-8 gap-y-4 p-6">
@@ -73,7 +82,7 @@ export function GrantRegistration({
           </div>
           <div>
             <div className="text-xs text-muted-foreground">金額</div>
-            <div className="font-latin text-sm font-bold">¥1,000,000</div>
+            <div className="text-sm font-bold">月ごとに入力（初期値は100万円、当選月は日割）</div>
           </div>
           <div>
             <div className="text-xs text-muted-foreground">仕訳の型</div>
@@ -87,6 +96,7 @@ export function GrantRegistration({
             {grants.map((grant) => {
               const defaultDate = grantEntryDate(grant.month, termStart);
               const entryDate = entryDates[grant.month] ?? defaultDate;
+              const amount = amounts[grant.month] ?? String(grant.amount);
               return (
                 <li
                   key={grant.month}
@@ -95,9 +105,28 @@ export function GrantRegistration({
                   <span className="font-latin w-14 text-sm font-bold">
                     {Number(grant.month.slice(5, 7))}月
                   </span>
-                  <span className="font-latin w-28 text-[13px]">
-                    ¥{grant.amount.toLocaleString("ja-JP")}
-                  </span>
+                  {grant.status === "available" ? (
+                    <Input
+                      type="number"
+                      inputMode="numeric"
+                      aria-label={`${Number(grant.month.slice(5, 7))}月分の金額`}
+                      className="font-latin w-28 flex-none"
+                      value={amount}
+                      min={1}
+                      step={1}
+                      disabled={pending}
+                      onChange={(event) =>
+                        setAmounts((current) => ({
+                          ...current,
+                          [grant.month]: event.target.value,
+                        }))
+                      }
+                    />
+                  ) : (
+                    <span className="font-latin w-28 text-[13px]">
+                      ¥{grant.amount.toLocaleString("ja-JP")}
+                    </span>
+                  )}
                   {grant.status === "available" ? (
                     <Input
                       type="date"
@@ -130,7 +159,7 @@ export function GrantRegistration({
                     <Button
                       size="xs"
                       disabled={pending}
-                      onClick={() => register(grant.month, entryDate)}
+                      onClick={() => register(grant.month, entryDate, amount)}
                     >
                       {pending && pendingMonth === grant.month ? "登録中…" : "この月を登録"}
                     </Button>
@@ -148,7 +177,7 @@ export function GrantRegistration({
             </p>
           )}
           <p className="mt-3 text-xs text-muted-foreground">
-            支給日の初期値はその月の1日（当選月は当選日）です。実際の入金日に合わせて変更できます。
+            支給日の初期値はその月の1日（当選月は当選日）、金額の初期値は100万円（当選月は日割）です。実際の入金日・振込額に合わせて変更できます。
             登録した支給は下書きを経ずに「確認済」で作成されます（振込は機械的なため）。公開は公開画面から。
           </p>
         </CardContent>

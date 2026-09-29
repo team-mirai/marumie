@@ -29,12 +29,18 @@ export class PrismaGrantRepository implements GrantRepository {
       : null;
   }
 
-  async registeredMonths(bookId: string) {
+  async registeredGrants(bookId: string) {
     const rows = await this.prisma.researchFundJournalEntry.findMany({
       where: { bookId: BigInt(bookId), source: "grant" },
-      select: { entryDate: true },
+      select: {
+        entryDate: true,
+        lines: { where: { side: "credit", accountKey: "grant-income" }, select: { amount: true } },
+      },
     });
-    return rows.map((row) => row.entryDate.toISOString().slice(0, 7));
+    return rows.map((row) => ({
+      month: row.entryDate.toISOString().slice(0, 7),
+      amount: row.lines.reduce((sum, line) => sum + Number(line.amount), 0),
+    }));
   }
 
   async accounts() {

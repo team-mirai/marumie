@@ -4,13 +4,15 @@ const accounts = [
   { key: "grant-income", type: "income" as const },
   { key: "bank", type: "asset" as const },
 ];
-function setup(overrides: { termStart?: string; registeredMonths?: string[] } = {}) {
+function setup(
+  overrides: { termStart?: string; registeredGrants?: { month: string; amount: number }[] } = {},
+) {
   const repository = {
     book: jest.fn().mockResolvedValue({
       financialYear: 2026,
       termStart: overrides.termStart ?? "2026-02-08",
     }),
-    registeredMonths: jest.fn().mockResolvedValue(overrides.registeredMonths ?? []),
+    registeredGrants: jest.fn().mockResolvedValue(overrides.registeredGrants ?? []),
     accounts: jest.fn().mockResolvedValue(accounts),
     create: jest.fn().mockResolvedValue("10"),
   };
@@ -18,7 +20,7 @@ function setup(overrides: { termStart?: string; registeredMonths?: string[] } = 
 }
 
 test("当選月以降だけを並べ、当選月は日割・当月まで登録可能にする", async () => {
-  const { usecase } = setup({ registeredMonths: ["2026-02"] });
+  const { usecase } = setup({ registeredGrants: [{ month: "2026-02", amount: 750_000 }] });
   const { grants, termStart } = await usecase.list("1", "2026-09-10");
   expect(termStart).toBe("2026-02-08");
   expect(grants[0]).toEqual({ month: "2026-02", amount: 750_000, status: "registered" });
@@ -58,7 +60,7 @@ test("当選月は当選日を仕訳日にし、日割の金額で作る", async
 });
 
 test("同月の二重生成・未到来・年度外・不正な月は拒否する", async () => {
-  const registered = setup({ registeredMonths: ["2026-05"] });
+  const registered = setup({ registeredGrants: [{ month: "2026-05", amount: 1_000_000 }] });
   await expect(registered.usecase.register("1", "2026-05", "user", "2026-09-10")).rejects.toThrow(
     "すでに登録",
   );
@@ -123,7 +125,7 @@ test("当選月は当選日より前の支給日を拒否する", async () => {
 });
 
 test("登録済み・未到来の判定は支給日を変えても変わらない", async () => {
-  const registered = setup({ registeredMonths: ["2026-05"] });
+  const registered = setup({ registeredGrants: [{ month: "2026-05", amount: 1_000_000 }] });
   await expect(
     registered.usecase.register("1", "2026-05", "user", "2026-09-10", "2026-05-20"),
   ).rejects.toThrow("すでに登録");
@@ -133,4 +135,63 @@ test("登録済み・未到来の判定は支給日を変えても変わらな�
   ).rejects.toThrow("到来");
   expect(registered.repository.create).not.toHaveBeenCalled();
   expect(upcoming.repository.create).not.toHaveBeenCalled();
+});
+
+test("登録済みの月は、自動計算の額ではなく登録した金額で並べる", async () => {
+  const { usecase } = setup({ registeredGrants: [{ month: "2026-03", amount: 980_000 }] });
+  const { grants } = await usecase.list("1", "2026-09-10");
+  expect(grants.find((grant) => grant.month === "2026-03")).toEqual({
+    month: "2026-03",
+    amount: 980_000,
+    status: "registered",
+  });
+  // 未登録の月は自動計算の額のまま
+  expect(grants.find((grant) => grant.month === "2026-04")?.amount).toBe(1_000_000);
+});
+
+test("手入力の金額で収入仕訳を作る", async () => {
+  const { repository, usecase } = setup();
+  await usecase.register("1", "2026-02", "user", "2026-09-10", undefined, 733_333);
+  expect(repository.create.mock.calls[0][2]).toMatchObject({
+    entryDate: "2026-02-08",
+    amount: 733_333,
+    lines: [
+      { side: "debit", accountKey: "bank", amount: 733_333 },
+      { side: "credit", accountKey: "grant-income", amount: 733_333 },
+    ],
+  });
+});
+
+test("金額を変えずに登録すると、自動計算の額で作る", async () => {
+  const { repository, usecase } = setup();
+  await usecase.register("1", "2026-05", "user", "2026-09-10", "2026-05-01", 1_000_000);
+  await usecase.register("1", "2026-06", "user", "2026-09-10", "2026-06-01");
+  expect(repository.create.mock.calls[0][2]).toMatchObject({ amount: 1_000_000 });
+  expect(repository.create.mock.calls[1][2]).toMatchObject({ amount: 1_000_000 });
+});
+
+test("手入力の金額は仕訳の重複検知の hash にも反映される", async () => {
+  const { repository, usecase } = setup();
+  await usecase.register("1", "2026-05", "user", "2026-09-10", "2026-05-01", 1_000_000);
+  await usecase.register("1", "2026-05", "user", "2026-09-10", "2026-05-01", 980_000);
+  expect(repository.create.mock.calls[0][2].hash).not.toBe(repository.create.mock.calls[1][2].hash);
+});
+
+test.each([0, -1, 1.5, Number.NaN, Number.POSITIVE_INFINITY, "1000000" as unknown as number])(
+  "画面を経由しない不正な金額 %p を拒否する",
+  async (amount) => {
+    const { repository, usecase } = setup();
+    await expect(
+      usecase.register("1", "2026-05", "user", "2026-09-10", "2026-05-01", amount),
+    ).rejects.toThrow("1円以上の整数");
+    expect(repository.create).not.toHaveBeenCalled();
+  },
+);
+
+test("金額を変えても同月の二重登録は拒否する", async () => {
+  const registered = setup({ registeredGrants: [{ month: "2026-05", amount: 1_000_000 }] });
+  await expect(
+    registered.usecase.register("1", "2026-05", "user", "2026-09-10", "2026-05-01", 980_000),
+  ).rejects.toThrow("すでに登録");
+  expect(registered.repository.create).not.toHaveBeenCalled();
 });

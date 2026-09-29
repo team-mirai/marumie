@@ -13,6 +13,7 @@ export async function registerGrant(
   bookId: string,
   month: string,
   entryDate: string,
+  amount: number,
 ) {
   const user = await requireAuth();
   if (!(await requireJournalTarget(politicianId, bookId)))
@@ -24,6 +25,7 @@ export async function registerGrant(
       user.id,
       undefined,
       entryDate,
+      amount,
     );
     revalidatePath("/(auth)", "layout");
     return { success: true as const };

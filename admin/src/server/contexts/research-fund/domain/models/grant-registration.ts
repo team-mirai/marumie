@@ -69,6 +69,20 @@ export function validateGrantEntryDate(
   return { status: "valid", value: entryDate };
 }
 
+/**
+ * 手入力された支給額を検証する。実際の振込額は自動計算の額と一致しないことがあるため変更を許すが、
+ * 画面を経由しない呼び出しも同じ判定で弾くため、UI の min/step ではなくこの関数を唯一の根拠にする。
+ */
+export function validateGrantAmount(amount: unknown): ResearchFundResult<number> {
+  if (typeof amount !== "number" || !Number.isSafeInteger(amount) || amount < 1)
+    return invalidResearchFundResult(
+      "amount",
+      RF_ERROR_CODES.INVALID_AMOUNT,
+      "金額は1円以上の整数で指定してください",
+    );
+  return { status: "valid", value: amount };
+}
+
 /** 2月30日のような存在しない日付を弾く。UTC 固定で読むのでタイムゾーンに依存しない。 */
 function isRealCalendarDate(value: string): boolean {
   const date = new Date(`${value}T00:00:00.000Z`);

@@ -3,6 +3,7 @@ import {
   grantEntryDate,
   isGrantMonth,
   japanCalendarDate,
+  validateGrantAmount,
   validateGrantEntryDate,
 } from "@/server/contexts/research-fund/domain/models/grant-registration";
 
@@ -82,3 +83,16 @@ describe("validateGrantEntryDate", () => {
     expect(validateGrantEntryDate("2026-03", "2026-02-08", "2026-03-01").status).toBe("valid");
   });
 });
+
+test.each([1, 733_333, 1_000_000])("1円以上の整数の支給額 %p を受け付ける", (amount) => {
+  expect(validateGrantAmount(amount)).toEqual({ status: "valid", value: amount });
+});
+test.each([0, -1, 1.5, Number.NaN, Number.POSITIVE_INFINITY, "1000000", null, undefined])(
+  "不正な支給額 %p を拒否する",
+  (amount) => {
+    expect(validateGrantAmount(amount)).toMatchObject({
+      status: "invalid",
+      errors: [{ path: "amount", code: "RF_INVALID_AMOUNT" }],
+    });
+  },
+);
