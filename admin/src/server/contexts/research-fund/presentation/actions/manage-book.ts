@@ -6,6 +6,10 @@ import { requireAuth } from "@/server/contexts/auth/presentation/loaders/require
 import { ManageBookUsecase } from "@/server/contexts/research-fund/application/usecases/manage-book-usecase";
 import { PrismaBookRepository } from "@/server/contexts/research-fund/infrastructure/repositories/prisma-book.repository";
 import { prisma } from "@/server/contexts/shared/infrastructure/prisma";
+import { WebappCacheInvalidator } from "@/server/contexts/shared/infrastructure/services/webapp-cache-invalidator";
+function usecase() {
+  return new ManageBookUsecase(new PrismaBookRepository(prisma), new WebappCacheInvalidator());
+}
 function publicErrorMessage(error: unknown, fallback: string): string {
   if (!(error instanceof BookError)) return fallback;
   switch (error.code) {
@@ -27,7 +31,7 @@ function publicErrorMessage(error: unknown, fallback: string): string {
 export async function createBook(politicianId: string, year: number) {
   await requireAuth();
   try {
-    await new ManageBookUsecase(new PrismaBookRepository(prisma)).create(politicianId, year);
+    await usecase().create(politicianId, year);
     revalidatePath("/(auth)", "layout");
     return { success: true as const };
   } catch (error) {
@@ -40,13 +44,9 @@ export async function createBook(politicianId: string, year: number) {
 export async function updateBook(politicianId: string, bookId: string, input: BookMetadata) {
   await requireAuth();
   try {
-    await new ManageBookUsecase(new PrismaBookRepository(prisma)).update(
-      politicianId,
-      bookId,
-      input,
-    );
+    const { cacheWarning } = await usecase().update(politicianId, bookId, input);
     revalidatePath("/(auth)", "layout");
-    return { success: true as const };
+    return { success: true as const, cacheWarning };
   } catch (error) {
     return {
       success: false as const,

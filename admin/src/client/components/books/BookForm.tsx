@@ -43,6 +43,8 @@ export function BookForm({
             return;
           }
           toast.success(book ? "帳簿情報を保存しました" : "帳簿を作成しました");
+          if ("cacheWarning" in result && result.cacheWarning)
+            toast.warning(`保存しましたが、まる見えの更新に失敗しました: ${result.cacheWarning}`);
           router.refresh();
         } catch {
           const message = "保存に失敗しました。もう一度お試しください";

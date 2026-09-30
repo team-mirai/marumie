@@ -96,6 +96,10 @@ export function ExpenditureGroupForm({
           return;
         }
         toast.success(group ? "支出群を保存しました" : "支出群を作成しました");
+        if (result.cacheWarning)
+          toast.warning(
+            `${group ? "保存" : "作成"}しましたが、まる見えの更新に失敗しました: ${result.cacheWarning}`,
+          );
         router.push(listPath);
         router.refresh();
       } catch {

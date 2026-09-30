@@ -9,6 +9,7 @@ import {
   type ExpenditureGroupWrite,
 } from "@/server/contexts/research-fund/domain/models/expenditure-group";
 import type { ExpenditureGroupRepository } from "@/server/contexts/research-fund/domain/repositories/expenditure-group-repository.interface";
+import type { ICacheInvalidator } from "@/server/contexts/shared/domain/services/cache-invalidator.interface";
 import { aggregateLinkedEntries } from "@/shared/research-fund/expenditure-group";
 
 const MAX_POLICY_COMMENT_LENGTH = 2000;
@@ -18,7 +19,10 @@ function validateId(id: string) {
 }
 
 export class ManageExpenditureGroupsUsecase {
-  constructor(private repository: ExpenditureGroupRepository) {}
+  constructor(
+    private repository: ExpenditureGroupRepository,
+    private cacheInvalidator: ICacheInvalidator,
+  ) {}
 
   /** 一覧画面。金額・件数・期間は紐づけた仕訳から自動集計する */
   async list(bookId: string) {
@@ -63,6 +67,7 @@ export class ManageExpenditureGroupsUsecase {
         `活用方針は${MAX_POLICY_COMMENT_LENGTH}文字以内で入力してください`,
       );
     await this.repository.savePolicyComment(bookId, trimmed);
+    return { cacheWarning: await this.invalidateWebappCache() };
   }
 
   /** 新規作成なら作った支出群の ID を、編集なら渡された ID を返す */
@@ -70,15 +75,17 @@ export class ManageExpenditureGroupsUsecase {
     validateId(bookId);
     if (groupId !== null) validateId(groupId);
     const write = await this.prepare(bookId, groupId, input);
-    if (groupId === null) return this.repository.create(bookId, write);
-    await this.repository.update(bookId, groupId, write);
-    return groupId;
+    let id = groupId;
+    if (id === null) id = await this.repository.create(bookId, write);
+    else await this.repository.update(bookId, id, write);
+    return { id, cacheWarning: await this.invalidateWebappCache() };
   }
 
   async remove(bookId: string, groupId: string) {
     validateId(bookId);
     validateId(groupId);
     await this.repository.remove(bookId, groupId);
+    return { cacheWarning: await this.invalidateWebappCache() };
   }
 
   /** 一覧に出ている支出群を過不足なく、表示したい順に渡す */
@@ -87,8 +94,24 @@ export class ManageExpenditureGroupsUsecase {
     for (const groupId of groupIds) validateId(groupId);
     if (new Set(groupIds).size !== groupIds.length)
       throw new ExpenditureGroupError("並び順の指定が重複しています");
-    if (groupIds.length === 0) return;
+    if (groupIds.length === 0) return { cacheWarning: null };
     await this.repository.reorder(bookId, groupIds);
+    return { cacheWarning: await this.invalidateWebappCache() };
+  }
+
+  /**
+   * 用途と活用方針は公開ページにそのまま出るので、保存したら webapp のキャッシュを消す。
+   * 保存自体は確定しているので、キャッシュ無効化の失敗は警告として返す（仕訳の公開と同じ扱い）。
+   */
+  private async invalidateWebappCache(): Promise<string | null> {
+    try {
+      await this.cacheInvalidator.invalidateWebappCache();
+      return null;
+    } catch (error) {
+      return error instanceof Error
+        ? error.message
+        : "ウェブアプリのキャッシュを更新できませんでした";
+    }
   }
 
   private async prepare(

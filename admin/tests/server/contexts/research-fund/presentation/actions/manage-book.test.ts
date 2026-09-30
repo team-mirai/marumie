@@ -13,12 +13,26 @@ beforeEach(() => jest.clearAllMocks());
 afterEach(() => jest.restoreAllMocks());
 
 describe.each([
-  { operation: "create" as const, run: () => createBook("1", 2026), fallback: "作成に失敗しました" },
-  { operation: "update" as const, run: () => updateBook("1", "2", metadata), fallback: "保存に失敗しました" },
-])("$operation", ({ operation, run, fallback }) => {
+  {
+    operation: "create" as const,
+    run: () => createBook("1", 2026),
+    fallback: "作成に失敗しました",
+    resolved: undefined,
+    success: { success: true },
+  },
+  {
+    operation: "update" as const,
+    run: () => updateBook("1", "2", metadata),
+    fallback: "保存に失敗しました",
+    resolved: { cacheWarning: "refresh failed" },
+    success: { success: true, cacheWarning: "refresh failed" },
+  },
+])("$operation", ({ operation, run, fallback, resolved, success }) => {
   test("認証後の成功時に帳簿一覧を再検証する", async () => {
-    const execute = jest.spyOn(ManageBookUsecase.prototype, operation).mockResolvedValue();
-    await expect(run()).resolves.toEqual({ success: true });
+    const execute = jest
+      .spyOn(ManageBookUsecase.prototype, operation)
+      .mockResolvedValue(resolved as never);
+    await expect(run()).resolves.toEqual(success);
     expect(requireAuth).toHaveBeenCalledTimes(1);
     expect(execute).toHaveBeenCalledTimes(1);
     expect(revalidatePath).toHaveBeenCalledWith("/(auth)", "layout");

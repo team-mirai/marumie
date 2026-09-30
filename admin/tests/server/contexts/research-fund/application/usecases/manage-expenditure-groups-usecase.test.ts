@@ -20,7 +20,12 @@ function setup() {
   repository.book.mockResolvedValue({ policyComment: "方針" });
   repository.list.mockResolvedValue([]);
   repository.entries.mockResolvedValue([]);
-  return { repository, usecase: new ManageExpenditureGroupsUsecase(repository) };
+  const cacheInvalidator = { invalidateWebappCache: jest.fn().mockResolvedValue(undefined) };
+  return {
+    repository,
+    cacheInvalidator,
+    usecase: new ManageExpenditureGroupsUsecase(repository, cacheInvalidator),
+  };
 }
 
 function entry(id: string, entryDate: string, amount: number, groupId: string | null = null): LinkableEntry {
@@ -114,7 +119,7 @@ test("新規作成は整えた入力をリポジトリに渡し、採番され�
       ],
       entryIds: ["10", "10"],
     }),
-  ).resolves.toBe("7");
+  ).resolves.toEqual({ id: "7", cacheWarning: null });
   expect(repository.create).toHaveBeenCalledWith("3", {
     title: "相棒",
     description: "説明",
@@ -129,7 +134,10 @@ test("新規作成は整えた入力をリポジトリに渡し、採番され�
 test("編集は渡されたIDで更新し、そのIDを返す", async () => {
   const { repository, usecase } = setup();
   repository.entries.mockResolvedValue([entry("10", "2026-05-14", 3000, "1")]);
-  await expect(usecase.save("3", "1", { ...edit, entryIds: ["10"] })).resolves.toBe("1");
+  await expect(usecase.save("3", "1", { ...edit, entryIds: ["10"] })).resolves.toEqual({
+    id: "1",
+    cacheWarning: null,
+  });
   expect(repository.update).toHaveBeenCalledWith("3", "1", expect.objectContaining({ entryIds: ["10"] }));
   expect(repository.create).not.toHaveBeenCalled();
 });
@@ -220,4 +228,44 @@ test.each(["", "0", "-1", "abc"])("不正なIDではリポジトリを呼ばな�
   expect(repository.savePolicyComment).not.toHaveBeenCalled();
   expect(repository.remove).not.toHaveBeenCalled();
   expect(repository.reorder).not.toHaveBeenCalled();
+});
+
+describe("公開ページに出る内容を保存したら webapp のキャッシュを無効化する", () => {
+  test.each([
+    ["活用方針の保存", (u: ManageExpenditureGroupsUsecase) => u.savePolicyComment("3", "方針")],
+    ["用途の追加", (u: ManageExpenditureGroupsUsecase) => u.save("3", null, edit)],
+    ["用途の編集", (u: ManageExpenditureGroupsUsecase) => u.save("3", "1", edit)],
+    ["用途の削除", (u: ManageExpenditureGroupsUsecase) => u.remove("3", "1")],
+    ["用途の並べ替え", (u: ManageExpenditureGroupsUsecase) => u.reorder("3", ["2", "1"])],
+  ])("%s", async (_, run) => {
+    const { repository, cacheInvalidator, usecase } = setup();
+    repository.create.mockResolvedValue("7");
+    await expect(run(usecase)).resolves.toMatchObject({ cacheWarning: null });
+    expect(cacheInvalidator.invalidateWebappCache).toHaveBeenCalledTimes(1);
+  });
+
+  test("無効化に失敗しても保存は成功扱いにし、警告を返す", async () => {
+    const { repository, cacheInvalidator, usecase } = setup();
+    cacheInvalidator.invalidateWebappCache.mockRejectedValue(new Error("refresh failed"));
+    await expect(usecase.savePolicyComment("3", "方針")).resolves.toEqual({
+      cacheWarning: "refresh failed",
+    });
+    expect(repository.savePolicyComment).toHaveBeenCalledWith("3", "方針");
+    cacheInvalidator.invalidateWebappCache.mockRejectedValue("unknown");
+    await expect(usecase.remove("3", "1")).resolves.toEqual({
+      cacheWarning: "ウェブアプリのキャッシュを更新できませんでした",
+    });
+  });
+
+  test("保存に失敗したときや並べ替える支出群が無いときは無効化しない", async () => {
+    const { repository, cacheInvalidator, usecase } = setup();
+    await expect(usecase.savePolicyComment("3", "あ".repeat(2001))).rejects.toThrow("活用方針");
+    await expect(usecase.save("3", null, { ...edit, entryIds: ["99"] })).rejects.toThrow("この帳簿");
+    await expect(usecase.remove("invalid", "1")).rejects.toThrow("ID");
+    await expect(usecase.reorder("3", ["1", "1"])).rejects.toThrow("重複");
+    repository.update.mockRejectedValue(new Error("DB error"));
+    await expect(usecase.save("3", "1", edit)).rejects.toThrow("DB error");
+    await expect(usecase.reorder("3", [])).resolves.toEqual({ cacheWarning: null });
+    expect(cacheInvalidator.invalidateWebappCache).not.toHaveBeenCalled();
+  });
 });

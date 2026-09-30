@@ -3,7 +3,8 @@ import type { BookMetadata } from "@/server/contexts/research-fund/domain/models
 const metadata = { asOfDate: "2026-08-20", nextUpdateNote: " 11月ごろ ", policyComment: " 方針 " };
 function setup() {
   const repository = { list: jest.fn(), create: jest.fn(), update: jest.fn() };
-  return { repository, usecase: new ManageBookUsecase(repository) };
+  const cacheInvalidator = { invalidateWebappCache: jest.fn().mockResolvedValue(undefined) };
+  return { repository, cacheInvalidator, usecase: new ManageBookUsecase(repository, cacheInvalidator) };
 }
 test.each([0, 1899, 10000, 2026.5, NaN])("不正な年度 %s は保存しない", async (year) => {
   const { repository, usecase } = setup();
@@ -76,4 +77,28 @@ test("集計できない金額があれば誤った累計を返さずエラー�
     },
   ]);
   await expect(usecase.list("1")).rejects.toThrow("金額は安全な範囲の0以上の整数円");
+});
+
+test("帳簿情報を保存したら webapp のキャッシュを無効化する", async () => {
+  const { cacheInvalidator, usecase } = setup();
+  await expect(usecase.update("1", "2", metadata)).resolves.toEqual({ cacheWarning: null });
+  expect(cacheInvalidator.invalidateWebappCache).toHaveBeenCalledTimes(1);
+});
+
+test("キャッシュの無効化に失敗しても帳簿情報の保存は成功扱いにし、警告を返す", async () => {
+  const { repository, cacheInvalidator, usecase } = setup();
+  cacheInvalidator.invalidateWebappCache.mockRejectedValue(new Error("refresh failed"));
+  await expect(usecase.update("1", "2", metadata)).resolves.toEqual({
+    cacheWarning: "refresh failed",
+  });
+  expect(repository.update).toHaveBeenCalled();
+});
+
+test("帳簿情報の保存に失敗したときや帳簿を作成しただけではキャッシュを無効化しない", async () => {
+  const { repository, cacheInvalidator, usecase } = setup();
+  await expect(usecase.update("1", "2", { ...metadata, asOfDate: "invalid" })).rejects.toThrow("日付");
+  repository.update.mockRejectedValue(new Error("帳簿の保存に失敗しました"));
+  await expect(usecase.update("1", "2", metadata)).rejects.toThrow("帳簿の保存に失敗しました");
+  await usecase.create("1", 2026);
+  expect(cacheInvalidator.invalidateWebappCache).not.toHaveBeenCalled();
 });

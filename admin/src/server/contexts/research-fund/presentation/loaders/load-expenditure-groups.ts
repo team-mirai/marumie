@@ -5,9 +5,13 @@ import { ExpenditureGroupError } from "@/server/contexts/research-fund/domain/mo
 import { PrismaExpenditureGroupRepository } from "@/server/contexts/research-fund/infrastructure/repositories/prisma-expenditure-group.repository";
 import { requireJournalTarget } from "@/server/contexts/research-fund/presentation/loaders/load-journal-review";
 import { prisma } from "@/server/contexts/shared/infrastructure/prisma";
+import { WebappCacheInvalidator } from "@/server/contexts/shared/infrastructure/services/webapp-cache-invalidator";
 
 function usecase() {
-  return new ManageExpenditureGroupsUsecase(new PrismaExpenditureGroupRepository(prisma));
+  return new ManageExpenditureGroupsUsecase(
+    new PrismaExpenditureGroupRepository(prisma),
+    new WebappCacheInvalidator(),
+  );
 }
 
 export async function loadExpenditureGroups(politicianId: string, bookId: string) {

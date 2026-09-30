@@ -10,6 +10,14 @@ import {
 import { PrismaExpenditureGroupRepository } from "@/server/contexts/research-fund/infrastructure/repositories/prisma-expenditure-group.repository";
 import { requireJournalTarget } from "@/server/contexts/research-fund/presentation/loaders/load-journal-review";
 import { prisma } from "@/server/contexts/shared/infrastructure/prisma";
+import { WebappCacheInvalidator } from "@/server/contexts/shared/infrastructure/services/webapp-cache-invalidator";
+
+function usecase() {
+  return new ManageExpenditureGroupsUsecase(
+    new PrismaExpenditureGroupRepository(prisma),
+    new WebappCacheInvalidator(),
+  );
+}
 
 function failure(error: unknown, fallback: string) {
   return {
@@ -23,11 +31,9 @@ export async function saveUsagePolicy(politicianId: string, bookId: string, poli
   if (!(await requireJournalTarget(politicianId, bookId)))
     return { success: false as const, error: "現在の対象帳簿を選択し直してください" };
   try {
-    await new ManageExpenditureGroupsUsecase(
-      new PrismaExpenditureGroupRepository(prisma),
-    ).savePolicyComment(bookId, policyComment);
+    const { cacheWarning } = await usecase().savePolicyComment(bookId, policyComment);
     revalidatePath("/(auth)", "layout");
-    return { success: true as const };
+    return { success: true as const, cacheWarning };
   } catch (error) {
     return failure(error, "活用方針の保存に失敗しました");
   }
@@ -43,11 +49,9 @@ export async function saveExpenditureGroup(
   if (!(await requireJournalTarget(politicianId, bookId)))
     return { success: false as const, error: "現在の対象帳簿を選択し直してください" };
   try {
-    const id = await new ManageExpenditureGroupsUsecase(
-      new PrismaExpenditureGroupRepository(prisma),
-    ).save(bookId, groupId, input);
+    const { id, cacheWarning } = await usecase().save(bookId, groupId, input);
     revalidatePath("/(auth)", "layout");
-    return { success: true as const, id };
+    return { success: true as const, id, cacheWarning };
   } catch (error) {
     return failure(error, "支出群の保存に失敗しました");
   }
@@ -62,12 +66,9 @@ export async function deleteExpenditureGroup(
   if (!(await requireJournalTarget(politicianId, bookId)))
     return { success: false as const, error: "現在の対象帳簿を選択し直してください" };
   try {
-    await new ManageExpenditureGroupsUsecase(new PrismaExpenditureGroupRepository(prisma)).remove(
-      bookId,
-      groupId,
-    );
+    const { cacheWarning } = await usecase().remove(bookId, groupId);
     revalidatePath("/(auth)", "layout");
-    return { success: true as const };
+    return { success: true as const, cacheWarning };
   } catch (error) {
     return failure(error, "支出群の削除に失敗しました");
   }
@@ -83,12 +84,9 @@ export async function reorderExpenditureGroups(
   if (!(await requireJournalTarget(politicianId, bookId)))
     return { success: false as const, error: "現在の対象帳簿を選択し直してください" };
   try {
-    await new ManageExpenditureGroupsUsecase(new PrismaExpenditureGroupRepository(prisma)).reorder(
-      bookId,
-      groupIds,
-    );
+    const { cacheWarning } = await usecase().reorder(bookId, groupIds);
     revalidatePath("/(auth)", "layout");
-    return { success: true as const };
+    return { success: true as const, cacheWarning };
   } catch (error) {
     return failure(error, "並べ替えに失敗しました");
   }

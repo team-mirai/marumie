@@ -38,6 +38,8 @@ export function ExpenditureGroupList({
           return;
         }
         toast.success("活用方針を保存しました");
+        if (result.cacheWarning)
+          toast.warning(`保存しましたが、まる見えの更新に失敗しました: ${result.cacheWarning}`);
         router.refresh();
       } catch {
         toast.error("通信に失敗しました。再度お試しください");
@@ -62,6 +64,8 @@ export function ExpenditureGroupList({
           toast.error(result.error);
           return;
         }
+        if (result.cacheWarning)
+          toast.warning(`並べ替えましたが、まる見えの更新に失敗しました: ${result.cacheWarning}`);
         router.refresh();
       } catch {
         toast.error("通信に失敗しました。再度お試しください");

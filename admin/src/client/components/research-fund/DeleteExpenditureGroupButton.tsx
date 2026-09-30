@@ -38,6 +38,8 @@ export function DeleteExpenditureGroupButton({
           return;
         }
         toast.success("支出群を削除しました");
+        if (result.cacheWarning)
+          toast.warning(`削除しましたが、まる見えの更新に失敗しました: ${result.cacheWarning}`);
         setOpen(false);
         router.push(
           `/politicians/${target.politicianId}/books/${target.bookId}/expenditure-groups`,
