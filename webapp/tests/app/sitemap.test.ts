@@ -45,15 +45,18 @@ describe("sitemap", () => {
 
     expect(urls).toContain(`${BASE_URL}/p/sample-taro/2025`);
     expect(urls).toContain(`${BASE_URL}/p/sample-taro/2026`);
+    expect(urls).toContain(`${BASE_URL}/p/sample-taro/2025/transactions`);
+    expect(urls).toContain(`${BASE_URL}/p/sample-taro/2026/transactions`);
   });
 
-  it("政治団体のページは従来どおり列挙する", async () => {
+  it("政治団体は年度ごとのトップページと全件ページを列挙し、リダイレクトするだけの URL は出さない", async () => {
     const urls = (await sitemap()).map((entry) => entry.url);
 
     expect(urls).toEqual([
-      BASE_URL,
-      `${BASE_URL}/o/team-mirai`,
-      `${BASE_URL}/o/team-mirai/transactions`,
+      `${BASE_URL}/o/team-mirai/2025`,
+      `${BASE_URL}/o/team-mirai/2025/transactions`,
+      `${BASE_URL}/o/team-mirai/2026`,
+      `${BASE_URL}/o/team-mirai/2026/transactions`,
     ]);
   });
 
@@ -72,6 +75,6 @@ describe("sitemap", () => {
     const urls = (await sitemap()).map((entry) => entry.url);
 
     expect(urls.filter((url) => url.includes("/p/"))).toEqual([]);
-    expect(urls).toContain(`${BASE_URL}/o/team-mirai`);
+    expect(urls).toContain(`${BASE_URL}/o/team-mirai/2026`);
   });
 });
