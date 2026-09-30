@@ -8,6 +8,13 @@ describe("getSankeyHorizontalMargin", () => {
     expect(margin).toBe(122);
   });
 
+  it("デスクトップで両端を小項目の文字サイズ（11px）にしたとき、1行7文字のラベルが収まる余白を返す", () => {
+    const margin = getSankeyHorizontalMargin(16, 11, 7);
+
+    expect(margin).toBeGreaterThanOrEqual(16 + 11 * 7);
+    expect(margin).toBe(97);
+  });
+
   it("SP（7px・ノードから4px）で1行7文字のラベルが収まる余白を返す", () => {
     const margin = getSankeyHorizontalMargin(4, 7, 7);
 

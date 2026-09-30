@@ -42,6 +42,7 @@ const DIMENSIONS = {
   FONT_SIZE_MOBILE_PX: 7,
   FONT_SIZE_DESKTOP: "14.5px",
   FONT_SIZE_MOBILE: "7px",
+  FONT_SIZE_SUB_DESKTOP_PX: 11,
   FONT_SIZE_SUB_DESKTOP: "11px",
   FONT_SIZE_SUB_MOBILE_PX: 6,
   FONT_SIZE_SUB_MOBILE: "6px",
@@ -78,7 +79,12 @@ const CHART_CONFIG = {
     DIMENSIONS.FONT_SIZE_MOBILE_PX,
     TEXT_CONFIG.MAX_CHARS_PER_LINE,
   ),
-  // 両端が小項目と同じ文字サイズのとき（compactMobileLabels）の SP の余白
+  // 両端が小項目と同じ文字サイズのとき（compactEdgeLabels）の余白
+  MARGIN_HORIZONTAL_DESKTOP_COMPACT: getSankeyHorizontalMargin(
+    DIMENSIONS.LABEL_OFFSET_DESKTOP,
+    DIMENSIONS.FONT_SIZE_SUB_DESKTOP_PX,
+    TEXT_CONFIG.MAX_CHARS_PER_LINE,
+  ),
   MARGIN_HORIZONTAL_MOBILE_COMPACT: getSankeyHorizontalMargin(
     DIMENSIONS.LABEL_OFFSET_MOBILE,
     DIMENSIONS.FONT_SIZE_SUB_MOBILE_PX,
@@ -103,8 +109,8 @@ const MOBILE_FIGURE_TEXT = {
   COMPACT: { FONT_SIZE: "7px", TSPAN_DY: 9, TOP_OFFSET: 11 },
 } as const;
 
-/** 両端（大項目）のラベルも SP で小項目と同じ文字サイズにするか。列の少ない図で文字が目立ちすぎないようにする。 */
-const CompactMobileLabelsContext = createContext(false);
+/** 両端（大項目）のラベルも小項目と同じ文字サイズにするか。列の少ない図で文字が目立ちすぎないようにする。 */
+const CompactEdgeLabelsContext = createContext(false);
 
 interface SankeyNodeWithPosition {
   id: string;
@@ -126,10 +132,10 @@ interface SankeyChartProps {
   /** 図の詳細を説明する読み上げ用テキスト。ariaLabel と食い違わないよう合わせて差し替える。 */
   ariaDescription?: string;
   /**
-   * SP で両端のノード名を小項目と同じ文字サイズにし、割合・合計もそれに合わせて小さくする。
+   * 両端のノード名を小項目と同じ文字サイズにする（デスクトップ・SP とも）。SP では割合・合計もそれに合わせて小さくする。
    * 小項目の列が無い（両端が大項目になる）図で、文字が帯より目立たないようにするために使う。
    */
-  compactMobileLabels?: boolean;
+  compactEdgeLabels?: boolean;
 }
 
 const getNodeWidth = (nodeType: string | undefined, isMobile: boolean) => {
@@ -286,10 +292,10 @@ const renderTotalNodeLabels = (
   _boxColor: string,
   percentageY: number,
   isMobile: boolean,
-  compactMobileLabels: boolean,
+  compactEdgeLabels: boolean,
 ) => {
   const elements = [];
-  const mobileText = compactMobileLabels ? MOBILE_FIGURE_TEXT.COMPACT : MOBILE_FIGURE_TEXT.REGULAR;
+  const mobileText = compactEdgeLabels ? MOBILE_FIGURE_TEXT.COMPACT : MOBILE_FIGURE_TEXT.REGULAR;
 
   // 上のラベル：「収入支出\n100%」
   elements.push(
@@ -392,7 +398,7 @@ const renderPercentageLabel = (
   boxColor: string,
   percentageY: number,
   isMobile: boolean,
-  compactMobileLabels: boolean,
+  compactEdgeLabels: boolean,
   getPercentageTextColor: (nodeLabel?: string, boxColor?: string) => string,
 ) => {
   if (!percentageText) {
@@ -412,7 +418,7 @@ const renderPercentageLabel = (
       fontSize={
         !isMobile
           ? "14.5px"
-          : compactMobileLabels
+          : compactEdgeLabels
             ? MOBILE_FIGURE_TEXT.COMPACT.FONT_SIZE
             : MOBILE_FIGURE_TEXT.REGULAR.FONT_SIZE
       }
@@ -428,15 +434,15 @@ const renderPrimaryLabel = (
   x: number,
   textAnchor: "start" | "middle" | "end" | "inherit",
   isMobile: boolean,
-  compactMobileLabels: boolean,
+  compactEdgeLabels: boolean,
 ) => {
   const label = node.label || node.id;
   const isSubcategory = node.nodeType === "income-sub" || node.nodeType === "expense-sub";
   // 文字サイズ・行間だけ小項目にそろえる（1行の文字数＝折り返しは大項目のまま）
-  const useSubTextSize = isSubcategory || (isMobile && compactMobileLabels);
+  const useSubTextSize = isSubcategory || compactEdgeLabels;
 
   const fontSize = !isMobile
-    ? isSubcategory
+    ? useSubTextSize
       ? DIMENSIONS.FONT_SIZE_SUB_DESKTOP
       : DIMENSIONS.FONT_SIZE_DESKTOP
     : useSubTextSize
@@ -500,7 +506,7 @@ const renderPrimaryLabel = (
 // カスタムラベルレイヤー（プライマリ + セカンダリ）
 const CustomLabelsLayer = ({ nodes }: { nodes: readonly SankeyNodeWithPosition[] }) => {
   const isMobile = useMobileDetection();
-  const compactMobileLabels = useContext(CompactMobileLabelsContext);
+  const compactEdgeLabels = useContext(CompactEdgeLabelsContext);
   const { getNodeColor, getPercentageTextColor } = useNodeColors();
 
   // 全体の合計値を計算（合計ノードの値を使用）
@@ -524,7 +530,7 @@ const CustomLabelsLayer = ({ nodes }: { nodes: readonly SankeyNodeWithPosition[]
 
         if (node.nodeType === "total") {
           elements.push(
-            ...renderTotalNodeLabels(node, boxColor, percentageY, isMobile, compactMobileLabels),
+            ...renderTotalNodeLabels(node, boxColor, percentageY, isMobile, compactEdgeLabels),
           );
         } else if (percentageText) {
           const percentageLabel = renderPercentageLabel(
@@ -533,7 +539,7 @@ const CustomLabelsLayer = ({ nodes }: { nodes: readonly SankeyNodeWithPosition[]
             boxColor,
             percentageY,
             isMobile,
-            compactMobileLabels,
+            compactEdgeLabels,
             getPercentageTextColor,
           );
           if (percentageLabel) {
@@ -542,7 +548,7 @@ const CustomLabelsLayer = ({ nodes }: { nodes: readonly SankeyNodeWithPosition[]
         }
 
         if (node.nodeType !== "total") {
-          elements.push(renderPrimaryLabel(node, x, textAnchor, isMobile, compactMobileLabels));
+          elements.push(renderPrimaryLabel(node, x, textAnchor, isMobile, compactEdgeLabels));
         }
 
         return elements;
@@ -555,7 +561,7 @@ export default function SankeyChart({
   data,
   ariaLabel = "政治資金の収支フロー図",
   ariaDescription = "政治資金の収入から支出へのお金の流れを示すサンキーダイアグラムです。",
-  compactMobileLabels = false,
+  compactEdgeLabels = false,
 }: SankeyChartProps) {
   const isMobile = useMobileDetection();
   const { getNodeColor } = useNodeColors();
@@ -596,8 +602,10 @@ export default function SankeyChart({
   };
 
   const horizontalMargin = !isMobile
-    ? CHART_CONFIG.MARGIN_HORIZONTAL_DESKTOP
-    : compactMobileLabels
+    ? compactEdgeLabels
+      ? CHART_CONFIG.MARGIN_HORIZONTAL_DESKTOP_COMPACT
+      : CHART_CONFIG.MARGIN_HORIZONTAL_DESKTOP
+    : compactEdgeLabels
       ? CHART_CONFIG.MARGIN_HORIZONTAL_MOBILE_COMPACT
       : CHART_CONFIG.MARGIN_HORIZONTAL_MOBILE;
 
@@ -622,7 +630,7 @@ export default function SankeyChart({
           white-space: pre-line;
         }
       `}</style>
-      <CompactMobileLabelsContext.Provider value={compactMobileLabels}>
+      <CompactEdgeLabelsContext.Provider value={compactEdgeLabels}>
         <ResponsiveSankey
           data={processedData}
           label={(node) => {
@@ -665,7 +673,7 @@ export default function SankeyChart({
             },
           }}
         />
-      </CompactMobileLabelsContext.Provider>
+      </CompactEdgeLabelsContext.Provider>
     </div>
   );
 }
