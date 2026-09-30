@@ -367,7 +367,7 @@ test.describe("調査研究費 政党トップページのサマリー", () => {
 		// 「調研費とは」コラプスは初期状態で閉じている
 		await expect(section.getByText("調研費とは")).toBeVisible();
 		await expect(
-			section.getByText(/自主基準として政党によるガイドラインを定めており/),
+			section.getByText(/透明性の観点から本サイトで公開しています/),
 		).toBeHidden();
 
 		// 公開中の議員が1名だけなので、その議員のチップと「他議員も今後追加」が並ぶ

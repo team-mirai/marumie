@@ -34,9 +34,9 @@ export default function ResearchFundFlowSection({ data, updatedAt }: Props) {
         </summary>
         <p className="mt-3 rounded-xl bg-gradient-to-br from-[#E2F6F3] to-[#EEF6E2] px-5 py-5 text-[15px] leading-[1.87] tracking-[0.01em] text-gray-800">
           <strong className="mb-3 block text-lg font-bold leading-relaxed">
-            調研費は政党収支とは別のお金ですが、原資が税金であるため本サイトであわせて公開しています。
+            調研費は、国会議員の議員活動のために国から支給される公費です。
           </strong>
-          法令上は議員活動に充てるもので、選挙運動や政党活動には使えません。年度末に余った分は国庫に返納します。チームみらいでは法令に加え、自主基準として政党によるガイドラインを定めており、追って公開予定です。（正式名称：調査研究広報滞在費、旧・文書通信交通滞在費。いわゆる「旧文通費」とも呼ばれます）
+          年末までに使われなかった残額は国庫に返納されます。政治資金規正法上の「政治資金」ではありませんが、チームみらいでは透明性の観点から本サイトで公開しています。（正式名称：調査研究広報滞在費、旧・文書通信交通滞在費）
         </p>
       </details>
 
