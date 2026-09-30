@@ -107,13 +107,13 @@ test("確認済の仕訳を選んでbefore/afterを見比べ、公開して公�
   await page.getByRole("link", { name: "公開", exact: true }).click();
   await expect(page.getByText("確認済・未公開 1件")).toBeVisible();
   await expect(page.getByRole("checkbox", { name: "視察先への移動を公開対象にする" })).toBeVisible();
-  // 取り下げても公開範囲は後退しない（公開済みの支出額だけが減る）
-  await expect(page.getByText(`現在の公開状態（〜${year}.03.31・¥0）`)).toBeVisible();
+  // 取り下げると公開範囲は残った公開中の仕訳（1月分の支給）の月末まで戻り、公開済みの支出額も減る
+  await expect(page.getByText(`現在の公開状態（〜${year}.01.31・¥0）`)).toBeVisible();
 
   await page.getByRole("link", { name: "年度帳簿" }).click();
   const bookCard = page.locator('[data-slot="card"]').filter({ has: page.getByRole("heading", { name: `${year}年度` }) });
   await expect(bookCard).toContainText("公開中");
-  await expect(bookCard).toContainText(`${year}.03.31まで`);
+  await expect(bookCard).toContainText(`${year}.01.31まで`);
 
   await page.goto("/politicians");
   await politicianCard.getByRole("button", { name: "削除", exact: true }).click();
