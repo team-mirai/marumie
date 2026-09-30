@@ -12,6 +12,7 @@ import ResearchFundFlowSection from "@/client/components/research-fund/ResearchF
 import ResearchFundHighlightsSection from "@/client/components/research-fund/ResearchFundHighlightsSection";
 import ResearchFundMonthlySection from "@/client/components/research-fund/ResearchFundMonthlySection";
 import ResearchFundPartyLinkSection from "@/client/components/research-fund/ResearchFundPartyLinkSection";
+import ResearchFundTrialNoticeSection from "@/client/components/research-fund/ResearchFundTrialNoticeSection";
 import { formatUpdatedAt } from "@/client/lib/format-date";
 import { loadResearchFundPage } from "@/server/contexts/research-fund/presentation/loaders/load-research-fund-page";
 
@@ -61,6 +62,7 @@ export default async function PoliticianPage({ params }: PoliticianPageProps) {
         <ResearchFundMonthlySection data={data} updatedAt={updatedAt} />
         <ResearchFundExpensesSection data={data} updatedAt={updatedAt} />
       </ResearchFundCrossLinkProvider>
+      <ResearchFundTrialNoticeSection politicianName={data.politician.name} />
       <ResearchFundAboutSection data={data} />
       <ResearchFundPartyLinkSection />
       <AboutSection />
