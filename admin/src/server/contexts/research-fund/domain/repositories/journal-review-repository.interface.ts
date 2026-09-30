@@ -21,7 +21,7 @@ export interface JournalReviewRepository {
   discardMany(bookId: string, entries: readonly ReviewEntry[]): Promise<void>;
   /** 確認済の支出の仕訳をまとめて下書きに戻す。1 件でも競合したら何も変更しない。 */
   revertManyToDraft(bookId: string, entries: readonly ReviewEntry[]): Promise<void>;
-  /** 公開中の仕訳を確認済に戻す（帳簿の公開範囲は変えない）。 */
+  /** 公開中の仕訳を確認済に戻し、帳簿の公開範囲を残った公開中の仕訳の最新月末まで戻す。 */
   unpublish(bookId: string, entry: ReviewEntry): Promise<void>;
   /** 確認済の支出の仕訳を下書きに戻す（支給は対象にしない）。 */
   revertToDraft(bookId: string, entry: ReviewEntry): Promise<void>;

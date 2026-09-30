@@ -48,4 +48,14 @@ export const Publication = {
     const latest = monthEnd(dates.reduce((a, b) => (a > b ? a : b)));
     return current && current > latest ? current : latest;
   },
+
+  /**
+   * 仕訳を取り下げたあとの公開範囲。残っている公開中の仕訳の最新月末を超えないよう戻す。
+   * 公開中の仕訳が残っていなければ未設定にする。現在値より先へ進めることはしない（未設定なら未設定のまま）。
+   */
+  retreatPublishedThrough(current: string | null, latestPublished: string | null): string | null {
+    if (latestPublished === null || current === null) return null;
+    const limit = monthEnd(latestPublished);
+    return current < limit ? current : limit;
+  },
 };

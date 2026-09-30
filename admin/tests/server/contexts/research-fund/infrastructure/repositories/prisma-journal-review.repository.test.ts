@@ -13,7 +13,7 @@ function rowWithLines(lines = input.lines) {
   };
 }
 function setup(count = 1) {
-  const tx = { researchFundJournalEntry: { updateMany: jest.fn().mockResolvedValue({ count }), deleteMany: jest.fn().mockResolvedValue({ count }), findMany: jest.fn(), findFirst: jest.fn().mockResolvedValue(rowWithLines()), create: jest.fn().mockResolvedValue({ id: BigInt(entry.id) }) }, researchFundJournalLine: { deleteMany: jest.fn(), createMany: jest.fn() }, researchFundAccount: { findMany: jest.fn() }, researchFundBook: { findUnique: jest.fn() } };
+  const tx = { researchFundJournalEntry: { updateMany: jest.fn().mockResolvedValue({ count }), deleteMany: jest.fn().mockResolvedValue({ count }), findMany: jest.fn(), findFirst: jest.fn().mockResolvedValue(rowWithLines()), create: jest.fn().mockResolvedValue({ id: BigInt(entry.id) }) }, researchFundJournalLine: { deleteMany: jest.fn(), createMany: jest.fn() }, researchFundAccount: { findMany: jest.fn() }, researchFundBook: { findUnique: jest.fn(), update: jest.fn() } };
   const transaction = jest.fn(async fn => fn(tx));
   const repository = new PrismaJournalReviewRepository({ ...tx, $transaction: transaction } as unknown as PrismaClient);
   return { repository, tx, transaction };
@@ -177,11 +177,35 @@ test("取り下げは公開中・更新日時を照合して確認済に戻し�
     id: BigInt(entry.id), bookId: BigInt(1), status: { in: ["published"] }, updatedAt: new Date(entry.updatedAt),
     source: { in: ["manual", "scan"] }, lines: { some: { side: "debit", account: { type: "expense" } } },
   }, data: { status: "approved", publishedAt: null } });
-  expect(tx.researchFundBook.findUnique).not.toHaveBeenCalled();
 });
-test("すでに確認済に戻っているなど競合したら取り下げを拒否する", async () => {
-  const { repository } = setup(0);
+function setupUnpublish(publishedThrough: string | null, latestPublished: string | null, count = 1) {
+  const context = setup(count);
+  context.tx.researchFundBook.findUnique.mockResolvedValue({ publishedThrough: publishedThrough && new Date(publishedThrough) });
+  context.tx.researchFundJournalEntry.findFirst.mockResolvedValue(latestPublished && { entryDate: new Date(latestPublished) });
+  return context;
+}
+test("取り下げたら、公開範囲を残った公開中の仕訳の最新月末まで同じトランザクションで戻す", async () => {
+  const { repository, tx, transaction } = setupUnpublish("2027-04-30", "2026-09-12");
+  await repository.unpublish("1", entry);
+  expect(transaction).toHaveBeenCalledTimes(1);
+  expect(tx.researchFundJournalEntry.findFirst).toHaveBeenCalledWith({ where: { bookId: BigInt(1), status: "published" }, orderBy: { entryDate: "desc" }, select: { entryDate: true } });
+  expect(tx.researchFundBook.update).toHaveBeenCalledWith({ where: { id: BigInt(1) }, data: { publishedThrough: new Date("2026-09-30") } });
+});
+test("取り下げた仕訳より新しい月や同じ月の公開中の仕訳が残っていれば、公開範囲は変えない", async () => {
+  const later = setupUnpublish("2026-09-30", "2026-09-01");
+  await later.repository.unpublish("1", entry);
+  expect(later.tx.researchFundBook.update).not.toHaveBeenCalled();
+});
+test("公開中の仕訳がすべて無くなったら、公開範囲を未設定にする", async () => {
+  const { repository, tx } = setupUnpublish("2026-09-30", null);
+  await repository.unpublish("1", entry);
+  expect(tx.researchFundBook.update).toHaveBeenCalledWith({ where: { id: BigInt(1) }, data: { publishedThrough: null } });
+});
+test("すでに確認済に戻っているなど競合したら取り下げを拒否し、公開範囲も変えない", async () => {
+  const { repository, tx } = setupUnpublish("2027-04-30", "2026-09-12", 0);
   await expect(repository.unpublish("1", entry)).rejects.toThrow("状態が変わりました");
+  expect(tx.researchFundBook.findUnique).not.toHaveBeenCalled();
+  expect(tx.researchFundBook.update).not.toHaveBeenCalled();
 });
 test("下書きに戻すのは確認済の支出・更新日時を照合して状態だけを戻す", async () => {
   const { repository, tx } = setup();

@@ -197,8 +197,9 @@ export class ManageJournalReviewUsecase {
   }
   /**
    * 公開中の仕訳を確認済に戻し、公開ページから取り下げる。
-   * 帳簿の公開範囲（publishedThrough）は後退させない。同じ月の他の仕訳は公開中のまま残るうえ、
-   * 戻した仕訳は修正して再公開する運用を想定しているため。
+   * 帳簿の公開範囲（publishedThrough）は、残った公開中の仕訳の最新月末を超えないよう戻す
+   * （公開中の仕訳が無くなれば未設定）。日付を誤った仕訳を取り下げたときに、公開ページの
+   * 「〜支給分」が実データより先の月を指したまま残らないようにするため。
    */
   async unpublish(bookId: string, id: string, updatedAt: string) {
     const entry = await this.repository.find(bookId, id);

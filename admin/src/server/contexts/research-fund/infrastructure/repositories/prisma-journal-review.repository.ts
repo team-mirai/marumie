@@ -5,6 +5,7 @@ import {
   type JournalWrite,
   type ReviewEntry,
 } from "@/server/contexts/research-fund/domain/models/journal-review";
+import { Publication } from "@/server/contexts/research-fund/domain/models/publication";
 import type { JournalReviewRepository } from "@/server/contexts/research-fund/domain/repositories/journal-review-repository.interface";
 
 const include = {
@@ -224,14 +225,37 @@ export class PrismaJournalReviewRepository implements JournalReviewRepository {
     });
   }
   // 取り下げは内容を変えないので状態だけを戻し、公開日時も消す（再公開で入れ直す）。
-  // 帳簿の published_through は後退させない。
+  // 帳簿の published_through は、残った公開中の仕訳の最新月末を超えないよう同じトランザクションで戻す。
+  // 日付を誤った仕訳を取り下げても、公開ページの「〜支給分」が実データより先の月を指したまま残らないように。
   async unpublish(bookId: string, entry: ReviewEntry) {
-    const result = await this.prisma.researchFundJournalEntry.updateMany({
-      where: guard(bookId, entry, ["published"]),
-      data: { status: "approved", publishedAt: null },
+    await this.prisma.$transaction(async (tx) => {
+      const result = await tx.researchFundJournalEntry.updateMany({
+        where: guard(bookId, entry, ["published"]),
+        data: { status: "approved", publishedAt: null },
+      });
+      if (result.count !== 1)
+        throw new JournalReviewError("仕訳の状態が変わりました。画面を再読み込みしてください");
+      const book = await tx.researchFundBook.findUnique({
+        where: { id: BigInt(bookId) },
+        select: { publishedThrough: true },
+      });
+      if (!book) return;
+      const latest = await tx.researchFundJournalEntry.findFirst({
+        where: { bookId: BigInt(bookId), status: "published" },
+        orderBy: { entryDate: "desc" },
+        select: { entryDate: true },
+      });
+      const current = book.publishedThrough?.toISOString().slice(0, 10) ?? null;
+      const next = Publication.retreatPublishedThrough(
+        current,
+        latest?.entryDate.toISOString().slice(0, 10) ?? null,
+      );
+      if (next !== current)
+        await tx.researchFundBook.update({
+          where: { id: BigInt(bookId) },
+          data: { publishedThrough: next === null ? null : new Date(next) },
+        });
     });
-    if (result.count !== 1)
-      throw new JournalReviewError("仕訳の状態が変わりました。画面を再読み込みしてください");
   }
   // 下書きに戻すのは内容を変えないので状態だけを戻す。支給は下書きを経ない仕様なので、
   // 支出の形式に限って照合する。
