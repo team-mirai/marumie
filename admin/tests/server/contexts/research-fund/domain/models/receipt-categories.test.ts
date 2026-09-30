@@ -10,6 +10,18 @@ const migrationSql = readFileSync(
   "utf-8",
 );
 
+// 20分類を入れた後に表示名だけを変えたマイグレーション（UPDATE ... SET "label" = ... WHERE "key" = ...）
+const labelRenameSqls = ["20260930100000_rename_research_fund_housing_label"].map((name) =>
+  readFileSync(resolve(__dirname, `../../../../../../../prisma/migrations/${name}/migration.sql`), "utf-8"),
+);
+const renamedLabels = new Map(
+  labelRenameSqls.flatMap((sql) =>
+    [...sql.matchAll(/SET "label" = '([^']+)'[\s\S]*?WHERE "key" = '([a-z-]+)'/g)].map(
+      ([, label, key]) => [key, label] as const,
+    ),
+  ),
+);
+
 describe("調研費の費用カテゴリー", () => {
   it("見直し後の20分類を表示順どおりに持つ", () => {
     expect(Object.values(RECEIPT_CATEGORIES).map((category) => category.label)).toEqual([
@@ -17,7 +29,7 @@ describe("調研費の費用カテゴリー", () => {
       "文房具・備品",
       "交通費",
       "航空券代",
-      "住居費",
+      "宿舎費",
       "通信・IT利用料",
       "宿泊費",
       "新聞・書籍代",
@@ -38,7 +50,9 @@ describe("調研費の費用カテゴリー", () => {
 
   it("科目マスタのマイグレーションと同じキー・表示名・表示順になっている", () => {
     const rows = [...migrationSql.matchAll(/\('([a-z-]+)',\s*'([^']+)',\s*'expense',.*?(\d+),\s*NOW\(\)\)/g)];
-    expect(rows.map(([, key, label, order]) => [key, label, Number(order)])).toEqual(
+    expect(
+      rows.map(([, key, label, order]) => [key, renamedLabels.get(key) ?? label, Number(order)]),
+    ).toEqual(
       Object.entries(RECEIPT_CATEGORIES).map(([key, { label }], index) => [key, label, index + 4]),
     );
   });

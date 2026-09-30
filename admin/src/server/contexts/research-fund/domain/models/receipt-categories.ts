@@ -15,7 +15,7 @@ export const RECEIPT_CATEGORIES = {
       "タクシー・ハイヤー、電車・バス等公共交通機関、高速道路料金・駐車場代など、航空機以外の移動に関する費用全般",
   },
   airfare: { label: "航空券代", definition: "国内外出張時の航空券・フライト代" },
-  housing: { label: "住居費", definition: "議員宿舎の使用料（月々の固定費用）" },
+  housing: { label: "宿舎費", definition: "議員宿舎の使用料（月々の固定費用）" },
   "telecom-it": {
     label: "通信・IT利用料",
     definition: "電話料金、各種ITツール・サブスクリプションの利用料",
