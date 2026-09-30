@@ -2,9 +2,12 @@ import {
   filterResearchFundExpenses,
   formatResearchFundDate,
   paginateResearchFundExpenses,
+  parseResearchFundTransactionsQuery,
   researchFundCategoryOptions,
   researchFundPagerItems,
+  researchFundTransactionsHref,
   researchFundTransactionsSummary,
+  resolveResearchFundCategories,
   revealResearchFundGroupRows,
   sortResearchFundExpenses,
   sumResearchFundTransactions,
@@ -22,6 +25,7 @@ function view(overrides: Partial<ResearchFundExpenseView> = {}): ResearchFundExp
     month: "2026-04",
     description: "タクシー代",
     amount: 1200,
+    accountKey: "transportation",
     detailed: { label: "交通費", color: "#0369A1" },
     legal: { label: "⑨ 滞在費", color: "#0369A1" },
     note: null,
@@ -99,52 +103,175 @@ describe("sortResearchFundExpenses（入出金の混在）", () => {
 
 describe("filterResearchFundExpenses", () => {
   const rows = [
-    view({ id: "1", detailed: { label: "交通費", color: "#000" } }),
-    view({ id: "2", detailed: { label: "新聞・書籍代", color: "#000" } }),
-    view({ id: "3", detailed: { label: "会議費", color: "#000" } }),
+    view({ id: "1", accountKey: "transportation" }),
+    view({ id: "2", accountKey: "newspapers-books" }),
+    view({ id: "3", accountKey: "meetings" }),
   ];
 
   it("何も選んでいなければ全件を返す", () => {
     expect(ids(filterResearchFundExpenses(rows, []))).toEqual(["1", "2", "3"]);
   });
 
-  it("選んだ詳細の区分の行だけを返す（複数選択）", () => {
-    expect(ids(filterResearchFundExpenses(rows, ["交通費", "会議費"]))).toEqual(["1", "3"]);
+  it("選んだ科目のキーの行だけを返す（複数選択）", () => {
+    expect(ids(filterResearchFundExpenses(rows, ["transportation", "meetings"]))).toEqual([
+      "1",
+      "3",
+    ]);
+  });
+
+  it("表示名ではなくキーで照合する（改名されても URL が壊れない）", () => {
+    const renamed = [view({ id: "1", accountKey: "lodging", detailed: { label: "宿舎費", color: "#000" } })];
+    expect(ids(filterResearchFundExpenses(renamed, ["lodging"]))).toEqual(["1"]);
+    expect(ids(filterResearchFundExpenses(renamed, ["宿舎費"]))).toEqual([]);
   });
 });
 
 describe("researchFundCategoryOptions", () => {
   it("出てくる詳細の区分を重複なく、法律上の区分の順（その他は最後）に並べる", () => {
     const options = researchFundCategoryOptions([
-      view({ detailed: { label: "その他", color: "#000" }, legal: { label: "その他", color: "#000" } }),
-      view({ detailed: { label: "交通費", color: "#000" }, legal: { label: "⑨ 滞在費", color: "#000" } }),
-      view({ detailed: { label: "会議費", color: "#000" }, legal: { label: "⑦ 調査研究費", color: "#000" } }),
-      view({ detailed: { label: "交通費", color: "#000" }, legal: { label: "⑨ 滞在費", color: "#000" } }),
       view({
+        accountKey: "other",
+        detailed: { label: "その他", color: "#000" },
+        legal: { label: "その他", color: "#000" },
+      }),
+      view({
+        accountKey: "transportation",
+        detailed: { label: "交通費", color: "#000" },
+        legal: { label: "⑨ 滞在費", color: "#000" },
+      }),
+      view({
+        accountKey: "meetings",
+        detailed: { label: "会議費", color: "#000" },
+        legal: { label: "⑦ 調査研究費", color: "#000" },
+      }),
+      view({
+        accountKey: "transportation",
+        detailed: { label: "交通費", color: "#000" },
+        legal: { label: "⑨ 滞在費", color: "#000" },
+      }),
+      view({
+        accountKey: "stationery-supplies",
         detailed: { label: "文房具・備品", color: "#000" },
         legal: { label: "③ 備品・消耗品費", color: "#000" },
       }),
     ]);
 
-    expect(options.map((option) => option.label)).toEqual([
+    expect(options.map((option) => option.category.label)).toEqual([
       "文房具・備品",
       "会議費",
       "交通費",
       "その他",
     ]);
+    expect(options.map((option) => option.key)).toEqual([
+      "stationery-supplies",
+      "meetings",
+      "transportation",
+      "other",
+    ]);
   });
 
   it("支給（入金）の区分は支出の区分より前に出す", () => {
     const options = researchFundCategoryOptions([
-      view({ detailed: { label: "交通費", color: "#000" }, legal: { label: "⑨ 滞在費", color: "#000" } }),
+      view({
+        accountKey: "transportation",
+        detailed: { label: "交通費", color: "#000" },
+        legal: { label: "⑨ 滞在費", color: "#000" },
+      }),
       view({
         kind: "grant",
+        accountKey: "grant-income",
         detailed: { label: "支給（入金）", color: "#000" },
         legal: { label: "支給（入金）", color: "#000" },
       }),
     ]);
 
-    expect(options.map((option) => option.label)).toEqual(["支給（入金）", "交通費"]);
+    expect(options.map((option) => option.category.label)).toEqual(["支給（入金）", "交通費"]);
+  });
+});
+
+describe("parseResearchFundTransactionsQuery", () => {
+  it("パラメーターが無ければ新しい順・絞り込みなし・1ページ目", () => {
+    expect(parseResearchFundTransactionsQuery({})).toEqual({
+      categories: [],
+      sort: "new",
+      page: 1,
+    });
+  });
+
+  it("カンマ区切りのカテゴリー・並び順・ページを読む", () => {
+    expect(
+      parseResearchFundTransactionsQuery({
+        categories: "transportation,meetings",
+        sort: "amount",
+        order: "asc",
+        page: "3",
+      }),
+    ).toEqual({ categories: ["transportation", "meetings"], sort: "amountAsc", page: 3 });
+  });
+
+  it("sort / order の組み合わせを4通りの並びに対応させる（order が無ければ降順）", () => {
+    const sortOf = (params: Record<string, string>) =>
+      parseResearchFundTransactionsQuery(params).sort;
+    expect(sortOf({ sort: "date", order: "desc" })).toBe("new");
+    expect(sortOf({ sort: "date", order: "asc" })).toBe("old");
+    expect(sortOf({ sort: "amount", order: "desc" })).toBe("amountDesc");
+    expect(sortOf({ sort: "amount" })).toBe("amountDesc");
+    expect(sortOf({ order: "asc" })).toBe("old");
+  });
+
+  it("不正な並び順・ページは既定に倒す", () => {
+    expect(parseResearchFundTransactionsQuery({ sort: "name", order: "up" }).sort).toBe("new");
+    expect(parseResearchFundTransactionsQuery({ page: "abc" }).page).toBe(1);
+    expect(parseResearchFundTransactionsQuery({ page: "0" }).page).toBe(1);
+    expect(parseResearchFundTransactionsQuery({ page: "-2" }).page).toBe(1);
+  });
+
+  it("同じパラメーターが複数あれば先頭を使い、空や重複のカテゴリーは落とす", () => {
+    expect(
+      parseResearchFundTransactionsQuery({
+        categories: ["meetings,,meetings", "transportation"],
+        page: ["2", "5"],
+      }),
+    ).toEqual({ categories: ["meetings"], sort: "new", page: 2 });
+  });
+});
+
+describe("resolveResearchFundCategories", () => {
+  const options = researchFundCategoryOptions([
+    view({ accountKey: "meetings", legal: { label: "⑦ 調査研究費", color: "#000" } }),
+    view({ accountKey: "transportation", legal: { label: "⑨ 滞在費", color: "#000" } }),
+  ]);
+
+  it("選択肢に無いカテゴリーを落とし、選択肢の並びに揃える", () => {
+    expect(resolveResearchFundCategories(["transportation", "nope", "meetings"], options)).toEqual(
+      ["meetings", "transportation"],
+    );
+    expect(resolveResearchFundCategories(["nope"], options)).toEqual([]);
+  });
+});
+
+describe("researchFundTransactionsHref", () => {
+  it("既定の状態ならパラメーターを付けない", () => {
+    expect(
+      researchFundTransactionsHref("taro", 2026, { categories: [], sort: "new", page: 1 }),
+    ).toBe("/p/taro/2026/transactions");
+  });
+
+  it("政治団体の全件ページと同じパラメーター名で状態を載せる", () => {
+    expect(
+      researchFundTransactionsHref("taro", 2026, {
+        categories: ["transportation", "meetings"],
+        sort: "amountAsc",
+        page: 2,
+      }),
+    ).toBe("/p/taro/2026/transactions?categories=transportation,meetings&sort=amount&order=asc&page=2");
+  });
+
+  it("組み立てた URL を読み戻すと同じ状態になる", () => {
+    const query = { categories: ["meetings"], sort: "old" as const, page: 4 };
+    const href = researchFundTransactionsHref("taro", 2026, query);
+    const params = Object.fromEntries(new URL(href, "https://example.com").searchParams);
+    expect(parseResearchFundTransactionsQuery(params)).toEqual(query);
   });
 });
 

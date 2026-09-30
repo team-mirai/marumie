@@ -46,14 +46,20 @@ export function sortResearchFundExpenses(
   }
 }
 
-/** 詳細の区分のラベルで絞り込む。何も選んでいなければ全件を返す。 */
+/** 科目のキーで絞り込む。何も選んでいなければ全件を返す。 */
 export function filterResearchFundExpenses(
   rows: readonly ResearchFundExpenseView[],
   categories: readonly string[],
 ): ResearchFundExpenseView[] {
   if (categories.length === 0) return [...rows];
   const selected = new Set(categories);
-  return rows.filter((row) => selected.has(row.detailed.label));
+  return rows.filter((row) => selected.has(row.accountKey));
+}
+
+/** 絞り込みの選択肢1つ。key は URL に載せる科目のキー。 */
+export interface ResearchFundCategoryOption {
+  key: string;
+  category: ResearchFundCategoryView;
 }
 
 /**
@@ -63,15 +69,15 @@ export function filterResearchFundExpenses(
  */
 export function researchFundCategoryOptions(
   rows: readonly ResearchFundExpenseView[],
-): ResearchFundCategoryView[] {
+): ResearchFundCategoryOption[] {
   const options = new Map<
     string,
-    { category: ResearchFundCategoryView; legal: string; isGrant: boolean }
+    { option: ResearchFundCategoryOption; legal: string; isGrant: boolean }
   >();
   for (const row of rows) {
-    if (!options.has(row.detailed.label)) {
-      options.set(row.detailed.label, {
-        category: row.detailed,
+    if (!options.has(row.accountKey)) {
+      options.set(row.accountKey, {
+        option: { key: row.accountKey, category: row.detailed },
         legal: row.legal.label,
         isGrant: row.kind === "grant",
       });
@@ -84,7 +90,86 @@ export function researchFundCategoryOptions(
         // 丸数字（①〜⑨）はコードポイント順に並び、「その他」はその後ろに来る。
         (a.legal < b.legal ? -1 : a.legal > b.legal ? 1 : 0),
     )
-    .map((option) => option.category);
+    .map((entry) => entry.option);
+}
+
+/** 全件ページの URL で指定する表示状態。パラメーター名は政治団体の全件ページと揃える。 */
+export interface ResearchFundTransactionsQuery {
+  /** 絞り込む科目のキー。空なら絞り込みなし */
+  categories: string[];
+  sort: ResearchFundTransactionSort;
+  page: number;
+}
+
+type SearchParams = Record<string, string | string[] | undefined>;
+
+function firstParam(value: string | string[] | undefined): string | undefined {
+  return Array.isArray(value) ? value[0] : value;
+}
+
+const SORT_BY_PARAMS: Record<string, ResearchFundTransactionSort> = {
+  "date:desc": "new",
+  "date:asc": "old",
+  "amount:desc": "amountDesc",
+  "amount:asc": "amountAsc",
+};
+
+const PARAMS_BY_SORT: Record<ResearchFundTransactionSort, { sort: string; order: string }> = {
+  new: { sort: "date", order: "desc" },
+  old: { sort: "date", order: "asc" },
+  amountDesc: { sort: "amount", order: "desc" },
+  amountAsc: { sort: "amount", order: "asc" },
+};
+
+/**
+ * URL の `categories`（カンマ区切り）・`sort`（date / amount）・`order`（asc / desc）・`page` を読む。
+ * 不正な値は既定（絞り込みなし・新しい順・1ページ目）に倒す。存在しないカテゴリーの除外と
+ * 範囲外のページの丸めは、データを見て行う（resolveResearchFundCategories / paginateResearchFundExpenses）。
+ */
+export function parseResearchFundTransactionsQuery(
+  params: SearchParams,
+): ResearchFundTransactionsQuery {
+  const categories = (firstParam(params.categories) ?? "")
+    .split(",")
+    .map((key) => key.trim())
+    .filter(Boolean);
+  const sortBy = firstParam(params.sort) ?? "date";
+  const order = firstParam(params.order) ?? "desc";
+  const page = Number.parseInt(firstParam(params.page) ?? "1", 10);
+  return {
+    categories: [...new Set(categories)],
+    sort: SORT_BY_PARAMS[`${sortBy}:${order}`] ?? "new",
+    page: Number.isFinite(page) && page >= 1 ? page : 1,
+  };
+}
+
+/** URL で指定されたカテゴリーのうち、選択肢にあるものだけを選択肢の並びで残す。 */
+export function resolveResearchFundCategories(
+  categories: readonly string[],
+  options: readonly ResearchFundCategoryOption[],
+): string[] {
+  const selected = new Set(categories);
+  return options.map((option) => option.key).filter((key) => selected.has(key));
+}
+
+/** 表示状態を URL にする。既定の値（絞り込みなし・新しい順・1ページ目）はパラメーターを省く。 */
+export function researchFundTransactionsHref(
+  slug: string,
+  financialYear: number,
+  query: ResearchFundTransactionsQuery,
+): string {
+  const params: string[] = [];
+  if (query.categories.length > 0) {
+    // カンマは区切りとしてそのまま残す（政治団体の全件ページの URL と同じ形）。
+    params.push(`categories=${query.categories.map(encodeURIComponent).join(",")}`);
+  }
+  if (query.sort !== "new") {
+    const { sort, order } = PARAMS_BY_SORT[query.sort];
+    params.push(`sort=${sort}`, `order=${order}`);
+  }
+  if (query.page > 1) params.push(`page=${query.page}`);
+  const path = `/p/${encodeURIComponent(slug)}/${financialYear}/transactions`;
+  return params.length > 0 ? `${path}?${params.join("&")}` : path;
 }
 
 interface ResearchFundTransactionsPage {

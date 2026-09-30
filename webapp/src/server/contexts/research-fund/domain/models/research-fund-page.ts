@@ -33,6 +33,8 @@ export interface ResearchFundExpenseView {
   month: string;
   description: string;
   amount: number;
+  /** 科目のキー（支給は支給の科目）。表示名は改名されうるので、全件ページの絞り込み URL にはこちらを載せる */
+  accountKey: string;
   detailed: ResearchFundCategoryView;
   legal: ResearchFundCategoryView;
   /** 特記事項（管理画面で入力したもの）。無ければ null */

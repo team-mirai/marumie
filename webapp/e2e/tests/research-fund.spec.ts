@@ -236,6 +236,51 @@ test.describe("調査研究費 議員ページ", () => {
 		);
 	});
 
+	test("全件ページの絞り込み・並び順・ページを URL で指定・共有でき、戻る操作で直前に戻る", async ({
+		page,
+	}) => {
+		await page.goto(`${PAGE_URL}/transactions?categories=grant-income`);
+		const table = page.locator("#transactions");
+		const summary = table.getByRole("status").filter({ hasText: "件を表示中" });
+		await expect(summary).toHaveText(
+			"1〜7 / 7件を表示中　入金 7,000,000円・出金 0円（絞り込み中）",
+		);
+
+		// 不正な指定でもエラーにならず、一覧が出る
+		await page.goto(`${PAGE_URL}/transactions?categories=nope&sort=name&order=up&page=999`);
+		await expect(summary).toBeVisible();
+		await expect(summary).not.toContainText("（絞り込み中）");
+
+		// 行のカテゴリーのラベルは、そのカテゴリー1つで絞り込む通常のリンク
+		await page.goto(`${PAGE_URL}/transactions`);
+		const grantLink = table
+			.locator("div.grid")
+			.filter({ hasText: "調査研究広報滞在費 8月分" })
+			.getByRole("link", { name: /^支給/ });
+		await expect(grantLink).toHaveAttribute(
+			"href",
+			"/p/sample-taro/2026/transactions?categories=grant-income",
+		);
+		await grantLink.click();
+		await expect(page).toHaveURL(/\/transactions\?categories=grant-income$/);
+		await expect(summary).toContainText("（絞り込み中）");
+
+		// 画面上の並び替えで URL が変わり、リロードしても同じ状態で開く
+		await table.getByRole("button", { name: "金額で並び替え" }).click();
+		await expect(page).toHaveURL(
+			/\/transactions\?categories=grant-income&sort=amount&order=desc$/,
+		);
+		await page.reload();
+		await expect(summary).toContainText("（絞り込み中）");
+
+		// 戻る操作で直前の状態（並び替え前）に戻る
+		await page.goBack();
+		await expect(page).toHaveURL(/\/transactions\?categories=grant-income$/);
+		await page.goBack();
+		await expect(page).toHaveURL(/\/transactions$/);
+		await expect(summary).not.toContainText("（絞り込み中）");
+	});
+
 	test("特記事項はⓘで開かず、項目名の下に常に出る", async ({ page }) => {
 		await page.goto(PAGE_URL);
 		const section = page.locator("#transactions");

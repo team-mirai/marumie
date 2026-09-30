@@ -29,4 +29,31 @@ describe("ResearchFundCategoryPill", () => {
       '<span class="inline-flex items-center whitespace-nowrap rounded-full border bg-white px-3 py-px text-xs font-medium leading-5" style="border-color:#0369A1;color:#0369A1">航空券代</span>',
     );
   });
+
+  it("href を渡すと、説明の無い科目はピル全体をリンクにする", () => {
+    const html = renderToStaticMarkup(
+      <ResearchFundCategoryPill
+        category={{ label: "航空券代", color: "#0369A1" }}
+        href="/p/taro/2026/transactions?categories=airfare"
+      />,
+    );
+
+    expect(html).toMatch(/^<a [^>]*href="\/p\/taro\/2026\/transactions\?categories=airfare"[^>]*>航空券代<\/a>$/);
+  });
+
+  it("href を渡すと、説明を持つ科目は表示名だけをリンクにし、説明のボタンはリンクの外に置く", () => {
+    const html = renderToStaticMarkup(
+      <ResearchFundCategoryPill
+        category={{
+          label: "交通費",
+          color: "#0369A1",
+          description: "航空券をのぞく電車・バス・タクシー代",
+        }}
+        href="/p/taro/2026/transactions?categories=transportation"
+      />,
+    );
+
+    expect(html).toMatch(/<a [^>]*href="\/p\/taro\/2026\/transactions\?categories=transportation"[^>]*>交通費<\/a><button/);
+    expect(html).toContain('aria-label="交通費の説明"');
+  });
 });

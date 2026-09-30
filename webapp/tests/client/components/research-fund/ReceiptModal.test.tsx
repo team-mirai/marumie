@@ -18,6 +18,7 @@ function expense(
     month: "2026-04",
     description: "タクシー代",
     amount: 1200,
+    accountKey: "transportation",
     detailed: category,
     legal: { label: "⑨ 滞在費", color: "#111111" },
     note: null,

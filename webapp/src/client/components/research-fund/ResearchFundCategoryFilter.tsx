@@ -3,11 +3,11 @@ import "client-only";
 
 import Image from "next/image";
 import { useState } from "react";
-import type { ResearchFundCategoryView } from "@/server/contexts/research-fund/domain/models/research-fund-page";
+import type { ResearchFundCategoryOption } from "@/client/lib/research-fund-transactions";
 
 interface Props {
-  options: ResearchFundCategoryView[];
-  /** 確定済みの選択。ポップオーバーを開くたびにここから下書きを作り直す */
+  options: ResearchFundCategoryOption[];
+  /** 確定済みの選択（科目のキー）。ポップオーバーを開くたびにここから下書きを作り直す */
   selected: string[];
   onApply: (selected: string[]) => void;
   onCancel: () => void;
@@ -69,11 +69,11 @@ export default function ResearchFundCategoryFilter({
   align = "left",
 }: Props) {
   const [draft, setDraft] = useState<string[]>(selected);
-  const allChecked = options.length > 0 && options.every((option) => draft.includes(option.label));
+  const allChecked = options.length > 0 && options.every((option) => draft.includes(option.key));
 
-  const toggle = (label: string) =>
+  const toggle = (key: string) =>
     setDraft((prev) =>
-      prev.includes(label) ? prev.filter((value) => value !== label) : [...prev, label],
+      prev.includes(key) ? prev.filter((value) => value !== key) : [...prev, key],
     );
 
   return (
@@ -86,16 +86,16 @@ export default function ResearchFundCategoryFilter({
           <CheckRow
             label="（すべて選択）"
             checked={allChecked}
-            onClick={() => setDraft(allChecked ? [] : options.map((option) => option.label))}
+            onClick={() => setDraft(allChecked ? [] : options.map((option) => option.key))}
             className="w-[236px]"
           />
           <div className="flex flex-col pl-4">
             {options.map((option) => (
               <CheckRow
-                key={option.label}
-                label={option.label}
-                checked={draft.includes(option.label)}
-                onClick={() => toggle(option.label)}
+                key={option.key}
+                label={option.category.label}
+                checked={draft.includes(option.key)}
+                onClick={() => toggle(option.key)}
                 className="w-[220px]"
               />
             ))}
@@ -113,7 +113,7 @@ export default function ResearchFundCategoryFilter({
         </button>
         <button
           type="button"
-          onClick={() => onApply(options.map((o) => o.label).filter((l) => draft.includes(l)))}
+          onClick={() => onApply(options.map((o) => o.key).filter((key) => draft.includes(key)))}
           className="flex w-[120px] cursor-pointer items-center justify-center rounded-[6px] bg-[#2AA693] px-4 py-2 text-sm leading-[1.29] font-medium text-white transition-opacity hover:opacity-90"
         >
           OK

@@ -109,6 +109,15 @@ describe("buildExpenseViews", () => {
     expect(view.detailed.color).toBe(view.legal.color);
   });
 
+  it("絞り込みの URL に使う科目のキーを持たせる", () => {
+    const [view] = buildExpenseViews(
+      [expense({ accountKey: "stationery-supplies" })],
+      accounts,
+    );
+
+    expect(view.accountKey).toBe("stationery-supplies");
+  });
+
   it("交通費の詳細の区分にだけ説明を持たせる", () => {
     const [taxi, transportation] = buildExpenseViews(
       [

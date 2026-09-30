@@ -55,6 +55,7 @@ export function buildExpenseViews(
           month: expense.date.slice(0, 7),
           description: expense.description,
           amount: expense.amount,
+          accountKey: expense.accountKey,
           detailed: GRANT_CATEGORY,
           legal: GRANT_CATEGORY,
           note: normalizeNote(expense.note),
@@ -76,6 +77,7 @@ export function buildExpenseViews(
         month: expense.date.slice(0, 7),
         description: expense.description,
         amount: expense.amount,
+        accountKey: expense.accountKey,
         detailed: {
           label: account?.label || UNKNOWN_CATEGORY_LABEL,
           color,

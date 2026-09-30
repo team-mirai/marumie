@@ -1,6 +1,7 @@
 "use client";
 import "client-only";
 
+import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import ReceiptModal from "@/client/components/research-fund/ReceiptModal";
 import ResearchFundAmount from "@/client/components/research-fund/ResearchFundAmount";
@@ -14,12 +15,15 @@ import {
   paginateResearchFundExpenses,
   researchFundCategoryOptions,
   researchFundPagerItems,
+  researchFundTransactionsHref,
   researchFundTransactionsSummary,
+  resolveResearchFundCategories,
   sortResearchFundExpenses,
   sumResearchFundTransactions,
   toggleAmountSort,
   toggleDateSort,
   type ResearchFundTransactionSort,
+  type ResearchFundTransactionsQuery,
 } from "@/client/lib/research-fund-transactions";
 import type { ResearchFundExpenseView } from "@/server/contexts/research-fund/domain/models/research-fund-page";
 import { RESEARCH_FUND_RECEIPTS_PUBLISHED } from "@/server/contexts/research-fund/domain/models/research-fund-receipt-publication";
@@ -29,6 +33,8 @@ interface Props {
   financialYear: number;
   /** 日付の新しい順・同一注文の行が隣り合う並び（buildExpenseViews の出力） */
   expenses: ResearchFundExpenseView[];
+  /** URL で指定された表示状態（parseResearchFundTransactionsQuery の出力） */
+  query: ResearchFundTransactionsQuery;
 }
 
 /** SP（≤760px）ではヘッダー行の代わりに並び替えタブと絞り込みボタンを出し、1行を縦積みにする。 */
@@ -137,38 +143,52 @@ function PagerButton({
  *
  * 1議員・1年度の公開中の出入金（支給と支出）は数百件なので、全件をサーバーで読み込んだうえで
  * 並び替え・絞り込み・ページングをクライアントで行う。領収書を公開している間は、領収書のある行の「領収書」ピルからモーダルで原本を見られる。
+ *
+ * 並び順・絞り込み・ページは URL（`categories` / `sort` / `order` / `page`）で持ち、操作のたびに URL を書き換える。
+ * 各行のカテゴリーのピルは、そのカテゴリー1つで絞り込んだ URL へのリンクにする。
  */
-export default function ResearchFundTransactionsTable({ slug, financialYear, expenses }: Props) {
-  const [sort, setSort] = useState<ResearchFundTransactionSort>("new");
-  const [categories, setCategories] = useState<string[]>([]);
+export default function ResearchFundTransactionsTable({
+  slug,
+  financialYear,
+  expenses,
+  query,
+}: Props) {
+  const router = useRouter();
   const [openFilter, setOpenFilter] = useState<"pc" | "sp" | null>(null);
-  const [page, setPage] = useState(1);
   const [receipt, setReceipt] = useState<ResearchFundExpenseView | null>(null);
 
+  const { sort } = query;
   const options = useMemo(() => researchFundCategoryOptions(expenses), [expenses]);
+  // 存在しないカテゴリーの指定は無視する（件数バッジ・絞り込み中の表示にも数えない）。
+  const categories = useMemo(
+    () => resolveResearchFundCategories(query.categories, options),
+    [query.categories, options],
+  );
   const filtered = useMemo(
     () => sortResearchFundExpenses(filterResearchFundExpenses(expenses, categories), sort),
     [expenses, categories, sort],
   );
-  const current = paginateResearchFundExpenses(filtered, page);
+  const current = paginateResearchFundExpenses(filtered, query.page);
   const pagerItems = researchFundPagerItems(current.page, current.totalPages);
   const totals = sumResearchFundTransactions(filtered);
 
-  const changeSort = (next: ResearchFundTransactionSort) => {
-    setSort(next);
-    setPage(1);
-  };
+  const hrefFor = (next: Partial<ResearchFundTransactionsQuery>) =>
+    researchFundTransactionsHref(slug, financialYear, { categories, sort, page: 1, ...next });
+
+  const navigate = (next: Partial<ResearchFundTransactionsQuery>) =>
+    router.push(hrefFor(next), { scroll: false });
+
+  const changeSort = (next: ResearchFundTransactionSort) => navigate({ sort: next });
 
   const toggleFilter = (at: "pc" | "sp") => setOpenFilter((open) => (open === at ? null : at));
 
   const applyCategories = (next: string[]) => {
-    setCategories(next);
     setOpenFilter(null);
-    setPage(1);
+    navigate({ categories: next });
   };
 
   const goToPage = (next: number) => {
-    setPage(next);
+    navigate({ page: next });
     window.scrollTo(0, 0);
   };
 
@@ -275,7 +295,10 @@ export default function ResearchFundTransactionsTable({ slug, financialYear, exp
                 {formatResearchFundDate(row.date)}
               </div>
               <div className="order-3 flex flex-wrap items-center gap-2 min-[761px]:order-none min-[761px]:pl-4">
-                <ResearchFundCategoryPill category={row.detailed} />
+                <ResearchFundCategoryPill
+                  category={row.detailed}
+                  href={hrefFor({ categories: [row.accountKey] })}
+                />
                 {RESEARCH_FUND_RECEIPTS_PUBLISHED && row.hasReceipt && (
                   <span className="min-[761px]:hidden">
                     <ResearchFundReceiptPill onClick={() => setReceipt(row)} />

@@ -14,6 +14,7 @@ function view(overrides: Partial<ResearchFundExpenseView> = {}): ResearchFundExp
     month: "2026-04",
     description: "タクシー代",
     amount: 1200,
+    accountKey: "transportation",
     detailed: { label: "タクシー代", color: "#111111" },
     legal: { label: "⑨ 滞在費", color: "#111111" },
     note: null,
