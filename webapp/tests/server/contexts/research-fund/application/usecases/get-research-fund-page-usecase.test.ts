@@ -178,7 +178,7 @@ describe("GetResearchFundPageUsecase", () => {
     expect(data?.nextUpdateNote).toBe("11月ごろ");
     expect(data?.policyComment).toBe("事務所の立ち上げに使っています");
     expect(data?.dataNote).toBe(
-      "仕訳が完了した支出を掲載しています。更新は不定期で、次回は11月ごろの予定です。使わなかった分（2ヶ月分で190万円）は年末時点で確定し、国庫に返還します。",
+      "仕訳が完了した支出を掲載しています。",
     );
   });
 

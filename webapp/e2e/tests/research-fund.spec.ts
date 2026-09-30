@@ -53,15 +53,12 @@ test.describe("調査研究費 議員ページ", () => {
 		await expect(
 			page.getByRole("heading", { name: /調研費もまるごと公開/ }),
 		).toBeVisible();
-		await expect(page.getByRole("link", { name: "こちらのnote" })).toHaveAttribute(
-			"href",
-			"https://note.com/team_mirai_jp/n/n58fca6f9e4e8",
-		);
+		await expect(page.getByRole("link", { name: "こちらのnote" })).toHaveCount(0);
 
 		// B-5 データについて
 		await expect(page.getByText("調研費のデータについて")).toBeVisible();
 		await expect(
-			page.getByText(/使わなかった分（.*）は年末時点で確定し、国庫に返還します。/),
+			page.getByText(/仕訳が完了した支出を掲載しています。/),
 		).toBeVisible();
 
 		// 政党ページへの導線

@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import AboutSection from "@/client/components/common/AboutSection";
 import LinkCardsSection from "@/client/components/common/LinkCardsSection";
-import TransparencySection from "@/client/components/common/TransparencySection";
+import GradientMessageCard from "@/client/components/common/GradientMessageCard";
 import MainColumn from "@/client/components/layout/MainColumn";
 import ResearchFundAboutSection from "@/client/components/research-fund/ResearchFundAboutSection";
 import { ResearchFundCrossLinkProvider } from "@/client/components/research-fund/ResearchFundCrossLink";
@@ -55,10 +55,9 @@ export default async function PoliticianPage({ params }: PoliticianPageProps) {
       {/* 用途カードと「すべての出入金」が相互にジャンプするので、その間をまとめて包む */}
       <ResearchFundCrossLinkProvider>
         {hasHighlights && <ResearchFundHighlightsSection data={data} updatedAt={updatedAt} />}
-        <TransparencySection
-          title="調研費もまるごと公開。意味ある使い方か、検証できるように👀"
-          intro="議員一人ひとりに支給される調研費の原資は、大切な税金。だから使わせていただいた分は1件ずつ公開し、その使用方針や主要な用途もわかりやすく伝えていくことが重要だと考えています。"
-        />
+        <GradientMessageCard title="調研費もまるごと公開。意味ある使い方か、検証できるように👀">
+          議員一人ひとりに支給される調研費の原資は、大切な税金。だから使わせていただいた分は1件ずつ公開し、その使用方針や主要な用途もわかりやすく伝えていくことが重要だと考えています。
+        </GradientMessageCard>
         <ResearchFundMonthlySection data={data} updatedAt={updatedAt} />
         <ResearchFundExpensesSection data={data} updatedAt={updatedAt} />
       </ResearchFundCrossLinkProvider>
