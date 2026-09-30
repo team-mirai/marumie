@@ -227,8 +227,11 @@ export class PrismaJournalReviewRepository implements JournalReviewRepository {
   // 取り下げは内容を変えないので状態だけを戻し、公開日時も消す（再公開で入れ直す）。
   // 帳簿の published_through は、残った公開中の仕訳の最新月末を超えないよう同じトランザクションで戻す。
   // 日付を誤った仕訳を取り下げても、公開ページの「〜支給分」が実データより先の月を指したまま残らないように。
+  // 同じ帳簿の取り下げが並行すると、互いの取り下げ前の仕訳を公開中と数えて公開範囲を戻し損ねるため、
+  // 仕訳を更新する前に帳簿の行をロックして直列化する（後続は先行のコミット後の状態を数える）。
   async unpublish(bookId: string, entry: ReviewEntry) {
     await this.prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT id FROM research_fund_books WHERE id = ${BigInt(bookId)} FOR UPDATE`;
       const result = await tx.researchFundJournalEntry.updateMany({
         where: guard(bookId, entry, ["published"]),
         data: { status: "approved", publishedAt: null },

@@ -13,7 +13,7 @@ function rowWithLines(lines = input.lines) {
   };
 }
 function setup(count = 1) {
-  const tx = { researchFundJournalEntry: { updateMany: jest.fn().mockResolvedValue({ count }), deleteMany: jest.fn().mockResolvedValue({ count }), findMany: jest.fn(), findFirst: jest.fn().mockResolvedValue(rowWithLines()), create: jest.fn().mockResolvedValue({ id: BigInt(entry.id) }) }, researchFundJournalLine: { deleteMany: jest.fn(), createMany: jest.fn() }, researchFundAccount: { findMany: jest.fn() }, researchFundBook: { findUnique: jest.fn(), update: jest.fn() } };
+  const tx = { researchFundJournalEntry: { updateMany: jest.fn().mockResolvedValue({ count }), deleteMany: jest.fn().mockResolvedValue({ count }), findMany: jest.fn(), findFirst: jest.fn().mockResolvedValue(rowWithLines()), create: jest.fn().mockResolvedValue({ id: BigInt(entry.id) }) }, researchFundJournalLine: { deleteMany: jest.fn(), createMany: jest.fn() }, researchFundAccount: { findMany: jest.fn() }, researchFundBook: { findUnique: jest.fn(), update: jest.fn() }, $queryRaw: jest.fn() };
   const transaction = jest.fn(async fn => fn(tx));
   const repository = new PrismaJournalReviewRepository({ ...tx, $transaction: transaction } as unknown as PrismaClient);
   return { repository, tx, transaction };
@@ -190,6 +190,12 @@ test("取り下げたら、公開範囲を残った公開中の仕訳の最新�
   expect(transaction).toHaveBeenCalledTimes(1);
   expect(tx.researchFundJournalEntry.findFirst).toHaveBeenCalledWith({ where: { bookId: BigInt(1), status: "published" }, orderBy: { entryDate: "desc" }, select: { entryDate: true } });
   expect(tx.researchFundBook.update).toHaveBeenCalledWith({ where: { id: BigInt(1) }, data: { publishedThrough: new Date("2026-09-30") } });
+
+  // 同じ帳簿の取り下げと直列化するため、仕訳を更新する前に帳簿の行をロックする
+  const [sql, ...values] = tx.$queryRaw.mock.calls[0];
+  expect(sql.join("?")).toContain("FOR UPDATE");
+  expect(values).toEqual([BigInt(1)]);
+  expect(tx.$queryRaw.mock.invocationCallOrder[0]).toBeLessThan(tx.researchFundJournalEntry.updateMany.mock.invocationCallOrder[0]);
 });
 test("取り下げた仕訳より新しい月や同じ月の公開中の仕訳が残っていれば、公開範囲は変えない", async () => {
   const later = setupUnpublish("2026-09-30", "2026-09-01");
