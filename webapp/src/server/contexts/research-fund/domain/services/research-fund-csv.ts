@@ -33,7 +33,6 @@ export function buildResearchFundCsv(expenses: readonly ResearchFundExpenseView[
         expense.legal.label,
         expense.description,
         expense.amount,
-        // 同一注文の分割行は、特記事項に「同一注文でN点購入」を含めて1点ずつ出す
         expense.note ?? "",
       ]
         .map(escapeCell)

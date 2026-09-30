@@ -2,10 +2,7 @@ import type {
   PublishedAccount,
   PublishedExpense,
 } from "@/server/contexts/research-fund/domain/models/published-research-fund";
-import {
-  buildExpenseViews,
-  splitGroupNote,
-} from "@/server/contexts/research-fund/domain/services/research-fund-expense-list";
+import { buildExpenseViews } from "@/server/contexts/research-fund/domain/services/research-fund-expense-list";
 
 const accounts: Record<string, PublishedAccount> = {
   taxi: { label: "タクシー代", legalLabel: "⑨ 滞在費", legalCategoryKey: "stay" },
@@ -61,7 +58,7 @@ describe("buildExpenseViews", () => {
     expect(views.map((view) => view.groupId)).toEqual(["7", null]);
   });
 
-  it("同一注文の分割行を隣り合わせにし、何点で1注文かを特記事項に添える", () => {
+  it("同一注文の分割行を隣り合わせにし、特記事項に説明を自動で付けない", () => {
     const views = buildExpenseViews(
       [
         expense({ id: "10", entryId: "10", splitGroup: "order-1", description: "トナー代" }),
@@ -72,11 +69,11 @@ describe("buildExpenseViews", () => {
     );
 
     expect(views.map((view) => view.id)).toEqual(["11", "10", "12"]);
-    expect(views[1].note).toBe(splitGroupNote(2));
-    expect(views[2].note).toBe(splitGroupNote(2));
+    expect(views[1].note).toBeNull();
+    expect(views[2].note).toBeNull();
   });
 
-  it("特記事項がある分割行は、元の特記事項と分割の説明を並べる", () => {
+  it("特記事項がある分割行は、入力された特記事項だけを出す", () => {
     const views = buildExpenseViews(
       [
         expense({ id: "1", entryId: "1", splitGroup: "order-1", note: "会派で按分" }),
@@ -85,7 +82,7 @@ describe("buildExpenseViews", () => {
       accounts,
     );
 
-    expect(views[0].note).toBe(`会派で按分／${splitGroupNote(2)}`);
+    expect(views.map((view) => view.note)).toEqual(["会派で按分", "会派で按分"]);
   });
 
   it("分割していない行の特記事項はそのまま、無ければ null", () => {

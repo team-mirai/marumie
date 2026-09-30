@@ -35,7 +35,7 @@ export interface ResearchFundExpenseView {
   amount: number;
   detailed: ResearchFundCategoryView;
   legal: ResearchFundCategoryView;
-  /** 特記事項。同一注文の分割行はその説明もここに含む。無ければ null */
+  /** 特記事項（管理画面で入力したもの）。無ければ null */
   note: string | null;
   /** 同一注文の分割グループ。単独の支出は null。CSV で注文単位に束ね直すのに使う。 */
   splitGroup: string | null;

@@ -19,27 +19,16 @@ const UNKNOWN_CATEGORY_LABEL = "その他";
  */
 const GRANT_CATEGORY: ResearchFundCategoryView = { label: "支給（入金）", color: "#238778" };
 
-/**
- * 同一注文の分割行につける説明。
- *
- * Amazon の明細を1品目ずつ起こしているため、同じ品を何度も買ったように読まれる。
- * 束ねて並べたうえで、何件で1注文なのかを特記事項として添える。
- */
-export function splitGroupNote(count: number): string {
-  return `同一注文で${count}点購入。1点ずつ行を分けて計上しています`;
-}
-
-function mergeNotes(note: string | null, splitNote: string | null): string | null {
-  if (!splitNote) return note?.trim() ? note : null;
-  return note?.trim() ? `${note}／${splitNote}` : splitNote;
+/** 特記事項は管理画面で入力したものだけを出す。空白だけなら null。 */
+function normalizeNote(note: string | null): string | null {
+  return note?.trim() ? note : null;
 }
 
 /**
  * B-4 の明細行を組み立てる。支給（入金）と支出（出金）を同じ一覧に混ぜる。
  *
  * 並びは日付の新しい順。同一注文（split_group）の行は必ず隣り合わせにし、
- * 何点で1注文かを特記事項に添えることで「同じものを何度も買っている」と
- * 読まれないようにする。
+ * 「同じものを何度も買っている」と読まれないようにする。
  *
  * groupIdByEntryId は仕訳ID → 支出群ID。用途カードと明細を相互にリンクするのに使う。
  */
@@ -48,12 +37,6 @@ export function buildExpenseViews(
   accounts: Readonly<Record<string, PublishedAccount>>,
   groupIdByEntryId: ReadonlyMap<string, string> = new Map(),
 ): ResearchFundExpenseView[] {
-  const splitCounts = new Map<string, number>();
-  for (const expense of expenses) {
-    if (!expense.splitGroup) continue;
-    splitCounts.set(expense.splitGroup, (splitCounts.get(expense.splitGroup) ?? 0) + 1);
-  }
-
   return [...expenses]
     .sort(
       (a, b) =>
@@ -74,7 +57,7 @@ export function buildExpenseViews(
           amount: expense.amount,
           detailed: GRANT_CATEGORY,
           legal: GRANT_CATEGORY,
-          note: mergeNotes(expense.note, null),
+          note: normalizeNote(expense.note),
           splitGroup: null,
           // 用途カードは支出だけを束ねるので、支給は紐づけない。
           groupId: null,
@@ -85,7 +68,6 @@ export function buildExpenseViews(
       const account = accounts[expense.accountKey];
       const color = researchFundCategoryColor(account?.legalCategoryKey ?? "");
       const description = researchFundCategoryDescription(expense.accountKey);
-      const splitCount = expense.splitGroup ? (splitCounts.get(expense.splitGroup) ?? 1) : 1;
       return {
         kind: expense.kind,
         id: expense.id,
@@ -100,7 +82,7 @@ export function buildExpenseViews(
           ...(description && { description }),
         },
         legal: { label: account?.legalLabel || UNKNOWN_CATEGORY_LABEL, color },
-        note: mergeNotes(expense.note, splitCount > 1 ? splitGroupNote(splitCount) : null),
+        note: normalizeNote(expense.note),
         splitGroup: expense.splitGroup,
         groupId: groupIdByEntryId.get(expense.entryId) ?? null,
         hasReceipt: expense.hasReceipt,
