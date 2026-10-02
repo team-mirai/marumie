@@ -74,7 +74,7 @@
   "devDependencies": {
     "@biomejs/biome": "2.5.14",
     "concurrently": "^9.2.1",
-    "dependency-cruiser": "^17.3.6",
+    "dependency-cruiser": "^18.0.0",
     "dotenv-cli": "^11.0.0",
     "knip": "^5.79.0",
     "lint-staged": "^16.2.7",
