@@ -50,11 +50,11 @@ describe("planReread", () => {
 
 describe("previewReread", () => {
   const entries = [
-    { id: "1", status: "draft" as const, documentId: "10" },
-    { id: "2", status: "draft" as const, documentId: "10" },
-    { id: "3", status: "draft" as const, documentId: "20" },
-    { id: "4", status: "approved" as const, documentId: "20" },
-    { id: "5", status: "draft" as const, documentId: null },
+    { id: "1", status: "draft" as const, documentId: "10", advancedBy: null },
+    { id: "2", status: "draft" as const, documentId: "10", advancedBy: null },
+    { id: "3", status: "draft" as const, documentId: "20", advancedBy: null },
+    { id: "4", status: "approved" as const, documentId: "20", advancedBy: null },
+    { id: "5", status: "draft" as const, documentId: null, advancedBy: null },
   ];
 
   it("選んでいない同じ書類の下書きも作り直す対象に数える", () => {
@@ -63,6 +63,7 @@ describe("previewReread", () => {
       draftCount: 2,
       excludedDocumentCount: 0,
       withoutDocumentCount: 0,
+      mixedAdvancerDocumentCount: 0,
     });
   });
 
@@ -72,6 +73,23 @@ describe("previewReread", () => {
       draftCount: 2,
       excludedDocumentCount: 1,
       withoutDocumentCount: 1,
+      mixedAdvancerDocumentCount: 0,
     });
+  });
+
+  it("立替者が混ざっている書類は、引き継げない書類として数える", () => {
+    const mixed = [
+      { ...entries[0], advancedBy: "秘書A" },
+      { ...entries[1], advancedBy: "秘書B" },
+    ];
+    expect(previewReread([mixed[0]], mixed).mixedAdvancerDocumentCount).toBe(1);
+  });
+
+  it("書類の下書きの立替者が1種類だけなら引き継げる書類として扱う", () => {
+    const same = [
+      { ...entries[0], advancedBy: "秘書A" },
+      { ...entries[1], advancedBy: "秘書A" },
+    ];
+    expect(previewReread([same[0]], same).mixedAdvancerDocumentCount).toBe(0);
   });
 });

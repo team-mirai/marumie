@@ -119,3 +119,34 @@ test("下書きに戻す操作が拒否されたら理由を返し、再検証�
   await expect(mutateJournalReview("2", "1", { type: "revert-to-draft", id: "3", updatedAt: "date" })).resolves.toEqual({ success: false, error: "支給は下書きに戻せません" });
   expect(revalidatePath).not.toHaveBeenCalled();
 });
+
+test("立替者の一括設定は対象帳簿を検証して結果を返し、成功後に再検証する", async () => {
+  const setAdvancedBy = jest.spyOn(ManageJournalReviewUsecase.prototype, "setAdvancedBy").mockResolvedValue({ updated: 2, advancedBy: "秘書A" });
+  const targets = [{ id: "3", updatedAt: "date" }, { id: "4", updatedAt: "date2" }];
+  await expect(mutateJournalReview("2", "1", { type: "set-advanced-by", targets, advancedBy: "秘書A" })).resolves.toEqual({ success: true, advance: { updated: 2, advancedBy: "秘書A" } });
+  expect(setAdvancedBy).toHaveBeenCalledWith("1", targets, "秘書A");
+  expect(revalidatePath).toHaveBeenCalledWith("/(auth)", "layout");
+});
+test("一括精算は精算日を渡して結果を返し、成功後に再検証する", async () => {
+  const settleMany = jest.spyOn(ManageJournalReviewUsecase.prototype, "settleMany").mockResolvedValue({ settled: 2, settledAt: "2026-09-30" });
+  const targets = [{ id: "3", updatedAt: "date" }, { id: "4", updatedAt: "date2" }];
+  await expect(mutateJournalReview("2", "1", { type: "settle-many", targets, settledAt: "2026-09-30" })).resolves.toEqual({ success: true, settlement: { settled: 2, settledAt: "2026-09-30" } });
+  expect(settleMany).toHaveBeenCalledWith("1", targets, "2026-09-30");
+  expect(revalidatePath).toHaveBeenCalledWith("/(auth)", "layout");
+});
+test("一括で未精算に戻すと件数を返して再検証する", async () => {
+  const unsettleMany = jest.spyOn(ManageJournalReviewUsecase.prototype, "unsettleMany").mockResolvedValue({ unsettled: 2 });
+  const targets = [{ id: "3", updatedAt: "date" }];
+  await expect(mutateJournalReview("2", "1", { type: "unsettle-many", targets })).resolves.toEqual({ success: true, unsettled: 2 });
+  expect(unsettleMany).toHaveBeenCalledWith("1", targets);
+  expect(revalidatePath).toHaveBeenCalledWith("/(auth)", "layout");
+});
+test.each([
+  ["set-advanced-by", "setAdvancedBy", "精算済です（先に未精算に戻してください）"],
+  ["settle-many", "settleMany", "下書きです"],
+  ["unsettle-many", "unsettleMany", "未精算です"],
+] as const)("%s が拒否されたら理由を返し、再検証しない", async (type, method, message) => {
+  jest.spyOn(ManageJournalReviewUsecase.prototype, method).mockRejectedValue(new JournalReviewError(message));
+  await expect(mutateJournalReview("2", "1", { type, targets: [{ id: "3", updatedAt: "date" }], advancedBy: "秘書A", settledAt: "2026-09-30" } as never)).resolves.toEqual({ success: false, error: message });
+  expect(revalidatePath).not.toHaveBeenCalled();
+});

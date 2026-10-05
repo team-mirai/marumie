@@ -1,9 +1,9 @@
 import { ManageJournalReviewUsecase } from "@/server/contexts/research-fund/application/usecases/manage-journal-review-usecase";
 import type { JournalEdit, ReviewEntry } from "@/server/contexts/research-fund/domain/models/journal-review";
 const input: JournalEdit = { entryDate: "2026-08-01", description: "視察の移動", amount: 1200, accountKey: "taxi", note: "公開メモ", memo: "内部メモ" };
-const entry: ReviewEntry = { ...input, id: "2", source: "scan", documentId: "3", splitGroup: "group", status: "draft", updatedAt: "2026-08-01T12:00:00.000Z", model: "test-model", promptVersion: 1 };
+const entry: ReviewEntry = { ...input, id: "2", source: "scan", documentId: "3", splitGroup: "group", status: "draft", updatedAt: "2026-08-01T12:00:00.000Z", model: "test-model", promptVersion: 1, advancedBy: null, settledAt: null };
 function setup(overrides: Partial<ReviewEntry> = {}) {
-  const repository = { list: jest.fn().mockResolvedValue([entry]), find: jest.fn().mockResolvedValue({ ...entry, ...overrides }), findMany: jest.fn().mockResolvedValue([{ ...entry, ...overrides }]), approveMany: jest.fn(), discardMany: jest.fn(), revertManyToDraft: jest.fn(), unpublish: jest.fn(), revertToDraft: jest.fn(), accounts: jest.fn().mockResolvedValue([{ key: "taxi", label: "タクシー代", type: "expense" }, { key: "needs-review", label: "要確認", type: "expense" }, { key: "bank", label: "普通預金", type: "asset" }, { key: "grant-income", label: "調査研究費収入", type: "income" }]), year: jest.fn().mockResolvedValue(2026), termStart: jest.fn().mockResolvedValue("2026-07-15"), create: jest.fn().mockResolvedValue("10"), update: jest.fn(), discard: jest.fn() };
+  const repository = { list: jest.fn().mockResolvedValue([entry]), find: jest.fn().mockResolvedValue({ ...entry, ...overrides }), findMany: jest.fn().mockResolvedValue([{ ...entry, ...overrides }]), approveMany: jest.fn(), discardMany: jest.fn(), revertManyToDraft: jest.fn(), unpublish: jest.fn(), revertToDraft: jest.fn(), accounts: jest.fn().mockResolvedValue([{ key: "taxi", label: "タクシー代", type: "expense" }, { key: "needs-review", label: "要確認", type: "expense" }, { key: "bank", label: "普通預金", type: "asset" }, { key: "grant-income", label: "調査研究費収入", type: "income" }]), year: jest.fn().mockResolvedValue(2026), termStart: jest.fn().mockResolvedValue("2026-07-15"), create: jest.fn().mockResolvedValue("10"), update: jest.fn(), discard: jest.fn(), advancers: jest.fn().mockResolvedValue(["秘書A"]), setAdvancedBy: jest.fn(), settleMany: jest.fn(), unsettleMany: jest.fn() };
   const cacheInvalidator = { invalidateWebappCache: jest.fn().mockResolvedValue(undefined) };
   return { repository, cacheInvalidator, usecase: new ManageJournalReviewUsecase(repository, cacheInvalidator) };
 }
@@ -50,7 +50,7 @@ test("別帳簿の仕訳・存在しない仕訳は更新できない", async ()
 test("一覧には費用科目だけを渡す", async () => {
   const { usecase } = setup();
   const data = await usecase.list("1");
-  expect(data.entries).toEqual([entry]); expect(data.accounts.map(a => a.key)).toEqual(["taxi", "needs-review"]);
+  expect(data.entries).toEqual([entry]); expect(data.accounts.map(a => a.key)).toEqual(["taxi", "needs-review"]); expect(data.advancers).toEqual(["秘書A"]);
 });
 
 const grantInput: JournalEdit = { entryDate: "2026-08-01", description: "調査研究広報滞在費 8月分", amount: 1_000_000, accountKey: "grant-income", note: "", memo: "" };
@@ -280,4 +280,92 @@ test("存在しない仕訳は下書きに戻せない", async () => {
   const { repository, usecase } = setup(); repository.find.mockResolvedValue(null);
   await expect(usecase.revertToDraft("1", "2", entry.updatedAt)).rejects.toThrow("見つかりません");
   expect(repository.revertToDraft).not.toHaveBeenCalled();
+});
+
+// --- 立替者と精算（事務所内の管理情報。公開内容は変えない） ---
+const advanced = { ...entry, status: "approved" as const, advancedBy: "秘書A" };
+const settled = { ...advanced, settledAt: "2026-09-01" };
+test.each(["draft", "approved", "published"] as const)("%s の支出に立替者を設定できる（公開中も変更でき、キャッシュは無効化しない）", async status => {
+  const { repository, cacheInvalidator, usecase } = setup({ status });
+  await expect(usecase.setAdvancedBy("1", [target], " 秘書A ")).resolves.toEqual({ updated: 1, advancedBy: "秘書A" });
+  expect(repository.setAdvancedBy).toHaveBeenCalledWith("1", [{ ...entry, status }], "秘書A");
+  expect(cacheInvalidator.invalidateWebappCache).not.toHaveBeenCalled();
+});
+test("空白だけの立替者は立替の解除として保存する", async () => {
+  const { repository, usecase } = setup();
+  await expect(usecase.setAdvancedBy("1", [target], "　")).resolves.toEqual({ updated: 1, advancedBy: null });
+  expect(repository.setAdvancedBy).toHaveBeenCalledWith("1", [entry], null);
+});
+test("長すぎる立替者は保存しない", async () => {
+  const { repository, usecase } = setup();
+  await expect(usecase.setAdvancedBy("1", [target], "あ".repeat(256))).rejects.toThrow("255文字以内");
+  expect(repository.findMany).not.toHaveBeenCalled(); expect(repository.setAdvancedBy).not.toHaveBeenCalled();
+});
+test("同じ仕訳を重ねて選んでも1件として扱う", async () => {
+  const { repository, usecase } = setup();
+  await expect(usecase.setAdvancedBy("1", [target, target], "秘書A")).resolves.toEqual({ updated: 1, advancedBy: "秘書A" });
+});
+test.each([
+  [{ settledAt: "2026-09-01", advancedBy: "秘書A" }, "精算済"],
+  [{ updatedAt: "2026-09-01T00:00:00.000Z" }, "別の操作で更新されました"],
+])("精算済・同時更新の仕訳が混ざっていたら立替者を1件も変更しない %j", async (overrides, message) => {
+  const { repository, usecase } = setup(overrides);
+  await expect(usecase.setAdvancedBy("1", [target], "秘書A")).rejects.toThrow(message);
+  expect(repository.setAdvancedBy).not.toHaveBeenCalled();
+});
+test("支給・返還など findMany が返さない仕訳には立替者を設定できない", async () => {
+  const { repository, usecase } = setup();
+  repository.findMany.mockResolvedValue([]);
+  await expect(usecase.setAdvancedBy("1", [target], "秘書A")).rejects.toThrow("支給・返還");
+  expect(repository.setAdvancedBy).not.toHaveBeenCalled();
+});
+test.each(["approved", "published"] as const)("%s の未精算の立替をまとめて精算できる（キャッシュは無効化しない）", async status => {
+  const { repository, cacheInvalidator, usecase } = setup({ ...advanced, status });
+  await expect(usecase.settleMany("1", [target], "2026-09-30")).resolves.toEqual({ settled: 1, settledAt: "2026-09-30" });
+  expect(repository.settleMany).toHaveBeenCalledWith("1", [{ ...advanced, status }], "2026-09-30");
+  expect(cacheInvalidator.invalidateWebappCache).not.toHaveBeenCalled();
+});
+test.each([
+  [{ ...entry, status: "draft" as const, advancedBy: "秘書A" }, "下書き"],
+  [{ ...entry, status: "approved" as const }, "立替ではありません"],
+  [settled, "すでに精算済"],
+])("下書き・立替なし・精算済が選ばれていたら1件も精算しない %j", async (overrides, message) => {
+  const { repository, usecase } = setup(overrides);
+  await expect(usecase.settleMany("1", [target], "2026-09-30")).rejects.toThrow(message);
+  await expect(usecase.settleMany("1", [target], "2026-09-30")).rejects.toThrow("まとめて精算しませんでした");
+  expect(repository.settleMany).not.toHaveBeenCalled();
+});
+test.each(["2099-12-31", "2026-07-31"])("未来日・仕訳の日付より前の精算日は受け付けない %s", async settledAt => {
+  const { repository, usecase } = setup(advanced);
+  await expect(usecase.settleMany("1", [target], settledAt)).rejects.toThrow();
+  expect(repository.settleMany).not.toHaveBeenCalled();
+});
+test("精算済をまとめて未精算に戻せる", async () => {
+  const { repository, usecase } = setup(settled);
+  await expect(usecase.unsettleMany("1", [target])).resolves.toEqual({ unsettled: 1 });
+  expect(repository.unsettleMany).toHaveBeenCalledWith("1", [settled]);
+});
+test("未精算の仕訳が混ざっていたら1件も未精算に戻さない", async () => {
+  const { repository, usecase } = setup(advanced);
+  await expect(usecase.unsettleMany("1", [target])).rejects.toThrow("未精算です");
+  expect(repository.unsettleMany).not.toHaveBeenCalled();
+});
+test("精算済の仕訳は金額を変更できず、破棄もできない。項目名だけなら変更できる", async () => {
+  const { repository, usecase } = setup(settled);
+  await expect(usecase.save("1", "2", entry.updatedAt, { ...input, amount: 1500 }, false)).rejects.toThrow("精算済の仕訳は金額を変更できません");
+  await expect(usecase.discard("1", "2", entry.updatedAt)).rejects.toThrow("精算済の仕訳は破棄できません");
+  expect(repository.update).not.toHaveBeenCalled(); expect(repository.discard).not.toHaveBeenCalled();
+  await usecase.save("1", "2", entry.updatedAt, { ...input, description: "別の項目名" }, false);
+  expect(repository.update).toHaveBeenCalled();
+});
+test("精算済は下書きに戻せない（下書きは精算できないため）", async () => {
+  const { repository, usecase } = setup(settled);
+  await expect(usecase.revertToDraft("1", "2", entry.updatedAt)).rejects.toThrow("精算済の仕訳は下書きに戻せません");
+  await expect(usecase.revertManyToDraft("1", [target])).rejects.toThrow("精算済です");
+  expect(repository.revertToDraft).not.toHaveBeenCalled(); expect(repository.revertManyToDraft).not.toHaveBeenCalled();
+});
+test("精算済はまとめて破棄できない", async () => {
+  const { repository, usecase } = setup(settled);
+  await expect(usecase.discardMany("1", [target])).rejects.toThrow("精算済です");
+  expect(repository.discardMany).not.toHaveBeenCalled();
 });

@@ -68,6 +68,8 @@ function model(row: Row): ReviewEntry | null {
     updatedAt: row.updatedAt.toISOString(),
     model: job?.model ?? null,
     promptVersion: job?.prompt.version ?? null,
+    advancedBy: row.advancedBy ?? null,
+    settledAt: row.settledAt ? row.settledAt.toISOString().slice(0, 10) : null,
   };
 }
 function data(input: JournalWrite) {
@@ -200,11 +202,12 @@ export class PrismaJournalReviewRepository implements JournalReviewRepository {
     });
   }
   // 一括の破棄は下書き・確認済の支出だけを対象にし、1 件でも競合していたらトランザクションごと巻き戻す。
+  // 精算済の仕訳は精算した額と記録が合わなくなるので消さない（settled_at IS NULL で照合する）。
   async discardMany(bookId: string, entries: readonly ReviewEntry[]) {
     await this.prisma.$transaction(async (tx) => {
       for (const entry of entries) {
         const result = await tx.researchFundJournalEntry.deleteMany({
-          where: { ...guard(bookId, entry), ...expenseWhere },
+          where: { ...guard(bookId, entry), ...expenseWhere, settledAt: null },
         });
         if (result.count !== 1)
           throw new JournalReviewError("仕訳が更新・公開されました。画面を再読み込みしてください");
@@ -272,9 +275,78 @@ export class PrismaJournalReviewRepository implements JournalReviewRepository {
   }
   async discard(bookId: string, entry: ReviewEntry) {
     const result = await this.prisma.researchFundJournalEntry.deleteMany({
-      where: guard(bookId, entry),
+      where: { ...guard(bookId, entry), settledAt: null },
     });
     if (result.count !== 1)
       throw new JournalReviewError("仕訳が更新・公開されました。画面を再読み込みしてください");
+  }
+  // 入力欄の候補。年度をまたいで同じ秘書が立て替えるので、同じ政治家の全帳簿から集める。
+  async advancers(bookId: string) {
+    const book = await this.prisma.researchFundBook.findUnique({
+      where: { id: BigInt(bookId) },
+      select: { politicianId: true },
+    });
+    if (!book) return [];
+    const rows = await this.prisma.researchFundJournalEntry.findMany({
+      where: { book: { politicianId: book.politicianId }, advancedBy: { not: null } },
+      distinct: ["advancedBy"],
+      select: { advancedBy: true },
+      orderBy: { advancedBy: "asc" },
+    });
+    return rows.flatMap((row) => (row.advancedBy === null ? [] : [row.advancedBy]));
+  }
+  // 立替情報は公開内容に影響しないので、公開中の仕訳も対象にする（複式行と hash は作り直さない）。
+  // 精算済の仕訳は精算した額と記録が合わなくなるので変更しない（settled_at IS NULL で照合する）。
+  // 1 件でも競合していたらトランザクションごと巻き戻し、一部だけ変わった状態にしない。
+  async setAdvancedBy(bookId: string, entries: readonly ReviewEntry[], advancedBy: string | null) {
+    await this.prisma.$transaction(async (tx) => {
+      for (const entry of entries) {
+        const result = await tx.researchFundJournalEntry.updateMany({
+          where: {
+            ...guard(bookId, entry, ["draft", "approved", "published"]),
+            ...expenseWhere,
+            settledAt: null,
+          },
+          data: { advancedBy },
+        });
+        if (result.count !== 1)
+          throw new JournalReviewError("仕訳が更新されました。画面を再読み込みしてください");
+      }
+    });
+  }
+  // 精算は確認済・公開中の未精算の立替だけを対象にする。1 件でも競合していたら巻き戻す。
+  async settleMany(bookId: string, entries: readonly ReviewEntry[], settledAt: string) {
+    await this.prisma.$transaction(async (tx) => {
+      for (const entry of entries) {
+        const result = await tx.researchFundJournalEntry.updateMany({
+          where: {
+            ...guard(bookId, entry, ["approved", "published"]),
+            ...expenseWhere,
+            advancedBy: { not: null },
+            settledAt: null,
+          },
+          data: { settledAt: new Date(`${settledAt}T00:00:00.000Z`) },
+        });
+        if (result.count !== 1)
+          throw new JournalReviewError("仕訳が更新されました。画面を再読み込みしてください");
+      }
+    });
+  }
+  // 誤操作の取り消し。精算済の仕訳だけを未精算に戻す。1 件でも競合していたら巻き戻す。
+  async unsettleMany(bookId: string, entries: readonly ReviewEntry[]) {
+    await this.prisma.$transaction(async (tx) => {
+      for (const entry of entries) {
+        const result = await tx.researchFundJournalEntry.updateMany({
+          where: {
+            ...guard(bookId, entry, ["draft", "approved", "published"]),
+            ...expenseWhere,
+            settledAt: { not: null },
+          },
+          data: { settledAt: null },
+        });
+        if (result.count !== 1)
+          throw new JournalReviewError("仕訳が更新されました。画面を再読み込みしてください");
+      }
+    });
   }
 }

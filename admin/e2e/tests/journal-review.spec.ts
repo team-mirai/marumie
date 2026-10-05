@@ -76,7 +76,7 @@ test("手動作成→一覧選択→編集→確認済、月絞り込みと破�
     await expect(createDialog).toBeHidden();
   }
   await page.getByRole("tab", { name: /^下書き（3）$/ }).click();
-  await page.getByRole("checkbox", { name: "表示中の下書き・確認済をすべて選択" }).click();
+  await page.getByRole("checkbox", { name: "表示中の支出の仕訳をすべて選択" }).click();
   await expect(page.getByText("3件の下書きを選択中")).toBeVisible();
   // 選択を 1 件外すと、外した仕訳は下書きのまま残る
   await page.getByRole("checkbox", { name: "会議への移動を選択" }).click();
@@ -102,7 +102,7 @@ test("手動作成→一覧選択→編集→確認済、月絞り込みと破�
   await expect(page.getByRole("row").filter({ hasText: "会議への移動" })).toHaveCount(0);
   // 選んだ確認済をまとめて下書きに戻す
   await page.getByRole("tab", { name: /^確認済（2）$/ }).click();
-  await page.getByRole("checkbox", { name: "表示中の下書き・確認済をすべて選択" }).click();
+  await page.getByRole("checkbox", { name: "表示中の支出の仕訳をすべて選択" }).click();
   await expect(page.getByText("2件の確認済を選択中")).toBeVisible();
   await page.getByRole("button", { name: "まとめて下書きに戻す" }).click();
   await expect(page.getByText("2件の仕訳を下書きに戻しました")).toBeVisible();

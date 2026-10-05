@@ -4,6 +4,7 @@ import type {
   ScanBatchView,
   ScanJobStatus,
 } from "@/server/contexts/research-fund/domain/models/scan-batch";
+import { inheritedAdvancedBy } from "@/server/contexts/research-fund/domain/models/advance";
 import { ScanJobError } from "@/server/contexts/research-fund/domain/models/scan-job";
 import type { RereadCandidate } from "@/server/contexts/research-fund/domain/models/scan-reread";
 import type {
@@ -195,6 +196,9 @@ export class PrismaScanRepository implements ScanRepository {
     const entries = new Map<string, ScanDraftEntry>();
     for (const entry of input.entries) if (!entries.has(entry.hash)) entries.set(entry.hash, entry);
     await this.prisma.$transaction(async (tx) => {
+      // 読み直しで引き継ぐ立替者。元の下書きの立替者が 1 種類だけなら作り直した下書きに付け直す
+      // （立替は読み取れないので LLM の結果には含まれず、そのままでは入力済みの立替者が消える）。
+      let advancedBy: string | null = null;
       if (input.replaceDrafts) {
         // 読み直しは書類単位で下書きを置き換える。確認済・公開中の仕訳がある書類は
         // （依頼の後に確認済にされた場合も）置き換えず、元の仕訳をそのまま残す。
@@ -204,6 +208,11 @@ export class PrismaScanRepository implements ScanRepository {
         // 同じ書類の読み直しが並行して完了しても、書類の行ロックで直列化する。後続は先行の
         // 新しい下書きがコミットされてから消すので、両方の結果が並んで残らない
         await tx.$queryRaw`SELECT id FROM research_fund_documents WHERE id = ${documentId} FOR UPDATE`;
+        const replaced = await tx.researchFundJournalEntry.findMany({
+          where: { bookId, documentId, status: "draft" },
+          select: { advancedBy: true },
+        });
+        advancedBy = inheritedAdvancedBy(replaced.map((row) => row.advancedBy)).advancedBy;
         await tx.researchFundJournalEntry.deleteMany({
           where: { bookId, documentId, status: "draft" },
         });
@@ -230,6 +239,7 @@ export class PrismaScanRepository implements ScanRepository {
           splitGroup: entry.splitGroup,
           note: entry.note,
           memo: entry.memo,
+          advancedBy,
           hash: entry.hash,
           createdById: input.userId,
         })),

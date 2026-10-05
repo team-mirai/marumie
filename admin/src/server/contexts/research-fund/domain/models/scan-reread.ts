@@ -1,3 +1,4 @@
+import { inheritedAdvancedBy } from "@/server/contexts/research-fund/domain/models/advance";
 import { SCAN_BATCH_MAX_DOCUMENTS } from "@/server/contexts/research-fund/domain/models/scan-batch";
 import {
   invalidResearchFundResult,
@@ -32,12 +33,16 @@ interface RereadPreview {
   excludedDocumentCount: number;
   /** 書類の紐づかない下書き（手入力など）の数。読み直しの対象にならない */
   withoutDocumentCount: number;
+  /** 立替者が混ざっているため、作り直した下書きに立替者を引き継げない書類の数 */
+  mixedAdvancerDocumentCount: number;
 }
 
 interface RereadEntry {
   id: string;
   status: "draft" | "approved" | "published";
   documentId: string | null;
+  /** 立替者。読み直しで作り直す下書きに引き継げるか判定するために見る */
+  advancedBy: string | null;
 }
 
 /** 読み直し指示を検証する。前後の空白は落とし、空なら受け付けない */
@@ -106,13 +111,20 @@ export function previewReread(
       .map((entry) => entry.documentId),
   );
   const targets = [...documentIds].filter((documentId) => !excluded.has(documentId));
+  const rebuilt = entries.filter(
+    (entry) =>
+      entry.status === "draft" && entry.documentId !== null && targets.includes(entry.documentId),
+  );
   return {
     documentCount: targets.length,
-    draftCount: entries.filter(
-      (entry) =>
-        entry.status === "draft" && entry.documentId !== null && targets.includes(entry.documentId),
-    ).length,
+    draftCount: rebuilt.length,
     excludedDocumentCount: excluded.size,
     withoutDocumentCount: drafts.filter((entry) => entry.documentId === null).length,
+    mixedAdvancerDocumentCount: targets.filter(
+      (documentId) =>
+        inheritedAdvancedBy(
+          rebuilt.filter((entry) => entry.documentId === documentId).map((e) => e.advancedBy),
+        ).mixed,
+    ).length,
   };
 }

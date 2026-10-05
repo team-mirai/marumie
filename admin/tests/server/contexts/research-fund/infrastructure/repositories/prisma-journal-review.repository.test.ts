@@ -74,7 +74,7 @@ test("手動仕訳を取得し、書類・メモの欠損値を表示用に変�
   await expect(repository.find("1", entry.id)).resolves.toEqual({
     id: entry.id, entryDate: input.entryDate, updatedAt: entry.updatedAt, description: "移動",
     note: "", memo: "", status: "draft", source: "manual", documentId: null, splitGroup: null,
-    model: null, promptVersion: null, amount: 1200, accountKey: "taxi",
+    model: null, promptVersion: null, amount: 1200, accountKey: "taxi", advancedBy: null, settledAt: null,
   });
   tx.researchFundJournalEntry.findFirst.mockResolvedValue(null);
   await expect(repository.find("9", entry.id)).resolves.toBeNull();
@@ -99,7 +99,7 @@ test("空の公開・非公開メモはNULLで保存し、破棄でも競合条�
   expect(tx.researchFundJournalEntry.deleteMany).toHaveBeenCalledWith({ where: {
     id: BigInt(entry.id), bookId: BigInt(1), updatedAt: new Date(entry.updatedAt),
     status: { in: ["draft", "approved"] }, source: { in: ["manual", "scan"] },
-    lines: { some: { side: "debit", account: { type: "expense" } } },
+    lines: { some: { side: "debit", account: { type: "expense" } } }, settledAt: null,
   } });
 });
 
@@ -142,7 +142,7 @@ test("一括の破棄は下書きの支出だけを1トランザクションで�
   const other = { id: "5", updatedAt: "2026-08-02T00:00:00.000Z" } as ReviewEntry;
   await repository.discardMany("1", [entry, other]);
   expect(transaction).toHaveBeenCalledTimes(1);
-  expect(tx.researchFundJournalEntry.deleteMany).toHaveBeenNthCalledWith(1, { where: { id: BigInt(entry.id), bookId: BigInt(1), status: { in: ["draft", "approved"] }, updatedAt: new Date(entry.updatedAt), source: { in: ["manual", "scan"] }, lines: { some: { side: "debit", account: { type: "expense" } } } } });
+  expect(tx.researchFundJournalEntry.deleteMany).toHaveBeenNthCalledWith(1, { where: { id: BigInt(entry.id), bookId: BigInt(1), status: { in: ["draft", "approved"] }, updatedAt: new Date(entry.updatedAt), source: { in: ["manual", "scan"] }, lines: { some: { side: "debit", account: { type: "expense" } } }, settledAt: null } });
   expect(tx.researchFundJournalEntry.deleteMany).toHaveBeenNthCalledWith(2, expect.objectContaining({ where: expect.objectContaining({ id: BigInt(other.id), updatedAt: new Date(other.updatedAt) }) }));
 });
 test("一括の破棄は1件でも競合したらトランザクションを中止する", async () => {
@@ -253,4 +253,68 @@ test("当選日は帳簿の議員から YYYY-MM-DD で返し、帳簿が無け�
   await expect(repository.termStart("1")).resolves.toBe("2026-07-15");
   tx.researchFundBook.findUnique.mockResolvedValue(null);
   await expect(repository.termStart("1")).resolves.toBeNull();
+});
+
+// --- 立替者と精算 ---
+test("一覧は立替者と精算日（日付だけ）を変換して返す", async () => {
+  const { repository, tx } = setup();
+  tx.researchFundJournalEntry.findFirst.mockResolvedValue({ ...rowWithLines(), advancedBy: "秘書A", settledAt: new Date("2026-09-30T00:00:00.000Z") });
+  await expect(repository.find("1", entry.id)).resolves.toMatchObject({ advancedBy: "秘書A", settledAt: "2026-09-30" });
+});
+test("立替者の候補は同じ政治家の全帳簿から重複なく集める", async () => {
+  const { repository, tx } = setup();
+  tx.researchFundBook.findUnique.mockResolvedValue({ politicianId: BigInt(7) });
+  tx.researchFundJournalEntry.findMany.mockResolvedValue([{ advancedBy: "秘書A" }, { advancedBy: "秘書B" }]);
+  await expect(repository.advancers("1")).resolves.toEqual(["秘書A", "秘書B"]);
+  expect(tx.researchFundJournalEntry.findMany).toHaveBeenCalledWith(expect.objectContaining({
+    where: { book: { politicianId: BigInt(7) }, advancedBy: { not: null } }, distinct: ["advancedBy"],
+  }));
+});
+test("帳簿が無ければ立替者の候補は空", async () => {
+  const { repository, tx } = setup();
+  tx.researchFundBook.findUnique.mockResolvedValue(null);
+  await expect(repository.advancers("1")).resolves.toEqual([]);
+  expect(tx.researchFundJournalEntry.findMany).not.toHaveBeenCalled();
+});
+test("立替者の設定は公開中も対象にし、未精算であることをDBでも照合する", async () => {
+  const { repository, tx, transaction } = setup();
+  await repository.setAdvancedBy("1", [entry], "秘書A");
+  expect(transaction).toHaveBeenCalledTimes(1);
+  expect(tx.researchFundJournalEntry.updateMany).toHaveBeenCalledWith({
+    where: expect.objectContaining({ id: BigInt(entry.id), bookId: BigInt(1), status: { in: ["draft", "approved", "published"] }, updatedAt: new Date(entry.updatedAt), settledAt: null, source: { in: ["manual", "scan"] } }),
+    data: { advancedBy: "秘書A" },
+  });
+});
+test("立替の解除は NULL を保存する", async () => {
+  const { repository, tx } = setup();
+  await repository.setAdvancedBy("1", [entry], null);
+  expect(tx.researchFundJournalEntry.updateMany.mock.calls[0][0].data).toEqual({ advancedBy: null });
+});
+test("精算は確認済・公開中の未精算の立替だけを対象にし、精算日を日付として保存する", async () => {
+  const { repository, tx, transaction } = setup();
+  await repository.settleMany("1", [entry], "2026-09-30");
+  expect(transaction).toHaveBeenCalledTimes(1);
+  expect(tx.researchFundJournalEntry.updateMany).toHaveBeenCalledWith({
+    where: expect.objectContaining({ status: { in: ["approved", "published"] }, advancedBy: { not: null }, settledAt: null }),
+    data: { settledAt: new Date("2026-09-30T00:00:00.000Z") },
+  });
+});
+test("未精算に戻すのは精算済だけを対象にする", async () => {
+  const { repository, tx } = setup();
+  await repository.unsettleMany("1", [entry]);
+  expect(tx.researchFundJournalEntry.updateMany).toHaveBeenCalledWith({
+    where: expect.objectContaining({ settledAt: { not: null } }), data: { settledAt: null },
+  });
+});
+test.each(["setAdvancedBy", "settleMany", "unsettleMany"] as const)("%s は1件でも競合したらトランザクションを中止する", async method => {
+  const { repository, tx } = setup(0);
+  tx.researchFundJournalEntry.updateMany.mockResolvedValue({ count: 0 });
+  const other = { id: "5", updatedAt: entry.updatedAt } as ReviewEntry;
+  const run = method === "setAdvancedBy"
+    ? repository.setAdvancedBy("1", [entry, other], "秘書A")
+    : method === "settleMany"
+      ? repository.settleMany("1", [entry, other], "2026-09-30")
+      : repository.unsettleMany("1", [entry, other]);
+  await expect(run).rejects.toThrow("再読み込み");
+  expect(tx.researchFundJournalEntry.updateMany).toHaveBeenCalledTimes(1);
 });

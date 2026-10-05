@@ -61,6 +61,8 @@ export function JournalEditor({
   }, [dirty]);
   const published = entry?.status === "published";
   const grant = entry?.source === "grant";
+  // 精算済は、精算した額と記録が合わなくなるので金額を変更できず、破棄もできない（立替者も同様）。
+  const settled = entry != null && entry.settledAt !== null;
   const dateRange = entry && grant ? monthRange(entry.entryDate) : null;
   function change<K extends keyof JournalEdit>(key: K, value: JournalEdit[K]) {
     setDirty(true);
@@ -134,12 +136,17 @@ export function JournalEditor({
               max="999999999999"
               step="1"
               required
-              disabled={grant}
+              disabled={grant || settled}
               value={input.amount || ""}
               onChange={(e) => change("amount", Number(e.target.value))}
             />
           </div>
         </div>
+        {settled && (
+          <p className="text-sm font-bold text-primary-active">
+            精算済の仕訳は金額・立替者を変更できず、破棄もできません。先に未精算に戻してください
+          </p>
+        )}
         <div>
           <Label htmlFor={`${fieldId}-description`}>項目名</Label>
           <Input
@@ -232,7 +239,7 @@ export function JournalEditor({
                 下書きに戻す
               </Button>
             )}
-            {entry && !grant && (
+            {entry && !grant && !settled && (
               <Button type="button" variant="destructive" onClick={onDiscard}>
                 破棄
               </Button>

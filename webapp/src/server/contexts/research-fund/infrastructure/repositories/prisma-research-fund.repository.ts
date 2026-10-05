@@ -16,7 +16,7 @@ import type { ResearchFundRow } from "@/shared/research-fund/aggregation";
 /**
  * 公開ページに出す仕訳の取り出し方。
  *
- * 備考（memo）は公開されない事務所内メモなので、select に含めない
+ * 備考（memo）と立替情報（advancedBy / settledAt）は公開されない事務所内の情報なので、select に含めない
  * （サーバー側にすら読み出さないことで、取り違えて出力する余地を無くす）。
  */
 const entrySelect = {

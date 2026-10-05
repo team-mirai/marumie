@@ -1,4 +1,10 @@
 import "server-only";
+import {
+  settlementRejection,
+  todayInJst,
+  validateAdvancedBy,
+  validateSettlementDate,
+} from "@/server/contexts/research-fund/domain/models/advance";
 import { validateGrantEntryDate } from "@/server/contexts/research-fund/domain/models/grant-registration";
 import { JournalEntry } from "@/server/contexts/research-fund/domain/models/journal-entry";
 import { JournalEntryHash } from "@/server/contexts/research-fund/domain/models/journal-entry-hash";
@@ -22,6 +28,8 @@ export class ManageJournalReviewUsecase {
     return {
       entries: await this.repository.list(bookId),
       accounts: (await this.repository.accounts()).filter((a) => a.type === "expense"),
+      // 立替者の入力欄の候補。表記ゆれで立替者ごとの集計が分かれないようにする。
+      advancers: await this.repository.advancers(bookId),
     };
   }
   private async editable(bookId: string, id: string, updatedAt: string) {
@@ -79,6 +87,11 @@ export class ManageJournalReviewUsecase {
       await this.repository.update(bookId, entry, await this.prepareGrant(bookId, entry, input));
       return;
     }
+    // 精算後に金額が変わると、精算した額と記録が合わなくなる。先に未精算に戻してから直す。
+    if (entry.settledAt !== null && input.amount !== entry.amount)
+      throw new JournalReviewError(
+        "精算済の仕訳は金額を変更できません。先に未精算に戻してください",
+      );
     let status = entry.status;
     if (approve) {
       const result = JournalEntry.transition(entry, "approved");
@@ -232,6 +245,9 @@ export class ManageJournalReviewUsecase {
     if (entry.source === "grant") throw new JournalReviewError("支給は下書きに戻せません");
     if (entry.status !== "approved")
       throw new JournalReviewError("確認済の仕訳だけを下書きに戻せます");
+    // 下書きは金額が確定していないので精算できない。精算済のまま下書きに戻さない。
+    if (entry.settledAt !== null)
+      throw new JournalReviewError("精算済の仕訳は下書きに戻せません。先に未精算に戻してください");
     if (entry.updatedAt !== updatedAt)
       throw new JournalReviewError("別の操作で更新されました。画面を再読み込みしてください");
     const result = JournalEntry.transition(entry, "draft");
@@ -257,6 +273,8 @@ export class ManageJournalReviewUsecase {
         rejected.push(`「${entry.description}」は別の操作で更新されました`);
       else if (JournalEntry.transition(entry, "draft").status === "invalid")
         rejected.push(`「${entry.description}」は確認済ではありません`);
+      else if (entry.settledAt !== null)
+        rejected.push(`「${entry.description}」は精算済です（先に未精算に戻してください）`);
       else reverting.push(entry);
     }
     if (rejected.length > 0)
@@ -279,6 +297,8 @@ export class ManageJournalReviewUsecase {
       else if (entry.status === "published") rejected.push(`「${entry.description}」は公開中です`);
       else if (entry.updatedAt !== target.updatedAt)
         rejected.push(`「${entry.description}」は別の操作で更新されました`);
+      else if (entry.settledAt !== null)
+        rejected.push(`「${entry.description}」は精算済です（先に未精算に戻してください）`);
       else discarding.push(entry);
     }
     if (rejected.length > 0) throw rejectMany(rejected, "破棄できない", "破棄しませんでした");
@@ -288,7 +308,95 @@ export class ManageJournalReviewUsecase {
   async discard(bookId: string, id: string, updatedAt: string) {
     const entry = await this.editable(bookId, id, updatedAt);
     if (entry.source === "grant") throw new JournalReviewError("支給は破棄できません");
+    // 精算済を消すと、精算した額と残る記録が合わなくなる。先に未精算に戻してから破棄する。
+    if (entry.settledAt !== null)
+      throw new JournalReviewError("精算済の仕訳は破棄できません。先に未精算に戻してください");
     await this.repository.discard(bookId, entry);
+  }
+  /**
+   * 選んだ支出の仕訳の立替者をまとめて設定・解除する（空白だけの入力は解除）。
+   *
+   * 立替は仕訳として計上しない事務所内の管理情報なので、公開中の仕訳でも変更できる。
+   * 公開内容（日付・金額・項目名・科目・特記事項）は変わらないので、webapp のキャッシュは無効化しない。
+   * 支給・返還は立替情報を持てないので受け付けない（findMany が支出だけを返す）。
+   * 精算済の仕訳が 1 件でもあれば何も変更せず、理由を利用者に返す。
+   */
+  async setAdvancedBy(
+    bookId: string,
+    targets: readonly { id: string; updatedAt: string }[],
+    advancedBy: string,
+  ) {
+    const validated = validateAdvancedBy(advancedBy);
+    if (validated.status === "invalid") throw new JournalReviewError(validated.errors[0].message);
+    const { unique, found } = await this.findTargets(bookId, targets, "立替者を設定する");
+    const updating: ReviewEntry[] = [];
+    const rejected: string[] = [];
+    for (const target of unique) {
+      const entry = found.get(target.id);
+      if (!entry) rejected.push("立替者を設定できない仕訳（支給・返還など）が選ばれています");
+      else if (entry.updatedAt !== target.updatedAt)
+        rejected.push(`「${entry.description}」は別の操作で更新されました`);
+      else if (entry.settledAt !== null)
+        rejected.push(`「${entry.description}」は精算済です（先に未精算に戻してください）`);
+      else updating.push(entry);
+    }
+    if (rejected.length > 0)
+      throw rejectMany(rejected, "立替者を設定できない", "変更しませんでした");
+    await this.repository.setAdvancedBy(bookId, updating, validated.value);
+    return { updated: updating.length, advancedBy: validated.value };
+  }
+  /**
+   * 選んだ未精算の立替をまとめて精算済にする。精算は「立替者へまとめてお金を移した」記録なので、
+   * 金額が確定した確認済・公開中の仕訳だけを対象にする。下書き・立替なし・精算済・支給が
+   * 1 件でもあれば何も変更せず、理由を利用者に返す（既存のまとめて操作と同じ「全件か無し」の扱い）。
+   * 精算は公開内容を変えないので、webapp のキャッシュは無効化しない。
+   */
+  async settleMany(
+    bookId: string,
+    targets: readonly { id: string; updatedAt: string }[],
+    settledAt: string,
+  ) {
+    const { unique, found } = await this.findTargets(bookId, targets, "精算する");
+    const settling: ReviewEntry[] = [];
+    const rejected: string[] = [];
+    for (const target of unique) {
+      const entry = found.get(target.id);
+      if (!entry) rejected.push("精算できない仕訳（支給・返還など）が選ばれています");
+      else if (entry.updatedAt !== target.updatedAt)
+        rejected.push(`「${entry.description}」は別の操作で更新されました`);
+      else {
+        const reason = settlementRejection(entry);
+        if (reason) rejected.push(reason);
+        else settling.push(entry);
+      }
+    }
+    if (rejected.length > 0) throw rejectMany(rejected, "精算できない", "精算しませんでした");
+    const date = validateSettlementDate(
+      settledAt,
+      settling.map((entry) => entry.entryDate),
+      todayInJst(new Date()),
+    );
+    if (date.status === "invalid") throw new JournalReviewError(date.errors[0].message);
+    await this.repository.settleMany(bookId, settling, date.value);
+    return { settled: settling.length, settledAt: date.value };
+  }
+  /** 選んだ精算済の立替をまとめて未精算に戻す（誤操作の取り消し）。全件か無しで扱う。 */
+  async unsettleMany(bookId: string, targets: readonly { id: string; updatedAt: string }[]) {
+    const { unique, found } = await this.findTargets(bookId, targets, "未精算に戻す");
+    const unsettling: ReviewEntry[] = [];
+    const rejected: string[] = [];
+    for (const target of unique) {
+      const entry = found.get(target.id);
+      if (!entry) rejected.push("この画面で扱えない仕訳が選ばれています");
+      else if (entry.updatedAt !== target.updatedAt)
+        rejected.push(`「${entry.description}」は別の操作で更新されました`);
+      else if (entry.settledAt === null) rejected.push(`「${entry.description}」は未精算です`);
+      else unsettling.push(entry);
+    }
+    if (rejected.length > 0)
+      throw rejectMany(rejected, "未精算に戻せない", "未精算に戻しませんでした");
+    await this.repository.unsettleMany(bookId, unsettling);
+    return { unsettled: unsettling.length };
   }
 }
 function rejectMany(rejected: readonly string[], cannot: string, notDone: string) {

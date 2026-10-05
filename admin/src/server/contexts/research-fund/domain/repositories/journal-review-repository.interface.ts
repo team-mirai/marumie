@@ -25,4 +25,22 @@ export interface JournalReviewRepository {
   unpublish(bookId: string, entry: ReviewEntry): Promise<void>;
   /** 確認済の支出の仕訳を下書きに戻す（支給は対象にしない）。 */
   revertToDraft(bookId: string, entry: ReviewEntry): Promise<void>;
+  /**
+   * 同じ議員室（帳簿の政治家）で過去に入力された立替者を重複なく返す（入力欄の候補）。
+   * 年度をまたいで同じ秘書が立て替えるので、この帳簿だけに限らない。
+   */
+  advancers(bookId: string): Promise<string[]>;
+  /**
+   * 支出の仕訳の立替者をまとめて設定・解除する（null で解除）。公開中の仕訳も対象にする。
+   * 精算済の仕訳は変更できず、1 件でも競合したら何も変更しない。
+   */
+  setAdvancedBy(
+    bookId: string,
+    entries: readonly ReviewEntry[],
+    advancedBy: string | null,
+  ): Promise<void>;
+  /** 未精算の立替をまとめて精算済にする。1 件でも競合したら何も変更しない。 */
+  settleMany(bookId: string, entries: readonly ReviewEntry[], settledAt: string): Promise<void>;
+  /** 精算済の立替をまとめて未精算に戻す。1 件でも競合したら何も変更しない。 */
+  unsettleMany(bookId: string, entries: readonly ReviewEntry[]): Promise<void>;
 }

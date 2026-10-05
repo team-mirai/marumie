@@ -35,6 +35,14 @@ export interface ReviewEntry extends JournalEdit, JournalEntry {
   updatedAt: string;
   model: string | null;
   promptVersion: number | null;
+  /**
+   * 立替者（事務所内の管理情報）。null なら調研費口座からの直接支出。
+   * JournalEdit に含めないのは、立替情報だけは公開中の仕訳でも変更でき、
+   * 複式の行・hash・公開内容に影響しない別系統の更新として扱うため。
+   */
+  advancedBy: string | null;
+  /** 立替の精算日（YYYY-MM-DD）。null なら未精算 */
+  settledAt: string | null;
 }
 export interface JournalWrite extends JournalEdit {
   hash: string;

@@ -15,7 +15,7 @@ function setup() {
   };
   const entry = {
     createManyAndReturn: jest.fn(),
-    findMany: jest.fn(),
+    findMany: jest.fn().mockResolvedValue([]),
     count: jest.fn(),
     deleteMany: jest.fn(),
   };
@@ -395,6 +395,44 @@ test("読み直しでは書類の下書きを消してから新しい下書き�
   expect(job.update).toHaveBeenCalledWith(
     expect.objectContaining({ data: expect.objectContaining({ status: "succeeded" }) }),
   );
+});
+
+test("読み直しは、元の下書きの立替者が1種類だけなら作り直した下書きに引き継ぐ", async () => {
+  const { entry, repository } = setup();
+  entry.count.mockResolvedValue(0);
+  entry.deleteMany.mockResolvedValue({ count: 1 });
+  entry.createManyAndReturn.mockResolvedValue([{ id: BigInt(101), hash: "hash-a" }]);
+  entry.findMany.mockResolvedValue([{ advancedBy: "秘書A" }, { advancedBy: "秘書A" }]);
+  await repository.completeJob({ ...COMPLETE_INPUT, replaceDrafts: true });
+  // 立替者は消す前に読む（消したあとでは引き継ぐ値が分からない）
+  expect(entry.findMany.mock.invocationCallOrder[0]).toBeLessThan(
+    entry.deleteMany.mock.invocationCallOrder[0],
+  );
+  expect(entry.createManyAndReturn.mock.calls[0][0].data[0]).toMatchObject({
+    advancedBy: "秘書A",
+  });
+});
+
+test.each([
+  ["複数の立替者が混ざっている", [{ advancedBy: "秘書A" }, { advancedBy: "秘書B" }]],
+  ["立替なしが混ざっている", [{ advancedBy: "秘書A" }, { advancedBy: null }]],
+  ["立替者が入っていない", [{ advancedBy: null }]],
+])("読み直しで %s 書類は立替者を引き継がない", async (_name, replaced) => {
+  const { entry, repository } = setup();
+  entry.count.mockResolvedValue(0);
+  entry.deleteMany.mockResolvedValue({ count: 1 });
+  entry.createManyAndReturn.mockResolvedValue([{ id: BigInt(101), hash: "hash-a" }]);
+  entry.findMany.mockResolvedValue(replaced);
+  await repository.completeJob({ ...COMPLETE_INPUT, replaceDrafts: true });
+  expect(entry.createManyAndReturn.mock.calls[0][0].data[0]).toMatchObject({ advancedBy: null });
+});
+
+test("通常のスキャンでは立替者を付けない（読み取れないので空のまま）", async () => {
+  const { entry, repository } = setup();
+  entry.createManyAndReturn.mockResolvedValue([{ id: BigInt(101), hash: "hash-a" }]);
+  await repository.completeJob({ ...COMPLETE_INPUT, replaceDrafts: false });
+  expect(entry.findMany).not.toHaveBeenCalled();
+  expect(entry.createManyAndReturn.mock.calls[0][0].data[0]).toMatchObject({ advancedBy: null });
 });
 
 test("読み直しの時点で確認済・公開中の仕訳がある書類は、新しい下書きを作らずに失敗させる", async () => {

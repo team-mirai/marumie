@@ -20,7 +20,19 @@ type Mutation =
   | { type: "discard-many"; targets: readonly { id: string; updatedAt: string }[] }
   | { type: "revert-many-to-draft"; targets: readonly { id: string; updatedAt: string }[] }
   | { type: "unpublish"; id: string; updatedAt: string }
-  | { type: "revert-to-draft"; id: string; updatedAt: string };
+  | { type: "revert-to-draft"; id: string; updatedAt: string }
+  // 立替情報は事務所内の管理情報なので、公開中の仕訳でも変更でき、公開ページのキャッシュも無効化しない。
+  | {
+      type: "set-advanced-by";
+      targets: readonly { id: string; updatedAt: string }[];
+      advancedBy: string;
+    }
+  | {
+      type: "settle-many";
+      targets: readonly { id: string; updatedAt: string }[];
+      settledAt: string;
+    }
+  | { type: "unsettle-many"; targets: readonly { id: string; updatedAt: string }[] };
 export async function mutateJournalReview(
   politicianId: string,
   bookId: string,
@@ -39,6 +51,9 @@ export async function mutateJournalReview(
     let discarded: number | undefined;
     let reverted: number | undefined;
     let cacheWarning: string | null | undefined;
+    let advance: { updated: number; advancedBy: string | null } | undefined;
+    let settlement: { settled: number; settledAt: string } | undefined;
+    let unsettled: number | undefined;
     if (mutation.type === "create") id = await usecase.create(bookId, mutation.input, user.id);
     else if (mutation.type === "save")
       await usecase.save(bookId, mutation.id, mutation.updatedAt, mutation.input, mutation.approve);
@@ -54,9 +69,25 @@ export async function mutateJournalReview(
       ({ cacheWarning } = await usecase.unpublish(bookId, mutation.id, mutation.updatedAt));
     else if (mutation.type === "revert-to-draft")
       await usecase.revertToDraft(bookId, mutation.id, mutation.updatedAt);
+    else if (mutation.type === "set-advanced-by")
+      advance = await usecase.setAdvancedBy(bookId, mutation.targets, mutation.advancedBy);
+    else if (mutation.type === "settle-many")
+      settlement = await usecase.settleMany(bookId, mutation.targets, mutation.settledAt);
+    else if (mutation.type === "unsettle-many")
+      ({ unsettled } = await usecase.unsettleMany(bookId, mutation.targets));
     else throw new JournalReviewError("操作が不正です");
     revalidatePath("/(auth)", "layout");
-    return { success: true as const, id, approved, discarded, reverted, cacheWarning };
+    return {
+      success: true as const,
+      id,
+      approved,
+      discarded,
+      reverted,
+      cacheWarning,
+      advance,
+      settlement,
+      unsettled,
+    };
   } catch (error) {
     return {
       success: false as const,
