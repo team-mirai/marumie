@@ -18,10 +18,10 @@ export class GetAllUsersUsecase {
   ) {}
 
   /**
-   * 認可チェックのみを実行
+   * 認可チェック
    * @throws AuthError 認証・認可エラー時
    */
-  async checkPermission(): Promise<void> {
+  private async checkPermission(): Promise<void> {
     const authUser = await this.authProvider.getUser();
     if (!authUser) {
       throw new AuthError("AUTH_FAILED", "ログインが必要です");
