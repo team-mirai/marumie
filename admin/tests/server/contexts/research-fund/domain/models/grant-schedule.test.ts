@@ -85,3 +85,32 @@ describe("GrantSchedule.generate", () => {
     });
   });
 });
+
+describe("GrantSchedule.registrable", () => {
+  const grants = schedule({ registeredMonths: ["2026-05"] });
+
+  function rejection(month: string) {
+    const result = GrantSchedule.registrable(grants, month);
+    return result.status === "invalid" ? result.errors[0].message : null;
+  }
+
+  it("支給日を迎えた未登録の月は、その月の予定を返す", () => {
+    expect(GrantSchedule.registrable(grants, "2026-06")).toEqual({
+      status: "valid",
+      value: { month: "2026-06", amount: 1_000_000, status: "available" },
+    });
+  });
+
+  it("登録済の月は登録できない", () => {
+    expect(rejection("2026-05")).toBe("この月の支給はすでに登録されています");
+  });
+
+  it("支給日が来ていない月は登録できない", () => {
+    expect(rejection("2026-10")).toBe("支給日が到来していません");
+  });
+
+  it("当選月より前・別の年度の月は登録できない", () => {
+    expect(rejection("2026-01")).toBe("この年度に支給のない月です");
+    expect(rejection("2027-05")).toBe("この年度に支給のない月です");
+  });
+});

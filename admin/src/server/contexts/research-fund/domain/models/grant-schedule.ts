@@ -88,4 +88,34 @@ export const GrantSchedule = {
     }
     return { status: "valid", value: grants };
   },
+
+  /**
+   * 支給の予定から、指定した月の支給を登録できるかを判定する。
+   * 年度に無い月・登録済の月・支給日が来ていない月は、却下理由を返す。
+   */
+  registrable(
+    grants: readonly ScheduledGrant[],
+    month: string,
+  ): ResearchFundResult<ScheduledGrant> {
+    const grant = grants.find((candidate) => candidate.month === month);
+    if (!grant)
+      return invalidResearchFundResult(
+        "month",
+        RF_ERROR_CODES.INVALID_DATE,
+        "この年度に支給のない月です",
+      );
+    if (grant.status === "registered")
+      return invalidResearchFundResult(
+        "month",
+        RF_ERROR_CODES.INVALID_STATUS_TRANSITION,
+        "この月の支給はすでに登録されています",
+      );
+    if (grant.status === "upcoming")
+      return invalidResearchFundResult(
+        "month",
+        RF_ERROR_CODES.INVALID_STATUS_TRANSITION,
+        "支給日が到来していません",
+      );
+    return { status: "valid", value: grant };
+  },
 };

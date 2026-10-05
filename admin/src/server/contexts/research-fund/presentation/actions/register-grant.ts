@@ -2,7 +2,7 @@
 import "server-only";
 import { revalidatePath } from "next/cache";
 import { requireAuth } from "@/server/contexts/auth/presentation/loaders/require-auth";
-import { ManageGrantsUsecase } from "@/server/contexts/research-fund/application/usecases/manage-grants-usecase";
+import { RegisterGrantUsecase } from "@/server/contexts/research-fund/application/usecases/register-grant-usecase";
 import { GrantRegistrationError } from "@/server/contexts/research-fund/domain/models/grant-registration";
 import { PrismaGrantRepository } from "@/server/contexts/research-fund/infrastructure/repositories/prisma-grant.repository";
 import { requireJournalTarget } from "@/server/contexts/research-fund/presentation/loaders/load-journal-review";
@@ -19,7 +19,7 @@ export async function registerGrant(
   if (!(await requireJournalTarget(politicianId, bookId)))
     return { success: false as const, error: "現在の対象帳簿を選択し直してください" };
   try {
-    await new ManageGrantsUsecase(new PrismaGrantRepository(prisma)).register(
+    await new RegisterGrantUsecase(new PrismaGrantRepository(prisma)).execute(
       bookId,
       month,
       user.id,
