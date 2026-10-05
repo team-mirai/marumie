@@ -24,16 +24,6 @@ const SCAN_ROOTS = ["admin/src", "webapp/src"];
  * 後続の Issue がリファクタするたびに 1 行ずつ消す。新しい違反をここに足してはいけない。
  */
 export const KNOWN_VIOLATIONS = {
-  // research-fund: 1 クラスに操作メソッドが並び、業務ルールの判定が重複している
-  "admin/src/server/contexts/research-fund/application/usecases/manage-journal-review-usecase.ts":
-    "操作メソッドが public に並んでいる（execute が無い）",
-  // report: 1 ファイルに複数クラス / 操作メソッドが public に並んでいる
-  "admin/src/server/contexts/report/application/usecases/manage-counterpart-usecase.ts":
-    "1 ファイルに複数クラス",
-  "admin/src/server/contexts/report/application/usecases/manage-donor-usecase.ts":
-    "1 ファイルに複数クラス",
-  "admin/src/server/contexts/report/application/usecases/xml-export-usecase.ts":
-    "generateFilename() が public",
   // shared / auth
   "admin/src/server/contexts/shared/application/usecases/manage-politician-usecase.ts":
     "操作メソッドが public に並んでいる（execute が無い）",

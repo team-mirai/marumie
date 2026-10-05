@@ -5,7 +5,7 @@ import "server-only";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/server/contexts/shared/infrastructure/prisma";
 import { PrismaDonorRepository } from "@/server/contexts/report/infrastructure/repositories/prisma-donor.repository";
-import { DeleteDonorUsecase } from "@/server/contexts/report/application/usecases/manage-donor-usecase";
+import { DeleteDonorUsecase } from "@/server/contexts/report/application/usecases/delete-donor-usecase";
 import { requireAuth } from "@/server/contexts/auth/presentation/loaders/require-auth";
 
 interface DeleteDonorActionResult {

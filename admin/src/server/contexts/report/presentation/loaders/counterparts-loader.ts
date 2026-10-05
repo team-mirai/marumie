@@ -2,11 +2,9 @@ import "server-only";
 
 import { prisma } from "@/server/contexts/shared/infrastructure/prisma";
 import { PrismaCounterpartRepository } from "@/server/contexts/report/infrastructure/repositories/prisma-counterpart.repository";
-import {
-  GetCounterpartsUsecase,
-  GetCounterpartDetailUsecase,
-  GetAllCounterpartsUsecase,
-} from "@/server/contexts/report/application/usecases/manage-counterpart-usecase";
+import { GetCounterpartsUsecase } from "@/server/contexts/report/application/usecases/get-counterparts-usecase";
+import { GetCounterpartDetailUsecase } from "@/server/contexts/report/application/usecases/get-counterpart-detail-usecase";
+import { GetAllCounterpartsUsecase } from "@/server/contexts/report/application/usecases/get-all-counterparts-usecase";
 import type {
   CounterpartWithUsage,
   Counterpart,

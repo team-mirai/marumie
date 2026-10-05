@@ -3,7 +3,17 @@ import "server-only";
 import { revalidatePath } from "next/cache";
 import { requireAuth } from "@/server/contexts/auth/presentation/loaders/require-auth";
 import { requireJournalTarget } from "@/server/contexts/research-fund/presentation/loaders/load-journal-review";
-import { ManageJournalReviewUsecase } from "@/server/contexts/research-fund/application/usecases/manage-journal-review-usecase";
+import { ApproveJournalEntriesUsecase } from "@/server/contexts/research-fund/application/usecases/approve-journal-entries-usecase";
+import { CreateJournalEntryUsecase } from "@/server/contexts/research-fund/application/usecases/create-journal-entry-usecase";
+import { DiscardJournalEntriesUsecase } from "@/server/contexts/research-fund/application/usecases/discard-journal-entries-usecase";
+import { DiscardJournalEntryUsecase } from "@/server/contexts/research-fund/application/usecases/discard-journal-entry-usecase";
+import { RevertJournalEntriesToDraftUsecase } from "@/server/contexts/research-fund/application/usecases/revert-journal-entries-to-draft-usecase";
+import { RevertJournalEntryToDraftUsecase } from "@/server/contexts/research-fund/application/usecases/revert-journal-entry-to-draft-usecase";
+import { SaveJournalEntryUsecase } from "@/server/contexts/research-fund/application/usecases/save-journal-entry-usecase";
+import { SetJournalEntriesAdvancedByUsecase } from "@/server/contexts/research-fund/application/usecases/set-journal-entries-advanced-by-usecase";
+import { SettleJournalEntriesUsecase } from "@/server/contexts/research-fund/application/usecases/settle-journal-entries-usecase";
+import { UnpublishJournalEntryUsecase } from "@/server/contexts/research-fund/application/usecases/unpublish-journal-entry-usecase";
+import { UnsettleJournalEntriesUsecase } from "@/server/contexts/research-fund/application/usecases/unsettle-journal-entries-usecase";
 import { PrismaJournalReviewRepository } from "@/server/contexts/research-fund/infrastructure/repositories/prisma-journal-review.repository";
 import {
   JournalReviewError,
@@ -42,10 +52,7 @@ export async function mutateJournalReview(
   if (!(await requireJournalTarget(politicianId, bookId)))
     return { success: false as const, error: "現在の対象帳簿を選択し直してください" };
   try {
-    const usecase = new ManageJournalReviewUsecase(
-      new PrismaJournalReviewRepository(prisma),
-      new WebappCacheInvalidator(),
-    );
+    const repository = new PrismaJournalReviewRepository(prisma);
     let id: string | undefined;
     let approved: { approved: number; skipped: number } | undefined;
     let discarded: number | undefined;
@@ -54,27 +61,65 @@ export async function mutateJournalReview(
     let advance: { updated: number; advancedBy: string | null } | undefined;
     let settlement: { settled: number; settledAt: string } | undefined;
     let unsettled: number | undefined;
-    if (mutation.type === "create") id = await usecase.create(bookId, mutation.input, user.id);
+    if (mutation.type === "create")
+      id = await new CreateJournalEntryUsecase(repository).execute(bookId, mutation.input, user.id);
     else if (mutation.type === "save")
-      await usecase.save(bookId, mutation.id, mutation.updatedAt, mutation.input, mutation.approve);
+      await new SaveJournalEntryUsecase(repository).execute(
+        bookId,
+        mutation.id,
+        mutation.updatedAt,
+        mutation.input,
+        mutation.approve,
+      );
     else if (mutation.type === "discard")
-      await usecase.discard(bookId, mutation.id, mutation.updatedAt);
+      await new DiscardJournalEntryUsecase(repository).execute(
+        bookId,
+        mutation.id,
+        mutation.updatedAt,
+      );
     else if (mutation.type === "approve-many")
-      approved = await usecase.approveMany(bookId, mutation.targets);
+      approved = await new ApproveJournalEntriesUsecase(repository).execute(
+        bookId,
+        mutation.targets,
+      );
     else if (mutation.type === "discard-many")
-      ({ discarded } = await usecase.discardMany(bookId, mutation.targets));
+      ({ discarded } = await new DiscardJournalEntriesUsecase(repository).execute(
+        bookId,
+        mutation.targets,
+      ));
     else if (mutation.type === "revert-many-to-draft")
-      ({ reverted } = await usecase.revertManyToDraft(bookId, mutation.targets));
+      ({ reverted } = await new RevertJournalEntriesToDraftUsecase(repository).execute(
+        bookId,
+        mutation.targets,
+      ));
     else if (mutation.type === "unpublish")
-      ({ cacheWarning } = await usecase.unpublish(bookId, mutation.id, mutation.updatedAt));
+      ({ cacheWarning } = await new UnpublishJournalEntryUsecase(
+        repository,
+        new WebappCacheInvalidator(),
+      ).execute(bookId, mutation.id, mutation.updatedAt));
     else if (mutation.type === "revert-to-draft")
-      await usecase.revertToDraft(bookId, mutation.id, mutation.updatedAt);
+      await new RevertJournalEntryToDraftUsecase(repository).execute(
+        bookId,
+        mutation.id,
+        mutation.updatedAt,
+      );
     else if (mutation.type === "set-advanced-by")
-      advance = await usecase.setAdvancedBy(bookId, mutation.targets, mutation.advancedBy);
+      advance = await new SetJournalEntriesAdvancedByUsecase(repository).execute(
+        bookId,
+        mutation.targets,
+        mutation.advancedBy,
+      );
     else if (mutation.type === "settle-many")
-      settlement = await usecase.settleMany(bookId, mutation.targets, mutation.settledAt);
+      settlement = await new SettleJournalEntriesUsecase(repository).execute(
+        bookId,
+        mutation.targets,
+        mutation.settledAt,
+      );
     else if (mutation.type === "unsettle-many")
-      ({ unsettled } = await usecase.unsettleMany(bookId, mutation.targets));
+      ({ unsettled } = await new UnsettleJournalEntriesUsecase(repository).execute(
+        bookId,
+        mutation.targets,
+      ));
     else throw new JournalReviewError("操作が不正です");
     revalidatePath("/(auth)", "layout");
     return {
