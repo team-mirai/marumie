@@ -65,9 +65,24 @@ export function validateRereadInstruction(value: string): ResearchFundResult<str
   return { status: "valid", value: instruction };
 }
 
+/** 読み直す下書きが 1 件以上選ばれているかを検証する */
+export function validateRereadSelection(
+  entryIds: readonly string[],
+): ResearchFundResult<undefined> {
+  if (entryIds.length === 0) {
+    return invalidResearchFundResult(
+      "entryIds",
+      RF_ERROR_CODES.INVALID_DOCUMENT,
+      "読み直す下書きを選んでください",
+    );
+  }
+  return { status: "valid", value: undefined };
+}
+
 /**
  * 候補の書類から読み直す書類を決める。確認済・公開中の仕訳を 1 件でも含む書類は外す
  * （読み直しは書類単位で下書きを置き換えるため、確認済の仕訳を巻き込まない）。
+ * 読み直せる書類が 1 つも残らなければ、その理由を返す。
  */
 export function planReread(candidates: readonly RereadCandidate[]): ResearchFundResult<RereadPlan> {
   const documentIds = [
@@ -82,6 +97,15 @@ export function planReread(candidates: readonly RereadCandidate[]): ResearchFund
       .filter((candidate) => candidate.hasReviewedEntries)
       .map((candidate) => candidate.documentId),
   ).size;
+  if (documentIds.length === 0) {
+    return invalidResearchFundResult(
+      "entryIds",
+      RF_ERROR_CODES.INVALID_DOCUMENT,
+      excludedCount > 0
+        ? "選んだ下書きの書類には確認済・公開中の仕訳があるため、読み直せません"
+        : "書類の紐づいた下書きを選んでください",
+    );
+  }
   if (documentIds.length > SCAN_BATCH_MAX_DOCUMENTS) {
     return invalidResearchFundResult(
       "entryIds",

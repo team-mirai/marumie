@@ -29,16 +29,8 @@ export const KNOWN_VIOLATIONS = {
     "操作メソッドが public に並んでいる（execute が無い）",
   "admin/src/server/contexts/research-fund/application/usecases/manage-expenditure-groups-usecase.ts":
     "操作メソッドが public に並んでいる（execute が無い）",
-  "admin/src/server/contexts/research-fund/application/usecases/manage-prompt-usecase.ts":
-    "操作メソッドが public に並んでいる（execute が無い）",
-  "admin/src/server/contexts/research-fund/application/usecases/manage-scan-usecase.ts":
-    "操作メソッドが public に並んでいる（execute が無い）",
-  "admin/src/server/contexts/research-fund/application/usecases/process-scan-jobs-usecase.ts":
-    "retry() が public",
   "admin/src/server/contexts/research-fund/application/usecases/publish-journal-entries-usecase.ts":
     "操作メソッドが public に並んでいる（execute が無い）",
-  "admin/src/server/contexts/research-fund/application/usecases/test-prompt-usecase.ts":
-    "listDocuments() が public",
   // report: 1 ファイルに複数クラス / 操作メソッドが public に並んでいる
   "admin/src/server/contexts/report/application/usecases/manage-counterpart-usecase.ts":
     "1 ファイルに複数クラス",

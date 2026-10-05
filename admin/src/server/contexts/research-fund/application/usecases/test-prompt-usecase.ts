@@ -1,10 +1,7 @@
 import "server-only";
 import { ResearchFundDocument } from "@/server/contexts/research-fund/domain/models/document";
 import type { ExtractedReceipt } from "@/server/contexts/research-fund/domain/models/extracted-receipt";
-import {
-  normalizePromptBody,
-  type PromptTestDocument,
-} from "@/server/contexts/research-fund/domain/models/prompt";
+import { normalizePromptBody } from "@/server/contexts/research-fund/domain/models/prompt";
 import type { DocumentRepository } from "@/server/contexts/research-fund/domain/repositories/document-repository.interface";
 import type { DocumentStorage } from "@/server/contexts/research-fund/domain/repositories/document-storage.interface";
 import type { ReceiptExtractionGateway } from "@/server/contexts/research-fund/domain/repositories/receipt-extraction-gateway.interface";
@@ -13,9 +10,6 @@ import {
   RF_ERROR_CODES,
   type ResearchFundResult,
 } from "@/server/contexts/research-fund/domain/types/validation";
-
-/** テスト実行の候補に出す書類の上限。多すぎる select を避けるためだけの数 */
-export const PROMPT_TEST_DOCUMENT_LIMIT = 50;
 
 const EXTRACTABLE_MIMES: readonly string[] = ["image/jpeg", "image/png", "application/pdf"];
 
@@ -33,18 +27,6 @@ export class TestPromptUsecase {
     private storage: DocumentStorage,
     private gateway: ReceiptExtractionGateway,
   ) {}
-
-  /** テスト実行で選べる書類を新しい順に返す */
-  async listDocuments(bookId: string): Promise<PromptTestDocument[]> {
-    const validation = ResearchFundDocument.validateId(bookId);
-    if (validation.status === "invalid") throw new Error(validation.errors[0].message);
-    const documents = await this.documentRepository.listByBook(bookId, PROMPT_TEST_DOCUMENT_LIMIT);
-    return documents.map((document) => ({
-      id: document.id,
-      originalFilename: document.originalFilename,
-      mime: document.mime,
-    }));
-  }
 
   async execute(input: {
     bookId: string;

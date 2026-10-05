@@ -1,10 +1,10 @@
 import { revalidatePath } from "next/cache";
 import { requireAuth } from "@/server/contexts/auth/presentation/loaders/require-auth";
-import { ManageScanUsecase } from "@/server/contexts/research-fund/application/usecases/manage-scan-usecase";
+import type { CreateScanBatchUsecase } from "@/server/contexts/research-fund/application/usecases/create-scan-batch-usecase";
 import { ScanBatchError } from "@/server/contexts/research-fund/domain/models/scan-batch";
 import { createScanBatch } from "@/server/contexts/research-fund/presentation/actions/create-scan-batch";
 import { requireJournalTarget } from "@/server/contexts/research-fund/presentation/loaders/load-journal-review";
-import { buildScanUsecase } from "@/server/contexts/research-fund/presentation/loaders/load-scan";
+import { buildCreateScanBatchUsecase } from "@/server/contexts/research-fund/presentation/loaders/load-scan";
 
 jest.mock("next/cache", () => ({ revalidatePath: jest.fn() }));
 jest.mock("@/server/contexts/auth/presentation/loaders/require-auth", () => ({
@@ -14,7 +14,7 @@ jest.mock("@/server/contexts/research-fund/presentation/loaders/load-journal-rev
   requireJournalTarget: jest.fn(),
 }));
 jest.mock("@/server/contexts/research-fund/presentation/loaders/load-scan", () => ({
-  buildScanUsecase: jest.fn(),
+  buildCreateScanBatchUsecase: jest.fn(),
 }));
 
 const createBatch = jest.fn();
@@ -44,8 +44,8 @@ beforeEach(() => {
     draftCount: 0,
   });
   jest
-    .mocked(buildScanUsecase)
-    .mockReturnValue({ createBatch } as unknown as ManageScanUsecase);
+    .mocked(buildCreateScanBatchUsecase)
+    .mockReturnValue({ execute: createBatch } as unknown as CreateScanBatchUsecase);
   createBatch.mockResolvedValue({ status: "valid", value: { batchId: "9" } });
 });
 

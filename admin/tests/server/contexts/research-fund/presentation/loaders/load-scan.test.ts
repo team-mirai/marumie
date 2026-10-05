@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
-import { ManageScanUsecase } from "@/server/contexts/research-fund/application/usecases/manage-scan-usecase";
+import { ListScanBatchesUsecase } from "@/server/contexts/research-fund/application/usecases/list-scan-batches-usecase";
 import { requireJournalTarget } from "@/server/contexts/research-fund/presentation/loaders/load-journal-review";
-import { buildScanUsecase, loadScan } from "@/server/contexts/research-fund/presentation/loaders/load-scan";
+import { buildCreateScanBatchUsecase, loadScan } from "@/server/contexts/research-fund/presentation/loaders/load-scan";
 import type { AdminTarget } from "@/server/contexts/shared/domain/models/admin-target";
 
 jest.mock("next/navigation", () => ({
@@ -37,7 +37,7 @@ afterEach(() => jest.restoreAllMocks());
 
 test("対象が一致しなければバッチを取得しない", async () => {
   jest.mocked(requireJournalTarget).mockResolvedValue(null);
-  const list = jest.spyOn(ManageScanUsecase.prototype, "list");
+  const list = jest.spyOn(ListScanBatchesUsecase.prototype, "execute");
   await expect(loadScan("2", "1")).rejects.toThrow("NOT_FOUND");
   expect(notFound).toHaveBeenCalled();
   expect(list).not.toHaveBeenCalled();
@@ -46,14 +46,14 @@ test("対象が一致しなければバッチを取得しない", async () => {
 test("プロンプトは議員ごと・バッチは帳簿ごとに引き、現在の対象を添えて返す", async () => {
   jest.mocked(requireJournalTarget).mockResolvedValue(target);
   const data = { batches: [], activePromptVersion: 3, model: "claude-sonnet-5" };
-  const list = jest.spyOn(ManageScanUsecase.prototype, "list").mockResolvedValue(data);
+  const list = jest.spyOn(ListScanBatchesUsecase.prototype, "execute").mockResolvedValue(data);
   await expect(loadScan("2", "1")).resolves.toEqual({ ...data, target });
   expect(list).toHaveBeenCalledWith("2", "1");
 });
 
 test.each(["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"])("%s がなければ組み立てない", (key) => {
   jest.replaceProperty(process, "env", { ...process.env, [key]: "" });
-  expect(() => buildScanUsecase()).toThrow("領収書ストレージが未設定です");
+  expect(() => buildCreateScanBatchUsecase()).toThrow("領収書ストレージが未設定です");
 });
 
 test("バケット名は未設定でも既定の private-receipts を使う", () => {
@@ -63,5 +63,5 @@ test("バケット名は未設定でも既定の private-receipts を使う", ()
     SUPABASE_SERVICE_ROLE_KEY: "test-key",
     RESEARCH_FUND_DOCUMENT_BUCKET: "",
   });
-  expect(() => buildScanUsecase()).not.toThrow();
+  expect(() => buildCreateScanBatchUsecase()).not.toThrow();
 });

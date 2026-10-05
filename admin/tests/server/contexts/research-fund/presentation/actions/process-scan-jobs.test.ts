@@ -1,10 +1,14 @@
 import { revalidatePath } from "next/cache";
 import { requireAuth } from "@/server/contexts/auth/presentation/loaders/require-auth";
 import type { ProcessScanJobsUsecase } from "@/server/contexts/research-fund/application/usecases/process-scan-jobs-usecase";
+import type { RetryScanJobUsecase } from "@/server/contexts/research-fund/application/usecases/retry-scan-job-usecase";
 import { processScanJobs } from "@/server/contexts/research-fund/presentation/actions/process-scan-jobs";
 import { retryScanJob } from "@/server/contexts/research-fund/presentation/actions/retry-scan-job";
 import { requireJournalTarget } from "@/server/contexts/research-fund/presentation/loaders/load-journal-review";
-import { buildProcessScanJobsUsecase } from "@/server/contexts/research-fund/presentation/loaders/load-scan";
+import {
+  buildProcessScanJobsUsecase,
+  buildRetryScanJobUsecase,
+} from "@/server/contexts/research-fund/presentation/loaders/load-scan";
 
 jest.mock("next/cache", () => ({ revalidatePath: jest.fn() }));
 jest.mock("@/server/contexts/auth/presentation/loaders/require-auth", () => ({
@@ -15,6 +19,7 @@ jest.mock("@/server/contexts/research-fund/presentation/loaders/load-journal-rev
 }));
 jest.mock("@/server/contexts/research-fund/presentation/loaders/load-scan", () => ({
   buildProcessScanJobsUsecase: jest.fn(),
+  buildRetryScanJobUsecase: jest.fn(),
 }));
 
 const execute = jest.fn();
@@ -36,7 +41,10 @@ beforeEach(() => {
   });
   jest
     .mocked(buildProcessScanJobsUsecase)
-    .mockReturnValue({ execute, retry } as unknown as ProcessScanJobsUsecase);
+    .mockReturnValue({ execute } as unknown as ProcessScanJobsUsecase);
+  jest
+    .mocked(buildRetryScanJobUsecase)
+    .mockReturnValue({ execute: retry } as unknown as RetryScanJobUsecase);
   execute.mockResolvedValue({ processed: 2, succeeded: 2, failed: 0, hasMore: true });
   retry.mockResolvedValue(true);
 });

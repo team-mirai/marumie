@@ -290,21 +290,4 @@ describe("ProcessScanJobsUsecase", () => {
     });
   });
 
-  describe("retry", () => {
-    it("puts a failed job back in the queue", async () => {
-      scanRepository.requeueJob.mockResolvedValue(true);
-      expect(await usecase.retry({ bookId: "12", jobId: "11" })).toBe(true);
-      expect(scanRepository.requeueJob).toHaveBeenCalledWith("12", "11");
-    });
-
-    it("reports failure when the job is no longer retryable", async () => {
-      scanRepository.requeueJob.mockResolvedValue(false);
-      expect(await usecase.retry({ bookId: "12", jobId: "11" })).toBe(false);
-    });
-
-    it("rejects an invalid job id", async () => {
-      await expect(usecase.retry({ bookId: "12", jobId: "abc" })).rejects.toThrow();
-      expect(scanRepository.requeueJob).not.toHaveBeenCalled();
-    });
-  });
 });
