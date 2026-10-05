@@ -208,6 +208,14 @@ export class PrismaScanRepository implements ScanRepository {
         // 同じ書類の読み直しが並行して完了しても、書類の行ロックで直列化する。後続は先行の
         // 新しい下書きがコミットされてから消すので、両方の結果が並んで残らない
         await tx.$queryRaw`SELECT id FROM research_fund_documents WHERE id = ${documentId} FOR UPDATE`;
+        // 立替者を読む前に下書きの行ロックも取る。書類のロックは立替者の更新
+        // （setAdvancedBy は書類を参照しない）を止めないので、ロック無しでは読んだ後・消す前に
+        // コミットされた立替者を取りこぼし、作り直した下書きに古い立替者を付けてしまう。
+        await tx.$queryRaw`
+          SELECT id FROM research_fund_journal_entries
+          WHERE book_id = ${bookId} AND document_id = ${documentId} AND status = 'draft'
+          FOR UPDATE
+        `;
         const replaced = await tx.researchFundJournalEntry.findMany({
           where: { bookId, documentId, status: "draft" },
           select: { advancedBy: true },

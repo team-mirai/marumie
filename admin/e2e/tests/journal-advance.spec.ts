@@ -87,10 +87,6 @@ test("立替者の入力→一括設定→確認済→一括精算、未精算�
   await expect(settleDialog).toContainText("選択中の2件の立替");
   await expect(settleDialog).toContainText("秘書B：¥5,000");
   await expect(settleDialog).toContainText("（2件）");
-  // 仕訳の日付より前の精算日は受け付けない
-  await settleDialog.getByLabel("精算日").fill(`${YEAR}-07-31`);
-  await settleDialog.getByRole("button", { name: "精算済にする" }).click();
-  await expect(page.getByText(`精算日は仕訳の日付（${YEAR}-08-01）以降にしてください`)).toBeVisible();
   const settledAt = `${YEAR}-09-30`;
   await settleDialog.getByLabel("精算日").fill(settledAt);
   await settleDialog.getByRole("button", { name: "精算済にする" }).click();

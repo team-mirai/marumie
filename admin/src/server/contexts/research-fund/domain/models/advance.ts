@@ -98,7 +98,14 @@ export function validateSettlementDate(
   entryDates: readonly string[],
   today: string,
 ): ResearchFundResult<string> {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value) || Number.isNaN(Date.parse(`${value}T00:00:00.000Z`))) {
+  // Date は存在しない日（2026-02-30 など）を翌月に繰り上げて解釈するので、解析した日付が入力と
+  // 一致することまで確かめる。繰り上がった日をそのまま精算日として保存しないため。
+  const parsed = new Date(`${value}T00:00:00.000Z`);
+  if (
+    !/^\d{4}-\d{2}-\d{2}$/.test(value) ||
+    Number.isNaN(parsed.getTime()) ||
+    parsed.toISOString().slice(0, 10) !== value
+  ) {
     return invalidResearchFundResult(
       "settledAt",
       RF_ERROR_CODES.INVALID_SETTLED_AT,

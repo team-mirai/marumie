@@ -70,8 +70,14 @@ describe("validateSettlementDate", () => {
     expect(result.status).toBe("invalid");
     if (result.status === "invalid") expect(result.errors[0].message).toContain("2026-08-20");
   });
-  it.each(["", "2026/09/01", "2026-02-30", "きのう"])("日付として読めない値は受け付けない %j", value => {
+  it.each(["", "2026/09/01", "きのう"])("日付として読めない値は受け付けない %j", value => {
     expect(validateSettlementDate(value, ["2026-08-01"], "2026-10-05").status).toBe("invalid");
+  });
+  it("カレンダー上に存在しない日付は受け付けない（翌月に繰り上げて保存しない）", () => {
+    // 仕訳の日付以降・今日以前なので、境界の判定だけでは通ってしまう値
+    const result = validateSettlementDate("2026-02-30", ["2026-02-28"], "2026-03-05");
+    expect(result.status).toBe("invalid");
+    if (result.status === "invalid") expect(result.errors[0].message).toContain("正しく入力");
   });
 });
 
