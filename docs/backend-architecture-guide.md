@@ -156,6 +156,91 @@ contexts/{コンテキスト名}/
   - バリデーション＋永続化: 分類 → bulk操作 → キャッシュ無効化
 - **エラー**: 詳細なエラーメッセージでラップして投げる
 
+##### Usecase の形（必須）
+
+1. **1 ファイルに 1 クラス。** 1 つのクラスに複数の操作をまとめた `Manage〜Usecase` は作らない
+2. **public メソッドは `execute` だけ。** constructor と private / protected メソッドは置いてよい
+3. **「この状態のエンティティにこの操作をしてよいか」の判定は Domain Model に置く。**
+   却下理由（ユーザーに見せるメッセージ）を返すのはドメインの仕事。usecase に書くのは段取りだけ
+   — 取得・ドメインの判定の呼び出し・同時更新の検出・永続化・キャッシュ無効化
+
+**なぜ**: 1 つのクラスに操作メソッドを並べると、各メソッドが同じ業務ルールを `if` で書き足すことになり、
+同じルールが 1 つのクラスの中で何か所にも重複する。実際に `ManageJournalReviewUsecase` では
+「公開中の仕訳は編集・破棄できない」という 1 つのルールが 6 か所に散っていた。
+1 クラス 1 操作に割ると、複数の操作が共有するルールを置ける場所がドメインしか無くなる。
+
+**自動検証**: `pnpm check:usecase-shape`（`pnpm verify` および CI に含まれる）が 1. と 2. を検査する。
+3. は機械的に検査できないのでレビューで見る。
+解消待ちの既存違反は [scripts/check-usecase-shape.mjs](../scripts/check-usecase-shape.mjs) の `KNOWN_VIOLATIONS` に
+列挙してあり、リファクタで解消したら該当行を 1 行消す（解消済みなのに例外が残っていると検査が落ちるので消し忘れない）。
+**新しく書く usecase をこのリストに足してはいけない。**
+
+```typescript
+// ✗ 悪い例: 操作メソッドが並び、同じ業務ルールが各メソッドに重複する
+export class ManageJournalReviewUsecase {
+  async save(bookId: string, id: string, updatedAt: string, input: JournalEdit) {
+    const entry = await this.repository.find(bookId, id);
+    if (!entry) throw new JournalReviewError("仕訳が見つかりません");
+    if (entry.status === "published")
+      throw new JournalReviewError("公開中の仕訳は編集できません"); // ← ルールがここにある
+    // ...
+  }
+
+  async discard(bookId: string, id: string, updatedAt: string) {
+    const entry = await this.repository.find(bookId, id);
+    if (!entry) throw new JournalReviewError("仕訳が見つかりません");
+    if (entry.status === "published")
+      throw new JournalReviewError("公開中の仕訳は破棄できません"); // ← 同じルールがまた増える
+    // ...
+  }
+}
+```
+
+```typescript
+// ✓ 良い例: 可否の判定と却下理由は Domain Model が返す
+// domain/models/journal-entry.ts
+export const JournalEntry = {
+  transition(
+    entry: JournalEntry,
+    nextStatus: JournalEntryStatus,
+  ): ResearchFundResult<JournalEntry> {
+    if (!allowed.some(([from, to]) => from === entry.status && to === nextStatus)) {
+      return invalidResearchFundResult(
+        "status",
+        RF_ERROR_CODES.INVALID_STATUS_TRANSITION,
+        "仕訳は下書きと確認済みの間、確認済みから公開済み、公開済みから確認済みへのみ変更できます",
+      );
+    }
+    return { status: "valid", value: Object.freeze({ ...entry, status: nextStatus }) };
+  },
+};
+```
+
+```typescript
+// ✓ 良い例: usecase は段取りだけを書く。public は execute だけ
+// application/usecases/revert-journal-entry-to-draft-usecase.ts
+export class RevertJournalEntryToDraftUsecase {
+  constructor(private repository: JournalReviewRepository) {}
+
+  async execute(bookId: string, id: string, updatedAt: string) {
+    const entry = await this.find(bookId, id, updatedAt);
+    // 可否の判定と却下理由はドメインが持つ
+    const result = JournalEntry.transition(entry, "draft");
+    if (result.status === "invalid") throw new JournalReviewError(result.errors[0].message);
+    await this.repository.revertToDraft(bookId, entry);
+  }
+
+  /** 取得と同時更新の検出は段取りなので usecase に置く（private） */
+  private async find(bookId: string, id: string, updatedAt: string) {
+    const entry = await this.repository.find(bookId, id);
+    if (!entry) throw new JournalReviewError("仕訳が見つかりません");
+    if (entry.updatedAt !== updatedAt)
+      throw new JournalReviewError("別の操作で更新されました。画面を再読み込みしてください");
+    return entry;
+  }
+}
+```
+
 #### Application Services（オプション）
 - **責務**: ドメインロジックに直接依存しない、アプリケーション層の処理のカプセル化
 - **特徴**: ビジネスルール（ドメイン知識）ではなく、技術的な処理や手続き的なロジックを扱う
@@ -345,6 +430,10 @@ Domain層でエラーを扱う場合は、拡張エラー型とエラーコー�
 ### 依存性逆転
 - [ ] Repositoryインターフェースはdomain層に配置されている
 - [ ] Repository実装はinfrastructure層に配置されている
+
+### Usecase の形
+- [ ] 1 ファイルに 1 クラスで、public メソッドは `execute` だけになっている
+- [ ] 「この状態でこの操作をしてよいか」の判定（却下理由を返すもの）は Domain Model にあり、usecase には段取りだけが書かれている
 
 ### Domain Model
 - [ ] ビジネスルールはドメインモデルに実装されている

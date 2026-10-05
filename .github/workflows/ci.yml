@@ -46,7 +46,7 @@ jobs:
           files="$(gh api --paginate "repos/$REPO/pulls/$PR_NUMBER/files" --jq '.[].filename')"
           echo "$files"
 
-          pattern='^(admin/|webapp/|packages/|shared/|prisma/|supabase/|\.github/workflows/|\.dependency-cruiser\.cjs$|biome\.json$|knip\.json$|package\.json$|pnpm-lock\.yaml$|pnpm-workspace\.yaml$|tsconfig\.json$)'
+          pattern='^(admin/|webapp/|packages/|shared/|prisma/|supabase/|scripts/|\.github/workflows/|\.dependency-cruiser\.cjs$|biome\.json$|knip\.json$|package\.json$|pnpm-lock\.yaml$|pnpm-workspace\.yaml$|tsconfig\.json$)'
           if printf '%s\n' "$files" | grep -qE "$pattern"; then
             echo "code=true" >> "$GITHUB_OUTPUT"
           else
@@ -93,6 +93,10 @@ jobs:
 
       - name: Check dependency rules for admin
         run: pnpm depcruise
+
+      # admin / webapp 両方の usecase を見るリポジトリ横断のチェック（depcruise と同様）
+      - name: Check usecase shape
+        run: pnpm check:usecase-shape
 
       - name: Upload admin coverage
         uses: actions/upload-artifact@v6
