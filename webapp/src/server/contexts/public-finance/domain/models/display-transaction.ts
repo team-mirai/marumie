@@ -24,6 +24,8 @@ export interface DisplayTransaction {
   category: string;
   subcategory?: string;
   account: string;
+  /** 保存済みの category_key。カテゴリーの絞り込みはサーバーがこの値で照合する */
+  categoryKey: string;
   label: string;
   shortLabel: string;
   friendly_category: string;
@@ -119,6 +121,7 @@ export function convertToDisplayTransaction(transaction: Transaction): DisplayTr
     category: categoryMapping.category,
     subcategory: categoryMapping.subcategory,
     account,
+    categoryKey: transaction.category_key,
     label: transaction.label || "",
     shortLabel: categoryMapping.shortLabel,
     friendly_category: transaction.friendly_category,

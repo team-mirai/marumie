@@ -12,6 +12,7 @@ function transaction(overrides: Partial<DisplayTransaction>): DisplayTransaction
     category: "経常経費",
     subcategory: "事務所費",
     account: "事務所費",
+    categoryKey: "office-expenses",
     label: "",
     shortLabel: "事務所費",
     friendly_category: "事務所の家賃",
@@ -79,6 +80,7 @@ describe("TransactionTable", () => {
           transaction({
             transactionType: "income",
             account: "個人からの寄附",
+            categoryKey: "individual-donations",
             shortLabel: "個人寄附",
             amount: 10000,
           }),
@@ -95,13 +97,29 @@ describe("TransactionTable", () => {
   it("絞り込みのキーが無い科目はリンクにしない", () => {
     const html = renderToStaticMarkup(
       <TransactionTable
-        transactions={[transaction({ account: "未知の科目", shortLabel: "不明" })]}
+        transactions={[
+          transaction({ account: "未知の科目", categoryKey: "undefined", shortLabel: "不明" }),
+        ]}
         categoryHref={categoryHref}
       />,
     );
 
     expect(parse(html).querySelectorAll("tbody a")).toHaveLength(0);
     expect(html).toContain("不明");
+  });
+
+  it("保存済みの category_key が勘定科目のキーと食い違う行はリンクにしない", () => {
+    // 絞り込みはサーバーが保存済みの category_key で照合するため、科目から決めたキーで
+    // リンクにするとその行自身が絞り込み結果から漏れてしまう
+    const html = renderToStaticMarkup(
+      <TransactionTable
+        transactions={[transaction({ categoryKey: "organizational-activities" })]}
+        categoryHref={categoryHref}
+      />,
+    );
+
+    expect(parse(html).querySelectorAll("tbody a")).toHaveLength(0);
+    expect(html).toContain("事務所費");
   });
 
   it("categoryHref を渡さない表（トップページ）ではラベルをリンクにしない", () => {

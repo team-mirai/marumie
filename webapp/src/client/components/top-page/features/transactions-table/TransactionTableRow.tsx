@@ -75,8 +75,12 @@ export default function TransactionTableRow({
 
   const isIncome = transaction.transactionType === "income";
   const categoryColors = getCategoryColors(transaction);
-  // 絞り込みのキーは勘定科目から一意に決まる。マッピングの無い科目は絞り込めないのでリンクにしない。
-  const categoryKey = PL_CATEGORIES[transaction.account]?.key;
+  // 絞り込みはサーバーが保存済みの category_key で照合するので、行の勘定科目から決まるキーと
+  // 一致するときだけリンクにする。マッピングの無い科目（ラベルが「不明」になる行）や、
+  // 保存済みのキーが科目と食い違う行は、絞り込んでもその行自身が出てこないためリンクにしない。
+  const accountCategoryKey = PL_CATEGORIES[transaction.account]?.key;
+  const categoryKey =
+    accountCategoryKey === transaction.categoryKey ? accountCategoryKey : undefined;
   const categoryLinkHref = categoryKey && categoryHref ? categoryHref(categoryKey) : undefined;
 
   return (
