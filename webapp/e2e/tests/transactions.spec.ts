@@ -85,4 +85,65 @@ test.describe("取引一覧ページ", () => {
 		await expect(newestButton).toHaveAttribute("aria-pressed", "false");
 		await expect(oldestButton).toHaveAttribute("aria-pressed", "true");
 	});
+
+	test("行のカテゴリーのラベルから、そのカテゴリーで絞り込めること", async ({ page }) => {
+		// 2ページ目から押しても1ページ目に戻ることを確かめる
+		await page.goto("/o/sample-party/2025/transactions?page=2");
+
+		const table = page.getByRole("table", { name: "政治資金取引一覧表" });
+		const categoryLink = table.locator("tbody tr").first().getByRole("link").first();
+		const label = ((await categoryLink.textContent()) ?? "").trim();
+		const href = await categoryLink.getAttribute("href");
+
+		// ボタンではなく通常の HTML リンク（新しいタブで開く・リンクのコピーができる）
+		expect(href).toMatch(
+			/^\/o\/sample-party\/2025\/transactions\?categories=[a-z-]+$/,
+		);
+
+		await categoryLink.click();
+		await expect(page).toHaveURL(href!);
+
+		// 表の行はすべて押したカテゴリーになる（PC・SP 両方のラベルを数える）
+		const labels = await table.locator("tbody a").allTextContents();
+		expect(labels.length).toBeGreaterThan(0);
+		expect([...new Set(labels.map((text) => text.trim()))]).toEqual([label]);
+
+		// 件数表示も絞り込み後の件数と一致する
+		const rowCount = await table.locator("tbody tr").count();
+		await expect(
+			page.getByText(`${rowCount}件中 1-${rowCount}件を表示`).first(),
+		).toBeVisible();
+
+		// 絞り込みパネルの選択状態も押したカテゴリー1つだけになる
+		const categoryHeader = table.locator(
+			'th:has(button[aria-label="カテゴリーフィルター"])',
+		);
+		await categoryHeader
+			.getByRole("button", { name: "カテゴリーフィルター" })
+			.click();
+		const checkedOptions = categoryHeader.locator(
+			'button:has(img[alt="Checkmark"])',
+		);
+		await expect(checkedOptions).toHaveCount(1);
+		await expect(checkedOptions).toHaveText(label);
+	});
+
+	test("モバイルでも行のカテゴリーのラベルが絞り込みリンクになっていること", async ({
+		page,
+	}) => {
+		await page.setViewportSize({ width: 390, height: 844 });
+		await page.goto("/o/sample-party/2025/transactions");
+
+		const table = page.getByRole("table", { name: "政治資金取引一覧表" });
+		const categoryLink = table.locator("tbody tr").first().getByRole("link").first();
+		const label = ((await categoryLink.textContent()) ?? "").trim();
+
+		await expect(categoryLink).toBeVisible();
+		await categoryLink.click();
+		await expect(page).toHaveURL(/\?categories=[a-z-]+$/);
+
+		const labels = await table.locator("tbody a").allTextContents();
+		expect(labels.length).toBeGreaterThan(0);
+		expect([...new Set(labels.map((text) => text.trim()))]).toEqual([label]);
+	});
 });

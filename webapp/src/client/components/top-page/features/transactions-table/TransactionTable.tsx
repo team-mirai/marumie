@@ -13,6 +13,8 @@ interface TransactionTableProps {
   perPage?: number;
   onApplyFilter?: (selectedKeys: string[]) => void;
   selectedCategories?: string[];
+  /** 渡すと各行のカテゴリーのラベルを、そのカテゴリーで絞り込むリンクにする */
+  categoryHref?: (categoryKey: string) => string;
 }
 
 export default function TransactionTable({
@@ -23,6 +25,7 @@ export default function TransactionTable({
   currentOrder,
   onApplyFilter,
   selectedCategories,
+  categoryHref,
 }: TransactionTableProps) {
   return (
     <div className="space-y-6">
@@ -37,7 +40,7 @@ export default function TransactionTable({
             onApplyFilter={onApplyFilter}
             selectedCategories={selectedCategories}
           />
-          <TransactionTableBody transactions={transactions} />
+          <TransactionTableBody transactions={transactions} categoryHref={categoryHref} />
         </table>
       </div>
     </div>

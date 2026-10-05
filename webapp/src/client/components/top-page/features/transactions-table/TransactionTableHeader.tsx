@@ -91,12 +91,13 @@ export default function TransactionTableHeader({
               <span className="text-gray-800 text-sm font-bold leading-[1.5]">カテゴリー</span>
             </div>
           )}
-          <CategoryFilter
-            isOpen={isFilterOpen}
-            onClose={() => setIsFilterOpen(false)}
-            onApplyFilter={onApplyFilter || (() => {})}
-            selectedCategories={selectedCategories}
-          />
+          {isFilterOpen && (
+            <CategoryFilter
+              onClose={() => setIsFilterOpen(false)}
+              onApplyFilter={onApplyFilter || (() => {})}
+              selectedCategories={selectedCategories}
+            />
+          )}
         </th>
 
         {/* 項目項目 - flexible width to match row */}

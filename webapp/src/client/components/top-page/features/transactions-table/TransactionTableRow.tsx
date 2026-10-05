@@ -1,14 +1,20 @@
 "use client";
 import "client-only";
 
+import TransactionCategoryPill from "@/client/components/top-page/features/transactions-table/TransactionCategoryPill";
 import { PL_CATEGORIES } from "@/shared/accounting/account-category";
 import type { DisplayTransaction } from "@/server/contexts/public-finance/domain/models/display-transaction";
 
 interface TransactionTableRowProps {
   transaction: DisplayTransaction;
+  /** 渡すとカテゴリーのラベルを、そのカテゴリーで絞り込むリンクにする */
+  categoryHref?: (categoryKey: string) => string;
 }
 
-export default function TransactionTableRow({ transaction }: TransactionTableRowProps) {
+export default function TransactionTableRow({
+  transaction,
+  categoryHref,
+}: TransactionTableRowProps) {
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("ja-JP", {
       style: "decimal",
@@ -69,6 +75,9 @@ export default function TransactionTableRow({ transaction }: TransactionTableRow
 
   const isIncome = transaction.transactionType === "income";
   const categoryColors = getCategoryColors(transaction);
+  // 絞り込みのキーは勘定科目から一意に決まる。マッピングの無い科目は絞り込めないのでリンクにしない。
+  const categoryKey = PL_CATEGORIES[transaction.account]?.key;
+  const categoryLinkHref = categoryKey && categoryHref ? categoryHref(categoryKey) : undefined;
 
   return (
     <tr className="w-full border-b border-[#D5DBE1]">
@@ -100,22 +109,13 @@ export default function TransactionTableRow({ transaction }: TransactionTableRow
 
           {/* Category label section */}
           <div className="flex items-center">
-            <div
+            <TransactionCategoryPill
+              label={getCategoryLabel(transaction)}
+              href={categoryLinkHref}
+              colors={categoryColors}
               className="flex items-center gap-2 px-2 py-0.5 rounded-full border h-[18px]"
-              style={{
-                backgroundColor: categoryColors.bgColor,
-                borderColor: categoryColors.borderColor,
-              }}
-            >
-              <span
-                className="text-xs font-medium text-left leading-[1em]"
-                style={{
-                  color: categoryColors.fontColor,
-                }}
-              >
-                {getCategoryLabel(transaction)}
-              </span>
-            </div>
+              labelClassName="text-xs font-medium text-left leading-[1em]"
+            />
           </div>
         </div>
       </td>
@@ -131,22 +131,13 @@ export default function TransactionTableRow({ transaction }: TransactionTableRow
       {/* Category column - 160px width */}
       <td className="hidden md:table-cell pl-4 h-16 w-[160px]">
         <div className="flex justify-start items-center h-11">
-          <div
+          <TransactionCategoryPill
+            label={getCategoryLabel(transaction)}
+            href={categoryLinkHref}
+            colors={categoryColors}
             className="flex flex-col justify-center items-center gap-2 px-3 rounded-full border"
-            style={{
-              backgroundColor: categoryColors.bgColor,
-              borderColor: categoryColors.borderColor,
-            }}
-          >
-            <span
-              className="font-medium text-xs leading-[1.67em] text-left"
-              style={{
-                color: categoryColors.fontColor,
-              }}
-            >
-              {getCategoryLabel(transaction)}
-            </span>
-          </div>
+            labelClassName="font-medium text-xs leading-[1.67em] text-left"
+          />
         </div>
       </td>
 

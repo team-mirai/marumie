@@ -1,7 +1,8 @@
 "use client";
 import "client-only";
 
-import { useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { transactionsCategoryHref } from "@/client/lib/transactions-category-href";
 import type { DisplayTransaction } from "@/server/contexts/public-finance/domain/models/display-transaction";
 import TransactionTable from "./TransactionTable";
 import TransactionTableMobileHeader, { type SortOption } from "./TransactionTableMobileHeader";
@@ -46,6 +47,7 @@ export default function InteractiveTransactionTable({
   selectedCategories,
 }: InteractiveTransactionTableProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
 
   // Parse URL params once
@@ -105,6 +107,11 @@ export default function InteractiveTransactionTable({
     router.push(`?${params.toString()}`);
   };
 
+  // 行のカテゴリーのラベルのリンク先。ボタンではなく通常のリンクにして、
+  // 新しいタブで開く・リンクのコピーといったブラウザ標準の操作ができるようにする。
+  const categoryHref = (categoryKey: string) =>
+    transactionsCategoryHref(pathname, new URLSearchParams(searchParams.toString()), categoryKey);
+
   const getCurrentSortOption = (): SortOption => {
     const sort = currentSort || "date";
     const order = currentOrder || "desc";
@@ -141,6 +148,7 @@ export default function InteractiveTransactionTable({
         currentOrder={currentOrder}
         onApplyFilter={handleApplyFilter}
         selectedCategories={selectedCategories}
+        categoryHref={categoryHref}
       />
 
       {/* ページネーション */}
