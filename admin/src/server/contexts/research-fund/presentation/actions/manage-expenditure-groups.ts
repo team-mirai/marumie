@@ -2,7 +2,10 @@
 import "server-only";
 import { revalidatePath } from "next/cache";
 import { requireAuth } from "@/server/contexts/auth/presentation/loaders/require-auth";
-import { ManageExpenditureGroupsUsecase } from "@/server/contexts/research-fund/application/usecases/manage-expenditure-groups-usecase";
+import { DeleteExpenditureGroupUsecase } from "@/server/contexts/research-fund/application/usecases/delete-expenditure-group-usecase";
+import { ReorderExpenditureGroupsUsecase } from "@/server/contexts/research-fund/application/usecases/reorder-expenditure-groups-usecase";
+import { SaveExpenditureGroupUsecase } from "@/server/contexts/research-fund/application/usecases/save-expenditure-group-usecase";
+import { SaveUsagePolicyUsecase } from "@/server/contexts/research-fund/application/usecases/save-usage-policy-usecase";
 import {
   ExpenditureGroupError,
   type ExpenditureGroupEdit,
@@ -12,11 +15,8 @@ import { requireJournalTarget } from "@/server/contexts/research-fund/presentati
 import { prisma } from "@/server/contexts/shared/infrastructure/prisma";
 import { WebappCacheInvalidator } from "@/server/contexts/shared/infrastructure/services/webapp-cache-invalidator";
 
-function usecase() {
-  return new ManageExpenditureGroupsUsecase(
-    new PrismaExpenditureGroupRepository(prisma),
-    new WebappCacheInvalidator(),
-  );
+function dependencies() {
+  return [new PrismaExpenditureGroupRepository(prisma), new WebappCacheInvalidator()] as const;
 }
 
 function failure(error: unknown, fallback: string) {
@@ -31,7 +31,10 @@ export async function saveUsagePolicy(politicianId: string, bookId: string, poli
   if (!(await requireJournalTarget(politicianId, bookId)))
     return { success: false as const, error: "現在の対象帳簿を選択し直してください" };
   try {
-    const { cacheWarning } = await usecase().savePolicyComment(bookId, policyComment);
+    const { cacheWarning } = await new SaveUsagePolicyUsecase(...dependencies()).execute(
+      bookId,
+      policyComment,
+    );
     revalidatePath("/(auth)", "layout");
     return { success: true as const, cacheWarning };
   } catch (error) {
@@ -49,7 +52,11 @@ export async function saveExpenditureGroup(
   if (!(await requireJournalTarget(politicianId, bookId)))
     return { success: false as const, error: "現在の対象帳簿を選択し直してください" };
   try {
-    const { id, cacheWarning } = await usecase().save(bookId, groupId, input);
+    const { id, cacheWarning } = await new SaveExpenditureGroupUsecase(...dependencies()).execute(
+      bookId,
+      groupId,
+      input,
+    );
     revalidatePath("/(auth)", "layout");
     return { success: true as const, id, cacheWarning };
   } catch (error) {
@@ -66,7 +73,10 @@ export async function deleteExpenditureGroup(
   if (!(await requireJournalTarget(politicianId, bookId)))
     return { success: false as const, error: "現在の対象帳簿を選択し直してください" };
   try {
-    const { cacheWarning } = await usecase().remove(bookId, groupId);
+    const { cacheWarning } = await new DeleteExpenditureGroupUsecase(...dependencies()).execute(
+      bookId,
+      groupId,
+    );
     revalidatePath("/(auth)", "layout");
     return { success: true as const, cacheWarning };
   } catch (error) {
@@ -84,7 +94,10 @@ export async function reorderExpenditureGroups(
   if (!(await requireJournalTarget(politicianId, bookId)))
     return { success: false as const, error: "現在の対象帳簿を選択し直してください" };
   try {
-    const { cacheWarning } = await usecase().reorder(bookId, groupIds);
+    const { cacheWarning } = await new ReorderExpenditureGroupsUsecase(...dependencies()).execute(
+      bookId,
+      groupIds,
+    );
     revalidatePath("/(auth)", "layout");
     return { success: true as const, cacheWarning };
   } catch (error) {

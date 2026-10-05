@@ -1,4 +1,9 @@
 import { z } from "zod";
+import {
+  invalidResearchFundResult,
+  RF_ERROR_CODES,
+  type ResearchFundResult,
+} from "@/server/contexts/research-fund/domain/types/validation";
 import type { LinkedEntrySummary } from "@/shared/research-fund/expenditure-group";
 
 export class ExpenditureGroupError extends Error {}
@@ -70,6 +75,77 @@ export function normalizeOutcomes(
 }
 
 /** 重複を除いた紐づけ先の仕訳 ID。順序は入力順を保つ */
-export function normalizeEntryIds(entryIds: readonly string[]): readonly string[] {
+function normalizeEntryIds(entryIds: readonly string[]): readonly string[] {
   return [...new Set(entryIds)];
+}
+
+/** 帳簿・支出群の ID は DB の自動採番（1 以上の整数）なので、それ以外の形はリポジトリに渡す前に弾く */
+export function assertValidIds(...ids: readonly string[]): void {
+  if (ids.some((id) => !/^[1-9]\d*$/.test(id))) throw new ExpenditureGroupError("IDが不正です");
+}
+
+/**
+ * 支出群（groupId。新規なら null）に紐づけてよい仕訳かを判定し、重複を除いた仕訳 ID を返す。
+ * entries は帳簿の紐づけ候補（費用仕訳）全件。
+ */
+export function validateEntryLinks(
+  groupId: string | null,
+  entryIds: readonly string[],
+  entries: readonly LinkableEntry[],
+): ResearchFundResult<readonly string[]> {
+  const unique = normalizeEntryIds(entryIds);
+  const byId = new Map(entries.map((entry) => [entry.id, entry]));
+  for (const entryId of unique) {
+    const entry = byId.get(entryId);
+    if (!entry)
+      return invalidResearchFundResult(
+        "entryIds",
+        RF_ERROR_CODES.INVALID_ENTRY_LINK,
+        "この帳簿にない仕訳は紐づけられません",
+      );
+    // 1 仕訳は 1 つの支出群にしか属せない（公開側で金額が二重計上されるため）
+    if (entry.groupId !== null && entry.groupId !== groupId)
+      return invalidResearchFundResult(
+        "entryIds",
+        RF_ERROR_CODES.INVALID_ENTRY_LINK,
+        "他の支出群に紐づいている仕訳は選べません",
+      );
+  }
+  return { status: "valid", value: unique };
+}
+
+const MAX_POLICY_COMMENT_LENGTH = 2000;
+
+/** 活用方針を保存できる形（前後の空白を落とした文字列）にそろえる */
+export function normalizePolicyComment(value: unknown): ResearchFundResult<string> {
+  if (typeof value !== "string")
+    return invalidResearchFundResult(
+      "policyComment",
+      RF_ERROR_CODES.INVALID_POLICY_COMMENT,
+      "活用方針の入力が不正です",
+    );
+  const trimmed = value.trim();
+  if (trimmed.length > MAX_POLICY_COMMENT_LENGTH)
+    return invalidResearchFundResult(
+      "policyComment",
+      RF_ERROR_CODES.INVALID_POLICY_COMMENT,
+      `活用方針は${MAX_POLICY_COMMENT_LENGTH}文字以内で入力してください`,
+    );
+  return { status: "valid", value: trimmed };
+}
+
+/**
+ * 支出群の並び順として受け付けられるか。同じ支出群が 2 回出てくる並びは受け付けない。
+ * 帳簿の支出群と過不足が無いかは、最新の一覧と突き合わせるリポジトリが検出する。
+ */
+export function validateGroupOrder(
+  groupIds: readonly string[],
+): ResearchFundResult<readonly string[]> {
+  if (new Set(groupIds).size !== groupIds.length)
+    return invalidResearchFundResult(
+      "groupIds",
+      RF_ERROR_CODES.INVALID_GROUP_ORDER,
+      "並び順の指定が重複しています",
+    );
+  return { status: "valid", value: groupIds };
 }

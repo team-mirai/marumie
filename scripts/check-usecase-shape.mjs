@@ -27,8 +27,6 @@ export const KNOWN_VIOLATIONS = {
   // research-fund: 1 クラスに操作メソッドが並び、業務ルールの判定が重複している
   "admin/src/server/contexts/research-fund/application/usecases/manage-book-usecase.ts":
     "操作メソッドが public に並んでいる（execute が無い）",
-  "admin/src/server/contexts/research-fund/application/usecases/manage-expenditure-groups-usecase.ts":
-    "操作メソッドが public に並んでいる（execute が無い）",
   "admin/src/server/contexts/research-fund/application/usecases/manage-grants-usecase.ts":
     "操作メソッドが public に並んでいる（execute が無い）",
   "admin/src/server/contexts/research-fund/application/usecases/manage-journal-review-usecase.ts":
