@@ -25,21 +25,10 @@ const SCAN_ROOTS = ["admin/src", "webapp/src"];
  */
 export const KNOWN_VIOLATIONS = {
   // research-fund: 1 クラスに操作メソッドが並び、業務ルールの判定が重複している
-  "admin/src/server/contexts/research-fund/application/usecases/manage-book-usecase.ts":
-    "操作メソッドが public に並んでいる（execute が無い）",
   "admin/src/server/contexts/research-fund/application/usecases/manage-expenditure-groups-usecase.ts":
     "操作メソッドが public に並んでいる（execute が無い）",
   "admin/src/server/contexts/research-fund/application/usecases/manage-journal-review-usecase.ts":
     "操作メソッドが public に並んでいる（execute が無い）",
-  "admin/src/server/contexts/research-fund/application/usecases/publish-journal-entries-usecase.ts":
-    "操作メソッドが public に並んでいる（execute が無い）",
-  // report: 1 ファイルに複数クラス / 操作メソッドが public に並んでいる
-  "admin/src/server/contexts/report/application/usecases/manage-counterpart-usecase.ts":
-    "1 ファイルに複数クラス",
-  "admin/src/server/contexts/report/application/usecases/manage-donor-usecase.ts":
-    "1 ファイルに複数クラス",
-  "admin/src/server/contexts/report/application/usecases/xml-export-usecase.ts":
-    "generateFilename() が public",
   // usecase ではなくヘルパー関数が usecases/ に置かれている（配置ごと見直す）
   "admin/src/server/contexts/data-import/application/usecases/read-sync-import-file-text.ts":
     "クラスではなく関数",

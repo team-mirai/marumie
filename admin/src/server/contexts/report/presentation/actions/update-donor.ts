@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/server/contexts/shared/infrastructure/prisma";
 import { PrismaDonorRepository } from "@/server/contexts/report/infrastructure/repositories/prisma-donor.repository";
-import { UpdateDonorUsecase } from "@/server/contexts/report/application/usecases/manage-donor-usecase";
+import { UpdateDonorUsecase } from "@/server/contexts/report/application/usecases/update-donor-usecase";
 import type { UpdateDonorInput } from "@/server/contexts/report/domain/models/donor";
 import { requireAuth } from "@/server/contexts/auth/presentation/loaders/require-auth";
 

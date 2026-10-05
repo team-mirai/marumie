@@ -6,6 +6,7 @@ import {
   KNOWN_FORM_IDS,
 } from "@/server/contexts/report/domain/services/report-serializer";
 import type { ReportData } from "@/server/contexts/report/domain/models/report-data";
+import { buildReportFilename } from "@/server/contexts/report/domain/models/report-filename";
 import type { DonationAssembler } from "@/server/contexts/report/application/services/donation-assembler";
 import type { ExpenseAssembler } from "@/server/contexts/report/application/services/expense-assembler";
 import type { IncomeAssembler } from "@/server/contexts/report/application/services/income-assembler";
@@ -52,9 +53,8 @@ export class XmlExportUsecase {
     // Step 3: Encode to Shift_JIS
     const shiftJisBuffer = iconv.encode(xml, "shift_jis");
 
-    // Generate filename with format: report_{fy}_{org_slug}_{exportedDateTime}.xml
     const slug = await this.profileRepository.getOrganizationSlug(input.politicalOrganizationId);
-    const filename = this.generateFilename(input.financialYear, slug);
+    const filename = buildReportFilename(input.financialYear, slug, new Date());
 
     return {
       xml,
@@ -62,19 +62,6 @@ export class XmlExportUsecase {
       filename,
       reportData,
     };
-  }
-
-  generateFilename(financialYear: number, slug: string | null): string {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, "0");
-    const day = String(now.getDate()).padStart(2, "0");
-    const hours = String(now.getHours()).padStart(2, "0");
-    const minutes = String(now.getMinutes()).padStart(2, "0");
-    const exportedDateTime = `${year}${month}${day}_${hours}${minutes}`;
-
-    const orgSlug = slug ?? "unknown";
-    return `report_${financialYear}_${orgSlug}_${exportedDateTime}.xml`;
   }
 
   // ============================================================

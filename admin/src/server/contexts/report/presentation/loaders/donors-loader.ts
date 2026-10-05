@@ -2,7 +2,7 @@ import "server-only";
 
 import { prisma } from "@/server/contexts/shared/infrastructure/prisma";
 import { PrismaDonorRepository } from "@/server/contexts/report/infrastructure/repositories/prisma-donor.repository";
-import { GetDonorsUsecase } from "@/server/contexts/report/application/usecases/manage-donor-usecase";
+import { GetDonorsUsecase } from "@/server/contexts/report/application/usecases/get-donors-usecase";
 import type {
   Donor,
   DonorWithUsage,
