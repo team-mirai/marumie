@@ -1,5 +1,6 @@
 import {
   SCAN_BATCH_MAX_DOCUMENTS,
+  requireActivePrompt,
   summarizeScanBatch,
   validateScanUpload,
   type ScanJobStatus,
@@ -66,5 +67,18 @@ describe("summarizeScanBatch", () => {
   });
   it("does not divide by zero for an empty batch", () => {
     expect(summarizeScanBatch([])).toEqual({ total: 0, succeeded: 0, failed: 0, percent: 0 });
+  });
+});
+
+describe("requireActivePrompt", () => {
+  it("returns the active prompt", () => {
+    const prompt = { id: "7", version: 3 };
+    expect(requireActivePrompt(prompt)).toBe(prompt);
+  });
+
+  it("refuses to create a batch while no prompt version is saved", () => {
+    expect(() => requireActivePrompt(null)).toThrow(
+      "読み取りプロンプトが未保存です。「読み取りプロンプト」から保存してください",
+    );
   });
 });

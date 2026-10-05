@@ -1,4 +1,4 @@
-import { PROMPT_BODY_MAX_LENGTH, normalizePromptBody, summarizePromptChange } from "@/server/contexts/research-fund/domain/models/prompt";
+import { PROMPT_BODY_MAX_LENGTH, normalizePromptBody, summarizePromptChange, validatePromptOwnerId, validatePromptVersion } from "@/server/contexts/research-fund/domain/models/prompt";
 test.each(["", "   \n\t ", null, undefined, 42, {}])("空・非文字列の本文は保存できない: %j", (body) => {
   expect(() => normalizePromptBody(body)).toThrow("プロンプト本文");
 });
@@ -23,4 +23,16 @@ test.each([
   ["a\n\nb", "a\nb", "+1行"],
 ])("前版との行差分を変更要旨にする: %j", (body, previous, expected) => {
   expect(summarizePromptChange(body, previous)).toBe(expected);
+});
+test.each(["", "0", "-1", "abc", "1.5"])("不正な議員IDは受け付けない: %j", (id) => {
+  expect(() => validatePromptOwnerId(id)).toThrow("IDが不正です");
+});
+test("正の整数の議員IDは受け付ける", () => {
+  expect(() => validatePromptOwnerId("12")).not.toThrow();
+});
+test.each([0, -1, 1.5, NaN, "1", null])("不正な版の指定は受け付けない: %j", (version) => {
+  expect(() => validatePromptVersion(version)).toThrow("版の指定が不正です");
+});
+test("1以上の整数の版はそのまま返す", () => {
+  expect(validatePromptVersion(3)).toBe(3);
 });

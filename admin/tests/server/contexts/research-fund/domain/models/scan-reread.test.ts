@@ -1,5 +1,6 @@
 import {
   planReread,
+  validateRereadSelection,
   previewReread,
   REREAD_INSTRUCTION_MAX_LENGTH,
   validateRereadInstruction,
@@ -28,6 +29,19 @@ describe("validateRereadInstruction", () => {
   });
 });
 
+describe("validateRereadSelection", () => {
+  it("下書きが選ばれていなければ受け付けない", () => {
+    expect(validateRereadSelection([])).toMatchObject({
+      status: "invalid",
+      errors: [{ message: "読み直す下書きを選んでください" }],
+    });
+  });
+
+  it("1件以上選ばれていれば受け付ける", () => {
+    expect(validateRereadSelection(["1"])).toEqual({ status: "valid", value: undefined });
+  });
+});
+
 describe("planReread", () => {
   it("確認済・公開中の仕訳を含む書類を外して数える", () => {
     expect(
@@ -37,6 +51,20 @@ describe("planReread", () => {
         { documentId: "1", hasReviewedEntries: false },
       ]),
     ).toEqual({ status: "valid", value: { documentIds: ["1"], excludedCount: 1 } });
+  });
+
+  it("すべての書類に確認済・公開中の仕訳があれば、その理由で受け付けない", () => {
+    expect(planReread([{ documentId: "1", hasReviewedEntries: true }])).toMatchObject({
+      status: "invalid",
+      errors: [{ message: "選んだ下書きの書類には確認済・公開中の仕訳があるため、読み直せません" }],
+    });
+  });
+
+  it("書類の紐づいた下書きが無ければ受け付けない", () => {
+    expect(planReread([])).toMatchObject({
+      status: "invalid",
+      errors: [{ message: "書類の紐づいた下書きを選んでください" }],
+    });
   });
 
   it("1回に読み直せる書類の上限を超えたら受け付けない", () => {

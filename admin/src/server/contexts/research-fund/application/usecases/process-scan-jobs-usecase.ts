@@ -132,15 +132,4 @@ export class ProcessScanJobsUsecase {
       return false;
     }
   }
-
-  /** 失敗したジョブを待機中に戻す。戻せなければ false（既に処理済みなど） */
-  async retry(input: { bookId: string; jobId: string }): Promise<boolean> {
-    for (const result of [
-      ResearchFundDocument.validateId(input.bookId),
-      ResearchFundDocument.validateId(input.jobId),
-    ]) {
-      if (result.status === "invalid") throw new Error(result.errors[0].message);
-    }
-    return await this.scanRepository.requeueJob(input.bookId, input.jobId);
-  }
 }
