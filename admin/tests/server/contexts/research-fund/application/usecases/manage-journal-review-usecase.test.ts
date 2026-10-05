@@ -369,3 +369,13 @@ test("精算済はまとめて破棄できない", async () => {
   await expect(usecase.discardMany("1", [target])).rejects.toThrow("精算済です");
   expect(repository.discardMany).not.toHaveBeenCalled();
 });
+test("まとめて操作は、取得した仕訳に支給が含まれていても1件の操作と同じ判定で拒否する", async () => {
+  const { repository, usecase } = setup({ ...grant, settledAt: null, advancedBy: null });
+  await expect(usecase.approveMany("1", [target])).rejects.toThrow("この画面で扱えない仕訳");
+  await expect(usecase.revertManyToDraft("1", [target])).rejects.toThrow("この画面で扱えない仕訳");
+  await expect(usecase.discardMany("1", [target])).rejects.toThrow("この画面で扱えない仕訳");
+  await expect(usecase.setAdvancedBy("1", [target], "秘書A")).rejects.toThrow("支給・返還");
+  await expect(usecase.settleMany("1", [target], "2026-09-30")).rejects.toThrow("支給・返還");
+  await expect(usecase.unsettleMany("1", [target])).rejects.toThrow("この画面で扱えない仕訳");
+  for (const method of ["approveMany", "revertManyToDraft", "discardMany", "setAdvancedBy", "settleMany", "unsettleMany"] as const) expect(repository[method]).not.toHaveBeenCalled();
+});

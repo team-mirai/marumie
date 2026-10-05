@@ -1,0 +1,128 @@
+import { settlementRejection } from "@/server/contexts/research-fund/domain/models/advance";
+import { JournalEntry } from "@/server/contexts/research-fund/domain/models/journal-entry";
+import type { ReviewEntry } from "@/server/contexts/research-fund/domain/models/journal-review";
+
+/**
+ * 仕訳の確認画面の各操作を、その仕訳にしてよいかの判定。
+ *
+ * 1 件の操作とまとめて操作が同じ判定を使い、同じ仕訳に対する可否が経路によって食い違わないようにする。
+ * 同時更新の検出（updatedAt の照合）は取得の段取りなので、ここでは扱わない。
+ */
+
+/** 判定に使う仕訳の最小の形 */
+export type OperableEntry = Pick<
+  ReviewEntry,
+  "description" | "source" | "status" | "advancedBy" | "settledAt" | "entryDate" | "amount" | "id"
+>;
+
+/**
+ * 操作を受け付けない理由（利用者に見せる文）。
+ * 1 件の操作では one を、まとめて操作では仕訳の項目名を含む many を見せる。
+ */
+export interface OperationRejection {
+  one: string;
+  many: string;
+}
+
+/** まとめて操作で支給を選んだときの理由。支給は一覧で選べないので、画面と食い違った選択として扱う */
+const UNSUPPORTED_ENTRY = "この画面で扱えない仕訳が選ばれています";
+
+function published(entry: OperableEntry): OperationRejection | null {
+  if (entry.status !== "published") return null;
+  return {
+    one: "公開中の仕訳は編集・破棄できません",
+    many: `「${entry.description}」は公開中です`,
+  };
+}
+
+function settled(entry: OperableEntry, one: string): OperationRejection | null {
+  if (entry.settledAt === null) return null;
+  return { one, many: `「${entry.description}」は精算済です（先に未精算に戻してください）` };
+}
+
+export const JournalOperation = {
+  /** 内容の編集。精算後に金額が変わると精算した額と記録が合わなくなるので、先に未精算に戻させる */
+  edit(entry: OperableEntry, amount: number): OperationRejection | null {
+    return (
+      published(entry) ??
+      (entry.amount === amount
+        ? null
+        : settled(entry, "精算済の仕訳は金額を変更できません。先に未精算に戻してください"))
+    );
+  },
+  /** 確認済にする。支給は下書きを経ずに確認済で作るので対象にならない */
+  approve(entry: OperableEntry): OperationRejection | null {
+    const rejection = published(entry);
+    if (rejection) return rejection;
+    if (entry.source === "grant") return { one: "支給はすでに確認済です", many: UNSUPPORTED_ENTRY };
+    const result = JournalEntry.transition(entry, "approved");
+    if (result.status === "invalid")
+      return {
+        one: result.errors[0].message,
+        many: `「${entry.description}」は下書きではありません`,
+      };
+    return null;
+  },
+  /** 下書きに戻す。下書きは金額が確定していないので精算できない。精算済のまま下書きに戻さない */
+  revertToDraft(entry: OperableEntry): OperationRejection | null {
+    if (entry.source === "grant")
+      return { one: "支給は下書きに戻せません", many: UNSUPPORTED_ENTRY };
+    if (JournalEntry.transition(entry, "draft").status === "invalid")
+      return {
+        one: "確認済の仕訳だけを下書きに戻せます",
+        many:
+          entry.status === "published"
+            ? `「${entry.description}」は公開中です`
+            : `「${entry.description}」は確認済ではありません`,
+      };
+    return settled(entry, "精算済の仕訳は下書きに戻せません。先に未精算に戻してください");
+  },
+  /** 破棄。精算済を消すと、精算した額と残る記録が合わなくなる */
+  discard(entry: OperableEntry): OperationRejection | null {
+    const rejection = published(entry);
+    if (rejection) return rejection;
+    if (entry.source === "grant") return { one: "支給は破棄できません", many: UNSUPPORTED_ENTRY };
+    return settled(entry, "精算済の仕訳は破棄できません。先に未精算に戻してください");
+  },
+  /** 公開中の仕訳を確認済に戻す（取り下げ）。支給も取り下げられる */
+  unpublish(entry: OperableEntry): OperationRejection | null {
+    if (entry.status !== "published")
+      return {
+        one: "公開中の仕訳だけを確認済に戻せます",
+        many: `「${entry.description}」は公開中ではありません`,
+      };
+    return null;
+  },
+  /**
+   * 立替者の設定・解除。立替は公開内容に影響しない事務所内の管理情報なので、公開中の仕訳でも変更できる。
+   * 支給は立替情報を持てない
+   */
+  setAdvancedBy(entry: OperableEntry): OperationRejection | null {
+    if (entry.source === "grant")
+      return {
+        one: "支給には立替者を設定できません",
+        many: "立替者を設定できない仕訳（支給・返還など）が選ばれています",
+      };
+    return settled(entry, "精算済の仕訳は立替者を変更できません。先に未精算に戻してください");
+  },
+  /** 精算。精算できる立替の条件は settlementRejection が持つ */
+  settle(entry: OperableEntry): OperationRejection | null {
+    if (entry.source === "grant")
+      return {
+        one: "支給は精算できません",
+        many: "精算できない仕訳（支給・返還など）が選ばれています",
+      };
+    const reason = settlementRejection(entry);
+    return reason ? { one: reason, many: reason } : null;
+  },
+  /** 未精算に戻す（精算の誤操作の取り消し） */
+  unsettle(entry: OperableEntry): OperationRejection | null {
+    if (entry.source === "grant") return { one: "支給は精算していません", many: UNSUPPORTED_ENTRY };
+    if (entry.settledAt === null)
+      return {
+        one: "精算済の仕訳だけを未精算に戻せます",
+        many: `「${entry.description}」は未精算です`,
+      };
+    return null;
+  },
+};

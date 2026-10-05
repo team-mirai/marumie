@@ -1,6 +1,6 @@
 import { revalidatePath } from "next/cache";
 import { requireAuth } from "@/server/contexts/auth/presentation/loaders/require-auth";
-import { ManageGrantsUsecase } from "@/server/contexts/research-fund/application/usecases/manage-grants-usecase";
+import { RegisterGrantUsecase } from "@/server/contexts/research-fund/application/usecases/register-grant-usecase";
 import { GrantRegistrationError } from "@/server/contexts/research-fund/domain/models/grant-registration";
 import { registerGrant } from "@/server/contexts/research-fund/presentation/actions/register-grant";
 import { requireJournalTarget } from "@/server/contexts/research-fund/presentation/loaders/load-journal-review";
@@ -16,7 +16,7 @@ beforeEach(() => {
 afterEach(() => jest.restoreAllMocks());
 
 test("現在の対象を検証し、作成者をサーバー側で設定し、レイアウトを再検証", async () => {
-  const register = jest.spyOn(ManageGrantsUsecase.prototype, "register").mockResolvedValue("3");
+  const register = jest.spyOn(RegisterGrantUsecase.prototype, "execute").mockResolvedValue("3");
   await expect(registerGrant("2", "1", "2026-05", "2026-05-20", 980_000)).resolves.toEqual({ success: true });
   expect(requireJournalTarget).toHaveBeenCalledWith("2", "1");
   expect(register).toHaveBeenCalledWith("1", "2026-05", "user", undefined, "2026-05-20", 980_000);
@@ -25,7 +25,7 @@ test("現在の対象を検証し、作成者をサーバー側で設定し、�
 
 test("別の対象への古いフォーム送信を拒否", async () => {
   jest.mocked(requireJournalTarget).mockResolvedValue(null);
-  const register = jest.spyOn(ManageGrantsUsecase.prototype, "register");
+  const register = jest.spyOn(RegisterGrantUsecase.prototype, "execute");
   await expect(registerGrant("2", "1", "2026-05", "2026-05-20", 980_000)).resolves.toMatchObject({ success: false });
   expect(register).not.toHaveBeenCalled();
   expect(revalidatePath).not.toHaveBeenCalled();
@@ -33,16 +33,16 @@ test("別の対象への古いフォーム送信を拒否", async () => {
 
 test("認証失敗時は登録しない", async () => {
   jest.mocked(requireAuth).mockRejectedValueOnce(new Error("auth"));
-  const register = jest.spyOn(ManageGrantsUsecase.prototype, "register");
+  const register = jest.spyOn(RegisterGrantUsecase.prototype, "execute");
   await expect(registerGrant("2", "1", "2026-05", "2026-05-20", 980_000)).rejects.toThrow("auth");
   expect(register).not.toHaveBeenCalled();
   expect(revalidatePath).not.toHaveBeenCalled();
 });
 
 test("利用者が解消できる業務エラーはメッセージを返し、内部エラーは漏らさない", async () => {
-  jest.spyOn(ManageGrantsUsecase.prototype, "register").mockRejectedValueOnce(new GrantRegistrationError("この月の支給はすでに登録されています"));
+  jest.spyOn(RegisterGrantUsecase.prototype, "execute").mockRejectedValueOnce(new GrantRegistrationError("この月の支給はすでに登録されています"));
   await expect(registerGrant("2", "1", "2026-05", "2026-05-20", 980_000)).resolves.toEqual({ success: false, error: "この月の支給はすでに登録されています" });
-  jest.spyOn(ManageGrantsUsecase.prototype, "register").mockRejectedValueOnce(new Error("private database detail"));
+  jest.spyOn(RegisterGrantUsecase.prototype, "execute").mockRejectedValueOnce(new Error("private database detail"));
   await expect(registerGrant("2", "1", "2026-05", "2026-05-20", 980_000)).resolves.toEqual({ success: false, error: "支給の登録に失敗しました" });
   expect(revalidatePath).not.toHaveBeenCalled();
 });
