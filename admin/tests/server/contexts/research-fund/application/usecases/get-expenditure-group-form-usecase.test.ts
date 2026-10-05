@@ -54,5 +54,6 @@ test.each(["", "0", "-1", "abc"])("不正なIDではリポジトリを呼ばな�
   await expect(usecase.execute(id, null)).rejects.toThrow("ID");
   expect(repository.entries).not.toHaveBeenCalled();
   await expect(usecase.execute("3", id)).rejects.toThrow("ID");
+  expect(repository.entries).not.toHaveBeenCalled();
   expect(repository.find).not.toHaveBeenCalled();
 });

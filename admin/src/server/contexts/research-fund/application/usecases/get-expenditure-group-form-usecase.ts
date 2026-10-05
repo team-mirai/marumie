@@ -11,9 +11,9 @@ export class GetExpenditureGroupFormUsecase {
 
   async execute(bookId: string, groupId: string | null) {
     assertValidIds(bookId);
+    if (groupId !== null) assertValidIds(groupId);
     const entries = await this.repository.entries(bookId);
     if (groupId === null) return { group: null, entries };
-    assertValidIds(groupId);
     const group = await this.repository.find(bookId, groupId);
     if (!group) throw new ExpenditureGroupError("支出群が見つかりません");
     return { group, entries };

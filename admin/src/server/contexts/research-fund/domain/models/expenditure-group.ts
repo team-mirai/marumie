@@ -8,7 +8,7 @@ import type { LinkedEntrySummary } from "@/shared/research-fund/expenditure-grou
 
 export class ExpenditureGroupError extends Error {}
 
-export const expenditureGroupEditSchema = z.object({
+const expenditureGroupEditSchema = z.object({
   title: z.string().trim().min(1).max(255),
   description: z.string().trim().min(1),
   outcomes: z
@@ -22,6 +22,20 @@ export const expenditureGroupEditSchema = z.object({
   entryIds: z.array(z.string().regex(/^[1-9]\d*$/)).max(500),
 });
 export type ExpenditureGroupEdit = z.infer<typeof expenditureGroupEditSchema>;
+
+/** フォームの入力を支出群として保存できる形か確かめる */
+export function parseExpenditureGroupEdit(
+  input: unknown,
+): ResearchFundResult<ExpenditureGroupEdit> {
+  const parsed = expenditureGroupEditSchema.safeParse(input);
+  if (!parsed.success)
+    return invalidResearchFundResult(
+      "input",
+      RF_ERROR_CODES.INVALID_GROUP_EDIT,
+      "タイトルと説明を入力してください",
+    );
+  return { status: "valid", value: parsed.data };
+}
 
 export interface OutcomeWrite {
   label: string;

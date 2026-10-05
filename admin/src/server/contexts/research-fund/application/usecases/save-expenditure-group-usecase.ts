@@ -3,8 +3,8 @@ import { invalidateWebappCache } from "@/server/contexts/research-fund/applicati
 import {
   assertValidIds,
   ExpenditureGroupError,
-  expenditureGroupEditSchema,
   normalizeOutcomes,
+  parseExpenditureGroupEdit,
   validateEntryLinks,
   type ExpenditureGroupEdit,
   type ExpenditureGroupWrite,
@@ -35,16 +35,16 @@ export class SaveExpenditureGroupUsecase {
     groupId: string | null,
     input: ExpenditureGroupEdit,
   ): Promise<ExpenditureGroupWrite> {
-    const parsed = expenditureGroupEditSchema.safeParse(input);
-    if (!parsed.success) throw new ExpenditureGroupError("タイトルと説明を入力してください");
+    const parsed = parseExpenditureGroupEdit(input);
+    if (parsed.status === "invalid") throw new ExpenditureGroupError(parsed.errors[0].message);
     const entries = await this.repository.entries(bookId);
     // 紐づけてよい仕訳かの判定と却下理由はドメインが持つ
-    const links = validateEntryLinks(groupId, parsed.data.entryIds, entries);
+    const links = validateEntryLinks(groupId, parsed.value.entryIds, entries);
     if (links.status === "invalid") throw new ExpenditureGroupError(links.errors[0].message);
     return {
-      title: parsed.data.title,
-      description: parsed.data.description,
-      outcomes: normalizeOutcomes(parsed.data.outcomes),
+      title: parsed.value.title,
+      description: parsed.value.description,
+      outcomes: normalizeOutcomes(parsed.value.outcomes),
       entryIds: links.value,
     };
   }

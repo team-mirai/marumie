@@ -2,6 +2,7 @@ import {
   assertValidIds,
   type LinkableEntry,
   normalizePolicyComment,
+  parseExpenditureGroupEdit,
   validateEntryLinks,
   validateGroupOrder,
 } from "@/server/contexts/research-fund/domain/models/expenditure-group";
@@ -66,6 +67,29 @@ describe("normalizePolicyComment", () => {
     expect(normalizePolicyComment(value)).toMatchObject({
       status: "invalid",
       errors: [{ message: "活用方針の入力が不正です" }],
+    });
+  });
+});
+
+describe("parseExpenditureGroupEdit", () => {
+  const valid = { title: " 調査 ", description: "説明", outcomes: [], entryIds: ["10"] };
+
+  test("保存できる入力は前後の空白を落として受け付ける", () => {
+    expect(parseExpenditureGroupEdit(valid)).toEqual({
+      status: "valid",
+      value: { ...valid, title: "調査" },
+    });
+  });
+
+  test.each([
+    { ...valid, title: " " },
+    { ...valid, description: "" },
+    { ...valid, entryIds: ["abc"] },
+    null,
+  ])("保存できない入力は却下する: %j", (input) => {
+    expect(parseExpenditureGroupEdit(input)).toMatchObject({
+      status: "invalid",
+      errors: [{ message: "タイトルと説明を入力してください" }],
     });
   });
 });
