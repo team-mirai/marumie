@@ -15,6 +15,10 @@ export interface Book extends BookMetadata {
   publishedThrough: string | null;
 }
 export const Book = {
+  /** 議員・帳簿の ID は正の整数の文字列 */
+  isValidId(id: string): boolean {
+    return /^[1-9]\d*$/.test(id);
+  },
   validateYear(year: number): ResearchFundResult<number> {
     if (!Number.isInteger(year) || year < 1900 || year > 9999)
       return invalidResearchFundResult(
