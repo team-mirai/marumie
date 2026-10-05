@@ -33,13 +33,6 @@ export const KNOWN_VIOLATIONS = {
     "操作メソッドが public に並んでいる（execute が無い）",
   "admin/src/server/contexts/research-fund/application/usecases/publish-journal-entries-usecase.ts":
     "操作メソッドが public に並んでいる（execute が無い）",
-  // report: 1 ファイルに複数クラス / 操作メソッドが public に並んでいる
-  "admin/src/server/contexts/report/application/usecases/manage-counterpart-usecase.ts":
-    "1 ファイルに複数クラス",
-  "admin/src/server/contexts/report/application/usecases/manage-donor-usecase.ts":
-    "1 ファイルに複数クラス",
-  "admin/src/server/contexts/report/application/usecases/xml-export-usecase.ts":
-    "generateFilename() が public",
   // shared / auth
   "admin/src/server/contexts/shared/application/usecases/manage-politician-usecase.ts":
     "操作メソッドが public に並んでいる（execute が無い）",
