@@ -50,49 +50,6 @@ describe("GetAllUsersUsecase", () => {
     usecase = new GetAllUsersUsecase(mockAuthProvider, mockUserRepository);
   });
 
-  describe("checkPermission", () => {
-    it("admin権限を持つユーザーは認可される", async () => {
-      const authUser = createMockSupabaseUser();
-      const adminUser = createMockUser({ role: "admin" });
-      mockAuthProvider.getUser.mockResolvedValue(authUser);
-      mockUserRepository.findByAuthId.mockResolvedValue(adminUser);
-
-      await expect(usecase.checkPermission()).resolves.toBeUndefined();
-    });
-
-    it("未認証の場合はエラーを投げる", async () => {
-      mockAuthProvider.getUser.mockResolvedValue(null);
-
-      await expect(usecase.checkPermission()).rejects.toThrow(AuthError);
-      await expect(usecase.checkPermission()).rejects.toMatchObject({
-        code: "AUTH_FAILED",
-      });
-    });
-
-    it("user権限の場合はエラーを投げる", async () => {
-      const authUser = createMockSupabaseUser();
-      const normalUser = createMockUser({ role: "user" });
-      mockAuthProvider.getUser.mockResolvedValue(authUser);
-      mockUserRepository.findByAuthId.mockResolvedValue(normalUser);
-
-      await expect(usecase.checkPermission()).rejects.toThrow(AuthError);
-      await expect(usecase.checkPermission()).rejects.toMatchObject({
-        code: "INSUFFICIENT_PERMISSION",
-      });
-    });
-
-    it("DBにユーザーが存在しない場合はuser権限として扱われエラーを投げる", async () => {
-      const authUser = createMockSupabaseUser();
-      mockAuthProvider.getUser.mockResolvedValue(authUser);
-      mockUserRepository.findByAuthId.mockResolvedValue(null);
-
-      await expect(usecase.checkPermission()).rejects.toThrow(AuthError);
-      await expect(usecase.checkPermission()).rejects.toMatchObject({
-        code: "INSUFFICIENT_PERMISSION",
-      });
-    });
-  });
-
   describe("execute", () => {
     it("admin権限を持つユーザーは全ユーザー一覧を取得できる", async () => {
       const authUser = createMockSupabaseUser();
@@ -126,6 +83,18 @@ describe("GetAllUsersUsecase", () => {
       const normalUser = createMockUser({ role: "user" });
       mockAuthProvider.getUser.mockResolvedValue(authUser);
       mockUserRepository.findByAuthId.mockResolvedValue(normalUser);
+
+      await expect(usecase.execute()).rejects.toThrow(AuthError);
+      await expect(usecase.execute()).rejects.toMatchObject({
+        code: "INSUFFICIENT_PERMISSION",
+      });
+      expect(mockUserRepository.findAll).not.toHaveBeenCalled();
+    });
+
+    it("DBにユーザーが存在しない場合はuser権限として扱われエラーを投げる", async () => {
+      const authUser = createMockSupabaseUser();
+      mockAuthProvider.getUser.mockResolvedValue(authUser);
+      mockUserRepository.findByAuthId.mockResolvedValue(null);
 
       await expect(usecase.execute()).rejects.toThrow(AuthError);
       await expect(usecase.execute()).rejects.toMatchObject({

@@ -22,6 +22,10 @@ function invalid(path: string, message: string) {
 }
 
 export const Politician = {
+  /** 議員 ID として扱える文字列か（正の整数）。不正な ID はリポジトリへ渡さない */
+  isValidId(id: string) {
+    return /^[1-9]\d*$/.test(id);
+  },
   validate(input: PoliticianInput) {
     if (
       !input ||

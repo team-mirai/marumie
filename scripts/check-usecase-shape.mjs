@@ -40,11 +40,6 @@ export const KNOWN_VIOLATIONS = {
     "1 ファイルに複数クラス",
   "admin/src/server/contexts/report/application/usecases/xml-export-usecase.ts":
     "generateFilename() が public",
-  // shared / auth
-  "admin/src/server/contexts/shared/application/usecases/manage-politician-usecase.ts":
-    "操作メソッドが public に並んでいる（execute が無い）",
-  "admin/src/server/contexts/auth/application/usecases/get-all-users-usecase.ts":
-    "checkPermission() が public",
   // usecase ではなくヘルパー関数が usecases/ に置かれている（配置ごと見直す）
   "admin/src/server/contexts/data-import/application/usecases/read-sync-import-file-text.ts":
     "クラスではなく関数",
