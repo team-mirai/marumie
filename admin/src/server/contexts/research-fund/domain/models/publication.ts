@@ -1,4 +1,4 @@
-import type { JournalEntry } from "@/server/contexts/research-fund/domain/models/journal-entry";
+import { JournalEntry } from "@/server/contexts/research-fund/domain/models/journal-entry";
 import type { ResearchFundCategory, ResearchFundRow } from "@/shared/research-fund/aggregation";
 
 /** 公開の候補として選べる確認済・未公開の仕訳。集計にそのまま渡せるよう行を兼ねる。 */
@@ -31,6 +31,24 @@ function monthEnd(date: string): string {
 }
 
 export const Publication = {
+  /** 公開する仕訳の選び方を受け付けない理由（利用者に見せる文）。重複は 1 件にまとめてから渡す */
+  selectionRejection(ids: readonly string[]): string | null {
+    if (ids.length === 0) return "公開する仕訳を選んでください";
+    if (ids.some((id) => !/^[1-9]\d*$/.test(id))) return "仕訳IDが不正です";
+    return null;
+  },
+
+  /** その仕訳を公開させない理由（利用者に見せる文）。公開してよければ null */
+  entryRejection(entry: PublishableEntry): string | null {
+    // 下書きは公開できない。確認済 → 公開済 の遷移だけを JournalEntry が許す。
+    if (JournalEntry.transition(entry, "published").status === "invalid")
+      return "確認済の仕訳だけを公開できます。下書きは先に確認済にしてください";
+    // 画面のチェックリストに出ない仕訳は before / after で確認できないので公開させない。
+    if (!Publication.isPublishable(entry.rowCount))
+      return "この画面で公開できない仕訳が含まれています。画面を再読み込みしてください";
+    return null;
+  },
+
   /**
    * 公開の候補にできるのは「費用1行／収入1行」に射影できる仕訳だけ。
    * それ以外はこの画面の before / after に表せないため、候補に出さず公開もさせない。

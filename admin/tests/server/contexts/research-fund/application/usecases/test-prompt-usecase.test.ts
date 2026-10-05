@@ -1,7 +1,4 @@
-import {
-  PROMPT_TEST_DOCUMENT_LIMIT,
-  TestPromptUsecase,
-} from "@/server/contexts/research-fund/application/usecases/test-prompt-usecase";
+import { TestPromptUsecase } from "@/server/contexts/research-fund/application/usecases/test-prompt-usecase";
 import type { ResearchFundDocument } from "@/server/contexts/research-fund/domain/models/document";
 import { PromptError } from "@/server/contexts/research-fund/domain/models/prompt";
 import type { DocumentRepository } from "@/server/contexts/research-fund/domain/repositories/document-repository.interface";
@@ -48,22 +45,6 @@ describe("TestPromptUsecase", () => {
     gateway.extract.mockResolvedValue({
       status: "valid",
       value: { ...RECEIPT, items: [...RECEIPT.items] },
-    });
-  });
-
-  describe("listDocuments", () => {
-    it("returns the book's documents for the select", async () => {
-      documentRepository.listByBook.mockResolvedValue([DOCUMENT]);
-
-      await expect(usecase.listDocuments("12")).resolves.toEqual([
-        { id: "42", originalFilename: "IMG_1.jpg", mime: "image/jpeg" },
-      ]);
-      expect(documentRepository.listByBook).toHaveBeenCalledWith("12", PROMPT_TEST_DOCUMENT_LIMIT);
-    });
-
-    it("rejects an invalid book id", async () => {
-      await expect(usecase.listDocuments("0")).rejects.toThrow("有効なIDを指定してください");
-      expect(documentRepository.listByBook).not.toHaveBeenCalled();
     });
   });
 

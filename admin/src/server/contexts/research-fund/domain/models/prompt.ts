@@ -51,6 +51,18 @@ export function normalizePromptBody(body: unknown): string {
   return normalized;
 }
 
+/** プロンプトの持ち主（議員）の ID を検証する。不正ならリポジトリを呼ぶ前に弾く */
+export function validatePromptOwnerId(id: string): void {
+  if (!/^[1-9]\d*$/.test(id)) throw new PromptError("IDが不正です");
+}
+
+/** 巻き戻し先の版番号を検証する。版は 1 からの連番 */
+export function validatePromptVersion(version: unknown): number {
+  if (typeof version !== "number" || !Number.isInteger(version) || version < 1)
+    throw new PromptError("版の指定が不正です");
+  return version;
+}
+
 /** 行ごとの出現回数。同じ行が複数回現れる本文でも増減を数えられるようにする */
 function countLines(body: string): Map<string, number> {
   const counts = new Map<string, number>();

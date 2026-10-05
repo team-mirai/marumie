@@ -1,6 +1,7 @@
 import { revalidatePath } from "next/cache";
 import { requireAuth } from "@/server/contexts/auth/presentation/loaders/require-auth";
-import { ManagePromptUsecase } from "@/server/contexts/research-fund/application/usecases/manage-prompt-usecase";
+import { RollbackPromptUsecase } from "@/server/contexts/research-fund/application/usecases/rollback-prompt-usecase";
+import { SavePromptUsecase } from "@/server/contexts/research-fund/application/usecases/save-prompt-usecase";
 import { mutatePrompt } from "@/server/contexts/research-fund/presentation/actions/manage-prompt";
 import { PromptError } from "@/server/contexts/research-fund/domain/models/prompt";
 import { requireJournalTarget } from "@/server/contexts/research-fund/presentation/loaders/load-journal-review";
@@ -15,36 +16,36 @@ beforeEach(() => {
 });
 afterEach(() => jest.restoreAllMocks());
 test("保存は更新者をサーバー側で設定し、採番された版を返してレイアウトを再検証", async () => {
-  const save = jest.spyOn(ManagePromptUsecase.prototype, "save").mockResolvedValue(4);
+  const save = jest.spyOn(SavePromptUsecase.prototype, "execute").mockResolvedValue(4);
   await expect(mutatePrompt("2", "1", { type: "save", body: "本文" })).resolves.toEqual({ success: true, version: 4 });
   expect(requireJournalTarget).toHaveBeenCalledWith("2", "1");
   expect(save).toHaveBeenCalledWith("2", "本文", "user");
   expect(revalidatePath).toHaveBeenCalledWith("/(auth)", "layout");
 });
 test("巻き戻しも対象を検証して再検証する", async () => {
-  const rollback = jest.spyOn(ManagePromptUsecase.prototype, "rollback").mockResolvedValue(undefined);
+  const rollback = jest.spyOn(RollbackPromptUsecase.prototype, "execute").mockResolvedValue(undefined);
   await expect(mutatePrompt("2", "1", { type: "rollback", version: 2 })).resolves.toEqual({ success: true, version: undefined });
   expect(rollback).toHaveBeenCalledWith("2", 2);
   expect(revalidatePath).toHaveBeenCalledWith("/(auth)", "layout");
 });
 test("別の対象への古いフォーム送信を拒否", async () => {
   jest.mocked(requireJournalTarget).mockResolvedValue(null);
-  const save = jest.spyOn(ManagePromptUsecase.prototype, "save");
+  const save = jest.spyOn(SavePromptUsecase.prototype, "execute");
   await expect(mutatePrompt("2", "1", { type: "save", body: "本文" })).resolves.toMatchObject({ success: false });
   expect(save).not.toHaveBeenCalled();
   expect(revalidatePath).not.toHaveBeenCalled();
 });
 test("認証失敗時は保存しない", async () => {
   jest.mocked(requireAuth).mockRejectedValueOnce(new Error("auth"));
-  const save = jest.spyOn(ManagePromptUsecase.prototype, "save");
+  const save = jest.spyOn(SavePromptUsecase.prototype, "execute");
   await expect(mutatePrompt("2", "1", { type: "save", body: "本文" })).rejects.toThrow("auth");
   expect(save).not.toHaveBeenCalled();
   expect(revalidatePath).not.toHaveBeenCalled();
 });
 test("入力の不備は利用者に伝え、内部エラーは漏らさない", async () => {
-  jest.spyOn(ManagePromptUsecase.prototype, "save").mockRejectedValueOnce(new PromptError("プロンプト本文を入力してください"));
+  jest.spyOn(SavePromptUsecase.prototype, "execute").mockRejectedValueOnce(new PromptError("プロンプト本文を入力してください"));
   await expect(mutatePrompt("2", "1", { type: "save", body: " " })).resolves.toEqual({ success: false, error: "プロンプト本文を入力してください" });
-  jest.spyOn(ManagePromptUsecase.prototype, "save").mockRejectedValueOnce(new Error("private database detail"));
+  jest.spyOn(SavePromptUsecase.prototype, "execute").mockRejectedValueOnce(new Error("private database detail"));
   await expect(mutatePrompt("2", "1", { type: "save", body: "本文" })).resolves.toEqual({ success: false, error: "読み取りプロンプトの保存に失敗しました" });
   expect(revalidatePath).not.toHaveBeenCalled();
 });

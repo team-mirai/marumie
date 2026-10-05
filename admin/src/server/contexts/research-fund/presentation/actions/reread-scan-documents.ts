@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { requireAuth } from "@/server/contexts/auth/presentation/loaders/require-auth";
 import { ScanBatchError } from "@/server/contexts/research-fund/domain/models/scan-batch";
 import { requireJournalTarget } from "@/server/contexts/research-fund/presentation/loaders/load-journal-review";
-import { buildScanUsecase } from "@/server/contexts/research-fund/presentation/loaders/load-scan";
+import { buildCreateRereadBatchUsecase } from "@/server/contexts/research-fund/presentation/loaders/load-scan";
 
 /**
  * 選んだ下書きが紐づく書類を、指示つきで読み直す queued ジョブにする。
@@ -19,7 +19,7 @@ export async function rereadScanDocuments(
   if (!(await requireJournalTarget(politicianId, bookId)))
     return { success: false as const, error: "現在の対象帳簿を選択し直してください" };
   try {
-    const result = await buildScanUsecase().reread({
+    const result = await buildCreateRereadBatchUsecase().execute({
       politicianId,
       bookId,
       userId: user.id,

@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
-import { ManagePromptUsecase } from "@/server/contexts/research-fund/application/usecases/manage-prompt-usecase";
-import { TestPromptUsecase } from "@/server/contexts/research-fund/application/usecases/test-prompt-usecase";
+import { GetPromptOverviewUsecase } from "@/server/contexts/research-fund/application/usecases/get-prompt-overview-usecase";
+import { ListPromptTestDocumentsUsecase } from "@/server/contexts/research-fund/application/usecases/list-prompt-test-documents-usecase";
 import { loadPrompts } from "@/server/contexts/research-fund/presentation/loaders/load-prompts";
 import { requireJournalTarget } from "@/server/contexts/research-fund/presentation/loaders/load-journal-review";
 import type { AdminTarget } from "@/server/contexts/shared/domain/models/admin-target";
@@ -14,8 +14,8 @@ beforeEach(() => jest.clearAllMocks());
 afterEach(() => jest.restoreAllMocks());
 test("対象が一致しなければプロンプトを取得しない", async () => {
   jest.mocked(requireJournalTarget).mockResolvedValue(null);
-  const list = jest.spyOn(ManagePromptUsecase.prototype, "list");
-  const listDocuments = jest.spyOn(TestPromptUsecase.prototype, "listDocuments");
+  const list = jest.spyOn(GetPromptOverviewUsecase.prototype, "execute");
+  const listDocuments = jest.spyOn(ListPromptTestDocumentsUsecase.prototype, "execute");
   await expect(loadPrompts("2", "1")).rejects.toThrow("NOT_FOUND");
   expect(notFound).toHaveBeenCalled();
   expect(list).not.toHaveBeenCalled();
@@ -24,10 +24,10 @@ test("対象が一致しなければプロンプトを取得しない", async ()
 test("帳簿ではなく議員のプロンプトを取得し、現在の対象を添えて返す", async () => {
   jest.mocked(requireJournalTarget).mockResolvedValue(target);
   const data = { versions: [], body: "本文", activeVersion: null, nextVersion: 1, automaticPrompt: "自動" };
-  const list = jest.spyOn(ManagePromptUsecase.prototype, "list").mockResolvedValue(data);
+  const list = jest.spyOn(GetPromptOverviewUsecase.prototype, "execute").mockResolvedValue(data);
   const testDocuments = [{ id: "9", originalFilename: "IMG_1.jpg", mime: "image/jpeg" }];
   const listDocuments = jest
-    .spyOn(TestPromptUsecase.prototype, "listDocuments")
+    .spyOn(ListPromptTestDocumentsUsecase.prototype, "execute")
     .mockResolvedValue(testDocuments);
   await expect(loadPrompts("2", "1")).resolves.toEqual({ ...data, testDocuments, target });
   expect(list).toHaveBeenCalledWith("2");

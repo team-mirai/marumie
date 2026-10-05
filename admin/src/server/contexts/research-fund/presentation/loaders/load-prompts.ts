@@ -1,6 +1,7 @@
 import "server-only";
 import { notFound } from "next/navigation";
-import { ManagePromptUsecase } from "@/server/contexts/research-fund/application/usecases/manage-prompt-usecase";
+import { GetPromptOverviewUsecase } from "@/server/contexts/research-fund/application/usecases/get-prompt-overview-usecase";
+import { ListPromptTestDocumentsUsecase } from "@/server/contexts/research-fund/application/usecases/list-prompt-test-documents-usecase";
 import { TestPromptUsecase } from "@/server/contexts/research-fund/application/usecases/test-prompt-usecase";
 import { VercelAIReceiptExtractionGateway } from "@/server/contexts/research-fund/infrastructure/llm/vercel-ai-receipt-extraction-gateway";
 import { PrismaDocumentRepository } from "@/server/contexts/research-fund/infrastructure/repositories/prisma-document.repository";
@@ -22,8 +23,8 @@ export async function loadPrompts(politicianId: string, bookId: string) {
   if (!target) notFound();
   // プロンプトは議員室（議員）ごと。年度帳簿をまたいで同じ版を使う
   const [data, testDocuments] = await Promise.all([
-    new ManagePromptUsecase(new PrismaPromptRepository(prisma)).list(target.politicianId),
-    buildTestPromptUsecase().listDocuments(bookId),
+    new GetPromptOverviewUsecase(new PrismaPromptRepository(prisma)).execute(target.politicianId),
+    new ListPromptTestDocumentsUsecase(new PrismaDocumentRepository(prisma)).execute(bookId),
   ]);
   return { ...data, testDocuments, target };
 }

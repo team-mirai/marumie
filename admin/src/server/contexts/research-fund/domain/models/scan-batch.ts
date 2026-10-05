@@ -47,6 +47,18 @@ export interface ScanOverview {
 
 export class ScanBatchError extends Error {}
 
+/**
+ * バッチを作るときに記録する有効なプロンプト版を返す。
+ * ジョブはどの版で読み取ったかを必ず記録するので、版が未保存ならバッチを作れない。
+ */
+export function requireActivePrompt<T>(prompt: T | null): T {
+  if (!prompt)
+    throw new ScanBatchError(
+      "読み取りプロンプトが未保存です。「読み取りプロンプト」から保存してください",
+    );
+  return prompt;
+}
+
 export function summarizeScanBatch(jobs: ScanJobView[]): ScanBatchProgress {
   const succeeded = jobs.filter((job) => job.status === "succeeded").length;
   const failed = jobs.filter((job) => job.status === "failed").length;

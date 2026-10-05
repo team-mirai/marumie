@@ -7,7 +7,7 @@ import {
   SCAN_BATCH_MAX_DOCUMENTS,
 } from "@/server/contexts/research-fund/domain/models/scan-batch";
 import { requireJournalTarget } from "@/server/contexts/research-fund/presentation/loaders/load-journal-review";
-import { buildScanUsecase } from "@/server/contexts/research-fund/presentation/loaders/load-scan";
+import { buildCreateScanBatchUsecase } from "@/server/contexts/research-fund/presentation/loaders/load-scan";
 
 /**
  * 書類をアップロードしてバッチと queued ジョブを作る。
@@ -34,7 +34,7 @@ export async function createScanBatch(politicianId: string, bookId: string, form
         originalFilename: file.name,
       })),
     );
-    const result = await buildScanUsecase().createBatch({
+    const result = await buildCreateScanBatchUsecase().execute({
       politicianId,
       bookId,
       userId: user.id,
