@@ -29,8 +29,6 @@ export const KNOWN_VIOLATIONS = {
     "操作メソッドが public に並んでいる（execute が無い）",
   "admin/src/server/contexts/research-fund/application/usecases/manage-expenditure-groups-usecase.ts":
     "操作メソッドが public に並んでいる（execute が無い）",
-  "admin/src/server/contexts/research-fund/application/usecases/manage-grants-usecase.ts":
-    "操作メソッドが public に並んでいる（execute が無い）",
   "admin/src/server/contexts/research-fund/application/usecases/manage-prompt-usecase.ts":
     "操作メソッドが public に並んでいる（execute が無い）",
   "admin/src/server/contexts/research-fund/application/usecases/manage-scan-usecase.ts":
