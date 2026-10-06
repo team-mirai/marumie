@@ -75,6 +75,7 @@ function model(row: Row): ReviewEntry | null {
     payeeId: row.payeeId === null ? null : String(row.payeeId),
     payeeLinkSource: row.payeeLinkSource ?? null,
     receiptAbsenceReason: row.receiptAbsenceReason ?? null,
+    receiptNumber: row.document?.receiptNumber ?? null,
     issuer: ExtractedReceipt.issuerOf(job?.rawJson),
   };
 }

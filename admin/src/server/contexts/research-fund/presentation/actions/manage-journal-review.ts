@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { requireAuth } from "@/server/contexts/auth/presentation/loaders/require-auth";
 import { requireJournalTarget } from "@/server/contexts/research-fund/presentation/loaders/load-journal-review";
 import { ApproveJournalEntriesUsecase } from "@/server/contexts/research-fund/application/usecases/approve-journal-entries-usecase";
+import { AssignReceiptNumbersUsecase } from "@/server/contexts/research-fund/application/usecases/assign-receipt-numbers-usecase";
 import { CreatePayeeAndLinkUsecase } from "@/server/contexts/research-fund/application/usecases/create-payee-and-link-usecase";
 import { CreateJournalEntryUsecase } from "@/server/contexts/research-fund/application/usecases/create-journal-entry-usecase";
 import { DiscardJournalEntriesUsecase } from "@/server/contexts/research-fund/application/usecases/discard-journal-entries-usecase";
@@ -19,6 +20,7 @@ import { UnpublishJournalEntryUsecase } from "@/server/contexts/research-fund/ap
 import { UnsettleJournalEntriesUsecase } from "@/server/contexts/research-fund/application/usecases/unsettle-journal-entries-usecase";
 import { PrismaJournalReviewRepository } from "@/server/contexts/research-fund/infrastructure/repositories/prisma-journal-review.repository";
 import { PrismaPayeeRepository } from "@/server/contexts/research-fund/infrastructure/repositories/prisma-payee.repository";
+import { PrismaReceiptNumberRepository } from "@/server/contexts/research-fund/infrastructure/repositories/prisma-receipt-number.repository";
 import {
   JournalReviewError,
   type JournalEdit,
@@ -60,7 +62,9 @@ type Mutation =
       payee: PayeeFormInput;
     }
   // 徴し難かった事情も議員課提出用の帳簿の情報なので、公開中の仕訳でも変更でき、キャッシュも無効化しない。
-  | { type: "set-receipt-absence-reason"; id: string; updatedAt: string; reason: string };
+  | { type: "set-receipt-absence-reason"; id: string; updatedAt: string; reason: string }
+  // 領収書等番号も議員課提出用の帳簿の情報なので、キャッシュは無効化しない。
+  | { type: "assign-receipt-numbers" };
 export async function mutateJournalReview(
   politicianId: string,
   bookId: string,
@@ -81,6 +85,7 @@ export async function mutateJournalReview(
     let unsettled: number | undefined;
     let payeeLink: { updated: number; payee: Payee | null } | undefined;
     let receiptAbsence: { receiptAbsenceReason: string | null } | undefined;
+    let receiptNumbers: { assigned: number } | undefined;
     if (mutation.type === "create")
       id = await new CreateJournalEntryUsecase(repository).execute(bookId, mutation.input, user.id);
     else if (mutation.type === "save")
@@ -158,6 +163,10 @@ export async function mutateJournalReview(
         mutation.updatedAt,
         mutation.reason,
       );
+    else if (mutation.type === "assign-receipt-numbers")
+      receiptNumbers = await new AssignReceiptNumbersUsecase(
+        new PrismaReceiptNumberRepository(prisma),
+      ).execute(bookId);
     else throw new JournalReviewError("操作が不正です");
     revalidatePath("/(auth)", "layout");
     return {
@@ -172,6 +181,7 @@ export async function mutateJournalReview(
       unsettled,
       payeeLink,
       receiptAbsence,
+      receiptNumbers,
     };
   } catch (error) {
     return {

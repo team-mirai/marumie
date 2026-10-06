@@ -100,6 +100,7 @@ export function JournalReview({
   const [discarding, setDiscarding] = useState(false);
   const [discardingChecked, setDiscardingChecked] = useState(false);
   const [unpublishing, setUnpublishing] = useState(false);
+  const [numbering, setNumbering] = useState(false);
   const [rereading, setRereading] = useState(false);
   const [instruction, setInstruction] = useState("");
   const [assigning, setAssigning] = useState(false);
@@ -163,6 +164,14 @@ export function JournalReview({
   const payeeUnsetCount = entries.filter(isPayeeUnset).length;
   // 書類も徴し難かった事情もない支出の件数（帳簿全体）。議員課への提出前に埋める目安にする。
   const receiptMissingCount = entries.filter(isReceiptMissing).length;
+  // 領収書等番号を振る対象になる書類の数（公開中の仕訳が紐づく未採番の書類。帳簿全体）。
+  const unnumberedDocumentCount = new Set(
+    entries.flatMap((e) =>
+      e.status === "published" && e.documentId !== null && e.receiptNumber === null
+        ? [e.documentId]
+        : [],
+    ),
+  ).size;
   const payeeNames = new Map(payees.map((p) => [p.id, p.name]));
   // 帳簿全体の未精算（立替者ごとの件数と合計額）。絞り込みに関わらず帳簿の全件で数える。
   const unsettledSummary = summarizeUnsettledAdvances(entries);
@@ -189,6 +198,7 @@ export function JournalReview({
         discarding ||
         discardingChecked ||
         unpublishing ||
+        numbering ||
         event.defaultPrevented ||
         event.altKey ||
         event.ctrlKey ||
@@ -444,6 +454,30 @@ export function JournalReview({
       }
     });
   }
+  /** 帳簿の未採番の書類に領収書等番号を振る（採番済みの番号は変えない） */
+  function assignReceiptNumbers() {
+    startTransition(async () => {
+      try {
+        const result = await mutateJournalReview(target.politicianId, target.bookId, {
+          type: "assign-receipt-numbers",
+        });
+        if (!result.success) {
+          toast.error(result.error);
+          return;
+        }
+        const assigned = result.receiptNumbers?.assigned ?? 0;
+        toast.success(
+          assigned > 0
+            ? `${assigned}件の書類に領収書等番号を振りました`
+            : "番号を振る書類はありませんでした",
+        );
+        setNumbering(false);
+        router.refresh();
+      } catch {
+        toast.error("通信に失敗しました。再度お試しください");
+      }
+    });
+  }
   /** 書類の無い支出の徴し難かった事情を保存する（空欄なら削除）。公開内容は変えないので公開中の仕訳でも送れる */
   function saveReceiptAbsenceReason(entry: ReviewEntry, reason: string) {
     startTransition(async () => {
@@ -581,14 +615,25 @@ export function JournalReview({
         title="仕訳の確認・編集"
         description={`${target.name}・${target.year}年 — 領収書と並べて支出を確認します。↑↓キーで移動できます。`}
         actions={
-          <Button
-            disabled={pending}
-            onClick={() => {
-              if (allowLeave()) setCreating(true);
-            }}
-          >
-            手動で仕訳を作成
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              disabled={pending}
+              onClick={() => {
+                if (allowLeave()) setNumbering(true);
+              }}
+            >
+              領収書等番号を振る
+            </Button>
+            <Button
+              disabled={pending}
+              onClick={() => {
+                if (allowLeave()) setCreating(true);
+              }}
+            >
+              手動で仕訳を作成
+            </Button>
+          </div>
         }
       />
       <div className="mb-4 flex flex-wrap items-center justify-between gap-4">
@@ -905,6 +950,11 @@ export function JournalReview({
                               分割 {splits.findIndex((e) => e.id === entry.id) + 1}/{splits.length}
                             </span>
                           )}
+                          {entry.receiptNumber !== null && (
+                            <span className="rounded-full border px-2">
+                              領収書等番号 <span className="font-latin">{entry.receiptNumber}</span>
+                            </span>
+                          )}
                           {isReceiptMissing(entry) ? (
                             <span className="rounded-full border border-destructive px-2 text-destructive">
                               領収書なし・事情未入力
@@ -1150,6 +1200,33 @@ export function JournalReview({
               onClick={rereadChecked}
             >
               読み直す
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog
+        open={numbering}
+        onOpenChange={(open) => {
+          if (!pending) setNumbering(open);
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>領収書等番号を振りますか？</DialogTitle>
+            <DialogDescription>
+              公開中の仕訳が紐づく未採番の書類（
+              <span className="font-latin">{unnumberedDocumentCount}</span>
+              件）に、仕訳の日付の早い順で番号を振ります。
+              すでに振った番号は変わらず、新しい番号は帳簿内の最大の番号の続きから振ります。
+              振った番号は後から変更できません。
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" disabled={pending} onClick={() => setNumbering(false)}>
+              キャンセル
+            </Button>
+            <Button disabled={pending} onClick={assignReceiptNumbers}>
+              番号を振る
             </Button>
           </DialogFooter>
         </DialogContent>

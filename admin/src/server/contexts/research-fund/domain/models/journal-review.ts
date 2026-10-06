@@ -64,6 +64,8 @@ export interface ReviewEntry extends JournalEdit, JournalEntry {
    * 支払先と同じく、公開内容・複式の行・hash に影響しない別系統の更新として扱う。
    */
   receiptAbsenceReason: string | null;
+  /** 紐づく書類の領収書等番号（議員課提出用の帳簿の列）。書類が無いか未採番なら null */
+  receiptNumber: number | null;
   /**
    * この仕訳を作った読み取りで書類から読み取った発行元。支払先が未設定のとき、支払先を作る候補として出す。
    * 手入力の仕訳・発行元を出さない古い形式の読み取り結果では null

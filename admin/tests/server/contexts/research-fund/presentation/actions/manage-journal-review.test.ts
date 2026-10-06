@@ -1,6 +1,7 @@
 import { revalidatePath } from "next/cache";
 import { requireAuth } from "@/server/contexts/auth/presentation/loaders/require-auth";
 import { requireJournalTarget } from "@/server/contexts/research-fund/presentation/loaders/load-journal-review";
+import { AssignReceiptNumbersUsecase } from "@/server/contexts/research-fund/application/usecases/assign-receipt-numbers-usecase";
 import { ApproveJournalEntriesUsecase } from "@/server/contexts/research-fund/application/usecases/approve-journal-entries-usecase";
 import { CreateJournalEntryUsecase } from "@/server/contexts/research-fund/application/usecases/create-journal-entry-usecase";
 import { DiscardJournalEntriesUsecase } from "@/server/contexts/research-fund/application/usecases/discard-journal-entries-usecase";
@@ -179,4 +180,17 @@ test("徴し難かった事情を保存し、公開ページのキャッシュ�
   await expect(mutateJournalReview("2", "1", { type: "set-receipt-absence-reason", id: "3", updatedAt: "date", reason: "自動券売機で購入" })).resolves.toMatchObject({ success: true, receiptAbsence: { receiptAbsenceReason: "自動券売機で購入" }, cacheWarning: undefined });
   expect(save).toHaveBeenCalledWith("1", "3", "date", "自動券売機で購入");
   expect(revalidatePath).toHaveBeenCalledWith("/(auth)", "layout");
+});
+
+test("領収書等番号の採番は現在の対象帳簿で行い、件数を返して再検証する", async () => {
+  const assign = jest.spyOn(AssignReceiptNumbersUsecase.prototype, "execute").mockResolvedValue({ assigned: 3 });
+  await expect(mutateJournalReview("2", "1", { type: "assign-receipt-numbers" })).resolves.toEqual({ success: true, receiptNumbers: { assigned: 3 } });
+  expect(requireJournalTarget).toHaveBeenCalledWith("2", "1"); expect(assign).toHaveBeenCalledWith("1");
+  expect(revalidatePath).toHaveBeenCalledWith("/(auth)", "layout");
+});
+test("現在の対象でない（別テナントの）帳簿には領収書等番号を振らない", async () => {
+  jest.mocked(requireJournalTarget).mockResolvedValue(null);
+  const assign = jest.spyOn(AssignReceiptNumbersUsecase.prototype, "execute");
+  await expect(mutateJournalReview("9", "8", { type: "assign-receipt-numbers" })).resolves.toMatchObject({ success: false });
+  expect(assign).not.toHaveBeenCalled(); expect(revalidatePath).not.toHaveBeenCalled();
 });
