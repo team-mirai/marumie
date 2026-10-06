@@ -51,7 +51,7 @@ import {
 import type { AdminTarget } from "@/server/contexts/shared/domain/models/admin-target";
 import { mutateJournalReview } from "@/server/contexts/research-fund/presentation/actions/manage-journal-review";
 import { rereadScanDocuments } from "@/server/contexts/research-fund/presentation/actions/reread-scan-documents";
-import { cn } from "@/client/lib";
+import { cn, isEmphasizedJournalAmount } from "@/client/lib";
 
 const statuses = { all: "すべて", draft: "下書き", approved: "確認済", published: "公開中" };
 export function JournalReview({
@@ -776,7 +776,12 @@ export function JournalReview({
                           )}
                         </div>
                       </TableCell>
-                      <TableCell className="text-right font-latin">
+                      <TableCell
+                        className={cn(
+                          "text-right font-latin",
+                          isEmphasizedJournalAmount(entry.amount) && "font-bold",
+                        )}
+                      >
                         ¥{entry.amount.toLocaleString("ja-JP")}
                       </TableCell>
                       <TableCell>
