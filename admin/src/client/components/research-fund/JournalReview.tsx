@@ -846,12 +846,17 @@ export function JournalReview({
                     entry={selected}
                     advancers={advancers}
                     pending={pending}
-                    onSave={(advancedBy) => assignAdvancedBy([selected], advancedBy)}
+                    // 立替の更新後は router.refresh() で編集フォームが作り直されるので、
+                    // 仕訳の編集フォームに未保存の変更があるときは、どの操作でも先に確認する
+                    onSave={(advancedBy) => {
+                      if (allowLeave()) assignAdvancedBy([selected], advancedBy);
+                    }}
                     onSettle={(date) => {
-                      // 仕訳の編集フォームに未保存の変更があると、精算後の再読み込みで失われるので確認する
                       if (allowLeave()) settle([selected], date);
                     }}
-                    onUnsettle={() => unsettle([selected])}
+                    onUnsettle={() => {
+                      if (allowLeave()) unsettle([selected]);
+                    }}
                   />
                 )}
               </>

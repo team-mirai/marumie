@@ -150,13 +150,29 @@ test("立替者の入力→一括設定→確認済→一括精算、未精算�
   await clickUntil(meeting, (options) =>
     expect(page.getByText(`秘書B／精算済（${dotted(singleSettledAt)}）`)).toBeVisible(options),
   );
+  // 「未精算に戻す」も、仕訳の編集フォームに未保存の変更があるときは確認してから送る
+  // （Playwright は既定で確認ダイアログを却下するので、そのままクリックするとキャンセルの挙動になる）
+  await page.getByLabel("備考", { exact: true }).fill("未精算に戻す前のメモ");
+  await page.getByRole("button", { name: "未精算に戻す" }).click();
+  // キャンセルしたので送られず、精算済のまま入力中の内容も残る
+  await expect(page.getByText(`秘書B／精算済（${dotted(singleSettledAt)}）`)).toBeVisible();
+  await expect(page.getByLabel("備考", { exact: true })).toHaveValue("未精算に戻す前のメモ");
+  // 確認を承諾すれば、これまでどおり送られる（未保存の変更は破棄される）
+  page.once("dialog", (dialog) => dialog.accept());
   await page.getByRole("button", { name: "未精算に戻す" }).click();
   await expect(page.getByText("1件を未精算に戻しました")).toBeVisible();
   await clickUntil(meeting, (options) =>
     expect(page.getByRole("button", { name: "立替者を保存" })).toBeVisible(options),
   );
 
+  // 「立替者を保存」も同じく、未保存の変更があるときは確認してから送る
+  await page.getByLabel("備考", { exact: true }).fill("立替者の保存前のメモ");
   await page.getByLabel("立替者", { exact: true }).fill("");
+  await page.getByRole("button", { name: "立替者を保存" }).click();
+  await expect(meeting).toContainText("立替：秘書B");
+  await expect(page.getByLabel("立替者", { exact: true })).toHaveValue("");
+  await expect(page.getByLabel("備考", { exact: true })).toHaveValue("立替者の保存前のメモ");
+  page.once("dialog", (dialog) => dialog.accept());
   await page.getByRole("button", { name: "立替者を保存" }).click();
   await expect(page.getByText("1件の立替者を解除しました")).toBeVisible();
   await expect(meeting).not.toContainText("立替：");
