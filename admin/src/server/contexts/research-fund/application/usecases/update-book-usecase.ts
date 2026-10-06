@@ -1,4 +1,5 @@
 import "server-only";
+import { invalidateWebappCache } from "@/server/contexts/research-fund/application/services/invalidate-webapp-cache";
 import { BookError } from "@/server/contexts/research-fund/domain/types/book-error";
 import { Book, type BookMetadata } from "@/server/contexts/research-fund/domain/models/book";
 import type { IBookRepository } from "@/server/contexts/research-fund/domain/repositories/book-repository.interface";
@@ -21,16 +22,6 @@ export class UpdateBookUsecase {
       nextUpdateNote: validation.value.nextUpdateNote.trim(),
       policyComment: validation.value.policyComment,
     });
-    // 時点・次回更新の予定・活用方針は公開ページに出るので、webapp のキャッシュを消す。
-    // 保存自体は確定しているので、キャッシュ無効化の失敗は警告として返す（仕訳の公開と同じ扱い）。
-    try {
-      await this.cacheInvalidator.invalidateWebappCache();
-      return { cacheWarning: null };
-    } catch (error) {
-      return {
-        cacheWarning:
-          error instanceof Error ? error.message : "ウェブアプリのキャッシュを更新できませんでした",
-      };
-    }
+    return { cacheWarning: await invalidateWebappCache(this.cacheInvalidator) };
   }
 }

@@ -1,4 +1,5 @@
 import "server-only";
+import { invalidateWebappCache } from "@/server/contexts/research-fund/application/services/invalidate-webapp-cache";
 import {
   Publication,
   PublicationError,
@@ -29,14 +30,10 @@ export class PublishJournalEntriesUsecase {
       target.entries.map((entry) => entry.entryDate),
     );
     await this.repository.publish(bookId, unique, publishedThrough);
-    // 公開自体は確定しているので、キャッシュ無効化の失敗は警告として返す。
-    let cacheWarning: string | null = null;
-    try {
-      await this.cacheInvalidator.invalidateWebappCache();
-    } catch (error) {
-      cacheWarning =
-        error instanceof Error ? error.message : "ウェブアプリのキャッシュを更新できませんでした";
-    }
-    return { count: unique.length, publishedThrough, cacheWarning };
+    return {
+      count: unique.length,
+      publishedThrough,
+      cacheWarning: await invalidateWebappCache(this.cacheInvalidator),
+    };
   }
 }

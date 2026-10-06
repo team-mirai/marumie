@@ -1,4 +1,5 @@
 import "server-only";
+import { invalidateWebappCache } from "@/server/contexts/research-fund/application/services/invalidate-webapp-cache";
 import { acceptJournalEntry } from "@/server/contexts/research-fund/application/services/journal-review-targets";
 import { JournalOperation } from "@/server/contexts/research-fund/domain/models/journal-operation";
 import type { JournalReviewRepository } from "@/server/contexts/research-fund/domain/repositories/journal-review-repository.interface";
@@ -24,14 +25,6 @@ export class UnpublishJournalEntryUsecase {
       JournalOperation.unpublish,
     );
     await this.repository.unpublish(bookId, entry);
-    // 取り下げ自体は確定しているので、キャッシュ無効化の失敗は警告として返す（公開と同じ扱い）。
-    let cacheWarning: string | null = null;
-    try {
-      await this.cacheInvalidator.invalidateWebappCache();
-    } catch (error) {
-      cacheWarning =
-        error instanceof Error ? error.message : "ウェブアプリのキャッシュを更新できませんでした";
-    }
-    return { cacheWarning };
+    return { cacheWarning: await invalidateWebappCache(this.cacheInvalidator) };
   }
 }

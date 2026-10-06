@@ -75,6 +75,14 @@ test("キャッシュの無効化に失敗しても帳簿情報の保存は成�
   expect(repository.update).toHaveBeenCalled();
 });
 
+test("Error 以外で失敗したときは共通の既定メッセージを警告として返す", async () => {
+  const { cacheInvalidator, usecase } = setup();
+  cacheInvalidator.invalidateWebappCache.mockRejectedValue("unknown");
+  await expect(usecase.execute("1", "2", metadata)).resolves.toEqual({
+    cacheWarning: "ウェブアプリのキャッシュを更新できませんでした",
+  });
+});
+
 test("帳簿情報の保存に失敗したときはキャッシュを無効化しない", async () => {
   const { repository, cacheInvalidator, usecase } = setup();
   await expect(usecase.execute("1", "2", { ...metadata, asOfDate: "invalid" })).rejects.toThrow("日付");
