@@ -1,15 +1,13 @@
 import "server-only";
-import {
-  GrantRegistrationError,
-  japanCalendarDate,
-} from "@/server/contexts/research-fund/domain/models/grant-registration";
+import { todayInJst } from "@/server/contexts/research-fund/domain/models/calendar-date";
+import { GrantRegistrationError } from "@/server/contexts/research-fund/domain/models/grant-registration";
 import { GrantSchedule } from "@/server/contexts/research-fund/domain/models/grant-schedule";
 import type { GrantRepository } from "@/server/contexts/research-fund/domain/repositories/grant-repository.interface";
 
 export class ListGrantsUsecase {
   constructor(private repository: GrantRepository) {}
 
-  async execute(bookId: string, referenceDate: string = japanCalendarDate()) {
+  async execute(bookId: string, referenceDate: string = todayInJst()) {
     const book = await this.repository.book(bookId);
     if (!book) throw new GrantRegistrationError("帳簿が見つかりません");
     const schedule = GrantSchedule.generate({

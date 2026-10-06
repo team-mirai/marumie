@@ -35,8 +35,8 @@ import { ResearchFundCategoryPill } from "@/client/components/research-fund/Rese
 import {
   settlementRejection,
   summarizeUnsettledAdvances,
-  todayInJst,
 } from "@/server/contexts/research-fund/domain/models/advance";
+import { todayInJst } from "@/server/contexts/research-fund/domain/models/calendar-date";
 import {
   isAccountUnconfirmed,
   legalLabelOf,

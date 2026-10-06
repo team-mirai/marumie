@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isSerialId } from "@/server/contexts/research-fund/domain/models/entity-id";
 import {
   invalidResearchFundResult,
   RF_ERROR_CODES,
@@ -19,7 +20,7 @@ const expenditureGroupEditSchema = z.object({
       }),
     )
     .max(20),
-  entryIds: z.array(z.string().regex(/^[1-9]\d*$/)).max(500),
+  entryIds: z.array(z.string().refine(isSerialId)).max(500),
 });
 export type ExpenditureGroupEdit = z.infer<typeof expenditureGroupEditSchema>;
 
@@ -95,7 +96,7 @@ function normalizeEntryIds(entryIds: readonly string[]): readonly string[] {
 
 /** 帳簿・支出群の ID は DB の自動採番（1 以上の整数）なので、それ以外の形はリポジトリに渡す前に弾く */
 export function assertValidIds(...ids: readonly string[]): void {
-  if (ids.some((id) => !/^[1-9]\d*$/.test(id))) throw new ExpenditureGroupError("IDが不正です");
+  if (ids.some((id) => !isSerialId(id))) throw new ExpenditureGroupError("IDが不正です");
 }
 
 /**

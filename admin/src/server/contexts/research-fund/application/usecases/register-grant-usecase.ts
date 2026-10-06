@@ -1,10 +1,10 @@
 import "server-only";
 import { ListGrantsUsecase } from "@/server/contexts/research-fund/application/usecases/list-grants-usecase";
 import {
-  GrantRegistrationError,
-  isGrantMonth,
-  japanCalendarDate,
-} from "@/server/contexts/research-fund/domain/models/grant-registration";
+  isCalendarMonth,
+  todayInJst,
+} from "@/server/contexts/research-fund/domain/models/calendar-date";
+import { GrantRegistrationError } from "@/server/contexts/research-fund/domain/models/grant-registration";
 import { GrantSchedule } from "@/server/contexts/research-fund/domain/models/grant-schedule";
 import type { GrantRepository } from "@/server/contexts/research-fund/domain/repositories/grant-repository.interface";
 import { buildGrantJournalWrite } from "@/server/contexts/research-fund/domain/services/grant-journal-builder";
@@ -21,13 +21,14 @@ export class RegisterGrantUsecase {
     bookId: string,
     month: string,
     userId: string,
-    referenceDate: string = japanCalendarDate(),
+    referenceDate: string = todayInJst(),
     /** 手入力された支給日。省略時はその月の既定日（当選月は当選日）。 */
     inputEntryDate?: string,
     /** 手入力された支給額。省略時は自動計算の額（当選月は日割）。 */
     inputAmount?: number,
   ) {
-    if (!isGrantMonth(month)) throw new GrantRegistrationError("月はYYYY-MM形式で指定してください");
+    if (!isCalendarMonth(month))
+      throw new GrantRegistrationError("月はYYYY-MM形式で指定してください");
     const { grants, termStart } = await this.listGrants.execute(bookId, referenceDate);
     const registrable = GrantSchedule.registrable(grants, month);
     if (registrable.status === "invalid")

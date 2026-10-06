@@ -5,8 +5,8 @@ import {
   ADVANCED_BY_MAX_LENGTH,
   normalizeAdvancedBy,
   settlementRejection,
-  todayInJst,
 } from "@/server/contexts/research-fund/domain/models/advance";
+import { todayInJst } from "@/server/contexts/research-fund/domain/models/calendar-date";
 import type { ReviewEntry } from "@/server/contexts/research-fund/domain/models/journal-review";
 
 /**

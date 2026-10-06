@@ -2,6 +2,7 @@ import "server-only";
 import { invalidateWebappCache } from "@/server/contexts/research-fund/application/services/invalidate-webapp-cache";
 import { BookError } from "@/server/contexts/research-fund/domain/types/book-error";
 import { Book, type BookMetadata } from "@/server/contexts/research-fund/domain/models/book";
+import { isSerialId } from "@/server/contexts/research-fund/domain/models/entity-id";
 import type { IBookRepository } from "@/server/contexts/research-fund/domain/repositories/book-repository.interface";
 import type { ICacheInvalidator } from "@/server/contexts/shared/domain/services/cache-invalidator.interface";
 
@@ -12,7 +13,7 @@ export class UpdateBookUsecase {
   ) {}
 
   async execute(politicianId: string, bookId: string, input: BookMetadata) {
-    if (!Book.isValidId(politicianId) || !Book.isValidId(bookId))
+    if (!isSerialId(politicianId) || !isSerialId(bookId))
       throw new BookError("INVALID_ID", "IDが不正です");
     const validation = Book.validateMetadata(input);
     if (validation.status === "invalid")

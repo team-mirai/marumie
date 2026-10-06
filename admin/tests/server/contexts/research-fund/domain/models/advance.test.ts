@@ -4,7 +4,6 @@ import {
   normalizeAdvancedBy,
   settlementRejection,
   summarizeUnsettledAdvances,
-  todayInJst,
   validateAdvancedBy,
   validateSettlementDate,
   type AdvanceEntry,
@@ -112,12 +111,5 @@ describe("inheritedAdvancedBy", () => {
   });
   it.each([[[]], [[null]], [[null, null]]])("立替者が1件も無ければ引き継ぐものが無いだけで混在ではない %j", values => {
     expect(inheritedAdvancedBy(values)).toEqual({ advancedBy: null, mixed: false });
-  });
-});
-
-describe("todayInJst", () => {
-  it("日本時間の日付を返す（UTC では前日でも日本の今日を使う）", () => {
-    expect(todayInJst(new Date("2026-10-05T23:00:00.000Z"))).toBe("2026-10-06");
-    expect(todayInJst(new Date("2026-10-05T14:59:00.000Z"))).toBe("2026-10-05");
   });
 });

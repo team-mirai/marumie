@@ -1,4 +1,8 @@
 import {
+  isCalendarDate,
+  isCalendarMonth,
+} from "@/server/contexts/research-fund/domain/models/calendar-date";
+import {
   invalidResearchFundResult,
   RF_ERROR_CODES,
   type ResearchFundResult,
@@ -27,20 +31,10 @@ export interface ScheduledGrant {
   status: "registered" | "available" | "upcoming";
 }
 
-function isCalendarDate(value: string): boolean {
-  const date = new Date(`${value}T00:00:00.000Z`);
-  return (
-    /^\d{4}-\d{2}-\d{2}$/.test(value) &&
-    !value.startsWith("0000-") &&
-    !Number.isNaN(date.getTime()) &&
-    date.toISOString().slice(0, 10) === value
-  );
-}
-
 export const GrantSchedule = {
   generate(input: GrantSchedule): ResearchFundResult<readonly ScheduledGrant[]> {
     for (const path of ["termStart", "referenceDate"] as const) {
-      if (!isCalendarDate(input[path])) {
+      if (!isCalendarDate(input[path], { allowYearZero: false })) {
         return invalidResearchFundResult(
           path,
           RF_ERROR_CODES.INVALID_DATE,
@@ -60,7 +54,7 @@ export const GrantSchedule = {
       );
     }
     for (const [index, grant] of input.registeredGrants.entries()) {
-      if (!/^\d{4}-\d{2}$/.test(grant.month) || !isCalendarDate(`${grant.month}-01`)) {
+      if (!isCalendarMonth(grant.month, { allowYearZero: false })) {
         return invalidResearchFundResult(
           `registeredGrants.${index}.month`,
           RF_ERROR_CODES.INVALID_DATE,

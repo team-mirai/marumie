@@ -1,4 +1,5 @@
 import "server-only";
+import { isSerialId } from "@/server/contexts/research-fund/domain/models/entity-id";
 import type { OperationRejection } from "@/server/contexts/research-fund/domain/models/journal-operation";
 import {
   JournalReviewError,
@@ -48,7 +49,7 @@ export async function acceptJournalEntries(
 ) {
   const unique = [...new Map(targets.map((target) => [target.id, target])).values()];
   if (unique.length === 0) throw new JournalReviewError(`${messages.action}仕訳を選んでください`);
-  if (unique.some((target) => !/^[1-9]\d*$/.test(target.id)))
+  if (unique.some((target) => !isSerialId(target.id)))
     throw new JournalReviewError("仕訳IDが不正です");
   const found = new Map(
     (

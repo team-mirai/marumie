@@ -1,3 +1,4 @@
+import { isCalendarDate } from "@/server/contexts/research-fund/domain/models/calendar-date";
 import {
   invalidResearchFundResult,
   RF_ERROR_CODES,
@@ -32,19 +33,6 @@ interface AdvanceSummaryRow {
   advancedBy: string;
   count: number;
   total: number;
-}
-
-/**
- * 日本時間の今日（YYYY-MM-DD）。精算日の「未来日にできない」判定は、サーバーの時計（UTC）ではなく
- * 事務所の時計で行う（UTC で数えると、日本時間の午前中に今日を指定した精算が未来日として弾かれる）。
- */
-export function todayInJst(now: Date): string {
-  return new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Asia/Tokyo",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(now);
 }
 
 /**
@@ -98,14 +86,7 @@ export function validateSettlementDate(
   entryDates: readonly string[],
   today: string,
 ): ResearchFundResult<string> {
-  // Date は存在しない日（2026-02-30 など）を翌月に繰り上げて解釈するので、解析した日付が入力と
-  // 一致することまで確かめる。繰り上がった日をそのまま精算日として保存しないため。
-  const parsed = new Date(`${value}T00:00:00.000Z`);
-  if (
-    !/^\d{4}-\d{2}-\d{2}$/.test(value) ||
-    Number.isNaN(parsed.getTime()) ||
-    parsed.toISOString().slice(0, 10) !== value
-  ) {
+  if (!isCalendarDate(value)) {
     return invalidResearchFundResult(
       "settledAt",
       RF_ERROR_CODES.INVALID_SETTLED_AT,

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { MAX_JOURNAL_AMOUNT } from "@/server/contexts/research-fund/domain/models/journal-amount";
 import { RECEIPT_CATEGORIES } from "@/server/contexts/research-fund/domain/models/receipt-categories";
 import {
   RF_ERROR_CODES,
@@ -17,7 +18,7 @@ export const extractedReceiptSchema = z.object({
           .describe(
             "明細の利用日（YYYY-MM-DD）。1枚の書類に利用日の異なる取引が並ぶとき（配車アプリの月次一括領収書など）に明細ごとの利用日を書く。書類の日付と同じならば null",
           ),
-        amount: z.number().int().positive().max(999_999_999_999).describe("金額（円の整数）"),
+        amount: z.number().int().positive().max(MAX_JOURNAL_AMOUNT).describe("金額（円の整数）"),
         category_key: z
           .enum([
             "needs-review",

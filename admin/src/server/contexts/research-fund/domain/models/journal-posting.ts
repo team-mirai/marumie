@@ -1,4 +1,8 @@
 import {
+  INVALID_JOURNAL_AMOUNT_MESSAGE,
+  isJournalAmount,
+} from "@/server/contexts/research-fund/domain/models/journal-amount";
+import {
   invalidResearchFundResult,
   RF_ERROR_CODES,
   type ResearchFundResult,
@@ -29,11 +33,6 @@ type PostingInput = {
   | { pattern: "refund"; source: "manual" }
 );
 
-// 円の整数。永続化先の Decimal(12, 0) と同じ範囲に制限する。
-function isValidAmount(amount: number): boolean {
-  return Number.isSafeInteger(amount) && amount > 0 && amount <= 999_999_999_999;
-}
-
 export const JournalPosting = {
   generate(input: PostingInput): ResearchFundResult<JournalPosting> {
     const { pattern, source, amount, account, assetAccount } = input;
@@ -50,11 +49,11 @@ export const JournalPosting = {
         "仕訳パターンと入力元の組み合わせが不正です",
       );
     }
-    if (!isValidAmount(amount)) {
+    if (!isJournalAmount(amount)) {
       return invalidResearchFundResult(
         "amount",
         RF_ERROR_CODES.INVALID_AMOUNT,
-        "金額は1円以上999999999999円以下の整数で指定してください",
+        INVALID_JOURNAL_AMOUNT_MESSAGE,
       );
     }
     if (
@@ -113,11 +112,11 @@ export const JournalPosting = {
           "科目を指定してください",
         );
       }
-      if (!isValidAmount(line.amount)) {
+      if (!isJournalAmount(line.amount)) {
         return invalidResearchFundResult(
           `lines.${index}.amount`,
           RF_ERROR_CODES.INVALID_AMOUNT,
-          "金額は1円以上999999999999円以下の整数で指定してください",
+          INVALID_JOURNAL_AMOUNT_MESSAGE,
         );
       }
       if (line.side === "debit") debit += BigInt(line.amount);

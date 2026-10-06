@@ -1,3 +1,4 @@
+import { isBigIntId } from "@/server/contexts/research-fund/domain/models/entity-id";
 import {
   invalidResearchFundResult,
   RF_ERROR_CODES,
@@ -35,7 +36,7 @@ export const ResearchFundDocument = {
     return { status: "valid", value: undefined };
   },
   validateId(id: string): ResearchFundResult<undefined> {
-    if (!/^[1-9]\d{0,18}$/.test(id) || BigInt(id) > BigInt("9223372036854775807")) {
+    if (!isBigIntId(id)) {
       return invalidResearchFundResult(
         "id",
         RF_ERROR_CODES.INVALID_DOCUMENT,

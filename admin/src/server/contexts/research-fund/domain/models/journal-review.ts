@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { JournalEntry } from "@/server/contexts/research-fund/domain/models/journal-entry";
+import { MAX_JOURNAL_AMOUNT } from "@/server/contexts/research-fund/domain/models/journal-amount";
 import type {
   JournalLine,
   ResearchFundAccount,
@@ -8,7 +9,7 @@ import type {
 export const journalEditSchema = z.object({
   entryDate: z.iso.date(),
   description: z.string().trim().min(1).max(255),
-  amount: z.number().int().positive().max(999_999_999_999),
+  amount: z.number().int().positive().max(MAX_JOURNAL_AMOUNT),
   accountKey: z.string().min(1).max(50),
   note: z.string(),
   memo: z.string(),

@@ -3,10 +3,8 @@ import {
   acceptJournalEntries,
   type JournalTarget,
 } from "@/server/contexts/research-fund/application/services/journal-review-targets";
-import {
-  todayInJst,
-  validateSettlementDate,
-} from "@/server/contexts/research-fund/domain/models/advance";
+import { validateSettlementDate } from "@/server/contexts/research-fund/domain/models/advance";
+import { todayInJst } from "@/server/contexts/research-fund/domain/models/calendar-date";
 import { JournalOperation } from "@/server/contexts/research-fund/domain/models/journal-operation";
 import { JournalReviewError } from "@/server/contexts/research-fund/domain/models/journal-review";
 import type { JournalReviewRepository } from "@/server/contexts/research-fund/domain/repositories/journal-review-repository.interface";

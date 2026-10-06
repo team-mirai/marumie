@@ -1,3 +1,4 @@
+import { isCalendarDate } from "@/server/contexts/research-fund/domain/models/calendar-date";
 import {
   invalidResearchFundResult,
   RF_ERROR_CODES,
@@ -19,10 +20,6 @@ export interface Book extends BookMetadata {
 const POLICY_COMMENT_MAX_LENGTH = 2000;
 
 export const Book = {
-  /** 議員・帳簿の ID は正の整数の文字列 */
-  isValidId(id: string): boolean {
-    return /^[1-9]\d*$/.test(id);
-  },
   validateYear(year: number): ResearchFundResult<number> {
     if (!Number.isInteger(year) || year < 1900 || year > 9999)
       return invalidResearchFundResult(
@@ -64,19 +61,13 @@ export const Book = {
         RF_ERROR_CODES.INVALID_BOOK_METADATA,
         "帳簿情報の入力が不正です",
       );
-    if (input.asOfDate) {
-      const date = new Date(`${input.asOfDate}T00:00:00.000Z`);
-      if (
-        !/^\d{4}-\d{2}-\d{2}$/.test(input.asOfDate) ||
-        !Number.isFinite(date.getTime()) ||
-        date.toISOString().slice(0, 10) !== input.asOfDate
-      )
-        return invalidResearchFundResult(
-          "asOfDate",
-          RF_ERROR_CODES.INVALID_DATE,
-          "時点の日付を正しく入力してください",
-        );
-    }
+    // 時点の日付は未入力（空文字）を許す。入っているときだけ実在する暦日かを確かめる。
+    if (input.asOfDate && !isCalendarDate(input.asOfDate))
+      return invalidResearchFundResult(
+        "asOfDate",
+        RF_ERROR_CODES.INVALID_DATE,
+        "時点の日付を正しく入力してください",
+      );
     const policyComment = Book.normalizePolicyComment(input.policyComment);
     if (policyComment.status === "invalid") return policyComment;
     return { status: "valid", value: { ...input, policyComment: policyComment.value } };

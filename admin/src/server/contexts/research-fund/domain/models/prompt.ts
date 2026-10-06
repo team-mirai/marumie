@@ -1,3 +1,5 @@
+import { isSerialId } from "@/server/contexts/research-fund/domain/models/entity-id";
+
 export const PROMPT_BODY_MAX_LENGTH = 20000;
 
 /** 読み取りプロンプトの 1 版。version は議員ごとに 1 から連番。 */
@@ -53,7 +55,7 @@ export function normalizePromptBody(body: unknown): string {
 
 /** プロンプトの持ち主（議員）の ID を検証する。不正ならリポジトリを呼ぶ前に弾く */
 export function validatePromptOwnerId(id: string): void {
-  if (!/^[1-9]\d*$/.test(id)) throw new PromptError("IDが不正です");
+  if (!isSerialId(id)) throw new PromptError("IDが不正です");
 }
 
 /** 巻き戻し先の版番号を検証する。版は 1 からの連番 */

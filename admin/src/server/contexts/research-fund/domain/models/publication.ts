@@ -1,3 +1,4 @@
+import { isSerialId } from "@/server/contexts/research-fund/domain/models/entity-id";
 import { JournalEntry } from "@/server/contexts/research-fund/domain/models/journal-entry";
 import type { ResearchFundCategory, ResearchFundRow } from "@/shared/research-fund/aggregation";
 
@@ -34,7 +35,7 @@ export const Publication = {
   /** 公開する仕訳の選び方を受け付けない理由（利用者に見せる文）。重複は 1 件にまとめてから渡す */
   selectionRejection(ids: readonly string[]): string | null {
     if (ids.length === 0) return "公開する仕訳を選んでください";
-    if (ids.some((id) => !/^[1-9]\d*$/.test(id))) return "仕訳IDが不正です";
+    if (ids.some((id) => !isSerialId(id))) return "仕訳IDが不正です";
     return null;
   },
 

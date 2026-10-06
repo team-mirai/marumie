@@ -1,5 +1,10 @@
 import "server-only";
 import { createHash } from "node:crypto";
+import { isCalendarDate } from "@/server/contexts/research-fund/domain/models/calendar-date";
+import {
+  INVALID_JOURNAL_AMOUNT_MESSAGE,
+  isJournalAmount,
+} from "@/server/contexts/research-fund/domain/models/journal-amount";
 import {
   invalidResearchFundResult,
   RF_ERROR_CODES,
@@ -23,23 +28,18 @@ export interface JournalEntryHash {
 export const JournalEntryHash = {
   generate(input: JournalEntryHash): ResearchFundResult<string> {
     const { entryDate, amount, description } = input;
-    const date = new Date(`${entryDate}T00:00:00.000Z`);
-    if (
-      !/^\d{4}-\d{2}-\d{2}$/.test(entryDate) ||
-      Number.isNaN(date.getTime()) ||
-      date.toISOString().slice(0, 10) !== entryDate
-    ) {
+    if (!isCalendarDate(entryDate)) {
       return invalidResearchFundResult(
         "entryDate",
         RF_ERROR_CODES.INVALID_DATE,
         "日付は実在する日をYYYY-MM-DD形式で指定してください",
       );
     }
-    if (!Number.isSafeInteger(amount) || amount <= 0 || amount > 999_999_999_999) {
+    if (!isJournalAmount(amount)) {
       return invalidResearchFundResult(
         "amount",
         RF_ERROR_CODES.INVALID_AMOUNT,
-        "金額は1円以上999999999999円以下の整数で指定してください",
+        INVALID_JOURNAL_AMOUNT_MESSAGE,
       );
     }
     if (!description.trim()) {

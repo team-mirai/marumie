@@ -2,6 +2,7 @@
 import { useEffect, useId, useState } from "react";
 import { Button, Input, Label, NativeSelect, Textarea } from "@/client/components/ui";
 import { LegalCategoryLabel } from "@/client/components/research-fund/LegalCategoryLabel";
+import { MAX_JOURNAL_AMOUNT } from "@/server/contexts/research-fund/domain/models/journal-amount";
 import {
   isAccountUnconfirmed,
   legalLabelOf,
@@ -134,7 +135,7 @@ export function JournalEditor({
               id={`${fieldId}-amount`}
               type="number"
               min="1"
-              max="999999999999"
+              max={MAX_JOURNAL_AMOUNT}
               step="1"
               required
               disabled={grant || settled}
