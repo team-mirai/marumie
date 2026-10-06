@@ -77,7 +77,7 @@ test("手動仕訳を取得し、書類・メモの欠損値を表示用に変�
     id: entry.id, entryDate: input.entryDate, updatedAt: entry.updatedAt, description: "移動",
     note: "", memo: "", status: "draft", source: "manual", documentId: null, splitGroup: null,
     model: null, promptVersion: null, amount: 1200, accountKey: "taxi", advancedBy: null, settledAt: null,
-    payeeId: null, payeeLinkSource: null,
+    payeeId: null, payeeLinkSource: null, receiptAbsenceReason: null,
   });
   tx.researchFundJournalEntry.findFirst.mockResolvedValue(null);
   await expect(repository.find("9", entry.id)).resolves.toBeNull();
@@ -379,4 +379,23 @@ test("同じ名称・住所の支払先があれば、登録済みのエラー�
   tx.researchFundPayee.create.mockRejectedValue(new Prisma.PrismaClientKnownRequestError("duplicate", { code: "P2002", clientVersion: "test" }));
   await expect(repository.createPayeeAndSetPayee("1", [entry], "5", payeeInput)).rejects.toThrow("同じ名称・住所の支払先がすでに登録されています");
   expect(tx.researchFundJournalEntry.updateMany).not.toHaveBeenCalled();
+});
+test("徴し難かった事情を取得する", async () => {
+  const { repository, tx } = setup();
+  tx.researchFundJournalEntry.findFirst.mockResolvedValue({ ...rowWithLines(), receiptAbsenceReason: "自動券売機で購入" });
+  await expect(repository.find("1", entry.id)).resolves.toMatchObject({ receiptAbsenceReason: "自動券売機で購入" });
+});
+test("徴し難かった事情は公開中・精算済も対象にし、書類の無い支出だけを更新する", async () => {
+  const { repository, tx } = setup();
+  await repository.setReceiptAbsenceReason("1", entry, "自動券売機で購入");
+  const call = tx.researchFundJournalEntry.updateMany.mock.calls[0][0];
+  expect(call.where).toEqual(expect.objectContaining({ id: BigInt(entry.id), bookId: BigInt(1), status: { in: ["draft", "approved", "published"] }, updatedAt: new Date(entry.updatedAt), source: { in: ["manual", "scan"] }, documentId: null }));
+  expect(call.where).not.toHaveProperty("settledAt");
+  expect(call.data).toEqual({ receiptAbsenceReason: "自動券売機で購入" });
+  await repository.setReceiptAbsenceReason("1", entry, null);
+  expect(tx.researchFundJournalEntry.updateMany.mock.calls[1][0].data).toEqual({ receiptAbsenceReason: null });
+});
+test("徴し難かった事情は競合したら（書類が付いた場合を含む）変更しない", async () => {
+  const { repository } = setup(0);
+  await expect(repository.setReceiptAbsenceReason("1", entry, "自動券売機で購入")).rejects.toThrow("再読み込み");
 });

@@ -10,6 +10,7 @@ import { RevertJournalEntryToDraftUsecase } from "@/server/contexts/research-fun
 import { SaveJournalEntryUsecase } from "@/server/contexts/research-fund/application/usecases/save-journal-entry-usecase";
 import { CreatePayeeAndLinkUsecase } from "@/server/contexts/research-fund/application/usecases/create-payee-and-link-usecase";
 import { SetJournalEntriesPayeeUsecase } from "@/server/contexts/research-fund/application/usecases/set-journal-entries-payee-usecase";
+import { SetReceiptAbsenceReasonUsecase } from "@/server/contexts/research-fund/application/usecases/set-receipt-absence-reason-usecase";
 import { SetJournalEntriesAdvancedByUsecase } from "@/server/contexts/research-fund/application/usecases/set-journal-entries-advanced-by-usecase";
 import { SettleJournalEntriesUsecase } from "@/server/contexts/research-fund/application/usecases/settle-journal-entries-usecase";
 import { UnpublishJournalEntryUsecase } from "@/server/contexts/research-fund/application/usecases/unpublish-journal-entry-usecase";
@@ -172,4 +173,10 @@ test("支払先の紐づけは既存の支払先・新規作成のどちらも�
   const create = jest.spyOn(CreatePayeeAndLinkUsecase.prototype, "execute").mockResolvedValue({ updated: 1, payee });
   await expect(mutateJournalReview("2", "1", { type: "create-payee-and-link", targets, payee: form })).resolves.toMatchObject({ success: true, payeeLink: { updated: 1, payee } });
   expect(create).toHaveBeenCalledWith("1", targets, form);
+});
+test("徴し難かった事情を保存し、公開ページのキャッシュは無効化しない", async () => {
+  const save = jest.spyOn(SetReceiptAbsenceReasonUsecase.prototype, "execute").mockResolvedValue({ receiptAbsenceReason: "自動券売機で購入" });
+  await expect(mutateJournalReview("2", "1", { type: "set-receipt-absence-reason", id: "3", updatedAt: "date", reason: "自動券売機で購入" })).resolves.toMatchObject({ success: true, receiptAbsence: { receiptAbsenceReason: "自動券売機で購入" }, cacheWarning: undefined });
+  expect(save).toHaveBeenCalledWith("1", "3", "date", "自動券売機で購入");
+  expect(revalidatePath).toHaveBeenCalledWith("/(auth)", "layout");
 });

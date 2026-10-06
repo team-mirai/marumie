@@ -1,7 +1,7 @@
 import { JournalOperation, type OperableEntry } from "@/server/contexts/research-fund/domain/models/journal-operation";
 
-const base: OperableEntry = { id: "1", description: "タクシー代", source: "manual", status: "draft", advancedBy: null, settledAt: null, entryDate: "2026-08-01", amount: 1200, accountKey: "taxi", note: "公開メモ", memo: "内部メモ" };
-const operations = ["edit", "approve", "revertToDraft", "discard", "unpublish", "setAdvancedBy", "setPayee", "settle", "unsettle"] as const;
+const base: OperableEntry = { id: "1", description: "タクシー代", source: "manual", status: "draft", advancedBy: null, settledAt: null, entryDate: "2026-08-01", amount: 1200, accountKey: "taxi", note: "公開メモ", memo: "内部メモ", documentId: null };
+const operations = ["edit", "approve", "revertToDraft", "discard", "unpublish", "setAdvancedBy", "setPayee", "setReceiptAbsenceReason", "settle", "unsettle"] as const;
 type Operation = (typeof operations)[number];
 function judge(operation: Operation, entry: OperableEntry) {
   return operation === "edit" ? JournalOperation.edit(entry, entry.amount) : JournalOperation[operation](entry);
@@ -9,16 +9,19 @@ function judge(operation: Operation, entry: OperableEntry) {
 
 // 仕訳の状態ごとに、受け付ける操作の一覧（可否表）。表に無い操作は受け付けない。
 // 支払先は公開内容に影響しないので、支給以外は公開中・精算済でも設定できる。
+// 徴し難かった事情も同じく公開中・精算済でも書けるが、書類の無い支出だけが持てる。
 const table: [string, Partial<OperableEntry>, Operation[]][] = [
-  ["下書きの支出", {}, ["edit", "approve", "discard", "setAdvancedBy", "setPayee"]],
-  ["確認済の支出", { status: "approved" }, ["edit", "revertToDraft", "discard", "setAdvancedBy", "setPayee"]],
-  ["公開中の支出", { status: "published" }, ["unpublish", "setAdvancedBy", "setPayee"]],
-  ["下書きの未精算の立替", { advancedBy: "秘書A" }, ["edit", "approve", "discard", "setAdvancedBy", "setPayee"]],
-  ["確認済の未精算の立替", { status: "approved", advancedBy: "秘書A" }, ["edit", "revertToDraft", "discard", "setAdvancedBy", "settle", "setPayee"]],
-  ["公開中の未精算の立替", { status: "published", advancedBy: "秘書A" }, ["unpublish", "setAdvancedBy", "settle", "setPayee"]],
-  ["確認済の精算済の立替", { status: "approved", advancedBy: "秘書A", settledAt: "2026-09-01" }, ["edit", "unsettle", "setPayee"]],
-  ["公開中の精算済の立替", { status: "published", advancedBy: "秘書A", settledAt: "2026-09-01" }, ["unpublish", "unsettle", "setPayee"]],
-  ["スキャンの下書き", { source: "scan" }, ["edit", "approve", "discard", "setAdvancedBy", "setPayee"]],
+  ["下書きの支出", {}, ["edit", "approve", "discard", "setAdvancedBy", "setPayee", "setReceiptAbsenceReason"]],
+  ["確認済の支出", { status: "approved" }, ["edit", "revertToDraft", "discard", "setAdvancedBy", "setPayee", "setReceiptAbsenceReason"]],
+  ["公開中の支出", { status: "published" }, ["unpublish", "setAdvancedBy", "setPayee", "setReceiptAbsenceReason"]],
+  ["下書きの未精算の立替", { advancedBy: "秘書A" }, ["edit", "approve", "discard", "setAdvancedBy", "setPayee", "setReceiptAbsenceReason"]],
+  ["確認済の未精算の立替", { status: "approved", advancedBy: "秘書A" }, ["edit", "revertToDraft", "discard", "setAdvancedBy", "settle", "setPayee", "setReceiptAbsenceReason"]],
+  ["公開中の未精算の立替", { status: "published", advancedBy: "秘書A" }, ["unpublish", "setAdvancedBy", "settle", "setPayee", "setReceiptAbsenceReason"]],
+  ["確認済の精算済の立替", { status: "approved", advancedBy: "秘書A", settledAt: "2026-09-01" }, ["edit", "unsettle", "setPayee", "setReceiptAbsenceReason"]],
+  ["公開中の精算済の立替", { status: "published", advancedBy: "秘書A", settledAt: "2026-09-01" }, ["unpublish", "unsettle", "setPayee", "setReceiptAbsenceReason"]],
+  ["スキャンの下書き", { source: "scan", documentId: "3" }, ["edit", "approve", "discard", "setAdvancedBy", "setPayee"]],
+  ["書類の無いスキャンの下書き", { source: "scan" }, ["edit", "approve", "discard", "setAdvancedBy", "setPayee", "setReceiptAbsenceReason"]],
+  ["書類のある確認済の支出", { source: "scan", documentId: "3", status: "approved" }, ["edit", "revertToDraft", "discard", "setAdvancedBy", "setPayee"]],
   ["確認済の支給", { source: "grant", status: "approved" }, ["edit"]],
   ["公開中の支給", { source: "grant", status: "published" }, ["unpublish"]],
 ];
@@ -57,6 +60,8 @@ describe("却下理由", () => {
     ["discard", grant, "支給は破棄できません", "この画面で扱えない仕訳が選ばれています"],
     ["setAdvancedBy", grant, "支給には立替者を設定できません", "立替者を設定できない仕訳（支給・返還など）が選ばれています"],
     ["settle", grant, "支給は精算できません", "精算できない仕訳（支給・返還など）が選ばれています"],
+    ["setReceiptAbsenceReason", grant, "支給には徴し難かった事情を書けません", "徴し難かった事情を書けない仕訳（支給・返還など）が選ばれています"],
+    ["setReceiptAbsenceReason", { ...base, source: "scan" as const, documentId: "3" }, "書類のある仕訳には徴し難かった事情を書けません", "「タクシー代」には書類があります"],
   ] as const)("%s: %j", (operation, entry, one, many) => {
     expect(judge(operation, entry)).toEqual({ one, many });
   });

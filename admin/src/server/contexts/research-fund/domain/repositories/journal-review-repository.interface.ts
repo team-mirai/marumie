@@ -40,6 +40,11 @@ export interface JournalReviewRepository {
     entries: readonly ReviewEntry[],
     advancedBy: string | null,
   ): Promise<void>;
+  /**
+   * 書類の無い支出の仕訳に、領収書等を徴し難かった事情を設定・削除する（null で削除）。
+   * 公開中・精算済の仕訳も対象にする。競合したら（書類が付いた場合を含む）変更しない。
+   */
+  setReceiptAbsenceReason(bookId: string, entry: ReviewEntry, reason: string | null): Promise<void>;
   /** 帳簿の議員（支払先の持ち主）。帳簿が無ければ null */
   politicianId(bookId: string): Promise<string | null>;
   /**

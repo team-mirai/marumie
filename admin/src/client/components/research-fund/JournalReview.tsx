@@ -31,6 +31,7 @@ import { PageHeader } from "@/client/components/layout/PageHeader";
 import { JournalAdvanceField } from "@/client/components/research-fund/JournalAdvanceField";
 import { JournalEditor } from "@/client/components/research-fund/JournalEditor";
 import { JournalPayeeField } from "@/client/components/research-fund/JournalPayeeField";
+import { JournalReceiptAbsenceField } from "@/client/components/research-fund/JournalReceiptAbsenceField";
 import { PayeeLinkDialog } from "@/client/components/research-fund/PayeeLinkDialog";
 import { LegalCategoryLabel } from "@/client/components/research-fund/LegalCategoryLabel";
 import { ResearchFundCategoryPill } from "@/client/components/research-fund/ResearchFundCategoryPill";
@@ -51,6 +52,10 @@ import {
   type PayeeFormInput,
   type PayeeSummary,
 } from "@/server/contexts/research-fund/domain/models/payee";
+import {
+  canHaveReceiptAbsenceReason,
+  isReceiptMissing,
+} from "@/server/contexts/research-fund/domain/models/receipt-absence";
 import {
   previewReread,
   REREAD_INSTRUCTION_MAX_LENGTH,
@@ -87,6 +92,7 @@ export function JournalReview({
   const [advancer, setAdvancer] = useState("");
   const [unsettledOnly, setUnsettledOnly] = useState(false);
   const [payeeUnsetOnly, setPayeeUnsetOnly] = useState(false);
+  const [receiptMissingOnly, setReceiptMissingOnly] = useState(false);
   const [linkingChecked, setLinkingChecked] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [checked, setChecked] = useState<readonly string[]>([]);
@@ -108,7 +114,8 @@ export function JournalReview({
     (e) =>
       (!unsettledOnly || (e.advancedBy !== null && e.settledAt === null)) &&
       (advancer === "" || e.advancedBy === advancer) &&
-      (!payeeUnsetOnly || isPayeeUnset(e)),
+      (!payeeUnsetOnly || isPayeeUnset(e)) &&
+      (!receiptMissingOnly || isReceiptMissing(e)),
   );
   const visible = filtered.filter((e) => status === "all" || e.status === status);
   // 支給も支出と同じく選べる。支給日の修正と確認済に戻す操作だけを許す（詳細側で制限する）。
@@ -154,6 +161,8 @@ export function JournalReview({
   const checkedPayeeId = checkedPayeeIds.size === 1 ? [...checkedPayeeIds][0] : null;
   // 支払先が未設定の支出の件数（帳簿全体）。絞り込みの目安にする。
   const payeeUnsetCount = entries.filter(isPayeeUnset).length;
+  // 書類も徴し難かった事情もない支出の件数（帳簿全体）。議員課への提出前に埋める目安にする。
+  const receiptMissingCount = entries.filter(isReceiptMissing).length;
   const payeeNames = new Map(payees.map((p) => [p.id, p.name]));
   // 帳簿全体の未精算（立替者ごとの件数と合計額）。絞り込みに関わらず帳簿の全件で数える。
   const unsettledSummary = summarizeUnsettledAdvances(entries);
@@ -435,6 +444,31 @@ export function JournalReview({
       }
     });
   }
+  /** 書類の無い支出の徴し難かった事情を保存する（空欄なら削除）。公開内容は変えないので公開中の仕訳でも送れる */
+  function saveReceiptAbsenceReason(entry: ReviewEntry, reason: string) {
+    startTransition(async () => {
+      try {
+        const result = await mutateJournalReview(target.politicianId, target.bookId, {
+          type: "set-receipt-absence-reason",
+          id: entry.id,
+          updatedAt: entry.updatedAt,
+          reason,
+        });
+        if (!result.success) {
+          toast.error(result.error);
+          return;
+        }
+        toast.success(
+          result.receiptAbsence?.receiptAbsenceReason == null
+            ? "徴し難かった事情を削除しました"
+            : "徴し難かった事情を保存しました",
+        );
+        router.refresh();
+      } catch {
+        toast.error("通信に失敗しました。再度お試しください");
+      }
+    });
+  }
   function save(input: JournalEdit, approve: boolean) {
     startTransition(async () => {
       try {
@@ -644,6 +678,21 @@ export function JournalReview({
           />
           <Label htmlFor="journal-payee-unset">
             支払先が未設定だけ（<span className="font-latin">{payeeUnsetCount}</span>）
+          </Label>
+          <Checkbox
+            id="journal-receipt-missing"
+            checked={receiptMissingOnly}
+            disabled={pending}
+            onCheckedChange={() => {
+              if (allowLeave()) {
+                setReceiptMissingOnly((current) => !current);
+                setSelectedId(null);
+                setChecked([]);
+              }
+            }}
+          />
+          <Label htmlFor="journal-receipt-missing">
+            書類も事情もないだけ（<span className="font-latin">{receiptMissingCount}</span>）
           </Label>
         </div>
       </div>
@@ -856,8 +905,14 @@ export function JournalReview({
                               分割 {splits.findIndex((e) => e.id === entry.id) + 1}/{splits.length}
                             </span>
                           )}
-                          {!entry.documentId && (
-                            <span className="rounded-full border px-2">領収書なし</span>
+                          {isReceiptMissing(entry) ? (
+                            <span className="rounded-full border border-destructive px-2 text-destructive">
+                              領収書なし・事情未入力
+                            </span>
+                          ) : (
+                            !entry.documentId && (
+                              <span className="rounded-full border px-2">領収書なし</span>
+                            )
                           )}
                           {!grant &&
                             (entry.payeeId === null ? (
@@ -969,6 +1024,16 @@ export function JournalReview({
                     }}
                     onUnsettle={() => {
                       if (allowLeave()) unsettle([selected]);
+                    }}
+                  />
+                )}
+                {canHaveReceiptAbsenceReason(selected) && (
+                  <JournalReceiptAbsenceField
+                    key={`${selected.id}:${selected.updatedAt}:receipt-absence`}
+                    entry={selected}
+                    pending={pending}
+                    onSave={(reason) => {
+                      if (allowLeave()) saveReceiptAbsenceReason(selected, reason);
                     }}
                   />
                 )}

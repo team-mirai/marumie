@@ -25,6 +25,8 @@ export type OperableEntry = Pick<
   | "amount"
   | "accountKey"
   | "id"
+  // 徴し難かった事情は書類の無い仕訳だけが持てる
+  | "documentId"
   // 支給の編集では、支給日以外が変わっていないかを備考まで含めて見る
   | "note"
   | "memo"
@@ -176,6 +178,23 @@ export const JournalOperation = {
       return {
         one: "支給には支払先を設定できません",
         many: "支払先を設定できない仕訳（支給・返還など）が選ばれています",
+      };
+    return null;
+  },
+  /**
+   * 領収書等を徴し難かった事情の入力・変更・削除。事情も議員課提出用の帳簿の情報で公開内容に影響しないので、
+   * 公開中・精算済の仕訳でも変更できる。書類のある仕訳と支給は事情を持てない（DB の CHECK 制約と一致させる）
+   */
+  setReceiptAbsenceReason(entry: OperableEntry): OperationRejection | null {
+    if (entry.source === "grant")
+      return {
+        one: "支給には徴し難かった事情を書けません",
+        many: "徴し難かった事情を書けない仕訳（支給・返還など）が選ばれています",
+      };
+    if (entry.documentId !== null)
+      return {
+        one: "書類のある仕訳には徴し難かった事情を書けません",
+        many: `「${entry.description}」には書類があります`,
       };
     return null;
   },

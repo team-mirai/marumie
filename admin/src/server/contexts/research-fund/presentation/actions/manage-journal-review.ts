@@ -12,6 +12,7 @@ import { RevertJournalEntriesToDraftUsecase } from "@/server/contexts/research-f
 import { RevertJournalEntryToDraftUsecase } from "@/server/contexts/research-fund/application/usecases/revert-journal-entry-to-draft-usecase";
 import { SaveJournalEntryUsecase } from "@/server/contexts/research-fund/application/usecases/save-journal-entry-usecase";
 import { SetJournalEntriesPayeeUsecase } from "@/server/contexts/research-fund/application/usecases/set-journal-entries-payee-usecase";
+import { SetReceiptAbsenceReasonUsecase } from "@/server/contexts/research-fund/application/usecases/set-receipt-absence-reason-usecase";
 import { SetJournalEntriesAdvancedByUsecase } from "@/server/contexts/research-fund/application/usecases/set-journal-entries-advanced-by-usecase";
 import { SettleJournalEntriesUsecase } from "@/server/contexts/research-fund/application/usecases/settle-journal-entries-usecase";
 import { UnpublishJournalEntryUsecase } from "@/server/contexts/research-fund/application/usecases/unpublish-journal-entry-usecase";
@@ -57,7 +58,9 @@ type Mutation =
       type: "create-payee-and-link";
       targets: readonly { id: string; updatedAt: string }[];
       payee: PayeeFormInput;
-    };
+    }
+  // 徴し難かった事情も議員課提出用の帳簿の情報なので、公開中の仕訳でも変更でき、キャッシュも無効化しない。
+  | { type: "set-receipt-absence-reason"; id: string; updatedAt: string; reason: string };
 export async function mutateJournalReview(
   politicianId: string,
   bookId: string,
@@ -77,6 +80,7 @@ export async function mutateJournalReview(
     let settlement: { settled: number; settledAt: string } | undefined;
     let unsettled: number | undefined;
     let payeeLink: { updated: number; payee: Payee | null } | undefined;
+    let receiptAbsence: { receiptAbsenceReason: string | null } | undefined;
     if (mutation.type === "create")
       id = await new CreateJournalEntryUsecase(repository).execute(bookId, mutation.input, user.id);
     else if (mutation.type === "save")
@@ -147,6 +151,13 @@ export async function mutateJournalReview(
         mutation.targets,
         mutation.payee,
       );
+    else if (mutation.type === "set-receipt-absence-reason")
+      receiptAbsence = await new SetReceiptAbsenceReasonUsecase(repository).execute(
+        bookId,
+        mutation.id,
+        mutation.updatedAt,
+        mutation.reason,
+      );
     else throw new JournalReviewError("操作が不正です");
     revalidatePath("/(auth)", "layout");
     return {
@@ -160,6 +171,7 @@ export async function mutateJournalReview(
       settlement,
       unsettled,
       payeeLink,
+      receiptAbsence,
     };
   } catch (error) {
     return {

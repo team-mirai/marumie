@@ -58,6 +58,11 @@ export interface ReviewEntry extends JournalEdit, JournalEntry {
   payeeId: string | null;
   /** 支払先を誰が紐づけたか。支払先があるときだけ持つ */
   payeeLinkSource: PayeeLinkSource | null;
+  /**
+   * 領収書等を徴し難かった事情。null なら未入力。書類の無い支出だけが持てる（domain/models/receipt-absence）。
+   * 支払先と同じく、公開内容・複式の行・hash に影響しない別系統の更新として扱う。
+   */
+  receiptAbsenceReason: string | null;
 }
 export interface JournalWrite extends JournalEdit {
   hash: string;

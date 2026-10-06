@@ -73,6 +73,7 @@ function model(row: Row): ReviewEntry | null {
     settledAt: row.settledAt ? row.settledAt.toISOString().slice(0, 10) : null,
     payeeId: row.payeeId === null ? null : String(row.payeeId),
     payeeLinkSource: row.payeeLinkSource ?? null,
+    receiptAbsenceReason: row.receiptAbsenceReason ?? null,
   };
 }
 function data(input: JournalWrite) {
@@ -337,6 +338,20 @@ export class PrismaJournalReviewRepository implements JournalReviewRepository {
           throw new JournalReviewError("仕訳が更新されました。画面を再読み込みしてください");
       }
     });
+  }
+  // 徴し難かった事情は公開内容に影響しないので、公開中・精算済の仕訳も対象にする（複式行と hash は作り直さない）。
+  // 書類のある仕訳は DB の CHECK 制約でも拒否されるが、競合として扱えるよう条件に含める。
+  async setReceiptAbsenceReason(bookId: string, entry: ReviewEntry, reason: string | null) {
+    const result = await this.prisma.researchFundJournalEntry.updateMany({
+      where: {
+        ...guard(bookId, entry, ["draft", "approved", "published"]),
+        ...expenseWhere,
+        documentId: null,
+      },
+      data: { receiptAbsenceReason: reason },
+    });
+    if (result.count !== 1)
+      throw new JournalReviewError("仕訳が更新されました。画面を再読み込みしてください");
   }
   async politicianId(bookId: string) {
     const book = await this.prisma.researchFundBook.findUnique({
