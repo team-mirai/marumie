@@ -2,17 +2,12 @@ import "server-only";
 import { ListGrantsUsecase } from "@/server/contexts/research-fund/application/usecases/list-grants-usecase";
 import {
   GrantRegistrationError,
-  grantDescription,
-  grantEntryDate,
   isGrantMonth,
   japanCalendarDate,
-  validateGrantAmount,
-  validateGrantEntryDate,
 } from "@/server/contexts/research-fund/domain/models/grant-registration";
 import { GrantSchedule } from "@/server/contexts/research-fund/domain/models/grant-schedule";
-import { JournalEntryHash } from "@/server/contexts/research-fund/domain/models/journal-entry-hash";
-import { JournalPosting } from "@/server/contexts/research-fund/domain/models/journal-posting";
 import type { GrantRepository } from "@/server/contexts/research-fund/domain/repositories/grant-repository.interface";
+import { buildGrantJournalWrite } from "@/server/contexts/research-fund/domain/services/grant-journal-builder";
 
 /** 下書きを経ず確認済で支給の収入仕訳を作る。振込は機械的なため目視確認を挟まない。 */
 export class RegisterGrantUsecase {
@@ -37,52 +32,16 @@ export class RegisterGrantUsecase {
     const registrable = GrantSchedule.registrable(grants, month);
     if (registrable.status === "invalid")
       throw new GrantRegistrationError(registrable.errors[0].message);
-    const grant = registrable.value;
 
-    // 画面を経由しない呼び出しも同じ判定で弾く。
-    const entryDate = inputEntryDate ?? grantEntryDate(month, termStart);
-    const validatedEntryDate = validateGrantEntryDate(month, termStart, entryDate);
-    if (validatedEntryDate.status === "invalid")
-      throw new GrantRegistrationError(validatedEntryDate.errors[0].message);
-    const validatedAmount = validateGrantAmount(
-      inputAmount === undefined ? grant.amount : inputAmount,
-    );
-    if (validatedAmount.status === "invalid")
-      throw new GrantRegistrationError(validatedAmount.errors[0].message);
-    const amount = validatedAmount.value;
-
-    const accounts = await this.repository.accounts();
-    const account = accounts.find((candidate) => candidate.key === "grant-income");
-    const assetAccount = accounts.find((candidate) => candidate.key === "bank");
-    if (!account || !assetAccount) throw new GrantRegistrationError("科目が見つかりません");
-    const posting = JournalPosting.generate({
-      pattern: "grant",
-      source: "grant",
-      amount,
-      account,
-      assetAccount,
-    });
-    if (posting.status === "invalid") throw new GrantRegistrationError(posting.errors[0].message);
-
-    const description = grantDescription(month);
-    const hash = JournalEntryHash.generate({
-      entryDate,
-      amount,
-      description,
-      documentId: null,
-    });
-    if (hash.status === "invalid") throw new GrantRegistrationError(hash.errors[0].message);
-    return this.repository.create(
-      bookId,
+    // 支給日・金額の検証は buildGrantJournalWrite が行うので、画面を経由しない呼び出しも同じ判定で弾ける。
+    const write = buildGrantJournalWrite({
       month,
-      {
-        entryDate,
-        description,
-        amount,
-        hash: hash.value,
-        lines: posting.value.lines,
-      },
-      userId,
-    );
+      termStart,
+      entryDate: inputEntryDate,
+      amount: inputAmount === undefined ? registrable.value.amount : inputAmount,
+      accounts: await this.repository.accounts(),
+    });
+    if (write.status === "invalid") throw new GrantRegistrationError(write.errors[0].message);
+    return this.repository.create(bookId, month, write.value, userId);
   }
 }

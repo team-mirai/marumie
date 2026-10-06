@@ -2,6 +2,7 @@ import { settlementRejection } from "@/server/contexts/research-fund/domain/mode
 import { JournalEntry } from "@/server/contexts/research-fund/domain/models/journal-entry";
 import {
   isAccountUnconfirmed,
+  type JournalEdit,
   type ReviewEntry,
 } from "@/server/contexts/research-fund/domain/models/journal-review";
 
@@ -24,6 +25,9 @@ export type OperableEntry = Pick<
   | "amount"
   | "accountKey"
   | "id"
+  // 支給の編集では、支給日以外が変わっていないかを備考まで含めて見る
+  | "note"
+  | "memo"
 >;
 
 /**
@@ -77,6 +81,25 @@ export const JournalOperation = {
     return entry.amount === amount
       ? null
       : settled(entry, "精算済の仕訳は金額を変更できません。先に未精算に戻してください");
+  },
+  /**
+   * 支給の内容の編集。支給は支給日だけを直せる。
+   * 金額・項目名・科目・備考は支給の登録時に月から決まるため、ここでは受け付けない。
+   * 支給の「どの月の分か」は仕訳日から判定するので、月をまたぐと同じ月を二重登録できてしまう。
+   * そのため変更後の支給日が登録時と同じ条件（その月の中・当選月は当選日以降）を満たすかは
+   * buildGrantJournalWrite が判定する。
+   * 公開中・同時更新の判定は edit と取得の段取りが行うので、ここでは扱わない。
+   */
+  editGrant(entry: OperableEntry, input: JournalEdit): OperationRejection | null {
+    if (
+      input.amount !== entry.amount ||
+      input.description !== entry.description ||
+      input.accountKey !== entry.accountKey ||
+      input.note !== entry.note ||
+      input.memo !== entry.memo
+    )
+      return { one: "支給は支給日だけを変更できます", many: UNSUPPORTED_ENTRY };
+    return null;
   },
   /**
    * 確認済にする。支給は下書きを経ずに確認済で作るので対象にならない。

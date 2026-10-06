@@ -1,6 +1,6 @@
 import { JournalOperation, type OperableEntry } from "@/server/contexts/research-fund/domain/models/journal-operation";
 
-const base: OperableEntry = { id: "1", description: "タクシー代", source: "manual", status: "draft", advancedBy: null, settledAt: null, entryDate: "2026-08-01", amount: 1200, accountKey: "taxi" };
+const base: OperableEntry = { id: "1", description: "タクシー代", source: "manual", status: "draft", advancedBy: null, settledAt: null, entryDate: "2026-08-01", amount: 1200, accountKey: "taxi", note: "公開メモ", memo: "内部メモ" };
 const operations = ["edit", "approve", "revertToDraft", "discard", "unpublish", "setAdvancedBy", "settle", "unsettle"] as const;
 type Operation = (typeof operations)[number];
 function judge(operation: Operation, entry: OperableEntry) {
@@ -99,5 +99,28 @@ describe("JournalOperation.edit", () => {
   });
   it("未精算の仕訳は金額を変更できる", () => {
     expect(JournalOperation.edit({ ...settled, settledAt: null }, 1500)).toBeNull();
+  });
+});
+
+describe("JournalOperation.editGrant", () => {
+  const grant: OperableEntry = { ...base, source: "grant", status: "approved", description: "調査研究広報滞在費 8月分", accountKey: "grant-income", amount: 1_000_000 };
+  const edit = { entryDate: grant.entryDate, description: grant.description, amount: grant.amount, accountKey: grant.accountKey, note: grant.note, memo: grant.memo };
+  it("支給日だけを変える保存は受け付ける", () => {
+    expect(JournalOperation.editGrant(grant, { ...edit, entryDate: "2026-08-20" })).toBeNull();
+  });
+  it("支給日を変えない保存も受け付ける", () => {
+    expect(JournalOperation.editGrant(grant, edit)).toBeNull();
+  });
+  it.each([
+    { amount: 2_000_000 },
+    { description: "別の項目" },
+    { accountKey: "taxi" },
+    { note: "別の公開メモ" },
+    { memo: "別の内部メモ" },
+  ])("支給日以外を変える保存は受け付けない %j", override => {
+    expect(JournalOperation.editGrant(grant, { ...edit, ...override })).toEqual({
+      one: "支給は支給日だけを変更できます",
+      many: "この画面で扱えない仕訳が選ばれています",
+    });
   });
 });
