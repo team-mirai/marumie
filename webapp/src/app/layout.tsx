@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Inter, Noto_Sans, Noto_Sans_JP } from "next/font/google";
+import { Noto_Sans, Noto_Sans_JP } from "next/font/google";
 import "./globals.css";
 import { GoogleAnalytics } from "@next/third-parties/google";
 import { SpeedInsights } from "@vercel/speed-insights/next";
@@ -15,28 +15,12 @@ const notoSansJP = Noto_Sans_JP({
   style: ["normal"],
 });
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
 const notoSans = Noto_Sans({
   variable: "--font-noto-sans",
   subsets: ["latin", "latin-ext"],
   weight: ["400", "500", "700", "800", "900"],
   display: "swap",
   preload: true,
-});
-
-const inter = Inter({
-  variable: "--font-inter",
-  subsets: ["latin"],
-  weight: ["400", "700"],
 });
 
 export const metadata: Metadata = {
@@ -73,7 +57,7 @@ export default function RootLayout({
     <html lang="ja">
       <head />
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${notoSans.variable} ${notoSansJP.variable} ${inter.variable} antialiased pt-24 flex flex-col min-h-screen`}
+        className={`${notoSans.variable} ${notoSansJP.variable} antialiased pt-24 flex flex-col min-h-screen`}
       >
         <Header />
         <div className="flex-grow">{children}</div>
