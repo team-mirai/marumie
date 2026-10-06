@@ -372,6 +372,8 @@ interface EnsureResult {
 /**
  * ファイルの取引先を自然キーで引き当て、無いものだけ作って ID 対応表を返す。
  * 既存の取引先は他団体でも使われているので、郵便番号などの属性は書き換えない。
+ * 別の取り込みが同じ取引先を先に作っていた場合は一意制約（address NULL も重複扱い）に当たるので
+ * skipDuplicates で読み飛ばし、引き直しでその行の ID を使う。作成件数は実際に挿入できた行数を返す。
  */
 async function ensureCounterparts(
   tx: Prisma.TransactionClient,
@@ -383,15 +385,18 @@ async function ensureCounterparts(
     (counterpart) => !idByKey.has(serializeCounterpartKey(toCounterpartKey(counterpart))),
   );
 
+  let createdCount = 0;
   for (const missingChunk of chunk(missing, INSERT_CHUNK_SIZE)) {
-    await tx.counterpart.createMany({
+    const { count } = await tx.counterpart.createMany({
       data: missingChunk.map((counterpart) => ({
         name: counterpart.name,
         postalCode: counterpart.postalCode,
         address: counterpart.address,
         tenantId,
       })),
+      skipDuplicates: true,
     });
+    createdCount += count;
   }
 
   if (missing.length > 0) {
@@ -399,7 +404,7 @@ async function ensureCounterparts(
     for (const [key, id] of created) idByKey.set(key, id);
   }
 
-  return { idByKey, createdCount: missing.length };
+  return { idByKey, createdCount };
 }
 
 /** 寄付者も同じく、自然キーで既存を再利用し、無いものだけ作る。 */
@@ -411,8 +416,9 @@ async function ensureDonors(
   const idByKey = await findDonorIdsByKey(tx, donors.map(toDonorKey));
   const missing = donors.filter((donor) => !idByKey.has(serializeDonorKey(toDonorKey(donor))));
 
+  let createdCount = 0;
   for (const missingChunk of chunk(missing, INSERT_CHUNK_SIZE)) {
-    await tx.donor.createMany({
+    const { count } = await tx.donor.createMany({
       data: missingChunk.map((donor) => ({
         // パーサーが現在の enum の値であることを検証済み。
         donorType: donor.donorType as DonorType,
@@ -421,7 +427,9 @@ async function ensureDonors(
         occupation: donor.occupation,
         tenantId,
       })),
+      skipDuplicates: true,
     });
+    createdCount += count;
   }
 
   if (missing.length > 0) {
@@ -429,5 +437,5 @@ async function ensureDonors(
     for (const [key, id] of created) idByKey.set(key, id);
   }
 
-  return { idByKey, createdCount: missing.length };
+  return { idByKey, createdCount };
 }

@@ -130,6 +130,7 @@ model Counterpart {
 
   transactionCounterparts TransactionCounterpart[]
 
+  // address が NULL の行も重複として扱うため、実 DB の一意インデックスは NULLS NOT DISTINCT（マイグレーションで張り替え。#1482）
   @@unique([name, address])
   @@index([tenantId])
   @@map("counterparts")
@@ -178,6 +179,7 @@ model Donor {
 
   transactionDonors TransactionDonor[]
 
+  // address が NULL の行も重複として扱うため、実 DB の一意インデックスは NULLS NOT DISTINCT（マイグレーションで張り替え。#1482）
   @@unique([name, address, donorType])
   @@index([tenantId])
   @@map("donors")
