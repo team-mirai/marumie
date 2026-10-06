@@ -14,6 +14,7 @@ describe("RetryScanJobUsecase", () => {
     failJob: jest.fn(),
     requeueJob: jest.fn(),
     accounts: jest.fn(),
+    payees: jest.fn(),
   };
   const usecase = new RetryScanJobUsecase(scanRepository);
 

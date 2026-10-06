@@ -12,7 +12,7 @@ const accounts: ResearchFundAccount[] = [
 ];
 
 function receipt(items: ExtractedReceipt["items"]): ExtractedReceipt {
-  return { date: "2026-04-01", items };
+  return { date: "2026-04-01", issuer: null, items };
 }
 
 describe("buildScanDraftEntries", () => {

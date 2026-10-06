@@ -77,7 +77,7 @@ test("手動仕訳を取得し、書類・メモの欠損値を表示用に変�
     id: entry.id, entryDate: input.entryDate, updatedAt: entry.updatedAt, description: "移動",
     note: "", memo: "", status: "draft", source: "manual", documentId: null, splitGroup: null,
     model: null, promptVersion: null, amount: 1200, accountKey: "taxi", advancedBy: null, settledAt: null,
-    payeeId: null, payeeLinkSource: null, receiptAbsenceReason: null,
+    payeeId: null, payeeLinkSource: null, receiptAbsenceReason: null, issuer: null,
   });
   tx.researchFundJournalEntry.findFirst.mockResolvedValue(null);
   await expect(repository.find("9", entry.id)).resolves.toBeNull();
@@ -398,4 +398,17 @@ test("徴し難かった事情は公開中・精算済も対象にし、書類�
 test("徴し難かった事情は競合したら（書類が付いた場合を含む）変更しない", async () => {
   const { repository } = setup(0);
   await expect(repository.setReceiptAbsenceReason("1", entry, "自動券売機で購入")).rejects.toThrow("再読み込み");
+});
+
+test("仕訳を作った読み取りの原文から発行元を添える（古い形式の原文なら null）", async () => {
+  const { repository, tx } = setup();
+  const job = (rawJson: unknown) => ({ createdAt: new Date("2026-08-01"), model: "m", prompt: { version: 1 }, rawJson });
+  const scanned = (rawJson: unknown) => ({ ...rowWithLines(), source: "scan", documentId: BigInt(3), document: { scanJobs: [job(rawJson)] } });
+  tx.researchFundJournalEntry.findMany.mockResolvedValue([
+    scanned({ date: "2026-08-01", issuer: { name: "JR東日本", address: "東京都渋谷区", phone: null, invoice_registration_number: null }, items: [] }),
+    { ...scanned({ date: "2026-08-01", items: [] }), id: BigInt(2) },
+  ]);
+  const [withIssuer, legacy] = await repository.list("1");
+  expect(withIssuer.issuer).toEqual({ name: "JR東日本", address: "東京都渋谷区", phone: null, invoice_registration_number: null });
+  expect(legacy.issuer).toBeNull();
 });

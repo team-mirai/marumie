@@ -30,6 +30,12 @@ describe("領収書抽出プロンプト", () => {
     expect(prompt).toContain("明細ごとの利用日を items の date に入れてください");
   });
 
+  it("発行元は明細ごとではなく書類単位で issuer に入れるよう伝える", () => {
+    const prompt = buildAutomaticReceiptPrompt();
+    expect(prompt).toContain("書類の発行元（書類単位で 1 者）");
+    expect(prompt).toContain("明細ごとではなく書類単位で issuer に1つだけ入れてください");
+  });
+
   it("分割粒度と迷った際のポリシーは編集可能なテンプレートだけに含める", () => {
     for (const policy of [
       "カテゴリ・項目が異なる明細は行を分けてください",

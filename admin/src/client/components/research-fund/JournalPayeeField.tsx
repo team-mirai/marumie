@@ -4,6 +4,7 @@ import { PayeeLinkDialog } from "@/client/components/research-fund/PayeeLinkDial
 import { Button, Checkbox, Label } from "@/client/components/ui";
 import type { ReviewEntry } from "@/server/contexts/research-fund/domain/models/journal-review";
 import {
+  payeeFormInputFromIssuer,
   withSameDocumentEntries,
   type Payee,
   type PayeeFormInput,
@@ -22,6 +23,7 @@ const linkSources: Record<PayeeLinkSource, string> = {
  * 支払先は議員課提出用の帳簿の情報で公開内容に影響しないので、公開中の仕訳でも変更できる
  * （仕訳の編集フォームとは別に保存する）。1 枚の書類の発行元は 1 者なので、
  * 同じ書類から作られた仕訳があれば既定でまとめて同じ支払先に紐づける。
+ * 支払先が未設定で書類から発行元が読み取れていれば、それを候補として出し、その内容で支払先を作って紐づけられる。
  */
 export function JournalPayeeField({
   entry,
@@ -69,7 +71,37 @@ export function JournalPayeeField({
           )}
         </div>
       ) : (
-        <p className="text-sm font-bold text-destructive">支払先が未設定です</p>
+        <>
+          <p className="text-sm font-bold text-destructive">支払先が未設定です</p>
+          {entry.issuer?.name && (
+            <div className="space-y-1 rounded-md border p-2 text-sm">
+              <p className="text-xs text-muted-foreground">書類から読み取った発行元</p>
+              <p className="font-bold">{entry.issuer.name}</p>
+              {entry.issuer.address && (
+                <p className="text-muted-foreground">{entry.issuer.address}</p>
+              )}
+              {entry.issuer.phone && (
+                <p className="font-latin text-muted-foreground">TEL {entry.issuer.phone}</p>
+              )}
+              {entry.issuer.invoice_registration_number && (
+                <p className="font-latin text-muted-foreground">
+                  {entry.issuer.invoice_registration_number}
+                </p>
+              )}
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={pending}
+                onClick={() => {
+                  if (entry.issuer) onCreate(targets, payeeFormInputFromIssuer(entry.issuer));
+                }}
+              >
+                この内容で支払先を作って紐づける
+              </Button>
+            </div>
+          )}
+        </>
       )}
       {siblings.length > 1 && (
         <div className="flex items-center gap-2">

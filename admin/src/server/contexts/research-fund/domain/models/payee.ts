@@ -1,3 +1,4 @@
+import type { ReceiptIssuer } from "@/server/contexts/research-fund/domain/models/extracted-receipt";
 import {
   invalidResearchFundResult,
   RF_ERROR_CODES,
@@ -14,6 +15,7 @@ import {
  * - 支払先は議員ごとに持つ。別の議員（＝別テナント）の支払先は見えず、紐づけられない
  * - 支払先は人が作成・編集したものだけなので、すべて確認済みとして扱う。
  *   確認状態の列は DB に持たない（#1655）。人以外が支払先を作るようになったら確認状態を持たせる
+ *   （書類の発行元との照合 domain/services/issuer-payee-matcher も、確認済みの支払先だけを相手にする前提）
  */
 
 export const PAYEE_NAME_MAX_LENGTH = 255;
@@ -84,6 +86,28 @@ export function normalizeInvoiceRegistrationNumber(value: string): string | null
   if (normalized.length === 0) return null;
   if (!/^T\d{13}$/.test(normalized)) return undefined;
   return normalized;
+}
+
+/** 住所の先頭に書かれた郵便番号（〒123-4567 など）。発行元の住所から支払先の郵便番号を切り出す */
+const LEADING_POSTAL_CODE = /^〒?\s*(\d{3}\s*[-‐‑‒–—―−ー－]?\s*\d{4})\s*/;
+
+/**
+ * 書類から読み取った発行元を、支払先の作成フォームの入力にする（確認画面の「この内容で支払先を作って紐づける」）。
+ * 住所の先頭の郵便番号は郵便番号の欄に移す。インボイス登録番号の形が合わなければ、
+ * 作成が失敗しないよう未入力にする（読み取りの原文には残っている）。電話番号は支払先に持たない。
+ */
+export function payeeFormInputFromIssuer(issuer: ReceiptIssuer): PayeeFormInput {
+  const rawAddress = (issuer.address ?? "").normalize("NFKC").trim();
+  const postal = LEADING_POSTAL_CODE.exec(rawAddress);
+  const postalCode = postal ? normalizePostalCode(postal[1]) : null;
+  const address = postal && postalCode ? rawAddress.slice(postal[0].length).trim() : rawAddress;
+  const invoice = normalizeInvoiceRegistrationNumber(issuer.invoice_registration_number ?? "");
+  return {
+    name: issuer.name ?? "",
+    postalCode: postalCode ?? "",
+    address,
+    invoiceRegistrationNumber: invoice ?? "",
+  };
 }
 
 /** 支払先の入力を検証し、保存する形に正規化する */

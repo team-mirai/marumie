@@ -13,6 +13,7 @@ import type {
   CreateScanBatchInput,
   ScanRepository,
 } from "@/server/contexts/research-fund/domain/repositories/scan-repository.interface";
+import type { Payee } from "@/server/contexts/research-fund/domain/models/payee";
 import type { ResearchFundAccount } from "@/server/contexts/research-fund/domain/models/journal-posting";
 import type { ScanDraftEntry } from "@/server/contexts/research-fund/domain/services/scan-journal-builder";
 
@@ -189,6 +190,7 @@ export class PrismaScanRepository implements ScanRepository {
     entries: ScanDraftEntry[];
     userId: string;
     replaceDrafts: boolean;
+    payeeId: string | null;
   }): Promise<void> {
     const bookId = BigInt(input.bookId);
     const documentId = BigInt(input.documentId);
@@ -233,6 +235,15 @@ export class PrismaScanRepository implements ScanRepository {
             "確認済・公開中の仕訳があるため、読み直した結果で置き換えませんでした",
           );
       }
+      // 発行元の照合で決まった支払先が帳簿と同じ議員のものかを同じトランザクションで確かめる
+      // （DB の外部キーは支払先の存在しか見ないため。#1674）。違えば紐づけずに下書きを作る
+      const payeeId =
+        input.payeeId !== null &&
+        (await tx.researchFundPayee.count({
+          where: { id: BigInt(input.payeeId), politician: { books: { some: { id: bookId } } } },
+        })) === 1
+          ? BigInt(input.payeeId)
+          : null;
       // 同じ書類を読み直しても仕訳を二重に作らない。hash は日付・金額・項目名・書類IDから作る。
       // (book_id, hash) の一意制約に任せて既存分は読み飛ばす（ON CONFLICT DO NOTHING）ので、
       // 同じ書類の処理が同時に走っても二重登録にならず、ジョブの完了も続行できる。
@@ -248,6 +259,8 @@ export class PrismaScanRepository implements ScanRepository {
           note: entry.note,
           memo: entry.memo,
           advancedBy,
+          payeeId,
+          payeeLinkSource: payeeId === null ? null : ("rule" as const),
           hash: entry.hash,
           createdById: input.userId,
         })),
@@ -289,6 +302,21 @@ export class PrismaScanRepository implements ScanRepository {
       data: { status: "queued", error: null, startedAt: null, finishedAt: null },
     });
     return result.count === 1;
+  }
+
+  async payees(bookId: string): Promise<Payee[]> {
+    const rows = await this.prisma.researchFundPayee.findMany({
+      where: { politician: { books: { some: { id: BigInt(bookId) } } } },
+      orderBy: { id: "asc" },
+    });
+    return rows.map((row) => ({
+      id: String(row.id),
+      politicianId: String(row.politicianId),
+      name: row.name,
+      postalCode: row.postalCode,
+      address: row.address,
+      invoiceRegistrationNumber: row.invoiceRegistrationNumber,
+    }));
   }
 
   async accounts(): Promise<ResearchFundAccount[]> {

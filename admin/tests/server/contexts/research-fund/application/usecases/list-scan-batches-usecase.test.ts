@@ -24,6 +24,7 @@ describe("ListScanBatchesUsecase", () => {
     failJob: jest.fn(),
     requeueJob: jest.fn(),
     accounts: jest.fn(),
+    payees: jest.fn(),
   };
   const promptRepository: jest.Mocked<PromptRepository> = {
     list: jest.fn(),

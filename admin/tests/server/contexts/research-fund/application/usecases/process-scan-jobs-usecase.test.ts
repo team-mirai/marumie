@@ -24,6 +24,7 @@ const JOB: ClaimedScanJob = {
 
 const RECEIPT = {
   date: "2026-04-01",
+  issuer: null,
   items: [
     { item: "タクシー代", amount: 1200, category_key: "transportation", note: null, memo: null, date: null, split_group: null },
   ],
@@ -42,6 +43,7 @@ describe("ProcessScanJobsUsecase", () => {
     failJob: jest.fn(),
     requeueJob: jest.fn(),
     accounts: jest.fn(),
+    payees: jest.fn(),
   };
   const storage: jest.Mocked<DocumentStorage> = {
     upload: jest.fn(),
@@ -67,6 +69,57 @@ describe("ProcessScanJobsUsecase", () => {
     ]);
     storage.download.mockResolvedValue({ status: "valid", value: new Uint8Array([1, 2]) });
     gateway.extract.mockResolvedValue({ status: "valid", value: { ...RECEIPT, items: [...RECEIPT.items] } });
+    scanRepository.payees.mockResolvedValue([]);
+  });
+
+  describe("linking the payee from the issuer", () => {
+    const PAYEE = { id: "7", politicianId: "5", name: "東京タクシー株式会社", postalCode: null, address: "", invoiceRegistrationNumber: null };
+    const ISSUER = { name: "東京タクシー（株）", address: null, phone: null, invoice_registration_number: null };
+
+    it("links the payee that exactly matches the issuer, looked up among the book's payees", async () => {
+      scanRepository.payees.mockResolvedValue([PAYEE]);
+      gateway.extract.mockResolvedValue({ status: "valid", value: { ...RECEIPT, issuer: ISSUER, items: [...RECEIPT.items] } });
+
+      await usecase.execute(input);
+
+      expect(scanRepository.payees).toHaveBeenCalledWith("12");
+      expect(scanRepository.completeJob).toHaveBeenCalledWith(
+        expect.objectContaining({
+          payeeId: "7",
+          // 発行元は読み取りの原文（監査用）に残る
+          rawJson: expect.objectContaining({ issuer: ISSUER }),
+        }),
+      );
+    });
+
+    it("leaves the entries unlinked when no payee matches the issuer", async () => {
+      scanRepository.payees.mockResolvedValue([PAYEE]);
+      gateway.extract.mockResolvedValue({ status: "valid", value: { ...RECEIPT, issuer: { ...ISSUER, name: "大阪タクシー株式会社" }, items: [...RECEIPT.items] } });
+
+      await usecase.execute(input);
+
+      expect(scanRepository.completeJob).toHaveBeenCalledWith(expect.objectContaining({ payeeId: null }));
+    });
+
+    it("leaves the entries unlinked when the reading has no issuer", async () => {
+      scanRepository.payees.mockResolvedValue([PAYEE]);
+
+      await usecase.execute(input);
+
+      expect(scanRepository.completeJob).toHaveBeenCalledWith(expect.objectContaining({ payeeId: null }));
+    });
+
+    it("links the payee on a reread as well", async () => {
+      scanRepository.claimJobs.mockResolvedValue([{ ...JOB, rereadInstruction: "読み直してください" }]);
+      scanRepository.payees.mockResolvedValue([PAYEE]);
+      gateway.extract.mockResolvedValue({ status: "valid", value: { ...RECEIPT, issuer: ISSUER, items: [...RECEIPT.items] } });
+
+      await usecase.execute(input);
+
+      expect(scanRepository.completeJob).toHaveBeenCalledWith(
+        expect.objectContaining({ replaceDrafts: true, payeeId: "7" }),
+      );
+    });
   });
 
   describe("execute", () => {
@@ -203,6 +256,7 @@ describe("ProcessScanJobsUsecase", () => {
       };
       const SPLIT_RECEIPT: ExtractedReceipt = {
         date: "2026-04-01",
+        issuer: null,
         items: [
           { item: "タクシー代", amount: 1200, category_key: "transportation", note: null, memo: null, date: null, split_group: "g1" },
           { item: "資料の印刷代", amount: 800, category_key: "printing", note: null, memo: "印刷の領収書は別紙", date: null, split_group: "g1" },
