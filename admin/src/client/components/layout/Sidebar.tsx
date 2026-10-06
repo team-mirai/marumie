@@ -14,6 +14,7 @@ import {
   CaretDoubleRight,
   Coins,
   Database,
+  DownloadSimple,
   Export,
   HandHeart,
   Link as LinkIcon,
@@ -49,6 +50,7 @@ const NAV_ICONS: Record<NavIconName, Icon> = {
   "hand-heart": HandHeart,
   "link-simple": LinkSimple,
   export: Export,
+  "download-simple": DownloadSimple,
   database: Database,
 };
 

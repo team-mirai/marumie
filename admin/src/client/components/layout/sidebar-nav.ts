@@ -19,6 +19,7 @@ export type NavIconName =
   | "hand-heart"
   | "link-simple"
   | "export"
+  | "download-simple"
   | "database";
 
 type NavItem = {
@@ -130,6 +131,11 @@ export function getVisibleNavSections(
               { href: `${base}/${target.bookId}/payees`, label: "支払先", icon: "address-book" },
               { href: `${base}/${target.bookId}/grants`, label: "支給の登録", icon: "coins" },
               { href: `${base}/${target.bookId}/publish`, label: "公開", icon: "export" },
+              {
+                href: `${base}/${target.bookId}/submission`,
+                label: "議員課提出",
+                icon: "download-simple",
+              },
               {
                 href: `${base}/${target.bookId}/expenditure-groups`,
                 label: "支出群と成果",
