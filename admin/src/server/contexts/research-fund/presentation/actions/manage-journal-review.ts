@@ -142,10 +142,11 @@ export async function mutateJournalReview(
         new PrismaPayeeRepository(prisma),
       ).execute(bookId, mutation.targets, mutation.payeeId);
     else if (mutation.type === "create-payee-and-link")
-      payeeLink = await new CreatePayeeAndLinkUsecase(
-        repository,
-        new PrismaPayeeRepository(prisma),
-      ).execute(bookId, mutation.targets, mutation.payee);
+      payeeLink = await new CreatePayeeAndLinkUsecase(repository).execute(
+        bookId,
+        mutation.targets,
+        mutation.payee,
+      );
     else throw new JournalReviewError("操作が不正です");
     revalidatePath("/(auth)", "layout");
     return {

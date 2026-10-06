@@ -5,6 +5,7 @@ import {
   type JournalWrite,
   type ReviewEntry,
 } from "@/server/contexts/research-fund/domain/models/journal-review";
+import type { Payee, PayeeInput } from "@/server/contexts/research-fund/domain/models/payee";
 import { Publication } from "@/server/contexts/research-fund/domain/models/publication";
 import type { JournalReviewRepository } from "@/server/contexts/research-fund/domain/repositories/journal-review-repository.interface";
 
@@ -107,6 +108,27 @@ function guard(
     updatedAt: new Date(entry.updatedAt),
     ...(entry.source === "grant" ? grantWhere : expenseWhere),
   };
+}
+// 人の手での紐づけなので紐づけ元は manual にし、AI の確信度・根拠は消す。1 件でも競合していたら投げて巻き戻させる。
+async function linkPayee(
+  tx: Prisma.TransactionClient,
+  bookId: string,
+  entries: readonly ReviewEntry[],
+  payeeId: string | null,
+) {
+  for (const entry of entries) {
+    const result = await tx.researchFundJournalEntry.updateMany({
+      where: { ...guard(bookId, entry, ["draft", "approved", "published"]), ...expenseWhere },
+      data: {
+        payeeId: payeeId === null ? null : BigInt(payeeId),
+        payeeLinkSource: payeeId === null ? null : "manual",
+        payeeLinkConfidence: null,
+        payeeLinkReason: null,
+      },
+    });
+    if (result.count !== 1)
+      throw new JournalReviewError("仕訳が更新されました。画面を再読み込みしてください");
+  }
 }
 export class PrismaJournalReviewRepository implements JournalReviewRepository {
   constructor(private prisma: PrismaClient) {}
@@ -324,7 +346,6 @@ export class PrismaJournalReviewRepository implements JournalReviewRepository {
     return book ? String(book.politicianId) : null;
   }
   // 支払先は公開内容に影響しないので、公開中・精算済の仕訳も対象にする（複式行と hash は作り直さない）。
-  // 人の手での紐づけなので紐づけ元は manual にし、AI の確信度・根拠は消す。
   // 支払先が帳簿と同じ議員のものかを同じトランザクションで確かめ、別の議員の支払先を紐づけない
   // （DB の外部キーは支払先の存在しか見ないため。#1674）。1 件でも競合していたら巻き戻す。
   async setPayee(bookId: string, entries: readonly ReviewEntry[], payeeId: string | null) {
@@ -335,20 +356,38 @@ export class PrismaJournalReviewRepository implements JournalReviewRepository {
         });
         if (owned !== 1) throw new JournalReviewError("支払先が見つかりません");
       }
-      for (const entry of entries) {
-        const result = await tx.researchFundJournalEntry.updateMany({
-          where: { ...guard(bookId, entry, ["draft", "approved", "published"]), ...expenseWhere },
-          data: {
-            payeeId: payeeId === null ? null : BigInt(payeeId),
-            payeeLinkSource: payeeId === null ? null : "manual",
-            payeeLinkConfidence: null,
-            payeeLinkReason: null,
-          },
-        });
-        if (result.count !== 1)
-          throw new JournalReviewError("仕訳が更新されました。画面を再読み込みしてください");
-      }
+      await linkPayee(tx, bookId, entries, payeeId);
     });
+  }
+  // 支払先の作成と紐づけを同じトランザクションで行い、紐づけが競合したら作成も巻き戻す（紐づかない支払先を残さない）。
+  // 支払先は帳簿の議員（politicianId）のものとして作るので、議員の照合は要らない。
+  async createPayeeAndSetPayee(
+    bookId: string,
+    entries: readonly ReviewEntry[],
+    politicianId: string,
+    input: PayeeInput,
+  ): Promise<Payee> {
+    try {
+      return await this.prisma.$transaction(async (tx) => {
+        const row = await tx.researchFundPayee.create({
+          data: { ...input, politicianId: BigInt(politicianId) },
+        });
+        await linkPayee(tx, bookId, entries, String(row.id));
+        return {
+          id: String(row.id),
+          politicianId: String(row.politicianId),
+          name: row.name,
+          postalCode: row.postalCode,
+          address: row.address,
+          invoiceRegistrationNumber: row.invoiceRegistrationNumber,
+        };
+      });
+    } catch (error) {
+      // 支払先は (議員, 名称, 住所) で一意。同じ相手を二重に作らせない。
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002")
+        throw new JournalReviewError("同じ名称・住所の支払先がすでに登録されています");
+      throw error;
+    }
   }
   // 精算は確認済・公開中の未精算の立替だけを対象にする。1 件でも競合していたら巻き戻す。
   async settleMany(bookId: string, entries: readonly ReviewEntry[], settledAt: string) {

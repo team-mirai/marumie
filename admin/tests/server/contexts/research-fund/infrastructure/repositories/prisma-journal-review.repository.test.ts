@@ -14,7 +14,7 @@ function rowWithLines(lines = input.lines) {
   };
 }
 function setup(count = 1) {
-  const tx = { researchFundJournalEntry: { updateMany: jest.fn().mockResolvedValue({ count }), deleteMany: jest.fn().mockResolvedValue({ count }), findMany: jest.fn(), findFirst: jest.fn().mockResolvedValue(rowWithLines()), create: jest.fn().mockResolvedValue({ id: BigInt(entry.id) }) }, researchFundJournalLine: { deleteMany: jest.fn(), createMany: jest.fn() }, researchFundAccount: { findMany: jest.fn() }, researchFundBook: { findUnique: jest.fn(), update: jest.fn() }, researchFundPayee: { count: jest.fn().mockResolvedValue(1) }, $queryRaw: jest.fn() };
+  const tx = { researchFundJournalEntry: { updateMany: jest.fn().mockResolvedValue({ count }), deleteMany: jest.fn().mockResolvedValue({ count }), findMany: jest.fn(), findFirst: jest.fn().mockResolvedValue(rowWithLines()), create: jest.fn().mockResolvedValue({ id: BigInt(entry.id) }) }, researchFundJournalLine: { deleteMany: jest.fn(), createMany: jest.fn() }, researchFundAccount: { findMany: jest.fn() }, researchFundBook: { findUnique: jest.fn(), update: jest.fn() }, researchFundPayee: { count: jest.fn().mockResolvedValue(1), create: jest.fn().mockResolvedValue({ id: BigInt(9), politicianId: BigInt(5), name: "東京タクシー", postalCode: null, address: "", invoiceRegistrationNumber: null }) }, $queryRaw: jest.fn() };
   const transaction = jest.fn(async fn => fn(tx));
   const repository = new PrismaJournalReviewRepository({ ...tx, $transaction: transaction } as unknown as PrismaClient);
   return { repository, tx, transaction };
@@ -360,4 +360,23 @@ test("支払先の紐づけは1件でも競合したらトランザクション�
   const other = { id: "5", updatedAt: entry.updatedAt } as ReviewEntry;
   await expect(repository.setPayee("1", [entry, other], "7")).rejects.toThrow("再読み込み");
   expect(tx.researchFundJournalEntry.updateMany).toHaveBeenCalledTimes(1);
+});
+const payeeInput = { name: "東京タクシー", postalCode: null, address: "", invoiceRegistrationNumber: null };
+test("支払先の作成と紐づけを同じトランザクションで行う", async () => {
+  const { repository, tx, transaction } = setup();
+  await expect(repository.createPayeeAndSetPayee("1", [entry], "5", payeeInput)).resolves.toEqual({ id: "9", politicianId: "5", ...payeeInput });
+  expect(transaction).toHaveBeenCalledTimes(1);
+  expect(tx.researchFundPayee.create).toHaveBeenCalledWith({ data: { ...payeeInput, politicianId: BigInt(5) } });
+  expect(tx.researchFundJournalEntry.updateMany.mock.calls[0][0].data).toEqual({ payeeId: BigInt(9), payeeLinkSource: "manual", payeeLinkConfidence: null, payeeLinkReason: null });
+});
+test("作成した支払先の紐づけが競合したらトランザクションごと中止し、支払先も残さない", async () => {
+  const { repository, tx } = setup(0);
+  await expect(repository.createPayeeAndSetPayee("1", [entry], "5", payeeInput)).rejects.toThrow("再読み込み");
+  expect(tx.researchFundPayee.create).toHaveBeenCalledTimes(1);
+});
+test("同じ名称・住所の支払先があれば、登録済みのエラーにして紐づけない", async () => {
+  const { repository, tx } = setup();
+  tx.researchFundPayee.create.mockRejectedValue(new Prisma.PrismaClientKnownRequestError("duplicate", { code: "P2002", clientVersion: "test" }));
+  await expect(repository.createPayeeAndSetPayee("1", [entry], "5", payeeInput)).rejects.toThrow("同じ名称・住所の支払先がすでに登録されています");
+  expect(tx.researchFundJournalEntry.updateMany).not.toHaveBeenCalled();
 });

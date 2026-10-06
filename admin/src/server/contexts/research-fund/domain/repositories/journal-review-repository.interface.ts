@@ -3,6 +3,7 @@ import type {
   ReviewAccount,
   ReviewEntry,
 } from "@/server/contexts/research-fund/domain/models/journal-review";
+import type { Payee, PayeeInput } from "@/server/contexts/research-fund/domain/models/payee";
 export interface JournalReviewRepository {
   list(bookId: string): Promise<ReviewEntry[]>;
   accounts(): Promise<ReviewAccount[]>;
@@ -46,6 +47,16 @@ export interface JournalReviewRepository {
    * 支払先が帳簿と同じ議員のものでなければ、1 件も変更せずに拒否する。1 件でも競合したら何も変更しない。
    */
   setPayee(bookId: string, entries: readonly ReviewEntry[], payeeId: string | null): Promise<void>;
+  /**
+   * 帳簿の議員の支払先を作成し、支出の仕訳に人の手で紐づける。1 件でも競合したら支払先も作成しない。
+   * 同じ名称・住所の支払先が既にあれば作成も紐づけもしない。
+   */
+  createPayeeAndSetPayee(
+    bookId: string,
+    entries: readonly ReviewEntry[],
+    politicianId: string,
+    input: PayeeInput,
+  ): Promise<Payee>;
   /** 未精算の立替をまとめて精算済にする。1 件でも競合したら何も変更しない。 */
   settleMany(bookId: string, entries: readonly ReviewEntry[], settledAt: string): Promise<void>;
   /** 精算済の立替をまとめて未精算に戻す。1 件でも競合したら何も変更しない。 */

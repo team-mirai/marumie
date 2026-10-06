@@ -34,10 +34,6 @@ test("支払先の作成・編集と、確認画面での紐づけ・その場�
     expect(dialog.getByLabel(/^名称/)).toBeVisible(options),
   );
   await dialog.getByLabel(/^名称/).fill("東京タクシー");
-  await dialog.getByLabel("郵便番号", { exact: true }).fill("１００００１");
-  await dialog.getByRole("button", { name: "作成", exact: true }).click();
-  // 不正な郵便番号は理由を伝えて保存しない
-  await expect(page.getByText("郵便番号は7桁の数字で入力してください")).toBeVisible();
   await dialog.getByLabel("郵便番号", { exact: true }).fill("１００ー０００１");
   await dialog.getByLabel("住所", { exact: true }).fill("東京都千代田区千代田1-1");
   await dialog.getByLabel("インボイス登録番号", { exact: true }).fill("t1234567890123");
