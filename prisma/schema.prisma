@@ -357,6 +357,8 @@ model ResearchFundJournalEntry {
 
   // 以下は議員課提出用の帳簿（衆議院・参議院フォーマット）の列のために持つ。
   // 支払先（支出を受けた者）。NULL = 未特定。帳簿と同じ議員の支払先であることはアプリ側で検証する
+  // （紐づける各リポジトリが同じトランザクションで確かめる）。DB で保証するには仕訳に politician_id を
+  // 非正規化して複合外部キーを張る必要があり、book の議員との二重管理になるため採らない（#1674）
   payeeId BigInt? @map("payee_id")
   // 支払先を誰が紐づけたか。支払先があるときは必ず持つ（DB 側の CHECK 制約で保証）
   payeeLinkSource ResearchFundPayeeLinkSource? @map("payee_link_source")
