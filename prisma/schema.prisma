@@ -245,6 +245,7 @@ model Politician {
   memberships PoliticianOrgMembership[]
   books       ResearchFundBook[]
   prompts     ResearchFundPrompt[]
+  payees      ResearchFundPayee[]
 
   @@index([tenantId])
   @@map("politicians")
@@ -293,6 +294,30 @@ model ResearchFundBook {
   @@map("research_fund_books")
 }
 
+// 支払先（支出を受けた者）。議員課提出用の帳簿に氏名・住所を載せるために持つ。
+// 政治資金の counterparts とは共用しない（調研費は transactions 系と完全に別系統で、
+// counterparts は全テナント横断の一意制約と DB トリガーを持つため）。
+// 住所は NULL を使わず未入力を空文字で表す。counterparts の自然キーが address NULL を
+// 重複扱いせず、同じ取引先の行を何行でも作れてしまう問題（#1482）を繰り返さないため。
+model ResearchFundPayee {
+  id                        BigInt   @id @default(autoincrement())
+  politicianId              BigInt   @map("politician_id")
+  name                      String   @db.VarChar(255) // 氏名（団体にあってはその名称）
+  postalCode                String?  @map("postal_code") @db.VarChar(10) // NULL = 未入力
+  address                   String   @default("") @db.VarChar(255) // 住所（団体にあっては主たる事務所の所在地）。空文字 = 未入力
+  invoiceRegistrationNumber String?  @map("invoice_registration_number") @db.VarChar(14) // "T" + 13桁。NULL = 未入力・インボイス未登録
+  createdAt                 DateTime @default(now()) @map("created_at")
+  updatedAt                 DateTime @updatedAt @map("updated_at")
+
+  politician Politician @relation(fields: [politicianId], references: [id], onDelete: Cascade)
+
+  journalEntries ResearchFundJournalEntry[]
+
+  // 支払先は議員ごとに持つ（同じ店でも議員室ごとに別の行）
+  @@unique([politicianId, name, address])
+  @@map("research_fund_payees")
+}
+
 // 科目マスタ（固定）。シードは prisma/seeds/researchFundAccounts.ts
 model ResearchFundAccount {
   key              String                  @id @db.VarChar(50) // "taxi" など
@@ -325,6 +350,22 @@ model ResearchFundJournalEntry {
   advancedBy  String?                 @map("advanced_by") @db.VarChar(255)
   // 立替の精算日。NULL = 未精算。立替者がいる仕訳だけが持てる（DB 側の CHECK 制約で保証）
   settledAt   DateTime?               @map("settled_at") @db.Date
+
+  // 以下は議員課提出用の帳簿（衆議院・参議院フォーマット）の列のために持つ。
+  // 支払先（支出を受けた者）。NULL = 未特定。帳簿と同じ議員の支払先であることはアプリ側で検証する
+  payeeId BigInt? @map("payee_id")
+  // 支払先を誰が紐づけたか。支払先があるときは必ず持つ（DB 側の CHECK 制約で保証）
+  payeeLinkSource ResearchFundPayeeLinkSource? @map("payee_link_source")
+  // AI が紐づけたときの確信度（0.000〜1.000）と根拠。source = ai のときだけ持てる
+  payeeLinkConfidence Decimal? @map("payee_link_confidence") @db.Decimal(4, 3)
+  payeeLinkReason     String?  @map("payee_link_reason")
+  // 領収書等を徴し難かった事情。領収書（document_id）が無い仕訳だけが持てる
+  receiptAbsenceReason String? @map("receipt_absence_reason")
+  // 資金管理団体からの支出
+  fromFundManagementOrg Boolean @default(false) @map("from_fund_management_org")
+  // 「1万円超として扱う」（参議院）の手動上書き。NULL = 金額からの自動判定に従う
+  treatAsOverTenThousand Boolean? @map("treat_as_over_ten_thousand")
+
   publishedAt DateTime?               @map("published_at")
   createdById String?                 @map("created_by_id")
   hash        String                  @default("") @db.VarChar(255) // 再取込・二重登録の重複検知
@@ -334,6 +375,10 @@ model ResearchFundJournalEntry {
   book      ResearchFundBook      @relation(fields: [bookId], references: [id], onDelete: Cascade)
   document  ResearchFundDocument? @relation(fields: [documentId], references: [id], onDelete: SetNull)
   createdBy User?                 @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  // 紐づけ先を消すときは先に紐づけを外す（誰が紐づけたかだけが残る状態を作らない）。
+  // Restrict ではなく NoAction にするのは、議員の削除で支払先と仕訳が同時に消える
+  // カスケードを止めないため（NoAction は文の終わりに検査する）
+  payee     ResearchFundPayee?    @relation(fields: [payeeId], references: [id], onDelete: NoAction)
 
   lines      ResearchFundJournalLine[]
   groupItems ResearchFundGroupItem[]
@@ -341,6 +386,8 @@ model ResearchFundJournalEntry {
   @@index([bookId, status, entryDate(sort: Desc)])
   @@unique([bookId, hash]) // 再取込・二重登録の重複検知を DB 側でも保証する
   @@index([documentId])
+  // 支払先ごとの仕訳の絞り込み・支払先の削除可否の判定用
+  @@index([payeeId])
   // 立替者ごとの未精算の集計・絞り込み用
   @@index([bookId, advancedBy, settledAt], map: "research_fund_journal_entries_advance_idx")
   @@map("research_fund_journal_entries")
@@ -372,6 +419,8 @@ model ResearchFundDocument {
   maskedKey        String?  @map("masked_key") @db.VarChar(255) // 公開用マスキング済み（当面は未使用＝原本公開）
   mime             String   @db.VarChar(100) // image/jpeg | image/png | application/pdf
   originalFilename String   @map("original_filename") @db.VarChar(255)
+  // 領収書等番号（議員課提出用の帳簿の列）。帳簿の中で一意な通し番号。NULL = 未採番
+  receiptNumber    Int?     @map("receipt_number")
   createdAt        DateTime @default(now()) @map("created_at")
   updatedAt        DateTime @updatedAt @map("updated_at")
 
@@ -381,6 +430,8 @@ model ResearchFundDocument {
   journalEntries ResearchFundJournalEntry[]
   scanJobs       ResearchFundScanJob[]
 
+  // 領収書等番号は帳簿の中で一意（未採番の NULL は重複してよい）
+  @@unique([bookId, receiptNumber])
   @@index([bookId])
   @@index([batchId])
   @@map("research_fund_documents")
@@ -523,6 +574,13 @@ enum ResearchFundEntrySource {
 enum ResearchFundJournalSide {
   debit
   credit
+}
+
+// 支払先を仕訳に紐づけた主体。manual = 人が選んだ / rule = 支払先名のルール照合 / ai = AI の推定
+enum ResearchFundPayeeLinkSource {
+  manual
+  rule
+  ai
 }
 
 enum ResearchFundScanJobStatus {
