@@ -12,7 +12,7 @@ import type { JournalReviewRepository } from "@/server/contexts/research-fund/do
 /**
  * 支出の仕訳の入力を検証し、保存する形（複式の行・hash）に組み立てる。
  * 手動作成と編集の保存で同じ検証をするために、ここに置く。
- * 確認済にできるかの判定は JournalOperation.approve が持つので、ここでは扱わない。
+ * 科目が要確認のまま確認済にできないルールは JournalOperation（approve / edit）が持つので、ここでは扱わない。
  */
 export async function prepareExpenseJournalWrite(
   repository: JournalReviewRepository,

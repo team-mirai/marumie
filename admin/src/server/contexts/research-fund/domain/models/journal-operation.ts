@@ -57,14 +57,26 @@ function settled(entry: OperableEntry, one: string): OperationRejection | null {
 }
 
 export const JournalOperation = {
-  /** 内容の編集。精算後に金額が変わると精算した額と記録が合わなくなるので、先に未精算に戻させる */
-  edit(entry: OperableEntry, amount: number): OperationRejection | null {
-    return (
-      published(entry) ??
-      (entry.amount === amount
-        ? null
-        : settled(entry, "精算済の仕訳は金額を変更できません。先に未精算に戻してください"))
-    );
+  /**
+   * 内容の編集。精算後に金額が変わると精算した額と記録が合わなくなるので、先に未精算に戻させる。
+   * 確認済の仕訳は科目を要確認に戻せない（確認済と科目未確定が同時に成り立つ状態を作らない）。
+   * accountKey には保存する科目を渡す（省略すると今の科目で判定する）。
+   */
+  edit(
+    entry: OperableEntry,
+    amount: number,
+    accountKey: string = entry.accountKey,
+  ): OperationRejection | null {
+    const rejection = published(entry);
+    if (rejection) return rejection;
+    if (entry.status === "approved" && isAccountUnconfirmed(accountKey))
+      return {
+        one: "科目を確定してから確認済にしてください",
+        many: `「${entry.description}」は科目が要確認です`,
+      };
+    return entry.amount === amount
+      ? null
+      : settled(entry, "精算済の仕訳は金額を変更できません。先に未精算に戻してください");
   },
   /**
    * 確認済にする。支給は下書きを経ずに確認済で作るので対象にならない。

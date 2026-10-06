@@ -85,6 +85,12 @@ describe("JournalOperation.approve", () => {
 
 describe("JournalOperation.edit", () => {
   const settled = { ...base, status: "approved" as const, advancedBy: "秘書A", settledAt: "2026-09-01" };
+  it("確認済の仕訳は科目を要確認に戻せない", () => {
+    expect(JournalOperation.edit({ ...base, status: "approved" }, base.amount, "needs-review")?.one).toBe("科目を確定してから確認済にしてください");
+  });
+  it("下書きは科目が要確認のままでも保存できる", () => {
+    expect(JournalOperation.edit(base, base.amount, "needs-review")).toBeNull();
+  });
   it("精算済の仕訳は金額を変えなければ編集できる", () => {
     expect(JournalOperation.edit(settled, 1200)).toBeNull();
   });
