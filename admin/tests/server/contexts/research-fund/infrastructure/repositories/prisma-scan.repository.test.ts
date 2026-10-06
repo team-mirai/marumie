@@ -462,7 +462,7 @@ test("読み直しは、元の下書きの立替者が1種類だけなら作り�
   entry.count.mockResolvedValue(0);
   entry.deleteMany.mockResolvedValue({ count: 1 });
   entry.createManyAndReturn.mockResolvedValue([{ id: BigInt(101), hash: "hash-a" }]);
-  entry.findMany.mockResolvedValue([{ advancedBy: "秘書A" }, { advancedBy: "秘書A" }]);
+  entry.findMany.mockResolvedValue([{ advancedBy: "秘書A", payeeId: null, payeeLinkSource: null }, { advancedBy: "秘書A", payeeId: null, payeeLinkSource: null }]);
   await repository.completeJob({ ...COMPLETE_INPUT, replaceDrafts: true });
   // 立替者は消す前に読む（消したあとでは引き継ぐ値が分からない）
   expect(entry.findMany.mock.invocationCallOrder[0]).toBeLessThan(
@@ -474,9 +474,9 @@ test("読み直しは、元の下書きの立替者が1種類だけなら作り�
 });
 
 test.each([
-  ["複数の立替者が混ざっている", [{ advancedBy: "秘書A" }, { advancedBy: "秘書B" }]],
-  ["立替なしが混ざっている", [{ advancedBy: "秘書A" }, { advancedBy: null }]],
-  ["立替者が入っていない", [{ advancedBy: null }]],
+  ["複数の立替者が混ざっている", [{ advancedBy: "秘書A", payeeId: null, payeeLinkSource: null }, { advancedBy: "秘書B", payeeId: null, payeeLinkSource: null }]],
+  ["立替なしが混ざっている", [{ advancedBy: "秘書A", payeeId: null, payeeLinkSource: null }, { advancedBy: null, payeeId: null, payeeLinkSource: null }]],
+  ["立替者が入っていない", [{ advancedBy: null, payeeId: null, payeeLinkSource: null }]],
 ])("読み直しで %s 書類は立替者を引き継がない", async (_name, replaced) => {
   const { entry, repository } = setup();
   entry.count.mockResolvedValue(0);
@@ -484,7 +484,61 @@ test.each([
   entry.createManyAndReturn.mockResolvedValue([{ id: BigInt(101), hash: "hash-a" }]);
   entry.findMany.mockResolvedValue(replaced);
   await repository.completeJob({ ...COMPLETE_INPUT, replaceDrafts: true });
-  expect(entry.createManyAndReturn.mock.calls[0][0].data[0]).toMatchObject({ advancedBy: null });
+  expect(entry.createManyAndReturn.mock.calls[0][0].data[0]).toMatchObject({ advancedBy: null, payeeId: null, payeeLinkSource: null });
+});
+
+test("読み直しは、元の下書きで人が選んだ支払先を引き継ぎ、帳簿と同じ議員のものかを確かめる", async () => {
+  const { entry, payee, repository } = setup();
+  entry.count.mockResolvedValue(0);
+  entry.deleteMany.mockResolvedValue({ count: 2 });
+  entry.createManyAndReturn.mockResolvedValue([{ id: BigInt(101), hash: "hash-a" }]);
+  entry.findMany.mockResolvedValue([
+    { advancedBy: null, payeeId: BigInt(7), payeeLinkSource: "manual" },
+    { advancedBy: null, payeeId: BigInt(7), payeeLinkSource: "manual" },
+  ]);
+  payee.count.mockResolvedValue(1);
+  // 発行元の照合で別の支払先が決まっても、人が選んだ支払先を優先する
+  await repository.completeJob({ ...COMPLETE_INPUT, replaceDrafts: true, payeeId: "8" });
+  expect(payee.count).toHaveBeenCalledWith({
+    where: { id: BigInt(7), politician: { books: { some: { id: BigInt(12) } } } },
+  });
+  expect(entry.createManyAndReturn.mock.calls[0][0].data[0]).toMatchObject({
+    payeeId: BigInt(7),
+    payeeLinkSource: "manual",
+  });
+});
+
+test("読み直しで引き継ぐ支払先が帳簿と別の議員のものなら紐づけない", async () => {
+  const { entry, payee, repository } = setup();
+  entry.count.mockResolvedValue(0);
+  entry.deleteMany.mockResolvedValue({ count: 1 });
+  entry.createManyAndReturn.mockResolvedValue([{ id: BigInt(101), hash: "hash-a" }]);
+  entry.findMany.mockResolvedValue([
+    { advancedBy: null, payeeId: BigInt(7), payeeLinkSource: "manual" },
+  ]);
+  payee.count.mockResolvedValue(0);
+  await repository.completeJob({ ...COMPLETE_INPUT, replaceDrafts: true });
+  expect(entry.createManyAndReturn.mock.calls[0][0].data[0]).toMatchObject({
+    payeeId: null,
+    payeeLinkSource: null,
+  });
+});
+
+test("読み直しで元の下書きの支払先が混ざっていれば、照合結果だけで紐づける", async () => {
+  const { entry, payee, repository } = setup();
+  entry.count.mockResolvedValue(0);
+  entry.deleteMany.mockResolvedValue({ count: 2 });
+  entry.createManyAndReturn.mockResolvedValue([{ id: BigInt(101), hash: "hash-a" }]);
+  entry.findMany.mockResolvedValue([
+    { advancedBy: null, payeeId: BigInt(7), payeeLinkSource: "manual" },
+    { advancedBy: null, payeeId: BigInt(9), payeeLinkSource: "manual" },
+  ]);
+  payee.count.mockResolvedValue(1);
+  await repository.completeJob({ ...COMPLETE_INPUT, replaceDrafts: true, payeeId: "8" });
+  expect(entry.createManyAndReturn.mock.calls[0][0].data[0]).toMatchObject({
+    payeeId: BigInt(8),
+    payeeLinkSource: "rule",
+  });
 });
 
 test("通常のスキャンでは立替者を付けない（読み取れないので空のまま）", async () => {
@@ -492,7 +546,7 @@ test("通常のスキャンでは立替者を付けない（読み取れない�
   entry.createManyAndReturn.mockResolvedValue([{ id: BigInt(101), hash: "hash-a" }]);
   await repository.completeJob({ ...COMPLETE_INPUT, replaceDrafts: false });
   expect(entry.findMany).not.toHaveBeenCalled();
-  expect(entry.createManyAndReturn.mock.calls[0][0].data[0]).toMatchObject({ advancedBy: null });
+  expect(entry.createManyAndReturn.mock.calls[0][0].data[0]).toMatchObject({ advancedBy: null, payeeId: null, payeeLinkSource: null });
 });
 
 test("読み直しの時点で確認済・公開中の仕訳がある書類は、新しい下書きを作らずに失敗させる", async () => {

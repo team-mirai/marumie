@@ -13,7 +13,12 @@ import type {
   CreateScanBatchInput,
   ScanRepository,
 } from "@/server/contexts/research-fund/domain/repositories/scan-repository.interface";
-import type { Payee } from "@/server/contexts/research-fund/domain/models/payee";
+import {
+  inheritedPayeeLink,
+  type Payee,
+  type PayeeLink,
+  rereadPayeeLink,
+} from "@/server/contexts/research-fund/domain/models/payee";
 import type { ResearchFundAccount } from "@/server/contexts/research-fund/domain/models/journal-posting";
 import type { ScanDraftEntry } from "@/server/contexts/research-fund/domain/services/scan-journal-builder";
 
@@ -201,6 +206,8 @@ export class PrismaScanRepository implements ScanRepository {
       // 読み直しで引き継ぐ立替者。元の下書きの立替者が 1 種類だけなら作り直した下書きに付け直す
       // （立替は読み取れないので LLM の結果には含まれず、そのままでは入力済みの立替者が消える）。
       let advancedBy: string | null = null;
+      // 読み直しで引き継ぐ支払先。元の下書きの支払先が 1 種類だけなら紐づけ元ごと付け直す
+      let inheritedPayee: PayeeLink | null = null;
       if (input.replaceDrafts) {
         // 読み直しは書類単位で下書きを置き換える。確認済・公開中の仕訳がある書類は
         // （依頼の後に確認済にされた場合も）置き換えず、元の仕訳をそのまま残す。
@@ -210,9 +217,9 @@ export class PrismaScanRepository implements ScanRepository {
         // 同じ書類の読み直しが並行して完了しても、書類の行ロックで直列化する。後続は先行の
         // 新しい下書きがコミットされてから消すので、両方の結果が並んで残らない
         await tx.$queryRaw`SELECT id FROM research_fund_documents WHERE id = ${documentId} FOR UPDATE`;
-        // 立替者を読む前に下書きの行ロックも取る。書類のロックは立替者の更新
-        // （setAdvancedBy は書類を参照しない）を止めないので、ロック無しでは読んだ後・消す前に
-        // コミットされた立替者を取りこぼし、作り直した下書きに古い立替者を付けてしまう。
+        // 立替者・支払先を読む前に下書きの行ロックも取る。書類のロックは立替者・支払先の更新
+        // （setAdvancedBy などは書類を参照しない）を止めないので、ロック無しでは読んだ後・消す前に
+        // コミットされた値を取りこぼし、作り直した下書きに古い立替者・支払先を付けてしまう。
         await tx.$queryRaw`
           SELECT id FROM research_fund_journal_entries
           WHERE book_id = ${bookId} AND document_id = ${documentId} AND status = 'draft'
@@ -220,9 +227,15 @@ export class PrismaScanRepository implements ScanRepository {
         `;
         const replaced = await tx.researchFundJournalEntry.findMany({
           where: { bookId, documentId, status: "draft" },
-          select: { advancedBy: true },
+          select: { advancedBy: true, payeeId: true, payeeLinkSource: true },
         });
         advancedBy = inheritedAdvancedBy(replaced.map((row) => row.advancedBy)).advancedBy;
+        inheritedPayee = inheritedPayeeLink(
+          replaced.map((row) => ({
+            payeeId: row.payeeId === null ? null : row.payeeId.toString(),
+            payeeLinkSource: row.payeeLinkSource,
+          })),
+        );
         await tx.researchFundJournalEntry.deleteMany({
           where: { bookId, documentId, status: "draft" },
         });
@@ -235,14 +248,16 @@ export class PrismaScanRepository implements ScanRepository {
             "確認済・公開中の仕訳があるため、読み直した結果で置き換えませんでした",
           );
       }
-      // 発行元の照合で決まった支払先が帳簿と同じ議員のものかを同じトランザクションで確かめる
+      // 読み直しでは、人が選んだ支払先の引き継ぎを発行元の照合より優先する（優先順位は rereadPayeeLink）
+      const link = rereadPayeeLink(inheritedPayee, input.payeeId);
+      // 紐づける支払先（照合の結果・引き継ぎとも）が帳簿と同じ議員のものかを同じトランザクションで確かめる
       // （DB の外部キーは支払先の存在しか見ないため。#1674）。違えば紐づけずに下書きを作る
-      const payeeId =
-        input.payeeId !== null &&
+      const payee =
+        link !== null &&
         (await tx.researchFundPayee.count({
-          where: { id: BigInt(input.payeeId), politician: { books: { some: { id: bookId } } } },
+          where: { id: BigInt(link.payeeId), politician: { books: { some: { id: bookId } } } },
         })) === 1
-          ? BigInt(input.payeeId)
+          ? link
           : null;
       // 同じ書類を読み直しても仕訳を二重に作らない。hash は日付・金額・項目名・書類IDから作る。
       // (book_id, hash) の一意制約に任せて既存分は読み飛ばす（ON CONFLICT DO NOTHING）ので、
@@ -259,8 +274,8 @@ export class PrismaScanRepository implements ScanRepository {
           note: entry.note,
           memo: entry.memo,
           advancedBy,
-          payeeId,
-          payeeLinkSource: payeeId === null ? null : ("rule" as const),
+          payeeId: payee === null ? null : BigInt(payee.payeeId),
+          payeeLinkSource: payee?.source ?? null,
           hash: entry.hash,
           createdById: input.userId,
         })),

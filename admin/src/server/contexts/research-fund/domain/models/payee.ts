@@ -203,3 +203,45 @@ export function sortPayees<T extends Pick<Payee, "name" | "address">>(payees: re
     (a, b) => a.name.localeCompare(b.name, "ja") || a.address.localeCompare(b.address, "ja"),
   );
 }
+
+/** 仕訳と支払先の紐づけ（どの支払先に、どの主体が紐づけたか） */
+export interface PayeeLink {
+  payeeId: string;
+  source: PayeeLinkSource;
+}
+
+/**
+ * スキャンの読み直しで作り直す下書きに引き継ぐ支払先を決める（立替者の inheritedAdvancedBy と同じ考え方）。
+ *
+ * 読み直しは書類単位で下書きを作り直すので、そのままでは紐づけた支払先が消える。
+ * 元の下書きの支払先が 1 種類だけ（全件が同じ支払先）なら引き継ぐ。未設定の下書きが混ざっていれば引き継がない。
+ * 同じ支払先でも紐づけ元が下書きごとに違うときは、人が選んだ（manual）ものがあれば manual として引き継ぐ。
+ */
+export function inheritedPayeeLink(
+  rows: readonly { payeeId: string | null; payeeLinkSource: PayeeLinkSource | null }[],
+): PayeeLink | null {
+  const distinct = new Set(rows.map((row) => row.payeeId));
+  const [payeeId] = distinct;
+  if (distinct.size !== 1 || !payeeId) return null;
+  // 紐づけ元が記録されていない支払先は、主体が分からないので人が選んだものとして扱う
+  const sources = new Set(rows.map((row) => row.payeeLinkSource ?? "manual"));
+  const [first] = sources;
+  return { payeeId, source: sources.has("manual") || !first ? "manual" : first };
+}
+
+/**
+ * 読み直しで作り直す下書きに紐づける支払先を、引き継いだ支払先と発行元の照合結果から決める。
+ *
+ * 優先順位: 人が選んだ支払先（manual）の引き継ぎ > 今回の発行元の照合（rule） > 照合・推定で付いていた支払先の引き継ぎ。
+ * - 人の判断は機械の照合より信頼できるので、照合で別の支払先が決まっても人が選んだものを残す
+ * - 照合・推定で付いていた支払先は、今回の読み取り結果で照合し直せたならそちらを採る（読み直しは読み取りを正す操作のため）
+ * - 今回の照合で決まらなければ、前に付いていた支払先を消さずに残す
+ */
+export function rereadPayeeLink(
+  inherited: PayeeLink | null,
+  matchedPayeeId: string | null,
+): PayeeLink | null {
+  if (inherited?.source === "manual") return inherited;
+  if (matchedPayeeId !== null) return { payeeId: matchedPayeeId, source: "rule" };
+  return inherited;
+}

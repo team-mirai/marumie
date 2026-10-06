@@ -1,9 +1,11 @@
 import {
+  inheritedPayeeLink,
   isPayeeUnset,
   normalizeInvoiceRegistrationNumber,
   normalizePostalCode,
   payeeAccessRejection,
   payeeFormInputFromIssuer,
+  rereadPayeeLink,
   sortPayees,
   validatePayeeInput,
   withSameDocumentEntries,
@@ -119,5 +121,41 @@ describe("payeeFormInputFromIssuer", () => {
 
   it("形の合わないインボイス登録番号・読み取れなかった項目は未入力にする", () => {
     expect(payeeFormInputFromIssuer({ name: "JR東日本", address: null, phone: null, invoice_registration_number: "T123" })).toEqual({ name: "JR東日本", postalCode: "", address: "", invoiceRegistrationNumber: "" });
+  });
+});
+
+describe("inheritedPayeeLink", () => {
+  test("元の下書きの支払先が1種類だけなら紐づけ元ごと引き継ぐ", () => {
+    expect(inheritedPayeeLink([{ payeeId: "7", payeeLinkSource: "rule" }, { payeeId: "7", payeeLinkSource: "rule" }])).toEqual({ payeeId: "7", source: "rule" });
+  });
+  test("同じ支払先で紐づけ元が混ざっていれば、人が選んだものとして引き継ぐ", () => {
+    expect(inheritedPayeeLink([{ payeeId: "7", payeeLinkSource: "rule" }, { payeeId: "7", payeeLinkSource: "manual" }])).toEqual({ payeeId: "7", source: "manual" });
+  });
+  test("紐づけ元が記録されていなければ人が選んだものとして扱う", () => {
+    expect(inheritedPayeeLink([{ payeeId: "7", payeeLinkSource: null }])).toEqual({ payeeId: "7", source: "manual" });
+  });
+  test.each([
+    ["支払先が混ざっている", [{ payeeId: "7", payeeLinkSource: "manual" as const }, { payeeId: "8", payeeLinkSource: "manual" as const }]],
+    ["未設定が混ざっている", [{ payeeId: "7", payeeLinkSource: "manual" as const }, { payeeId: null, payeeLinkSource: null }]],
+    ["支払先が入っていない", [{ payeeId: null, payeeLinkSource: null }]],
+    ["下書きが無い", []],
+  ])("%s なら引き継がない", (_name, rows) => {
+    expect(inheritedPayeeLink(rows)).toBeNull();
+  });
+});
+
+describe("rereadPayeeLink", () => {
+  test("人が選んだ支払先は、照合で別の支払先が決まっても引き継ぐ", () => {
+    expect(rereadPayeeLink({ payeeId: "7", source: "manual" }, "8")).toEqual({ payeeId: "7", source: "manual" });
+  });
+  test.each(["rule", "ai"] as const)("%s で付いていた支払先より今回の照合結果を採る", (source) => {
+    expect(rereadPayeeLink({ payeeId: "7", source }, "8")).toEqual({ payeeId: "8", source: "rule" });
+  });
+  test("今回の照合で決まらなければ前に付いていた支払先を残す", () => {
+    expect(rereadPayeeLink({ payeeId: "7", source: "rule" }, null)).toEqual({ payeeId: "7", source: "rule" });
+  });
+  test("引き継ぐものが無ければ照合結果を「ルール照合」として紐づける", () => {
+    expect(rereadPayeeLink(null, "8")).toEqual({ payeeId: "8", source: "rule" });
+    expect(rereadPayeeLink(null, null)).toBeNull();
   });
 });
