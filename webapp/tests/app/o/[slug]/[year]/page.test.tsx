@@ -46,8 +46,6 @@ async function renderSections(): Promise<ReactElement[]> {
 }
 
 describe("OrgPage の調査研究費セクション", () => {
-  const originalValue = process.env.HIDE_RESEARCH_FUND_ENTRY;
-
   beforeEach(() => {
     loadOrganizationsMock.mockResolvedValue({
       default: "team-mirai",
@@ -58,28 +56,21 @@ describe("OrgPage の調査研究費セクション", () => {
     loadResearchFundPartySummaryMock.mockResolvedValue({ asOfDate: null });
   });
 
-  afterEach(() => {
-    if (originalValue === undefined) {
-      delete process.env.HIDE_RESEARCH_FUND_ENTRY;
-    } else {
-      process.env.HIDE_RESEARCH_FUND_ENTRY = originalValue;
-    }
-  });
-
-  it("未設定なら、所属議員の調研費があればセクションを出す", async () => {
-    delete process.env.HIDE_RESEARCH_FUND_ENTRY;
-
+  it("調研費を公開する所属議員がいればセクションを出す", async () => {
     const sections = await renderSections();
 
     expect(sections.some((section) => section.type === ResearchFundPartySection)).toBe(true);
+    expect(loadResearchFundPartySummaryMock).toHaveBeenCalledWith({
+      slug: "team-mirai",
+      financialYear: 2026,
+    });
   });
 
-  it("隠す設定なら、所属議員の調研費があってもセクションを出さない", async () => {
-    process.env.HIDE_RESEARCH_FUND_ENTRY = "true";
+  it("調研費を公開する所属議員がいなければ（loader が null）セクションを出さない", async () => {
+    loadResearchFundPartySummaryMock.mockResolvedValue(null);
 
     const sections = await renderSections();
 
     expect(sections.some((section) => section.type === ResearchFundPartySection)).toBe(false);
-    expect(loadResearchFundPartySummaryMock).not.toHaveBeenCalled();
   });
 });

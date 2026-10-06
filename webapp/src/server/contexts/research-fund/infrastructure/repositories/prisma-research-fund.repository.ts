@@ -87,7 +87,7 @@ export class PrismaResearchFundRepository implements ResearchFundRepository {
         nextUpdateNote: true,
         policyComment: true,
         details: true,
-        politician: { select: { name: true, slug: true } },
+        politician: { select: { name: true, slug: true, isResearchFundPublic: true } },
         journalEntries: {
           where: { status: "published" },
           select: entrySelect,
@@ -186,7 +186,8 @@ export class PrismaResearchFundRepository implements ResearchFundRepository {
     }));
 
     return {
-      politician: book.politician,
+      politician: { name: book.politician.name, slug: book.politician.slug },
+      isPublic: book.politician.isResearchFundPublic,
       financialYear: book.financialYear,
       asOfDate: book.asOfDate ? dateOf(book.asOfDate) : null,
       nextUpdateNote: book.nextUpdateNote,
@@ -211,7 +212,8 @@ export class PrismaResearchFundRepository implements ResearchFundRepository {
         displayName: true,
         politicianMemberships: {
           // 現在所属している議員だけを出す（ended_on が入っていれば離党・任期満了）。
-          where: { endedOn: null },
+          // 調研費を「公開しない」議員は、準備中としても出さない。
+          where: { endedOn: null, politician: { isResearchFundPublic: true } },
           orderBy: [{ politician: { displayOrder: "asc" } }, { politicianId: "asc" }],
           select: {
             politician: {
@@ -290,7 +292,8 @@ export class PrismaResearchFundRepository implements ResearchFundRepository {
   async findPoliticians(financialYear: number): Promise<ResearchFundPoliticianSource[]> {
     const politicians = await this.prisma.politician.findMany({
       // 帳簿の無い議員はセレクタに出さない（開いても中身が無いため）。
-      where: { books: { some: { financialYear } } },
+      // 調研費を「公開しない」議員も出さない（URL を知っていれば開ける）。
+      where: { isResearchFundPublic: true, books: { some: { financialYear } } },
       orderBy: [{ displayOrder: "asc" }, { id: "asc" }],
       select: {
         name: true,
@@ -324,8 +327,12 @@ export class PrismaResearchFundRepository implements ResearchFundRepository {
 
   async findPublishedPageRefs(): Promise<PublishedResearchFundPageRef[]> {
     // 公開する仕訳が 1 件も無い帳簿はページとして中身が無いので sitemap に載せない。
+    // 調研費を「公開しない」議員のページも載せない。
     const books = await this.prisma.researchFundBook.findMany({
-      where: { journalEntries: { some: { status: "published" } } },
+      where: {
+        politician: { isResearchFundPublic: true },
+        journalEntries: { some: { status: "published" } },
+      },
       select: { financialYear: true, politician: { select: { slug: true } } },
       orderBy: [{ politicianId: "asc" }, { financialYear: "asc" }],
     });

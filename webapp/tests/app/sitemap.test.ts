@@ -16,18 +16,7 @@ const loadPublishedResearchFundPagesMock = loadPublishedResearchFundPages as jes
 const BASE_URL = process.env.WEBAPP_URL || "https://marumie.team-mir.ai";
 
 describe("sitemap", () => {
-  const originalHideValue = process.env.HIDE_RESEARCH_FUND_ENTRY;
-
-  afterEach(() => {
-    if (originalHideValue === undefined) {
-      delete process.env.HIDE_RESEARCH_FUND_ENTRY;
-    } else {
-      process.env.HIDE_RESEARCH_FUND_ENTRY = originalHideValue;
-    }
-  });
-
   beforeEach(() => {
-    delete process.env.HIDE_RESEARCH_FUND_ENTRY;
     loadOrganizationsMock.mockResolvedValue({
       default: "team-mirai",
       organizations: [{ slug: "team-mirai", orgName: null, displayName: "チームみらい" }],
@@ -64,17 +53,5 @@ describe("sitemap", () => {
     const urls = (await sitemap()).map((entry) => entry.url);
 
     expect(urls.filter((url) => url.includes("/p/"))).toEqual([]);
-  });
-
-  it("調研費の導線を隠す設定なら、公開中の議員ページがあっても /p/ の URL を出さない", async () => {
-    process.env.HIDE_RESEARCH_FUND_ENTRY = "true";
-    loadPublishedResearchFundPagesMock.mockResolvedValue([
-      { slug: "sample-taro", financialYear: 2026 },
-    ]);
-
-    const urls = (await sitemap()).map((entry) => entry.url);
-
-    expect(urls.filter((url) => url.includes("/p/"))).toEqual([]);
-    expect(urls).toContain(`${BASE_URL}/o/team-mirai/2026`);
   });
 });

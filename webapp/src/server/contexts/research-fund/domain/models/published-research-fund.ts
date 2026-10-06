@@ -54,6 +54,8 @@ export interface PublishedExpenditureGroup {
 
 export interface PublishedResearchFund {
   politician: { name: string; slug: string };
+  /** 議員が調研費を「公開する」設定か。false でもページは表示し、導線・sitemap から外して noindex にする */
+  isPublic: boolean;
   financialYear: number;
   /** 「2026.8.20更新」。未設定なら null */
   asOfDate: string | null;

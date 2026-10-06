@@ -72,6 +72,8 @@ export interface ResearchFundGroupView {
 
 export interface ResearchFundPageData {
   politician: { name: string; slug: string };
+  /** 議員が調研費を「公開する」設定か。false ならページに noindex を付ける */
+  isPublic: boolean;
   financialYear: number;
   asOfDate: string | null;
   /** 更新日に添える公開範囲「2026年2月〜8月支給分」。公開月が無ければ null */

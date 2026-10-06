@@ -12,6 +12,7 @@ const politician = {
   name: "議員",
   slug: "member",
   termStart: new Date("2026-02-08"),
+  isResearchFundPublic: false,
   memberships: [],
 };
 function setup() {
@@ -105,6 +106,7 @@ test("無所属と所属ありの一覧をシリアライズする", async () =>
     id: "1",
     politicalOrganizationId: "",
     politicalOrganizationName: null,
+    isResearchFundPublic: false,
   });
   expect(result[1].politicalOrganizationName).toBe("政党");
 });
@@ -117,6 +119,7 @@ test("ID指定で議員を取得し、見つからなければnullを返す", as
     id: "1",
     politicalOrganizationId: "",
     politicalOrganizationName: null,
+    isResearchFundPublic: false,
   });
   expect(tx.politician.findUnique).toHaveBeenCalledWith({
     where: { id: BigInt(1) },
@@ -190,4 +193,13 @@ test("予期しない保存エラーの内部情報を公開しない", async ()
   await expect(repository.save(null, input)).rejects.toThrow(
     "議員の保存に失敗しました。もう一度お試しください",
   );
+});
+
+test("調研費の公開フラグだけを更新する", async () => {
+  const { tx, repository } = setup();
+  await repository.setResearchFundPublic("1", true);
+  expect(tx.politician.update).toHaveBeenCalledWith({
+    where: { id: BigInt(1) },
+    data: { isResearchFundPublic: true },
+  });
 });

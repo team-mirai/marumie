@@ -6,6 +6,7 @@ import { PageHeader } from "@/client/components/layout/PageHeader";
 import { Button, Card, CardContent } from "@/client/components/ui";
 import { cn } from "@/client/lib";
 import { DeletePoliticianButton } from "@/client/components/politicians/DeletePoliticianButton";
+import { ResearchFundPublicSwitch } from "@/client/components/politicians/ResearchFundPublicSwitch";
 import { loadPoliticians } from "@/server/contexts/shared/presentation/loaders/load-politicians";
 
 export default async function PoliticiansPage() {
@@ -65,6 +66,7 @@ export default async function PoliticiansPage() {
                   当選{" "}
                   <span className="font-latin">{p.termStart.slice(0, 7).replaceAll("-", ".")}</span>
                 </p>
+                <ResearchFundPublicSwitch id={p.id} isResearchFundPublic={p.isResearchFundPublic} />
                 <div className="flex flex-wrap items-center gap-2">
                   <Button variant="outline" size="sm" asChild>
                     <Link href={`/politicians/${p.id}/books`}>年度帳簿</Link>

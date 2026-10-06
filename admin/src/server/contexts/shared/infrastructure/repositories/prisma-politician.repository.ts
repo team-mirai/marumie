@@ -20,6 +20,7 @@ function toModel(row: Row): Politician {
     termStart: row.termStart.toISOString().slice(0, 10),
     politicalOrganizationId: membership ? String(membership.politicalOrganizationId) : "",
     politicalOrganizationName: membership?.politicalOrganization.displayName ?? null,
+    isResearchFundPublic: row.isResearchFundPublic,
   };
 }
 
@@ -84,6 +85,12 @@ export class PrismaPoliticianRepository implements IPoliticianRepository {
       }
       throw new Error("議員の保存に失敗しました。もう一度お試しください");
     }
+  }
+  async setResearchFundPublic(id: string, isPublic: boolean) {
+    await this.prisma.politician.update({
+      where: { id: BigInt(id) },
+      data: { isResearchFundPublic: isPublic },
+    });
   }
   async delete(id: string) {
     await this.prisma.$transaction(async (tx) => {

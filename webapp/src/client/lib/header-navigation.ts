@@ -39,7 +39,7 @@ const POLITICIAN_SECTIONS: HeaderNavigationItem[] = [
 ];
 
 interface HeaderNavigationOptions {
-  /** 政治団体ページのナビに「調査研究費」を出すか（調研費の導線を隠す設定では false） */
+  /** 政治団体ページのナビに「調査研究費」を出すか（調研費を「公開する」議員がいなければ false） */
   showResearchFund?: boolean;
 }
 

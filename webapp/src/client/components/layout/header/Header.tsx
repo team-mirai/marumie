@@ -3,28 +3,24 @@ import HeaderClient from "@/client/components/layout/header/HeaderClient";
 import { loadOrganizations } from "@/server/contexts/public-finance/presentation/loaders/load-organizations";
 import type { ResearchFundPoliticianEntry } from "@/server/contexts/research-fund/domain/models/research-fund-politician-list";
 import { loadResearchFundPoliticians } from "@/server/contexts/research-fund/presentation/loaders/load-research-fund-politicians";
-import { isResearchFundEntryHidden } from "@/server/contexts/research-fund/presentation/loaders/research-fund-entry-visibility";
 
 /** 組織セレクタに出す年度。`OrganizationYearSheet` の `AVAILABLE_YEARS` と揃える。 */
 const AVAILABLE_YEARS = [2025, 2026] as const;
 
 export default async function Header() {
-  const hideResearchFund = isResearchFundEntryHidden();
   const [organizationsData, politicianLists] = await Promise.all([
     loadOrganizations(),
-    // 導線を隠す設定のときは、公開済みの議員がいてもセレクターに出さない。
-    hideResearchFund
-      ? AVAILABLE_YEARS.map(() => [] as ResearchFundPoliticianEntry[])
-      : // 年度を切り替えたときに、その年度に帳簿のある議員だけを出せるよう年度ごとに取る。
-        Promise.all(
-          AVAILABLE_YEARS.map((financialYear) =>
-            // 調研費の帳簿が無い環境（CI のビルド時など）でもヘッダーは描けるようにする。
-            loadResearchFundPoliticians({ financialYear }).catch((error) => {
-              console.error("loadResearchFundPoliticians error:", error);
-              return [] as ResearchFundPoliticianEntry[];
-            }),
-          ),
-        ),
+    // 年度を切り替えたときに、その年度に帳簿のある議員だけを出せるよう年度ごとに取る。
+    // 調研費を「公開しない」議員は loader が返さないのでセレクターに出ない。
+    Promise.all(
+      AVAILABLE_YEARS.map((financialYear) =>
+        // 調研費の帳簿が無い環境（CI のビルド時など）でもヘッダーは描けるようにする。
+        loadResearchFundPoliticians({ financialYear }).catch((error) => {
+          console.error("loadResearchFundPoliticians error:", error);
+          return [] as ResearchFundPoliticianEntry[];
+        }),
+      ),
+    ),
   ]);
 
   const politiciansByYear: Record<number, ResearchFundPoliticianEntry[]> = Object.fromEntries(
@@ -35,7 +31,8 @@ export default async function Header() {
     <HeaderClient
       organizations={organizationsData}
       politiciansByYear={politiciansByYear}
-      showResearchFundNavigation={!hideResearchFund}
+      // 調研費を「公開する」議員が 1 人もいなければ、ナビにも「調査研究費」を出さない。
+      showResearchFundNavigation={politicianLists.some((politicians) => politicians.length > 0)}
     />
   );
 }

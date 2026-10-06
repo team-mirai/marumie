@@ -19,6 +19,7 @@ const accounts: PublishedResearchFund["accounts"] = {
 function published(overrides: Partial<PublishedResearchFund> = {}): PublishedResearchFund {
   return {
     politician: { name: "サンプル 太郎", slug: "sample-taro" },
+    isPublic: true,
     financialYear: 2026,
     asOfDate: "2026-08-20",
     nextUpdateNote: "11月ごろ",
@@ -105,6 +106,14 @@ describe("GetResearchFundPageUsecase", () => {
     const { usecase } = usecaseWith(null);
 
     expect(await usecase.execute({ slug: "unknown", financialYear: 2026 })).toBeNull();
+  });
+
+  it("議員が調研費を公開する設定かをページに渡す", async () => {
+    const { usecase } = usecaseWith(published({ isPublic: false }));
+
+    const data = await usecase.execute({ slug: "sample-taro", financialYear: 2026 });
+
+    expect(data?.isPublic).toBe(false);
   });
 
   it("支給・支出の合計と未使用を集計する", async () => {

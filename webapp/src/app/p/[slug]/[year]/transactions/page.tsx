@@ -36,6 +36,8 @@ export async function generateMetadata({
     title: data
       ? `${data.politician.name}の調査研究費：すべての出入金 - みらいまる見え政治資金`
       : "みらいまる見え政治資金",
+    // 調研費を「公開しない」議員のページは、URL を知っていれば開けるが検索エンジンには載せない。
+    ...(data && !data.isPublic && { robots: { index: false } }),
   };
 }
 

@@ -11,7 +11,10 @@ const input: PoliticianInput = {
 let repository: jest.Mocked<IPoliticianRepository>;
 let usecase: SavePoliticianUsecase;
 beforeEach(() => {
-  repository = { findAll: jest.fn(), findById: jest.fn(), save: jest.fn(), delete: jest.fn() };
+  repository = { findAll: jest.fn(), findById: jest.fn(), save: jest.fn(),
+    setResearchFundPublic: jest.fn(),
+    delete: jest.fn(),
+  };
   usecase = new SavePoliticianUsecase(repository);
 });
 test("必須値を正規化して無所属で作成する", async () => {
@@ -36,7 +39,7 @@ test.each([
   expect(repository.save).not.toHaveBeenCalled();
 });
 test("既存議員の氏名・所属を更新する", async () => {
-  repository.findById.mockResolvedValue({ ...input, id: "1", politicalOrganizationName: null });
+  repository.findById.mockResolvedValue({ ...input, id: "1", politicalOrganizationName: null, isResearchFundPublic: false });
   await usecase.execute("1", { ...input, politicalOrganizationId: "2" });
   expect(repository.save).toHaveBeenCalledWith(
     "1",

@@ -10,6 +10,8 @@ interface PoliticianSeedData {
   /** 所属する政治団体（既存 political_organizations）の slug。null なら無所属 */
   organizationSlug: string | null;
   startedOn?: string;
+  /** 調研費を公開するか（既定は非公開）。非公開の議員は webapp の導線・sitemap に出ず、URL で開くと noindex になる */
+  isResearchFundPublic?: boolean;
 }
 
 const data: PoliticianSeedData[] = [
@@ -21,6 +23,7 @@ const data: PoliticianSeedData[] = [
     tenantSlug: 'sample-party',
     organizationSlug: 'sample-party',
     startedOn: '2025-07-21',
+    isResearchFundPublic: true,
   },
   {
     name: 'サンプル 花子',
@@ -39,6 +42,7 @@ const data: PoliticianSeedData[] = [
     tenantSlug: 'sample-party',
     organizationSlug: 'sample-party',
     startedOn: '2025-07-21',
+    isResearchFundPublic: true,
   },
   {
     name: 'E2E 議員',
@@ -70,6 +74,7 @@ export const politiciansSeeder: Seeder = {
             slug: item.slug,
             termStart: new Date(item.termStart),
             displayOrder: item.displayOrder,
+            isResearchFundPublic: item.isResearchFundPublic ?? false,
             tenantId: tenant.id,
           },
         });

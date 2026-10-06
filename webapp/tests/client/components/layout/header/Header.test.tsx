@@ -20,38 +20,36 @@ const loadResearchFundPoliticiansMock = loadResearchFundPoliticians as jest.Mock
 const POLITICIAN = { slug: "sample-taro", name: "サンプル太郎", statusLabel: "2026年2月〜8月分を公開中" };
 
 describe("Header", () => {
-  const originalValue = process.env.HIDE_RESEARCH_FUND_ENTRY;
-
   beforeEach(() => {
     loadOrganizationsMock.mockResolvedValue({ default: "team-mirai", organizations: [] });
     loadResearchFundPoliticiansMock.mockReset();
     loadResearchFundPoliticiansMock.mockResolvedValue([POLITICIAN]);
   });
 
-  afterEach(() => {
-    if (originalValue === undefined) {
-      delete process.env.HIDE_RESEARCH_FUND_ENTRY;
-    } else {
-      process.env.HIDE_RESEARCH_FUND_ENTRY = originalValue;
-    }
-  });
-
-  it("未設定なら公開済みの議員をセレクターに渡し、ナビに調査研究費を出す", async () => {
-    delete process.env.HIDE_RESEARCH_FUND_ENTRY;
-
+  it("調研費を公開する議員を年度ごとにセレクターへ渡し、ナビに調査研究費を出す", async () => {
     const element = await Header();
 
     expect(element.props.politiciansByYear).toEqual({ 2025: [POLITICIAN], 2026: [POLITICIAN] });
     expect(element.props.showResearchFundNavigation).toBe(true);
   });
 
-  it("隠す設定なら公開済みの議員がいてもセレクターに出さず、ナビの調査研究費も出さない", async () => {
-    process.env.HIDE_RESEARCH_FUND_ENTRY = "true";
+  it("調研費を公開する議員がいなければ、ナビの調査研究費を出さない", async () => {
+    loadResearchFundPoliticiansMock.mockResolvedValue([]);
 
     const element = await Header();
 
     expect(element.props.politiciansByYear).toEqual({ 2025: [], 2026: [] });
     expect(element.props.showResearchFundNavigation).toBe(false);
-    expect(loadResearchFundPoliticiansMock).not.toHaveBeenCalled();
+  });
+
+  it("ある年度だけに公開する議員がいれば、ナビに調査研究費を出す", async () => {
+    loadResearchFundPoliticiansMock.mockImplementation(async ({ financialYear }) =>
+      financialYear === 2026 ? [POLITICIAN] : [],
+    );
+
+    const element = await Header();
+
+    expect(element.props.politiciansByYear).toEqual({ 2025: [], 2026: [POLITICIAN] });
+    expect(element.props.showResearchFundNavigation).toBe(true);
   });
 });

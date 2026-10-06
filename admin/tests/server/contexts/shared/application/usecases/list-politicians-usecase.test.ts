@@ -10,10 +10,13 @@ const input: PoliticianInput = {
 };
 let repository: jest.Mocked<IPoliticianRepository>;
 beforeEach(() => {
-  repository = { findAll: jest.fn(), findById: jest.fn(), save: jest.fn(), delete: jest.fn() };
+  repository = { findAll: jest.fn(), findById: jest.fn(), save: jest.fn(),
+    setResearchFundPublic: jest.fn(),
+    delete: jest.fn(),
+  };
 });
 test("一覧を返す", async () => {
-  const politician = { ...input, id: "1", politicalOrganizationName: null };
+  const politician = { ...input, id: "1", politicalOrganizationName: null, isResearchFundPublic: false };
   repository.findAll.mockResolvedValue([politician]);
   expect(await new ListPoliticiansUsecase(repository).execute()).toEqual([politician]);
 });

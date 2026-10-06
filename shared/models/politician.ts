@@ -8,6 +8,8 @@ export interface PoliticianInput {
 export interface Politician extends PoliticianInput {
   id: string;
   politicalOrganizationName: string | null;
+  /** 調研費を公開するか。false でも議員ページは URL で開けるが、webapp の導線・sitemap に出さず noindex にする */
+  isResearchFundPublic: boolean;
 }
 
 const VALIDATION_CODES = {

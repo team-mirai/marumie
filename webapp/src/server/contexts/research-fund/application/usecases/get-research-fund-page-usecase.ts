@@ -48,6 +48,7 @@ export class GetResearchFundPageUsecase {
 
     return {
       politician: published.politician,
+      isPublic: published.isPublic,
       financialYear: published.financialYear,
       asOfDate: published.asOfDate,
       grantPeriodLabel: buildGrantPeriodLabel({

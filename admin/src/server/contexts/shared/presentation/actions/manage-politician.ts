@@ -4,8 +4,10 @@ import type { PoliticianInput } from "@/shared/models/politician";
 import { requireAuth } from "@/server/contexts/auth/presentation/loaders/require-auth";
 import { SavePoliticianUsecase } from "@/server/contexts/shared/application/usecases/save-politician-usecase";
 import { DeletePoliticianUsecase } from "@/server/contexts/shared/application/usecases/delete-politician-usecase";
+import { SetPoliticianResearchFundPublicUsecase } from "@/server/contexts/shared/application/usecases/set-politician-research-fund-public-usecase";
 import { PrismaPoliticianRepository } from "@/server/contexts/shared/infrastructure/repositories/prisma-politician.repository";
 import { prisma } from "@/server/contexts/shared/infrastructure/prisma";
+import { WebappCacheInvalidator } from "@/server/contexts/shared/infrastructure/services/webapp-cache-invalidator";
 
 export async function savePolitician(id: string | null, input: PoliticianInput) {
   await requireAuth();
@@ -17,6 +19,22 @@ export async function savePolitician(id: string | null, input: PoliticianInput) 
     return {
       success: false as const,
       error: error instanceof Error ? error.message : "保存に失敗しました",
+    };
+  }
+}
+export async function setPoliticianResearchFundPublic(id: string, isPublic: boolean) {
+  await requireAuth();
+  try {
+    const result = await new SetPoliticianResearchFundPublicUsecase(
+      new PrismaPoliticianRepository(prisma),
+      new WebappCacheInvalidator(),
+    ).execute(id, isPublic);
+    revalidatePath("/(auth)", "layout");
+    return { success: true as const, ...result };
+  } catch (error) {
+    return {
+      success: false as const,
+      error: error instanceof Error ? error.message : "公開設定の変更に失敗しました",
     };
   }
 }
