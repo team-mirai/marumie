@@ -127,6 +127,7 @@ export function getVisibleNavSections(
                 icon: "list-bullets",
                 badge: target.draftCount,
               },
+              { href: `${base}/${target.bookId}/payees`, label: "支払先", icon: "address-book" },
               { href: `${base}/${target.bookId}/grants`, label: "支給の登録", icon: "coins" },
               { href: `${base}/${target.bookId}/publish`, label: "公開", icon: "export" },
               {

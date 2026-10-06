@@ -4,6 +4,7 @@ import { loadAdminTargets } from "@/server/contexts/shared/presentation/loaders/
 import { prisma } from "@/server/contexts/shared/infrastructure/prisma";
 import { ListJournalReviewUsecase } from "@/server/contexts/research-fund/application/usecases/list-journal-review-usecase";
 import { PrismaJournalReviewRepository } from "@/server/contexts/research-fund/infrastructure/repositories/prisma-journal-review.repository";
+import { PrismaPayeeRepository } from "@/server/contexts/research-fund/infrastructure/repositories/prisma-payee.repository";
 
 export async function requireJournalTarget(politicianId: string, bookId: string) {
   const { currentTarget } = await loadAdminTargets();
@@ -20,6 +21,7 @@ export async function loadJournalReview(politicianId: string, bookId: string) {
   if (!target) notFound();
   const data = await new ListJournalReviewUsecase(
     new PrismaJournalReviewRepository(prisma),
+    new PrismaPayeeRepository(prisma),
   ).execute(bookId);
   return { ...data, target };
 }

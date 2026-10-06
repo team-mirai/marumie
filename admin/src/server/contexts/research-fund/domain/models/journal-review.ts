@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { JournalEntry } from "@/server/contexts/research-fund/domain/models/journal-entry";
+import type { PayeeLinkSource } from "@/server/contexts/research-fund/domain/models/payee";
 import { MAX_JOURNAL_AMOUNT } from "@/server/contexts/research-fund/domain/models/journal-amount";
 import type {
   JournalLine,
@@ -50,6 +51,13 @@ export interface ReviewEntry extends JournalEdit, JournalEntry {
   advancedBy: string | null;
   /** 立替の精算日（YYYY-MM-DD）。null なら未精算 */
   settledAt: string | null;
+  /**
+   * 支払先（支出を受けた者）。null なら未設定。立替者と同じく、公開内容・複式の行・hash に影響しない
+   * 別系統の更新として扱う（帳簿の提出用の情報で、公開ページには出さない）。
+   */
+  payeeId: string | null;
+  /** 支払先を誰が紐づけたか。支払先があるときだけ持つ */
+  payeeLinkSource: PayeeLinkSource | null;
 }
 export interface JournalWrite extends JournalEdit {
   hash: string;

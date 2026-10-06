@@ -8,12 +8,13 @@ function rowWithLines(lines = input.lines) {
     id: BigInt(entry.id), entryDate: new Date(input.entryDate), createdAt: new Date(input.entryDate),
     updatedAt: new Date(entry.updatedAt), description: input.description, note: null, memo: null,
     status: "draft", source: "manual", documentId: null, splitGroup: null, document: null,
+    payeeId: null, payeeLinkSource: null,
     lines: lines.map(line => ({ ...line, amount: new Prisma.Decimal(line.amount),
       account: { type: line.side === "debit" ? "expense" : "asset" } })),
   };
 }
 function setup(count = 1) {
-  const tx = { researchFundJournalEntry: { updateMany: jest.fn().mockResolvedValue({ count }), deleteMany: jest.fn().mockResolvedValue({ count }), findMany: jest.fn(), findFirst: jest.fn().mockResolvedValue(rowWithLines()), create: jest.fn().mockResolvedValue({ id: BigInt(entry.id) }) }, researchFundJournalLine: { deleteMany: jest.fn(), createMany: jest.fn() }, researchFundAccount: { findMany: jest.fn() }, researchFundBook: { findUnique: jest.fn(), update: jest.fn() }, $queryRaw: jest.fn() };
+  const tx = { researchFundJournalEntry: { updateMany: jest.fn().mockResolvedValue({ count }), deleteMany: jest.fn().mockResolvedValue({ count }), findMany: jest.fn(), findFirst: jest.fn().mockResolvedValue(rowWithLines()), create: jest.fn().mockResolvedValue({ id: BigInt(entry.id) }) }, researchFundJournalLine: { deleteMany: jest.fn(), createMany: jest.fn() }, researchFundAccount: { findMany: jest.fn() }, researchFundBook: { findUnique: jest.fn(), update: jest.fn() }, researchFundPayee: { count: jest.fn().mockResolvedValue(1) }, $queryRaw: jest.fn() };
   const transaction = jest.fn(async fn => fn(tx));
   const repository = new PrismaJournalReviewRepository({ ...tx, $transaction: transaction } as unknown as PrismaClient);
   return { repository, tx, transaction };
@@ -68,6 +69,7 @@ test("手動仕訳を取得し、書類・メモの欠損値を表示用に変�
     id: BigInt(entry.id), entryDate: new Date(input.entryDate), updatedAt: new Date(entry.updatedAt),
     createdAt: new Date(input.entryDate), description: "移動", note: null, memo: null,
     status: "draft", source: "manual", documentId: null, splitGroup: null, document: null,
+    payeeId: null, payeeLinkSource: null,
     lines: [{ side: "credit", accountKey: "bank", account: { type: "asset" }, amount: new Prisma.Decimal(1200) },
       { side: "debit", accountKey: "taxi", account: { type: "expense" }, amount: new Prisma.Decimal(1200) }],
   });
@@ -75,6 +77,7 @@ test("手動仕訳を取得し、書類・メモの欠損値を表示用に変�
     id: entry.id, entryDate: input.entryDate, updatedAt: entry.updatedAt, description: "移動",
     note: "", memo: "", status: "draft", source: "manual", documentId: null, splitGroup: null,
     model: null, promptVersion: null, amount: 1200, accountKey: "taxi", advancedBy: null, settledAt: null,
+    payeeId: null, payeeLinkSource: null,
   });
   tx.researchFundJournalEntry.findFirst.mockResolvedValue(null);
   await expect(repository.find("9", entry.id)).resolves.toBeNull();
@@ -316,5 +319,45 @@ test.each(["setAdvancedBy", "settleMany", "unsettleMany"] as const)("%s は1件�
       ? repository.settleMany("1", [entry, other], "2026-09-30")
       : repository.unsettleMany("1", [entry, other]);
   await expect(run).rejects.toThrow("再読み込み");
+  expect(tx.researchFundJournalEntry.updateMany).toHaveBeenCalledTimes(1);
+});
+test("支払先と紐づけ元を取得する", async () => {
+  const { repository, tx } = setup();
+  tx.researchFundJournalEntry.findFirst.mockResolvedValue({ ...rowWithLines(), payeeId: BigInt(7), payeeLinkSource: "manual" });
+  await expect(repository.find("1", entry.id)).resolves.toMatchObject({ payeeId: "7", payeeLinkSource: "manual" });
+});
+test("帳簿の議員を返す。帳簿が無ければ null", async () => {
+  const { repository, tx } = setup();
+  tx.researchFundBook.findUnique.mockResolvedValue({ politicianId: BigInt(7) });
+  await expect(repository.politicianId("1")).resolves.toBe("7");
+  tx.researchFundBook.findUnique.mockResolvedValue(null);
+  await expect(repository.politicianId("1")).resolves.toBeNull();
+});
+test("支払先の紐づけは公開中・精算済も対象にし、紐づけ元を手動と記録して AI の確信度・根拠を消す", async () => {
+  const { repository, tx, transaction } = setup();
+  await repository.setPayee("1", [entry], "7");
+  expect(transaction).toHaveBeenCalledTimes(1);
+  expect(tx.researchFundPayee.count).toHaveBeenCalledWith({ where: { id: BigInt(7), politician: { books: { some: { id: BigInt(1) } } } } });
+  const call = tx.researchFundJournalEntry.updateMany.mock.calls[0][0];
+  expect(call.where).toEqual(expect.objectContaining({ id: BigInt(entry.id), bookId: BigInt(1), status: { in: ["draft", "approved", "published"] }, updatedAt: new Date(entry.updatedAt), source: { in: ["manual", "scan"] } }));
+  expect(call.where).not.toHaveProperty("settledAt");
+  expect(call.data).toEqual({ payeeId: BigInt(7), payeeLinkSource: "manual", payeeLinkConfidence: null, payeeLinkReason: null });
+});
+test("支払先の紐づけを外すと紐づけ元も消す", async () => {
+  const { repository, tx } = setup();
+  await repository.setPayee("1", [entry], null);
+  expect(tx.researchFundPayee.count).not.toHaveBeenCalled();
+  expect(tx.researchFundJournalEntry.updateMany.mock.calls[0][0].data).toEqual({ payeeId: null, payeeLinkSource: null, payeeLinkConfidence: null, payeeLinkReason: null });
+});
+test("帳簿と別の議員（別テナント）の支払先は DB でも照合して紐づけない", async () => {
+  const { repository, tx } = setup();
+  tx.researchFundPayee.count.mockResolvedValue(0);
+  await expect(repository.setPayee("1", [entry], "8")).rejects.toThrow("支払先が見つかりません");
+  expect(tx.researchFundJournalEntry.updateMany).not.toHaveBeenCalled();
+});
+test("支払先の紐づけは1件でも競合したらトランザクションを中止する", async () => {
+  const { repository, tx } = setup(0);
+  const other = { id: "5", updatedAt: entry.updatedAt } as ReviewEntry;
+  await expect(repository.setPayee("1", [entry, other], "7")).rejects.toThrow("再読み込み");
   expect(tx.researchFundJournalEntry.updateMany).toHaveBeenCalledTimes(1);
 });

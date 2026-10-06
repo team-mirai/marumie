@@ -160,7 +160,7 @@ describe("議員室モード", () => {
     const sections = getVisibleNavSections("user", target);
     expect(sections.map((s) => s.title)).toEqual(["議員室", "調査研究費"]);
     expect(sections[0].items.map((i) => i.href)).toEqual(["/politicians", "/politicians/3/books"]);
-    expect(sections[1].items).toHaveLength(6);
+    expect(sections[1].items).toHaveLength(7);
     expect(sections[1].items.every((i) => i.href.startsWith("/politicians/3/books/7/"))).toBe(true);
     expect(sections[1].items.find((i) => i.label === "仕訳の確認・編集")?.badge).toBe(4);
   });

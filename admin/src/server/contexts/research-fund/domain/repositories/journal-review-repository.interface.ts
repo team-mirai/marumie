@@ -39,6 +39,13 @@ export interface JournalReviewRepository {
     entries: readonly ReviewEntry[],
     advancedBy: string | null,
   ): Promise<void>;
+  /** 帳簿の議員（支払先の持ち主）。帳簿が無ければ null */
+  politicianId(bookId: string): Promise<string | null>;
+  /**
+   * 支出の仕訳の支払先をまとめて人の手で紐づける・外す（null で外す）。公開中・精算済の仕訳も対象にする。
+   * 支払先が帳簿と同じ議員のものでなければ、1 件も変更せずに拒否する。1 件でも競合したら何も変更しない。
+   */
+  setPayee(bookId: string, entries: readonly ReviewEntry[], payeeId: string | null): Promise<void>;
   /** 未精算の立替をまとめて精算済にする。1 件でも競合したら何も変更しない。 */
   settleMany(bookId: string, entries: readonly ReviewEntry[], settledAt: string): Promise<void>;
   /** 精算済の立替をまとめて未精算に戻す。1 件でも競合したら何も変更しない。 */

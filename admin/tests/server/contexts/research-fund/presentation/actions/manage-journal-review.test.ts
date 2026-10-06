@@ -8,6 +8,8 @@ import { DiscardJournalEntryUsecase } from "@/server/contexts/research-fund/appl
 import { RevertJournalEntriesToDraftUsecase } from "@/server/contexts/research-fund/application/usecases/revert-journal-entries-to-draft-usecase";
 import { RevertJournalEntryToDraftUsecase } from "@/server/contexts/research-fund/application/usecases/revert-journal-entry-to-draft-usecase";
 import { SaveJournalEntryUsecase } from "@/server/contexts/research-fund/application/usecases/save-journal-entry-usecase";
+import { CreatePayeeAndLinkUsecase } from "@/server/contexts/research-fund/application/usecases/create-payee-and-link-usecase";
+import { SetJournalEntriesPayeeUsecase } from "@/server/contexts/research-fund/application/usecases/set-journal-entries-payee-usecase";
 import { SetJournalEntriesAdvancedByUsecase } from "@/server/contexts/research-fund/application/usecases/set-journal-entries-advanced-by-usecase";
 import { SettleJournalEntriesUsecase } from "@/server/contexts/research-fund/application/usecases/settle-journal-entries-usecase";
 import { UnpublishJournalEntryUsecase } from "@/server/contexts/research-fund/application/usecases/unpublish-journal-entry-usecase";
@@ -159,4 +161,15 @@ test.each([
   jest.spyOn(usecase.prototype, "execute").mockRejectedValue(new JournalReviewError(message));
   await expect(mutateJournalReview("2", "1", { type, targets: [{ id: "3", updatedAt: "date" }], advancedBy: "秘書A", settledAt: "2026-09-30" } as never)).resolves.toEqual({ success: false, error: message });
   expect(revalidatePath).not.toHaveBeenCalled();
+});
+test("支払先の紐づけは既存の支払先・新規作成のどちらも同じ帳簿で行い、結果を返す", async () => {
+  const payee = { id: "7", politicianId: "2", name: "東京タクシー", postalCode: null, address: "", invoiceRegistrationNumber: null };
+  const targets = [{ id: "3", updatedAt: "date" }];
+  const link = jest.spyOn(SetJournalEntriesPayeeUsecase.prototype, "execute").mockResolvedValue({ updated: 1, payee });
+  await expect(mutateJournalReview("2", "1", { type: "set-payee", targets, payeeId: "7" })).resolves.toMatchObject({ success: true, payeeLink: { updated: 1, payee } });
+  expect(link).toHaveBeenCalledWith("1", targets, "7");
+  const form = { name: "東京タクシー", postalCode: "", address: "", invoiceRegistrationNumber: "" };
+  const create = jest.spyOn(CreatePayeeAndLinkUsecase.prototype, "execute").mockResolvedValue({ updated: 1, payee });
+  await expect(mutateJournalReview("2", "1", { type: "create-payee-and-link", targets, payee: form })).resolves.toMatchObject({ success: true, payeeLink: { updated: 1, payee } });
+  expect(create).toHaveBeenCalledWith("1", targets, form);
 });

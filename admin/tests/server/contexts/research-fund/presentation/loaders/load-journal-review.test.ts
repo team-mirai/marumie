@@ -23,7 +23,7 @@ test.each([null, { ...target, bookId: "9" }, { ...target, politicianId: "9" },
 });
 test("一致した帳簿の一覧と現在の対象を返す", async () => {
   select(target);
-  const data = { entries: [], accounts: [], advancers: [] };
+  const data = { entries: [], accounts: [], advancers: [], payees: [] };
   const list = jest.spyOn(ListJournalReviewUsecase.prototype, "execute").mockResolvedValue(data);
   await expect(loadJournalReview("2", "1")).resolves.toEqual({ ...data, target });
   expect(list).toHaveBeenCalledWith("1");

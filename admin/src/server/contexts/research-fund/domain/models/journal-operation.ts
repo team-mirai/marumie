@@ -167,6 +167,18 @@ export const JournalOperation = {
       };
     return settled(entry, "精算済の仕訳は立替者を変更できません。先に未精算に戻してください");
   },
+  /**
+   * 支払先の紐づけ・解除。支払先は議員課提出用の帳簿の情報で公開内容に影響しないので、
+   * 公開中・精算済の仕訳でも変更できる。支給は支払先を持たない
+   */
+  setPayee(entry: OperableEntry): OperationRejection | null {
+    if (entry.source === "grant")
+      return {
+        one: "支給には支払先を設定できません",
+        many: "支払先を設定できない仕訳（支給・返還など）が選ばれています",
+      };
+    return null;
+  },
   /** 精算。精算できる立替の条件は settlementRejection が持つ */
   settle(entry: OperableEntry): OperationRejection | null {
     if (entry.source === "grant")

@@ -79,7 +79,7 @@ test.describe("サイドバー", () => {
     const sidebar = page.getByRole("complementary");
     await expect(sidebar.getByText("調査研究費", { exact: true })).toBeVisible();
     await expect(sidebar.getByRole("link", { name: "取引一覧" })).toHaveCount(0);
-    for (const name of ["書類スキャン", "仕訳の確認・編集", "支給の登録", "公開", "支出群と成果", "読み取りプロンプト"]) {
+    for (const name of ["書類スキャン", "仕訳の確認・編集", "支払先", "支給の登録", "公開", "支出群と成果", "読み取りプロンプト"]) {
       await expect(sidebar.getByRole("link", { name })).toHaveAttribute("href", /\/politicians\/\d+\/books\/\d+\//);
     }
     await expect(page.getByRole("main").getByText("現在の対象", { exact: true })).toBeVisible();

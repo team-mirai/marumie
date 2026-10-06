@@ -30,6 +30,8 @@ import {
 import { PageHeader } from "@/client/components/layout/PageHeader";
 import { JournalAdvanceField } from "@/client/components/research-fund/JournalAdvanceField";
 import { JournalEditor } from "@/client/components/research-fund/JournalEditor";
+import { JournalPayeeField } from "@/client/components/research-fund/JournalPayeeField";
+import { PayeeLinkDialog } from "@/client/components/research-fund/PayeeLinkDialog";
 import { LegalCategoryLabel } from "@/client/components/research-fund/LegalCategoryLabel";
 import { ResearchFundCategoryPill } from "@/client/components/research-fund/ResearchFundCategoryPill";
 import {
@@ -45,6 +47,11 @@ import {
   type ReviewEntry,
 } from "@/server/contexts/research-fund/domain/models/journal-review";
 import {
+  isPayeeUnset,
+  type PayeeFormInput,
+  type PayeeSummary,
+} from "@/server/contexts/research-fund/domain/models/payee";
+import {
   previewReread,
   REREAD_INSTRUCTION_MAX_LENGTH,
 } from "@/server/contexts/research-fund/domain/models/scan-reread";
@@ -58,6 +65,7 @@ export function JournalReview({
   entries,
   accounts,
   advancers,
+  payees,
   target,
   initialStatus,
 }: {
@@ -65,6 +73,8 @@ export function JournalReview({
   accounts: ReviewAccount[];
   /** 同じ議員室で過去に入力された立替者（入力欄の候補） */
   advancers: string[];
+  /** 帳簿の議員の支払先（紐づけの候補）。別の議員の支払先は含まない */
+  payees: PayeeSummary[];
   target: Extract<AdminTarget, { kind: "research-fund" }>;
   /** スキャン画面の「完了分を確認へ」から下書きタブを開くための初期値 */
   initialStatus?: string;
@@ -76,6 +86,8 @@ export function JournalReview({
   const [month, setMonth] = useState("");
   const [advancer, setAdvancer] = useState("");
   const [unsettledOnly, setUnsettledOnly] = useState(false);
+  const [payeeUnsetOnly, setPayeeUnsetOnly] = useState(false);
+  const [linkingChecked, setLinkingChecked] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [checked, setChecked] = useState<readonly string[]>([]);
   const [creating, setCreating] = useState(false);
@@ -95,7 +107,8 @@ export function JournalReview({
   const filtered = monthly.filter(
     (e) =>
       (!unsettledOnly || (e.advancedBy !== null && e.settledAt === null)) &&
-      (advancer === "" || e.advancedBy === advancer),
+      (advancer === "" || e.advancedBy === advancer) &&
+      (!payeeUnsetOnly || isPayeeUnset(e)),
   );
   const visible = filtered.filter((e) => status === "all" || e.status === status);
   // 支給も支出と同じく選べる。支給日の修正と確認済に戻す操作だけを許す（詳細側で制限する）。
@@ -136,6 +149,12 @@ export function JournalReview({
     (max, e) => (e.entryDate > max ? e.entryDate : max),
     "",
   );
+  // 選んだ仕訳の支払先が 1 つに揃っていれば、まとめて紐づけるダイアログの初期値にする。
+  const checkedPayeeIds = new Set(checkedEntries.map((e) => e.payeeId));
+  const checkedPayeeId = checkedPayeeIds.size === 1 ? [...checkedPayeeIds][0] : null;
+  // 支払先が未設定の支出の件数（帳簿全体）。絞り込みの目安にする。
+  const payeeUnsetCount = entries.filter(isPayeeUnset).length;
+  const payeeNames = new Map(payees.map((p) => [p.id, p.name]));
   // 帳簿全体の未精算（立替者ごとの件数と合計額）。絞り込みに関わらず帳簿の全件で数える。
   const unsettledSummary = summarizeUnsettledAdvances(entries);
   // 立替者の絞り込みの選択肢。この帳簿に実際に入力されている立替者だけを出す。
@@ -157,6 +176,7 @@ export function JournalReview({
         pending ||
         creating ||
         rereading ||
+        linkingChecked ||
         discarding ||
         discardingChecked ||
         unpublishing ||
@@ -361,6 +381,60 @@ export function JournalReview({
       }
     });
   }
+  /**
+   * 支払先をまとめて紐づける・外す（1 件の支払先の欄からも、同じ書類の仕訳を含めて同じ経路で送る）。
+   * 支払先は公開内容を変えないので、公開中の仕訳でも送れる。紐づけ元は「手動」として記録される。
+   */
+  function linkPayee(entriesToLink: readonly ReviewEntry[], payeeId: string | null) {
+    const targets = entriesToLink.map((e) => ({ id: e.id, updatedAt: e.updatedAt }));
+    startTransition(async () => {
+      try {
+        const result = await mutateJournalReview(target.politicianId, target.bookId, {
+          type: "set-payee",
+          targets,
+          payeeId,
+        });
+        if (!result.success) {
+          toast.error(result.error);
+          return;
+        }
+        const { updated = 0, payee = null } = result.payeeLink ?? {};
+        toast.success(
+          payee === null
+            ? `${updated}件の支払先を外しました`
+            : `${updated}件の支払先を「${payee.name}」にしました`,
+        );
+        setLinkingChecked(false);
+        setChecked([]);
+        router.refresh();
+      } catch {
+        toast.error("通信に失敗しました。再度お試しください");
+      }
+    });
+  }
+  function createPayeeAndLink(entriesToLink: readonly ReviewEntry[], input: PayeeFormInput) {
+    const targets = entriesToLink.map((e) => ({ id: e.id, updatedAt: e.updatedAt }));
+    startTransition(async () => {
+      try {
+        const result = await mutateJournalReview(target.politicianId, target.bookId, {
+          type: "create-payee-and-link",
+          targets,
+          payee: input,
+        });
+        if (!result.success) {
+          toast.error(result.error);
+          return;
+        }
+        const { updated = 0, payee = null } = result.payeeLink ?? {};
+        toast.success(`支払先「${payee?.name ?? input.name}」を作成し、${updated}件に紐づけました`);
+        setLinkingChecked(false);
+        setChecked([]);
+        router.refresh();
+      } catch {
+        toast.error("通信に失敗しました。再度お試しください");
+      }
+    });
+  }
   function save(input: JournalEdit, approve: boolean) {
     startTransition(async () => {
       try {
@@ -556,6 +630,21 @@ export function JournalReview({
             }}
           />
           <Label htmlFor="journal-unsettled">未精算の立替だけ</Label>
+          <Checkbox
+            id="journal-payee-unset"
+            checked={payeeUnsetOnly}
+            disabled={pending}
+            onCheckedChange={() => {
+              if (allowLeave()) {
+                setPayeeUnsetOnly((current) => !current);
+                setSelectedId(null);
+                setChecked([]);
+              }
+            }}
+          />
+          <Label htmlFor="journal-payee-unset">
+            支払先が未設定だけ（<span className="font-latin">{payeeUnsetCount}</span>）
+          </Label>
         </div>
       </div>
       {unsettledSummary.length > 0 && (
@@ -620,6 +709,15 @@ export function JournalReview({
                 立替者をまとめて設定
               </Button>
             )}
+            <Button
+              variant="outline"
+              disabled={pending}
+              onClick={() => {
+                if (allowLeave()) setLinkingChecked(true);
+              }}
+            >
+              支払先をまとめて設定
+            </Button>
             {unsettleable && (
               <Button variant="outline" disabled={pending} onClick={() => unsettle(checkedEntries)}>
                 まとめて未精算に戻す
@@ -761,6 +859,16 @@ export function JournalReview({
                           {!entry.documentId && (
                             <span className="rounded-full border px-2">領収書なし</span>
                           )}
+                          {!grant &&
+                            (entry.payeeId === null ? (
+                              <span className="rounded-full border border-destructive px-2 text-destructive">
+                                支払先未設定
+                              </span>
+                            ) : (
+                              <span className="rounded-full border px-2">
+                                支払先：{payeeNames.get(entry.payeeId) ?? "不明"}
+                              </span>
+                            ))}
                           {entry.advancedBy !== null && (
                             <span className="rounded-full border px-2">
                               立替：{entry.advancedBy}
@@ -861,6 +969,21 @@ export function JournalReview({
                     }}
                     onUnsettle={() => {
                       if (allowLeave()) unsettle([selected]);
+                    }}
+                  />
+                )}
+                {selected.source !== "grant" && (
+                  <JournalPayeeField
+                    key={`${selected.id}:${selected.updatedAt}:payee`}
+                    entry={selected}
+                    entries={entries}
+                    payees={payees}
+                    pending={pending}
+                    onLink={(targets, payeeId) => {
+                      if (allowLeave()) linkPayee(targets, payeeId);
+                    }}
+                    onCreate={(targets, input) => {
+                      if (allowLeave()) createPayeeAndLink(targets, input);
                     }}
                   />
                 )}
@@ -1082,6 +1205,19 @@ export function JournalReview({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <PayeeLinkDialog
+        // 開くたびに選んだ仕訳の支払先から選び直せるよう、開閉で作り直す
+        key={`payee-link:${linkingChecked}`}
+        open={linkingChecked}
+        onOpenChange={setLinkingChecked}
+        description={`選択中の${checkedEntries.length}件に同じ支払先を紐づけます。支払先は議員課に提出する帳簿に使う情報で、公開ページの内容は変わりません。`}
+        payees={payees}
+        currentPayeeId={checkedPayeeId}
+        defaultSearchQuery={checkedEntries[0]?.description ?? ""}
+        pending={pending}
+        onLink={(payeeId) => linkPayee(checkedEntries, payeeId)}
+        onCreate={(input) => createPayeeAndLink(checkedEntries, input)}
+      />
       <Dialog
         open={settling}
         onOpenChange={(open) => {

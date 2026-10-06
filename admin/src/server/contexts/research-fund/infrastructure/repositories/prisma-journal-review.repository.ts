@@ -70,6 +70,8 @@ function model(row: Row): ReviewEntry | null {
     promptVersion: job?.prompt.version ?? null,
     advancedBy: row.advancedBy ?? null,
     settledAt: row.settledAt ? row.settledAt.toISOString().slice(0, 10) : null,
+    payeeId: row.payeeId === null ? null : String(row.payeeId),
+    payeeLinkSource: row.payeeLinkSource ?? null,
   };
 }
 function data(input: JournalWrite) {
@@ -308,6 +310,40 @@ export class PrismaJournalReviewRepository implements JournalReviewRepository {
             settledAt: null,
           },
           data: { advancedBy },
+        });
+        if (result.count !== 1)
+          throw new JournalReviewError("仕訳が更新されました。画面を再読み込みしてください");
+      }
+    });
+  }
+  async politicianId(bookId: string) {
+    const book = await this.prisma.researchFundBook.findUnique({
+      where: { id: BigInt(bookId) },
+      select: { politicianId: true },
+    });
+    return book ? String(book.politicianId) : null;
+  }
+  // 支払先は公開内容に影響しないので、公開中・精算済の仕訳も対象にする（複式行と hash は作り直さない）。
+  // 人の手での紐づけなので紐づけ元は manual にし、AI の確信度・根拠は消す。
+  // 支払先が帳簿と同じ議員のものかを同じトランザクションで確かめ、別の議員の支払先を紐づけない
+  // （DB の外部キーは支払先の存在しか見ないため。#1674）。1 件でも競合していたら巻き戻す。
+  async setPayee(bookId: string, entries: readonly ReviewEntry[], payeeId: string | null) {
+    await this.prisma.$transaction(async (tx) => {
+      if (payeeId !== null) {
+        const owned = await tx.researchFundPayee.count({
+          where: { id: BigInt(payeeId), politician: { books: { some: { id: BigInt(bookId) } } } },
+        });
+        if (owned !== 1) throw new JournalReviewError("支払先が見つかりません");
+      }
+      for (const entry of entries) {
+        const result = await tx.researchFundJournalEntry.updateMany({
+          where: { ...guard(bookId, entry, ["draft", "approved", "published"]), ...expenseWhere },
+          data: {
+            payeeId: payeeId === null ? null : BigInt(payeeId),
+            payeeLinkSource: payeeId === null ? null : "manual",
+            payeeLinkConfidence: null,
+            payeeLinkReason: null,
+          },
         });
         if (result.count !== 1)
           throw new JournalReviewError("仕訳が更新されました。画面を再読み込みしてください");

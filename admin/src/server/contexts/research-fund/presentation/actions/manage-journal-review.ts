@@ -4,21 +4,25 @@ import { revalidatePath } from "next/cache";
 import { requireAuth } from "@/server/contexts/auth/presentation/loaders/require-auth";
 import { requireJournalTarget } from "@/server/contexts/research-fund/presentation/loaders/load-journal-review";
 import { ApproveJournalEntriesUsecase } from "@/server/contexts/research-fund/application/usecases/approve-journal-entries-usecase";
+import { CreatePayeeAndLinkUsecase } from "@/server/contexts/research-fund/application/usecases/create-payee-and-link-usecase";
 import { CreateJournalEntryUsecase } from "@/server/contexts/research-fund/application/usecases/create-journal-entry-usecase";
 import { DiscardJournalEntriesUsecase } from "@/server/contexts/research-fund/application/usecases/discard-journal-entries-usecase";
 import { DiscardJournalEntryUsecase } from "@/server/contexts/research-fund/application/usecases/discard-journal-entry-usecase";
 import { RevertJournalEntriesToDraftUsecase } from "@/server/contexts/research-fund/application/usecases/revert-journal-entries-to-draft-usecase";
 import { RevertJournalEntryToDraftUsecase } from "@/server/contexts/research-fund/application/usecases/revert-journal-entry-to-draft-usecase";
 import { SaveJournalEntryUsecase } from "@/server/contexts/research-fund/application/usecases/save-journal-entry-usecase";
+import { SetJournalEntriesPayeeUsecase } from "@/server/contexts/research-fund/application/usecases/set-journal-entries-payee-usecase";
 import { SetJournalEntriesAdvancedByUsecase } from "@/server/contexts/research-fund/application/usecases/set-journal-entries-advanced-by-usecase";
 import { SettleJournalEntriesUsecase } from "@/server/contexts/research-fund/application/usecases/settle-journal-entries-usecase";
 import { UnpublishJournalEntryUsecase } from "@/server/contexts/research-fund/application/usecases/unpublish-journal-entry-usecase";
 import { UnsettleJournalEntriesUsecase } from "@/server/contexts/research-fund/application/usecases/unsettle-journal-entries-usecase";
 import { PrismaJournalReviewRepository } from "@/server/contexts/research-fund/infrastructure/repositories/prisma-journal-review.repository";
+import { PrismaPayeeRepository } from "@/server/contexts/research-fund/infrastructure/repositories/prisma-payee.repository";
 import {
   JournalReviewError,
   type JournalEdit,
 } from "@/server/contexts/research-fund/domain/models/journal-review";
+import type { Payee, PayeeFormInput } from "@/server/contexts/research-fund/domain/models/payee";
 import { prisma } from "@/server/contexts/shared/infrastructure/prisma";
 import { WebappCacheInvalidator } from "@/server/contexts/shared/infrastructure/services/webapp-cache-invalidator";
 
@@ -42,7 +46,18 @@ type Mutation =
       targets: readonly { id: string; updatedAt: string }[];
       settledAt: string;
     }
-  | { type: "unsettle-many"; targets: readonly { id: string; updatedAt: string }[] };
+  | { type: "unsettle-many"; targets: readonly { id: string; updatedAt: string }[] }
+  // 支払先も議員課提出用の帳簿の情報で公開内容を変えないので、公開中の仕訳でも変更でき、キャッシュも無効化しない。
+  | {
+      type: "set-payee";
+      targets: readonly { id: string; updatedAt: string }[];
+      payeeId: string | null;
+    }
+  | {
+      type: "create-payee-and-link";
+      targets: readonly { id: string; updatedAt: string }[];
+      payee: PayeeFormInput;
+    };
 export async function mutateJournalReview(
   politicianId: string,
   bookId: string,
@@ -61,6 +76,7 @@ export async function mutateJournalReview(
     let advance: { updated: number; advancedBy: string | null } | undefined;
     let settlement: { settled: number; settledAt: string } | undefined;
     let unsettled: number | undefined;
+    let payeeLink: { updated: number; payee: Payee | null } | undefined;
     if (mutation.type === "create")
       id = await new CreateJournalEntryUsecase(repository).execute(bookId, mutation.input, user.id);
     else if (mutation.type === "save")
@@ -120,6 +136,16 @@ export async function mutateJournalReview(
         bookId,
         mutation.targets,
       ));
+    else if (mutation.type === "set-payee")
+      payeeLink = await new SetJournalEntriesPayeeUsecase(
+        repository,
+        new PrismaPayeeRepository(prisma),
+      ).execute(bookId, mutation.targets, mutation.payeeId);
+    else if (mutation.type === "create-payee-and-link")
+      payeeLink = await new CreatePayeeAndLinkUsecase(
+        repository,
+        new PrismaPayeeRepository(prisma),
+      ).execute(bookId, mutation.targets, mutation.payee);
     else throw new JournalReviewError("操作が不正です");
     revalidatePath("/(auth)", "layout");
     return {
@@ -132,6 +158,7 @@ export async function mutateJournalReview(
       advance,
       settlement,
       unsettled,
+      payeeLink,
     };
   } catch (error) {
     return {
