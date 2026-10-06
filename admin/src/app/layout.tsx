@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Poppins } from "next/font/google";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Toaster } from "@/client/components/ui";
+import { buildAdminPageTitle, DEPLOY_TARGET_ENV } from "@/client/lib/deploy-environment";
 import "./globals.css";
 
 const poppins = Poppins({
@@ -11,7 +12,7 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
-  title: "政治資金ダッシュボード管理画面",
+  title: buildAdminPageTitle(DEPLOY_TARGET_ENV),
   robots: {
     index: false,
     follow: false,

@@ -1,4 +1,5 @@
 import { cn } from "@/client/lib";
+import { DEPLOY_TARGET_ENV, isStagingTargetEnv } from "@/client/lib/deploy-environment";
 
 interface BrandWordmarkProps {
   className?: string;
@@ -9,8 +10,13 @@ interface BrandWordmarkProps {
  * ロゴ画像は置かず文字のみで表現する（ブランドガイド上、ロゴの改変・多用を避けるため）。
  * サイドバーと公開画面（ログイン等）のカードで同じ表現を共有する。
  * 値はデザインハンドオフ（docs/reference/design_handoff_admin_redesign/README.md「1. サイドバー」）が正。
+ *
+ * ステージングでのみ「STAGING」のピルを足して、本番と取り違えたまま操作する事故を防ぐ。
+ * 本番・ローカルでは何も描かないので、既存の見た目は変わらない。
  */
 export function BrandWordmark({ className }: BrandWordmarkProps) {
+  const isStaging = isStagingTargetEnv(DEPLOY_TARGET_ENV);
+
   return (
     <div className={cn("min-w-0", className)}>
       <div className="whitespace-nowrap text-[13px] font-bold tracking-[0.06em] text-foreground">
@@ -18,6 +24,11 @@ export function BrandWordmark({ className }: BrandWordmarkProps) {
       </div>
       <div className="mt-0.5 font-latin text-[10px] font-semibold tracking-[0.14em] text-primary-hover">
         ADMIN CONSOLE
+        {isStaging && (
+          <span className="ml-1.5 inline-block rounded-full bg-destructive px-1.5 py-[1px] align-[1px] text-[9px] font-bold tracking-[0.08em] text-destructive-foreground">
+            STAGING
+          </span>
+        )}
       </div>
     </div>
   );
