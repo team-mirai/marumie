@@ -6,6 +6,7 @@ import type { SubmissionLedgerRepository } from "@/server/contexts/research-fund
 const include = {
   lines: { include: { account: true } },
   payee: true,
+  document: { select: { receiptNumber: true, mime: true } },
 } satisfies Prisma.ResearchFundJournalEntryInclude;
 type Row = Prisma.ResearchFundJournalEntryGetPayload<{ include: typeof include }>;
 
@@ -23,6 +24,8 @@ function model(row: Row): SubmissionLedgerEntry | null {
     payeeAddress: row.payee?.address ?? null,
     note: row.note,
     documentId: row.documentId === null ? null : String(row.documentId),
+    receiptNumber: row.document?.receiptNumber ?? null,
+    documentMime: row.document?.mime ?? null,
     receiptAbsenceReason: row.receiptAbsenceReason,
   };
 }
@@ -32,7 +35,7 @@ export class PrismaSubmissionLedgerRepository implements SubmissionLedgerReposit
   async find(bookId: string) {
     const book = await this.prisma.researchFundBook.findUnique({
       where: { id: BigInt(bookId) },
-      select: { financialYear: true },
+      select: { financialYear: true, politician: { select: { slug: true } } },
     });
     if (!book) return null;
     const rows = await this.prisma.researchFundJournalEntry.findMany({
@@ -46,6 +49,7 @@ export class PrismaSubmissionLedgerRepository implements SubmissionLedgerReposit
       orderBy: [{ entryDate: "asc" }, { id: "asc" }],
     });
     return {
+      politicianSlug: book.politician.slug,
       financialYear: book.financialYear,
       entries: rows.flatMap((row) => model(row) ?? []),
     };

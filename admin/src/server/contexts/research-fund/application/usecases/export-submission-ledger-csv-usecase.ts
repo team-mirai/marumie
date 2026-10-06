@@ -16,7 +16,7 @@ export class ExportSubmissionLedgerCsvUsecase {
     if (!ledger) return null;
     return {
       filename: submissionLedgerFilename(house, ledger.financialYear),
-      csv: buildSubmissionLedgerCsv(house, ledger.entries),
+      csv: buildSubmissionLedgerCsv(house, ledger, ledger.entries),
     };
   }
 }

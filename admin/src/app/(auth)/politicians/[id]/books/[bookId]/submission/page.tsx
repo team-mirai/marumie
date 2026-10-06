@@ -61,7 +61,8 @@ export default async function SubmissionLedgerPage({
               >
                 仕訳の確認・編集
               </Link>
-              で支払先や事情を入力してください。
+              で支払先や事情を入力してください。書類の領収書等番号が未採番の仕訳は、領収書等番号と領収書画像ファイル名が空欄になります。
+              同じ画面の「領収書等番号を振る」で採番してください。
             </p>
             <Table>
               <TableHeader>
