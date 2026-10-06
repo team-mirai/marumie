@@ -46,7 +46,7 @@ export function normalizePayeeName(name: string): string {
  * 1. インボイス登録番号の一致。番号が一致する支払先があれば、名称は見ずにそれだけで決める
  * 2. 正規化した名称の一致。ただし発行元と支払先の両方にインボイス登録番号があり食い違う支払先は除く
  *
- * 渡す支払先は確認済みのものに限る（いまは支払先がすべて人の作成したもので確認済み。domain/models/payee）。
+ * 支払先に確認状態は無いので、議員の支払先すべてを渡す（domain/models/payee）。
  */
 export function matchPayeeByIssuer<T extends Pick<Payee, "name" | "invoiceRegistrationNumber">>(
   issuer: ReceiptIssuer | null,

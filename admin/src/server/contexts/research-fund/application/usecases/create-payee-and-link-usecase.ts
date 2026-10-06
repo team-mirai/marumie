@@ -13,7 +13,6 @@ import type { JournalReviewRepository } from "@/server/contexts/research-fund/do
  *
  * 支払先は帳簿の議員の支払先として作る。仕訳を先に確かめ、紐づけられないなら支払先も作らない
  * （作成と紐づけは同じトランザクションで行い、紐づけが競合したら作成も巻き戻す）。
- * 作成した支払先は人が入力したものなので確認済みとして扱う（domain/models/payee）。
  */
 export class CreatePayeeAndLinkUsecase {
   constructor(private repository: JournalReviewRepository) {}

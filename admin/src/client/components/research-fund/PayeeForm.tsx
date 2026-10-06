@@ -109,9 +109,7 @@ export function PayeeForm({
           onChange={(e) => setInvoiceRegistrationNumber(e.target.value)}
         />
       </div>
-      <p className="text-xs text-muted-foreground">
-        同じ名称・住所の支払先は登録できません。人が作成・編集した支払先は確認済みとして扱います。
-      </p>
+      <p className="text-xs text-muted-foreground">同じ名称・住所の支払先は登録できません。</p>
       <div className="flex justify-end gap-2">
         {onCancel && (
           <Button type="button" variant="outline" disabled={pending} onClick={onCancel}>

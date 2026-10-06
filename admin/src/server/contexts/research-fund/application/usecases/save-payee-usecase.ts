@@ -10,7 +10,6 @@ import type { PayeeRepository } from "@/server/contexts/research-fund/domain/rep
 
 /**
  * 議員の支払先を作成する（id が null）・編集する。
- * 人が作成・編集した支払先は確認済みとして扱う（domain/models/payee）。
  * 編集は議員の支払先に限り、別の議員の支払先は id を知っていても変更できない。
  */
 export class SavePayeeUsecase {
