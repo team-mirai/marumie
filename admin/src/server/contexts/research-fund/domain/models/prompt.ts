@@ -18,7 +18,7 @@ export interface PromptVersion extends PromptRecord {
 }
 
 export interface PromptOverview {
-  versions: PromptVersion[];
+  versions: readonly PromptVersion[];
   /** エディタの初期値。版が 1 つも無ければデフォルトテンプレート */
   body: string;
   /** 有効版の版番号。版が 1 つも無ければ null */
@@ -88,4 +88,47 @@ export function summarizePromptChange(body: string, previousBody: string | null)
   }
   if (added === 0 && removed === 0) return "行の並び替え";
   return [added > 0 && `+${added}行`, removed > 0 && `−${removed}行`].filter(Boolean).join("・");
+}
+
+/**
+ * 議員の読み取りプロンプトの版履歴。
+ * どの版を編集対象にするか・次の版番号・各版の変更要旨は、保存された列ではなく履歴から導出する。
+ */
+export class PromptHistory {
+  private constructor(readonly versions: readonly PromptVersion[]) {}
+
+  /** version の降順に並んだ記録から版履歴を組み立てる */
+  static fromRecords(records: readonly PromptRecord[]): PromptHistory {
+    return new PromptHistory(
+      records.map((record, index) => ({
+        ...record,
+        // records は version の降順なので、次の要素が前の版にあたる
+        summary: summarizePromptChange(record.body, records[index + 1]?.body ?? null),
+      })),
+    );
+  }
+
+  /** 編集・表示の対象になる版。有効版があればそれ、無ければ最新版。版が 1 つも無ければ null */
+  get active(): PromptVersion | null {
+    return this.versions.find((version) => version.isActive) ?? this.versions[0] ?? null;
+  }
+
+  /** 保存すると採番される版番号。版は 1 からの連番 */
+  get nextVersion(): number {
+    return (this.versions[0]?.version ?? 0) + 1;
+  }
+
+  /**
+   * 版履歴の画面に出す内容。
+   * 版が 1 つも無いうちは編集対象が無いため、渡された初期テンプレートから書き始める。
+   */
+  overview(defaultBody: string): Omit<PromptOverview, "automaticPrompt"> {
+    const active = this.active;
+    return {
+      versions: this.versions,
+      body: active?.body ?? defaultBody,
+      activeVersion: active?.version ?? null,
+      nextVersion: this.nextVersion,
+    };
+  }
 }

@@ -4,8 +4,13 @@ const base: GrantSchedule = {
   termStart: "2026-02-01",
   financialYear: 2026,
   referenceDate: "2026-09-10",
-  registeredMonths: [],
+  registeredGrants: [],
 };
+
+/** 登録済みの月を、自動計算と同額で登録したものとして表す */
+function registered(...months: string[]) {
+  return months.map((month) => ({ month, amount: 1_000_000 }));
+}
 
 function schedule(overrides: Partial<GrantSchedule> = {}) {
   const result = GrantSchedule.generate({ ...base, ...overrides });
@@ -46,13 +51,43 @@ describe("GrantSchedule.generate", () => {
   });
 
   it("登録済みを優先し、過去・当月の未登録分は登録可能、翌月以降は未到来", () => {
-    const registeredMonths = Object.freeze(["2026-02", "2026-02", "2026-10", "2025-03"]);
-    const grants = schedule({ registeredMonths });
+    const registeredGrants = Object.freeze(registered("2026-02", "2026-02", "2026-10", "2025-03"));
+    const grants = schedule({ registeredGrants });
     expect(grants.map((grant) => grant.status)).toEqual([
       "registered", "available", "available", "available", "available", "available",
       "available", "available", "registered", "upcoming", "upcoming",
     ]);
-    expect(registeredMonths).toHaveLength(4);
+    expect(registeredGrants).toHaveLength(4);
+  });
+
+  it("登録済みの月は自動計算の額ではなく登録した額を出し、未登録の月は自動計算のまま", () => {
+    const grants = schedule({
+      termStart: "2026-02-08",
+      registeredGrants: [
+        { month: "2026-02", amount: 750_000 },
+        { month: "2026-03", amount: 980_000 },
+      ],
+    });
+    expect(grants.slice(0, 3)).toEqual([
+      { month: "2026-02", amount: 750_000, status: "registered" },
+      { month: "2026-03", amount: 980_000, status: "registered" },
+      { month: "2026-04", amount: 1_000_000, status: "available" },
+    ]);
+  });
+
+  it("同じ月の登録が重複したら後の登録の額を採る", () => {
+    const grants = schedule({
+      registeredGrants: [
+        { month: "2026-03", amount: 100_000 },
+        { month: "2026-03", amount: 900_000 },
+      ],
+    });
+    expect(grants[1]).toEqual({ month: "2026-03", amount: 900_000, status: "registered" });
+  });
+
+  it("登録した額が0円でも登録済みとして扱う", () => {
+    const grants = schedule({ registeredGrants: [{ month: "2026-03", amount: 0 }] });
+    expect(grants[1]).toEqual({ month: "2026-03", amount: 0, status: "registered" });
   });
 
   it("当選月でも当選日前には登録できず、当日から登録可能", () => {
@@ -80,14 +115,14 @@ describe("GrantSchedule.generate", () => {
   });
 
   it.each(["2026-00", "2026-13", "2026-2", "2026-02-01", "0000-01", "invalid"])("不正な登録月 %s を拒否する", (month) => {
-    expect(GrantSchedule.generate({ ...base, registeredMonths: [month] })).toMatchObject({
-      status: "invalid", errors: [{ path: "registeredMonths.0", code: "RF_INVALID_DATE" }],
+    expect(GrantSchedule.generate({ ...base, registeredGrants: registered(month) })).toMatchObject({
+      status: "invalid", errors: [{ path: "registeredGrants.0.month", code: "RF_INVALID_DATE" }],
     });
   });
 });
 
 describe("GrantSchedule.registrable", () => {
-  const grants = schedule({ registeredMonths: ["2026-05"] });
+  const grants = schedule({ registeredGrants: registered("2026-05") });
 
   function rejection(month: string) {
     const result = GrantSchedule.registrable(grants, month);

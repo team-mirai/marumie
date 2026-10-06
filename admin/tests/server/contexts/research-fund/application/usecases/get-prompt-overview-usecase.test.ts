@@ -17,19 +17,13 @@ test("版が1つも無ければデフォルトテンプレートから始め、�
     automaticPrompt: buildAutomaticReceiptPrompt(),
   });
 });
-test("有効版の本文を編集対象にし、変更要旨と次の版番号を返す", async () => {
+test("議員の版履歴から導出した内容に、自動付加される部分を添えて返す", async () => {
   const { repository, usecase } = setup();
   repository.list.mockResolvedValue([record(3, "a\nb\nc", false), record(2, "a\nb", true), record(1, "a", false)]);
   const result = await usecase.execute("2");
-  expect(result.body).toBe("a\nb");
-  expect(result.activeVersion).toBe(2);
-  expect(result.nextVersion).toBe(4);
+  expect(repository.list).toHaveBeenCalledWith("2");
+  expect(result).toMatchObject({ body: "a\nb", activeVersion: 2, nextVersion: 4, automaticPrompt: buildAutomaticReceiptPrompt() });
   expect(result.versions.map((v) => v.summary)).toEqual(["+1行", "+1行", "初版"]);
-});
-test("有効版が無ければ最新版を編集対象にする", async () => {
-  const { repository, usecase } = setup();
-  repository.list.mockResolvedValue([record(2, "新", false), record(1, "旧", false)]);
-  await expect(usecase.execute("2")).resolves.toMatchObject({ body: "新", activeVersion: 2, nextVersion: 3 });
 });
 test.each(["", "0", "-1", "abc"])("不正な議員IDではリポジトリを呼ばない: %j", async (politicianId) => {
   const { repository, usecase } = setup();

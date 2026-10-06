@@ -1,6 +1,6 @@
 import "server-only";
 import {
-  summarizePromptChange,
+  PromptHistory,
   validatePromptOwnerId,
   type PromptOverview,
 } from "@/server/contexts/research-fund/domain/models/prompt";
@@ -16,18 +16,9 @@ export class GetPromptOverviewUsecase {
 
   async execute(politicianId: string): Promise<PromptOverview> {
     validatePromptOwnerId(politicianId);
-    const records = await this.repository.list(politicianId);
-    const versions = records.map((record, index) => ({
-      ...record,
-      // records は version の降順なので、次の要素が前の版にあたる
-      summary: summarizePromptChange(record.body, records[index + 1]?.body ?? null),
-    }));
-    const active = versions.find((version) => version.isActive) ?? versions[0] ?? null;
+    const history = PromptHistory.fromRecords(await this.repository.list(politicianId));
     return {
-      versions,
-      body: active?.body ?? DEFAULT_OFFICE_PROMPT,
-      activeVersion: active?.version ?? null,
-      nextVersion: (versions[0]?.version ?? 0) + 1,
+      ...history.overview(DEFAULT_OFFICE_PROMPT),
       automaticPrompt: buildAutomaticReceiptPrompt(),
     };
   }

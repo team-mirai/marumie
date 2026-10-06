@@ -30,14 +30,9 @@ test("当選月以降だけを並べ、当選月は日割・当月まで登録�
   ]);
 });
 
-test("登録済みの月は、自動計算の額ではなく登録した金額で並べる", async () => {
-  const { usecase } = setup({ registeredGrants: [{ month: "2026-03", amount: 980_000 }] });
-  const { grants } = await usecase.execute("1", "2026-09-10");
-  expect(grants.find((grant) => grant.month === "2026-03")).toEqual({
-    month: "2026-03",
-    amount: 980_000,
-    status: "registered",
-  });
-  // 未登録の月は自動計算の額のまま
-  expect(grants.find((grant) => grant.month === "2026-04")?.amount).toBe(1_000_000);
+test("帳簿が無ければ登録済みの支給を引かずに弾く", async () => {
+  const { repository, usecase } = setup();
+  repository.book.mockResolvedValue(null);
+  await expect(usecase.execute("1", "2026-09-10")).rejects.toThrow("帳簿が見つかりません");
+  expect(repository.registeredGrants).not.toHaveBeenCalled();
 });
