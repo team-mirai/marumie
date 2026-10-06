@@ -14,6 +14,10 @@ export interface Book extends BookMetadata {
   status: "preparing" | "active" | "closed";
   publishedThrough: string | null;
 }
+
+/** 活用方針は公開ページにそのまま出るので、長さに上限を設ける */
+const POLICY_COMMENT_MAX_LENGTH = 2000;
+
 export const Book = {
   /** 議員・帳簿の ID は正の整数の文字列 */
   isValidId(id: string): boolean {
@@ -27,6 +31,26 @@ export const Book = {
         "年度は1900〜9999の整数で指定してください",
       );
     return { status: "valid", value: year };
+  },
+  /**
+   * 活用方針を保存できる形（前後の空白を落とした文字列）にそろえる。
+   * 帳簿情報フォームと支出群の画面の両方から保存できるので、どちらの経路もこの判定を通す。
+   */
+  normalizePolicyComment(value: unknown): ResearchFundResult<string> {
+    if (typeof value !== "string")
+      return invalidResearchFundResult(
+        "policyComment",
+        RF_ERROR_CODES.INVALID_POLICY_COMMENT,
+        "活用方針の入力が不正です",
+      );
+    const trimmed = value.trim();
+    if (trimmed.length > POLICY_COMMENT_MAX_LENGTH)
+      return invalidResearchFundResult(
+        "policyComment",
+        RF_ERROR_CODES.INVALID_POLICY_COMMENT,
+        `活用方針は${POLICY_COMMENT_MAX_LENGTH}文字以内で入力してください`,
+      );
+    return { status: "valid", value: trimmed };
   },
   validateMetadata(input: BookMetadata): ResearchFundResult<BookMetadata> {
     if (
@@ -53,6 +77,8 @@ export const Book = {
           "時点の日付を正しく入力してください",
         );
     }
-    return { status: "valid", value: input };
+    const policyComment = Book.normalizePolicyComment(input.policyComment);
+    if (policyComment.status === "invalid") return policyComment;
+    return { status: "valid", value: { ...input, policyComment: policyComment.value } };
   },
 };

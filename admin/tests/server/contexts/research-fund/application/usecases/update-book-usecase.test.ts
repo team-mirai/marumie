@@ -21,6 +21,25 @@ test("メタデータを正規化し、空の日付も保存できる", async ()
   await usecase.execute("1", "2", { asOfDate: "", nextUpdateNote: "", policyComment: "" });
 });
 
+test("上限ちょうどの2000文字の活用方針は前後の空白を落として保存する", async () => {
+  const { repository, usecase } = setup();
+  await usecase.execute("1", "2", { ...metadata, policyComment: `  ${"あ".repeat(2000)}  ` });
+  expect(repository.update).toHaveBeenCalledWith("1", "2", {
+    ...metadata,
+    nextUpdateNote: "11月ごろ",
+    policyComment: "あ".repeat(2000),
+  });
+});
+
+test("2000文字を超える活用方針は支出群の画面と同じメッセージで弾き、保存もキャッシュの無効化もしない", async () => {
+  const { repository, cacheInvalidator, usecase } = setup();
+  await expect(
+    usecase.execute("1", "2", { ...metadata, policyComment: "あ".repeat(2001) }),
+  ).rejects.toThrow("活用方針は2000文字以内で入力してください");
+  expect(repository.update).not.toHaveBeenCalled();
+  expect(cacheInvalidator.invalidateWebappCache).not.toHaveBeenCalled();
+});
+
 test("不正なIDではリポジトリを呼ばない", async () => {
   const { repository, usecase } = setup();
   await expect(usecase.execute("1", "-1", metadata)).rejects.toThrow("ID");

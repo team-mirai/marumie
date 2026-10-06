@@ -1,7 +1,6 @@
 import {
   assertValidIds,
   type LinkableEntry,
-  normalizePolicyComment,
   parseExpenditureGroupEdit,
   validateEntryLinks,
   validateGroupOrder,
@@ -44,30 +43,6 @@ describe("validateEntryLinks", () => {
 
   test("紐づけ無しは常に受け付ける", () => {
     expect(validateEntryLinks("1", [], [])).toEqual({ status: "valid", value: [] });
-  });
-});
-
-describe("normalizePolicyComment", () => {
-  test("前後の空白を落とす", () => {
-    expect(normalizePolicyComment("  調査ツールに重点  ")).toEqual({
-      status: "valid",
-      value: "調査ツールに重点",
-    });
-  });
-
-  test("2000文字までは受け付け、超えたら却下する", () => {
-    expect(normalizePolicyComment("あ".repeat(2000))).toMatchObject({ status: "valid" });
-    expect(normalizePolicyComment("あ".repeat(2001))).toMatchObject({
-      status: "invalid",
-      errors: [{ message: "活用方針は2000文字以内で入力してください" }],
-    });
-  });
-
-  test.each([null, 1, undefined])("文字列でなければ却下する: %j", (value) => {
-    expect(normalizePolicyComment(value)).toMatchObject({
-      status: "invalid",
-      errors: [{ message: "活用方針の入力が不正です" }],
-    });
   });
 });
 

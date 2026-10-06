@@ -17,9 +17,9 @@ export class UpdateBookUsecase {
     if (validation.status === "invalid")
       throw new BookError(validation.errors[0].code, validation.errors[0].message);
     await this.repository.update(politicianId, bookId, {
-      asOfDate: input.asOfDate,
-      nextUpdateNote: input.nextUpdateNote.trim(),
-      policyComment: input.policyComment.trim(),
+      asOfDate: validation.value.asOfDate,
+      nextUpdateNote: validation.value.nextUpdateNote.trim(),
+      policyComment: validation.value.policyComment,
     });
     // 時点・次回更新の予定・活用方針は公開ページに出るので、webapp のキャッシュを消す。
     // 保存自体は確定しているので、キャッシュ無効化の失敗は警告として返す（仕訳の公開と同じ扱い）。

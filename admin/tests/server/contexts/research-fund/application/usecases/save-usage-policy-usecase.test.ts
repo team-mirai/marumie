@@ -32,6 +32,12 @@ test("活用方針は前後の空白を落として保存し、webapp のキャ�
   expect(cacheInvalidator.invalidateWebappCache).toHaveBeenCalledTimes(1);
 });
 
+test("上限ちょうどの2000文字の活用方針は保存する", async () => {
+  const { repository, usecase } = setup();
+  await expect(usecase.execute("3", `  ${"あ".repeat(2000)}  `)).resolves.toEqual({ cacheWarning: null });
+  expect(repository.savePolicyComment).toHaveBeenCalledWith("3", "あ".repeat(2000));
+});
+
 test.each([null, 1, undefined, "あ".repeat(2001)])("保存できない活用方針は保存も無効化もしない: %j", async (value) => {
   const { repository, cacheInvalidator, usecase } = setup();
   await expect(usecase.execute("3", value)).rejects.toThrow("活用方針");

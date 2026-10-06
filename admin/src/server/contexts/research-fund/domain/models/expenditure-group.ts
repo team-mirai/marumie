@@ -128,26 +128,6 @@ export function validateEntryLinks(
   return { status: "valid", value: unique };
 }
 
-const MAX_POLICY_COMMENT_LENGTH = 2000;
-
-/** 活用方針を保存できる形（前後の空白を落とした文字列）にそろえる */
-export function normalizePolicyComment(value: unknown): ResearchFundResult<string> {
-  if (typeof value !== "string")
-    return invalidResearchFundResult(
-      "policyComment",
-      RF_ERROR_CODES.INVALID_POLICY_COMMENT,
-      "活用方針の入力が不正です",
-    );
-  const trimmed = value.trim();
-  if (trimmed.length > MAX_POLICY_COMMENT_LENGTH)
-    return invalidResearchFundResult(
-      "policyComment",
-      RF_ERROR_CODES.INVALID_POLICY_COMMENT,
-      `活用方針は${MAX_POLICY_COMMENT_LENGTH}文字以内で入力してください`,
-    );
-  return { status: "valid", value: trimmed };
-}
-
 /**
  * 支出群の並び順として受け付けられるか。同じ支出群が 2 回出てくる並びは受け付けない。
  * 帳簿の支出群と過不足が無いかは、最新の一覧と突き合わせるリポジトリが検出する。
