@@ -19,7 +19,7 @@ export class SetJournalEntriesAdvancedByUsecase {
   async execute(bookId: string, targets: readonly JournalTarget[], advancedBy: string) {
     const validated = validateAdvancedBy(advancedBy);
     if (validated.status === "invalid") throw new JournalReviewError(validated.errors[0].message);
-    const updating = await acceptJournalEntries(
+    const { accepted: updating } = await acceptJournalEntries(
       this.repository,
       bookId,
       targets,

@@ -3,6 +3,7 @@ import { useEffect, useId, useState } from "react";
 import { Button, Input, Label, NativeSelect, Textarea } from "@/client/components/ui";
 import { LegalCategoryLabel } from "@/client/components/research-fund/LegalCategoryLabel";
 import {
+  isAccountUnconfirmed,
   legalLabelOf,
   type JournalEdit,
   type ReviewAccount,
@@ -184,7 +185,7 @@ export function JournalEditor({
                 legalLabel={legalLabelOf(accounts, input.accountKey)}
                 className="mt-1 block"
               />
-              {input.accountKey === "needs-review" && (
+              {isAccountUnconfirmed(input.accountKey) && (
                 <p className="text-sm font-bold text-destructive">要確認：科目を確定してください</p>
               )}
             </div>
@@ -223,7 +224,7 @@ export function JournalEditor({
             {entry?.status === "draft" && (
               <Button
                 type="submit"
-                disabled={input.accountKey === "needs-review"}
+                disabled={isAccountUnconfirmed(input.accountKey)}
                 onClick={(e) => {
                   if (e.currentTarget.form?.reportValidity()) {
                     e.preventDefault();

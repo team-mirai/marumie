@@ -10,13 +10,13 @@ import type { JournalReviewRepository } from "@/server/contexts/research-fund/do
 /**
  * 選んだ下書きをまとめて確認済にする。1 件ずつの「確認済にする」と同じ業務ルール
  * （科目が確定済・下書きからの遷移・同時更新の検出）を全件に適用する。
- * 科目が未確定（要確認）の下書きは除外して残りを確認済にし、除外した件数を返す。
+ * 科目が未確定（要確認）の下書きは、判定が除外として扱う理由を返すので除外され、残りを確認済にして件数を返す。
  * それ以外の理由で通らない仕訳が 1 件でもあれば何も変更せず、理由を利用者に返す。
  */
 export class ApproveJournalEntriesUsecase {
   constructor(private repository: JournalReviewRepository) {}
   async execute(bookId: string, targets: readonly JournalTarget[]) {
-    const accepted = await acceptJournalEntries(
+    const { accepted, excluded } = await acceptJournalEntries(
       this.repository,
       bookId,
       targets,
@@ -27,12 +27,11 @@ export class ApproveJournalEntriesUsecase {
         notDone: "確認済にしませんでした",
       },
     );
-    const approving = accepted.filter((entry) => entry.accountKey !== "needs-review");
-    if (approving.length === 0)
+    if (accepted.length === 0)
       throw new JournalReviewError(
         "選んだ仕訳はすべて科目が要確認のため、確認済にできる仕訳がありません。科目を確定してください",
       );
-    await this.repository.approveMany(bookId, approving);
-    return { approved: approving.length, skipped: accepted.length - approving.length };
+    await this.repository.approveMany(bookId, accepted);
+    return { approved: accepted.length, skipped: excluded.length };
   }
 }

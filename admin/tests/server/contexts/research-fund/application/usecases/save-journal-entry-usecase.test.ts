@@ -27,6 +27,11 @@ test("未確定の科目は下書きで保存し、確認済への遷移を拒�
   await expect(usecase.execute("1", "2", entry.updatedAt, { ...input, accountKey: "needs-review" }, true)).rejects.toThrow("科目を確定");
   expect(repository.update).not.toHaveBeenCalled();
 });
+test("要確認の下書きは、科目を確定する保存なら確認済にできる", async () => {
+  const { repository, usecase } = setupUsecase({ accountKey: "needs-review" });
+  await usecase.execute("1", "2", entry.updatedAt, { ...input, accountKey: "taxi" }, true);
+  expect(repository.update.mock.calls[0][2]).toMatchObject({ status: "approved", accountKey: "taxi" });
+});
 test("別帳簿の仕訳・存在しない仕訳は更新できない", async () => {
   const { repository, usecase } = setupUsecase(); repository.find.mockResolvedValue(null);
   await expect(usecase.execute("9", "2", entry.updatedAt, input, true)).rejects.toThrow("見つかりません");

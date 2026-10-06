@@ -31,7 +31,8 @@ export class SaveJournalEntryUsecase {
       updatedAt,
       (found) =>
         JournalOperation.edit(found, input.amount) ??
-        (approve ? JournalOperation.approve(found) : null),
+        // 確認済にできるかは保存後の科目で判定する（要確認の下書きでも、科目を確定する保存なら確認済にできる）
+        (approve ? JournalOperation.approve(found, input.accountKey) : null),
     );
     if (entry.source === "grant") {
       await this.repository.update(bookId, entry, await this.prepareGrant(bookId, entry, input));

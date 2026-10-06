@@ -13,7 +13,7 @@ import type { JournalReviewRepository } from "@/server/contexts/research-fund/do
 export class RevertJournalEntriesToDraftUsecase {
   constructor(private repository: JournalReviewRepository) {}
   async execute(bookId: string, targets: readonly JournalTarget[]) {
-    const reverting = await acceptJournalEntries(
+    const { accepted: reverting } = await acceptJournalEntries(
       this.repository,
       bookId,
       targets,

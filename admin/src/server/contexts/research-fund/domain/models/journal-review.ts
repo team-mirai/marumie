@@ -19,12 +19,18 @@ export interface ReviewAccount extends ResearchFundAccount {
   /** 法律上の区分（法定区分）。科目マスタで科目ごとに一意に決まる。要確認など区分を持たない科目は null */
   legalLabel: string | null;
 }
+/** 科目マスタで「要確認（科目未確定）」を表す科目キー。この文字列との比較は isAccountUnconfirmed に閉じる */
+const UNCONFIRMED_ACCOUNT_KEY = "needs-review";
+/** 科目が未確定（要確認）か。確認済にできるかの判定や画面の注意表示が共通で使う */
+export function isAccountUnconfirmed(accountKey: string): boolean {
+  return accountKey === UNCONFIRMED_ACCOUNT_KEY;
+}
 /** 科目に対応する法律上の区分。科目が未確定（要確認・未選択）か区分を持たない科目なら null（未定） */
 export function legalLabelOf(
   accounts: readonly ReviewAccount[],
   accountKey: string,
 ): string | null {
-  if (accountKey === "needs-review") return null;
+  if (isAccountUnconfirmed(accountKey)) return null;
   return accounts.find((a) => a.key === accountKey)?.legalLabel ?? null;
 }
 export interface ReviewEntry extends JournalEdit, JournalEntry {

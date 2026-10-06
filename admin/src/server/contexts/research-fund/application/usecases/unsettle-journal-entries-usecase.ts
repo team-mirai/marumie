@@ -10,7 +10,7 @@ import type { JournalReviewRepository } from "@/server/contexts/research-fund/do
 export class UnsettleJournalEntriesUsecase {
   constructor(private repository: JournalReviewRepository) {}
   async execute(bookId: string, targets: readonly JournalTarget[]) {
-    const unsettling = await acceptJournalEntries(
+    const { accepted: unsettling } = await acceptJournalEntries(
       this.repository,
       bookId,
       targets,

@@ -1,6 +1,9 @@
 import { settlementRejection } from "@/server/contexts/research-fund/domain/models/advance";
 import { JournalEntry } from "@/server/contexts/research-fund/domain/models/journal-entry";
-import type { ReviewEntry } from "@/server/contexts/research-fund/domain/models/journal-review";
+import {
+  isAccountUnconfirmed,
+  type ReviewEntry,
+} from "@/server/contexts/research-fund/domain/models/journal-review";
 
 /**
  * 仕訳の確認画面の各操作を、その仕訳にしてよいかの判定。
@@ -12,7 +15,15 @@ import type { ReviewEntry } from "@/server/contexts/research-fund/domain/models/
 /** 判定に使う仕訳の最小の形 */
 export type OperableEntry = Pick<
   ReviewEntry,
-  "description" | "source" | "status" | "advancedBy" | "settledAt" | "entryDate" | "amount" | "id"
+  | "description"
+  | "source"
+  | "status"
+  | "advancedBy"
+  | "settledAt"
+  | "entryDate"
+  | "amount"
+  | "accountKey"
+  | "id"
 >;
 
 /**
@@ -22,6 +33,11 @@ export type OperableEntry = Pick<
 export interface OperationRejection {
   one: string;
   many: string;
+  /**
+   * まとめて操作では拒否ではなく除外として扱う理由。
+   * 要確認の下書きが 1 件混ざっただけで、選んだ全件が止まらないようにする。
+   */
+  bulkExcludable?: true;
 }
 
 /** まとめて操作で支給を選んだときの理由。支給は一覧で選べないので、画面と食い違った選択として扱う */
@@ -50,8 +66,12 @@ export const JournalOperation = {
         : settled(entry, "精算済の仕訳は金額を変更できません。先に未精算に戻してください"))
     );
   },
-  /** 確認済にする。支給は下書きを経ずに確認済で作るので対象にならない */
-  approve(entry: OperableEntry): OperationRejection | null {
+  /**
+   * 確認済にする。支給は下書きを経ずに確認済で作るので対象にならない。
+   * 科目が未確定（要確認）なら確認済にできない。編集して確認済にする経路は保存後の科目で判定するので、
+   * accountKey に保存する科目を渡す（省略すると今の科目で判定する）。
+   */
+  approve(entry: OperableEntry, accountKey: string = entry.accountKey): OperationRejection | null {
     const rejection = published(entry);
     if (rejection) return rejection;
     if (entry.source === "grant") return { one: "支給はすでに確認済です", many: UNSUPPORTED_ENTRY };
@@ -60,6 +80,13 @@ export const JournalOperation = {
       return {
         one: result.errors[0].message,
         many: `「${entry.description}」は下書きではありません`,
+      };
+    // 要確認はまとめて操作では除外する。他の理由と同じ拒否にすると、1 件混ざっただけで全体が止まってしまう。
+    if (isAccountUnconfirmed(accountKey))
+      return {
+        one: "科目を確定してから確認済にしてください",
+        many: `「${entry.description}」は科目が要確認です`,
+        bulkExcludable: true,
       };
     return null;
   },

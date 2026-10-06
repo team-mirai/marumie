@@ -13,7 +13,7 @@ import type { JournalReviewRepository } from "@/server/contexts/research-fund/do
 export class DiscardJournalEntriesUsecase {
   constructor(private repository: JournalReviewRepository) {}
   async execute(bookId: string, targets: readonly JournalTarget[]) {
-    const discarding = await acceptJournalEntries(
+    const { accepted: discarding } = await acceptJournalEntries(
       this.repository,
       bookId,
       targets,

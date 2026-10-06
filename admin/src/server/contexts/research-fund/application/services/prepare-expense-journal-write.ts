@@ -12,6 +12,7 @@ import type { JournalReviewRepository } from "@/server/contexts/research-fund/do
 /**
  * 支出の仕訳の入力を検証し、保存する形（複式の行・hash）に組み立てる。
  * 手動作成と編集の保存で同じ検証をするために、ここに置く。
+ * 確認済にできるかの判定は JournalOperation.approve が持つので、ここでは扱わない。
  */
 export async function prepareExpenseJournalWrite(
   repository: JournalReviewRepository,
@@ -28,8 +29,6 @@ export async function prepareExpenseJournalWrite(
   const year = await repository.year(bookId);
   if (!year || Number(input.entryDate.slice(0, 4)) !== year)
     throw new JournalReviewError("帳簿の年度内の日付を指定してください");
-  if (status === "approved" && input.accountKey === "needs-review")
-    throw new JournalReviewError("科目を確定してから確認済にしてください");
   const accounts = await repository.accounts();
   const account = accounts.find((a) => a.key === input.accountKey);
   const assetAccount = accounts.find((a) => a.key === "bank");

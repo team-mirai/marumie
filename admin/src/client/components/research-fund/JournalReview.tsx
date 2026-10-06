@@ -38,6 +38,7 @@ import {
   todayInJst,
 } from "@/server/contexts/research-fund/domain/models/advance";
 import {
+  isAccountUnconfirmed,
   legalLabelOf,
   type JournalEdit,
   type ReviewAccount,
@@ -711,7 +712,7 @@ export function JournalReview({
                       className={cn(
                         "cursor-pointer",
                         entry.id === selected?.id && "bg-accent",
-                        entry.accountKey === "needs-review" && "border-l-4 border-l-destructive",
+                        isAccountUnconfirmed(entry.accountKey) && "border-l-4 border-l-destructive",
                       )}
                     >
                       <TableCell
@@ -864,7 +865,7 @@ export function JournalReview({
           </DialogHeader>
           <JournalEditor
             entry={null}
-            accounts={accounts.filter((a) => a.key !== "needs-review")}
+            accounts={accounts.filter((a) => !isAccountUnconfirmed(a.key))}
             year={target.year}
             pending={pending}
             onSave={save}
