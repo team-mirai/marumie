@@ -7,6 +7,9 @@
 --   統合で残す行の属性（郵便番号・職業・テナント）は最小 id の行のものをそのまま使う。
 --   紐づけ表は transaction_id ごとに 1 行の一意制約があるので、付け替えで (transaction_id, *_id) が重複することはない。
 
+-- 途中で失敗したときにトリガーが止まったまま・一意インデックスが消えたままにならないよう、全体を 1 つのトランザクションで行う。
+BEGIN;
+
 -- 付け替えの UPDATE で紐づけ表の検証トリガーが既存行を再検証しないよう、統合の間だけ止める。
 -- トリガーが見るのは取引の種別・カテゴリと寄付者の donor_type だけで、統合先も同じ donor_type なので
 -- 付け替えで検証結果は変わらない。止めないと、トリガーの規則が後から変わって今の規則に合わない既存の紐づけで失敗しうる。
@@ -68,3 +71,5 @@ CREATE UNIQUE INDEX "counterparts_name_address_key" ON "public"."counterparts"("
 
 DROP INDEX "public"."donors_name_address_donor_type_key";
 CREATE UNIQUE INDEX "donors_name_address_donor_type_key" ON "public"."donors"("name", "address", "donor_type") NULLS NOT DISTINCT;
+
+COMMIT;
