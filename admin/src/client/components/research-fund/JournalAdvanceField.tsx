@@ -117,7 +117,8 @@ export function JournalAdvanceField({
                   }
                 />
                 <p className="text-xs text-muted-foreground">
-                  未来の日付と、仕訳の日付（<span className="font-latin">{entry.entryDate}</span>
+                  未来の日付と、仕訳の日付（
+                  <span className="font-latin">{entry.entryDate.replaceAll("-", ".")}</span>
                   ）より前の日付は指定できません
                 </p>
                 <div className="flex flex-wrap gap-2">
@@ -131,12 +132,15 @@ export function JournalAdvanceField({
                   </Button>
                   <Button
                     type="button"
-                    disabled={pending || settling.settledAt === ""}
+                    disabled={pending || settling.settledAt === "" || rejection !== null}
                     onClick={() => onSettle(settling.settledAt)}
                   >
                     精算する
                   </Button>
                 </div>
+                {rejection !== null && (
+                  <p className="text-xs font-bold text-primary-active">{rejection}</p>
+                )}
               </div>
             ))}
         </>
@@ -144,7 +148,7 @@ export function JournalAdvanceField({
         <>
           <p className="text-sm">
             <span className="font-bold">{entry.advancedBy}</span>
-            ／精算済（<span className="font-latin">{entry.settledAt}</span>）
+            ／精算済（<span className="font-latin">{entry.settledAt.replaceAll("-", ".")}</span>）
           </p>
           <p className="text-xs text-muted-foreground">
             精算済の仕訳は金額・立替者を変更できず、破棄もできません。直すには未精算に戻してください。

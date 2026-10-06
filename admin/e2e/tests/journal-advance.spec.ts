@@ -5,6 +5,8 @@ import { clickUntil } from "../helpers/interactions";
 // 精算は金額が確定した確認済・公開中だけに許す。
 // 帳簿は前年度で作る（仕訳の日付が必ず過去になり、精算日に「今日」を指定できる）。
 const YEAR = new Date().getFullYear() - 1;
+/** 入力値（YYYY-MM-DD）を画面表示の日付表記（YYYY.MM.DD）に変換する */
+const dotted = (isoDate: string) => isoDate.replaceAll("-", ".");
 
 test("立替者の入力→一括設定→確認済→一括精算、未精算の絞り込みと集計", async ({ page }) => {
   const name = `e2e-advance-${Date.now()}`;
@@ -93,7 +95,8 @@ test("立替者の入力→一括設定→確認済→一括精算、未精算�
   const settledAt = `${YEAR}-09-30`;
   await settleDialog.getByLabel("精算日").fill(settledAt);
   await settleDialog.getByRole("button", { name: "精算済にする" }).click();
-  await expect(page.getByText(`2件の立替を精算済（${settledAt}）にしました`)).toBeVisible();
+  // 日付は画面表示では YYYY.MM.DD（admin UI ガイドライン）
+  await expect(page.getByText(`2件の立替を精算済（${dotted(settledAt)}）にしました`)).toBeVisible();
   await expect(meeting).toContainText("精算済");
   await expect(printing).toContainText("精算済");
   // 精算済は未精算の集計から外れる
@@ -119,7 +122,7 @@ test("立替者の入力→一括設定→確認済→一括精算、未精算�
   await expect(page.getByLabel("金額", { exact: true })).toBeDisabled();
   await expect(page.getByRole("button", { name: "破棄", exact: true })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "立替者を保存" })).toHaveCount(0);
-  await expect(page.getByText(`秘書B／精算済（${settledAt}）`)).toBeVisible();
+  await expect(page.getByText(`秘書B／精算済（${dotted(settledAt)}）`)).toBeVisible();
   // 未精算に戻すと変更できるようになる
   await page.getByRole("button", { name: "未精算に戻す" }).click();
   await expect(page.getByText("1件を未精算に戻しました")).toBeVisible();
@@ -139,11 +142,13 @@ test("立替者の入力→一括設定→確認済→一括精算、未精算�
   await expect(page.getByLabel("精算日")).not.toHaveValue("");
   await page.getByLabel("精算日").fill(singleSettledAt);
   await page.getByRole("button", { name: "精算する" }).click();
-  await expect(page.getByText(`1件の立替を精算済（${singleSettledAt}）にしました`)).toBeVisible();
+  await expect(
+    page.getByText(`1件の立替を精算済（${dotted(singleSettledAt)}）にしました`),
+  ).toBeVisible();
   await expect(meeting).toContainText("精算済");
   // 欄は「立替者／精算済（日付）」と「未精算に戻す」の表示に切り替わる
   await clickUntil(meeting, (options) =>
-    expect(page.getByText(`秘書B／精算済（${singleSettledAt}）`)).toBeVisible(options),
+    expect(page.getByText(`秘書B／精算済（${dotted(singleSettledAt)}）`)).toBeVisible(options),
   );
   await page.getByRole("button", { name: "未精算に戻す" }).click();
   await expect(page.getByText("1件を未精算に戻しました")).toBeVisible();

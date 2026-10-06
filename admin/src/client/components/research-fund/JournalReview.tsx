@@ -331,7 +331,7 @@ export function JournalReview({
           return;
         }
         const { settled = 0, settledAt: saved = date } = result.settlement ?? {};
-        toast.success(`${settled}件の立替を精算済（${saved}）にしました`);
+        toast.success(`${settled}件の立替を精算済（${saved.replaceAll("-", ".")}）にしました`);
         setSettling(false);
         setChecked([]);
         router.refresh();
@@ -767,7 +767,10 @@ export function JournalReview({
                           )}
                           {entry.settledAt !== null && (
                             <span className="rounded-full border bg-accent px-2 text-accent-foreground">
-                              精算済 <span className="font-latin">{entry.settledAt}</span>
+                              精算済{" "}
+                              <span className="font-latin">
+                                {entry.settledAt.replaceAll("-", ".")}
+                              </span>
                             </span>
                           )}
                         </div>
@@ -843,7 +846,10 @@ export function JournalReview({
                     advancers={advancers}
                     pending={pending}
                     onSave={(advancedBy) => assignAdvancedBy([selected], advancedBy)}
-                    onSettle={(date) => settle([selected], date)}
+                    onSettle={(date) => {
+                      // 仕訳の編集フォームに未保存の変更があると、精算後の再読み込みで失われるので確認する
+                      if (allowLeave()) settle([selected], date);
+                    }}
                     onUnsettle={() => unsettle([selected])}
                   />
                 )}
