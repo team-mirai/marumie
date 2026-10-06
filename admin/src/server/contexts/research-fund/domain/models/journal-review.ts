@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { JournalEntry } from "@/server/contexts/research-fund/domain/models/journal-entry";
+import type { ReceiptIssuer } from "@/server/contexts/research-fund/domain/models/extracted-receipt";
 import type { PayeeLinkSource } from "@/server/contexts/research-fund/domain/models/payee";
 import { MAX_JOURNAL_AMOUNT } from "@/server/contexts/research-fund/domain/models/journal-amount";
 import type {
@@ -58,6 +59,11 @@ export interface ReviewEntry extends JournalEdit, JournalEntry {
   payeeId: string | null;
   /** 支払先を誰が紐づけたか。支払先があるときだけ持つ */
   payeeLinkSource: PayeeLinkSource | null;
+  /**
+   * この仕訳を作った読み取りで書類から読み取った発行元。支払先が未設定のとき、支払先を作る候補として出す。
+   * 手入力の仕訳・発行元を出さない古い形式の読み取り結果では null
+   */
+  issuer: ReceiptIssuer | null;
 }
 export interface JournalWrite extends JournalEdit {
   hash: string;

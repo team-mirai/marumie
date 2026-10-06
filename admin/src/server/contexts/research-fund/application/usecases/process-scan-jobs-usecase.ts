@@ -6,6 +6,7 @@ import type {
   ClaimedScanJob,
   ScanRepository,
 } from "@/server/contexts/research-fund/domain/repositories/scan-repository.interface";
+import { matchPayeeByIssuer } from "@/server/contexts/research-fund/domain/services/issuer-payee-matcher";
 import { buildScanDraftEntries } from "@/server/contexts/research-fund/domain/services/scan-journal-builder";
 import { ResearchFundDocument } from "@/server/contexts/research-fund/domain/models/document";
 
@@ -108,6 +109,12 @@ export class ProcessScanJobsUsecase {
         await this.scanRepository.failJob(job.id, entries.errors[0].message, rawJson);
         return false;
       }
+      // 発行元が確認済みの支払先に確実に一致したら、この書類の仕訳すべてに紐づける（ルール照合）。
+      // 一致しなければ未紐づけのまま残し、確認画面で読み取った発行元から支払先を作れるようにする
+      const payee = matchPayeeByIssuer(
+        extracted.value.issuer,
+        await this.scanRepository.payees(input.bookId),
+      );
       await this.scanRepository.completeJob({
         bookId: input.bookId,
         jobId: job.id,
@@ -118,6 +125,7 @@ export class ProcessScanJobsUsecase {
         // 読み直しジョブは、読み取りに成功したときだけ書類の下書きを置き換える。
         // ここまでの失敗はすべて failJob で終わるので、元の下書きは残る。
         replaceDrafts: job.rereadInstruction !== null,
+        payeeId: payee?.id ?? null,
       });
       return true;
     } catch (error) {

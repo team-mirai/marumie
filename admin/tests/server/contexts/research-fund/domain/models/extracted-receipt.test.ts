@@ -29,6 +29,7 @@ describe("ExtractedReceipt.normalize", () => {
         status: "valid",
         value: {
           date: "2026-09-10",
+          issuer: null,
           items: [{ ...receipt.items[0], date: null, note: null, memo: null, split_group: null }],
         },
       });
@@ -50,6 +51,7 @@ describe("ExtractedReceipt.normalize", () => {
       status: "valid",
       value: {
         date: receipt.date,
+        issuer: null,
         items: [
           { ...items[0], date: null, note: "調査用", memo: null, split_group: "order-1" },
           { ...items[1], date: null, memo: null },
@@ -163,5 +165,68 @@ describe("ExtractedReceipt.normalize", () => {
         items: [{ ...receipt.items[0], amount: 999_999_999_999 }],
       }).status,
     ).toBe("valid");
+  });
+});
+
+describe("書類の発行元", () => {
+  it("発行元を書類単位で保持し、空白を整える", () => {
+    const result = ExtractedReceipt.normalize({
+      ...receipt,
+      issuer: {
+        name: " 東京タクシー株式会社 ",
+        address: "東京都千代田区千代田1-1",
+        phone: "03-1234-5678",
+        invoice_registration_number: " T1234567890123 ",
+      },
+    });
+    expect(result).toMatchObject({
+      status: "valid",
+      value: {
+        issuer: {
+          name: "東京タクシー株式会社",
+          address: "東京都千代田区千代田1-1",
+          phone: "03-1234-5678",
+          invoice_registration_number: "T1234567890123",
+        },
+      },
+    });
+  });
+
+  it("発行元を出さない古い形式の読み取り結果も受け付ける", () => {
+    expect(ExtractedReceipt.normalize(receipt)).toMatchObject({
+      status: "valid",
+      value: { issuer: null },
+    });
+  });
+
+  it.each([
+    ["空の項目だけ", { name: " ", address: "", phone: null }],
+    ["不正な形", "東京タクシー"],
+  ])("発行元が %s なら読み取り全体を失敗させず null にする", (_, issuer) => {
+    expect(ExtractedReceipt.normalize({ ...receipt, issuer })).toMatchObject({
+      status: "valid",
+      value: { issuer: null },
+    });
+  });
+
+  it("読み取れなかった項目は null にする", () => {
+    expect(
+      ExtractedReceipt.normalize({ ...receipt, issuer: { name: "JR東日本", phone: 123 } }),
+    ).toMatchObject({
+      value: {
+        issuer: { name: "JR東日本", address: null, phone: null, invoice_registration_number: null },
+      },
+    });
+  });
+
+  it("保存済みの原文から発行元を取り出す（古い形式・原文が無いときは null）", () => {
+    expect(ExtractedReceipt.issuerOf({ ...receipt, issuer: { name: "JR東日本" } })).toEqual({
+      name: "JR東日本",
+      address: null,
+      phone: null,
+      invoice_registration_number: null,
+    });
+    expect(ExtractedReceipt.issuerOf(receipt)).toBeNull();
+    expect(ExtractedReceipt.issuerOf(null)).toBeNull();
   });
 });

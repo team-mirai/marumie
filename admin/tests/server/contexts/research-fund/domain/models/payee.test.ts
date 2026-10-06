@@ -3,6 +3,7 @@ import {
   normalizeInvoiceRegistrationNumber,
   normalizePostalCode,
   payeeAccessRejection,
+  payeeFormInputFromIssuer,
   sortPayees,
   validatePayeeInput,
   withSameDocumentEntries,
@@ -105,4 +106,18 @@ test("支払先は名称順、同名なら住所順に並べる", () => {
   expect(sortPayees([{ name: "東京タクシー", address: "B" }, { name: "JR東日本", address: "" }, { name: "東京タクシー", address: "A" }])).toEqual([
     { name: "JR東日本", address: "" }, { name: "東京タクシー", address: "A" }, { name: "東京タクシー", address: "B" },
   ]);
+});
+
+describe("payeeFormInputFromIssuer", () => {
+  const issuer = { name: "東京タクシー株式会社", address: "〒１００－０００１ 東京都千代田区千代田1-1", phone: "03-1234-5678", invoice_registration_number: "t1234567890123" };
+
+  it("読み取った発行元を支払先の入力にし、住所の先頭の郵便番号を郵便番号の欄に移す", () => {
+    const formInput = payeeFormInputFromIssuer(issuer);
+    expect(formInput).toEqual({ name: "東京タクシー株式会社", postalCode: "100-0001", address: "東京都千代田区千代田1-1", invoiceRegistrationNumber: "T1234567890123" });
+    expect(validatePayeeInput(formInput).status).toBe("valid");
+  });
+
+  it("形の合わないインボイス登録番号・読み取れなかった項目は未入力にする", () => {
+    expect(payeeFormInputFromIssuer({ name: "JR東日本", address: null, phone: null, invoice_registration_number: "T123" })).toEqual({ name: "JR東日本", postalCode: "", address: "", invoiceRegistrationNumber: "" });
+  });
 });

@@ -1,5 +1,6 @@
 import "server-only";
 import { Prisma, type PrismaClient } from "@prisma/client";
+import { ExtractedReceipt } from "@/server/contexts/research-fund/domain/models/extracted-receipt";
 import {
   JournalReviewError,
   type JournalWrite,
@@ -73,6 +74,7 @@ function model(row: Row): ReviewEntry | null {
     settledAt: row.settledAt ? row.settledAt.toISOString().slice(0, 10) : null,
     payeeId: row.payeeId === null ? null : String(row.payeeId),
     payeeLinkSource: row.payeeLinkSource ?? null,
+    issuer: ExtractedReceipt.issuerOf(job?.rawJson),
   };
 }
 function data(input: JournalWrite) {

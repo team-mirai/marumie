@@ -21,6 +21,7 @@ function setup() {
   };
   const line = { createMany: jest.fn() };
   const account = { findMany: jest.fn() };
+  const payee = { count: jest.fn(), findMany: jest.fn() };
   const tx = {
     researchFundScanBatch: batch,
     researchFundDocument: document,
@@ -28,6 +29,7 @@ function setup() {
     researchFundJournalEntry: entry,
     researchFundJournalLine: line,
     researchFundAccount: account,
+    researchFundPayee: payee,
     $queryRaw: jest.fn(),
   };
   const client = {
@@ -42,6 +44,7 @@ function setup() {
     entry,
     line,
     account,
+    payee,
     client,
     repository: new PrismaScanRepository(client as unknown as PrismaClient),
   };
@@ -251,6 +254,7 @@ const COMPLETE_INPUT = {
   rawJson: { date: "2026-04-01" },
   userId: "user-1",
   replaceDrafts: false,
+  payeeId: null,
   entries: [
     {
       entryDate: "2026-04-01",
@@ -353,6 +357,62 @@ test("一部の仕訳だけ既にある場合は新しく作れた分にだけ�
   expect(line.createMany).toHaveBeenCalledWith({
     data: second.lines.map((l) => ({ ...l, entryId: BigInt(102) })),
   });
+});
+
+test("発行元の照合で決まった支払先を、作った仕訳すべてに「ルール照合」として紐づける", async () => {
+  const { entry, payee, repository } = setup();
+  payee.count.mockResolvedValue(1);
+  entry.createManyAndReturn.mockResolvedValue([]);
+  const second = { ...COMPLETE_INPUT.entries[0], description: "書籍代", hash: "hash-b" };
+  await repository.completeJob({
+    ...COMPLETE_INPUT,
+    entries: [COMPLETE_INPUT.entries[0], second],
+    payeeId: "7",
+  });
+  // 支払先が帳簿と同じ議員のものかを同じトランザクションで確かめる（#1674）
+  expect(payee.count).toHaveBeenCalledWith({
+    where: { id: BigInt(7), politician: { books: { some: { id: BigInt(12) } } } },
+  });
+  expect(entry.createManyAndReturn.mock.calls[0][0].data).toEqual([
+    expect.objectContaining({ payeeId: BigInt(7), payeeLinkSource: "rule" }),
+    expect.objectContaining({ payeeId: BigInt(7), payeeLinkSource: "rule" }),
+  ]);
+});
+
+test("帳簿と別の議員の支払先は紐づけずに下書きを作る", async () => {
+  const { entry, job, payee, repository } = setup();
+  payee.count.mockResolvedValue(0);
+  entry.createManyAndReturn.mockResolvedValue([]);
+  await repository.completeJob({ ...COMPLETE_INPUT, payeeId: "7" });
+  expect(entry.createManyAndReturn.mock.calls[0][0].data).toEqual([
+    expect.objectContaining({ payeeId: null, payeeLinkSource: null }),
+  ]);
+  expect(job.update).toHaveBeenCalledWith(
+    expect.objectContaining({ data: expect.objectContaining({ status: "succeeded" }) }),
+  );
+});
+
+test("照合で支払先が決まらなければ未紐づけのまま作る", async () => {
+  const { entry, payee, repository } = setup();
+  entry.createManyAndReturn.mockResolvedValue([]);
+  await repository.completeJob(COMPLETE_INPUT);
+  expect(payee.count).not.toHaveBeenCalled();
+  expect(entry.createManyAndReturn.mock.calls[0][0].data).toEqual([
+    expect.objectContaining({ payeeId: null, payeeLinkSource: null }),
+  ]);
+});
+
+test("発行元の照合に使う支払先は帳簿の議員のものだけを返す", async () => {
+  const { payee, repository } = setup();
+  payee.findMany.mockResolvedValue([
+    { id: BigInt(7), politicianId: BigInt(5), name: "JR東日本", postalCode: null, address: "", invoiceRegistrationNumber: null },
+  ]);
+  await expect(repository.payees("12")).resolves.toEqual([
+    { id: "7", politicianId: "5", name: "JR東日本", postalCode: null, address: "", invoiceRegistrationNumber: null },
+  ]);
+  expect(payee.findMany).toHaveBeenCalledWith(
+    expect.objectContaining({ where: { politician: { books: { some: { id: BigInt(12) } } } } }),
+  );
 });
 
 test("通常のスキャンでは既存の仕訳を消さない", async () => {

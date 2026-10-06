@@ -77,7 +77,7 @@ test("手動仕訳を取得し、書類・メモの欠損値を表示用に変�
     id: entry.id, entryDate: input.entryDate, updatedAt: entry.updatedAt, description: "移動",
     note: "", memo: "", status: "draft", source: "manual", documentId: null, splitGroup: null,
     model: null, promptVersion: null, amount: 1200, accountKey: "taxi", advancedBy: null, settledAt: null,
-    payeeId: null, payeeLinkSource: null,
+    payeeId: null, payeeLinkSource: null, issuer: null,
   });
   tx.researchFundJournalEntry.findFirst.mockResolvedValue(null);
   await expect(repository.find("9", entry.id)).resolves.toBeNull();
@@ -379,4 +379,17 @@ test("同じ名称・住所の支払先があれば、登録済みのエラー�
   tx.researchFundPayee.create.mockRejectedValue(new Prisma.PrismaClientKnownRequestError("duplicate", { code: "P2002", clientVersion: "test" }));
   await expect(repository.createPayeeAndSetPayee("1", [entry], "5", payeeInput)).rejects.toThrow("同じ名称・住所の支払先がすでに登録されています");
   expect(tx.researchFundJournalEntry.updateMany).not.toHaveBeenCalled();
+});
+
+test("仕訳を作った読み取りの原文から発行元を添える（古い形式の原文なら null）", async () => {
+  const { repository, tx } = setup();
+  const job = (rawJson: unknown) => ({ createdAt: new Date("2026-08-01"), model: "m", prompt: { version: 1 }, rawJson });
+  const scanned = (rawJson: unknown) => ({ ...rowWithLines(), source: "scan", documentId: BigInt(3), document: { scanJobs: [job(rawJson)] } });
+  tx.researchFundJournalEntry.findMany.mockResolvedValue([
+    scanned({ date: "2026-08-01", issuer: { name: "JR東日本", address: "東京都渋谷区", phone: null, invoice_registration_number: null }, items: [] }),
+    { ...scanned({ date: "2026-08-01", items: [] }), id: BigInt(2) },
+  ]);
+  const [withIssuer, legacy] = await repository.list("1");
+  expect(withIssuer.issuer).toEqual({ name: "JR東日本", address: "東京都渋谷区", phone: null, invoice_registration_number: null });
+  expect(legacy.issuer).toBeNull();
 });

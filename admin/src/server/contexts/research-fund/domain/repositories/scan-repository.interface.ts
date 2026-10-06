@@ -2,6 +2,7 @@ import type { ScanBatchView } from "@/server/contexts/research-fund/domain/model
 import type { ScanDraftEntry } from "@/server/contexts/research-fund/domain/services/scan-journal-builder";
 import type { ResearchFundAccount } from "@/server/contexts/research-fund/domain/models/journal-posting";
 import type { RereadCandidate } from "@/server/contexts/research-fund/domain/models/scan-reread";
+import type { Payee } from "@/server/contexts/research-fund/domain/models/payee";
 
 export interface CreateScanBatchInput {
   bookId: string;
@@ -65,6 +66,8 @@ export interface ScanRepository {
    * 同じ hash の仕訳が既にあれば（同時実行を含む）その明細は読み飛ばし、ジョブの完了は続行する。
    * replaceDrafts なら、同じトランザクションで書類の下書き仕訳を先に消してから作る（読み直し）。
    * そのとき書類に確認済・公開中の仕訳があれば、何も変えずに ScanJobError を投げる。
+   * payeeId があれば、作った仕訳すべてにその支払先を「ルール照合」として紐づける。
+   * 支払先が帳簿と同じ議員のものでなければ（照合の後に変わった場合を含む）紐づけずに完了する。
    */
   completeJob(input: {
     bookId: string;
@@ -74,11 +77,14 @@ export interface ScanRepository {
     entries: ScanDraftEntry[];
     userId: string;
     replaceDrafts: boolean;
+    payeeId: string | null;
   }): Promise<void>;
   /** ジョブを failed にしてエラーを記録する */
   failJob(jobId: string, error: string, rawJson?: unknown): Promise<void>;
   /** failed のジョブを queued に戻す。戻せたら true */
   requeueJob(bookId: string, jobId: string): Promise<boolean>;
+  /** 帳簿の議員の支払先（書類の発行元との照合に使う）。別の議員の支払先は返さない */
+  payees(bookId: string): Promise<Payee[]>;
   /** 科目マスタ（下書き仕訳の科目解決に使う） */
   accounts(): Promise<ResearchFundAccount[]>;
 }

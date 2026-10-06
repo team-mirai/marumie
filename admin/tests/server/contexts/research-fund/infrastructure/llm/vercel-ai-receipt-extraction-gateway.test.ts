@@ -58,6 +58,7 @@ describe("VercelAIReceiptExtractionGateway（LLMのみモック、SDKの構造�
         status: "valid",
         value: {
           date: valid.date,
+          issuer: null,
           items: [
             {
               item: "書籍",

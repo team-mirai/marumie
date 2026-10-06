@@ -6,8 +6,24 @@ import {
   type ResearchFundResult,
 } from "@/server/contexts/research-fund/domain/types/validation";
 
+/** 書類の発行元。1 枚の書類の発行元は 1 者なので、明細ではなく書類単位で持つ */
+export const receiptIssuerSchema = z.object({
+  name: z.string().nullable().describe("発行元の名称（店名・会社名など）。読み取れなければ null"),
+  address: z.string().nullable().describe("発行元の住所。読み取れなければ null"),
+  phone: z.string().nullable().describe("発行元の電話番号。読み取れなければ null"),
+  invoice_registration_number: z
+    .string()
+    .nullable()
+    .describe("発行元のインボイス登録番号（T に続く13桁）。記載がなければ null"),
+});
+
+export type ReceiptIssuer = z.infer<typeof receiptIssuerSchema>;
+
 export const extractedReceiptSchema = z.object({
   date: z.iso.date().describe("領収書の日付（YYYY-MM-DD）"),
+  issuer: receiptIssuerSchema
+    .nullable()
+    .describe("書類の発行元（書類単位で 1 者）。発行元が読み取れなければ null"),
   items: z
     .array(
       z.object({
@@ -79,12 +95,37 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
+function textOrNull(value: unknown): string | null {
+  return typeof value === "string" ? value.trim() || null : null;
+}
+
+/**
+ * 発行元を正規化する。発行元は支払先の照合に使う補助の情報なので、欠落・不正な形でも
+ * 読み取り全体を失敗させず null（読み取れなかった）として扱う。
+ * 発行元を出さない古い形式の読み取り結果もこれで受け付ける。
+ */
+function normalizeIssuer(value: unknown): ReceiptIssuer | null {
+  if (!isRecord(value)) return null;
+  const issuer = {
+    name: textOrNull(value.name),
+    address: textOrNull(value.address),
+    phone: textOrNull(value.phone),
+    invoice_registration_number: textOrNull(value.invoice_registration_number),
+  };
+  return Object.values(issuer).every((field) => field === null) ? null : issuer;
+}
+
 export const ExtractedReceipt = {
+  /** 保存済みの読み取りの原文から発行元を取り出す。発行元が無い・古い形式なら null */
+  issuerOf(rawJson: unknown): ReceiptIssuer | null {
+    return isRecord(rawJson) ? normalizeIssuer(rawJson.issuer) : null;
+  },
   normalize(input: unknown): ResearchFundResult<ExtractedReceipt> {
     const normalized = isRecord(input)
       ? {
           ...input,
           date: trimText(input.date),
+          issuer: normalizeIssuer(input.issuer),
           items: Array.isArray(input.items)
             ? input.items.map((item: unknown) =>
                 isRecord(item)
