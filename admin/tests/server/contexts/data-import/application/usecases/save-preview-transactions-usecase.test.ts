@@ -388,5 +388,59 @@ TXN-001,2025/6/1,人件費,,,,,,1000,普通預金,,,,,,1000,給与支払,,人件
         ["different-org-id"]
       );
     });
+
+    it("年度をまたいで同じ取引No がある CSV は、前年度の取引を更新せず年度ごとに新規・更新する", async () => {
+      const csvContent = `取引No,取引日,借方勘定科目,借方補助科目,借方部門,借方取引先,借方税区分,借方インボイス,借方金額,貸方勘定科目,貸方補助科目,貸方部門,貸方取引先,貸方税区分,貸方インボイス,貸方金額,摘要,仕訳メモ,タグ
+1,2025/6/1,人件費,,,,,,1000,普通預金,,,,,,1000,給与支払（2025）,,人件費
+1,2026/1/5,人件費,,,,,,2000,普通預金,,,,,,2000,給与支払（2026）,,人件費`;
+
+      // 2025 年度に取引No 1 が既にあり、内容が CSV と異なる
+      mockRepository.findByTransactionNos.mockResolvedValue([{
+        id: 'existing-2025-1',
+        political_organization_id: '1',
+        transaction_no: '1',
+        transaction_date: new Date('2025-06-01'),
+        financial_year: 2025,
+        transaction_type: 'expense',
+        debit_account: '人件費',
+        debit_amount: 1000,
+        credit_account: '普通預金',
+        credit_amount: 1000,
+        description: '給与支払（2025・修正前）',
+        friendly_category: '',
+        memo: '',
+        category_key: '人件費',
+        label: '',
+        hash: 'old-hash',
+        created_at: new Date(),
+        updated_at: new Date()
+      }]);
+      mockRepository.createMany.mockImplementation(async (transactions) =>
+        transactions.map((t, index) => ({ ...t, id: `new-id-${index}`, label: t.label || '', created_at: new Date(), updated_at: new Date() })),
+      );
+      mockRepository.updateMany.mockImplementation(async (updateData) =>
+        updateData.map((d, index) => ({ ...(d.update as CreateTransactionInput), id: `updated-id-${index}`, label: '', created_at: new Date(), updated_at: new Date() })),
+      );
+
+      const previewResult = await previewUsecase.execute({ csvContent, politicalOrganizationId: "1" });
+      expect(previewResult.transactions.map((t) => t.status)).toEqual(["update", "insert"]);
+
+      const result = await usecase.execute({
+        validTransactions: previewResult.transactions,
+        politicalOrganizationId: "1",
+      });
+
+      expect(result.savedCount).toBe(2);
+      // 2025 年度の取引No 1 だけを更新対象にする
+      expect(mockRepository.updateMany).toHaveBeenCalledWith([
+        expect.objectContaining({
+          where: { politicalOrganizationId: BigInt(1), financialYear: 2025, transactionNo: "1" },
+        }),
+      ]);
+      // 2026 年度の取引No 1 は新規として作る
+      expect(mockRepository.createMany).toHaveBeenCalledWith([
+        expect.objectContaining({ transaction_no: "1", financial_year: 2026 }),
+      ]);
+    });
   });
 });

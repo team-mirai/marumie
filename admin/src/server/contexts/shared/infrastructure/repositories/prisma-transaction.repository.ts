@@ -131,7 +131,7 @@ export class PrismaTransactionRepository implements ITransactionRepository {
 
   async updateMany(
     data: Array<{
-      where: { politicalOrganizationId: bigint; transactionNo: string };
+      where: { politicalOrganizationId: bigint; financialYear: number; transactionNo: string };
       update: UpdateTransactionInput;
     }>,
   ): Promise<Transaction[]> {
@@ -141,15 +141,18 @@ export class PrismaTransactionRepository implements ITransactionRepository {
     const updatePromises = data.map(async (item) => {
       const existingTransaction = await this.prisma.transaction.findUnique({
         where: {
-          politicalOrganizationId_transactionNo: {
+          politicalOrganizationId_financialYear_transactionNo: {
             politicalOrganizationId: item.where.politicalOrganizationId,
+            financialYear: item.where.financialYear,
             transactionNo: item.where.transactionNo,
           },
         },
       });
 
       if (!existingTransaction) {
-        throw new Error(`Transaction not found: ${item.where.transactionNo}`);
+        throw new Error(
+          `Transaction not found: ${item.where.financialYear}/${item.where.transactionNo}`,
+        );
       }
 
       return this.update(existingTransaction.id.toString(), item.update);

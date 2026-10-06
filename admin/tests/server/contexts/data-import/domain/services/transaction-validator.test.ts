@@ -181,8 +181,8 @@ describe("TransactionValidator", () => {
         id: "existing-1",
         political_organization_id: "org-1",
         transaction_no: "DUP001",
-        transaction_date: new Date(),
-        financial_year: 2024,
+        transaction_date: new Date("2025-06-06"),
+        financial_year: 2025,
         transaction_type: "expense" as const,
         debit_account: "人件費",
         debit_amount: 100000,
@@ -202,6 +202,76 @@ describe("TransactionValidator", () => {
 
       expect(result[0].status).toBe("skip");
       expect(result[0].errors).toContain("重複のためスキップされます");
+    });
+
+    describe("取引No の照合は年度単位", () => {
+      const createExisting = (overrides: { transaction_no: string; financial_year: number; hash: string }) => ({
+        id: `existing-${overrides.financial_year}-${overrides.transaction_no}`,
+        political_organization_id: "org1",
+        transaction_date: new Date(`${overrides.financial_year}-06-06`),
+        transaction_type: "expense" as const,
+        debit_account: "人件費",
+        debit_amount: 1000,
+        credit_account: "普通預金",
+        credit_amount: 1000,
+        description: "",
+        friendly_category: "テストカテゴリ",
+        memo: "",
+        category_key: "personnel",
+        label: "",
+        created_at: new Date(),
+        updated_at: new Date(),
+        ...overrides,
+      });
+
+      it("前年度に同じ取引No があっても、別年度の仕訳は新規と判定する", () => {
+        const transactions = [
+          createMockTransaction({ transaction_no: "1", transaction_date: new Date("2026-01-10"), hash: "new-hash" }),
+        ];
+        const existing = [createExisting({ transaction_no: "1", financial_year: 2025, hash: "old-hash" })];
+
+        const result = validator.validatePreviewTransactions(transactions, existing);
+
+        expect(result[0].status).toBe("insert");
+        expect(result[0].existingTransactionId).toBeUndefined();
+      });
+
+      it("同じ年度・同じ取引No は内容が同じならスキップ、違えば更新と判定する", () => {
+        const transactions = [
+          createMockTransaction({ transaction_no: "1", transaction_date: new Date("2025-03-01"), hash: "same-hash" }),
+          createMockTransaction({ transaction_no: "2", transaction_date: new Date("2025-03-01"), hash: "changed-hash" }),
+        ];
+        const existing = [
+          createExisting({ transaction_no: "1", financial_year: 2025, hash: "same-hash" }),
+          createExisting({ transaction_no: "2", financial_year: 2025, hash: "old-hash" }),
+        ];
+
+        const result = validator.validatePreviewTransactions(transactions, existing);
+
+        expect(result[0].status).toBe("skip");
+        expect(result[1].status).toBe("update");
+        expect(result[1].existingTransactionId).toBe("existing-2025-2");
+      });
+
+      it("2 つの年度が混ざった仕訳は、それぞれの年度の既存取引と照合する", () => {
+        const transactions = [
+          createMockTransaction({ transaction_no: "1", transaction_date: new Date("2025-12-31"), hash: "hash-2025" }),
+          createMockTransaction({ transaction_no: "1", transaction_date: new Date("2026-01-01"), hash: "hash-2026-changed" }),
+          createMockTransaction({ transaction_no: "2", transaction_date: new Date("2026-01-05"), hash: "hash-2026-new" }),
+        ];
+        const existing = [
+          createExisting({ transaction_no: "1", financial_year: 2025, hash: "hash-2025" }),
+          createExisting({ transaction_no: "1", financial_year: 2026, hash: "hash-2026" }),
+          createExisting({ transaction_no: "2", financial_year: 2025, hash: "hash-2025-2" }),
+        ];
+
+        const result = validator.validatePreviewTransactions(transactions, existing);
+
+        expect(result[0].status).toBe("skip");
+        expect(result[1].status).toBe("update");
+        expect(result[1].existingTransactionId).toBe("existing-2026-1");
+        expect(result[2].status).toBe("insert");
+      });
     });
 
     it("should mark transactions as invalid for invalid debit account", () => {
@@ -326,8 +396,8 @@ describe("TransactionValidator", () => {
         id: "existing-2",
         political_organization_id: "org-1",
         transaction_no: "DUP001",
-        transaction_date: new Date(),
-        financial_year: 2024,
+        transaction_date: new Date("2025-06-06"),
+        financial_year: 2025,
         transaction_type: "expense" as const,
         debit_account: "人件費",
         debit_amount: 100000,

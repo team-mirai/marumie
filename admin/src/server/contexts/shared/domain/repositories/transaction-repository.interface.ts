@@ -26,7 +26,7 @@ export interface ITransactionRepository {
   ): Promise<PaginatedResult<TransactionWithOrganization>>;
   updateMany(
     data: Array<{
-      where: { politicalOrganizationId: bigint; transactionNo: string };
+      where: { politicalOrganizationId: bigint; financialYear: number; transactionNo: string };
       update: UpdateTransactionInput;
     }>,
   ): Promise<Transaction[]>;

@@ -69,6 +69,7 @@ export class SavePreviewTransactionsUsecase {
         const updateData = updateTransactions.map((transaction) => ({
           where: {
             politicalOrganizationId: BigInt(input.politicalOrganizationId),
+            financialYear: PreviewTransaction.extractFinancialYear(transaction.transaction_date),
             transactionNo: transaction.transaction_no,
           },
           update: PreviewTransaction.toUpdateInput(transaction),

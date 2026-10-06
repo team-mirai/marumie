@@ -112,7 +112,7 @@ model Transaction {
   transactionCounterparts  TransactionCounterpart[]
   transactionDonors        TransactionDonor[]
 
-  @@unique([politicalOrganizationId, transactionNo])
+  @@unique([politicalOrganizationId, financialYear, transactionNo])
   @@index([politicalOrganizationId, financialYear, transactionType, transactionDate(sort: Desc)])
   @@map("transactions")
 }
