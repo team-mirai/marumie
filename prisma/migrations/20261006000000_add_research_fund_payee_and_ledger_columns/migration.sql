@@ -56,9 +56,11 @@ ALTER TABLE "research_fund_journal_entries"
   CHECK (("payee_id" IS NULL) = ("payee_link_source" IS NULL));
 
 -- 確信度と根拠は AI が紐づけたときだけ持つ（人やルールの紐づけに確信度は無い）。
+-- 紐づけ元が NULL のとき "payee_link_source" = 'ai' は UNKNOWN になり CHECK を通ってしまうので、
+-- COALESCE で false に確定させる（支払先も紐づけ元も無い仕訳に確信度だけが残る状態を禁止する）。
 ALTER TABLE "research_fund_journal_entries"
   ADD CONSTRAINT "research_fund_journal_entries_payee_link_ai_fields"
-  CHECK ("payee_link_source" = 'ai' OR ("payee_link_confidence" IS NULL AND "payee_link_reason" IS NULL));
+  CHECK (COALESCE("payee_link_source" = 'ai', false) OR ("payee_link_confidence" IS NULL AND "payee_link_reason" IS NULL));
 
 -- 確信度は 0〜1。
 ALTER TABLE "research_fund_journal_entries"
