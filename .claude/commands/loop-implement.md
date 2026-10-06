@@ -39,7 +39,7 @@ description: loop:ready の Issue を 1 つ実装し、PR 作成と auto-merge �
 
 - rules.md の「実装の規約」に従う。
 - **スコープアウトの原則を徹底する。** PR が大きくなりそうだと感じたら、それはスコープを切り出すシグナル。
-- Prisma の schema 変更が必要だと分かったら止めてエスカレーションする。
+- Prisma の schema 変更（既存データの UPDATE を含む）は、rules.md の絶対ルール 4 に従い、`loop:migration-approved` があり本文の「マイグレーション」節の範囲内のときだけ実装する。それ以外は止めてエスカレーションする。
 
 ### 4. ローカル CI
 
