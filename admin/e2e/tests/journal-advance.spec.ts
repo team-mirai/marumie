@@ -60,6 +60,9 @@ test("立替者の入力→一括設定→確認済→一括精算、未精算�
   // 前後の空白は落として保存するので、表記ゆれで集計が分かれない
   await expect(meeting).toContainText("立替：秘書A");
   await expect(page.getByText("秘書A：¥3,000")).toBeVisible();
+  // 下書きは精算できないので、1 件の欄でもボタンを押せずその理由が出る
+  await expect(page.getByRole("button", { name: "精算済にする" })).toBeDisabled();
+  await expect(page.getByText(/「会議室の利用料」は下書きです/)).toBeVisible();
 
   // 複数選んで立替者をまとめて設定する
   await page.getByRole("checkbox", { name: "表示中の支出の仕訳をすべて選択" }).click();
@@ -124,6 +127,30 @@ test("立替者の入力→一括設定→確認済→一括精算、未精算�
     expect(page.getByRole("button", { name: "立替者を保存" })).toBeVisible(options),
   );
   await expect(page.getByLabel("金額", { exact: true })).toBeEnabled();
+
+  // 1 件の欄から精算できる（立替者の変更が未保存のうちは精算させない）
+  await page.getByLabel("立替者", { exact: true }).fill("秘書C");
+  await expect(page.getByRole("button", { name: "精算済にする" })).toBeDisabled();
+  await expect(page.getByText("立替者の変更を保存してから精算してください")).toBeVisible();
+  await page.getByLabel("立替者", { exact: true }).fill("秘書B");
+  await page.getByRole("button", { name: "精算済にする" }).click();
+  const singleSettledAt = `${YEAR}-10-31`;
+  // 精算日の初期値は日本時間の今日。日付を指定して確定する
+  await expect(page.getByLabel("精算日")).not.toHaveValue("");
+  await page.getByLabel("精算日").fill(singleSettledAt);
+  await page.getByRole("button", { name: "精算する" }).click();
+  await expect(page.getByText(`1件の立替を精算済（${singleSettledAt}）にしました`)).toBeVisible();
+  await expect(meeting).toContainText("精算済");
+  // 欄は「立替者／精算済（日付）」と「未精算に戻す」の表示に切り替わる
+  await clickUntil(meeting, (options) =>
+    expect(page.getByText(`秘書B／精算済（${singleSettledAt}）`)).toBeVisible(options),
+  );
+  await page.getByRole("button", { name: "未精算に戻す" }).click();
+  await expect(page.getByText("1件を未精算に戻しました")).toBeVisible();
+  await clickUntil(meeting, (options) =>
+    expect(page.getByRole("button", { name: "立替者を保存" })).toBeVisible(options),
+  );
+
   await page.getByLabel("立替者", { exact: true }).fill("");
   await page.getByRole("button", { name: "立替者を保存" }).click();
   await expect(page.getByText("1件の立替者を解除しました")).toBeVisible();
