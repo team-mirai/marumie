@@ -52,6 +52,14 @@ test("CSV は UTF-8 BOM 付き・CRLF で、全セルを引用符で囲み引用
   expect(lines[2]).toBe("");
 });
 
+test("数式として評価される文字で始まる文字列のセルは先頭に ' を付け、金額はそのまま出す", () => {
+  const row = submissionLedgerRow("representatives", { ...entry, description: "=1+1", payeeName: "@SUM(A1)", note: "-2+3", amount: -500 });
+  expect(row[1]).toBe("'=1+1");
+  expect(row[2]).toBe("-500");
+  expect(row[5]).toBe("'@SUM(A1)");
+  expect(row[7]).toBe("'-2+3");
+});
+
 test("仕訳が無くても見出し行だけの CSV を出す", () => {
   expect(buildSubmissionLedgerCsv("councillors", []).slice(1).split("\r\n")).toHaveLength(2);
 });

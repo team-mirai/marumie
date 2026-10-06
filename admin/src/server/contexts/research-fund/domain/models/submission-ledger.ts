@@ -80,6 +80,9 @@ export function submissionLedgerHeaders(house: ParliamentHouse): string[] {
   return COLUMNS[house].map(([header]) => header);
 }
 
+/** 表計算ソフトが数式として評価する先頭文字。文字列のセルは先頭に ' を付けて文字列のまま開かせる */
+const FORMULA_PREFIX = /^[=+\-@\t\r]/;
+
 /** 1 仕訳を提出用の帳簿の 1 行にする。null の列は空欄 */
 export function submissionLedgerRow(
   house: ParliamentHouse,
@@ -87,7 +90,9 @@ export function submissionLedgerRow(
 ): string[] {
   return COLUMNS[house].map(([, column]) => {
     const value = column(entry);
-    return value === null ? "" : String(value);
+    if (value === null) return "";
+    if (typeof value === "number") return String(value);
+    return FORMULA_PREFIX.test(value) ? `'${value}` : value;
   });
 }
 
