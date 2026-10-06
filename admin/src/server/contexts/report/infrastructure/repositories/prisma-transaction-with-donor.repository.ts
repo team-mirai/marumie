@@ -411,6 +411,7 @@ export class PrismaTransactionWithDonorRepository implements ITransactionWithDon
   async findByTransactionNosForDonorCsv(
     transactionNos: string[],
     politicalOrganizationId: string,
+    financialYear: number,
   ): Promise<TransactionForDonorCsv[]> {
     if (transactionNos.length === 0) {
       return [];
@@ -426,6 +427,7 @@ export class PrismaTransactionWithDonorRepository implements ITransactionWithDon
       where: {
         transactionNo: { in: transactionNos },
         politicalOrganizationId: BigInt(politicalOrganizationId),
+        financialYear,
       },
       include: {
         transactionDonors: {

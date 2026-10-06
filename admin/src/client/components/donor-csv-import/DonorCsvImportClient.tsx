@@ -16,6 +16,8 @@ import { FileDropzone } from "@/client/components/common/FileDropzone";
 interface DonorCsvImportClientProps {
   /** グローバル対象（サイドバー上部）で選択中の政治団体 */
   politicalOrganizationId: string;
+  /** グローバル対象で選択中の年度。取引No はこの年度の取引から探す */
+  financialYear: number;
   previewAction: (data: PreviewDonorCsvRequest) => Promise<PreviewDonorCsvResult>;
   importAction: (data: ImportDonorCsvRequest) => Promise<ImportDonorCsvResult>;
 }
@@ -25,6 +27,7 @@ const FILE_NOTE = "UTF-8 ・ 最大 100MB";
 
 export default function DonorCsvImportClient({
   politicalOrganizationId,
+  financialYear,
   previewAction,
   importAction,
 }: DonorCsvImportClientProps) {
@@ -65,6 +68,7 @@ export default function DonorCsvImportClient({
         const result = await stablePreviewAction({
           file,
           politicalOrganizationId,
+          financialYear,
         });
         setPreviewResult(result);
       } catch (err) {
@@ -77,7 +81,7 @@ export default function DonorCsvImportClient({
     };
 
     previewFile();
-  }, [file, politicalOrganizationId, stablePreviewAction]);
+  }, [file, politicalOrganizationId, financialYear, stablePreviewAction]);
 
   const resetFileInput = useCallback(() => {
     setFile(null);
@@ -97,6 +101,7 @@ export default function DonorCsvImportClient({
       const result = await importActionRef.current({
         csvContent,
         politicalOrganizationId,
+        financialYear,
       });
 
       if (result.ok) {
@@ -111,7 +116,7 @@ export default function DonorCsvImportClient({
     } finally {
       setIsImporting(false);
     }
-  }, [file, politicalOrganizationId, resetFileInput]);
+  }, [file, politicalOrganizationId, financialYear, resetFileInput]);
 
   return (
     <div className="space-y-6">

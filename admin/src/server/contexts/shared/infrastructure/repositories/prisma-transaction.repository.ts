@@ -232,6 +232,7 @@ export class PrismaTransactionRepository implements ITransactionRepository {
   async findByTransactionNos(
     transactionNos: string[],
     politicalOrganizationIds?: string[],
+    financialYear?: number,
   ): Promise<Transaction[]> {
     const where: Prisma.TransactionWhereInput = {
       transactionNo: {
@@ -243,6 +244,10 @@ export class PrismaTransactionRepository implements ITransactionRepository {
       where.politicalOrganizationId = {
         in: politicalOrganizationIds.map((id) => BigInt(id)),
       };
+    }
+
+    if (financialYear !== undefined) {
+      where.financialYear = financialYear;
     }
 
     const transactions = await this.prisma.transaction.findMany({

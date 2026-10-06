@@ -18,10 +18,11 @@ export default async function ImportDonorsPage() {
   return (
     <div>
       <PageHeader label="Donor Import" title="寄付者一括インポート" />
-      <CurrentTargetBar target={target} note="に取り込まれます" />
+      <CurrentTargetBar target={target} note="の取引に寄付者を紐づけます" />
       <DonorCsvImportClient
         key={target.organizationId}
         politicalOrganizationId={target.organizationId}
+        financialYear={target.year}
         previewAction={previewDonorCsv}
         importAction={importDonorCsv}
       />

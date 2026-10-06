@@ -23,6 +23,8 @@ import { NoValidRowsError } from "@/server/contexts/report/domain/errors/donor-c
 export interface ImportDonorCsvInput {
   csvContent: string;
   politicalOrganizationId: string;
+  /** 寄付者を紐づける取引の年度。取引No は年度ごとに振り直されるので年度で絞る */
+  financialYear: number;
 }
 
 interface ImportDonorCsvOutput {
@@ -60,6 +62,7 @@ export class ImportDonorCsvUsecase {
     const transactions = await this.transactionRepository.findByTransactionNosForDonorCsv(
       transactionNos,
       input.politicalOrganizationId,
+      input.financialYear,
     );
     const transactionMap = new Map<string, TransactionForDonorCsv>(
       transactions.map((t) => [t.transactionNo, t]),

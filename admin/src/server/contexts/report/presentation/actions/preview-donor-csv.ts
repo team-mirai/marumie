@@ -18,6 +18,7 @@ import { requireAuth } from "@/server/contexts/auth/presentation/loaders/require
 export interface PreviewDonorCsvRequest {
   file: File;
   politicalOrganizationId: string;
+  financialYear: number;
 }
 
 export async function previewDonorCsv(
@@ -26,7 +27,7 @@ export async function previewDonorCsv(
   await requireAuth();
 
   try {
-    const { file, politicalOrganizationId } = data;
+    const { file, politicalOrganizationId, financialYear } = data;
 
     if (!file) {
       throw new Error("ファイルが選択されていません");
@@ -34,6 +35,10 @@ export async function previewDonorCsv(
 
     if (!politicalOrganizationId) {
       throw new Error("政治団体IDが指定されていません");
+    }
+
+    if (!Number.isInteger(financialYear)) {
+      throw new Error("年度が指定されていません");
     }
 
     const csvBuffer = Buffer.from(await file.arrayBuffer());
@@ -56,6 +61,7 @@ export async function previewDonorCsv(
     const result = await usecase.execute({
       csvContent,
       politicalOrganizationId,
+      financialYear,
     });
 
     return result;

@@ -11,11 +11,12 @@ function buildTransaction(
   transactionNo: string,
   counterpart: SyncExportCounterpart | null,
   donor: SyncExportDonor | null,
+  financialYear = 2026,
 ): SyncExportTransaction {
   return {
     transactionNo,
-    transactionDate: "2026-04-01",
-    financialYear: 2026,
+    transactionDate: `${financialYear}-04-01`,
+    financialYear,
     transactionType: "income",
     debitAccount: "普通預金",
     debitSubAccount: null,
@@ -50,8 +51,8 @@ function setup() {
       deleteMany: jest.fn().mockResolvedValue({ count: 0 }),
       createMany: jest.fn().mockResolvedValue({ count: 2 }),
       findMany: jest.fn().mockResolvedValue([
-        { id: BigInt(101), transactionNo: "T1" },
-        { id: BigInt(102), transactionNo: "T2" },
+        { id: BigInt(101), financialYear: 2026, transactionNo: "T1" },
+        { id: BigInt(102), financialYear: 2026, transactionNo: "T2" },
       ]),
     },
     balanceSnapshot: { deleteMany: jest.fn(), createMany: jest.fn() },
@@ -110,5 +111,45 @@ test("同時に別の取り込みが同じ取引先・寄付者を作ってい�
   });
   expect(tx.transactionDonor.createMany).toHaveBeenCalledWith({
     data: [{ transactionId: BigInt(102), donorId: BigInt(5) }],
+  });
+});
+
+test("年度違いで同じ取引No の取引があっても、取引先・寄付者をファイル上の同じ年度の取引に紐づける", async () => {
+  const { tx, repository } = setup();
+  const file = {
+    transactions: [
+      buildTransaction("1", { name: "取引先A", postalCode: null, address: null }, null, 2025),
+      buildTransaction(
+        "1",
+        null,
+        { donorType: "individual", name: "寄付者X", address: null, occupation: "会社員" },
+        2026,
+      ),
+    ],
+    balanceSnapshots: [],
+    organizationReportProfiles: [],
+  } as unknown as OrganizationSyncExport;
+
+  // 引き直しの結果は年度の新しい順に返ってきても、年度で突き合わせる。
+  tx.transaction.findMany.mockResolvedValue([
+    { id: BigInt(202), financialYear: 2026, transactionNo: "1" },
+    { id: BigInt(201), financialYear: 2025, transactionNo: "1" },
+  ]);
+  tx.counterpart.findMany.mockResolvedValue([{ id: BigInt(1), name: "取引先A", address: null }]);
+  tx.donor.findMany.mockResolvedValue([
+    { id: BigInt(5), name: "寄付者X", address: null, donorType: "individual" },
+  ]);
+
+  await repository.replaceOrganizationSyncData({ politicalOrganizationId: "7", file });
+
+  expect(tx.transaction.findMany).toHaveBeenCalledWith({
+    where: { politicalOrganizationId: BigInt(7) },
+    select: { id: true, financialYear: true, transactionNo: true },
+  });
+  expect(tx.transactionCounterpart.createMany).toHaveBeenCalledWith({
+    data: [{ transactionId: BigInt(201), counterpartId: BigInt(1) }],
+  });
+  expect(tx.transactionDonor.createMany).toHaveBeenCalledWith({
+    data: [{ transactionId: BigInt(202), donorId: BigInt(5) }],
   });
 });

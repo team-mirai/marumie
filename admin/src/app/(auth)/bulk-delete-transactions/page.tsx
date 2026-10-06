@@ -11,5 +11,8 @@ export default async function BulkDeleteTransactionsPage() {
     return <TargetRequiredNotice label="Bulk Delete" title="取引一括削除" />;
   }
 
-  return <BulkDeleteTransactionsClient key={target.organizationId} target={target} />;
+  // 年度を切り替えたら前の年度の検索結果（＝削除対象）を持ち越さないよう作り直す
+  return (
+    <BulkDeleteTransactionsClient key={`${target.organizationId}-${target.year}`} target={target} />
+  );
 }

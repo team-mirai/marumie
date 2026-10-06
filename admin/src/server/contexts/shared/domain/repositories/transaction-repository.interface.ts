@@ -33,8 +33,12 @@ export interface ITransactionRepository {
   delete(id: string): Promise<void>;
   deleteAll(filters?: TransactionFilters): Promise<number>;
   createMany(inputs: CreateTransactionInput[]): Promise<Transaction[]>;
+  /**
+   * transaction_no は年度ごとに振り直されるため、financialYear を渡すとその年度の取引だけに絞る。
+   */
   findByTransactionNos(
     transactionNos: string[],
     politicalOrganizationIds?: string[],
+    financialYear?: number,
   ): Promise<Transaction[]>;
 }

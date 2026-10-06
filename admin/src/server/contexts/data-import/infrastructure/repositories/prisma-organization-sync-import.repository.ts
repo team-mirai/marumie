@@ -64,6 +64,14 @@ function resolveId<T>(idByKey: Map<string, T>, key: string, label: string): T {
   return id;
 }
 
+/**
+ * 取引の自然キー (年度, transaction_no) を Map のキーにする。
+ * transaction_no は年度ごとに振り直されるので、番号だけでは別年度の取引と取り違える。
+ */
+function transactionKey(transaction: { financialYear: number; transactionNo: string }): string {
+  return `${transaction.financialYear}:${transaction.transactionNo}`;
+}
+
 function toTransactionCreateInput(
   transaction: SyncExportTransaction,
   politicalOrganizationId: bigint,
@@ -189,13 +197,13 @@ export class PrismaOrganizationSyncImportRepository implements IOrganizationSync
           });
         }
 
-        // createMany は ID を返さないので、自然キー (団体, transaction_no) で引き直す。
+        // createMany は ID を返さないので、自然キー (団体, 年度, transaction_no) で引き直す。
         const insertedTransactions = await tx.transaction.findMany({
           where: { politicalOrganizationId },
-          select: { id: true, transactionNo: true },
+          select: { id: true, financialYear: true, transactionNo: true },
         });
-        const transactionIdByNo = new Map(
-          insertedTransactions.map((transaction) => [transaction.transactionNo, transaction.id]),
+        const transactionIdByKey = new Map(
+          insertedTransactions.map((transaction) => [transactionKey(transaction), transaction.id]),
         );
 
         // 4. 取引先・寄付者の紐づけを入れる。
@@ -204,8 +212,8 @@ export class PrismaOrganizationSyncImportRepository implements IOrganizationSync
             ? [
                 {
                   transactionId: resolveId(
-                    transactionIdByNo,
-                    transaction.transactionNo,
+                    transactionIdByKey,
+                    transactionKey(transaction),
                     `取引 ${transaction.transactionNo}`,
                   ),
                   counterpartId: resolveId(
@@ -226,8 +234,8 @@ export class PrismaOrganizationSyncImportRepository implements IOrganizationSync
             ? [
                 {
                   transactionId: resolveId(
-                    transactionIdByNo,
-                    transaction.transactionNo,
+                    transactionIdByKey,
+                    transactionKey(transaction),
                     `取引 ${transaction.transactionNo}`,
                   ),
                   donorId: resolveId(

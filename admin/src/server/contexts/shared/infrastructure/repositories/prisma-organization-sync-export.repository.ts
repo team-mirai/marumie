@@ -30,7 +30,8 @@ export class PrismaOrganizationSyncExportRepository implements IOrganizationSync
         const [transactions, balanceSnapshots, reportProfiles] = await Promise.all([
           tx.transaction.findMany({
             where: { politicalOrganizationId: id },
-            orderBy: { transactionNo: "asc" },
+            // transaction_no は年度ごとに振り直されるので、年度を先に並べて順序を一意にする。
+            orderBy: [{ financialYear: "asc" }, { transactionNo: "asc" }],
             include: {
               transactionCounterparts: { include: { counterpart: true } },
               transactionDonors: { include: { donor: true } },

@@ -9,13 +9,19 @@ export async function GET(request: NextRequest) {
 
   const { searchParams } = new URL(request.url);
   const orgId = searchParams.get("orgId");
+  const year = searchParams.get("year");
   const nos = searchParams.get("nos");
 
-  if (!orgId || !nos) {
+  if (!orgId || !year || !nos) {
     return NextResponse.json(
-      { success: false, error: "orgId and nos are required" },
+      { success: false, error: "orgId, year and nos are required" },
       { status: 400 },
     );
+  }
+
+  const financialYear = Number(year);
+  if (!Number.isInteger(financialYear)) {
+    return NextResponse.json({ success: false, error: "year must be an integer" }, { status: 400 });
   }
 
   const transactionNos = nos
@@ -30,6 +36,6 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const result = await loadTransactionsByNos(orgId, transactionNos);
+  const result = await loadTransactionsByNos(orgId, financialYear, transactionNos);
   return NextResponse.json(result);
 }

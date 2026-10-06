@@ -21,6 +21,7 @@ import { requireAuth } from "@/server/contexts/auth/presentation/loaders/require
 export interface ImportDonorCsvRequest {
   csvContent: string;
   politicalOrganizationId: string;
+  financialYear: number;
 }
 
 export type ImportDonorCsvResult =
@@ -31,7 +32,7 @@ export async function importDonorCsv(data: ImportDonorCsvRequest): Promise<Impor
   await requireAuth();
 
   try {
-    const { csvContent, politicalOrganizationId } = data;
+    const { csvContent, politicalOrganizationId, financialYear } = data;
 
     if (!csvContent) {
       return { ok: false, error: "CSVコンテンツが指定されていません" };
@@ -39,6 +40,10 @@ export async function importDonorCsv(data: ImportDonorCsvRequest): Promise<Impor
 
     if (!politicalOrganizationId) {
       return { ok: false, error: "政治団体IDが指定されていません" };
+    }
+
+    if (!Number.isInteger(financialYear)) {
+      return { ok: false, error: "年度が指定されていません" };
     }
 
     const csvLoader = new DonorCsvLoader();
@@ -62,6 +67,7 @@ export async function importDonorCsv(data: ImportDonorCsvRequest): Promise<Impor
     const result = await usecase.execute({
       csvContent,
       politicalOrganizationId,
+      financialYear,
     });
 
     revalidatePath("/import-donors");

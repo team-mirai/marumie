@@ -4,7 +4,7 @@
  * 本番 / ステージングは別 DB で、ID（BIGSERIAL）は環境間で一致しない。
  * そのためファイルには DB の ID を一切含めず、自然キーだけで表現する。
  * - 政治団体: slug
- * - 取引: transaction_no（政治団体内で一意）
+ * - 取引: financial_year + transaction_no（政治団体内で一意。transaction_no は年度ごとに振り直される）
  * - 取引先: name + address
  * - 寄付者: name + address + donor_type
  *

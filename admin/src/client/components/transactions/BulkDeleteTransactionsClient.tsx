@@ -52,6 +52,7 @@ export function BulkDeleteTransactionsClient({ target }: { target: OrganizationT
 
     const params = new URLSearchParams({
       orgId: target.organizationId,
+      year: String(target.year),
       nos: nos.join(","),
     });
     const response = await fetch(`/api/transactions/search-by-nos?${params}`);

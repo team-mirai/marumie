@@ -18,6 +18,8 @@ import type { ITransactionWithDonorRepository } from "@/server/contexts/report/d
 export interface PreviewDonorCsvInput {
   csvContent: string;
   politicalOrganizationId: string;
+  /** 寄付者を紐づける取引の年度。取引No は年度ごとに振り直されるので年度で絞る */
+  financialYear: number;
 }
 
 export interface PreviewDonorCsvResult {
@@ -52,6 +54,7 @@ export class PreviewDonorCsvUsecase {
       const transactions = await this.transactionRepository.findByTransactionNosForDonorCsv(
         transactionNos,
         input.politicalOrganizationId,
+        input.financialYear,
       );
       const transactionMap = new Map<string, TransactionForDonorCsv>(
         transactions.map((t) => [t.transactionNo, t]),

@@ -145,12 +145,19 @@ describe("ImportDonorCsvUsecase", () => {
     const input: ImportDonorCsvInput = {
       csvContent: "dummy csv content",
       politicalOrganizationId: "org-123",
+      financialYear: 2025,
     };
 
     const result = await usecase.execute(input);
 
     expect(result.importedCount).toBe(1);
     expect(result.createdDonorCount).toBe(1);
+    // 取引No は年度ごとに振り直されるので、指定した年度の取引から探す
+    expect(mockTransactionRepository.findByTransactionNosForDonorCsv).toHaveBeenCalledWith(
+      [previewRow.transactionNo],
+      "org-123",
+      2025,
+    );
     expect(mockDonorRepository.createMany).toHaveBeenCalledWith(
       [
         {
@@ -176,6 +183,7 @@ describe("ImportDonorCsvUsecase", () => {
     const input: ImportDonorCsvInput = {
       csvContent: "",
       politicalOrganizationId: "org-123",
+      financialYear: 2025,
     };
 
     await expect(usecase.execute(input)).rejects.toThrow(NoValidRowsError);
@@ -197,6 +205,7 @@ describe("ImportDonorCsvUsecase", () => {
     const input: ImportDonorCsvInput = {
       csvContent: "dummy csv content",
       politicalOrganizationId: "org-123",
+      financialYear: 2025,
     };
 
     await expect(usecase.execute(input)).rejects.toThrow(NoValidRowsError);
@@ -228,6 +237,7 @@ describe("ImportDonorCsvUsecase", () => {
     const input: ImportDonorCsvInput = {
       csvContent: "dummy csv content",
       politicalOrganizationId: "org-123",
+      financialYear: 2025,
     };
 
     const result = await usecase.execute(input);
@@ -270,6 +280,7 @@ describe("ImportDonorCsvUsecase", () => {
     const input: ImportDonorCsvInput = {
       csvContent: "dummy csv content",
       politicalOrganizationId: "org-123",
+      financialYear: 2025,
     };
 
     const result = await usecase.execute(input);
@@ -313,6 +324,7 @@ describe("ImportDonorCsvUsecase", () => {
     const input: ImportDonorCsvInput = {
       csvContent: "dummy csv content",
       politicalOrganizationId: "org-123",
+      financialYear: 2025,
     };
 
     const result = await usecase.execute(input);
@@ -382,6 +394,7 @@ describe("ImportDonorCsvUsecase", () => {
     const input: ImportDonorCsvInput = {
       csvContent: "dummy csv content",
       politicalOrganizationId: "org-123",
+      financialYear: 2025,
     };
 
     const result = await usecase.execute(input);
@@ -409,6 +422,7 @@ describe("ImportDonorCsvUsecase", () => {
     const input: ImportDonorCsvInput = {
       csvContent: "dummy csv content",
       politicalOrganizationId: "org-123",
+      financialYear: 2025,
     };
 
     await usecase.execute(input);
@@ -446,6 +460,7 @@ describe("ImportDonorCsvUsecase", () => {
     const input: ImportDonorCsvInput = {
       csvContent: "dummy csv content",
       politicalOrganizationId: "org-123",
+      financialYear: 2025,
     };
 
     const result = await usecase.execute(input);
