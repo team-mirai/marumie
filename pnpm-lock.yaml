@@ -56,7 +56,7 @@ importers:
     dependencies:
       '@ai-sdk/anthropic':
         specifier: ^3.0.2
-        version: 3.0.127(zod@4.6.5)
+        version: 3.0.129(zod@4.6.5)
       '@phosphor-icons/react':
         specifier: ^2.1.10
         version: 2.1.10(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
@@ -101,7 +101,7 @@ importers:
         version: 1.3.1(next@16.3.8(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@playwright/test@1.63.0)(@types/node@25.9.9)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(react@19.3.0)
       ai:
         specifier: ^6.0.6
-        version: 6.0.301(zod@4.6.5)
+        version: 6.0.303(zod@4.6.5)
       class-variance-authority:
         specifier: ^0.7.1
         version: 0.7.1
@@ -239,14 +239,14 @@ importers:
 
 packages:
 
-  '@ai-sdk/anthropic@3.0.127':
-    resolution: {integrity: sha512-Inff1DmPRVWi6QGr9YL2wiA4maILZuve9I8id/O4keQEoq6fJv6EfvkrSFw/nNvm2jiTcIUfDrpczeHTuhl9mg==}
+  '@ai-sdk/anthropic@3.0.129':
+    resolution: {integrity: sha512-97IV+oX8c3MAdqFgFYTXuumlcs5htg7w1Lye1pr+rFoNzNX/uSUdP56t0bhyeDvvD6TlZroBqgD5VnHrmYr0IA==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
 
-  '@ai-sdk/gateway@3.0.210':
-    resolution: {integrity: sha512-XUC2HGvDLhpfHKT7yXirZELHWIHzPJLtE3CE3FO6fjcQHcKR5nrsHxOp00THk1SivDo3IZB1yS6Un4+kAQ8eJg==}
+  '@ai-sdk/gateway@3.0.212':
+    resolution: {integrity: sha512-iTJSim/6LuSxiG3RF0FWU7bEQ8dF6EplcWci5Km4Vc8SUcR8vxFuC7T/pfCutW00pI/3WYsHm8RCQ5141/Xykw==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
@@ -2166,8 +2166,8 @@ packages:
     engines: {node: '>=0.4.0'}
     hasBin: true
 
-  ai@6.0.301:
-    resolution: {integrity: sha512-pb7vIIBXKw4VGpbLmXvD+u5qbUe+2Mm7hEEkHs6Z2XBiifxAUEB38gl5JbaRi3BWsFqN13GP25/NHhf/DvPjgg==}
+  ai@6.0.303:
+    resolution: {integrity: sha512-4HE3naLXgRLN4XOoEJaPHfIz7/hO0A21ltUG5DM3NDrGVTrqhnfs7s3ItwHtiWazCDOIuc4cCE4MgiuEvVryCw==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
@@ -3859,13 +3859,13 @@ packages:
 
 snapshots:
 
-  '@ai-sdk/anthropic@3.0.127(zod@4.6.5)':
+  '@ai-sdk/anthropic@3.0.129(zod@4.6.5)':
     dependencies:
       '@ai-sdk/provider': 3.0.18
       '@ai-sdk/provider-utils': 4.0.57(zod@4.6.5)
       zod: 4.6.5
 
-  '@ai-sdk/gateway@3.0.210(zod@4.6.5)':
+  '@ai-sdk/gateway@3.0.212(zod@4.6.5)':
     dependencies:
       '@ai-sdk/provider': 3.0.18
       '@ai-sdk/provider-utils': 4.0.57(zod@4.6.5)
@@ -5625,9 +5625,9 @@ snapshots:
 
   acorn@8.18.0: {}
 
-  ai@6.0.301(zod@4.6.5):
+  ai@6.0.303(zod@4.6.5):
     dependencies:
-      '@ai-sdk/gateway': 3.0.210(zod@4.6.5)
+      '@ai-sdk/gateway': 3.0.212(zod@4.6.5)
       '@ai-sdk/provider': 3.0.18
       '@ai-sdk/provider-utils': 4.0.57(zod@4.6.5)
       '@opentelemetry/api': 1.9.1
