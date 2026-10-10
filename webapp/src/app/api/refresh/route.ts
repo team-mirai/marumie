@@ -22,7 +22,10 @@ export async function POST(request: NextRequest) {
     revalidateTag("top-page-data", "max");
     revalidateTag("organizations", "max");
     // 調研費（admin の公開画面から呼ばれる）。公開ページの loader がこのタグでキャッシュする。
-    revalidateTag("research-fund-page-data", "max");
+    // "max" は古いデータを返しつつ裏で作り直す方式で、sitemap も loader のキャッシュも同じタグで無効化されるため、
+    // 公開直後に sitemap が作り直されると loader から公開前の一覧を受け取って固まってしまう。
+    // 即時に失効させ、次のアクセスで最新の公開状態を読み直させる。
+    revalidateTag("research-fund-page-data", { expire: 0 });
 
     return NextResponse.json({
       success: true,

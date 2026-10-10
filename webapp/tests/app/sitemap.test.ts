@@ -6,7 +6,7 @@ jest.mock(
   () => ({ loadPublishedResearchFundPages: jest.fn() }),
 );
 
-import sitemap from "@/app/sitemap";
+import sitemap, { revalidate } from "@/app/sitemap";
 import { loadOrganizations } from "@/server/contexts/public-finance/presentation/loaders/load-organizations";
 import { loadPublishedResearchFundPages } from "@/server/contexts/research-fund/presentation/loaders/load-published-research-fund-pages";
 
@@ -53,5 +53,9 @@ describe("sitemap", () => {
     const urls = (await sitemap()).map((entry) => entry.url);
 
     expect(urls.filter((url) => url.includes("/p/"))).toEqual([]);
+  });
+
+  it("再デプロイなしで公開内容の変化を反映するため、1 時間ごとに作り直す", () => {
+    expect(revalidate).toBe(3600);
   });
 });

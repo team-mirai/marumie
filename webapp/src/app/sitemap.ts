@@ -4,6 +4,11 @@ import { loadPublishedResearchFundPages } from "@/server/contexts/research-fund/
 
 export const dynamic = "force-static";
 
+// 公開内容の変化を再デプロイなしで反映するため、1 時間ごとに作り直す。
+// これが無いと、デプロイ時か /api/refresh でタグが無効化されたときにしか作り直されない。
+// （segment config は静的に解析されるので、定数を import せずリテラルで書く）
+export const revalidate = 3600;
+
 // 政治団体ページの年度切り替えで選べる年度（/o/[slug]/[year] の VALID_YEARS と揃える）
 const ORGANIZATION_YEARS = [2025, 2026] as const;
 
