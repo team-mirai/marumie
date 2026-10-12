@@ -29,22 +29,21 @@ test("移る仕訳と表記を確認してから支払先を統合でき、イ�
   // 同じ相手の支払先が 2 件（東京タクシー株式会社・東京ﾀｸｼｰ）と、番号の違う別の相手を作る
   await page.getByRole("link", { name: "支払先", exact: true }).click();
   await expect(page.getByRole("heading", { name: "支払先" })).toBeVisible();
-  const dialog = page.getByRole("dialog");
   for (const [payee, invoice] of [
     ["東京タクシー株式会社", "T1234567890123"],
     ["東京ﾀｸｼｰ", ""],
     ["東京交通", "T9999999999999"],
   ] as const) {
-    await clickUntil(page.getByRole("button", { name: "支払先を追加" }), (options) =>
-      expect(dialog.getByLabel(/^名称/)).toBeVisible(options),
-    );
-    await dialog.getByLabel(/^名称/).fill(payee);
-    await dialog.getByLabel("インボイス登録番号", { exact: true }).fill(invoice);
-    await dialog.getByRole("button", { name: "作成", exact: true }).click();
-    await expect(dialog).toBeHidden();
+    await page.getByRole("link", { name: "支払先を追加" }).click();
+    await page.getByLabel(/^名称/).fill(payee);
+    await page.getByLabel("インボイス登録番号", { exact: true }).fill(invoice);
+    await page.getByRole("button", { name: "作成", exact: true }).click();
+    await expect(page.getByRole("heading", { name: payee, exact: true })).toBeVisible();
+    await page.getByRole("link", { name: "支払先の一覧に戻る" }).click();
     await expect(page.getByRole("row").filter({ hasText: payee })).toBeVisible();
   }
 
+  const dialog = page.getByRole("dialog");
   // 支出の下書きを東京ﾀｸｼｰに紐づける
   await page.getByRole("link", { name: "仕訳の確認・編集" }).click();
   await expect(page.getByRole("heading", { name: "仕訳の確認・編集" })).toBeVisible();

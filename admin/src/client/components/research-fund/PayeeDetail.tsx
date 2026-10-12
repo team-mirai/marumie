@@ -3,7 +3,7 @@ import { CaretLeft } from "@phosphor-icons/react/dist/ssr";
 import { PageHeader } from "@/client/components/layout/PageHeader";
 import { PayeeAliasDeleteButton } from "@/client/components/research-fund/PayeeAliasDeleteButton";
 import { PayeeDeleteButton } from "@/client/components/research-fund/PayeeDeleteButton";
-import { PayeeEditButton } from "@/client/components/research-fund/PayeeEditButton";
+import { PayeeEditForm } from "@/client/components/research-fund/PayeeEditForm";
 import { PayeeMergeButton } from "@/client/components/research-fund/PayeeMergeButton";
 import {
   Card,
@@ -37,12 +37,8 @@ const aliasSources: Record<PayeeAlias["source"], string> = {
   ai: "AI",
 };
 
-function Unset() {
-  return <span className="text-muted-foreground">未入力</span>;
-}
-
 /**
- * 支払先（支出を受けた者）の詳細。支払先の情報と、選択中の帳簿でその支払先に紐づいた仕訳を表示する。
+ * 支払先（支出を受けた者）の詳細。支払先の情報をページ上で編集でき、選択中の帳簿でその支払先に紐づいた仕訳を表示する。
  * 紐づけの誤りを見つけるための画面で、仕訳の編集や支払先の付け替えは仕訳の確認画面で行う。
  * 書類との照合に使う表記（紐づけの操作から自動で記録される）も表示し、誤った表記はここで削除する。
  * 支払先そのものの削除もここで行う（公開中の仕訳が紐づく支払先は削除できない）。
@@ -80,7 +76,6 @@ export function PayeeDetail({
         description="支払先を編集すると、紐づけたすべての仕訳に反映されます。"
         actions={
           <div className="flex gap-2">
-            <PayeeEditButton payee={payee} usageCount={entries.length} target={target} />
             <PayeeMergeButton
               payee={payee}
               aliases={aliases}
@@ -91,20 +86,7 @@ export function PayeeDetail({
           </div>
         }
       />
-      <Card className="mb-6">
-        <CardContent className="p-6">
-          <dl className="grid gap-x-6 gap-y-3 text-sm sm:grid-cols-[max-content_1fr]">
-            <dt className="font-bold">名称</dt>
-            <dd>{payee.name}</dd>
-            <dt className="font-bold">郵便番号</dt>
-            <dd className="font-latin">{payee.postalCode ?? <Unset />}</dd>
-            <dt className="font-bold">住所</dt>
-            <dd>{payee.address || <Unset />}</dd>
-            <dt className="font-bold">インボイス登録番号</dt>
-            <dd className="font-latin">{payee.invoiceRegistrationNumber ?? <Unset />}</dd>
-          </dl>
-        </CardContent>
-      </Card>
+      <PayeeEditForm payee={payee} usageCount={entries.length} target={target} />
       <h2 className="mb-1 text-base font-bold">
         書類上の表記（<span className="font-latin">{aliases.length}</span>件）
       </h2>

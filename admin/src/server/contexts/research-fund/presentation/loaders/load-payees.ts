@@ -15,3 +15,10 @@ export async function loadPayees(politicianId: string, bookId: string) {
   );
   return { payees, target };
 }
+
+/** 支払先の作成ページ。選択中の帳簿の議員の支払先として作成する */
+export async function loadPayeeCreateForm(politicianId: string, bookId: string) {
+  const target = await requireJournalTarget(politicianId, bookId);
+  if (!target) notFound();
+  return { target };
+}
