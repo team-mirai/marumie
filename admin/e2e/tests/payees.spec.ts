@@ -26,33 +26,37 @@ test("支払先の作成・編集と、確認画面での紐づけ・その場�
     page.getByRole("button", { name: `${name}／${YEAR}年度` }).click(),
   ]);
 
-  // 支払先を作成する。郵便番号とインボイス登録番号の表記ゆれは保存時に揃える
+  // 支払先を作成ページで作成する。郵便番号とインボイス登録番号の表記ゆれは保存時に揃える
   await page.getByRole("link", { name: "支払先", exact: true }).click();
   await expect(page.getByRole("heading", { name: "支払先" })).toBeVisible();
-  const dialog = page.getByRole("dialog");
-  await clickUntil(page.getByRole("button", { name: "支払先を追加" }), (options) =>
-    expect(dialog.getByLabel(/^名称/)).toBeVisible(options),
-  );
-  await dialog.getByLabel(/^名称/).fill("東京タクシー");
-  await dialog.getByLabel("郵便番号", { exact: true }).fill("１００ー０００１");
-  await dialog.getByLabel("住所", { exact: true }).fill("東京都千代田区千代田1-1");
-  await dialog.getByLabel("インボイス登録番号", { exact: true }).fill("t1234567890123");
-  await dialog.getByRole("button", { name: "作成", exact: true }).click();
-  await expect(dialog).toBeHidden();
-  const taxi = page.getByRole("row").filter({ hasText: "東京タクシー" });
+  await page.getByRole("link", { name: "支払先を追加" }).click();
+  await expect(page).toHaveURL(/\/payees\/new$/);
+  await page.getByLabel(/^名称/).fill("東京タクシー");
+  await page.getByLabel("郵便番号", { exact: true }).fill("１００ー０００１");
+  await page.getByLabel("住所", { exact: true }).fill("東京都千代田区千代田1-1");
+  await page.getByLabel("インボイス登録番号", { exact: true }).fill("t1234567890123");
+  await page.getByRole("button", { name: "作成", exact: true }).click();
+
+  // 作成すると、作成した支払先の詳細ページに移動する
+  await expect(page).toHaveURL(/\/payees\/\d+$/);
+  await expect(page.getByRole("heading", { name: "東京タクシー" })).toBeVisible();
+  await expect(page.getByLabel("郵便番号", { exact: true })).toHaveValue("100-0001");
+  await expect(page.getByLabel("インボイス登録番号", { exact: true })).toHaveValue("T1234567890123");
+
+  // 詳細ページ上で編集する
+  await page.getByLabel(/^名称/).fill("東京タクシー株式会社");
+  await page.getByRole("button", { name: "保存", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "東京タクシー株式会社" })).toBeVisible();
+
+  // 一覧に反映され、一覧からは編集用のモーダルを開かない
+  await page.getByRole("link", { name: "支払先", exact: true }).click();
+  const taxi = page.getByRole("row").filter({ hasText: "東京タクシー株式会社" });
   await expect(taxi).toContainText("100-0001");
   await expect(taxi).toContainText("T1234567890123");
-
-  // 編集する
-  await clickUntil(taxi.getByRole("button", { name: "編集" }), (options) =>
-    expect(dialog.getByLabel(/^名称/)).toBeVisible(options),
-  );
-  await dialog.getByLabel(/^名称/).fill("東京タクシー株式会社");
-  await dialog.getByRole("button", { name: "保存", exact: true }).click();
-  await expect(dialog).toBeHidden();
-  await expect(page.getByRole("row").filter({ hasText: "東京タクシー株式会社" })).toBeVisible();
+  await expect(taxi.getByRole("button", { name: "編集" })).toHaveCount(0);
 
   // 確認画面で支出の下書きを 2 件作る
+  const dialog = page.getByRole("dialog");
   await page.getByRole("link", { name: "仕訳の確認・編集" }).click();
   await expect(page.getByRole("heading", { name: "仕訳の確認・編集" })).toBeVisible();
   for (const description of ["タクシー代", "会議室の利用料"]) {
@@ -114,7 +118,7 @@ test("支払先の作成・編集と、確認画面での紐づけ・その場�
   );
   await page.getByRole("link", { name: "東京タクシー株式会社", exact: true }).click();
   await expect(page.getByRole("heading", { name: "東京タクシー株式会社" })).toBeVisible();
-  await expect(page.getByText("東京都千代田区千代田1-1")).toBeVisible();
+  await expect(page.getByLabel("住所", { exact: true })).toHaveValue("東京都千代田区千代田1-1");
 
   // 作成した支払先は支払先の一覧にも並び、紐づいた仕訳の件数が分かる
   await page.getByRole("link", { name: "支払先", exact: true }).click();
@@ -133,14 +137,12 @@ test("支払先の作成・編集と、確認画面での紐づけ・その場�
   await expect(linkedRow).toContainText("¥3,000");
   await expect(linkedRow).toContainText("下書き");
 
-  // 詳細ページから編集できる
-  await clickUntil(page.getByRole("button", { name: "編集", exact: true }), (options) =>
-    expect(dialog.getByLabel(/^名称/)).toBeVisible(options),
-  );
-  await dialog.getByLabel("住所", { exact: true }).fill("東京都港区芝公園4-2-8");
-  await dialog.getByRole("button", { name: "保存", exact: true }).click();
-  await expect(dialog).toBeHidden();
-  await expect(page.getByText("東京都港区芝公園4-2-8")).toBeVisible();
+  // 詳細ページ上で編集でき、リロードしても保存した内容が出る
+  await page.getByLabel("住所", { exact: true }).fill("東京都港区芝公園4-2-8");
+  await page.getByRole("button", { name: "保存", exact: true }).click();
+  await expect(page.getByText("支払先「貸会議室センター」を保存しました")).toBeVisible();
+  await page.reload();
+  await expect(page.getByLabel("住所", { exact: true })).toHaveValue("東京都港区芝公園4-2-8");
 
   // 存在しない支払先は 404 になる
   const missing = await page.goto(detailUrl.replace(/\d+$/, "999999999"));
