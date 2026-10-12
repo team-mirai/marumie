@@ -67,7 +67,7 @@ test.each([
   expect(normalizeInvoiceRegistrationNumber(value)).toBe(expected);
 });
 
-describe("payeeAccessRejection（テナントの境界）", () => {
+describe("payeeAccessRejection（議員の境界）", () => {
   test("同じ議員の支払先なら受け付ける", () => {
     expect(payeeAccessRejection({ politicianId: "1" }, "1")).toBeNull();
   });

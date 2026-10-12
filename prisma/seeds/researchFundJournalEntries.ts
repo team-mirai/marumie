@@ -108,7 +108,7 @@ export function buildResearchFundJournalEntries(): Prisma.ResearchFundJournalEnt
 export const researchFundJournalEntriesSeeder: Seeder = {
   name: "Research Fund Journal Entries",
   async seed(prisma: PrismaClient) {
-    // 所属ありの開発用議員だけに投入。E2E テナント・無所属議員には投入しない。
+    // 所属ありの開発用議員だけに投入。E2E 用・無所属議員には投入しない。
     const politician = await prisma.politician.findUnique({ where: { slug: "sample-taro" } });
     if (!politician) throw new Error("Seed politician sample-taro not found");
     const book = await prisma.researchFundBook.findUnique({

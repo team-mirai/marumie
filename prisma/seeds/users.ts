@@ -7,7 +7,6 @@ interface UserSeedData {
   email: string;
   password: string;
   role: 'admin' | 'user';
-  tenantMemberships: { tenantSlug: string; tenantRole: 'owner' | 'admin' | 'editor' }[];
 }
 
 const data: UserSeedData[] = [
@@ -15,18 +14,11 @@ const data: UserSeedData[] = [
     email: 'foo@example.com',
     password: 'foo@example.com',
     role: 'admin',
-    tenantMemberships: [
-      { tenantSlug: 'sample-party', tenantRole: 'owner' },
-      { tenantSlug: 'e2e-test-org', tenantRole: 'owner' },
-    ],
   },
   {
     email: 'bar@example.com',
     password: 'bar@example.com',
     role: 'user',
-    tenantMemberships: [
-      { tenantSlug: 'sample-party', tenantRole: 'editor' },
-    ],
   },
 ];
 
@@ -60,9 +52,9 @@ async function ensureDbUser(
   authId: string,
   userData: UserSeedData
 ): Promise<void> {
-  let user = await prisma.user.findUnique({ where: { authId } });
+  const user = await prisma.user.findUnique({ where: { authId } });
   if (!user) {
-    user = await prisma.user.create({
+    await prisma.user.create({
       data: {
         authId,
         email: userData.email,
@@ -70,36 +62,6 @@ async function ensureDbUser(
       },
     });
     console.log(`✅ DB record created: ${userData.email}`);
-  }
-
-  // Create tenant memberships
-  for (const membership of userData.tenantMemberships) {
-    const tenant = await prisma.tenant.findFirst({
-      where: { slug: membership.tenantSlug },
-    });
-    if (!tenant) {
-      console.log(`⚠️  Tenant not found: ${membership.tenantSlug}, skipping membership for ${userData.email}`);
-      continue;
-    }
-
-    const existingMembership = await prisma.userTenantMembership.findUnique({
-      where: {
-        userId_tenantId: { userId: user.id, tenantId: tenant.id },
-      },
-    });
-
-    if (!existingMembership) {
-      await prisma.userTenantMembership.create({
-        data: {
-          userId: user.id,
-          tenantId: tenant.id,
-          role: membership.tenantRole,
-        },
-      });
-      console.log(`✅ Membership created: ${userData.email} -> ${membership.tenantSlug} (${membership.tenantRole})`);
-    } else {
-      console.log(`⏭️  Membership already exists: ${userData.email} -> ${membership.tenantSlug}`);
-    }
   }
 }
 

@@ -349,7 +349,7 @@ test("支払先の紐づけを外すと紐づけ元も消す", async () => {
   expect(tx.researchFundPayee.count).not.toHaveBeenCalled();
   expect(tx.researchFundJournalEntry.updateMany.mock.calls[0][0].data).toEqual({ payeeId: null, payeeLinkSource: null, payeeLinkConfidence: null, payeeLinkReason: null });
 });
-test("帳簿と別の議員（別テナント）の支払先は DB でも照合して紐づけない", async () => {
+test("帳簿と別の議員の支払先は DB でも照合して紐づけない", async () => {
   const { repository, tx } = setup();
   tx.researchFundPayee.count.mockResolvedValue(0);
   await expect(repository.setPayee("1", [entry], "8")).rejects.toThrow("支払先が見つかりません");

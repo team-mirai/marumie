@@ -188,7 +188,7 @@ test("領収書等番号の採番は現在の対象帳簿で行い、件数を�
   expect(requireJournalTarget).toHaveBeenCalledWith("2", "1"); expect(assign).toHaveBeenCalledWith("1");
   expect(revalidatePath).toHaveBeenCalledWith("/(auth)", "layout");
 });
-test("現在の対象でない（別テナントの）帳簿には領収書等番号を振らない", async () => {
+test("現在の対象でない（別の議員の）帳簿には領収書等番号を振らない", async () => {
   jest.mocked(requireJournalTarget).mockResolvedValue(null);
   const assign = jest.spyOn(AssignReceiptNumbersUsecase.prototype, "execute");
   await expect(mutateJournalReview("9", "8", { type: "assign-receipt-numbers" })).resolves.toMatchObject({ success: false });

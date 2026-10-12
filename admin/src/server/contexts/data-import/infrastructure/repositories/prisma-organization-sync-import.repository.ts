@@ -165,7 +165,7 @@ export class PrismaOrganizationSyncImportRepository implements IOrganizationSync
       async (tx) => {
         const organization = await tx.politicalOrganization.findUnique({
           where: { id: politicalOrganizationId },
-          select: { tenantId: true },
+          select: { id: true },
         });
 
         if (!organization) {
@@ -182,10 +182,10 @@ export class PrismaOrganizationSyncImportRepository implements IOrganizationSync
         await tx.balanceSnapshot.deleteMany({ where: { politicalOrganizationId } });
 
         // 2. 取引先・寄付者は他団体と共有されうるので消さない。
-        //    自然キーで既存を再利用し、無いものだけ、この団体のテナントを付けて作る。
+        //    自然キーで既存を再利用し、無いものだけ作る。
         const { counterparts, donors } = collectDistinctCounterpartsAndDonors(file);
-        const counterpartResult = await ensureCounterparts(tx, counterparts, organization.tenantId);
-        const donorResult = await ensureDonors(tx, donors, organization.tenantId);
+        const counterpartResult = await ensureCounterparts(tx, counterparts);
+        const donorResult = await ensureDonors(tx, donors);
 
         // 3. 取引を入れる。紐づけの INSERT には transactions の category_key を見る
         //    DB トリガーがあるため、必ず取引を先に入れる。
@@ -325,8 +325,8 @@ function toTimeoutErrorIfExpired(error: unknown): unknown {
 }
 
 /**
- * 取引先の一意制約 (name, address) はテナントをまたぐグローバル制約なので、
- * 照合はテナントを見ずに行う。`name IN (...)` で絞ってから address まで含めて突き合わせる。
+ * 取引先の一意制約 (name, address) は団体をまたぐグローバル制約なので、
+ * 照合は団体を見ずに行う。`name IN (...)` で絞ってから address まで含めて突き合わせる。
  */
 async function findCounterpartIdsByKey(
   client: ReadClient,
@@ -386,7 +386,6 @@ interface EnsureResult {
 async function ensureCounterparts(
   tx: Prisma.TransactionClient,
   counterparts: SyncExportCounterpart[],
-  tenantId: bigint | null,
 ): Promise<EnsureResult> {
   const idByKey = await findCounterpartIdsByKey(tx, counterparts.map(toCounterpartKey));
   const missing = counterparts.filter(
@@ -400,7 +399,6 @@ async function ensureCounterparts(
         name: counterpart.name,
         postalCode: counterpart.postalCode,
         address: counterpart.address,
-        tenantId,
       })),
       skipDuplicates: true,
     });
@@ -419,7 +417,6 @@ async function ensureCounterparts(
 async function ensureDonors(
   tx: Prisma.TransactionClient,
   donors: SyncExportDonor[],
-  tenantId: bigint | null,
 ): Promise<EnsureResult> {
   const idByKey = await findDonorIdsByKey(tx, donors.map(toDonorKey));
   const missing = donors.filter((donor) => !idByKey.has(serializeDonorKey(toDonorKey(donor))));
@@ -433,7 +430,6 @@ async function ensureDonors(
         name: donor.name,
         address: donor.address,
         occupation: donor.occupation,
-        tenantId,
       })),
       skipDuplicates: true,
     });

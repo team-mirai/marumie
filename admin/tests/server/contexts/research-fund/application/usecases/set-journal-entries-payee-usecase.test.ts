@@ -36,7 +36,7 @@ describe("既存の支払先を紐づける", () => {
     expect(payeeRepository.find).not.toHaveBeenCalled();
     expect(repository.setPayee).toHaveBeenCalledWith("1", [{ ...entry, payeeId: "7", payeeLinkSource: "manual" }], null);
   });
-  test("他の議員（他テナント）の支払先は見つからない扱いにして紐づけない", async () => {
+  test("他の議員の支払先は見つからない扱いにして紐づけない", async () => {
     const { repository, payeeRepository, usecase } = setupUsecase();
     payeeRepository.find.mockResolvedValue(null);
     await expect(usecase.execute("1", [target], "8")).rejects.toThrow("支払先が見つかりません");

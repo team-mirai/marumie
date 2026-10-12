@@ -6,7 +6,6 @@ interface PoliticianSeedData {
   slug: string;
   termStart: string;
   displayOrder: number;
-  tenantSlug: string;
   /** 所属する政治団体（既存 political_organizations）の slug。null なら無所属 */
   organizationSlug: string | null;
   startedOn?: string;
@@ -20,7 +19,6 @@ const data: PoliticianSeedData[] = [
     slug: 'sample-taro',
     termStart: '2025-07-21',
     displayOrder: 1,
-    tenantSlug: 'sample-party',
     organizationSlug: 'sample-party',
     startedOn: '2025-07-21',
     isResearchFundPublic: true,
@@ -30,7 +28,6 @@ const data: PoliticianSeedData[] = [
     slug: 'sample-hanako',
     termStart: '2025-07-21',
     displayOrder: 2,
-    tenantSlug: 'sample-party',
     organizationSlug: null, // 無所属（所属なしでも議員は存在できることの確認用）
   },
   {
@@ -39,7 +36,6 @@ const data: PoliticianSeedData[] = [
     slug: 'sample-jiro',
     termStart: '2025-07-21',
     displayOrder: 3,
-    tenantSlug: 'sample-party',
     organizationSlug: 'sample-party',
     startedOn: '2025-07-21',
     isResearchFundPublic: true,
@@ -49,7 +45,6 @@ const data: PoliticianSeedData[] = [
     slug: 'e2e-politician',
     termStart: '2025-07-21',
     displayOrder: 1,
-    tenantSlug: 'e2e-test-org',
     organizationSlug: 'e2e-test-org',
     startedOn: '2025-07-21',
   },
@@ -62,12 +57,6 @@ export const politiciansSeeder: Seeder = {
       let politician = await prisma.politician.findUnique({ where: { slug: item.slug } });
 
       if (!politician) {
-        const tenant = await prisma.tenant.findFirst({ where: { slug: item.tenantSlug } });
-        if (!tenant) {
-          console.log(`⚠️  Tenant not found: ${item.tenantSlug}, skipping ${item.slug}`);
-          continue;
-        }
-
         politician = await prisma.politician.create({
           data: {
             name: item.name,
@@ -75,7 +64,6 @@ export const politiciansSeeder: Seeder = {
             termStart: new Date(item.termStart),
             displayOrder: item.displayOrder,
             isResearchFundPublic: item.isResearchFundPublic ?? false,
-            tenantId: tenant.id,
           },
         });
         console.log(`✅ Created: ${item.slug}`);
