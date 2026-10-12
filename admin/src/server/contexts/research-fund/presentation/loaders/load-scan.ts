@@ -9,6 +9,7 @@ import {
   researchFundExtractionModel,
   VercelAIReceiptExtractionGateway,
 } from "@/server/contexts/research-fund/infrastructure/llm/vercel-ai-receipt-extraction-gateway";
+import { PrismaDuplicateDocumentRepository } from "@/server/contexts/research-fund/infrastructure/repositories/prisma-duplicate-document.repository";
 import { PrismaPromptRepository } from "@/server/contexts/research-fund/infrastructure/repositories/prisma-prompt.repository";
 import { PrismaScanRepository } from "@/server/contexts/research-fund/infrastructure/repositories/prisma-scan.repository";
 import { buildDocumentStorage } from "@/server/contexts/research-fund/infrastructure/storage/build-document-storage";
@@ -50,6 +51,7 @@ export async function loadScan(politicianId: string, bookId: string) {
   const data = await new ListScanBatchesUsecase(
     new PrismaScanRepository(prisma),
     new PrismaPromptRepository(prisma),
+    new PrismaDuplicateDocumentRepository(prisma),
     researchFundExtractionModel(),
   ).execute(target.politicianId, bookId);
   return { ...data, target };
