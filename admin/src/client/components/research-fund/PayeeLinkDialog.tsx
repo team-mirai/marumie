@@ -44,7 +44,7 @@ export function PayeeLinkDialog({
   currentPayeeId: string | null;
   /** 支払先を新規作成するときの住所検索に使う帳簿の議員 */
   target: Pick<Extract<AdminTarget, { kind: "research-fund" }>, "politicianId" | "bookId">;
-  /** 支払先を新規作成するときの AI 検索の初期値（仕訳の項目名） */
+  /** 支払先を新規作成するときの AI 検索の初期値（書類から読み取った発行元の名前。無ければ空） */
   defaultSearchQuery: string;
   pending: boolean;
   onLink: (payeeId: string | null) => void;

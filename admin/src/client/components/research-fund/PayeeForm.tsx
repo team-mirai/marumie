@@ -35,7 +35,7 @@ export function PayeeForm({
   initial: Payee | null;
   /** 住所検索のプロンプトを選ぶ帳簿の議員 */
   target: Pick<Extract<AdminTarget, { kind: "research-fund" }>, "politicianId" | "bookId">;
-  /** AI 検索の初期値（仕訳の項目名など） */
+  /** AI 検索の初期値（書類から読み取った発行元の名前など） */
   defaultSearchQuery?: string;
   pending: boolean;
   submitLabel: string;

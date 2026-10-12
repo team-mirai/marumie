@@ -99,6 +99,8 @@ test("支払先の作成・編集と、確認画面での紐づけ・その場�
   await expect(page.getByText("1件の下書きを選択中")).toBeVisible();
   await page.getByRole("button", { name: "支払先をまとめて設定" }).click();
   await dialog.getByRole("button", { name: "新しい支払先を作成して紐づける" }).click();
+  // 手入力の仕訳には書類の発行元が無いので、AI 検索の会社名は空で始まる（項目名は入らない）
+  await expect(dialog.getByLabel("会社名", { exact: true })).toHaveValue("");
   await dialog.getByLabel(/^名称/).fill("貸会議室センター");
   await dialog.getByRole("button", { name: "作成して紐づける" }).click();
   await expect(page.getByText("支払先「貸会議室センター」を作成し、1件に紐づけました")).toBeVisible();
