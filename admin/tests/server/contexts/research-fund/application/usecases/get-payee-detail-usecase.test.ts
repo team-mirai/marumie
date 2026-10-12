@@ -4,12 +4,14 @@ const payee = { id: "7", politicianId: "5", name: "東京タクシー", postalCo
 const entry = { id: "11", entryDate: "2026-05-01", description: "タクシー代", amount: 1200, status: "approved" as const };
 const alias = { id: "3", name: "東京ﾀｸｼｰ", source: "rule" as const, document: { id: "21", originalFilename: "receipt.jpg" }, createdAt: "2026-05-01T00:00:00.000Z", sharedWith: [] };
 const deletion = { publishedCount: 1, unlinkedCount: 2 };
+const candidate = { ...payee, id: "8", name: "東京ﾀｸｼｰ", entryCount: 3, aliases: [{ name: "東京タクシー(株)", normalizedName: "東京タクシー株式会社" }] };
 function setup() {
-  return { listJournalEntries: jest.fn().mockResolvedValue([entry]), list: jest.fn(), find: jest.fn().mockResolvedValue(payee), create: jest.fn(), update: jest.fn(), listAliases: jest.fn().mockResolvedValue([alias]), deleteAlias: jest.fn(), deletionImpact: jest.fn().mockResolvedValue(deletion), delete: jest.fn() };
+  return { listJournalEntries: jest.fn().mockResolvedValue([entry]), list: jest.fn(), find: jest.fn().mockResolvedValue(payee), create: jest.fn(), update: jest.fn(), listAliases: jest.fn().mockResolvedValue([alias]), deleteAlias: jest.fn(), deletionImpact: jest.fn().mockResolvedValue(deletion), delete: jest.fn(), listMergeCandidates: jest.fn().mockResolvedValue([candidate]), merge: jest.fn() };
 }
-test("議員の支払先と、帳簿でその支払先に紐づいた仕訳と、支払先に記録された表記と、削除したときの影響を返す", async () => {
+test("議員の支払先と、帳簿でその支払先に紐づいた仕訳と、支払先に記録された表記と、削除したときの影響と、統合の候補を返す", async () => {
   const repository = setup();
-  await expect(new GetPayeeDetailUsecase(repository).execute("5", "1", "7")).resolves.toEqual({ payee, entries: [entry], aliases: [alias], deletion });
+  await expect(new GetPayeeDetailUsecase(repository).execute("5", "1", "7")).resolves.toEqual({ payee, entries: [entry], aliases: [alias], deletion, mergeCandidates: [candidate] });
+  expect(repository.listMergeCandidates).toHaveBeenCalledWith("5", "7");
   expect(repository.deletionImpact).toHaveBeenCalledWith("5", "7");
   expect(repository.find).toHaveBeenCalledWith("5", "7");
   expect(repository.listJournalEntries).toHaveBeenCalledWith("5", "7", "1");

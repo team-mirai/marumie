@@ -2,9 +2,10 @@ import { revalidatePath } from "next/cache";
 import { requireAuth } from "@/server/contexts/auth/presentation/loaders/require-auth";
 import { DeletePayeeUsecase } from "@/server/contexts/research-fund/application/usecases/delete-payee-usecase";
 import { DeletePayeeAliasUsecase } from "@/server/contexts/research-fund/application/usecases/delete-payee-alias-usecase";
+import { MergePayeesUsecase } from "@/server/contexts/research-fund/application/usecases/merge-payees-usecase";
 import { SavePayeeUsecase } from "@/server/contexts/research-fund/application/usecases/save-payee-usecase";
 import { PayeeError } from "@/server/contexts/research-fund/domain/models/payee";
-import { deletePayee, deletePayeeAlias, savePayee } from "@/server/contexts/research-fund/presentation/actions/manage-payees";
+import { deletePayee, deletePayeeAlias, mergePayees, savePayee } from "@/server/contexts/research-fund/presentation/actions/manage-payees";
 import { requireJournalTarget } from "@/server/contexts/research-fund/presentation/loaders/load-journal-review";
 jest.mock("next/cache", () => ({ revalidatePath: jest.fn() }));
 jest.mock("@/server/contexts/auth/presentation/loaders/require-auth", () => ({ requireAuth: jest.fn() }));
@@ -73,5 +74,24 @@ test("支払先の削除の業務エラーは理由を返し、内部エラー�
   await expect(deletePayee("2", "1", "7")).resolves.toEqual({ success: false, error: "公開中の仕訳（1件）に紐づいているため削除できません" });
   jest.spyOn(DeletePayeeUsecase.prototype, "execute").mockRejectedValueOnce(new Error("private database detail"));
   await expect(deletePayee("2", "1", "7")).resolves.toEqual({ success: false, error: "支払先の削除に失敗しました" });
+  expect(revalidatePath).not.toHaveBeenCalled();
+});
+test("選択中の帳簿の議員の支払先を統合し、紐づけ直した件数を返してレイアウトを再検証する", async () => {
+  const merge = jest.spyOn(MergePayeesUsecase.prototype, "execute").mockResolvedValue({ movedEntryCount: 3 });
+  await expect(mergePayees("2", "1", "7", "8")).resolves.toEqual({ success: true, movedEntryCount: 3 });
+  expect(merge).toHaveBeenCalledWith("2", "7", "8");
+  expect(revalidatePath).toHaveBeenCalledWith("/(auth)", "layout");
+});
+test("選択中の対象と違う議員への支払先の統合は行わない", async () => {
+  jest.mocked(requireJournalTarget).mockResolvedValue(null);
+  const merge = jest.spyOn(MergePayeesUsecase.prototype, "execute");
+  await expect(mergePayees("3", "1", "7", "8")).resolves.toMatchObject({ success: false });
+  expect(merge).not.toHaveBeenCalled(); expect(revalidatePath).not.toHaveBeenCalled();
+});
+test("支払先の統合の業務エラーは理由を返し、内部エラーは漏らさない", async () => {
+  jest.spyOn(MergePayeesUsecase.prototype, "execute").mockRejectedValueOnce(new PayeeError("インボイス登録番号が食い違うため統合できません"));
+  await expect(mergePayees("2", "1", "7", "8")).resolves.toEqual({ success: false, error: "インボイス登録番号が食い違うため統合できません" });
+  jest.spyOn(MergePayeesUsecase.prototype, "execute").mockRejectedValueOnce(new Error("private database detail"));
+  await expect(mergePayees("2", "1", "7", "8")).resolves.toEqual({ success: false, error: "支払先の統合に失敗しました" });
   expect(revalidatePath).not.toHaveBeenCalled();
 });

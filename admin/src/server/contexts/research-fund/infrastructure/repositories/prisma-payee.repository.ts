@@ -8,6 +8,12 @@ import {
   type PayeeJournalEntry,
 } from "@/server/contexts/research-fund/domain/models/payee";
 import type { PayeeAlias } from "@/server/contexts/research-fund/domain/models/payee-alias";
+import {
+  payeeMergeAddedAliases,
+  payeeMergeRejection,
+  type PayeeMergeCandidate,
+  type PayeeMergeResult,
+} from "@/server/contexts/research-fund/domain/models/payee-merge";
 import type { PayeeRepository } from "@/server/contexts/research-fund/domain/repositories/payee-repository.interface";
 
 function model(row: ResearchFundPayee): Payee {
@@ -184,6 +190,80 @@ export class PrismaPayeeRepository implements PayeeRepository {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2003")
         throw new PayeeError(
           "削除中に仕訳が紐づけられたため削除できませんでした。もう一度お試しください",
+        );
+      throw error;
+    }
+  }
+  async listMergeCandidates(politicianId: string, id: string): Promise<PayeeMergeCandidate[]> {
+    const rows = await this.prisma.researchFundPayee.findMany({
+      where: { politicianId: BigInt(politicianId), id: { not: BigInt(id) } },
+      include: {
+        _count: { select: { journalEntries: true } },
+        aliases: { select: { name: true, normalizedName: true }, orderBy: { id: "asc" } },
+      },
+      orderBy: [{ name: "asc" }, { address: "asc" }],
+    });
+    return rows.map((row) => ({
+      ...model(row),
+      entryCount: row._count.journalEntries,
+      aliases: row.aliases,
+    }));
+  }
+  // 両方の支払先が議員のものかと統合できるかを同じトランザクションで確かめてから、
+  // 仕訳を紐づけ直し（紐づけの経路・確信度・根拠はそのまま）、表記を移し、統合元を消す。
+  // 統合先にすでにある表記は移さず、統合元と一緒に外部キーのカスケードで消える。
+  async merge(politicianId: string, targetId: string, sourceId: string): Promise<PayeeMergeResult> {
+    try {
+      return await this.prisma.$transaction(async (tx) => {
+        const [target, source] = await Promise.all(
+          [targetId, sourceId].map((id) =>
+            tx.researchFundPayee.findFirst({
+              where: { id: BigInt(id), politicianId: BigInt(politicianId) },
+              include: {
+                aliases: {
+                  select: { id: true, name: true, normalizedName: true },
+                  orderBy: { id: "asc" },
+                },
+              },
+            }),
+          ),
+        );
+        if (!target || !source) return { status: "not-found" as const };
+        const rejection = payeeMergeRejection(model(target), model(source));
+        if (rejection) return { status: "rejected" as const, reason: rejection };
+        const moved = await tx.researchFundJournalEntry.updateMany({
+          where: { payeeId: source.id },
+          data: { payeeId: target.id },
+        });
+        // 統合元の表記は記録の経路・最初の書類・記録日時ごと移す。統合元の名称は表記に無ければ人の操作として新しく記録する
+        const added = payeeMergeAddedAliases(source, target.aliases);
+        const moving = source.aliases.filter((alias) => added.includes(alias));
+        if (moving.length > 0)
+          await tx.researchFundPayeeAlias.updateMany({
+            where: { id: { in: moving.map((alias) => alias.id) } },
+            data: { payeeId: target.id },
+          });
+        const recorded = added.filter((alias) => !moving.some((other) => other === alias));
+        if (recorded.length > 0)
+          await tx.researchFundPayeeAlias.createMany({
+            data: recorded.map(({ name, normalizedName }) => ({
+              payeeId: target.id,
+              name,
+              normalizedName,
+              source: "manual" as const,
+            })),
+          });
+        await tx.researchFundPayee.delete({ where: { id: source.id } });
+        return { status: "merged" as const, movedEntryCount: moved.count };
+      });
+    } catch (error) {
+      // 確認のあとに統合元へ仕訳が紐づけられる・統合先に同じ表記が記録されると、外部キー・一意制約で止まる
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        (error.code === "P2003" || error.code === "P2002")
+      )
+        throw new PayeeError(
+          "統合中に支払先の紐づけ・表記が変わったため統合できませんでした。もう一度お試しください",
         );
       throw error;
     }

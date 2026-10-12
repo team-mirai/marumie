@@ -2,7 +2,7 @@ import { DeletePayeeUsecase } from "@/server/contexts/research-fund/application/
 import { PayeeError, type PayeeDeletionResult } from "@/server/contexts/research-fund/domain/models/payee";
 
 function setup(result: PayeeDeletionResult) {
-  return { listJournalEntries: jest.fn(), list: jest.fn(), find: jest.fn(), create: jest.fn(), update: jest.fn(), listAliases: jest.fn(), deleteAlias: jest.fn(), deletionImpact: jest.fn(), delete: jest.fn().mockResolvedValue(result) };
+  return { listJournalEntries: jest.fn(), list: jest.fn(), find: jest.fn(), create: jest.fn(), update: jest.fn(), listAliases: jest.fn(), deleteAlias: jest.fn(), deletionImpact: jest.fn(), delete: jest.fn().mockResolvedValue(result), listMergeCandidates: jest.fn(), merge: jest.fn() };
 }
 test("議員の支払先を削除し、未設定に戻した仕訳の件数を返す", async () => {
   const repository = setup({ status: "deleted", unlinkedCount: 2 });

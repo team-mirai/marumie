@@ -7,6 +7,10 @@ import type {
   PayeeSummary,
 } from "@/server/contexts/research-fund/domain/models/payee";
 import type { PayeeAlias } from "@/server/contexts/research-fund/domain/models/payee-alias";
+import type {
+  PayeeMergeCandidate,
+  PayeeMergeResult,
+} from "@/server/contexts/research-fund/domain/models/payee-merge";
 
 /** 支払先は議員ごとに持つ。どの操作も議員で絞り込み、別の議員の支払先を返さない・変更しない */
 export interface PayeeRepository {
@@ -38,4 +42,15 @@ export interface PayeeRepository {
    * 公開中の仕訳が紐づいていれば何も変えずに published を返す。別の議員の支払先なら not-found
    */
   delete(politicianId: string, id: string): Promise<PayeeDeletionResult>;
+  /**
+   * 議員の支払先のうち、id の支払先に統合できる候補（id 以外）を名称順に返す。
+   * 仕訳の件数は議員のすべての帳簿で数え、記録された表記の名称を添える
+   */
+  listMergeCandidates(politicianId: string, id: string): Promise<PayeeMergeCandidate[]>;
+  /**
+   * 議員の支払先 sourceId を targetId に統合する（domain/models/payee-merge）。
+   * 統合元の仕訳を統合先に紐づけ直し、表記と名称を統合先の表記にして、統合元を消す。
+   * どちらかが別の議員の支払先なら not-found、統合できない理由があれば何も変えずに rejected を返す
+   */
+  merge(politicianId: string, targetId: string, sourceId: string): Promise<PayeeMergeResult>;
 }

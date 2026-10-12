@@ -4,6 +4,7 @@ import { PageHeader } from "@/client/components/layout/PageHeader";
 import { PayeeAliasDeleteButton } from "@/client/components/research-fund/PayeeAliasDeleteButton";
 import { PayeeDeleteButton } from "@/client/components/research-fund/PayeeDeleteButton";
 import { PayeeEditButton } from "@/client/components/research-fund/PayeeEditButton";
+import { PayeeMergeButton } from "@/client/components/research-fund/PayeeMergeButton";
 import {
   Card,
   CardContent,
@@ -21,6 +22,7 @@ import type {
   PayeeJournalEntry,
 } from "@/server/contexts/research-fund/domain/models/payee";
 import type { PayeeAlias } from "@/server/contexts/research-fund/domain/models/payee-alias";
+import type { PayeeMergeCandidate } from "@/server/contexts/research-fund/domain/models/payee-merge";
 import type { AdminTarget } from "@/server/contexts/shared/domain/models/admin-target";
 
 const statuses: Record<PayeeJournalEntry["status"], string> = {
@@ -44,18 +46,21 @@ function Unset() {
  * 紐づけの誤りを見つけるための画面で、仕訳の編集や支払先の付け替えは仕訳の確認画面で行う。
  * 書類との照合に使う表記（紐づけの操作から自動で記録される）も表示し、誤った表記はここで削除する。
  * 支払先そのものの削除もここで行う（公開中の仕訳が紐づく支払先は削除できない）。
+ * 同じ相手の支払先が重複していれば、別の支払先をこの支払先に統合する。
  */
 export function PayeeDetail({
   payee,
   entries,
   aliases,
   deletion,
+  mergeCandidates,
   target,
 }: {
   payee: Payee;
   entries: readonly PayeeJournalEntry[];
   aliases: readonly PayeeAlias[];
   deletion: PayeeDeletionImpact;
+  mergeCandidates: readonly PayeeMergeCandidate[];
   target: Extract<AdminTarget, { kind: "research-fund" }>;
 }) {
   return (
@@ -76,6 +81,12 @@ export function PayeeDetail({
         actions={
           <div className="flex gap-2">
             <PayeeEditButton payee={payee} usageCount={entries.length} target={target} />
+            <PayeeMergeButton
+              payee={payee}
+              aliases={aliases}
+              candidates={mergeCandidates}
+              target={target}
+            />
             <PayeeDeleteButton payee={payee} deletion={deletion} target={target} />
           </div>
         }
@@ -131,7 +142,7 @@ export function PayeeDetail({
                     {alias.document ? (
                       alias.document.originalFilename
                     ) : (
-                      <span className="text-muted-foreground">削除済み</span>
+                      <span className="text-muted-foreground">なし</span>
                     )}
                   </TableCell>
                   <TableCell className="font-latin whitespace-nowrap">
