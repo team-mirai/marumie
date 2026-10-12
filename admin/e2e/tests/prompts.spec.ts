@@ -26,6 +26,10 @@ test("デフォルトから初版を保存し、編集して版を重ね、巻�
   await openPromptsPage(page, `e2e-prompt-${Date.now()}`);
   const section = page.getByRole("region", { name: "領収書の読み取り" });
 
+  // 初期表示は領収書の読み取りタブで、編集欄は選択中の種類の 1 つだけ
+  await expect(page.getByRole("tab", { name: "領収書の読み取り" })).toHaveAttribute("aria-selected", "true");
+  await expect(page.getByRole("region", { name: "支払先の住所検索" })).toBeHidden();
+
   // 版が無い議員はデフォルトテンプレートから始まり、自動生成部は参照だけできる
   const body = section.getByLabel("プロンプト本文");
   await expect(body).toHaveValue(/迷ったら needs-review/);
@@ -74,6 +78,13 @@ test("住所検索プロンプトは読み取りプロンプトとは別に版�
   await openPromptsPage(page, `e2e-address-prompt-${Date.now()}`);
   const section = page.getByRole("region", { name: "支払先の住所検索" });
   const receipt = page.getByRole("region", { name: "領収書の読み取り" });
+  const addressTab = page.getByRole("tab", { name: "支払先の住所検索" });
+  const receiptTab = page.getByRole("tab", { name: "領収書の読み取り" });
+
+  // タブを切り替えると、住所検索の編集欄だけが表示される
+  await addressTab.click();
+  await expect(addressTab).toHaveAttribute("aria-selected", "true");
+  await expect(receipt).toBeHidden();
 
   // 版が無い議員は今の住所検索プロンプトから始まり、名称の差し込みと出力形式は参照だけできる
   const body = section.getByLabel("プロンプト本文");
@@ -88,8 +99,12 @@ test("住所検索プロンプトは読み取りプロンプトとは別に版�
   await clickUntil(section.getByRole("button", { name: "保存して v1 にする" }), (options) =>
     expect(section.getByText("v1 有効")).toBeVisible(options),
   );
+  // 保存後も住所検索タブが選ばれたまま
+  await expect(addressTab).toHaveAttribute("aria-selected", "true");
   // 読み取りプロンプトの版は増えない
+  await receiptTab.click();
   await expect(receipt.getByText("未保存（デフォルト）")).toBeVisible();
+  await addressTab.click();
 
   const history = section.locator('[data-slot="card"]').filter({ has: page.getByRole("heading", { name: "版履歴" }) }).getByRole("listitem");
   await expect(history).toHaveCount(1);
@@ -104,7 +119,11 @@ test("住所検索プロンプトは読み取りプロンプトとは別に版�
   await history.filter({ hasText: "v1" }).getByRole("button", { name: "巻き戻し" }).click();
   await expect(section.getByText("v1 有効")).toBeVisible();
   await expect(body).toHaveValue(/本社または主たる事務所の住所を特定してください/);
+  // 巻き戻し後も住所検索タブが選ばれたまま
+  await expect(addressTab).toHaveAttribute("aria-selected", "true");
   await page.reload();
-  await expect(section.getByText("v1 有効")).toBeVisible();
+  // 再読み込みすると初期表示の領収書の読み取りタブに戻る
   await expect(receipt.getByText("未保存（デフォルト）")).toBeVisible();
+  await addressTab.click();
+  await expect(section.getByText("v1 有効")).toBeVisible();
 });
