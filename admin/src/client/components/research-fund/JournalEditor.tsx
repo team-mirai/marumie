@@ -315,7 +315,7 @@ export function JournalEditor({
                 確認済にする
               </Button>
             )}
-            {entry.status === "approved" && !grant && (
+            {entry.status === "approved" && !grant && !settled && (
               <Button
                 type="button"
                 variant="outline"
