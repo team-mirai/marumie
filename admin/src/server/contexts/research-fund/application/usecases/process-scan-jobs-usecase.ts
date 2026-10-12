@@ -10,6 +10,7 @@ import {
   matchPayeeByIssuer,
   payeeToRegisterForIssuer,
 } from "@/server/contexts/research-fund/domain/services/issuer-payee-matcher";
+import { payeeAliasFromIssuer } from "@/server/contexts/research-fund/domain/models/payee-alias";
 import { buildScanDraftEntries } from "@/server/contexts/research-fund/domain/services/scan-journal-builder";
 import { ResearchFundDocument } from "@/server/contexts/research-fund/domain/models/document";
 
@@ -114,7 +115,8 @@ export class ProcessScanJobsUsecase {
       }
       // 発行元が支払先に確実に一致したら、この書類の仕訳すべてに紐づける（ルール照合）。
       // 一致しなければ、読み取った発行元から支払先を新しく登録して紐づける。発行元の名称が
-      // 読み取れない・同じ相手かもしれない支払先があるなら未紐づけのまま残す（誤って紐づけるより安全なため）
+      // 読み取れない・同じ相手かもしれない支払先があるなら未紐づけのまま残す（誤って紐づけるより安全なため）。
+      // 紐づけたら、発行元の名称をその支払先の表記として記録し、以後の照合に使う
       const payees = await this.scanRepository.payees(input.bookId);
       const payee = matchPayeeByIssuer(extracted.value.issuer, payees);
       await this.scanRepository.completeJob({
@@ -129,6 +131,7 @@ export class ProcessScanJobsUsecase {
         replaceDrafts: job.rereadInstruction !== null,
         payeeId: payee?.id ?? null,
         newPayee: payee === null ? payeeToRegisterForIssuer(extracted.value.issuer, payees) : null,
+        payeeAlias: payeeAliasFromIssuer(extracted.value.issuer),
       });
       return true;
     } catch (error) {

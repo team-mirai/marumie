@@ -28,6 +28,7 @@ function setup() {
     findUniqueOrThrow: jest.fn(),
   };
   const book = { findUniqueOrThrow: jest.fn() };
+  const alias = { createMany: jest.fn() };
   const tx = {
     researchFundScanBatch: batch,
     researchFundDocument: document,
@@ -37,6 +38,7 @@ function setup() {
     researchFundAccount: account,
     researchFundPayee: payee,
     researchFundBook: book,
+    researchFundPayeeAlias: alias,
     $queryRaw: jest.fn(),
   };
   const client = {
@@ -53,6 +55,7 @@ function setup() {
     account,
     payee,
     book,
+    alias,
     client,
     repository: new PrismaScanRepository(client as unknown as PrismaClient),
   };
@@ -264,6 +267,7 @@ const COMPLETE_INPUT = {
   replaceDrafts: false,
   payeeId: null,
   newPayee: null,
+  payeeAlias: null,
   entries: [
     {
       entryDate: "2026-04-01",
@@ -401,6 +405,51 @@ test("帳簿と別の議員の支払先は紐づけずに下書きを作る", as
   );
 });
 
+const ALIAS = { name: "Amazon.co.jp", normalizedName: "amazon.co.jp" };
+
+test("紐づけた支払先に、発行元の名称を紐づけ元と書類つきの表記として記録する（同じ表記は二重に記録しない）", async () => {
+  const { entry, payee, alias, repository } = setup();
+  payee.count.mockResolvedValue(1);
+  entry.createManyAndReturn.mockResolvedValue([]);
+  await repository.completeJob({ ...COMPLETE_INPUT, payeeId: "7", payeeAlias: ALIAS });
+  expect(alias.createMany).toHaveBeenCalledWith({
+    data: [{ payeeId: BigInt(7), name: "Amazon.co.jp", normalizedName: "amazon.co.jp", source: "rule", documentId: BigInt(42) }],
+    skipDuplicates: true,
+  });
+});
+
+test("発行元から登録した支払先には「AI」として表記を記録する", async () => {
+  const { entry, payee, book, alias, repository } = setup();
+  entry.createManyAndReturn.mockResolvedValue([]);
+  book.findUniqueOrThrow.mockResolvedValue({ politicianId: BigInt(5) });
+  payee.findUniqueOrThrow.mockResolvedValue({ id: BigInt(9), invoiceRegistrationNumber: null });
+  await repository.completeJob({
+    ...COMPLETE_INPUT,
+    newPayee: { name: "Amazon.co.jp", postalCode: null, address: "", invoiceRegistrationNumber: null },
+    payeeAlias: ALIAS,
+  });
+  expect(alias.createMany).toHaveBeenCalledWith({
+    data: [expect.objectContaining({ payeeId: BigInt(9), source: "ai", documentId: BigInt(42) })],
+    skipDuplicates: true,
+  });
+});
+
+test("支払先を紐づけなければ表記を記録しない", async () => {
+  const { entry, payee, alias, repository } = setup();
+  payee.count.mockResolvedValue(0);
+  entry.createManyAndReturn.mockResolvedValue([]);
+  await repository.completeJob({ ...COMPLETE_INPUT, payeeId: "7", payeeAlias: ALIAS });
+  expect(alias.createMany).not.toHaveBeenCalled();
+});
+
+test("発行元の名称が読み取れていなければ表記を記録しない", async () => {
+  const { entry, payee, alias, repository } = setup();
+  payee.count.mockResolvedValue(1);
+  entry.createManyAndReturn.mockResolvedValue([]);
+  await repository.completeJob({ ...COMPLETE_INPUT, payeeId: "7" });
+  expect(alias.createMany).not.toHaveBeenCalled();
+});
+
 test("照合で支払先が決まらなければ未紐づけのまま作る", async () => {
   const { entry, payee, repository } = setup();
   entry.createManyAndReturn.mockResolvedValue([]);
@@ -467,13 +516,13 @@ test("照合で支払先が決まれば新しい支払先は登録しない", as
   ]);
 });
 
-test("発行元の照合に使う支払先は帳簿の議員のものだけを返す", async () => {
+test("発行元の照合に使う支払先は帳簿の議員のものだけを、記録された表記つきで返す", async () => {
   const { payee, repository } = setup();
   payee.findMany.mockResolvedValue([
-    { id: BigInt(7), politicianId: BigInt(5), name: "JR東日本", postalCode: null, address: "", invoiceRegistrationNumber: null },
+    { id: BigInt(7), politicianId: BigInt(5), name: "JR東日本", postalCode: null, address: "", invoiceRegistrationNumber: null, aliases: [{ normalizedName: "jr東日本品川駅" }] },
   ]);
   await expect(repository.payees("12")).resolves.toEqual([
-    { id: "7", politicianId: "5", name: "JR東日本", postalCode: null, address: "", invoiceRegistrationNumber: null },
+    { id: "7", politicianId: "5", name: "JR東日本", postalCode: null, address: "", invoiceRegistrationNumber: null, aliases: ["jr東日本品川駅"] },
   ]);
   expect(payee.findMany).toHaveBeenCalledWith(
     expect.objectContaining({ where: { politician: { books: { some: { id: BigInt(12) } } } } }),

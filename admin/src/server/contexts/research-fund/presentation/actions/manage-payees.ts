@@ -2,6 +2,7 @@
 import "server-only";
 import { revalidatePath } from "next/cache";
 import { requireAuth } from "@/server/contexts/auth/presentation/loaders/require-auth";
+import { DeletePayeeAliasUsecase } from "@/server/contexts/research-fund/application/usecases/delete-payee-alias-usecase";
 import { SavePayeeUsecase } from "@/server/contexts/research-fund/application/usecases/save-payee-usecase";
 import {
   PayeeError,
@@ -36,6 +37,35 @@ export async function savePayee(
     return {
       success: false as const,
       error: error instanceof PayeeError ? error.message : "支払先の保存に失敗しました",
+    };
+  }
+}
+
+/**
+ * 支払先に記録された表記を削除する。対象は選択中の帳簿の議員の支払先の表記だけ。
+ * 削除した表記はそれ以降の書類の照合に使われない。支払先と同じく webapp のキャッシュは無効化しない。
+ */
+export async function deletePayeeAlias(
+  politicianId: string,
+  bookId: string,
+  payeeId: string,
+  aliasId: string,
+) {
+  await requireAuth();
+  const target = await requireJournalTarget(politicianId, bookId);
+  if (!target) return { success: false as const, error: "現在の対象帳簿を選択し直してください" };
+  try {
+    await new DeletePayeeAliasUsecase(new PrismaPayeeRepository(prisma)).execute(
+      target.politicianId,
+      payeeId,
+      aliasId,
+    );
+    revalidatePath("/(auth)", "layout");
+    return { success: true as const };
+  } catch (error) {
+    return {
+      success: false as const,
+      error: error instanceof PayeeError ? error.message : "表記の削除に失敗しました",
     };
   }
 }

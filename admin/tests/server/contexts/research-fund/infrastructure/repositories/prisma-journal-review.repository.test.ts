@@ -14,7 +14,7 @@ function rowWithLines(lines = input.lines) {
   };
 }
 function setup(count = 1) {
-  const tx = { researchFundJournalEntry: { updateMany: jest.fn().mockResolvedValue({ count }), deleteMany: jest.fn().mockResolvedValue({ count }), findMany: jest.fn(), findFirst: jest.fn().mockResolvedValue(rowWithLines()), create: jest.fn().mockResolvedValue({ id: BigInt(entry.id) }) }, researchFundJournalLine: { deleteMany: jest.fn(), createMany: jest.fn() }, researchFundAccount: { findMany: jest.fn() }, researchFundBook: { findUnique: jest.fn(), update: jest.fn() }, researchFundPayee: { count: jest.fn().mockResolvedValue(1), create: jest.fn().mockResolvedValue({ id: BigInt(9), politicianId: BigInt(5), name: "東京タクシー", postalCode: null, address: "", invoiceRegistrationNumber: null }) }, $queryRaw: jest.fn() };
+  const tx = { researchFundJournalEntry: { updateMany: jest.fn().mockResolvedValue({ count }), deleteMany: jest.fn().mockResolvedValue({ count }), findMany: jest.fn(), findFirst: jest.fn().mockResolvedValue(rowWithLines()), create: jest.fn().mockResolvedValue({ id: BigInt(entry.id) }) }, researchFundJournalLine: { deleteMany: jest.fn(), createMany: jest.fn() }, researchFundAccount: { findMany: jest.fn() }, researchFundBook: { findUnique: jest.fn(), update: jest.fn() }, researchFundPayee: { count: jest.fn().mockResolvedValue(1), create: jest.fn().mockResolvedValue({ id: BigInt(9), politicianId: BigInt(5), name: "東京タクシー", postalCode: null, address: "", invoiceRegistrationNumber: null }) }, researchFundPayeeAlias: { createMany: jest.fn() }, $queryRaw: jest.fn() };
   const transaction = jest.fn(async fn => fn(tx));
   const repository = new PrismaJournalReviewRepository({ ...tx, $transaction: transaction } as unknown as PrismaClient);
   return { repository, tx, transaction };
@@ -360,6 +360,28 @@ test("支払先の紐づけは1件でも競合したらトランザクション�
   const other = { id: "5", updatedAt: entry.updatedAt } as ReviewEntry;
   await expect(repository.setPayee("1", [entry, other], "7")).rejects.toThrow("再読み込み");
   expect(tx.researchFundJournalEntry.updateMany).toHaveBeenCalledTimes(1);
+});
+const scanned = (id: string, documentId: string | null, name: string | null) => ({ id, updatedAt: entry.updatedAt, documentId, issuer: name === null ? null : { name, address: null, phone: null, invoice_registration_number: null } }) as ReviewEntry;
+test("支払先を紐づけたら、書類のある仕訳の発行元の名称を手動の表記として記録する（同じ表記は二重に記録しない）", async () => {
+  const { repository, tx } = setup();
+  await repository.setPayee("1", [scanned("1", "21", "Amazon.co.jp"), scanned("2", "21", "Amazon.co.jp"), scanned("3", null, "手入力"), scanned("4", "22", null)], "7");
+  const amazon = { payeeId: BigInt(7), name: "Amazon.co.jp", normalizedName: "amazon.co.jp", source: "manual", documentId: BigInt(21) };
+  expect(tx.researchFundPayeeAlias.createMany).toHaveBeenCalledWith({ data: [amazon, amazon], skipDuplicates: true });
+});
+test("書類の無い仕訳・発行元の名称が読み取れていない書類だけなら表記を記録しない", async () => {
+  const { repository, tx } = setup();
+  await repository.setPayee("1", [scanned("3", null, "手入力"), scanned("4", "22", null)], "7");
+  expect(tx.researchFundPayeeAlias.createMany).not.toHaveBeenCalled();
+});
+test("支払先の紐づけを外しても表記は記録も削除もしない", async () => {
+  const { repository, tx } = setup();
+  await repository.setPayee("1", [scanned("1", "21", "Amazon.co.jp")], null);
+  expect(tx.researchFundPayeeAlias.createMany).not.toHaveBeenCalled();
+});
+test("支払先をその場で作成して紐づけたときも表記を記録する", async () => {
+  const { repository, tx } = setup();
+  await repository.createPayeeAndSetPayee("1", [scanned("1", "21", "Amazon.co.jp")], "5", { name: "アマゾンジャパン合同会社", postalCode: null, address: "", invoiceRegistrationNumber: null });
+  expect(tx.researchFundPayeeAlias.createMany).toHaveBeenCalledWith({ data: [expect.objectContaining({ payeeId: BigInt(9), normalizedName: "amazon.co.jp", source: "manual" })], skipDuplicates: true });
 });
 const payeeInput = { name: "東京タクシー", postalCode: null, address: "", invoiceRegistrationNumber: null };
 test("支払先の作成と紐づけを同じトランザクションで行う", async () => {

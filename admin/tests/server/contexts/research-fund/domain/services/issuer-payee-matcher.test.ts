@@ -6,8 +6,8 @@ import {
 } from "@/server/contexts/research-fund/domain/services/issuer-payee-matcher";
 
 const issuer: ReceiptIssuer = { name: null, address: null, phone: null, invoice_registration_number: null };
-const taxi = { id: "1", name: "東京タクシー株式会社", invoiceRegistrationNumber: "T1234567890123" };
-const jr = { id: "2", name: "JR東日本", invoiceRegistrationNumber: null };
+const taxi = { id: "1", name: "東京タクシー株式会社", invoiceRegistrationNumber: "T1234567890123", aliases: [] };
+const jr = { id: "2", name: "JR東日本", invoiceRegistrationNumber: null, aliases: [] };
 const payees = [taxi, jr];
 
 describe("normalizePayeeName", () => {
@@ -48,12 +48,12 @@ describe("matchPayeeByIssuer", () => {
   });
 
   it("名称が一致する支払先が複数あれば紐づけない", () => {
-    const branch = { id: "3", name: "ＪＲ東日本", invoiceRegistrationNumber: null };
+    const branch = { id: "3", name: "ＪＲ東日本", invoiceRegistrationNumber: null, aliases: [] };
     expect(matchPayeeByIssuer({ ...issuer, name: "JR東日本" }, [...payees, branch])).toBeNull();
   });
 
   it("インボイス登録番号が一致する支払先が複数あれば、名称が一致しても紐づけない", () => {
-    const other = { id: "3", name: "東京タクシー 新宿", invoiceRegistrationNumber: "T1234567890123" };
+    const other = { id: "3", name: "東京タクシー 新宿", invoiceRegistrationNumber: "T1234567890123", aliases: [] };
     expect(matchPayeeByIssuer({ ...issuer, name: "東京タクシー株式会社", invoice_registration_number: "T1234567890123" }, [...payees, other])).toBeNull();
   });
 
@@ -75,6 +75,33 @@ describe("matchPayeeByIssuer", () => {
   });
 });
 
+describe("matchPayeeByIssuer（記録された表記）", () => {
+  const amazon = { id: "4", name: "アマゾンジャパン合同会社", invoiceRegistrationNumber: null, aliases: [normalizePayeeName("Amazon.co.jp")] };
+
+  it("名称を直した支払先にも、記録された表記に一致すれば紐づける", () => {
+    expect(matchPayeeByIssuer({ ...issuer, name: "Ａｍａｚｏｎ.co.jp" }, [...payees, amazon])).toBe(amazon);
+  });
+
+  it("同じ表記が複数の支払先に記録されていれば、その表記では紐づけない", () => {
+    const other = { ...amazon, id: "5", name: "Amazon マーケットプレイス出品者" };
+    expect(matchPayeeByIssuer({ ...issuer, name: "Amazon.co.jp" }, [amazon, other])).toBeNull();
+  });
+
+  it("表記が別の支払先の今の名称と一致すれば、候補が複数として紐づけない", () => {
+    const named = { id: "6", name: "Amazon.co.jp", invoiceRegistrationNumber: null, aliases: [] };
+    expect(matchPayeeByIssuer({ ...issuer, name: "Amazon.co.jp" }, [amazon, named])).toBeNull();
+  });
+
+  it("表記が一致してもインボイス登録番号が食い違えば紐づけない", () => {
+    const numbered = { ...amazon, invoiceRegistrationNumber: "T1111111111111" };
+    expect(matchPayeeByIssuer({ ...issuer, name: "Amazon.co.jp", invoice_registration_number: "T2222222222222" }, [numbered])).toBeNull();
+  });
+
+  it("インボイス登録番号の一致を表記より優先する", () => {
+    expect(matchPayeeByIssuer({ ...issuer, name: "Amazon.co.jp", invoice_registration_number: "T1234567890123" }, [taxi, amazon])).toBe(taxi);
+  });
+});
+
 describe("payeeToRegisterForIssuer", () => {
   it("同じ名称・番号の支払先が無ければ、発行元から登録する支払先の内容を返す", () => {
     expect(payeeToRegisterForIssuer({ ...issuer, name: "Amazon.co.jp" }, payees)).toEqual({ name: "Amazon.co.jp", postalCode: null, address: "", invoiceRegistrationNumber: null });
@@ -83,13 +110,18 @@ describe("payeeToRegisterForIssuer", () => {
   it("登録した支払先には、同じ表記の次の書類が名称の一致で紐づく", () => {
     const registered = payeeToRegisterForIssuer({ ...issuer, name: "Amazon.co.jp" }, []);
     expect(registered).not.toBeNull();
-    const payee = { id: "9", name: registered?.name ?? "", invoiceRegistrationNumber: registered?.invoiceRegistrationNumber ?? null };
+    const payee = { id: "9", name: registered?.name ?? "", invoiceRegistrationNumber: registered?.invoiceRegistrationNumber ?? null, aliases: [] };
     expect(matchPayeeByIssuer({ ...issuer, name: "amazon.co.jp" }, [payee])).toBe(payee);
   });
 
   it("正規化した名称が同じ支払先があれば、照合で選ばれなくても登録しない（同じ相手かもしれないため）", () => {
     expect(payeeToRegisterForIssuer({ ...issuer, name: "東京タクシー（株）", invoice_registration_number: "T9999999999999" }, payees)).toBeNull();
     expect(payeeToRegisterForIssuer({ ...issuer, name: "ＪＲ東日本" }, [jr, { ...jr, id: "3" }])).toBeNull();
+  });
+
+  it("記録された表記が同じ支払先があれば登録しない", () => {
+    const amazon = { id: "4", name: "アマゾンジャパン合同会社", invoiceRegistrationNumber: null, aliases: [normalizePayeeName("Amazon.co.jp")] };
+    expect(payeeToRegisterForIssuer({ ...issuer, name: "Amazon.co.jp" }, [amazon])).toBeNull();
   });
 
   it("インボイス登録番号が同じ支払先があれば登録しない", () => {

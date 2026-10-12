@@ -4,6 +4,7 @@ import type {
   PayeeJournalEntry,
   PayeeSummary,
 } from "@/server/contexts/research-fund/domain/models/payee";
+import type { PayeeAlias } from "@/server/contexts/research-fund/domain/models/payee-alias";
 
 /** 支払先は議員ごとに持つ。どの操作も議員で絞り込み、別の議員の支払先を返さない・変更しない */
 export interface PayeeRepository {
@@ -21,4 +22,11 @@ export interface PayeeRepository {
   create(politicianId: string, input: PayeeInput): Promise<Payee>;
   /** 別の議員の支払先・存在しない支払先なら PayeeError を投げる */
   update(politicianId: string, id: string, input: PayeeInput): Promise<Payee>;
+  /**
+   * 議員の支払先に記録された表記を記録の古い順に返す。同じ表記が記録されている同じ議員の別の支払先を添える。
+   * 別の議員の支払先なら空
+   */
+  listAliases(politicianId: string, id: string): Promise<PayeeAlias[]>;
+  /** 議員の支払先の表記を削除する。別の議員の支払先・別の支払先の表記・存在しない表記なら false */
+  deleteAlias(politicianId: string, id: string, aliasId: string): Promise<boolean>;
 }

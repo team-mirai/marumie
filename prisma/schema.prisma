@@ -263,10 +263,35 @@ model ResearchFundPayee {
   politician Politician @relation(fields: [politicianId], references: [id], onDelete: Cascade)
 
   journalEntries ResearchFundJournalEntry[]
+  aliases        ResearchFundPayeeAlias[]
 
   // 支払先は議員ごとに持つ（同じ店でも議員室ごとに別の行）
   @@unique([politicianId, name, address])
   @@map("research_fund_payees")
+}
+
+// 支払先の表記。書類から読み取った発行元の名称のうち、その支払先を指すと分かったもの。
+// 支払先の名称は帳簿に載せる名前として人が直すので、書類との照合の手がかりは名称とは別に持つ（#1727）。
+// 表記は紐づけの操作から自動で記録し、書類の発行元との照合に使う。
+// 議員は持たない（支払先から決まる。議員の一致はアプリ側で確かめる。#1674 と同じ判断）
+model ResearchFundPayeeAlias {
+  id             BigInt                      @id @default(autoincrement())
+  payeeId        BigInt                      @map("payee_id")
+  name           String                      @db.VarChar(255) // 書類に印字された表記そのまま（表示・再正規化用）
+  normalizedName String                      @map("normalized_name") @db.VarChar(255) // 照合用に正規化した表記
+  source         ResearchFundPayeeLinkSource // 記録した経路
+  documentId     BigInt?                     @map("document_id") // 最初に見つかった書類
+  createdAt      DateTime                    @default(now()) @map("created_at")
+  updatedAt      DateTime                    @updatedAt @map("updated_at")
+
+  payee    ResearchFundPayee     @relation(fields: [payeeId], references: [id], onDelete: Cascade)
+  document ResearchFundDocument? @relation(fields: [documentId], references: [id], onDelete: SetNull)
+
+  // 同じ支払先に同じ表記を二重に持たない。別の支払先に同じ表記があるのは許す（チェーン店など）
+  @@unique([payeeId, normalizedName])
+  // 照合で表記から支払先を引く
+  @@index([normalizedName])
+  @@map("research_fund_payee_aliases")
 }
 
 // 科目マスタ（固定）。シードは prisma/seeds/researchFundAccounts.ts
@@ -382,6 +407,7 @@ model ResearchFundDocument {
 
   journalEntries ResearchFundJournalEntry[]
   scanJobs       ResearchFundScanJob[]
+  payeeAliases   ResearchFundPayeeAlias[]
 
   // 領収書等番号は帳簿の中で一意（未採番の NULL は重複してよい）
   @@unique([bookId, receiptNumber])

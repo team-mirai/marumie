@@ -128,11 +128,32 @@ describeIntegration("ProcessScanJobsUsecase（実際の領収書と LLM API）",
     expect(entries.length).toBeGreaterThan(0);
     for (const entry of entries)
       expect(entry).toEqual({ payeeId: registered[0].id, payeeLinkSource: "ai" });
+    // 発行元の名称が、登録した支払先の表記として記録される
+    const aliases = await prisma.researchFundPayeeAlias.findMany({ where: { payeeId: registered[0].id } });
+    expect(aliases).toEqual([
+      expect.objectContaining({ name: registered[0].name, source: "ai", documentId }),
+    ]);
   }, 180_000);
 
   it("続けて 2 枚目の Amazon の領収書を処理すると、支払先は増えず 1 枚目で登録した支払先に紐づく", async () => {
     const [first] = await payees();
     const documentId = await scan("amazon-receipt-02.png");
+
+    expect(await payees()).toHaveLength(1);
+    const entries = await entriesOf(documentId);
+    expect(entries.length).toBeGreaterThan(0);
+    for (const entry of entries) expect(entry).toEqual({ payeeId: first.id, payeeLinkSource: "rule" });
+  }, 180_000);
+
+  it("支払先の名称を直したあとでも、同じ表記の領収書は新しい支払先を作らず名称を直した支払先に紐づく", async () => {
+    const [first] = await payees();
+    // ステージングで起きた手順の再現: 「Amazon.co.jp」を AI 検索で正式名称に直した。
+    // インボイス登録番号の一致ではなく表記の一致で紐づくことを確かめるため、番号も外す
+    await prisma.researchFundPayee.update({
+      where: { id: first.id },
+      data: { name: "アマゾンジャパン合同会社", invoiceRegistrationNumber: null },
+    });
+    const documentId = await scan("amazon-receipt-01.png");
 
     expect(await payees()).toHaveLength(1);
     const entries = await entriesOf(documentId);

@@ -41,16 +41,26 @@ export function normalizePayeeName(name: string): string {
 }
 
 /**
+ * 照合の相手にする支払先。aliases は支払先に記録された表記の正規化した名称（domain/models/payee-alias）。
+ * 支払先の名称を正式名称に直しても、書類上の表記で同じ相手に紐づけられるように名称とは別に持つ
+ */
+type MatchablePayee = Pick<Payee, "name" | "invoiceRegistrationNumber"> & {
+  aliases: readonly string[];
+};
+
+/**
  * 書類の発行元に確実に一致する支払先を 1 件返す。一致しない・候補が複数なら null。
  *
  * 提出物は公になるので、誤って紐づけるより未紐づけで残すほうがよい。一致の判定は次の 2 つだけで、
  * 部分一致や類似度では紐づけない。
  * 1. インボイス登録番号の一致。番号が一致する支払先があれば、名称は見ずにそれだけで決める
- * 2. 正規化した名称の一致。ただし発行元と支払先の両方にインボイス登録番号があり食い違う支払先は除く
+ * 2. 正規化した名称が、支払先の今の名称か記録された表記のどれかに一致。ただし発行元と支払先の両方に
+ *    インボイス登録番号があり食い違う支払先は除く。同じ表記が複数の支払先に記録されていれば
+ *    （チェーン店など、表記だけでは相手が決まらない）紐づけない
  *
  * 支払先に確認状態は無いので、議員の支払先すべてを渡す（domain/models/payee）。
  */
-export function matchPayeeByIssuer<T extends Pick<Payee, "name" | "invoiceRegistrationNumber">>(
+export function matchPayeeByIssuer<T extends MatchablePayee>(
   issuer: ReceiptIssuer | null,
   payees: readonly T[],
 ): T | null {
@@ -63,9 +73,10 @@ export function matchPayeeByIssuer<T extends Pick<Payee, "name" | "invoiceRegist
   }
   const name = normalizePayeeName(issuer.name ?? "");
   if (name.length === 0) return null;
+  if (payees.filter((payee) => payee.aliases.includes(name)).length > 1) return null;
   const byName = payees.filter(
     (payee) =>
-      normalizePayeeName(payee.name) === name &&
+      matchesName(payee, name) &&
       // 番号が一致する支払先は上で決まっているので、ここに残るのは番号が食い違うか、どちらかが番号を持たないもの
       (invoice === null || payee.invoiceRegistrationNumber === null),
   );
@@ -75,25 +86,32 @@ export function matchPayeeByIssuer<T extends Pick<Payee, "name" | "invoiceRegist
 /**
  * 発行元に一致する支払先が無かったときに、発行元から新しく登録する支払先の内容を返す。登録しないなら null。
  *
- * インボイス登録番号か正規化した名称が同じ支払先が 1 件でもあれば登録しない。照合で 1 件に決まらなかった
- * （候補が複数・番号が食い違う）だけで同じ相手かもしれず、二重に登録すると誤った紐づけの元になるため、
- * 未紐づけのまま残して人に任せる。発行元の名称が読み取れなければ登録しない。
+ * インボイス登録番号か正規化した名称（支払先の今の名称・記録された表記）が同じ支払先が 1 件でもあれば
+ * 登録しない。照合で 1 件に決まらなかった（候補が複数・番号が食い違う）だけで同じ相手かもしれず、
+ * 二重に登録すると誤った紐づけの元になるため、未紐づけのまま残して人に任せる。発行元の名称が読み取れなければ登録しない。
  * 登録した支払先は、次の書類で発行元の名称（または番号）が完全一致すれば matchPayeeByIssuer で紐づく。
  */
 export function payeeToRegisterForIssuer(
   issuer: ReceiptIssuer | null,
-  payees: readonly Pick<Payee, "name" | "invoiceRegistrationNumber">[],
+  payees: readonly MatchablePayee[],
 ): PayeeInput | null {
   const input = newPayeeFromIssuer(issuer);
   if (input === null) return null;
   const name = normalizePayeeName(input.name);
   const similar = payees.some(
     (payee) =>
-      normalizePayeeName(payee.name) === name ||
+      matchesName(payee, name) ||
       (input.invoiceRegistrationNumber !== null &&
         payee.invoiceRegistrationNumber === input.invoiceRegistrationNumber),
   );
   return similar ? null : input;
+}
+
+/** 正規化した名称が、支払先の今の名称か記録された表記のどれかに一致するか */
+function matchesName(payee: MatchablePayee, normalizedName: string): boolean {
+  return (
+    normalizePayeeName(payee.name) === normalizedName || payee.aliases.includes(normalizedName)
+  );
 }
 
 function onlyOne<T>(candidates: readonly T[]): T | null {
