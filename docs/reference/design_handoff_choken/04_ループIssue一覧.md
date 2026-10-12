@@ -36,7 +36,7 @@
 
 ### 2. `feat(research-fund): 議員の管理ユースケース`
 - **Why**: データのルート。議員は所属なしでも存在できる（membership 別テーブル。親は既存 political_organizations で政党テーブルは新設しない）
-- **Done**: 議員の作成/更新/削除、既存 political_organizations への membership の付け外しのユースケーステストが通る／削除は帳簿・仕訳・書類まで連鎖する／テナント外の議員を操作できないことがテストで検証される
+- **Done**: 議員の作成/更新/削除、既存 political_organizations への membership の付け外しのユースケーステストが通る／削除は帳簿・仕訳・書類まで連鎖する
 - **Out of scope**: UI／published データがある場合の削除ガード仕様の追加検討（`loop:human` 論点）
 
 ### 3. `feat(research-fund): 年度帳簿と支給生成ユースケース`

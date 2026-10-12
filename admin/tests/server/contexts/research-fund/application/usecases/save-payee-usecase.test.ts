@@ -18,7 +18,7 @@ test("議員の支払先を編集する", async () => {
   expect(repository.find).toHaveBeenCalledWith("5", "7");
   expect(repository.update).toHaveBeenCalledWith("5", "7", normalized);
 });
-test("他の議員（他テナント）の支払先は編集できない", async () => {
+test("他の議員の支払先は編集できない", async () => {
   const { repository, usecase } = setup();
   repository.find.mockResolvedValue(null);
   await expect(usecase.execute("5", "8", form)).rejects.toThrow("支払先が見つかりません");

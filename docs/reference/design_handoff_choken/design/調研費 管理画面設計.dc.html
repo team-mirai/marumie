@@ -167,7 +167,7 @@ class Component extends DCLogic {
         { name: "politician_party_memberships", jp: "議員 ⇄ 政党", badge: "新規", badgeBg: "#30BCA7",
           cols: [col("politician_id","bigint FK","→ politicians.id"), col("party_id","bigint FK","→ parties.id"), col("started_on","date"), col("ended_on","date ?","離党・移籍の履歴も残せる")] },
         { name: "politicians", jp: "議員（データのルート）", badge: "新規", badgeBg: "#30BCA7",
-          cols: [col("id","bigint PK"), col("tenant_id","bigint FK","→ tenants.id（既存認証に相乗り）"), col("name","varchar","峰島侑也"), col("slug","varchar UQ","/choken/mineshima"), col("term_start","date","支給の起点"), col("display_order","int")] },
+          cols: [col("id","bigint PK"), col("name","varchar","峰島侑也"), col("slug","varchar UQ","/choken/mineshima"), col("term_start","date","支給の起点"), col("display_order","int")] },
         { name: "rf_books", jp: "年度帳簿（1年間のお財布）", badge: "新規", badgeBg: "#30BCA7",
           note: "UNIQUE(politician_id, financial_year)。公開状況・活用方針など年度単位の属性もここ（旧 profiles を統合）",
           cols: [col("id","bigint PK"), col("politician_id","bigint FK"), col("financial_year","int","2026"), col("status","enum","preparing ／ active ／ closed"), col("published_through","date ?","何月分まで公開"), col("as_of_date","date ?","「2026.8.20時点」"), col("details","jsonb","データについて（B-5）の説明文")] },

@@ -16,47 +16,11 @@ model User {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  tenantMemberships UserTenantMembership[]
-
   researchFundJournalEntriesCreated ResearchFundJournalEntry[]
   researchFundScanBatchesUploaded   ResearchFundScanBatch[]
   researchFundPromptsUpdated        ResearchFundPrompt[]
 
   @@map("users")
-}
-
-model Tenant {
-  id          BigInt   @id @default(autoincrement())
-  name        String   @db.VarChar(100)
-  slug        String   @unique @db.VarChar(50)
-  description String?
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
-
-  politicalOrganizations PoliticalOrganization[]
-  counterparts           Counterpart[]
-  donors                 Donor[]
-  memberships            UserTenantMembership[]
-  politicians            Politician[]
-
-  @@map("tenants")
-}
-
-model UserTenantMembership {
-  id        BigInt     @id @default(autoincrement())
-  userId    String     @map("user_id")
-  tenantId  BigInt     @map("tenant_id")
-  role      TenantRole @default(editor)
-  createdAt DateTime   @default(now()) @map("created_at")
-  updatedAt DateTime   @updatedAt @map("updated_at")
-
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, tenantId])
-  @@index([userId])
-  @@index([tenantId])
-  @@map("user_tenant_memberships")
 }
 
 model PoliticalOrganization {
@@ -68,15 +32,11 @@ model PoliticalOrganization {
   slug             String            @unique @db.VarChar(255)
   orgName          String?           @map("org_name") @db.VarChar(255)
 
-  tenantId BigInt? @map("tenant_id")
-  tenant   Tenant? @relation(fields: [tenantId], references: [id])
-
   balanceSnapshots BalanceSnapshot[]
   reportProfiles   OrganizationReportProfile[]
   transactions     Transaction[]
   politicianMemberships PoliticianOrgMembership[]
 
-  @@index([tenantId])
   @@map("political_organizations")
 }
 
@@ -125,14 +85,10 @@ model Counterpart {
   createdAt  DateTime @default(now()) @map("created_at")
   updatedAt  DateTime @updatedAt @map("updated_at")
 
-  tenantId BigInt? @map("tenant_id")
-  tenant   Tenant? @relation(fields: [tenantId], references: [id])
-
   transactionCounterparts TransactionCounterpart[]
 
   // address が NULL の行も重複として扱うため、実 DB の一意インデックスは NULLS NOT DISTINCT（マイグレーションで張り替え。#1482）
   @@unique([name, address])
-  @@index([tenantId])
   @@map("counterparts")
 }
 
@@ -174,14 +130,10 @@ model Donor {
   createdAt         DateTime          @default(now()) @map("created_at")
   updatedAt         DateTime          @updatedAt @map("updated_at")
 
-  tenantId BigInt? @map("tenant_id")
-  tenant   Tenant? @relation(fields: [tenantId], references: [id])
-
   transactionDonors TransactionDonor[]
 
   // address が NULL の行も重複として扱うため、実 DB の一意インデックスは NULLS NOT DISTINCT（マイグレーションで張り替え。#1482）
   @@unique([name, address, donorType])
-  @@index([tenantId])
   @@map("donors")
 }
 
@@ -231,7 +183,6 @@ model OrganizationReportProfile {
 
 // 議員。政党テーブルは新設せず、所属は PoliticianOrgMembership 経由で
 // 既存 political_organizations を参照する（所属なしでも存在できる）。
-// tenant_id は既存 political_organizations と同じく nullable（テナント強制は #1112）。
 model Politician {
   id                   BigInt   @id @default(autoincrement())
   name                 String   @db.VarChar(255)
@@ -243,15 +194,11 @@ model Politician {
   createdAt            DateTime @default(now()) @map("created_at")
   updatedAt            DateTime @updatedAt @map("updated_at")
 
-  tenantId BigInt? @map("tenant_id")
-  tenant   Tenant? @relation(fields: [tenantId], references: [id])
-
   memberships PoliticianOrgMembership[]
   books       ResearchFundBook[]
   prompts     ResearchFundPrompt[]
   payees      ResearchFundPayee[]
 
-  @@index([tenantId])
   @@map("politicians")
 }
 
@@ -300,7 +247,7 @@ model ResearchFundBook {
 
 // 支払先（支出を受けた者）。議員課提出用の帳簿に氏名・住所を載せるために持つ。
 // 政治資金の counterparts とは共用しない（調研費は transactions 系と完全に別系統で、
-// counterparts は全テナント横断の一意制約と DB トリガーを持つため）。
+// counterparts は全体で一意の制約と DB トリガーを持つため）。
 // 住所は NULL を使わず未入力を空文字で表す。counterparts の自然キーが address NULL を
 // 重複扱いせず、同じ取引先の行を何行でも作れてしまう問題（#1482）を繰り返さないため。
 model ResearchFundPayee {
@@ -607,12 +554,6 @@ enum TransactionType {
 enum UserRole {
   admin
   user
-}
-
-enum TenantRole {
-  owner
-  admin
-  editor
 }
 
 enum DonorType {

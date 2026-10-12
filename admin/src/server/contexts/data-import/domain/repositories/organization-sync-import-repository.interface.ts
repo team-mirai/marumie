@@ -38,7 +38,7 @@ export interface IOrganizationSyncImportRepository {
 
   /**
    * 渡した自然キーのうち、この環境に既に存在するものだけを返す（dry-run 用）。
-   * 取引先・寄付者の一意制約はテナントをまたぐグローバル制約なので、テナントは見ない。
+   * 取引先・寄付者の一意制約は団体をまたぐグローバル制約なので、団体は見ない。
    */
   findExistingCounterpartKeys(
     keys: SyncImportCounterpartKey[],

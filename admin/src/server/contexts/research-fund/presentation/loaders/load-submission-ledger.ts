@@ -18,7 +18,7 @@ export async function loadSubmissionLedger(politicianId: string, bookId: string)
   return { ...ledger, target };
 }
 
-/** 議員課提出用の CSV。選択中の帳簿でなければ null（別の議員・テナントの帳簿は出さない） */
+/** 議員課提出用の CSV。選択中の帳簿でなければ null（別の議員の帳簿は出さない） */
 export async function loadSubmissionLedgerCsv(
   politicianId: string,
   bookId: string,

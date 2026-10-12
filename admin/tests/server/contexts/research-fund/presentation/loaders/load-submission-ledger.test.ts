@@ -9,7 +9,7 @@ const target = { kind: "research-fund" as const, key: "book:1", name: "議員", 
 beforeEach(() => jest.mocked(requireJournalTarget).mockResolvedValue(target));
 afterEach(() => jest.restoreAllMocks());
 
-test("選択中の帳簿でなければ CSV を作らない（別の議員・テナントの帳簿は出さない）", async () => {
+test("選択中の帳簿でなければ CSV を作らない（別の議員の帳簿は出さない）", async () => {
   jest.mocked(requireJournalTarget).mockResolvedValue(null);
   const execute = jest.spyOn(ExportSubmissionLedgerCsvUsecase.prototype, "execute");
   await expect(loadSubmissionLedgerCsv("2", "1", "representatives")).resolves.toBeNull();

@@ -46,7 +46,7 @@ function buildTransaction(
 
 function setup() {
   const tx = {
-    politicalOrganization: { findUnique: jest.fn().mockResolvedValue({ tenantId: BigInt(9) }) },
+    politicalOrganization: { findUnique: jest.fn().mockResolvedValue({ id: BigInt(7) }) },
     transaction: {
       deleteMany: jest.fn().mockResolvedValue({ count: 0 }),
       createMany: jest.fn().mockResolvedValue({ count: 2 }),
