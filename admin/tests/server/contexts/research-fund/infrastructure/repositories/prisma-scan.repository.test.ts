@@ -113,6 +113,7 @@ test("バッチは新しい順、ジョブはアップロード順で返す", as
       jobs: [
         {
           id: BigInt(5),
+          documentId: BigInt(31),
           status: "queued",
           rawJson: null,
           error: null,
@@ -128,6 +129,7 @@ test("バッチは新しい順、ジョブはアップロード順で返す", as
       jobs: [
         {
           id: "5",
+          documentId: "31",
           status: "queued",
           originalFilename: "IMG_1.jpg",
           mime: "image/jpeg",
@@ -166,6 +168,7 @@ test.each([
       jobs: [
         {
           id: BigInt(1),
+          documentId: BigInt(3),
           status: "succeeded",
           rawJson,
           error: null,

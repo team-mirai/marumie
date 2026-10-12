@@ -1,5 +1,7 @@
 import "server-only";
+import { findDuplicateDocuments } from "@/server/contexts/research-fund/domain/models/duplicate-document";
 import { sortPayees } from "@/server/contexts/research-fund/domain/models/payee";
+import type { DuplicateDocumentRepository } from "@/server/contexts/research-fund/domain/repositories/duplicate-document-repository.interface";
 import type { JournalReviewRepository } from "@/server/contexts/research-fund/domain/repositories/journal-review-repository.interface";
 import type { PayeeRepository } from "@/server/contexts/research-fund/domain/repositories/payee-repository.interface";
 
@@ -8,6 +10,7 @@ export class ListJournalReviewUsecase {
   constructor(
     private repository: JournalReviewRepository,
     private payeeRepository: PayeeRepository,
+    private duplicateDocumentRepository: DuplicateDocumentRepository,
   ) {}
   async execute(bookId: string) {
     const politicianId = await this.repository.politicianId(bookId);
@@ -21,6 +24,10 @@ export class ListJournalReviewUsecase {
         politicianId === null
           ? []
           : sortPayees(await this.payeeRepository.list(politicianId, bookId)),
+      // 書類 ID → 同じ書類を二重にスキャンした可能性のある相手の書類。下書きの仕訳に警告を出す
+      duplicates: findDuplicateDocuments(
+        await this.duplicateDocumentRepository.listScannedDocuments(bookId),
+      ),
     };
   }
 }

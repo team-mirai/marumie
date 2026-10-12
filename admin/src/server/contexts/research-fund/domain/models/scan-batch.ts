@@ -1,3 +1,4 @@
+import type { DuplicateDocuments } from "@/server/contexts/research-fund/domain/models/duplicate-document";
 import {
   invalidResearchFundResult,
   RF_ERROR_CODES,
@@ -14,6 +15,7 @@ export type ScanJobStatus = "queued" | "running" | "succeeded" | "failed";
 
 export interface ScanJobView {
   id: string;
+  documentId: string;
   status: ScanJobStatus;
   originalFilename: string;
   mime: string;
@@ -43,6 +45,8 @@ export interface ScanOverview {
   activePromptVersion: number | null;
   /** 読み取りに使うモデル名。画面の注記に出す */
   model: string;
+  /** 書類 ID → 同じ書類の可能性がある相手の書類（二重スキャンの警告に使う） */
+  duplicates: DuplicateDocuments;
 }
 
 export class ScanBatchError extends Error {}

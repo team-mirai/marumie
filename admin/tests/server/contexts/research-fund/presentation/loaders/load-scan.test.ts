@@ -45,7 +45,7 @@ test("対象が一致しなければバッチを取得しない", async () => {
 
 test("プロンプトは議員ごと・バッチは帳簿ごとに引き、現在の対象を添えて返す", async () => {
   jest.mocked(requireJournalTarget).mockResolvedValue(target);
-  const data = { batches: [], activePromptVersion: 3, model: "claude-sonnet-5" };
+  const data = { batches: [], activePromptVersion: 3, model: "claude-sonnet-5", duplicates: {} };
   const list = jest.spyOn(ListScanBatchesUsecase.prototype, "execute").mockResolvedValue(data);
   await expect(loadScan("2", "1")).resolves.toEqual({ ...data, target });
   expect(list).toHaveBeenCalledWith("2", "1");
