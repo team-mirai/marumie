@@ -6,6 +6,7 @@ import {
   type PayeeInput,
   type PayeeJournalEntry,
 } from "@/server/contexts/research-fund/domain/models/payee";
+import type { PayeeAlias } from "@/server/contexts/research-fund/domain/models/payee-alias";
 import type { PayeeRepository } from "@/server/contexts/research-fund/domain/repositories/payee-repository.interface";
 
 function model(row: ResearchFundPayee): Payee {
@@ -86,5 +87,46 @@ export class PrismaPayeeRepository implements PayeeRepository {
         return model(await tx.researchFundPayee.findUniqueOrThrow({ where: { id: BigInt(id) } }));
       }),
     );
+  }
+  async listAliases(politicianId: string, id: string): Promise<PayeeAlias[]> {
+    const rows = await this.prisma.researchFundPayeeAlias.findMany({
+      where: { payeeId: BigInt(id), payee: { politicianId: BigInt(politicianId) } },
+      include: { document: { select: { id: true, originalFilename: true } } },
+      orderBy: { id: "asc" },
+    });
+    if (rows.length === 0) return [];
+    // 照合は議員の支払先すべてを相手にするので、同じ表記を持つ別の支払先も同じ議員の中で探す
+    const shared = await this.prisma.researchFundPayeeAlias.findMany({
+      where: {
+        normalizedName: { in: rows.map((row) => row.normalizedName) },
+        payeeId: { not: BigInt(id) },
+        payee: { politicianId: BigInt(politicianId) },
+      },
+      include: { payee: { select: { id: true, name: true } } },
+      orderBy: [{ payeeId: "asc" }],
+    });
+    return rows.map((row) => ({
+      id: String(row.id),
+      name: row.name,
+      source: row.source,
+      document: row.document
+        ? { id: String(row.document.id), originalFilename: row.document.originalFilename }
+        : null,
+      createdAt: row.createdAt.toISOString(),
+      sharedWith: shared
+        .filter((other) => other.normalizedName === row.normalizedName)
+        .map((other) => ({ id: String(other.payee.id), name: other.payee.name })),
+    }));
+  }
+  // 支払先と議員で絞り込んで消し、別の議員・別の支払先の表記は id を知っていても消せないようにする。
+  async deleteAlias(politicianId: string, id: string, aliasId: string) {
+    const result = await this.prisma.researchFundPayeeAlias.deleteMany({
+      where: {
+        id: BigInt(aliasId),
+        payeeId: BigInt(id),
+        payee: { politicianId: BigInt(politicianId) },
+      },
+    });
+    return result.count === 1;
   }
 }

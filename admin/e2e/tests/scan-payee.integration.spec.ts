@@ -16,7 +16,7 @@ const RECEIPTS = ["amazon-receipt-01.png", "amazon-receipt-02.png"].map((name) =
   buffer: readFileSync(join(__dirname, "../../tests/data/research-fund", name)),
 }));
 
-test("2 枚の Amazon の領収書を読み取ると、Amazon の支払先が 1 件だけ登録され、仕訳件数が 2 になる", async ({
+test("2 枚の Amazon の領収書を読み取ると、Amazon の支払先が 1 件だけ登録され、仕訳件数が 2 になり、詳細ページで書類上の表記を確認・削除できる", async ({
   page,
 }) => {
   test.setTimeout(300_000);
@@ -61,4 +61,14 @@ test("2 枚の Amazon の領収書を読み取ると、Amazon の支払先が 1 
   await expect(rows.first()).toContainText(/Amazon|アマゾン/i);
   // 仕訳（この帳簿）の件数
   await expect(rows.first().getByRole("cell").nth(4)).toHaveText("2");
+
+  // 詳細ページに、書類から読み取った発行元の名称が支払先の表記として並び、削除できる
+  await rows.first().getByRole("link").click();
+  const aliases = page.getByRole("button", { name: /^表記「.+」を削除$/ });
+  await expect(aliases.first()).toBeVisible();
+  const before = await aliases.count();
+  await aliases.first().click();
+  await page.getByRole("button", { name: "削除する" }).click();
+  await expect(page.getByText(/^表記「.+」を削除しました$/)).toBeVisible();
+  await expect(aliases).toHaveCount(before - 1);
 });

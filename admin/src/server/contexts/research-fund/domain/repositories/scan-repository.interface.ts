@@ -3,6 +3,7 @@ import type { ScanDraftEntry } from "@/server/contexts/research-fund/domain/serv
 import type { ResearchFundAccount } from "@/server/contexts/research-fund/domain/models/journal-posting";
 import type { RereadCandidate } from "@/server/contexts/research-fund/domain/models/scan-reread";
 import type { Payee, PayeeInput } from "@/server/contexts/research-fund/domain/models/payee";
+import type { PayeeAliasName } from "@/server/contexts/research-fund/domain/models/payee-alias";
 
 export interface CreateScanBatchInput {
   bookId: string;
@@ -71,6 +72,8 @@ export interface ScanRepository {
    * 紐づける支払先が決まらず newPayee があれば、帳簿の議員の支払先として登録し「AI」として紐づける。
    * 同じ名称・住所の支払先が既にあれば（同時に処理した書類が先に登録した場合）、インボイス登録番号が
    * 食い違わない限りそれに紐づける。食い違えば紐づけずに完了する。
+   * 支払先を紐づけたら（引き継ぎを含む）、payeeAlias をその支払先の表記として紐づけ元と書類つきで記録する。
+   * 同じ支払先に同じ表記が既にあれば記録しない（最初の記録を残す）。
    */
   completeJob(input: {
     bookId: string;
@@ -82,13 +85,17 @@ export interface ScanRepository {
     replaceDrafts: boolean;
     payeeId: string | null;
     newPayee: PayeeInput | null;
+    payeeAlias: PayeeAliasName | null;
   }): Promise<void>;
   /** ジョブを failed にしてエラーを記録する */
   failJob(jobId: string, error: string, rawJson?: unknown): Promise<void>;
   /** failed のジョブを queued に戻す。戻せたら true */
   requeueJob(bookId: string, jobId: string): Promise<boolean>;
-  /** 帳簿の議員の支払先（書類の発行元との照合に使う）。別の議員の支払先は返さない */
-  payees(bookId: string): Promise<Payee[]>;
+  /**
+   * 帳簿の議員の支払先（書類の発行元との照合に使う）。記録された表記の正規化した名称を添える。
+   * 別の議員の支払先は返さない
+   */
+  payees(bookId: string): Promise<(Payee & { aliases: string[] })[]>;
   /** 科目マスタ（下書き仕訳の科目解決に使う） */
   accounts(): Promise<ResearchFundAccount[]>;
 }

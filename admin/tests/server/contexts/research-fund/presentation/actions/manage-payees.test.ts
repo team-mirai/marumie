@@ -1,8 +1,9 @@
 import { revalidatePath } from "next/cache";
 import { requireAuth } from "@/server/contexts/auth/presentation/loaders/require-auth";
+import { DeletePayeeAliasUsecase } from "@/server/contexts/research-fund/application/usecases/delete-payee-alias-usecase";
 import { SavePayeeUsecase } from "@/server/contexts/research-fund/application/usecases/save-payee-usecase";
 import { PayeeError } from "@/server/contexts/research-fund/domain/models/payee";
-import { savePayee } from "@/server/contexts/research-fund/presentation/actions/manage-payees";
+import { deletePayeeAlias, savePayee } from "@/server/contexts/research-fund/presentation/actions/manage-payees";
 import { requireJournalTarget } from "@/server/contexts/research-fund/presentation/loaders/load-journal-review";
 jest.mock("next/cache", () => ({ revalidatePath: jest.fn() }));
 jest.mock("@/server/contexts/auth/presentation/loaders/require-auth", () => ({ requireAuth: jest.fn() }));
@@ -35,4 +36,22 @@ test("業務エラーは理由を返し、内部エラーは漏らさない", as
   jest.spyOn(SavePayeeUsecase.prototype, "execute").mockRejectedValueOnce(new Error("private database detail"));
   await expect(savePayee("2", "1", null, form)).resolves.toEqual({ success: false, error: "支払先の保存に失敗しました" });
   expect(revalidatePath).not.toHaveBeenCalled();
+});
+test("選択中の帳簿の議員の支払先の表記を削除し、レイアウトを再検証する", async () => {
+  const remove = jest.spyOn(DeletePayeeAliasUsecase.prototype, "execute").mockResolvedValue();
+  await expect(deletePayeeAlias("2", "1", "7", "3")).resolves.toEqual({ success: true });
+  expect(remove).toHaveBeenCalledWith("2", "7", "3");
+  expect(revalidatePath).toHaveBeenCalledWith("/(auth)", "layout");
+});
+test("選択中の対象と違う議員への表記の削除は行わない", async () => {
+  jest.mocked(requireJournalTarget).mockResolvedValue(null);
+  const remove = jest.spyOn(DeletePayeeAliasUsecase.prototype, "execute");
+  await expect(deletePayeeAlias("3", "1", "7", "3")).resolves.toMatchObject({ success: false });
+  expect(remove).not.toHaveBeenCalled(); expect(revalidatePath).not.toHaveBeenCalled();
+});
+test("表記の削除の業務エラーは理由を返し、内部エラーは漏らさない", async () => {
+  jest.spyOn(DeletePayeeAliasUsecase.prototype, "execute").mockRejectedValueOnce(new PayeeError("表記が見つかりません"));
+  await expect(deletePayeeAlias("2", "1", "7", "3")).resolves.toEqual({ success: false, error: "表記が見つかりません" });
+  jest.spyOn(DeletePayeeAliasUsecase.prototype, "execute").mockRejectedValueOnce(new Error("private database detail"));
+  await expect(deletePayeeAlias("2", "1", "7", "3")).resolves.toEqual({ success: false, error: "表記の削除に失敗しました" });
 });

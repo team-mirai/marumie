@@ -73,7 +73,7 @@ describe("ProcessScanJobsUsecase", () => {
   });
 
   describe("linking the payee from the issuer", () => {
-    const PAYEE = { id: "7", politicianId: "5", name: "東京タクシー株式会社", postalCode: null, address: "", invoiceRegistrationNumber: null };
+    const PAYEE = { id: "7", politicianId: "5", name: "東京タクシー株式会社", postalCode: null, address: "", invoiceRegistrationNumber: null, aliases: [] };
     const ISSUER = { name: "東京タクシー（株）", address: null, phone: null, invoice_registration_number: null };
 
     it("links the payee that exactly matches the issuer, looked up among the book's payees", async () => {
@@ -86,6 +86,8 @@ describe("ProcessScanJobsUsecase", () => {
       expect(scanRepository.completeJob).toHaveBeenCalledWith(
         expect.objectContaining({
           payeeId: "7",
+          // 発行元の名称は、紐づけた支払先の表記として記録する
+          payeeAlias: { name: "東京タクシー（株）", normalizedName: "東京タクシー株式会社" },
           // 発行元は読み取りの原文（監査用）に残る
           rawJson: expect.objectContaining({ issuer: ISSUER }),
         }),
@@ -131,7 +133,17 @@ describe("ProcessScanJobsUsecase", () => {
 
       await usecase.execute(input);
 
-      expect(scanRepository.completeJob).toHaveBeenCalledWith(expect.objectContaining({ payeeId: null, newPayee: null }));
+      expect(scanRepository.completeJob).toHaveBeenCalledWith(expect.objectContaining({ payeeId: null, newPayee: null, payeeAlias: null }));
+    });
+
+    it("links the renamed payee through its recorded alias without registering a new one", async () => {
+      // 1 枚目の「Amazon.co.jp」から作った支払先を正式名称に直したあとでも、同じ表記の書類はその支払先に紐づく
+      scanRepository.payees.mockResolvedValue([{ ...PAYEE, id: "9", name: "アマゾンジャパン合同会社", aliases: ["amazon.co.jp"] }]);
+      gateway.extract.mockResolvedValue({ status: "valid", value: { ...RECEIPT, issuer: { ...ISSUER, name: "Amazon.co.jp" }, items: [...RECEIPT.items] } });
+
+      await usecase.execute(input);
+
+      expect(scanRepository.completeJob).toHaveBeenCalledWith(expect.objectContaining({ payeeId: "9", newPayee: null }));
     });
 
     it("links the payee on a reread as well", async () => {

@@ -50,11 +50,12 @@ export interface JournalReviewRepository {
   /**
    * 支出の仕訳の支払先をまとめて人の手で紐づける・外す（null で外す）。公開中・精算済の仕訳も対象にする。
    * 支払先が帳簿と同じ議員のものでなければ、1 件も変更せずに拒否する。1 件でも競合したら何も変更しない。
+   * 紐づけたら、書類のある仕訳の発行元の名称をその支払先の表記として記録する（外しても表記は消さない）。
    */
   setPayee(bookId: string, entries: readonly ReviewEntry[], payeeId: string | null): Promise<void>;
   /**
    * 帳簿の議員の支払先を作成し、支出の仕訳に人の手で紐づける。1 件でも競合したら支払先も作成しない。
-   * 同じ名称・住所の支払先が既にあれば作成も紐づけもしない。
+   * 同じ名称・住所の支払先が既にあれば作成も紐づけもしない。表記の記録は setPayee と同じ。
    */
   createPayeeAndSetPayee(
     bookId: string,

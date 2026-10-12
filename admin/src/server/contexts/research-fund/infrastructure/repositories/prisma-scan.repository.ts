@@ -20,6 +20,7 @@ import {
   type PayeeLink,
   rereadPayeeLink,
 } from "@/server/contexts/research-fund/domain/models/payee";
+import type { PayeeAliasName } from "@/server/contexts/research-fund/domain/models/payee-alias";
 import type { ResearchFundAccount } from "@/server/contexts/research-fund/domain/models/journal-posting";
 import type { ScanDraftEntry } from "@/server/contexts/research-fund/domain/services/scan-journal-builder";
 
@@ -198,6 +199,7 @@ export class PrismaScanRepository implements ScanRepository {
     replaceDrafts: boolean;
     payeeId: string | null;
     newPayee: PayeeInput | null;
+    payeeAlias: PayeeAliasName | null;
   }): Promise<void> {
     const bookId = BigInt(input.bookId);
     const documentId = BigInt(input.documentId);
@@ -263,6 +265,20 @@ export class PrismaScanRepository implements ScanRepository {
           : input.newPayee === null
             ? null
             : await registerPayee(tx, bookId, input.newPayee);
+      // 発行元の名称を、紐づけた支払先の表記として記録する。支払先の名称を直しても次の書類が同じ相手に紐づくように。
+      // (支払先, 正規化した表記) の一意制約に当たれば記録しない（最初に記録した経路と書類を残す）
+      if (payee !== null && input.payeeAlias !== null)
+        await tx.researchFundPayeeAlias.createMany({
+          data: [
+            {
+              payeeId: BigInt(payee.payeeId),
+              ...input.payeeAlias,
+              source: payee.source,
+              documentId,
+            },
+          ],
+          skipDuplicates: true,
+        });
       // 同じ書類を読み直しても仕訳を二重に作らない。hash は日付・金額・項目名・書類IDから作る。
       // (book_id, hash) の一意制約に任せて既存分は読み飛ばす（ON CONFLICT DO NOTHING）ので、
       // 同じ書類の処理が同時に走っても二重登録にならず、ジョブの完了も続行できる。
@@ -323,9 +339,10 @@ export class PrismaScanRepository implements ScanRepository {
     return result.count === 1;
   }
 
-  async payees(bookId: string): Promise<Payee[]> {
+  async payees(bookId: string): Promise<(Payee & { aliases: string[] })[]> {
     const rows = await this.prisma.researchFundPayee.findMany({
       where: { politician: { books: { some: { id: BigInt(bookId) } } } },
+      include: { aliases: { select: { normalizedName: true }, orderBy: { id: "asc" } } },
       orderBy: { id: "asc" },
     });
     return rows.map((row) => ({
@@ -335,6 +352,7 @@ export class PrismaScanRepository implements ScanRepository {
       postalCode: row.postalCode,
       address: row.address,
       invoiceRegistrationNumber: row.invoiceRegistrationNumber,
+      aliases: row.aliases.map((alias) => alias.normalizedName),
     }));
   }
 

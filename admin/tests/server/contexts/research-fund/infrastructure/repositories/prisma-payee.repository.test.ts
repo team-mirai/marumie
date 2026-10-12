@@ -5,7 +5,7 @@ const row = { id: BigInt(7), politicianId: BigInt(5), name: "東京タクシー"
 const payee = { id: "7", politicianId: "5", name: "東京タクシー", postalCode: "100-0001", address: "東京都千代田区", invoiceRegistrationNumber: "T1234567890123" };
 const input = { name: "東京タクシー", postalCode: "100-0001", address: "東京都千代田区", invoiceRegistrationNumber: "T1234567890123" };
 function setup() {
-  const tx = { researchFundJournalEntry: { findMany: jest.fn() }, researchFundPayee: { findMany: jest.fn(), findFirst: jest.fn(), create: jest.fn().mockResolvedValue(row), updateMany: jest.fn().mockResolvedValue({ count: 1 }), findUniqueOrThrow: jest.fn().mockResolvedValue(row) } };
+  const tx = { researchFundJournalEntry: { findMany: jest.fn() }, researchFundPayee: { findMany: jest.fn(), findFirst: jest.fn(), create: jest.fn().mockResolvedValue(row), updateMany: jest.fn().mockResolvedValue({ count: 1 }), findUniqueOrThrow: jest.fn().mockResolvedValue(row) }, researchFundPayeeAlias: { findMany: jest.fn().mockResolvedValue([]), deleteMany: jest.fn().mockResolvedValue({ count: 1 }) } };
   const repository = new PrismaPayeeRepository({ ...tx, $transaction: jest.fn(async fn => fn(tx)) } as unknown as PrismaClient);
   return { repository, tx };
 }
@@ -59,4 +59,32 @@ test("一意制約以外のエラーはそのまま投げる", async () => {
   const { repository, tx } = setup();
   tx.researchFundPayee.create.mockRejectedValue(new Error("connection lost"));
   await expect(repository.create("5", input)).rejects.toThrow("connection lost");
+});
+test("表記は議員の支払先のものを記録の古い順に返し、同じ表記を持つ同じ議員の別の支払先を添える", async () => {
+  const { repository, tx } = setup();
+  const createdAt = new Date("2026-05-01T00:00:00.000Z");
+  tx.researchFundPayeeAlias.findMany
+    .mockResolvedValueOnce([
+      { id: BigInt(3), name: "Amazon.co.jp", normalizedName: "amazon.co.jp", source: "ai", createdAt, document: { id: BigInt(21), originalFilename: "amazon.jpg" } },
+      { id: BigInt(4), name: "アマゾン", normalizedName: "アマゾン", source: "manual", createdAt, document: null },
+    ])
+    .mockResolvedValueOnce([{ normalizedName: "amazon.co.jp", payee: { id: BigInt(8), name: "Amazon マーケットプレイス" } }]);
+  await expect(repository.listAliases("5", "7")).resolves.toEqual([
+    { id: "3", name: "Amazon.co.jp", source: "ai", document: { id: "21", originalFilename: "amazon.jpg" }, createdAt: createdAt.toISOString(), sharedWith: [{ id: "8", name: "Amazon マーケットプレイス" }] },
+    { id: "4", name: "アマゾン", source: "manual", document: null, createdAt: createdAt.toISOString(), sharedWith: [] },
+  ]);
+  expect(tx.researchFundPayeeAlias.findMany.mock.calls[0][0].where).toEqual({ payeeId: BigInt(7), payee: { politicianId: BigInt(5) } });
+  expect(tx.researchFundPayeeAlias.findMany.mock.calls[1][0].where).toEqual({ normalizedName: { in: ["amazon.co.jp", "アマゾン"] }, payeeId: { not: BigInt(7) }, payee: { politicianId: BigInt(5) } });
+});
+test("表記が無ければ別の支払先を探さずに空を返す", async () => {
+  const { repository, tx } = setup();
+  await expect(repository.listAliases("6", "7")).resolves.toEqual([]);
+  expect(tx.researchFundPayeeAlias.findMany).toHaveBeenCalledTimes(1);
+});
+test("表記の削除は支払先と議員で絞り込み、消せなければ false を返す", async () => {
+  const { repository, tx } = setup();
+  await expect(repository.deleteAlias("5", "7", "3")).resolves.toBe(true);
+  expect(tx.researchFundPayeeAlias.deleteMany).toHaveBeenCalledWith({ where: { id: BigInt(3), payeeId: BigInt(7), payee: { politicianId: BigInt(5) } } });
+  tx.researchFundPayeeAlias.deleteMany.mockResolvedValue({ count: 0 });
+  await expect(repository.deleteAlias("6", "7", "3")).resolves.toBe(false);
 });

@@ -3,7 +3,7 @@ import { entry, setup } from "./journal-review-test-helpers";
 const payee = { id: "7", politicianId: "5", postalCode: null, address: "", invoiceRegistrationNumber: null, usageCount: 0 };
 function setupUsecase() {
   const { repository } = setup();
-  const payeeRepository = { listJournalEntries: jest.fn(), list: jest.fn().mockResolvedValue([{ ...payee, name: "東京タクシー" }, { ...payee, id: "8", name: "JR東日本" }]), find: jest.fn(), create: jest.fn(), update: jest.fn() };
+  const payeeRepository = { listJournalEntries: jest.fn(), list: jest.fn().mockResolvedValue([{ ...payee, name: "東京タクシー" }, { ...payee, id: "8", name: "JR東日本" }]), find: jest.fn(), create: jest.fn(), update: jest.fn(), listAliases: jest.fn(), deleteAlias: jest.fn() };
   return { repository, payeeRepository, usecase: new ListJournalReviewUsecase(repository, payeeRepository) };
 }
 test("一覧には費用科目だけを渡す", async () => {

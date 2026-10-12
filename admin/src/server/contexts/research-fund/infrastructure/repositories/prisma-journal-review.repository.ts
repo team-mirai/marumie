@@ -7,6 +7,7 @@ import {
   type ReviewEntry,
 } from "@/server/contexts/research-fund/domain/models/journal-review";
 import type { Payee, PayeeInput } from "@/server/contexts/research-fund/domain/models/payee";
+import { payeeAliasFromIssuer } from "@/server/contexts/research-fund/domain/models/payee-alias";
 import { Publication } from "@/server/contexts/research-fund/domain/models/publication";
 import type { JournalReviewRepository } from "@/server/contexts/research-fund/domain/repositories/journal-review-repository.interface";
 
@@ -114,6 +115,7 @@ function guard(
   };
 }
 // 人の手での紐づけなので紐づけ元は manual にし、AI の確信度・根拠は消す。1 件でも競合していたら投げて巻き戻させる。
+// 紐づけたら、書類の発行元の名称を支払先の表記として記録する（#1727）。
 async function linkPayee(
   tx: Prisma.TransactionClient,
   bookId: string,
@@ -133,6 +135,24 @@ async function linkPayee(
     if (result.count !== 1)
       throw new JournalReviewError("仕訳が更新されました。画面を再読み込みしてください");
   }
+  if (payeeId === null) return;
+  // 書類から読み取った発行元の名称を、紐づけた支払先の表記として記録する（外すときは記録済みの表記を残す）。
+  // 発行元は仕訳を作った読み取りの結果（model の job）から取る。(支払先, 正規化した表記) が既にあれば記録しない
+  const aliases = entries.flatMap((entry) => {
+    const alias = payeeAliasFromIssuer(entry.issuer);
+    return alias === null || entry.documentId === null
+      ? []
+      : [
+          {
+            payeeId: BigInt(payeeId),
+            ...alias,
+            source: "manual" as const,
+            documentId: BigInt(entry.documentId),
+          },
+        ];
+  });
+  if (aliases.length > 0)
+    await tx.researchFundPayeeAlias.createMany({ data: aliases, skipDuplicates: true });
 }
 export class PrismaJournalReviewRepository implements JournalReviewRepository {
   constructor(private prisma: PrismaClient) {}
