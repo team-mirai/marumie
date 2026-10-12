@@ -2,6 +2,7 @@ import Link from "next/link";
 import { CaretLeft } from "@phosphor-icons/react/dist/ssr";
 import { PageHeader } from "@/client/components/layout/PageHeader";
 import { PayeeAliasDeleteButton } from "@/client/components/research-fund/PayeeAliasDeleteButton";
+import { PayeeDeleteButton } from "@/client/components/research-fund/PayeeDeleteButton";
 import { PayeeEditButton } from "@/client/components/research-fund/PayeeEditButton";
 import {
   Card,
@@ -14,7 +15,11 @@ import {
   TableRow,
 } from "@/client/components/ui";
 import { cn, formatDateTime } from "@/client/lib";
-import type { Payee, PayeeJournalEntry } from "@/server/contexts/research-fund/domain/models/payee";
+import type {
+  Payee,
+  PayeeDeletionImpact,
+  PayeeJournalEntry,
+} from "@/server/contexts/research-fund/domain/models/payee";
 import type { PayeeAlias } from "@/server/contexts/research-fund/domain/models/payee-alias";
 import type { AdminTarget } from "@/server/contexts/shared/domain/models/admin-target";
 
@@ -38,16 +43,19 @@ function Unset() {
  * 支払先（支出を受けた者）の詳細。支払先の情報と、選択中の帳簿でその支払先に紐づいた仕訳を表示する。
  * 紐づけの誤りを見つけるための画面で、仕訳の編集や支払先の付け替えは仕訳の確認画面で行う。
  * 書類との照合に使う表記（紐づけの操作から自動で記録される）も表示し、誤った表記はここで削除する。
+ * 支払先そのものの削除もここで行う（公開中の仕訳が紐づく支払先は削除できない）。
  */
 export function PayeeDetail({
   payee,
   entries,
   aliases,
+  deletion,
   target,
 }: {
   payee: Payee;
   entries: readonly PayeeJournalEntry[];
   aliases: readonly PayeeAlias[];
+  deletion: PayeeDeletionImpact;
   target: Extract<AdminTarget, { kind: "research-fund" }>;
 }) {
   return (
@@ -65,7 +73,12 @@ export function PayeeDetail({
         label="Payee"
         title={payee.name}
         description="支払先を編集すると、紐づけたすべての仕訳に反映されます。"
-        actions={<PayeeEditButton payee={payee} usageCount={entries.length} target={target} />}
+        actions={
+          <div className="flex gap-2">
+            <PayeeEditButton payee={payee} usageCount={entries.length} target={target} />
+            <PayeeDeleteButton payee={payee} deletion={deletion} target={target} />
+          </div>
+        }
       />
       <Card className="mb-6">
         <CardContent className="p-6">

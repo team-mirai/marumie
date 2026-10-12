@@ -5,6 +5,7 @@ import {
   normalizeInvoiceRegistrationNumber,
   normalizePostalCode,
   payeeAccessRejection,
+  payeeDeletionRejection,
   payeeFormInputFromIssuer,
   rereadPayeeLink,
   sortPayees,
@@ -171,5 +172,14 @@ describe("rereadPayeeLink", () => {
   test("引き継ぐものが無ければ照合結果を「ルール照合」として紐づける", () => {
     expect(rereadPayeeLink(null, "8")).toEqual({ payeeId: "8", source: "rule" });
     expect(rereadPayeeLink(null, null)).toBeNull();
+  });
+});
+
+describe("payeeDeletionRejection", () => {
+  it("公開中の仕訳が無ければ、他の仕訳が紐づいていても削除できる", () => {
+    expect(payeeDeletionRejection({ publishedCount: 0 })).toBeNull();
+  });
+  it("公開中の仕訳があれば、その件数を理由にして削除させない", () => {
+    expect(payeeDeletionRejection({ publishedCount: 2 })).toContain("公開中の仕訳（2件）");
   });
 });

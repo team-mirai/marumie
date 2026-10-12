@@ -2,7 +2,7 @@ import { DeletePayeeAliasUsecase } from "@/server/contexts/research-fund/applica
 import { PayeeError } from "@/server/contexts/research-fund/domain/models/payee";
 
 function setup(deleted: boolean) {
-  return { listJournalEntries: jest.fn(), list: jest.fn(), find: jest.fn(), create: jest.fn(), update: jest.fn(), listAliases: jest.fn(), deleteAlias: jest.fn().mockResolvedValue(deleted) };
+  return { listJournalEntries: jest.fn(), list: jest.fn(), find: jest.fn(), create: jest.fn(), update: jest.fn(), listAliases: jest.fn(), deleteAlias: jest.fn().mockResolvedValue(deleted), deletionImpact: jest.fn(), delete: jest.fn() };
 }
 test("議員の支払先の表記を削除する", async () => {
   const repository = setup(true);
