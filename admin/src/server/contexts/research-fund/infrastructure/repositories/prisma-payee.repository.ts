@@ -3,6 +3,7 @@ import { Prisma, type PrismaClient, type ResearchFundPayee } from "@prisma/clien
 import {
   PayeeError,
   type Payee,
+  type PayeeDeletionResult,
   type PayeeInput,
   type PayeeJournalEntry,
 } from "@/server/contexts/research-fund/domain/models/payee";
@@ -27,6 +28,12 @@ async function unique<T>(run: () => Promise<T>): Promise<T> {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002")
       throw new PayeeError("同じ名称・住所の支払先がすでに登録されています");
     throw error;
+  }
+}
+// 公開中の仕訳が見つかったときに、削除のトランザクションを巻き戻すための目印
+class PublishedEntriesFound extends Error {
+  constructor(readonly publishedCount: number) {
+    super("published entries found");
   }
 }
 export class PrismaPayeeRepository implements PayeeRepository {
@@ -128,5 +135,57 @@ export class PrismaPayeeRepository implements PayeeRepository {
       },
     });
     return result.count === 1;
+  }
+  // 支払先が議員のものかを確かめてから、議員のすべての帳簿の仕訳を状態で分けて数える。
+  async deletionImpact(politicianId: string, id: string) {
+    if (!(await this.find(politicianId, id))) return null;
+    const [publishedCount, unlinkedCount] = await Promise.all([
+      this.prisma.researchFundJournalEntry.count({
+        where: { payeeId: BigInt(id), status: "published" },
+      }),
+      this.prisma.researchFundJournalEntry.count({
+        where: { payeeId: BigInt(id), status: { not: "published" } },
+      }),
+    ]);
+    return { publishedCount, unlinkedCount };
+  }
+  // 公開中でない仕訳の紐づけを外してから、残った仕訳（公開中のもの）を数える。
+  // 外す更新は対象の行をロックし、並行して公開された仕訳は条件の再評価で外さない。
+  // 公開中の仕訳が残っていれば、外した紐づけも含めて巻き戻す。表記は外部キーのカスケードで一緒に消える。
+  async delete(politicianId: string, id: string): Promise<PayeeDeletionResult> {
+    try {
+      return await this.prisma.$transaction(async (tx) => {
+        const payee = await tx.researchFundPayee.findFirst({
+          where: { id: BigInt(id), politicianId: BigInt(politicianId) },
+          select: { id: true },
+        });
+        if (!payee) return { status: "not-found" as const };
+        // 支払先が無い仕訳は紐づけの経路・確信度・根拠を持てない（DB の CHECK 制約）ので一緒に消す
+        const unlinked = await tx.researchFundJournalEntry.updateMany({
+          where: { payeeId: payee.id, status: { not: "published" } },
+          data: {
+            payeeId: null,
+            payeeLinkSource: null,
+            payeeLinkConfidence: null,
+            payeeLinkReason: null,
+          },
+        });
+        const publishedCount = await tx.researchFundJournalEntry.count({
+          where: { payeeId: payee.id, status: "published" },
+        });
+        if (publishedCount > 0) throw new PublishedEntriesFound(publishedCount);
+        await tx.researchFundPayee.delete({ where: { id: payee.id } });
+        return { status: "deleted" as const, unlinkedCount: unlinked.count };
+      });
+    } catch (error) {
+      if (error instanceof PublishedEntriesFound)
+        return { status: "published", publishedCount: error.publishedCount };
+      // 確認のあとに別の仕訳が紐づけられると、外部キーで削除が止まる
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2003")
+        throw new PayeeError(
+          "削除中に仕訳が紐づけられたため削除できませんでした。もう一度お試しください",
+        );
+      throw error;
+    }
   }
 }
