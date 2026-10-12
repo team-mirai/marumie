@@ -16,6 +16,7 @@ import type {
 import {
   inheritedPayeeLink,
   type Payee,
+  type PayeeInput,
   type PayeeLink,
   rereadPayeeLink,
 } from "@/server/contexts/research-fund/domain/models/payee";
@@ -196,6 +197,7 @@ export class PrismaScanRepository implements ScanRepository {
     userId: string;
     replaceDrafts: boolean;
     payeeId: string | null;
+    newPayee: PayeeInput | null;
   }): Promise<void> {
     const bookId = BigInt(input.bookId);
     const documentId = BigInt(input.documentId);
@@ -258,7 +260,9 @@ export class PrismaScanRepository implements ScanRepository {
           where: { id: BigInt(link.payeeId), politician: { books: { some: { id: bookId } } } },
         })) === 1
           ? link
-          : null;
+          : input.newPayee === null
+            ? null
+            : await registerPayee(tx, bookId, input.newPayee);
       // 同じ書類を読み直しても仕訳を二重に作らない。hash は日付・金額・項目名・書類IDから作る。
       // (book_id, hash) の一意制約に任せて既存分は読み飛ばす（ON CONFLICT DO NOTHING）ので、
       // 同じ書類の処理が同時に走っても二重登録にならず、ジョブの完了も続行できる。
@@ -361,4 +365,38 @@ function summarizeRawJson(rawJson: unknown): string | null {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+/**
+ * 照合で決まらなかった書類の発行元を、帳簿の議員の支払先として登録し、AI による紐づけとして返す。
+ * (議員, 名称, 住所) の一意制約に当たったら（同時に処理した書類が先に登録した場合）作らずに既存の行を使う。
+ * ただし既存の行とインボイス登録番号が食い違えば別の相手でありうるので紐づけない。
+ */
+async function registerPayee(
+  tx: Prisma.TransactionClient,
+  bookId: bigint,
+  input: PayeeInput,
+): Promise<PayeeLink | null> {
+  const { politicianId } = await tx.researchFundBook.findUniqueOrThrow({
+    where: { id: bookId },
+    select: { politicianId: true },
+  });
+  // ON CONFLICT DO NOTHING。並行して同じ支払先を登録しても一意制約のエラーでジョブを落とさない
+  await tx.researchFundPayee.createMany({
+    data: [{ ...input, politicianId }],
+    skipDuplicates: true,
+  });
+  const row = await tx.researchFundPayee.findUniqueOrThrow({
+    where: {
+      politicianId_name_address: { politicianId, name: input.name, address: input.address },
+    },
+    select: { id: true, invoiceRegistrationNumber: true },
+  });
+  if (
+    row.invoiceRegistrationNumber !== null &&
+    input.invoiceRegistrationNumber !== null &&
+    row.invoiceRegistrationNumber !== input.invoiceRegistrationNumber
+  )
+    return null;
+  return { payeeId: String(row.id), source: "ai" };
 }

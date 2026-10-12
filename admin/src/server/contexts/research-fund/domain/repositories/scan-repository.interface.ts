@@ -2,7 +2,7 @@ import type { ScanBatchView } from "@/server/contexts/research-fund/domain/model
 import type { ScanDraftEntry } from "@/server/contexts/research-fund/domain/services/scan-journal-builder";
 import type { ResearchFundAccount } from "@/server/contexts/research-fund/domain/models/journal-posting";
 import type { RereadCandidate } from "@/server/contexts/research-fund/domain/models/scan-reread";
-import type { Payee } from "@/server/contexts/research-fund/domain/models/payee";
+import type { Payee, PayeeInput } from "@/server/contexts/research-fund/domain/models/payee";
 
 export interface CreateScanBatchInput {
   bookId: string;
@@ -68,6 +68,9 @@ export interface ScanRepository {
    * そのとき書類に確認済・公開中の仕訳があれば、何も変えずに ScanJobError を投げる。
    * payeeId があれば、作った仕訳すべてにその支払先を「ルール照合」として紐づける。
    * 支払先が帳簿と同じ議員のものでなければ（照合の後に変わった場合を含む）紐づけずに完了する。
+   * 紐づける支払先が決まらず newPayee があれば、帳簿の議員の支払先として登録し「AI」として紐づける。
+   * 同じ名称・住所の支払先が既にあれば（同時に処理した書類が先に登録した場合）、インボイス登録番号が
+   * 食い違わない限りそれに紐づける。食い違えば紐づけずに完了する。
    */
   completeJob(input: {
     bookId: string;
@@ -78,6 +81,7 @@ export interface ScanRepository {
     userId: string;
     replaceDrafts: boolean;
     payeeId: string | null;
+    newPayee: PayeeInput | null;
   }): Promise<void>;
   /** ジョブを failed にしてエラーを記録する */
   failJob(jobId: string, error: string, rawJson?: unknown): Promise<void>;

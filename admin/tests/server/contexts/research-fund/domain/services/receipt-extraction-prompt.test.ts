@@ -37,6 +37,13 @@ describe("領収書抽出プロンプト", () => {
     expect(prompt).toContain("明細ごとではなく書類単位で issuer に1つだけ入れてください");
   });
 
+  it("マーケットプレイスの書類は出品者ではなく書類を発行したサービスを、印字どおりの表記で発行元にするよう伝える", () => {
+    // 発行元から支払先を新しく登録し、次の書類はその名称との完全一致で紐づけるので、表記を揺らさせない
+    const prompt = buildAutomaticReceiptPrompt();
+    expect(prompt).toContain("出品者ではなく書類を発行したサービス");
+    expect(prompt).toContain("書類に印字された表記をそのまま書き写してください");
+  });
+
   it("分割粒度と迷った際のポリシーは編集可能なテンプレートだけに含める", () => {
     for (const policy of [
       "item または category_key が異なる明細は行を分ける",

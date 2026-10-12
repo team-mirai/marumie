@@ -124,6 +124,16 @@ export function payeeFormInputFromIssuer(issuer: ReceiptIssuer): PayeeFormInput 
   };
 }
 
+/**
+ * スキャンで照合に一致する支払先が無かったときに、読み取った発行元から新しく登録する支払先の内容。
+ * 発行元が無い・名称が読み取れない・支払先として保存できない内容なら null（未紐づけのまま残す）。
+ */
+export function newPayeeFromIssuer(issuer: ReceiptIssuer | null): PayeeInput | null {
+  if (issuer === null) return null;
+  const validated = validatePayeeInput(payeeFormInputFromIssuer(issuer));
+  return validated.status === "valid" ? validated.value : null;
+}
+
 /** 支払先の入力を検証し、保存する形に正規化する */
 export function validatePayeeInput(input: PayeeFormInput): ResearchFundResult<PayeeInput> {
   const name = input.name.trim();

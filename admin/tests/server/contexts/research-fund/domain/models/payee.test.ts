@@ -1,6 +1,7 @@
 import {
   inheritedPayeeLink,
   isPayeeUnset,
+  newPayeeFromIssuer,
   normalizeInvoiceRegistrationNumber,
   normalizePostalCode,
   payeeAccessRejection,
@@ -121,6 +122,19 @@ describe("payeeFormInputFromIssuer", () => {
 
   it("形の合わないインボイス登録番号・読み取れなかった項目は未入力にする", () => {
     expect(payeeFormInputFromIssuer({ name: "JR東日本", address: null, phone: null, invoice_registration_number: "T123" })).toEqual({ name: "JR東日本", postalCode: "", address: "", invoiceRegistrationNumber: "" });
+  });
+});
+
+describe("newPayeeFromIssuer", () => {
+  it("読み取った発行元を、保存する形に正規化した支払先の内容にする", () => {
+    expect(newPayeeFromIssuer({ name: " Amazon.co.jp ", address: null, phone: null, invoice_registration_number: null })).toEqual({ name: "Amazon.co.jp", postalCode: null, address: "", invoiceRegistrationNumber: null });
+    expect(newPayeeFromIssuer({ name: "東京タクシー株式会社", address: "〒100-0001 東京都千代田区千代田1-1", phone: null, invoice_registration_number: "t1234567890123" })).toEqual(input);
+  });
+
+  it("発行元が無い・名称が読み取れない・長すぎる名称なら登録しない", () => {
+    expect(newPayeeFromIssuer(null)).toBeNull();
+    expect(newPayeeFromIssuer({ name: null, address: "東京都千代田区", phone: null, invoice_registration_number: "T1234567890123" })).toBeNull();
+    expect(newPayeeFromIssuer({ name: "あ".repeat(256), address: null, phone: null, invoice_registration_number: null })).toBeNull();
   });
 });
 

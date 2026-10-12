@@ -21,7 +21,13 @@ function setup() {
   };
   const line = { createMany: jest.fn() };
   const account = { findMany: jest.fn() };
-  const payee = { count: jest.fn(), findMany: jest.fn() };
+  const payee = {
+    count: jest.fn(),
+    findMany: jest.fn(),
+    createMany: jest.fn(),
+    findUniqueOrThrow: jest.fn(),
+  };
+  const book = { findUniqueOrThrow: jest.fn() };
   const tx = {
     researchFundScanBatch: batch,
     researchFundDocument: document,
@@ -30,6 +36,7 @@ function setup() {
     researchFundJournalLine: line,
     researchFundAccount: account,
     researchFundPayee: payee,
+    researchFundBook: book,
     $queryRaw: jest.fn(),
   };
   const client = {
@@ -45,6 +52,7 @@ function setup() {
     line,
     account,
     payee,
+    book,
     client,
     repository: new PrismaScanRepository(client as unknown as PrismaClient),
   };
@@ -255,6 +263,7 @@ const COMPLETE_INPUT = {
   userId: "user-1",
   replaceDrafts: false,
   payeeId: null,
+  newPayee: null,
   entries: [
     {
       entryDate: "2026-04-01",
@@ -399,6 +408,62 @@ test("照合で支払先が決まらなければ未紐づけのまま作る", as
   expect(payee.count).not.toHaveBeenCalled();
   expect(entry.createManyAndReturn.mock.calls[0][0].data).toEqual([
     expect.objectContaining({ payeeId: null, payeeLinkSource: null }),
+  ]);
+});
+
+const NEW_PAYEE = {
+  name: "Amazon.co.jp",
+  postalCode: null,
+  address: "",
+  invoiceRegistrationNumber: null,
+};
+
+test("照合で決まらず新しい支払先があれば、帳簿の議員の支払先として登録し「AI」として紐づける", async () => {
+  const { entry, payee, book, repository } = setup();
+  entry.createManyAndReturn.mockResolvedValue([]);
+  book.findUniqueOrThrow.mockResolvedValue({ politicianId: BigInt(5) });
+  payee.findUniqueOrThrow.mockResolvedValue({ id: BigInt(9), invoiceRegistrationNumber: null });
+  await repository.completeJob({ ...COMPLETE_INPUT, newPayee: NEW_PAYEE });
+  expect(book.findUniqueOrThrow).toHaveBeenCalledWith({
+    where: { id: BigInt(12) },
+    select: { politicianId: true },
+  });
+  // 並行して同じ支払先を登録しても一意制約のエラーにしない
+  expect(payee.createMany).toHaveBeenCalledWith({
+    data: [{ ...NEW_PAYEE, politicianId: BigInt(5) }],
+    skipDuplicates: true,
+  });
+  expect(payee.findUniqueOrThrow).toHaveBeenCalledWith({
+    where: { politicianId_name_address: { politicianId: BigInt(5), name: "Amazon.co.jp", address: "" } },
+    select: { id: true, invoiceRegistrationNumber: true },
+  });
+  expect(entry.createManyAndReturn.mock.calls[0][0].data).toEqual([
+    expect.objectContaining({ payeeId: BigInt(9), payeeLinkSource: "ai" }),
+  ]);
+});
+
+test("同じ名称・住所の支払先が既にありインボイス登録番号が食い違えば、紐づけずに下書きを作る", async () => {
+  const { entry, payee, book, repository } = setup();
+  entry.createManyAndReturn.mockResolvedValue([]);
+  book.findUniqueOrThrow.mockResolvedValue({ politicianId: BigInt(5) });
+  payee.findUniqueOrThrow.mockResolvedValue({ id: BigInt(9), invoiceRegistrationNumber: "T1111111111111" });
+  await repository.completeJob({
+    ...COMPLETE_INPUT,
+    newPayee: { ...NEW_PAYEE, invoiceRegistrationNumber: "T2222222222222" },
+  });
+  expect(entry.createManyAndReturn.mock.calls[0][0].data).toEqual([
+    expect.objectContaining({ payeeId: null, payeeLinkSource: null }),
+  ]);
+});
+
+test("照合で支払先が決まれば新しい支払先は登録しない", async () => {
+  const { entry, payee, repository } = setup();
+  payee.count.mockResolvedValue(1);
+  entry.createManyAndReturn.mockResolvedValue([]);
+  await repository.completeJob({ ...COMPLETE_INPUT, payeeId: "7", newPayee: NEW_PAYEE });
+  expect(payee.createMany).not.toHaveBeenCalled();
+  expect(entry.createManyAndReturn.mock.calls[0][0].data).toEqual([
+    expect.objectContaining({ payeeId: BigInt(7), payeeLinkSource: "rule" }),
   ]);
 });
 
