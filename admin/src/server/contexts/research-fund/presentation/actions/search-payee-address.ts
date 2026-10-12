@@ -37,7 +37,7 @@ export async function searchPayeeAddress(
   } catch (error) {
     console.error("Error searching payee address:", error);
     if (error instanceof Error) {
-      if (error.message.includes("timeout") || error.message.includes("ETIMEDOUT"))
+      if (/timeout|ETIMEDOUT/i.test(error.message))
         return {
           success: false,
           error: {
@@ -45,7 +45,7 @@ export async function searchPayeeAddress(
             message: "検索がタイムアウトしました。再度お試しください。",
           },
         };
-      if (error.message.includes("rate") || error.message.includes("429"))
+      if (/\brate.?limit|\b429\b/i.test(error.message))
         return {
           success: false,
           error: { type: "RATE_LIMIT", retryAfter: 60 },

@@ -35,7 +35,10 @@ test("認証失敗時は検索しない", async () => {
 });
 test.each([
   ["request timeout", "TIMEOUT"],
+  ["Request Timeout", "TIMEOUT"],
   ["429 Too Many Requests", "RATE_LIMIT"],
+  ["Rate limit exceeded", "RATE_LIMIT"],
+  ["failed to generate text", "API_ERROR"],
   ["private api detail", "API_ERROR"],
 ])("検索の失敗（%s）は内部の詳細を出さずに種類で返す", async (message, type) => {
   jest.spyOn(SearchPayeeAddressUsecase.prototype, "execute").mockRejectedValueOnce(new Error(message));
