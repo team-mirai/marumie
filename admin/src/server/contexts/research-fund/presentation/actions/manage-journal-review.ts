@@ -76,6 +76,8 @@ export async function mutateJournalReview(
   try {
     const repository = new PrismaJournalReviewRepository(prisma);
     let id: string | undefined;
+    // 保存後の更新時刻。画面が続けて同じ仕訳に立替者の変更などを送るときの照合に使う
+    let saved: { updatedAt: string } | undefined;
     let approved: { approved: number; skipped: number } | undefined;
     let discarded: number | undefined;
     let reverted: number | undefined;
@@ -89,7 +91,7 @@ export async function mutateJournalReview(
     if (mutation.type === "create")
       id = await new CreateJournalEntryUsecase(repository).execute(bookId, mutation.input, user.id);
     else if (mutation.type === "save")
-      await new SaveJournalEntryUsecase(repository).execute(
+      saved = await new SaveJournalEntryUsecase(repository).execute(
         bookId,
         mutation.id,
         mutation.updatedAt,
@@ -172,6 +174,7 @@ export async function mutateJournalReview(
     return {
       success: true as const,
       id,
+      saved,
       approved,
       discarded,
       reverted,

@@ -20,7 +20,9 @@ function setup(count = 1) {
   return { repository, tx, transaction };
 }
 test("公開状態と更新日時をDBで照合してから同一トランザクションで行を置換", async () => {
-  const { repository, tx, transaction } = setup(); await repository.update("1", entry, input);
+  const { repository, tx, transaction } = setup();
+  tx.researchFundJournalEntry.findFirst.mockResolvedValue({ ...rowWithLines(), updatedAt: new Date("2026-08-02T03:04:05.678Z") });
+  await expect(repository.update("1", entry, input)).resolves.toEqual({ updatedAt: "2026-08-02T03:04:05.678Z" });
   expect(transaction).toHaveBeenCalledTimes(1);
   expect(tx.researchFundJournalEntry.updateMany).toHaveBeenCalledWith({ where: expect.objectContaining({ id: BigInt(entry.id), bookId: BigInt(1), status: { in: ["draft", "approved"] }, updatedAt: new Date(entry.updatedAt) }), data: expect.objectContaining({ status: "approved", memo: "非公開" }) });
   expect(tx.researchFundJournalLine.deleteMany).toHaveBeenCalledWith({ where: { entryId: BigInt(entry.id) } });

@@ -12,7 +12,7 @@ import {
 import type { JournalReviewRepository } from "@/server/contexts/research-fund/domain/repositories/journal-review-repository.interface";
 import { buildGrantJournalWrite } from "@/server/contexts/research-fund/domain/services/grant-journal-builder";
 
-/** 仕訳を 1 件編集して保存する（approve なら確認済にもする） */
+/** 仕訳を 1 件編集して保存する（approve なら確認済にもする）。保存後の更新時刻を返す */
 export class SaveJournalEntryUsecase {
   constructor(private repository: JournalReviewRepository) {}
   async execute(
@@ -43,7 +43,7 @@ export class SaveJournalEntryUsecase {
             entry.documentId,
             approve ? "approved" : entry.status,
           );
-    await this.repository.update(bookId, entry, write);
+    return this.repository.update(bookId, entry, write);
   }
   /** 支給は支給日だけを直せる。何を直せるかは JournalOperation、組み立ては buildGrantJournalWrite が判定する */
   private async prepareGrant(

@@ -15,7 +15,8 @@ export interface JournalReviewRepository {
   /** 支給の起点となる当選日（YYYY-MM-DD）。帳簿が無ければ null */
   termStart(bookId: string): Promise<string | null>;
   create(bookId: string, input: JournalWrite, userId: string): Promise<string>;
-  update(bookId: string, entry: ReviewEntry, input: JournalWrite): Promise<void>;
+  /** 保存後の更新時刻を返す（続けて同じ仕訳に別の操作を送るときの同時更新の照合に使う）。 */
+  update(bookId: string, entry: ReviewEntry, input: JournalWrite): Promise<{ updatedAt: string }>;
   discard(bookId: string, entry: ReviewEntry): Promise<void>;
   approveMany(bookId: string, entries: readonly ReviewEntry[]): Promise<void>;
   /** 下書き・確認済の支出の仕訳をまとめて削除する。1 件でも競合したら何も削除しない。 */

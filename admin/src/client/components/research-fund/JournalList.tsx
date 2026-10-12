@@ -102,6 +102,22 @@ function ChipView({ chip, className }: { chip: Chip; className?: string }) {
   );
 }
 
+/** 仕訳の状態ピル（一覧の行と詳細カードのヘッダーで共通） */
+export function JournalStatusPill({ status }: { status: ReviewEntry["status"] }) {
+  return (
+    <span
+      className={cn(
+        "whitespace-nowrap rounded-full border px-[7px] text-[10.5px] leading-[18px]",
+        status === "draft"
+          ? "border-subtle-foreground bg-card text-muted-foreground"
+          : "border-primary bg-accent text-accent-foreground",
+      )}
+    >
+      {statusLabels[status]}
+    </span>
+  );
+}
+
 function AccountPill({ entry }: { entry: ReviewEntry }) {
   if (entry.source === "grant")
     return (
@@ -301,16 +317,7 @@ export function JournalList({
                   ¥{entry.amount.toLocaleString("ja-JP")}
                 </td>
                 <td className="flex justify-center">
-                  <span
-                    className={cn(
-                      "whitespace-nowrap rounded-full border px-[7px] text-[10.5px] leading-[18px]",
-                      entry.status === "draft"
-                        ? "border-subtle-foreground bg-card text-muted-foreground"
-                        : "border-primary bg-accent text-accent-foreground",
-                    )}
-                  >
-                    {statusLabels[entry.status]}
-                  </span>
+                  <JournalStatusPill status={entry.status} />
                 </td>
               </tr>
             );

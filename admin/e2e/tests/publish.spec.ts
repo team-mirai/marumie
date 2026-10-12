@@ -45,7 +45,7 @@ test("確認済の仕訳を選んでbefore/afterを見比べ、公開して公�
   await expect(page.getByRole("row").filter({ hasText: "視察先への移動" })).toContainText("確認済");
 
   await page.getByRole("link", { name: "公開", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "公開" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "公開", exact: true })).toBeVisible();
   await expect(page.getByText("確認済・未公開 2件")).toBeVisible();
   await expect(page.getByRole("button", { name: "公開する仕訳を選んでください" })).toBeDisabled();
   await expect(page.getByText("仕訳を選ぶとこちらが変化します")).toBeVisible();
@@ -91,7 +91,16 @@ test("確認済の仕訳を選んでbefore/afterを見比べ、公開して公�
   // 公開中の仕訳を確認済に戻すと、修正できるようになり、公開の候補に戻る
   const publishedRow = page.getByRole("row").filter({ hasText: "視察先への移動" });
   await publishedRow.click();
-  await expect(page.getByLabel("金額", { exact: true })).toBeDisabled();
+  // 公開中は公開される内容を読み取り表示にし、事務所内の管理（立替者など）だけを行ごとに変更できる
+  await expect(page.getByText("公開中のため、公開される内容は編集できません")).toBeVisible();
+  await expect(page.getByLabel("金額", { exact: true })).toHaveCount(0);
+  await expect(page.getByLabel("備考", { exact: true })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "保存", exact: true })).toHaveCount(0);
+  await page.getByRole("button", { name: "立替者を編集" }).click();
+  await page.getByLabel("立替者", { exact: true }).fill("秘書A");
+  await page.getByRole("button", { name: "立替者を保存" }).click();
+  await expect(page.getByText("1件の立替者を「秘書A」にしました")).toBeVisible();
+  await expect(publishedRow).toContainText("立替 秘書A");
   const unpublishDialog = page.getByRole("dialog");
   await clickUntil(page.getByRole("button", { name: "確認済に戻す", exact: true }).first(), (options) =>
     expect(unpublishDialog.getByText("確認済に戻しますか？")).toBeVisible(options),

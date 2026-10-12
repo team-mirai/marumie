@@ -215,7 +215,7 @@ export class PrismaJournalReviewRepository implements JournalReviewRepository {
     return String(row.id);
   }
   async update(bookId: string, entry: ReviewEntry, input: JournalWrite) {
-    await unique(() =>
+    return unique(() =>
       this.prisma.$transaction(async (tx) => {
         const result = await tx.researchFundJournalEntry.updateMany({
           where: guard(bookId, entry),
@@ -232,6 +232,8 @@ export class PrismaJournalReviewRepository implements JournalReviewRepository {
         await tx.researchFundJournalLine.createMany({
           data: input.lines.map((l) => ({ ...l, entryId: BigInt(entry.id) })),
         });
+        // 複式行の作り直しは仕訳の行を更新しないので、照合後に読んだ更新時刻が保存後のものになる
+        return { updatedAt: row.updatedAt.toISOString() };
       }),
     );
   }

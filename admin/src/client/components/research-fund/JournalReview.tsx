@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState, useTransition, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { Plus } from "@phosphor-icons/react/dist/ssr";
+import { CaretDown, CaretUp, Plus } from "@phosphor-icons/react/dist/ssr";
 import { toast } from "sonner";
 import {
   Button,
@@ -26,11 +26,9 @@ import {
   JournalBulkActionBar,
   type BulkAction,
 } from "@/client/components/research-fund/JournalBulkActionBar";
-import { JournalAdvanceField } from "@/client/components/research-fund/JournalAdvanceField";
+import { JournalCreateForm } from "@/client/components/research-fund/JournalCreateForm";
 import { JournalEditor } from "@/client/components/research-fund/JournalEditor";
-import { JournalList } from "@/client/components/research-fund/JournalList";
-import { JournalPayeeField } from "@/client/components/research-fund/JournalPayeeField";
-import { JournalReceiptAbsenceField } from "@/client/components/research-fund/JournalReceiptAbsenceField";
+import { JournalList, JournalStatusPill } from "@/client/components/research-fund/JournalList";
 import { PayeeLinkDialog } from "@/client/components/research-fund/PayeeLinkDialog";
 import {
   settlementRejection,
@@ -50,10 +48,7 @@ import {
   type PayeeFormInput,
   type PayeeSummary,
 } from "@/server/contexts/research-fund/domain/models/payee";
-import {
-  canHaveReceiptAbsenceReason,
-  isReceiptMissing,
-} from "@/server/contexts/research-fund/domain/models/receipt-absence";
+import { isReceiptMissing } from "@/server/contexts/research-fund/domain/models/receipt-absence";
 import {
   previewReread,
   REREAD_INSTRUCTION_MAX_LENGTH,
@@ -504,29 +499,18 @@ export function JournalReview({
       }
     });
   }
-  function save(input: JournalEdit, approve: boolean) {
+  function create(input: JournalEdit) {
     startTransition(async () => {
       try {
-        const result = await mutateJournalReview(
-          target.politicianId,
-          target.bookId,
-          creating
-            ? { type: "create", input }
-            : {
-                type: "save",
-                id: selected?.id ?? "",
-                updatedAt: selected?.updatedAt ?? "",
-                input,
-                approve,
-              },
-        );
+        const result = await mutateJournalReview(target.politicianId, target.bookId, {
+          type: "create",
+          input,
+        });
         if (!result.success) {
           toast.error(result.error);
           return;
         }
-        toast.success(
-          creating ? "下書きを作成しました" : approve ? "確認済にしました" : "保存しました",
-        );
+        toast.success("下書きを作成しました");
         if (result.id) {
           setStatus("all");
           setMonth("");
@@ -539,6 +523,73 @@ export function JournalReview({
         toast.error("通信に失敗しました。再度お試しください");
       }
     });
+  }
+  /**
+   * 選んだ仕訳を保存する（approve なら確認済にもする）。編集ビューで立替者を変えていれば
+   * （advancedBy が null でなければ）、仕訳の保存が成功したあとに続けて立替者も送る。
+   * 立替者の更新も画面の持つ更新時刻で同時更新を検出するので、仕訳の保存が返す保存後の更新時刻で送る。
+   */
+  function save(input: JournalEdit, approve: boolean, advancedBy: string | null) {
+    if (!selected) return;
+    const entry = selected;
+    const done = approve ? "確認済にしました" : "保存しました";
+    startTransition(async () => {
+      try {
+        const result = await mutateJournalReview(target.politicianId, target.bookId, {
+          type: "save",
+          id: entry.id,
+          updatedAt: entry.updatedAt,
+          input,
+          approve,
+        });
+        if (!result.success) {
+          toast.error(
+            result.error,
+            advancedBy === null ? undefined : { description: "立替者の変更も保存していません" },
+          );
+          return;
+        }
+        if (advancedBy === null) toast.success(done);
+        else
+          await saveAdvancedByAfter(
+            entry,
+            result.saved?.updatedAt ?? entry.updatedAt,
+            advancedBy,
+            done,
+          );
+        router.refresh();
+      } catch {
+        toast.error("通信に失敗しました。再度お試しください");
+      }
+    });
+  }
+  /** 仕訳の保存に続けて立替者を送る。失敗したら、仕訳は保存済みで立替者だけが失敗したと分かるように出す */
+  async function saveAdvancedByAfter(
+    entry: ReviewEntry,
+    updatedAt: string,
+    advancedBy: string,
+    done: string,
+  ) {
+    const failed = `仕訳は${done.replace(/しました$/, "")}しましたが、立替者を保存できませんでした`;
+    try {
+      const result = await mutateJournalReview(target.politicianId, target.bookId, {
+        type: "set-advanced-by",
+        targets: [{ id: entry.id, updatedAt }],
+        advancedBy,
+      });
+      if (!result.success) {
+        toast.error(failed, { description: result.error });
+        return;
+      }
+      const saved = result.advance?.advancedBy ?? null;
+      toast.success(
+        saved === null
+          ? `${done}（立替者を解除しました）`
+          : `${done}（立替者を「${saved}」にしました）`,
+      );
+    } catch {
+      toast.error(failed, { description: "通信に失敗しました。再度お試しください" });
+    }
   }
   function unpublish() {
     if (!selected) return;
@@ -849,94 +900,79 @@ export function JournalReview({
         <Card className="gap-0 overflow-hidden py-0 xl:min-h-0">
           {selected ? (
             <>
-              <div className="flex shrink-0 items-center justify-between border-b border-border-soft px-5 py-2.5">
-                <h2 className="font-bold">仕訳の詳細</h2>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={pending || index <= 0}
-                    onClick={() => select(visible[index - 1].id)}
-                  >
-                    前へ
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={pending || index >= visible.length - 1}
-                    onClick={() => select(visible[index + 1].id)}
-                  >
-                    次へ
-                  </Button>
+              <div className="flex shrink-0 items-center gap-3 border-b border-border-soft px-3.5 py-2.5">
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <h2 className="truncate text-[14.5px] font-bold">{selected.description}</h2>
+                    <JournalStatusPill status={selected.status} />
+                  </div>
+                  <p className="font-latin text-[11px] text-muted-foreground">
+                    {index + 1} / {visible.length}
+                  </p>
                 </div>
+                <Button
+                  variant="outline"
+                  size="icon-sm"
+                  aria-label="前へ"
+                  disabled={pending || index <= 0}
+                  onClick={() => select(visible[index - 1].id)}
+                >
+                  <CaretUp aria-hidden />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="icon-sm"
+                  aria-label="次へ"
+                  disabled={pending || index >= visible.length - 1}
+                  onClick={() => select(visible[index + 1].id)}
+                >
+                  <CaretDown aria-hidden />
+                </Button>
               </div>
-              <CardContent className="min-h-0 flex-1 overflow-y-auto p-5">
-                <DuplicateDocumentWarning
-                  duplicates={duplicatesOf(selected)}
-                  bookId={target.bookId}
-                  politicianId={target.politicianId}
-                  className="mb-4"
-                />
-                <JournalEditor
-                  key={`${selected.id}:${selected.updatedAt}`}
-                  entry={selected}
-                  accounts={accounts}
-                  year={target.year}
-                  documentUrl={documentUrl}
-                  pending={pending}
-                  onSave={save}
-                  onDiscard={() => setDiscarding(true)}
-                  onUnpublish={() => setUnpublishing(true)}
-                  onRevertToDraft={revertToDraft}
-                />
-                {selected.source !== "grant" && (
-                  <JournalAdvanceField
-                    key={`${selected.id}:${selected.updatedAt}:advance`}
-                    entry={selected}
-                    advancers={advancers}
-                    pending={pending}
-                    // 立替の更新後は router.refresh() で編集フォームが作り直されるので、
-                    // 仕訳の編集フォームに未保存の変更があるときは、どの操作でも先に確認する
-                    onSave={(advancedBy) => {
-                      if (allowLeave()) assignAdvancedBy([selected], advancedBy);
-                    }}
-                    onSettle={(date) => {
-                      if (allowLeave()) settle([selected], date);
-                    }}
-                    onUnsettle={() => {
-                      if (allowLeave()) unsettle([selected]);
-                    }}
+              <JournalEditor
+                key={`${selected.id}:${selected.updatedAt}`}
+                entry={selected}
+                entries={entries}
+                accounts={accounts}
+                advancers={advancers}
+                payees={payees}
+                target={target}
+                documentUrl={documentUrl}
+                banner={
+                  <DuplicateDocumentWarning
+                    duplicates={duplicatesOf(selected)}
+                    bookId={target.bookId}
+                    politicianId={target.politicianId}
+                    className="rounded-md border border-destructive px-2.5 py-1.5"
                   />
-                )}
-                {canHaveReceiptAbsenceReason(selected) && (
-                  <JournalReceiptAbsenceField
-                    key={`${selected.id}:${selected.updatedAt}:receipt-absence`}
-                    entry={selected}
-                    pending={pending}
-                    onSave={(reason) => {
-                      if (allowLeave()) saveReceiptAbsenceReason(selected, reason);
-                    }}
-                  />
-                )}
-                {selected.source !== "grant" && (
-                  <JournalPayeeField
-                    key={`${selected.id}:${selected.updatedAt}:payee`}
-                    entry={selected}
-                    entries={entries}
-                    payees={payees}
-                    target={target}
-                    payeesPath={`/politicians/${target.politicianId}/books/${target.bookId}/payees`}
-                    allowLeave={allowLeave}
-                    pending={pending}
-                    onLink={(targets, payeeId) => {
-                      if (allowLeave()) linkPayee(targets, payeeId);
-                    }}
-                    onCreate={(targets, input) => {
-                      if (allowLeave()) createPayeeAndLink(targets, input);
-                    }}
-                  />
-                )}
-              </CardContent>
+                }
+                pending={pending}
+                allowLeave={allowLeave}
+                onSave={save}
+                onDiscard={() => setDiscarding(true)}
+                onUnpublish={() => setUnpublishing(true)}
+                onRevertToDraft={revertToDraft}
+                // 事務所内の管理の更新後は router.refresh() で編集フォームが作り直されるので、
+                // 仕訳の編集フォームに未保存の変更があるときは、どの操作でも先に確認する
+                onSetAdvancedBy={(advancedBy) => {
+                  if (allowLeave()) assignAdvancedBy([selected], advancedBy);
+                }}
+                onSettle={(date) => {
+                  if (allowLeave()) settle([selected], date);
+                }}
+                onUnsettle={() => {
+                  if (allowLeave()) unsettle([selected]);
+                }}
+                onSaveReceiptAbsenceReason={(reason) => {
+                  if (allowLeave()) saveReceiptAbsenceReason(selected, reason);
+                }}
+                onLinkPayee={(targets, payeeId) => {
+                  if (allowLeave()) linkPayee(targets, payeeId);
+                }}
+                onCreatePayee={(targets, input) => {
+                  if (allowLeave()) createPayeeAndLink(targets, input);
+                }}
+              />
             </>
           ) : (
             <CardContent className="p-5">
@@ -958,15 +994,11 @@ export function JournalReview({
             <DialogTitle>手動で仕訳を作成</DialogTitle>
             <DialogDescription>領収書なしの支出を下書きとして登録します。</DialogDescription>
           </DialogHeader>
-          <JournalEditor
-            entry={null}
+          <JournalCreateForm
             accounts={accounts.filter((a) => !isAccountUnconfirmed(a.key))}
             year={target.year}
             pending={pending}
-            onSave={save}
-            onDiscard={() => {}}
-            onUnpublish={() => {}}
-            onRevertToDraft={() => {}}
+            onCreate={create}
           />
         </DialogContent>
       </Dialog>
@@ -1000,7 +1032,8 @@ export function JournalReview({
           </div>
           <ul className="list-disc pl-5 text-sm text-muted-foreground">
             <li>
-              読み直す書類：<span className="font-latin">{reread.documentCount}</span>
+              読み直す書類：
+              <span className="font-latin">{reread.documentCount}</span>
               件（作り直す下書き
               <span className="font-latin">{reread.draftCount}</span>件）
             </li>
@@ -1077,7 +1110,8 @@ export function JournalReview({
           <DialogHeader>
             <DialogTitle>確認済に戻しますか？</DialogTitle>
             <DialogDescription>
-              「{selected?.description}」は「調研費まる見え」の公開ページから消えます。
+              「{selected?.description}
+              」は「調研費まる見え」の公開ページから消えます。
               修正したあと、公開画面から改めて公開してください。
             </DialogDescription>
           </DialogHeader>
@@ -1101,7 +1135,8 @@ export function JournalReview({
           <DialogHeader>
             <DialogTitle>仕訳を破棄しますか？</DialogTitle>
             <DialogDescription>
-              「{selected?.description}」を削除します。この操作は取り消せません。
+              「{selected?.description}
+              」を削除します。この操作は取り消せません。
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -1124,7 +1159,8 @@ export function JournalReview({
           <DialogHeader>
             <DialogTitle>選んだ仕訳を破棄しますか？</DialogTitle>
             <DialogDescription>
-              選択中の{checkedEntries.length}件の仕訳を削除します。この操作は取り消せません。
+              選択中の{checkedEntries.length}
+              件の仕訳を削除します。この操作は取り消せません。
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -1207,7 +1243,8 @@ export function JournalReview({
           <DialogHeader>
             <DialogTitle>選んだ立替を精算済にしますか？</DialogTitle>
             <DialogDescription>
-              選択中の{checkedEntries.length}件の立替を、指定した精算日で精算済にします。
+              選択中の{checkedEntries.length}
+              件の立替を、指定した精算日で精算済にします。
               調研費口座から立替者へ移した額と、下の合計額が合っているか確認してください。
             </DialogDescription>
           </DialogHeader>
@@ -1224,7 +1261,8 @@ export function JournalReview({
               onChange={(e) => setSettledAt(e.target.value)}
             />
             <p className="text-xs text-muted-foreground">
-              未来の日付と、仕訳の日付（{settlementMin}）より前の日付は指定できません
+              未来の日付と、仕訳の日付（{settlementMin}
+              ）より前の日付は指定できません
             </p>
           </div>
           <ul className="list-disc pl-5 text-sm">

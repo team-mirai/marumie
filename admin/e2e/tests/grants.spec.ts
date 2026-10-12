@@ -62,8 +62,10 @@ test("支給日と金額を指定して確認済登録し、二重生成を拒�
 
   // 支給も選んで支給日だけを直せる（金額・項目名は変えられない）
   await grantRow.click();
-  await expect(page.getByLabel("金額", { exact: true })).toBeDisabled();
-  await expect(page.getByLabel("項目名", { exact: true })).toBeDisabled();
+  const publicGroup = page.getByRole("region", { name: "公開される内容" });
+  await expect(publicGroup).toContainText("調査研究広報滞在費 1月分");
+  await expect(page.getByLabel("金額", { exact: true })).toHaveCount(0);
+  await expect(page.getByLabel("項目名", { exact: true })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "破棄" })).toHaveCount(0);
   await page.getByLabel("日付", { exact: true }).fill(`${year}-01-20`);
   await page.getByRole("button", { name: "保存", exact: true }).click();
