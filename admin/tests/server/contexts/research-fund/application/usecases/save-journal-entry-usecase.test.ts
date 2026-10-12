@@ -10,6 +10,11 @@ test("編集して確認済にする。公開・非公開メモと書類由来�
   await usecase.execute("1", "2", entry.updatedAt, { ...input, amount: 1500 }, true);
   expect(repository.update).toHaveBeenCalledWith("1", entry, expect.objectContaining({ status: "approved", amount: 1500, note: "公開メモ", memo: "内部メモ", lines: [{ side: "debit", accountKey: "taxi", amount: 1500 }, { side: "credit", accountKey: "bank", amount: 1500 }] }));
 });
+test("保存後の更新時刻を返す（続けて同じ仕訳に別の操作を送るときの照合に使う）", async () => {
+  const { repository, usecase } = setupUsecase();
+  repository.update.mockResolvedValue({ updatedAt: "2026-08-02T00:00:00.000Z" });
+  await expect(usecase.execute("1", "2", entry.updatedAt, input, false)).resolves.toEqual({ updatedAt: "2026-08-02T00:00:00.000Z" });
+});
 test.each(["draft", "approved"] as const)("%s を保存できる", async status => {
   const { repository, usecase } = setupUsecase({ status });
   await usecase.execute("1", "2", entry.updatedAt, input, false);

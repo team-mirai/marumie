@@ -48,11 +48,14 @@ test("書類の無い支出に徴し難かった事情を書き・消し、書�
   await expect(trainRow).toContainText("領収書なし・事情未入力");
   await expect(page.getByRole("button", { name: /^書類も事情もない/ })).toHaveText("書類も事情もない 2");
 
-  // 事情を書く
+  // 事情を書く（「事務所内の管理」の行を鉛筆で編集モードにし、行ごとに保存する）
   await clickUntil(trainRow, (options) =>
     expect(page.getByLabel("項目名", { exact: true })).toHaveValue("電車代", options),
   );
-  const reason = page.getByLabel("領収書等を徴し難かった事情");
+  const officeGroup = page.getByRole("region", { name: "事務所内の管理" });
+  await expect(officeGroup).toContainText("未入力");
+  await page.getByRole("button", { name: "書類の事情を編集" }).click();
+  const reason = page.getByLabel("書類の事情", { exact: true });
   await reason.fill("自動券売機で購入したため");
   await page.getByRole("button", { name: "事情を保存" }).click();
   await expect(page.getByText("徴し難かった事情を保存しました")).toBeVisible();
@@ -70,6 +73,8 @@ test("書類の無い支出に徴し難かった事情を書き・消し、書�
   await clickUntil(trainRow, (options) =>
     expect(page.getByLabel("項目名", { exact: true })).toHaveValue("電車代", options),
   );
+  await expect(officeGroup).toContainText("自動券売機で購入したため");
+  await page.getByRole("button", { name: "書類の事情を編集" }).click();
   await expect(reason).toHaveValue("自動券売機で購入したため");
   await reason.fill("");
   await page.getByRole("button", { name: "事情を保存" }).click();

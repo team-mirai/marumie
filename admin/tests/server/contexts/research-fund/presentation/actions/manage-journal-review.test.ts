@@ -53,9 +53,9 @@ test("内部エラーは漏らさず、失敗時に再検証しない", async ()
 });
 
 test("保存と破棄は対象帳簿・更新日時を渡し、成功後に再検証する", async () => {
-  const save = jest.spyOn(SaveJournalEntryUsecase.prototype, "execute").mockResolvedValue();
+  const save = jest.spyOn(SaveJournalEntryUsecase.prototype, "execute").mockResolvedValue({ updatedAt: "saved" });
   const discard = jest.spyOn(DiscardJournalEntryUsecase.prototype, "execute").mockResolvedValue();
-  await expect(mutateJournalReview("2", "1", { type: "save", id: "3", updatedAt: "date", input, approve: true })).resolves.toEqual({ success: true });
+  await expect(mutateJournalReview("2", "1", { type: "save", id: "3", updatedAt: "date", input, approve: true })).resolves.toEqual({ success: true, saved: { updatedAt: "saved" } });
   expect(save).toHaveBeenCalledWith("1", "3", "date", input, true);
   await expect(mutateJournalReview("2", "1", { type: "discard", id: "3", updatedAt: "date" })).resolves.toEqual({ success: true });
   expect(discard).toHaveBeenCalledWith("1", "3", "date");

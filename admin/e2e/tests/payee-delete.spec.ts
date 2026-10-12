@@ -62,7 +62,7 @@ test("公開中の仕訳に紐づく支払先は削除できず、下書きだ�
   await page.getByRole("button", { name: "確認済にする", exact: true }).click();
   await expect(travelRow).toContainText("確認済");
   await page.getByRole("link", { name: "公開", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "公開" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "公開", exact: true })).toBeVisible();
   await page.getByRole("checkbox", { name: "視察先への移動を公開対象にする" }).click();
   await page.getByRole("button", { name: "1件（¥1,500）を公開する" }).click();
   await expect(page.getByText("確認済・未公開 0件")).toBeVisible();

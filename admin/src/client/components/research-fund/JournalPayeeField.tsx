@@ -1,6 +1,9 @@
 "use client";
 import { useId, useState } from "react";
 import Link from "next/link";
+import { WarningCircle } from "@phosphor-icons/react/dist/ssr";
+import { JournalOfficeRow, TextButton } from "@/client/components/research-fund/JournalOfficeRow";
+import { detailLabelClassName } from "@/client/components/research-fund/JournalPublicFields";
 import { PayeeLinkDialog } from "@/client/components/research-fund/PayeeLinkDialog";
 import { Button, Checkbox, Label } from "@/client/components/ui";
 import type { ReviewEntry } from "@/server/contexts/research-fund/domain/models/journal-review";
@@ -21,12 +24,12 @@ const linkSources: Record<PayeeLinkSource, string> = {
 };
 
 /**
- * 1 件の支出の支払先（支出を受けた者）を表示し、紐づけ・変更・解除する欄。
+ * 詳細カードの「事務所内の管理」の支払先の行。支払先（支出を受けた者）を表示し、紐づけ・変更・解除する。
  *
- * 支払先は議員課提出用の帳簿の情報で公開内容に影響しないので、公開中の仕訳でも変更できる
- * （仕訳の編集フォームとは別に保存する）。1 枚の書類の発行元は 1 者なので、
+ * 支払先は議員課提出用の帳簿の情報で公開内容に影響しないので、公開中の仕訳でも変更でき、
+ * 仕訳の編集フォームとは別にすぐ保存する。1 枚の書類の発行元は 1 者なので、
  * 同じ書類から作られた仕訳があれば既定でまとめて同じ支払先に紐づける。
- * 支払先が未設定で書類から発行元が読み取れていれば、それを候補として出し、その内容で支払先を作って紐づけられる。
+ * 支払先が未設定で書類から発行元が読み取れていれば、その内容で支払先を作って紐づけられる。
  */
 export function JournalPayeeField({
   entry,
@@ -60,14 +63,69 @@ export function JournalPayeeField({
   const payee = payees.find((p) => p.id === entry.payeeId) ?? null;
   const siblings = withSameDocumentEntries([entry], entries);
   const targets = sameDocument ? siblings : [entry];
+  const issuer = entry.issuer;
   return (
-    <div className="mt-4 space-y-2 rounded-lg bg-background p-3">
-      <div className="flex items-center gap-2">
-        <span className="text-xs font-bold">支払先</span>
-        <span className="rounded-full border px-2 text-xs text-muted-foreground">公開されない</span>
-      </div>
+    <JournalOfficeRow
+      label={<span className={detailLabelClassName}>支払先</span>}
+      action={
+        payee ? (
+          <TextButton aria-label="支払先を変更" disabled={pending} onClick={() => setLinking(true)}>
+            変更
+          </TextButton>
+        ) : (
+          <>
+            {issuer?.name && (
+              <Button
+                type="button"
+                size="xs"
+                className="text-[11.5px]"
+                disabled={pending}
+                onClick={() => onCreate(targets, payeeFormInputFromIssuer(issuer))}
+              >
+                発行元で作成
+              </Button>
+            )}
+            <Button
+              type="button"
+              variant="outline"
+              size="xs"
+              className="text-[11.5px]"
+              aria-label="支払先を選ぶ"
+              disabled={pending}
+              onClick={() => setLinking(true)}
+            >
+              選ぶ
+            </Button>
+          </>
+        )
+      }
+      below={
+        siblings.length > 1 && (
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id={`${fieldId}-same-document`}
+              checked={sameDocument}
+              disabled={pending}
+              onCheckedChange={() => setSameDocument((current) => !current)}
+            />
+            <Label htmlFor={`${fieldId}-same-document`} className="text-[11px] font-normal">
+              同じ書類の<span className="font-latin">{siblings.length}</span>
+              件にもまとめて紐づける
+            </Label>
+          </div>
+        )
+      }
+    >
       {payee ? (
-        <div className="text-sm">
+        <p
+          title={[
+            payee.postalCode ? `〒${payee.postalCode}` : "",
+            payee.address || "住所未入力",
+            payee.invoiceRegistrationNumber ?? "",
+          ]
+            .filter(Boolean)
+            .join(" ")}
+        >
           <Link
             href={`${payeesPath}/${payee.id}`}
             onClick={(event) => {
@@ -77,69 +135,33 @@ export function JournalPayeeField({
           >
             {payee.name}
           </Link>
-          <p className="text-muted-foreground">
-            {payee.postalCode && <span className="mr-2 font-latin">〒{payee.postalCode}</span>}
-            {payee.address || "住所未入力"}
-          </p>
-          {payee.invoiceRegistrationNumber && (
-            <p className="font-latin text-muted-foreground">{payee.invoiceRegistrationNumber}</p>
-          )}
           {entry.payeeLinkSource && (
-            <p className="mt-1 text-xs text-muted-foreground">
+            <span className="ml-1.5 text-[11px] text-subtle-foreground">
               {linkSources[entry.payeeLinkSource]}
-            </p>
+            </span>
           )}
-        </div>
+        </p>
       ) : (
         <>
-          <p className="text-sm font-bold text-destructive">支払先が未設定です</p>
-          {entry.issuer?.name && (
-            <div className="space-y-1 rounded-md border p-2 text-sm">
-              <p className="text-xs text-muted-foreground">書類から読み取った発行元</p>
-              <p className="font-bold">{entry.issuer.name}</p>
-              {entry.issuer.address && (
-                <p className="text-muted-foreground">{entry.issuer.address}</p>
+          <p className="flex items-center gap-1 font-bold text-destructive">
+            <WarningCircle aria-hidden className="size-3.5" />
+            未設定
+          </p>
+          {issuer?.name && (
+            <p
+              className="text-[11px] text-muted-foreground"
+              title={[issuer.address, issuer.phone && `TEL ${issuer.phone}`]
+                .filter(Boolean)
+                .join(" ")}
+            >
+              書類の発行元：{issuer.name}
+              {issuer.invoice_registration_number && (
+                <span className="font-latin">（{issuer.invoice_registration_number}）</span>
               )}
-              {entry.issuer.phone && (
-                <p className="font-latin text-muted-foreground">TEL {entry.issuer.phone}</p>
-              )}
-              {entry.issuer.invoice_registration_number && (
-                <p className="font-latin text-muted-foreground">
-                  {entry.issuer.invoice_registration_number}
-                </p>
-              )}
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                disabled={pending}
-                onClick={() => {
-                  if (entry.issuer) onCreate(targets, payeeFormInputFromIssuer(entry.issuer));
-                }}
-              >
-                この内容で支払先を作って紐づける
-              </Button>
-            </div>
+            </p>
           )}
         </>
       )}
-      {siblings.length > 1 && (
-        <div className="flex items-center gap-2">
-          <Checkbox
-            id={`${fieldId}-same-document`}
-            checked={sameDocument}
-            disabled={pending}
-            onCheckedChange={() => setSameDocument((current) => !current)}
-          />
-          <Label htmlFor={`${fieldId}-same-document`} className="font-normal">
-            同じ書類の仕訳（<span className="font-latin">{siblings.length}</span>
-            件）にまとめて紐づける
-          </Label>
-        </div>
-      )}
-      <Button type="button" variant="outline" disabled={pending} onClick={() => setLinking(true)}>
-        {payee ? "支払先を変更" : "支払先を選ぶ"}
-      </Button>
       <PayeeLinkDialog
         // 開くたびに今の支払先から選び直せるよう、開閉で作り直す
         key={String(linking)}
@@ -158,6 +180,6 @@ export function JournalPayeeField({
         onLink={(payeeId) => onLink(targets, payeeId)}
         onCreate={(input) => onCreate(targets, input)}
       />
-    </div>
+    </JournalOfficeRow>
   );
 }
