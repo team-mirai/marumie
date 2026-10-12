@@ -4,6 +4,8 @@ import { RollbackPromptUsecase } from "@/server/contexts/research-fund/applicati
 import { SavePromptUsecase } from "@/server/contexts/research-fund/application/usecases/save-prompt-usecase";
 import { mutatePrompt } from "@/server/contexts/research-fund/presentation/actions/manage-prompt";
 import { PromptError } from "@/server/contexts/research-fund/domain/models/prompt";
+import { PrismaAddressSearchPromptRepository } from "@/server/contexts/research-fund/infrastructure/repositories/prisma-address-search-prompt.repository";
+import { PrismaPromptRepository } from "@/server/contexts/research-fund/infrastructure/repositories/prisma-prompt.repository";
 import { requireJournalTarget } from "@/server/contexts/research-fund/presentation/loaders/load-journal-review";
 jest.mock("next/cache", () => ({ revalidatePath: jest.fn() }));
 jest.mock("@/server/contexts/auth/presentation/loaders/require-auth", () => ({ requireAuth: jest.fn() }));
@@ -48,4 +50,23 @@ test("入力の不備は利用者に伝え、内部エラーは漏らさない",
   jest.spyOn(SavePromptUsecase.prototype, "execute").mockRejectedValueOnce(new Error("private database detail"));
   await expect(mutatePrompt("2", "1", { type: "save", body: "本文" })).resolves.toEqual({ success: false, error: "読み取りプロンプトの保存に失敗しました" });
   expect(revalidatePath).not.toHaveBeenCalled();
+});
+test("種類を省略すると読み取りプロンプトの版を保存する", async () => {
+  const save = jest.spyOn(SavePromptUsecase.prototype, "execute").mockResolvedValue(1);
+  await mutatePrompt("2", "1", { type: "save", body: "本文" });
+  expect(save.mock.contexts[0]).toMatchObject({ repository: expect.any(PrismaPromptRepository) });
+});
+test("住所検索プロンプトは住所検索の版として保存・巻き戻しする", async () => {
+  const save = jest.spyOn(SavePromptUsecase.prototype, "execute").mockResolvedValue(3);
+  const rollback = jest.spyOn(RollbackPromptUsecase.prototype, "execute").mockResolvedValue(undefined);
+  await expect(mutatePrompt("2", "1", { type: "save", body: "住所" }, "address-search")).resolves.toEqual({ success: true, version: 3 });
+  await expect(mutatePrompt("2", "1", { type: "rollback", version: 1 }, "address-search")).resolves.toMatchObject({ success: true });
+  expect(save).toHaveBeenCalledWith("2", "住所", "user");
+  expect(save.mock.contexts[0]).toMatchObject({ repository: expect.any(PrismaAddressSearchPromptRepository) });
+  expect(rollback.mock.contexts[0]).toMatchObject({ repository: expect.any(PrismaAddressSearchPromptRepository) });
+  expect(revalidatePath).toHaveBeenCalledWith("/(auth)", "layout");
+});
+test("住所検索プロンプトの保存失敗は住所検索のメッセージで伝える", async () => {
+  jest.spyOn(SavePromptUsecase.prototype, "execute").mockRejectedValueOnce(new Error("private database detail"));
+  await expect(mutatePrompt("2", "1", { type: "save", body: "本文" }, "address-search")).resolves.toEqual({ success: false, error: "住所検索プロンプトの保存に失敗しました" });
 });

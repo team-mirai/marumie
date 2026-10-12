@@ -16,9 +16,10 @@ model User {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  researchFundJournalEntriesCreated ResearchFundJournalEntry[]
-  researchFundScanBatchesUploaded   ResearchFundScanBatch[]
-  researchFundPromptsUpdated        ResearchFundPrompt[]
+  researchFundJournalEntriesCreated       ResearchFundJournalEntry[]
+  researchFundScanBatchesUploaded         ResearchFundScanBatch[]
+  researchFundPromptsUpdated              ResearchFundPrompt[]
+  researchFundAddressSearchPromptsUpdated ResearchFundAddressSearchPrompt[]
 
   @@map("users")
 }
@@ -198,6 +199,8 @@ model Politician {
   books       ResearchFundBook[]
   prompts     ResearchFundPrompt[]
   payees      ResearchFundPayee[]
+
+  addressSearchPrompts ResearchFundAddressSearchPrompt[]
 
   @@map("politicians")
 }
@@ -478,6 +481,26 @@ model ResearchFundPrompt {
   @@unique([politicianId, version])
   @@index([politicianId, isActive])
   @@map("research_fund_prompts")
+}
+
+// 支払先の住所検索プロンプト。読み取りプロンプトと同じく議員ごとに版を重ねる。
+// スキャンジョブから参照されないので、読み取りプロンプトとは別テーブルにする。
+model ResearchFundAddressSearchPrompt {
+  id           BigInt   @id @default(autoincrement())
+  politicianId BigInt   @map("politician_id")
+  version      Int
+  body         String
+  isActive     Boolean  @default(false) @map("is_active")
+  updatedById  String?  @map("updated_by_id")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  politician Politician @relation(fields: [politicianId], references: [id], onDelete: Cascade)
+  updatedBy  User?      @relation(fields: [updatedById], references: [id], onDelete: SetNull)
+
+  @@unique([politicianId, version])
+  @@index([politicianId, isActive])
+  @@map("research_fund_address_search_prompts")
 }
 
 // 支出群（主要な支出の成果）。金額・件数・期間は items から自動集計する。

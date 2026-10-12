@@ -4,9 +4,9 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { CircleNotch, Play } from "@phosphor-icons/react/dist/ssr";
 import { Button, Card, CardContent, Label, NativeSelect, Textarea } from "@/client/components/ui";
-import { PageHeader } from "@/client/components/layout/PageHeader";
 import { cn } from "@/client/lib";
 import type {
+  PromptKind,
   PromptOverview,
   PromptTestDocument,
 } from "@/server/contexts/research-fund/domain/models/prompt";
@@ -18,7 +18,30 @@ function formatDate(isoDate: string) {
   return isoDate.slice(0, 10).replaceAll("-", ".");
 }
 
+const SECTIONS: Record<
+  PromptKind,
+  { title: string; description: string; automaticSummary: string; defaultLabel: string }
+> = {
+  receipt: {
+    title: "領収書の読み取り",
+    description: "書類スキャンで使う整理プロンプト。各ジョブは使った版を記録します。",
+    automaticSummary: "自動で付加される部分を見る（出力スキーマ・費用カテゴリの語彙と定義）",
+    defaultLabel: "デフォルトテンプレート",
+  },
+  "address-search": {
+    title: "支払先の住所検索",
+    description: "支払先フォームの AI 検索で、名称から住所を調べるときに使うプロンプト。",
+    automaticSummary: "自動で付加される部分を見る（検索する名称・検索ヒント・出力形式）",
+    defaultLabel: "デフォルトのプロンプト",
+  },
+};
+
+/**
+ * 議員室ごとのプロンプト 1 種類分の編集欄と版履歴。
+ * 保存すると新しい版になり、過去の版へ巻き戻せる。テスト実行は読み取りプロンプトだけ。
+ */
 export function PromptEditor({
+  kind,
   versions,
   body: savedBody,
   activeVersion,
@@ -27,15 +50,19 @@ export function PromptEditor({
   testDocuments,
   target,
 }: PromptOverview & {
-  testDocuments: PromptTestDocument[];
+  kind: PromptKind;
+  /** テスト実行で選べる書類。読み取りプロンプトだけに渡す */
+  testDocuments?: PromptTestDocument[];
   target: Extract<AdminTarget, { kind: "research-fund" }>;
 }) {
   const router = useRouter();
+  const section = SECTIONS[kind];
+  const headingId = useId();
   const fieldId = useId();
   const testDocumentId = useId();
   const [body, setBody] = useState(savedBody);
   const [pending, startTransition] = useTransition();
-  const [selectedDocumentId, setSelectedDocumentId] = useState(testDocuments[0]?.id ?? "");
+  const [selectedDocumentId, setSelectedDocumentId] = useState(testDocuments?.[0]?.id ?? "");
   const [testing, startTesting] = useTransition();
   const [testResult, setTestResult] = useState<{ json: string } | { error: string } | null>(null);
   const dirty = body !== savedBody;
@@ -45,7 +72,7 @@ export function PromptEditor({
   function run(mutation: Parameters<typeof mutatePrompt>[2], onSuccess: (message: string) => void) {
     startTransition(async () => {
       try {
-        const result = await mutatePrompt(target.politicianId, target.bookId, mutation);
+        const result = await mutatePrompt(target.politicianId, target.bookId, mutation, kind);
         if (!result.success) {
           toast.error(result.error);
           return;
@@ -82,19 +109,20 @@ export function PromptEditor({
   }
 
   return (
-    <>
-      <PageHeader
-        label="Prompt"
-        title="読み取りプロンプト"
-        description={`${target.name}の議員室のスキャンで使う整理プロンプト。保存すると新しい版になり、各ジョブは使った版を記録します。`}
-      />
+    <section aria-labelledby={headingId} className="flex flex-col gap-4">
+      <div>
+        <h2 id={headingId} className="text-lg font-bold">
+          {section.title}
+        </h2>
+        <p className="mt-1 text-sm text-muted-foreground">{section.description}</p>
+      </div>
       <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1.5fr)_minmax(300px,1fr)]">
         <div className="flex flex-col gap-5">
           <Card>
             <CardContent className="p-5">
               <details className="mb-4 rounded-lg border border-border-soft">
                 <summary className="cursor-pointer list-none px-4 py-3 text-sm font-bold">
-                  自動で付加される部分を見る（出力スキーマ・費用カテゴリの語彙と定義）
+                  {section.automaticSummary}
                 </summary>
                 <div className="border-t border-border-soft px-4 py-3">
                   <p className="mb-2 text-xs text-muted-foreground">
@@ -149,71 +177,73 @@ export function PromptEditor({
               </div>
               {activeVersion === null && (
                 <p className="mt-3 text-xs text-muted-foreground">
-                  まだ版がありません。デフォルトテンプレートを下敷きに編集し、保存すると v1
+                  まだ版がありません。{section.defaultLabel}を下敷きに編集し、保存すると v1
                   になります。
                 </p>
               )}
             </CardContent>
           </Card>
-          <Card>
-            <CardContent className="p-5">
-              <h2 className="font-bold">テスト実行</h2>
-              <p className="mt-1 mb-3 text-sm text-muted-foreground">
-                編集中の本文（未保存でよい）で書類1枚だけを読み取り、結果を確認できます。仕訳・ジョブは作られません。
-              </p>
-              {testDocuments.length === 0 ? (
-                <p className="text-sm text-muted-foreground">
-                  この帳簿にはまだ書類がありません。「書類スキャン」からアップロードすると選べるようになります。
+          {testDocuments && (
+            <Card>
+              <CardContent className="p-5">
+                <h3 className="font-bold">テスト実行</h3>
+                <p className="mt-1 mb-3 text-sm text-muted-foreground">
+                  編集中の本文（未保存でよい）で書類1枚だけを読み取り、結果を確認できます。仕訳・ジョブは作られません。
                 </p>
-              ) : (
-                <div className="flex flex-wrap items-end gap-3">
-                  <div className="flex flex-col gap-1.5">
-                    <Label htmlFor={testDocumentId}>書類</Label>
-                    <NativeSelect
-                      id={testDocumentId}
-                      className="w-60"
-                      value={selectedDocumentId}
-                      disabled={testing}
-                      onChange={(event) => {
-                        setSelectedDocumentId(event.target.value);
-                        setTestResult(null);
-                      }}
-                    >
-                      {testDocuments.map((document) => (
-                        <option key={document.id} value={document.id}>
-                          {document.originalFilename}
-                        </option>
-                      ))}
-                    </NativeSelect>
-                  </div>
-                  <Button
-                    variant="outline"
-                    disabled={testing || body.trim().length === 0 || !selectedDocumentId}
-                    onClick={runTest}
-                  >
-                    {testing ? (
-                      <CircleNotch aria-hidden className="size-4 animate-spin" />
-                    ) : (
-                      <Play aria-hidden className="size-4" />
-                    )}
-                    {testing ? "読み取り中…" : "テスト実行"}
-                  </Button>
-                </div>
-              )}
-              {testResult !== null &&
-                ("json" in testResult ? (
-                  <pre className="mt-4 max-h-80 overflow-auto whitespace-pre-wrap break-all rounded-lg bg-accent p-4 font-mono text-xs">
-                    {testResult.json}
-                  </pre>
+                {testDocuments.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">
+                    この帳簿にはまだ書類がありません。「書類スキャン」からアップロードすると選べるようになります。
+                  </p>
                 ) : (
-                  <p className="mt-4 text-sm text-destructive">{testResult.error}</p>
-                ))}
-            </CardContent>
-          </Card>
+                  <div className="flex flex-wrap items-end gap-3">
+                    <div className="flex flex-col gap-1.5">
+                      <Label htmlFor={testDocumentId}>書類</Label>
+                      <NativeSelect
+                        id={testDocumentId}
+                        className="w-60"
+                        value={selectedDocumentId}
+                        disabled={testing}
+                        onChange={(event) => {
+                          setSelectedDocumentId(event.target.value);
+                          setTestResult(null);
+                        }}
+                      >
+                        {testDocuments.map((document) => (
+                          <option key={document.id} value={document.id}>
+                            {document.originalFilename}
+                          </option>
+                        ))}
+                      </NativeSelect>
+                    </div>
+                    <Button
+                      variant="outline"
+                      disabled={testing || body.trim().length === 0 || !selectedDocumentId}
+                      onClick={runTest}
+                    >
+                      {testing ? (
+                        <CircleNotch aria-hidden className="size-4 animate-spin" />
+                      ) : (
+                        <Play aria-hidden className="size-4" />
+                      )}
+                      {testing ? "読み取り中…" : "テスト実行"}
+                    </Button>
+                  </div>
+                )}
+                {testResult !== null &&
+                  ("json" in testResult ? (
+                    <pre className="mt-4 max-h-80 overflow-auto whitespace-pre-wrap break-all rounded-lg bg-accent p-4 font-mono text-xs">
+                      {testResult.json}
+                    </pre>
+                  ) : (
+                    <p className="mt-4 text-sm text-destructive">{testResult.error}</p>
+                  ))}
+              </CardContent>
+            </Card>
+          )}
         </div>
         <Card className="xl:sticky xl:top-6">
           <CardContent className="p-5">
-            <h2 className="mb-3 font-bold">版履歴</h2>
+            <h3 className="mb-3 font-bold">版履歴</h3>
             {versions.length === 0 ? (
               <p className="text-sm text-muted-foreground">保存するとここに版が並びます。</p>
             ) : (
@@ -230,7 +260,8 @@ export function PromptEditor({
                     <div className="min-w-0 flex-1">
                       <div className="truncate text-sm">{version.summary}</div>
                       <div className="font-latin text-xs text-muted-foreground">
-                        {formatDate(version.updatedAt)}・{version.jobCount}ジョブ
+                        {formatDate(version.updatedAt)}
+                        {version.jobCount !== null && `・${version.jobCount}ジョブ`}
                       </div>
                     </div>
                     {version.isActive ? (
@@ -258,6 +289,6 @@ export function PromptEditor({
           </CardContent>
         </Card>
       </div>
-    </>
+    </section>
   );
 }

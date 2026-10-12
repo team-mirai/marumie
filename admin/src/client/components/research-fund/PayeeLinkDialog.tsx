@@ -13,6 +13,7 @@ import {
   NativeSelect,
 } from "@/client/components/ui";
 import type { Payee, PayeeFormInput } from "@/server/contexts/research-fund/domain/models/payee";
+import type { AdminTarget } from "@/server/contexts/shared/domain/models/admin-target";
 
 /** 選択肢に出す支払先の表記。同名の支払先を住所で見分けられるようにする */
 function payeeLabel(payee: Pick<Payee, "name" | "address">) {
@@ -29,6 +30,7 @@ export function PayeeLinkDialog({
   description,
   payees,
   currentPayeeId,
+  target,
   defaultSearchQuery,
   pending,
   onLink,
@@ -40,6 +42,8 @@ export function PayeeLinkDialog({
   payees: readonly Payee[];
   /** 対象の仕訳に今紐づいている支払先（まちまちなら null） */
   currentPayeeId: string | null;
+  /** 支払先を新規作成するときの住所検索に使う帳簿の議員 */
+  target: Pick<Extract<AdminTarget, { kind: "research-fund" }>, "politicianId" | "bookId">;
   /** 支払先を新規作成するときの AI 検索の初期値（仕訳の項目名） */
   defaultSearchQuery: string;
   pending: boolean;
@@ -64,6 +68,7 @@ export function PayeeLinkDialog({
         {creating ? (
           <PayeeForm
             initial={null}
+            target={target}
             defaultSearchQuery={defaultSearchQuery}
             pending={pending}
             submitLabel="作成して紐づける"

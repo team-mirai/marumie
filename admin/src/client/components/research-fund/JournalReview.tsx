@@ -1114,6 +1114,7 @@ export function JournalReview({
                     entry={selected}
                     entries={entries}
                     payees={payees}
+                    target={target}
                     payeesPath={`/politicians/${target.politicianId}/books/${target.bookId}/payees`}
                     allowLeave={allowLeave}
                     pending={pending}
@@ -1378,6 +1379,7 @@ export function JournalReview({
         description={`選択中の${checkedEntries.length}件に同じ支払先を紐づけます。支払先は議員課に提出する帳簿に使う情報で、公開ページの内容は変わりません。`}
         payees={payees}
         currentPayeeId={checkedPayeeId}
+        target={target}
         defaultSearchQuery={checkedEntries[0]?.description ?? ""}
         pending={pending}
         onLink={(payeeId) => linkPayee(checkedEntries, payeeId)}

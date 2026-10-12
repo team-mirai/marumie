@@ -2,7 +2,10 @@ import { isSerialId } from "@/server/contexts/research-fund/domain/models/entity
 
 export const PROMPT_BODY_MAX_LENGTH = 20000;
 
-/** 読み取りプロンプトの 1 版。version は議員ごとに 1 から連番。 */
+/** 議員ごとに版で管理するプロンプトの種類。読み取り（スキャン）と支払先の住所検索 */
+export type PromptKind = "receipt" | "address-search";
+
+/** 読み取りプロンプト・住所検索プロンプトの 1 版。version は議員ごとに 1 から連番。 */
 export interface PromptRecord {
   id: string;
   version: number;
@@ -10,8 +13,8 @@ export interface PromptRecord {
   isActive: boolean;
   /** ISO 8601。画面では YYYY.MM.DD で表示する */
   updatedAt: string;
-  /** この版を使ったスキャンジョブ数 */
-  jobCount: number;
+  /** この版を使ったスキャンジョブ数。ジョブから参照されない住所検索プロンプトでは null */
+  jobCount: number | null;
 }
 
 /** 版履歴に出す 1 行。変更要旨は前版との差分から導出する（本文以外の列は持たない） */
@@ -93,7 +96,7 @@ export function summarizePromptChange(body: string, previousBody: string | null)
 }
 
 /**
- * 議員の読み取りプロンプトの版履歴。
+ * 議員の読み取りプロンプト・住所検索プロンプトの版履歴。
  * どの版を編集対象にするか・次の版番号・各版の変更要旨は、保存された列ではなく履歴から導出する。
  */
 export class PromptHistory {

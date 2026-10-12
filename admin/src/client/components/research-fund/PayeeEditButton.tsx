@@ -69,6 +69,7 @@ export function PayeeEditButton({
             <PayeeForm
               key={`${payee.id}:${payee.name}:${payee.address}`}
               initial={payee}
+              target={target}
               pending={pending}
               submitLabel="保存"
               onSubmit={save}

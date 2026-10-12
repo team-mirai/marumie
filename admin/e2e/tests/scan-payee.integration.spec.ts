@@ -42,8 +42,9 @@ test("2 枚の Amazon の領収書を読み取ると、Amazon の支払先が 1 
 
   // 既定の読み取りプロンプトを保存する（アップロードには有効なプロンプト版が要る）
   await page.getByRole("link", { name: "読み取りプロンプト" }).click();
-  await clickUntil(page.getByRole("button", { name: "保存して v1 にする" }), (options) =>
-    expect(page.getByText("v1 有効")).toBeVisible(options),
+  const receiptPrompt = page.getByRole("region", { name: "領収書の読み取り" });
+  await clickUntil(receiptPrompt.getByRole("button", { name: "保存して v1 にする" }), (options) =>
+    expect(receiptPrompt.getByText("v1 有効")).toBeVisible(options),
   );
 
   // 2 枚をアップロードすると、画面がそのまま読み取りを進める
