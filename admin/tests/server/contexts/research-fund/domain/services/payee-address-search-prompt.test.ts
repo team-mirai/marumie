@@ -26,3 +26,10 @@ test("検索ヒントが無ければヒントの行を付けない", () => {
   expect(prompt).toContain("会社名: 株式会社テスト\n\n【出力形式】");
   expect(prompt).not.toContain("検索ヒント");
 });
+test("候補の会社名には法人名だけを返し、補足は根拠に書くよう、自動付加部分で指示する", () => {
+  // 議員室プロンプトの版があっても効くよう、指示は自動付加部分に置く
+  const prompt = buildPayeeAddressSearchPrompt("編集済みの独自の指示", "GO株式会社");
+  expect(prompt).toContain("companyName には登記上の法人名だけを書いてください");
+  expect(prompt).toContain("事業内容・法人番号・旧称・「前株のため別表記」などの注記を、括弧書きを含めて companyName に付け加えないでください");
+  expect(prompt).toContain("同名の会社を見分けるための情報（法人番号・事業内容など）は source に書いてください");
+});
