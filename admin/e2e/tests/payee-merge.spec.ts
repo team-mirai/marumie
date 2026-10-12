@@ -65,7 +65,7 @@ test("移る仕訳と表記を確認してから支払先を統合でき、イ�
   );
   await dialog.getByLabel("支払先", { exact: true }).selectOption({ label: "東京ﾀｸｼｰ" });
   await dialog.getByRole("button", { name: "紐づける", exact: true }).click();
-  await expect(travelRow).toContainText("支払先：東京ﾀｸｼｰ");
+  await expect(travelRow).toContainText("東京ﾀｸｼｰ");
 
   // 統合先の詳細ページを開く
   await page.getByRole("link", { name: "支払先", exact: true }).click();
@@ -107,6 +107,6 @@ test("移る仕訳と表記を確認してから支払先を統合でき、イ�
   await expect(page.getByRole("row").filter({ hasText: "東京タクシー株式会社" })).toBeVisible();
   await expect(page.getByRole("link", { name: "東京ﾀｸｼｰ", exact: true })).toHaveCount(0);
   await page.getByRole("link", { name: "仕訳の確認・編集" }).click();
-  await expect(travelRow).toContainText("支払先：東京タクシー株式会社");
+  await expect(travelRow).toContainText("東京タクシー株式会社");
   await expect(travelRow).toContainText("下書き");
 });

@@ -57,7 +57,7 @@ test("手動作成→一覧選択→編集→確認済、月絞り込みと破�
   await expect(page.getByLabel("項目名", { exact: true })).toHaveValue("会議への移動");
   await page.getByLabel("月", { exact: true }).selectOption("08");
   await expect(page.getByRole("row").filter({ hasText: "会議への移動" })).toHaveCount(0);
-  await expect(page.getByRole("tab", { name: "確認済（1）" })).toBeVisible();
+  await expect(page.getByRole("tab", { name: "確認済 1" })).toBeVisible();
   await page.getByRole("button", { name: "破棄", exact: true }).click();
   await page.getByRole("button", { name: "破棄する", exact: true }).click();
   await expect(row).toHaveCount(0);
@@ -75,39 +75,39 @@ test("手動作成→一覧選択→編集→確認済、月絞り込みと破�
     await createDialog.getByRole("button", { name: "下書きを作成" }).click();
     await expect(createDialog).toBeHidden();
   }
-  await page.getByRole("tab", { name: /^下書き（3）$/ }).click();
+  await page.getByRole("tab", { name: /^下書き 3$/ }).click();
   await page.getByRole("checkbox", { name: "表示中の支出の仕訳をすべて選択" }).click();
-  await expect(page.getByText("3件の下書きを選択中")).toBeVisible();
+  await expect(page.getByText("3件選択")).toBeVisible();
   // 選択を 1 件外すと、外した仕訳は下書きのまま残る
   await page.getByRole("checkbox", { name: "会議への移動を選択" }).click();
   await page.getByRole("button", { name: "まとめて確認済にする" }).click();
-  await expect(page.getByRole("tab", { name: /^確認済（2）$/ })).toBeVisible();
-  await expect(page.getByRole("tab", { name: /^下書き（1）$/ })).toBeVisible();
-  await page.getByRole("tab", { name: /^確認済（2）$/ }).click();
+  await expect(page.getByRole("tab", { name: /^確認済 2$/ })).toBeVisible();
+  await expect(page.getByRole("tab", { name: /^下書き 1$/ })).toBeVisible();
+  await page.getByRole("tab", { name: /^確認済 2$/ }).click();
   for (const description of ["資料の購入", "書籍の購入"])
     await expect(page.getByRole("row").filter({ hasText: description })).toContainText("確認済");
   // 選んだ下書きをまとめて破棄する。キャンセルすれば何も消えず選択も残る
-  await page.getByRole("tab", { name: /^下書き（1）$/ }).click();
+  await page.getByRole("tab", { name: /^下書き 1$/ }).click();
   await page.getByRole("checkbox", { name: "会議への移動を選択" }).click();
   await page.getByRole("button", { name: "まとめて破棄" }).click();
   const discardDialog = page.getByRole("dialog");
   await expect(discardDialog).toContainText("1件の仕訳を削除します。この操作は取り消せません。");
   await discardDialog.getByRole("button", { name: "キャンセル" }).click();
   await expect(discardDialog).toBeHidden();
-  await expect(page.getByText("1件の下書きを選択中")).toBeVisible();
+  await expect(page.getByText("1件選択")).toBeVisible();
   await page.getByRole("button", { name: "まとめて破棄" }).click();
   await discardDialog.getByRole("button", { name: "破棄する", exact: true }).click();
   await expect(page.getByText("1件の仕訳を破棄しました")).toBeVisible();
-  await expect(page.getByRole("tab", { name: /^下書き（0）$/ })).toBeVisible();
+  await expect(page.getByRole("tab", { name: /^下書き 0$/ })).toBeVisible();
   await expect(page.getByRole("row").filter({ hasText: "会議への移動" })).toHaveCount(0);
   // 選んだ確認済をまとめて下書きに戻す
-  await page.getByRole("tab", { name: /^確認済（2）$/ }).click();
+  await page.getByRole("tab", { name: /^確認済 2$/ }).click();
   await page.getByRole("checkbox", { name: "表示中の支出の仕訳をすべて選択" }).click();
-  await expect(page.getByText("2件の確認済を選択中")).toBeVisible();
+  await expect(page.getByText("2件選択")).toBeVisible();
   await page.getByRole("button", { name: "まとめて下書きに戻す" }).click();
   await expect(page.getByText("2件の仕訳を下書きに戻しました")).toBeVisible();
-  await expect(page.getByRole("tab", { name: /^下書き（2）$/ })).toBeVisible();
-  await expect(page.getByRole("tab", { name: /^確認済（0）$/ })).toBeVisible();
+  await expect(page.getByRole("tab", { name: /^下書き 2$/ })).toBeVisible();
+  await expect(page.getByRole("tab", { name: /^確認済 0$/ })).toBeVisible();
   await page.goto("/politicians");
   await politicianCard.getByRole("button", { name: "削除", exact: true }).click();
   await page.getByRole("button", { name: "削除する", exact: true }).click();

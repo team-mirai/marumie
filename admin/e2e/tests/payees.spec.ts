@@ -73,8 +73,8 @@ test("支払先の作成・編集と、確認画面での紐づけ・その場�
   }
   const taxiRow = page.getByRole("row").filter({ hasText: "タクシー代" });
   const meetingRow = page.getByRole("row").filter({ hasText: "会議室の利用料" });
-  await expect(taxiRow).toContainText("支払先未設定");
-  await expect(meetingRow).toContainText("支払先未設定");
+  await expect(taxiRow).toContainText("未設定");
+  await expect(meetingRow).toContainText("未設定");
 
   // 既存の支払先を選んで紐づける（手動で紐づけたと記録される）
   await clickUntil(taxiRow, (options) =>
@@ -88,19 +88,19 @@ test("支払先の作成・編集と、確認画面での紐づけ・その場�
     .selectOption({ label: "東京タクシー株式会社（東京都千代田区千代田1-1）" });
   await dialog.getByRole("button", { name: "紐づける", exact: true }).click();
   await expect(page.getByText("1件の支払先を「東京タクシー株式会社」にしました")).toBeVisible();
-  await expect(taxiRow).toContainText("支払先：東京タクシー株式会社");
+  await expect(taxiRow).toContainText("東京タクシー株式会社");
   await expect(page.getByText("手動で紐づけ")).toBeVisible();
 
   // 支払先が未設定の仕訳だけに絞り込める
-  await page.getByLabel(/支払先が未設定だけ/).click();
+  await page.getByRole("button", { name: /^支払先 未設定/ }).click();
   await expect(meetingRow).toBeVisible();
   await expect(taxiRow).toHaveCount(0);
-  await page.getByLabel(/支払先が未設定だけ/).click();
+  await page.getByRole("button", { name: /^支払先 未設定/ }).click();
   await expect(taxiRow).toBeVisible();
 
   // 選んだ仕訳に、その場で支払先を作成して紐づける
   await meetingRow.getByRole("checkbox").click();
-  await expect(page.getByText("1件の下書きを選択中")).toBeVisible();
+  await expect(page.getByText("1件選択")).toBeVisible();
   await page.getByRole("button", { name: "支払先をまとめて設定" }).click();
   await dialog.getByRole("button", { name: "新しい支払先を作成して紐づける" }).click();
   // 手入力の仕訳には書類の発行元が無いので、AI 検索の会社名は空で始まる（項目名は入らない）
@@ -108,9 +108,9 @@ test("支払先の作成・編集と、確認画面での紐づけ・その場�
   await dialog.getByLabel(/^名称/).fill("貸会議室センター");
   await dialog.getByRole("button", { name: "作成して紐づける" }).click();
   await expect(page.getByText("支払先「貸会議室センター」を作成し、1件に紐づけました")).toBeVisible();
-  await expect(meetingRow).toContainText("支払先：貸会議室センター");
-  await expect(page.getByLabel(/支払先が未設定だけ/)).toBeVisible();
-  await expect(page.getByText("支払先が未設定だけ（0）")).toBeVisible();
+  await expect(meetingRow).toContainText("貸会議室センター");
+  await expect(page.getByRole("button", { name: /^支払先 未設定/ })).toBeVisible();
+  await expect(page.getByRole("button", { name: /^支払先 未設定/ })).toHaveText("支払先 未設定 0");
 
   // 確認画面の支払先から、その支払先の詳細ページへ移動できる
   await clickUntil(taxiRow, (options) =>

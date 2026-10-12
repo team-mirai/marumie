@@ -46,7 +46,7 @@ test("書類の無い支出に徴し難かった事情を書き・消し、書�
   const trainRow = page.getByRole("row").filter({ hasText: "電車代" });
   const meetingRow = page.getByRole("row").filter({ hasText: "会議室の利用料" });
   await expect(trainRow).toContainText("領収書なし・事情未入力");
-  await expect(page.getByText("書類も事情もないだけ（2）")).toBeVisible();
+  await expect(page.getByRole("button", { name: /^書類も事情もない/ })).toHaveText("書類も事情もない 2");
 
   // 事情を書く
   await clickUntil(trainRow, (options) =>
@@ -57,13 +57,13 @@ test("書類の無い支出に徴し難かった事情を書き・消し、書�
   await page.getByRole("button", { name: "事情を保存" }).click();
   await expect(page.getByText("徴し難かった事情を保存しました")).toBeVisible();
   await expect(trainRow).not.toContainText("事情未入力");
-  await expect(page.getByText("書類も事情もないだけ（1）")).toBeVisible();
+  await expect(page.getByRole("button", { name: /^書類も事情もない/ })).toHaveText("書類も事情もない 1");
 
   // 書類も事情もない仕訳だけに絞り込める
-  await page.getByLabel(/書類も事情もないだけ/).click();
+  await page.getByRole("button", { name: /^書類も事情もない/ }).click();
   await expect(meetingRow).toBeVisible();
   await expect(trainRow).toHaveCount(0);
-  await page.getByLabel(/書類も事情もないだけ/).click();
+  await page.getByRole("button", { name: /^書類も事情もない/ }).click();
   await expect(trainRow).toBeVisible();
 
   // 空欄で保存すると事情を消す
