@@ -17,6 +17,11 @@ import {
   type ResearchFundResult,
 } from "@/server/contexts/research-fund/domain/types/validation";
 
+/** 領収書の読み取りに使うモデル。スキャンジョブにも同じ名前を記録する */
+export function researchFundExtractionModel(): string {
+  return process.env.RESEARCH_FUND_EXTRACTION_MODEL?.trim() || "claude-opus-5-5";
+}
+
 export class VercelAIReceiptExtractionGateway implements ReceiptExtractionGateway {
   async extract(params: ReceiptExtractionParams): Promise<ResearchFundResult<ExtractedReceipt>> {
     const { document, officePrompt, rereadInstruction } = params;
@@ -32,7 +37,7 @@ export class VercelAIReceiptExtractionGateway implements ReceiptExtractionGatewa
     }
     try {
       const { output } = await generateText({
-        model: anthropic(process.env.RESEARCH_FUND_EXTRACTION_MODEL?.trim() || "claude-sonnet-5"),
+        model: anthropic(researchFundExtractionModel()),
         system: buildReceiptExtractionPrompt(officePrompt, rereadInstruction ?? null),
         messages: [
           {
