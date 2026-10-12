@@ -135,8 +135,8 @@ test("統合の候補は議員の支払先のうち統合先以外を、すべ�
   expect(args.include._count).toEqual({ select: { journalEntries: true } });
 });
 describe("統合", () => {
-  const targetRow = { ...row, aliases: [{ id: BigInt(1), name: "東京タクシー", normalizedName: "東京タクシー" }] };
-  const sourceRow = { ...row, id: BigInt(8), name: "東京ﾀｸｼｰ(株)", invoiceRegistrationNumber: null, aliases: [{ id: BigInt(2), name: "東京ﾀｸｼｰ", normalizedName: "東京タクシー" }, { id: BigInt(3), name: "TOKYO TAXI", normalizedName: "tokyotaxi" }] };
+  const targetRow = { ...row, aliases: [{ id: BigInt(1), name: "東京タクシー", normalizedName: "東京タクシー", documentId: BigInt(20) }] };
+  const sourceRow = { ...row, id: BigInt(8), name: "東京ﾀｸｼｰ(株)", invoiceRegistrationNumber: null, aliases: [{ id: BigInt(2), name: "東京ﾀｸｼｰ", normalizedName: "東京タクシー", documentId: BigInt(21) }, { id: BigInt(3), name: "TOKYO TAXI", normalizedName: "tokyotaxi", documentId: null }] };
   function mergeSetup() {
     const context = setup();
     context.tx.researchFundPayee.findFirst.mockImplementation(async ({ where }) => (where.id === BigInt(7) ? targetRow : where.id === BigInt(8) ? sourceRow : null));
@@ -151,6 +151,14 @@ describe("統合", () => {
     expect(tx.researchFundPayeeAlias.updateMany).toHaveBeenCalledWith({ where: { id: { in: [BigInt(3)] } }, data: { payeeId: BigInt(7) } });
     expect(tx.researchFundPayeeAlias.createMany).toHaveBeenCalledWith({ data: [{ payeeId: BigInt(7), name: "東京ﾀｸｼｰ(株)", normalizedName: "東京タクシー株式会社", source: "manual" }] });
     expect(tx.researchFundPayee.delete).toHaveBeenCalledWith({ where: { id: BigInt(8) } });
+    // 統合先の表記にすでに最初の書類があれば上書きしない
+    expect(tx.researchFundPayeeAlias.updateMany).toHaveBeenCalledTimes(1);
+  });
+  test("統合先にすでにある表記に最初の書類が無ければ、消える統合元の表記の書類を引き継ぐ", async () => {
+    const { repository, tx } = mergeSetup();
+    tx.researchFundPayee.findFirst.mockImplementation(async ({ where }) => (where.id === BigInt(7) ? { ...targetRow, aliases: [{ ...targetRow.aliases[0], documentId: null }] } : sourceRow));
+    await expect(repository.merge("5", "7", "8")).resolves.toEqual({ status: "merged", movedEntryCount: 4 });
+    expect(tx.researchFundPayeeAlias.updateMany).toHaveBeenCalledWith({ where: { id: BigInt(1), documentId: null }, data: { documentId: BigInt(21) } });
   });
   test("移す表記・記録する名称が無ければ表記を変えない", async () => {
     const { repository, tx } = mergeSetup();

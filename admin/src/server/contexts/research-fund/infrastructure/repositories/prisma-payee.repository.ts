@@ -211,7 +211,7 @@ export class PrismaPayeeRepository implements PayeeRepository {
   }
   // 両方の支払先が議員のものかと統合できるかを同じトランザクションで確かめてから、
   // 仕訳を紐づけ直し（紐づけの経路・確信度・根拠はそのまま）、表記を移し、統合元を消す。
-  // 統合先にすでにある表記は移さず、統合元と一緒に外部キーのカスケードで消える。
+  // 統合先にすでにある表記は移さず（最初の書類は統合先に無ければ引き継ぐ）、統合元と一緒に外部キーのカスケードで消える。
   async merge(politicianId: string, targetId: string, sourceId: string): Promise<PayeeMergeResult> {
     try {
       return await this.prisma.$transaction(async (tx) => {
@@ -221,7 +221,7 @@ export class PrismaPayeeRepository implements PayeeRepository {
               where: { id: BigInt(id), politicianId: BigInt(politicianId) },
               include: {
                 aliases: {
-                  select: { id: true, name: true, normalizedName: true },
+                  select: { id: true, name: true, normalizedName: true, documentId: true },
                   orderBy: { id: "asc" },
                 },
               },
@@ -238,6 +238,18 @@ export class PrismaPayeeRepository implements PayeeRepository {
         // 統合元の表記は記録の経路・最初の書類・記録日時ごと移す。統合元の名称は表記に無ければ人の操作として新しく記録する
         const added = payeeMergeAddedAliases(source, target.aliases);
         const moving = source.aliases.filter((alias) => added.includes(alias));
+        // 統合先にすでにある表記は統合元と一緒に消えるので、統合先に最初の書類が無ければ統合元のものを引き継ぐ
+        for (const alias of source.aliases) {
+          if (moving.includes(alias) || alias.documentId === null) continue;
+          const existing = target.aliases.find(
+            (other) => other.normalizedName === alias.normalizedName,
+          );
+          if (existing && existing.documentId === null)
+            await tx.researchFundPayeeAlias.updateMany({
+              where: { id: existing.id, documentId: null },
+              data: { documentId: alias.documentId },
+            });
+        }
         if (moving.length > 0)
           await tx.researchFundPayeeAlias.updateMany({
             where: { id: { in: moving.map((alias) => alias.id) } },
