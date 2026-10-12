@@ -2,6 +2,7 @@ import type { ReceiptIssuer } from "@/server/contexts/research-fund/domain/model
 import {
   matchPayeeByIssuer,
   normalizePayeeName,
+  payeeToRegisterForIssuer,
 } from "@/server/contexts/research-fund/domain/services/issuer-payee-matcher";
 
 const issuer: ReceiptIssuer = { name: null, address: null, phone: null, invoice_registration_number: null };
@@ -71,5 +72,32 @@ describe("matchPayeeByIssuer", () => {
   it("発行元が無い・名称も番号も無ければ紐づけない", () => {
     expect(matchPayeeByIssuer(null, payees)).toBeNull();
     expect(matchPayeeByIssuer({ ...issuer, address: "東京都千代田区" }, payees)).toBeNull();
+  });
+});
+
+describe("payeeToRegisterForIssuer", () => {
+  it("同じ名称・番号の支払先が無ければ、発行元から登録する支払先の内容を返す", () => {
+    expect(payeeToRegisterForIssuer({ ...issuer, name: "Amazon.co.jp" }, payees)).toEqual({ name: "Amazon.co.jp", postalCode: null, address: "", invoiceRegistrationNumber: null });
+  });
+
+  it("登録した支払先には、同じ表記の次の書類が名称の一致で紐づく", () => {
+    const registered = payeeToRegisterForIssuer({ ...issuer, name: "Amazon.co.jp" }, []);
+    expect(registered).not.toBeNull();
+    const payee = { id: "9", name: registered?.name ?? "", invoiceRegistrationNumber: registered?.invoiceRegistrationNumber ?? null };
+    expect(matchPayeeByIssuer({ ...issuer, name: "amazon.co.jp" }, [payee])).toBe(payee);
+  });
+
+  it("正規化した名称が同じ支払先があれば、照合で選ばれなくても登録しない（同じ相手かもしれないため）", () => {
+    expect(payeeToRegisterForIssuer({ ...issuer, name: "東京タクシー（株）", invoice_registration_number: "T9999999999999" }, payees)).toBeNull();
+    expect(payeeToRegisterForIssuer({ ...issuer, name: "ＪＲ東日本" }, [jr, { ...jr, id: "3" }])).toBeNull();
+  });
+
+  it("インボイス登録番号が同じ支払先があれば登録しない", () => {
+    expect(payeeToRegisterForIssuer({ ...issuer, name: "別の名称", invoice_registration_number: "T1234567890123" }, payees)).toBeNull();
+  });
+
+  it("発行元が無い・名称が読み取れなければ登録しない", () => {
+    expect(payeeToRegisterForIssuer(null, [])).toBeNull();
+    expect(payeeToRegisterForIssuer({ ...issuer, invoice_registration_number: "T9999999999999" }, [])).toBeNull();
   });
 });

@@ -92,13 +92,38 @@ describe("ProcessScanJobsUsecase", () => {
       );
     });
 
-    it("leaves the entries unlinked when no payee matches the issuer", async () => {
+    it("does not register a new payee when an existing payee matches the issuer", async () => {
       scanRepository.payees.mockResolvedValue([PAYEE]);
-      gateway.extract.mockResolvedValue({ status: "valid", value: { ...RECEIPT, issuer: { ...ISSUER, name: "大阪タクシー株式会社" }, items: [...RECEIPT.items] } });
+      gateway.extract.mockResolvedValue({ status: "valid", value: { ...RECEIPT, issuer: ISSUER, items: [...RECEIPT.items] } });
 
       await usecase.execute(input);
 
-      expect(scanRepository.completeJob).toHaveBeenCalledWith(expect.objectContaining({ payeeId: null }));
+      expect(scanRepository.completeJob).toHaveBeenCalledWith(expect.objectContaining({ payeeId: "7", newPayee: null }));
+    });
+
+    it("registers a payee from the issuer when no payee matches the issuer", async () => {
+      scanRepository.payees.mockResolvedValue([PAYEE]);
+      const issuer = { name: "大阪タクシー株式会社", address: "〒530-0001 大阪府大阪市北区梅田1-1", phone: "06-0000-0000", invoice_registration_number: "T9876543210987" };
+      gateway.extract.mockResolvedValue({ status: "valid", value: { ...RECEIPT, issuer, items: [...RECEIPT.items] } });
+
+      await usecase.execute(input);
+
+      expect(scanRepository.completeJob).toHaveBeenCalledWith(
+        expect.objectContaining({
+          payeeId: null,
+          newPayee: { name: "大阪タクシー株式会社", postalCode: "530-0001", address: "大阪府大阪市北区梅田1-1", invoiceRegistrationNumber: "T9876543210987" },
+        }),
+      );
+    });
+
+    it("leaves the entries unlinked without registering when a payee with the same name exists but does not match", async () => {
+      // 番号が食い違う同名の支払先は照合で選ばれない。同じ相手かもしれないので二重に登録しない
+      scanRepository.payees.mockResolvedValue([{ ...PAYEE, invoiceRegistrationNumber: "T1111111111111" }]);
+      gateway.extract.mockResolvedValue({ status: "valid", value: { ...RECEIPT, issuer: { ...ISSUER, invoice_registration_number: "T2222222222222" }, items: [...RECEIPT.items] } });
+
+      await usecase.execute(input);
+
+      expect(scanRepository.completeJob).toHaveBeenCalledWith(expect.objectContaining({ payeeId: null, newPayee: null }));
     });
 
     it("leaves the entries unlinked when the reading has no issuer", async () => {
@@ -106,7 +131,7 @@ describe("ProcessScanJobsUsecase", () => {
 
       await usecase.execute(input);
 
-      expect(scanRepository.completeJob).toHaveBeenCalledWith(expect.objectContaining({ payeeId: null }));
+      expect(scanRepository.completeJob).toHaveBeenCalledWith(expect.objectContaining({ payeeId: null, newPayee: null }));
     });
 
     it("links the payee on a reread as well", async () => {
