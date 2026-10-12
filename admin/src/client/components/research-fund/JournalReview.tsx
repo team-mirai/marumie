@@ -22,6 +22,10 @@ import {
   Textarea,
 } from "@/client/components/ui";
 import { DuplicateDocumentWarning } from "@/client/components/research-fund/DuplicateDocumentWarning";
+import {
+  JournalBulkActionBar,
+  type BulkAction,
+} from "@/client/components/research-fund/JournalBulkActionBar";
 import { JournalAdvanceField } from "@/client/components/research-fund/JournalAdvanceField";
 import { JournalEditor } from "@/client/components/research-fund/JournalEditor";
 import { JournalList } from "@/client/components/research-fund/JournalList";
@@ -619,7 +623,80 @@ export function JournalReview({
   }
   const unsettledCount = unsettledSummary.reduce((sum, row) => sum + row.count, 0);
   const unsettledTotal = unsettledSummary.reduce((sum, row) => sum + row.total, 0);
-  const bulkButton = "h-[30px] px-3 text-xs";
+  // まとめて操作バーのボタン（表示条件を満たすものだけ。並び順のまま右端が primary）
+  const bulkActions = (
+    [
+      { shown: true, label: "選択を解除", variant: "outline", onSelect: () => setChecked([]) },
+      {
+        shown: true,
+        label: "支払先をまとめて設定",
+        variant: "outline",
+        onSelect: () => {
+          if (allowLeave()) setLinkingChecked(true);
+        },
+      },
+      {
+        shown: assignable,
+        label: "立替者をまとめて設定",
+        variant: "outline",
+        onSelect: () => {
+          if (allowLeave()) {
+            setAssigned("");
+            setAssigning(true);
+          }
+        },
+      },
+      {
+        shown: unsettleable,
+        label: "まとめて未精算に戻す",
+        variant: "outline",
+        onSelect: () => unsettle(checkedEntries),
+      },
+      {
+        shown: checkedKind === "draft",
+        label: "LLMで読み直す",
+        variant: "outline",
+        onSelect: () => {
+          if (allowLeave()) setRereading(true);
+        },
+      },
+      {
+        shown: discardable,
+        label: "まとめて破棄",
+        variant: "destructive",
+        onSelect: () => {
+          if (allowLeave()) setDiscardingChecked(true);
+        },
+      },
+      {
+        shown: revertable,
+        label: "まとめて下書きに戻す",
+        variant: "default",
+        onSelect: () => {
+          if (allowLeave()) revertChecked();
+        },
+      },
+      {
+        shown: settlable,
+        label: "まとめて精算",
+        variant: "default",
+        onSelect: () => {
+          if (allowLeave()) {
+            const jst = todayInJst(new Date());
+            setToday(jst);
+            setSettledAt(jst);
+            setSettling(true);
+          }
+        },
+      },
+      {
+        shown: checkedKind === "draft",
+        label: "まとめて確認済にする",
+        variant: "default",
+        onSelect: approveChecked,
+      },
+    ] satisfies (BulkAction & { shown: boolean })[]
+  ).filter((action) => action.shown);
   return (
     <div className="flex flex-col gap-2.5 xl:h-[calc(100vh-2.5rem)]">
       <div className="flex min-h-9 flex-wrap items-center gap-3">
@@ -760,131 +837,12 @@ export function JournalReview({
           onToggleAll={() => setChecked(allChecked ? [] : checkable.map((e) => e.id))}
           overlay={
             checkedEntries.length > 0 && (
-              <div className="absolute right-2.5 bottom-3 left-2.5 flex flex-wrap items-center gap-1.5 rounded-[24px] border border-border bg-card py-1.5 pr-1.5 pl-4 shadow-[0_8px_24px_rgba(0,0,0,0.12)]">
-                <span
-                  className="mr-auto text-xs font-bold"
-                  title={
-                    checkedKind === "mixed"
-                      ? "状態が混ざっているため、選んだ全件に使える操作だけを表示しています"
-                      : undefined
-                  }
-                >
-                  <span className="font-latin">{checkedEntries.length}</span>
-                  {checkedKind === "mixed" ? "件の仕訳を選択中" : "件選択"}
-                </span>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className={bulkButton}
-                  disabled={pending}
-                  onClick={() => setChecked([])}
-                >
-                  選択を解除
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className={bulkButton}
-                  disabled={pending}
-                  onClick={() => {
-                    if (allowLeave()) setLinkingChecked(true);
-                  }}
-                >
-                  支払先をまとめて設定
-                </Button>
-                {assignable && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className={bulkButton}
-                    disabled={pending}
-                    onClick={() => {
-                      if (allowLeave()) {
-                        setAssigned("");
-                        setAssigning(true);
-                      }
-                    }}
-                  >
-                    立替者をまとめて設定
-                  </Button>
-                )}
-                {unsettleable && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className={bulkButton}
-                    disabled={pending}
-                    onClick={() => unsettle(checkedEntries)}
-                  >
-                    まとめて未精算に戻す
-                  </Button>
-                )}
-                {checkedKind === "draft" && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className={bulkButton}
-                    disabled={pending}
-                    onClick={() => {
-                      if (allowLeave()) setRereading(true);
-                    }}
-                  >
-                    LLMで読み直す
-                  </Button>
-                )}
-                {discardable && (
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    className={bulkButton}
-                    disabled={pending}
-                    onClick={() => {
-                      if (allowLeave()) setDiscardingChecked(true);
-                    }}
-                  >
-                    まとめて破棄
-                  </Button>
-                )}
-                {revertable && (
-                  <Button
-                    size="sm"
-                    className={bulkButton}
-                    disabled={pending}
-                    onClick={() => {
-                      if (allowLeave()) revertChecked();
-                    }}
-                  >
-                    まとめて下書きに戻す
-                  </Button>
-                )}
-                {settlable && (
-                  <Button
-                    size="sm"
-                    className={bulkButton}
-                    disabled={pending}
-                    onClick={() => {
-                      if (allowLeave()) {
-                        const jst = todayInJst(new Date());
-                        setToday(jst);
-                        setSettledAt(jst);
-                        setSettling(true);
-                      }
-                    }}
-                  >
-                    まとめて精算
-                  </Button>
-                )}
-                {checkedKind === "draft" && (
-                  <Button
-                    size="sm"
-                    className={bulkButton}
-                    disabled={pending}
-                    onClick={approveChecked}
-                  >
-                    まとめて確認済にする
-                  </Button>
-                )}
-              </div>
+              <JournalBulkActionBar
+                count={checkedEntries.length}
+                mixed={checkedKind === "mixed"}
+                pending={pending}
+                actions={bulkActions}
+              />
             )
           }
         />

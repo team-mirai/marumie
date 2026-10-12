@@ -48,3 +48,9 @@ export {
 } from "@/client/components/ui/tabs";
 export { Switch } from "@/client/components/ui/switch";
 export { Toaster } from "@/client/components/ui/sonner";
+export {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/client/components/ui/dropdown-menu";

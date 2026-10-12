@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { clickUntil } from "../helpers/interactions";
+import { clickUntil, clickBulkAction } from "../helpers/interactions";
 
 test("手動作成→一覧選択→編集→確認済、月絞り込みと破棄", async ({ page }) => {
   const name = `e2e-journal-${Date.now()}`;
@@ -78,6 +78,15 @@ test("手動作成→一覧選択→編集→確認済、月絞り込みと破�
   await page.getByRole("tab", { name: /^下書き 3$/ }).click();
   await page.getByRole("checkbox", { name: "表示中の支出の仕訳をすべて選択" }).click();
   await expect(page.getByText("3件選択")).toBeVisible();
+  // 幅が足りないときは primary 以外が「…」メニューに入り、足りるときはバーに並ぶ
+  await expect(page.getByRole("button", { name: "ほかの操作" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "LLMで読み直す" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "まとめて確認済にする" })).toBeVisible();
+  const narrow = page.viewportSize();
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await expect(page.getByRole("button", { name: "LLMで読み直す" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "ほかの操作" })).toHaveCount(0);
+  if (narrow) await page.setViewportSize(narrow);
   // 選択を 1 件外すと、外した仕訳は下書きのまま残る
   await page.getByRole("checkbox", { name: "会議への移動を選択" }).click();
   await page.getByRole("button", { name: "まとめて確認済にする" }).click();
@@ -89,13 +98,13 @@ test("手動作成→一覧選択→編集→確認済、月絞り込みと破�
   // 選んだ下書きをまとめて破棄する。キャンセルすれば何も消えず選択も残る
   await page.getByRole("tab", { name: /^下書き 1$/ }).click();
   await page.getByRole("checkbox", { name: "会議への移動を選択" }).click();
-  await page.getByRole("button", { name: "まとめて破棄" }).click();
+  await clickBulkAction(page, "まとめて破棄");
   const discardDialog = page.getByRole("dialog");
   await expect(discardDialog).toContainText("1件の仕訳を削除します。この操作は取り消せません。");
   await discardDialog.getByRole("button", { name: "キャンセル" }).click();
   await expect(discardDialog).toBeHidden();
   await expect(page.getByText("1件選択")).toBeVisible();
-  await page.getByRole("button", { name: "まとめて破棄" }).click();
+  await clickBulkAction(page, "まとめて破棄");
   await discardDialog.getByRole("button", { name: "破棄する", exact: true }).click();
   await expect(page.getByText("1件の仕訳を破棄しました")).toBeVisible();
   await expect(page.getByRole("tab", { name: /^下書き 0$/ })).toBeVisible();

@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { clickUntil } from "../helpers/interactions";
+import { clickUntil, clickBulkAction } from "../helpers/interactions";
 
 // 支払先（支出を受けた者）の管理と、仕訳の確認画面での紐づけの流れ。
 // 支払先は議員ごとに持ち、確認画面では帳簿の議員の支払先だけを選べる。
@@ -101,7 +101,7 @@ test("支払先の作成・編集と、確認画面での紐づけ・その場�
   // 選んだ仕訳に、その場で支払先を作成して紐づける
   await meetingRow.getByRole("checkbox").click();
   await expect(page.getByText("1件選択")).toBeVisible();
-  await page.getByRole("button", { name: "支払先をまとめて設定" }).click();
+  await clickBulkAction(page, "支払先をまとめて設定");
   await dialog.getByRole("button", { name: "新しい支払先を作成して紐づける" }).click();
   // 手入力の仕訳には書類の発行元が無いので、AI 検索の会社名は空で始まる（項目名は入らない）
   await expect(dialog.getByLabel("会社名", { exact: true })).toHaveValue("");
