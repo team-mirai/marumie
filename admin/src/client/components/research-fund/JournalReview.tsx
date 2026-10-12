@@ -1,12 +1,12 @@
 "use client";
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useState, useTransition, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
+import { Plus } from "@phosphor-icons/react/dist/ssr";
 import { toast } from "sonner";
 import {
   Button,
   Card,
   CardContent,
-  Checkbox,
   Dialog,
   DialogContent,
   DialogHeader,
@@ -16,26 +16,18 @@ import {
   Input,
   Label,
   NativeSelect,
-  Table,
-  TableHeader,
-  TableBody,
-  TableRow,
-  TableHead,
-  TableCell,
   Tabs,
   TabsList,
   TabsTrigger,
   Textarea,
 } from "@/client/components/ui";
-import { PageHeader } from "@/client/components/layout/PageHeader";
 import { DuplicateDocumentWarning } from "@/client/components/research-fund/DuplicateDocumentWarning";
 import { JournalAdvanceField } from "@/client/components/research-fund/JournalAdvanceField";
 import { JournalEditor } from "@/client/components/research-fund/JournalEditor";
+import { JournalList } from "@/client/components/research-fund/JournalList";
 import { JournalPayeeField } from "@/client/components/research-fund/JournalPayeeField";
 import { JournalReceiptAbsenceField } from "@/client/components/research-fund/JournalReceiptAbsenceField";
 import { PayeeLinkDialog } from "@/client/components/research-fund/PayeeLinkDialog";
-import { LegalCategoryLabel } from "@/client/components/research-fund/LegalCategoryLabel";
-import { ResearchFundCategoryPill } from "@/client/components/research-fund/ResearchFundCategoryPill";
 import {
   settlementRejection,
   summarizeUnsettledAdvances,
@@ -44,7 +36,6 @@ import { todayInJst } from "@/server/contexts/research-fund/domain/models/calend
 import type { DuplicateDocuments } from "@/server/contexts/research-fund/domain/models/duplicate-document";
 import {
   isAccountUnconfirmed,
-  legalLabelOf,
   type JournalEdit,
   type ReviewAccount,
   type ReviewEntry,
@@ -66,7 +57,7 @@ import {
 import type { AdminTarget } from "@/server/contexts/shared/domain/models/admin-target";
 import { mutateJournalReview } from "@/server/contexts/research-fund/presentation/actions/manage-journal-review";
 import { rereadScanDocuments } from "@/server/contexts/research-fund/presentation/actions/reread-scan-documents";
-import { cn, isEmphasizedJournalAmount } from "@/client/lib";
+import { cn } from "@/client/lib";
 
 const statuses = { all: "すべて", draft: "下書き", approved: "確認済", published: "公開中" };
 export function JournalReview({
@@ -619,449 +610,309 @@ export function JournalReview({
   const documentUrl = selected?.documentId
     ? `/api/research-fund/documents/${selected.documentId}?bookId=${target.bookId}&politicianId=${target.politicianId}`
     : undefined;
+  // 絞り込みを変えるときは、未保存の変更を確認してから選択とチェックを外す
+  function changeFilter(apply: () => void) {
+    if (!allowLeave()) return;
+    apply();
+    setSelectedId(null);
+    setChecked([]);
+  }
+  const unsettledCount = unsettledSummary.reduce((sum, row) => sum + row.count, 0);
+  const unsettledTotal = unsettledSummary.reduce((sum, row) => sum + row.total, 0);
+  const bulkButton = "h-[30px] px-3 text-xs";
   return (
-    <>
-      <PageHeader
-        label="Journal entries"
-        title="仕訳の確認・編集"
-        description={`${target.name}・${target.year}年 — 領収書と並べて支出を確認します。↑↓キーで移動できます。`}
-        actions={
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              disabled={pending}
-              onClick={() => {
-                if (allowLeave()) setNumbering(true);
-              }}
-            >
-              領収書等番号を振る
-            </Button>
-            <Button
-              disabled={pending}
-              onClick={() => {
-                if (allowLeave()) setCreating(true);
-              }}
-            >
-              手動で仕訳を作成
-            </Button>
-          </div>
-        }
-      />
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-4">
+    <div className="flex flex-col gap-2.5 xl:h-[calc(100vh-2.5rem)]">
+      <div className="flex min-h-9 flex-wrap items-center gap-3">
+        <h1 className="text-lg font-bold tracking-[0.04em]">仕訳の確認・編集</h1>
+        <span className="text-xs text-muted-foreground">
+          {target.name}・<span className="font-latin">{target.year}</span>年
+        </span>
+        <div className="ml-auto flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            className="text-xs"
+            disabled={pending}
+            onClick={() => {
+              if (allowLeave()) setNumbering(true);
+            }}
+          >
+            領収書等番号を振る
+          </Button>
+          <Button
+            size="sm"
+            className="text-xs"
+            disabled={pending}
+            onClick={() => {
+              if (allowLeave()) setCreating(true);
+            }}
+          >
+            <Plus aria-hidden />
+            手動で仕訳を作成
+          </Button>
+        </div>
+      </div>
+      <div className="flex flex-wrap items-center gap-2">
         <Tabs
           value={status}
           onValueChange={(value) => {
-            if (!pending && allowLeave()) {
-              setStatus(value);
-              setSelectedId(null);
-              setChecked([]);
-            }
+            if (!pending) changeFilter(() => setStatus(value));
           }}
         >
-          <TabsList aria-label="仕訳の状態">
+          <TabsList aria-label="仕訳の状態" className="h-8">
             {Object.entries(statuses).map(([key, label]) => (
-              <TabsTrigger key={key} value={key}>
-                {label}（{filtered.filter((e) => key === "all" || e.status === key).length}）
+              <TabsTrigger key={key} value={key} className="flex-none px-3.5 text-xs">
+                {label}{" "}
+                <span className="font-latin">
+                  {filtered.filter((e) => key === "all" || e.status === key).length}
+                </span>
               </TabsTrigger>
             ))}
           </TabsList>
         </Tabs>
-        <div className="flex items-center gap-2">
-          <Label htmlFor="journal-month">月</Label>
-          <NativeSelect
-            id="journal-month"
-            value={month}
+        <span aria-hidden className="mx-1 h-5 w-px bg-border-soft" />
+        <NativeSelect
+          aria-label="月"
+          value={month}
+          disabled={pending}
+          className="h-8 text-xs"
+          onChange={(e) => {
+            const value = e.target.value;
+            changeFilter(() => setMonth(value));
+          }}
+        >
+          <option value="">すべての月</option>
+          {Array.from({ length: 12 }, (_, i) => (
+            <option key={i} value={String(i + 1).padStart(2, "0")}>
+              {i + 1}月
+            </option>
+          ))}
+        </NativeSelect>
+        <NativeSelect
+          aria-label="立替者で絞り込み"
+          value={advancer}
+          disabled={pending}
+          className="h-8 text-xs"
+          onChange={(e) => {
+            const value = e.target.value;
+            changeFilter(() => setAdvancer(value));
+          }}
+        >
+          <option value="">すべての立替者</option>
+          {bookAdvancers.map((name) => (
+            <option key={name} value={name}>
+              {name}
+            </option>
+          ))}
+        </NativeSelect>
+        <div className="ml-auto flex flex-wrap items-center gap-2">
+          <span className="text-[11px] font-bold text-muted-foreground">要対応</span>
+          <FilterChip
+            pressed={payeeUnsetOnly}
+            tone={payeeUnsetCount > 0 ? "destructive" : "none"}
             disabled={pending}
-            onChange={(e) => {
-              if (allowLeave()) {
-                setMonth(e.target.value);
-                setSelectedId(null);
-                setChecked([]);
-              }
-            }}
+            onClick={() => changeFilter(() => setPayeeUnsetOnly((current) => !current))}
           >
-            <option value="">すべての月</option>
-            {Array.from({ length: 12 }, (_, i) => (
-              <option key={i} value={String(i + 1).padStart(2, "0")}>
-                {i + 1}月
-              </option>
-            ))}
-          </NativeSelect>
-          <Label htmlFor="journal-advancer">立替者で絞り込み</Label>
-          <NativeSelect
-            id="journal-advancer"
-            value={advancer}
+            支払先 未設定 <span className="font-latin font-bold">{payeeUnsetCount}</span>
+          </FilterChip>
+          <FilterChip
+            pressed={receiptMissingOnly}
+            tone={receiptMissingCount > 0 ? "destructive" : "none"}
             disabled={pending}
-            onChange={(e) => {
-              if (allowLeave()) {
-                setAdvancer(e.target.value);
-                setSelectedId(null);
-                setChecked([]);
-              }
-            }}
+            onClick={() => changeFilter(() => setReceiptMissingOnly((current) => !current))}
           >
-            <option value="">すべての立替者</option>
-            {bookAdvancers.map((name) => (
-              <option key={name} value={name}>
-                {name}
-              </option>
-            ))}
-          </NativeSelect>
-          <Checkbox
-            id="journal-unsettled"
-            checked={unsettledOnly}
-            disabled={pending}
-            onCheckedChange={() => {
-              if (allowLeave()) {
-                setUnsettledOnly((current) => !current);
-                setSelectedId(null);
-                setChecked([]);
-              }
-            }}
-          />
-          <Label htmlFor="journal-unsettled">未精算の立替だけ</Label>
-          <Checkbox
-            id="journal-payee-unset"
-            checked={payeeUnsetOnly}
-            disabled={pending}
-            onCheckedChange={() => {
-              if (allowLeave()) {
-                setPayeeUnsetOnly((current) => !current);
-                setSelectedId(null);
-                setChecked([]);
-              }
-            }}
-          />
-          <Label htmlFor="journal-payee-unset">
-            支払先が未設定だけ（<span className="font-latin">{payeeUnsetCount}</span>）
-          </Label>
-          <Checkbox
-            id="journal-receipt-missing"
-            checked={receiptMissingOnly}
-            disabled={pending}
-            onCheckedChange={() => {
-              if (allowLeave()) {
-                setReceiptMissingOnly((current) => !current);
-                setSelectedId(null);
-                setChecked([]);
-              }
-            }}
-          />
-          <Label htmlFor="journal-receipt-missing">
-            書類も事情もないだけ（<span className="font-latin">{receiptMissingCount}</span>）
-          </Label>
+            書類も事情もない <span className="font-latin font-bold">{receiptMissingCount}</span>
+          </FilterChip>
+          {(unsettledSummary.length > 0 || unsettledOnly) && (
+            <FilterChip
+              pressed={unsettledOnly}
+              tone="primary"
+              disabled={pending}
+              title={unsettledSummary
+                .map(
+                  (row) =>
+                    `${row.advancedBy}：¥${row.total.toLocaleString("ja-JP")}（${row.count}件）`,
+                )
+                .join("\n")}
+              onClick={() => changeFilter(() => setUnsettledOnly((current) => !current))}
+            >
+              未精算の立替{" "}
+              <span className="font-bold">
+                <span className="font-latin">{unsettledCount}</span>件{" "}
+                <span className="font-latin">¥{unsettledTotal.toLocaleString("ja-JP")}</span>
+              </span>
+            </FilterChip>
+          )}
         </div>
       </div>
-      {unsettledSummary.length > 0 && (
-        <Card className="mb-4">
-          <CardContent className="p-4">
-            <h2 className="mb-2 text-sm font-bold">
-              立替者ごとの未精算（帳簿全体・
-              <span className="font-latin">{unsettledSummary.length}</span>名）
-            </h2>
-            <ul className="flex flex-wrap gap-x-6 gap-y-1 text-sm">
-              {unsettledSummary.map((row) => (
-                <li key={row.advancedBy}>
-                  {row.advancedBy}：
-                  <span className="font-latin font-bold">¥{row.total.toLocaleString("ja-JP")}</span>
-                  <span className="ml-1 text-muted-foreground">
-                    （<span className="font-latin">{row.count}</span>件）
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
-      )}
-      {checkedEntries.length > 0 && (
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-accent px-4 py-3">
-          <span className="text-sm font-bold text-accent-foreground">
-            <span className="font-latin">{checkedEntries.length}</span>件の
-            {checkedKind === "draft" ? "下書き" : checkedKind === "approved" ? "確認済" : "仕訳"}
-            を選択中
-            {checkedKind === "mixed" && (
-              <span className="ml-2 font-normal">
-                （状態が混ざっているため、選んだ全件に使える操作だけを表示しています）
-              </span>
-            )}
-          </span>
-          <div className="flex gap-2">
-            <Button variant="outline" disabled={pending} onClick={() => setChecked([])}>
-              選択を解除
-            </Button>
-            {checkedKind === "draft" && (
-              <Button
-                variant="outline"
-                disabled={pending}
-                onClick={() => {
-                  if (allowLeave()) setRereading(true);
-                }}
-              >
-                LLMで読み直す
-              </Button>
-            )}
-            {assignable && (
-              <Button
-                variant="outline"
-                disabled={pending}
-                onClick={() => {
-                  if (allowLeave()) {
-                    setAssigned("");
-                    setAssigning(true);
+      <div className="grid gap-3 xl:min-h-0 xl:flex-1 xl:grid-cols-[minmax(0,1fr)_400px] min-[1440px]:grid-cols-[minmax(0,1fr)_452px]">
+        <JournalList
+          visible={visible}
+          entries={entries}
+          selectedId={selected?.id ?? null}
+          checked={checked}
+          checkable={checkable}
+          pending={pending}
+          payeeNames={payeeNames}
+          isDuplicated={(entry) => duplicatesOf(entry).length > 0}
+          onSelect={select}
+          onToggle={toggle}
+          onToggleAll={() => setChecked(allChecked ? [] : checkable.map((e) => e.id))}
+          overlay={
+            checkedEntries.length > 0 && (
+              <div className="absolute right-2.5 bottom-3 left-2.5 flex flex-wrap items-center gap-1.5 rounded-[24px] border border-border bg-card py-1.5 pr-1.5 pl-4 shadow-[0_8px_24px_rgba(0,0,0,0.12)]">
+                <span
+                  className="mr-auto text-xs font-bold"
+                  title={
+                    checkedKind === "mixed"
+                      ? "状態が混ざっているため、選んだ全件に使える操作だけを表示しています"
+                      : undefined
                   }
-                }}
-              >
-                立替者をまとめて設定
-              </Button>
-            )}
-            <Button
-              variant="outline"
-              disabled={pending}
-              onClick={() => {
-                if (allowLeave()) setLinkingChecked(true);
-              }}
-            >
-              支払先をまとめて設定
-            </Button>
-            {unsettleable && (
-              <Button variant="outline" disabled={pending} onClick={() => unsettle(checkedEntries)}>
-                まとめて未精算に戻す
-              </Button>
-            )}
-            {discardable && (
-              <Button
-                variant="destructive"
-                disabled={pending}
-                onClick={() => {
-                  if (allowLeave()) setDiscardingChecked(true);
-                }}
-              >
-                まとめて破棄
-              </Button>
-            )}
-            {checkedKind === "draft" && (
-              <Button disabled={pending} onClick={approveChecked}>
-                まとめて確認済にする
-              </Button>
-            )}
-            {revertable && (
-              <Button
-                disabled={pending}
-                onClick={() => {
-                  if (allowLeave()) revertChecked();
-                }}
-              >
-                まとめて下書きに戻す
-              </Button>
-            )}
-            {settlable && (
-              <Button
-                disabled={pending}
-                onClick={() => {
-                  if (allowLeave()) {
-                    const jst = todayInJst(new Date());
-                    setToday(jst);
-                    setSettledAt(jst);
-                    setSettling(true);
-                  }
-                }}
-              >
-                まとめて精算
-              </Button>
-            )}
-          </div>
-        </div>
-      )}
-      <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,3fr)_minmax(360px,2fr)]">
-        <Card>
-          <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-10">
-                    <Checkbox
-                      checked={allChecked}
-                      disabled={pending || checkable.length === 0}
-                      onCheckedChange={() =>
-                        setChecked(allChecked ? [] : checkable.map((e) => e.id))
+                >
+                  <span className="font-latin">{checkedEntries.length}</span>
+                  {checkedKind === "mixed" ? "件の仕訳を選択中" : "件選択"}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className={bulkButton}
+                  disabled={pending}
+                  onClick={() => setChecked([])}
+                >
+                  選択を解除
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className={bulkButton}
+                  disabled={pending}
+                  onClick={() => {
+                    if (allowLeave()) setLinkingChecked(true);
+                  }}
+                >
+                  支払先をまとめて設定
+                </Button>
+                {assignable && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className={bulkButton}
+                    disabled={pending}
+                    onClick={() => {
+                      if (allowLeave()) {
+                        setAssigned("");
+                        setAssigning(true);
                       }
-                      aria-label="表示中の支出の仕訳をすべて選択"
-                    />
-                  </TableHead>
-                  <TableHead>日付</TableHead>
-                  <TableHead>カテゴリー</TableHead>
-                  <TableHead>項目</TableHead>
-                  <TableHead>金額</TableHead>
-                  <TableHead>状態</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {visible.map((entry) => {
-                  const splits = entry.splitGroup
-                    ? entries.filter(
-                        (e) =>
-                          e.splitGroup === entry.splitGroup && e.documentId === entry.documentId,
-                      )
-                    : [];
-                  const grant = entry.source === "grant";
-                  return (
-                    <TableRow
-                      key={entry.id}
-                      tabIndex={0}
-                      aria-selected={entry.id === selected?.id}
-                      onClick={() => select(entry.id)}
-                      onKeyDown={(event) => {
-                        if (event.key === "Enter" || event.key === " ") {
-                          event.preventDefault();
-                          select(entry.id);
-                        }
-                      }}
-                      className={cn(
-                        "cursor-pointer",
-                        entry.id === selected?.id && "bg-accent",
-                        isAccountUnconfirmed(entry.accountKey) && "border-l-4 border-l-destructive",
-                      )}
-                    >
-                      <TableCell
-                        onClick={(event) => event.stopPropagation()}
-                        onKeyDown={(event) => event.stopPropagation()}
-                      >
-                        {!grant && (
-                          <Checkbox
-                            checked={checked.includes(entry.id)}
-                            disabled={pending}
-                            onCheckedChange={() => toggle(entry.id)}
-                            aria-label={`${entry.description}を選択`}
-                          />
-                        )}
-                      </TableCell>
-                      <TableCell className="font-latin whitespace-nowrap">
-                        {entry.entryDate.replaceAll("-", ".")}
-                      </TableCell>
-                      <TableCell>
-                        {grant ? (
-                          <span className="inline-block whitespace-nowrap rounded-full border bg-accent px-3 py-0.5 text-xs font-medium text-accent-foreground">
-                            支給
-                          </span>
-                        ) : (
-                          <>
-                            <ResearchFundCategoryPill accountKey={entry.accountKey} />
-                            <LegalCategoryLabel
-                              legalLabel={legalLabelOf(accounts, entry.accountKey)}
-                              className="mt-1 block"
-                            />
-                          </>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <span>{entry.description}</span>
-                        <div className="mt-1 flex flex-wrap gap-1 text-xs text-muted-foreground">
-                          {splits.length > 1 && (
-                            <span className="rounded-full border px-2">
-                              分割 {splits.findIndex((e) => e.id === entry.id) + 1}/{splits.length}
-                            </span>
-                          )}
-                          {duplicatesOf(entry).length > 0 && (
-                            <span className="rounded-full border border-destructive px-2 text-destructive">
-                              同じ内容の書類あり
-                            </span>
-                          )}
-                          {entry.receiptNumber !== null && (
-                            <span className="rounded-full border px-2">
-                              領収書等番号 <span className="font-latin">{entry.receiptNumber}</span>
-                            </span>
-                          )}
-                          {isReceiptMissing(entry) ? (
-                            <span className="rounded-full border border-destructive px-2 text-destructive">
-                              領収書なし・事情未入力
-                            </span>
-                          ) : (
-                            !entry.documentId && (
-                              <span className="rounded-full border px-2">領収書なし</span>
-                            )
-                          )}
-                          {!grant &&
-                            (entry.payeeId === null ? (
-                              <span className="rounded-full border border-destructive px-2 text-destructive">
-                                支払先未設定
-                              </span>
-                            ) : (
-                              <span className="rounded-full border px-2">
-                                支払先：{payeeNames.get(entry.payeeId) ?? "不明"}
-                              </span>
-                            ))}
-                          {entry.advancedBy !== null && (
-                            <span className="rounded-full border px-2">
-                              立替：{entry.advancedBy}
-                            </span>
-                          )}
-                          {entry.settledAt !== null && (
-                            <span className="rounded-full border bg-accent px-2 text-accent-foreground">
-                              精算済{" "}
-                              <span className="font-latin">
-                                {entry.settledAt.replaceAll("-", ".")}
-                              </span>
-                            </span>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell
-                        className={cn(
-                          "text-right font-latin",
-                          isEmphasizedJournalAmount(entry.amount) && "font-bold",
-                        )}
-                      >
-                        ¥{entry.amount.toLocaleString("ja-JP")}
-                      </TableCell>
-                      <TableCell>
-                        <span
-                          className={cn(
-                            "whitespace-nowrap rounded-full border px-2 py-1 text-xs",
-                            entry.status === "draft"
-                              ? "bg-background text-muted-foreground"
-                              : "bg-accent text-accent-foreground",
-                          )}
-                        >
-                          {statuses[entry.status]}
-                        </span>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-                {visible.length === 0 && (
-                  <TableRow>
-                    <TableCell colSpan={6} className="p-8 text-center text-muted-foreground">
-                      該当する仕訳はありません
-                    </TableCell>
-                  </TableRow>
+                    }}
+                  >
+                    立替者をまとめて設定
+                  </Button>
                 )}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-        <Card className="xl:sticky xl:top-6 xl:max-h-[calc(100vh-3rem)] xl:overflow-y-auto">
-          <CardContent className="p-5">
-            {selected ? (
-              <>
-                <div className="mb-4 flex items-center justify-between">
-                  <h2 className="font-bold">仕訳の詳細</h2>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      disabled={pending || index <= 0}
-                      onClick={() => select(visible[index - 1].id)}
-                    >
-                      前へ
-                    </Button>
-                    <Button
-                      variant="outline"
-                      disabled={pending || index >= visible.length - 1}
-                      onClick={() => select(visible[index + 1].id)}
-                    >
-                      次へ
-                    </Button>
-                  </div>
+                {unsettleable && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className={bulkButton}
+                    disabled={pending}
+                    onClick={() => unsettle(checkedEntries)}
+                  >
+                    まとめて未精算に戻す
+                  </Button>
+                )}
+                {checkedKind === "draft" && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className={bulkButton}
+                    disabled={pending}
+                    onClick={() => {
+                      if (allowLeave()) setRereading(true);
+                    }}
+                  >
+                    LLMで読み直す
+                  </Button>
+                )}
+                {discardable && (
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    className={bulkButton}
+                    disabled={pending}
+                    onClick={() => {
+                      if (allowLeave()) setDiscardingChecked(true);
+                    }}
+                  >
+                    まとめて破棄
+                  </Button>
+                )}
+                {revertable && (
+                  <Button
+                    size="sm"
+                    className={bulkButton}
+                    disabled={pending}
+                    onClick={() => {
+                      if (allowLeave()) revertChecked();
+                    }}
+                  >
+                    まとめて下書きに戻す
+                  </Button>
+                )}
+                {settlable && (
+                  <Button
+                    size="sm"
+                    className={bulkButton}
+                    disabled={pending}
+                    onClick={() => {
+                      if (allowLeave()) {
+                        const jst = todayInJst(new Date());
+                        setToday(jst);
+                        setSettledAt(jst);
+                        setSettling(true);
+                      }
+                    }}
+                  >
+                    まとめて精算
+                  </Button>
+                )}
+                {checkedKind === "draft" && (
+                  <Button
+                    size="sm"
+                    className={bulkButton}
+                    disabled={pending}
+                    onClick={approveChecked}
+                  >
+                    まとめて確認済にする
+                  </Button>
+                )}
+              </div>
+            )
+          }
+        />
+        <Card className="gap-0 overflow-hidden py-0 xl:min-h-0">
+          {selected ? (
+            <>
+              <div className="flex shrink-0 items-center justify-between border-b border-border-soft px-5 py-2.5">
+                <h2 className="font-bold">仕訳の詳細</h2>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={pending || index <= 0}
+                    onClick={() => select(visible[index - 1].id)}
+                  >
+                    前へ
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={pending || index >= visible.length - 1}
+                    onClick={() => select(visible[index + 1].id)}
+                  >
+                    次へ
+                  </Button>
                 </div>
+              </div>
+              <CardContent className="min-h-0 flex-1 overflow-y-auto p-5">
                 <DuplicateDocumentWarning
                   duplicates={duplicatesOf(selected)}
                   bookId={target.bookId}
@@ -1127,13 +978,15 @@ export function JournalReview({
                     }}
                   />
                 )}
-              </>
-            ) : (
+              </CardContent>
+            </>
+          ) : (
+            <CardContent className="p-5">
               <p className="text-sm text-muted-foreground">
                 仕訳を作成すると、ここで確認できます。
               </p>
-            )}
-          </CardContent>
+            </CardContent>
+          )}
         </Card>
       </div>
       <Dialog
@@ -1440,6 +1293,53 @@ export function JournalReview({
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </>
+    </div>
+  );
+}
+
+const chipTones = {
+  destructive: {
+    off: "border-destructive bg-card text-destructive hover:bg-destructive-hover",
+    on: "border-destructive bg-destructive text-destructive-foreground",
+  },
+  primary: {
+    off: "border-primary bg-accent text-accent-foreground hover:bg-card",
+    on: "border-primary bg-primary text-primary-foreground",
+  },
+  none: {
+    off: "border-disabled-border bg-card text-subtle-foreground hover:bg-background",
+    on: "border-subtle-foreground bg-subtle-foreground text-primary-foreground",
+  },
+};
+/** ツールバーの要対応チップ（押すと絞り込みを ON/OFF する） */
+function FilterChip({
+  pressed,
+  tone,
+  disabled,
+  title,
+  onClick,
+  children,
+}: {
+  pressed: boolean;
+  tone: keyof typeof chipTones;
+  disabled: boolean;
+  title?: string;
+  onClick: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      aria-pressed={pressed}
+      disabled={disabled}
+      title={title}
+      onClick={onClick}
+      className={cn(
+        "inline-flex h-8 cursor-pointer items-center gap-1.5 whitespace-nowrap rounded-full border px-3 text-xs transition-colors duration-150 ease-out outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed",
+        chipTones[tone][pressed ? "on" : "off"],
+      )}
+    >
+      {children}
+    </button>
   );
 }

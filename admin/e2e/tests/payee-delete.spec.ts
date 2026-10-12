@@ -48,13 +48,13 @@ test("公開中の仕訳に紐づく支払先は削除できず、下書きだ�
     [meetingRow, "貸会議室センター"],
   ] as const) {
     await row.getByRole("checkbox").click();
-    await expect(page.getByText("1件の下書きを選択中")).toBeVisible();
+    await expect(page.getByText("1件選択")).toBeVisible();
     await page.getByRole("button", { name: "支払先をまとめて設定" }).click();
     await dialog.getByRole("button", { name: "新しい支払先を作成して紐づける" }).click();
     await dialog.getByLabel(/^名称/).fill(payee);
     await dialog.getByRole("button", { name: "作成して紐づける" }).click();
     await expect(page.getByText(`支払先「${payee}」を作成し、1件に紐づけました`)).toBeVisible();
-    await expect(row).toContainText(`支払先：${payee}`);
+    await expect(row).toContainText(payee);
   }
 
   // 東京タクシーに紐づく仕訳を確認済にして公開する
@@ -104,9 +104,9 @@ test("公開中の仕訳に紐づく支払先は削除できず、下書きだ�
 
   // 紐づいていた下書きは支払先が未設定に戻り、公開中の仕訳の支払先はそのまま残る
   await page.getByRole("link", { name: "仕訳の確認・編集" }).click();
-  await expect(meetingRow).toContainText("支払先未設定");
+  await expect(meetingRow).toContainText("未設定");
   await expect(meetingRow).toContainText("下書き");
-  await expect(travelRow).toContainText("支払先：東京タクシー");
+  await expect(travelRow).toContainText("東京タクシー");
 
   // 削除した支払先の詳細ページは 404 になる
   const missing = await page.goto(detailUrl);

@@ -54,8 +54,8 @@ test("支給日と金額を指定して確認済登録し、二重生成を拒�
 
   await page.getByRole("link", { name: "仕訳の確認・編集" }).click();
   const grantRow = page.getByRole("row").filter({ hasText: "調査研究広報滞在費 1月分" });
-  // 手入力した支給日が仕訳日として保存されている
-  await expect(grantRow).toContainText(`${year}.01.15`);
+  // 手入力した支給日が仕訳日として保存されている（一覧は帳簿の年度内なので年を省く）
+  await expect(grantRow).toContainText("01.15");
   await expect(grantRow).toContainText("確認済");
   await expect(grantRow).toContainText("支給");
   await expect(grantRow).toContainText("980,000");
@@ -67,7 +67,7 @@ test("支給日と金額を指定して確認済登録し、二重生成を拒�
   await expect(page.getByRole("button", { name: "破棄" })).toHaveCount(0);
   await page.getByLabel("日付", { exact: true }).fill(`${year}-01-20`);
   await page.getByRole("button", { name: "保存", exact: true }).click();
-  await expect(grantRow).toContainText(`${year}.01.20`);
+  await expect(grantRow).toContainText("01.20");
 
   await page.goto("/politicians");
   await politicianCard.getByRole("button", { name: "削除", exact: true }).click();
