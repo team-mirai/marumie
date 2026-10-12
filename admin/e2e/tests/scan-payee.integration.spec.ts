@@ -54,6 +54,41 @@ test("2 枚の Amazon の領収書を読み取ると、Amazon の支払先が 1 
   const batch = page.locator('[data-slot="card"]').filter({ hasText: "のバッチ" });
   await expect(batch).toContainText("2件中 2件完了・0件失敗", { timeout: 240_000 });
 
+  // 読み取った仕訳から支払先を作成しようとすると、AI 検索の会社名は項目名ではなく発行元の名前で始まる
+  await page.getByRole("link", { name: "仕訳の確認・編集" }).click();
+  await expect(page.getByRole("heading", { name: "仕訳の確認・編集" })).toBeVisible();
+  const dialog = page.getByRole("dialog");
+  const companyName = dialog.getByLabel("会社名", { exact: true });
+  const scannedRow = page
+    .getByRole("row")
+    .filter({ has: page.getByRole("checkbox", { name: /を選択$/ }) })
+    .first();
+  await clickUntil(scannedRow, (options) =>
+    expect(page.getByLabel("項目名", { exact: true })).not.toHaveValue("", options),
+  );
+  const description = await page.getByLabel("項目名", { exact: true }).inputValue();
+  await clickUntil(page.getByRole("button", { name: "支払先を変更" }), (options) =>
+    expect(dialog.getByRole("button", { name: "新しい支払先を作成して紐づける" })).toBeVisible(
+      options,
+    ),
+  );
+  await dialog.getByRole("button", { name: "新しい支払先を作成して紐づける" }).click();
+  await expect(companyName).toHaveValue(/Amazon|アマゾン/i);
+  await expect(companyName).not.toHaveValue(description);
+  await dialog.getByRole("button", { name: "キャンセル" }).click();
+  await dialog.getByRole("button", { name: "キャンセル" }).click();
+  await expect(dialog).toBeHidden();
+
+  // 一覧で選んでまとめて設定するときも同じ
+  await scannedRow.getByRole("checkbox").click();
+  await page.getByRole("button", { name: "支払先をまとめて設定" }).click();
+  await dialog.getByRole("button", { name: "新しい支払先を作成して紐づける" }).click();
+  await expect(companyName).toHaveValue(/Amazon|アマゾン/i);
+  await expect(companyName).not.toHaveValue(description);
+  await dialog.getByRole("button", { name: "キャンセル" }).click();
+  await dialog.getByRole("button", { name: "キャンセル" }).click();
+  await expect(dialog).toBeHidden();
+
   // 支払先は出品者（AnkerDirect / QiuWavyMart）ではなく Amazon に揃い、1 件だけ登録される
   await page.getByRole("link", { name: "支払先", exact: true }).click();
   await expect(page.getByRole("heading", { name: "支払先" })).toBeVisible();
