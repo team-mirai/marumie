@@ -1,7 +1,10 @@
 import { anthropic } from "@ai-sdk/anthropic";
 import { LoadAPIKeyError } from "ai";
 import { MockLanguageModelV3 } from "ai/test";
-import { VercelAIReceiptExtractionGateway } from "@/server/contexts/research-fund/infrastructure/llm/vercel-ai-receipt-extraction-gateway";
+import {
+  researchFundExtractionModel,
+  VercelAIReceiptExtractionGateway,
+} from "@/server/contexts/research-fund/infrastructure/llm/vercel-ai-receipt-extraction-gateway";
 import type { ReceiptExtractionParams } from "@/server/contexts/research-fund/domain/repositories/receipt-extraction-gateway.interface";
 import { buildReceiptExtractionPrompt } from "@/server/contexts/research-fund/domain/services/receipt-extraction-prompt";
 
@@ -71,7 +74,7 @@ describe("VercelAIReceiptExtractionGateway（LLMのみモック、SDKの構造�
           ],
         },
       });
-      expect(anthropic).toHaveBeenCalledWith("claude-sonnet-5");
+      expect(anthropic).toHaveBeenCalledWith("claude-opus-5-5");
       expect(model.doGenerateCalls).toHaveLength(1);
       const call = model.doGenerateCalls[0];
       expect(call.responseFormat).toMatchObject({ type: "json", schema: { type: "object" } });
@@ -174,5 +177,23 @@ describe("VercelAIReceiptExtractionGateway（LLMのみモック、SDKの構造�
       }),
     ).toMatchObject({ status: "invalid", errors: [{ code: "RF_INVALID_DOCUMENT" }] });
     expect(anthropic).not.toHaveBeenCalled();
+  });
+});
+
+describe("researchFundExtractionModel", () => {
+  const originalModel = process.env.RESEARCH_FUND_EXTRACTION_MODEL;
+  afterEach(() => {
+    if (originalModel === undefined) delete process.env.RESEARCH_FUND_EXTRACTION_MODEL;
+    else process.env.RESEARCH_FUND_EXTRACTION_MODEL = originalModel;
+  });
+
+  it("未設定なら claude-opus-5-5 を使う（スキャンジョブにも同じ名前を記録する）", () => {
+    delete process.env.RESEARCH_FUND_EXTRACTION_MODEL;
+    expect(researchFundExtractionModel()).toBe("claude-opus-5-5");
+  });
+
+  it("環境変数があれば前後の空白を除いて使う", () => {
+    process.env.RESEARCH_FUND_EXTRACTION_MODEL = " custom-model ";
+    expect(researchFundExtractionModel()).toBe("custom-model");
   });
 });

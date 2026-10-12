@@ -38,7 +38,8 @@ export async function searchCounterpartAddressAction(
       success: false,
       error: {
         type: "API_ERROR",
-        message: error instanceof Error ? error.message : "住所検索に失敗しました",
+        // API の生のエラーメッセージは画面に出さない（詳細は上のサーバーログに残す）
+        message: "住所検索に失敗しました。時間をおいて再度お試しください。",
         retryable: true,
       },
     };

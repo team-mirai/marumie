@@ -11,17 +11,20 @@ import type {
   CounterpartAddressSearchResult,
 } from "@/server/contexts/report/domain/models/counterpart-address-search";
 
-const MODEL = "claude-sonnet-4-20250514";
+/** 取引先の住所検索に使うモデル。環境変数で差し替えられる */
+function addressSearchModel(): string {
+  return process.env.COUNTERPART_ADDRESS_SEARCH_MODEL?.trim() || "claude-opus-5-5";
+}
 
 export class VercelAIGateway implements LLMGateway {
   async searchAddress(params: SearchAddressParams): Promise<CounterpartAddressSearchResult> {
     const prompt = buildCounterpartAddressSearchPrompt(params.companyName, params.hint);
 
     const { text } = await generateText({
-      model: anthropic(MODEL),
+      model: anthropic(addressSearchModel()),
       prompt,
       tools: {
-        web_search: anthropic.tools.webSearch_20250305({
+        web_search: anthropic.tools.webSearch_20260209({
           maxUses: 3,
         }),
       },
