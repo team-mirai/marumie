@@ -44,7 +44,7 @@
     "test:e2e:admin": "node scripts/supabase-env.mjs pnpm --filter admin test:e2e",
     "test:e2e:ui": "node scripts/supabase-env.mjs pnpm --filter admin test:e2e:ui",
     "test:integration": "INTEGRATION_TEST=true pnpm --filter admin test -- \\.integration\\.test\\.ts$",
-    "test:integration:e2e": "INTEGRATION_TEST=true node scripts/supabase-env.mjs pnpm --filter admin test:e2e -- scan-payee.integration.spec.ts",
+    "test:integration:e2e": "INTEGRATION_TEST=true node scripts/supabase-env.mjs pnpm --filter admin exec playwright test e2e/tests/scan-payee.integration.spec.ts",
     "// Database": "==========================================",
     "db:generate": "prisma generate",
     "db:migrate": "pnpm -s dotenv -e .env.dev -- prisma migrate dev",
