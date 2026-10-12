@@ -5,7 +5,7 @@ const row = { id: BigInt(7), politicianId: BigInt(5), name: "東京タクシー"
 const payee = { id: "7", politicianId: "5", name: "東京タクシー", postalCode: "100-0001", address: "東京都千代田区", invoiceRegistrationNumber: "T1234567890123" };
 const input = { name: "東京タクシー", postalCode: "100-0001", address: "東京都千代田区", invoiceRegistrationNumber: "T1234567890123" };
 function setup() {
-  const tx = { researchFundJournalEntry: { findMany: jest.fn() }, researchFundPayee: { findMany: jest.fn(), findFirst: jest.fn(), create: jest.fn().mockResolvedValue(row), updateMany: jest.fn().mockResolvedValue({ count: 1 }), findUniqueOrThrow: jest.fn().mockResolvedValue(row) }, researchFundPayeeAlias: { findMany: jest.fn().mockResolvedValue([]), deleteMany: jest.fn().mockResolvedValue({ count: 1 }) } };
+  const tx = { researchFundJournalEntry: { findMany: jest.fn(), count: jest.fn().mockResolvedValue(0), updateMany: jest.fn().mockResolvedValue({ count: 2 }) }, researchFundPayee: { findMany: jest.fn(), findFirst: jest.fn(), create: jest.fn().mockResolvedValue(row), updateMany: jest.fn().mockResolvedValue({ count: 1 }), findUniqueOrThrow: jest.fn().mockResolvedValue(row), delete: jest.fn().mockResolvedValue(row) }, researchFundPayeeAlias: { findMany: jest.fn().mockResolvedValue([]), deleteMany: jest.fn().mockResolvedValue({ count: 1 }) } };
   const repository = new PrismaPayeeRepository({ ...tx, $transaction: jest.fn(async fn => fn(tx)) } as unknown as PrismaClient);
   return { repository, tx };
 }
@@ -87,4 +87,42 @@ test("表記の削除は支払先と議員で絞り込み、消せなければ f
   expect(tx.researchFundPayeeAlias.deleteMany).toHaveBeenCalledWith({ where: { id: BigInt(3), payeeId: BigInt(7), payee: { politicianId: BigInt(5) } } });
   tx.researchFundPayeeAlias.deleteMany.mockResolvedValue({ count: 0 });
   await expect(repository.deleteAlias("6", "7", "3")).resolves.toBe(false);
+});
+test("削除の影響は議員の支払先について、すべての帳簿の仕訳を公開中とそれ以外に分けて数える", async () => {
+  const { repository, tx } = setup();
+  tx.researchFundPayee.findFirst.mockResolvedValue(row);
+  tx.researchFundJournalEntry.count.mockResolvedValueOnce(1).mockResolvedValueOnce(4);
+  await expect(repository.deletionImpact("5", "7")).resolves.toEqual({ publishedCount: 1, unlinkedCount: 4 });
+  expect(tx.researchFundJournalEntry.count.mock.calls.map(([args]) => args.where)).toEqual([{ payeeId: BigInt(7), status: "published" }, { payeeId: BigInt(7), status: { not: "published" } }]);
+  tx.researchFundPayee.findFirst.mockResolvedValue(null);
+  await expect(repository.deletionImpact("6", "7")).resolves.toBeNull();
+});
+test("削除は公開中でない仕訳の紐づけを経路・確信度・根拠ごと外してから支払先を消す", async () => {
+  const { repository, tx } = setup();
+  tx.researchFundPayee.findFirst.mockResolvedValue({ id: BigInt(7) });
+  await expect(repository.delete("5", "7")).resolves.toEqual({ status: "deleted", unlinkedCount: 2 });
+  expect(tx.researchFundPayee.findFirst.mock.calls[0][0].where).toEqual({ id: BigInt(7), politicianId: BigInt(5) });
+  expect(tx.researchFundJournalEntry.updateMany).toHaveBeenCalledWith({ where: { payeeId: BigInt(7), status: { not: "published" } }, data: { payeeId: null, payeeLinkSource: null, payeeLinkConfidence: null, payeeLinkReason: null } });
+  expect(tx.researchFundJournalEntry.count.mock.calls[0][0].where).toEqual({ payeeId: BigInt(7), status: "published" });
+  expect(tx.researchFundPayee.delete).toHaveBeenCalledWith({ where: { id: BigInt(7) } });
+});
+test("公開中の仕訳が残っていれば支払先を消さず、外した紐づけも巻き戻すようトランザクションを例外で抜ける", async () => {
+  const { repository, tx } = setup();
+  tx.researchFundPayee.findFirst.mockResolvedValue({ id: BigInt(7) });
+  tx.researchFundJournalEntry.count.mockResolvedValue(3);
+  await expect(repository.delete("5", "7")).resolves.toEqual({ status: "published", publishedCount: 3 });
+  expect(tx.researchFundPayee.delete).not.toHaveBeenCalled();
+});
+test("別の議員の支払先は何も変えずに見つからないとする", async () => {
+  const { repository, tx } = setup();
+  tx.researchFundPayee.findFirst.mockResolvedValue(null);
+  await expect(repository.delete("6", "7")).resolves.toEqual({ status: "not-found" });
+  expect(tx.researchFundJournalEntry.updateMany).not.toHaveBeenCalled();
+  expect(tx.researchFundPayee.delete).not.toHaveBeenCalled();
+});
+test("削除中に別の仕訳が紐づけられて外部キーで止まったら、やり直しを促すエラーにする", async () => {
+  const { repository, tx } = setup();
+  tx.researchFundPayee.findFirst.mockResolvedValue({ id: BigInt(7) });
+  tx.researchFundPayee.delete.mockRejectedValue(new Prisma.PrismaClientKnownRequestError("fk", { code: "P2003", clientVersion: "test" }));
+  await expect(repository.delete("5", "7")).rejects.toThrow("もう一度お試しください");
 });

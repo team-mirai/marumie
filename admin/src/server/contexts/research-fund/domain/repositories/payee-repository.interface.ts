@@ -1,5 +1,7 @@
 import type {
   Payee,
+  PayeeDeletionImpact,
+  PayeeDeletionResult,
   PayeeInput,
   PayeeJournalEntry,
   PayeeSummary,
@@ -29,4 +31,11 @@ export interface PayeeRepository {
   listAliases(politicianId: string, id: string): Promise<PayeeAlias[]>;
   /** 議員の支払先の表記を削除する。別の議員の支払先・別の支払先の表記・存在しない表記なら false */
   deleteAlias(politicianId: string, id: string, aliasId: string): Promise<boolean>;
+  /** 議員の支払先を削除したときの影響を、議員のすべての帳簿の仕訳で数える。別の議員の支払先なら null */
+  deletionImpact(politicianId: string, id: string): Promise<PayeeDeletionImpact | null>;
+  /**
+   * 議員の支払先を削除する。紐づいていた公開中でない仕訳は支払先が未設定に戻り、表記も一緒に消える。
+   * 公開中の仕訳が紐づいていれば何も変えずに published を返す。別の議員の支払先なら not-found
+   */
+  delete(politicianId: string, id: string): Promise<PayeeDeletionResult>;
 }

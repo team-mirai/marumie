@@ -269,3 +269,27 @@ export function rereadPayeeLink(
   if (matchedPayeeId !== null) return { payeeId: matchedPayeeId, source: "rule" };
   return inherited;
 }
+
+/**
+ * 支払先を削除したときの影響。議員のすべての帳簿の仕訳で数える。
+ * 公開中の仕訳に紐づく支払先は削除できない（公開済みの内容を壊さない）。
+ * それ以外（下書き・確認済）の仕訳は、削除すると支払先が未設定に戻る
+ */
+export interface PayeeDeletionImpact {
+  /** 紐づいている公開中の仕訳の件数 */
+  publishedCount: number;
+  /** 削除すると支払先が未設定に戻る仕訳の件数 */
+  unlinkedCount: number;
+}
+
+/** 支払先の削除の結果。公開中の仕訳が残っていれば削除せず、その件数を返す */
+export type PayeeDeletionResult =
+  | { status: "deleted"; unlinkedCount: number }
+  | { status: "not-found" }
+  | { status: "published"; publishedCount: number };
+
+/** 支払先を削除できない理由。削除できるなら null */
+export function payeeDeletionRejection(impact: Pick<PayeeDeletionImpact, "publishedCount">) {
+  if (impact.publishedCount === 0) return null;
+  return `公開中の仕訳（${impact.publishedCount}件）に紐づいているため削除できません。先に仕訳の支払先を付け替えるか、公開を取り下げてください`;
+}

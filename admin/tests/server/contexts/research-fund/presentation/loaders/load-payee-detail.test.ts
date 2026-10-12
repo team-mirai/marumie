@@ -10,8 +10,8 @@ const payee = { id: "7", politicianId: "2", name: "東京タクシー", postalCo
 afterEach(() => jest.restoreAllMocks());
 test("選択中の帳簿の議員の支払先と、帳簿で紐づいた仕訳を返す", async () => {
   jest.mocked(requireJournalTarget).mockResolvedValue(target);
-  const get = jest.spyOn(GetPayeeDetailUsecase.prototype, "execute").mockResolvedValue({ payee, entries: [], aliases: [] });
-  await expect(loadPayeeDetail("2", "1", "7")).resolves.toEqual({ payee, entries: [], aliases: [], target });
+  const get = jest.spyOn(GetPayeeDetailUsecase.prototype, "execute").mockResolvedValue({ payee, entries: [], aliases: [], deletion: { publishedCount: 0, unlinkedCount: 0 } });
+  await expect(loadPayeeDetail("2", "1", "7")).resolves.toEqual({ payee, entries: [], aliases: [], deletion: { publishedCount: 0, unlinkedCount: 0 }, target });
   expect(get).toHaveBeenCalledWith("2", "1", "7");
 });
 test("別の議員の支払先・存在しない支払先なら 404 にする", async () => {

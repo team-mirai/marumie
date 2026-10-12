@@ -2,6 +2,7 @@
 import "server-only";
 import { revalidatePath } from "next/cache";
 import { requireAuth } from "@/server/contexts/auth/presentation/loaders/require-auth";
+import { DeletePayeeUsecase } from "@/server/contexts/research-fund/application/usecases/delete-payee-usecase";
 import { DeletePayeeAliasUsecase } from "@/server/contexts/research-fund/application/usecases/delete-payee-alias-usecase";
 import { SavePayeeUsecase } from "@/server/contexts/research-fund/application/usecases/save-payee-usecase";
 import {
@@ -66,6 +67,28 @@ export async function deletePayeeAlias(
     return {
       success: false as const,
       error: error instanceof PayeeError ? error.message : "表記の削除に失敗しました",
+    };
+  }
+}
+
+/**
+ * 支払先を削除する。対象は選択中の帳簿の議員の支払先だけ。公開中の仕訳が紐づく支払先は削除しない。
+ * 紐づいていた公開中でない仕訳は支払先が未設定に戻る。支払先は公開内容に影響しないので、webapp のキャッシュは無効化しない。
+ */
+export async function deletePayee(politicianId: string, bookId: string, payeeId: string) {
+  await requireAuth();
+  const target = await requireJournalTarget(politicianId, bookId);
+  if (!target) return { success: false as const, error: "現在の対象帳簿を選択し直してください" };
+  try {
+    const { unlinkedCount } = await new DeletePayeeUsecase(
+      new PrismaPayeeRepository(prisma),
+    ).execute(target.politicianId, payeeId);
+    revalidatePath("/(auth)", "layout");
+    return { success: true as const, unlinkedCount };
+  } catch (error) {
+    return {
+      success: false as const,
+      error: error instanceof PayeeError ? error.message : "支払先の削除に失敗しました",
     };
   }
 }
