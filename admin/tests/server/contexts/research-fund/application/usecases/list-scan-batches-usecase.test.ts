@@ -1,4 +1,5 @@
 import { ListScanBatchesUsecase } from "@/server/contexts/research-fund/application/usecases/list-scan-batches-usecase";
+import type { DuplicateDocumentRepository } from "@/server/contexts/research-fund/domain/repositories/duplicate-document-repository.interface";
 import type { PromptRepository } from "@/server/contexts/research-fund/domain/repositories/prompt-repository.interface";
 import type { ScanRepository } from "@/server/contexts/research-fund/domain/repositories/scan-repository.interface";
 
@@ -32,11 +33,20 @@ describe("ListScanBatchesUsecase", () => {
     activate: jest.fn(),
     findActive: jest.fn(),
   };
-  const usecase = new ListScanBatchesUsecase(scanRepository, promptRepository, "claude-sonnet-5");
+  const duplicateDocumentRepository: jest.Mocked<DuplicateDocumentRepository> = {
+    listScannedDocuments: jest.fn(),
+  };
+  const usecase = new ListScanBatchesUsecase(
+    scanRepository,
+    promptRepository,
+    duplicateDocumentRepository,
+    "claude-sonnet-5",
+  );
 
   beforeEach(() => {
     jest.resetAllMocks();
     promptRepository.findActive.mockResolvedValue(ACTIVE_PROMPT);
+    duplicateDocumentRepository.listScannedDocuments.mockResolvedValue([]);
   });
 
   it("adds the progress summary, the active version and the model", async () => {
@@ -47,6 +57,7 @@ describe("ListScanBatchesUsecase", () => {
         jobs: [
           {
             id: "1",
+            documentId: "21",
             status: "succeeded",
             originalFilename: "a.jpg",
             mime: "image/jpeg",
@@ -55,6 +66,7 @@ describe("ListScanBatchesUsecase", () => {
           },
           {
             id: "2",
+            documentId: "22",
             status: "queued",
             originalFilename: "b.pdf",
             mime: "application/pdf",
@@ -72,6 +84,25 @@ describe("ListScanBatchesUsecase", () => {
       succeeded: 1,
       failed: 0,
       percent: 50,
+    });
+  });
+
+  it("adds the book's documents that may be scanned twice, keyed by document", async () => {
+    scanRepository.listBatches.mockResolvedValue([]);
+    const receipt = {
+      date: "2026-09-01",
+      issuer: null,
+      items: [{ item: "グラス代", amount: 683, category_key: "stationery-supplies" }],
+    };
+    duplicateDocumentRepository.listScannedDocuments.mockResolvedValue([
+      { documentId: "21", originalFilename: "a.jpg", rawJson: receipt, payeeIds: [] },
+      { documentId: "23", originalFilename: "c.jpg", rawJson: receipt, payeeIds: [] },
+    ]);
+    const overview = await usecase.execute("5", "12");
+    expect(duplicateDocumentRepository.listScannedDocuments).toHaveBeenCalledWith("12");
+    expect(overview.duplicates).toEqual({
+      "21": [{ documentId: "23", originalFilename: "c.jpg", date: "2026-09-01", totalAmount: 683 }],
+      "23": [{ documentId: "21", originalFilename: "a.jpg", date: "2026-09-01", totalAmount: 683 }],
     });
   });
 

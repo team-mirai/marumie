@@ -126,6 +126,7 @@ export class PrismaScanRepository implements ScanRepository {
       createdAt: row.createdAt.toISOString(),
       jobs: row.jobs.map((job) => ({
         id: job.id.toString(),
+        documentId: job.documentId.toString(),
         status: job.status as ScanJobStatus,
         originalFilename: job.document.originalFilename,
         mime: job.document.mime,

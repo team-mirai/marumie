@@ -12,6 +12,7 @@ import {
 } from "@phosphor-icons/react/dist/ssr";
 import { toast } from "sonner";
 import { PageHeader } from "@/client/components/layout/PageHeader";
+import { DuplicateDocumentWarning } from "@/client/components/research-fund/DuplicateDocumentWarning";
 import {
   Button,
   Card,
@@ -73,6 +74,7 @@ export function DocumentScan({
   batches,
   activePromptVersion,
   model,
+  duplicates,
   target,
 }: ScanOverview & { target: Extract<AdminTarget, { kind: "research-fund" }> }) {
   const router = useRouter();
@@ -352,6 +354,14 @@ export function DocumentScan({
                           {job.status === "failed"
                             ? (job.error ?? "読み取りに失敗しました")
                             : (job.summary ?? "—")}
+                          {job.status === "succeeded" && (
+                            <DuplicateDocumentWarning
+                              duplicates={duplicates[job.documentId] ?? []}
+                              bookId={target.bookId}
+                              politicianId={target.politicianId}
+                              className="mt-1"
+                            />
+                          )}
                         </TableCell>
                         <TableCell className="whitespace-nowrap">
                           {job.status === "failed" && (

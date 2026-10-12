@@ -8,7 +8,7 @@ import {
 } from "@/server/contexts/research-fund/domain/models/scan-batch";
 
 function job(status: ScanJobStatus): ScanJobView {
-  return { id: "1", status, originalFilename: "a.jpg", mime: "image/jpeg", summary: null, error: null };
+  return { id: "1", documentId: "1", status, originalFilename: "a.jpg", mime: "image/jpeg", summary: null, error: null };
 }
 
 describe("validateScanUpload", () => {

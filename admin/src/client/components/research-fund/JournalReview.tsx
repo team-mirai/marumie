@@ -28,6 +28,7 @@ import {
   Textarea,
 } from "@/client/components/ui";
 import { PageHeader } from "@/client/components/layout/PageHeader";
+import { DuplicateDocumentWarning } from "@/client/components/research-fund/DuplicateDocumentWarning";
 import { JournalAdvanceField } from "@/client/components/research-fund/JournalAdvanceField";
 import { JournalEditor } from "@/client/components/research-fund/JournalEditor";
 import { JournalPayeeField } from "@/client/components/research-fund/JournalPayeeField";
@@ -40,6 +41,7 @@ import {
   summarizeUnsettledAdvances,
 } from "@/server/contexts/research-fund/domain/models/advance";
 import { todayInJst } from "@/server/contexts/research-fund/domain/models/calendar-date";
+import type { DuplicateDocuments } from "@/server/contexts/research-fund/domain/models/duplicate-document";
 import {
   isAccountUnconfirmed,
   legalLabelOf,
@@ -71,6 +73,7 @@ export function JournalReview({
   accounts,
   advancers,
   payees,
+  duplicates,
   target,
   initialStatus,
 }: {
@@ -80,6 +83,8 @@ export function JournalReview({
   advancers: string[];
   /** 帳簿の議員の支払先（紐づけの候補）。別の議員の支払先は含まない */
   payees: PayeeSummary[];
+  /** 書類 ID → 同じ書類を二重にスキャンした可能性のある相手の書類 */
+  duplicates: DuplicateDocuments;
   target: Extract<AdminTarget, { kind: "research-fund" }>;
   /** スキャン画面の「完了分を確認へ」から下書きタブを開くための初期値 */
   initialStatus?: string;
@@ -605,6 +610,11 @@ export function JournalReview({
       }
     });
   }
+  // 二重スキャンの警告は下書きにだけ出す（確認済にする前に気づけるように）
+  const duplicatesOf = (entry: ReviewEntry) =>
+    entry.status === "draft" && entry.documentId !== null
+      ? (duplicates[entry.documentId] ?? [])
+      : [];
   const documentUrl = selected?.documentId
     ? `/api/research-fund/documents/${selected.documentId}?bookId=${target.bookId}&politicianId=${target.politicianId}`
     : undefined;
@@ -950,6 +960,11 @@ export function JournalReview({
                               分割 {splits.findIndex((e) => e.id === entry.id) + 1}/{splits.length}
                             </span>
                           )}
+                          {duplicatesOf(entry).length > 0 && (
+                            <span className="rounded-full border border-destructive px-2 text-destructive">
+                              同じ内容の書類あり
+                            </span>
+                          )}
                           {entry.receiptNumber !== null && (
                             <span className="rounded-full border px-2">
                               領収書等番号 <span className="font-latin">{entry.receiptNumber}</span>
@@ -1046,6 +1061,12 @@ export function JournalReview({
                     </Button>
                   </div>
                 </div>
+                <DuplicateDocumentWarning
+                  duplicates={duplicatesOf(selected)}
+                  bookId={target.bookId}
+                  politicianId={target.politicianId}
+                  className="mb-4"
+                />
                 <JournalEditor
                   key={`${selected.id}:${selected.updatedAt}`}
                   entry={selected}
