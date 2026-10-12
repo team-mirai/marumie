@@ -106,7 +106,41 @@ test("支払先の作成・編集と、確認画面での紐づけ・その場�
   await expect(page.getByLabel(/支払先が未設定だけ/)).toBeVisible();
   await expect(page.getByText("支払先が未設定だけ（0）")).toBeVisible();
 
+  // 確認画面の支払先から、その支払先の詳細ページへ移動できる
+  await clickUntil(taxiRow, (options) =>
+    expect(page.getByLabel("項目名", { exact: true })).toHaveValue("タクシー代", options),
+  );
+  await page.getByRole("link", { name: "東京タクシー株式会社", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "東京タクシー株式会社" })).toBeVisible();
+  await expect(page.getByText("東京都千代田区千代田1-1")).toBeVisible();
+
   // 作成した支払先は支払先の一覧にも並び、紐づいた仕訳の件数が分かる
   await page.getByRole("link", { name: "支払先", exact: true }).click();
   await expect(page.getByRole("row").filter({ hasText: "貸会議室センター" })).toContainText("1");
+
+  // 一覧から詳細ページへ移動でき、紐づいた仕訳が一覧と同じ件数だけ並ぶ。リロードしても同じ支払先が出る
+  await page.getByRole("link", { name: "貸会議室センター", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "貸会議室センター" })).toBeVisible();
+  const detailUrl = page.url();
+  expect(detailUrl).toMatch(/\/payees\/\d+$/);
+  await page.reload();
+  await expect(page.getByRole("heading", { name: "貸会議室センター" })).toBeVisible();
+  await expect(page.getByText(/紐づいている仕訳（1件）/)).toBeVisible();
+  const linkedRow = page.getByRole("row").filter({ hasText: "会議室の利用料" });
+  await expect(linkedRow).toContainText(`${YEAR}-08-01`);
+  await expect(linkedRow).toContainText("¥3,000");
+  await expect(linkedRow).toContainText("下書き");
+
+  // 詳細ページから編集できる
+  await clickUntil(page.getByRole("button", { name: "編集", exact: true }), (options) =>
+    expect(dialog.getByLabel(/^名称/)).toBeVisible(options),
+  );
+  await dialog.getByLabel("住所", { exact: true }).fill("東京都港区芝公園4-2-8");
+  await dialog.getByRole("button", { name: "保存", exact: true }).click();
+  await expect(dialog).toBeHidden();
+  await expect(page.getByText("東京都港区芝公園4-2-8")).toBeVisible();
+
+  // 存在しない支払先は 404 になる
+  const missing = await page.goto(detailUrl.replace(/\d+$/, "999999999"));
+  expect(missing?.status()).toBe(404);
 });

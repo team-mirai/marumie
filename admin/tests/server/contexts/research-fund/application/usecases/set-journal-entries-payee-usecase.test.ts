@@ -6,7 +6,7 @@ import { entry, grant, setup, target } from "./journal-review-test-helpers";
 const payee = { id: "7", politicianId: "5", name: "東京タクシー", postalCode: null, address: "", invoiceRegistrationNumber: null };
 function setupUsecase(overrides: Partial<ReviewEntry> = {}) {
   const { repository, cacheInvalidator } = setup(overrides);
-  const payeeRepository = { list: jest.fn(), find: jest.fn().mockResolvedValue(payee), create: jest.fn().mockResolvedValue(payee), update: jest.fn() };
+  const payeeRepository = { listJournalEntries: jest.fn(), list: jest.fn(), find: jest.fn().mockResolvedValue(payee), create: jest.fn().mockResolvedValue(payee), update: jest.fn() };
   return { repository, payeeRepository, cacheInvalidator, usecase: new SetJournalEntriesPayeeUsecase(repository, payeeRepository) };
 }
 

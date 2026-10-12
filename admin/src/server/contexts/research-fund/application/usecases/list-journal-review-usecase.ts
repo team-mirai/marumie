@@ -18,7 +18,9 @@ export class ListJournalReviewUsecase {
       advancers: await this.repository.advancers(bookId),
       // 紐づけの候補は帳簿の議員の支払先だけ（別の議員の支払先は見せない）。
       payees:
-        politicianId === null ? [] : sortPayees(await this.payeeRepository.list(politicianId)),
+        politicianId === null
+          ? []
+          : sortPayees(await this.payeeRepository.list(politicianId, bookId)),
     };
   }
 }

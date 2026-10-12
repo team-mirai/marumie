@@ -11,6 +11,7 @@ export async function loadPayees(politicianId: string, bookId: string) {
   if (!target) notFound();
   const payees = await new ListPayeesUsecase(new PrismaPayeeRepository(prisma)).execute(
     target.politicianId,
+    target.bookId,
   );
   return { payees, target };
 }

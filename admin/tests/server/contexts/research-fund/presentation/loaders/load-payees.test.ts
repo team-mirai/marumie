@@ -11,7 +11,7 @@ test("選択中の帳簿の議員の支払先を返す", async () => {
   jest.mocked(requireJournalTarget).mockResolvedValue(target);
   const list = jest.spyOn(ListPayeesUsecase.prototype, "execute").mockResolvedValue([]);
   await expect(loadPayees("2", "1")).resolves.toEqual({ payees: [], target });
-  expect(list).toHaveBeenCalledWith("2");
+  expect(list).toHaveBeenCalledWith("2", "1");
 });
 test("選択中の対象と一致しなければ支払先を取得しない", async () => {
   jest.mocked(requireJournalTarget).mockResolvedValue(null);

@@ -4,6 +4,7 @@ import {
   PayeeError,
   type Payee,
   type PayeeInput,
+  type PayeeJournalEntry,
 } from "@/server/contexts/research-fund/domain/models/payee";
 import type { PayeeRepository } from "@/server/contexts/research-fund/domain/repositories/payee-repository.interface";
 
@@ -29,13 +30,34 @@ async function unique<T>(run: () => Promise<T>): Promise<T> {
 }
 export class PrismaPayeeRepository implements PayeeRepository {
   constructor(private prisma: PrismaClient) {}
-  async list(politicianId: string) {
+  async list(politicianId: string, bookId: string) {
     const rows = await this.prisma.researchFundPayee.findMany({
       where: { politicianId: BigInt(politicianId) },
-      include: { _count: { select: { journalEntries: true } } },
+      include: { _count: { select: { journalEntries: { where: { bookId: BigInt(bookId) } } } } },
       orderBy: [{ name: "asc" }, { address: "asc" }],
     });
     return rows.map((row) => ({ ...model(row), usageCount: row._count.journalEntries }));
+  }
+  // 件数は list と同じ条件（帳簿・支払先）で数えるので、一覧の件数とここで返す件数は一致する。
+  async listJournalEntries(politicianId: string, id: string, bookId: string) {
+    const rows = await this.prisma.researchFundJournalEntry.findMany({
+      where: {
+        bookId: BigInt(bookId),
+        payeeId: BigInt(id),
+        payee: { politicianId: BigInt(politicianId) },
+      },
+      include: { lines: { where: { side: "debit" }, select: { amount: true } } },
+      orderBy: [{ entryDate: "desc" }, { id: "asc" }],
+    });
+    return rows.map(
+      (row): PayeeJournalEntry => ({
+        id: String(row.id),
+        entryDate: row.entryDate.toISOString().slice(0, 10),
+        description: row.description,
+        amount: row.lines.reduce((sum, line) => sum + line.amount.toNumber(), 0),
+        status: row.status,
+      }),
+    );
   }
   async find(politicianId: string, id: string) {
     const row = await this.prisma.researchFundPayee.findFirst({
