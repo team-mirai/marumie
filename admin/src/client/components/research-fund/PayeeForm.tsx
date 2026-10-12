@@ -13,15 +13,19 @@ import {
   type Payee,
   type PayeeFormInput,
 } from "@/server/contexts/research-fund/domain/models/payee";
+import { searchPayeeAddress } from "@/server/contexts/research-fund/presentation/actions/search-payee-address";
+import type { AdminTarget } from "@/server/contexts/shared/domain/models/admin-target";
 
 /**
  * 支払先の作成・編集フォーム。
  *
  * 住所は政治資金の取引先画面と同じ AI 検索（AddressInput）で、名称から郵便番号と住所を引いて入力できる。
+ * 検索には帳簿の議員の住所検索プロンプトを使う。
  * 入力の検証と正規化（郵便番号・インボイス登録番号の表記ゆれの吸収）はサーバー側のドメインで行う。
  */
 export function PayeeForm({
   initial,
+  target,
   defaultSearchQuery,
   pending,
   submitLabel,
@@ -29,6 +33,8 @@ export function PayeeForm({
   onCancel,
 }: {
   initial: Payee | null;
+  /** 住所検索のプロンプトを選ぶ帳簿の議員 */
+  target: Pick<Extract<AdminTarget, { kind: "research-fund" }>, "politicianId" | "bookId">;
   /** AI 検索の初期値（仕訳の項目名など） */
   defaultSearchQuery?: string;
   pending: boolean;
@@ -61,6 +67,9 @@ export function PayeeForm({
         defaultSearchQuery={defaultSearchQuery ?? initial?.name ?? ""}
         onSelect={select}
         disabled={pending}
+        searchAddress={(name, hint) =>
+          searchPayeeAddress(target.politicianId, target.bookId, name, hint)
+        }
       />
       <div className="space-y-2">
         <Label htmlFor={`${fieldId}-name`}>

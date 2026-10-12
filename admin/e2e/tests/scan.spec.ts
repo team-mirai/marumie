@@ -42,8 +42,9 @@ test("プロンプト保存後に書類をアップロードすると、バッ�
   await expect(page.getByText("まだバッチがありません。")).toBeVisible();
 
   await page.getByRole("link", { name: "読み取りプロンプト" }).click();
-  await clickUntil(page.getByRole("button", { name: "保存して v1 にする" }), (options) =>
-    expect(page.getByText("v1 有効")).toBeVisible(options),
+  const receiptPrompt = page.getByRole("region", { name: "領収書の読み取り" });
+  await clickUntil(receiptPrompt.getByRole("button", { name: "保存して v1 にする" }), (options) =>
+    expect(receiptPrompt.getByText("v1 有効")).toBeVisible(options),
   );
 
   await page.getByRole("link", { name: "書類スキャン" }).click();

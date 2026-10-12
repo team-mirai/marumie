@@ -4,6 +4,7 @@ import Link from "next/link";
 import { PayeeLinkDialog } from "@/client/components/research-fund/PayeeLinkDialog";
 import { Button, Checkbox, Label } from "@/client/components/ui";
 import type { ReviewEntry } from "@/server/contexts/research-fund/domain/models/journal-review";
+import type { AdminTarget } from "@/server/contexts/shared/domain/models/admin-target";
 import {
   payeeFormInputFromIssuer,
   withSameDocumentEntries,
@@ -30,6 +31,7 @@ export function JournalPayeeField({
   entry,
   entries,
   payees,
+  target,
   payeesPath,
   allowLeave,
   pending,
@@ -41,6 +43,8 @@ export function JournalPayeeField({
   entries: readonly ReviewEntry[];
   /** 帳簿の議員の支払先 */
   payees: readonly Payee[];
+  /** 支払先を新規作成するときの住所検索に使う帳簿の議員 */
+  target: Pick<Extract<AdminTarget, { kind: "research-fund" }>, "politicianId" | "bookId">;
   /** 支払先の一覧ページのパス。支払先の詳細ページへのリンクに使う */
   payeesPath: string;
   /** 編集中の変更を破棄して画面を離れてよいか（支払先の詳細ページへ移る前に確かめる） */
@@ -147,6 +151,7 @@ export function JournalPayeeField({
         }
         payees={payees}
         currentPayeeId={entry.payeeId}
+        target={target}
         defaultSearchQuery={entry.description}
         pending={pending}
         onLink={(payeeId) => onLink(targets, payeeId)}

@@ -156,6 +156,7 @@ export function PayeeList({
             <PayeeForm
               key={editing === "new" ? "new" : editing.id}
               initial={editing === "new" ? null : editing}
+              target={target}
               pending={pending}
               submitLabel={editing === "new" ? "作成" : "保存"}
               onSubmit={save}

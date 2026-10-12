@@ -5,7 +5,10 @@ import { useId, useState } from "react";
 import { ArrowSquareOut, MagnifyingGlass } from "@phosphor-icons/react/dist/ssr";
 import { Button, Input, Label } from "@/client/components/ui";
 import { cn } from "@/client/lib";
-import { useAddressSearch } from "@/client/components/counterparts/useAddressSearch";
+import {
+  type SearchAddress,
+  useAddressSearch,
+} from "@/client/components/counterparts/useAddressSearch";
 import type { AddressCandidate } from "@/server/contexts/report/presentation/types/address-search";
 
 /** 候補選択時に返されるデータ */
@@ -21,6 +24,8 @@ interface AddressInputProps {
   /** 候補を選択したときのコールバック */
   onSelect: (result: CounterpartSearchResult) => void;
   disabled?: boolean;
+  /** 住所検索の実行。省略すると政治資金の取引先の住所検索を使う */
+  searchAddress?: SearchAddress;
 }
 
 /** 確度ラベル。ブランド外の色（黄・オレンジ）は使わず、高=teal deep / 中=墨 / 低=赤で表す */
@@ -44,6 +49,7 @@ export function AddressInput({
   defaultSearchQuery = "",
   onSelect,
   disabled = false,
+  searchAddress,
 }: AddressInputProps) {
   const searchQueryId = useId();
   const hintId = useId();
@@ -54,6 +60,7 @@ export function AddressInput({
   const { phase, searchResult, hint, isSearching, startSearch, reSearch, setHint } =
     useAddressSearch({
       companyName: searchQuery,
+      searchAddress,
     });
 
   const handleSelectCandidate = (candidate: AddressCandidate) => {
