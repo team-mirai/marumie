@@ -1,4 +1,4 @@
-import { expect, type Locator } from "@playwright/test";
+import { expect, type Locator, type Page } from "@playwright/test";
 
 // 1 回の試行で「クリックが効いたか」を見極める猶予
 const ATTEMPT_TIMEOUT = 5_000;
@@ -46,4 +46,22 @@ async function satisfied(
   } catch {
     return false;
   }
+}
+
+/**
+ * まとめて操作バーの操作を押す。
+ *
+ * バーに全部のボタンが収まらないときは、primary 以外の操作（「支払先をまとめて設定」「まとめて破棄」など）が
+ * 「…」メニューに入るので、バーに無ければメニューから選ぶ。収まるかは画面幅と選んだ仕訳で出る操作の数で変わる。
+ */
+export async function clickBulkAction(page: Page, name: string): Promise<void> {
+  const button = page.getByRole("button", { name, exact: true });
+  const more = page.getByRole("button", { name: "ほかの操作" });
+  await expect(button.or(more)).toBeVisible();
+  if (await button.isVisible()) {
+    await button.click();
+    return;
+  }
+  await more.click();
+  await page.getByRole("menuitem", { name, exact: true }).click();
 }

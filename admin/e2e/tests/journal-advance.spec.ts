@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { clickUntil } from "../helpers/interactions";
+import { clickUntil, clickBulkAction } from "../helpers/interactions";
 
 // 立替の入力から精算までの流れ。立替は事務所内の管理情報なので、下書きのうちから入力でき、
 // 精算は金額が確定した確認済・公開中だけに許す。
@@ -71,7 +71,7 @@ test("立替者の入力→一括設定→確認済→一括精算、未精算�
   await expect(page.getByText("2件選択")).toBeVisible();
   // 下書きは金額が確定していないので精算できない
   await expect(page.getByRole("button", { name: "まとめて精算" })).toHaveCount(0);
-  await page.getByRole("button", { name: "立替者をまとめて設定" }).click();
+  await clickBulkAction(page, "立替者をまとめて設定");
   const assignDialog = page.getByRole("dialog");
   await assignDialog.getByLabel("立替者", { exact: true }).fill("秘書B");
   await assignDialog.getByRole("button", { name: "設定する" }).click();
@@ -181,7 +181,7 @@ test("立替者の入力→一括設定→確認済→一括精算、未精算�
   await expect(meeting).not.toContainText("立替 ");
   // 残った精算済は、まとめて未精算に戻せる
   await page.getByRole("checkbox", { name: "資料の印刷代を選択" }).click();
-  await page.getByRole("button", { name: "まとめて未精算に戻す" }).click();
+  await clickBulkAction(page, "まとめて未精算に戻す");
   await expect(printing).not.toContainText("精算済");
   await expect(page.getByRole("button", { name: /^未精算の立替/ })).toHaveAttribute("title", "秘書B：¥2,000（1件）");
 

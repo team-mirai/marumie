@@ -1,7 +1,7 @@
 import { readFileSync } from "fs";
 import { join } from "path";
 import { test, expect } from "@playwright/test";
-import { clickUntil } from "../helpers/interactions";
+import { clickUntil, clickBulkAction } from "../helpers/interactions";
 
 // 書類スキャンで支払先が新しく登録され、2 枚目はそれに紐づくことを、実際の LLM API と
 // 実際の領収書の画像（黒塗り済み。#1721）で確かめる。LLM も読み取り結果もモックしない。
@@ -81,7 +81,7 @@ test("2 枚の Amazon の領収書を読み取ると、Amazon の支払先が 1 
 
   // 一覧で選んでまとめて設定するときも同じ
   await scannedRow.getByRole("checkbox").click();
-  await page.getByRole("button", { name: "支払先をまとめて設定" }).click();
+  await clickBulkAction(page, "支払先をまとめて設定");
   await dialog.getByRole("button", { name: "新しい支払先を作成して紐づける" }).click();
   await expect(companyName).toHaveValue(/Amazon|アマゾン/i);
   await expect(companyName).not.toHaveValue(description);

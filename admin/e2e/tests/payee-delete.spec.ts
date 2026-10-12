@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { clickUntil } from "../helpers/interactions";
+import { clickUntil, clickBulkAction } from "../helpers/interactions";
 
 // 支払先の削除。公開中の仕訳に紐づく支払先は削除できず、
 // それ以外の支払先は削除すると紐づいていた仕訳（下書き・確認済）の支払先が未設定に戻る。
@@ -49,7 +49,7 @@ test("公開中の仕訳に紐づく支払先は削除できず、下書きだ�
   ] as const) {
     await row.getByRole("checkbox").click();
     await expect(page.getByText("1件選択")).toBeVisible();
-    await page.getByRole("button", { name: "支払先をまとめて設定" }).click();
+    await clickBulkAction(page, "支払先をまとめて設定");
     await dialog.getByRole("button", { name: "新しい支払先を作成して紐づける" }).click();
     await dialog.getByLabel(/^名称/).fill(payee);
     await dialog.getByRole("button", { name: "作成して紐づける" }).click();
