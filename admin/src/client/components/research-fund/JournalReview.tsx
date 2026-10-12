@@ -1093,6 +1093,8 @@ export function JournalReview({
                     entry={selected}
                     entries={entries}
                     payees={payees}
+                    payeesPath={`/politicians/${target.politicianId}/books/${target.bookId}/payees`}
+                    allowLeave={allowLeave}
                     pending={pending}
                     onLink={(targets, payeeId) => {
                       if (allowLeave()) linkPayee(targets, payeeId);

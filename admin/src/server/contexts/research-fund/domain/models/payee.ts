@@ -40,9 +40,23 @@ export interface Payee {
   invoiceRegistrationNumber: string | null;
 }
 
-/** 一覧に出す支払先。紐づいている仕訳の件数（議員の全帳簿）を添える */
+/**
+ * 一覧に出す支払先。紐づいている仕訳の件数を添える。
+ * 件数は選択中の帳簿で数え、支払先の詳細ページに並ぶ仕訳の件数と揃える
+ */
 export interface PayeeSummary extends Payee {
   usageCount: number;
+}
+
+/** 支払先の詳細ページに並べる、支払先に紐づいた仕訳 */
+export interface PayeeJournalEntry {
+  id: string;
+  /** YYYY-MM-DD */
+  entryDate: string;
+  description: string;
+  /** 借方の合計（支出の金額） */
+  amount: number;
+  status: "draft" | "approved" | "published";
 }
 
 /** 画面から送られる支払先の入力（未入力は空文字） */

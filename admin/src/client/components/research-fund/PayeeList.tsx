@@ -1,5 +1,6 @@
 "use client";
 import { useState, useTransition } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Plus } from "@phosphor-icons/react/dist/ssr";
 import { toast } from "sonner";
@@ -86,14 +87,21 @@ export function PayeeList({
                 <TableHead>郵便番号</TableHead>
                 <TableHead>住所</TableHead>
                 <TableHead>インボイス登録番号</TableHead>
-                <TableHead className="text-right">仕訳</TableHead>
+                <TableHead className="text-right">仕訳（この帳簿）</TableHead>
                 <TableHead className="w-24" />
               </TableRow>
             </TableHeader>
             <TableBody>
               {payees.map((payee) => (
                 <TableRow key={payee.id}>
-                  <TableCell className="font-bold">{payee.name}</TableCell>
+                  <TableCell className="font-bold">
+                    <Link
+                      href={`/politicians/${target.politicianId}/books/${target.bookId}/payees/${payee.id}`}
+                      className="text-primary-active hover:underline"
+                    >
+                      {payee.name}
+                    </Link>
+                  </TableCell>
                   <TableCell className="font-latin whitespace-nowrap">
                     {payee.postalCode ?? <span className="text-muted-foreground">未入力</span>}
                   </TableCell>
@@ -140,7 +148,7 @@ export function PayeeList({
             <DialogTitle>{editing === "new" ? "支払先を追加" : "支払先を編集"}</DialogTitle>
             <DialogDescription>
               {editing !== null && editing !== "new" && editing.usageCount > 0
-                ? `この支払先に紐づいた${editing.usageCount}件の仕訳にも反映されます。`
+                ? `この帳簿で紐づいた${editing.usageCount}件を含め、この支払先に紐づいたすべての仕訳に反映されます。`
                 : "名称は必須です。郵便番号・住所はAI検索で入力を補助できます。"}
             </DialogDescription>
           </DialogHeader>

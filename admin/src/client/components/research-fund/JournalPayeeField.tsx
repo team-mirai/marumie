@@ -1,5 +1,6 @@
 "use client";
 import { useId, useState } from "react";
+import Link from "next/link";
 import { PayeeLinkDialog } from "@/client/components/research-fund/PayeeLinkDialog";
 import { Button, Checkbox, Label } from "@/client/components/ui";
 import type { ReviewEntry } from "@/server/contexts/research-fund/domain/models/journal-review";
@@ -29,6 +30,8 @@ export function JournalPayeeField({
   entry,
   entries,
   payees,
+  payeesPath,
+  allowLeave,
   pending,
   onLink,
   onCreate,
@@ -38,6 +41,10 @@ export function JournalPayeeField({
   entries: readonly ReviewEntry[];
   /** 帳簿の議員の支払先 */
   payees: readonly Payee[];
+  /** 支払先の一覧ページのパス。支払先の詳細ページへのリンクに使う */
+  payeesPath: string;
+  /** 編集中の変更を破棄して画面を離れてよいか（支払先の詳細ページへ移る前に確かめる） */
+  allowLeave: () => boolean;
   pending: boolean;
   onLink: (targets: readonly ReviewEntry[], payeeId: string | null) => void;
   onCreate: (targets: readonly ReviewEntry[], input: PayeeFormInput) => void;
@@ -56,7 +63,15 @@ export function JournalPayeeField({
       </div>
       {payee ? (
         <div className="text-sm">
-          <p className="font-bold">{payee.name}</p>
+          <Link
+            href={`${payeesPath}/${payee.id}`}
+            onClick={(event) => {
+              if (!allowLeave()) event.preventDefault();
+            }}
+            className="font-bold text-primary-active hover:underline"
+          >
+            {payee.name}
+          </Link>
           <p className="text-muted-foreground">
             {payee.postalCode && <span className="mr-2 font-latin">〒{payee.postalCode}</span>}
             {payee.address || "住所未入力"}
