@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { extractedReceiptSchema } from "@/server/contexts/research-fund/domain/models/extracted-receipt";
 import { RECEIPT_CATEGORIES } from "@/server/contexts/research-fund/domain/models/receipt-categories";
+import { normalizePromptBody } from "@/server/contexts/research-fund/domain/models/prompt";
 import {
   buildAutomaticReceiptPrompt,
   buildReceiptExtractionPrompt,
@@ -38,14 +39,18 @@ describe("領収書抽出プロンプト", () => {
 
   it("分割粒度と迷った際のポリシーは編集可能なテンプレートだけに含める", () => {
     for (const policy of [
-      "カテゴリ・項目が異なる明細は行を分けてください",
-      "同一品の複数購入はまとめて構いません",
+      "item または category_key が異なる明細は行を分ける",
+      "個数・種類にかかわらず1行にまとめ",
       "カテゴリの判断に迷ったら needs-review",
       "同一注文から分割した明細には同じ split_group",
     ]) {
       expect(DEFAULT_OFFICE_PROMPT).toContain(policy);
       expect(buildAutomaticReceiptPrompt()).not.toContain(policy);
     }
+  });
+
+  it("デフォルトのテンプレートはそのまま版として保存できる", () => {
+    expect(normalizePromptBody(DEFAULT_OFFICE_PROMPT)).toBe(DEFAULT_OFFICE_PROMPT);
   });
 
   it.each(["", "分割せず1明細として読み取ってください。"])(
