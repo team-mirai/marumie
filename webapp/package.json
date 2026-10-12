@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "dependencies": {
-    "@next/third-parties": "16.3.8",
+    "@next/third-parties": "16.4.0",
     "@nivo/sankey": "^0.99.0",
     "@prisma/client": "^6.19.1",
     "@supabase/supabase-js": "^2.89.0",
