@@ -7,6 +7,7 @@ import type { ReviewEntry } from "@/server/contexts/research-fund/domain/models/
 import type { AdminTarget } from "@/server/contexts/shared/domain/models/admin-target";
 import {
   payeeFormInputFromIssuer,
+  payeeSearchQueryFromEntries,
   withSameDocumentEntries,
   type Payee,
   type PayeeFormInput,
@@ -152,7 +153,7 @@ export function JournalPayeeField({
         payees={payees}
         currentPayeeId={entry.payeeId}
         target={target}
-        defaultSearchQuery={entry.description}
+        defaultSearchQuery={payeeSearchQueryFromEntries([entry])}
         pending={pending}
         onLink={(payeeId) => onLink(targets, payeeId)}
         onCreate={(input) => onCreate(targets, input)}

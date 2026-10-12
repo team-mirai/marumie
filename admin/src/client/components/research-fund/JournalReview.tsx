@@ -51,6 +51,7 @@ import {
 } from "@/server/contexts/research-fund/domain/models/journal-review";
 import {
   isPayeeUnset,
+  payeeSearchQueryFromEntries,
   type PayeeFormInput,
   type PayeeSummary,
 } from "@/server/contexts/research-fund/domain/models/payee";
@@ -1380,7 +1381,7 @@ export function JournalReview({
         payees={payees}
         currentPayeeId={checkedPayeeId}
         target={target}
-        defaultSearchQuery={checkedEntries[0]?.description ?? ""}
+        defaultSearchQuery={payeeSearchQueryFromEntries(checkedEntries)}
         pending={pending}
         onLink={(payeeId) => linkPayee(checkedEntries, payeeId)}
         onCreate={(input) => createPayeeAndLink(checkedEntries, input)}

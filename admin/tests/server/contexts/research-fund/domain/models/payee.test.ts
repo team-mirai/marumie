@@ -7,6 +7,7 @@ import {
   payeeAccessRejection,
   payeeDeletionRejection,
   payeeFormInputFromIssuer,
+  payeeSearchQueryFromEntries,
   rereadPayeeLink,
   sortPayees,
   validatePayeeInput,
@@ -123,6 +124,23 @@ describe("payeeFormInputFromIssuer", () => {
 
   it("形の合わないインボイス登録番号・読み取れなかった項目は未入力にする", () => {
     expect(payeeFormInputFromIssuer({ name: "JR東日本", address: null, phone: null, invoice_registration_number: "T123" })).toEqual({ name: "JR東日本", postalCode: "", address: "", invoiceRegistrationNumber: "" });
+  });
+});
+
+describe("payeeSearchQueryFromEntries", () => {
+  it("書類から読み取った発行元の名前を AI 検索の初期値にする", () => {
+    expect(payeeSearchQueryFromEntries([{ issuer: { name: " 東京タクシー株式会社 " } }])).toBe("東京タクシー株式会社");
+  });
+
+  it("発行元が無い・名前が読み取れない仕訳なら空にする（項目名は使わない）", () => {
+    expect(payeeSearchQueryFromEntries([{ issuer: null }])).toBe("");
+    expect(payeeSearchQueryFromEntries([{ issuer: { name: null } }])).toBe("");
+    expect(payeeSearchQueryFromEntries([{ issuer: { name: "  " } }])).toBe("");
+    expect(payeeSearchQueryFromEntries([])).toBe("");
+  });
+
+  it("複数の仕訳なら、発行元の名前がある最初の仕訳の名前にする", () => {
+    expect(payeeSearchQueryFromEntries([{ issuer: null }, { issuer: { name: "JR東日本" } }, { issuer: { name: "Amazon.co.jp" } }])).toBe("JR東日本");
   });
 });
 

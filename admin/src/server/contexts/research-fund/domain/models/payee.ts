@@ -125,6 +125,21 @@ export function payeeFormInputFromIssuer(issuer: ReceiptIssuer): PayeeFormInput 
 }
 
 /**
+ * 仕訳から支払先を新しく作るときの AI 住所検索の「会社名」の初期値。
+ * 書類から読み取った発行元の名前があればそれ（複数の仕訳なら最初に見つかったもの）、無ければ空。
+ * 仕訳の項目名は品目（「モバイルバッテリー代」など）で会社名ではないので使わない。
+ */
+export function payeeSearchQueryFromEntries(
+  entries: readonly { issuer: Pick<ReceiptIssuer, "name"> | null }[],
+): string {
+  for (const entry of entries) {
+    const name = entry.issuer?.name?.trim();
+    if (name) return name;
+  }
+  return "";
+}
+
+/**
  * スキャンで照合に一致する支払先が無かったときに、読み取った発行元から新しく登録する支払先の内容。
  * 発行元が無い・名称が読み取れない・支払先として保存できない内容なら null（未紐づけのまま残す）。
  */
