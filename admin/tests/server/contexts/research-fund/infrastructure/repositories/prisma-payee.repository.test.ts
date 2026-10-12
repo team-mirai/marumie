@@ -5,7 +5,7 @@ const row = { id: BigInt(7), politicianId: BigInt(5), name: "東京タクシー"
 const payee = { id: "7", politicianId: "5", name: "東京タクシー", postalCode: "100-0001", address: "東京都千代田区", invoiceRegistrationNumber: "T1234567890123" };
 const input = { name: "東京タクシー", postalCode: "100-0001", address: "東京都千代田区", invoiceRegistrationNumber: "T1234567890123" };
 function setup() {
-  const tx = { researchFundJournalEntry: { findMany: jest.fn(), count: jest.fn().mockResolvedValue(0), updateMany: jest.fn().mockResolvedValue({ count: 2 }) }, researchFundPayee: { findMany: jest.fn(), findFirst: jest.fn(), create: jest.fn().mockResolvedValue(row), updateMany: jest.fn().mockResolvedValue({ count: 1 }), findUniqueOrThrow: jest.fn().mockResolvedValue(row), delete: jest.fn().mockResolvedValue(row) }, researchFundPayeeAlias: { findMany: jest.fn().mockResolvedValue([]), deleteMany: jest.fn().mockResolvedValue({ count: 1 }) } };
+  const tx = { researchFundJournalEntry: { findMany: jest.fn(), count: jest.fn().mockResolvedValue(0), updateMany: jest.fn().mockResolvedValue({ count: 2 }) }, researchFundPayee: { findMany: jest.fn(), findFirst: jest.fn(), create: jest.fn().mockResolvedValue(row), updateMany: jest.fn().mockResolvedValue({ count: 1 }), findUniqueOrThrow: jest.fn().mockResolvedValue(row), delete: jest.fn().mockResolvedValue(row) }, researchFundPayeeAlias: { findMany: jest.fn().mockResolvedValue([]), deleteMany: jest.fn().mockResolvedValue({ count: 1 }), updateMany: jest.fn().mockResolvedValue({ count: 1 }), createMany: jest.fn().mockResolvedValue({ count: 1 }) } };
   const repository = new PrismaPayeeRepository({ ...tx, $transaction: jest.fn(async fn => fn(tx)) } as unknown as PrismaClient);
   return { repository, tx };
 }
@@ -125,4 +125,66 @@ test("削除中に別の仕訳が紐づけられて外部キーで止まった�
   tx.researchFundPayee.findFirst.mockResolvedValue({ id: BigInt(7) });
   tx.researchFundPayee.delete.mockRejectedValue(new Prisma.PrismaClientKnownRequestError("fk", { code: "P2003", clientVersion: "test" }));
   await expect(repository.delete("5", "7")).rejects.toThrow("もう一度お試しください");
+});
+test("統合の候補は議員の支払先のうち統合先以外を、すべての帳簿の仕訳の件数と記録された表記つきで返す", async () => {
+  const { repository, tx } = setup();
+  tx.researchFundPayee.findMany.mockResolvedValue([{ ...row, id: BigInt(8), _count: { journalEntries: 3 }, aliases: [{ name: "東京ﾀｸｼｰ", normalizedName: "東京タクシー" }] }]);
+  await expect(repository.listMergeCandidates("5", "7")).resolves.toEqual([{ ...payee, id: "8", entryCount: 3, aliases: [{ name: "東京ﾀｸｼｰ", normalizedName: "東京タクシー" }] }]);
+  const args = tx.researchFundPayee.findMany.mock.calls[0][0];
+  expect(args.where).toEqual({ politicianId: BigInt(5), id: { not: BigInt(7) } });
+  expect(args.include._count).toEqual({ select: { journalEntries: true } });
+});
+describe("統合", () => {
+  const targetRow = { ...row, aliases: [{ id: BigInt(1), name: "東京タクシー", normalizedName: "東京タクシー", documentId: BigInt(20) }] };
+  const sourceRow = { ...row, id: BigInt(8), name: "東京ﾀｸｼｰ(株)", invoiceRegistrationNumber: null, aliases: [{ id: BigInt(2), name: "東京ﾀｸｼｰ", normalizedName: "東京タクシー", documentId: BigInt(21) }, { id: BigInt(3), name: "TOKYO TAXI", normalizedName: "tokyotaxi", documentId: null }] };
+  function mergeSetup() {
+    const context = setup();
+    context.tx.researchFundPayee.findFirst.mockImplementation(async ({ where }) => (where.id === BigInt(7) ? targetRow : where.id === BigInt(8) ? sourceRow : null));
+    context.tx.researchFundJournalEntry.updateMany.mockResolvedValue({ count: 4 });
+    return context;
+  }
+  test("統合元の仕訳を経路などはそのままに統合先へ紐づけ直し、統合先に無い表記を移し、統合元の名称を表記にして統合元を消す", async () => {
+    const { repository, tx } = mergeSetup();
+    await expect(repository.merge("5", "7", "8")).resolves.toEqual({ status: "merged", movedEntryCount: 4 });
+    expect(tx.researchFundPayee.findFirst.mock.calls.map(([args]) => args.where)).toEqual([{ id: BigInt(7), politicianId: BigInt(5) }, { id: BigInt(8), politicianId: BigInt(5) }]);
+    expect(tx.researchFundJournalEntry.updateMany).toHaveBeenCalledWith({ where: { payeeId: BigInt(8) }, data: { payeeId: BigInt(7) } });
+    expect(tx.researchFundPayeeAlias.updateMany).toHaveBeenCalledWith({ where: { id: { in: [BigInt(3)] } }, data: { payeeId: BigInt(7) } });
+    expect(tx.researchFundPayeeAlias.createMany).toHaveBeenCalledWith({ data: [{ payeeId: BigInt(7), name: "東京ﾀｸｼｰ(株)", normalizedName: "東京タクシー株式会社", source: "manual" }] });
+    expect(tx.researchFundPayee.delete).toHaveBeenCalledWith({ where: { id: BigInt(8) } });
+    // 統合先の表記にすでに最初の書類があれば上書きしない
+    expect(tx.researchFundPayeeAlias.updateMany).toHaveBeenCalledTimes(1);
+  });
+  test("統合先にすでにある表記に最初の書類が無ければ、消える統合元の表記の書類を引き継ぐ", async () => {
+    const { repository, tx } = mergeSetup();
+    tx.researchFundPayee.findFirst.mockImplementation(async ({ where }) => (where.id === BigInt(7) ? { ...targetRow, aliases: [{ ...targetRow.aliases[0], documentId: null }] } : sourceRow));
+    await expect(repository.merge("5", "7", "8")).resolves.toEqual({ status: "merged", movedEntryCount: 4 });
+    expect(tx.researchFundPayeeAlias.updateMany).toHaveBeenCalledWith({ where: { id: BigInt(1), documentId: null }, data: { documentId: BigInt(21) } });
+  });
+  test("移す表記・記録する名称が無ければ表記を変えない", async () => {
+    const { repository, tx } = mergeSetup();
+    tx.researchFundPayee.findFirst.mockImplementation(async ({ where }) => (where.id === BigInt(7) ? targetRow : { ...sourceRow, name: "東京タクシー", aliases: [] }));
+    await expect(repository.merge("5", "7", "8")).resolves.toEqual({ status: "merged", movedEntryCount: 4 });
+    expect(tx.researchFundPayeeAlias.updateMany).not.toHaveBeenCalled();
+    expect(tx.researchFundPayeeAlias.createMany).not.toHaveBeenCalled();
+  });
+  test("インボイス登録番号が食い違えば何も変えずに理由を返す", async () => {
+    const { repository, tx } = mergeSetup();
+    tx.researchFundPayee.findFirst.mockImplementation(async ({ where }) => (where.id === BigInt(7) ? targetRow : { ...sourceRow, invoiceRegistrationNumber: "T9999999999999" }));
+    await expect(repository.merge("5", "7", "8")).resolves.toMatchObject({ status: "rejected", reason: expect.stringContaining("インボイス登録番号が食い違うため統合できません") });
+    expect(tx.researchFundJournalEntry.updateMany).not.toHaveBeenCalled();
+    expect(tx.researchFundPayee.delete).not.toHaveBeenCalled();
+  });
+  test("どちらかが別の議員の支払先なら何も変えずに見つからないとする", async () => {
+    const { repository, tx } = mergeSetup();
+    await expect(repository.merge("5", "7", "9")).resolves.toEqual({ status: "not-found" });
+    expect(tx.researchFundJournalEntry.updateMany).not.toHaveBeenCalled();
+    expect(tx.researchFundPayee.delete).not.toHaveBeenCalled();
+  });
+  test("統合中に紐づけ・表記が変わって外部キー・一意制約で止まったら、やり直しを促すエラーにする", async () => {
+    const { repository, tx } = mergeSetup();
+    tx.researchFundPayee.delete.mockRejectedValue(new Prisma.PrismaClientKnownRequestError("fk", { code: "P2003", clientVersion: "test" }));
+    await expect(repository.merge("5", "7", "8")).rejects.toThrow("もう一度お試しください");
+    tx.researchFundPayee.delete.mockRejectedValue(duplicate);
+    await expect(repository.merge("5", "7", "8")).rejects.toThrow("もう一度お試しください");
+  });
 });

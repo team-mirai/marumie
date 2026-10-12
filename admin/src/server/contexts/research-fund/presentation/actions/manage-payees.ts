@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { requireAuth } from "@/server/contexts/auth/presentation/loaders/require-auth";
 import { DeletePayeeUsecase } from "@/server/contexts/research-fund/application/usecases/delete-payee-usecase";
 import { DeletePayeeAliasUsecase } from "@/server/contexts/research-fund/application/usecases/delete-payee-alias-usecase";
+import { MergePayeesUsecase } from "@/server/contexts/research-fund/application/usecases/merge-payees-usecase";
 import { SavePayeeUsecase } from "@/server/contexts/research-fund/application/usecases/save-payee-usecase";
 import {
   PayeeError,
@@ -89,6 +90,34 @@ export async function deletePayee(politicianId: string, bookId: string, payeeId:
     return {
       success: false as const,
       error: error instanceof PayeeError ? error.message : "支払先の削除に失敗しました",
+    };
+  }
+}
+
+/**
+ * 同じ議員の支払先 sourceId を、いま見ている支払先 targetId に統合する。対象は選択中の帳簿の議員の支払先だけ。
+ * 統合元の仕訳は議員のすべての帳簿で統合先に紐づき、統合元の表記と名称は統合先の表記になる。
+ * 支払先は公開ページに出さないので、webapp のキャッシュは無効化しない。
+ */
+export async function mergePayees(
+  politicianId: string,
+  bookId: string,
+  targetId: string,
+  sourceId: string,
+) {
+  await requireAuth();
+  const target = await requireJournalTarget(politicianId, bookId);
+  if (!target) return { success: false as const, error: "現在の対象帳簿を選択し直してください" };
+  try {
+    const { movedEntryCount } = await new MergePayeesUsecase(
+      new PrismaPayeeRepository(prisma),
+    ).execute(target.politicianId, targetId, sourceId);
+    revalidatePath("/(auth)", "layout");
+    return { success: true as const, movedEntryCount };
+  } catch (error) {
+    return {
+      success: false as const,
+      error: error instanceof PayeeError ? error.message : "支払先の統合に失敗しました",
     };
   }
 }

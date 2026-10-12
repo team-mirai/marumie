@@ -4,7 +4,7 @@ const payee = { id: "7", politicianId: "5", name: "東京タクシー", postalCo
 const form = { name: " 東京タクシー ", postalCode: "1000001", address: "東京都千代田区", invoiceRegistrationNumber: "" };
 const normalized = { name: "東京タクシー", postalCode: "100-0001", address: "東京都千代田区", invoiceRegistrationNumber: null };
 function setup() {
-  const repository = { listJournalEntries: jest.fn(), list: jest.fn(), find: jest.fn().mockResolvedValue(payee), create: jest.fn().mockResolvedValue(payee), update: jest.fn().mockResolvedValue(payee), listAliases: jest.fn(), deleteAlias: jest.fn(), deletionImpact: jest.fn(), delete: jest.fn() };
+  const repository = { listJournalEntries: jest.fn(), list: jest.fn(), find: jest.fn().mockResolvedValue(payee), create: jest.fn().mockResolvedValue(payee), update: jest.fn().mockResolvedValue(payee), listAliases: jest.fn(), deleteAlias: jest.fn(), deletionImpact: jest.fn(), delete: jest.fn(), listMergeCandidates: jest.fn(), merge: jest.fn() };
   return { repository, usecase: new SavePayeeUsecase(repository) };
 }
 test("議員の支払先として正規化して作成する", async () => {
