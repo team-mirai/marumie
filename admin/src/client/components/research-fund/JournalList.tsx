@@ -7,8 +7,7 @@ import {
   type ReviewEntry,
 } from "@/server/contexts/research-fund/domain/models/journal-review";
 import { isReceiptMissing } from "@/server/contexts/research-fund/domain/models/receipt-absence";
-import { RECEIPT_CATEGORIES } from "@/server/contexts/research-fund/domain/models/receipt-categories";
-import { cn, isEmphasizedJournalAmount } from "@/client/lib";
+import { cn, isEmphasizedJournalAmount, journalAccountLabel } from "@/client/lib";
 
 const statusLabels = { draft: "下書き", approved: "確認済", published: "公開中" };
 
@@ -125,17 +124,17 @@ function AccountPill({ entry }: { entry: ReviewEntry }) {
         支給
       </span>
     );
-  const label = RECEIPT_CATEGORIES[entry.accountKey as keyof typeof RECEIPT_CATEGORIES]?.label;
-  const unconfirmed = isAccountUnconfirmed(entry.accountKey) || label === undefined;
+  const label = journalAccountLabel(entry);
+  const unconfirmed = label === "要確認";
   return (
     <span
-      title={label ?? "要確認"}
+      title={label}
       className={cn(
         "max-w-full truncate rounded-full border bg-card px-2 py-px text-[11px] font-bold",
         unconfirmed ? "border-destructive text-destructive" : "border-primary text-primary-hover",
       )}
     >
-      {unconfirmed ? "要確認" : label}
+      {label}
     </span>
   );
 }
