@@ -1,5 +1,5 @@
 import { Warning } from "@phosphor-icons/react/dist/ssr";
-import { cn } from "@/client/lib";
+import { cn, researchFundDocumentUrl } from "@/client/lib";
 import type { DuplicateDocument } from "@/server/contexts/research-fund/domain/models/duplicate-document";
 
 /**
@@ -31,7 +31,7 @@ export function DuplicateDocumentWarning({
           <span key={duplicate.documentId}>
             {index > 0 && "、"}
             <a
-              href={`/api/research-fund/documents/${duplicate.documentId}?bookId=${bookId}&politicianId=${politicianId}`}
+              href={researchFundDocumentUrl({ bookId, politicianId }, duplicate.documentId)}
               target="_blank"
               rel="noreferrer"
               className="font-latin underline underline-offset-2"

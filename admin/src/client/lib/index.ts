@@ -24,3 +24,4 @@ export { filterJournalEntries, journalAccountLabel } from "./research-fund-journ
 export { layoutResearchFundSankey } from "./research-fund-sankey";
 export { formatLinkedPeriod } from "./research-fund-groups";
 export { saveBlobAsFile } from "./download-blob";
+export { researchFundDocumentUrl } from "./research-fund-document-url";

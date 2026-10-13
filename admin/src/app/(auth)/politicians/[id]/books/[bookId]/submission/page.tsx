@@ -35,8 +35,10 @@ export default async function SubmissionLedgerPage({
         label="Submission"
         title="議員課提出用の帳簿"
         description={`${target.name}の${financialYear}年度の帳簿を、衆議院・参議院の議員課の Excel と同じ列順の CSV でダウンロードします。公開済みの支出の仕訳（${entryCount}件）を 1 行ずつ出力します。`}
-        actions={PARLIAMENT_HOUSES.map((house) => (
-          <Button key={house} variant="outline" asChild>
+      />
+      <div className="flex flex-wrap gap-3">
+        {PARLIAMENT_HOUSES.map((house) => (
+          <Button key={house} asChild>
             <a
               href={`/api/research-fund/books/${target.bookId}/submission-ledger?${query(house)}`}
               download
@@ -46,7 +48,7 @@ export default async function SubmissionLedgerPage({
             </a>
           </Button>
         ))}
-      />
+      </div>
       {warnings.length > 0 && (
         <Card className="border-destructive">
           <CardContent className="space-y-3">
