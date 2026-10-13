@@ -24,7 +24,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/client/components/ui";
-import { cn } from "@/client/lib";
+import { cn, researchFundDocumentUrl } from "@/client/lib";
 import {
   SCAN_BATCH_MAX_DOCUMENTS,
   SCAN_DOCUMENT_MIME_TYPES,
@@ -332,7 +332,14 @@ export function DocumentScan({
                             ) : (
                               <ImageIcon aria-hidden className="size-4 text-muted-foreground" />
                             )}
-                            <span className="font-latin text-xs">{job.originalFilename}</span>
+                            <a
+                              href={researchFundDocumentUrl(target, job.documentId)}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="font-latin text-xs underline underline-offset-2 hover:text-primary-active"
+                            >
+                              {job.originalFilename}
+                            </a>
                           </span>
                         </TableCell>
                         <TableCell className="whitespace-nowrap">

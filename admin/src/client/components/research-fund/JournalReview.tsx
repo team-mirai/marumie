@@ -56,7 +56,7 @@ import {
 import type { AdminTarget } from "@/server/contexts/shared/domain/models/admin-target";
 import { mutateJournalReview } from "@/server/contexts/research-fund/presentation/actions/manage-journal-review";
 import { rereadScanDocuments } from "@/server/contexts/research-fund/presentation/actions/reread-scan-documents";
-import { cn } from "@/client/lib";
+import { cn, researchFundDocumentUrl } from "@/client/lib";
 
 const statuses = { all: "すべて", draft: "下書き", approved: "確認済", published: "公開中" };
 export function JournalReview({
@@ -663,7 +663,7 @@ export function JournalReview({
       ? (duplicates[entry.documentId] ?? [])
       : [];
   const documentUrl = selected?.documentId
-    ? `/api/research-fund/documents/${selected.documentId}?bookId=${target.bookId}&politicianId=${target.politicianId}`
+    ? researchFundDocumentUrl(target, selected.documentId)
     : undefined;
   // 絞り込みを変えるときは、未保存の変更を確認してから選択とチェックを外す
   function changeFilter(apply: () => void) {
