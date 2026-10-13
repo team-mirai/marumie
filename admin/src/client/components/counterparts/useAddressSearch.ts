@@ -31,9 +31,9 @@ interface UseAddressSearchReturn {
   hint: string;
   isSearching: boolean;
 
-  // アクション
-  startSearch: () => void;
-  reSearch: () => void;
+  // アクション（検索が終わると解決する）
+  startSearch: () => Promise<void>;
+  reSearch: () => Promise<void>;
   selectCandidate: (candidate: AddressCandidate) => void;
   switchToManual: () => void;
   clear: () => void;
@@ -81,13 +81,9 @@ export function useAddressSearch({
     [companyName, searchAddress],
   );
 
-  const startSearch = useCallback(() => {
-    doSearch(hint || undefined);
-  }, [doSearch, hint]);
+  const startSearch = useCallback(() => doSearch(hint || undefined), [doSearch, hint]);
 
-  const reSearch = useCallback(() => {
-    doSearch(hint || undefined);
-  }, [doSearch, hint]);
+  const reSearch = useCallback(() => doSearch(hint || undefined), [doSearch, hint]);
 
   const selectCandidate = useCallback((candidate: AddressCandidate) => {
     setAddress(candidate.address);
