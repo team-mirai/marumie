@@ -30,7 +30,8 @@
       "project": ["src/**/*.{ts,tsx}"],
       "ignore": [
         "src/client/components/ui/**/*"
-      ]
+      ],
+      "ignoreDependencies": ["jest-environment-jsdom", "jsdom"]
     }
   }
 }

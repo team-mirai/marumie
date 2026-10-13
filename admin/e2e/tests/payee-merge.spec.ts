@@ -61,9 +61,9 @@ test("移る仕訳と表記を確認してから支払先を統合でき、イ�
     expect(page.getByLabel("項目名", { exact: true })).toHaveValue("視察先への移動", options),
   );
   await clickUntil(page.getByRole("button", { name: "支払先を選ぶ" }), (options) =>
-    expect(dialog.getByLabel("支払先", { exact: true })).toBeVisible(options),
+    expect(dialog.getByRole("combobox", { name: "支払先を検索" })).toBeVisible(options),
   );
-  await dialog.getByLabel("支払先", { exact: true }).selectOption({ label: "東京ﾀｸｼｰ" });
+  await dialog.getByRole("option", { name: /東京ﾀｸｼｰ/ }).click();
   await dialog.getByRole("button", { name: "紐づける", exact: true }).click();
   await expect(travelRow).toContainText("東京ﾀｸｼｰ");
 

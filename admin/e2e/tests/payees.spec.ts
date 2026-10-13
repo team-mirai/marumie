@@ -81,11 +81,12 @@ test("支払先の作成・編集と、確認画面での紐づけ・その場�
     expect(page.getByLabel("項目名", { exact: true })).toHaveValue("タクシー代", options),
   );
   await clickUntil(page.getByRole("button", { name: "支払先を選ぶ" }), (options) =>
-    expect(dialog.getByLabel("支払先", { exact: true })).toBeVisible(options),
+    expect(dialog.getByRole("combobox", { name: "支払先を検索" })).toBeVisible(options),
   );
-  await dialog
-    .getByLabel("支払先", { exact: true })
-    .selectOption({ label: "東京タクシー株式会社（東京都千代田区千代田1-1）" });
+  // 候補をクリックしても選ぶだけで、「紐づける」を押すまで紐づかない
+  await dialog.getByRole("combobox", { name: "支払先を検索" }).fill("千代田");
+  await dialog.getByRole("option", { name: /東京タクシー株式会社/ }).click();
+  await expect(dialog.getByText("紐づけ先：東京タクシー株式会社")).toBeVisible();
   await dialog.getByRole("button", { name: "紐づける", exact: true }).click();
   await expect(page.getByText("1件の支払先を「東京タクシー株式会社」にしました")).toBeVisible();
   await expect(taxiRow).toContainText("東京タクシー株式会社");
