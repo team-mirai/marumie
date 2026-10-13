@@ -20,6 +20,7 @@ export {
   toggleAllPublishCandidates,
 } from "./research-fund-publish";
 export { isEmphasizedJournalAmount } from "./research-fund-journal-amount";
+export { filterJournalEntries, journalAccountLabel } from "./research-fund-journal-filter";
 export { layoutResearchFundSankey } from "./research-fund-sankey";
 export { formatLinkedPeriod } from "./research-fund-groups";
 export { saveBlobAsFile } from "./download-blob";

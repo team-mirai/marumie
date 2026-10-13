@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState, useTransition, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { CaretDown, CaretUp, Plus } from "@phosphor-icons/react/dist/ssr";
+import { CaretDown, CaretUp, MagnifyingGlass, Plus } from "@phosphor-icons/react/dist/ssr";
 import { toast } from "sonner";
 import {
   Button,
@@ -56,7 +56,7 @@ import {
 import type { AdminTarget } from "@/server/contexts/shared/domain/models/admin-target";
 import { mutateJournalReview } from "@/server/contexts/research-fund/presentation/actions/manage-journal-review";
 import { rereadScanDocuments } from "@/server/contexts/research-fund/presentation/actions/reread-scan-documents";
-import { cn, researchFundDocumentUrl } from "@/client/lib";
+import { cn, filterJournalEntries, researchFundDocumentUrl } from "@/client/lib";
 
 const statuses = { all: "すべて", draft: "下書き", approved: "確認済", published: "公開中" };
 export function JournalReview({
@@ -89,6 +89,7 @@ export function JournalReview({
   const [unsettledOnly, setUnsettledOnly] = useState(false);
   const [payeeUnsetOnly, setPayeeUnsetOnly] = useState(false);
   const [receiptMissingOnly, setReceiptMissingOnly] = useState(false);
+  const [query, setQuery] = useState("");
   const [linkingChecked, setLinkingChecked] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [checked, setChecked] = useState<readonly string[]>([]);
@@ -105,14 +106,12 @@ export function JournalReview({
   const [settledAt, setSettledAt] = useState("");
   const [today, setToday] = useState("");
   const [pending, startTransition] = useTransition();
-  const monthly = entries.filter((e) => !month || e.entryDate.slice(5, 7) === month);
-  // 立替の絞り込み。既存の月・状態の絞り込みと組み合わせられる（タブの件数もこの絞り込みの中で数える）。
-  const filtered = monthly.filter(
-    (e) =>
-      (!unsettledOnly || (e.advancedBy !== null && e.settledAt === null)) &&
-      (advancer === "" || e.advancedBy === advancer) &&
-      (!payeeUnsetOnly || isPayeeUnset(e)) &&
-      (!receiptMissingOnly || isReceiptMissing(e)),
+  const payeeNames = new Map(payees.map((p) => [p.id, p.name]));
+  // 月・立替・要対応・検索の絞り込み。状態タブと組み合わせられる（タブの件数もこの絞り込みの中で数える）。
+  const filtered = filterJournalEntries(
+    entries,
+    { month, advancer, unsettledOnly, payeeUnsetOnly, receiptMissingOnly, query },
+    payeeNames,
   );
   const visible = filtered.filter((e) => status === "all" || e.status === status);
   // 支給も支出と同じく選べる。支給日の修正と確認済に戻す操作だけを許す（詳細側で制限する）。
@@ -168,7 +167,6 @@ export function JournalReview({
         : [],
     ),
   ).size;
-  const payeeNames = new Map(payees.map((p) => [p.id, p.name]));
   // 帳簿全体の未精算（立替者ごとの件数と合計額）。絞り込みに関わらず帳簿の全件で数える。
   const unsettledSummary = summarizeUnsettledAdvances(entries);
   // 立替者の絞り込みの選択肢。この帳簿に実際に入力されている立替者だけを出す。
@@ -833,6 +831,24 @@ export function JournalReview({
             </option>
           ))}
         </NativeSelect>
+        <div className="relative">
+          <MagnifyingGlass
+            aria-hidden
+            className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground"
+          />
+          <Input
+            type="search"
+            aria-label="科目・項目・支払先で検索"
+            placeholder="科目・項目・支払先で検索"
+            value={query}
+            disabled={pending}
+            className="h-8 w-56 pl-8 text-xs"
+            onChange={(e) => {
+              const value = e.target.value;
+              changeFilter(() => setQuery(value));
+            }}
+          />
+        </div>
         <div className="ml-auto flex flex-wrap items-center gap-2">
           <span className="text-[11px] font-bold text-muted-foreground">要対応</span>
           <FilterChip
