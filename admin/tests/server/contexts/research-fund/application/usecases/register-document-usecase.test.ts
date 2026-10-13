@@ -6,6 +6,7 @@ describe("RegisterDocumentUsecase", () => {
   const repository: jest.Mocked<DocumentRepository> = {
     create: jest.fn(),
     findById: jest.fn(),
+    findByPolitician: jest.fn(),
     listByBook: jest.fn(),
   };
   const storage: jest.Mocked<DocumentStorage> = {

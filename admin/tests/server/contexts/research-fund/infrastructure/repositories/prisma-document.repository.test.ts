@@ -46,6 +46,18 @@ describe("PrismaDocumentRepository", () => {
       where: { id: BigInt("9007199254740993"), bookId: BigInt("13") },
     });
   });
+  it("enforces politician scope through the book in the database query", async () => {
+    delegate.findFirst.mockResolvedValue(row);
+    expect(await repository.findByPolitician("5", "9007199254740993")).toMatchObject({
+      id: "9007199254740993",
+      bookId: "12",
+    });
+    expect(delegate.findFirst).toHaveBeenCalledWith({
+      where: { id: BigInt("9007199254740993"), book: { politicianId: BigInt("5") } },
+    });
+    delegate.findFirst.mockResolvedValue(null);
+    expect(await repository.findByPolitician("6", "9007199254740993")).toBeNull();
+  });
   it("lists the book's documents newest first within the limit", async () => {
     delegate.findMany.mockResolvedValue([row]);
     expect(await repository.listByBook("12", 50)).toEqual([

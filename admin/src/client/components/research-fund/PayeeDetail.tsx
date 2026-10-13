@@ -122,7 +122,14 @@ export function PayeeDetail({
                   <TableCell className="whitespace-nowrap">{aliasSources[alias.source]}</TableCell>
                   <TableCell>
                     {alias.document ? (
-                      alias.document.originalFilename
+                      <a
+                        href={`/api/research-fund/politician-documents/${alias.document.id}?bookId=${target.bookId}&politicianId=${target.politicianId}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="underline underline-offset-2"
+                      >
+                        {alias.document.originalFilename}
+                      </a>
                     ) : (
                       <span className="text-muted-foreground">なし</span>
                     )}
