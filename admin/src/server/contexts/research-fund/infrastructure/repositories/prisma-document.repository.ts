@@ -22,6 +22,16 @@ export class PrismaDocumentRepository implements DocumentRepository {
     return row ? this.toModel(row) : null;
   }
 
+  async findByPolitician(
+    politicianId: string,
+    documentId: string,
+  ): Promise<ResearchFundDocument | null> {
+    const row = await this.prisma.researchFundDocument.findFirst({
+      where: { id: BigInt(documentId), book: { politicianId: BigInt(politicianId) } },
+    });
+    return row ? this.toModel(row) : null;
+  }
+
   async listByBook(bookId: string, limit: number): Promise<ResearchFundDocument[]> {
     const rows = await this.prisma.researchFundDocument.findMany({
       where: { bookId: BigInt(bookId) },
