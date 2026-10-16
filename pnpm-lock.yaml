@@ -101,7 +101,7 @@ importers:
         version: 8.21.3(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       '@vercel/speed-insights':
         specifier: ^1.3.1
-        version: 1.3.1(next@16.3.8(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@playwright/test@1.64.0)(@types/node@25.9.9)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(react@19.3.0)
+        version: 1.3.1(next@16.3.8(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@playwright/test@1.64.1)(@types/node@25.9.9)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(react@19.3.0)
       ai:
         specifier: ^6.0.6
         version: 6.0.303(zod@4.6.5)
@@ -116,7 +116,7 @@ importers:
         version: 0.7.3
       next:
         specifier: 16.3.8
-        version: 16.3.8(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@playwright/test@1.64.0)(@types/node@25.9.9)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+        version: 16.3.8(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@playwright/test@1.64.1)(@types/node@25.9.9)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       react:
         specifier: 19.3.0
         version: 19.3.0
@@ -138,7 +138,7 @@ importers:
     devDependencies:
       '@playwright/test':
         specifier: ^1.57.0
-        version: 1.64.0
+        version: 1.64.1
       '@tailwindcss/postcss':
         specifier: ^4.1.18
         version: 4.3.3
@@ -183,7 +183,7 @@ importers:
     dependencies:
       '@next/third-parties':
         specifier: 16.4.0
-        version: 16.4.0(next@16.3.8(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@playwright/test@1.64.0)(@types/node@25.9.9)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(react@19.3.0)
+        version: 16.4.0(next@16.3.8(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@playwright/test@1.64.1)(@types/node@25.9.9)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(react@19.3.0)
       '@nivo/sankey':
         specifier: ^0.99.0
         version: 0.99.0(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
@@ -195,13 +195,13 @@ importers:
         version: 2.117.3(@opentelemetry/api@1.9.1)
       '@vercel/speed-insights':
         specifier: ^1.3.1
-        version: 1.3.1(next@16.3.8(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@playwright/test@1.64.0)(@types/node@25.9.9)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(react@19.3.0)
+        version: 1.3.1(next@16.3.8(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@playwright/test@1.64.1)(@types/node@25.9.9)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(react@19.3.0)
       apexcharts:
         specifier: ^5.3.6
         version: 5.16.0
       next:
         specifier: 16.3.8
-        version: 16.3.8(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@playwright/test@1.64.0)(@types/node@25.9.9)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+        version: 16.3.8(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@playwright/test@1.64.1)(@types/node@25.9.9)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       react:
         specifier: 19.3.0
         version: 19.3.0
@@ -214,7 +214,7 @@ importers:
     devDependencies:
       '@playwright/test':
         specifier: ^1.57.0
-        version: 1.64.0
+        version: 1.64.1
       '@tailwindcss/postcss':
         specifier: ^4.1.18
         version: 4.3.3
@@ -1362,8 +1362,8 @@ packages:
     resolution: {integrity: sha512-SEeaJLb3qBNF/OaXnaR1NmmBbFYk1zC0ZH/52fATcRPLFg/p791YrcyFFy44Bo9sLaGuSuLp5Q6axbb/O+v/RA==}
     engines: {node: ^14.18.0 || >=16.0.0}
 
-  '@playwright/test@1.64.0':
-    resolution: {integrity: sha512-oTN9FNYuN6bqQMwiho6jJKLCG2/QOYCixGXuCjRmzOq23eODeukuY2XiAVoVpAECbuezMt1MHQjAiQxK8F+Y+g==}
+  '@playwright/test@1.64.1':
+    resolution: {integrity: sha512-IaYGml/nSOiZWROfPtuIL7neuu9qDOZ3TNvNljUIrhDMxiGTgPjzj/g9p9RxpS2tSepPDRY+UwAaEeiKtUvIAg==}
     engines: {node: '>=20'}
     hasBin: true
 
@@ -3669,13 +3669,13 @@ packages:
   pkg-types@2.3.3:
     resolution: {integrity: sha512-j/lCFdcppV0JxWpCEITdbDltBxPP6cHT+yNJ6Go2OgoSA9518X847X9z0p6LtA4Nc16+eQzCZjRrWanTGvHJ5w==}
 
-  playwright-core@1.64.0:
-    resolution: {integrity: sha512-T9r+MZkTECl2+oUcZ26YgZzTrYidTsIhYYkJix+6iDOymOb1FB2RLLSOxRGnZGv5DStt+aduIVbt+E8WygXYpg==}
+  playwright-core@1.64.1:
+    resolution: {integrity: sha512-BC4s8y6SEVA6Q1rSxZTto8hI1KUI3xXlHGZgvGqP4IqPdI/a6FX9H29IDNz7vKo9l21b6LfYosScPL6M3xxyDQ==}
     engines: {node: '>=20'}
     hasBin: true
 
-  playwright@1.64.0:
-    resolution: {integrity: sha512-kVzTnYFYEyQ9RGzBjNCd2+yEqWmVbxl3AHPynv3qQ6JTjv4a+kwRcnqQwIpuP3NnrnIrE/Q6wWAIAvMfIE2/Yg==}
+  playwright@1.64.1:
+    resolution: {integrity: sha512-HCrVhHr5QQuwYoswEUGTb7gGp522yflbv/ST8nF4sFWGuLjQCt17Q/EubpGGSNKYn1tsTCPZxqHhHCfVURu7UA==}
     engines: {node: '>=20'}
     hasBin: true
 
@@ -3748,8 +3748,8 @@ packages:
   react-is@18.3.1:
     resolution: {integrity: sha512-/LLMVyas0ljjAtoYiPqYiL8VWXzUUdThrmU5+n20DZv+a+ClRoevUzw5JxU+Ieh5/c87ytoTBV9G1FiKfNJdmg==}
 
-  react-is@19.3.0:
-    resolution: {integrity: sha512-UpMYezM4v5/18F28aC66AEsjXIgE02kyEMH6yLdgLXu/UTfa1Ntwck/nNLrbqJsEXW7gPb0coNO9FQse9WTovA==}
+  react-is@19.3.1:
+    resolution: {integrity: sha512-RRieF6IyxQBkcK6pP8xOHprLTPW6QjRkbGdImtqNme+/hYVwCZkLQLdlZGOhUqXwkS9IEynaGvPJtv6XB/cz0Q==}
 
   react-remove-scroll-bar@2.3.8:
     resolution: {integrity: sha512-9r+yi9+mgU33AKcj6IbT9oRCO78WriSj6t/cF8DWBZJ9aOGPOTEDvdUDz1FwKim7QXWwmHqtdHnRJfhAxEG46Q==}
@@ -5076,9 +5076,9 @@ snapshots:
   '@next/swc-win32-x64-msvc@16.3.8':
     optional: true
 
-  '@next/third-parties@16.4.0(next@16.3.8(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@playwright/test@1.64.0)(@types/node@25.9.9)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(react@19.3.0)':
+  '@next/third-parties@16.4.0(next@16.3.8(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@playwright/test@1.64.1)(@types/node@25.9.9)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(react@19.3.0)':
     dependencies:
-      next: 16.3.8(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@playwright/test@1.64.0)(@types/node@25.9.9)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+      next: 16.3.8(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@playwright/test@1.64.1)(@types/node@25.9.9)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       react: 19.3.0
       third-party-capital: 1.0.20
 
@@ -5336,9 +5336,9 @@ snapshots:
 
   '@pkgr/core@0.3.6': {}
 
-  '@playwright/test@1.64.0':
+  '@playwright/test@1.64.1':
     dependencies:
-      playwright: 1.64.0
+      playwright: 1.64.1
 
   '@prisma/client@6.19.3(prisma@6.19.3(typescript@5.9.3))(typescript@5.9.3)':
     optionalDependencies:
@@ -6287,9 +6287,9 @@ snapshots:
 
   '@vercel/oidc@3.2.0': {}
 
-  '@vercel/speed-insights@1.3.1(next@16.3.8(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@playwright/test@1.64.0)(@types/node@25.9.9)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(react@19.3.0)':
+  '@vercel/speed-insights@1.3.1(next@16.3.8(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@playwright/test@1.64.1)(@types/node@25.9.9)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(react@19.3.0)':
     optionalDependencies:
-      next: 16.3.8(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@playwright/test@1.64.0)(@types/node@25.9.9)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+      next: 16.3.8(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@playwright/test@1.64.1)(@types/node@25.9.9)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       react: 19.3.0
 
   acorn-jsx-walk@2.0.0: {}
@@ -7565,7 +7565,7 @@ snapshots:
 
   neo-async@2.6.2: {}
 
-  next@16.3.8(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@playwright/test@1.64.0)(@types/node@25.9.9)(react-dom@19.3.0(react@19.3.0))(react@19.3.0):
+  next@16.3.8(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@playwright/test@1.64.1)(@types/node@25.9.9)(react-dom@19.3.0(react@19.3.0))(react@19.3.0):
     dependencies:
       '@next/env': 16.3.8
       '@swc/helpers': 0.5.23
@@ -7585,7 +7585,7 @@ snapshots:
       '@next/swc-win32-arm64-msvc': 16.3.8
       '@next/swc-win32-x64-msvc': 16.3.8
       '@opentelemetry/api': 1.9.1
-      '@playwright/test': 1.64.0
+      '@playwright/test': 1.64.1
       sharp: 0.35.5(@types/node@25.9.9)
     transitivePeerDependencies:
       - '@babel/core'
@@ -7718,11 +7718,11 @@ snapshots:
       exsolve: 1.1.3
       pathe: 2.0.3
 
-  playwright-core@1.64.0: {}
+  playwright-core@1.64.1: {}
 
-  playwright@1.64.0:
+  playwright@1.64.1:
     dependencies:
-      playwright-core: 1.64.0
+      playwright-core: 1.64.1
 
   postcss@8.5.23:
     dependencies:
@@ -7745,7 +7745,7 @@ snapshots:
   pretty-format@30.5.1:
     dependencies:
       '@jest/react-is-18': react-is@18.3.1
-      '@jest/react-is-19': react-is@19.3.0
+      '@jest/react-is-19': react-is@19.3.1
       '@jest/schemas': 30.5.0
       ansi-styles: 5.2.0
 
@@ -7799,7 +7799,7 @@ snapshots:
 
   react-is@18.3.1: {}
 
-  react-is@19.3.0: {}
+  react-is@19.3.1: {}
 
   react-remove-scroll-bar@2.3.8(@types/react@19.3.0)(react@19.3.0):
     dependencies:
