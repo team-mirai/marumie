@@ -97,6 +97,59 @@ function detectKind(bytes: Uint8Array, mime: string | null): FileKind | null {
   return null;
 }
 
+/**
+ * JPEG の EXIF Orientation が表す、正しい向きで表示するための回転（時計回りの度数）。
+ * 鏡像の指定（2・4・5・7。カメラではまず使われない）と、読めない場合は 0
+ */
+export function jpegExifRotation(bytes: Uint8Array): number {
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  let offset = 2;
+  while (offset + 4 <= bytes.length && bytes[offset] === 0xff) {
+    const marker = bytes[offset + 1];
+    // SOS 以降は画像データなので、メタデータはそれより前にしかない
+    if (marker === 0xda) return 0;
+    const length = view.getUint16(offset + 2);
+    const start = offset + 4;
+    if (
+      marker === 0xe1 &&
+      start + 14 <= bytes.length &&
+      String.fromCharCode(...bytes.subarray(start, start + 4)) === "Exif"
+    ) {
+      return orientationToRotation(readTiffOrientation(view, start + 6));
+    }
+    offset = start + length - 2;
+  }
+  return 0;
+}
+
+function readTiffOrientation(view: DataView, tiff: number): number {
+  try {
+    const little = view.getUint16(tiff) === 0x4949;
+    const ifd = tiff + view.getUint32(tiff + 4, little);
+    const count = view.getUint16(ifd, little);
+    for (let i = 0; i < count; i++) {
+      const entry = ifd + 2 + i * 12;
+      if (view.getUint16(entry, little) === 0x0112) return view.getUint16(entry + 8, little);
+    }
+  } catch {
+    // 壊れた EXIF は向きの指定が無いものとして扱う
+  }
+  return 1;
+}
+
+function orientationToRotation(orientation: number): number {
+  switch (orientation) {
+    case 3:
+      return 180;
+    case 6:
+      return 90;
+    case 8:
+      return 270;
+    default:
+      return 0;
+  }
+}
+
 function drawLabel(page: PDFPage, font: PDFFont, text: string) {
   const width = font.widthOfTextAtSize(text, LABEL_SIZE);
   page.drawText(text, {
@@ -136,6 +189,8 @@ async function addDocument(
   if (kind === null) throw new Error("対応していない形式の書類です");
   if (kind === "pdf") {
     const source = await PDFDocument.load(bytes, { ignoreEncryption: true });
+    // pdf-lib は復号できず、そのまま埋め込むと中身が読めないページになるので、読めなかった書類として扱う
+    if (source.isEncrypted) throw new Error("暗号化された PDF です");
     const sourcePages = source.getPages();
     if (sourcePages.length === 0) throw new Error("ページのない PDF です");
     for (const [i, sourcePage] of sourcePages.entries()) {
@@ -157,13 +212,16 @@ async function addDocument(
     return;
   }
   const image = kind === "png" ? await output.embedPng(bytes) : await output.embedJpg(bytes);
-  const placement = placeInBox(image.width, image.height);
+  // pdf-lib は EXIF の向きを反映しないので、ブラウザでの表示と同じ向きになるよう回転して置く
+  const rotation = kind === "jpeg" ? jpegExifRotation(bytes) : 0;
+  const placement = placeInBox(image.width, image.height, rotation);
   const target = output.addPage([A4_WIDTH, A4_HEIGHT]);
   target.drawImage(image, {
     x: placement.x,
     y: placement.y,
     width: image.width * placement.scale,
     height: image.height * placement.scale,
+    rotate: degrees(placement.rotate),
   });
   drawLabel(target, font, receiptLabel(item.receiptNumber, 1, 1));
 }

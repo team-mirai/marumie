@@ -4,6 +4,7 @@ import {
   A4_WIDTH,
   buildReceiptPrintPdf,
   CONTENT_BOX,
+  jpegExifRotation,
   placeInBox,
   receiptLabel,
 } from "@/client/lib/research-fund-receipt-print";
@@ -34,6 +35,31 @@ describe("placeInBox", () => {
   test("既定の枠は印字の帯より下にあり、A4 に収まる", () => {
     expect(CONTENT_BOX.y + CONTENT_BOX.height).toBeLessThan(A4_HEIGHT - 28 - 14);
     expect(CONTENT_BOX.x + CONTENT_BOX.width).toBeLessThanOrEqual(A4_WIDTH);
+  });
+});
+
+/** EXIF の Orientation だけを持つ JPEG の先頭部分（APP1 → SOS） */
+function jpegHeader(orientation: number, littleEndian: boolean): Uint8Array {
+  const tiff = littleEndian
+    ? [0x49, 0x49, 0x2a, 0x00, 0x08, 0x00, 0x00, 0x00, 0x01, 0x00, 0x12, 0x01, 0x03, 0x00, 0x01, 0x00, 0x00, 0x00, orientation, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
+    : [0x4d, 0x4d, 0x00, 0x2a, 0x00, 0x00, 0x00, 0x08, 0x00, 0x01, 0x01, 0x12, 0x00, 0x03, 0x00, 0x00, 0x00, 0x01, 0x00, orientation, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
+  const app1 = [0x45, 0x78, 0x69, 0x66, 0x00, 0x00, ...tiff];
+  const length = app1.length + 2;
+  // APP0（JFIF）を先に置き、APP1 まで読み飛ばせることも確かめる
+  const app0 = [0xff, 0xe0, 0x00, 0x04, 0x00, 0x00];
+  return Uint8Array.from([0xff, 0xd8, ...app0, 0xff, 0xe1, length >> 8, length & 0xff, ...app1, 0xff, 0xda, 0x00, 0x02]);
+}
+
+describe("jpegExifRotation", () => {
+  test("EXIF の Orientation 3・6・8 を時計回りの回転にする（バイト順は両方読める）", () => {
+    expect(jpegExifRotation(jpegHeader(3, true))).toBe(180);
+    expect(jpegExifRotation(jpegHeader(6, false))).toBe(90);
+    expect(jpegExifRotation(jpegHeader(8, true))).toBe(270);
+    expect(jpegExifRotation(jpegHeader(1, false))).toBe(0);
+  });
+  test("EXIF が無い・壊れている JPEG は回転しない", () => {
+    expect(jpegExifRotation(Uint8Array.from([0xff, 0xd8, 0xff, 0xda, 0x00, 0x02]))).toBe(0);
+    expect(jpegExifRotation(jpegHeader(6, true).subarray(0, 20))).toBe(0);
   });
 });
 
@@ -76,5 +102,15 @@ describe("buildReceiptPrintPdf", () => {
     );
     expect(result.failedReceiptNumbers).toEqual([1, 2, 3]);
     expect((await PDFDocument.load(result.bytes)).getPageCount()).toBe(4);
+  });
+  test("暗号化された PDF は中身が読めないので、読めなかった旨のページにして番号を返す", async () => {
+    const encrypted = await PDFDocument.load(await pdfWithPages(2));
+    encrypted.context.trailerInfo.Encrypt = encrypted.context.obj({});
+    const result = await buildReceiptPrintPdf(
+      [{ receiptNumber: 5, mime: "application/pdf", url: "enc" }],
+      async () => encrypted.save(),
+    );
+    expect(result.failedReceiptNumbers).toEqual([5]);
+    expect((await PDFDocument.load(result.bytes)).getPageCount()).toBe(1);
   });
 });
