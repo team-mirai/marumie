@@ -14,9 +14,10 @@ import { cn, isEmphasizedJournalAmount, journalAccountLabel } from "@/client/lib
 
 const statusLabels = { draft: "下書き", approved: "確認済", published: "公開中" };
 
-// ヘッダーと行で共通の列。1280〜1439px は詳細カードが狭まる分、科目・支払先を詰める。
+// ヘッダーと行で共通の列。1280〜1439px は詳細カードが狭まる分、科目・項目・支払先・領収書等番号を詰める
+// （列幅と pr-3 の合計 584px が、1280px 幅での一覧の幅に収まるようにする）。
 const columns =
-  "grid grid-cols-[36px_52px_116px_minmax(0,1fr)_170px_84px_64px] items-center pr-3 xl:max-[1440px]:grid-cols-[36px_52px_96px_minmax(120px,1fr)_120px_84px_64px]";
+  "grid grid-cols-[36px_52px_116px_minmax(0,1fr)_170px_84px_84px_64px] items-center pr-3 xl:max-[1440px]:grid-cols-[36px_52px_96px_minmax(104px,1fr)_96px_40px_84px_64px]";
 
 type Chip = {
   label: ReactNode;
@@ -69,16 +70,6 @@ function chipsOf(
   else if (entry.receiptAbsent) others.push({ label: "徴難", title: "徴難", tone: "plain" });
   if (entry.receiptAbsent && entry.documentId === null)
     others.push({ label: "書類なし", title: "書類なし", tone: "plain" });
-  if (entry.receiptNumber !== null)
-    others.push({
-      label: (
-        <>
-          領収書等番号 <span className="font-latin">{entry.receiptNumber}</span>
-        </>
-      ),
-      title: `領収書等番号 ${entry.receiptNumber}`,
-      tone: "plain",
-    });
   if (entry.settledAt !== null) {
     const settled = entry.settledAt.slice(5).replace("-", ".");
     others.push({
@@ -221,6 +212,12 @@ export function JournalList({
             <th scope="col" className="pl-2 text-left">
               支払先
             </th>
+            <th scope="col" className="whitespace-nowrap pr-2 text-right">
+              <span className="xl:max-[1440px]:hidden">領収書等番号</span>
+              <span className="hidden xl:max-[1440px]:inline" title="領収書等番号">
+                番号
+              </span>
+            </th>
             <th scope="col" className="text-right">
               金額
             </th>
@@ -313,6 +310,9 @@ export function JournalList({
                         {payeeNames.get(entry.payeeId) ?? "不明"}
                       </span>
                     ))}
+                </td>
+                <td className="pr-2 text-right font-latin text-xs text-muted-foreground">
+                  {entry.receiptNumber}
                 </td>
                 <td
                   className={cn(
