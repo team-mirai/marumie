@@ -15,8 +15,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/client/components/ui";
+import { AssignmentDialog } from "@/client/components/user-management/AssignmentDialog";
 import { UserRoleBadge } from "@/client/components/user-management/UserRoleBadge";
-import { formatDate, resolveUserRoleBadge, toggleUserRole } from "@/client/lib";
+import {
+  assignedPoliticianNames,
+  formatDate,
+  resolveUserRoleBadge,
+  toggleUserRole,
+} from "@/client/lib";
 import type { UserRole } from "@/server/contexts/auth/domain/models/user-role";
 import type { User } from "@/server/contexts/shared/domain/repositories/user-repository.interface";
 
@@ -89,44 +95,17 @@ function RoleCheckboxes({
   );
 }
 
-/**
- * 担当する議員を複数選ぶチェックボックス群。
- * 担当の議員室にだけ調査研究費を書き込める（閲覧は research_fund ロールがあれば全議員室）。
- */
-function AssignmentCheckboxes({
-  user,
+/** 担当する議員の名前を一覧に並べる。担当がいなければ「なし」 */
+function AssignedPoliticianNames({
+  assignedPoliticianIds,
   politicians,
-  disabled,
-  onToggle,
 }: {
-  user: UserDisplayData;
+  assignedPoliticianIds: readonly string[];
   politicians: readonly { id: string; name: string }[];
-  disabled: boolean;
-  onToggle: (politicianId: string, checked: boolean) => void;
 }) {
-  if (politicians.length === 0)
-    return <span className="text-xs text-muted-foreground">議員が登録されていません</span>;
-  return (
-    <div className="flex flex-col gap-1.5">
-      {politicians.map((politician) => {
-        const id = `user-${user.id}-politician-${politician.id}`;
-        return (
-          <div key={politician.id} className="flex items-center gap-1.5">
-            <Checkbox
-              id={id}
-              aria-label={`${user.email} の担当議員: ${politician.name}`}
-              checked={user.assignedPoliticianIds.includes(politician.id)}
-              onCheckedChange={(checked) => onToggle(politician.id, checked === true)}
-              disabled={disabled}
-            />
-            <Label htmlFor={id} className="font-normal">
-              {politician.name}
-            </Label>
-          </div>
-        );
-      })}
-    </div>
-  );
+  const names = assignedPoliticianNames(assignedPoliticianIds, politicians);
+  if (names.length === 0) return <span className="text-xs text-muted-foreground">なし</span>;
+  return <span className="text-[13px] text-foreground">{names.join("、")}</span>;
 }
 
 export default function UserManagement({
@@ -143,6 +122,7 @@ export default function UserManagement({
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRoles, setInviteRoles] = useState<UserRole[]>([]);
   const [isInviting, setIsInviting] = useState(false);
+  const [editingAssignmentUser, setEditingAssignmentUser] = useState<UserDisplayData | null>(null);
 
   const handleRolesChange = async (userId: string, newRoles: UserRole[]) => {
     setIsLoading(true);
@@ -177,33 +157,18 @@ export default function UserManagement({
     }
   };
 
-  const handleAssignmentChange = async (
-    user: UserDisplayData,
-    politicianId: string,
-    checked: boolean,
-  ) => {
-    const next = checked
-      ? [...user.assignedPoliticianIds, politicianId]
-      : user.assignedPoliticianIds.filter((id) => id !== politicianId);
-    setIsLoading(true);
-
-    try {
-      const result = await updateUserAssignmentsAction(user.id, next);
-      if (result.ok) {
-        setUsers((prev) =>
-          prev.map((u) =>
-            u.id === user.id ? { ...u, assignedPoliticianIds: result.assignedPoliticianIds } : u,
-          ),
-        );
-      } else {
-        alert(`担当の更新に失敗しました: ${result.error}`);
-      }
-    } catch (error) {
-      console.error("Error updating assignments:", error);
-      alert(`担当の更新に失敗しました: ${error instanceof Error ? error.message : "不明なエラー"}`);
-    } finally {
-      setIsLoading(false);
-    }
+  const handleAssignmentSave = async (
+    userId: string,
+    politicianIds: string[],
+  ): Promise<{ ok: true } | { ok: false; error: string }> => {
+    const result = await updateUserAssignmentsAction(userId, politicianIds);
+    if (!result.ok) return result;
+    setUsers((prev) =>
+      prev.map((u) =>
+        u.id === userId ? { ...u, assignedPoliticianIds: result.assignedPoliticianIds } : u,
+      ),
+    );
+    return { ok: true };
   };
 
   const handleInviteUser = async (e: FormEvent) => {
@@ -311,14 +276,22 @@ export default function UserManagement({
                   />
                 </TableCell>
                 <TableCell>
-                  <AssignmentCheckboxes
-                    user={user}
-                    politicians={politicians}
-                    disabled={isLoading}
-                    onToggle={(politicianId, checked) =>
-                      handleAssignmentChange(user, politicianId, checked)
-                    }
-                  />
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+                    <AssignedPoliticianNames
+                      assignedPoliticianIds={user.assignedPoliticianIds}
+                      politicians={politicians}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="xs"
+                      aria-label={`${user.email} の担当議員を変更`}
+                      onClick={() => setEditingAssignmentUser(user)}
+                      disabled={isLoading}
+                    >
+                      変更
+                    </Button>
+                  </div>
                 </TableCell>
               </TableRow>
             ))}
@@ -331,6 +304,15 @@ export default function UserManagement({
           </div>
         )}
       </div>
+
+      {editingAssignmentUser && (
+        <AssignmentDialog
+          user={editingAssignmentUser}
+          politicians={politicians}
+          onSave={(politicianIds) => handleAssignmentSave(editingAssignmentUser.id, politicianIds)}
+          onClose={() => setEditingAssignmentUser(null)}
+        />
+      )}
     </div>
   );
 }
