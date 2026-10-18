@@ -1,6 +1,6 @@
 "use client";
 import type { ReactNode } from "react";
-import { GlobeSimple, Info, LockSimple } from "@phosphor-icons/react/dist/ssr";
+import { GlobeSimple, LockSimple } from "@phosphor-icons/react/dist/ssr";
 import { Input, Label, NativeSelect, Textarea } from "@/client/components/ui";
 import { LegalCategoryLabel } from "@/client/components/research-fund/LegalCategoryLabel";
 import { cn } from "@/client/lib";
@@ -230,13 +230,6 @@ export function JournalPublicFields({
                   </Changed>
                   <p className="flex flex-wrap items-center gap-x-3 text-[11px] text-muted-foreground">
                     {legalLabel}
-                    <span
-                      className="inline-flex items-center gap-0.5"
-                      title={`借方 ${accountLabel ?? "科目"}／貸方 普通預金 の複式仕訳を自動で作成`}
-                    >
-                      <Info aria-hidden className="size-3" />
-                      複式は自動
-                    </span>
                   </p>
                   {isAccountUnconfirmed(input.accountKey) && (
                     <p className="text-xs font-bold text-destructive">
