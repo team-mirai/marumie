@@ -14,9 +14,10 @@ import { cn, isEmphasizedJournalAmount, journalAccountLabel } from "@/client/lib
 
 const statusLabels = { draft: "下書き", approved: "確認済", published: "公開中" };
 
-// ヘッダーと行で共通の列。1280〜1439px は詳細カードが狭まる分、科目・支払先・領収書等番号を詰める。
+// ヘッダーと行で共通の列。1280〜1439px は詳細カードが狭まる分、科目・項目・支払先・領収書等番号を詰める
+// （列幅と pr-3 の合計 584px が、1280px 幅での一覧の幅に収まるようにする）。
 const columns =
-  "grid grid-cols-[36px_52px_116px_minmax(0,1fr)_170px_84px_84px_64px] items-center pr-3 xl:max-[1440px]:grid-cols-[36px_52px_96px_minmax(120px,1fr)_120px_48px_84px_64px]";
+  "grid grid-cols-[36px_52px_116px_minmax(0,1fr)_170px_84px_84px_64px] items-center pr-3 xl:max-[1440px]:grid-cols-[36px_52px_96px_minmax(104px,1fr)_96px_40px_84px_64px]";
 
 type Chip = {
   label: ReactNode;
