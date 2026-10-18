@@ -35,4 +35,12 @@ describe("togglePoliticianAssignment", () => {
   it("既に担当している議員をチェックしても重複させない", () => {
     expect(togglePoliticianAssignment(["2"], "2", true, politicians)).toEqual(["2"]);
   });
+
+  it("議員一覧に無い既存の担当 ID は解除せずに残す", () => {
+    expect(togglePoliticianAssignment(["99", "3"], "1", true, politicians)).toEqual([
+      "1",
+      "3",
+      "99",
+    ]);
+  });
 });

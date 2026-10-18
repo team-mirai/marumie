@@ -12,6 +12,7 @@ export function assignedPoliticianNames(
 
 /**
  * 担当する議員の集合に 1 人を付け外しした結果を返す（議員の並び順に並べ、重複させない）。
+ * 議員一覧に無い既存の担当 ID は解除せず末尾に残す（保存で意図せず担当が外れないように）。
  */
 export function togglePoliticianAssignment(
   assignedPoliticianIds: readonly string[],
@@ -22,5 +23,9 @@ export function togglePoliticianAssignment(
   const next = new Set(assignedPoliticianIds);
   if (checked) next.add(politicianId);
   else next.delete(politicianId);
-  return politicians.filter((p) => next.has(p.id)).map((p) => p.id);
+  const listedIds = new Set(politicians.map((p) => p.id));
+  return [
+    ...politicians.filter((p) => next.has(p.id)).map((p) => p.id),
+    ...[...next].filter((id) => !listedIds.has(id)),
+  ];
 }
