@@ -1,6 +1,7 @@
 import { readFile } from "fs/promises";
 import { join } from "path";
 import {
+  detectionMaxEdge,
   fillRegions,
   ReceiptMaskingService,
   toPageRegions,
@@ -19,6 +20,34 @@ function pixel(image: RasterImage, x: number, y: number): number[] {
   const offset = (y * image.width + x) * 4;
   return [...image.rgba.slice(offset, offset + 4)];
 }
+
+describe("detectionMaxEdge", () => {
+  /** 長辺を edge に縮めたときの画像トークン数（28 × 28 画素で 1 トークン） */
+  function tokens(page: { width: number; height: number }, edge: number): number {
+    const ratio = Math.min(1, edge / Math.max(page.width, page.height));
+    const width = Math.round(page.width * ratio);
+    const height = Math.round(page.height * ratio);
+    return Math.ceil(width / 28) * Math.ceil(height / 28);
+  }
+
+  it("A4 縦のページは、長辺 1568 画素では画像トークン数が上限を超えるので、上限に収まるまで縮める", () => {
+    const page = { width: 1240, height: 1754 };
+    const edge = detectionMaxEdge(page);
+
+    expect(tokens(page, 1568)).toBeGreaterThan(1568);
+    expect(edge).toBeLessThan(1568);
+    expect(tokens(page, edge)).toBeLessThanOrEqual(1568);
+    expect(tokens(page, edge + 1)).toBeGreaterThan(1568);
+  });
+
+  it("細長いページは長辺 1568 画素で止める", () => {
+    expect(detectionMaxEdge({ width: 400, height: 3000 })).toBe(1568);
+  });
+
+  it("小さいページは縮めない", () => {
+    expect(detectionMaxEdge({ width: 600, height: 800 })).toBe(800);
+  });
+});
 
 describe("toPageRegions", () => {
   it("縮小画像の座標を元のページ画像の座標に直し、余白を足す", () => {
@@ -89,8 +118,9 @@ describe("ReceiptMaskingService（LLM のみ差し替え）", () => {
     expect(result.mime).toBe("application/pdf");
     expect(calls).toHaveLength(2);
     for (const call of calls) {
-      // LLM には長辺 1568 画素以下の JPEG を渡す
+      // LLM には長辺 1568 画素以下・画像トークン 1568 以下の JPEG を渡す
       expect(Math.max(call.width, call.height)).toBeLessThanOrEqual(1568);
+      expect(Math.ceil(call.width / 28) * Math.ceil(call.height / 28)).toBeLessThanOrEqual(1568);
       expect([...call.jpeg.slice(0, 2)]).toEqual([0xff, 0xd8]);
     }
     const pages = await codec.toPageImages({ bytes: result.bytes, mime: "application/pdf" });

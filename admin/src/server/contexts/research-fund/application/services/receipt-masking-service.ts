@@ -7,8 +7,13 @@ import type {
 import type { DocumentRasterCodec } from "@/server/contexts/research-fund/domain/repositories/document-raster-codec.interface";
 import type { PersonalInfoRegionDetector } from "@/server/contexts/research-fund/domain/repositories/personal-info-region-detector.interface";
 
-/** LLM に渡すページ画像の長辺。これを超えると API 側で縮小され、返る座標がずれる */
+/**
+ * LLM に渡すページ画像の長辺と画像トークン数（28 × 28 画素で 1 トークン）の上限。
+ * どちらかを超えると API 側で縮小され、返る座標がずれる。標準解像度のモデルに切り替えても収まる値にしている
+ */
 const DETECTION_MAX_EDGE = 1568;
+const DETECTION_MAX_TOKENS = 1568;
+const DETECTION_PATCH = 28;
 /** 塗る矩形の四辺に足す余白（ページ画像の長辺に対する割合）。LLM の座標の誤差を吸収する */
 const PADDING_RATIO = 0.006;
 
@@ -29,9 +34,9 @@ export class ReceiptMaskingService {
   }): Promise<{ bytes: Uint8Array; mime: "application/pdf" }> {
     const pages = await this.codec.toPageImages(document);
     const masked: RasterImage[] = [];
-    // ページを順に処理し、LLM への同時リクエストとメモリ上のページ画像を増やさない
+    // ページを順に処理し、LLM への同時リクエストを増やさない
     for (const [index, page] of pages.entries()) {
-      const preview = this.codec.shrink(page, DETECTION_MAX_EDGE);
+      const preview = this.codec.shrink(page, detectionMaxEdge(page));
       let regions: MaskingRegion[];
       try {
         regions = await this.detector.detect({
@@ -49,6 +54,24 @@ export class ReceiptMaskingService {
     }
     return { bytes: await this.codec.toImagePdf(masked), mime: "application/pdf" };
   }
+}
+
+/**
+ * LLM に渡すために縮める長辺を、長辺と画像トークン数の両方の上限に収まるよう決める。
+ * 縮めた大きさは shrink と同じ丸め方で求める
+ */
+export function detectionMaxEdge(page: { width: number; height: number }): number {
+  const longEdge = Math.max(page.width, page.height);
+  let edge = Math.min(DETECTION_MAX_EDGE, longEdge);
+  while (edge > DETECTION_PATCH) {
+    const ratio = edge / longEdge;
+    const width = Math.max(1, Math.round(page.width * ratio));
+    const height = Math.max(1, Math.round(page.height * ratio));
+    const tokens = Math.ceil(width / DETECTION_PATCH) * Math.ceil(height / DETECTION_PATCH);
+    if (tokens <= DETECTION_MAX_TOKENS) break;
+    edge -= 1;
+  }
+  return edge;
 }
 
 /**

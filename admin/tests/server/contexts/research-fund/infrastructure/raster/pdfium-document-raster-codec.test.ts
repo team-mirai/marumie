@@ -61,6 +61,18 @@ describe("PdfiumDocumentRasterCodec", () => {
     expect(page.rgba[1]).toBeLessThan(80);
   });
 
+  it("画素数が 100 メガピクセルを超える PNG は展開せずに失敗する", async () => {
+    // IHDR の幅・高さだけ 20000 × 20000 に書き換える（展開する前に止まるので中身は壊れていてよい）
+    const bytes = new Uint8Array(await readFile(join(DATA_DIR, "amazon-receipt-01.png")));
+    const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+    view.setUint32(16, 20000);
+    view.setUint32(20, 20000);
+
+    await expect(codec.toPageImages({ bytes, mime: "image/png" })).rejects.toThrow(
+      "PNG is too large: 20000 x 20000",
+    );
+  });
+
   it("透過のある PNG は白い背景に重ねる", async () => {
     const { PNG } = await import("pngjs");
     const png = new PNG({ width: 2, height: 1 });

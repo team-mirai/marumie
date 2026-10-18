@@ -14,6 +14,8 @@ const RENDER_DPI = 150;
 /** ページ画像の長辺の上限。スマートフォンで撮った大きな写真もここまで縮める */
 const MAX_PAGE_EDGE = 2400;
 const JPEG_QUALITY = 85;
+/** 展開する PNG の画素数の上限（jpeg-js の既定 maxResolutionInMP と同じ 100 メガピクセル） */
+const MAX_PNG_PIXELS = 100_000_000;
 
 /**
  * 書類とページ画像の相互変換。Vercel のサーバーレス関数でも動くよう、
@@ -106,6 +108,11 @@ function decodeJpeg(bytes: Uint8Array): RasterImage {
 
 /** 透過のある PNG は白い背景に重ねる（JPEG にすると透過部分が黒くなるため） */
 function decodePng(bytes: Uint8Array): RasterImage {
+  // 展開前に IHDR の幅（16〜19 バイト目）と高さ（20〜23 バイト目）を見て、巨大な画像でメモリを使い果たさない
+  if (bytes.length < 24) throw new Error("PNG is too short");
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  if (view.getUint32(16) * view.getUint32(20) > MAX_PNG_PIXELS)
+    throw new Error(`PNG is too large: ${view.getUint32(16)} x ${view.getUint32(20)}`);
   const decoded = PNG.sync.read(Buffer.from(bytes));
   const rgba = new Uint8Array(decoded.data);
   for (let i = 0; i < rgba.length; i += 4) {
