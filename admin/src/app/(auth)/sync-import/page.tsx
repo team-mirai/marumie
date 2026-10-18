@@ -1,7 +1,6 @@
 import "server-only";
 
-import { UserRoleModel } from "@/server/contexts/auth/domain/models/user-role";
-import { getCurrentUser } from "@/server/contexts/auth/presentation/loaders/load-current-user";
+import { requireRolePage } from "@/server/contexts/auth/presentation/loaders/require-role-page";
 import { prepareSyncImportUpload } from "@/server/contexts/data-import/presentation/actions/prepare-sync-import-upload";
 import { previewSyncImport } from "@/server/contexts/data-import/presentation/actions/preview-sync-import";
 import { runSyncImport } from "@/server/contexts/data-import/presentation/actions/run-sync-import";
@@ -28,12 +27,8 @@ function Notice({ children }: { children: React.ReactNode }) {
 }
 
 export default async function SyncImportPage() {
-  const user = await getCurrentUser();
-
   // サイドバーからは admin にしか見えないが、URL 直打ちでも実行させない。
-  if (!user || !UserRoleModel.isAdmin(user.role)) {
-    return <Notice>この画面は管理者（admin）のみ利用できます。</Notice>;
-  }
+  await requireRolePage("admin");
 
   // 本番に取り込むと取り返しがつかないので、環境ごと画面を出さない
   // （サーバー処理側でも同じ判定で拒否している）。

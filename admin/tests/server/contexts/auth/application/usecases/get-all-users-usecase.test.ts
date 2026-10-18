@@ -21,7 +21,7 @@ describe("GetAllUsersUsecase", () => {
     id: "user-id",
     authId: "auth-user-id",
     email: "admin@example.com",
-    role: "admin",
+    roles: ["admin"],
     createdAt: new Date("2024-01-01"),
     updatedAt: new Date("2024-01-01"),
     ...overrides,
@@ -44,7 +44,7 @@ describe("GetAllUsersUsecase", () => {
       findByAuthId: jest.fn(),
       findByEmail: jest.fn(),
       findAll: jest.fn(),
-      updateRole: jest.fn(),
+      updateRoles: jest.fn(),
       delete: jest.fn(),
     };
     usecase = new GetAllUsersUsecase(mockAuthProvider, mockUserRepository);
@@ -53,10 +53,10 @@ describe("GetAllUsersUsecase", () => {
   describe("execute", () => {
     it("admin権限を持つユーザーは全ユーザー一覧を取得できる", async () => {
       const authUser = createMockSupabaseUser();
-      const adminUser = createMockUser({ role: "admin" });
+      const adminUser = createMockUser({ roles: ["admin"] });
       const allUsers = [
         adminUser,
-        createMockUser({ id: "user-2", authId: "auth-2", email: "user@example.com", role: "user" }),
+        createMockUser({ id: "user-2", authId: "auth-2", email: "user@example.com", roles: ["political_fund", "research_fund"] }),
       ];
       mockAuthProvider.getUser.mockResolvedValue(authUser);
       mockUserRepository.findByAuthId.mockResolvedValue(adminUser);
@@ -78,9 +78,9 @@ describe("GetAllUsersUsecase", () => {
       expect(mockUserRepository.findAll).not.toHaveBeenCalled();
     });
 
-    it("user権限の場合はエラーを投げる", async () => {
+    it("admin 以外のロールしか持たない場合はエラーを投げる", async () => {
       const authUser = createMockSupabaseUser();
-      const normalUser = createMockUser({ role: "user" });
+      const normalUser = createMockUser({ roles: ["political_fund", "research_fund"] });
       mockAuthProvider.getUser.mockResolvedValue(authUser);
       mockUserRepository.findByAuthId.mockResolvedValue(normalUser);
 
@@ -91,7 +91,7 @@ describe("GetAllUsersUsecase", () => {
       expect(mockUserRepository.findAll).not.toHaveBeenCalled();
     });
 
-    it("DBにユーザーが存在しない場合はuser権限として扱われエラーを投げる", async () => {
+    it("DBにユーザーが存在しない場合はロールなしとして扱われエラーを投げる", async () => {
       const authUser = createMockSupabaseUser();
       mockAuthProvider.getUser.mockResolvedValue(authUser);
       mockUserRepository.findByAuthId.mockResolvedValue(null);

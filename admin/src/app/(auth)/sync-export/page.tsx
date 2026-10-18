@@ -1,7 +1,6 @@
 import "server-only";
 
-import { UserRoleModel } from "@/server/contexts/auth/domain/models/user-role";
-import { getCurrentUser } from "@/server/contexts/auth/presentation/loaders/load-current-user";
+import { requireRolePage } from "@/server/contexts/auth/presentation/loaders/require-role-page";
 import { loadCurrentOrganizationTarget } from "@/server/contexts/shared/presentation/loaders/load-current-organization-target";
 import { CurrentTargetBar } from "@/client/components/layout/CurrentTargetBar";
 import { PageHeader } from "@/client/components/layout/PageHeader";
@@ -12,19 +11,8 @@ const LABEL = "Sync Export";
 const TITLE = "同期用エクスポート";
 
 export default async function SyncExportPage() {
-  const user = await getCurrentUser();
-
   // サイドバーからは admin にしか見えないが、URL 直打ちでも実行させない。
-  if (!user || !UserRoleModel.isAdmin(user.role)) {
-    return (
-      <div>
-        <PageHeader label={LABEL} title={TITLE} />
-        <div className="rounded-lg border border-border bg-card p-6 text-sm text-muted-foreground">
-          この画面は管理者（admin）のみ利用できます。
-        </div>
-      </div>
-    );
-  }
+  await requireRolePage("admin");
 
   const target = await loadCurrentOrganizationTarget();
 

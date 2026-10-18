@@ -7,6 +7,7 @@ import { DonorAssignmentClient } from "@/client/components/donor-assignment/Dono
 import { TargetRequiredNotice } from "@/client/components/layout/TargetRequiredNotice";
 import { DONOR_REQUIRED_CATEGORIES } from "@/server/contexts/report/domain/models/donor-assignment-rules";
 import { PL_CATEGORIES } from "@/shared/accounting/account-category";
+import { requireRolePage } from "@/server/contexts/auth/presentation/loaders/require-role-page";
 
 function buildCategoryOptions(): { value: string; label: string }[] {
   const donorCategories = new Set([...DONOR_REQUIRED_CATEGORIES]);
@@ -31,6 +32,7 @@ interface DonorAssignmentPageProps {
 }
 
 export default async function DonorAssignmentPage({ searchParams }: DonorAssignmentPageProps) {
+  await requireRolePage("political_fund");
   const target = await loadCurrentOrganizationTarget();
 
   if (!target) {

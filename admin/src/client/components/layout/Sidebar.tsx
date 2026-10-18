@@ -5,7 +5,7 @@ import { TargetSelector } from "@/client/components/layout/TargetSelector";
 import { useAdminTarget } from "@/client/components/layout/AdminTargetProvider";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import type { UserRole } from "@prisma/client";
+import type { UserRole } from "@/server/contexts/auth/domain/models/user-role";
 import type { Icon } from "@phosphor-icons/react";
 import {
   AddressBook,
@@ -56,7 +56,7 @@ const NAV_ICONS: Record<NavIconName, Icon> = {
 
 type SidebarProps = {
   logoutAction: (formData: FormData) => Promise<void>;
-  userRole: UserRole | null;
+  userRoles: UserRole[];
   userEmail: string;
   /** 同期用インポートが利用できる環境か（サーバー側で判定した結果） */
   syncImportEnabled: boolean;
@@ -89,7 +89,7 @@ function CollapsibleTooltip({
 
 export default function Sidebar({
   logoutAction,
-  userRole,
+  userRoles,
   userEmail,
   syncImportEnabled,
   collapsed,
@@ -97,7 +97,7 @@ export default function Sidebar({
 }: SidebarProps) {
   const pathname = usePathname();
   const { currentTarget } = useAdminTarget();
-  const navSections = getVisibleNavSections(userRole, currentTarget, { syncImportEnabled });
+  const navSections = getVisibleNavSections(userRoles, currentTarget, { syncImportEnabled });
   const ToggleIcon = collapsed ? CaretDoubleRight : CaretDoubleLeft;
   const toggleLabel = collapsed ? "サイドバーを開く" : "サイドバーを折りたたむ";
 
@@ -191,9 +191,11 @@ export default function Sidebar({
           </span>
         </div>
         {/* 「ユーザー情報」ページを廃止したため、メールとロールはここだけで確認する */}
-        {userRole && !collapsed && (
-          <div className="px-2.5">
-            <UserRoleBadge role={userRole} />
+        {userRoles.length > 0 && !collapsed && (
+          <div className="flex flex-wrap gap-1 px-2.5">
+            {userRoles.map((role) => (
+              <UserRoleBadge key={role} role={role} />
+            ))}
           </div>
         )}
         <form action={logoutAction}>

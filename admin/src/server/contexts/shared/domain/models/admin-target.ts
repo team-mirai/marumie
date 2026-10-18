@@ -1,3 +1,5 @@
+import { type UserRole, UserRoleModel } from "@/server/contexts/auth/domain/models/user-role";
+
 export type AdminTarget = {
   key: string;
   name: string;
@@ -11,6 +13,18 @@ export function targetDestination(target: AdminTarget): string {
   return target.kind === "research-fund"
     ? `/politicians/${target.politicianId}/books`
     : "/political-organizations";
+}
+
+/**
+ * ユーザーのロールでその対象を選べるか。
+ * 政治団体は政治資金（political_fund）、議員室は調査研究費（research_fund）の機能なので、
+ * 使えない機能の対象は対象切り替えにも出さない（admin は全対象を選べる）。
+ */
+export function isTargetAvailableFor(target: AdminTarget, roles: readonly UserRole[]): boolean {
+  return UserRoleModel.canUse(
+    roles,
+    target.kind === "research-fund" ? ["research_fund"] : ["political_fund"],
+  );
 }
 
 /** 政治団体系ページが必要とする「政治団体 × 年度」。グローバル対象から取り出す。 */

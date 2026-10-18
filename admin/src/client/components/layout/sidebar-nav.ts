@@ -1,5 +1,5 @@
 import type { AdminTarget } from "@/server/contexts/shared/domain/models/admin-target";
-import type { UserRole } from "@prisma/client";
+import { type UserRole, UserRoleModel } from "@/server/contexts/auth/domain/models/user-role";
 
 /**
  * サイドバーの nav 項目に使う Phosphor アイコンの識別子。
@@ -26,7 +26,8 @@ type NavItem = {
   href: string;
   label: string;
   icon: NavIconName;
-  adminOnly?: boolean;
+  /** この項目の機能を使えるロール（admin は常に使える） */
+  role: UserRole;
   /** 同期用インポートが有効な環境（非本番 かつ DATA_SYNC_IMPORT_ENABLED=true）でのみ表示する */
   syncImportOnly?: boolean;
   badge?: number;
@@ -43,9 +44,9 @@ type NavSection = {
 const TARGET_MANAGEMENT_SECTION: NavSection = {
   title: "対象の管理",
   items: [
-    { href: "/political-organizations", label: "政治団体", icon: "bank" },
-    { href: "/politicians", label: "議員", icon: "user" },
-    { href: "/users", label: "ユーザー管理", icon: "users", adminOnly: true },
+    { href: "/political-organizations", label: "政治団体", icon: "bank", role: "political_fund" },
+    { href: "/politicians", label: "議員", icon: "user", role: "research_fund" },
+    { href: "/users", label: "ユーザー管理", icon: "users", role: "admin" },
   ],
 };
 
@@ -54,31 +55,56 @@ const ORGANIZATION_SECTIONS: NavSection[] = [
   {
     title: "データ取り込み",
     items: [
-      { href: "/transactions", label: "取引一覧", icon: "list-bullets" },
-      { href: "/bulk-delete-transactions", label: "取引一括削除", icon: "trash" },
-      { href: "/upload-csv", label: "CSVアップロード", icon: "upload-simple" },
-      { href: "/balance-snapshots", label: "残高登録", icon: "coins" },
+      { href: "/transactions", label: "取引一覧", icon: "list-bullets", role: "political_fund" },
+      {
+        href: "/bulk-delete-transactions",
+        label: "取引一括削除",
+        icon: "trash",
+        role: "political_fund",
+      },
+      {
+        href: "/upload-csv",
+        label: "CSVアップロード",
+        icon: "upload-simple",
+        role: "political_fund",
+      },
+      { href: "/balance-snapshots", label: "残高登録", icon: "coins", role: "political_fund" },
     ],
   },
   {
     title: "報告書",
     items: [
-      { href: "/counterparts", label: "取引先マスタ", icon: "address-book" },
-      { href: "/assign/counterparts", label: "取引先紐付け", icon: "link" },
-      { href: "/donors", label: "寄付者マスタ", icon: "hand-heart" },
-      { href: "/assign/donors", label: "寄付者紐付け", icon: "link-simple" },
-      { href: "/export-report", label: "報告書エクスポート", icon: "export" },
+      {
+        href: "/counterparts",
+        label: "取引先マスタ",
+        icon: "address-book",
+        role: "political_fund",
+      },
+      { href: "/assign/counterparts", label: "取引先紐付け", icon: "link", role: "political_fund" },
+      { href: "/donors", label: "寄付者マスタ", icon: "hand-heart", role: "political_fund" },
+      {
+        href: "/assign/donors",
+        label: "寄付者紐付け",
+        icon: "link-simple",
+        role: "political_fund",
+      },
+      {
+        href: "/export-report",
+        label: "報告書エクスポート",
+        icon: "export",
+        role: "political_fund",
+      },
     ],
   },
   {
     title: "データ同期",
     items: [
-      { href: "/sync-export", label: "同期用エクスポート", icon: "database", adminOnly: true },
+      { href: "/sync-export", label: "同期用エクスポート", icon: "database", role: "admin" },
       {
         href: "/sync-import",
         label: "同期用インポート",
         icon: "database",
-        adminOnly: true,
+        role: "admin",
         syncImportOnly: true,
       },
     ],
@@ -93,12 +119,12 @@ type NavEnvironment = {
 
 /**
  * ユーザーのロールと現在のグローバル対象に応じて表示可能な nav セクションを返す。
- * adminOnly の項目は admin ロールにのみ表示し、項目が空になったセクションは除外する。
+ * 各項目はその機能を使えるロール（admin は全項目）にのみ表示し、項目が空になったセクションは除外する。
  * 対象が未選択のときは、開いても「政治団体が選択されていません」としか言えない
  * データ取り込み・報告書のセクションを出さず、対象の管理だけに絞る。
  */
 export function getVisibleNavSections(
-  userRole: UserRole | null,
+  userRoles: readonly UserRole[],
   target: AdminTarget | null = null,
   environment: NavEnvironment = {},
 ): NavSection[] {
@@ -109,9 +135,9 @@ export function getVisibleNavSections(
           {
             title: "議員室",
             items: [
-              { href: "/politicians", label: "議員", icon: "user" },
-              { href: base, label: "年度帳簿", icon: "bank" },
-              { href: "/users", label: "ユーザー管理", icon: "users", adminOnly: true },
+              { href: "/politicians", label: "議員", icon: "user", role: "research_fund" },
+              { href: base, label: "年度帳簿", icon: "bank", role: "research_fund" },
+              { href: "/users", label: "ユーザー管理", icon: "users", role: "admin" },
             ],
           },
           {
@@ -121,30 +147,50 @@ export function getVisibleNavSections(
                 href: `${base}/${target.bookId}/scan`,
                 label: "書類スキャン",
                 icon: "upload-simple",
+                role: "research_fund",
               },
               {
                 href: `${base}/${target.bookId}/entries`,
                 label: "仕訳の確認・編集",
                 icon: "list-bullets",
+                role: "research_fund",
                 badge: target.draftCount,
               },
-              { href: `${base}/${target.bookId}/payees`, label: "支払先", icon: "address-book" },
-              { href: `${base}/${target.bookId}/grants`, label: "支給の登録", icon: "coins" },
-              { href: `${base}/${target.bookId}/publish`, label: "公開", icon: "export" },
+              {
+                href: `${base}/${target.bookId}/payees`,
+                label: "支払先",
+                icon: "address-book",
+                role: "research_fund",
+              },
+              {
+                href: `${base}/${target.bookId}/grants`,
+                label: "支給の登録",
+                icon: "coins",
+                role: "research_fund",
+              },
+              {
+                href: `${base}/${target.bookId}/publish`,
+                label: "公開",
+                icon: "export",
+                role: "research_fund",
+              },
               {
                 href: `${base}/${target.bookId}/submission`,
                 label: "議員課提出",
                 icon: "download-simple",
+                role: "research_fund",
               },
               {
                 href: `${base}/${target.bookId}/expenditure-groups`,
                 label: "支出群と成果",
                 icon: "hand-heart",
+                role: "research_fund",
               },
               {
                 href: `${base}/${target.bookId}/prompts`,
                 label: "読み取りプロンプト",
                 icon: "list-bullets",
+                role: "research_fund",
               },
             ],
           },
@@ -157,7 +203,7 @@ export function getVisibleNavSections(
       ...section,
       items: section.items.filter(
         (item) =>
-          (!item.adminOnly || userRole === "admin") &&
+          UserRoleModel.canUse(userRoles, [item.role]) &&
           (!item.syncImportOnly || environment.syncImportEnabled === true),
       ),
     }))

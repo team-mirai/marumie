@@ -60,7 +60,12 @@ export class ExchangeCodeForSessionUsecase {
 
       // DB にユーザーが存在するか確認
       let dbUser = await this.userRepository.findByAuthId(session.user.id);
-      let requiresPasswordSetup = false;
+
+      // 招待経由（emailConfirmedAt があり lastSignInAt がない）の新規ユーザーは
+      // パスワード設定が必要。Google 経由のユーザーはパスワード不要のためスキップ。
+      // 招待時にロール付きで DB ユーザーを作っておくため、DB の有無ではなく認証側の状態で判定する
+      const requiresPasswordSetup =
+        !isGoogleLogin && !!session.user.emailConfirmedAt && !session.user.lastSignInAt;
 
       if (!dbUser) {
         // 初回ログインのユーザーを DB に作成
@@ -73,13 +78,8 @@ export class ExchangeCodeForSessionUsecase {
         dbUser = await this.userRepository.create({
           authId: session.user.id,
           email: email,
-          role: "user",
+          roles: [],
         });
-
-        // 招待経由（emailConfirmedAt があり lastSignInAt がない）の新規ユーザーは
-        // パスワード設定が必要。Google 経由のユーザーはパスワード不要のためスキップ
-        requiresPasswordSetup =
-          !isGoogleLogin && !!session.user.emailConfirmedAt && !session.user.lastSignInAt;
       }
 
       return { user: dbUser, requiresPasswordSetup };

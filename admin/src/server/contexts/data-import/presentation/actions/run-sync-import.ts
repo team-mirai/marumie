@@ -1,7 +1,7 @@
 "use server";
 
 import { updateTag } from "next/cache";
-import { requireAdmin } from "@/server/contexts/auth/presentation/loaders/require-admin";
+import { requireRole } from "@/server/contexts/auth/presentation/loaders/require-role";
 import { ImportOrganizationSyncUsecase } from "@/server/contexts/data-import/application/usecases/import-organization-sync-usecase";
 import type { OrganizationSyncImportResult } from "@/server/contexts/data-import/domain/models/organization-sync-import";
 import { prisma } from "@/server/contexts/shared/infrastructure/prisma";
@@ -23,7 +23,7 @@ export async function runSyncImport(data: {
   storageKey: string;
   confirmationSlug: string;
 }): Promise<RunSyncImportResponse> {
-  await requireAdmin();
+  await requireRole("admin");
 
   try {
     const usecase = new ImportOrganizationSyncUsecase(

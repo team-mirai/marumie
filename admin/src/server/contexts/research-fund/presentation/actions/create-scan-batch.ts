@@ -1,7 +1,7 @@
 "use server";
 import "server-only";
 import { revalidatePath } from "next/cache";
-import { requireAuth } from "@/server/contexts/auth/presentation/loaders/require-auth";
+import { requireRole } from "@/server/contexts/auth/presentation/loaders/require-role";
 import {
   ScanBatchError,
   SCAN_BATCH_MAX_DOCUMENTS,
@@ -14,7 +14,7 @@ import { buildCreateScanBatchUsecase } from "@/server/contexts/research-fund/pre
  * File はサーバーアクションの境界を越えられるが、Uint8Array に読み出してから usecase に渡す。
  */
 export async function createScanBatch(politicianId: string, bookId: string, formData: FormData) {
-  const user = await requireAuth();
+  const user = await requireRole("research_fund");
   if (!(await requireJournalTarget(politicianId, bookId)))
     return { success: false as const, error: "現在の対象帳簿を選択し直してください" };
   const files = formData

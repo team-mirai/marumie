@@ -10,6 +10,7 @@ export type AuthErrorCode =
   | "INVALID_TOKEN"
   | "NETWORK_ERROR"
   | "INSUFFICIENT_PERMISSION"
+  | "INVALID_ROLE"
   | "USER_NOT_FOUND"
   | "INVALID_EMAIL"
   | "WEAK_PASSWORD"
@@ -42,6 +43,7 @@ export const AUTH_ERROR_MESSAGES: Record<AuthErrorCode, string> = {
   INVALID_TOKEN: "認証情報が無効です。再度ログインしてください",
   NETWORK_ERROR: "認証サービスに接続できませんでした。しばらく待ってから再試行してください",
   INSUFFICIENT_PERMISSION: "この操作を行う権限がありません",
+  INVALID_ROLE: "不明なロールが指定されました",
   USER_NOT_FOUND: "ユーザーが見つかりません",
   INVALID_EMAIL: "有効なメールアドレスを入力してください",
   WEAK_PASSWORD: "パスワードは6文字以上で入力してください",

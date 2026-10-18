@@ -6,7 +6,7 @@ import { PrismaDonorRepository } from "@/server/contexts/report/infrastructure/r
 import { PrismaTransactionDonorRepository } from "@/server/contexts/report/infrastructure/repositories/prisma-transaction-donor.repository";
 import { PrismaTransactionWithDonorRepository } from "@/server/contexts/report/infrastructure/repositories/prisma-transaction-with-donor.repository";
 import { BulkAssignDonorUsecase } from "@/server/contexts/report/application/usecases/assign-donor-usecase";
-import { requireAuth } from "@/server/contexts/auth/presentation/loaders/require-auth";
+import { requireRole } from "@/server/contexts/auth/presentation/loaders/require-role";
 
 interface BulkAssignDonorActionResult {
   success: boolean;
@@ -18,7 +18,7 @@ export async function bulkAssignDonorAction(
   transactionIds: string[],
   donorId: string,
 ): Promise<BulkAssignDonorActionResult> {
-  await requireAuth();
+  await requireRole("political_fund");
 
   try {
     const transactionRepository = new PrismaTransactionWithDonorRepository(prisma);

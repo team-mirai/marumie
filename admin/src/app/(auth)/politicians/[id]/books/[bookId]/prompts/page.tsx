@@ -2,12 +2,14 @@ import { PageHeader } from "@/client/components/layout/PageHeader";
 import { PromptEditor } from "@/client/components/research-fund/PromptEditor";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/client/components/ui";
 import { loadPrompts } from "@/server/contexts/research-fund/presentation/loaders/load-prompts";
+import { requireRolePage } from "@/server/contexts/auth/presentation/loaders/require-role-page";
 
 export default async function PromptsPage({
   params,
 }: {
   params: Promise<{ id: string; bookId: string }>;
 }) {
+  await requireRolePage("research_fund");
   const { id, bookId } = await params;
   const { receipt, addressSearch, testDocuments, target } = await loadPrompts(id, bookId);
   return (

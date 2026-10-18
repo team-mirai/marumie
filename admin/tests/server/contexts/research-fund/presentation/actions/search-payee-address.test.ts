@@ -1,8 +1,8 @@
-import { requireAuth } from "@/server/contexts/auth/presentation/loaders/require-auth";
+import { requireRole } from "@/server/contexts/auth/presentation/loaders/require-role";
 import { SearchPayeeAddressUsecase } from "@/server/contexts/research-fund/application/usecases/search-payee-address-usecase";
 import { searchPayeeAddress } from "@/server/contexts/research-fund/presentation/actions/search-payee-address";
 import { requireJournalTarget } from "@/server/contexts/research-fund/presentation/loaders/load-journal-review";
-jest.mock("@/server/contexts/auth/presentation/loaders/require-auth", () => ({ requireAuth: jest.fn() }));
+jest.mock("@/server/contexts/auth/presentation/loaders/require-role", () => ({ requireRole: jest.fn() }));
 jest.mock("@/server/contexts/research-fund/presentation/loaders/load-journal-review", () => ({ requireJournalTarget: jest.fn() }));
 jest.mock("@/server/contexts/shared/infrastructure/prisma", () => ({ prisma: {} }));
 jest.mock("@ai-sdk/anthropic", () => ({ anthropic: jest.fn() }));
@@ -10,7 +10,7 @@ jest.mock("ai", () => ({ generateText: jest.fn() }));
 beforeEach(() => {
   jest.clearAllMocks();
   jest.spyOn(console, "error").mockImplementation(() => {});
-  jest.mocked(requireAuth).mockResolvedValue({ id: "user" } as Awaited<ReturnType<typeof requireAuth>>);
+  jest.mocked(requireRole).mockResolvedValue({ id: "user" } as Awaited<ReturnType<typeof requireRole>>);
   jest.mocked(requireJournalTarget).mockResolvedValue({ kind: "research-fund", key: "book:1", name: "議員", year: 2026, politicianId: "2", bookId: "1", draftCount: 0 });
 });
 afterEach(() => jest.restoreAllMocks());
@@ -28,7 +28,7 @@ test("別の対象からの検索は、その議員のプロンプトを使わ�
   expect(search).not.toHaveBeenCalled();
 });
 test("認証失敗時は検索しない", async () => {
-  jest.mocked(requireAuth).mockRejectedValueOnce(new Error("auth"));
+  jest.mocked(requireRole).mockRejectedValueOnce(new Error("auth"));
   const search = jest.spyOn(SearchPayeeAddressUsecase.prototype, "execute");
   await expect(searchPayeeAddress("2", "1", "株式会社テスト")).rejects.toThrow("auth");
   expect(search).not.toHaveBeenCalled();

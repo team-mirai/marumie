@@ -9,12 +9,12 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(uuid())
-  authId    String   @unique @map("auth_id")
-  email     String   @unique @db.VarChar(255)
-  role      UserRole @default(user)
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  id        String     @id @default(uuid())
+  authId    String     @unique @map("auth_id")
+  email     String     @unique @db.VarChar(255)
+  roles     UserRole[] @default([])
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @updatedAt @map("updated_at")
 
   researchFundJournalEntriesCreated       ResearchFundJournalEntry[]
   researchFundScanBatchesUploaded         ResearchFundScanBatch[]
@@ -602,7 +602,8 @@ enum TransactionType {
 
 enum UserRole {
   admin
-  user
+  political_fund
+  research_fund
 }
 
 enum DonorType {

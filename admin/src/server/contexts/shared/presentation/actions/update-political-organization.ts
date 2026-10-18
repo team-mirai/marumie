@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/server/contexts/shared/infrastructure/prisma";
 import { PrismaPoliticalOrganizationRepository } from "@/server/contexts/shared/infrastructure/repositories/prisma-political-organization.repository";
 import { UpdatePoliticalOrganizationUsecase } from "@/server/contexts/shared/application/usecases/update-political-organization-usecase";
-import { requireAuth } from "@/server/contexts/auth/presentation/loaders/require-auth";
+import { requireRole } from "@/server/contexts/auth/presentation/loaders/require-role";
 
 export interface UpdatePoliticalOrganizationData {
   displayName: string;
@@ -17,7 +17,7 @@ export async function updatePoliticalOrganization(
   id: string,
   data: UpdatePoliticalOrganizationData,
 ) {
-  await requireAuth();
+  await requireRole("political_fund");
 
   try {
     const organizationId = parseInt(id, 10);

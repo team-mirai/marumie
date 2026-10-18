@@ -72,8 +72,25 @@ describe("ExchangeCodeForSessionUsecase", () => {
       expect(mockUserRepository.create).toHaveBeenCalledWith({
         authId: "auth-user-id",
         email: "test@example.com",
-        role: "user",
+        roles: [],
       });
+    });
+
+    it("招待時に DB ユーザーが作られていても、初回ログイン（lastSignInAt なし）ならパスワード設定を求める", async () => {
+      const session = createMockSession({
+        user: createMockSupabaseUser({
+          emailConfirmedAt: "2024-01-01T00:00:00Z",
+          lastSignInAt: null,
+        }),
+      });
+      const invitedUser = createMockUser({ roles: ["research_fund"] });
+      mockAuthProvider.exchangeCodeForSession.mockResolvedValue(session);
+      mockUserRepository.findByAuthId.mockResolvedValue(invitedUser);
+
+      const result = await usecase.execute("auth-code");
+
+      expect(result).toEqual({ user: invitedUser, requiresPasswordSetup: true });
+      expect(mockUserRepository.create).not.toHaveBeenCalled();
     });
 
     it("新規ユーザーでlastSignInAtがある場合はrequiresPasswordSetupがfalse", async () => {
@@ -181,7 +198,7 @@ describe("ExchangeCodeForSessionUsecase", () => {
       expect(mockUserRepository.create).toHaveBeenCalledWith({
         authId: "auth-user-id",
         email: "member@team-mir.ai",
-        role: "user",
+        roles: [],
       });
     });
 

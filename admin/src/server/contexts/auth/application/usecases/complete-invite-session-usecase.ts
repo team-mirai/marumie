@@ -35,7 +35,7 @@ export class CompleteInviteSessionUsecase {
         await this.userRepository.create({
           authId: authUser.id,
           email: authUser.email,
-          role: "user",
+          roles: [],
         });
       }
     } catch (e) {

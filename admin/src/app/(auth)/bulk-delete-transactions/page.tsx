@@ -3,8 +3,10 @@ import "server-only";
 import { BulkDeleteTransactionsClient } from "@/client/components/transactions/BulkDeleteTransactionsClient";
 import { TargetRequiredNotice } from "@/client/components/layout/TargetRequiredNotice";
 import { loadCurrentOrganizationTarget } from "@/server/contexts/shared/presentation/loaders/load-current-organization-target";
+import { requireRolePage } from "@/server/contexts/auth/presentation/loaders/require-role-page";
 
 export default async function BulkDeleteTransactionsPage() {
+  await requireRolePage("political_fund");
   const target = await loadCurrentOrganizationTarget();
 
   if (!target) {

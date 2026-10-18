@@ -8,12 +8,12 @@ import type {
 export class PrismaUserRepository implements UserRepository {
   constructor(private prisma: PrismaClient) {}
 
-  async create(data: { authId: string; email: string; role?: UserRole }): Promise<User> {
+  async create(data: { authId: string; email: string; roles?: UserRole[] }): Promise<User> {
     return await this.prisma.user.create({
       data: {
         authId: data.authId,
         email: data.email,
-        role: data.role ?? "user",
+        roles: data.roles ?? [],
       },
     });
   }
@@ -42,10 +42,10 @@ export class PrismaUserRepository implements UserRepository {
     });
   }
 
-  async updateRole(authId: string, role: UserRole): Promise<User> {
+  async updateRoles(authId: string, roles: UserRole[]): Promise<User> {
     return await this.prisma.user.update({
       where: { authId },
-      data: { role },
+      data: { roles },
     });
   }
 

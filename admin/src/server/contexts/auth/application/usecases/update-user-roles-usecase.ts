@@ -5,20 +5,19 @@ import type {
   UserRepository,
   User,
 } from "@/server/contexts/shared/domain/repositories/user-repository.interface";
-import type { UserRole } from "@prisma/client";
 import { AuthError } from "@/server/contexts/auth/domain/errors/auth-error";
 import { UserRoleModel } from "@/server/contexts/auth/domain/models/user-role";
 
 /**
- * ユーザーロール更新のユースケース（admin権限必須）
+ * ユーザーのロール（複数）更新のユースケース（admin権限必須）
  */
-export class UpdateUserRoleUsecase {
+export class UpdateUserRolesUsecase {
   constructor(
     private readonly authProvider: AuthProvider,
     private readonly userRepository: UserRepository,
   ) {}
 
-  async execute(userId: string, role: UserRole): Promise<User> {
+  async execute(userId: string, roles: readonly string[]): Promise<User> {
     // 認可チェック
     const authUser = await this.authProvider.getUser();
     if (!authUser) {
@@ -26,10 +25,16 @@ export class UpdateUserRoleUsecase {
     }
 
     const currentUser = await this.userRepository.findByAuthId(authUser.id);
-    const currentRole = currentUser?.role ?? "user";
 
-    if (!UserRoleModel.hasPermission(currentRole, "admin")) {
+    if (!UserRoleModel.isAdmin(currentUser?.roles ?? [])) {
       throw new AuthError("INSUFFICIENT_PERMISSION", "この操作には管理者権限が必要です");
+    }
+
+    let normalizedRoles: ReturnType<typeof UserRoleModel.normalize>;
+    try {
+      normalizedRoles = UserRoleModel.normalize(roles);
+    } catch (e) {
+      throw new AuthError("INVALID_ROLE", e instanceof Error ? e.message : String(e), e);
     }
 
     try {
@@ -40,13 +45,13 @@ export class UpdateUserRoleUsecase {
       }
 
       // authId でロールを更新
-      return await this.userRepository.updateRole(user.authId, role);
+      return await this.userRepository.updateRoles(user.authId, normalizedRoles);
     } catch (e) {
-      console.error(`Update user role failed for ${userId}:`, e);
+      console.error(`Update user roles failed for ${userId}:`, e);
       if (e instanceof AuthError) {
         throw e;
       }
-      throw new AuthError("AUTH_FAILED", `Failed to update user role: ${String(e)}`, e);
+      throw new AuthError("AUTH_FAILED", `Failed to update user roles: ${String(e)}`, e);
     }
   }
 }

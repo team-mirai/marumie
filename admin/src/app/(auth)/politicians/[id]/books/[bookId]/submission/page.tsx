@@ -19,12 +19,14 @@ import {
   SUBMISSION_LEDGER_ISSUE_LABELS,
 } from "@/server/contexts/research-fund/domain/models/submission-ledger";
 import { loadSubmissionLedger } from "@/server/contexts/research-fund/presentation/loaders/load-submission-ledger";
+import { requireRolePage } from "@/server/contexts/auth/presentation/loaders/require-role-page";
 
 export default async function SubmissionLedgerPage({
   params,
 }: {
   params: Promise<{ id: string; bookId: string }>;
 }) {
+  await requireRolePage("research_fund");
   const { id, bookId } = await params;
   const { entryCount, financialYear, warnings, target } = await loadSubmissionLedger(id, bookId);
   const query = (house: string) =>

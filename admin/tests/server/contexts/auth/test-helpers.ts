@@ -31,7 +31,7 @@ export const createMockUser = (overrides: Partial<User> = {}): User => ({
   id: "user-id",
   authId: "auth-user-id",
   email: "test@example.com",
-  role: "user",
+  roles: [],
   createdAt: new Date("2024-01-01"),
   updatedAt: new Date("2024-01-01"),
   ...overrides,
@@ -59,6 +59,6 @@ export const createMockUserRepository = (): jest.Mocked<UserRepository> => ({
   findByAuthId: jest.fn(),
   findByEmail: jest.fn(),
   findAll: jest.fn(),
-  updateRole: jest.fn(),
+  updateRoles: jest.fn(),
   delete: jest.fn(),
 });

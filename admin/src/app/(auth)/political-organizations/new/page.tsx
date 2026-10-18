@@ -5,10 +5,14 @@ import { PageHeader } from "@/client/components/layout/PageHeader";
 import { BackLink } from "@/client/components/layout/BackLink";
 import { createPoliticalOrganization } from "@/server/contexts/shared/presentation/actions/create-political-organization";
 import type { CreatePoliticalOrganizationData } from "@/server/contexts/shared/presentation/actions/create-political-organization";
+import { requireRole } from "@/server/contexts/auth/presentation/loaders/require-role";
+import { requireRolePage } from "@/server/contexts/auth/presentation/loaders/require-role-page";
 
-export default function NewPoliticalOrganizationPage() {
+export default async function NewPoliticalOrganizationPage() {
+  await requireRolePage("political_fund");
   const handleSubmit = async (formData: CreatePoliticalOrganizationData) => {
     "use server";
+    await requireRole("political_fund");
     return await createPoliticalOrganization(formData);
   };
 

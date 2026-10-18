@@ -1,7 +1,7 @@
 "use server";
 import "server-only";
 import { revalidatePath } from "next/cache";
-import { requireAuth } from "@/server/contexts/auth/presentation/loaders/require-auth";
+import { requireRole } from "@/server/contexts/auth/presentation/loaders/require-role";
 import { RegisterGrantUsecase } from "@/server/contexts/research-fund/application/usecases/register-grant-usecase";
 import { GrantRegistrationError } from "@/server/contexts/research-fund/domain/models/grant-registration";
 import { PrismaGrantRepository } from "@/server/contexts/research-fund/infrastructure/repositories/prisma-grant.repository";
@@ -15,7 +15,7 @@ export async function registerGrant(
   entryDate: string,
   amount: number,
 ) {
-  const user = await requireAuth();
+  const user = await requireRole("research_fund");
   if (!(await requireJournalTarget(politicianId, bookId)))
     return { success: false as const, error: "現在の対象帳簿を選択し直してください" };
   try {

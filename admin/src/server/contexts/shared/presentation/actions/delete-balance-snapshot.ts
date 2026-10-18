@@ -4,10 +4,10 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/server/contexts/shared/infrastructure/prisma";
 import { PrismaBalanceSnapshotRepository } from "@/server/contexts/shared/infrastructure/repositories/prisma-balance-snapshot.repository";
 import { DeleteBalanceSnapshotUsecase } from "@/server/contexts/shared/application/usecases/delete-balance-snapshot-usecase";
-import { requireAuth } from "@/server/contexts/auth/presentation/loaders/require-auth";
+import { requireRole } from "@/server/contexts/auth/presentation/loaders/require-role";
 
 export async function deleteBalanceSnapshot(id: string) {
-  await requireAuth();
+  await requireRole("political_fund");
 
   try {
     if (!id.trim()) {

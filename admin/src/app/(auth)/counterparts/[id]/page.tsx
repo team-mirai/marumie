@@ -6,6 +6,7 @@ import { loadCounterpartTransactionsData } from "@/server/contexts/report/presen
 import { loadCurrentOrganizationTarget } from "@/server/contexts/shared/presentation/loaders/load-current-organization-target";
 import { CounterpartDetailClient } from "@/client/components/counterparts/CounterpartDetailClient";
 import { TargetRequiredNotice } from "@/client/components/layout/TargetRequiredNotice";
+import { requireRolePage } from "@/server/contexts/auth/presentation/loaders/require-role-page";
 
 interface CounterpartDetailPageProps {
   params: Promise<{ id: string }>;
@@ -20,6 +21,7 @@ export default async function CounterpartDetailPage({
   params,
   searchParams,
 }: CounterpartDetailPageProps) {
+  await requireRolePage("political_fund");
   const { id } = await params;
   const searchParamsResolved = await searchParams;
 

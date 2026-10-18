@@ -5,7 +5,7 @@ import { prisma } from "@/server/contexts/shared/infrastructure/prisma";
 import { PrismaDonorRepository } from "@/server/contexts/report/infrastructure/repositories/prisma-donor.repository";
 import { UpdateDonorUsecase } from "@/server/contexts/report/application/usecases/update-donor-usecase";
 import type { UpdateDonorInput } from "@/server/contexts/report/domain/models/donor";
-import { requireAuth } from "@/server/contexts/auth/presentation/loaders/require-auth";
+import { requireRole } from "@/server/contexts/auth/presentation/loaders/require-role";
 
 interface UpdateDonorActionResult {
   success: boolean;
@@ -16,7 +16,7 @@ export async function updateDonorAction(
   id: string,
   input: UpdateDonorInput,
 ): Promise<UpdateDonorActionResult> {
-  await requireAuth();
+  await requireRole("political_fund");
 
   try {
     const repository = new PrismaDonorRepository(prisma);

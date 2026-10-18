@@ -40,7 +40,7 @@ describe("CompleteInviteSessionUsecase", () => {
       expect(mockUserRepository.create).toHaveBeenCalledWith({
         authId: "auth-user-id",
         email: "test@example.com",
-        role: "user",
+        roles: [],
       });
     });
 

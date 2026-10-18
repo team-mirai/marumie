@@ -5,7 +5,7 @@ interface UserRoleBadgeProps {
   role: UserRole;
 }
 
-/** ユーザーロールのピルバッジ（11px/700・1.5px 枠）。admin=teal / user=グレー。 */
+/** ユーザーロールのピルバッジ（11px/700・1.5px 枠）。admin=teal / 業務ロール=グレー。 */
 export function UserRoleBadge({ role }: UserRoleBadgeProps) {
   const badge = resolveUserRoleBadge(role);
   return (

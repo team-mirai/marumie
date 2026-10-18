@@ -6,7 +6,7 @@ import { PrismaTransactionRepository } from "@/server/contexts/shared/infrastruc
 import { WebappCacheInvalidator } from "@/server/contexts/shared/infrastructure/services/webapp-cache-invalidator";
 import { SavePreviewTransactionsUsecase } from "@/server/contexts/data-import/application/usecases/save-preview-transactions-usecase";
 import type { PreviewTransaction } from "@/server/contexts/data-import/domain/models/preview-transaction";
-import { requireAuth } from "@/server/contexts/auth/presentation/loaders/require-auth";
+import { requireRole } from "@/server/contexts/auth/presentation/loaders/require-role";
 
 const transactionRepository = new PrismaTransactionRepository(prisma);
 const cacheInvalidator = new WebappCacheInvalidator();
@@ -28,7 +28,7 @@ export interface UploadCsvResponse {
 
 export async function uploadCsv(data: UploadCsvRequest): Promise<UploadCsvResponse> {
   "use server";
-  await requireAuth();
+  await requireRole("political_fund");
 
   try {
     const { validTransactions, politicalOrganizationId } = data;

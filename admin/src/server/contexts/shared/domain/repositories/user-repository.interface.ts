@@ -5,17 +5,17 @@ export interface User {
   id: string;
   authId: string;
   email: string;
-  role: UserRole;
+  roles: UserRole[];
   createdAt: Date;
   updatedAt: Date;
 }
 
 export interface UserRepository {
-  create(data: { authId: string; email: string; role?: UserRole }): Promise<User>;
+  create(data: { authId: string; email: string; roles?: UserRole[] }): Promise<User>;
   findById(id: string): Promise<User | null>;
   findByAuthId(authId: string): Promise<User | null>;
   findByEmail(email: string): Promise<User | null>;
   findAll(): Promise<User[]>;
-  updateRole(authId: string, role: UserRole): Promise<User>;
+  updateRoles(authId: string, roles: UserRole[]): Promise<User>;
   delete(authId: string): Promise<void>;
 }

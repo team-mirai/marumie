@@ -2,7 +2,7 @@
 
 import { WebappCacheInvalidator } from "@/server/contexts/shared/infrastructure/services/webapp-cache-invalidator";
 import { ClearWebappCacheUsecase } from "@/server/contexts/shared/application/usecases/clear-webapp-cache-usecase";
-import { requireAuth } from "@/server/contexts/auth/presentation/loaders/require-auth";
+import { requireRole } from "@/server/contexts/auth/presentation/loaders/require-role";
 
 interface ClearWebappCacheResponse {
   success: boolean;
@@ -13,7 +13,7 @@ const cacheInvalidator = new WebappCacheInvalidator();
 const clearWebappCacheUsecase = new ClearWebappCacheUsecase(cacheInvalidator);
 
 export async function clearWebappCacheAction(): Promise<ClearWebappCacheResponse> {
-  await requireAuth();
+  await requireRole("political_fund");
 
   return await clearWebappCacheUsecase.execute();
 }

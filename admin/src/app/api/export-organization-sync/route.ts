@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireAdminResponse } from "@/server/contexts/auth/presentation/loaders/require-admin-response";
+import { requireRoleResponse } from "@/server/contexts/auth/presentation/loaders/require-role-response";
 import { ExportOrganizationSyncUsecase } from "@/server/contexts/shared/application/usecases/export-organization-sync-usecase";
 import {
   buildSyncExportFilename,
@@ -17,7 +17,7 @@ const MAX_BIGINT = BigInt("9223372036854775807");
  * 読み取り専用なので環境による制限は設けず、admin ロールだけに開放する。
  */
 export async function GET(request: Request) {
-  const forbidden = await requireAdminResponse();
+  const forbidden = await requireRoleResponse("admin");
   if (forbidden) return forbidden;
 
   const url = new URL(request.url);

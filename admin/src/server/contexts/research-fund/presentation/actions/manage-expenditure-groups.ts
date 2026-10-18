@@ -1,7 +1,7 @@
 "use server";
 import "server-only";
 import { revalidatePath } from "next/cache";
-import { requireAuth } from "@/server/contexts/auth/presentation/loaders/require-auth";
+import { requireRole } from "@/server/contexts/auth/presentation/loaders/require-role";
 import { DeleteExpenditureGroupUsecase } from "@/server/contexts/research-fund/application/usecases/delete-expenditure-group-usecase";
 import { ReorderExpenditureGroupsUsecase } from "@/server/contexts/research-fund/application/usecases/reorder-expenditure-groups-usecase";
 import { SaveExpenditureGroupUsecase } from "@/server/contexts/research-fund/application/usecases/save-expenditure-group-usecase";
@@ -27,7 +27,7 @@ function failure(error: unknown, fallback: string) {
 }
 
 export async function saveUsagePolicy(politicianId: string, bookId: string, policyComment: string) {
-  await requireAuth();
+  await requireRole("research_fund");
   if (!(await requireJournalTarget(politicianId, bookId)))
     return { success: false as const, error: "現在の対象帳簿を選択し直してください" };
   try {
@@ -48,7 +48,7 @@ export async function saveExpenditureGroup(
   groupId: string | null,
   input: ExpenditureGroupEdit,
 ) {
-  await requireAuth();
+  await requireRole("research_fund");
   if (!(await requireJournalTarget(politicianId, bookId)))
     return { success: false as const, error: "現在の対象帳簿を選択し直してください" };
   try {
@@ -69,7 +69,7 @@ export async function deleteExpenditureGroup(
   bookId: string,
   groupId: string,
 ) {
-  await requireAuth();
+  await requireRole("research_fund");
   if (!(await requireJournalTarget(politicianId, bookId)))
     return { success: false as const, error: "現在の対象帳簿を選択し直してください" };
   try {
@@ -90,7 +90,7 @@ export async function reorderExpenditureGroups(
   bookId: string,
   groupIds: string[],
 ) {
-  await requireAuth();
+  await requireRole("research_fund");
   if (!(await requireJournalTarget(politicianId, bookId)))
     return { success: false as const, error: "現在の対象帳簿を選択し直してください" };
   try {

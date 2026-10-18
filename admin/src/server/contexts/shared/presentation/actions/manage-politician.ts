@@ -1,7 +1,7 @@
 "use server";
 import { revalidatePath } from "next/cache";
 import type { PoliticianInput } from "@/shared/models/politician";
-import { requireAuth } from "@/server/contexts/auth/presentation/loaders/require-auth";
+import { requireRole } from "@/server/contexts/auth/presentation/loaders/require-role";
 import { SavePoliticianUsecase } from "@/server/contexts/shared/application/usecases/save-politician-usecase";
 import { DeletePoliticianUsecase } from "@/server/contexts/shared/application/usecases/delete-politician-usecase";
 import { SetPoliticianResearchFundPublicUsecase } from "@/server/contexts/shared/application/usecases/set-politician-research-fund-public-usecase";
@@ -10,7 +10,7 @@ import { prisma } from "@/server/contexts/shared/infrastructure/prisma";
 import { WebappCacheInvalidator } from "@/server/contexts/shared/infrastructure/services/webapp-cache-invalidator";
 
 export async function savePolitician(id: string | null, input: PoliticianInput) {
-  await requireAuth();
+  await requireRole("admin");
   try {
     await new SavePoliticianUsecase(new PrismaPoliticianRepository(prisma)).execute(id, input);
     revalidatePath("/(auth)", "layout");
@@ -23,7 +23,7 @@ export async function savePolitician(id: string | null, input: PoliticianInput) 
   }
 }
 export async function setPoliticianResearchFundPublic(id: string, isPublic: boolean) {
-  await requireAuth();
+  await requireRole("research_fund");
   try {
     const result = await new SetPoliticianResearchFundPublicUsecase(
       new PrismaPoliticianRepository(prisma),
@@ -39,7 +39,7 @@ export async function setPoliticianResearchFundPublic(id: string, isPublic: bool
   }
 }
 export async function deletePolitician(id: string) {
-  await requireAuth();
+  await requireRole("admin");
   try {
     await new DeletePoliticianUsecase(new PrismaPoliticianRepository(prisma)).execute(id);
     revalidatePath("/(auth)", "layout");

@@ -1,6 +1,6 @@
 "use server";
 
-import { requireAdmin } from "@/server/contexts/auth/presentation/loaders/require-admin";
+import { requireRole } from "@/server/contexts/auth/presentation/loaders/require-role";
 import { PreviewOrganizationSyncImportUsecase } from "@/server/contexts/data-import/application/usecases/preview-organization-sync-import-usecase";
 import type { OrganizationSyncImportPlan } from "@/server/contexts/data-import/domain/models/organization-sync-import";
 import { prisma } from "@/server/contexts/shared/infrastructure/prisma";
@@ -19,7 +19,7 @@ export type PreviewSyncImportResponse =
 export async function previewSyncImport(data: {
   storageKey: string;
 }): Promise<PreviewSyncImportResponse> {
-  await requireAdmin();
+  await requireRole("admin");
 
   try {
     const usecase = new PreviewOrganizationSyncImportUsecase(

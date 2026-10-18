@@ -1,7 +1,7 @@
 "use server";
 import "server-only";
 import { revalidatePath } from "next/cache";
-import { requireAuth } from "@/server/contexts/auth/presentation/loaders/require-auth";
+import { requireRole } from "@/server/contexts/auth/presentation/loaders/require-role";
 import { ScanBatchError } from "@/server/contexts/research-fund/domain/models/scan-batch";
 import { requireJournalTarget } from "@/server/contexts/research-fund/presentation/loaders/load-journal-review";
 import { buildCreateRereadBatchUsecase } from "@/server/contexts/research-fund/presentation/loaders/load-scan";
@@ -15,7 +15,7 @@ export async function rereadScanDocuments(
   bookId: string,
   input: { entryIds: string[]; instruction: string },
 ) {
-  const user = await requireAuth();
+  const user = await requireRole("research_fund");
   if (!(await requireJournalTarget(politicianId, bookId)))
     return { success: false as const, error: "現在の対象帳簿を選択し直してください" };
   try {

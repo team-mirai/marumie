@@ -10,8 +10,10 @@ import { Button, Card, CardContent } from "@/client/components/ui";
 import { BookForm } from "@/client/components/books/BookForm";
 import { loadPolitician } from "@/server/contexts/shared/presentation/loaders/load-politicians";
 import { loadBooks } from "@/server/contexts/research-fund/presentation/loaders/load-books";
+import { requireRolePage } from "@/server/contexts/auth/presentation/loaders/require-role-page";
 
 export default async function BooksPage({ params }: { params: Promise<{ id: string }> }) {
+  await requireRolePage("research_fund");
   const { id } = await params;
   const politician = await loadPolitician(id);
   if (!politician) notFound();
