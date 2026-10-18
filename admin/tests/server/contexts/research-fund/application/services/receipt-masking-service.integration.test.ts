@@ -1,6 +1,6 @@
 import { config } from "dotenv";
-import { readFile } from "fs/promises";
-import { join } from "path";
+import { mkdir, readFile, writeFile } from "fs/promises";
+import { dirname, join } from "path";
 
 // .env.local から ANTHROPIC_API_KEY を読み込む（admin ディレクトリから実行される前提）
 config({ path: join(process.cwd(), ".env.local") });
@@ -23,10 +23,15 @@ import { PdfiumDocumentRasterCodec } from "@/server/contexts/research-fund/infra
  *
  * 明示的に有効にしたときだけ動く（ANTHROPIC_API_KEY が要る。DB は使わない）:
  *   pnpm test:integration
+ *
+ * 黒塗りした PDF は、検証の前に data/integration-output/receipt-masking/masked-dummy-receipts.pdf
+ * （リポジトリ直下の data/。gitignore 済み）へ書き出す。どこがどう塗られたかを目で確かめるためのもので、
+ * 検証が失敗しても残る。
  */
 const describeIntegration = process.env.INTEGRATION_TEST === "true" ? describe : describe.skip;
 
 const FIXTURE = join(process.cwd(), "tests/data/research-fund/masking-dummy-receipts.pdf");
+const OUTPUT = join(process.cwd(), "../data/integration-output/receipt-masking/masked-dummy-receipts.pdf");
 
 /** 塗られているべきダミーの個人情報（比較用に空白・ハイフンを除いた形） */
 const PERSONAL_INFO = [
@@ -87,6 +92,8 @@ describeIntegration("ReceiptMaskingService（実際の LLM API）", () => {
       new VercelAIPersonalInfoRegionDetector(),
     );
     output = (await service.mask({ bytes: input, mime: "application/pdf" })).bytes;
+    await mkdir(dirname(OUTPUT), { recursive: true });
+    await writeFile(OUTPUT, output);
   }, 300_000);
 
   it("出力の PDF のページ数は入力と同じ", async () => {
