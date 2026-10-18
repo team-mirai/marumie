@@ -5,6 +5,7 @@ import { Globe } from "@phosphor-icons/react/dist/ssr";
 import { toast } from "sonner";
 import { PageHeader } from "@/client/components/layout/PageHeader";
 import { ResearchFundSankey } from "@/client/components/research-fund/ResearchFundSankey";
+import { WriteFieldset } from "@/client/components/research-fund/ResearchFundWriteAccess";
 import { Button, Card, CardContent, Checkbox } from "@/client/components/ui";
 import {
   cn,
@@ -187,16 +188,19 @@ export function JournalPublication({
                 公開できる確認済の仕訳はありません
               </p>
             )}
-            <Button
-              className="mt-3.5 w-full"
-              disabled={selected.length === 0 || pending}
-              onClick={publish}
-            >
-              <Globe size={15} />
-              {selected.length === 0
-                ? "公開する仕訳を選んでください"
-                : `${selected.length}件（${formatCurrency(selectedTotal)}）を公開する`}
-            </Button>
+            {/* 担当外でも候補は選べる（AFTER のプレビューは閲覧のため）。無効にするのは公開ボタンだけ */}
+            <WriteFieldset>
+              <Button
+                className="mt-3.5 w-full"
+                disabled={selected.length === 0 || pending}
+                onClick={publish}
+              >
+                <Globe size={15} />
+                {selected.length === 0
+                  ? "公開する仕訳を選んでください"
+                  : `${selected.length}件（${formatCurrency(selectedTotal)}）を公開する`}
+              </Button>
+            </WriteFieldset>
             <p className="mt-2.5 text-xs leading-relaxed text-subtle-foreground">
               公開すると「調研費まる見え」に即時反映され、公開範囲の表記
               {publishedThrough

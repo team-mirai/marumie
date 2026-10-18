@@ -10,7 +10,7 @@ import { prisma } from "@/server/contexts/shared/infrastructure/prisma";
 import { PrismaUserRepository } from "@/server/contexts/shared/infrastructure/repositories/prisma-user.repository";
 
 /** ユーザーが担当する議員の ID。同じリクエストの中では結果を使い回す */
-export const loadAssignedPoliticianIds = cache(
+const loadAssignedPoliticianIds = cache(
   async (userId: string): Promise<string[]> =>
     new PrismaUserRepository(prisma).findAssignedPoliticianIds(userId),
 );

@@ -95,15 +95,13 @@ describe("UpdateUserAssignmentsUsecase", () => {
     });
   });
 
-  it("保存に失敗した場合（存在しない議員など）は AuthError にラップされる", async () => {
+  it("保存に失敗した場合（存在しない議員など）は AuthError にラップせずそのまま投げる", async () => {
     signInAs(["admin"]);
     mockUserRepository.findById.mockResolvedValue(targetUser);
-    mockUserRepository.replaceAssignedPoliticians.mockRejectedValue(new Error("FK violation"));
+    const error = new Error("FK violation");
+    mockUserRepository.replaceAssignedPoliticians.mockRejectedValue(error);
     jest.spyOn(console, "error").mockImplementation(() => {});
 
-    await expect(usecase.execute("target-user-id", ["999"])).rejects.toMatchObject({
-      name: "AuthError",
-      code: "AUTH_FAILED",
-    });
+    await expect(usecase.execute("target-user-id", ["999"])).rejects.toBe(error);
   });
 });

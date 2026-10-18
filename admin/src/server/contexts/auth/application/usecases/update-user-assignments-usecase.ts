@@ -44,11 +44,10 @@ export class UpdateUserAssignmentsUsecase {
 
       return await this.userRepository.replaceAssignedPoliticians(user.id, normalizedIds);
     } catch (e) {
-      console.error(`Update user assignments failed for ${userId}:`, e);
-      if (e instanceof AuthError) {
-        throw e;
-      }
-      throw new AuthError("AUTH_FAILED", `Failed to update user assignments: ${String(e)}`, e);
+      console.error("Update user assignments failed for %s:", userId, e);
+      // AuthError 以外（存在しない議員の外部キー違反など）は AUTH_FAILED にせずそのまま投げ、
+      // アクション側の「担当の更新に失敗しました」を出す（AUTH_FAILED の文言はログイン失敗のもののため）
+      throw e;
     }
   }
 }
