@@ -8,6 +8,10 @@ import type {
   RasterImage,
 } from "@/server/contexts/research-fund/domain/models/masking-region";
 import type { DocumentRasterCodec } from "@/server/contexts/research-fund/domain/repositories/document-raster-codec.interface";
+import {
+  applyOrientation,
+  readJpegOrientation,
+} from "@/server/contexts/research-fund/infrastructure/raster/jpeg-orientation";
 
 /** PDF のページを画像にするときの解像度 */
 const RENDER_DPI = 150;
@@ -101,9 +105,13 @@ function bgraToRgba(bgra: Uint8Array): Uint8Array {
   return rgba;
 }
 
+/** EXIF の Orientation に従って、表示上の向きに回転・反転した画像にする */
 function decodeJpeg(bytes: Uint8Array): RasterImage {
   const decoded = jpeg.decode(bytes, { useTArray: true, formatAsRGBA: true });
-  return { width: decoded.width, height: decoded.height, rgba: decoded.data };
+  return applyOrientation(
+    { width: decoded.width, height: decoded.height, rgba: decoded.data },
+    readJpegOrientation(bytes),
+  );
 }
 
 /** 透過のある PNG は白い背景に重ねる（JPEG にすると透過部分が黒くなるため） */
