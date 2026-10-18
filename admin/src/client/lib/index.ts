@@ -26,3 +26,4 @@ export { layoutResearchFundSankey } from "./research-fund-sankey";
 export { formatLinkedPeriod } from "./research-fund-groups";
 export { saveBlobAsFile } from "./download-blob";
 export { researchFundDocumentUrl } from "./research-fund-document-url";
+export { assignedPoliticianNames, togglePoliticianAssignment } from "./politician-assignment";
