@@ -7,7 +7,11 @@ import type {
   MaskableMime,
   RasterImage,
 } from "@/server/contexts/research-fund/domain/models/masking-region";
-import type { DocumentRasterCodec } from "@/server/contexts/research-fund/domain/repositories/document-raster-codec.interface";
+import type {
+  DocumentRasterCodec,
+  ImagePdfWriter,
+  RasterDocument,
+} from "@/server/contexts/research-fund/domain/repositories/document-raster-codec.interface";
 import {
   applyOrientation,
   readJpegOrientation,
@@ -26,11 +30,18 @@ const MAX_PNG_PIXELS = 100_000_000;
  * ネイティブバイナリや OS のコマンドに依存しないライブラリ（pdfium の WASM 版・pure JS の画像コーデック・pdf-lib）だけを使う。
  */
 export class PdfiumDocumentRasterCodec implements DocumentRasterCodec {
-  async toPageImages(document: { bytes: Uint8Array; mime: MaskableMime }): Promise<RasterImage[]> {
-    if (document.mime === "application/pdf") return await renderPdf(document.bytes);
-    const image =
-      document.mime === "image/png" ? decodePng(document.bytes) : decodeJpeg(document.bytes);
-    return [this.shrink(image, MAX_PAGE_EDGE)];
+  async open(document: { bytes: Uint8Array; mime: MaskableMime }): Promise<RasterDocument> {
+    if (document.mime === "application/pdf") return await openPdf(document.bytes);
+    const { bytes, mime } = document;
+    return {
+      pageCount: 1,
+      renderPage: async (index) => {
+        if (index !== 0) throw new Error(`Page index out of range: ${index}`);
+        const image = mime === "image/png" ? decodePng(bytes) : decodeJpeg(bytes);
+        return this.shrink(image, MAX_PAGE_EDGE);
+      },
+      close: () => {},
+    };
   }
 
   shrink(image: RasterImage, maxEdge: number): RasterImage {
@@ -52,57 +63,61 @@ export class PdfiumDocumentRasterCodec implements DocumentRasterCodec {
     return new Uint8Array(encoded.data);
   }
 
-  async toImagePdf(pages: RasterImage[]): Promise<Uint8Array> {
+  async createImagePdf(): Promise<ImagePdfWriter> {
     // 作成日時や作成ソフトなどのメタデータも書き込まない
     const pdf = await PDFDocument.create({ updateMetadata: false });
-    for (const page of pages) {
-      const image = await pdf.embedJpg(this.toJpeg(page));
-      const width = (page.width * 72) / RENDER_DPI;
-      const height = (page.height * 72) / RENDER_DPI;
-      pdf.addPage([width, height]).drawImage(image, { x: 0, y: 0, width, height });
-    }
-    return await pdf.save();
+    return {
+      addPage: async (page) => {
+        // 埋め込むのは JPEG のバイト列だけで、画素データへの参照は残さない
+        const image = await pdf.embedJpg(this.toJpeg(page));
+        const width = (page.width * 72) / RENDER_DPI;
+        const height = (page.height * 72) / RENDER_DPI;
+        pdf.addPage([width, height]).drawImage(image, { x: 0, y: 0, width, height });
+      },
+      save: async () => await pdf.save(),
+    };
   }
 }
 
-async function renderPdf(bytes: Uint8Array): Promise<RasterImage[]> {
+/** PDF を読み込む。ページはまだ描画しないので、ページ数だけならすぐ分かる */
+async function openPdf(bytes: Uint8Array): Promise<RasterDocument> {
   const library = await PDFiumLibrary.init();
+  let document: Awaited<ReturnType<typeof library.loadDocument>>;
   try {
-    const document = await library.loadDocument(bytes);
-    try {
-      const images: RasterImage[] = [];
-      for (const page of document.pages()) {
-        const { originalWidth, originalHeight } = page.getOriginalSize();
-        const scale = Math.min(
-          RENDER_DPI / 72,
-          MAX_PAGE_EDGE / Math.max(originalWidth, originalHeight),
-        );
-        // 既定の描画は白背景・BGRA の順
-        const rendered = await page.render({ scale, render: "bitmap" });
-        images.push({
-          width: rendered.width,
-          height: rendered.height,
-          rgba: bgraToRgba(rendered.data),
-        });
-      }
-      return images;
-    } finally {
-      document.destroy();
-    }
-  } finally {
+    document = await library.loadDocument(bytes);
+  } catch (error) {
     library.destroy();
+    throw error;
   }
+  return {
+    pageCount: document.getPageCount(),
+    renderPage: async (index) => {
+      const page = document.getPage(index);
+      const { originalWidth, originalHeight } = page.getOriginalSize();
+      const scale = Math.min(
+        RENDER_DPI / 72,
+        MAX_PAGE_EDGE / Math.max(originalWidth, originalHeight),
+      );
+      // 既定の描画は白背景・BGRA の順
+      const rendered = await page.render({ scale, render: "bitmap" });
+      return { width: rendered.width, height: rendered.height, rgba: bgraToRgba(rendered.data) };
+    },
+    close: () => {
+      document.destroy();
+      library.destroy();
+    },
+  };
 }
 
+/** BGRA を RGBA に並べ替える。描画結果の複製を作らないよう、渡した配列をそのまま書き換えて返す */
 function bgraToRgba(bgra: Uint8Array): Uint8Array {
-  const rgba = new Uint8Array(bgra.length);
   for (let i = 0; i < bgra.length; i += 4) {
-    rgba[i] = bgra[i + 2];
-    rgba[i + 1] = bgra[i + 1];
-    rgba[i + 2] = bgra[i];
-    rgba[i + 3] = 255;
+    const blue = bgra[i];
+    bgra[i] = bgra[i + 2];
+    bgra[i + 2] = blue;
+    bgra[i + 3] = 255;
   }
-  return rgba;
+  return bgra;
 }
 
 /** EXIF の Orientation に従って、表示上の向きに回転・反転した画像にする */
