@@ -55,6 +55,7 @@ import {
 } from "@/server/contexts/research-fund/domain/models/scan-reread";
 import type { AdminTarget } from "@/server/contexts/shared/domain/models/admin-target";
 import { WriteFieldset } from "@/client/components/research-fund/ResearchFundWriteAccess";
+import { attachJournalDocument } from "@/server/contexts/research-fund/presentation/actions/attach-journal-document";
 import { mutateJournalReview } from "@/server/contexts/research-fund/presentation/actions/manage-journal-review";
 import { rereadScanDocuments } from "@/server/contexts/research-fund/presentation/actions/reread-scan-documents";
 import { cn, filterJournalEntries, researchFundDocumentUrl } from "@/client/lib";
@@ -492,6 +493,37 @@ export function JournalReview({
             ? "徴し難かった事情を削除しました"
             : "徴し難かった事情を保存しました",
         );
+        router.refresh();
+      } catch {
+        toast.error("通信に失敗しました。再度お試しください");
+      }
+    });
+  }
+  function attachDocument(entry: ReviewEntry, file: File) {
+    // 書類と事情は同時に持てないので、紐づけると入力済みの事情は消える
+    if (
+      entry.receiptAbsenceReason !== null &&
+      !window.confirm(
+        "領収書を紐づけると、入力済みの「徴し難かった事情」は消えます。紐づけますか？",
+      )
+    )
+      return;
+    const formData = new FormData();
+    formData.append("document", file);
+    startTransition(async () => {
+      try {
+        const result = await attachJournalDocument(
+          target.politicianId,
+          target.bookId,
+          entry.id,
+          entry.updatedAt,
+          formData,
+        );
+        if (!result.success) {
+          toast.error(result.error);
+          return;
+        }
+        toast.success("領収書を紐づけました");
         router.refresh();
       } catch {
         toast.error("通信に失敗しました。再度お試しください");
@@ -986,6 +1018,9 @@ export function JournalReview({
                 }}
                 onSaveReceiptAbsenceReason={(reason) => {
                   if (allowLeave()) saveReceiptAbsenceReason(selected, reason);
+                }}
+                onAttachDocument={(file) => {
+                  if (allowLeave()) attachDocument(selected, file);
                 }}
                 onLinkPayee={(targets, payeeId) => {
                   if (allowLeave()) linkPayee(targets, payeeId);

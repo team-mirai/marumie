@@ -14,6 +14,7 @@ import { JournalReceiptAbsenceField } from "@/client/components/research-fund/Jo
 import { useResearchFundReadOnly } from "@/client/components/research-fund/ResearchFundWriteAccess";
 import { cn } from "@/client/lib";
 import { normalizeAdvancedBy } from "@/server/contexts/research-fund/domain/models/advance";
+import { JournalOperation } from "@/server/contexts/research-fund/domain/models/journal-operation";
 import {
   isAccountUnconfirmed,
   type JournalEdit,
@@ -54,6 +55,7 @@ export function JournalEditor({
   onSettle,
   onUnsettle,
   onSaveReceiptAbsenceReason,
+  onAttachDocument,
   onLinkPayee,
   onCreatePayee,
 }: {
@@ -83,6 +85,8 @@ export function JournalEditor({
   onSettle: (settledAt: string) => void;
   onUnsettle: () => void;
   onSaveReceiptAbsenceReason: (reason: string) => void;
+  /** 書類の無い仕訳に、あとから領収書ファイルを紐づける */
+  onAttachDocument: (file: File) => void;
   onLinkPayee: (targets: readonly ReviewEntry[], payeeId: string | null) => void;
   onCreatePayee: (targets: readonly ReviewEntry[], input: PayeeFormInput) => void;
 }) {
@@ -154,7 +158,12 @@ export function JournalEditor({
     >
       <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-3.5 py-3">
         {banner}
-        <JournalDocumentPreview grant={grant} documentUrl={documentUrl} />
+        <JournalDocumentPreview
+          grant={grant}
+          documentUrl={documentUrl}
+          pending={pending}
+          onAttach={JournalOperation.attachDocument(entry) === null ? onAttachDocument : undefined}
+        />
         {published && (
           <div className="flex items-center gap-1.5 rounded-md bg-muted px-2.5 py-[7px] text-xs">
             <LockSimple aria-hidden className="size-3.5 shrink-0" />

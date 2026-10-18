@@ -46,6 +46,16 @@ export interface JournalReviewRepository {
    * 公開中・精算済の仕訳も対象にする。競合したら（書類が付いた場合を含む）変更しない。
    */
   setReceiptAbsenceReason(bookId: string, entry: ReviewEntry, reason: string | null): Promise<void>;
+  /**
+   * 書類の無い下書き・確認済の支出の仕訳に、アップロード済みの原本を書類として登録して紐づける。
+   * 書類は未採番（領収書等番号なし）で作り、読み取りジョブは作らない。紐づけた仕訳の徴し難かった事情は消し、
+   * 重複検知の hash を書類を含めて作り直す。競合したら（公開・書類が付いた場合を含む）書類も作らない。
+   */
+  attachDocument(
+    bookId: string,
+    entry: ReviewEntry,
+    document: { storageKey: string; mime: string; originalFilename: string },
+  ): Promise<void>;
   /** 帳簿の議員（支払先の持ち主）。帳簿が無ければ null */
   politicianId(bookId: string): Promise<string | null>;
   /**

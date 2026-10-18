@@ -198,6 +198,27 @@ export const JournalOperation = {
       };
     return null;
   },
+  /**
+   * 書類の無い支出の仕訳に、あとから領収書を紐づける。
+   * 公開ページは公開中の仕訳の書類をそのまま領収書として出すので、公開中に紐づけると即座に公開されてしまう。
+   * そのため公開中は対象にせず、編集と同じく下書き・確認済に戻してから紐づけさせる。
+   * 書類の差し替え・取り外しはしないので、すでに書類がある仕訳も対象にしない
+   */
+  attachDocument(entry: OperableEntry): OperationRejection | null {
+    if (entry.source === "grant")
+      return { one: "支給には領収書を紐づけられません", many: UNSUPPORTED_ENTRY };
+    if (entry.status === "published")
+      return {
+        one: "公開中の仕訳には領収書を紐づけられません。先に確認済に戻してください",
+        many: `「${entry.description}」は公開中です`,
+      };
+    if (entry.documentId !== null)
+      return {
+        one: "すでに書類のある仕訳には領収書を紐づけられません",
+        many: `「${entry.description}」には書類があります`,
+      };
+    return null;
+  },
   /** 精算。精算できる立替の条件は settlementRejection が持つ */
   settle(entry: OperableEntry): OperationRejection | null {
     if (entry.source === "grant")
