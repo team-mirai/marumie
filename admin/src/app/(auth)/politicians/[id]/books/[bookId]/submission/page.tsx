@@ -36,7 +36,7 @@ export default async function SubmissionLedgerPage({
       <PageHeader
         label="Submission"
         title="議員課提出用の帳簿"
-        description={`${target.name}の${financialYear}年度の帳簿を、衆議院・参議院の議員課の Excel と同じ列順の CSV でダウンロードします。公開済みの支出の仕訳（${entryCount}件）を 1 行ずつ出力します。`}
+        description={`${target.name}の${financialYear}年度の帳簿を、衆議院・参議院の議員課の Excel と同じ列順の CSV でダウンロードします。公開済みの支出の仕訳（${entryCount}件）を 1 行ずつ、大項目（① 人件費〜⑩ その他の経費）ごとに日付順で並べて出力します。`}
       />
       <div className="flex flex-wrap gap-3">
         {PARLIAMENT_HOUSES.map((house) => (
