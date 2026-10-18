@@ -5,6 +5,7 @@ import { isReceiptMissing } from "@/server/contexts/research-fund/domain/models/
  *
  * - 1 行 = 1 仕訳。1 枚の領収書に法定の区分が違う明細が混ざることがあるので、書類単位にしない
  * - 出すのは公開済み（published）の支出の仕訳だけ（下書き・確認済は含めない）
+ * - 行は大項目（① 人件費〜⑩ その他の経費）の番号順 → 年月日順に並べる（sortSubmissionLedgerEntries）
  * - 列の値は docs/old/20261006_2100_調研費議員課提出用帳簿の列の決定.md（#1654）に従う。
  *   領収書等番号・領収書有無・画像ファイル名は docs/old/20261006_2330_調研費領収書等番号の振り方の決定.md（#1685）に従う。
  *   決まっていない列は空欄で出す。備考には公開される note を出し、非公開の memo は出さない
@@ -143,11 +144,46 @@ export function submissionLedgerRow(
   });
 }
 
+/** 法定の区分の先頭の丸数字（① 〜 ⑳）を番号にする。区分なし・丸数字で始まらなければ null */
+export function legalCategoryNumber(legalLabel: string | null): number | null {
+  const code = legalLabel?.codePointAt(0);
+  if (code === undefined || code < 0x2460 || code > 0x2473) return null;
+  return code - 0x2460 + 1;
+}
+
+function compareNullsLast(a: number | null, b: number | null): number {
+  if (a === b) return 0;
+  if (a === null) return 1;
+  if (b === null) return -1;
+  return a - b;
+}
+
+/** 仕訳 ID（BigInt の 10 進文字列）を数値の順で比べる */
+function compareIds(a: string, b: string): number {
+  return a.length - b.length || (a < b ? -1 : a > b ? 1 : 0);
+}
+
+/**
+ * 提出用の帳簿の並び順。大項目の番号順（区分なしは最後）→ 年月日 → 領収書等番号（書類なし・未採番は後ろ）→ 仕訳の登録順。
+ * 印刷用の領収書もこの順に並べる
+ */
+export function sortSubmissionLedgerEntries(
+  entries: readonly SubmissionLedgerEntry[],
+): SubmissionLedgerEntry[] {
+  return [...entries].sort(
+    (a, b) =>
+      compareNullsLast(legalCategoryNumber(a.legalLabel), legalCategoryNumber(b.legalLabel)) ||
+      a.entryDate.localeCompare(b.entryDate) ||
+      compareNullsLast(a.receiptNumber, b.receiptNumber) ||
+      compareIds(a.id, b.id),
+  );
+}
+
 function escapeCell(value: string): string {
   return `"${value.replace(/"/g, '""')}"`;
 }
 
-/** Excel で文字化けしないよう UTF-8 BOM を付け、改行は CRLF にする */
+/** 行は sortSubmissionLedgerEntries の順に並べる。Excel で文字化けしないよう UTF-8 BOM を付け、改行は CRLF にする */
 export function buildSubmissionLedgerCsv(
   house: ParliamentHouse,
   book: SubmissionLedgerBook,
@@ -155,7 +191,7 @@ export function buildSubmissionLedgerCsv(
 ): string {
   const rows = [
     submissionLedgerHeaders(house),
-    ...entries.map((entry) => submissionLedgerRow(house, entry, book)),
+    ...sortSubmissionLedgerEntries(entries).map((entry) => submissionLedgerRow(house, entry, book)),
   ];
   return `﻿${rows.map((row) => row.map(escapeCell).join(",")).join("\r\n")}\r\n`;
 }

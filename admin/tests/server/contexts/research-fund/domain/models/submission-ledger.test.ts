@@ -1,12 +1,14 @@
 import {
   buildSubmissionLedgerCsv,
   isParliamentHouse,
+  legalCategoryNumber,
   receiptImageFilename,
   receiptNumberCell,
   receiptPresenceCell,
   submissionLedgerFilename,
   submissionLedgerHeaders,
   submissionLedgerRow,
+  sortSubmissionLedgerEntries,
   submissionLedgerWarnings,
   type SubmissionLedgerEntry,
 } from "@/server/contexts/research-fund/domain/models/submission-ledger";
@@ -63,6 +65,57 @@ test("数式として評価される文字で始まる文字列のセルは先�
   expect(row[2]).toBe("-500");
   expect(row[5]).toBe("'@SUM(A1)");
   expect(row[7]).toBe("'-2+3");
+});
+
+describe("並び順", () => {
+  const at = (id: string, legalLabel: string | null, entryDate: string, receiptNumber: number | null = null): SubmissionLedgerEntry => ({ ...entry, id, legalLabel, entryDate, receiptNumber, documentId: receiptNumber === null ? null : `d${id}` });
+  const ids = (entries: SubmissionLedgerEntry[]) => entries.map((e) => e.id);
+
+  test("大項目の番号順（① → ⑩）、同じ大項目の中では年月日順に並べる", () => {
+    const entries = [
+      at("1", "⑩ その他の経費", "2026-04-01"),
+      at("2", "② 光熱水費", "2026-05-01"),
+      at("3", "⑨ 滞在費", "2026-04-02"),
+      at("4", "① 人件費", "2026-06-01"),
+      at("5", "② 光熱水費", "2026-04-15"),
+      at("6", "③ 備品・消耗品費", "2026-04-01"),
+    ];
+    expect(ids(sortSubmissionLedgerEntries(entries))).toEqual(["4", "5", "2", "6", "3", "1"]);
+  });
+
+  test("文字列の比較ではなく丸数字の番号で並べる", () => {
+    expect([..."①②③④⑤⑥⑦⑧⑨⑩"].map((c) => legalCategoryNumber(`${c} 区分`))).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+    expect(legalCategoryNumber(null)).toBeNull();
+    expect(legalCategoryNumber("その他")).toBeNull();
+  });
+
+  test("大項目も年月日も同じなら領収書等番号順（書類なし・未採番は後ろ）、それも同じなら登録順", () => {
+    const entries = [
+      at("10", "⑨ 滞在費", "2026-04-01"),
+      at("9", "⑨ 滞在費", "2026-04-01"),
+      at("3", "⑨ 滞在費", "2026-04-01", 20),
+      at("4", "⑨ 滞在費", "2026-04-01", 7),
+    ];
+    expect(ids(sortSubmissionLedgerEntries(entries))).toEqual(["4", "3", "9", "10"]);
+  });
+
+  test("大項目を持たない科目の行は最後に年月日順で並べる", () => {
+    const entries = [
+      at("1", null, "2026-05-01"),
+      at("2", "⑩ その他の経費", "2026-12-01"),
+      at("3", null, "2026-04-01"),
+      at("4", "① 人件費", "2026-04-01"),
+    ];
+    expect(ids(sortSubmissionLedgerEntries(entries))).toEqual(["4", "2", "3", "1"]);
+  });
+
+  test("CSV の行も同じ順に並べる（衆議院・参議院とも）", () => {
+    const entries = [at("1", "⑨ 滞在費", "2026-04-01"), at("2", "① 人件費", "2026-05-01")];
+    for (const house of ["representatives", "councillors"] as const) {
+      const lines = buildSubmissionLedgerCsv(house, book, entries).slice(1).split("\r\n");
+      expect([lines[1], lines[2]].map((line) => line.split(",")[0])).toEqual(['"① 人件費"', '"⑨ 滞在費"']);
+    }
+  });
 });
 
 test("仕訳が無くても見出し行だけの CSV を出す", () => {
