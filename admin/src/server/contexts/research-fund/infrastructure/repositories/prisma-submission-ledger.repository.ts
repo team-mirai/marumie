@@ -54,4 +54,12 @@ export class PrismaSubmissionLedgerRepository implements SubmissionLedgerReposit
       entries: rows.flatMap((row) => model(row) ?? []),
     };
   }
+
+  async findDocumentStorageKeys(bookId: string, documentIds: readonly string[]) {
+    const rows = await this.prisma.researchFundDocument.findMany({
+      where: { bookId: BigInt(bookId), id: { in: documentIds.map((id) => BigInt(id)) } },
+      select: { id: true, storageKey: true },
+    });
+    return new Map(rows.map((row) => [String(row.id), row.storageKey]));
+  }
 }

@@ -2,6 +2,7 @@ import "server-only";
 import Link from "next/link";
 import { DownloadSimple } from "@phosphor-icons/react/dist/ssr";
 import { PageHeader } from "@/client/components/layout/PageHeader";
+import { ReceiptPrintPanel } from "@/client/components/research-fund/ReceiptPrintPanel";
 import {
   Button,
   Card,
@@ -28,7 +29,8 @@ export default async function SubmissionLedgerPage({
 }) {
   await requireRolePage("research_fund");
   const { id, bookId } = await params;
-  const { entryCount, financialYear, warnings, target } = await loadSubmissionLedger(id, bookId);
+  const { entryCount, financialYear, warnings, receiptPrintCounts, target } =
+    await loadSubmissionLedger(id, bookId);
   const query = (house: string) =>
     new URLSearchParams({ politicianId: target.politicianId, house }).toString();
   return (
@@ -51,6 +53,10 @@ export default async function SubmissionLedgerPage({
           </Button>
         ))}
       </div>
+      <ReceiptPrintPanel
+        target={{ politicianId: target.politicianId, bookId: target.bookId }}
+        counts={receiptPrintCounts}
+      />
       {warnings.length > 0 && (
         <Card className="border-destructive">
           <CardContent className="space-y-3">

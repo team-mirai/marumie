@@ -41,3 +41,9 @@ test("帳簿が無ければ仕訳を引かずに null", async () => {
   await expect(repository.find("7")).resolves.toBeNull();
   expect(prisma.researchFundJournalEntry.findMany).not.toHaveBeenCalled();
 });
+test("帳簿に属する書類のストレージ上のキーを書類 ID ごとに返す", async () => {
+  const findMany = jest.fn().mockResolvedValue([{ id: BigInt(5), storageKey: "key-5" }]);
+  const repository = new PrismaSubmissionLedgerRepository({ researchFundDocument: { findMany } } as unknown as PrismaClient);
+  await expect(repository.findDocumentStorageKeys("7", ["5", "6"])).resolves.toEqual(new Map([["5", "key-5"]]));
+  expect(findMany).toHaveBeenCalledWith({ where: { bookId: BigInt(7), id: { in: [BigInt(5), BigInt(6)] } }, select: { id: true, storageKey: true } });
+});
