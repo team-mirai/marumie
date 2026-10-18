@@ -4,7 +4,8 @@
 #
 # 判定順（上から最初に当たったもの）:
 #   1. main の CI が赤        → fix-main（すでに loop/fix-main-* の PR が open ならそれは PR 側の規則で扱う）
-#   2. 動かせる loop PR がある → fix-ci（必須チェック失敗・コンフリクト） / resolve-coderabbit（HEAD がレビュー済みで未解決スレッドあり）
+#   2. 動かせる loop PR がある → fix-ci（必須チェック失敗・コンフリクト） / resolve-coderabbit（HEAD がレビュー済みで
+#      CodeRabbit か CodeQL の未解決スレッドあり。CodeQL のスレッドも同じセッションが裁く）
 #   3. 着手できる Issue がある → implement（loop:unblock 優先、次に番号最小。依存待ちは読み飛ばすだけ）
 #   4. in-flight の PR か依存待ちの Issue がある → wait
 #   5. それ以外            → none
@@ -29,7 +30,7 @@
 #   "waiting_on":  { "prs": [...], "issues": [...] } }
 #
 # 環境変数:
-#   LOOP_MAX_FIX_ROUNDS           CodeRabbit 対応の修正 push を何ラウンドまで許すか（デフォルト 2）
+#   LOOP_MAX_FIX_ROUNDS           CodeRabbit / CodeQL 対応の修正 push を何ラウンドまで許すか（デフォルト 2）
 #   LOOP_NUDGE_INTERVAL_MINUTES   レート制限中の PR に再レビューを促す間隔（デフォルト 20）
 #   LOOP_STALE_REVIEW_MINUTES     head がレビュー済みなのに Request changes が残るとき、dismiss するまで待つ時間（デフォルト 20）
 #                                 head のコミット時刻・対象レビューの投稿時刻の両方がこれ以上前であることを要求する
@@ -43,6 +44,9 @@ stale_minutes="${LOOP_STALE_REVIEW_MINUTES:-20}"
 jq --argjson max_rounds "$max_rounds" --argjson nudge_interval "$nudge_interval" --argjson stale_minutes "$stale_minutes" '
   def elapsed_minutes($t): (now - ($t | fromdateiso8601)) / 60;
 
+  # ループが裁くボット（coderabbitai と github-advanced-security = CodeQL）の未解決スレッド数
+  def bot_unresolved: .threads.coderabbit_unresolved + (.threads.codeql_unresolved // 0);
+
   # 取り残された Request changes:
   #   coderabbitai の有効な Request changes がある / 未解決スレッドが 1 つも無い / head の CodeRabbit レビューが完了している
   #   （レート制限なら nudges、レビュー中なら待つ）/ head も対象レビューも LOOP_STALE_REVIEW_MINUTES 以上前 / 他に直すものが無い
@@ -52,7 +56,7 @@ jq --argjson max_rounds "$max_rounds" --argjson nudge_interval "$nudge_interval"
   def stale_changes_requested:
     .coderabbit_review != null
     and .review_decision == "CHANGES_REQUESTED"
-    and .threads.coderabbit_unresolved == 0
+    and bot_unresolved == 0
     and .threads.human_unresolved == 0
     and (.coderabbit | IN("SUCCESS", "FAILURE", "ERROR"))
     and .ci_complete != "FAILURE"
@@ -71,7 +75,7 @@ jq --argjson max_rounds "$max_rounds" --argjson nudge_interval "$nudge_interval"
         | {pr: .number, issue: .issue.number, reason: "human-review"} ]
       + [ $prs[] | select(.threads.human_unresolved == 0
                           and .fix_rounds >= $max_rounds
-                          and .threads.coderabbit_unresolved > 0)
+                          and bot_unresolved > 0)
         | {pr: .number, issue: .issue.number, reason: "budget-exceeded"} ]
     ) as $escalations
   | ($escalations | map(.pr)) as $esc_prs
@@ -83,16 +87,16 @@ jq --argjson max_rounds "$max_rounds" --argjson nudge_interval "$nudge_interval"
            reason: (if .merge_state == "DIRTY" then "conflict with main" else "ci-complete failed" end)} ]
       + [ $live[] | select(.ci_complete != "FAILURE" and .merge_state != "DIRTY"
                            and (.coderabbit | IN("SUCCESS", "FAILURE", "ERROR", "RATE_LIMITED"))
-                           and .threads.coderabbit_unresolved > 0)
+                           and bot_unresolved > 0)
         | {action: "resolve-coderabbit", target: .number,
-           reason: "\(.threads.coderabbit_unresolved) unresolved CodeRabbit thread(s) on reviewed head"} ]
+           reason: "\(.threads.coderabbit_unresolved) unresolved CodeRabbit / \(.threads.codeql_unresolved // 0) unresolved CodeQL thread(s) on reviewed head"} ]
       | sort_by(.target)
     ) as $pr_actions
   | ($pr_actions | map(.target)) as $action_prs
   | ($live | map(select(.number as $n | ($action_prs | index($n)) == null)) | map(.number)) as $inflight
 
   # レート制限で head が未レビューのままの PR: 再レビューを促す（head ごとに 1 回、間隔を空けて再送）
-  | ([ $live[] | select(.coderabbit == "RATE_LIMITED" and .threads.coderabbit_unresolved == 0
+  | ([ $live[] | select(.coderabbit == "RATE_LIMITED" and bot_unresolved == 0
                         and (.nudged_at == null or ((now - (.nudged_at | fromdateiso8601)) / 60) >= $nudge_interval))
         | .number ]) as $nudges
 

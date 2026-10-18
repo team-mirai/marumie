@@ -25,7 +25,7 @@
 # 環境変数:
 #   LOOP_WAIT_SECONDS      WAITING 時に状態を取り直す間隔（デフォルト 60）
 #   LOOP_MAX_WAIT_SECONDS  状態が変わらないまま待つ上限（デフォルト 7200）
-#   LOOP_MAX_FIX_ROUNDS    CodeRabbit 対応の修正ラウンド上限（loop-once.sh → decide.sh に渡る。デフォルト 2）
+#   LOOP_MAX_FIX_ROUNDS    CodeRabbit / CodeQL 対応の修正ラウンド上限（loop-once.sh → decide.sh に渡る。デフォルト 2）
 #
 # ログ: .loop/logs/<開始時刻>/tick-<試行番号>.log（同名の .state.json / .decision.json も残る）
 

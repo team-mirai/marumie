@@ -1,12 +1,13 @@
 ---
 allowed-tools: Bash(git:*), Bash(gh:*), Bash(pnpm:*), Bash(npx:*)
 argument-hint: <PR番号>
-description: loop PR に付いた CodeRabbit の指摘を「修正 / 退け / Issue化」に振り分け、返信して resolve する（承認は待たない）
+description: loop PR に付いた CodeRabbit / CodeQL の指摘を「修正 / 退け / Issue化」に振り分け、返信して resolve する（承認は待たない）
 ---
 
-# ループ: CodeRabbit レビュー対応
+# ループ: CodeRabbit / CodeQL レビュー対応
 
-あなたはループエンジニアリングのレビュー対応セッションです。ランナーは「CodeRabbit が最新コミットをレビュー済みで、未解決スレッドが残っている」
+あなたはループエンジニアリングのレビュー対応セッションです。ランナーは「CodeRabbit が最新コミットをレビュー済みで、
+CodeRabbit（`coderabbitai`）か CodeQL（`github-advanced-security`）の未解決スレッドが残っている」
 loop PR **#$ARGUMENTS** を選んでこのセッションを起動しています。全スレッドを裁いて返信・resolve し、必要なら修正を push して終了します。
 共通ルールは [docs/loop-session-rules.md](../../docs/loop-session-rules.md) を**最初に読む**こと。
 
@@ -15,7 +16,7 @@ loop PR **#$ARGUMENTS** を選んでこのセッションを起動していま�
 - 現在のブランチ: !`git branch --show-current`
 - 対象 PR: !`gh pr view $ARGUMENTS --json number,title,headRefName,headRefOid,reviewDecision --jq '"#\(.number) \(.title) [\(.headRefName)] head=\(.headRefOid[0:8]) reviewDecision=\(.reviewDecision)"'`
 - 紐づく Issue: !`gh pr view $ARGUMENTS --json body --jq '.body | [scan("[Cc]loses #([0-9]+)")[]] | join(",")'`
-- これまでの修正ラウンド: !`gh pr view $ARGUMENTS --json commits --jq '[.commits[] | select(.messageHeadline | startswith("fix: CodeRabbit"))] | length'`
+- これまでの修正ラウンド: !`gh pr view $ARGUMENTS --json commits --jq '[.commits[] | select(.messageHeadline | startswith("fix: CodeRabbit") or startswith("fix: CodeQL"))] | length'`
 
 ## 背景
 
@@ -24,7 +25,10 @@ loop PR **#$ARGUMENTS** を選んでこのセッションを起動していま�
   したがって、**修正して resolve する** か **理由を返信して resolve する** かを全スレッドに行えばブロックは解ける。
   切り替わらない場合（レート制限で未レビュー、レビュー済みでも Request changes が残る）はランナーが再レビューの催促や
   取り下げで解くので、セッションは気にしなくてよい。
-- 修正 push の予算は **2 ラウンド**（ランナーが `fix: CodeRabbit` で始まるコミット数で数える）。超えて未解決が残ればランナーが人間にエスカレーションする。
+- CodeQL（code scanning）は、PR の差分に新しいアラートが出ると `github-advanced-security` ボットがレビュースレッドを付ける。
+  `CodeQL` チェックは必須ではないので auto-merge は止めないが、ランナーは未解決スレッドとして数えるため、CodeRabbit の指摘と同じくこのセッションが裁く。
+  コメント本文末尾の `Show more details` のリンク（`.../security/code-scanning/<アラート番号>`）からアラート番号が分かる。
+- 修正 push の予算は **2 ラウンド**（ランナーが `fix: CodeRabbit` / `fix: CodeQL` で始まるコミット数で数える）。超えて未解決が残ればランナーが人間にエスカレーションする。
   「現在の状況」のラウンド数が既に 1 なら、このセッションが最後の修正機会。
 - このプロダクトは公開されており一定の品質を保ちたい一方、CodeRabbit の指摘には付き合うとキリがない細かいものも多い。
   **指摘の妥当性はセッション自身が判断する。** 黙って resolve することも、言われるがまま全部直すこともしない。
@@ -43,7 +47,7 @@ gh api graphql -f query='query { repository(owner: "team-mirai", name: "marumie"
   --jq '.data.repository.pullRequest.reviewThreads.nodes[] | select(.isResolved == false)'
 ```
 
-先頭コメントの `author.login` が `coderabbitai` でないスレッドが 1 つでもあれば、rules.md の信頼境界に従いこの PR の処理を止めて
+先頭コメントの `author.login` が `coderabbitai` でも `github-advanced-security` でもないスレッドが 1 つでもあれば、rules.md の信頼境界に従いこの PR の処理を止めて
 `loop:human` にエスカレーションする（ランナーも同じ判定をするが、二重に守る）。
 
 ### (c) スレッドごとに判定する
@@ -58,6 +62,13 @@ CodeRabbit の各コメントの 1 行目には `_カテゴリ_ | _重要度（�
 | **退ける**（理由を返信して resolve） | ・Issue の **Out of scope** に明記された事項への指摘<br>・Issue のスコープを超える機能追加・仕様変更の提案<br>・上記ガイドラインに根拠のない好み・スタイルの指摘（命名の好み、コメント・docstring の追加要求、既存コードと同じ書き方への指摘など）<br>・ガイドラインが明示的に許可している書き方への指摘（例: domain の型・純粋関数への `server-only` 追加要求は [backend-architecture-guide.md](../../docs/backend-architecture-guide.md) 3.2.1 / 4.3 で退ける）<br>・コードを読んで**事実誤認と確認できた**もの（何がどう違うかを具体的に書く）<br>・すでに同じ理由で退けた指摘の再掲 |
 | **Issue 化する**（Issue リンクを返信して resolve） | ・🏗️ Heavy lift のリファクタ・設計変更提案で、価値はあるがこの PR で扱うと肥大化するもの<br>・スコープ外だが放置すべきでない問題の発見<br>→ rules.md のスコープアウトの原則どおり `loop:ready`（AI で可能）か `loop:human`（判断が要る）で起票し、本文に「CodeRabbit の指摘（PR #$ARGUMENTS）を契機に起票」と書く |
 
+**CodeQL（`github-advanced-security`）の指摘**は、タグが無く件数も少ないセキュリティ上の指摘なので、上表の「好み・スタイル」での退けは使わない:
+
+- **修正する**: 原則こちら。指摘されたデータの流れ（ユーザー入力がどこに届くか）を実際のコードで追い、問題があれば直す
+- **退ける**: コードを読んで**誤検知と確認できた**場合だけ（例: 値がサーバー側で固定・検証済みで外部入力が届かない、テストコードでの利用）。
+  何がどう安全なのかを具体的に書き、(e) でアラートの dismiss まで行う
+- **Issue 化する**: 直すには Issue のスコープを大きく超える設計変更が要る場合。アラートは dismiss せず open のまま残す
+
 判断に迷う指摘は「修正する」に倒す（公開プロダクトの品質を優先する）。ただし迷った理由がスコープ（Issue の範囲を超えるか）なら「Issue 化する」に倒す。
 このセッションが最後の修正ラウンドなら、さらに修正が必要なものは「Issue 化する」に倒して PR を肥大化させない
 （🔴 Critical / セキュリティ / 規約違反は例外。それでも直しきれなければエスカレーション）。
@@ -65,11 +76,13 @@ CodeRabbit の各コメントの 1 行目には `_カテゴリ_ | _重要度（�
 ### (d) 修正する指摘をまとめて直す
 
 修正後に rules.md の「ローカル CI」で `pnpm verify`（必要なら E2E）を通し、**`fix: CodeRabbit の指摘に対応（<要約>）`** でコミットして push する。
+修正が CodeQL の指摘だけなら **`fix: CodeQL の指摘に対応（<要約>）`** とする（両方を直したときは 1 コミットにまとめ、`fix: CodeRabbit` の方を使う）。
 この接頭辞はランナーがラウンド数を数えるのに使うので変えない。修正が 1 件も無ければ push しない。
 
 ### (e) 各スレッドに返信して resolve する
 
-修正したものも含め、CodeRabbit のスレッドは自動では閉じないので**全件**をこのセッションが閉じる:
+修正したものも含め、CodeRabbit のスレッドは自動では閉じないので**全件**をこのセッションが閉じる。
+CodeQL のスレッドも同様に全件を返信・resolve する（直した場合は CodeQL の再実行後に自動で閉じることもあるが、待たずに閉じる）:
 
 ```bash
 # 返信（databaseId は (b) で取得した先頭コメントのもの）
@@ -80,6 +93,15 @@ gh api "repos/{owner}/{repo}/pulls/$ARGUMENTS/comments/<databaseId>/replies" -f 
 gh api graphql -f query='mutation { resolveReviewThread(input: {threadId: "<thread id>"}) { thread { isResolved } } }'
 ```
 
+- CodeQL の指摘を**退けた**場合は、スレッドへの返信に加えて code scanning のアラートも理由付きで dismiss する
+  （しないと次の push でも同じアラートが残り続ける）。`dismissed_reason` は `false positive` か `used in tests` を使う:
+
+  ```bash
+  gh api -X PATCH "repos/{owner}/{repo}/code-scanning/alerts/<アラート番号>" \
+    -f state=dismissed -f dismissed_reason='false positive' -f dismissed_comment='🤖 <退けた理由>（PR #$ARGUMENTS）'
+  ```
+
+  dismiss が権限不足などで失敗したら、その旨をスレッドの返信に書いたうえで resolve する（`CodeQL` は必須チェックではないのでマージは止まらない）
 - 返信は必ず `🤖` で始め、人間が後から「ループが退けた指摘」を一覧できるようにする
 - 返信なしの resolve、`@coderabbitai resolve`（全件一括 resolve）、CodeRabbit のレビュー自体の dismiss は**禁止**。退けた根拠がスレッドに残らず、人間が監査できなくなる
 - `@coderabbitai review` による再レビュー要求は行わない（増分レビュー済みのコミットには効かない。push すれば自動で再レビューされる）
@@ -89,7 +111,7 @@ gh api graphql -f query='mutation { resolveReviewThread(input: {threadId: "<thre
 PR にコメントする（人間がマージ後に読み、退けた指摘の妥当性を監査するため）:
 
 ```text
-🤖 CodeRabbit レビュー対応: 修正 <a> 件 / 退け <b> 件 / Issue化 <c> 件
+🤖 CodeRabbit / CodeQL レビュー対応: 修正 <a> 件 / 退け <b> 件 / Issue化 <c> 件
 - 修正: <要約>（<commit>）
 - 退け: <要約> — <理由>
 - Issue化: #<M> <タイトル>
@@ -102,6 +124,6 @@ auto-merge の予約が生きているか `gh pr view $ARGUMENTS --json autoMerg
 **再レビューや承認は待たない。** push した修正に新しい指摘が付けば、次の tick のランナーがこのコマンドを再び起動する（ラウンド上限まで）。
 承認されれば auto-merge がマージする。
 
-- 全スレッドを返信・resolve できた: `LOOP_RESULT: SUCCESS issue=#<紐づく Issue> pr=<PR URL>`
+- 全スレッド（CodeRabbit と CodeQL）を返信・resolve できた: `LOOP_RESULT: SUCCESS issue=#<紐づく Issue> pr=<PR URL>`
 - 人間のスレッドがある、または判断できない指摘が残った: 紐づく Issue を `loop:wip` から `loop:human` に付け替え、
   Issue と PR に「どの指摘が残っていて、なぜ判断できなかったか」をコメントし、PR は open のまま `LOOP_RESULT: BLOCKED issue=#<N> reason=coderabbit-unresolved` で終了する。

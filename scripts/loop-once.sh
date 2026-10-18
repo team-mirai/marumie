@@ -187,9 +187,9 @@ verify_success() { # $1: action, $2: target, $3: head before session (fix-ci の
       local repo unresolved
       repo="$(gh repo view --json nameWithOwner --jq .nameWithOwner)"
       unresolved="$(gh api graphql -f query="query { repository(owner: \"${repo%/*}\", name: \"${repo#*/}\") { pullRequest(number: $target) { reviewThreads(first: 100) { nodes { isResolved comments(first: 1) { nodes { author { login } } } } } } } }" \
-        --jq '[.data.repository.pullRequest.reviewThreads.nodes[] | select(.isResolved == false and .comments.nodes[0].author.login == "coderabbitai")] | length')"
+        --jq '[.data.repository.pullRequest.reviewThreads.nodes[] | select(.isResolved == false and (.comments.nodes[0].author.login | IN("coderabbitai", "github-advanced-security")))] | length')"
       [[ "$unresolved" == "0" ]] && return 0
-      echo "[loop-once] 検証失敗: PR #$target に未解決の CodeRabbit スレッドが $unresolved 件残っています" >&2
+      echo "[loop-once] 検証失敗: PR #$target に未解決の CodeRabbit / CodeQL スレッドが $unresolved 件残っています" >&2
       return 1 ;;
     fix-main)
       local n
