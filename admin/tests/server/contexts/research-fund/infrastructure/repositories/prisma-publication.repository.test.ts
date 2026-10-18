@@ -16,6 +16,7 @@ function entry(overrides: Record<string, unknown>) {
     entryDate: new Date("2026-08-13T00:00:00.000Z"),
     description: "視察先への移動",
     status: "approved",
+    document: null,
     lines: [line("debit", "taxi", 1500, "expense"), line("credit", "bank", 1500, "asset")],
     ...overrides,
   };
@@ -62,6 +63,8 @@ test("公開済みは集計行に、確認済は公開の候補に振り分け�
         accountKey: "grant-income",
         amount: 1_000_000,
         type: "grant",
+        document: null,
+        documentRejection: null,
       },
     ],
     accounts: {
@@ -96,7 +99,16 @@ test("帳簿が無ければ null を返す", async () => {
 test("公開対象の現在の状態と帳簿の公開範囲を返す", async () => {
   const { repository, tx } = setup([entry({})], new Date("2026-07-31T00:00:00.000Z"));
   await expect(repository.pending("1", ["1"])).resolves.toEqual({
-    entries: [{ id: "1", status: "approved", entryDate: "2026-08-13", rowCount: 1 }],
+    entries: [
+      {
+        id: "1",
+        status: "approved",
+        entryDate: "2026-08-13",
+        description: "視察先への移動",
+        document: null,
+        rowCount: 1,
+      },
+    ],
     publishedThrough: "2026-07-31",
   });
   expect(tx.researchFundJournalEntry.findMany).toHaveBeenCalledWith(
@@ -119,11 +131,54 @@ test("候補にできない仕訳の行数もそのまま返し、公開の可�
   });
 });
 
-test("確認済だけを公開済みにし、公開範囲は既存値より新しいときだけ前進させる", async () => {
+test("公開の候補と公開対象に、書類の公開用の版の状態と公開できない理由を添える", async () => {
+  const { repository } = setup([
+    entry({ id: BigInt(1), document: { maskingStatus: "succeeded", maskedKey: "masked-1" } }),
+    entry({ id: BigInt(2), document: { maskingStatus: "running", maskedKey: null } }),
+    entry({ id: BigInt(3), document: null }),
+  ]);
+  const snapshot = await repository.snapshot("1");
+  expect(
+    snapshot?.candidates.map(({ id, document, documentRejection }) => ({
+      id,
+      document,
+      documentRejection,
+    })),
+  ).toEqual([
+    {
+      id: "1",
+      document: { maskingStatus: "succeeded", hasMaskedVersion: true },
+      documentRejection: null,
+    },
+    {
+      id: "2",
+      document: { maskingStatus: "running", hasMaskedVersion: false },
+      documentRejection: "書類の公開用の版を作成中です。できあがるまで公開できません",
+    },
+    { id: "3", document: null, documentRejection: null },
+  ]);
+  await expect(repository.pending("1", ["1", "2", "3"])).resolves.toMatchObject({
+    entries: [
+      { id: "1", document: { maskingStatus: "succeeded", hasMaskedVersion: true } },
+      { id: "2", document: { maskingStatus: "running", hasMaskedVersion: false } },
+      { id: "3", document: null },
+    ],
+  });
+});
+
+test("確認済で書類の公開用の版が作成済み（または書類の無い）仕訳だけを公開済みにし、公開範囲は既存値より新しいときだけ前進させる", async () => {
   const { repository, tx } = setup([entry({})]);
   await repository.publish("1", ["1"], "2026-08-31");
   expect(tx.researchFundJournalEntry.updateMany).toHaveBeenCalledWith({
-    where: { bookId: BigInt(1), id: { in: [BigInt(1)] }, status: "approved" },
+    where: {
+      bookId: BigInt(1),
+      id: { in: [BigInt(1)] },
+      status: "approved",
+      OR: [
+        { documentId: null },
+        { document: { maskingStatus: "succeeded", maskedKey: { not: null } } },
+      ],
+    },
     data: { status: "published", publishedAt: expect.any(Date) },
   });
   expect(tx.researchFundBook.updateMany).toHaveBeenCalledWith({

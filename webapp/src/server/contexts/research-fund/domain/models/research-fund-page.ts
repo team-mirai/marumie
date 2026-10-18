@@ -44,6 +44,8 @@ export interface ResearchFundExpenseView {
   /** 紐づいた支出群（用途カード）のID。1仕訳は1つの支出群にしか属さない。紐づけが無ければ null */
   groupId: string | null;
   hasReceipt: boolean;
+  /** 領収書の公開用の版が作成済みか。false の間は領収書を開かせず準備中と表示する */
+  receiptReady: boolean;
   /** 領収書の表示の種類。領収書が無い・種類が判定できない場合は null */
   receiptKind: ResearchFundReceiptKind | null;
 }

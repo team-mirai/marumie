@@ -32,6 +32,7 @@ function view(overrides: Partial<ResearchFundExpenseView> = {}): ResearchFundExp
     splitGroup: null,
     groupId: null,
     hasReceipt: false,
+    receiptReady: false,
     receiptKind: null,
     ...overrides,
   };

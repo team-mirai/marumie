@@ -1,6 +1,8 @@
 import "client-only";
 
 interface Props {
+  /** 公開用の版が作成済みか。false の間は開けない「準備中」のピルにする */
+  ready: boolean;
   onClick: () => void;
 }
 
@@ -23,8 +25,22 @@ function ReceiptIcon() {
   );
 }
 
-/** 明細の「領収書」ピル。押すと領収書モーダルを開く（デザインの receiptStyle「ピル」案）。 */
-export default function ResearchFundReceiptPill({ onClick }: Props) {
+/**
+ * 明細の「領収書」ピル。押すと領収書モーダルを開く（デザインの receiptStyle「ピル」案）。
+ * 公開用の版がまだ無い書類は原本を配信しないので、押せない「準備中」のピルにする（#1803）。
+ */
+export default function ResearchFundReceiptPill({ ready, onClick }: Props) {
+  if (!ready) {
+    return (
+      <span
+        title="個人情報を黒塗りした公開用の領収書を準備しています"
+        className="inline-flex h-[22px] shrink-0 items-center gap-1 whitespace-nowrap rounded-full border border-[#D1D5DB] bg-white px-2.5 text-xs leading-none font-bold text-[#9CA3AF]"
+      >
+        <ReceiptIcon />
+        領収書準備中
+      </span>
+    );
+  }
   return (
     <button
       type="button"

@@ -1,9 +1,21 @@
 import { PublishJournalEntriesUsecase } from "@/server/contexts/research-fund/application/usecases/publish-journal-entries-usecase";
 import type { PublishableEntry } from "@/server/contexts/research-fund/domain/models/publication";
 
+function entry(overrides: Partial<PublishableEntry> = {}): PublishableEntry {
+  return {
+    id: "1",
+    status: "approved",
+    entryDate: "2026-08-13",
+    description: "視察先への移動",
+    document: null,
+    rowCount: 1,
+    ...overrides,
+  };
+}
+
 const approved: PublishableEntry[] = [
-  { id: "1", status: "approved", entryDate: "2026-08-13", rowCount: 1 },
-  { id: "2", status: "approved", entryDate: "2026-07-01", rowCount: 1 },
+  entry({ id: "1", entryDate: "2026-08-13" }),
+  entry({ id: "2", entryDate: "2026-07-01", description: "書籍購入" }),
 ];
 
 function setup(
@@ -44,7 +56,7 @@ test("確認済の仕訳を公開し、公開範囲を最新月末まで進め�
 
 test("下書きが混ざっていたら公開せず、キャッシュにも触らない", async () => {
   const { repository, cacheInvalidator, usecase } = setup({
-    entries: [approved[0], { id: "2", status: "draft", entryDate: "2026-07-01", rowCount: 1 }],
+    entries: [approved[0], entry({ id: "2", status: "draft", entryDate: "2026-07-01" })],
   });
   await expect(usecase.execute("1", ["1", "2"])).rejects.toThrow("確認済の仕訳だけを公開できます");
   expect(repository.publish).not.toHaveBeenCalled();
@@ -53,7 +65,7 @@ test("下書きが混ざっていたら公開せず、キャッシュにも触�
 
 test("公開済みの再公開も拒否する", async () => {
   const { repository, usecase } = setup({
-    entries: [{ id: "1", status: "published", entryDate: "2026-08-13", rowCount: 1 }],
+    entries: [entry({ status: "published" })],
   });
   await expect(usecase.execute("1", ["1"])).rejects.toThrow("確認済の仕訳だけを公開できます");
   expect(repository.publish).not.toHaveBeenCalled();
@@ -61,11 +73,38 @@ test("公開済みの再公開も拒否する", async () => {
 
 test("チェックリストに出ない仕訳（費用1行に射影できない仕訳）は公開しない", async () => {
   const { repository, cacheInvalidator, usecase } = setup({
-    entries: [{ id: "1", status: "approved", entryDate: "2026-08-13", rowCount: 2 }],
+    entries: [entry({ rowCount: 2 })],
   });
   await expect(usecase.execute("1", ["1"])).rejects.toThrow("この画面で公開できない仕訳");
   expect(repository.publish).not.toHaveBeenCalled();
   expect(cacheInvalidator.invalidateWebappCache).not.toHaveBeenCalled();
+});
+
+test("書類の公開用の版が作成済みでない仕訳があれば、どの仕訳がなぜ公開できないかをまとめて示し、公開しない", async () => {
+  const { repository, cacheInvalidator, usecase } = setup({
+    entries: [
+      entry({ id: "1", description: "タクシー代", document: { maskingStatus: "pending", hasMaskedVersion: false } }),
+      entry({ id: "2", description: "書籍購入", document: { maskingStatus: "failed", hasMaskedVersion: false } }),
+      entry({ id: "3", description: "資料印刷", document: { maskingStatus: "succeeded", hasMaskedVersion: true } }),
+    ],
+  });
+  const result = usecase.execute("1", ["1", "2", "3"]);
+  await expect(result).rejects.toThrow(
+    "公開できない仕訳があります。「タクシー代」書類の公開用の版がまだ作られていません。帳簿の画面を開いたままにすると順に作られます／「書籍購入」書類の公開用の版の作成に失敗しています。仕訳の詳細から作り直してください",
+  );
+  expect(repository.publish).not.toHaveBeenCalled();
+  expect(cacheInvalidator.invalidateWebappCache).not.toHaveBeenCalled();
+});
+
+test("書類の公開用の版が作成済みの仕訳と、書類の無い仕訳は公開できる", async () => {
+  const { repository, usecase } = setup({
+    entries: [
+      entry({ id: "1", document: { maskingStatus: "succeeded", hasMaskedVersion: true } }),
+      entry({ id: "2", entryDate: "2026-07-01", document: null }),
+    ],
+  });
+  await expect(usecase.execute("1", ["1", "2"])).resolves.toMatchObject({ count: 2 });
+  expect(repository.publish).toHaveBeenCalledWith("1", ["1", "2"], "2026-08-31");
 });
 
 test("未選択・不正なID・見つからない仕訳・帳簿なしは公開しない", async () => {

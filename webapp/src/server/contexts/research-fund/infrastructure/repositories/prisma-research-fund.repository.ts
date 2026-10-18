@@ -1,13 +1,14 @@
 import "server-only";
-import type { Prisma, PrismaClient } from "@prisma/client";
-import type {
-  PublishedAccount,
-  PublishedExpenditureGroup,
-  PublishedExpense,
-  PublishedPartyResearchFund,
-  PublishedPoliticianResearchFund,
-  PublishedResearchFund,
-  PublishedResearchFundPageRef,
+import type { Prisma, PrismaClient, ResearchFundMaskingStatus } from "@prisma/client";
+import {
+  MASKED_RECEIPT_MIME,
+  type PublishedAccount,
+  type PublishedExpenditureGroup,
+  type PublishedExpense,
+  type PublishedPartyResearchFund,
+  type PublishedPoliticianResearchFund,
+  type PublishedResearchFund,
+  type PublishedResearchFundPageRef,
 } from "@/server/contexts/research-fund/domain/models/published-research-fund";
 import type { ResearchFundPoliticianSource } from "@/server/contexts/research-fund/domain/models/research-fund-politician-list";
 import type { ResearchFundRepository } from "@/server/contexts/research-fund/domain/repositories/research-fund-repository.interface";
@@ -26,8 +27,8 @@ const entrySelect = {
   note: true,
   splitGroup: true,
   documentId: true,
-  // PDF の領収書を画像タグで描かないよう、表示の出し分けに書類の MIME を渡す。
-  document: { select: { mime: true } },
+  // 原本は配信しないので、公開用の版が作成済みかだけを見る（キーは公開ページに渡さない。#1803）。
+  document: { select: { maskingStatus: true, maskedKey: true } },
   lines: {
     select: {
       id: true,
@@ -138,8 +139,7 @@ export class PrismaResearchFundRepository implements ResearchFundRepository {
             amount: line.amount.toNumber(),
             note: entry.note,
             splitGroup: null,
-            hasReceipt: entry.documentId !== null,
-            receiptMime: entry.document?.mime ?? null,
+            ...receiptOf(entry.document),
           });
           continue;
         }
@@ -161,8 +161,7 @@ export class PrismaResearchFundRepository implements ResearchFundRepository {
           amount: line.amount.toNumber(),
           note: entry.note,
           splitGroup: entry.splitGroup,
-          hasReceipt: entry.documentId !== null,
-          receiptMime: entry.document?.mime ?? null,
+          ...receiptOf(entry.document),
         });
       }
     }
@@ -346,10 +345,33 @@ export class PrismaResearchFundRepository implements ResearchFundRepository {
   async findPublishedReceipt(entryId: string) {
     const entry = await this.prisma.researchFundJournalEntry.findFirst({
       where: { id: BigInt(entryId), status: "published" },
-      select: { document: { select: { storageKey: true } } },
+      select: { document: { select: { maskingStatus: true, maskedKey: true } } },
     });
-    return entry?.document ? { storageKey: entry.document.storageKey } : null;
+    const maskedKey = maskedKeyOf(entry?.document ?? null);
+    return maskedKey ? { maskedKey } : null;
   }
+}
+
+/**
+ * 配信してよい公開用の版のキー。作成済みのものだけを配信する。
+ * 作り直しの依頼中・失敗した版は、問題があって作り直す版かもしれないので配信しない（#1803）。
+ */
+function maskedKeyOf(
+  document: { maskingStatus: ResearchFundMaskingStatus; maskedKey: string | null } | null,
+): string | null {
+  return document?.maskingStatus === "succeeded" ? document.maskedKey : null;
+}
+
+/** 明細に載せる領収書の状態。書類があっても公開用の版が無い間は準備中（receiptReady: false） */
+function receiptOf(
+  document: { maskingStatus: ResearchFundMaskingStatus; maskedKey: string | null } | null,
+): Pick<PublishedExpense, "hasReceipt" | "receiptReady" | "receiptMime"> {
+  const ready = maskedKeyOf(document) !== null;
+  return {
+    hasReceipt: document !== null,
+    receiptReady: ready,
+    receiptMime: ready ? MASKED_RECEIPT_MIME : null,
+  };
 }
 
 /**

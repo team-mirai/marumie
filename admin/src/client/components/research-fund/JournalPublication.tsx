@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { Globe } from "@phosphor-icons/react/dist/ssr";
 import { toast } from "sonner";
 import { PageHeader } from "@/client/components/layout/PageHeader";
+import { DocumentMaskingBadge } from "@/client/components/research-fund/DocumentMaskingStatus";
 import { ResearchFundSankey } from "@/client/components/research-fund/ResearchFundSankey";
 import { WriteFieldset } from "@/client/components/research-fund/ResearchFundWriteAccess";
 import { Button, Card, CardContent, Checkbox } from "@/client/components/ui";
@@ -88,10 +89,15 @@ export function JournalPublication({
     [published, accounts, candidates, checked],
   );
   const delta = before && after ? describePublishDelta(before, after) : null;
-  const candidateIds = candidates.map((candidate) => candidate.id);
+  // 書類の公開用の版が作成済みでない仕訳は公開できないので、選べるのはそれ以外だけ（#1803）
+  const candidateIds = candidates
+    .filter((candidate) => candidate.documentRejection === null)
+    .map((candidate) => candidate.id);
+  const blockedCount = candidates.length - candidateIds.length;
   const selection = publishSelectionOf(candidateIds, checked);
 
   function toggle(candidate: PublishCandidate) {
+    if (candidate.documentRejection !== null) return;
     setChecked((current) =>
       current.includes(candidate.id)
         ? current.filter((id) => id !== candidate.id)
@@ -138,7 +144,7 @@ export function JournalPublication({
                 htmlFor="publish-all"
                 className={cn(
                   "flex items-center gap-2 px-2.5 text-[12.5px] text-muted-foreground",
-                  candidates.length > 0 && !pending ? "cursor-pointer" : "cursor-not-allowed",
+                  candidateIds.length > 0 && !pending ? "cursor-pointer" : "cursor-not-allowed",
                 )}
               >
                 <Checkbox
@@ -146,7 +152,7 @@ export function JournalPublication({
                   checked={
                     selection === "all" ? true : selection === "some" ? "indeterminate" : false
                   }
-                  disabled={pending || candidates.length === 0}
+                  disabled={pending || candidateIds.length === 0}
                   onCheckedChange={() =>
                     setChecked((current) => toggleAllPublishCandidates(candidateIds, current))
                   }
@@ -156,36 +162,64 @@ export function JournalPublication({
               </label>
             </div>
             <ul className="grid gap-0.5">
-              {candidates.map((candidate) => (
-                <li key={candidate.id}>
-                  <label
-                    htmlFor={`publish-${candidate.id}`}
-                    className={cn(
-                      "flex cursor-pointer items-center gap-2.5 rounded-lg px-2.5 py-2",
-                      checked.includes(candidate.id) && "bg-accent",
-                    )}
-                  >
-                    <Checkbox
-                      id={`publish-${candidate.id}`}
-                      checked={checked.includes(candidate.id)}
-                      onCheckedChange={() => toggle(candidate)}
-                      disabled={pending}
-                      aria-label={`${candidate.description}を公開対象にする`}
-                    />
-                    <span className="font-latin w-12 shrink-0 text-[11.5px] text-muted-foreground">
-                      {candidate.date.slice(5).replace("-", "/")}
-                    </span>
-                    <span className="flex-1 text-[13px]">{candidate.description}</span>
-                    <span className="font-latin text-[12.5px] font-semibold">
-                      {formatCurrency(candidate.amount)}
-                    </span>
-                  </label>
-                </li>
-              ))}
+              {candidates.map((candidate) => {
+                const blocked = candidate.documentRejection !== null;
+                return (
+                  <li key={candidate.id}>
+                    <label
+                      htmlFor={`publish-${candidate.id}`}
+                      className={cn(
+                        "grid grid-cols-[auto_auto_minmax(0,1fr)_auto] items-center gap-x-2.5 gap-y-1 rounded-lg px-2.5 py-2",
+                        blocked ? "cursor-not-allowed" : "cursor-pointer",
+                        checked.includes(candidate.id) && "bg-accent",
+                      )}
+                    >
+                      <Checkbox
+                        id={`publish-${candidate.id}`}
+                        checked={checked.includes(candidate.id)}
+                        onCheckedChange={() => toggle(candidate)}
+                        disabled={pending || blocked}
+                        aria-label={`${candidate.description}を公開対象にする`}
+                      />
+                      <span className="font-latin w-12 shrink-0 text-[11.5px] text-muted-foreground">
+                        {candidate.date.slice(5).replace("-", "/")}
+                      </span>
+                      <span className={cn("text-[13px]", blocked && "text-muted-foreground")}>
+                        {candidate.description}
+                      </span>
+                      <span className="font-latin text-[12.5px] font-semibold">
+                        {formatCurrency(candidate.amount)}
+                      </span>
+                      <span className="col-start-3 col-end-5 flex flex-wrap items-center gap-1.5 text-[11.5px] text-muted-foreground">
+                        {candidate.document ? (
+                          <>
+                            公開用の版
+                            <DocumentMaskingBadge status={candidate.document.maskingStatus} />
+                          </>
+                        ) : (
+                          "書類なし"
+                        )}
+                      </span>
+                      {candidate.documentRejection && (
+                        <span className="col-start-3 col-end-5 text-[11.5px] text-destructive">
+                          {candidate.documentRejection}
+                        </span>
+                      )}
+                    </label>
+                  </li>
+                );
+              })}
             </ul>
             {candidates.length === 0 && (
               <p className="py-6 text-center text-sm text-muted-foreground">
                 公開できる確認済の仕訳はありません
+              </p>
+            )}
+            {blockedCount > 0 && (
+              <p className="mt-2.5 text-xs leading-relaxed text-muted-foreground">
+                書類の公開用の版（個人情報を黒塗りした版）が作成済みでない{" "}
+                <span className="font-latin">{blockedCount}</span>
+                件は公開できません。まる見えには原本ではなく公開用の版を表示します。
               </p>
             )}
             {/* 担当外でも候補は選べる（AFTER のプレビューは閲覧のため）。無効にするのは公開ボタンだけ */}

@@ -21,6 +21,7 @@ function view(overrides: Partial<ResearchFundExpenseView> = {}): ResearchFundExp
     splitGroup: null,
     groupId: null,
     hasReceipt: false,
+    receiptReady: false,
     receiptKind: null,
     ...overrides,
   };
@@ -46,6 +47,7 @@ describe("buildResearchFundCsv", () => {
         note: "会派で按分",
         splitGroup: "order-1",
         hasReceipt: true,
+        receiptReady: true,
       }),
     ]);
 

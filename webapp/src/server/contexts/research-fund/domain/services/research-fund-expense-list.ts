@@ -63,7 +63,8 @@ export function buildExpenseViews(
           // 用途カードは支出だけを束ねるので、支給は紐づけない。
           groupId: null,
           hasReceipt: expense.hasReceipt,
-          receiptKind: expense.hasReceipt ? receiptKindOf(expense.receiptMime) : null,
+          receiptReady: expense.receiptReady,
+          receiptKind: expense.receiptReady ? receiptKindOf(expense.receiptMime) : null,
         };
       }
       const account = accounts[expense.accountKey];
@@ -88,7 +89,8 @@ export function buildExpenseViews(
         splitGroup: expense.splitGroup,
         groupId: groupIdByEntryId.get(expense.entryId) ?? null,
         hasReceipt: expense.hasReceipt,
-        receiptKind: expense.hasReceipt ? receiptKindOf(expense.receiptMime) : null,
+        receiptReady: expense.receiptReady,
+        receiptKind: expense.receiptReady ? receiptKindOf(expense.receiptMime) : null,
       };
     });
 }

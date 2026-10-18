@@ -2,7 +2,7 @@ import { GetResearchFundReceiptUsecase } from "@/server/contexts/research-fund/a
 import type { ReceiptStorage } from "@/server/contexts/research-fund/domain/repositories/receipt-storage.interface";
 import type { ResearchFundRepository } from "@/server/contexts/research-fund/domain/repositories/research-fund-repository.interface";
 
-function build(receipt: { storageKey: string } | null) {
+function build(receipt: { maskedKey: string } | null) {
   const repository: ResearchFundRepository = {
     findPublished: jest.fn().mockResolvedValue(null),
     findPublishedByOrganization: jest.fn().mockResolvedValue(null),
@@ -17,8 +17,8 @@ function build(receipt: { storageKey: string } | null) {
 }
 
 describe("GetResearchFundReceiptUsecase", () => {
-  it("公開済みの仕訳に紐づく領収書は署名URLを返す", async () => {
-    const { usecase, storage } = build({ storageKey: "key-1" });
+  it("公開済みの仕訳に紐づく領収書は、公開用の版の署名URLを返す", async () => {
+    const { usecase, storage } = build({ maskedKey: "key-1" });
 
     expect(await usecase.execute("12")).toBe("https://storage.example/signed");
     expect(storage.createSignedUrl).toHaveBeenCalledWith("key-1", 300);
@@ -32,7 +32,7 @@ describe("GetResearchFundReceiptUsecase", () => {
   });
 
   it("仕訳IDでない入力ではストレージにも問い合わせない", async () => {
-    const { usecase, repository } = build({ storageKey: "key-1" });
+    const { usecase, repository } = build({ maskedKey: "key-1" });
 
     expect(await usecase.execute("../secret")).toBeNull();
     expect(await usecase.execute("0")).toBeNull();

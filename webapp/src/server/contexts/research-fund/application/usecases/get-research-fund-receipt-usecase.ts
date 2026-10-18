@@ -12,13 +12,13 @@ export class GetResearchFundReceiptUsecase {
   ) {}
 
   /**
-   * published の仕訳に紐づく領収書の署名URL。
-   * 未公開の仕訳・存在しない仕訳は null を返し、公開前の領収書が漏れないようにする。
+   * published の仕訳に紐づく領収書の、公開用の版の署名URL。原本は配信しない（#1803）。
+   * 未公開の仕訳・存在しない仕訳・公開用の版がまだ無い仕訳は null を返し、公開前の領収書や原本が漏れないようにする。
    */
   async execute(entryId: string): Promise<string | null> {
     if (!/^[1-9]\d*$/.test(entryId)) return null;
     const receipt = await this.repository.findPublishedReceipt(entryId);
     if (!receipt) return null;
-    return await this.storage.createSignedUrl(receipt.storageKey, SIGNED_URL_EXPIRES_IN);
+    return await this.storage.createSignedUrl(receipt.maskedKey, SIGNED_URL_EXPIRES_IN);
   }
 }

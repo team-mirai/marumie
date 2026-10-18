@@ -11,6 +11,6 @@ export interface PublicationRepository {
     bookId: string,
     ids: readonly string[],
   ): Promise<{ entries: PublishableEntry[]; publishedThrough: string | null } | null>;
-  /** 確認済の仕訳だけを published にし、公開範囲を更新する。 */
+  /** 確認済で、書類の公開用の版が作成済み（または書類の無い）仕訳だけを published にし、公開範囲を更新する。 */
   publish(bookId: string, ids: readonly string[], publishedThrough: string | null): Promise<void>;
 }

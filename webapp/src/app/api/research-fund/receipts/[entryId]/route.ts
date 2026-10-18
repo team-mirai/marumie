@@ -7,8 +7,9 @@ import { loadResearchFundReceiptUrl } from "@/server/contexts/research-fund/pres
 export const dynamic = "force-dynamic";
 
 /**
- * 領収書の原本を配信する。非公開バケットの署名URLへリダイレクトするだけで、
- * 公開済み（published）の仕訳に紐づくものしか返さない。
+ * 領収書の公開用の版（個人情報を黒塗りし、メタデータを消した版）を配信する。原本は配信しない。
+ * 非公開バケットの署名URLへリダイレクトするだけで、公開済み（published）の仕訳に紐づく、
+ * 作成済みの公開用の版しか返さない。
  * 領収書を公開していない間（RESEARCH_FUND_RECEIPTS_PUBLISHED が false）は、どの仕訳にも 404 を返す。
  */
 export async function GET(_request: Request, { params }: { params: Promise<{ entryId: string }> }) {

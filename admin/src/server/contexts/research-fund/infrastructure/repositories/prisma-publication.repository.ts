@@ -3,6 +3,7 @@ import type { Prisma, PrismaClient } from "@prisma/client";
 import {
   Publication,
   PublicationError,
+  type PublicationDocument,
   type PublicationSnapshot,
   type PublishCandidate,
 } from "@/server/contexts/research-fund/domain/models/publication";
@@ -11,8 +12,18 @@ import type { ResearchFundRow } from "@/shared/research-fund/aggregation";
 
 const include = {
   lines: { include: { account: true } },
+  document: { select: { maskingStatus: true, maskedKey: true } },
 } satisfies Prisma.ResearchFundJournalEntryInclude;
 type Row = Prisma.ResearchFundJournalEntryGetPayload<{ include: typeof include }>;
+
+/** 仕訳に付いた書類の公開用の版の状態。書類が無ければ null */
+function documentOf(entry: Row): PublicationDocument | null {
+  if (!entry.document) return null;
+  return {
+    maskingStatus: entry.document.maskingStatus,
+    hasMaskedVersion: entry.document.maskedKey !== null,
+  };
+}
 
 /** 集計に使うのは「借方の費用」と「貸方の調査研究費収入」だけ。相手勘定の普通預金は数えない。 */
 function rowsOf(entry: Row): ResearchFundRow[] {
@@ -62,7 +73,14 @@ export class PrismaPublicationRepository implements PublicationRepository {
       }
       // 「費用1行／収入1行」に射影できる仕訳だけを公開の候補にする（それ以外はこの画面で扱えない）。
       if (!Publication.isPublishable(rows.length)) continue;
-      candidates.push({ ...rows[0], id: String(entry.id), description: entry.description });
+      const document = documentOf(entry);
+      candidates.push({
+        ...rows[0],
+        id: String(entry.id),
+        description: entry.description,
+        document,
+        documentRejection: Publication.documentRejection(document),
+      });
     }
     return {
       published,
@@ -87,6 +105,8 @@ export class PrismaPublicationRepository implements PublicationRepository {
         id: String(entry.id),
         status: entry.status,
         entryDate: entry.entryDate.toISOString().slice(0, 10),
+        description: entry.description,
+        document: documentOf(entry),
         // 候補の適格性は画面と同じ射影で測る（画面に出ない仕訳を公開させない）。
         rowCount: rowsOf(entry).length,
       })),
@@ -102,6 +122,11 @@ export class PrismaPublicationRepository implements PublicationRepository {
           bookId: BigInt(bookId),
           id: { in: ids.map((id) => BigInt(id)) },
           status: "approved",
+          // 判定のあとで作り直しが依頼されても、公開用の版が作成済みでない書類の付いた仕訳は公開しない。
+          OR: [
+            { documentId: null },
+            { document: { maskingStatus: "succeeded", maskedKey: { not: null } } },
+          ],
         },
         data: { status: "published", publishedAt: new Date() },
       });

@@ -26,6 +26,7 @@ function expense(overrides: Partial<PublishedExpense> = {}): PublishedExpense {
     note: null,
     splitGroup: null,
     hasReceipt: false,
+    receiptReady: false,
     receiptMime: null,
     ...overrides,
   };
@@ -155,9 +156,9 @@ describe("buildExpenseViews", () => {
   it("領収書の MIME から表示の種類を決める", () => {
     const views = buildExpenseViews(
       [
-        expense({ id: "1", entryId: "1", hasReceipt: true, receiptMime: "image/png" }),
-        expense({ id: "2", entryId: "2", hasReceipt: true, receiptMime: "application/pdf" }),
-        expense({ id: "3", entryId: "3", hasReceipt: false, receiptMime: null }),
+        expense({ id: "1", entryId: "1", hasReceipt: true, receiptReady: true, receiptMime: "image/png" }),
+        expense({ id: "2", entryId: "2", hasReceipt: true, receiptReady: true, receiptMime: "application/pdf" }),
+        expense({ id: "3", entryId: "3", hasReceipt: false, receiptReady: false, receiptMime: null }),
       ],
       accounts,
     );
@@ -165,6 +166,17 @@ describe("buildExpenseViews", () => {
     expect(views.find((view) => view.id === "1")?.receiptKind).toBe("image");
     expect(views.find((view) => view.id === "2")?.receiptKind).toBe("pdf");
     expect(views.find((view) => view.id === "3")?.receiptKind).toBeNull();
+  });
+
+  it("公開用の版がまだ無い領収書は準備中として残し、表示の種類を決めない", () => {
+    const [view] = buildExpenseViews(
+      [expense({ hasReceipt: true, receiptReady: false, receiptMime: null })],
+      accounts,
+    );
+
+    expect(view.hasReceipt).toBe(true);
+    expect(view.receiptReady).toBe(false);
+    expect(view.receiptKind).toBeNull();
   });
 
   it("支給（入金）の行は支出と同じ一覧に日付順で混ぜ、どちらの区分でも入金と分かる名前にする", () => {

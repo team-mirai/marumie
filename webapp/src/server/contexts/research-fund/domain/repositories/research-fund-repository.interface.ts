@@ -28,6 +28,6 @@ export interface ResearchFundRepository {
   /** 公開ページが成立する議員×年度の一覧（sitemap 用）。published の仕訳を 1 件以上持つ帳簿だけ */
   findPublishedPageRefs(): Promise<PublishedResearchFundPageRef[]>;
 
-  /** published の仕訳に紐づく領収書だけを返す。未公開の仕訳の領収書は返さない。 */
+  /** published の仕訳に紐づく領収書の、作成済みの公開用の版だけを返す。未公開の仕訳の領収書・原本は返さない。 */
   findPublishedReceipt(entryId: string): Promise<PublishedReceipt | null>;
 }
