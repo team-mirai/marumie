@@ -2,7 +2,7 @@ import { ExportSubmissionLedgerCsvUsecase } from "@/server/contexts/research-fun
 import { GetSubmissionLedgerUsecase } from "@/server/contexts/research-fund/application/usecases/get-submission-ledger-usecase";
 import type { SubmissionLedgerEntry } from "@/server/contexts/research-fund/domain/models/submission-ledger";
 
-const entry: SubmissionLedgerEntry = { id: "1", entryDate: "2026-04-03", source: "manual", legalLabel: "⑨ 滞在費", description: "タクシー代", amount: 1200, payeeName: null, payeeAddress: null, note: null, documentId: null, receiptNumber: null, documentMime: null, receiptAbsenceReason: null };
+const entry: SubmissionLedgerEntry = { id: "1", entryDate: "2026-04-03", source: "manual", legalLabel: "⑨ 滞在費", description: "タクシー代", amount: 1200, payeeName: null, payeeAddress: null, note: null, documentId: null, receiptNumber: null, documentMime: null, receiptAbsent: false, receiptAbsenceReason: null };
 function setup(ledger: unknown = { politicianSlug: "tanaka-taro", financialYear: 2026, entries: [entry] }) {
   return { find: jest.fn().mockResolvedValue(ledger), findDocumentStorageKeys: jest.fn() };
 }

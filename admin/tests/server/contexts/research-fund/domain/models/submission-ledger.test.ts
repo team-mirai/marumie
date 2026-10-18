@@ -14,9 +14,13 @@ import {
   type SubmissionLedgerEntry,
 } from "@/server/contexts/research-fund/domain/models/submission-ledger";
 
-const entry: SubmissionLedgerEntry = { id: "1", entryDate: "2026-04-03", source: "scan", legalLabel: "⑨ 滞在費", description: "タクシー代", amount: 1200, payeeName: "東京タクシー", payeeAddress: "東京都千代田区", note: "国会から事務所へ", documentId: "5", receiptNumber: 12, documentMime: "application/pdf", receiptAbsenceReason: null };
+const entry: SubmissionLedgerEntry = { id: "1", entryDate: "2026-04-03", source: "scan", legalLabel: "⑨ 滞在費", description: "タクシー代", amount: 1200, payeeName: "東京タクシー", payeeAddress: "東京都千代田区", note: "国会から事務所へ", documentId: "5", receiptNumber: 12, documentMime: "application/pdf", receiptAbsent: false, receiptAbsenceReason: null };
 const book = { politicianSlug: "tanaka-taro", financialYear: 2026 };
-const noReceipt: SubmissionLedgerEntry = { ...entry, id: "2", source: "manual", documentId: null, receiptNumber: null, documentMime: null, receiptAbsenceReason: "自動券売機で購入したため" };
+const noReceipt: SubmissionLedgerEntry = { ...entry, id: "2", source: "manual", documentId: null, receiptNumber: null, documentMime: null, receiptAbsent: true, receiptAbsenceReason: "自動券売機で購入したため" };
+/** 振込明細などの書類はあるが、領収書が無いので徴難にした仕訳 */
+const absentWithDocument: SubmissionLedgerEntry = { ...entry, id: "7", receiptAbsent: true, receiptAbsenceReason: "振込のみで領収書が発行されないため" };
+/** 書類が無く、徴難も付いていない仕訳 */
+const missing: SubmissionLedgerEntry = { ...noReceipt, id: "8", receiptAbsent: false, receiptAbsenceReason: null };
 
 describe("衆議院のフォーマット", () => {
   test("議員課の Excel と同じ列順で並べる", () => {
@@ -157,18 +161,22 @@ test.each([["representatives", true], ["councillors", true], ["", false], ["hous
   expect(isParliamentHouse(value)).toBe(expected);
 });
 
-describe("領収書等番号・領収書有無・領収書画像ファイル名（#1685）", () => {
+describe("領収書等番号・領収書有無・領収書画像ファイル名（#1685, #1778）", () => {
   const unnumbered = { ...entry, receiptNumber: null };
-  test("領収書等番号・徴難は、書類ありなら番号（未採番なら空欄）、書類なしなら 徴難", () => {
+  test("領収書等番号・徴難は、徴難なら書類があっても 徴難、徴難でなければ書類の番号（書類なし・未採番なら空欄）", () => {
     expect(receiptNumberCell(entry)).toBe("12");
     expect(receiptNumberCell(unnumbered)).toBeNull();
     expect(receiptNumberCell(noReceipt)).toBe("徴難");
     expect(receiptNumberCell({ ...noReceipt, receiptAbsenceReason: null })).toBe("徴難");
+    expect(receiptNumberCell(absentWithDocument)).toBe("徴難");
+    expect(receiptNumberCell(missing)).toBeNull();
   });
-  test("領収書有無は、書類ありなら 有（未採番でも）、書類なしなら 無", () => {
+  test("領収書有無は、徴難なら書類があっても 無、徴難でなければ書類ありで 有（未採番でも）・書類なしで 無", () => {
     expect(receiptPresenceCell(entry)).toBe("有");
     expect(receiptPresenceCell(unnumbered)).toBe("有");
     expect(receiptPresenceCell(noReceipt)).toBe("無");
+    expect(receiptPresenceCell(absentWithDocument)).toBe("無");
+    expect(receiptPresenceCell(missing)).toBe("無");
   });
   test.each([["image/jpeg", "tanaka-taro_2026_0001.jpg"], ["image/png", "tanaka-taro_2026_0001.png"], ["application/pdf", "tanaka-taro_2026_0001.pdf"]])("%s の書類の画像ファイル名は %s", (documentMime, expected) => {
     expect(receiptImageFilename({ ...entry, receiptNumber: 1, documentMime }, book)).toBe(expected);
@@ -177,27 +185,44 @@ describe("領収書等番号・領収書有無・領収書画像ファイル名�
     expect(receiptImageFilename({ ...entry, receiptNumber: 123 }, book)).toBe("tanaka-taro_2026_0123.pdf");
     expect(receiptImageFilename({ ...entry, receiptNumber: 12345 }, book)).toBe("tanaka-taro_2026_12345.pdf");
   });
-  test("書類なし・未採番・拡張子の分からない書類の画像ファイル名は空欄", () => {
+  test("徴難（番号のある書類があっても）・書類なし・未採番・拡張子の分からない書類の画像ファイル名は空欄", () => {
+    expect(receiptImageFilename(absentWithDocument, book)).toBeNull();
     expect(receiptImageFilename(noReceipt, book)).toBeNull();
     expect(receiptImageFilename(unnumbered, book)).toBeNull();
     expect(receiptImageFilename({ ...entry, documentMime: "image/gif" }, book)).toBeNull();
   });
+  test("書類のある徴難の仕訳は、衆議院・参議院とも番号・ファイル名を出さず、事情を出す", () => {
+    expect(submissionLedgerRow("representatives", absentWithDocument, book).slice(8, 10)).toEqual(["徴難", "振込のみで領収書が発行されないため"]);
+    expect(submissionLedgerRow("councillors", absentWithDocument, book).slice(9)).toEqual(["無", "振込のみで領収書が発行されないため", "", "", ""]);
+  });
+  test("書類が無く徴難でもない仕訳は、衆議院は空欄、参議院は 無", () => {
+    expect(submissionLedgerRow("representatives", missing, book).slice(8, 10)).toEqual(["", ""]);
+    expect(submissionLedgerRow("councillors", missing, book).slice(9)).toEqual(["無", "", "", "", ""]);
+  });
 });
 
 describe("submissionLedgerWarnings", () => {
-  test("支払先が未設定の仕訳と、書類も徴し難かった事情もない仕訳を挙げる", () => {
+  test("支払先が未設定の仕訳と、書類が無く徴難でもない仕訳を挙げる", () => {
     const noPayee = { ...entry, id: "3", payeeName: null, payeeAddress: null };
-    const missing = { ...noReceipt, id: "4", receiptAbsenceReason: null };
     const both = { ...missing, id: "5", payeeName: null, payeeAddress: null };
-    expect(submissionLedgerWarnings([entry, noReceipt, noPayee, missing, both])).toEqual([
+    expect(submissionLedgerWarnings([entry, noReceipt, absentWithDocument, noPayee, missing, both])).toEqual([
       { entry: noPayee, issues: ["payee-missing"] },
       { entry: missing, issues: ["receipt-missing"] },
       { entry: both, issues: ["payee-missing", "receipt-missing"] },
     ]);
   });
-  test("書類が未採番の仕訳を挙げる", () => {
+  test("徴難で事情が未入力の仕訳は、書類の有無を問わず事情の未入力として挙げる", () => {
+    const noReason = { ...noReceipt, id: "9", receiptAbsenceReason: null };
+    const noReasonWithDocument = { ...absentWithDocument, id: "10", receiptAbsenceReason: null };
+    expect(submissionLedgerWarnings([noReason, noReasonWithDocument])).toEqual([
+      { entry: noReason, issues: ["receipt-absence-reason-missing"] },
+      { entry: noReasonWithDocument, issues: ["receipt-absence-reason-missing"] },
+    ]);
+  });
+  test("徴難でない仕訳の書類が未採番なら挙げ、徴難の仕訳の書類は未採番でも挙げない", () => {
     const unnumbered = { ...entry, id: "6", receiptNumber: null };
-    expect(submissionLedgerWarnings([entry, noReceipt, unnumbered])).toEqual([
+    const absentUnnumbered = { ...absentWithDocument, id: "11", receiptNumber: null };
+    expect(submissionLedgerWarnings([entry, noReceipt, unnumbered, absentUnnumbered])).toEqual([
       { entry: unnumbered, issues: ["receipt-number-missing"] },
     ]);
   });

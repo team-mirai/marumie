@@ -11,6 +11,7 @@ import { RevertJournalEntryToDraftUsecase } from "@/server/contexts/research-fun
 import { SaveJournalEntryUsecase } from "@/server/contexts/research-fund/application/usecases/save-journal-entry-usecase";
 import { CreatePayeeAndLinkUsecase } from "@/server/contexts/research-fund/application/usecases/create-payee-and-link-usecase";
 import { SetJournalEntriesPayeeUsecase } from "@/server/contexts/research-fund/application/usecases/set-journal-entries-payee-usecase";
+import { SetReceiptAbsentUsecase } from "@/server/contexts/research-fund/application/usecases/set-receipt-absent-usecase";
 import { SetReceiptAbsenceReasonUsecase } from "@/server/contexts/research-fund/application/usecases/set-receipt-absence-reason-usecase";
 import { SetJournalEntriesAdvancedByUsecase } from "@/server/contexts/research-fund/application/usecases/set-journal-entries-advanced-by-usecase";
 import { SettleJournalEntriesUsecase } from "@/server/contexts/research-fund/application/usecases/settle-journal-entries-usecase";
@@ -174,6 +175,18 @@ test("支払先の紐づけは既存の支払先・新規作成のどちらも�
   const create = jest.spyOn(CreatePayeeAndLinkUsecase.prototype, "execute").mockResolvedValue({ updated: 1, payee });
   await expect(mutateJournalReview("2", "1", { type: "create-payee-and-link", targets, payee: form })).resolves.toMatchObject({ success: true, payeeLink: { updated: 1, payee } });
   expect(create).toHaveBeenCalledWith("1", targets, form);
+});
+test("徴難を付け外しし、公開ページのキャッシュは無効化しない", async () => {
+  const set = jest.spyOn(SetReceiptAbsentUsecase.prototype, "execute").mockResolvedValue({ receiptAbsent: true });
+  await expect(mutateJournalReview("2", "1", { type: "set-receipt-absent", id: "3", updatedAt: "date", receiptAbsent: true })).resolves.toMatchObject({ success: true, receiptAbsent: { receiptAbsent: true }, cacheWarning: undefined });
+  expect(set).toHaveBeenCalledWith("1", "3", "date", true);
+  expect(revalidatePath).toHaveBeenCalledWith("/(auth)", "layout");
+});
+test("担当外の議員室では徴難を変更しない", async () => {
+  jest.mocked(requireResearchFundWriter).mockRejectedValueOnce(new Error("forbidden"));
+  const set = jest.spyOn(SetReceiptAbsentUsecase.prototype, "execute");
+  await expect(mutateJournalReview("2", "1", { type: "set-receipt-absent", id: "3", updatedAt: "date", receiptAbsent: true })).rejects.toThrow("forbidden");
+  expect(set).not.toHaveBeenCalled(); expect(revalidatePath).not.toHaveBeenCalled();
 });
 test("徴し難かった事情を保存し、公開ページのキャッシュは無効化しない", async () => {
   const save = jest.spyOn(SetReceiptAbsenceReasonUsecase.prototype, "execute").mockResolvedValue({ receiptAbsenceReason: "自動券売機で購入" });

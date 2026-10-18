@@ -10,7 +10,10 @@ import {
   detailLabelClassName,
   JournalPublicFields,
 } from "@/client/components/research-fund/JournalPublicFields";
-import { JournalReceiptAbsenceField } from "@/client/components/research-fund/JournalReceiptAbsenceField";
+import {
+  JournalReceiptAbsenceField,
+  JournalReceiptAbsentField,
+} from "@/client/components/research-fund/JournalReceiptAbsenceField";
 import { useResearchFundReadOnly } from "@/client/components/research-fund/ResearchFundWriteAccess";
 import { cn } from "@/client/lib";
 import { normalizeAdvancedBy } from "@/server/contexts/research-fund/domain/models/advance";
@@ -22,7 +25,10 @@ import {
   type ReviewEntry,
 } from "@/server/contexts/research-fund/domain/models/journal-review";
 import type { Payee, PayeeFormInput } from "@/server/contexts/research-fund/domain/models/payee";
-import { canHaveReceiptAbsenceReason } from "@/server/contexts/research-fund/domain/models/receipt-absence";
+import {
+  canHaveReceiptAbsenceReason,
+  canMarkReceiptAbsent,
+} from "@/server/contexts/research-fund/domain/models/receipt-absence";
 import type { AdminTarget } from "@/server/contexts/shared/domain/models/admin-target";
 
 /** 閲覧時に鉛筆で編集モードにする行（同時に開くのは 1 行だけ） */
@@ -34,7 +40,7 @@ type EditingRow = "advance" | "receiptAbsence";
  * 本文は「公開される内容」と「事務所内の管理」の 2 つのグループに分ける。
  * - 公開中：公開される内容は読み取り表示。フッターの代わりに source を固定で出す
  * - 下書き・確認済：公開される内容は入力欄。フッターの保存で、日付〜備考と、変えた立替者を一緒に送る
- * 事務所内の管理（支払先・立替者・書類の事情）は公開内容を変えないので、公開中でも行ごとに変更できる。
+ * 事務所内の管理（支払先・立替者・徴難・書類の事情）は公開内容を変えないので、公開中でも行ごとに変更できる。
  */
 export function JournalEditor({
   entry,
@@ -54,6 +60,7 @@ export function JournalEditor({
   onSetAdvancedBy,
   onSettle,
   onUnsettle,
+  onSetReceiptAbsent,
   onSaveReceiptAbsenceReason,
   onAttachDocument,
   onLinkPayee,
@@ -84,6 +91,8 @@ export function JournalEditor({
   onSetAdvancedBy: (advancedBy: string) => void;
   onSettle: (settledAt: string) => void;
   onUnsettle: () => void;
+  /** 徴難を付ける・外す（外すと事情も消える） */
+  onSetReceiptAbsent: (receiptAbsent: boolean) => void;
   onSaveReceiptAbsenceReason: (reason: string) => void;
   /** 書類の無い仕訳に、あとから領収書ファイルを紐づける */
   onAttachDocument: (file: File) => void;
@@ -195,7 +204,7 @@ export function JournalEditor({
                 事務所内の管理
               </h3>
               <span
-                title="支払先・立替者・書類の事情・備考は事務所内の管理と議員課に提出する帳簿に使う情報で、公開ページには出ません。支払先・立替者・書類の事情は公開中の仕訳でも変更できます"
+                title="支払先・立替者・徴難・書類の事情・備考は事務所内の管理と議員課に提出する帳簿に使う情報で、公開ページには出ません。支払先・立替者・徴難・書類の事情は公開中の仕訳でも変更できます"
                 className="rounded-full border border-disabled-border px-1.5 text-[10px] leading-4 text-muted-foreground"
               >
                 公開されない・公開中も編集可
@@ -236,6 +245,15 @@ export function JournalEditor({
                 onSave={onSetAdvancedBy}
                 onSettle={onSettle}
                 onUnsettle={onUnsettle}
+              />
+            )}
+            {canMarkReceiptAbsent(entry) && (
+              <JournalReceiptAbsentField
+                entry={entry}
+                pending={pending}
+                // 徴難を外して保存できると編集フォームが作り直され、事情の下書きも閉じる。
+                // 保存に失敗したときに下書きを失わないよう、ここでは閉じない
+                onChange={onSetReceiptAbsent}
               />
             )}
             {canHaveReceiptAbsenceReason(entry) && (

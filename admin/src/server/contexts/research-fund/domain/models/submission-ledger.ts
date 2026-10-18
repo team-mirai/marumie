@@ -1,4 +1,7 @@
-import { isReceiptMissing } from "@/server/contexts/research-fund/domain/models/receipt-absence";
+import {
+  isReceiptAbsenceReasonMissing,
+  isReceiptMissing,
+} from "@/server/contexts/research-fund/domain/models/receipt-absence";
 
 /**
  * 議員課に提出する帳簿（衆議院・参議院のフォーマット）。
@@ -42,6 +45,8 @@ export interface SubmissionLedgerEntry {
   readonly receiptNumber: number | null;
   /** 書類の MIME タイプ。書類なしなら null */
   readonly documentMime: string | null;
+  /** 徴難か。書類の有無とは独立に付く */
+  readonly receiptAbsent: boolean;
   readonly receiptAbsenceReason: string | null;
 }
 
@@ -51,18 +56,22 @@ export interface SubmissionLedgerBook {
   readonly financialYear: number;
 }
 
-/** 書類なしの仕訳の「領収書等番号・徴難」（衆議院） */
+/** 徴難の仕訳の「領収書等番号・徴難」（衆議院） */
 const RECEIPT_ABSENT = "徴難";
 
-/** 衆議院の「領収書等番号・徴難」。書類ありなら番号（未採番なら空欄）、書類なしなら 徴難 */
+/**
+ * 衆議院の「領収書等番号・徴難」。徴難なら書類があっても 徴難、徴難でなければ書類の番号
+ * （書類なし・未採番なら空欄）
+ */
 export function receiptNumberCell(entry: SubmissionLedgerEntry): string | null {
-  if (entry.documentId === null) return RECEIPT_ABSENT;
-  return entry.receiptNumber === null ? null : String(entry.receiptNumber);
+  if (entry.receiptAbsent) return RECEIPT_ABSENT;
+  if (entry.documentId === null || entry.receiptNumber === null) return null;
+  return String(entry.receiptNumber);
 }
 
-/** 参議院の「領収書有無」 */
+/** 参議院の「領収書有無」。徴難か書類なしなら 無 */
 export function receiptPresenceCell(entry: SubmissionLedgerEntry): string {
-  return entry.documentId === null ? "無" : "有";
+  return entry.receiptAbsent || entry.documentId === null ? "無" : "有";
 }
 
 const EXTENSIONS: Record<string, string> = {
@@ -73,13 +82,13 @@ const EXTENSIONS: Record<string, string> = {
 
 /**
  * 参議院の「領収書画像ファイル名」。{議員 slug}_{年度}_{番号 4 桁ゼロ埋め}.{拡張子}。
- * 書類なし・未採番・拡張子の分からない書類は空欄
+ * 徴難（書類があっても）・書類なし・未採番・拡張子の分からない書類は空欄
  */
 export function receiptImageFilename(
   entry: SubmissionLedgerEntry,
   book: SubmissionLedgerBook,
 ): string | null {
-  if (entry.documentId === null || entry.receiptNumber === null) return null;
+  if (entry.receiptAbsent || entry.documentId === null || entry.receiptNumber === null) return null;
   const extension = entry.documentMime === null ? undefined : EXTENSIONS[entry.documentMime];
   if (!extension) return null;
   const number = String(entry.receiptNumber).padStart(4, "0");
@@ -206,10 +215,15 @@ export function submissionLedgerFilename(house: ParliamentHouse, financialYear: 
   return `research_fund_ledger_${financialYear}_${house}.csv`;
 }
 
-type SubmissionLedgerIssue = "payee-missing" | "receipt-missing" | "receipt-number-missing";
+type SubmissionLedgerIssue =
+  | "payee-missing"
+  | "receipt-missing"
+  | "receipt-absence-reason-missing"
+  | "receipt-number-missing";
 export const SUBMISSION_LEDGER_ISSUE_LABELS: Record<SubmissionLedgerIssue, string> = {
   "payee-missing": "支払先が未設定",
-  "receipt-missing": "書類も徴し難かった事情もない",
+  "receipt-missing": "書類が無く、徴難でもない",
+  "receipt-absence-reason-missing": "徴難だが徴し難かった事情が未入力",
   "receipt-number-missing": "書類の領収書等番号が未採番",
 };
 
@@ -218,7 +232,10 @@ interface SubmissionLedgerWarning {
   readonly issues: readonly SubmissionLedgerIssue[];
 }
 
-/** 提出前に埋めるべき項目が欠けている仕訳（支払先が未設定、書類も徴し難かった事情もない、または書類が未採番） */
+/**
+ * 提出前に埋めるべき項目が欠けている仕訳（支払先が未設定、書類が無く徴難でもない、徴難だが事情が未入力、
+ * または徴難でない仕訳の書類が未採番）
+ */
 export function submissionLedgerWarnings(
   entries: readonly SubmissionLedgerEntry[],
 ): SubmissionLedgerWarning[] {
@@ -226,7 +243,8 @@ export function submissionLedgerWarnings(
     const issues: SubmissionLedgerIssue[] = [];
     if (entry.payeeName === null) issues.push("payee-missing");
     if (isReceiptMissing(entry)) issues.push("receipt-missing");
-    if (entry.documentId !== null && entry.receiptNumber === null) {
+    if (isReceiptAbsenceReasonMissing(entry)) issues.push("receipt-absence-reason-missing");
+    if (!entry.receiptAbsent && entry.documentId !== null && entry.receiptNumber === null) {
       issues.push("receipt-number-missing");
     }
     return issues.length ? [{ entry, issues }] : [];

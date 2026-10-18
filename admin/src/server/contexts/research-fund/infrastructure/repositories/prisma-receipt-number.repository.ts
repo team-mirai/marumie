@@ -16,7 +16,8 @@ export class PrismaReceiptNumberRepository implements ReceiptNumberRepository {
         id: true,
         receiptNumber: true,
         journalEntries: {
-          where: { bookId: BigInt(bookId), status: "published" },
+          // 徴難の仕訳は帳簿に番号を出さないので、その仕訳にしか紐づかない書類には番号を振らない
+          where: { bookId: BigInt(bookId), status: "published", receiptAbsent: false },
           select: { entryDate: true },
           orderBy: { entryDate: "asc" },
           take: 1,

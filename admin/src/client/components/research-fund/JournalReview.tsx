@@ -159,12 +159,15 @@ export function JournalReview({
   const checkedPayeeId = checkedPayeeIds.size === 1 ? [...checkedPayeeIds][0] : null;
   // 支払先が未設定の支出の件数（帳簿全体）。絞り込みの目安にする。
   const payeeUnsetCount = entries.filter(isPayeeUnset).length;
-  // 書類も徴し難かった事情もない支出の件数（帳簿全体）。議員課への提出前に埋める目安にする。
+  // 書類が無く徴難でもない支出の件数（帳簿全体）。議員課への提出前に埋める目安にする。
   const receiptMissingCount = entries.filter(isReceiptMissing).length;
-  // 領収書等番号を振る対象になる書類の数（公開中の仕訳が紐づく未採番の書類。帳簿全体）。
+  // 領収書等番号を振る対象になる書類の数（徴難でない公開中の仕訳が紐づく未採番の書類。帳簿全体）。
   const unnumberedDocumentCount = new Set(
     entries.flatMap((e) =>
-      e.status === "published" && e.documentId !== null && e.receiptNumber === null
+      e.status === "published" &&
+      !e.receiptAbsent &&
+      e.documentId !== null &&
+      e.receiptNumber === null
         ? [e.documentId]
         : [],
     ),
@@ -474,7 +477,28 @@ export function JournalReview({
       }
     });
   }
-  /** 書類の無い支出の徴し難かった事情を保存する（空欄なら削除）。公開内容は変えないので公開中の仕訳でも送れる */
+  /** 支出の徴難を付ける・外す（外すと事情も消える）。公開内容は変えないので公開中の仕訳でも送れる */
+  function setReceiptAbsent(entry: ReviewEntry, receiptAbsent: boolean) {
+    startTransition(async () => {
+      try {
+        const result = await mutateJournalReview(target.politicianId, target.bookId, {
+          type: "set-receipt-absent",
+          id: entry.id,
+          updatedAt: entry.updatedAt,
+          receiptAbsent,
+        });
+        if (!result.success) {
+          toast.error(result.error);
+          return;
+        }
+        toast.success(receiptAbsent ? "徴難にしました" : "徴難を外しました");
+        router.refresh();
+      } catch {
+        toast.error("通信に失敗しました。再度お試しください");
+      }
+    });
+  }
+  /** 徴難の支出の徴し難かった事情を保存する（空欄なら削除）。公開内容は変えないので公開中の仕訳でも送れる */
   function saveReceiptAbsenceReason(entry: ReviewEntry, reason: string) {
     startTransition(async () => {
       try {
@@ -500,14 +524,6 @@ export function JournalReview({
     });
   }
   function attachDocument(entry: ReviewEntry, file: File) {
-    // 書類と事情は同時に持てないので、紐づけると入力済みの事情は消える
-    if (
-      entry.receiptAbsenceReason !== null &&
-      !window.confirm(
-        "領収書を紐づけると、入力済みの「徴し難かった事情」は消えます。紐づけますか？",
-      )
-    )
-      return;
     const formData = new FormData();
     formData.append("document", file);
     startTransition(async () => {
@@ -900,7 +916,7 @@ export function JournalReview({
             disabled={pending}
             onClick={() => changeFilter(() => setReceiptMissingOnly((current) => !current))}
           >
-            書類も事情もない <span className="font-latin font-bold">{receiptMissingCount}</span>
+            書類なし・徴難なし <span className="font-latin font-bold">{receiptMissingCount}</span>
           </FilterChip>
           {(unsettledSummary.length > 0 || unsettledOnly) && (
             <FilterChip
@@ -1015,6 +1031,9 @@ export function JournalReview({
                 }}
                 onUnsettle={() => {
                   if (allowLeave()) unsettle([selected]);
+                }}
+                onSetReceiptAbsent={(receiptAbsent) => {
+                  if (allowLeave()) setReceiptAbsent(selected, receiptAbsent);
                 }}
                 onSaveReceiptAbsenceReason={(reason) => {
                   if (allowLeave()) saveReceiptAbsenceReason(selected, reason);

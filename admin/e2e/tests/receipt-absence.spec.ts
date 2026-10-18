@@ -1,10 +1,10 @@
 import { test, expect } from "@playwright/test";
 import { clickUntil } from "../helpers/interactions";
 
-// 書類の無い支出に「領収書等を徴し難かった事情」を書く流れと、書類も事情もない仕訳の絞り込み。
+// 支出に「徴難」を付けて「領収書等を徴し難かった事情」を書く流れと、書類が無く徴難でもない仕訳の絞り込み（#1778）。
 const YEAR = new Date().getFullYear() - 1;
 
-test("書類の無い支出に徴し難かった事情を書き・消し、書類も事情もない仕訳を絞り込める", async ({
+test("支出に徴難を付けて徴し難かった事情を書き、徴難を外すと事情も消え、書類も徴難もない仕訳を絞り込める", async ({
   page,
 }) => {
   const name = `e2e-receipt-absence-${Date.now()}`;
@@ -45,39 +45,48 @@ test("書類の無い支出に徴し難かった事情を書き・消し、書�
   }
   const trainRow = page.getByRole("row").filter({ hasText: "電車代" });
   const meetingRow = page.getByRole("row").filter({ hasText: "会議室の利用料" });
-  await expect(trainRow).toContainText("領収書なし・事情未入力");
-  await expect(page.getByRole("button", { name: /^書類も事情もない/ })).toHaveText("書類も事情もない 2");
+  const missingFilter = page.getByRole("button", { name: /^書類なし・徴難なし/ });
+  await expect(trainRow).toContainText("書類なし・徴難なし");
+  await expect(missingFilter).toHaveText("書類なし・徴難なし 2");
 
-  // 事情を書く（「事務所内の管理」の行を鉛筆で編集モードにし、行ごとに保存する）
+  // 徴難を付ける（「事務所内の管理」のチェックだけで保存する）。付けるまで事情の行は出ない
   await clickUntil(trainRow, (options) =>
     expect(page.getByLabel("項目名", { exact: true })).toHaveValue("電車代", options),
   );
+  await expect(page.getByRole("button", { name: "書類の事情を編集" })).toHaveCount(0);
+  const absent = page.getByLabel("領収書等を徴し難かった", { exact: true });
+  await absent.click();
+  await expect(page.getByText("徴難にしました")).toBeVisible();
+  await expect(absent).toBeChecked();
+  await expect(trainRow).toContainText("徴難・事情未入力");
+  await expect(missingFilter).toHaveText("書類なし・徴難なし 1");
+
+  // 事情を書く（鉛筆で行を編集モードにし、行ごとに保存する）
   const officeGroup = page.getByRole("region", { name: "事務所内の管理" });
   await expect(officeGroup).toContainText("未入力");
   await page.getByRole("button", { name: "書類の事情を編集" }).click();
-  const reason = page.getByLabel("書類の事情", { exact: true });
-  await reason.fill("自動券売機で購入したため");
+  await page.getByLabel("書類の事情", { exact: true }).fill("自動券売機で購入したため");
   await page.getByRole("button", { name: "事情を保存" }).click();
   await expect(page.getByText("徴し難かった事情を保存しました")).toBeVisible();
   await expect(trainRow).not.toContainText("事情未入力");
-  await expect(page.getByRole("button", { name: /^書類も事情もない/ })).toHaveText("書類も事情もない 1");
+  await expect(officeGroup).toContainText("自動券売機で購入したため");
 
-  // 書類も事情もない仕訳だけに絞り込める
-  await page.getByRole("button", { name: /^書類も事情もない/ }).click();
+  // 書類が無く徴難でもない仕訳だけに絞り込める
+  await missingFilter.click();
   await expect(meetingRow).toBeVisible();
   await expect(trainRow).toHaveCount(0);
-  await page.getByRole("button", { name: /^書類も事情もない/ }).click();
+  await missingFilter.click();
   await expect(trainRow).toBeVisible();
 
-  // 空欄で保存すると事情を消す
+  // 徴難を外すと（確認のうえ）事情も消える
   await clickUntil(trainRow, (options) =>
     expect(page.getByLabel("項目名", { exact: true })).toHaveValue("電車代", options),
   );
-  await expect(officeGroup).toContainText("自動券売機で購入したため");
-  await page.getByRole("button", { name: "書類の事情を編集" }).click();
-  await expect(reason).toHaveValue("自動券売機で購入したため");
-  await reason.fill("");
-  await page.getByRole("button", { name: "事情を保存" }).click();
-  await expect(page.getByText("徴し難かった事情を削除しました")).toBeVisible();
-  await expect(trainRow).toContainText("領収書なし・事情未入力");
+  page.once("dialog", (dialog) => dialog.accept());
+  await absent.click();
+  await expect(page.getByText("徴難を外しました")).toBeVisible();
+  await expect(absent).not.toBeChecked();
+  await expect(officeGroup).not.toContainText("自動券売機で購入したため");
+  await expect(trainRow).toContainText("書類なし・徴難なし");
+  await expect(missingFilter).toHaveText("書類なし・徴難なし 2");
 });

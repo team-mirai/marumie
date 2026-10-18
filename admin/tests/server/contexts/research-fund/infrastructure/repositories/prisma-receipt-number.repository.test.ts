@@ -18,7 +18,7 @@ function setup(count = 1) {
 }
 
 describe("PrismaReceiptNumberRepository", () => {
-  it("帳簿の書類と、同じ帳簿の公開済みの仕訳の最も早い日付を返す", async () => {
+  it("帳簿の書類と、同じ帳簿の徴難でない公開済みの仕訳の最も早い日付を返す", async () => {
     const { repository, tx } = setup();
     tx.researchFundDocument.findMany.mockResolvedValue([
       {
@@ -38,7 +38,7 @@ describe("PrismaReceiptNumberRepository", () => {
         id: true,
         receiptNumber: true,
         journalEntries: {
-          where: { bookId: BigInt(12), status: "published" },
+          where: { bookId: BigInt(12), status: "published", receiptAbsent: false },
           select: { entryDate: true },
           orderBy: { entryDate: "asc" },
           take: 1,
