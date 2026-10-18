@@ -64,6 +64,8 @@ describe("fillRegions", () => {
 });
 
 describe("ReceiptMaskingService（LLM のみ差し替え）", () => {
+  // PDFium で実際にラスタ化するので、CI の並列実行下では既定の 5 秒を超えることがある
+  const RASTER_TIMEOUT_MS = 30_000;
   const codec = new PdfiumDocumentRasterCodec();
 
   it("PDF の全ページで塗る箇所を尋ね、その箇所を塗った同じページ数の PDF を返す", async () => {
@@ -99,7 +101,7 @@ describe("ReceiptMaskingService（LLM のみ差し替え）", () => {
       // 塗っていない隅は白いまま
       expect(pixel(page, 5, 5)[0]).toBeGreaterThan(225);
     }
-  });
+  }, RASTER_TIMEOUT_MS);
 
   it("画像を渡すと 1 ページの PDF を返す", async () => {
     const bytes = new Uint8Array(await readFile(join(DATA_DIR, "amazon-receipt-01.png")));
@@ -111,7 +113,7 @@ describe("ReceiptMaskingService（LLM のみ差し替え）", () => {
     });
 
     expect(await codec.toPageImages({ bytes: result.bytes, mime: "application/pdf" })).toHaveLength(1);
-  });
+  }, RASTER_TIMEOUT_MS);
 
   it("塗る箇所の判定に失敗したら、黒塗りしないまま返さずに失敗する", async () => {
     const bytes = new Uint8Array(await readFile(join(DATA_DIR, "masking-dummy-receipts.pdf")));
@@ -125,5 +127,5 @@ describe("ReceiptMaskingService（LLM のみ差し替え）", () => {
     await expect(
       new ReceiptMaskingService(codec, detector).mask({ bytes, mime: "application/pdf" }),
     ).rejects.toThrow("Failed to detect personal info on page 2: rate limited");
-  });
+  }, RASTER_TIMEOUT_MS);
 });
