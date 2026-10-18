@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { loadAdminTargets } from "@/server/contexts/shared/presentation/loaders/load-admin-targets";
+import { ListDocumentMaskingsUsecase } from "@/server/contexts/research-fund/application/usecases/list-document-maskings-usecase";
 import { ListJournalReviewUsecase } from "@/server/contexts/research-fund/application/usecases/list-journal-review-usecase";
 import { loadJournalReview, requireJournalTarget } from "@/server/contexts/research-fund/presentation/loaders/load-journal-review";
 import type { AdminTarget } from "@/server/contexts/shared/domain/models/admin-target";
@@ -25,8 +26,13 @@ test("一致した帳簿の一覧と現在の対象を返す", async () => {
   select(target);
   const data = { entries: [], accounts: [], advancers: [], payees: [], duplicates: {} };
   const list = jest.spyOn(ListJournalReviewUsecase.prototype, "execute").mockResolvedValue(data);
-  await expect(loadJournalReview("2", "1")).resolves.toEqual({ ...data, target });
+  const maskings = {
+    "5": { documentId: "5", status: "succeeded" as const, error: null, regionCount: 2, hasMaskedVersion: true },
+  };
+  const listMaskings = jest.spyOn(ListDocumentMaskingsUsecase.prototype, "execute").mockResolvedValue(maskings);
+  await expect(loadJournalReview("2", "1")).resolves.toEqual({ ...data, maskings, target });
   expect(list).toHaveBeenCalledWith("1");
+  expect(listMaskings).toHaveBeenCalledWith("1");
 });
 test("認証を含む対象取得の失敗時は一覧を取得しない", async () => {
   jest.mocked(loadAdminTargets).mockRejectedValue(new Error("auth"));

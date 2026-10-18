@@ -13,6 +13,12 @@ const nextConfig: NextConfig = {
   env: {
     NEXT_PUBLIC_DEPLOY_TARGET_ENV: process.env.VERCEL_TARGET_ENV ?? "",
   },
+  // 書類の公開用の版を作る PDFium は、同じディレクトリの pdfium.wasm を実行時に読み込む（#1802）。
+  // バンドルするとファイルの場所がずれるので node_modules から読ませ、デプロイ先に wasm を含める。
+  serverExternalPackages: ["@hyzyla/pdfium"],
+  outputFileTracingIncludes: {
+    "/politicians/[id]/books/[bookId]/**": ["./node_modules/@hyzyla/pdfium/dist/pdfium.wasm"],
+  },
   experimental: {
     serverActions: {
       bodySizeLimit: "100mb",

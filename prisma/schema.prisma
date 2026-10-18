@@ -417,11 +417,16 @@ model ResearchFundDocument {
   bookId           BigInt   @map("book_id")
   batchId          BigInt?  @map("batch_id")
   storageKey       String   @map("storage_key") @db.VarChar(255) // 原本
-  maskedKey        String?  @map("masked_key") @db.VarChar(255) // 公開用マスキング済み（当面は未使用＝原本公開）
+  maskedKey        String?  @map("masked_key") @db.VarChar(255) // 公開用の版（全ページを画像にして組み直し、個人情報を黒塗りした PDF）
   mime             String   @db.VarChar(100) // image/jpeg | image/png | application/pdf
   originalFilename String   @map("original_filename") @db.VarChar(255)
   // 領収書等番号（議員課提出用の帳簿の列）。帳簿の中で一意な通し番号。NULL = 未採番
   receiptNumber    Int?     @map("receipt_number")
+  // 公開用の版の状態。読み取りとは独立に、帳簿の画面を開いている間に作る（#1802）
+  maskingStatus     ResearchFundMaskingStatus @default(pending) @map("masking_status")
+  maskingStartedAt  DateTime?                 @map("masking_started_at") // 作成中のまま止まった書類を待機に戻す判定に使う
+  maskingError      String?                   @map("masking_error") // 失敗理由
+  maskedRegionCount Int?                      @map("masked_region_count") // 黒塗りした箇所の数（作成済みのときだけ値を持つ）
   createdAt        DateTime @default(now()) @map("created_at")
   updatedAt        DateTime @updatedAt @map("updated_at")
 
@@ -436,6 +441,7 @@ model ResearchFundDocument {
   @@unique([bookId, receiptNumber])
   @@index([bookId])
   @@index([batchId])
+  @@index([bookId, maskingStatus])
   @@map("research_fund_documents")
 }
 
@@ -603,6 +609,13 @@ enum ResearchFundPayeeLinkSource {
   manual
   rule
   ai
+}
+
+enum ResearchFundMaskingStatus {
+  pending
+  running
+  succeeded
+  failed
 }
 
 enum ResearchFundScanJobStatus {

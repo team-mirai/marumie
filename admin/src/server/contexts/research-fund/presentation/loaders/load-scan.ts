@@ -2,6 +2,7 @@ import "server-only";
 import { notFound } from "next/navigation";
 import { CreateRereadBatchUsecase } from "@/server/contexts/research-fund/application/usecases/create-reread-batch-usecase";
 import { CreateScanBatchUsecase } from "@/server/contexts/research-fund/application/usecases/create-scan-batch-usecase";
+import { ListDocumentMaskingsUsecase } from "@/server/contexts/research-fund/application/usecases/list-document-maskings-usecase";
 import { ListScanBatchesUsecase } from "@/server/contexts/research-fund/application/usecases/list-scan-batches-usecase";
 import { ProcessScanJobsUsecase } from "@/server/contexts/research-fund/application/usecases/process-scan-jobs-usecase";
 import { RetryScanJobUsecase } from "@/server/contexts/research-fund/application/usecases/retry-scan-job-usecase";
@@ -9,6 +10,7 @@ import {
   researchFundExtractionModel,
   VercelAIReceiptExtractionGateway,
 } from "@/server/contexts/research-fund/infrastructure/llm/vercel-ai-receipt-extraction-gateway";
+import { PrismaDocumentMaskingRepository } from "@/server/contexts/research-fund/infrastructure/repositories/prisma-document-masking.repository";
 import { PrismaDuplicateDocumentRepository } from "@/server/contexts/research-fund/infrastructure/repositories/prisma-duplicate-document.repository";
 import { PrismaPromptRepository } from "@/server/contexts/research-fund/infrastructure/repositories/prisma-prompt.repository";
 import { PrismaScanRepository } from "@/server/contexts/research-fund/infrastructure/repositories/prisma-scan.repository";
@@ -54,5 +56,8 @@ export async function loadScan(politicianId: string, bookId: string) {
     new PrismaDuplicateDocumentRepository(prisma),
     researchFundExtractionModel(),
   ).execute(target.politicianId, bookId);
-  return { ...data, target };
+  const maskings = await new ListDocumentMaskingsUsecase(
+    new PrismaDocumentMaskingRepository(prisma),
+  ).execute(bookId);
+  return { ...data, maskings, target };
 }

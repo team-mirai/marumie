@@ -12,6 +12,7 @@ import {
 } from "@phosphor-icons/react/dist/ssr";
 import { toast } from "sonner";
 import { PageHeader } from "@/client/components/layout/PageHeader";
+import { DocumentMaskingStatus } from "@/client/components/research-fund/DocumentMaskingStatus";
 import { DuplicateDocumentWarning } from "@/client/components/research-fund/DuplicateDocumentWarning";
 import {
   Button,
@@ -35,6 +36,7 @@ import { createScanBatch } from "@/server/contexts/research-fund/presentation/ac
 import { useResearchFundReadOnly } from "@/client/components/research-fund/ResearchFundWriteAccess";
 import { processScanJobs } from "@/server/contexts/research-fund/presentation/actions/process-scan-jobs";
 import { retryScanJob } from "@/server/contexts/research-fund/presentation/actions/retry-scan-job";
+import type { DocumentMasking } from "@/server/contexts/research-fund/domain/models/document-masking";
 import type { AdminTarget } from "@/server/contexts/shared/domain/models/admin-target";
 
 const STATUS_LABELS: Record<ScanJobStatus, string> = {
@@ -76,8 +78,13 @@ export function DocumentScan({
   activePromptVersion,
   model,
   duplicates,
+  maskings,
   target,
-}: ScanOverview & { target: Extract<AdminTarget, { kind: "research-fund" }> }) {
+}: ScanOverview & {
+  /** 書類 ID → 公開用の版の状態 */
+  maskings: Record<string, DocumentMasking>;
+  target: Extract<AdminTarget, { kind: "research-fund" }>;
+}) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
@@ -322,6 +329,7 @@ export function DocumentScan({
                       <TableHead>ファイル</TableHead>
                       <TableHead>状態</TableHead>
                       <TableHead>抽出結果</TableHead>
+                      <TableHead>公開用の版</TableHead>
                       <TableHead className="w-24" />
                     </TableRow>
                   </TableHeader>
@@ -372,6 +380,13 @@ export function DocumentScan({
                               className="mt-1"
                             />
                           )}
+                        </TableCell>
+                        <TableCell className="min-w-48">
+                          <DocumentMaskingStatus
+                            target={target}
+                            documentId={job.documentId}
+                            masking={maskings[job.documentId]}
+                          />
                         </TableCell>
                         <TableCell className="whitespace-nowrap">
                           {job.status === "failed" && (
