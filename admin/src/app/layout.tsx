@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Poppins } from "next/font/google";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import { NumberInputWheelGuard } from "@/client/components/layout/NumberInputWheelGuard";
 import { Toaster } from "@/client/components/ui";
 import { buildAdminPageTitle, DEPLOY_TARGET_ENV } from "@/client/lib/deploy-environment";
 import "./globals.css";
@@ -25,6 +26,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         {children}
         <Toaster />
+        <NumberInputWheelGuard />
         <SpeedInsights />
       </body>
     </html>

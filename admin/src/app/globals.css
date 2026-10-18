@@ -76,3 +76,18 @@ body {
   background: var(--color-background);
   color: var(--color-foreground);
 }
+
+/*
+ * 数値の入力欄に出るブラウザ標準の上下ボタン（スピンボタン）を消す。
+ * クリックのはずみで金額や年度が 1 ずつ変わる操作ミスを防ぐため（#1795）。
+ * マウスホイールでの増減は NumberInputWheelGuard で止めている。
+ */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
