@@ -14,7 +14,7 @@ AIエージェント（Claude Code / Codex）に実装を自律的に回して�
 | 層 | 実体 | 役割 |
 |----|------|------|
 | ランナー | [scripts/loop.sh](../scripts/loop.sh) → [scripts/loop-once.sh](../scripts/loop-once.sh) → [scripts/loop/](../scripts/loop/) | 状態の収集、何をするかの判定、予算の判定、人間レビュー・予算超過のエスカレーション、待機、セッション結果の検証 |
-| セッション | [.claude/commands/loop-*.md](../.claude/commands/)（共通規則は [docs/loop-session-rules.md](loop-session-rules.md)） | 渡された 1 つの仕事だけをする: Issue を実装する / PR の CI を直す / main の CI を直す / CodeRabbit の指摘を裁く |
+| セッション | [.claude/commands/loop-*.md](../.claude/commands/)（共通規則は [docs/loop-session-rules.md](loop-session-rules.md)） | 渡された 1 つの仕事だけをする: Issue を実装する / PR の CI を直す / main の CI を直す / CodeRabbit・CodeQL の指摘を裁く |
 
 ランナーの 1 tick は次の順で動く（[scripts/loop/state.sh](../scripts/loop/state.sh) が状態 JSON を作り、[scripts/loop/decide.sh](../scripts/loop/decide.sh) が判定する）:
 
@@ -112,7 +112,7 @@ docsのみの変更などで個別ジョブがスキップされても必ず報�
   `fix: CodeRabbit の指摘に対応（…）` で push し、**全スレッドに返信して resolve** してから終了する。承認は待たない
 - 退ける場合は必ずスレッドに `🤖` で始まる理由を返信してから resolve する。黙って resolve すること、
   `@coderabbitai resolve` での一括 resolve、セッションがレビュー自体を dismiss することは禁止（人間が後から監査できなくなる）
-- 修正 push は **2 ラウンドまで**（`LOOP_MAX_FIX_ROUNDS`）。ランナーが `fix: CodeRabbit` で始まるコミット数で数え、
+- 修正 push は **2 ラウンドまで**（`LOOP_MAX_FIX_ROUNDS`）。ランナーが `fix: CodeRabbit` / `fix: CodeQL` で始まるコミット数で数え、
   超えてもまだ**未解決の指摘が残っていれば**、セッションを起動せずに PR を open のまま Issue を `loop:human` に付け替える。
   指摘を全部裁いたあとに Request changes だけが残っている状態は予算超過ではなく、次の 2 項でランナーが解く
 - **全スレッドを resolve しても Request changes が自動で APPROVED に切り替わらないことがある。**
@@ -129,9 +129,24 @@ docsのみの変更などで個別ジョブがスキップされても必ず報�
   1 Issue で「PR 作成時の 1 回 + 修正 push の最大 2 ラウンド」の最大 3 回を使う。上限を超えたレビューを
   usage-based add-on で継続できない構成（このリポジトリはこれに当たる）では、この最大 3 回が上限に制約されるため、
   上限がループのスループットの上限にもなる
-- ループが自動処理するのは `coderabbitai` のスレッドだけ。人間のレビュースレッドがある PR はランナーが即 `loop:human` に付け替える
+- ループが自動処理するのは `coderabbitai` と `github-advanced-security`（CodeQL）のスレッドだけ。それ以外の投稿者（人間）の
+  レビュースレッドがある PR はランナーが即 `loop:human` に付け替える。CodeQL の扱いは次節
 - エスカレーション済みの PR（Issue が `loop:human` / `loop:blocked`）は、メンテナが `loop:ready` に戻すまでランナーの対象外
 - 判定基準の実体は [loop-resolve-coderabbit.md](../.claude/commands/loop-resolve-coderabbit.md)
+
+### CodeQL の指摘
+
+リポジトリでは CodeQL（code scanning の default setup）が有効で、PR の差分に新しいアラートが出ると
+`github-advanced-security` ボットがレビュースレッドを付ける。GitHub 公式のボットで利用者が書いた内容を含まないので、
+CodeRabbit と同じ信頼境界で扱い、**同じ `loop-resolve-coderabbit` セッションが CodeRabbit の指摘と一緒に裁く**。
+
+- ランナーは CodeQL の未解決スレッドを `threads.codeql_unresolved` として数え、`human_unresolved` には含めない。
+  セッションの起動条件（head が CodeRabbit にレビュー済み）・修正ラウンドの予算・取り残された Request changes の判定は、
+  CodeRabbit と CodeQL の未解決スレッドの合計で行う。CodeQL の指摘が直らないまま予算を超えれば、CodeRabbit と同様に `loop:human` に付け替える
+- 修正コミットは `fix: CodeQL の指摘に対応（…）`（CodeRabbit の指摘とまとめて直したときは `fix: CodeRabbit …`）。どちらもラウンドとして数える
+- セキュリティ上の指摘なので原則は修正する。誤検知と**コードで確認できた**場合だけ退け、スレッドへの返信に加えて
+  code scanning のアラートを理由付きで dismiss する
+- `CodeQL` チェックは必須ではないため、FAILURE でも `ci-complete` は green になり auto-merge は止まらない
 
 ## ラベル運用
 
@@ -222,7 +237,7 @@ Claude Code 内で `/loop-issue <やりたいことの概要>` を実行する�
 「連続」は文字どおりで、別の結果が出た時点でカウンタは 0 に戻る。安全弁として試行回数は指定回数の 4 倍で打ち切る。
 
 ランナーはセッションの `LOOP_RESULT: SUCCESS` を鵜呑みにせず、GitHub 側で裏を取る
-（実装なら `loop/issue-<N>-*` の PR が open か、CI 修理なら head が進んだか、レビュー対応なら未解決の CodeRabbit スレッドが 0 か）。
+（実装なら `loop/issue-<N>-*` の PR が open か、CI 修理なら head が進んだか、レビュー対応なら未解決の CodeRabbit / CodeQL スレッドが 0 か）。
 裏が取れなければ一過性の失敗として扱う。
 
 終了時は必ず終端結果を 1 行出力する（ログから停止理由を判別するため）:

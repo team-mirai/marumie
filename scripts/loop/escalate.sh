@@ -22,9 +22,9 @@ while IFS=$'\t' read -r pr issue reason; do
   [[ -z "$pr" ]] && continue
   case "$reason" in
     human-review)
-      body="🤖 人間のレビュースレッドが未解決のため、この PR はループの対象から外し人間に引き継ぎます。ループが自動で扱うのは coderabbitai のスレッドだけです。対応後、Issue を \`loop:ready\` に戻すとループが再開します。" ;;
+      body="🤖 人間のレビュースレッドが未解決のため、この PR はループの対象から外し人間に引き継ぎます。ループが自動で扱うのは coderabbitai と github-advanced-security（CodeQL）のスレッドだけです。対応後、Issue を \`loop:ready\` に戻すとループが再開します。" ;;
     budget-exceeded)
-      body="🤖 CodeRabbit 対応の修正ラウンドが上限（LOOP_MAX_FIX_ROUNDS）に達しても未解決の指摘が残っているため、この PR はループの対象から外し人間に引き継ぎます。残った指摘の判断をお願いします。PR は open のまま、auto-merge の予約も残しています。" ;;
+      body="🤖 CodeRabbit / CodeQL 対応の修正ラウンドが上限（LOOP_MAX_FIX_ROUNDS）に達しても未解決の指摘が残っているため、この PR はループの対象から外し人間に引き継ぎます。残った指摘の判断をお願いします。PR は open のまま、auto-merge の予約も残しています。" ;;
     *)
       body="🤖 ループの対象から外し人間に引き継ぎます（reason=${reason}）。" ;;
   esac

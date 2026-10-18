@@ -19,9 +19,11 @@
 #       "coderabbit_note": "<コミットステータスの説明文>",
 #       "head_committed_at": "<ISO8601>",
 #       "nudged_at": "<head 以降に @coderabbitai review を投げた最新時刻>" | null,
-#       "fix_rounds": <"fix: CodeRabbit" で始まるコミット数>,
+#       "fix_rounds": <"fix: CodeRabbit" / "fix: CodeQL" で始まるコミット数>,
 #       "issue": { "number", "labels": [...], "escalated": true|false } | null,   # Closes で紐づく Issue
-#       "threads": { "coderabbit_unresolved": n, "human_unresolved": n },
+#       "threads": { "coderabbit_unresolved": n, "codeql_unresolved": n, "human_unresolved": n },
+#                      # codeql_unresolved は github-advanced-security（CodeQL の code scanning）のスレッド。
+#                      # GitHub 公式のボットで利用者が書いた内容を含まないため、coderabbitai と同じくループが裁く
 #       "coderabbit_review": { "id": <review の databaseId>, "commit": "<レビュー時点の head>",
 #                              "submitted_at": "<ISO8601>" } | null
 #                      # coderabbitai が出した有効な（dismiss されていない）Request changes
@@ -115,7 +117,7 @@ prs_json="$(jq --argjson extra "$pr_extra" --argjson cr "$cr_status" '
         coderabbit_note: ($st.description // ""),
         head_committed_at: $head_at,
         nudged_at: $nudged,
-        fix_rounds: ([$x.commits.nodes[]? | select(.commit.messageHeadline | startswith("fix: CodeRabbit"))] | length),
+        fix_rounds: ([$x.commits.nodes[]? | select(.commit.messageHeadline | startswith("fix: CodeRabbit") or startswith("fix: CodeQL"))] | length),
         issue: (if $iss == null then null else {
           number: $iss.number,
           labels: [$iss.labels.nodes[].name],
@@ -123,7 +125,8 @@ prs_json="$(jq --argjson extra "$pr_extra" --argjson cr "$cr_status" '
         } end),
         threads: {
           coderabbit_unresolved: ([$open[] | select(.comments.nodes[0].author.login == "coderabbitai")] | length),
-          human_unresolved:      ([$open[] | select(.comments.nodes[0].author.login != "coderabbitai")] | length)
+          codeql_unresolved:     ([$open[] | select(.comments.nodes[0].author.login == "github-advanced-security")] | length),
+          human_unresolved:      ([$open[] | select(.comments.nodes[0].author.login | IN("coderabbitai", "github-advanced-security") | not)] | length)
         },
         coderabbit_review: (if $cr_review == null then null else {
           id: $cr_review.databaseId,
