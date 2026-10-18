@@ -139,6 +139,8 @@ describe("ReceiptMaskingService（LLM のみ差し替え）", () => {
     });
 
     expect(result.mime).toBe("application/pdf");
+    // 2 ページで 1 箇所ずつ塗った
+    expect(result.regionCount).toBe(2);
     expect(calls).toHaveLength(2);
     for (const call of calls) {
       // LLM には長辺 1568 画素以下・画像トークン 1568 以下の JPEG を渡す

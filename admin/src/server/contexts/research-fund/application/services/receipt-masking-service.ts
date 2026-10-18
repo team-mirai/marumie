@@ -43,24 +43,27 @@ export class ReceiptMaskingService {
   async mask(document: {
     bytes: Uint8Array;
     mime: MaskableMime;
-  }): Promise<{ bytes: Uint8Array; mime: "application/pdf" }> {
+  }): Promise<{ bytes: Uint8Array; mime: "application/pdf"; regionCount: number }> {
     const source = await this.codec.open(document);
     try {
       // LLM を呼ぶ前に、ページを描画せずに分かるページ数で断る
       if (source.pageCount > MAX_MASKING_PAGES) throw new MaskingPageLimitError(source.pageCount);
       const pdf = await this.codec.createImagePdf();
+      let regionCount = 0;
       // ページを順に処理し、LLM への同時リクエストを増やさない
       for (let index = 0; index < source.pageCount; index += 1) {
-        await pdf.addPage(await this.maskPage(await source.renderPage(index), index));
+        const page = await source.renderPage(index);
+        regionCount += await this.maskPage(page, index);
+        await pdf.addPage(page);
       }
-      return { bytes: await pdf.save(), mime: "application/pdf" };
+      return { bytes: await pdf.save(), mime: "application/pdf", regionCount };
     } finally {
       source.close();
     }
   }
 
-  /** ページ画像の個人情報を塗る（渡した画像をそのまま塗って返す） */
-  private async maskPage(page: RasterImage, index: number): Promise<RasterImage> {
+  /** ページ画像の個人情報を塗る（渡した画像をそのまま塗る）。塗った箇所の数を返す */
+  private async maskPage(page: RasterImage, index: number): Promise<number> {
     const preview = this.codec.shrink(page, detectionMaxEdge(page));
     let regions: MaskingRegion[];
     try {
@@ -75,8 +78,9 @@ export class ReceiptMaskingService {
         `Failed to detect personal info on page ${index + 1}: ${error instanceof Error ? error.message : String(error)}`,
       );
     }
-    fillRegions(page, toPageRegions(regions, preview, page));
-    return page;
+    const pageRegions = toPageRegions(regions, preview, page);
+    fillRegions(page, pageRegions);
+    return pageRegions.length;
   }
 }
 

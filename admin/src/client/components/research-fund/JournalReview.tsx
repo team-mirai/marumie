@@ -57,6 +57,7 @@ import type { AdminTarget } from "@/server/contexts/shared/domain/models/admin-t
 import { WriteFieldset } from "@/client/components/research-fund/ResearchFundWriteAccess";
 import { attachJournalDocument } from "@/server/contexts/research-fund/presentation/actions/attach-journal-document";
 import { mutateJournalReview } from "@/server/contexts/research-fund/presentation/actions/manage-journal-review";
+import type { DocumentMasking } from "@/server/contexts/research-fund/domain/models/document-masking";
 import { rereadScanDocuments } from "@/server/contexts/research-fund/presentation/actions/reread-scan-documents";
 import { cn, filterJournalEntries, researchFundDocumentUrl } from "@/client/lib";
 
@@ -67,6 +68,7 @@ export function JournalReview({
   advancers,
   payees,
   duplicates,
+  maskings,
   target,
   initialStatus,
 }: {
@@ -78,6 +80,8 @@ export function JournalReview({
   payees: PayeeSummary[];
   /** 書類 ID → 同じ書類を二重にスキャンした可能性のある相手の書類 */
   duplicates: DuplicateDocuments;
+  /** 書類 ID → 公開用の版の状態 */
+  maskings: Record<string, DocumentMasking>;
   target: Extract<AdminTarget, { kind: "research-fund" }>;
   /** スキャン画面の「完了分を確認へ」から下書きタブを開くための初期値 */
   initialStatus?: string;
@@ -1007,6 +1011,7 @@ export function JournalReview({
                 payees={payees}
                 target={target}
                 documentUrl={documentUrl}
+                documentMasking={selected.documentId ? maskings[selected.documentId] : undefined}
                 banner={
                   <DuplicateDocumentWarning
                     duplicates={duplicatesOf(selected)}

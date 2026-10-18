@@ -3,6 +3,7 @@ import { useEffect, useId, useState, type ReactNode } from "react";
 import { Info, LockKey, LockSimple, Trash } from "@phosphor-icons/react/dist/ssr";
 import { Button, Input, Label } from "@/client/components/ui";
 import { JournalAdvanceField } from "@/client/components/research-fund/JournalAdvanceField";
+import { DocumentMaskingStatus } from "@/client/components/research-fund/DocumentMaskingStatus";
 import { JournalDocumentPreview } from "@/client/components/research-fund/JournalDocumentPreview";
 import { JournalOfficeRow, TextButton } from "@/client/components/research-fund/JournalOfficeRow";
 import { JournalPayeeField } from "@/client/components/research-fund/JournalPayeeField";
@@ -29,6 +30,7 @@ import {
   canHaveReceiptAbsenceReason,
   canMarkReceiptAbsent,
 } from "@/server/contexts/research-fund/domain/models/receipt-absence";
+import type { DocumentMasking } from "@/server/contexts/research-fund/domain/models/document-masking";
 import type { AdminTarget } from "@/server/contexts/shared/domain/models/admin-target";
 
 /** 閲覧時に鉛筆で編集モードにする行（同時に開くのは 1 行だけ） */
@@ -50,6 +52,7 @@ export function JournalEditor({
   payees,
   target,
   documentUrl,
+  documentMasking,
   banner,
   pending: busy,
   allowLeave,
@@ -75,6 +78,8 @@ export function JournalEditor({
   payees: readonly Payee[];
   target: Extract<AdminTarget, { kind: "research-fund" }>;
   documentUrl?: string;
+  /** 紐づく書類の公開用の版の状態。書類の無い仕訳・読み込んだあとに紐づけた書類では無い */
+  documentMasking?: DocumentMasking;
   /** 本文の先頭に出す警告（二重スキャンなど） */
   banner?: ReactNode;
   pending: boolean;
@@ -173,6 +178,13 @@ export function JournalEditor({
           pending={pending}
           onAttach={JournalOperation.attachDocument(entry) === null ? onAttachDocument : undefined}
         />
+        {entry.documentId !== null && (
+          <DocumentMaskingStatus
+            target={target}
+            documentId={entry.documentId}
+            masking={documentMasking}
+          />
+        )}
         {published && (
           <div className="flex items-center gap-1.5 rounded-md bg-muted px-2.5 py-[7px] text-xs">
             <LockSimple aria-hidden className="size-3.5 shrink-0" />

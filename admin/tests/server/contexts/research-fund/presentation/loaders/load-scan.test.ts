@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { ListDocumentMaskingsUsecase } from "@/server/contexts/research-fund/application/usecases/list-document-maskings-usecase";
 import { ListScanBatchesUsecase } from "@/server/contexts/research-fund/application/usecases/list-scan-batches-usecase";
 import { requireJournalTarget } from "@/server/contexts/research-fund/presentation/loaders/load-journal-review";
 import { buildCreateScanBatchUsecase, loadScan } from "@/server/contexts/research-fund/presentation/loaders/load-scan";
@@ -47,8 +48,15 @@ test("プロンプトは議員ごと・バッチは帳簿ごとに引き、現�
   jest.mocked(requireJournalTarget).mockResolvedValue(target);
   const data = { batches: [], activePromptVersion: 3, model: "claude-sonnet-5", duplicates: {} };
   const list = jest.spyOn(ListScanBatchesUsecase.prototype, "execute").mockResolvedValue(data);
-  await expect(loadScan("2", "1")).resolves.toEqual({ ...data, target });
+  const maskings = {
+    "5": { documentId: "5", status: "failed" as const, error: "理由", regionCount: null, hasMaskedVersion: false },
+  };
+  const listMaskings = jest
+    .spyOn(ListDocumentMaskingsUsecase.prototype, "execute")
+    .mockResolvedValue(maskings);
+  await expect(loadScan("2", "1")).resolves.toEqual({ ...data, maskings, target });
   expect(list).toHaveBeenCalledWith("2", "1");
+  expect(listMaskings).toHaveBeenCalledWith("1");
 });
 
 test.each(["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"])("%s がなければ組み立てない", (key) => {
