@@ -8,6 +8,7 @@ import { isReceiptMissing } from "@/server/contexts/research-fund/domain/models/
  * - 行は大項目（① 人件費〜⑩ その他の経費）の番号順 → 年月日順に並べる（sortSubmissionLedgerEntries）
  * - 列の値は docs/old/20261006_2100_調研費議員課提出用帳簿の列の決定.md（#1654）に従う。
  *   領収書等番号・領収書有無・画像ファイル名は docs/old/20261006_2330_調研費領収書等番号の振り方の決定.md（#1685）に従う。
+ *   支出項目は法定の区分から先頭の丸数字を外した区分名だけを出す（legalCategoryName）。
  *   決まっていない列は空欄で出す。備考には公開される note を出し、非公開の memo は出さない
  */
 
@@ -93,7 +94,7 @@ const PAYEE_ADDRESS_HEADER = "支出を受けた者の住所（団体にあっ�
 /** 議員課の Excel の列順どおりに並べる */
 const COLUMNS: Record<ParliamentHouse, readonly (readonly [string, Column])[]> = {
   representatives: [
-    ["支出項目", (e) => e.legalLabel],
+    ["支出項目", (e) => legalCategoryName(e.legalLabel)],
     ["支出の目的", (e) => e.description],
     ["金額", (e) => e.amount],
     ["年月日", (e) => e.entryDate],
@@ -106,7 +107,7 @@ const COLUMNS: Record<ParliamentHouse, readonly (readonly [string, Column])[]> =
     ["メモ", blank],
   ],
   councillors: [
-    ["支出項目", (e) => e.legalLabel],
+    ["支出項目", (e) => legalCategoryName(e.legalLabel)],
     ["支出の目的", (e) => e.description],
     ["金額", (e) => e.amount],
     ["年月日", (e) => e.entryDate],
@@ -149,6 +150,11 @@ export function legalCategoryNumber(legalLabel: string | null): number | null {
   const code = legalLabel?.codePointAt(0);
   if (code === undefined || code < 0x2460 || code > 0x2473) return null;
   return code - 0x2460 + 1;
+}
+
+/** 法定の区分から先頭の丸数字（① 〜 ⑳）とその後ろの空白を外した区分名。区分なしなら null */
+export function legalCategoryName(legalLabel: string | null): string | null {
+  return legalLabel?.replace(/^[\u2460-\u2473]\s*/u, "") ?? null;
 }
 
 function compareNullsLast(a: number | null, b: number | null): number {

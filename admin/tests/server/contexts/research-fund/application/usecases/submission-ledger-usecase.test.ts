@@ -17,7 +17,7 @@ test("件数と提出前に確認が必要な仕訳を返す", async () => {
 test("院のフォーマットの CSV とファイル名を返す", async () => {
   const result = await new ExportSubmissionLedgerCsvUsecase(setup()).execute("7", "councillors");
   expect(result?.filename).toBe("research_fund_ledger_2026_councillors.csv");
-  expect(result?.csv.split("\r\n")[1]).toBe('"⑨ 滞在費","タクシー代","1200","2026-04-03","","","","","","無","","","",""');
+  expect(result?.csv.split("\r\n")[1]).toBe('"滞在費","タクシー代","1200","2026-04-03","","","","","","無","","","",""');
 });
 test.each(["", "0", "abc"])("帳簿 ID %j が不正なら帳簿を引かない", async bookId => {
   const repository = setup();
