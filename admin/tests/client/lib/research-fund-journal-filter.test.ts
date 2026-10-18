@@ -24,6 +24,7 @@ function entry(id: string, overrides: Partial<ReviewEntry> = {}): ReviewEntry {
     settledAt: null,
     payeeId: null,
     payeeLinkSource: null,
+    receiptAbsent: false,
     receiptAbsenceReason: null,
     receiptNumber: null,
     issuer: null,
@@ -109,4 +110,17 @@ test("検索は既存の絞り込みと組み合わせて効く", () => {
   expect(ids("交通", { unsettledOnly: true })).toEqual([]);
   expect(ids("不明", { payeeUnsetOnly: true })).toEqual(["unconfirmed"]);
   expect(ids("交通", { receiptMissingOnly: true })).toEqual([]);
+});
+
+test("書類なしの絞り込みは、書類が無く徴難も付いていない支出だけを残す", () => {
+  const missing = entry("missing", { source: "manual", documentId: null });
+  const absent = entry("absent", { source: "manual", documentId: null, receiptAbsent: true });
+  const absentWithDocument = entry("absent-with-document", { receiptAbsent: true });
+  expect(
+    filterJournalEntries(
+      [taxi, grant, missing, absent, absentWithDocument],
+      { ...noFilter, receiptMissingOnly: true },
+      payeeNames,
+    ).map((e) => e.id),
+  ).toEqual(["missing"]);
 });

@@ -26,6 +26,7 @@ function model(row: Row): SubmissionLedgerEntry | null {
     documentId: row.documentId === null ? null : String(row.documentId),
     receiptNumber: row.document?.receiptNumber ?? null,
     documentMime: row.document?.mime ?? null,
+    receiptAbsent: row.receiptAbsent,
     receiptAbsenceReason: row.receiptAbsenceReason,
   };
 }

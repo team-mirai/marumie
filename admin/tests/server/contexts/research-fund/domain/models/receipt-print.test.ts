@@ -6,7 +6,7 @@ import {
 } from "@/server/contexts/research-fund/domain/models/receipt-print";
 import type { SubmissionLedgerEntry } from "@/server/contexts/research-fund/domain/models/submission-ledger";
 
-const base: SubmissionLedgerEntry = { id: "1", entryDate: "2026-04-03", source: "scan", legalLabel: "⑨ 滞在費", description: "タクシー代", amount: 20000, payeeName: "東京タクシー", payeeAddress: null, note: null, documentId: "5", receiptNumber: 12, documentMime: "image/jpeg", receiptAbsenceReason: null };
+const base: SubmissionLedgerEntry = { id: "1", entryDate: "2026-04-03", source: "scan", legalLabel: "⑨ 滞在費", description: "タクシー代", amount: 20000, payeeName: "東京タクシー", payeeAddress: null, note: null, documentId: "5", receiptNumber: 12, documentMime: "image/jpeg", receiptAbsent: false, receiptAbsenceReason: null };
 const entry = (overrides: Partial<SubmissionLedgerEntry>): SubmissionLedgerEntry => ({ ...base, ...overrides });
 const numbers = (entries: SubmissionLedgerEntry[], scope: "over-threshold" | "all" = "all") =>
   selectReceiptPrintDocuments(entries, scope).documents.map((d) => d.receiptNumber);
@@ -14,6 +14,11 @@ const numbers = (entries: SubmissionLedgerEntry[], scope: "over-threshold" | "al
 describe("書類の選別", () => {
   test("書類なしの仕訳は入れない", () => {
     expect(numbers([entry({ documentId: null, receiptNumber: null, documentMime: null })])).toEqual([]);
+  });
+  test("徴難の仕訳の書類は入れない（帳簿に番号が出ないので）。徴難でない仕訳も紐づく書類はその金額だけで数える", () => {
+    const selection = selectReceiptPrintDocuments([entry({ receiptAbsent: true, receiptAbsenceReason: "振込のみ" }), entry({ id: "2", documentId: "6", receiptNumber: null, receiptAbsent: true }), entry({ id: "3", documentId: "7", receiptNumber: 4, amount: 6000 }), entry({ id: "4", documentId: "7", receiptNumber: 4, amount: 5000, receiptAbsent: true })], "all");
+    expect(selection.documents.map((d) => [d.receiptNumber, d.totalAmount])).toEqual([[4, 6000]]);
+    expect(selection.unnumberedCount).toBe(0);
   });
   test("複数の仕訳が紐づく書類は 1 回だけ入れ、金額は合計する", () => {
     const docs = groupReceiptPrintDocuments([entry({ id: "1", amount: 6000 }), entry({ id: "2", amount: 5000 })]);

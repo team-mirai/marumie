@@ -6,7 +6,7 @@ import { validateReceiptAbsenceReason } from "@/server/contexts/research-fund/do
 import type { JournalReviewRepository } from "@/server/contexts/research-fund/domain/repositories/journal-review-repository.interface";
 
 /**
- * 書類の無い支出の仕訳に、領収書等を徴し難かった事情を書く・直す・消す（空白だけの入力は削除）。
+ * 徴難の支出の仕訳に、領収書等を徴し難かった事情を書く・直す・消す（空白だけの入力は削除）。
  *
  * 事情は議員課提出用の帳簿の情報で公開内容を変えないので、公開中の仕訳でも変更でき、
  * webapp のキャッシュは無効化しない。

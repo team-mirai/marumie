@@ -357,7 +357,10 @@ model ResearchFundJournalEntry {
   // AI が紐づけたときの確信度（0.000〜1.000）と根拠。source = ai のときだけ持てる
   payeeLinkConfidence Decimal? @map("payee_link_confidence") @db.Decimal(4, 3)
   payeeLinkReason     String?  @map("payee_link_reason")
-  // 領収書等を徴し難かった事情。領収書（document_id）が無い仕訳だけが持てる
+  // 徴難（領収書等を徴し難かった）か。書類（振込明細など）の有無とは独立に指定する。
+  // 支給の仕訳は徴難にしない（DB 側の CHECK 制約で保証）
+  receiptAbsent        Boolean @default(false) @map("receipt_absent")
+  // 領収書等を徴し難かった事情。徴難の仕訳だけが持てる（DB 側の CHECK 制約で保証）
   receiptAbsenceReason String? @map("receipt_absence_reason")
   // 資金管理団体からの支出
   fromFundManagementOrg Boolean @default(false) @map("from_fund_management_org")

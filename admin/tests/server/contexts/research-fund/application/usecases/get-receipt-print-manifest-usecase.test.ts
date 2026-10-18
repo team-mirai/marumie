@@ -2,7 +2,7 @@ import { GetReceiptPrintManifestUsecase } from "@/server/contexts/research-fund/
 import type { SubmissionLedgerEntry } from "@/server/contexts/research-fund/domain/models/submission-ledger";
 import type { DocumentStorage } from "@/server/contexts/research-fund/domain/repositories/document-storage.interface";
 
-const base: SubmissionLedgerEntry = { id: "1", entryDate: "2026-04-03", source: "scan", legalLabel: "⑨ 滞在費", description: "タクシー代", amount: 20000, payeeName: null, payeeAddress: null, note: null, documentId: "5", receiptNumber: 12, documentMime: "image/jpeg", receiptAbsenceReason: null };
+const base: SubmissionLedgerEntry = { id: "1", entryDate: "2026-04-03", source: "scan", legalLabel: "⑨ 滞在費", description: "タクシー代", amount: 20000, payeeName: null, payeeAddress: null, note: null, documentId: "5", receiptNumber: 12, documentMime: "image/jpeg", receiptAbsent: false, receiptAbsenceReason: null };
 const entries = [
   base,
   { ...base, id: "2", documentId: "6", receiptNumber: 3, legalLabel: "② 会議費", documentMime: "application/pdf" },

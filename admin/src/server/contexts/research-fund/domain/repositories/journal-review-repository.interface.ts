@@ -42,13 +42,18 @@ export interface JournalReviewRepository {
     advancedBy: string | null,
   ): Promise<void>;
   /**
-   * 書類の無い支出の仕訳に、領収書等を徴し難かった事情を設定・削除する（null で削除）。
-   * 公開中・精算済の仕訳も対象にする。競合したら（書類が付いた場合を含む）変更しない。
+   * 支出の仕訳の徴難を付け外しする。外すと徴し難かった事情も消す。
+   * 公開中・精算済の仕訳も対象にする。競合したら変更しない。
+   */
+  setReceiptAbsent(bookId: string, entry: ReviewEntry, receiptAbsent: boolean): Promise<void>;
+  /**
+   * 徴難の支出の仕訳に、領収書等を徴し難かった事情を設定・削除する（null で削除）。
+   * 公開中・精算済の仕訳も対象にする。競合したら（徴難が外れた場合を含む）変更しない。
    */
   setReceiptAbsenceReason(bookId: string, entry: ReviewEntry, reason: string | null): Promise<void>;
   /**
    * 書類の無い下書き・確認済の支出の仕訳に、アップロード済みの原本を書類として登録して紐づける。
-   * 書類は未採番（領収書等番号なし）で作り、読み取りジョブは作らない。紐づけた仕訳の徴し難かった事情は消し、
+   * 書類は未採番（領収書等番号なし）で作り、読み取りジョブは作らない。徴難と徴し難かった事情はそのまま残し、
    * 重複検知の hash を書類を含めて作り直す。競合したら（公開・書類が付いた場合を含む）書類も作らない。
    */
   attachDocument(

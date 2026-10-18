@@ -10,8 +10,8 @@ import type { JournalReviewRepository } from "@/server/contexts/research-fund/do
  * 領収書なしで作った支出の仕訳に、あとから届いた領収書ファイルを紐づける。
  *
  * 原本を Storage に保存し、書類として登録して仕訳に紐づける。読み取りジョブは作らないので、
- * この書類から AI 読み取りで新しい仕訳ができることはない。紐づけた仕訳の徴し難かった事情は消える
- * （書類と事情を同時に持たない）。公開中の仕訳は対象にしないので、webapp のキャッシュは無効化しない。
+ * この書類から AI 読み取りで新しい仕訳ができることはない。紐づけても仕訳の徴難と徴し難かった事情はそのまま残る
+ * （徴難は書類の有無と独立）。公開中の仕訳は対象にしないので、webapp のキャッシュは無効化しない。
  */
 export class AttachJournalDocumentUsecase {
   constructor(

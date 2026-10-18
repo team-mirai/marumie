@@ -25,8 +25,10 @@ export type OperableEntry = Pick<
   | "amount"
   | "accountKey"
   | "id"
-  // 徴し難かった事情は書類の無い仕訳だけが持てる
+  // 領収書をあとから紐づけられるのは書類の無い仕訳だけ
   | "documentId"
+  // 徴し難かった事情は徴難の仕訳だけが持てる
+  | "receiptAbsent"
   // 支給の編集では、支給日以外が変わっていないかを備考まで含めて見る
   | "note"
   | "memo"
@@ -182,8 +184,20 @@ export const JournalOperation = {
     return null;
   },
   /**
+   * 徴難の付け外し。徴難は議員課提出用の帳簿の情報で公開内容に影響しないので、
+   * 公開中・精算済の仕訳でも変更できる。書類の有無は問わない。支給は徴難にしない（DB の CHECK 制約と一致させる）
+   */
+  setReceiptAbsent(entry: OperableEntry): OperationRejection | null {
+    if (entry.source === "grant")
+      return {
+        one: "支給は徴難にできません",
+        many: "徴難にできない仕訳（支給・返還など）が選ばれています",
+      };
+    return null;
+  },
+  /**
    * 領収書等を徴し難かった事情の入力・変更・削除。事情も議員課提出用の帳簿の情報で公開内容に影響しないので、
-   * 公開中・精算済の仕訳でも変更できる。書類のある仕訳と支給は事情を持てない（DB の CHECK 制約と一致させる）
+   * 公開中・精算済の仕訳でも変更できる。徴難の仕訳だけが事情を持てる（DB の CHECK 制約と一致させる）
    */
   setReceiptAbsenceReason(entry: OperableEntry): OperationRejection | null {
     if (entry.source === "grant")
@@ -191,10 +205,10 @@ export const JournalOperation = {
         one: "支給には徴し難かった事情を書けません",
         many: "徴し難かった事情を書けない仕訳（支給・返還など）が選ばれています",
       };
-    if (entry.documentId !== null)
+    if (!entry.receiptAbsent)
       return {
-        one: "書類のある仕訳には徴し難かった事情を書けません",
-        many: `「${entry.description}」には書類があります`,
+        one: "徴難の仕訳だけに徴し難かった事情を書けます。先に徴難にしてください",
+        many: `「${entry.description}」は徴難ではありません`,
       };
     return null;
   },

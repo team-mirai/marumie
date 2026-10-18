@@ -73,7 +73,7 @@
 5. `margin-left:auto` で右寄せし、見出し「要対応」11px / 700 / muted
 6. **要対応チップ**（トグル。高さ 32px のピル、12px、横 padding 12px、gap 6px、件数は Poppins 700）
    - 「支払先 未設定 **579**」= 現行の `payeeUnsetOnly`。件数 > 0 のとき枠と数字を destructive（`#E63946`）
-   - 「書類も事情もない **0**」= 現行の `receiptMissingOnly`。件数 0 のときは枠 `#ccc`・文字 `#939393`
+   - 「書類なし・徴難なし **0**」= 現行の `receiptMissingOnly`（書類が無く徴難も付いていない支出。#1778）。件数 0 のときは枠 `#ccc`・文字 `#939393`
    - 「未精算の立替 **1件 ¥4,490**」= 現行の `unsettledOnly`。帳簿全体の `summarizeUnsettledAdvances(entries)` の件数合計と金額合計を出す。mint 地（accent）＋teal 枠。未精算が無いときはチップごと出さない
    - ONのときは塗り（destructive チップは destructive 地＋白文字、未精算チップは primary 地＋白文字）にする
    - 立替者ごとの内訳（現行カードの「伊藤淳：¥4,490（1件）」）は、未精算チップの `title` かホバーのポップオーバーで出す。2名以上いても1チップのまま
@@ -91,7 +91,7 @@
 | 36px | Checkbox（14px、中央）。支給の行は空 |
 | 52px | 日付 `MM.DD`（Poppins 12px）。帳簿は年度単位なので年は省く |
 | 116px | 科目ピル（11px / 700、teal 文字・teal 枠・白地、padding 1px 8px）。支給は「支給」ピル（accent 地）。**要確認の科目**は destructive の枠・文字で「要確認」 |
-| 1fr | 項目名（13px、1行で省略 `…`）＋右に補助チップ（10.5px、`#ccc` 枠、padding 0 6px）：「分割 n/m」「立替 伊藤淳」（teal 枠・teal 文字）、「同じ内容の書類あり」「領収書なし・事情未入力」（destructive）、「領収書なし」、「精算済 MM.DD」（accent 地） |
+| 1fr | 項目名（13px、1行で省略 `…`）＋右に補助チップ（10.5px、`#ccc` 枠、padding 0 6px）：「分割 n/m」「立替 伊藤淳」（teal 枠・teal 文字）、「同じ内容の書類あり」「書類なし・徴難なし」「徴難・事情未入力」（destructive）、「徴難」「書類なし」、「精算済 MM.DD」（accent 地） |
 | 170px | 支払先名（12px、`#333`、省略 `…`）。未設定は destructive の「⚠ 未設定」（`ph-warning-circle`）。支給は空 |
 | 84px | 金額（Poppins 12.5px、右揃え）。`isEmphasizedJournalAmount` のときは 700 |
 | 64px | 状態ピル（10.5px、padding 0 7px、中央）。公開中・確認済＝accent 地＋teal 枠、下書き＝白地＋`#ccc` 枠＋muted 文字 |
@@ -185,7 +185,8 @@
 | | 編集ビュー（下書き・確認済）：最初から入力欄（高さ 30px） | 立替者があり未精算なら右に「未精算」ピル（10.5px、`#ccc` 枠） |
 | | 精算できない理由（`settlementRejection`）があるとき、行の下に 11px / muted「ⓘ 精算は確認済にしてからできます」などを1行で（左 padding 86px でラベル列を避ける） | 精算できるとき：右にテキストボタン「精算済にする」→ 精算日のポップオーバー（date Input、min = 仕訳の日付、max = 今日（JST）、「キャンセル」「精算する」） |
 | | 精算済：「伊藤淳 ／ 精算済 2026.10.01」 | テキストボタン「未精算に戻す」 |
-| **書類の事情**（`canHaveReceiptAbsenceReason` のときだけ） | 本文、または destructive 700「⚠ 未入力」 | 鉛筆で編集：Textarea（2行、placeholder「例: 自動券売機で購入したため」）＋「保存」「キャンセル」 |
+| **徴難**（`canMarkReceiptAbsent` のとき。書類の有無は問わない。#1778） | チェックボックス「領収書等を徴し難かった」 | チェックの操作だけで保存（`set-receipt-absent`）。外すとき事情が入力済みなら確認し、事情も消す |
+| **書類の事情**（`canHaveReceiptAbsenceReason` = 徴難のときだけ） | 本文、または destructive 700「⚠ 未入力」 | 鉛筆で編集：Textarea（2行、placeholder「例: 自動券売機で購入したため」）＋「保存」「キャンセル」 |
 | **備考**（支給以外） | 本文、または「—」（`#939393`） | 編集ビューでは高さ 30px の Input（placeholder「事務所内のメモ」）。閲覧時は「未決事項 1」を参照 |
 
 現行の長い説明文（「立て替えた人を入力すると…」「議員課に提出する帳簿に記載します…」）は、グループ見出しの補足ピルに `title` で入れる。

@@ -76,6 +76,7 @@ function model(row: Row): ReviewEntry | null {
     settledAt: row.settledAt ? row.settledAt.toISOString().slice(0, 10) : null,
     payeeId: row.payeeId === null ? null : String(row.payeeId),
     payeeLinkSource: row.payeeLinkSource ?? null,
+    receiptAbsent: row.receiptAbsent,
     receiptAbsenceReason: row.receiptAbsenceReason ?? null,
     receiptNumber: row.document?.receiptNumber ?? null,
     issuer: ExtractedReceipt.issuerOf(job?.rawJson),
@@ -365,14 +366,24 @@ export class PrismaJournalReviewRepository implements JournalReviewRepository {
       }
     });
   }
+  // 徴難は公開内容に影響しないので、公開中・精算済の仕訳も対象にする（複式行と hash は作り直さない）。
+  // 事情は徴難の仕訳だけが持てる（DB の CHECK 制約）ので、外すときは事情も消す。
+  async setReceiptAbsent(bookId: string, entry: ReviewEntry, receiptAbsent: boolean) {
+    const result = await this.prisma.researchFundJournalEntry.updateMany({
+      where: { ...guard(bookId, entry, ["draft", "approved", "published"]), ...expenseWhere },
+      data: receiptAbsent ? { receiptAbsent } : { receiptAbsent, receiptAbsenceReason: null },
+    });
+    if (result.count !== 1)
+      throw new JournalReviewError("仕訳が更新されました。画面を再読み込みしてください");
+  }
   // 徴し難かった事情は公開内容に影響しないので、公開中・精算済の仕訳も対象にする（複式行と hash は作り直さない）。
-  // 書類のある仕訳は DB の CHECK 制約でも拒否されるが、競合として扱えるよう条件に含める。
+  // 徴難でない仕訳は DB の CHECK 制約でも拒否されるが、競合として扱えるよう条件に含める。
   async setReceiptAbsenceReason(bookId: string, entry: ReviewEntry, reason: string | null) {
     const result = await this.prisma.researchFundJournalEntry.updateMany({
       where: {
         ...guard(bookId, entry, ["draft", "approved", "published"]),
         ...expenseWhere,
-        documentId: null,
+        receiptAbsent: true,
       },
       data: { receiptAbsenceReason: reason },
     });
@@ -402,7 +413,7 @@ export class PrismaJournalReviewRepository implements JournalReviewRepository {
         if (hash.status === "invalid") throw new JournalReviewError(hash.errors[0].message);
         const result = await tx.researchFundJournalEntry.updateMany({
           where: { ...guard(bookId, entry), ...expenseWhere, documentId: null },
-          data: { documentId: created.id, receiptAbsenceReason: null, hash: hash.value },
+          data: { documentId: created.id, hash: hash.value },
         });
         if (result.count !== 1)
           throw new JournalReviewError("仕訳が更新・公開されました。画面を再読み込みしてください");

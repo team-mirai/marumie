@@ -9,7 +9,7 @@ function rowWithLines(lines = input.lines) {
     id: BigInt(entry.id), entryDate: new Date(input.entryDate), createdAt: new Date(input.entryDate),
     updatedAt: new Date(entry.updatedAt), description: input.description, note: null, memo: null,
     status: "draft", source: "manual", documentId: null, splitGroup: null, document: null,
-    payeeId: null, payeeLinkSource: null,
+    payeeId: null, payeeLinkSource: null, receiptAbsent: false,
     lines: lines.map(line => ({ ...line, amount: new Prisma.Decimal(line.amount),
       account: { type: line.side === "debit" ? "expense" : "asset" } })),
   };
@@ -72,7 +72,7 @@ test("手動仕訳を取得し、書類・メモの欠損値を表示用に変�
     id: BigInt(entry.id), entryDate: new Date(input.entryDate), updatedAt: new Date(entry.updatedAt),
     createdAt: new Date(input.entryDate), description: "移動", note: null, memo: null,
     status: "draft", source: "manual", documentId: null, splitGroup: null, document: null,
-    payeeId: null, payeeLinkSource: null,
+    payeeId: null, payeeLinkSource: null, receiptAbsent: false,
     lines: [{ side: "credit", accountKey: "bank", account: { type: "asset" }, amount: new Prisma.Decimal(1200) },
       { side: "debit", accountKey: "taxi", account: { type: "expense" }, amount: new Prisma.Decimal(1200) }],
   });
@@ -80,7 +80,7 @@ test("手動仕訳を取得し、書類・メモの欠損値を表示用に変�
     id: entry.id, entryDate: input.entryDate, updatedAt: entry.updatedAt, description: "移動",
     note: "", memo: "", status: "draft", source: "manual", documentId: null, splitGroup: null,
     model: null, promptVersion: null, amount: 1200, accountKey: "taxi", advancedBy: null, settledAt: null,
-    payeeId: null, payeeLinkSource: null, receiptAbsenceReason: null, receiptNumber: null, issuer: null,
+    payeeId: null, payeeLinkSource: null, receiptAbsent: false, receiptAbsenceReason: null, receiptNumber: null, issuer: null,
   });
   tx.researchFundJournalEntry.findFirst.mockResolvedValue(null);
   await expect(repository.find("9", entry.id)).resolves.toBeNull();
@@ -405,22 +405,38 @@ test("同じ名称・住所の支払先があれば、登録済みのエラー�
   await expect(repository.createPayeeAndSetPayee("1", [entry], "5", payeeInput)).rejects.toThrow("同じ名称・住所の支払先がすでに登録されています");
   expect(tx.researchFundJournalEntry.updateMany).not.toHaveBeenCalled();
 });
-test("徴し難かった事情を取得する", async () => {
+test("徴難と徴し難かった事情を取得する", async () => {
   const { repository, tx } = setup();
-  tx.researchFundJournalEntry.findFirst.mockResolvedValue({ ...rowWithLines(), receiptAbsenceReason: "自動券売機で購入" });
-  await expect(repository.find("1", entry.id)).resolves.toMatchObject({ receiptAbsenceReason: "自動券売機で購入" });
+  tx.researchFundJournalEntry.findFirst.mockResolvedValue({ ...rowWithLines(), receiptAbsent: true, receiptAbsenceReason: "自動券売機で購入" });
+  await expect(repository.find("1", entry.id)).resolves.toMatchObject({ receiptAbsent: true, receiptAbsenceReason: "自動券売機で購入" });
 });
-test("徴し難かった事情は公開中・精算済も対象にし、書類の無い支出だけを更新する", async () => {
+test("徴難は公開中・精算済の支出も対象にし、書類の有無を条件にしない。外すときは事情も消す", async () => {
+  const { repository, tx } = setup();
+  await repository.setReceiptAbsent("1", entry, true);
+  const call = tx.researchFundJournalEntry.updateMany.mock.calls[0][0];
+  expect(call.where).toEqual(expect.objectContaining({ id: BigInt(entry.id), bookId: BigInt(1), status: { in: ["draft", "approved", "published"] }, updatedAt: new Date(entry.updatedAt), source: { in: ["manual", "scan"] } }));
+  expect(call.where).not.toHaveProperty("documentId");
+  expect(call.where).not.toHaveProperty("settledAt");
+  expect(call.data).toEqual({ receiptAbsent: true });
+  await repository.setReceiptAbsent("1", entry, false);
+  expect(tx.researchFundJournalEntry.updateMany.mock.calls[1][0].data).toEqual({ receiptAbsent: false, receiptAbsenceReason: null });
+});
+test("徴難は競合したら変更しない", async () => {
+  const { repository } = setup(0);
+  await expect(repository.setReceiptAbsent("1", entry, true)).rejects.toThrow("再読み込み");
+});
+test("徴し難かった事情は公開中・精算済も対象にし、徴難の支出だけを更新する（書類の有無は問わない）", async () => {
   const { repository, tx } = setup();
   await repository.setReceiptAbsenceReason("1", entry, "自動券売機で購入");
   const call = tx.researchFundJournalEntry.updateMany.mock.calls[0][0];
-  expect(call.where).toEqual(expect.objectContaining({ id: BigInt(entry.id), bookId: BigInt(1), status: { in: ["draft", "approved", "published"] }, updatedAt: new Date(entry.updatedAt), source: { in: ["manual", "scan"] }, documentId: null }));
+  expect(call.where).toEqual(expect.objectContaining({ id: BigInt(entry.id), bookId: BigInt(1), status: { in: ["draft", "approved", "published"] }, updatedAt: new Date(entry.updatedAt), source: { in: ["manual", "scan"] }, receiptAbsent: true }));
+  expect(call.where).not.toHaveProperty("documentId");
   expect(call.where).not.toHaveProperty("settledAt");
   expect(call.data).toEqual({ receiptAbsenceReason: "自動券売機で購入" });
   await repository.setReceiptAbsenceReason("1", entry, null);
   expect(tx.researchFundJournalEntry.updateMany.mock.calls[1][0].data).toEqual({ receiptAbsenceReason: null });
 });
-test("徴し難かった事情は競合したら（書類が付いた場合を含む）変更しない", async () => {
+test("徴し難かった事情は競合したら（徴難が外れた場合を含む）変更しない", async () => {
   const { repository } = setup(0);
   await expect(repository.setReceiptAbsenceReason("1", entry, "自動券売機で購入")).rejects.toThrow("再読み込み");
 });
@@ -446,7 +462,7 @@ describe("領収書の紐づけ", () => {
     Object.assign(context.tx, { researchFundDocument: { create } });
     return { ...context, create };
   }
-  test("書類を未採番で作り、書類の無い下書き・確認済の支出に紐づけて事情を消し、hash を書類込みで作り直す", async () => {
+  test("書類を未採番で作り、書類の無い下書き・確認済の支出に紐づけ、徴難と事情は残して hash を書類込みで作り直す", async () => {
     const { repository, tx, transaction, create } = withDocument();
     await repository.attachDocument("1", manual, { storageKey: "opaque-key", mime: "application/pdf", originalFilename: "領収書.pdf" });
     expect(transaction).toHaveBeenCalledTimes(1);
@@ -456,7 +472,7 @@ describe("領収書の紐づけ", () => {
     const call = tx.researchFundJournalEntry.updateMany.mock.calls[0][0];
     expect(call.where).toEqual(expect.objectContaining({ id: BigInt(entry.id), bookId: BigInt(1), status: { in: ["draft", "approved"] }, updatedAt: new Date(entry.updatedAt), source: { in: ["manual", "scan"] }, documentId: null }));
     const hash = JournalEntryHash.generate({ entryDate: "2026-08-01", amount: 1200, description: "移動", documentId: "77" });
-    expect(call.data).toEqual({ documentId: BigInt(77), receiptAbsenceReason: null, hash: hash.status === "valid" ? hash.value : "" });
+    expect(call.data).toEqual({ documentId: BigInt(77), hash: hash.status === "valid" ? hash.value : "" });
   });
   test("競合したら（公開・書類が付いた場合を含む）投げてトランザクションごと巻き戻させる", async () => {
     const { repository } = withDocument(0);

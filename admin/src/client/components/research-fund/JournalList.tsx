@@ -6,7 +6,10 @@ import {
   isAccountUnconfirmed,
   type ReviewEntry,
 } from "@/server/contexts/research-fund/domain/models/journal-review";
-import { isReceiptMissing } from "@/server/contexts/research-fund/domain/models/receipt-absence";
+import {
+  isReceiptAbsenceReasonMissing,
+  isReceiptMissing,
+} from "@/server/contexts/research-fund/domain/models/receipt-absence";
 import { cn, isEmphasizedJournalAmount, journalAccountLabel } from "@/client/lib";
 
 const statusLabels = { draft: "下書き", approved: "確認済", published: "公開中" };
@@ -54,14 +57,18 @@ function chipsOf(
     });
   if (duplicated)
     others.push({ label: "同じ内容の書類あり", title: "同じ内容の書類あり", tone: "destructive" });
+  // 徴難は書類の有無とは別に出す（振込明細などの書類があっても徴難のことがある）
   if (isReceiptMissing(entry))
     others.push({
-      label: "領収書なし・事情未入力",
-      title: "領収書なし・事情未入力",
+      label: "書類なし・徴難なし",
+      title: "書類が無く、徴難も付いていない",
       tone: "destructive",
     });
-  else if (!entry.documentId)
-    others.push({ label: "領収書なし", title: "領収書なし", tone: "plain" });
+  else if (isReceiptAbsenceReasonMissing(entry))
+    others.push({ label: "徴難・事情未入力", title: "徴難・事情未入力", tone: "destructive" });
+  else if (entry.receiptAbsent) others.push({ label: "徴難", title: "徴難", tone: "plain" });
+  if (entry.receiptAbsent && entry.documentId === null)
+    others.push({ label: "書類なし", title: "書類なし", tone: "plain" });
   if (entry.receiptNumber !== null)
     others.push({
       label: (

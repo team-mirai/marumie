@@ -60,9 +60,11 @@ export interface ReviewEntry extends JournalEdit, JournalEntry {
   /** 支払先を誰が紐づけたか。支払先があるときだけ持つ */
   payeeLinkSource: PayeeLinkSource | null;
   /**
-   * 領収書等を徴し難かった事情。null なら未入力。書類の無い支出だけが持てる（domain/models/receipt-absence）。
+   * 徴難（領収書等を徴し難かった）か。書類の有無とは独立に付ける（domain/models/receipt-absence）。
    * 支払先と同じく、公開内容・複式の行・hash に影響しない別系統の更新として扱う。
    */
+  receiptAbsent: boolean;
+  /** 領収書等を徴し難かった事情。null なら未入力。徴難の支出だけが持てる（domain/models/receipt-absence） */
   receiptAbsenceReason: string | null;
   /** 紐づく書類の領収書等番号（議員課提出用の帳簿の列）。書類が無いか未採番なら null */
   receiptNumber: number | null;

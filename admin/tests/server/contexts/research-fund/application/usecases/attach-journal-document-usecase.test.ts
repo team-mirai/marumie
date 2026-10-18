@@ -19,8 +19,8 @@ describe("領収書を紐づける", () => {
     expect(repository.attachDocument).toHaveBeenCalledWith("1", { ...entry, ...noDocument, status }, { storageKey: "opaque-key", mime: "application/pdf", originalFilename: "領収書.pdf" });
     expect(cacheInvalidator.invalidateWebappCache).not.toHaveBeenCalled();
   });
-  test("徴し難かった事情が入力済みでも紐づけられる（事情はリポジトリが消す）", async () => {
-    const { repository, usecase } = build({ ...noDocument, receiptAbsenceReason: "自動券売機で購入" });
+  test("徴難で事情が入力済みでも紐づけられる（徴難と事情はそのまま残る）", async () => {
+    const { repository, usecase } = build({ ...noDocument, receiptAbsent: true, receiptAbsenceReason: "自動券売機で購入" });
     await usecase.execute("1", target.id, target.updatedAt, file);
     expect(repository.attachDocument).toHaveBeenCalled();
   });
