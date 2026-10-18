@@ -1,6 +1,7 @@
 import { Prisma, type PrismaClient } from "@prisma/client";
 import { PrismaJournalReviewRepository } from "@/server/contexts/research-fund/infrastructure/repositories/prisma-journal-review.repository";
 import type { JournalWrite, ReviewEntry } from "@/server/contexts/research-fund/domain/models/journal-review";
+import { JournalEntryHash } from "@/server/contexts/research-fund/domain/models/journal-entry-hash";
 const entry = { id: "9007199254740993", updatedAt: "2026-08-01T00:00:00.000Z" } as ReviewEntry;
 const input: JournalWrite = { entryDate: "2026-08-01", description: "移動", amount: 1200, accountKey: "taxi", note: "公開", memo: "非公開", hash: "hash", status: "approved", lines: [{ side: "debit", accountKey: "taxi", amount: 1200 }, { side: "credit", accountKey: "bank", amount: 1200 }] };
 function rowWithLines(lines = input.lines) {
@@ -435,4 +436,30 @@ test("仕訳を作った読み取りの原文から発行元を添える（古�
   const [withIssuer, legacy] = await repository.list("1");
   expect(withIssuer.issuer).toEqual({ name: "JR東日本", address: "東京都渋谷区", phone: null, invoice_registration_number: null });
   expect(legacy.issuer).toBeNull();
+});
+
+describe("領収書の紐づけ", () => {
+  const manual = { ...entry, entryDate: "2026-08-01", amount: 1200, description: "移動", source: "manual" } as ReviewEntry;
+  function withDocument(count = 1) {
+    const context = setup(count);
+    const create = jest.fn().mockResolvedValue({ id: BigInt(77) });
+    Object.assign(context.tx, { researchFundDocument: { create } });
+    return { ...context, create };
+  }
+  test("書類を未採番で作り、書類の無い下書き・確認済の支出に紐づけて事情を消し、hash を書類込みで作り直す", async () => {
+    const { repository, tx, transaction, create } = withDocument();
+    await repository.attachDocument("1", manual, { storageKey: "opaque-key", mime: "application/pdf", originalFilename: "領収書.pdf" });
+    expect(transaction).toHaveBeenCalledTimes(1);
+    expect(create).toHaveBeenCalledWith({ data: { storageKey: "opaque-key", mime: "application/pdf", originalFilename: "領収書.pdf", bookId: BigInt(1) }, select: { id: true } });
+    expect(create.mock.calls[0][0].data).not.toHaveProperty("receiptNumber");
+    expect(create.mock.calls[0][0].data).not.toHaveProperty("batchId");
+    const call = tx.researchFundJournalEntry.updateMany.mock.calls[0][0];
+    expect(call.where).toEqual(expect.objectContaining({ id: BigInt(entry.id), bookId: BigInt(1), status: { in: ["draft", "approved"] }, updatedAt: new Date(entry.updatedAt), source: { in: ["manual", "scan"] }, documentId: null }));
+    const hash = JournalEntryHash.generate({ entryDate: "2026-08-01", amount: 1200, description: "移動", documentId: "77" });
+    expect(call.data).toEqual({ documentId: BigInt(77), receiptAbsenceReason: null, hash: hash.status === "valid" ? hash.value : "" });
+  });
+  test("競合したら（公開・書類が付いた場合を含む）投げてトランザクションごと巻き戻させる", async () => {
+    const { repository } = withDocument(0);
+    await expect(repository.attachDocument("1", manual, { storageKey: "k", mime: "image/png", originalFilename: "a.png" })).rejects.toThrow("再読み込み");
+  });
 });

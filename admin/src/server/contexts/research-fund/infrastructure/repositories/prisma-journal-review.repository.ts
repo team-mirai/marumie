@@ -1,6 +1,7 @@
 import "server-only";
 import { Prisma, type PrismaClient } from "@prisma/client";
 import { ExtractedReceipt } from "@/server/contexts/research-fund/domain/models/extracted-receipt";
+import { JournalEntryHash } from "@/server/contexts/research-fund/domain/models/journal-entry-hash";
 import {
   JournalReviewError,
   type JournalWrite,
@@ -377,6 +378,36 @@ export class PrismaJournalReviewRepository implements JournalReviewRepository {
     });
     if (result.count !== 1)
       throw new JournalReviewError("仕訳が更新されました。画面を再読み込みしてください");
+  }
+  // 書類の作成と紐づけを同じトランザクションで行い、紐づけが競合したら書類も作らない（どの仕訳にも紐づかない書類を残さない）。
+  // 書類は採番前（receipt_number IS NULL）で作るので、次の採番操作で帳簿内の最大番号 + 1 から振られる。
+  async attachDocument(
+    bookId: string,
+    entry: ReviewEntry,
+    document: { storageKey: string; mime: string; originalFilename: string },
+  ) {
+    await unique(() =>
+      this.prisma.$transaction(async (tx) => {
+        const created = await tx.researchFundDocument.create({
+          data: { ...document, bookId: BigInt(bookId) },
+          select: { id: true },
+        });
+        // 編集の保存と同じく、hash は書類を含めて作る（手入力の仕訳は連番を使わない）
+        const hash = JournalEntryHash.generate({
+          entryDate: entry.entryDate,
+          amount: entry.amount,
+          description: entry.description,
+          documentId: String(created.id),
+        });
+        if (hash.status === "invalid") throw new JournalReviewError(hash.errors[0].message);
+        const result = await tx.researchFundJournalEntry.updateMany({
+          where: { ...guard(bookId, entry), ...expenseWhere, documentId: null },
+          data: { documentId: created.id, receiptAbsenceReason: null, hash: hash.value },
+        });
+        if (result.count !== 1)
+          throw new JournalReviewError("仕訳が更新・公開されました。画面を再読み込みしてください");
+      }),
+    );
   }
   async politicianId(bookId: string) {
     const book = await this.prisma.researchFundBook.findUnique({
