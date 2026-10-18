@@ -11,6 +11,7 @@ export type AuthErrorCode =
   | "NETWORK_ERROR"
   | "INSUFFICIENT_PERMISSION"
   | "INVALID_ROLE"
+  | "INVALID_ASSIGNMENT"
   | "USER_NOT_FOUND"
   | "INVALID_EMAIL"
   | "WEAK_PASSWORD"
@@ -44,6 +45,7 @@ export const AUTH_ERROR_MESSAGES: Record<AuthErrorCode, string> = {
   NETWORK_ERROR: "認証サービスに接続できませんでした。しばらく待ってから再試行してください",
   INSUFFICIENT_PERMISSION: "この操作を行う権限がありません",
   INVALID_ROLE: "不明なロールが指定されました",
+  INVALID_ASSIGNMENT: "担当の議員の指定が不正です",
   USER_NOT_FOUND: "ユーザーが見つかりません",
   INVALID_EMAIL: "有効なメールアドレスを入力してください",
   WEAK_PASSWORD: "パスワードは6文字以上で入力してください",

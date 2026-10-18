@@ -105,4 +105,15 @@ test.describe("research_fund だけのユーザー", () => {
 		await expect(page.getByRole("link", { name: "編集" })).toHaveCount(0);
 		await expect(page.getByRole("button", { name: "削除" })).toHaveCount(0);
 	});
+
+	test("担当外の議員室は閲覧できるが、書き込み用のボタン・フォームは無効になる（#1773）", async ({ page }) => {
+		// シードの baz@example.com は担当の議員を持たないので、どの議員室も担当外になる
+		await page.goto("/politicians/1/books");
+		await expect(page.getByRole("heading", { name: "年度帳簿" })).toBeVisible();
+		await expect(page.getByText("担当外のため閲覧のみ")).toBeVisible();
+		await expect(page.getByRole("button", { name: "帳簿を作成" })).toBeDisabled();
+
+		await page.goto("/politicians");
+		await expect(page.getByRole("switch").first()).toBeDisabled();
+	});
 });

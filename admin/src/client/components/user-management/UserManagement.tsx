@@ -28,16 +28,24 @@ interface UserDisplayData {
   id: string;
   email: string;
   roles: UserRole[];
+  /** 担当する議員の ID（調査研究費の書き込みは担当の議員室だけ。#1773） */
+  assignedPoliticianIds: string[];
   createdAt: Date;
 }
 
 interface UserManagementProps {
   users: UserDisplayData[];
   availableRoles: readonly UserRole[];
+  /** 担当として選べる議員 */
+  politicians: readonly { id: string; name: string }[];
   updateUserRolesAction: (
     userId: string,
     roles: UserRole[],
   ) => Promise<{ ok: true; user: User } | { ok: false; error: string }>;
+  updateUserAssignmentsAction: (
+    userId: string,
+    politicianIds: string[],
+  ) => Promise<{ ok: true; assignedPoliticianIds: string[] } | { ok: false; error: string }>;
   inviteUserAction: (email: string, roles: UserRole[]) => Promise<{ ok: boolean; error?: string }>;
 }
 
@@ -81,10 +89,52 @@ function RoleCheckboxes({
   );
 }
 
+/**
+ * 担当する議員を複数選ぶチェックボックス群。
+ * 担当の議員室にだけ調査研究費を書き込める（閲覧は research_fund ロールがあれば全議員室）。
+ */
+function AssignmentCheckboxes({
+  user,
+  politicians,
+  disabled,
+  onToggle,
+}: {
+  user: UserDisplayData;
+  politicians: readonly { id: string; name: string }[];
+  disabled: boolean;
+  onToggle: (politicianId: string, checked: boolean) => void;
+}) {
+  if (politicians.length === 0)
+    return <span className="text-xs text-muted-foreground">議員が登録されていません</span>;
+  return (
+    <div className="flex flex-col gap-1.5">
+      {politicians.map((politician) => {
+        const id = `user-${user.id}-politician-${politician.id}`;
+        return (
+          <div key={politician.id} className="flex items-center gap-1.5">
+            <Checkbox
+              id={id}
+              aria-label={`${user.email} の担当議員: ${politician.name}`}
+              checked={user.assignedPoliticianIds.includes(politician.id)}
+              onCheckedChange={(checked) => onToggle(politician.id, checked === true)}
+              disabled={disabled}
+            />
+            <Label htmlFor={id} className="font-normal">
+              {politician.name}
+            </Label>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 export default function UserManagement({
   users: initialUsers,
   availableRoles,
+  politicians,
   updateUserRolesAction,
+  updateUserAssignmentsAction,
   inviteUserAction,
 }: UserManagementProps) {
   const router = useRouter();
@@ -105,6 +155,7 @@ export default function UserManagement({
           prev.map((user) =>
             user.id === userId
               ? {
+                  ...user,
                   id: result.user.id,
                   email: result.user.email,
                   roles: result.user.roles,
@@ -121,6 +172,35 @@ export default function UserManagement({
       alert(
         `ロールの更新に失敗しました: ${error instanceof Error ? error.message : "不明なエラー"}`,
       );
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleAssignmentChange = async (
+    user: UserDisplayData,
+    politicianId: string,
+    checked: boolean,
+  ) => {
+    const next = checked
+      ? [...user.assignedPoliticianIds, politicianId]
+      : user.assignedPoliticianIds.filter((id) => id !== politicianId);
+    setIsLoading(true);
+
+    try {
+      const result = await updateUserAssignmentsAction(user.id, next);
+      if (result.ok) {
+        setUsers((prev) =>
+          prev.map((u) =>
+            u.id === user.id ? { ...u, assignedPoliticianIds: result.assignedPoliticianIds } : u,
+          ),
+        );
+      } else {
+        alert(`担当の更新に失敗しました: ${result.error}`);
+      }
+    } catch (error) {
+      console.error("Error updating assignments:", error);
+      alert(`担当の更新に失敗しました: ${error instanceof Error ? error.message : "不明なエラー"}`);
     } finally {
       setIsLoading(false);
     }
@@ -195,6 +275,7 @@ export default function UserManagement({
               <TableHead>ロール</TableHead>
               <TableHead>作成日</TableHead>
               <TableHead>ロールの変更</TableHead>
+              <TableHead>担当議員（調査研究費）</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -226,6 +307,16 @@ export default function UserManagement({
                     disabled={isLoading}
                     onToggle={(role, checked) =>
                       handleRolesChange(user.id, toggleUserRole(user.roles, role, checked))
+                    }
+                  />
+                </TableCell>
+                <TableCell>
+                  <AssignmentCheckboxes
+                    user={user}
+                    politicians={politicians}
+                    disabled={isLoading}
+                    onToggle={(politicianId, checked) =>
+                      handleAssignmentChange(user, politicianId, checked)
                     }
                   />
                 </TableCell>

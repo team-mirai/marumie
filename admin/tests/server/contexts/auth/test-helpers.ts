@@ -61,4 +61,7 @@ export const createMockUserRepository = (): jest.Mocked<UserRepository> => ({
   findAll: jest.fn(),
   updateRoles: jest.fn(),
   delete: jest.fn(),
+  findAssignedPoliticianIds: jest.fn(),
+  findAllAssignedPoliticianIds: jest.fn(),
+  replaceAssignedPoliticians: jest.fn(),
 });

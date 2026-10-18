@@ -53,6 +53,9 @@ describe("InviteUserUsecase", () => {
       findAll: jest.fn(),
       updateRoles: jest.fn(),
       delete: jest.fn(),
+      findAssignedPoliticianIds: jest.fn(),
+      findAllAssignedPoliticianIds: jest.fn(),
+      replaceAssignedPoliticians: jest.fn(),
     };
     mockAdminAuthProvider = {
       inviteUserByEmail: jest.fn(),

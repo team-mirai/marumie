@@ -1,7 +1,7 @@
 "use server";
 import "server-only";
 import { revalidatePath } from "next/cache";
-import { requireRole } from "@/server/contexts/auth/presentation/loaders/require-role";
+import { requireResearchFundWriter } from "@/server/contexts/auth/presentation/loaders/require-research-fund-writer";
 import { requireJournalTarget } from "@/server/contexts/research-fund/presentation/loaders/load-journal-review";
 import { buildProcessScanJobsUsecase } from "@/server/contexts/research-fund/presentation/loaders/load-scan";
 
@@ -10,7 +10,7 @@ import { buildProcessScanJobsUsecase } from "@/server/contexts/research-fund/pre
  * 画面は hasMore が true の間これを繰り返し呼ぶ（キュー基盤は使わない）。
  */
 export async function processScanJobs(politicianId: string, bookId: string) {
-  const user = await requireRole("research_fund");
+  const user = await requireResearchFundWriter(politicianId);
   if (!(await requireJournalTarget(politicianId, bookId)))
     return { success: false as const, error: "現在の対象帳簿を選択し直してください" };
   try {

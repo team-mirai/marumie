@@ -1,7 +1,7 @@
 "use server";
 import "server-only";
 import { revalidatePath } from "next/cache";
-import { requireRole } from "@/server/contexts/auth/presentation/loaders/require-role";
+import { requireResearchFundWriter } from "@/server/contexts/auth/presentation/loaders/require-research-fund-writer";
 import { DeleteExpenditureGroupUsecase } from "@/server/contexts/research-fund/application/usecases/delete-expenditure-group-usecase";
 import { ReorderExpenditureGroupsUsecase } from "@/server/contexts/research-fund/application/usecases/reorder-expenditure-groups-usecase";
 import { SaveExpenditureGroupUsecase } from "@/server/contexts/research-fund/application/usecases/save-expenditure-group-usecase";
@@ -27,7 +27,7 @@ function failure(error: unknown, fallback: string) {
 }
 
 export async function saveUsagePolicy(politicianId: string, bookId: string, policyComment: string) {
-  await requireRole("research_fund");
+  await requireResearchFundWriter(politicianId);
   if (!(await requireJournalTarget(politicianId, bookId)))
     return { success: false as const, error: "現在の対象帳簿を選択し直してください" };
   try {
@@ -48,7 +48,7 @@ export async function saveExpenditureGroup(
   groupId: string | null,
   input: ExpenditureGroupEdit,
 ) {
-  await requireRole("research_fund");
+  await requireResearchFundWriter(politicianId);
   if (!(await requireJournalTarget(politicianId, bookId)))
     return { success: false as const, error: "現在の対象帳簿を選択し直してください" };
   try {
@@ -69,7 +69,7 @@ export async function deleteExpenditureGroup(
   bookId: string,
   groupId: string,
 ) {
-  await requireRole("research_fund");
+  await requireResearchFundWriter(politicianId);
   if (!(await requireJournalTarget(politicianId, bookId)))
     return { success: false as const, error: "現在の対象帳簿を選択し直してください" };
   try {
@@ -90,7 +90,7 @@ export async function reorderExpenditureGroups(
   bookId: string,
   groupIds: string[],
 ) {
-  await requireRole("research_fund");
+  await requireResearchFundWriter(politicianId);
   if (!(await requireJournalTarget(politicianId, bookId)))
     return { success: false as const, error: "現在の対象帳簿を選択し直してください" };
   try {

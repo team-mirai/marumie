@@ -1,13 +1,13 @@
 "use server";
 import "server-only";
 import { revalidatePath } from "next/cache";
-import { requireRole } from "@/server/contexts/auth/presentation/loaders/require-role";
+import { requireResearchFundWriter } from "@/server/contexts/auth/presentation/loaders/require-research-fund-writer";
 import { requireJournalTarget } from "@/server/contexts/research-fund/presentation/loaders/load-journal-review";
 import { buildRetryScanJobUsecase } from "@/server/contexts/research-fund/presentation/loaders/load-scan";
 
 /** 失敗したジョブを待機中に戻す。実行そのものは processScanJobs が拾う */
 export async function retryScanJob(politicianId: string, bookId: string, jobId: string) {
-  await requireRole("research_fund");
+  await requireResearchFundWriter(politicianId);
   if (!(await requireJournalTarget(politicianId, bookId)))
     return { success: false as const, error: "現在の対象帳簿を選択し直してください" };
   try {

@@ -7,6 +7,10 @@ import { toast } from "sonner";
 import { PageHeader } from "@/client/components/layout/PageHeader";
 import { Button, Card, CardContent, Label, Textarea } from "@/client/components/ui";
 import { cn, formatCurrency, formatLinkedPeriod } from "@/client/lib";
+import {
+  WriteFieldset,
+  WriteLinkButton,
+} from "@/client/components/research-fund/ResearchFundWriteAccess";
 import type { ExpenditureGroupSummary } from "@/server/contexts/research-fund/domain/models/expenditure-group";
 import {
   reorderExpenditureGroups,
@@ -80,35 +84,35 @@ export function ExpenditureGroupList({
         title="支出群と成果"
         description="支出をまとめて「活用方針」と「主要な成果」を書く。金額・件数・期間は紐づけた仕訳から自動集計されます。"
         actions={
-          <Button asChild>
-            <Link href={`${base}/new`}>
-              <Plus size={14} />
-              支出群を作る
-            </Link>
-          </Button>
+          <WriteLinkButton href={`${base}/new`}>
+            <Plus size={14} />
+            支出群を作る
+          </WriteLinkButton>
         }
       />
       <Card className="mb-5 max-w-4xl">
-        <CardContent className="p-5">
-          <Label htmlFor={policyFieldId}>活用方針（帳簿全体・議員本人が書く1〜2行）</Label>
-          <Textarea
-            id={policyFieldId}
-            className="mt-1.5 min-h-14"
-            rows={2}
-            value={policyComment}
-            disabled={pending}
-            onChange={(event) => setPolicyComment(event.target.value)}
-          />
-          <div className="mt-2 flex justify-end">
-            <Button
-              size="xs"
-              disabled={pending || policyComment === savedPolicyComment}
-              onClick={savePolicy}
-            >
-              保存
-            </Button>
-          </div>
-        </CardContent>
+        <WriteFieldset>
+          <CardContent className="p-5">
+            <Label htmlFor={policyFieldId}>活用方針（帳簿全体・議員本人が書く1〜2行）</Label>
+            <Textarea
+              id={policyFieldId}
+              className="mt-1.5 min-h-14"
+              rows={2}
+              value={policyComment}
+              disabled={pending}
+              onChange={(event) => setPolicyComment(event.target.value)}
+            />
+            <div className="mt-2 flex justify-end">
+              <Button
+                size="xs"
+                disabled={pending || policyComment === savedPolicyComment}
+                onClick={savePolicy}
+              >
+                保存
+              </Button>
+            </div>
+          </CardContent>
+        </WriteFieldset>
       </Card>
       {groups.length === 0 ? (
         <Card className="max-w-4xl">
@@ -148,26 +152,28 @@ export function ExpenditureGroupList({
                   <Button asChild variant="outline" size="xs">
                     <Link href={`${base}/${group.id}`}>編集</Link>
                   </Button>
-                  <div className="ml-auto flex gap-1.5">
-                    <Button
-                      variant="outline"
-                      size="icon-sm"
-                      disabled={pending || index === 0}
-                      aria-label={`${group.title}を前に移動`}
-                      onClick={() => move(index, -1)}
-                    >
-                      <CaretLeft size={12} />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="icon-sm"
-                      disabled={pending || index === groups.length - 1}
-                      aria-label={`${group.title}を後ろに移動`}
-                      onClick={() => move(index, 1)}
-                    >
-                      <CaretRight size={12} />
-                    </Button>
-                  </div>
+                  <WriteFieldset>
+                    <div className="ml-auto flex gap-1.5">
+                      <Button
+                        variant="outline"
+                        size="icon-sm"
+                        disabled={pending || index === 0}
+                        aria-label={`${group.title}を前に移動`}
+                        onClick={() => move(index, -1)}
+                      >
+                        <CaretLeft size={12} />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="icon-sm"
+                        disabled={pending || index === groups.length - 1}
+                        aria-label={`${group.title}を後ろに移動`}
+                        onClick={() => move(index, 1)}
+                      >
+                        <CaretRight size={12} />
+                      </Button>
+                    </div>
+                  </WriteFieldset>
                 </div>
               </CardContent>
             </Card>

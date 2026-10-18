@@ -1,6 +1,28 @@
 import { UserRoleModel } from "@/server/contexts/auth/domain/models/user-role";
 
 describe("UserRoleModel", () => {
+  describe("canWriteResearchFund", () => {
+    it("research_fund のユーザーは担当の議員にだけ書き込める", () => {
+      expect(UserRoleModel.canWriteResearchFund(["research_fund"], ["1", "3"], "1")).toBe(true);
+      expect(UserRoleModel.canWriteResearchFund(["research_fund"], ["1", "3"], "3")).toBe(true);
+      expect(UserRoleModel.canWriteResearchFund(["research_fund"], ["1", "3"], "2")).toBe(false);
+    });
+
+    it("担当のない research_fund のユーザーはどの議員にも書き込めない（閲覧のみ）", () => {
+      expect(UserRoleModel.canWriteResearchFund(["research_fund"], [], "1")).toBe(false);
+    });
+
+    it("admin は担当の有無に関係なく全議員に書き込める", () => {
+      expect(UserRoleModel.canWriteResearchFund(["admin"], [], "1")).toBe(true);
+      expect(UserRoleModel.canWriteResearchFund(["admin"], ["2"], "1")).toBe(true);
+    });
+
+    it("research_fund ロールが無ければ、担当が残っていても書き込めない", () => {
+      expect(UserRoleModel.canWriteResearchFund(["political_fund"], ["1"], "1")).toBe(false);
+      expect(UserRoleModel.canWriteResearchFund([], ["1"], "1")).toBe(false);
+    });
+  });
+
   describe("canUse", () => {
     it("admin は他のロールの有無に関係なく全機能を使える", () => {
       expect(UserRoleModel.canUse(["admin"], ["political_fund"])).toBe(true);

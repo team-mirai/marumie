@@ -32,6 +32,7 @@ import {
   type ScanOverview,
 } from "@/server/contexts/research-fund/domain/models/scan-batch";
 import { createScanBatch } from "@/server/contexts/research-fund/presentation/actions/create-scan-batch";
+import { useResearchFundReadOnly } from "@/client/components/research-fund/ResearchFundWriteAccess";
 import { processScanJobs } from "@/server/contexts/research-fund/presentation/actions/process-scan-jobs";
 import { retryScanJob } from "@/server/contexts/research-fund/presentation/actions/retry-scan-job";
 import type { AdminTarget } from "@/server/contexts/shared/domain/models/admin-target";
@@ -84,6 +85,8 @@ export function DocumentScan({
   const [processing, setProcessing] = useState(false);
   const [autoRun, setAutoRun] = useState(false);
   const ready = activePromptVersion !== null;
+  // 担当外の議員室は閲覧のみ。アップロード・読み取り・再実行を無効にする
+  const readOnly = useResearchFundReadOnly();
   const jobs = batches.flatMap((batch) => batch.jobs);
   const unfinished = jobs.filter(
     (job) => job.status === "queued" || job.status === "running",
@@ -188,7 +191,7 @@ export function DocumentScan({
   function handleDrop(event: DragEvent<HTMLDivElement>) {
     event.preventDefault();
     setDragging(false);
-    if (pending || !ready) return;
+    if (pending || !ready || readOnly) return;
     upload([...(event.dataTransfer.files ?? [])]);
   }
 
@@ -208,7 +211,7 @@ export function DocumentScan({
               data-dragging={dragging || undefined}
               onDragOver={(event) => {
                 event.preventDefault();
-                if (!pending && ready) setDragging(true);
+                if (!pending && ready && !readOnly) setDragging(true);
               }}
               onDragLeave={(event) => {
                 event.preventDefault();
@@ -218,7 +221,7 @@ export function DocumentScan({
               className={cn(
                 "flex flex-col items-center gap-2 rounded-lg border-[1.5px] border-dashed border-primary bg-accent px-5 py-9 text-center transition-colors duration-150 ease-out",
                 dragging && "border-primary-active bg-teal-soft/30",
-                (pending || !ready) && "border-disabled-border bg-secondary",
+                (pending || !ready || readOnly) && "border-disabled-border bg-secondary",
               )}
             >
               <UploadSimple aria-hidden className="size-8 text-primary-active" />
@@ -233,7 +236,7 @@ export function DocumentScan({
                 type="button"
                 variant="outline"
                 className="mt-1.5 text-xs"
-                disabled={pending || !ready}
+                disabled={pending || !ready || readOnly}
                 onClick={() => inputRef.current?.click()}
               >
                 {pending ? "アップロード中…" : "ファイルを選ぶ"}
@@ -245,7 +248,7 @@ export function DocumentScan({
                 accept={SCAN_DOCUMENT_MIME_TYPES.join(",")}
                 aria-label="領収書・請求書"
                 className="sr-only"
-                disabled={pending || !ready}
+                disabled={pending || !ready || readOnly}
                 onChange={(event) => upload([...(event.target.files ?? [])])}
               />
             </div>
@@ -261,7 +264,7 @@ export function DocumentScan({
           <div className="flex flex-wrap items-center gap-3">
             <Button
               type="button"
-              disabled={processing || pending || unfinished === 0}
+              disabled={processing || pending || unfinished === 0 || readOnly}
               onClick={start}
             >
               {processing || autoRun
@@ -376,7 +379,7 @@ export function DocumentScan({
                               type="button"
                               variant="outline"
                               className="text-xs"
-                              disabled={pending || processing}
+                              disabled={pending || processing || readOnly}
                               onClick={() => retry(job.id)}
                             >
                               <ArrowClockwise aria-hidden className="size-4" />

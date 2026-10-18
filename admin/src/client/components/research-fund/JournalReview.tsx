@@ -54,6 +54,7 @@ import {
   REREAD_INSTRUCTION_MAX_LENGTH,
 } from "@/server/contexts/research-fund/domain/models/scan-reread";
 import type { AdminTarget } from "@/server/contexts/shared/domain/models/admin-target";
+import { WriteFieldset } from "@/client/components/research-fund/ResearchFundWriteAccess";
 import { mutateJournalReview } from "@/server/contexts/research-fund/presentation/actions/manage-journal-review";
 import { rereadScanDocuments } from "@/server/contexts/research-fund/presentation/actions/reread-scan-documents";
 import { cn, filterJournalEntries, researchFundDocumentUrl } from "@/client/lib";
@@ -753,30 +754,32 @@ export function JournalReview({
         <span className="text-xs text-muted-foreground">
           {target.name}・<span className="font-latin">{target.year}</span>年
         </span>
-        <div className="ml-auto flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            className="text-xs"
-            disabled={pending}
-            onClick={() => {
-              if (allowLeave()) setNumbering(true);
-            }}
-          >
-            領収書等番号を振る
-          </Button>
-          <Button
-            size="sm"
-            className="text-xs"
-            disabled={pending}
-            onClick={() => {
-              if (allowLeave()) setCreating(true);
-            }}
-          >
-            <Plus aria-hidden />
-            手動で仕訳を作成
-          </Button>
-        </div>
+        <WriteFieldset>
+          <div className="ml-auto flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-xs"
+              disabled={pending}
+              onClick={() => {
+                if (allowLeave()) setNumbering(true);
+              }}
+            >
+              領収書等番号を振る
+            </Button>
+            <Button
+              size="sm"
+              className="text-xs"
+              disabled={pending}
+              onClick={() => {
+                if (allowLeave()) setCreating(true);
+              }}
+            >
+              <Plus aria-hidden />
+              手動で仕訳を作成
+            </Button>
+          </div>
+        </WriteFieldset>
       </div>
       <div className="flex flex-wrap items-center gap-2">
         <Tabs
@@ -904,12 +907,14 @@ export function JournalReview({
           onToggleAll={() => setChecked(allChecked ? [] : checkable.map((e) => e.id))}
           overlay={
             checkedEntries.length > 0 && (
-              <JournalBulkActionBar
-                count={checkedEntries.length}
-                mixed={checkedKind === "mixed"}
-                pending={pending}
-                actions={bulkActions}
-              />
+              <WriteFieldset>
+                <JournalBulkActionBar
+                  count={checkedEntries.length}
+                  mixed={checkedKind === "mixed"}
+                  pending={pending}
+                  actions={bulkActions}
+                />
+              </WriteFieldset>
             )
           }
         />

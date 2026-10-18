@@ -5,6 +5,7 @@ import { PayeeAliasDeleteButton } from "@/client/components/research-fund/PayeeA
 import { PayeeDeleteButton } from "@/client/components/research-fund/PayeeDeleteButton";
 import { PayeeEditForm } from "@/client/components/research-fund/PayeeEditForm";
 import { PayeeMergeButton } from "@/client/components/research-fund/PayeeMergeButton";
+import { WriteFieldset } from "@/client/components/research-fund/ResearchFundWriteAccess";
 import {
   Card,
   CardContent,
@@ -75,18 +76,22 @@ export function PayeeDetail({
         title={payee.name}
         description="支払先を編集すると、紐づけたすべての仕訳に反映されます。"
         actions={
-          <div className="flex gap-2">
-            <PayeeMergeButton
-              payee={payee}
-              aliases={aliases}
-              candidates={mergeCandidates}
-              target={target}
-            />
-            <PayeeDeleteButton payee={payee} deletion={deletion} target={target} />
-          </div>
+          <WriteFieldset>
+            <div className="flex gap-2">
+              <PayeeMergeButton
+                payee={payee}
+                aliases={aliases}
+                candidates={mergeCandidates}
+                target={target}
+              />
+              <PayeeDeleteButton payee={payee} deletion={deletion} target={target} />
+            </div>
+          </WriteFieldset>
         }
       />
-      <PayeeEditForm payee={payee} usageCount={entries.length} target={target} />
+      <WriteFieldset>
+        <PayeeEditForm payee={payee} usageCount={entries.length} target={target} />
+      </WriteFieldset>
       <h2 className="mb-1 text-base font-bold">
         書類上の表記（<span className="font-latin">{aliases.length}</span>件）
       </h2>
@@ -138,12 +143,14 @@ export function PayeeDetail({
                     {formatDateTime(alias.createdAt)}
                   </TableCell>
                   <TableCell className="text-right">
-                    <PayeeAliasDeleteButton
-                      payeeId={payee.id}
-                      aliasId={alias.id}
-                      name={alias.name}
-                      target={target}
-                    />
+                    <WriteFieldset>
+                      <PayeeAliasDeleteButton
+                        payeeId={payee.id}
+                        aliasId={alias.id}
+                        name={alias.name}
+                        target={target}
+                      />
+                    </WriteFieldset>
                   </TableCell>
                 </TableRow>
               ))}

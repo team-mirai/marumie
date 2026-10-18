@@ -8,6 +8,9 @@ import type {
 import { AuthError } from "@/server/contexts/auth/domain/errors/auth-error";
 import { UserRoleModel } from "@/server/contexts/auth/domain/models/user-role";
 
+/** ユーザーと、そのユーザーが担当する議員の ID */
+export type UserWithAssignments = User & { assignedPoliticianIds: string[] };
+
 /**
  * 全ユーザー一覧取得のユースケース（admin権限必須）
  */
@@ -34,11 +37,18 @@ export class GetAllUsersUsecase {
     }
   }
 
-  async execute(): Promise<User[]> {
+  async execute(): Promise<UserWithAssignments[]> {
     // 認可チェック
     await this.checkPermission();
 
-    // ユーザー一覧取得
-    return await this.userRepository.findAll();
+    // ユーザー一覧と担当議員を取得
+    const [users, assignments] = await Promise.all([
+      this.userRepository.findAll(),
+      this.userRepository.findAllAssignedPoliticianIds(),
+    ]);
+    return users.map((user) => ({
+      ...user,
+      assignedPoliticianIds: assignments.get(user.id) ?? [],
+    }));
   }
 }

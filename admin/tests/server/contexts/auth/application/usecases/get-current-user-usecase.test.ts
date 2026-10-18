@@ -46,6 +46,9 @@ describe("GetCurrentUserUsecase", () => {
       findAll: jest.fn(),
       updateRoles: jest.fn(),
       delete: jest.fn(),
+      findAssignedPoliticianIds: jest.fn(),
+      findAllAssignedPoliticianIds: jest.fn(),
+      replaceAssignedPoliticians: jest.fn(),
     };
     usecase = new GetCurrentUserUsecase(mockAuthProvider, mockUserRepository);
   });

@@ -2,6 +2,7 @@
 import { revalidatePath } from "next/cache";
 import type { PoliticianInput } from "@/shared/models/politician";
 import { requireRole } from "@/server/contexts/auth/presentation/loaders/require-role";
+import { requireResearchFundWriter } from "@/server/contexts/auth/presentation/loaders/require-research-fund-writer";
 import { SavePoliticianUsecase } from "@/server/contexts/shared/application/usecases/save-politician-usecase";
 import { DeletePoliticianUsecase } from "@/server/contexts/shared/application/usecases/delete-politician-usecase";
 import { SetPoliticianResearchFundPublicUsecase } from "@/server/contexts/shared/application/usecases/set-politician-research-fund-public-usecase";
@@ -23,7 +24,7 @@ export async function savePolitician(id: string | null, input: PoliticianInput) 
   }
 }
 export async function setPoliticianResearchFundPublic(id: string, isPublic: boolean) {
-  await requireRole("research_fund");
+  await requireResearchFundWriter(id);
   try {
     const result = await new SetPoliticianResearchFundPublicUsecase(
       new PrismaPoliticianRepository(prisma),

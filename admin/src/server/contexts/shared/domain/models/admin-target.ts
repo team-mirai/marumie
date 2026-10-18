@@ -27,6 +27,30 @@ export function isTargetAvailableFor(target: AdminTarget, roles: readonly UserRo
   );
 }
 
+/**
+ * 対象が未選択のときに選んだ状態で始める対象（#1773）。
+ * 秘書は基本的に 1 つの議員室を担当するので、担当がちょうど 1 人ならその議員室の最新年度の帳簿を選ぶ
+ * （取り違えを防ぐため）。担当が 0 人・複数人、または担当の議員に帳簿が無ければ未選択のままにする。
+ * @param targets ユーザーが選べる対象
+ * @param assignedPoliticianIds ユーザーが担当する議員の ID
+ */
+export function defaultTargetFor(
+  targets: readonly AdminTarget[],
+  assignedPoliticianIds: readonly string[],
+): AdminTarget | null {
+  if (assignedPoliticianIds.length !== 1) return null;
+  const [politicianId] = assignedPoliticianIds;
+  return targets.reduce<AdminTarget | null>(
+    (latest, target) =>
+      target.kind === "research-fund" &&
+      target.politicianId === politicianId &&
+      (latest === null || target.year > latest.year)
+        ? target
+        : latest,
+    null,
+  );
+}
+
 /** 政治団体系ページが必要とする「政治団体 × 年度」。グローバル対象から取り出す。 */
 export type OrganizationTarget = {
   organizationId: string;

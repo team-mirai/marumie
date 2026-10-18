@@ -1,5 +1,5 @@
 import { revalidatePath } from "next/cache";
-import { requireRole } from "@/server/contexts/auth/presentation/loaders/require-role";
+import { requireResearchFundWriter } from "@/server/contexts/auth/presentation/loaders/require-research-fund-writer";
 import type { ProcessScanJobsUsecase } from "@/server/contexts/research-fund/application/usecases/process-scan-jobs-usecase";
 import type { RetryScanJobUsecase } from "@/server/contexts/research-fund/application/usecases/retry-scan-job-usecase";
 import { processScanJobs } from "@/server/contexts/research-fund/presentation/actions/process-scan-jobs";
@@ -11,8 +11,8 @@ import {
 } from "@/server/contexts/research-fund/presentation/loaders/load-scan";
 
 jest.mock("next/cache", () => ({ revalidatePath: jest.fn() }));
-jest.mock("@/server/contexts/auth/presentation/loaders/require-role", () => ({
-  requireRole: jest.fn(),
+jest.mock("@/server/contexts/auth/presentation/loaders/require-research-fund-writer", () => ({
+  requireResearchFundWriter: jest.fn(),
 }));
 jest.mock("@/server/contexts/research-fund/presentation/loaders/load-journal-review", () => ({
   requireJournalTarget: jest.fn(),
@@ -28,8 +28,8 @@ const retry = jest.fn();
 beforeEach(() => {
   jest.clearAllMocks();
   jest
-    .mocked(requireRole)
-    .mockResolvedValue({ id: "user" } as Awaited<ReturnType<typeof requireRole>>);
+    .mocked(requireResearchFundWriter)
+    .mockResolvedValue({ id: "user" } as Awaited<ReturnType<typeof requireResearchFundWriter>>);
   jest.mocked(requireJournalTarget).mockResolvedValue({
     kind: "research-fund",
     key: "book:1",
@@ -69,7 +69,7 @@ describe("processScanJobs", () => {
   });
 
   test("認証失敗時は処理を始めない", async () => {
-    jest.mocked(requireRole).mockRejectedValueOnce(new Error("auth"));
+    jest.mocked(requireResearchFundWriter).mockRejectedValueOnce(new Error("auth"));
     await expect(processScanJobs("2", "1")).rejects.toThrow("auth");
     expect(execute).not.toHaveBeenCalled();
   });

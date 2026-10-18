@@ -37,6 +37,23 @@ export namespace UserRoleModel {
     return roles.includes("admin");
   }
 
+  /**
+   * 議員の調査研究費のデータを変える操作（書き込み）ができるか判定する（#1773）。
+   * 閲覧は research_fund ロールがあれば全議員に開いているが、書き込みは担当の議員室に絞る
+   * （秘書が別の議員室に書類を上げてしまう取り違えを防ぐ）。admin は担当に関係なく全議員に書き込める。
+   * @param roles 現在のユーザーのロール
+   * @param assignedPoliticianIds 現在のユーザーが担当する議員の ID
+   * @param politicianId 書き込み先の議員の ID
+   */
+  export function canWriteResearchFund(
+    roles: readonly UserRole[],
+    assignedPoliticianIds: readonly string[],
+    politicianId: string,
+  ): boolean {
+    if (isAdmin(roles)) return true;
+    return roles.includes("research_fund") && assignedPoliticianIds.includes(politicianId);
+  }
+
   /** どの機能も使えない（ロールを 1 つも持たない）か判定 */
   export function hasNoRole(roles: readonly UserRole[]): boolean {
     return roles.length === 0;

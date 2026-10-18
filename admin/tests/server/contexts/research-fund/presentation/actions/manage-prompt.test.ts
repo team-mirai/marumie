@@ -1,5 +1,5 @@
 import { revalidatePath } from "next/cache";
-import { requireRole } from "@/server/contexts/auth/presentation/loaders/require-role";
+import { requireResearchFundWriter } from "@/server/contexts/auth/presentation/loaders/require-research-fund-writer";
 import { RollbackPromptUsecase } from "@/server/contexts/research-fund/application/usecases/rollback-prompt-usecase";
 import { SavePromptUsecase } from "@/server/contexts/research-fund/application/usecases/save-prompt-usecase";
 import { mutatePrompt } from "@/server/contexts/research-fund/presentation/actions/manage-prompt";
@@ -8,12 +8,12 @@ import { PrismaAddressSearchPromptRepository } from "@/server/contexts/research-
 import { PrismaPromptRepository } from "@/server/contexts/research-fund/infrastructure/repositories/prisma-prompt.repository";
 import { requireJournalTarget } from "@/server/contexts/research-fund/presentation/loaders/load-journal-review";
 jest.mock("next/cache", () => ({ revalidatePath: jest.fn() }));
-jest.mock("@/server/contexts/auth/presentation/loaders/require-role", () => ({ requireRole: jest.fn() }));
+jest.mock("@/server/contexts/auth/presentation/loaders/require-research-fund-writer", () => ({ requireResearchFundWriter: jest.fn() }));
 jest.mock("@/server/contexts/research-fund/presentation/loaders/load-journal-review", () => ({ requireJournalTarget: jest.fn() }));
 jest.mock("@/server/contexts/shared/infrastructure/prisma", () => ({ prisma: {} }));
 beforeEach(() => {
   jest.clearAllMocks();
-  jest.mocked(requireRole).mockResolvedValue({ id: "user" } as Awaited<ReturnType<typeof requireRole>>);
+  jest.mocked(requireResearchFundWriter).mockResolvedValue({ id: "user" } as Awaited<ReturnType<typeof requireResearchFundWriter>>);
   jest.mocked(requireJournalTarget).mockResolvedValue({ kind: "research-fund", key: "book:1", name: "議員", year: 2026, politicianId: "2", bookId: "1", draftCount: 0 });
 });
 afterEach(() => jest.restoreAllMocks());
@@ -38,7 +38,7 @@ test("別の対象への古いフォーム送信を拒否", async () => {
   expect(revalidatePath).not.toHaveBeenCalled();
 });
 test("認証失敗時は保存しない", async () => {
-  jest.mocked(requireRole).mockRejectedValueOnce(new Error("auth"));
+  jest.mocked(requireResearchFundWriter).mockRejectedValueOnce(new Error("auth"));
   const save = jest.spyOn(SavePromptUsecase.prototype, "execute");
   await expect(mutatePrompt("2", "1", { type: "save", body: "本文" })).rejects.toThrow("auth");
   expect(save).not.toHaveBeenCalled();

@@ -161,7 +161,7 @@ module.exports = {
       name: "no-shared-to-contexts",
       comment:
         "sharedコンテキストから他のコンテキストへの依存は禁止。" +
-        "ただし認証ガード（auth の requireRole / requireRolePage / requireRoleResponse）と、" +
+        "ただし認証ガード（auth の requireRole / requireRolePage / requireRoleResponse / requireResearchFundWriter）と、" +
         "ロールで使える対象を絞るためのロールのドメインモデル（auth の user-role）のみ暫定的に許可している。" +
         "shared/presentation/actions の 6 件は本来 shared に置くべきものではなく" +
         "（他コンテキストから呼ばれておらず、admin 画面専用の入口である）、" +
@@ -173,6 +173,7 @@ module.exports = {
         path: "contexts/(data-import|report|auth)",
         pathNot: [
           "contexts/auth/presentation/loaders/require-role",
+          "contexts/auth/presentation/loaders/require-research-fund-writer",
           "contexts/auth/domain/models/user-role",
         ],
       },

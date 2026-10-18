@@ -1,7 +1,7 @@
 "use server";
 import "server-only";
 import { revalidatePath } from "next/cache";
-import { requireRole } from "@/server/contexts/auth/presentation/loaders/require-role";
+import { requireResearchFundWriter } from "@/server/contexts/auth/presentation/loaders/require-research-fund-writer";
 import { RollbackPromptUsecase } from "@/server/contexts/research-fund/application/usecases/rollback-prompt-usecase";
 import { SavePromptUsecase } from "@/server/contexts/research-fund/application/usecases/save-prompt-usecase";
 import { PromptError, type PromptKind } from "@/server/contexts/research-fund/domain/models/prompt";
@@ -23,7 +23,7 @@ export async function mutatePrompt(
   mutation: Mutation,
   kind: PromptKind = "receipt",
 ) {
-  const user = await requireRole("research_fund");
+  const user = await requireResearchFundWriter(politicianId);
   if (!(await requireJournalTarget(politicianId, bookId)))
     return { success: false as const, error: "現在の対象帳簿を選択し直してください" };
   try {

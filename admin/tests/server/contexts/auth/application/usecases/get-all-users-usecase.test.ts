@@ -46,12 +46,15 @@ describe("GetAllUsersUsecase", () => {
       findAll: jest.fn(),
       updateRoles: jest.fn(),
       delete: jest.fn(),
+      findAssignedPoliticianIds: jest.fn(),
+      findAllAssignedPoliticianIds: jest.fn(),
+      replaceAssignedPoliticians: jest.fn(),
     };
     usecase = new GetAllUsersUsecase(mockAuthProvider, mockUserRepository);
   });
 
   describe("execute", () => {
-    it("admin権限を持つユーザーは全ユーザー一覧を取得できる", async () => {
+    it("admin権限を持つユーザーは全ユーザー一覧を、担当議員とあわせて取得できる", async () => {
       const authUser = createMockSupabaseUser();
       const adminUser = createMockUser({ roles: ["admin"] });
       const allUsers = [
@@ -61,10 +64,14 @@ describe("GetAllUsersUsecase", () => {
       mockAuthProvider.getUser.mockResolvedValue(authUser);
       mockUserRepository.findByAuthId.mockResolvedValue(adminUser);
       mockUserRepository.findAll.mockResolvedValue(allUsers);
+      mockUserRepository.findAllAssignedPoliticianIds.mockResolvedValue(new Map([["user-2", ["1", "3"]]]));
 
       const result = await usecase.execute();
 
-      expect(result).toEqual(allUsers);
+      expect(result).toEqual([
+        { ...adminUser, assignedPoliticianIds: [] },
+        { ...allUsers[1], assignedPoliticianIds: ["1", "3"] },
+      ]);
       expect(mockUserRepository.findAll).toHaveBeenCalled();
     });
 
