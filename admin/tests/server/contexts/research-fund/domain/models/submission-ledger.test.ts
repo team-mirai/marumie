@@ -1,6 +1,7 @@
 import {
   buildSubmissionLedgerCsv,
   isParliamentHouse,
+  legalCategoryName,
   legalCategoryNumber,
   receiptImageFilename,
   receiptNumberCell,
@@ -26,7 +27,7 @@ describe("衆議院のフォーマット", () => {
     ]);
   });
   test("1 仕訳を 1 行にし、決まっていない列は空欄にする", () => {
-    expect(submissionLedgerRow("representatives", entry, book)).toEqual(["⑨ 滞在費", "タクシー代", "1200", "2026-04-03", "", "東京タクシー", "東京都千代田区", "国会から事務所へ", "12", "", ""]);
+    expect(submissionLedgerRow("representatives", entry, book)).toEqual(["滞在費", "タクシー代", "1200", "2026-04-03", "", "東京タクシー", "東京都千代田区", "国会から事務所へ", "12", "", ""]);
     expect(submissionLedgerRow("representatives", noReceipt, book).slice(8, 10)).toEqual(["徴難", "自動券売機で購入したため"]);
   });
 });
@@ -40,8 +41,26 @@ describe("参議院のフォーマット", () => {
     ]);
   });
   test("1 仕訳を 1 行にし、決まっていない列は空欄にする", () => {
-    expect(submissionLedgerRow("councillors", noReceipt, book)).toEqual(["⑨ 滞在費", "タクシー代", "1200", "2026-04-03", "", "", "東京タクシー", "東京都千代田区", "国会から事務所へ", "無", "自動券売機で購入したため", "", "", ""]);
+    expect(submissionLedgerRow("councillors", noReceipt, book)).toEqual(["滞在費", "タクシー代", "1200", "2026-04-03", "", "", "東京タクシー", "東京都千代田区", "国会から事務所へ", "無", "自動券売機で購入したため", "", "", ""]);
     expect(submissionLedgerRow("councillors", entry, book).slice(9)).toEqual(["有", "", "", "", "tanaka-taro_2026_0012.pdf"]);
+  });
+});
+
+describe("支出項目", () => {
+  test.each([
+    ["① 人件費", "人件費"], ["② 光熱水費", "光熱水費"], ["③ 備品・消耗品費", "備品・消耗品費"], ["④ 事務所費", "事務所費"],
+    ["⑤ 会議費", "会議費"], ["⑥ 広報紙誌の発行その他の事業費", "広報紙誌の発行その他の事業費"], ["⑦ 調査研究費", "調査研究費"],
+    ["⑧ 交通費", "交通費"], ["⑨ 滞在費", "滞在費"], ["⑩ その他の経費", "その他の経費"],
+  ])("%s は丸数字と空白を外して %s にする", (legalLabel, expected) => {
+    expect(legalCategoryName(legalLabel)).toBe(expected);
+    expect(submissionLedgerRow("representatives", { ...entry, legalLabel }, book)[0]).toBe(expected);
+    expect(submissionLedgerRow("councillors", { ...entry, legalLabel }, book)[0]).toBe(expected);
+  });
+  test("全角の空白・空白なしでも外し、丸数字で始まらない区分はそのまま、区分なしは null", () => {
+    expect(legalCategoryName("⑨\u3000滞在費")).toBe("滞在費");
+    expect(legalCategoryName("⑨滞在費")).toBe("滞在費");
+    expect(legalCategoryName("その他")).toBe("その他");
+    expect(legalCategoryName(null)).toBeNull();
   });
 });
 
@@ -55,7 +74,7 @@ test("CSV は UTF-8 BOM 付き・CRLF で、全セルを引用符で囲み引用
   expect(csv.startsWith("﻿\"支出項目\",")).toBe(true);
   const lines = csv.slice(1).split("\r\n");
   expect(lines).toHaveLength(3);
-  expect(lines[1]).toBe('"⑨ 滞在費","A""B,C","1200","2026-04-03","","東京タクシー","東京都千代田区","国会から事務所へ","12","",""');
+  expect(lines[1]).toBe('"滞在費","A""B,C","1200","2026-04-03","","東京タクシー","東京都千代田区","国会から事務所へ","12","",""');
   expect(lines[2]).toBe("");
 });
 
@@ -81,6 +100,13 @@ describe("並び順", () => {
       at("6", "③ 備品・消耗品費", "2026-04-01"),
     ];
     expect(ids(sortSubmissionLedgerEntries(entries))).toEqual(["4", "5", "2", "6", "3", "1"]);
+  });
+
+  test("支出項目から丸数字を外しても、丸数字の番号順に並べる", () => {
+    const labels = ["⑩ その他の経費", "⑥ 広報紙誌の発行その他の事業費", "① 人件費", "④ 事務所費"];
+    const entries = labels.map((label, i) => at(String(i + 1), label, "2026-04-01"));
+    const lines = buildSubmissionLedgerCsv("councillors", book, entries).slice(1).split("\r\n");
+    expect(lines.slice(1, 5).map((line) => line.split(",")[0])).toEqual(['"人件費"', '"事務所費"', '"広報紙誌の発行その他の事業費"', '"その他の経費"']);
   });
 
   test("文字列の比較ではなく丸数字の番号で並べる", () => {
@@ -113,7 +139,7 @@ describe("並び順", () => {
     const entries = [at("1", "⑨ 滞在費", "2026-04-01"), at("2", "① 人件費", "2026-05-01")];
     for (const house of ["representatives", "councillors"] as const) {
       const lines = buildSubmissionLedgerCsv(house, book, entries).slice(1).split("\r\n");
-      expect([lines[1], lines[2]].map((line) => line.split(",")[0])).toEqual(['"① 人件費"', '"⑨ 滞在費"']);
+      expect([lines[1], lines[2]].map((line) => line.split(",")[0])).toEqual(['"人件費"', '"滞在費"']);
     }
   });
 });
