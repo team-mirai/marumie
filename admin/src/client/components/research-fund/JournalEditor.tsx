@@ -251,14 +251,9 @@ export function JournalEditor({
               <JournalReceiptAbsentField
                 entry={entry}
                 pending={pending}
-                onChange={(receiptAbsent) => {
-                  // 徴難を外すと事情も消えるので、事情の編集中なら下書きごと閉じる
-                  if (!receiptAbsent && editingRow === "receiptAbsence") {
-                    setEditingRow(null);
-                    setRowDraft("");
-                  }
-                  onSetReceiptAbsent(receiptAbsent);
-                }}
+                // 徴難を外して保存できると編集フォームが作り直され、事情の下書きも閉じる。
+                // 保存に失敗したときに下書きを失わないよう、ここでは閉じない
+                onChange={onSetReceiptAbsent}
               />
             )}
             {canHaveReceiptAbsenceReason(entry) && (
