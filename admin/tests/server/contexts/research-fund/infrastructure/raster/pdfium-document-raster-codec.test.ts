@@ -1,7 +1,10 @@
 import { readFile } from "fs/promises";
 import { join } from "path";
 import { PDFiumLibrary } from "@hyzyla/pdfium";
-import type { RasterImage } from "@/server/contexts/research-fund/domain/models/masking-region";
+import type {
+  MaskableMime,
+  RasterImage,
+} from "@/server/contexts/research-fund/domain/models/masking-region";
 import { PdfiumDocumentRasterCodec } from "@/server/contexts/research-fund/infrastructure/raster/pdfium-document-raster-codec";
 
 const DATA_DIR = join(process.cwd(), "tests/data/research-fund");
@@ -12,6 +15,26 @@ function solid(width: number, height: number, [r, g, b]: [number, number, number
   const rgba = new Uint8Array(width * height * 4);
   for (let i = 0; i < rgba.length; i += 4) rgba.set([r, g, b, 255], i);
   return { width, height, rgba };
+}
+
+/** 書類を開いて全ページを画像にする */
+async function renderAll(bytes: Uint8Array, mime: MaskableMime): Promise<RasterImage[]> {
+  const document = await codec.open({ bytes, mime });
+  try {
+    const pages: RasterImage[] = [];
+    for (let index = 0; index < document.pageCount; index += 1)
+      pages.push(await document.renderPage(index));
+    return pages;
+  } finally {
+    document.close();
+  }
+}
+
+/** ページ画像を順に追加して PDF を作る */
+async function toImagePdf(pages: RasterImage[]): Promise<Uint8Array> {
+  const pdf = await codec.createImagePdf();
+  for (const page of pages) await pdf.addPage(page);
+  return await pdf.save();
 }
 
 /** PDF の各ページのテキストとページ数を pdfium で読む */
@@ -26,9 +49,26 @@ async function readPdf(bytes: Uint8Array): Promise<{ pageCount: number; texts: s
 }
 
 describe("PdfiumDocumentRasterCodec", () => {
+  it("PDF は開いた時点でページ数が分かる", async () => {
+    const bytes = new Uint8Array(await readFile(join(DATA_DIR, "masking-dummy-receipts.pdf")));
+    const document = await codec.open({ bytes, mime: "application/pdf" });
+
+    expect(document.pageCount).toBe(2);
+    document.close();
+  });
+
+  it("JPEG・PNG は 1 ページとして開く", async () => {
+    const bytes = new Uint8Array(await readFile(join(DATA_DIR, "amazon-receipt-01.png")));
+    const document = await codec.open({ bytes, mime: "image/png" });
+
+    expect(document.pageCount).toBe(1);
+    await expect(document.renderPage(1)).rejects.toThrow("Page index out of range: 1");
+    document.close();
+  });
+
   it("PDF は全ページを 150dpi の画像にする", async () => {
     const bytes = new Uint8Array(await readFile(join(DATA_DIR, "masking-dummy-receipts.pdf")));
-    const pages = await codec.toPageImages({ bytes, mime: "application/pdf" });
+    const pages = await renderAll(bytes, "application/pdf");
 
     expect(pages).toHaveLength(2);
     for (const page of pages) {
@@ -45,7 +85,7 @@ describe("PdfiumDocumentRasterCodec", () => {
 
   it("PNG は 1 ページの画像にする", async () => {
     const bytes = new Uint8Array(await readFile(join(DATA_DIR, "amazon-receipt-01.png")));
-    const pages = await codec.toPageImages({ bytes, mime: "image/png" });
+    const pages = await renderAll(bytes, "image/png");
 
     expect(pages).toHaveLength(1);
     expect(pages[0].rgba).toHaveLength(pages[0].width * pages[0].height * 4);
@@ -53,7 +93,7 @@ describe("PdfiumDocumentRasterCodec", () => {
 
   it("JPEG は 1 ページの画像にし、長辺 2400 画素を超える写真は縮める", async () => {
     const bytes = codec.toJpeg(solid(3000, 1500, [200, 50, 50]));
-    const [page] = await codec.toPageImages({ bytes, mime: "image/jpeg" });
+    const [page] = await renderAll(bytes, "image/jpeg");
 
     expect({ width: page.width, height: page.height }).toEqual({ width: 2400, height: 1200 });
     // JPEG の圧縮で多少ずれても色は保たれる
@@ -68,7 +108,7 @@ describe("PdfiumDocumentRasterCodec", () => {
     view.setUint32(16, 20000);
     view.setUint32(20, 20000);
 
-    await expect(codec.toPageImages({ bytes, mime: "image/png" })).rejects.toThrow(
+    await expect(renderAll(bytes, "image/png")).rejects.toThrow(
       "PNG is too large: 20000 x 20000",
     );
   });
@@ -77,10 +117,7 @@ describe("PdfiumDocumentRasterCodec", () => {
     const { PNG } = await import("pngjs");
     const png = new PNG({ width: 2, height: 1 });
     png.data.set([0, 0, 0, 0, 0, 0, 0, 255]);
-    const [page] = await codec.toPageImages({
-      bytes: new Uint8Array(PNG.sync.write(png)),
-      mime: "image/png",
-    });
+    const [page] = await renderAll(new Uint8Array(PNG.sync.write(png)), "image/png");
 
     expect([...page.rgba]).toEqual([255, 255, 255, 255, 0, 0, 0, 255]);
   });
@@ -103,9 +140,9 @@ describe("PdfiumDocumentRasterCodec", () => {
     });
   });
 
-  describe("toImagePdf", () => {
+  describe("createImagePdf", () => {
     it("ページ画像だけで構成された PDF を作り、テキスト・メタデータは持たない", async () => {
-      const pdf = await codec.toImagePdf([solid(300, 600, [255, 255, 255]), solid(600, 300, [0, 0, 0])]);
+      const pdf = await toImagePdf([solid(300, 600, [255, 255, 255]), solid(600, 300, [0, 0, 0])]);
       const { pageCount, texts } = await readPdf(pdf);
 
       expect(pageCount).toBe(2);
@@ -119,8 +156,8 @@ describe("PdfiumDocumentRasterCodec", () => {
       const bytes = new Uint8Array(await readFile(join(DATA_DIR, "masking-dummy-receipts.pdf")));
       expect((await readPdf(bytes)).texts[0]).toContain("090-9876-5432");
 
-      const pages = await codec.toPageImages({ bytes, mime: "application/pdf" });
-      const { pageCount, texts } = await readPdf(await codec.toImagePdf(pages));
+      const pages = await renderAll(bytes, "application/pdf");
+      const { pageCount, texts } = await readPdf(await toImagePdf(pages));
 
       expect(pageCount).toBe(2);
       expect(texts).toEqual(["", ""]);

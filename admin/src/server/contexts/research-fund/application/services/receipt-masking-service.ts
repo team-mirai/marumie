@@ -14,12 +14,24 @@ import type { PersonalInfoRegionDetector } from "@/server/contexts/research-fund
 const DETECTION_MAX_EDGE = 1568;
 const DETECTION_MAX_TOKENS = 1568;
 const DETECTION_PATCH = 28;
+/** 黒塗りできる書類のページ数の上限。LLM をページごとに順に呼ぶので、関数の実行時間の上限に収まるようにする */
+export const MAX_MASKING_PAGES = 20;
 /** 塗る矩形の四辺に足す余白（ページ画像の長辺に対する割合）。LLM の座標の誤差を吸収する */
 const PADDING_RATIO = 0.006;
+
+/** 書類のページ数が黒塗りできる上限を超えている */
+export class MaskingPageLimitError extends Error {
+  constructor(readonly pageCount: number) {
+    super(
+      `Document has ${pageCount} pages, exceeding the masking limit of ${MAX_MASKING_PAGES} pages`,
+    );
+  }
+}
 
 /**
  * 書類（PDF・JPEG・PNG）の個人情報を黒塗りした PDF を作る。
  * 下の文字が残らないよう、全ページを画像にしてから塗り、画像だけの PDF に組み直す。
+ * メモリがページ数に比例しないよう、1 ページずつ描画・塗り・PDF への追加を済ませてから次のページに進む。
  * DB・Storage には触れず、バイト列を受け取って返す。
  */
 export class ReceiptMaskingService {
@@ -32,27 +44,39 @@ export class ReceiptMaskingService {
     bytes: Uint8Array;
     mime: MaskableMime;
   }): Promise<{ bytes: Uint8Array; mime: "application/pdf" }> {
-    const pages = await this.codec.toPageImages(document);
-    const masked: RasterImage[] = [];
-    // ページを順に処理し、LLM への同時リクエストを増やさない
-    for (const [index, page] of pages.entries()) {
-      const preview = this.codec.shrink(page, detectionMaxEdge(page));
-      let regions: MaskingRegion[];
-      try {
-        regions = await this.detector.detect({
-          jpeg: this.codec.toJpeg(preview),
-          width: preview.width,
-          height: preview.height,
-        });
-      } catch (error) {
-        // 塗る箇所が分からないまま元の書類を返すことはしない
-        throw new Error(
-          `Failed to detect personal info on page ${index + 1}: ${error instanceof Error ? error.message : String(error)}`,
-        );
+    const source = await this.codec.open(document);
+    try {
+      // LLM を呼ぶ前に、ページを描画せずに分かるページ数で断る
+      if (source.pageCount > MAX_MASKING_PAGES) throw new MaskingPageLimitError(source.pageCount);
+      const pdf = await this.codec.createImagePdf();
+      // ページを順に処理し、LLM への同時リクエストを増やさない
+      for (let index = 0; index < source.pageCount; index += 1) {
+        await pdf.addPage(await this.maskPage(await source.renderPage(index), index));
       }
-      masked.push(fillRegions(page, toPageRegions(regions, preview, page)));
+      return { bytes: await pdf.save(), mime: "application/pdf" };
+    } finally {
+      source.close();
     }
-    return { bytes: await this.codec.toImagePdf(masked), mime: "application/pdf" };
+  }
+
+  /** ページ画像の個人情報を塗る（渡した画像をそのまま塗って返す） */
+  private async maskPage(page: RasterImage, index: number): Promise<RasterImage> {
+    const preview = this.codec.shrink(page, detectionMaxEdge(page));
+    let regions: MaskingRegion[];
+    try {
+      regions = await this.detector.detect({
+        jpeg: this.codec.toJpeg(preview),
+        width: preview.width,
+        height: preview.height,
+      });
+    } catch (error) {
+      // 塗る箇所が分からないまま元の書類を返すことはしない
+      throw new Error(
+        `Failed to detect personal info on page ${index + 1}: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+    fillRegions(page, toPageRegions(regions, preview, page));
+    return page;
   }
 }
 
@@ -96,9 +120,12 @@ export function toPageRegions(
   });
 }
 
-/** 矩形の範囲を黒で塗った新しい画像を返す（元の画像は変えない）。矩形はページ内に収まっている前提 */
-export function fillRegions(image: RasterImage, regions: MaskingRegion[]): RasterImage {
-  const rgba = new Uint8Array(image.rgba);
+/**
+ * 画像の矩形の範囲を黒で塗る。ページ 1 枚分の複製を持たないよう、渡した画像をそのまま書き換える。
+ * 矩形はページ内に収まっている前提
+ */
+export function fillRegions(image: RasterImage, regions: MaskingRegion[]): void {
+  const { rgba } = image;
   for (const region of regions) {
     for (let y = region.y; y < region.y + region.height; y += 1) {
       const rowStart = (y * image.width + region.x) * 4;
@@ -111,5 +138,4 @@ export function fillRegions(image: RasterImage, regions: MaskingRegion[]): Raste
       }
     }
   }
-  return { width: image.width, height: image.height, rgba };
 }

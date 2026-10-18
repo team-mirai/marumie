@@ -115,25 +115,24 @@ describe("applyOrientation", () => {
   });
 });
 
-describe("PdfiumDocumentRasterCodec.toPageImages（EXIF Orientation）", () => {
+describe("PdfiumDocumentRasterCodec.open（EXIF Orientation）", () => {
+  async function renderJpeg(bytes: Uint8Array): Promise<RasterImage> {
+    const document = await codec.open({ bytes, mime: "image/jpeg" });
+    return await document.renderPage(0);
+  }
+
   // 横長 64 × 32 の画像。左上が赤・右上が緑・左下が青・右下が白
   const jpegBytes = codec.toJpeg(quadrants(64, 32, [RED, GREEN, BLUE, WHITE]));
 
   it("Orientation 6 の JPEG は時計回りに 90 度回して縦長にする", async () => {
-    const [page] = await codec.toPageImages({
-      bytes: withSegment(jpegBytes, exifSegment(6, false)),
-      mime: "image/jpeg",
-    });
+    const page = await renderJpeg(withSegment(jpegBytes, exifSegment(6, false)));
 
     expect({ width: page.width, height: page.height }).toEqual({ width: 32, height: 64 });
     expect(quadrantColors(page)).toEqual([BLUE, RED, WHITE, GREEN]);
   });
 
   it("Orientation 3 の JPEG は 180 度回す", async () => {
-    const [page] = await codec.toPageImages({
-      bytes: withSegment(jpegBytes, exifSegment(3, true)),
-      mime: "image/jpeg",
-    });
+    const page = await renderJpeg(withSegment(jpegBytes, exifSegment(3, true)));
 
     expect({ width: page.width, height: page.height }).toEqual({ width: 64, height: 32 });
     expect(quadrantColors(page)).toEqual([WHITE, BLUE, GREEN, RED]);
@@ -144,7 +143,7 @@ describe("PdfiumDocumentRasterCodec.toPageImages（EXIF Orientation）", () => {
     // IFD0 の位置を JPEG の外を指すように書き換える
     brokenExif.set([0xff, 0xff, 0xff, 0xff], 14);
     for (const bytes of [jpegBytes, withSegment(jpegBytes, brokenExif)]) {
-      const [page] = await codec.toPageImages({ bytes, mime: "image/jpeg" });
+      const page = await renderJpeg(bytes);
       expect({ width: page.width, height: page.height }).toEqual({ width: 64, height: 32 });
       expect(quadrantColors(page)).toEqual([RED, GREEN, BLUE, WHITE]);
     }

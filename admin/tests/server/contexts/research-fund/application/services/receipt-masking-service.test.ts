@@ -1,12 +1,16 @@
 import { readFile } from "fs/promises";
 import { join } from "path";
+import { PDFDocument } from "pdf-lib";
 import {
   detectionMaxEdge,
   fillRegions,
+  MAX_MASKING_PAGES,
+  MaskingPageLimitError,
   ReceiptMaskingService,
   toPageRegions,
 } from "@/server/contexts/research-fund/application/services/receipt-masking-service";
 import type { RasterImage } from "@/server/contexts/research-fund/domain/models/masking-region";
+import type { DocumentRasterCodec } from "@/server/contexts/research-fund/domain/repositories/document-raster-codec.interface";
 import type { PersonalInfoRegionDetector } from "@/server/contexts/research-fund/domain/repositories/personal-info-region-detector.interface";
 import { PdfiumDocumentRasterCodec } from "@/server/contexts/research-fund/infrastructure/raster/pdfium-document-raster-codec";
 
@@ -14,6 +18,26 @@ const DATA_DIR = join(process.cwd(), "tests/data/research-fund");
 
 function white(width: number, height: number): RasterImage {
   return { width, height, rgba: new Uint8Array(width * height * 4).fill(255) };
+}
+
+/** PDF の全ページを画像にする */
+async function renderAll(codec: DocumentRasterCodec, bytes: Uint8Array): Promise<RasterImage[]> {
+  const document = await codec.open({ bytes, mime: "application/pdf" });
+  try {
+    const pages: RasterImage[] = [];
+    for (let index = 0; index < document.pageCount; index += 1)
+      pages.push(await document.renderPage(index));
+    return pages;
+  } finally {
+    document.close();
+  }
+}
+
+/** 小さい白紙のページだけの PDF を作る */
+async function blankPdf(pageCount: number): Promise<Uint8Array> {
+  const pdf = await PDFDocument.create();
+  for (let i = 0; i < pageCount; i += 1) pdf.addPage([72, 72]);
+  return await pdf.save();
 }
 
 function pixel(image: RasterImage, x: number, y: number): number[] {
@@ -78,9 +102,9 @@ describe("toPageRegions", () => {
 });
 
 describe("fillRegions", () => {
-  it("矩形の範囲だけを黒で塗り、元の画像は変えない", () => {
-    const image = white(4, 3);
-    const filled = fillRegions(image, [{ x: 1, y: 1, width: 2, height: 1 }]);
+  it("矩形の範囲だけを黒で塗る（複製を作らず、渡した画像をそのまま塗る）", () => {
+    const filled = white(4, 3);
+    fillRegions(filled, [{ x: 1, y: 1, width: 2, height: 1 }]);
 
     expect(pixel(filled, 1, 1)).toEqual([0, 0, 0, 255]);
     expect(pixel(filled, 2, 1)).toEqual([0, 0, 0, 255]);
@@ -88,7 +112,6 @@ describe("fillRegions", () => {
     expect(pixel(filled, 3, 1)).toEqual([255, 255, 255, 255]);
     expect(pixel(filled, 1, 0)).toEqual([255, 255, 255, 255]);
     expect(pixel(filled, 1, 2)).toEqual([255, 255, 255, 255]);
-    expect(pixel(image, 1, 1)).toEqual([255, 255, 255, 255]);
   });
 });
 
@@ -123,7 +146,7 @@ describe("ReceiptMaskingService（LLM のみ差し替え）", () => {
       expect(Math.ceil(call.width / 28) * Math.ceil(call.height / 28)).toBeLessThanOrEqual(1568);
       expect([...call.jpeg.slice(0, 2)]).toEqual([0xff, 0xd8]);
     }
-    const pages = await codec.toPageImages({ bytes: result.bytes, mime: "application/pdf" });
+    const pages = await renderAll(codec, result.bytes);
     expect(pages).toHaveLength(2);
     for (const page of pages) {
       const [r, g, b] = pixel(page, Math.floor(page.width / 2), Math.floor(page.height / 2));
@@ -142,7 +165,7 @@ describe("ReceiptMaskingService（LLM のみ差し替え）", () => {
       mime: "image/png",
     });
 
-    expect(await codec.toPageImages({ bytes: result.bytes, mime: "application/pdf" })).toHaveLength(1);
+    expect(await renderAll(codec, result.bytes)).toHaveLength(1);
   }, RASTER_TIMEOUT_MS);
 
   it("塗る箇所の判定に失敗したら、黒塗りしないまま返さずに失敗する", async () => {
@@ -158,4 +181,102 @@ describe("ReceiptMaskingService（LLM のみ差し替え）", () => {
       new ReceiptMaskingService(codec, detector).mask({ bytes, mime: "application/pdf" }),
     ).rejects.toThrow("Failed to detect personal info on page 2: rate limited");
   }, RASTER_TIMEOUT_MS);
+
+  it(`${MAX_MASKING_PAGES + 1} ページ以上の PDF は、LLM を呼ばずにページ数の上限を超えたエラーで失敗する`, async () => {
+    const detect = jest.fn().mockResolvedValue([]);
+
+    const result = new ReceiptMaskingService(codec, { detect }).mask({
+      bytes: await blankPdf(MAX_MASKING_PAGES + 1),
+      mime: "application/pdf",
+    });
+
+    await expect(result).rejects.toThrow(MaskingPageLimitError);
+    await expect(result).rejects.toThrow("Document has 21 pages, exceeding the masking limit of 20 pages");
+    expect(detect).not.toHaveBeenCalled();
+  }, RASTER_TIMEOUT_MS);
+
+  it(`${MAX_MASKING_PAGES} ページちょうどの PDF は黒塗りできる`, async () => {
+    const detect = jest.fn().mockResolvedValue([]);
+
+    const result = await new ReceiptMaskingService(codec, { detect }).mask({
+      bytes: await blankPdf(MAX_MASKING_PAGES),
+      mime: "application/pdf",
+    });
+
+    expect(detect).toHaveBeenCalledTimes(MAX_MASKING_PAGES);
+    expect(await renderAll(codec, result.bytes)).toHaveLength(MAX_MASKING_PAGES);
+  }, RASTER_TIMEOUT_MS);
+});
+
+describe("ReceiptMaskingService（ページ画像の持ち方）", () => {
+  /**
+   * 描画したページ画像が PDF に追加されるまでの間を「保持中」として数える偽のコーデック。
+   * 縮小版は保持中のページから作るので、保持中のページ数が 1 以下なら同時に持つ未圧縮の画像は 1 ページ分とその縮小版に収まる
+   */
+  function trackingCodec(pageCount: number) {
+    const state = { rendered: 0, added: 0, maxHeld: 0, closed: false, saved: false };
+    const codec: DocumentRasterCodec = {
+      open: async () => ({
+        pageCount,
+        renderPage: async () => {
+          state.rendered += 1;
+          state.maxHeld = Math.max(state.maxHeld, state.rendered - state.added);
+          return white(300, 400);
+        },
+        close: () => {
+          state.closed = true;
+        },
+      }),
+      shrink: (image, maxEdge) => (Math.max(image.width, image.height) <= maxEdge ? image : white(30, 40)),
+      toJpeg: () => new Uint8Array([0xff, 0xd8]),
+      createImagePdf: async () => ({
+        addPage: async () => {
+          state.added += 1;
+        },
+        save: async () => {
+          state.saved = true;
+          return new Uint8Array();
+        },
+      }),
+    };
+    return { codec, state };
+  }
+
+  it.each([1, 5, MAX_MASKING_PAGES])(
+    "%i ページの書類でも、ページ画像は PDF に追加してから次のページを描画する（同時に保持するのは 1 ページ分）",
+    async (pageCount) => {
+      const { codec, state } = trackingCodec(pageCount);
+
+      await new ReceiptMaskingService(codec, { detect: async () => [] }).mask({
+        bytes: new Uint8Array(),
+        mime: "application/pdf",
+      });
+
+      expect(state).toEqual({ rendered: pageCount, added: pageCount, maxHeld: 1, closed: true, saved: true });
+    },
+  );
+
+  it("ページ数が上限を超えるときは、ページを 1 枚も描画せずに書類を閉じる", async () => {
+    const { codec, state } = trackingCodec(MAX_MASKING_PAGES + 1);
+
+    await expect(
+      new ReceiptMaskingService(codec, { detect: async () => [] }).mask({
+        bytes: new Uint8Array(),
+        mime: "application/pdf",
+      }),
+    ).rejects.toThrow(MaskingPageLimitError);
+
+    expect(state).toMatchObject({ rendered: 0, closed: true, saved: false });
+  });
+
+  it("途中のページで失敗しても書類を閉じる", async () => {
+    const { codec, state } = trackingCodec(3);
+    const detect = jest.fn().mockResolvedValueOnce([]).mockRejectedValueOnce(new Error("rate limited"));
+
+    await expect(
+      new ReceiptMaskingService(codec, { detect }).mask({ bytes: new Uint8Array(), mime: "application/pdf" }),
+    ).rejects.toThrow("Failed to detect personal info on page 2: rate limited");
+
+    expect(state).toMatchObject({ rendered: 2, added: 1, closed: true, saved: false });
+  });
 });
