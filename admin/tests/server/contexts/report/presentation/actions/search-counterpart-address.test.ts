@@ -1,8 +1,8 @@
 import { searchCounterpartAddressAction } from "@/server/contexts/report/presentation/actions/search-counterpart-address";
 import { VercelAIGateway } from "@/server/contexts/report/infrastructure/llm/vercel-ai-gateway";
 
-jest.mock("@/server/contexts/auth/presentation/loaders/require-auth", () => ({
-  requireAuth: jest.fn(),
+jest.mock("@/server/contexts/auth/presentation/loaders/require-role", () => ({
+  requireRole: jest.fn(),
 }));
 jest.mock("@/server/contexts/report/infrastructure/llm/vercel-ai-gateway", () => ({
   VercelAIGateway: jest.fn(),

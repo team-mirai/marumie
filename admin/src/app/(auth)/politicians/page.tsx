@@ -8,8 +8,13 @@ import { cn } from "@/client/lib";
 import { DeletePoliticianButton } from "@/client/components/politicians/DeletePoliticianButton";
 import { ResearchFundPublicSwitch } from "@/client/components/politicians/ResearchFundPublicSwitch";
 import { loadPoliticians } from "@/server/contexts/shared/presentation/loaders/load-politicians";
+import { UserRoleModel } from "@/server/contexts/auth/domain/models/user-role";
+import { requireRolePage } from "@/server/contexts/auth/presentation/loaders/require-role-page";
 
 export default async function PoliticiansPage() {
+  const user = await requireRolePage("research_fund");
+  // 議員の登録・編集・削除は admin だけ（一覧の閲覧と公開切り替えは research_fund でもできる）
+  const canManagePoliticians = UserRoleModel.isAdmin(user.roles);
   const [politicians, { currentTarget }] = await Promise.all([
     loadPoliticians(),
     loadAdminTargets(),
@@ -20,12 +25,14 @@ export default async function PoliticiansPage() {
         label="Politicians"
         title="議員一覧"
         actions={
-          <Button asChild>
-            <Link href="/politicians/new">
-              <Plus />
-              議員を追加
-            </Link>
-          </Button>
+          canManagePoliticians && (
+            <Button asChild>
+              <Link href="/politicians/new">
+                <Plus />
+                議員を追加
+              </Link>
+            </Button>
+          )
         }
       />
       {politicians.length === 0 ? (
@@ -71,12 +78,16 @@ export default async function PoliticiansPage() {
                   <Button variant="outline" size="sm" asChild>
                     <Link href={`/politicians/${p.id}/books`}>年度帳簿</Link>
                   </Button>
-                  <Button variant="outline" size="sm" asChild>
-                    <Link href={`/politicians/${p.id}/edit`}>編集</Link>
-                  </Button>
-                  <div className="ml-auto">
-                    <DeletePoliticianButton id={p.id} name={p.name} />
-                  </div>
+                  {canManagePoliticians && (
+                    <>
+                      <Button variant="outline" size="sm" asChild>
+                        <Link href={`/politicians/${p.id}/edit`}>編集</Link>
+                      </Button>
+                      <div className="ml-auto">
+                        <DeletePoliticianButton id={p.id} name={p.name} />
+                      </div>
+                    </>
+                  )}
                 </div>
               </CardContent>
             </Card>

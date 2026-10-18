@@ -10,6 +10,7 @@ import {
   COUNTERPART_REQUIRED_EXPENSE_CATEGORIES,
 } from "@/server/contexts/report/domain/models/counterpart-assignment-rules";
 import { PL_CATEGORIES } from "@/shared/accounting/account-category";
+import { requireRolePage } from "@/server/contexts/auth/presentation/loaders/require-role-page";
 
 /**
  * Counterpart紐付け対象カテゴリのオプションを生成
@@ -43,6 +44,7 @@ interface CounterpartAssignmentPageProps {
 export default async function CounterpartAssignmentPage({
   searchParams,
 }: CounterpartAssignmentPageProps) {
+  await requireRolePage("political_fund");
   const target = await loadCurrentOrganizationTarget();
 
   if (!target) {

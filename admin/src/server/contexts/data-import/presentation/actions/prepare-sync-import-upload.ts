@@ -1,6 +1,6 @@
 "use server";
 
-import { requireAdmin } from "@/server/contexts/auth/presentation/loaders/require-admin";
+import { requireRole } from "@/server/contexts/auth/presentation/loaders/require-role";
 import { PrepareSyncImportUploadUsecase } from "@/server/contexts/data-import/application/usecases/prepare-sync-import-upload-usecase";
 import type { SyncImportUploadTarget } from "@/server/contexts/data-import/domain/repositories/sync-import-file-storage.interface";
 import { buildSyncImportFileStorage } from "@/server/contexts/data-import/infrastructure/storage/build-sync-import-file-storage";
@@ -18,7 +18,7 @@ export type PrepareSyncImportUploadResponse =
 export async function prepareSyncImportUpload(data: {
   fileSize: number;
 }): Promise<PrepareSyncImportUploadResponse> {
-  await requireAdmin();
+  await requireRole("admin");
 
   try {
     const usecase = new PrepareSyncImportUploadUsecase(buildSyncImportFileStorage());

@@ -223,10 +223,10 @@ export class SupabaseAuthProvider implements AuthProvider {
  * AdminAuthProvider インターフェースの Supabase 実装
  */
 export class SupabaseAdminAuthProvider implements AdminAuthProvider {
-  async inviteUserByEmail(email: string, redirectTo: string): Promise<void> {
+  async inviteUserByEmail(email: string, redirectTo: string): Promise<{ authId: string }> {
     try {
       const supabase = createSupabaseAdminClient();
-      const { error } = await supabase.auth.admin.inviteUserByEmail(email, {
+      const { data, error } = await supabase.auth.admin.inviteUserByEmail(email, {
         redirectTo,
       });
 
@@ -237,6 +237,7 @@ export class SupabaseAdminAuthProvider implements AdminAuthProvider {
         }
         throw new AuthError("INVITE_FAILED", error.message, error);
       }
+      return { authId: data.user.id };
     } catch (e) {
       if (e instanceof AuthError) throw e;
       throw new AuthError("NETWORK_ERROR", "認証サービスに接続できません", e);

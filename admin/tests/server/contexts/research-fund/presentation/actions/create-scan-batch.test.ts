@@ -1,5 +1,5 @@
 import { revalidatePath } from "next/cache";
-import { requireAuth } from "@/server/contexts/auth/presentation/loaders/require-auth";
+import { requireRole } from "@/server/contexts/auth/presentation/loaders/require-role";
 import type { CreateScanBatchUsecase } from "@/server/contexts/research-fund/application/usecases/create-scan-batch-usecase";
 import { ScanBatchError } from "@/server/contexts/research-fund/domain/models/scan-batch";
 import { createScanBatch } from "@/server/contexts/research-fund/presentation/actions/create-scan-batch";
@@ -7,8 +7,8 @@ import { requireJournalTarget } from "@/server/contexts/research-fund/presentati
 import { buildCreateScanBatchUsecase } from "@/server/contexts/research-fund/presentation/loaders/load-scan";
 
 jest.mock("next/cache", () => ({ revalidatePath: jest.fn() }));
-jest.mock("@/server/contexts/auth/presentation/loaders/require-auth", () => ({
-  requireAuth: jest.fn(),
+jest.mock("@/server/contexts/auth/presentation/loaders/require-role", () => ({
+  requireRole: jest.fn(),
 }));
 jest.mock("@/server/contexts/research-fund/presentation/loaders/load-journal-review", () => ({
   requireJournalTarget: jest.fn(),
@@ -32,8 +32,8 @@ function jpeg(name: string) {
 beforeEach(() => {
   jest.clearAllMocks();
   jest
-    .mocked(requireAuth)
-    .mockResolvedValue({ id: "user" } as Awaited<ReturnType<typeof requireAuth>>);
+    .mocked(requireRole)
+    .mockResolvedValue({ id: "user" } as Awaited<ReturnType<typeof requireRole>>);
   jest.mocked(requireJournalTarget).mockResolvedValue({
     kind: "research-fund",
     key: "book:1",
@@ -95,7 +95,7 @@ test("別の対象への古いフォーム送信を拒否", async () => {
 });
 
 test("認証失敗時はアップロードしない", async () => {
-  jest.mocked(requireAuth).mockRejectedValueOnce(new Error("auth"));
+  jest.mocked(requireRole).mockRejectedValueOnce(new Error("auth"));
   await expect(createScanBatch("2", "1", formDataWith([jpeg("a.jpg")]))).rejects.toThrow("auth");
   expect(createBatch).not.toHaveBeenCalled();
 });

@@ -1,16 +1,16 @@
 import { revalidatePath } from "next/cache";
-import { requireAuth } from "@/server/contexts/auth/presentation/loaders/require-auth";
+import { requireRole } from "@/server/contexts/auth/presentation/loaders/require-role";
 import { RegisterGrantUsecase } from "@/server/contexts/research-fund/application/usecases/register-grant-usecase";
 import { GrantRegistrationError } from "@/server/contexts/research-fund/domain/models/grant-registration";
 import { registerGrant } from "@/server/contexts/research-fund/presentation/actions/register-grant";
 import { requireJournalTarget } from "@/server/contexts/research-fund/presentation/loaders/load-journal-review";
 jest.mock("next/cache", () => ({ revalidatePath: jest.fn() }));
-jest.mock("@/server/contexts/auth/presentation/loaders/require-auth", () => ({ requireAuth: jest.fn() }));
+jest.mock("@/server/contexts/auth/presentation/loaders/require-role", () => ({ requireRole: jest.fn() }));
 jest.mock("@/server/contexts/research-fund/presentation/loaders/load-journal-review", () => ({ requireJournalTarget: jest.fn() }));
 jest.mock("@/server/contexts/shared/infrastructure/prisma", () => ({ prisma: {} }));
 beforeEach(() => {
   jest.clearAllMocks();
-  jest.mocked(requireAuth).mockResolvedValue({ id: "user" } as Awaited<ReturnType<typeof requireAuth>>);
+  jest.mocked(requireRole).mockResolvedValue({ id: "user" } as Awaited<ReturnType<typeof requireRole>>);
   jest.mocked(requireJournalTarget).mockResolvedValue({ kind: "research-fund", key: "book:1", name: "議員", year: 2026, politicianId: "2", bookId: "1", draftCount: 0 });
 });
 afterEach(() => jest.restoreAllMocks());
@@ -32,7 +32,7 @@ test("別の対象への古いフォーム送信を拒否", async () => {
 });
 
 test("認証失敗時は登録しない", async () => {
-  jest.mocked(requireAuth).mockRejectedValueOnce(new Error("auth"));
+  jest.mocked(requireRole).mockRejectedValueOnce(new Error("auth"));
   const register = jest.spyOn(RegisterGrantUsecase.prototype, "execute");
   await expect(registerGrant("2", "1", "2026-05", "2026-05-20", 980_000)).rejects.toThrow("auth");
   expect(register).not.toHaveBeenCalled();

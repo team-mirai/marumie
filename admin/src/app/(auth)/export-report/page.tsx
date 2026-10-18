@@ -9,8 +9,10 @@ import { DownloadButton } from "@/client/components/export-report/DownloadButton
 import { PageHeader } from "@/client/components/layout/PageHeader";
 import { CurrentTargetBar } from "@/client/components/layout/CurrentTargetBar";
 import { TargetRequiredNotice } from "@/client/components/layout/TargetRequiredNotice";
+import { requireRolePage } from "@/server/contexts/auth/presentation/loaders/require-role-page";
 
 export default async function ExportReportPage() {
+  await requireRolePage("political_fund");
   const target = await loadCurrentOrganizationTarget();
 
   if (!target) {

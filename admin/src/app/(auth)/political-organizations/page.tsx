@@ -6,8 +6,10 @@ import { loadPoliticalOrganizationsData } from "@/server/contexts/shared/present
 import { PoliticalOrganizationCard } from "@/client/components/political-organizations/PoliticalOrganizationCard";
 import { PageHeader } from "@/client/components/layout/PageHeader";
 import { Button } from "@/client/components/ui";
+import { requireRolePage } from "@/server/contexts/auth/presentation/loaders/require-role-page";
 
 export default async function PoliticalOrganizationsPage() {
+  await requireRolePage("political_fund");
   const organizations = await loadPoliticalOrganizationsData();
 
   return (

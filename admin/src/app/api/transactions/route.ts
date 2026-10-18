@@ -3,10 +3,10 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/server/contexts/shared/infrastructure/prisma";
 import { PrismaTransactionRepository } from "@/server/contexts/shared/infrastructure/repositories/prisma-transaction.repository";
 import { GetTransactionsUsecase } from "@/server/contexts/data-import/application/usecases/get-transactions-usecase";
-import { requireAuthResponse } from "@/server/contexts/auth/presentation/loaders/require-auth-response";
+import { requireRoleResponse } from "@/server/contexts/auth/presentation/loaders/require-role-response";
 
 export async function GET(request: NextRequest) {
-  const unauthorized = await requireAuthResponse();
+  const unauthorized = await requireRoleResponse("political_fund");
   if (unauthorized) return unauthorized;
 
   try {

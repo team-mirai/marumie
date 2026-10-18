@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { requireAuth } from "@/server/contexts/auth/presentation/loaders/require-auth";
+import { requireRoleResponse } from "@/server/contexts/auth/presentation/loaders/require-role-response";
 import { isParliamentHouse } from "@/server/contexts/research-fund/domain/models/submission-ledger";
 import { loadSubmissionLedgerCsv } from "@/server/contexts/research-fund/presentation/loaders/load-submission-ledger";
 
@@ -7,7 +7,8 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ bookId: string }> },
 ) {
-  await requireAuth();
+  const denied = await requireRoleResponse("research_fund");
+  if (denied) return denied;
   const { bookId } = await params;
   const politicianId = request.nextUrl.searchParams.get("politicianId") ?? "";
   const house = request.nextUrl.searchParams.get("house") ?? "";

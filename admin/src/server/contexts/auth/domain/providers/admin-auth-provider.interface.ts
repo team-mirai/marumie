@@ -12,7 +12,8 @@ export interface AdminAuthProvider {
    * @param redirectTo 招待リンクのリダイレクト先 URL
    * @throws {AuthError} INVITE_FAILED - 招待失敗
    * @throws {AuthError} INVALID_EMAIL - 無効なメールアドレス
+   * @returns 招待したユーザーの認証 ID（招待時点で認証側にユーザーが作られる）
    * @throws {AuthError} NETWORK_ERROR - ネットワークエラー
    */
-  inviteUserByEmail(email: string, redirectTo: string): Promise<void>;
+  inviteUserByEmail(email: string, redirectTo: string): Promise<{ authId: string }>;
 }

@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { requireAuthResponse } from "@/server/contexts/auth/presentation/loaders/require-auth-response";
+import { requireRoleResponse } from "@/server/contexts/auth/presentation/loaders/require-role-response";
 import { loadPoliticianDocument } from "@/server/contexts/research-fund/presentation/loaders/load-politician-document";
 
 /** 選択中の帳簿の議員の書類を、帳簿を問わず開く（支払先の表記の最初の書類） */
@@ -7,7 +7,7 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ documentId: string }> },
 ) {
-  const unauthorized = await requireAuthResponse();
+  const unauthorized = await requireRoleResponse("research_fund");
   if (unauthorized) return unauthorized;
   const { documentId } = await params;
   const bookId = request.nextUrl.searchParams.get("bookId") ?? "";

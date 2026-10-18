@@ -1,6 +1,6 @@
 "use server";
 import "server-only";
-import { requireAuth } from "@/server/contexts/auth/presentation/loaders/require-auth";
+import { requireRole } from "@/server/contexts/auth/presentation/loaders/require-role";
 import { SearchPayeeAddressUsecase } from "@/server/contexts/research-fund/application/usecases/search-payee-address-usecase";
 import type { PayeeAddressSearchResult } from "@/server/contexts/research-fund/domain/models/payee-address-search";
 import { VercelAIPayeeAddressSearchGateway } from "@/server/contexts/research-fund/infrastructure/llm/vercel-ai-payee-address-search-gateway";
@@ -18,7 +18,7 @@ export async function searchPayeeAddress(
   name: string,
   hint?: string,
 ): Promise<PayeeAddressSearchResult> {
-  await requireAuth();
+  await requireRole("research_fund");
   const target = await requireJournalTarget(politicianId, bookId);
   if (!target)
     return {

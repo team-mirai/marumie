@@ -4,8 +4,10 @@ import { PageHeader } from "@/client/components/layout/PageHeader";
 import { PoliticianForm } from "@/client/components/politicians/PoliticianForm";
 import { loadPolitician } from "@/server/contexts/shared/presentation/loaders/load-politicians";
 import { loadPoliticalOrganizationsData } from "@/server/contexts/shared/presentation/loaders/load-political-organizations-data";
+import { requireRolePage } from "@/server/contexts/auth/presentation/loaders/require-role-page";
 
 export default async function EditPoliticianPage({ params }: { params: Promise<{ id: string }> }) {
+  await requireRolePage("admin");
   const { id } = await params;
   const [politician, organizations] = await Promise.all([
     loadPolitician(id),

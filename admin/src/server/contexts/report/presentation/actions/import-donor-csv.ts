@@ -16,7 +16,7 @@ import {
   NoValidRowsError,
 } from "@/server/contexts/report/domain/errors/donor-csv-error";
 import { ImportDonorCsvUsecase } from "@/server/contexts/report/application/usecases/import-donor-csv-usecase";
-import { requireAuth } from "@/server/contexts/auth/presentation/loaders/require-auth";
+import { requireRole } from "@/server/contexts/auth/presentation/loaders/require-role";
 
 export interface ImportDonorCsvRequest {
   csvContent: string;
@@ -29,7 +29,7 @@ export type ImportDonorCsvResult =
   | { ok: false; error: string };
 
 export async function importDonorCsv(data: ImportDonorCsvRequest): Promise<ImportDonorCsvResult> {
-  await requireAuth();
+  await requireRole("political_fund");
 
   try {
     const { csvContent, politicalOrganizationId, financialYear } = data;

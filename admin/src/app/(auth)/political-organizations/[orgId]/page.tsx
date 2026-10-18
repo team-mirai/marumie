@@ -8,6 +8,8 @@ import { Button } from "@/client/components/ui";
 import { loadPoliticalOrganizationData } from "@/server/contexts/shared/presentation/loaders/load-political-organization-data";
 import { updatePoliticalOrganization } from "@/server/contexts/shared/presentation/actions/update-political-organization";
 import type { UpdatePoliticalOrganizationData } from "@/server/contexts/shared/presentation/actions/update-political-organization";
+import { requireRole } from "@/server/contexts/auth/presentation/loaders/require-role";
+import { requireRolePage } from "@/server/contexts/auth/presentation/loaders/require-role-page";
 
 interface EditPoliticalOrganizationPageProps {
   params: Promise<{ orgId: string }>;
@@ -16,6 +18,7 @@ interface EditPoliticalOrganizationPageProps {
 export default async function EditPoliticalOrganizationPage({
   params,
 }: EditPoliticalOrganizationPageProps) {
+  await requireRolePage("political_fund");
   const { orgId } = await params;
 
   let organization;
@@ -31,6 +34,7 @@ export default async function EditPoliticalOrganizationPage({
 
   const handleSubmit = async (formData: UpdatePoliticalOrganizationData) => {
     "use server";
+    await requireRole("political_fund");
     return await updatePoliticalOrganization(orgId, formData);
   };
 

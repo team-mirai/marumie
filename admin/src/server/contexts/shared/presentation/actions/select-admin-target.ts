@@ -2,9 +2,11 @@
 import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { targetDestination } from "@/server/contexts/shared/domain/models/admin-target";
+import { requireRole } from "@/server/contexts/auth/presentation/loaders/require-role";
 import { loadAdminTargets } from "@/server/contexts/shared/presentation/loaders/load-admin-targets";
 
 export async function selectAdminTarget(key: string) {
+  await requireRole("political_fund", "research_fund");
   // loader 内で認証を確認し、最新の選択肢から ID を検証する。
   const { targets, cookieName } = await loadAdminTargets();
   const target = targets.find((item) => item.key === key);

@@ -24,12 +24,12 @@ export class GetCurrentUserUsecase {
 
       let user = await this.userRepository.findByAuthId(authUser.id);
 
-      // DB にユーザーがいない場合は作成
+      // DB にユーザーがいない場合は作成（ロールは admin がユーザー管理画面で付けるまで持たない）
       if (!user && authUser.email) {
         user = await this.userRepository.create({
           authId: authUser.id,
           email: authUser.email,
-          role: "user",
+          roles: [],
         });
       }
 

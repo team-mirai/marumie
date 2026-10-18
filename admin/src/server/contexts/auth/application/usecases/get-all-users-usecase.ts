@@ -28,9 +28,8 @@ export class GetAllUsersUsecase {
     }
 
     const currentUser = await this.userRepository.findByAuthId(authUser.id);
-    const currentRole = currentUser?.role ?? "user";
 
-    if (!UserRoleModel.hasPermission(currentRole, "admin")) {
+    if (!UserRoleModel.isAdmin(currentUser?.roles ?? [])) {
       throw new AuthError("INSUFFICIENT_PERMISSION", "この操作には管理者権限が必要です");
     }
   }

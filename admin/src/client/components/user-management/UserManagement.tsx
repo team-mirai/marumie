@@ -5,8 +5,9 @@ import type { ChangeEvent, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import {
   Button,
+  Checkbox,
   Input,
-  NativeSelect,
+  Label,
   Table,
   TableBody,
   TableCell,
@@ -15,7 +16,7 @@ import {
   TableRow,
 } from "@/client/components/ui";
 import { UserRoleBadge } from "@/client/components/user-management/UserRoleBadge";
-import { formatDate } from "@/client/lib";
+import { formatDate, resolveUserRoleBadge, toggleUserRole } from "@/client/lib";
 import type { UserRole } from "@/server/contexts/auth/domain/models/user-role";
 import type { User } from "@/server/contexts/shared/domain/repositories/user-repository.interface";
 
@@ -26,37 +27,78 @@ import type { User } from "@/server/contexts/shared/domain/repositories/user-rep
 interface UserDisplayData {
   id: string;
   email: string;
-  role: UserRole;
+  roles: UserRole[];
   createdAt: Date;
 }
 
 interface UserManagementProps {
   users: UserDisplayData[];
-  availableRoles: UserRole[];
-  updateUserRoleAction: (
+  availableRoles: readonly UserRole[];
+  updateUserRolesAction: (
     userId: string,
-    role: UserRole,
+    roles: UserRole[],
   ) => Promise<{ ok: true; user: User } | { ok: false; error: string }>;
-  inviteUserAction: (email: string) => Promise<{ ok: boolean; error?: string }>;
+  inviteUserAction: (email: string, roles: UserRole[]) => Promise<{ ok: boolean; error?: string }>;
+}
+
+/** ロールを複数選ぶチェックボックス群。招待フォームと一覧の各行で共有する */
+function RoleCheckboxes({
+  idPrefix,
+  ariaLabelPrefix,
+  availableRoles,
+  roles,
+  disabled,
+  onToggle,
+}: {
+  idPrefix: string;
+  ariaLabelPrefix: string;
+  availableRoles: readonly UserRole[];
+  roles: readonly UserRole[];
+  disabled: boolean;
+  onToggle: (role: UserRole, checked: boolean) => void;
+}) {
+  return (
+    <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+      {availableRoles.map((role) => {
+        const id = `${idPrefix}-${role}`;
+        const label = resolveUserRoleBadge(role).label;
+        return (
+          <div key={role} className="flex items-center gap-1.5">
+            <Checkbox
+              id={id}
+              aria-label={`${ariaLabelPrefix}${label}`}
+              checked={roles.includes(role)}
+              onCheckedChange={(checked) => onToggle(role, checked === true)}
+              disabled={disabled}
+            />
+            <Label htmlFor={id} className="font-normal">
+              {label}
+            </Label>
+          </div>
+        );
+      })}
+    </div>
+  );
 }
 
 export default function UserManagement({
   users: initialUsers,
   availableRoles,
-  updateUserRoleAction,
+  updateUserRolesAction,
   inviteUserAction,
 }: UserManagementProps) {
   const router = useRouter();
   const [users, setUsers] = useState(initialUsers);
   const [isLoading, setIsLoading] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteRoles, setInviteRoles] = useState<UserRole[]>([]);
   const [isInviting, setIsInviting] = useState(false);
 
-  const handleRoleChange = async (userId: string, newRole: UserRole) => {
+  const handleRolesChange = async (userId: string, newRoles: UserRole[]) => {
     setIsLoading(true);
 
     try {
-      const result = await updateUserRoleAction(userId, newRole);
+      const result = await updateUserRolesAction(userId, newRoles);
       if (result.ok) {
         // result.userからUserDisplayDataに必要なフィールドのみを取得して更新
         setUsers((prev) =>
@@ -65,7 +107,7 @@ export default function UserManagement({
               ? {
                   id: result.user.id,
                   email: result.user.email,
-                  role: result.user.role,
+                  roles: result.user.roles,
                   createdAt: result.user.createdAt,
                 }
               : user,
@@ -75,7 +117,7 @@ export default function UserManagement({
         alert(`ロールの更新に失敗しました: ${result.error}`);
       }
     } catch (error) {
-      console.error("Error updating role:", error);
+      console.error("Error updating roles:", error);
       alert(
         `ロールの更新に失敗しました: ${error instanceof Error ? error.message : "不明なエラー"}`,
       );
@@ -91,10 +133,11 @@ export default function UserManagement({
     setIsInviting(true);
 
     try {
-      const result = await inviteUserAction(inviteEmail.trim());
+      const result = await inviteUserAction(inviteEmail.trim(), inviteRoles);
       if (result.ok) {
         alert(`${inviteEmail}に招待を送信しました`);
         setInviteEmail("");
+        setInviteRoles([]);
         // Server ActionのrevalidatePath()によりキャッシュが無効化されるため、ルーターのrefreshで十分
         router.refresh();
       } else {
@@ -113,19 +156,34 @@ export default function UserManagement({
       {/* Invite User Form */}
       <div className="rounded-lg border border-border bg-card p-6">
         <h2 className="mb-4 text-base font-bold text-foreground">新規ユーザー招待</h2>
-        <form onSubmit={handleInviteUser} className="flex flex-wrap gap-3">
-          <Input
-            type="email"
-            value={inviteEmail}
-            onChange={(e: ChangeEvent<HTMLInputElement>) => setInviteEmail(e.target.value)}
-            placeholder="メールアドレスを入力"
+        <form onSubmit={handleInviteUser} className="space-y-3">
+          <div className="flex flex-wrap gap-3">
+            <Input
+              type="email"
+              value={inviteEmail}
+              onChange={(e: ChangeEvent<HTMLInputElement>) => setInviteEmail(e.target.value)}
+              placeholder="メールアドレスを入力"
+              disabled={isInviting}
+              className="max-w-md flex-1"
+              required
+            />
+            <Button type="submit" disabled={isInviting || !inviteEmail.trim()}>
+              {isInviting ? "送信中..." : "招待を送信"}
+            </Button>
+          </div>
+          <RoleCheckboxes
+            idPrefix="invite-role"
+            ariaLabelPrefix="招待するユーザーのロール: "
+            availableRoles={availableRoles}
+            roles={inviteRoles}
             disabled={isInviting}
-            className="max-w-md flex-1"
-            required
+            onToggle={(role, checked) =>
+              setInviteRoles((prev) => toggleUserRole(prev, role, checked))
+            }
           />
-          <Button type="submit" disabled={isInviting || !inviteEmail.trim()}>
-            {isInviting ? "送信中..." : "招待を送信"}
-          </Button>
+          <p className="text-xs text-muted-foreground">
+            ロールを選ばずに招待すると、管理者がロールを付けるまでどの機能も使えません。
+          </p>
         </form>
       </div>
 
@@ -136,7 +194,7 @@ export default function UserManagement({
               <TableHead>メール</TableHead>
               <TableHead>ロール</TableHead>
               <TableHead>作成日</TableHead>
-              <TableHead>操作</TableHead>
+              <TableHead>ロールの変更</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -146,25 +204,30 @@ export default function UserManagement({
                   {user.email}
                 </TableCell>
                 <TableCell>
-                  <UserRoleBadge role={user.role} />
+                  {user.roles.length === 0 ? (
+                    <span className="text-xs text-muted-foreground">なし</span>
+                  ) : (
+                    <div className="flex flex-wrap gap-1">
+                      {user.roles.map((role) => (
+                        <UserRoleBadge key={role} role={role} />
+                      ))}
+                    </div>
+                  )}
                 </TableCell>
                 <TableCell className="font-latin text-[13px] text-muted-foreground">
                   {formatDate(user.createdAt)}
                 </TableCell>
                 <TableCell>
-                  <NativeSelect
-                    aria-label={`${user.email} のロール`}
-                    value={user.role}
-                    onChange={(e) => handleRoleChange(user.id, e.target.value as UserRole)}
+                  <RoleCheckboxes
+                    idPrefix={`user-${user.id}-role`}
+                    ariaLabelPrefix={`${user.email} のロール: `}
+                    availableRoles={availableRoles}
+                    roles={user.roles}
                     disabled={isLoading}
-                    className="h-8 text-xs"
-                  >
-                    {availableRoles.map((role) => (
-                      <option key={role} value={role}>
-                        {role.charAt(0).toUpperCase() + role.slice(1)}
-                      </option>
-                    ))}
-                  </NativeSelect>
+                    onToggle={(role, checked) =>
+                      handleRolesChange(user.id, toggleUserRole(user.roles, role, checked))
+                    }
+                  />
                 </TableCell>
               </TableRow>
             ))}

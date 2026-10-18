@@ -1,10 +1,10 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { loadBalanceSnapshotsData } from "@/server/contexts/shared/presentation/loaders/load-balance-snapshots-data";
-import { requireAuthResponse } from "@/server/contexts/auth/presentation/loaders/require-auth-response";
+import { requireRoleResponse } from "@/server/contexts/auth/presentation/loaders/require-role-response";
 
 export async function GET(request: NextRequest) {
-  const unauthorized = await requireAuthResponse();
+  const unauthorized = await requireRoleResponse("political_fund");
   if (unauthorized) return unauthorized;
 
   try {

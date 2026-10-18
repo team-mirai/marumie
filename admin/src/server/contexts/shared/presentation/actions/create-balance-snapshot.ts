@@ -3,7 +3,7 @@
 import { prisma } from "@/server/contexts/shared/infrastructure/prisma";
 import { PrismaBalanceSnapshotRepository } from "@/server/contexts/shared/infrastructure/repositories/prisma-balance-snapshot.repository";
 import { CreateBalanceSnapshotUsecase } from "@/server/contexts/shared/application/usecases/create-balance-snapshot-usecase";
-import { requireAuth } from "@/server/contexts/auth/presentation/loaders/require-auth";
+import { requireRole } from "@/server/contexts/auth/presentation/loaders/require-role";
 
 interface CreateBalanceSnapshotData {
   politicalOrganizationId: string;
@@ -12,7 +12,7 @@ interface CreateBalanceSnapshotData {
 }
 
 export async function createBalanceSnapshot(data: CreateBalanceSnapshotData) {
-  await requireAuth();
+  await requireRole("political_fund");
 
   try {
     const { politicalOrganizationId, snapshotDate, balance } = data;

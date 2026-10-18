@@ -2,7 +2,7 @@
 import "client-only";
 
 import { useState } from "react";
-import type { UserRole } from "@prisma/client";
+import type { UserRole } from "@/server/contexts/auth/domain/models/user-role";
 import { AdminTargetProvider } from "@/client/components/layout/AdminTargetProvider";
 import type { AdminTarget } from "@/server/contexts/shared/domain/models/admin-target";
 import Sidebar from "@/client/components/layout/Sidebar";
@@ -10,7 +10,7 @@ import { cn } from "@/client/lib/index";
 
 type AuthShellProps = {
   logoutAction: (formData: FormData) => Promise<void>;
-  userRole: UserRole | null;
+  userRoles: UserRole[];
   userEmail: string;
   /** 同期用インポートが利用できる環境か（サーバー側で判定した結果） */
   syncImportEnabled: boolean;
@@ -27,7 +27,7 @@ type AuthShellProps = {
  */
 export default function AuthShell({
   logoutAction,
-  userRole,
+  userRoles,
   userEmail,
   syncImportEnabled,
   children,
@@ -47,7 +47,7 @@ export default function AuthShell({
       >
         <Sidebar
           logoutAction={logoutAction}
-          userRole={userRole}
+          userRoles={userRoles}
           userEmail={userEmail}
           syncImportEnabled={syncImportEnabled}
           collapsed={collapsed}

@@ -16,7 +16,7 @@ export class InviteUserUsecase {
     private readonly adminAuthProvider: AdminAuthProvider,
   ) {}
 
-  async execute(email: string): Promise<void> {
+  async execute(email: string, roles: readonly string[]): Promise<void> {
     // 認可チェック
     const authUser = await this.authProvider.getUser();
     if (!authUser) {
@@ -28,9 +28,8 @@ export class InviteUserUsecase {
       console.warn(`User not found in DB for authId: ${authUser.id}`);
       throw new AuthError("USER_NOT_FOUND", "ユーザー情報が見つかりません");
     }
-    const currentRole = currentUser.role;
 
-    if (!UserRoleModel.hasPermission(currentRole, "admin")) {
+    if (!UserRoleModel.isAdmin(currentUser.roles)) {
       throw new AuthError("INSUFFICIENT_PERMISSION", "この操作には管理者権限が必要です");
     }
 
@@ -44,20 +43,40 @@ export class InviteUserUsecase {
       throw new AuthError("INVALID_EMAIL", "Invalid email format");
     }
 
+    let normalizedRoles: ReturnType<typeof UserRoleModel.normalize>;
+    try {
+      normalizedRoles = UserRoleModel.normalize(roles);
+    } catch (e) {
+      throw new AuthError("INVALID_ROLE", e instanceof Error ? e.message : String(e), e);
+    }
+
     const siteUrl = process.env.SITE_URL;
     if (!siteUrl) {
       throw new AuthError("NETWORK_ERROR", "SITE_URL environment variable must be set");
     }
     const redirectTo = `${siteUrl}/auth/callback`;
 
+    let invitedAuthId: string;
     try {
-      await this.adminAuthProvider.inviteUserByEmail(email, redirectTo);
+      ({ authId: invitedAuthId } = await this.adminAuthProvider.inviteUserByEmail(
+        email,
+        redirectTo,
+      ));
     } catch (e) {
       console.error("Invite user failed:", e);
       if (e instanceof AuthError) {
         throw e;
       }
       throw new AuthError("INVITE_FAILED", `Failed to invite user: ${String(e)}`, e);
+    }
+
+    // 招待時に選んだロールを初回ログイン前から持たせるため、DB のユーザーをここで作っておく
+    // （作らないと初回ログインでロールなしのユーザーとして作られる）
+    const invitedUser = await this.userRepository.findByAuthId(invitedAuthId);
+    if (invitedUser) {
+      await this.userRepository.updateRoles(invitedAuthId, normalizedRoles);
+    } else {
+      await this.userRepository.create({ authId: invitedAuthId, email, roles: normalizedRoles });
     }
   }
 }

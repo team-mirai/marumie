@@ -7,7 +7,7 @@ import { PreviewMfCsvUsecase } from "@/server/contexts/data-import/application/u
 import type { PreviewMfCsvResult } from "@/server/contexts/data-import/application/usecases/preview-mf-csv-usecase";
 import { MfCsvLoader } from "@/server/contexts/data-import/infrastructure/mf/mf-csv-loader";
 import { MfRecordConverter } from "@/server/contexts/data-import/infrastructure/mf/mf-record-converter";
-import { requireAuth } from "@/server/contexts/auth/presentation/loaders/require-auth";
+import { requireRole } from "@/server/contexts/auth/presentation/loaders/require-role";
 const transactionRepository = new PrismaTransactionRepository(prisma);
 const previewUsecase = new PreviewMfCsvUsecase(
   transactionRepository,
@@ -22,7 +22,7 @@ export interface PreviewCsvRequest {
 
 export async function previewCsv(data: PreviewCsvRequest): Promise<PreviewMfCsvResult> {
   "use server";
-  await requireAuth();
+  await requireRole("political_fund");
 
   try {
     const { file, politicalOrganizationId } = data;

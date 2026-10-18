@@ -5,7 +5,7 @@ import { prisma } from "@/server/contexts/shared/infrastructure/prisma";
 import { PrismaOrganizationReportProfileRepository } from "@/server/contexts/report/infrastructure/repositories/prisma-organization-report-profile.repository";
 import { SaveOrganizationProfileUsecase } from "@/server/contexts/report/application/usecases/save-organization-profile-usecase";
 import type { OrganizationReportProfileDetails } from "@/server/contexts/report/domain/models/organization-report-profile";
-import { requireAuth } from "@/server/contexts/auth/presentation/loaders/require-auth";
+import { requireRole } from "@/server/contexts/auth/presentation/loaders/require-role";
 
 interface SaveOrganizationProfileData {
   id?: string;
@@ -19,7 +19,7 @@ interface SaveOrganizationProfileData {
 }
 
 export async function saveOrganizationProfile(data: SaveOrganizationProfileData) {
-  await requireAuth();
+  await requireRole("political_fund");
 
   try {
     const repository = new PrismaOrganizationReportProfileRepository(prisma);

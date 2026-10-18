@@ -1,5 +1,6 @@
 import { loadJournalReview } from "@/server/contexts/research-fund/presentation/loaders/load-journal-review";
 import { JournalReview } from "@/client/components/research-fund/JournalReview";
+import { requireRolePage } from "@/server/contexts/auth/presentation/loaders/require-role-page";
 export default async function JournalReviewPage({
   params,
   searchParams,
@@ -7,6 +8,7 @@ export default async function JournalReviewPage({
   params: Promise<{ id: string; bookId: string }>;
   searchParams: Promise<{ status?: string }>;
 }) {
+  await requireRolePage("research_fund");
   const { id, bookId } = await params;
   const { status } = await searchParams;
   const data = await loadJournalReview(id, bookId);

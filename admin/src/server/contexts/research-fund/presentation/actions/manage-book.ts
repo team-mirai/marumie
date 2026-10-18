@@ -2,7 +2,7 @@
 import { BookError } from "@/server/contexts/research-fund/domain/types/book-error";
 import { revalidatePath } from "next/cache";
 import type { BookMetadata } from "@/server/contexts/research-fund/domain/models/book";
-import { requireAuth } from "@/server/contexts/auth/presentation/loaders/require-auth";
+import { requireRole } from "@/server/contexts/auth/presentation/loaders/require-role";
 import { CreateBookUsecase } from "@/server/contexts/research-fund/application/usecases/create-book-usecase";
 import { UpdateBookUsecase } from "@/server/contexts/research-fund/application/usecases/update-book-usecase";
 import { PrismaBookRepository } from "@/server/contexts/research-fund/infrastructure/repositories/prisma-book.repository";
@@ -27,7 +27,7 @@ function publicErrorMessage(error: unknown, fallback: string): string {
 }
 
 export async function createBook(politicianId: string, year: number) {
-  await requireAuth();
+  await requireRole("research_fund");
   try {
     await new CreateBookUsecase(new PrismaBookRepository(prisma)).execute(politicianId, year);
     revalidatePath("/(auth)", "layout");
@@ -40,7 +40,7 @@ export async function createBook(politicianId: string, year: number) {
   }
 }
 export async function updateBook(politicianId: string, bookId: string, input: BookMetadata) {
-  await requireAuth();
+  await requireRole("research_fund");
   try {
     const { cacheWarning } = await new UpdateBookUsecase(
       new PrismaBookRepository(prisma),

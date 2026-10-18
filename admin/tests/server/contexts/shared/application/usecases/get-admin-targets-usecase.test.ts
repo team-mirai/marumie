@@ -7,18 +7,33 @@ function setup() {
   return new GetAdminTargetsUsecase({ list });
 }
 test.each([undefined, "invalid", "book:99", "org:99:2026"])("未選択・無効・削除済みの %s は他の対象に切り替えない", async (key) => {
-  expect((await setup().execute(key, 2026)).currentTarget).toBeNull();
+  expect((await setup().execute(key, 2026, ["admin"])).currentTarget).toBeNull();
 });
 test("明示選択した帳簿をそのまま返し、一覧の先頭を選ばない", async () => {
-  expect((await setup().execute(book.key, 2026)).currentTarget).toEqual(book);
+  expect((await setup().execute(book.key, 2026, ["admin"])).currentTarget).toEqual(book);
   expect(targetDestination(book)).toBe("/politicians/3/books");
   expect(targetDestination(org)).toBe("/political-organizations");
 });
 test("年をまたいでも選択した団体・年度は変わらない", async () => {
-  const result = await setup().execute("org:1:2024", 2026);
+  const result = await setup().execute("org:1:2024", 2026, ["admin"]);
   expect(result.currentTarget).toEqual({ ...org, key: "org:1:2024", year: 2024 });
   expect(result.targets).toContainEqual(result.currentTarget);
 });
 test("対象が1つもなければ空リスト・未選択を返す", async () => {
-  expect(await new GetAdminTargetsUsecase({ list: async () => [] }).execute(undefined, 2026)).toEqual({ targets: [], currentTarget: null });
+  expect(await new GetAdminTargetsUsecase({ list: async () => [] }).execute(undefined, 2026, ["admin"])).toEqual({ targets: [], currentTarget: null });
+});
+test("political_fund だけのユーザーには政治団体だけを出し、保存済みの議員室の選択も無効にする", async () => {
+  const result = await setup().execute(book.key, 2026, ["political_fund"]);
+  expect(result.targets).toEqual([org]);
+  expect(result.currentTarget).toBeNull();
+});
+test("research_fund だけのユーザーには議員室だけを出し、保存済みの政治団体の選択も無効にする", async () => {
+  const result = await setup().execute("org:1:2024", 2026, ["research_fund"]);
+  expect(result.targets).toEqual([book]);
+  expect(result.currentTarget).toBeNull();
+});
+test("両方のロールを持つユーザーには政治団体と議員室の両方を出す", async () => {
+  const result = await setup().execute(book.key, 2026, ["political_fund", "research_fund"]);
+  expect(result.targets).toEqual([org, book]);
+  expect(result.currentTarget).toEqual(book);
 });

@@ -6,6 +6,7 @@ import { ReportProfileForm } from "@/client/components/report-profile/ReportProf
 import { YearSelector } from "@/client/components/report-profile/YearSelector";
 import { PageHeader } from "@/client/components/layout/PageHeader";
 import { BackLink } from "@/client/components/layout/BackLink";
+import { requireRolePage } from "@/server/contexts/auth/presentation/loaders/require-role-page";
 
 interface ReportProfilePageProps {
   params: Promise<{ orgId: string }>;
@@ -13,6 +14,7 @@ interface ReportProfilePageProps {
 }
 
 export default async function ReportProfilePage({ params, searchParams }: ReportProfilePageProps) {
+  await requireRolePage("political_fund");
   const { orgId } = await params;
   const { year } = await searchParams;
 
