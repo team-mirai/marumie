@@ -1,11 +1,23 @@
+import type { DocumentMaskingStatus } from "@/server/contexts/research-fund/domain/models/document-masking";
 import { isSerialId } from "@/server/contexts/research-fund/domain/models/entity-id";
 import { JournalEntry } from "@/server/contexts/research-fund/domain/models/journal-entry";
 import type { ResearchFundCategory, ResearchFundRow } from "@/shared/research-fund/aggregation";
+
+/** 仕訳に付いた書類の公開用の版の状態（#1803）。webapp は原本でなく公開用の版を配信する */
+export interface PublicationDocument {
+  maskingStatus: DocumentMaskingStatus;
+  /** 公開用の版のファイルがあるか */
+  hasMaskedVersion: boolean;
+}
 
 /** 公開の候補として選べる確認済・未公開の仕訳。集計にそのまま渡せるよう行を兼ねる。 */
 export interface PublishCandidate extends ResearchFundRow {
   id: string;
   description: string;
+  /** 付いている書類。書類の無い仕訳は null */
+  document: PublicationDocument | null;
+  /** 書類の公開用の版が無いため公開できない理由（利用者に見せる文）。公開できれば null */
+  documentRejection: string | null;
 }
 
 /** 公開画面が描く before / after の材料。before は公開済みだけ、after は候補を足して集計する。 */
@@ -20,6 +32,10 @@ export interface PublicationSnapshot {
 export interface PublishableEntry extends JournalEntry {
   id: string;
   entryDate: string;
+  /** 公開できない理由を利用者に示すときに、どの仕訳かを伝えるために使う */
+  description: string;
+  /** 付いている書類。書類の無い仕訳は null */
+  document: PublicationDocument | null;
   /** 集計行に射影したときの行数。公開の候補かどうかの判定に使う。 */
   rowCount: number;
 }
@@ -47,7 +63,29 @@ export const Publication = {
     // 画面のチェックリストに出ない仕訳は before / after で確認できないので公開させない。
     if (!Publication.isPublishable(entry.rowCount))
       return "この画面で公開できない仕訳が含まれています。画面を再読み込みしてください";
-    return null;
+    return Publication.documentRejection(entry.document);
+  },
+
+  /**
+   * 書類の公開用の版が無いため公開させない理由（利用者に見せる文）。公開してよければ null。
+   * webapp は原本を配信せず公開用の版だけを配信するので、版が作成済みでない書類の付いた仕訳は公開させない。
+   * 判定は版が作成済みかどうかだけで、人間の承認は求めない（#1803）。書類の無い仕訳は公開できる。
+   * 作り直しの依頼中・失敗した書類は、前の版が残っていても作成済みとはみなさない（webapp も配信しない）。
+   */
+  documentRejection(document: PublicationDocument | null): string | null {
+    if (document === null) return null;
+    if (document.maskingStatus === "succeeded" && document.hasMaskedVersion) return null;
+    switch (document.maskingStatus) {
+      case "running":
+        return "書類の公開用の版を作成中です。できあがるまで公開できません";
+      case "failed":
+        return "書類の公開用の版の作成に失敗しています。仕訳の詳細から作り直してください";
+      case "succeeded":
+        // 作成済みなのにファイルが無いのはデータの不整合。待っていても作られないので作り直しを促す
+        return "書類の公開用の版のファイルが見つかりません。仕訳の詳細から作り直してください";
+      default:
+        return "書類の公開用の版がまだ作られていません。帳簿の画面を開いたままにすると順に作られます";
+    }
   },
 
   /**

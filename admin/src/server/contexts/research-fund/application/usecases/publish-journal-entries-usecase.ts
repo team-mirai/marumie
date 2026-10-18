@@ -21,10 +21,13 @@ export class PublishJournalEntriesUsecase {
     if (!target) throw new PublicationError("帳簿が見つかりません");
     if (target.entries.length !== unique.length)
       throw new PublicationError("選んだ仕訳が見つかりません。画面を再読み込みしてください");
-    for (const entry of target.entries) {
+    // どの仕訳がなぜ公開できないかを、まとめて利用者に示す（1 件ずつ直して出し直させない）
+    const rejections = target.entries.flatMap((entry) => {
       const rejection = Publication.entryRejection(entry);
-      if (rejection) throw new PublicationError(rejection);
-    }
+      return rejection ? [`「${entry.description}」${rejection}`] : [];
+    });
+    if (rejections.length > 0)
+      throw new PublicationError(`公開できない仕訳があります。${rejections.join("／")}`);
     const publishedThrough = Publication.advancePublishedThrough(
       target.publishedThrough,
       target.entries.map((entry) => entry.entryDate),

@@ -40,7 +40,14 @@ test("公開する仕訳を選んでいない・IDが不正な選び方は受け
 });
 
 describe("仕訳を公開してよいか", () => {
-  const entry: PublishableEntry = { id: "1", status: "approved", entryDate: "2026-08-13", rowCount: 1 };
+  const entry: PublishableEntry = {
+    id: "1",
+    status: "approved",
+    entryDate: "2026-08-13",
+    description: "視察先への移動",
+    document: null,
+    rowCount: 1,
+  };
 
   test("確認済で費用1行に射影できる仕訳は公開できる", () => {
     expect(Publication.entryRejection(entry)).toBeNull();
@@ -56,5 +63,40 @@ describe("仕訳を公開してよいか", () => {
     expect(Publication.entryRejection({ ...entry, rowCount: 2 })).toBe(
       "この画面で公開できない仕訳が含まれています。画面を再読み込みしてください",
     );
+  });
+});
+
+describe("書類の公開用の版による公開の可否（#1803）", () => {
+  test("書類の無い仕訳は公開できる", () => {
+    expect(Publication.documentRejection(null)).toBeNull();
+  });
+
+  test("公開用の版が作成済みの書類なら公開できる", () => {
+    expect(
+      Publication.documentRejection({ maskingStatus: "succeeded", hasMaskedVersion: true }),
+    ).toBeNull();
+  });
+
+  test.each([
+    ["未作成", { maskingStatus: "pending", hasMaskedVersion: false }, "まだ作られていません"],
+    ["作り直しの依頼中（前の版が残っている）", { maskingStatus: "pending", hasMaskedVersion: true }, "まだ作られていません"],
+    ["作成中", { maskingStatus: "running", hasMaskedVersion: false }, "作成中です"],
+    ["失敗（前の版が残っている）", { maskingStatus: "failed", hasMaskedVersion: true }, "作成に失敗しています"],
+    ["作成済みなのに版のファイルが無い", { maskingStatus: "succeeded", hasMaskedVersion: false }, "ファイルが見つかりません"],
+  ] as const)("%s の書類が付いた仕訳は公開できない", (_label, document, message) => {
+    expect(Publication.documentRejection(document)).toContain(message);
+  });
+
+  test("確認済の仕訳でも、公開用の版が無い書類が付いていれば公開できない", () => {
+    expect(
+      Publication.entryRejection({
+        id: "1",
+        status: "approved",
+        entryDate: "2026-08-13",
+        description: "視察先への移動",
+        document: { maskingStatus: "running", hasMaskedVersion: false },
+        rowCount: 1,
+      }),
+    ).toBe("書類の公開用の版を作成中です。できあがるまで公開できません");
   });
 });

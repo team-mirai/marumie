@@ -3,8 +3,8 @@ import { createClient } from "@supabase/supabase-js";
 import type { ReceiptStorage } from "@/server/contexts/research-fund/domain/repositories/receipt-storage.interface";
 
 /**
- * 領収書の原本は非公開バケットに置き、署名URLで配信する（admin と同じバケット）。
- * 当面はマスキングなしで原本を公開する運用のため、masked_key は使わない。
+ * 領収書は非公開バケットに置き、署名URLで配信する（admin と同じバケット）。
+ * 配信するのは公開用の版（masked_key）だけで、原本（storage_key）は配信しない（#1803）。
  */
 export class SupabaseReceiptStorage implements ReceiptStorage {
   constructor(

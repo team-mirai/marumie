@@ -25,6 +25,7 @@ function expense(
     splitGroup: null,
     groupId: null,
     hasReceipt: true,
+    receiptReady: true,
     receiptKind: "image",
     ...overrides,
   };

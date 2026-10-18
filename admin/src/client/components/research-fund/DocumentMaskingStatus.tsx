@@ -27,6 +27,20 @@ const STATUS_STYLES: Record<MaskingStatus, string> = {
   failed: "border-destructive bg-destructive text-white",
 };
 
+/** 書類の公開用の版の状態のバッジ（未作成・作成中・作成済み・失敗） */
+export function DocumentMaskingBadge({ status }: { status: MaskingStatus }) {
+  return (
+    <span
+      className={cn(
+        "inline-block rounded-full border px-2.5 py-0.5 text-[11px] font-medium",
+        STATUS_STYLES[status],
+      )}
+    >
+      {STATUS_LABELS[status]}
+    </span>
+  );
+}
+
 /**
  * 書類の公開用の版（個人情報を黒塗りし、メタデータを消した版）の状態と操作（#1802）。
  * 状態・黒塗りした箇所の数・失敗の理由を出し、版を開く（原本と見比べる）・作る・作り直すことができる。
@@ -71,14 +85,7 @@ export function DocumentMaskingStatus({
     <div className={cn("flex flex-col gap-1 text-xs", className)}>
       <div className="flex flex-wrap items-center gap-1.5">
         <span className="font-bold">公開用の版</span>
-        <span
-          className={cn(
-            "inline-block rounded-full border px-2.5 py-0.5 text-[11px] font-medium",
-            STATUS_STYLES[status],
-          )}
-        >
-          {STATUS_LABELS[status]}
-        </span>
+        <DocumentMaskingBadge status={status} />
         {status === "succeeded" && masking && masking.regionCount !== null && (
           <span className="text-muted-foreground">
             黒塗り <span className="font-latin">{masking.regionCount}</span> 箇所

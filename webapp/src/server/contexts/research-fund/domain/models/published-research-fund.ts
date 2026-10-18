@@ -31,8 +31,14 @@ export interface PublishedExpense {
   /** 特記事項（公開される）。備考（memo）は含まない。 */
   note: string | null;
   splitGroup: string | null;
+  /** 書類（領収書など）が付いているか。公開用の版がまだ無くても true */
   hasReceipt: boolean;
-  /** 領収書の書類の MIME（image/jpeg | image/png | application/pdf）。領収書が無ければ null */
+  /**
+   * 書類の公開用の版（個人情報を黒塗りし、メタデータを消した版）が作成済みか。
+   * 原本は配信しないので、false の間は領収書を表示せず準備中とする（#1803）
+   */
+  receiptReady: boolean;
+  /** 配信する公開用の版の MIME。公開用の版が無ければ null */
   receiptMime: string | null;
 }
 
@@ -75,9 +81,15 @@ export interface PublishedResearchFund {
   groups: PublishedExpenditureGroup[];
 }
 
-/** 公開された領収書。published の仕訳に紐づくものだけを配信する。 */
+/** 書類の公開用の版は、全ページを画像にして組み直した PDF（#1802） */
+export const MASKED_RECEIPT_MIME = "application/pdf";
+
+/**
+ * 公開された領収書。published の仕訳に紐づく書類の、作成済みの公開用の版だけを配信する。
+ * 原本のキーは持たせない（取り違えて原本を配信する余地を無くす。#1803）
+ */
 export interface PublishedReceipt {
-  storageKey: string;
+  maskedKey: string;
 }
 
 /** 政党ページ A-6 が読む、議員1人分の published 射影。 */

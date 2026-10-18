@@ -142,7 +142,7 @@ function PagerButton({
  * 調研費の「すべての出入金」全件ページの表。
  *
  * 1議員・1年度の公開中の出入金（支給と支出）は数百件なので、全件をサーバーで読み込んだうえで
- * 並び替え・絞り込み・ページングをクライアントで行う。領収書を公開している間は、領収書のある行の「領収書」ピルからモーダルで原本を見られる。
+ * 並び替え・絞り込み・ページングをクライアントで行う。領収書を公開している間は、領収書のある行の「領収書」ピルからモーダルで公開用の版（個人情報を黒塗りした版）を見られる。
  *
  * 並び順・絞り込み・ページは URL（`categories` / `sort` / `order` / `page`）で持ち、操作のたびに URL を書き換える。
  * 各行のカテゴリーのピルは、そのカテゴリー1つで絞り込んだ URL へのリンクにする。
@@ -301,7 +301,10 @@ export default function ResearchFundTransactionsTable({
                 />
                 {RESEARCH_FUND_RECEIPTS_PUBLISHED && row.hasReceipt && (
                   <span className="min-[761px]:hidden">
-                    <ResearchFundReceiptPill onClick={() => setReceipt(row)} />
+                    <ResearchFundReceiptPill
+                      ready={row.receiptReady}
+                      onClick={() => setReceipt(row)}
+                    />
                   </span>
                 )}
               </div>
@@ -312,7 +315,10 @@ export default function ResearchFundTransactionsTable({
                   </span>
                   {RESEARCH_FUND_RECEIPTS_PUBLISHED && row.hasReceipt && (
                     <span className="hidden min-[761px]:inline-flex">
-                      <ResearchFundReceiptPill onClick={() => setReceipt(row)} />
+                      <ResearchFundReceiptPill
+                        ready={row.receiptReady}
+                        onClick={() => setReceipt(row)}
+                      />
                     </span>
                   )}
                 </span>

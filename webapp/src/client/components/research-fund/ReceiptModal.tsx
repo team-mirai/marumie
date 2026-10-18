@@ -16,7 +16,7 @@ interface Props {
 const FOCUSABLE_SELECTOR =
   'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
-/** 領収書の原本。署名URLはリクエストのたびに発行するので、画像はこのエンドポイント経由で読む。 */
+/** 領収書の公開用の版（原本は配信しない）。署名URLはリクエストのたびに発行するので、画像はこのエンドポイント経由で読む。 */
 function receiptUrl(entryId: string): string {
   return `/api/research-fund/receipts/${encodeURIComponent(entryId)}`;
 }

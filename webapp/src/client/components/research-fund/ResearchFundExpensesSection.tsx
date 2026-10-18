@@ -56,7 +56,7 @@ function StarIcon() {
  *
  * 支給（入金）と支出（出金）を日付の新しい順に混ぜ、先頭6件だけを出し、続きは「もっと見る」から全件ページで見る。
  * 用途カードに紐づく行は「★ 用途N」から該当カードへ飛べ、カードの「N件」からは該当行まで一覧を広げる。
- * 領収書を公開している間は、領収書のある行の「領収書」ピルから原本をモーダルで見られる。
+ * 領収書を公開している間は、領収書のある行の「領収書」ピルから公開用の版（個人情報を黒塗りした版）をモーダルで見られる。
  */
 export default function ResearchFundExpensesSection({ data, updatedAt }: Props) {
   const { rowsRequest, showCard } = useResearchFundCrossLink();
@@ -130,7 +130,9 @@ export default function ResearchFundExpensesSection({ data, updatedAt }: Props) 
     if (!hasReceipt && !link) return null;
     return (
       <>
-        {hasReceipt && <ResearchFundReceiptPill onClick={() => setReceipt(row)} />}
+        {hasReceipt && (
+          <ResearchFundReceiptPill ready={row.receiptReady} onClick={() => setReceipt(row)} />
+        )}
         {link}
       </>
     );
