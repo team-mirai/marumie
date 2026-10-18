@@ -21,7 +21,22 @@ model User {
   researchFundPromptsUpdated              ResearchFundPrompt[]
   researchFundAddressSearchPromptsUpdated ResearchFundAddressSearchPrompt[]
 
+  politicianAssignments UserPoliticianAssignment[]
+
   @@map("users")
+}
+
+// ユーザーが担当する議員（調査研究費の書き込みを担当の議員室に絞るため。#1773）
+model UserPoliticianAssignment {
+  userId       String     @map("user_id")
+  politicianId BigInt     @map("politician_id")
+  createdAt    DateTime   @default(now()) @map("created_at")
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  politician   Politician @relation(fields: [politicianId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, politicianId])
+  @@index([politicianId])
+  @@map("user_politician_assignments")
 }
 
 model PoliticalOrganization {
@@ -201,6 +216,8 @@ model Politician {
   payees      ResearchFundPayee[]
 
   addressSearchPrompts ResearchFundAddressSearchPrompt[]
+
+  userAssignments UserPoliticianAssignment[]
 
   @@map("politicians")
 }

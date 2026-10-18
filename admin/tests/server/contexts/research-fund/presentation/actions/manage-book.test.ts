@@ -1,12 +1,12 @@
 import { revalidatePath } from "next/cache";
-import { requireRole } from "@/server/contexts/auth/presentation/loaders/require-role";
+import { requireResearchFundWriter } from "@/server/contexts/auth/presentation/loaders/require-research-fund-writer";
 import { CreateBookUsecase } from "@/server/contexts/research-fund/application/usecases/create-book-usecase";
 import { UpdateBookUsecase } from "@/server/contexts/research-fund/application/usecases/update-book-usecase";
 import { BookError } from "@/server/contexts/research-fund/domain/types/book-error";
 import { createBook, updateBook } from "@/server/contexts/research-fund/presentation/actions/manage-book";
 
 jest.mock("next/cache", () => ({ revalidatePath: jest.fn() }));
-jest.mock("@/server/contexts/auth/presentation/loaders/require-role", () => ({ requireRole: jest.fn() }));
+jest.mock("@/server/contexts/auth/presentation/loaders/require-research-fund-writer", () => ({ requireResearchFundWriter: jest.fn() }));
 jest.mock("@/server/contexts/shared/infrastructure/prisma", () => ({ prisma: {} }));
 
 const metadata = { asOfDate: "", nextUpdateNote: "", policyComment: "" };
@@ -39,8 +39,8 @@ describe.each([
       .spyOn(usecase, "execute")
       .mockResolvedValue(resolved as never);
     await expect(run()).resolves.toEqual(success);
-    expect(requireRole).toHaveBeenCalledTimes(1);
-    expect(requireRole).toHaveBeenCalledWith("research_fund");
+    expect(requireResearchFundWriter).toHaveBeenCalledTimes(1);
+    expect(requireResearchFundWriter).toHaveBeenCalledWith("1");
     expect(execute).toHaveBeenCalledTimes(1);
     expect(revalidatePath).toHaveBeenCalledWith("/(auth)", "layout");
   });
@@ -69,7 +69,7 @@ describe.each([
 
   test("認証失敗時は処理と再検証を行わず認証エラーを伝える", async () => {
     const error = new Error("authentication required");
-    jest.mocked(requireRole).mockRejectedValueOnce(error);
+    jest.mocked(requireResearchFundWriter).mockRejectedValueOnce(error);
     const execute = jest.spyOn(usecase, "execute");
     await expect(run()).rejects.toBe(error);
     expect(execute).not.toHaveBeenCalled();

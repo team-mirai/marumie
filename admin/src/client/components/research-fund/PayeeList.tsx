@@ -2,7 +2,6 @@ import Link from "next/link";
 import { Plus } from "@phosphor-icons/react/dist/ssr";
 import { PageHeader } from "@/client/components/layout/PageHeader";
 import {
-  Button,
   Card,
   CardContent,
   Table,
@@ -12,6 +11,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/client/components/ui";
+import { WriteLinkButton } from "@/client/components/research-fund/ResearchFundWriteAccess";
 import type { PayeeSummary } from "@/server/contexts/research-fund/domain/models/payee";
 import type { AdminTarget } from "@/server/contexts/shared/domain/models/admin-target";
 
@@ -34,12 +34,10 @@ export function PayeeList({
         title="支払先"
         description={`${target.name}の支払先（支出を受けた者）です。議員課に提出する帳簿の氏名・住所に使います。編集すると、紐づけたすべての仕訳に反映されます。`}
         actions={
-          <Button asChild>
-            <Link href={`${base}/new`}>
-              <Plus />
-              支払先を追加
-            </Link>
-          </Button>
+          <WriteLinkButton href={`${base}/new`}>
+            <Plus />
+            支払先を追加
+          </WriteLinkButton>
         }
       />
       <Card>

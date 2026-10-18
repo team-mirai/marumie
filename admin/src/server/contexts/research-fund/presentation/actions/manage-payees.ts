@@ -1,7 +1,7 @@
 "use server";
 import "server-only";
 import { revalidatePath } from "next/cache";
-import { requireRole } from "@/server/contexts/auth/presentation/loaders/require-role";
+import { requireResearchFundWriter } from "@/server/contexts/auth/presentation/loaders/require-research-fund-writer";
 import { DeletePayeeUsecase } from "@/server/contexts/research-fund/application/usecases/delete-payee-usecase";
 import { DeletePayeeAliasUsecase } from "@/server/contexts/research-fund/application/usecases/delete-payee-alias-usecase";
 import { MergePayeesUsecase } from "@/server/contexts/research-fund/application/usecases/merge-payees-usecase";
@@ -24,7 +24,7 @@ export async function savePayee(
   id: string | null,
   input: PayeeFormInput,
 ) {
-  await requireRole("research_fund");
+  await requireResearchFundWriter(politicianId);
   const target = await requireJournalTarget(politicianId, bookId);
   if (!target) return { success: false as const, error: "現在の対象帳簿を選択し直してください" };
   try {
@@ -53,7 +53,7 @@ export async function deletePayeeAlias(
   payeeId: string,
   aliasId: string,
 ) {
-  await requireRole("research_fund");
+  await requireResearchFundWriter(politicianId);
   const target = await requireJournalTarget(politicianId, bookId);
   if (!target) return { success: false as const, error: "現在の対象帳簿を選択し直してください" };
   try {
@@ -77,7 +77,7 @@ export async function deletePayeeAlias(
  * 紐づいていた公開中でない仕訳は支払先が未設定に戻る。支払先は公開内容に影響しないので、webapp のキャッシュは無効化しない。
  */
 export async function deletePayee(politicianId: string, bookId: string, payeeId: string) {
-  await requireRole("research_fund");
+  await requireResearchFundWriter(politicianId);
   const target = await requireJournalTarget(politicianId, bookId);
   if (!target) return { success: false as const, error: "現在の対象帳簿を選択し直してください" };
   try {
@@ -105,7 +105,7 @@ export async function mergePayees(
   targetId: string,
   sourceId: string,
 ) {
-  await requireRole("research_fund");
+  await requireResearchFundWriter(politicianId);
   const target = await requireJournalTarget(politicianId, bookId);
   if (!target) return { success: false as const, error: "現在の対象帳簿を選択し直してください" };
   try {

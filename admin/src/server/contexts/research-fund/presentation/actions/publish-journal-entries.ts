@@ -1,7 +1,7 @@
 "use server";
 import "server-only";
 import { revalidatePath } from "next/cache";
-import { requireRole } from "@/server/contexts/auth/presentation/loaders/require-role";
+import { requireResearchFundWriter } from "@/server/contexts/auth/presentation/loaders/require-research-fund-writer";
 import { PublicationError } from "@/server/contexts/research-fund/domain/models/publication";
 import { requireJournalTarget } from "@/server/contexts/research-fund/presentation/loaders/load-journal-review";
 import { PublishJournalEntriesUsecase } from "@/server/contexts/research-fund/application/usecases/publish-journal-entries-usecase";
@@ -14,7 +14,7 @@ export async function publishJournalEntries(
   bookId: string,
   ids: readonly string[],
 ) {
-  await requireRole("research_fund");
+  await requireResearchFundWriter(politicianId);
   if (!(await requireJournalTarget(politicianId, bookId)))
     return { success: false as const, error: "現在の対象帳簿を選択し直してください" };
   try {

@@ -54,4 +54,41 @@ export class PrismaUserRepository implements UserRepository {
       where: { authId },
     });
   }
+
+  async findAssignedPoliticianIds(userId: string): Promise<string[]> {
+    const rows = await this.prisma.userPoliticianAssignment.findMany({
+      where: { userId },
+      orderBy: { politicianId: "asc" },
+      select: { politicianId: true },
+    });
+    return rows.map((row) => String(row.politicianId));
+  }
+
+  async findAllAssignedPoliticianIds(): Promise<Map<string, string[]>> {
+    const rows = await this.prisma.userPoliticianAssignment.findMany({
+      orderBy: [{ userId: "asc" }, { politicianId: "asc" }],
+      select: { userId: true, politicianId: true },
+    });
+    const assignments = new Map<string, string[]>();
+    for (const row of rows) {
+      assignments.set(row.userId, [
+        ...(assignments.get(row.userId) ?? []),
+        String(row.politicianId),
+      ]);
+    }
+    return assignments;
+  }
+
+  async replaceAssignedPoliticians(
+    userId: string,
+    politicianIds: readonly string[],
+  ): Promise<string[]> {
+    await this.prisma.$transaction([
+      this.prisma.userPoliticianAssignment.deleteMany({ where: { userId } }),
+      this.prisma.userPoliticianAssignment.createMany({
+        data: politicianIds.map((politicianId) => ({ userId, politicianId: BigInt(politicianId) })),
+      }),
+    ]);
+    return await this.findAssignedPoliticianIds(userId);
+  }
 }

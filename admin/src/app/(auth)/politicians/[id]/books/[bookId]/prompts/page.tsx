@@ -1,5 +1,6 @@
 import { PageHeader } from "@/client/components/layout/PageHeader";
 import { PromptEditor } from "@/client/components/research-fund/PromptEditor";
+import { WriteFieldset } from "@/client/components/research-fund/ResearchFundWriteAccess";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/client/components/ui";
 import { loadPrompts } from "@/server/contexts/research-fund/presentation/loaders/load-prompts";
 import { requireRolePage } from "@/server/contexts/auth/presentation/loaders/require-role-page";
@@ -26,21 +27,25 @@ export default async function PromptsPage({
           <TabsTrigger value="address-search">支払先の住所検索</TabsTrigger>
         </TabsList>
         <TabsContent value="receipt">
-          <PromptEditor
-            key={`receipt:${receipt.activeVersion}`}
-            kind="receipt"
-            {...receipt}
-            testDocuments={testDocuments}
-            target={target}
-          />
+          <WriteFieldset>
+            <PromptEditor
+              key={`receipt:${receipt.activeVersion}`}
+              kind="receipt"
+              {...receipt}
+              testDocuments={testDocuments}
+              target={target}
+            />
+          </WriteFieldset>
         </TabsContent>
         <TabsContent value="address-search">
-          <PromptEditor
-            key={`address-search:${addressSearch.activeVersion}`}
-            kind="address-search"
-            {...addressSearch}
-            target={target}
-          />
+          <WriteFieldset>
+            <PromptEditor
+              key={`address-search:${addressSearch.activeVersion}`}
+              kind="address-search"
+              {...addressSearch}
+              target={target}
+            />
+          </WriteFieldset>
         </TabsContent>
       </Tabs>
     </>

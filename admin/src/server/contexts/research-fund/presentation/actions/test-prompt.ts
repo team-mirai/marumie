@@ -1,6 +1,6 @@
 "use server";
 import "server-only";
-import { requireRole } from "@/server/contexts/auth/presentation/loaders/require-role";
+import { requireResearchFundWriter } from "@/server/contexts/auth/presentation/loaders/require-research-fund-writer";
 import { PromptError } from "@/server/contexts/research-fund/domain/models/prompt";
 import { requireJournalTarget } from "@/server/contexts/research-fund/presentation/loaders/load-journal-review";
 import { buildTestPromptUsecase } from "@/server/contexts/research-fund/presentation/loaders/load-prompts";
@@ -19,7 +19,7 @@ export async function testPrompt(
     body: string;
   },
 ) {
-  await requireRole("research_fund");
+  await requireResearchFundWriter(politicianId);
   if (!(await requireJournalTarget(politicianId, bookId)))
     return { success: false as const, error: "現在の対象帳簿を選択し直してください" };
   try {

@@ -11,6 +11,7 @@ import {
   JournalPublicFields,
 } from "@/client/components/research-fund/JournalPublicFields";
 import { JournalReceiptAbsenceField } from "@/client/components/research-fund/JournalReceiptAbsenceField";
+import { useResearchFundReadOnly } from "@/client/components/research-fund/ResearchFundWriteAccess";
 import { cn } from "@/client/lib";
 import { normalizeAdvancedBy } from "@/server/contexts/research-fund/domain/models/advance";
 import {
@@ -43,7 +44,7 @@ export function JournalEditor({
   target,
   documentUrl,
   banner,
-  pending,
+  pending: busy,
   allowLeave,
   onSave,
   onDiscard,
@@ -85,6 +86,9 @@ export function JournalEditor({
   onLinkPayee: (targets: readonly ReviewEntry[], payeeId: string | null) => void;
   onCreatePayee: (targets: readonly ReviewEntry[], input: PayeeFormInput) => void;
 }) {
+  // 担当外の議員室は閲覧のみ。処理中と同じく、編集用の入力・ボタンをすべて無効にする
+  const readOnly = useResearchFundReadOnly();
+  const pending = busy || readOnly;
   const fieldId = useId();
   const [input, setInput] = useState<JournalEdit>(entry);
   const [advancedBy, setAdvancedBy] = useState(entry.advancedBy ?? "");

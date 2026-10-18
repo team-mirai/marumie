@@ -8,6 +8,7 @@ import { PlusCircle } from "@phosphor-icons/react/dist/ssr";
 import { PageHeader } from "@/client/components/layout/PageHeader";
 import { Button, Card, CardContent } from "@/client/components/ui";
 import { BookForm } from "@/client/components/books/BookForm";
+import { WriteFieldset } from "@/client/components/research-fund/ResearchFundWriteAccess";
 import { loadPolitician } from "@/server/contexts/shared/presentation/loaders/load-politicians";
 import { loadBooks } from "@/server/contexts/research-fund/presentation/loaders/load-books";
 import { requireRolePage } from "@/server/contexts/auth/presentation/loaders/require-role-page";
@@ -92,7 +93,9 @@ export default async function BooksPage({ params }: { params: Promise<{ id: stri
               <details className="border-t border-border-soft pt-4">
                 <summary className="cursor-pointer text-sm font-bold">帳簿情報を編集</summary>
                 <div className="pt-4">
-                  <BookForm politicianId={id} book={book} />
+                  <WriteFieldset>
+                    <BookForm politicianId={id} book={book} />
+                  </WriteFieldset>
                 </div>
               </details>
             </CardContent>
@@ -105,13 +108,15 @@ export default async function BooksPage({ params }: { params: Promise<{ id: stri
               新規作成
             </h3>
             <p className="text-sm text-muted-foreground">年度を指定して空の帳簿を作成します。</p>
-            <BookForm
-              politicianId={id}
-              defaultYear={Math.min(
-                9999,
-                books.length ? books[0].financialYear + 1 : new Date().getFullYear(),
-              )}
-            />
+            <WriteFieldset>
+              <BookForm
+                politicianId={id}
+                defaultYear={Math.min(
+                  9999,
+                  books.length ? books[0].financialYear + 1 : new Date().getFullYear(),
+                )}
+              />
+            </WriteFieldset>
           </CardContent>
         </Card>
       </div>

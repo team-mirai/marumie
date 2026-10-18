@@ -10,14 +10,16 @@ import { ResearchFundPublicSwitch } from "@/client/components/politicians/Resear
 import { loadPoliticians } from "@/server/contexts/shared/presentation/loaders/load-politicians";
 import { UserRoleModel } from "@/server/contexts/auth/domain/models/user-role";
 import { requireRolePage } from "@/server/contexts/auth/presentation/loaders/require-role-page";
+import { loadResearchFundWritePermission } from "@/server/contexts/auth/presentation/loaders/require-research-fund-writer";
 
 export default async function PoliticiansPage() {
   const user = await requireRolePage("research_fund");
-  // 議員の登録・編集・削除は admin だけ（一覧の閲覧と公開切り替えは research_fund でもできる）
+  // 議員の登録・編集・削除は admin だけ（一覧の閲覧は research_fund でもでき、公開切り替えは担当の議員だけできる）
   const canManagePoliticians = UserRoleModel.isAdmin(user.roles);
-  const [politicians, { currentTarget }] = await Promise.all([
+  const [politicians, { currentTarget }, canWriteFor] = await Promise.all([
     loadPoliticians(),
     loadAdminTargets(),
+    loadResearchFundWritePermission(),
   ]);
   return (
     <div>
@@ -73,7 +75,11 @@ export default async function PoliticiansPage() {
                   当選{" "}
                   <span className="font-latin">{p.termStart.slice(0, 7).replaceAll("-", ".")}</span>
                 </p>
-                <ResearchFundPublicSwitch id={p.id} isResearchFundPublic={p.isResearchFundPublic} />
+                <ResearchFundPublicSwitch
+                  id={p.id}
+                  isResearchFundPublic={p.isResearchFundPublic}
+                  readOnly={!canWriteFor(p.id)}
+                />
                 <div className="flex flex-wrap items-center gap-2">
                   <Button variant="outline" size="sm" asChild>
                     <Link href={`/politicians/${p.id}/books`}>年度帳簿</Link>

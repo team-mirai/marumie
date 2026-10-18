@@ -1,5 +1,5 @@
 import { revalidatePath } from "next/cache";
-import { requireRole } from "@/server/contexts/auth/presentation/loaders/require-role";
+import { requireResearchFundWriter } from "@/server/contexts/auth/presentation/loaders/require-research-fund-writer";
 import { DeletePayeeUsecase } from "@/server/contexts/research-fund/application/usecases/delete-payee-usecase";
 import { DeletePayeeAliasUsecase } from "@/server/contexts/research-fund/application/usecases/delete-payee-alias-usecase";
 import { MergePayeesUsecase } from "@/server/contexts/research-fund/application/usecases/merge-payees-usecase";
@@ -8,14 +8,14 @@ import { PayeeError } from "@/server/contexts/research-fund/domain/models/payee"
 import { deletePayee, deletePayeeAlias, mergePayees, savePayee } from "@/server/contexts/research-fund/presentation/actions/manage-payees";
 import { requireJournalTarget } from "@/server/contexts/research-fund/presentation/loaders/load-journal-review";
 jest.mock("next/cache", () => ({ revalidatePath: jest.fn() }));
-jest.mock("@/server/contexts/auth/presentation/loaders/require-role", () => ({ requireRole: jest.fn() }));
+jest.mock("@/server/contexts/auth/presentation/loaders/require-research-fund-writer", () => ({ requireResearchFundWriter: jest.fn() }));
 jest.mock("@/server/contexts/research-fund/presentation/loaders/load-journal-review", () => ({ requireJournalTarget: jest.fn() }));
 jest.mock("@/server/contexts/shared/infrastructure/prisma", () => ({ prisma: {} }));
 const form = { name: "東京タクシー", postalCode: "", address: "", invoiceRegistrationNumber: "" };
 const payee = { id: "7", politicianId: "2", name: "東京タクシー", postalCode: null, address: "", invoiceRegistrationNumber: null };
 beforeEach(() => {
   jest.clearAllMocks();
-  jest.mocked(requireRole).mockResolvedValue({ id: "user" } as Awaited<ReturnType<typeof requireRole>>);
+  jest.mocked(requireResearchFundWriter).mockResolvedValue({ id: "user" } as Awaited<ReturnType<typeof requireResearchFundWriter>>);
   jest.mocked(requireJournalTarget).mockResolvedValue({ kind: "research-fund", key: "book:1", name: "議員", year: 2026, politicianId: "2", bookId: "1", draftCount: 0 });
 });
 afterEach(() => jest.restoreAllMocks());

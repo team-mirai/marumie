@@ -11,6 +11,9 @@
  * - 認証後のページ（src/app/(auth) 配下の page.tsx の default export）→ requireRolePage
  *
  * ログイン前・ロール付与前に使う認証フローなど、ロールを問わない入口だけを PUBLIC_ENTRIES に理由付きで列挙する。
+ *
+ * 調査研究費のデータを変えるサーバーアクションは、閲覧（全議員）より狭い「担当の議員室だけ」に絞るため（#1773）、
+ * requireRole ではなく requireResearchFundWriter を最初に呼んでいることも検査する。
  */
 import { readdirSync, readFileSync } from "node:fs";
 import { join, relative, sep } from "node:path";
@@ -41,12 +44,17 @@ const PUBLIC_ENTRIES: Record<string, string> = {
   "app/(auth)/page.tsx#default": "ダッシュボード。データを持たず、どのロールでも開ける",
 };
 
+/** 調査研究費のデータを変えるのに research-fund コンテキストの外にあるサーバーアクション */
+const RESEARCH_FUND_WRITE_ACTIONS_OUTSIDE_CONTEXT = [
+  "server/contexts/shared/presentation/actions/manage-politician.ts#setPoliticianResearchFundPublic",
+];
+
 const HTTP_METHODS = new Set(["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"]);
 
 type EntryKind = "action" | "route" | "page";
 
 const GUARDS: Record<EntryKind, readonly string[]> = {
-  action: ["requireRole"],
+  action: ["requireRole", "requireResearchFundWriter"],
   route: ["requireRoleResponse"],
   page: ["requireRolePage"],
 };
@@ -196,6 +204,21 @@ describe("ロールのガードの網羅", () => {
       .filter((entry) => !firstStatementCallsGuard(entry.body, GUARDS[entry.kind]))
       .map((entry) => `${entry.kind}: ${entry.key}（${GUARDS[entry.kind].join(" / ")} を最初に呼ぶ）`);
 
+    expect(missing).toEqual([]);
+  });
+
+  it("調査研究費のサーバーアクションは、担当の議員室だけに書き込めるガード（requireResearchFundWriter）を最初に通る", () => {
+    const writeActions = entries.filter(
+      (entry) =>
+        entry.kind === "action" &&
+        (entry.key.startsWith("server/contexts/research-fund/presentation/actions/") ||
+          RESEARCH_FUND_WRITE_ACTIONS_OUTSIDE_CONTEXT.includes(entry.key)),
+    );
+    expect(writeActions.length).toBeGreaterThan(15);
+
+    const missing = writeActions
+      .filter((entry) => !firstStatementCallsGuard(entry.body, ["requireResearchFundWriter"]))
+      .map((entry) => `${entry.key}（requireResearchFundWriter を最初に呼ぶ）`);
     expect(missing).toEqual([]);
   });
 

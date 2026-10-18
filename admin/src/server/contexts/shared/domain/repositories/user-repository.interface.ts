@@ -18,4 +18,10 @@ export interface UserRepository {
   findAll(): Promise<User[]>;
   updateRoles(authId: string, roles: UserRole[]): Promise<User>;
   delete(authId: string): Promise<void>;
+  /** ユーザーが担当する議員の ID（#1773） */
+  findAssignedPoliticianIds(userId: string): Promise<string[]>;
+  /** 全ユーザーの担当（ユーザー ID → 担当する議員の ID）。担当のないユーザーは含まない */
+  findAllAssignedPoliticianIds(): Promise<Map<string, string[]>>;
+  /** ユーザーの担当を、渡した議員の集合に置き換える */
+  replaceAssignedPoliticians(userId: string, politicianIds: readonly string[]): Promise<string[]>;
 }

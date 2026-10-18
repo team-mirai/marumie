@@ -8,13 +8,16 @@ import { setPoliticianResearchFundPublic } from "@/server/contexts/shared/presen
 /**
  * 議員ごとに調研費を「公開する／公開しない」を切り替える。
  * 公開しない議員のページも URL を知っていれば開けるが、まる見えの導線・sitemap には出ず noindex になる。
+ * 担当外の議員（readOnly）は切り替えられない（#1773）。
  */
 export function ResearchFundPublicSwitch({
   id,
   isResearchFundPublic,
+  readOnly = false,
 }: {
   id: string;
   isResearchFundPublic: boolean;
+  readOnly?: boolean;
 }) {
   const router = useRouter();
   const switchId = useId();
@@ -24,7 +27,7 @@ export function ResearchFundPublicSwitch({
       <Switch
         id={switchId}
         checked={isResearchFundPublic}
-        disabled={busy}
+        disabled={busy || readOnly}
         onCheckedChange={async (checked) => {
           setBusy(true);
           try {
@@ -48,6 +51,7 @@ export function ResearchFundPublicSwitch({
       />
       <Label htmlFor={switchId}>
         調研費：{isResearchFundPublic ? "公開中" : "非公開（URL を知っている人だけが見られます）"}
+        {readOnly && <span className="text-muted-foreground">（担当外のため閲覧のみ）</span>}
       </Label>
     </div>
   );
