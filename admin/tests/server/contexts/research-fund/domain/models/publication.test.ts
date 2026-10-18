@@ -82,7 +82,7 @@ describe("書類の公開用の版による公開の可否（#1803）", () => {
     ["作り直しの依頼中（前の版が残っている）", { maskingStatus: "pending", hasMaskedVersion: true }, "まだ作られていません"],
     ["作成中", { maskingStatus: "running", hasMaskedVersion: false }, "作成中です"],
     ["失敗（前の版が残っている）", { maskingStatus: "failed", hasMaskedVersion: true }, "作成に失敗しています"],
-    ["作成済みなのに版のファイルが無い", { maskingStatus: "succeeded", hasMaskedVersion: false }, "まだ作られていません"],
+    ["作成済みなのに版のファイルが無い", { maskingStatus: "succeeded", hasMaskedVersion: false }, "ファイルが見つかりません"],
   ] as const)("%s の書類が付いた仕訳は公開できない", (_label, document, message) => {
     expect(Publication.documentRejection(document)).toContain(message);
   });

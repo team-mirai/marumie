@@ -81,20 +81,30 @@ export function JournalPublication({
   const router = useRouter();
   const [checked, setChecked] = useState<readonly string[]>([]);
   const [pending, startTransition] = useTransition();
-  const selected = candidates.filter((candidate) => checked.includes(candidate.id));
+  // 書類の公開用の版が作成済みでない仕訳は公開できないので、選べるのはそれ以外だけ（#1803）
+  const candidateIds = useMemo(
+    () =>
+      candidates
+        .filter((candidate) => candidate.documentRejection === null)
+        .map((candidate) => candidate.id),
+    [candidates],
+  );
+  const blockedCount = candidates.length - candidateIds.length;
+  // 選んだ後の再読み込みで公開できなくなった仕訳は、表示・プレビュー・公開のいずれでも選択として扱わない
+  const selectedIds = useMemo(
+    () => checked.filter((id) => candidateIds.includes(id)),
+    [checked, candidateIds],
+  );
+  const selected = candidates.filter((candidate) => selectedIds.includes(candidate.id));
   const selectedTotal = selected.reduce((sum, candidate) => sum + candidate.amount, 0);
   const before = useMemo(() => aggregate(published, accounts), [published, accounts]);
   const after = useMemo(
-    () => aggregate([...published, ...candidates.filter((c) => checked.includes(c.id))], accounts),
-    [published, accounts, candidates, checked],
+    () =>
+      aggregate([...published, ...candidates.filter((c) => selectedIds.includes(c.id))], accounts),
+    [published, accounts, candidates, selectedIds],
   );
   const delta = before && after ? describePublishDelta(before, after) : null;
-  // 書類の公開用の版が作成済みでない仕訳は公開できないので、選べるのはそれ以外だけ（#1803）
-  const candidateIds = candidates
-    .filter((candidate) => candidate.documentRejection === null)
-    .map((candidate) => candidate.id);
-  const blockedCount = candidates.length - candidateIds.length;
-  const selection = publishSelectionOf(candidateIds, checked);
+  const selection = publishSelectionOf(candidateIds, selectedIds);
 
   function toggle(candidate: PublishCandidate) {
     if (candidate.documentRejection !== null) return;
@@ -107,7 +117,7 @@ export function JournalPublication({
   function publish() {
     startTransition(async () => {
       try {
-        const result = await publishJournalEntries(target.politicianId, target.bookId, checked);
+        const result = await publishJournalEntries(target.politicianId, target.bookId, selectedIds);
         if (!result.success) {
           toast.error(result.error);
           return;
@@ -171,12 +181,12 @@ export function JournalPublication({
                       className={cn(
                         "grid grid-cols-[auto_auto_minmax(0,1fr)_auto] items-center gap-x-2.5 gap-y-1 rounded-lg px-2.5 py-2",
                         blocked ? "cursor-not-allowed" : "cursor-pointer",
-                        checked.includes(candidate.id) && "bg-accent",
+                        selectedIds.includes(candidate.id) && "bg-accent",
                       )}
                     >
                       <Checkbox
                         id={`publish-${candidate.id}`}
-                        checked={checked.includes(candidate.id)}
+                        checked={selectedIds.includes(candidate.id)}
                         onCheckedChange={() => toggle(candidate)}
                         disabled={pending || blocked}
                         aria-label={`${candidate.description}を公開対象にする`}
