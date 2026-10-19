@@ -59,7 +59,7 @@ import { attachJournalDocument } from "@/server/contexts/research-fund/presentat
 import { mutateJournalReview } from "@/server/contexts/research-fund/presentation/actions/manage-journal-review";
 import type { DocumentMasking } from "@/server/contexts/research-fund/domain/models/document-masking";
 import { rereadScanDocuments } from "@/server/contexts/research-fund/presentation/actions/reread-scan-documents";
-import { cn, filterJournalEntries, researchFundDocumentUrl } from "@/client/lib";
+import { cn, filterJournalEntries } from "@/client/lib";
 
 const statuses = { all: "すべて", draft: "下書き", approved: "確認済", published: "公開中" };
 export function JournalReview({
@@ -713,9 +713,6 @@ export function JournalReview({
     entry.status === "draft" && entry.documentId !== null
       ? (duplicates[entry.documentId] ?? [])
       : [];
-  const documentUrl = selected?.documentId
-    ? researchFundDocumentUrl(target, selected.documentId)
-    : undefined;
   // 絞り込みを変えるときは、未保存の変更を確認してから選択とチェックを外す
   function changeFilter(apply: () => void) {
     if (!allowLeave()) return;
@@ -1010,7 +1007,6 @@ export function JournalReview({
                 advancers={advancers}
                 payees={payees}
                 target={target}
-                documentUrl={documentUrl}
                 documentMasking={selected.documentId ? maskings[selected.documentId] : undefined}
                 banner={
                   <DuplicateDocumentWarning
