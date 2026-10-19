@@ -7,6 +7,7 @@ import {
   SCAN_BATCH_MAX_DOCUMENTS,
 } from "@/server/contexts/research-fund/domain/models/scan-batch";
 import { requireJournalTarget } from "@/server/contexts/research-fund/presentation/loaders/load-journal-review";
+import { notifyDocumentMasking } from "@/server/contexts/research-fund/presentation/loaders/load-document-masking";
 import { buildCreateScanBatchUsecase } from "@/server/contexts/research-fund/presentation/loaders/load-scan";
 
 /**
@@ -42,6 +43,8 @@ export async function createScanBatch(politicianId: string, bookId: string, form
     });
     if (result.status === "invalid")
       return { success: false as const, error: result.errors[0].message };
+    // 登録した書類の公開用の版を、画面を開いていなくても作り始める（#1812）
+    await notifyDocumentMasking();
     revalidatePath("/(auth)", "layout");
     return { success: true as const, batchId: result.value.batchId, count: documents.length };
   } catch (error) {

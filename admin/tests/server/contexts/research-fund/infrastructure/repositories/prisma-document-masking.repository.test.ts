@@ -27,56 +27,80 @@ describe("PrismaDocumentMaskingRepository", () => {
     delegate.findMany.mockResolvedValue([
       { id: BigInt(1), maskingStatus: "succeeded", maskingError: null, maskedRegionCount: 2, maskedKey: "m" },
       { id: BigInt(2), maskingStatus: "failed", maskingError: "理由", maskedRegionCount: null, maskedKey: null },
+      { id: BigInt(3), maskingStatus: "pending", maskingError: "作り直しの印", maskedRegionCount: null, maskedKey: null },
     ]);
 
     expect(await repository.listByBook("12")).toEqual([
       { documentId: "1", status: "succeeded", error: null, regionCount: 2, hasMaskedVersion: true },
       { documentId: "2", status: "failed", error: "理由", regionCount: null, hasMaskedVersion: false },
+      // 作り直しの印は失敗の理由ではないので画面に出さない
+      { documentId: "3", status: "pending", error: null, regionCount: null, hasMaskedVersion: false },
     ]);
     expect(delegate.findMany.mock.calls[0][0].where).toEqual({ bookId: BigInt(12) });
   });
 
-  it("未作成・作成中の件数を数える", async () => {
+  it("すべての帳簿の未作成・作成中の件数を数える", async () => {
     delegate.groupBy.mockResolvedValue([{ maskingStatus: "pending", _count: { _all: 3 } }]);
 
-    expect(await repository.countUnfinished("12")).toEqual({ pending: 3, running: 0 });
+    expect(await repository.countUnfinished()).toEqual({ pending: 3, running: 0 });
     expect(delegate.groupBy.mock.calls[0][0].where).toEqual({
-      bookId: BigInt(12),
       maskingStatus: { in: ["pending", "running"] },
     });
   });
 
-  it("失効した作成中の書類を未作成に戻す", async () => {
-    delegate.updateMany.mockResolvedValue({ count: 1 });
+  it("失効した作成中の書類を、作り直しても止まったものは失敗に、初めて止まったものは印を付けて未作成に戻す", async () => {
+    delegate.updateMany.mockResolvedValueOnce({ count: 1 }).mockResolvedValueOnce({ count: 2 });
     const staleBefore = new Date();
+    const stale = {
+      maskingStatus: "running",
+      OR: [{ maskingStartedAt: null }, { maskingStartedAt: { lt: staleBefore } }],
+    };
 
-    expect(await repository.releaseStale("12", staleBefore)).toBe(1);
-    expect(delegate.updateMany).toHaveBeenCalledWith({
-      where: {
-        bookId: BigInt(12),
-        maskingStatus: "running",
-        OR: [{ maskingStartedAt: null }, { maskingStartedAt: { lt: staleBefore } }],
-      },
-      data: { maskingStatus: "pending", maskingStartedAt: null },
+    expect(
+      await repository.releaseStale(staleBefore, { retryNote: "印", failure: "止まりました" }),
+    ).toEqual({ retried: 2, failed: 1 });
+    expect(prisma.$transaction).toHaveBeenCalledTimes(1);
+    expect(delegate.updateMany).toHaveBeenNthCalledWith(1, {
+      where: { ...stale, maskingError: { not: null } },
+      data: { maskingStatus: "failed", maskingError: "止まりました", maskedRegionCount: null },
+    });
+    expect(delegate.updateMany).toHaveBeenNthCalledWith(2, {
+      where: { ...stale, maskingError: null },
+      data: { maskingStatus: "pending", maskingStartedAt: null, maskingError: "印" },
     });
   });
 
-  it("未作成の書類だけを作成中にして返し、別の実行が先に着手した書類は含めない", async () => {
+  it("最も古い未作成の書類を作成中にして返し、別の実行が先に着手した書類は飛ばす", async () => {
     delegate.findMany.mockResolvedValue([
       { id: BigInt(1), storageKey: "k1", mime: "image/png" },
       { id: BigInt(2), storageKey: "k2", mime: "application/pdf" },
     ]);
     delegate.updateMany.mockResolvedValueOnce({ count: 0 }).mockResolvedValueOnce({ count: 1 });
 
-    const result = await repository.claim("12", 2);
+    const result = await repository.claimNext();
 
-    expect(result).toEqual([
-      { documentId: "2", storageKey: "k2", mime: "application/pdf", startedAt: expect.any(Date) },
-    ]);
+    expect(result).toEqual({
+      documentId: "2",
+      storageKey: "k2",
+      mime: "application/pdf",
+      startedAt: expect.any(Date),
+    });
+    expect(delegate.findMany.mock.calls[0][0]).toMatchObject({
+      where: { maskingStatus: "pending" },
+      orderBy: { id: "asc" },
+    });
+    // 作り直しの印（masking_error）は消さずに残す
     expect(delegate.updateMany).toHaveBeenLastCalledWith({
       where: { id: BigInt(2), maskingStatus: "pending" },
-      data: { maskingStatus: "running", maskingStartedAt: result[0].startedAt, maskingError: null },
+      data: { maskingStatus: "running", maskingStartedAt: result?.startedAt },
     });
+  });
+
+  it("すべての候補を別の実行が先に着手していたら null を返す", async () => {
+    delegate.findMany.mockResolvedValue([{ id: BigInt(1), storageKey: "k1", mime: "image/png" }]);
+    delegate.updateMany.mockResolvedValue({ count: 0 });
+
+    expect(await repository.claimNext()).toBeNull();
   });
 
   it("着手したときのまま作成中なら、作った版を記録して前の版のキーを返す", async () => {

@@ -4,6 +4,7 @@ import { requireResearchFundWriter } from "@/server/contexts/auth/presentation/l
 import { AttachJournalDocumentUsecase } from "@/server/contexts/research-fund/application/usecases/attach-journal-document-usecase";
 import { JournalReviewError } from "@/server/contexts/research-fund/domain/models/journal-review";
 import { attachJournalDocument } from "@/server/contexts/research-fund/presentation/actions/attach-journal-document";
+import { notifyDocumentMasking } from "@/server/contexts/research-fund/presentation/loaders/load-document-masking";
 import { requireJournalTarget } from "@/server/contexts/research-fund/presentation/loaders/load-journal-review";
 
 jest.mock("next/cache", () => ({ revalidatePath: jest.fn() }));
@@ -12,6 +13,9 @@ jest.mock("@/server/contexts/auth/presentation/loaders/require-research-fund-wri
 }));
 jest.mock("@/server/contexts/research-fund/presentation/loaders/load-journal-review", () => ({
   requireJournalTarget: jest.fn(),
+}));
+jest.mock("@/server/contexts/research-fund/presentation/loaders/load-document-masking", () => ({
+  notifyDocumentMasking: jest.fn(),
 }));
 jest.mock("@/server/contexts/research-fund/application/usecases/attach-journal-document-usecase");
 jest.mock("@/server/contexts/research-fund/infrastructure/repositories/prisma-journal-review.repository");
@@ -46,7 +50,7 @@ beforeEach(() => {
   execute.mockResolvedValue(undefined);
 });
 
-test("ファイルを読み出して usecase に渡し、レイアウトを再検証する", async () => {
+test("ファイルを読み出して usecase に渡し、公開用の版の作成を依頼してレイアウトを再検証する", async () => {
   await expect(
     attachJournalDocument("2", "1", "9", "2026-08-01T00:00:00.000Z", formDataWith(pdf)),
   ).resolves.toEqual({ success: true });
@@ -56,6 +60,7 @@ test("ファイルを読み出して usecase に渡し、レイアウトを再�
     mime: "application/pdf",
     originalFilename: "領収書.pdf",
   });
+  expect(notifyDocumentMasking).toHaveBeenCalledTimes(1);
   expect(revalidatePath).toHaveBeenCalledWith("/(auth)", "layout");
 });
 
@@ -96,5 +101,6 @@ test("業務上の拒否は理由を返し、それ以外は汎用のエラー�
     success: false,
     error: "領収書の紐づけに失敗しました。時間をおいて再度お試しください",
   });
+  expect(notifyDocumentMasking).not.toHaveBeenCalled();
   expect(revalidatePath).not.toHaveBeenCalled();
 });

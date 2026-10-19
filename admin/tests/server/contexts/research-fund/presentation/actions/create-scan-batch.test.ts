@@ -4,6 +4,7 @@ import type { CreateScanBatchUsecase } from "@/server/contexts/research-fund/app
 import { ScanBatchError } from "@/server/contexts/research-fund/domain/models/scan-batch";
 import { createScanBatch } from "@/server/contexts/research-fund/presentation/actions/create-scan-batch";
 import { requireJournalTarget } from "@/server/contexts/research-fund/presentation/loaders/load-journal-review";
+import { notifyDocumentMasking } from "@/server/contexts/research-fund/presentation/loaders/load-document-masking";
 import { buildCreateScanBatchUsecase } from "@/server/contexts/research-fund/presentation/loaders/load-scan";
 
 jest.mock("next/cache", () => ({ revalidatePath: jest.fn() }));
@@ -12,6 +13,9 @@ jest.mock("@/server/contexts/auth/presentation/loaders/require-research-fund-wri
 }));
 jest.mock("@/server/contexts/research-fund/presentation/loaders/load-journal-review", () => ({
   requireJournalTarget: jest.fn(),
+}));
+jest.mock("@/server/contexts/research-fund/presentation/loaders/load-document-masking", () => ({
+  notifyDocumentMasking: jest.fn(),
 }));
 jest.mock("@/server/contexts/research-fund/presentation/loaders/load-scan", () => ({
   buildCreateScanBatchUsecase: jest.fn(),
@@ -49,7 +53,7 @@ beforeEach(() => {
   createBatch.mockResolvedValue({ status: "valid", value: { batchId: "9" } });
 });
 
-test("ファイルを読み出して usecase に渡し、レイアウトを再検証する", async () => {
+test("ファイルを読み出して usecase に渡し、公開用の版の作成を依頼してレイアウトを再検証する", async () => {
   const formData = formDataWith([jpeg("IMG_1.jpg"), jpeg("IMG_2.jpg")]);
   await expect(createScanBatch("2", "1", formData)).resolves.toEqual({
     success: true,
@@ -65,6 +69,7 @@ test("ファイルを読み出して usecase に渡し、レイアウトを再�
       { bytes: new Uint8Array([1, 2, 3]), mime: "image/jpeg", originalFilename: "IMG_2.jpg" },
     ],
   });
+  expect(notifyDocumentMasking).toHaveBeenCalledTimes(1);
   expect(revalidatePath).toHaveBeenCalledWith("/(auth)", "layout");
 });
 
@@ -75,6 +80,7 @@ test("31枚以上はサーバー側でも弾き、保存を始めない", async 
     error: "1回にアップロードできるのは30枚までです",
   });
   expect(createBatch).not.toHaveBeenCalled();
+  expect(notifyDocumentMasking).not.toHaveBeenCalled();
   expect(revalidatePath).not.toHaveBeenCalled();
 });
 

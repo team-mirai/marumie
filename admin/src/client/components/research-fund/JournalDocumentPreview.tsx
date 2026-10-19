@@ -107,7 +107,7 @@ function maskedUnavailableReason(masking: DocumentMasking | undefined): string |
     case "failed":
       return "公開用の版の作成に失敗したため、見られる版がありません";
     default:
-      return "公開用の版はまだ作られていません。帳簿の画面を開いている間に自動で作られます";
+      return "公開用の版はまだ作られていません。自動で作られるので、しばらくしてから再読み込みしてください";
   }
 }
 

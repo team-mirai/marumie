@@ -143,6 +143,24 @@ USE_MOCK_DATA=true
 
 設定後、トランザクションページのバックエンドがモックデータを返すようになります。
 
+## 調研費の書類の公開用の版をローカルで作る
+
+本番・staging（Vercel 上のデプロイ）では、書類を登録・作り直すと Vercel Queues 経由でサーバー側で公開用の版が作られ、
+取りこぼしは Vercel Cron（5 分ごと）が拾い直します。ローカル・CI・E2E ではキューを使わないので、書類は未作成のまま残ります。
+
+ローカルで作りたいときは、`admin/.env.local` に `CRON_SECRET`（任意の文字列）と `ANTHROPIC_API_KEY` を設定して admin を起動し、
+定期実行の入口を手で呼びます。キューを使えない環境では、この呼び出しの中で未作成の版がなくなるまで順に作ります
+（作成中のまま止まった書類も作り直しの対象に戻します）。
+
+```bash
+# シェルは admin/.env.local を読まないので、そこに設定したのと同じ値を渡す
+export CRON_SECRET=<admin/.env.local の CRON_SECRET>
+curl -H "Authorization: Bearer $CRON_SECRET" http://localhost:3001/api/cron/document-masking
+# => {"retried":0,"failedStale":0,"notified":0,"processed":2,"remaining":0}
+```
+
+作り終えたら admin の画面を再読み込みすると、状態が反映されます。
+
 ## サンプルデータ
 
 `data/sampledata.csv` に政治資金の取引データのサンプルが含まれています。管理画面（http://localhost:3001）の「CSVアップロード」機能からこのファイルをアップロードして確認できます。

@@ -1,5 +1,17 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "installCommand": "npm i -g pnpm@10.30.3 && cd .. && pnpm install --frozen-lockfile",
-  "ignoreCommand": "[ \"$VERCEL_ENV\" = \"production\" ] && [ \"$MANUAL_DEPLOY\" != \"1\" ] && exit 0 || exit 1"
+  "ignoreCommand": "[ \"$VERCEL_ENV\" = \"production\" ] && [ \"$MANUAL_DEPLOY\" != \"1\" ] && exit 0 || exit 1",
+  "functions": {
+    "src/app/api/queues/document-masking/route.ts": {
+      "experimentalTriggers": [
+        {
+          "type": "queue/v2beta",
+          "topic": "research-fund-document-masking",
+          "retryAfterSeconds": 60
+        }
+      ]
+    }
+  },
+  "crons": [{ "path": "/api/cron/document-masking", "schedule": "*/5 * * * *" }]
 }
