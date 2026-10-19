@@ -153,6 +153,8 @@ USE_MOCK_DATA=true
 （作成中のまま止まった書類も作り直しの対象に戻します）。
 
 ```bash
+# シェルは admin/.env.local を読まないので、そこに設定したのと同じ値を渡す
+export CRON_SECRET=<admin/.env.local の CRON_SECRET>
 curl -H "Authorization: Bearer $CRON_SECRET" http://localhost:3001/api/cron/document-masking
 # => {"retried":0,"failedStale":0,"notified":0,"processed":2,"remaining":0}
 ```
