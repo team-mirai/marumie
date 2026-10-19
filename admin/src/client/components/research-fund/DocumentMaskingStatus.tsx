@@ -42,29 +42,20 @@ export function DocumentMaskingBadge({ status }: { status: MaskingStatus }) {
 }
 
 /**
- * 書類の公開用の版（個人情報を黒塗りし、メタデータを消した版）の状態と操作（#1802）。
- * 状態・黒塗りした箇所の数・失敗の理由を出し、版を開く（原本と見比べる）・作る・作り直すことができる。
- * 未作成の版は帳簿の画面を開いている間に自動で作られるので、未作成・作成中のあいだは作るボタンを出さない。
+ * 公開用の版を作り直せるか。未作成は自動で作られるので、作り直しの依頼は作成済み・失敗の書類だけで受ける
  */
-export function DocumentMaskingStatus({
-  target,
-  documentId,
-  masking,
-  className,
-}: {
-  target: { politicianId: string; bookId: string };
-  documentId: string;
-  /** 読み込んだ時点の状態。読み込んだあとに登録された書類では無い（未作成として扱う） */
-  masking: DocumentMasking | undefined;
-  className?: string;
-}) {
-  const router = useRouter();
-  const readOnly = useResearchFundReadOnly();
-  const [pending, startTransition] = useTransition();
+export function canRerequestDocumentMasking(masking: DocumentMasking | undefined): boolean {
   const status = masking?.status ?? "pending";
-  // 未作成は自動で作られるので、作り直しの依頼は作成済み・失敗の書類だけで受ける
-  const requestable = status !== "pending" && DocumentMaskingPolicy.canRequest(status);
+  return status !== "pending" && DocumentMaskingPolicy.canRequest(status);
+}
 
+/** 公開用の版の作り直しを依頼する。読み取り画面の一覧と仕訳の詳細カードで共有する */
+export function useRequestDocumentMasking(
+  target: { politicianId: string; bookId: string },
+  documentId: string,
+) {
+  const router = useRouter();
+  const [pending, startTransition] = useTransition();
   function request() {
     startTransition(async () => {
       try {
@@ -80,6 +71,30 @@ export function DocumentMaskingStatus({
       }
     });
   }
+  return { pending, request };
+}
+
+/**
+ * 書類の公開用の版（個人情報を黒塗りし、メタデータを消した版）の状態と操作（#1802）。読み取り画面の一覧で使う。
+ * 状態・黒塗りした箇所の数・失敗の理由を出し、版を開く（原本と見比べる）・作る・作り直すことができる。
+ * 未作成の版は帳簿の画面を開いている間に自動で作られるので、未作成・作成中のあいだは作るボタンを出さない。
+ */
+export function DocumentMaskingStatus({
+  target,
+  documentId,
+  masking,
+  className,
+}: {
+  target: { politicianId: string; bookId: string };
+  documentId: string;
+  /** 読み込んだ時点の状態。読み込んだあとに登録された書類では無い（未作成として扱う） */
+  masking: DocumentMasking | undefined;
+  className?: string;
+}) {
+  const readOnly = useResearchFundReadOnly();
+  const { pending, request } = useRequestDocumentMasking(target, documentId);
+  const status = masking?.status ?? "pending";
+  const requestable = canRerequestDocumentMasking(masking);
 
   return (
     <div className={cn("flex flex-col gap-1 text-xs", className)}>

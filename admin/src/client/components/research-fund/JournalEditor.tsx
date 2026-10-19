@@ -3,7 +3,6 @@ import { useEffect, useId, useState, type ReactNode } from "react";
 import { Info, LockKey, LockSimple, Trash } from "@phosphor-icons/react/dist/ssr";
 import { Button, Input, Label } from "@/client/components/ui";
 import { JournalAdvanceField } from "@/client/components/research-fund/JournalAdvanceField";
-import { DocumentMaskingStatus } from "@/client/components/research-fund/DocumentMaskingStatus";
 import { JournalDocumentPreview } from "@/client/components/research-fund/JournalDocumentPreview";
 import { JournalOfficeRow, TextButton } from "@/client/components/research-fund/JournalOfficeRow";
 import { JournalPayeeField } from "@/client/components/research-fund/JournalPayeeField";
@@ -51,7 +50,6 @@ export function JournalEditor({
   advancers,
   payees,
   target,
-  documentUrl,
   documentMasking,
   banner,
   pending: busy,
@@ -77,7 +75,6 @@ export function JournalEditor({
   advancers: readonly string[];
   payees: readonly Payee[];
   target: Extract<AdminTarget, { kind: "research-fund" }>;
-  documentUrl?: string;
   /** 紐づく書類の公開用の版の状態。書類の無い仕訳・読み込んだあとに紐づけた書類では無い */
   documentMasking?: DocumentMasking;
   /** 本文の先頭に出す警告（二重スキャンなど） */
@@ -174,17 +171,12 @@ export function JournalEditor({
         {banner}
         <JournalDocumentPreview
           grant={grant}
-          documentUrl={documentUrl}
+          target={target}
+          documentId={entry.documentId}
+          masking={documentMasking}
           pending={pending}
           onAttach={JournalOperation.attachDocument(entry) === null ? onAttachDocument : undefined}
         />
-        {entry.documentId !== null && (
-          <DocumentMaskingStatus
-            target={target}
-            documentId={entry.documentId}
-            masking={documentMasking}
-          />
-        )}
         {published && (
           <div className="flex items-center gap-1.5 rounded-md bg-muted px-2.5 py-[7px] text-xs">
             <LockSimple aria-hidden className="size-3.5 shrink-0" />
