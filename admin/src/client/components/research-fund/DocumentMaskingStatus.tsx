@@ -28,16 +28,45 @@ const STATUS_STYLES: Record<MaskingStatus, string> = {
 };
 
 /** 書類の公開用の版の状態のバッジ（未作成・作成中・作成済み・失敗） */
-export function DocumentMaskingBadge({ status }: { status: MaskingStatus }) {
+export function DocumentMaskingBadge({
+  status,
+  className,
+}: {
+  status: MaskingStatus;
+  className?: string;
+}) {
   return (
     <span
       className={cn(
         "inline-block rounded-full border px-2.5 py-0.5 text-[11px] font-medium",
         STATUS_STYLES[status],
+        className,
       )}
     >
       {STATUS_LABELS[status]}
     </span>
+  );
+}
+
+/** バッジと同じ色の点。幅の狭い一覧で、表記の代わりに出す（表記は title と読み上げに回す） */
+export function DocumentMaskingDot({
+  status,
+  className,
+}: {
+  status: MaskingStatus;
+  className?: string;
+}) {
+  return (
+    <span
+      role="img"
+      aria-label={`公開用の版 ${STATUS_LABELS[status]}`}
+      title={`公開用の版 ${STATUS_LABELS[status]}`}
+      className={cn(
+        "inline-block size-2.5 rounded-full border-2",
+        STATUS_STYLES[status],
+        className,
+      )}
+    />
   );
 }
 
