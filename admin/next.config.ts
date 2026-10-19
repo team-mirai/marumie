@@ -16,8 +16,11 @@ const nextConfig: NextConfig = {
   // 書類の公開用の版を作る PDFium は、同じディレクトリの pdfium.wasm を実行時に読み込む（#1802）。
   // バンドルするとファイルの場所がずれるので node_modules から読ませ、デプロイ先に wasm を含める。
   serverExternalPackages: ["@hyzyla/pdfium"],
+  // 作成はキューと定期実行から呼ばれる Route Handler で行う（#1812）。
   outputFileTracingIncludes: {
     "/politicians/[id]/books/[bookId]/**": ["./node_modules/@hyzyla/pdfium/dist/pdfium.wasm"],
+    "/api/queues/document-masking": ["./node_modules/@hyzyla/pdfium/dist/pdfium.wasm"],
+    "/api/cron/document-masking": ["./node_modules/@hyzyla/pdfium/dist/pdfium.wasm"],
   },
   experimental: {
     serverActions: {

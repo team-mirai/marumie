@@ -41,6 +41,8 @@ const PUBLIC_ENTRIES: Record<string, string> = {
   "server/contexts/auth/presentation/actions/exchange-code-for-session.ts#exchangeCodeForSession":
     "認証コードとセッションの交換（ログイン前）",
   "app/api/auth/callback/route.ts#GET": "認証のコールバック（ログイン前）",
+  "app/api/cron/document-masking/route.ts#GET":
+    "Vercel Cron から呼ばれる（利用者のログインはない）。最初に requireCronResponse で CRON_SECRET を確かめる",
   "app/(auth)/page.tsx#default": "ダッシュボード。データを持たず、どのロールでも開ける",
 };
 

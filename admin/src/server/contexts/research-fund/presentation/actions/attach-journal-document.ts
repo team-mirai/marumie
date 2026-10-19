@@ -6,6 +6,7 @@ import { AttachJournalDocumentUsecase } from "@/server/contexts/research-fund/ap
 import { JournalReviewError } from "@/server/contexts/research-fund/domain/models/journal-review";
 import { PrismaJournalReviewRepository } from "@/server/contexts/research-fund/infrastructure/repositories/prisma-journal-review.repository";
 import { buildDocumentStorage } from "@/server/contexts/research-fund/infrastructure/storage/build-document-storage";
+import { notifyDocumentMasking } from "@/server/contexts/research-fund/presentation/loaders/load-document-masking";
 import { requireJournalTarget } from "@/server/contexts/research-fund/presentation/loaders/load-journal-review";
 import { prisma } from "@/server/contexts/shared/infrastructure/prisma";
 
@@ -35,6 +36,8 @@ export async function attachJournalDocument(
       mime: file.type,
       originalFilename: file.name,
     });
+    // 紐づけた書類の公開用の版を、画面を開いていなくても作り始める（#1812）
+    await notifyDocumentMasking();
     revalidatePath("/(auth)", "layout");
     return { success: true as const };
   } catch (error) {

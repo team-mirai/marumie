@@ -1,9 +1,6 @@
 import { MaskingPageLimitError } from "@/server/contexts/research-fund/application/services/receipt-masking-service";
 import { ProcessDocumentMaskingUsecase } from "@/server/contexts/research-fund/application/usecases/process-document-masking-usecase";
-import {
-  MASKING_BATCH_SIZE,
-  MASKING_STALE_MS,
-} from "@/server/contexts/research-fund/domain/models/document-masking";
+import { MASKING_MAX_RUNNING } from "@/server/contexts/research-fund/domain/models/document-masking";
 import type {
   ClaimedMaskingDocument,
   DocumentMaskingRepository,
@@ -25,7 +22,7 @@ describe("ProcessDocumentMaskingUsecase", () => {
     listByBook: jest.fn(),
     countUnfinished: jest.fn(),
     releaseStale: jest.fn(),
-    claim: jest.fn(),
+    claimNext: jest.fn(),
     complete: jest.fn(),
     fail: jest.fn(),
     request: jest.fn(),
@@ -37,16 +34,16 @@ describe("ProcessDocumentMaskingUsecase", () => {
     remove: jest.fn(),
   };
   const masking = { mask: jest.fn() };
-  const usecase = new ProcessDocumentMaskingUsecase(repository, storage, masking);
+  const queue = { enabled: true, notify: jest.fn() };
+  const usecase = new ProcessDocumentMaskingUsecase(repository, storage, masking, queue);
   const masked = new Uint8Array([9, 9]);
 
   beforeEach(() => {
     jest.resetAllMocks();
-    repository.releaseStale.mockResolvedValue(0);
     repository.countUnfinished
       .mockResolvedValueOnce({ pending: 1, running: 0 })
       .mockResolvedValue({ pending: 0, running: 0 });
-    repository.claim.mockResolvedValue([DOCUMENT]);
+    repository.claimNext.mockResolvedValue(DOCUMENT);
     repository.complete.mockResolvedValue({ recorded: true, replacedKey: null });
     storage.download.mockResolvedValue({ status: "valid", value: new Uint8Array([1, 2]) });
     storage.upload.mockResolvedValue({ status: "valid", value: "masked-key" });
@@ -54,9 +51,9 @@ describe("ProcessDocumentMaskingUsecase", () => {
   });
 
   it("未作成の書類を作成中にし、黒塗りした版を保存して作成済みにする", async () => {
-    const result = await usecase.execute({ bookId: "12" });
+    const result = await usecase.execute();
 
-    expect(repository.claim).toHaveBeenCalledWith("12", MASKING_BATCH_SIZE);
+    expect(repository.claimNext).toHaveBeenCalledTimes(1);
     expect(storage.download).toHaveBeenCalledWith("original-key");
     expect(masking.mask).toHaveBeenCalledWith({
       bytes: new Uint8Array([1, 2]),
@@ -70,13 +67,14 @@ describe("ProcessDocumentMaskingUsecase", () => {
     });
     expect(repository.fail).not.toHaveBeenCalled();
     expect(storage.remove).not.toHaveBeenCalled();
-    expect(result).toEqual({ processed: 1, succeeded: 1, failed: 0, hasMore: false });
+    expect(queue.notify).not.toHaveBeenCalled();
+    expect(result).toEqual({ processed: 1, succeeded: 1, failed: 0, remaining: 0 });
   });
 
   it("作り直したときは、置き換えた前の版のファイルを消す", async () => {
     repository.complete.mockResolvedValue({ recorded: true, replacedKey: "old-masked-key" });
 
-    await usecase.execute({ bookId: "12" });
+    await usecase.execute();
 
     expect(storage.remove).toHaveBeenCalledWith("old-masked-key");
   });
@@ -85,7 +83,7 @@ describe("ProcessDocumentMaskingUsecase", () => {
     repository.complete.mockResolvedValue({ recorded: true, replacedKey: "old-masked-key" });
     storage.remove.mockRejectedValue(new Error("storage down"));
 
-    const result = await usecase.execute({ bookId: "12" });
+    const result = await usecase.execute();
 
     expect(repository.fail).not.toHaveBeenCalled();
     expect(result.succeeded).toBe(1);
@@ -94,48 +92,66 @@ describe("ProcessDocumentMaskingUsecase", () => {
   it("作成中に失効して別の実行が着手し直していたら、作った版を記録せずに消す", async () => {
     repository.complete.mockResolvedValue({ recorded: false });
 
-    const result = await usecase.execute({ bookId: "12" });
+    const result = await usecase.execute();
 
     expect(storage.remove).toHaveBeenCalledWith("masked-key");
     expect(repository.fail).not.toHaveBeenCalled();
     expect(result).toMatchObject({ succeeded: 0, failed: 1 });
   });
 
-  it("作成中のまま止まった書類を、着手の前に失効の時刻で待機に戻す", async () => {
-    const now = Date.now();
-    await usecase.execute({ bookId: "12" });
+  it("作成中が上限に達していれば着手しない（作成中の処理が終わったときに次を依頼するので取りこぼさない）", async () => {
+    repository.countUnfinished.mockReset().mockResolvedValue({ pending: 2, running: MASKING_MAX_RUNNING });
 
-    const staleBefore = repository.releaseStale.mock.calls[0][1];
-    expect(repository.releaseStale.mock.calls[0][0]).toBe("12");
-    expect(Math.abs(now - MASKING_STALE_MS - staleBefore.getTime())).toBeLessThan(1000);
-    expect(repository.releaseStale.mock.invocationCallOrder[0]).toBeLessThan(
-      repository.claim.mock.invocationCallOrder[0],
-    );
-  });
+    const result = await usecase.execute();
 
-  it("別の実行が作成中なら着手せず、残りがあることだけを返す（同じ書類を二重に作らない）", async () => {
-    repository.countUnfinished.mockReset().mockResolvedValue({ pending: 2, running: MASKING_BATCH_SIZE });
-
-    const result = await usecase.execute({ bookId: "12" });
-
-    expect(repository.claim).not.toHaveBeenCalled();
+    expect(repository.claimNext).not.toHaveBeenCalled();
     expect(masking.mask).not.toHaveBeenCalled();
-    expect(result).toEqual({ processed: 0, succeeded: 0, failed: 0, hasMore: true });
+    expect(queue.notify).not.toHaveBeenCalled();
+    expect(result).toEqual({ processed: 0, succeeded: 0, failed: 0, remaining: 2 + MASKING_MAX_RUNNING });
   });
 
-  it("処理した後も未作成の書類が残っていれば hasMore を返す", async () => {
+  it("同じメッセージが 2 回届いても、別の実行が着手済みの書類は作らない", async () => {
+    // 1 回目の配送で着手済みなので、2 回目の配送では着手できる書類が無い
+    repository.countUnfinished.mockReset().mockResolvedValue({ pending: 0, running: 1 });
+    repository.claimNext.mockResolvedValue(null);
+
+    const result = await usecase.execute();
+
+    expect(masking.mask).not.toHaveBeenCalled();
+    expect(repository.complete).not.toHaveBeenCalled();
+    expect(repository.fail).not.toHaveBeenCalled();
+    expect(queue.notify).not.toHaveBeenCalled();
+    expect(result).toEqual({ processed: 0, succeeded: 0, failed: 0, remaining: 1 });
+  });
+
+  it("作り終えて未作成の書類が残っていれば、次を作るようキューに依頼する", async () => {
     repository.countUnfinished
       .mockReset()
       .mockResolvedValueOnce({ pending: 3, running: 0 })
       .mockResolvedValue({ pending: 2, running: 0 });
 
-    expect(await usecase.execute({ bookId: "12" })).toMatchObject({ processed: 1, hasMore: true });
+    expect(await usecase.execute()).toMatchObject({ processed: 1, remaining: 2 });
+    expect(queue.notify).toHaveBeenCalledTimes(1);
+    expect(queue.notify.mock.invocationCallOrder[0]).toBeGreaterThan(
+      repository.complete.mock.invocationCallOrder[0],
+    );
+  });
+
+  it("作成に失敗しても、未作成の書類が残っていれば次を依頼する（1 件の失敗で止めない）", async () => {
+    masking.mask.mockRejectedValue(new Error("rate limited"));
+    repository.countUnfinished
+      .mockReset()
+      .mockResolvedValueOnce({ pending: 2, running: 0 })
+      .mockResolvedValue({ pending: 1, running: 0 });
+
+    expect(await usecase.execute()).toMatchObject({ failed: 1, remaining: 1 });
+    expect(queue.notify).toHaveBeenCalledTimes(1);
   });
 
   it("ページ数の上限を超える書類は、上限を超えた理由で失敗にする", async () => {
     masking.mask.mockRejectedValue(new MaskingPageLimitError(21));
 
-    const result = await usecase.execute({ bookId: "12" });
+    const result = await usecase.execute();
 
     expect(repository.fail).toHaveBeenCalledWith(
       DOCUMENT,
@@ -143,13 +159,13 @@ describe("ProcessDocumentMaskingUsecase", () => {
     );
     expect(storage.upload).not.toHaveBeenCalled();
     expect(repository.complete).not.toHaveBeenCalled();
-    expect(result).toEqual({ processed: 1, succeeded: 0, failed: 1, hasMore: false });
+    expect(result).toEqual({ processed: 1, succeeded: 0, failed: 1, remaining: 0 });
   });
 
   it("黒塗りに失敗したら、理由を残して失敗にする（元の書類を公開用の版にしない）", async () => {
     masking.mask.mockRejectedValue(new Error("Failed to detect personal info on page 2: rate limited"));
 
-    await usecase.execute({ bookId: "12" });
+    await usecase.execute();
 
     expect(repository.fail).toHaveBeenCalledWith(
       DOCUMENT,
@@ -161,15 +177,15 @@ describe("ProcessDocumentMaskingUsecase", () => {
   it("失敗の理由は 500 文字までにする", async () => {
     masking.mask.mockRejectedValue(new Error("x".repeat(600)));
 
-    await usecase.execute({ bookId: "12" });
+    await usecase.execute();
 
     expect(repository.fail.mock.calls[0][1]).toHaveLength(500);
   });
 
   it("黒塗りできない形式の書類は、書類を取り出さずに失敗にする", async () => {
-    repository.claim.mockResolvedValue([{ ...DOCUMENT, mime: "image/gif" }]);
+    repository.claimNext.mockResolvedValue({ ...DOCUMENT, mime: "image/gif" });
 
-    await usecase.execute({ bookId: "12" });
+    await usecase.execute();
 
     expect(storage.download).not.toHaveBeenCalled();
     expect(repository.fail).toHaveBeenCalledWith(
@@ -186,14 +202,9 @@ describe("ProcessDocumentMaskingUsecase", () => {
       ],
     });
 
-    await usecase.execute({ bookId: "12" });
+    await usecase.execute();
 
     expect(masking.mask).not.toHaveBeenCalled();
     expect(repository.fail).toHaveBeenCalledWith(DOCUMENT, "原本がありません");
-  });
-
-  it("不正な帳簿 ID では何もしない", async () => {
-    await expect(usecase.execute({ bookId: "abc" })).rejects.toThrow("有効なIDを指定してください");
-    expect(repository.releaseStale).not.toHaveBeenCalled();
   });
 });

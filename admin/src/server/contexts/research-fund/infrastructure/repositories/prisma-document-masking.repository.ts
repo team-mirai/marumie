@@ -6,6 +6,9 @@ import type {
   DocumentMaskingRepository,
 } from "@/server/contexts/research-fund/domain/repositories/document-masking-repository.interface";
 
+/** 着手を試す候補の数。キューから並んで届いた処理が同じ書類を取り合っても、別の書類に着手できるようにする */
+const CLAIM_CANDIDATES = 5;
+
 export class PrismaDocumentMaskingRepository implements DocumentMaskingRepository {
   constructor(private prisma: PrismaClient) {}
 
@@ -32,16 +35,17 @@ export class PrismaDocumentMaskingRepository implements DocumentMaskingRepositor
     return rows.map((row) => ({
       documentId: row.id.toString(),
       status: row.maskingStatus,
-      error: row.maskingError,
+      // pending / running の masking_error は作り直しの印なので、画面には失敗のときだけ出す
+      error: row.maskingStatus === "failed" ? row.maskingError : null,
       regionCount: row.maskedRegionCount,
       hasMaskedVersion: row.maskedKey !== null,
     }));
   }
 
-  async countUnfinished(bookId: string): Promise<{ pending: number; running: number }> {
+  async countUnfinished(): Promise<{ pending: number; running: number }> {
     const rows = await this.prisma.researchFundDocument.groupBy({
       by: ["maskingStatus"],
-      where: { bookId: BigInt(bookId), maskingStatus: { in: ["pending", "running"] } },
+      where: { maskingStatus: { in: ["pending", "running"] } },
       _count: { _all: true },
     });
     const count = (status: "pending" | "running") =>
@@ -49,42 +53,52 @@ export class PrismaDocumentMaskingRepository implements DocumentMaskingRepositor
     return { pending: count("pending"), running: count("running") };
   }
 
-  async releaseStale(bookId: string, staleBefore: Date): Promise<number> {
-    const result = await this.prisma.researchFundDocument.updateMany({
-      where: {
-        bookId: BigInt(bookId),
-        maskingStatus: "running",
-        OR: [{ maskingStartedAt: null }, { maskingStartedAt: { lt: staleBefore } }],
-      },
-      data: { maskingStatus: "pending", maskingStartedAt: null },
+  async releaseStale(
+    staleBefore: Date,
+    outcome: { retryNote: string; failure: string },
+  ): Promise<{ retried: number; failed: number }> {
+    const stale = {
+      maskingStatus: "running" as const,
+      OR: [{ maskingStartedAt: null }, { maskingStartedAt: { lt: staleBefore } }],
+    };
+    return await this.prisma.$transaction(async (tx) => {
+      // 作り直しても止まったもの（印が残っている）を先に失敗にし、そのあと初めて止まったものに印を付けて戻す
+      const failed = await tx.researchFundDocument.updateMany({
+        where: { ...stale, maskingError: { not: null } },
+        data: { maskingStatus: "failed", maskingError: outcome.failure, maskedRegionCount: null },
+      });
+      const retried = await tx.researchFundDocument.updateMany({
+        where: { ...stale, maskingError: null },
+        data: { maskingStatus: "pending", maskingStartedAt: null, maskingError: outcome.retryNote },
+      });
+      return { retried: retried.count, failed: failed.count };
     });
-    return result.count;
   }
 
-  async claim(bookId: string, limit: number): Promise<ClaimedMaskingDocument[]> {
+  async claimNext(): Promise<ClaimedMaskingDocument | null> {
     const candidates = await this.prisma.researchFundDocument.findMany({
-      where: { bookId: BigInt(bookId), maskingStatus: "pending" },
+      where: { maskingStatus: "pending" },
       orderBy: { id: "asc" },
-      take: limit,
+      take: CLAIM_CANDIDATES,
       select: { id: true, storageKey: true, mime: true },
     });
-    const claimed: ClaimedMaskingDocument[] = [];
     for (const document of candidates) {
       const startedAt = new Date();
-      // 同時に走った別の実行が先に着手していたら count は 0 になる。その分は諦めて次へ。
+      // 同時に走った別の実行が先に着手していたら count は 0 になる。その書類は諦めて次へ。
+      // masking_error（作り直しの印）は残し、また止まったときに失敗にできるようにする
       const result = await this.prisma.researchFundDocument.updateMany({
         where: { id: document.id, maskingStatus: "pending" },
-        data: { maskingStatus: "running", maskingStartedAt: startedAt, maskingError: null },
+        data: { maskingStatus: "running", maskingStartedAt: startedAt },
       });
       if (result.count !== 1) continue;
-      claimed.push({
+      return {
         documentId: document.id.toString(),
         storageKey: document.storageKey,
         mime: document.mime,
         startedAt,
-      });
+      };
     }
-    return claimed;
+    return null;
   }
 
   async complete(input: {
