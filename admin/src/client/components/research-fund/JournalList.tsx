@@ -3,6 +3,11 @@ import { useEffect, useRef, type ReactNode } from "react";
 import { Keyboard, WarningCircle } from "@phosphor-icons/react/dist/ssr";
 import { Checkbox } from "@/client/components/ui";
 import {
+  DocumentMaskingBadge,
+  DocumentMaskingDot,
+} from "@/client/components/research-fund/DocumentMaskingStatus";
+import type { DocumentMasking } from "@/server/contexts/research-fund/domain/models/document-masking";
+import {
   isAccountUnconfirmed,
   type ReviewEntry,
 } from "@/server/contexts/research-fund/domain/models/journal-review";
@@ -14,10 +19,10 @@ import { cn, isEmphasizedJournalAmount, journalAccountLabel } from "@/client/lib
 
 const statusLabels = { draft: "下書き", approved: "確認済", published: "公開中" };
 
-// ヘッダーと行で共通の列。1280〜1439px は詳細カードが狭まる分、科目・項目・支払先・領収書等番号を詰める
-// （列幅と pr-3 の合計 584px が、1280px 幅での一覧の幅に収まるようにする）。
+// ヘッダーと行で共通の列。1280〜1439px は詳細カードが狭まる分、科目・項目・支払先・領収書等番号を詰め、
+// 公開用の版は表記の代わりに色の点で出す（列幅と pr-3 の合計 584px が、1280px 幅での一覧の幅に収まるようにする）。
 const columns =
-  "grid grid-cols-[36px_52px_116px_minmax(0,1fr)_170px_84px_84px_64px] items-center pr-3 xl:max-[1440px]:grid-cols-[36px_52px_96px_minmax(104px,1fr)_96px_40px_84px_64px]";
+  "grid grid-cols-[36px_52px_116px_minmax(0,1fr)_130px_84px_84px_60px_64px] items-center pr-3 xl:max-[1440px]:grid-cols-[36px_52px_96px_minmax(92px,1fr)_88px_40px_84px_20px_64px]";
 
 type Chip = {
   label: ReactNode;
@@ -99,6 +104,36 @@ function ChipView({ chip, className }: { chip: Chip; className?: string }) {
   );
 }
 
+/**
+ * 仕訳に付いた書類の公開用の版の状態。書類の無い仕訳（手動作成・支給）は版が要らないので「—」を出し、未作成と見分ける。
+ * 状態が読み込まれていない書類（読み込んだあとに登録された書類）は未作成として扱う。
+ */
+function MaskingCell({
+  entry,
+  masking,
+}: {
+  entry: ReviewEntry;
+  masking: DocumentMasking | undefined;
+}) {
+  if (entry.documentId === null)
+    return (
+      <span title="書類なし（公開用の版はありません）" className="text-xs text-subtle-foreground">
+        <span aria-hidden>—</span>
+        <span className="sr-only">書類なし</span>
+      </span>
+    );
+  const status = masking?.status ?? "pending";
+  return (
+    <>
+      <DocumentMaskingBadge
+        status={status}
+        className="whitespace-nowrap px-1.5 py-0 text-[10.5px] leading-4 xl:max-[1440px]:hidden"
+      />
+      <DocumentMaskingDot status={status} className="hidden xl:max-[1440px]:inline-block" />
+    </>
+  );
+}
+
 /** 仕訳の状態ピル（一覧の行と詳細カードのヘッダーで共通） */
 export function JournalStatusPill({ status }: { status: ReviewEntry["status"] }) {
   return (
@@ -149,6 +184,7 @@ export function JournalList({
   checkable,
   pending,
   payeeNames,
+  maskings,
   isDuplicated,
   onSelect,
   onToggle,
@@ -164,6 +200,8 @@ export function JournalList({
   checkable: readonly ReviewEntry[];
   pending: boolean;
   payeeNames: ReadonlyMap<string, string>;
+  /** 書類ごとの公開用の版の状態（書類 ID がキー） */
+  maskings: Readonly<Record<string, DocumentMasking>>;
   isDuplicated: (entry: ReviewEntry) => boolean;
   onSelect: (id: string) => void;
   onToggle: (id: string) => void;
@@ -221,6 +259,12 @@ export function JournalList({
             <th scope="col" className="text-right">
               金額
             </th>
+            <th scope="col" className="whitespace-nowrap text-center">
+              <span className="xl:max-[1440px]:hidden">公開用の版</span>
+              <span className="hidden xl:max-[1440px]:inline" title="公開用の版">
+                版
+              </span>
+            </th>
             <th scope="col" className="text-center">
               状態
             </th>
@@ -238,6 +282,9 @@ export function JournalList({
             const grant = entry.source === "grant";
             const selected = entry.id === selectedId;
             const { split, others } = chipsOf(entry, entries, isDuplicated(entry));
+            const masking = entry.documentId === null ? undefined : maskings[entry.documentId];
+            // 公開用の版の作成に失敗した書類の行は、公開できないので行ごと目立たせる（理由は詳細カードに出る）
+            const maskingFailed = entry.documentId !== null && masking?.status === "failed";
             return (
               <tr
                 key={entry.id}
@@ -256,7 +303,9 @@ export function JournalList({
                   "h-[38px] cursor-pointer border-b border-border-soft text-[13px] transition-colors duration-150 ease-out outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring",
                   selected
                     ? "bg-accent shadow-[inset_3px_0_0_var(--color-primary)]"
-                    : "bg-card hover:bg-background",
+                    : maskingFailed
+                      ? "bg-destructive-hover"
+                      : "bg-card hover:bg-background",
                   !selected &&
                     isAccountUnconfirmed(entry.accountKey) &&
                     "shadow-[inset_3px_0_0_var(--color-destructive)]",
@@ -321,6 +370,9 @@ export function JournalList({
                   )}
                 >
                   ¥{entry.amount.toLocaleString("ja-JP")}
+                </td>
+                <td className="flex justify-center">
+                  <MaskingCell entry={entry} masking={masking} />
                 </td>
                 <td className="flex justify-center">
                   <JournalStatusPill status={entry.status} />

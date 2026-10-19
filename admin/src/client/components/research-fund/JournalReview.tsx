@@ -950,6 +950,7 @@ export function JournalReview({
           checkable={checkable}
           pending={pending}
           payeeNames={payeeNames}
+          maskings={maskings}
           isDuplicated={(entry) => duplicatesOf(entry).length > 0}
           onSelect={select}
           onToggle={toggle}
