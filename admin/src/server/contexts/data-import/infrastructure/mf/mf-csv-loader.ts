@@ -1,5 +1,6 @@
 import type { MfCsvRecord } from "@/server/contexts/data-import/domain/models/mf-csv-record";
 import type { IMfCsvLoader } from "@/server/contexts/data-import/domain/repositories/mf-csv-loader.interface";
+import { parseCsv } from "@/server/contexts/shared/infrastructure/csv/parse-csv";
 
 export class MfCsvLoader implements IMfCsvLoader {
   private readonly columnMapping: Record<string, keyof MfCsvRecord> = {
@@ -34,16 +35,9 @@ export class MfCsvLoader implements IMfCsvLoader {
       return [];
     }
 
-    const lines = csvContent.trim().split("\n");
+    const [headers, ...dataRecords] = parseCsv(csvContent.trim());
 
-    if (lines.length === 0) {
-      return [];
-    }
-
-    const headerLine = lines[0];
-    const headers = this.parseCSVLine(headerLine);
-
-    if (headers.length === 0) {
+    if (!headers || headers.length === 0) {
       throw new Error("Invalid CSV format: no headers found");
     }
 
@@ -52,40 +46,7 @@ export class MfCsvLoader implements IMfCsvLoader {
       throw new Error("Invalid CSV format: no recognized headers found");
     }
 
-    const dataLines = lines.slice(1);
-
-    return dataLines
-      .filter((line) => line.trim())
-      .map((line) => {
-        try {
-          const values = this.parseCSVLine(line);
-          return this.createRecord(headers, values);
-        } catch (_error) {
-          throw new Error(`Failed to parse CSV line: ${line}`);
-        }
-      });
-  }
-
-  private parseCSVLine(line: string): string[] {
-    const chars = Array.from(line);
-
-    const result: string[] = [];
-    let current = "";
-    let inQuotes = false;
-
-    for (const char of chars) {
-      if (char === '"') {
-        inQuotes = !inQuotes;
-      } else if (char === "," && !inQuotes) {
-        result.push(current);
-        current = "";
-      } else {
-        current += char;
-      }
-    }
-
-    result.push(current);
-    return result;
+    return dataRecords.map((values) => this.createRecord(headers, values));
   }
 
   private createRecord(headers: string[], values: string[]): MfCsvRecord {
