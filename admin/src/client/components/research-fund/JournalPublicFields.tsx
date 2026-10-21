@@ -85,7 +85,7 @@ export function JournalPublicFields({
   const changed = (key: keyof JournalEdit) => entry !== null && input[key] !== entry[key];
   const legalLabel = <LegalCategoryLabel legalLabel={legalLabelOf(accounts, input.accountKey)} />;
   return (
-    <section aria-labelledby={`${fieldId}-public`} className="space-y-1.5">
+    <section aria-labelledby={`${fieldId}-public`} className="@container space-y-1.5">
       <h3
         id={`${fieldId}-public`}
         className="flex items-center gap-1 text-[11px] font-bold tracking-[0.06em] text-primary-hover"
@@ -122,7 +122,8 @@ export function JournalPublicFields({
         </div>
       ) : (
         <div className="space-y-2.5 pt-1">
-          <div className="grid grid-cols-[76px_minmax(0,1fr)_36px_120px] items-center gap-2.5">
+          {/* 詳細カードが狭いときは金額を次の行へ送り、日付とカレンダーアイコンの幅を確保する。 */}
+          <div className="grid grid-cols-[76px_minmax(0,1fr)] items-center gap-2.5 @min-[440px]:grid-cols-[76px_minmax(160px,1fr)_36px_120px]">
             <Label htmlFor={`${fieldId}-date`} className={detailLabelClassName}>
               日付
             </Label>
