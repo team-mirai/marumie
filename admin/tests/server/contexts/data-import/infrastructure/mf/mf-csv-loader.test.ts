@@ -55,6 +55,56 @@ describe("MfCsvLoader", () => {
       expect(result[1].transaction_no).toBe("2");
     });
 
+    describe("欄の中に改行を含むCSV", () => {
+      const header =
+        "取引No,取引日,借方勘定科目,借方補助科目,借方税区,借方部門,借方金額(円),借方税額,貸方勘定科目,貸方補助科目,貸方税区,貸方部門,貸方金額(円),貸方税額,摘要,起訖タグ,メモ";
+
+      it("引用符内の改行で1件が複数行に割れず、各列が正しく入る", async () => {
+        const csvContent = [
+          header,
+          '1,2025/6/6,事務費,,対象外,,5000,0,普通預金,,対象外,,5000,0,"文具購入\n（ボールペン）",備品,"メモ1\nメモ2"',
+          "2,2025/6/7,事務費,,対象外,,3000,0,普通預金,,対象外,,3000,0,切手購入,通信費,",
+        ].join("\n");
+
+        const result = await loader.load(csvContent);
+
+        expect(result).toHaveLength(2);
+        expect(result[0]).toMatchObject({
+          transaction_no: "1",
+          transaction_date: "2025/6/6",
+          debit_account: "事務費",
+          debit_amount: "5000",
+          credit_account: "普通預金",
+          credit_amount: "5000",
+          description: "文具購入\n（ボールペン）",
+          friendly_category: "備品",
+          memo: "メモ1\nメモ2",
+        });
+        expect(result[1]).toMatchObject({
+          transaction_no: "2",
+          description: "切手購入",
+          friendly_category: "通信費",
+          memo: "",
+        });
+      });
+
+      it("CRLF 改行と \"\" のエスケープを含むCSVを読める", async () => {
+        const csvContent = [
+          header,
+          '1,2025/6/6,事務費,,対象外,,5000,0,普通預金,,対象外,,5000,0,"""特急"" 便\r\n送料",備品,メモ',
+          "2,2025/6/7,事務費,,対象外,,3000,0,普通預金,,対象外,,3000,0,切手購入,通信費,メモ2",
+        ].join("\r\n");
+
+        const result = await loader.load(csvContent);
+
+        expect(result).toHaveLength(2);
+        expect(result[0].description).toBe('"特急" 便\r\n送料');
+        expect(result[0].friendly_category).toBe("備品");
+        expect(result[0].memo).toBe("メモ");
+        expect(result[1].memo).toBe("メモ2");
+      });
+    });
+
     it("should handle malformed CSV gracefully", async () => {
       const csvContent = "invalid,csv,content";
 
