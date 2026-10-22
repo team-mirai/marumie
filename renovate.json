@@ -84,6 +84,27 @@
         "github-actions"
       ],
       "groupName": "github-actions"
+    },
+    {
+      "description": "Major updates need dashboard approval (keep PR slots free)",
+      "matchUpdateTypes": ["major"],
+      "dependencyDashboardApproval": true
+    },
+    {
+      "description": "Node.js runtime minor/patch immediate",
+      "matchDepNames": ["node"],
+      "matchManagers": ["nvm", "nodenv", "dockerfile", "npm", "github-actions"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "Node.js",
+      "groupSlug": "node-runtime",
+      "minimumReleaseAge": null,
+      "schedule": ["at any time"],
+      "prPriority": 10
+    },
+    {
+      "description": "Next.js first in line",
+      "matchPackageNames": ["next", "@next/**", "eslint-config-next"],
+      "prPriority": 9
     }
   ]
 }
