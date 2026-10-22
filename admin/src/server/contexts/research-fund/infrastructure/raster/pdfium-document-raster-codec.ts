@@ -98,26 +98,15 @@ async function openPdf(bytes: Uint8Array): Promise<RasterDocument> {
         RENDER_DPI / 72,
         MAX_PAGE_EDGE / Math.max(originalWidth, originalHeight),
       );
-      // 既定の描画は白背景・BGRA の順
+      // 既定の描画は不透明な白背景で、@hyzyla/pdfium が REVERSE_BYTE_ORDER を付けて描くので画素は RGBA の順で返る
       const rendered = await page.render({ scale, render: "bitmap" });
-      return { width: rendered.width, height: rendered.height, rgba: bgraToRgba(rendered.data) };
+      return { width: rendered.width, height: rendered.height, rgba: rendered.data };
     },
     close: () => {
       document.destroy();
       library.destroy();
     },
   };
-}
-
-/** BGRA を RGBA に並べ替える。描画結果の複製を作らないよう、渡した配列をそのまま書き換えて返す */
-function bgraToRgba(bgra: Uint8Array): Uint8Array {
-  for (let i = 0; i < bgra.length; i += 4) {
-    const blue = bgra[i];
-    bgra[i] = bgra[i + 2];
-    bgra[i + 2] = blue;
-    bgra[i + 3] = 255;
-  }
-  return bgra;
 }
 
 /** EXIF の Orientation に従って、表示上の向きに回転・反転した画像にする */
