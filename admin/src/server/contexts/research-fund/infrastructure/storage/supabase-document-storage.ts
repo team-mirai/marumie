@@ -3,9 +3,17 @@ import { randomUUID } from "node:crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { ResearchFundDocument } from "@/server/contexts/research-fund/domain/models/document";
 import type { DocumentStorage } from "@/server/contexts/research-fund/domain/repositories/document-storage.interface";
-import type { ResearchFundResult } from "@/server/contexts/research-fund/domain/types/validation";
+import type {
+  DocumentUploadStorage,
+  DocumentUploadTarget,
+} from "@/server/contexts/research-fund/domain/repositories/document-upload-storage.interface";
+import {
+  invalidResearchFundResult,
+  RF_ERROR_CODES,
+  type ResearchFundResult,
+} from "@/server/contexts/research-fund/domain/types/validation";
 
-export class SupabaseDocumentStorage implements DocumentStorage {
+export class SupabaseDocumentStorage implements DocumentStorage, DocumentUploadStorage {
   constructor(
     private client: SupabaseClient,
     private bucket: string,
@@ -48,5 +56,29 @@ export class SupabaseDocumentStorage implements DocumentStorage {
   async remove(storageKey: string): Promise<void> {
     const { error } = await this.client.storage.from(this.bucket).remove([storageKey]);
     if (error) throw new Error("領収書の削除に失敗しました", { cause: error });
+  }
+
+  async createUploadTarget(prefix: string): Promise<DocumentUploadTarget> {
+    const uploadKey = `${prefix}${randomUUID()}`;
+    const { data, error } = await this.client.storage
+      .from(this.bucket)
+      .createSignedUploadUrl(uploadKey);
+    if (error || !data?.signedUrl)
+      throw new Error("書類のアップロード先の発行に失敗しました", { cause: error });
+    return { uploadKey, uploadUrl: data.signedUrl };
+  }
+
+  async claimUpload(uploadKey: string): Promise<ResearchFundResult<string>> {
+    const storageKey = randomUUID();
+    const { error } = await this.client.storage.from(this.bucket).move(uploadKey, storageKey);
+    if (error) {
+      console.error("Research fund document claim error:", error);
+      return invalidResearchFundResult(
+        "document",
+        RF_ERROR_CODES.INVALID_DOCUMENT,
+        "アップロードした書類が見つかりませんでした。もう一度選び直してください",
+      );
+    }
+    return { status: "valid", value: storageKey };
   }
 }

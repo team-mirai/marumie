@@ -60,6 +60,10 @@ import { mutateJournalReview } from "@/server/contexts/research-fund/presentatio
 import type { DocumentMasking } from "@/server/contexts/research-fund/domain/models/document-masking";
 import { rereadScanDocuments } from "@/server/contexts/research-fund/presentation/actions/reread-scan-documents";
 import { cn, filterJournalEntries } from "@/client/lib";
+import {
+  documentFileSizeError,
+  uploadResearchFundDocuments,
+} from "@/client/lib/research-fund-document-upload";
 
 const statuses = { all: "すべて", draft: "下書き", approved: "確認済", published: "公開中" };
 export function JournalReview({
@@ -528,16 +532,26 @@ export function JournalReview({
     });
   }
   function attachDocument(entry: ReviewEntry, file: File) {
-    const formData = new FormData();
-    formData.append("document", file);
+    // 上限を超えるファイルは、アップロードする前に理由を出す
+    const sizeError = documentFileSizeError([file]);
+    if (sizeError) {
+      toast.error(sizeError);
+      return;
+    }
     startTransition(async () => {
       try {
+        // ファイル本体はストレージへ直接置き、紐づけにはキーだけを渡す（#1824）
+        const uploaded = await uploadResearchFundDocuments(target, [file]);
+        if (!uploaded.success) {
+          toast.error(uploaded.error);
+          return;
+        }
         const result = await attachJournalDocument(
           target.politicianId,
           target.bookId,
           entry.id,
           entry.updatedAt,
-          formData,
+          uploaded.uploads[0],
         );
         if (!result.success) {
           toast.error(result.error);

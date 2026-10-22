@@ -1,3 +1,4 @@
+import { documentUploadSizeError } from "@/server/contexts/research-fund/domain/models/document-upload";
 import type { DuplicateDocuments } from "@/server/contexts/research-fund/domain/models/duplicate-document";
 import {
   invalidResearchFundResult,
@@ -74,25 +75,34 @@ export function summarizeScanBatch(jobs: ScanJobView[]): ScanBatchProgress {
   };
 }
 
-/**
- * アップロードされた書類の枚数と形式を、Storage に触れる前に検証する。
- * 1 枚ごとの中身（空でないか・MIME が対応形式か）は ResearchFundDocument が見る。
- */
-export function validateScanUpload(documents: { mime: string }[]): ResearchFundResult<undefined> {
-  if (documents.length === 0) {
+/** 1 回のアップロードの書類の枚数を確かめる */
+export function validateScanBatchCount(count: number): ResearchFundResult<undefined> {
+  if (count === 0) {
     return invalidResearchFundResult(
       "documents",
       RF_ERROR_CODES.INVALID_DOCUMENT,
       "書類を1枚以上選んでください",
     );
   }
-  if (documents.length > SCAN_BATCH_MAX_DOCUMENTS) {
+  if (count > SCAN_BATCH_MAX_DOCUMENTS) {
     return invalidResearchFundResult(
       "documents",
       RF_ERROR_CODES.INVALID_DOCUMENT,
       `1回にアップロードできるのは${SCAN_BATCH_MAX_DOCUMENTS}枚までです`,
     );
   }
+  return { status: "valid", value: undefined };
+}
+
+/**
+ * これからアップロードする書類の枚数・形式・サイズを、アップロード先を発行する前に検証する。
+ * 形式はブラウザの申告なので、実際の中身は登録時に validateUploadedDocument が確かめる。
+ */
+export function validateScanUpload(
+  documents: { mime: string; size: number }[],
+): ResearchFundResult<undefined> {
+  const count = validateScanBatchCount(documents.length);
+  if (count.status === "invalid") return count;
   if (
     documents.some(
       (document) => !(SCAN_DOCUMENT_MIME_TYPES as readonly string[]).includes(document.mime),
@@ -103,6 +113,11 @@ export function validateScanUpload(documents: { mime: string }[]): ResearchFundR
       RF_ERROR_CODES.INVALID_DOCUMENT,
       "JPG・PNG・PDFのみアップロードできます",
     );
+  }
+  for (const document of documents) {
+    const sizeError = documentUploadSizeError(document.size);
+    if (sizeError)
+      return invalidResearchFundResult("documents", RF_ERROR_CODES.INVALID_DOCUMENT, sizeError);
   }
   return { status: "valid", value: undefined };
 }

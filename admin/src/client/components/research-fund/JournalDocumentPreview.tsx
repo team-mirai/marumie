@@ -23,6 +23,7 @@ import {
 import { useResearchFundReadOnly } from "@/client/components/research-fund/ResearchFundWriteAccess";
 import { cn, researchFundDocumentUrl } from "@/client/lib";
 import type { DocumentMasking } from "@/server/contexts/research-fund/domain/models/document-masking";
+import { DOCUMENT_UPLOAD_MAX_SIZE_LABEL } from "@/server/contexts/research-fund/domain/models/document-upload";
 import { SCAN_DOCUMENT_MIME_TYPES } from "@/server/contexts/research-fund/domain/models/scan-batch";
 
 type DocumentVersion = "original" | "masked";
@@ -73,7 +74,7 @@ export function JournalDocumentPreview({
             variant="outline"
             size="xs"
             disabled={pending}
-            title="あとから届いた領収書（JPG・PNG・PDF）をこの仕訳に紐づけます"
+            title={`あとから届いた領収書（JPG・PNG・PDF・1ファイル${DOCUMENT_UPLOAD_MAX_SIZE_LABEL}まで）をこの仕訳に紐づけます`}
             onClick={() => fileInput.current?.click()}
           >
             <Paperclip aria-hidden />

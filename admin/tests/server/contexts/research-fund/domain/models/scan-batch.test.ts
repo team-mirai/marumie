@@ -1,7 +1,9 @@
+import { DOCUMENT_UPLOAD_MAX_BYTES } from "@/server/contexts/research-fund/domain/models/document-upload";
 import {
   SCAN_BATCH_MAX_DOCUMENTS,
   requireActivePrompt,
   summarizeScanBatch,
+  validateScanBatchCount,
   validateScanUpload,
   type ScanJobStatus,
   type ScanJobView,
@@ -14,11 +16,11 @@ function job(status: ScanJobStatus): ScanJobView {
 describe("validateScanUpload", () => {
   it("accepts 1 to 30 supported documents", () => {
     for (const count of [1, SCAN_BATCH_MAX_DOCUMENTS]) {
-      const documents = Array.from({ length: count }, () => ({ mime: "image/jpeg" }));
+      const documents = Array.from({ length: count }, () => ({ mime: "image/jpeg", size: 1 }));
       expect(validateScanUpload(documents)).toEqual({ status: "valid", value: undefined });
     }
     expect(
-      validateScanUpload([{ mime: "image/png" }, { mime: "application/pdf" }]),
+      validateScanUpload([{ mime: "image/png", size: 1 }, { mime: "application/pdf", size: 1 }]),
     ).toMatchObject({ status: "valid" });
   });
   it("rejects an empty selection", () => {
@@ -30,6 +32,7 @@ describe("validateScanUpload", () => {
   it("rejects more than 30 documents", () => {
     const documents = Array.from({ length: SCAN_BATCH_MAX_DOCUMENTS + 1 }, () => ({
       mime: "image/jpeg",
+      size: 1,
     }));
     expect(validateScanUpload(documents)).toMatchObject({
       status: "invalid",
@@ -37,10 +40,34 @@ describe("validateScanUpload", () => {
     });
   });
   it.each(["image/gif", "text/csv", "", "image/svg+xml"])("rejects %s", (mime) => {
-    expect(validateScanUpload([{ mime: "image/jpeg" }, { mime }])).toMatchObject({
+    expect(validateScanUpload([{ mime: "image/jpeg", size: 1 }, { mime, size: 1 }])).toMatchObject({
       status: "invalid",
       errors: [{ message: "JPG・PNG・PDFのみアップロードできます" }],
     });
+  });
+  it("accepts a file of exactly the size limit", () => {
+    expect(
+      validateScanUpload([{ mime: "application/pdf", size: DOCUMENT_UPLOAD_MAX_BYTES }]),
+    ).toMatchObject({ status: "valid" });
+  });
+  it.each([
+    ["over the size limit", DOCUMENT_UPLOAD_MAX_BYTES + 1, "1ファイル20MBまでです"],
+    ["empty", 0, "空のファイルはアップロードできません"],
+  ])("rejects a file %s", (_, size, message) => {
+    expect(
+      validateScanUpload([{ mime: "image/jpeg", size: 1 }, { mime: "application/pdf", size }]),
+    ).toMatchObject({ status: "invalid", errors: [{ message }] });
+  });
+});
+
+describe("validateScanBatchCount", () => {
+  it.each([
+    [0, "invalid"],
+    [1, "valid"],
+    [SCAN_BATCH_MAX_DOCUMENTS, "valid"],
+    [SCAN_BATCH_MAX_DOCUMENTS + 1, "invalid"],
+  ])("%i documents are %s", (count, status) => {
+    expect(validateScanBatchCount(count)).toMatchObject({ status });
   });
 });
 
