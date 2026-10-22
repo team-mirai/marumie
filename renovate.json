@@ -4,7 +4,6 @@
     "config:recommended"
   ],
   "timezone": "Asia/Tokyo",
-  "schedule": ["before 9am on saturday"],
   "prHourlyLimit": 5,
   "prConcurrentLimit": 10,
   "labels": [
