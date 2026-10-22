@@ -1,8 +1,8 @@
 import { CreateScanBatchUsecase } from "@/server/contexts/research-fund/application/usecases/create-scan-batch-usecase";
 import type { DocumentStorage } from "@/server/contexts/research-fund/domain/repositories/document-storage.interface";
+import type { DocumentUploadStorage } from "@/server/contexts/research-fund/domain/repositories/document-upload-storage.interface";
 import type { PromptRepository } from "@/server/contexts/research-fund/domain/repositories/prompt-repository.interface";
 import type { ScanRepository } from "@/server/contexts/research-fund/domain/repositories/scan-repository.interface";
-import { RF_ERROR_CODES } from "@/server/contexts/research-fund/domain/types/validation";
 
 const ACTIVE_PROMPT = {
   id: "7",
@@ -12,6 +12,10 @@ const ACTIVE_PROMPT = {
   updatedAt: "2026-09-01T00:00:00.000Z",
   jobCount: 0,
 };
+const JPEG = new Uint8Array([0xff, 0xd8, 0xff, 0xe0]);
+const PDF = new TextEncoder().encode("%PDF-1.4\n");
+const UUID_1 = "11111111-1111-4111-8111-111111111111";
+const UUID_2 = "22222222-2222-4222-8222-222222222222";
 
 describe("CreateScanBatchUsecase", () => {
   const scanRepository: jest.Mocked<ScanRepository> = {
@@ -34,11 +38,13 @@ describe("CreateScanBatchUsecase", () => {
     activate: jest.fn(),
     findActive: jest.fn(),
   };
-  const storage: jest.Mocked<DocumentStorage> = {
+  const storage: jest.Mocked<DocumentStorage & DocumentUploadStorage> = {
     upload: jest.fn(),
     download: jest.fn(),
     createSignedUrl: jest.fn(),
     remove: jest.fn(),
+    createUploadTarget: jest.fn(),
+    claimUpload: jest.fn(),
   };
   const usecase = new CreateScanBatchUsecase(
     scanRepository,
@@ -51,26 +57,31 @@ describe("CreateScanBatchUsecase", () => {
     bookId: "12",
     userId: "user-1",
     documents: [
-      { bytes: new Uint8Array([1]), mime: "image/jpeg", originalFilename: "IMG_1.jpg" },
-      { bytes: new Uint8Array([2]), mime: "application/pdf", originalFilename: "invoice.pdf" },
+      { uploadKey: `uploads/5/user-1/${UUID_1}`, originalFilename: "IMG_1.jpg" },
+      { uploadKey: `uploads/5/user-1/${UUID_2}`, originalFilename: "invoice.pdf" },
     ],
   };
 
   beforeEach(() => {
     jest.resetAllMocks();
     promptRepository.findActive.mockResolvedValue(ACTIVE_PROMPT);
-    storage.upload
+    storage.claimUpload
       .mockResolvedValueOnce({ status: "valid", value: "key-1" })
       .mockResolvedValueOnce({ status: "valid", value: "key-2" });
+    storage.download.mockImplementation(async (key) => ({
+      status: "valid",
+      value: key === "key-1" ? JPEG : PDF,
+    }));
     scanRepository.createBatch.mockResolvedValue("99");
   });
 
-  it("uploads every document and records the active prompt version on each queued job", async () => {
+  it("claims every upload and records the detected format and the active prompt version", async () => {
     expect(await usecase.execute(input)).toEqual({
       status: "valid",
       value: { batchId: "99" },
     });
-    expect(storage.upload).toHaveBeenCalledTimes(2);
+    expect(storage.claimUpload).toHaveBeenNthCalledWith(1, input.documents[0].uploadKey);
+    expect(storage.claimUpload).toHaveBeenNthCalledWith(2, input.documents[1].uploadKey);
     expect(scanRepository.createBatch).toHaveBeenCalledWith({
       bookId: "12",
       uploadedById: "user-1",
@@ -88,23 +99,31 @@ describe("CreateScanBatchUsecase", () => {
     { name: "too many documents", documents: Array.from({ length: 31 }, () => input.documents[0]) },
     { name: "no documents", documents: [] },
     {
-      name: "an unsupported format",
-      documents: [{ bytes: new Uint8Array([1]), mime: "image/gif", originalFilename: "a.gif" }],
+      name: "an original already registered (not an upload key)",
+      documents: [{ uploadKey: UUID_1, originalFilename: "a.jpg" }],
     },
     {
-      name: "an empty file",
-      documents: [{ bytes: new Uint8Array(), mime: "image/jpeg", originalFilename: "a.jpg" }],
+      name: "an upload key issued to another user",
+      documents: [{ uploadKey: `uploads/5/user-2/${UUID_1}`, originalFilename: "a.jpg" }],
+    },
+    {
+      name: "an upload key issued for another politician",
+      documents: [{ uploadKey: `uploads/6/user-1/${UUID_1}`, originalFilename: "a.jpg" }],
+    },
+    {
+      name: "a path escaping the upload prefix",
+      documents: [{ uploadKey: `uploads/5/user-1/../../${UUID_1}`, originalFilename: "a.jpg" }],
     },
     {
       name: "a blank filename",
-      documents: [{ bytes: new Uint8Array([1]), mime: "image/jpeg", originalFilename: " " }],
+      documents: [{ uploadKey: input.documents[0].uploadKey, originalFilename: " " }],
     },
   ])("rejects $name before touching storage", async ({ documents }) => {
     expect(await usecase.execute({ ...input, documents })).toMatchObject({
       status: "invalid",
       errors: [{ code: "RF_INVALID_DOCUMENT" }],
     });
-    expect(storage.upload).not.toHaveBeenCalled();
+    expect(storage.claimUpload).not.toHaveBeenCalled();
     expect(scanRepository.createBatch).not.toHaveBeenCalled();
   });
 
@@ -112,45 +131,95 @@ describe("CreateScanBatchUsecase", () => {
     expect(await usecase.execute({ ...input, bookId: "../12" })).toMatchObject({
       status: "invalid",
     });
-    expect(storage.upload).not.toHaveBeenCalled();
+    expect(storage.claimUpload).not.toHaveBeenCalled();
   });
 
   it("refuses to create jobs while no prompt version is active", async () => {
     promptRepository.findActive.mockResolvedValue(null);
     await expect(usecase.execute(input)).rejects.toThrow("読み取りプロンプトが未保存です");
-    expect(storage.upload).not.toHaveBeenCalled();
+    expect(storage.claimUpload).not.toHaveBeenCalled();
     expect(scanRepository.createBatch).not.toHaveBeenCalled();
   });
 
-  it("removes already uploaded originals when the batch cannot be saved", async () => {
+  it("does not trust the browser: a file whose content is not JPEG/PNG/PDF is removed and rejected", async () => {
+    storage.download.mockImplementation(async (key) => ({
+      status: "valid",
+      value: key === "key-1" ? JPEG : new TextEncoder().encode("<svg/>"),
+    }));
+    expect(await usecase.execute(input)).toMatchObject({
+      status: "invalid",
+      errors: [{ message: expect.stringContaining("ファイルの中身が対応する形式ではありません") }],
+    });
+    expect(storage.remove).toHaveBeenCalledWith("key-2");
+    expect(storage.remove).toHaveBeenCalledWith("key-1");
+    expect(scanRepository.createBatch).not.toHaveBeenCalled();
+  });
+
+  it("rejects a file over the size limit after checking the stored bytes", async () => {
+    const huge = new Uint8Array(20 * 1024 * 1024 + 1);
+    huge.set(PDF);
+    storage.download.mockImplementation(async (key) => ({
+      status: "valid",
+      value: key === "key-1" ? JPEG : huge,
+    }));
+    expect(await usecase.execute(input)).toMatchObject({
+      status: "invalid",
+      errors: [{ message: "1ファイル20MBまでです" }],
+    });
+    expect(storage.remove).toHaveBeenCalledWith("key-2");
+    expect(scanRepository.createBatch).not.toHaveBeenCalled();
+  });
+
+  it("rejects an upload that was never placed, removing the ones already claimed", async () => {
+    storage.claimUpload.mockReset();
+    storage.claimUpload
+      .mockResolvedValueOnce({ status: "valid", value: "key-1" })
+      .mockResolvedValueOnce({
+        status: "invalid",
+        errors: [
+          {
+            path: "document",
+            code: "RF_INVALID_DOCUMENT",
+            message: "アップロードした書類が見つかりませんでした",
+            severity: "error",
+          },
+        ],
+      });
+    expect(await usecase.execute(input)).toMatchObject({ status: "invalid" });
+    expect(storage.remove).toHaveBeenCalledTimes(1);
+    expect(storage.remove).toHaveBeenCalledWith("key-1");
+    expect(scanRepository.createBatch).not.toHaveBeenCalled();
+  });
+
+  it("removes already claimed originals when the batch cannot be saved", async () => {
     scanRepository.createBatch.mockRejectedValue(new Error("database failed"));
     await expect(usecase.execute(input)).rejects.toThrow("database failed");
     expect(storage.remove).toHaveBeenCalledWith("key-1");
     expect(storage.remove).toHaveBeenCalledWith("key-2");
   });
 
-  it("removes already uploaded originals when a later upload fails", async () => {
-    storage.upload.mockReset();
-    storage.upload
+  it("removes already claimed originals when a later claim fails", async () => {
+    storage.claimUpload.mockReset();
+    storage.claimUpload
       .mockResolvedValueOnce({ status: "valid", value: "key-1" })
-      .mockRejectedValueOnce(new Error("upload failed"));
-    await expect(usecase.execute(input)).rejects.toThrow("upload failed");
+      .mockRejectedValueOnce(new Error("storage failed"));
+    await expect(usecase.execute(input)).rejects.toThrow("storage failed");
     expect(storage.remove).toHaveBeenCalledWith("key-1");
     expect(scanRepository.createBatch).not.toHaveBeenCalled();
   });
 
   it("does not remove an original twice when the invalid-upload cleanup fails", async () => {
-    storage.upload.mockReset();
-    storage.upload
+    storage.claimUpload.mockReset();
+    storage.claimUpload
       .mockResolvedValueOnce({ status: "valid", value: "key-1" })
       .mockResolvedValueOnce({
         status: "invalid",
         errors: [
           {
-            path: "documents",
-            code: RF_ERROR_CODES.INVALID_DOCUMENT,
-            message: "保存に失敗しました",
-            severity: "error" as const,
+            path: "document",
+            code: "RF_INVALID_DOCUMENT",
+            message: "見つかりません",
+            severity: "error",
           },
         ],
       });

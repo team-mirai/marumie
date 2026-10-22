@@ -7,6 +7,8 @@ describe("SupabaseDocumentStorage", () => {
     download: jest.fn(),
     createSignedUrl: jest.fn(),
     remove: jest.fn(),
+    createSignedUploadUrl: jest.fn(),
+    move: jest.fn(),
   };
   const from = jest.fn(() => bucket);
   const client = { storage: { from } } as unknown as SupabaseClient;
@@ -98,6 +100,44 @@ describe("SupabaseDocumentStorage", () => {
   it("reports cleanup failures", async () => {
     bucket.remove.mockResolvedValue({ error: new Error("denied") });
     await expect(storage.remove("key")).rejects.toThrow("削除");
+  });
+  it("issues a signed upload URL for a new key under the given prefix", async () => {
+    bucket.createSignedUploadUrl.mockResolvedValue({
+      data: { signedUrl: "https://storage.example/upload" },
+      error: null,
+    });
+    const target = await storage.createUploadTarget("uploads/2/user-1/");
+    expect(target).toEqual({
+      uploadKey: expect.stringMatching(/^uploads\/2\/user-1\/[0-9a-f-]{36}$/),
+      uploadUrl: "https://storage.example/upload",
+    });
+    expect(bucket.createSignedUploadUrl).toHaveBeenCalledWith(target.uploadKey);
+    expect(from).toHaveBeenCalledWith("private-receipts");
+    expect((await storage.createUploadTarget("uploads/2/user-1/")).uploadKey).not.toBe(
+      target.uploadKey,
+    );
+  });
+  it.each([
+    { data: null, error: new Error("denied") },
+    { data: null, error: null },
+  ])("reports upload target failures", async (response) => {
+    bucket.createSignedUploadUrl.mockResolvedValue(response);
+    await expect(storage.createUploadTarget("uploads/2/user-1/")).rejects.toThrow("アップロード先");
+  });
+  it("claims an upload by moving it to a new opaque key", async () => {
+    bucket.move.mockResolvedValue({ data: {}, error: null });
+    const result = await storage.claimUpload("uploads/2/user-1/abc");
+    expect(result).toEqual({ status: "valid", value: expect.stringMatching(/^[0-9a-f-]{36}$/) });
+    if (result.status !== "valid") throw new Error("unexpected validation error");
+    expect(bucket.move).toHaveBeenCalledWith("uploads/2/user-1/abc", result.value);
+  });
+  it("reports a missing upload as invalid", async () => {
+    bucket.move.mockResolvedValue({ data: null, error: new Error("Object not found") });
+    jest.spyOn(console, "error").mockImplementation(() => {});
+    expect(await storage.claimUpload("uploads/2/user-1/abc")).toMatchObject({
+      status: "invalid",
+      errors: [{ code: "RF_INVALID_DOCUMENT" }],
+    });
   });
   it("requires an explicit bucket name", () => {
     expect(() => new SupabaseDocumentStorage(client, " ")).toThrow("バケット");

@@ -27,6 +27,11 @@ import {
 } from "@/client/components/ui";
 import { cn, researchFundDocumentUrl } from "@/client/lib";
 import {
+  documentFileSizeError,
+  uploadResearchFundDocuments,
+} from "@/client/lib/research-fund-document-upload";
+import { DOCUMENT_UPLOAD_MAX_SIZE_LABEL } from "@/server/contexts/research-fund/domain/models/document-upload";
+import {
   SCAN_BATCH_MAX_DOCUMENTS,
   SCAN_DOCUMENT_MIME_TYPES,
   type ScanJobStatus,
@@ -70,7 +75,7 @@ function rejectionReason(files: File[]): string | null {
   );
   if (unsupported.length > 0)
     return `JPG・PNG・PDFのみアップロードできます（${unsupported[0].name}）`;
-  return null;
+  return documentFileSizeError(files);
 }
 
 export function DocumentScan({
@@ -177,11 +182,15 @@ export function DocumentScan({
       toast.error(reason);
       return;
     }
-    const formData = new FormData();
-    for (const file of files) formData.append("documents", file);
     startTransition(async () => {
       try {
-        const result = await createScanBatch(target.politicianId, target.bookId, formData);
+        // ファイル本体はストレージへ直接置き、登録にはキーだけを渡す（#1824）
+        const uploaded = await uploadResearchFundDocuments(target, files);
+        if (!uploaded.success) {
+          toast.error(uploaded.error);
+          return;
+        }
+        const result = await createScanBatch(target.politicianId, target.bookId, uploaded.uploads);
         if (!result.success) {
           toast.error(result.error);
           return;
@@ -237,7 +246,8 @@ export function DocumentScan({
               </span>
               <p className="text-sm font-bold text-foreground">ここに領収書・請求書をドロップ</p>
               <p className="text-xs text-muted-foreground">
-                JPG / PNG / PDF ・ 1回に最大{SCAN_BATCH_MAX_DOCUMENTS}枚 ・ スマホ写真もそのままでOK
+                JPG / PNG / PDF ・ 1ファイル{DOCUMENT_UPLOAD_MAX_SIZE_LABEL}まで ・ 1回に最大
+                {SCAN_BATCH_MAX_DOCUMENTS}枚 ・ スマホ写真もそのままでOK
               </p>
               <Button
                 type="button"

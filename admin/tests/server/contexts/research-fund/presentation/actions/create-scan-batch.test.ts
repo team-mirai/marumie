@@ -23,14 +23,8 @@ jest.mock("@/server/contexts/research-fund/presentation/loaders/load-scan", () =
 
 const createBatch = jest.fn();
 
-function formDataWith(files: File[]) {
-  const formData = new FormData();
-  for (const file of files) formData.append("documents", file);
-  return formData;
-}
-
 function jpeg(name: string) {
-  return new File([new Uint8Array([1, 2, 3])], name, { type: "image/jpeg" });
+  return { uploadKey: `uploads/2/user/${name}`, originalFilename: name };
 }
 
 beforeEach(() => {
@@ -53,9 +47,8 @@ beforeEach(() => {
   createBatch.mockResolvedValue({ status: "valid", value: { batchId: "9" } });
 });
 
-test("ファイルを読み出して usecase に渡し、公開用の版の作成を依頼してレイアウトを再検証する", async () => {
-  const formData = formDataWith([jpeg("IMG_1.jpg"), jpeg("IMG_2.jpg")]);
-  await expect(createScanBatch("2", "1", formData)).resolves.toEqual({
+test("ブラウザが置いた書類のキーを usecase に渡し、公開用の版の作成を依頼してレイアウトを再検証する", async () => {
+  await expect(createScanBatch("2", "1", [jpeg("IMG_1.jpg"), jpeg("IMG_2.jpg")])).resolves.toEqual({
     success: true,
     batchId: "9",
     count: 2,
@@ -64,10 +57,7 @@ test("ファイルを読み出して usecase に渡し、公開用の版の作�
     politicianId: "2",
     bookId: "1",
     userId: "user",
-    documents: [
-      { bytes: new Uint8Array([1, 2, 3]), mime: "image/jpeg", originalFilename: "IMG_1.jpg" },
-      { bytes: new Uint8Array([1, 2, 3]), mime: "image/jpeg", originalFilename: "IMG_2.jpg" },
-    ],
+    documents: [jpeg("IMG_1.jpg"), jpeg("IMG_2.jpg")],
   });
   expect(notifyDocumentMasking).toHaveBeenCalledTimes(1);
   expect(revalidatePath).toHaveBeenCalledWith("/(auth)", "layout");
@@ -75,7 +65,7 @@ test("ファイルを読み出して usecase に渡し、公開用の版の作�
 
 test("31枚以上はサーバー側でも弾き、保存を始めない", async () => {
   const files = Array.from({ length: 31 }, (_, index) => jpeg(`IMG_${index}.jpg`));
-  await expect(createScanBatch("2", "1", formDataWith(files))).resolves.toEqual({
+  await expect(createScanBatch("2", "1", files)).resolves.toEqual({
     success: false,
     error: "1回にアップロードできるのは30枚までです",
   });
@@ -85,7 +75,7 @@ test("31枚以上はサーバー側でも弾き、保存を始めない", async 
 });
 
 test("ファイルが無ければ保存を始めない", async () => {
-  await expect(createScanBatch("2", "1", new FormData())).resolves.toEqual({
+  await expect(createScanBatch("2", "1", [])).resolves.toEqual({
     success: false,
     error: "書類を1枚以上選んでください",
   });
@@ -94,7 +84,7 @@ test("ファイルが無ければ保存を始めない", async () => {
 
 test("別の対象への古いフォーム送信を拒否", async () => {
   jest.mocked(requireJournalTarget).mockResolvedValue(null);
-  await expect(createScanBatch("2", "1", formDataWith([jpeg("a.jpg")]))).resolves.toMatchObject({
+  await expect(createScanBatch("2", "1", [jpeg("a.jpg")])).resolves.toMatchObject({
     success: false,
   });
   expect(createBatch).not.toHaveBeenCalled();
@@ -102,7 +92,7 @@ test("別の対象への古いフォーム送信を拒否", async () => {
 
 test("認証失敗時はアップロードしない", async () => {
   jest.mocked(requireResearchFundWriter).mockRejectedValueOnce(new Error("auth"));
-  await expect(createScanBatch("2", "1", formDataWith([jpeg("a.jpg")]))).rejects.toThrow("auth");
+  await expect(createScanBatch("2", "1", [jpeg("a.jpg")])).rejects.toThrow("auth");
   expect(createBatch).not.toHaveBeenCalled();
 });
 
@@ -118,7 +108,7 @@ test("対応外の形式は usecase の検証結果をそのまま伝える", as
       },
     ],
   });
-  await expect(createScanBatch("2", "1", formDataWith([jpeg("a.jpg")]))).resolves.toEqual({
+  await expect(createScanBatch("2", "1", [jpeg("a.jpg")])).resolves.toEqual({
     success: false,
     error: "JPG・PNG・PDFのみアップロードできます",
   });
@@ -127,12 +117,12 @@ test("対応外の形式は usecase の検証結果をそのまま伝える", as
 
 test("利用者が直せる事情は伝え、内部エラーは漏らさない", async () => {
   createBatch.mockRejectedValueOnce(new ScanBatchError("読み取りプロンプトが未保存です"));
-  await expect(createScanBatch("2", "1", formDataWith([jpeg("a.jpg")]))).resolves.toEqual({
+  await expect(createScanBatch("2", "1", [jpeg("a.jpg")])).resolves.toEqual({
     success: false,
     error: "読み取りプロンプトが未保存です",
   });
   createBatch.mockRejectedValueOnce(new Error("private storage detail"));
-  await expect(createScanBatch("2", "1", formDataWith([jpeg("a.jpg")]))).resolves.toEqual({
+  await expect(createScanBatch("2", "1", [jpeg("a.jpg")])).resolves.toEqual({
     success: false,
     error: "書類のアップロードに失敗しました。時間をおいて再度お試しください",
   });
