@@ -1,6 +1,7 @@
 import { readFile } from "fs/promises";
 import { join } from "path";
 import { PDFiumLibrary } from "@hyzyla/pdfium";
+import { PDFDocument, rgb } from "pdf-lib";
 import type {
   MaskableMime,
   RasterImage,
@@ -81,6 +82,16 @@ describe("PdfiumDocumentRasterCodec", () => {
     const darkPixels = pages[0].rgba.filter((value, i) => i % 4 === 0 && value < 128).length;
     expect(darkPixels).toBeGreaterThan(0);
     expect(darkPixels).toBeLessThan(pages[0].width * pages[0].height * 0.5);
+  });
+
+  it("PDF を画像にしても色の並びは入れ替わらない", async () => {
+    // 赤一色のページを描画して、R と B が入れ替わって青くならないことを確かめる
+    const source = await PDFDocument.create();
+    source.addPage([72, 72]).drawRectangle({ x: 0, y: 0, width: 72, height: 72, color: rgb(1, 0, 0) });
+    const [page] = await renderAll(await source.save(), "application/pdf");
+
+    const center = ((page.height >> 1) * page.width + (page.width >> 1)) * 4;
+    expect([...page.rgba.subarray(center, center + 4)]).toEqual([255, 0, 0, 255]);
   });
 
   it("PNG は 1 ページの画像にする", async () => {
