@@ -120,6 +120,9 @@ async function expectPageScreenshot(page: Page, name: string) {
     fullPage: true,
     // グラフの描画が終わるまで待てるよう、既定（5 秒）より長めにとる
     timeout: 15_000,
+    // CI でもグラフの線の縁（アンチエイリアス）が実行ごとに数百〜千ピクセルほど揺れる（全体の 0.01% 程度）。
+    // 崩れ（要素のずれ・欠け・色の変化）はこれより桁違いに多くのピクセルが変わるので、0.1% までは許す
+    maxDiffPixelRatio: 0.001,
   });
 }
 
