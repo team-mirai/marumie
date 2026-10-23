@@ -98,6 +98,10 @@ jobs:
       - name: Check usecase shape
         run: pnpm check:usecase-shape
 
+      # 本番デプロイ時の依存パッケージ一覧（Deploy Production で使うスクリプト）のテスト
+      - name: Test dependency diff script
+        run: pnpm test:dependency-diff
+
       - name: Upload admin coverage
         uses: actions/upload-artifact@v6
         with:
