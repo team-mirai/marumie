@@ -20,7 +20,8 @@ import { test, expect, type Page } from "@playwright/test";
 //
 //        # 1. CI と同じ素の Postgres にマイグレーションとシードを入れる
 //        docker run -d --rm --name visual-db -e POSTGRES_PASSWORD=postgres -p 55432:5432 postgres:18
-//        export DATABASE_URL=postgresql://postgres:postgres@localhost:55432/postgres DIRECT_URL=$DATABASE_URL
+//        export DATABASE_URL=postgresql://postgres:postgres@localhost:55432/postgres
+//        export DIRECT_URL="$DATABASE_URL"
 //        pnpm db:migrate:deploy && SUPABASE_ENV_OPTIONAL=1 pnpm db:seed
 //        # 2. Linux のブラウザを起動する（バージョンは webapp の @playwright/test に合わせる）
 //        docker run -d --rm --name visual-browser --platform linux/amd64 --init -p 53333:3000 \
