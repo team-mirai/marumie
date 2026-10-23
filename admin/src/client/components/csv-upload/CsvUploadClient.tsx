@@ -13,13 +13,16 @@ import type {
   UploadCsvRequest,
   UploadCsvResponse,
 } from "@/server/contexts/data-import/presentation/actions/upload-csv";
-import type { PreviewCsvRequest } from "@/server/contexts/data-import/presentation/actions/preview-csv";
+import type {
+  PreviewCsvRequest,
+  PreviewCsvResponse,
+} from "@/server/contexts/data-import/presentation/actions/preview-csv";
 
 interface CsvUploadClientProps {
   /** グローバル対象（サイドバー上部）で選択中の政治団体 */
   politicalOrganizationId: string;
   uploadAction: (data: UploadCsvRequest) => Promise<UploadCsvResponse>;
-  previewAction: (data: PreviewCsvRequest) => Promise<PreviewMfCsvResult>;
+  previewAction: (data: PreviewCsvRequest) => Promise<PreviewCsvResponse>;
 }
 
 /** 現在サポートしているデータソース。取り込みロジックは MF クラウド会計のみ */
@@ -68,8 +71,13 @@ export default function CsvUploadClient({
     setHasError(false);
 
     try {
-      const result = await previewAction({ file, politicalOrganizationId });
-      setPreviewResult(result);
+      const response = await previewAction({ file, politicalOrganizationId });
+      if (!response.ok) {
+        setPreviewResult(null);
+        setPreviewError(response.error);
+        return;
+      }
+      setPreviewResult(response.result);
     } catch (err) {
       setPreviewResult(null);
       setPreviewError(err instanceof Error ? err.message : "CSVのプレビューに失敗しました");

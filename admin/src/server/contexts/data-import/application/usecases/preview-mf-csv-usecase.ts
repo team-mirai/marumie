@@ -1,5 +1,6 @@
 import "server-only";
 
+import { MfCsvFormatError } from "@/server/contexts/data-import/domain/errors/mf-csv-format-error";
 import type { IMfCsvLoader } from "@/server/contexts/data-import/domain/repositories/mf-csv-loader.interface";
 import type { IMfRecordConverter } from "@/server/contexts/data-import/domain/repositories/mf-record-converter.interface";
 import type { PreviewTransaction } from "@/server/contexts/data-import/domain/models/preview-transaction";
@@ -71,7 +72,11 @@ export class PreviewMfCsvUsecase {
         summary,
         statistics,
       };
-    } catch (_error) {
+    } catch (error) {
+      // 形式の誤りは利用者が直せるので、取引 0 件として扱わずに呼び出し元へ伝える
+      if (error instanceof MfCsvFormatError) {
+        throw error;
+      }
       return {
         transactions: [],
         summary: calculatePreviewSummary([]),

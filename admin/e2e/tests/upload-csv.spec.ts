@@ -127,16 +127,38 @@ test.describe("CSVアップロード（MFクラウド会計）", () => {
 		await expect(page.getByRole("table")).not.toContainText("E2E取込 カテゴリなし");
 	});
 
-	test("MFクラウド会計の形式でない CSV は取り込む取引が無いと表示され、保存できない", async ({
+	test("MFクラウド会計の形式でない CSV は形式の誤りがエラーとして表示され、保存できない", async ({
 		page,
 	}) => {
-		// 形式の誤りはエラーとしては表示されず、取引 0 件として扱われる（#1839 で直す）
-		await previewCsv(page, IMPORT_YEAR, "not-mf.csv", "名前,金額\n山田,1000\n");
+		await page.goto("/upload-csv");
+		await expect(page.getByRole("main")).toContainText(`サンプル党／${IMPORT_YEAR}年度`);
 
-		await expect(page.getByText("取り込み対象の取引が見つかりませんでした。")).toBeVisible();
+		// 形式の誤りではプレビューが表示されないため、previewCsv ではなくエラー表示を待つ
+		const alert = page.getByRole("alert").filter({ hasText: "プレビューに失敗しました" });
+		await expect(async () => {
+			await page.getByLabel("CSVファイル", { exact: true }).setInputFiles({
+				name: "not-mf.csv",
+				mimeType: "text/csv",
+				buffer: Buffer.from("名前,金額\n山田,1000\n", "utf-8"),
+			});
+			await page.getByRole("button", { name: "プレビューを表示" }).click({ timeout: 5_000 });
+			await expect(alert).toBeVisible({ timeout: 10_000 });
+		}).toPass({ timeout: 30_000 });
+
+		await expect(alert).toContainText("MFクラウド会計の仕訳帳の形式ではありません");
+		await expect(page.getByRole("heading", { name: "取り込みプレビュー" })).toHaveCount(0);
 		await expect(page.getByRole("button", { name: "このデータを保存する" })).toHaveCount(0);
 
 		await gotoTransactions(page);
 		await expect(page.getByText("トランザクションが登録されていません")).toBeVisible();
+	});
+
+	test("見出しだけでデータ行が無い CSV は取り込む取引が無いと表示され、保存できない", async ({
+		page,
+	}) => {
+		await previewCsv(page, IMPORT_YEAR, "header-only.csv", mfCsv([]));
+
+		await expect(page.getByText("取り込み対象の取引が見つかりませんでした。")).toBeVisible();
+		await expect(page.getByRole("button", { name: "このデータを保存する" })).toHaveCount(0);
 	});
 });
