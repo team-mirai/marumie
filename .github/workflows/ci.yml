@@ -412,6 +412,8 @@ jobs:
           name: admin-e2e-report
           path: admin/e2e/.output/
           retention-days: 7
+          # .output は「.」始まりの隠しディレクトリなので、明示しないと何もアップロードされない
+          include-hidden-files: true
 
   # main のブランチ保護で必須にする唯一のチェック。
   # 各ジョブは paths によってスキップされうるが、このジョブは常に報告される。
