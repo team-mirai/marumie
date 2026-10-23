@@ -33,7 +33,7 @@ jobs:
 
       # 前回の release タグとの比較（依存パッケージの一覧）に履歴とタグが要るため、全履歴を取る
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
