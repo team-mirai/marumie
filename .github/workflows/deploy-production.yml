@@ -31,8 +31,17 @@ jobs:
             exit 1
           fi
 
+      # 前回の release タグとの比較（依存パッケージの一覧）に履歴とタグが要るため、全履歴を取る
       - name: Checkout code
         uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      # 前回の本番デプロイ（release タグ）から変わった直接依存パッケージを job summary に出す。
+      # 確認用の情報なので、失敗しても本番デプロイは止めない
+      - name: Summarize dependency changes since last release
+        continue-on-error: true
+        run: node scripts/dependency-diff.mjs "$GITHUB_SHA" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Install Vercel CLI
         run: npm install --global vercel@latest
