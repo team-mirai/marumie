@@ -10,6 +10,7 @@
   "labels": [
     "dependencies"
   ],
+  "minimumReleaseAge": "3 days",
   "lockFileMaintenance": {
     "enabled": true
   },
@@ -54,11 +55,12 @@
       ]
     },
     {
-      "description": "Next.js and React",
+      "description": "Next.js, React and @next/* packages",
       "matchPackageNames": [
         "next",
         "react",
-        "react-dom"
+        "react-dom",
+        "@next/**"
       ],
       "groupName": "next-react"
     },
@@ -86,9 +88,28 @@
       "groupName": "github-actions"
     },
     {
+      "description": "Automerge non-major updates once CI passes",
+      "matchUpdateTypes": ["minor", "patch", "digest", "lockFileMaintenance"],
+      "automerge": true
+    },
+    {
       "description": "Major updates need dashboard approval (keep PR slots free)",
       "matchUpdateTypes": ["major"],
       "dependencyDashboardApproval": true
+    },
+    {
+      "description": "devDependencies major updates are automerged once CI passes (no dashboard approval)",
+      "matchDepTypes": ["devDependencies"],
+      "matchUpdateTypes": ["major"],
+      "matchPackageNames": ["!tailwindcss", "!@tailwindcss/postcss", "!@types/node"],
+      "dependencyDashboardApproval": false,
+      "automerge": true
+    },
+    {
+      "description": "GitHub Actions updates (including major) are automerged once CI passes",
+      "matchManagers": ["github-actions"],
+      "dependencyDashboardApproval": false,
+      "automerge": true
     },
     {
       "description": "Node.js runtime minor/patch immediate",
@@ -105,6 +126,23 @@
       "description": "Next.js first in line",
       "matchPackageNames": ["next", "@next/**", "eslint-config-next"],
       "prPriority": 9
+    },
+    {
+      "description": "Next.js / React minor updates need human review (patch is automerged)",
+      "matchPackageNames": ["next", "react", "react-dom", "@next/**"],
+      "matchUpdateTypes": ["minor"],
+      "automerge": false
+    },
+    {
+      "description": "@supabase/ssr is 0.x and minor updates may break, so they need human review (patch is automerged)",
+      "matchPackageNames": ["@supabase/ssr"],
+      "matchUpdateTypes": ["minor"],
+      "automerge": false
+    },
+    {
+      "description": "Packages that always need human review",
+      "matchPackageNames": ["@vercel/queue", "@hyzyla/pdfium"],
+      "automerge": false
     }
   ]
 }

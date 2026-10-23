@@ -5,3 +5,7 @@ packages:
 
 onlyBuiltDependencies:
   - supabase
+
+# 公開から 3 日（4320 分）経っていない版を依存解決に使わない（推移的な依存を含む）。
+# renovate.json の minimumReleaseAge と揃えること（ずれると Renovate が作った lockfile 更新を pnpm が拒否しうる）
+minimumReleaseAge: 4320
