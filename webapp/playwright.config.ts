@@ -12,6 +12,10 @@ const useDevServer = process.env.E2E_DEV_SERVER === "1";
 export default defineConfig({
   testDir: "./e2e/tests",
   outputDir: "./e2e/.output/test-results",
+  // 見た目の比較（e2e/tests/visual.spec.ts）の基準画像は CI（Linux）の描画結果だけを持つ。
+  // 手元の Mac からも Docker の Linux ブラウザにつないで撮り直せるよう、
+  // ファイル名にテストを動かす OS 名（既定の {platform}）を入れない
+  snapshotPathTemplate: "{testDir}/{testFilePath}-snapshots/{arg}-{projectName}{ext}",
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
