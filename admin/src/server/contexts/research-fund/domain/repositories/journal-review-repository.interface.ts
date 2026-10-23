@@ -61,6 +61,19 @@ export interface JournalReviewRepository {
     entry: ReviewEntry,
     document: { storageKey: string; mime: string; originalFilename: string },
   ): Promise<void>;
+  /**
+   * 書類のある下書き・確認済の支出の仕訳の書類を、アップロード済みの原本に差し替える。
+   * 書類の行はそのまま使うので、領収書等番号・読み取り結果・同じ書類に紐づく仕訳の内容と状態は変わらない。
+   * 前の書類から作った公開用の版は外し、新しい原本から作り直す対象（pending）に戻す。
+   * 同じ書類に紐づく仕訳はどれも更新時刻を進め、開いている画面に差し替えを気づかせる。
+   * 同じ書類に公開中の仕訳がある・読み取り中なら拒否し、競合したら何も変更しない。
+   * 使われなくなった前の原本と公開用の版のキーを返す（呼び出し側が消す）。
+   */
+  replaceDocument(
+    bookId: string,
+    entry: ReviewEntry,
+    document: { storageKey: string; mime: string; originalFilename: string },
+  ): Promise<{ storageKey: string; maskedKey: string | null }>;
   /** 帳簿の議員（支払先の持ち主）。帳簿が無ければ null */
   politicianId(bookId: string): Promise<string | null>;
   /**

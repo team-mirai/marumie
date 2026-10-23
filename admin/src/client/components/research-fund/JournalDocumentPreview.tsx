@@ -1,8 +1,9 @@
 "use client";
-import { useRef, useState, type ReactNode } from "react";
+import { useRef, useState, type ReactNode, type RefObject } from "react";
 import {
   ArrowClockwise,
   ArrowSquareOut,
+  ArrowsLeftRight,
   ArrowsOut,
   Paperclip,
 } from "@phosphor-icons/react/dist/ssr";
@@ -38,9 +39,14 @@ const VERSION_LABELS: Record<DocumentVersion, string> = {
 const newTabLinkClassName =
   "inline-flex items-center gap-0.5 rounded-sm text-[11px] font-bold whitespace-nowrap text-primary-active underline-offset-2 transition-colors duration-150 ease-out outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2";
 
+/** 作り直し・差し替えなど、見比べるより控えめにする文字のボタン */
+const subtleButtonClassName =
+  "inline-flex cursor-pointer items-center gap-0.5 rounded-sm text-[11px] whitespace-nowrap text-muted-foreground underline underline-offset-2 transition-colors duration-150 ease-out outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:text-disabled-foreground";
+
 /**
  * 詳細カードの書類まわり。書類の無い仕訳と支給は、その旨だけを出す。
  * 書類の無い仕訳に領収書を紐づけられるとき（onAttach を渡したとき）は、ファイルを選ぶボタンも出す。
+ * 書類を差し替えられるとき（onReplace を渡したとき）は、原本の行に差し替えるボタンを出す。
  */
 export function JournalDocumentPreview({
   grant,
@@ -49,6 +55,7 @@ export function JournalDocumentPreview({
   masking,
   pending = false,
   onAttach,
+  onReplace,
 }: {
   grant: boolean;
   target: { politicianId: string; bookId: string };
@@ -58,10 +65,20 @@ export function JournalDocumentPreview({
   pending?: boolean;
   /** 書類の無い仕訳に領収書ファイルを紐づける。紐づけられない仕訳では渡さない */
   onAttach?: (file: File) => void;
+  /** 書類のある仕訳の書類ファイルを差し替える。差し替えられない仕訳では渡さない */
+  onReplace?: (file: File) => void;
 }) {
   const fileInput = useRef<HTMLInputElement>(null);
   if (!grant && documentId !== null)
-    return <JournalDocumentPanel target={target} documentId={documentId} masking={masking} />;
+    return (
+      <JournalDocumentPanel
+        target={target}
+        documentId={documentId}
+        masking={masking}
+        pending={pending}
+        onReplace={onReplace}
+      />
+    );
   return (
     <div className="flex min-h-14 shrink-0 flex-col items-center justify-center gap-1.5 rounded-md border border-dashed px-3 py-2 text-center text-xs text-muted-foreground">
       {grant
@@ -80,22 +97,41 @@ export function JournalDocumentPreview({
             <Paperclip aria-hidden />
             領収書を紐づける
           </Button>
-          <input
-            ref={fileInput}
-            type="file"
-            accept={SCAN_DOCUMENT_MIME_TYPES.join(",")}
-            aria-label="紐づける領収書ファイル"
-            className="hidden"
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              // 同じファイルを選び直しても onChange が起きるように、選択を毎回空に戻す
-              e.target.value = "";
-              if (file) onAttach(file);
-            }}
+          <DocumentFileInput
+            inputRef={fileInput}
+            label="紐づける領収書ファイル"
+            onSelect={onAttach}
           />
         </>
       )}
     </div>
+  );
+}
+
+/** 書類ファイルを 1 つ選ぶ、見えない入力欄。ボタンから click() で開く */
+function DocumentFileInput({
+  inputRef,
+  label,
+  onSelect,
+}: {
+  inputRef: RefObject<HTMLInputElement | null>;
+  label: string;
+  onSelect: (file: File) => void;
+}) {
+  return (
+    <input
+      ref={inputRef}
+      type="file"
+      accept={SCAN_DOCUMENT_MIME_TYPES.join(",")}
+      aria-label={label}
+      className="hidden"
+      onChange={(e) => {
+        const file = e.target.files?.[0];
+        // 同じファイルを選び直しても onChange が起きるように、選択を毎回空に戻す
+        e.target.value = "";
+        if (file) onSelect(file);
+      }}
+    />
   );
 }
 
@@ -117,17 +153,23 @@ function maskedUnavailableReason(masking: DocumentMasking | undefined): string |
  * どちらも「拡大」で大きく表示（表示したまま切り替え・左右に並べて見比べられる）、「新しいタブ」で開ける。
  * 公開用の版の行には状態・黒塗りした箇所の数を添え、見られないときはその理由、失敗したときは失敗の理由を出す。
  * 作り直しは見比べるより控えめな文字のボタンにし、前の版が置き換わることを横に書いておく。
+ * 書類の差し替え（#1827）も同じく控えめな文字のボタンにし、原本の行の下に出す。
  */
 function JournalDocumentPanel({
   target,
   documentId,
   masking,
+  pending: busy,
+  onReplace,
 }: {
   target: { politicianId: string; bookId: string };
   documentId: string;
   masking: DocumentMasking | undefined;
+  pending: boolean;
+  onReplace?: (file: File) => void;
 }) {
   const readOnly = useResearchFundReadOnly();
+  const replaceInput = useRef<HTMLInputElement>(null);
   const { pending, request } = useRequestDocumentMasking(target, documentId);
   const [viewer, setViewer] = useState<ViewerMode | null>(null);
   const status = masking?.status ?? "pending";
@@ -190,7 +232,34 @@ function JournalDocumentPanel({
         />
       </div>
       <div className="divide-y divide-border-soft border-t border-disabled-border px-2.5">
-        <DocumentVersionRow label="原本" actions={versionActions("original")} />
+        <DocumentVersionRow
+          label="原本"
+          actions={versionActions("original")}
+          below={
+            onReplace && (
+              <p className="flex flex-wrap items-center gap-x-1.5 text-muted-foreground">
+                <button
+                  type="button"
+                  disabled={busy || readOnly}
+                  title={`別の書類ファイル（JPG・PNG・PDF・1ファイル${DOCUMENT_UPLOAD_MAX_SIZE_LABEL}まで）に差し替えます`}
+                  onClick={() => replaceInput.current?.click()}
+                  className={subtleButtonClassName}
+                >
+                  <ArrowsLeftRight aria-hidden className="size-3" />
+                  書類を差し替える
+                </button>
+                <span className="text-[11px]">
+                  （仕訳の内容と領収書等番号はそのまま。公開用の版は作り直します）
+                </span>
+                <DocumentFileInput
+                  inputRef={replaceInput}
+                  label="差し替える書類ファイル"
+                  onSelect={onReplace}
+                />
+              </p>
+            )
+          }
+        />
         <DocumentVersionRow
           label="公開用の版"
           status={
@@ -226,7 +295,7 @@ function JournalDocumentPanel({
                     type="button"
                     disabled={pending || readOnly}
                     onClick={request}
-                    className="inline-flex cursor-pointer items-center gap-0.5 rounded-sm text-[11px] whitespace-nowrap text-muted-foreground underline underline-offset-2 transition-colors duration-150 ease-out outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:text-disabled-foreground"
+                    className={subtleButtonClassName}
                   >
                     <ArrowClockwise aria-hidden className="size-3" />
                     {masking?.hasMaskedVersion ? "作り直す" : "作る"}

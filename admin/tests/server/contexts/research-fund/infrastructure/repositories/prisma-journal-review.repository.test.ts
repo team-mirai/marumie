@@ -479,3 +479,54 @@ describe("領収書の紐づけ", () => {
     await expect(repository.attachDocument("1", manual, { storageKey: "k", mime: "image/png", originalFilename: "a.png" })).rejects.toThrow("再読み込み");
   });
 });
+
+describe("書類の差し替え", () => {
+  const scanned = { ...entry, documentId: "77", source: "scan" } as ReviewEntry;
+  const replacement = { storageKey: "new-key", mime: "image/png", originalFilename: "正式な領収書.png" };
+  function withDocument({ count = 1, published = 0, reading = 0, current = { storageKey: "old-key", maskedKey: "old-masked" } as { storageKey: string; maskedKey: string | null } | null } = {}) {
+    const context = setup(count);
+    const document = { findFirst: jest.fn().mockResolvedValue(current), update: jest.fn() };
+    const countEntries = jest.fn().mockResolvedValue(published);
+    Object.assign(context.tx.researchFundJournalEntry, { count: countEntries });
+    Object.assign(context.tx, { researchFundDocument: document, researchFundScanJob: { count: jest.fn().mockResolvedValue(reading) } });
+    return { ...context, document, countEntries };
+  }
+  test("書類の行の原本を入れ替え、公開用の版を外して作り直しの対象に戻し、前のファイルのキーを返す", async () => {
+    const { repository, transaction, document } = withDocument();
+    await expect(repository.replaceDocument("1", scanned, replacement)).resolves.toEqual({ storageKey: "old-key", maskedKey: "old-masked" });
+    expect(transaction).toHaveBeenCalledTimes(1);
+    expect(document.findFirst).toHaveBeenCalledWith({ where: { id: BigInt(77), bookId: BigInt(1) }, select: { storageKey: true, maskedKey: true } });
+    expect(document.update).toHaveBeenCalledWith({ where: { id: BigInt(77) }, data: { ...replacement, maskedKey: null, maskingStatus: "pending", maskingStartedAt: null, maskingError: null, maskedRegionCount: null } });
+    // 領収書等番号は書類の行に付いたまま引き継ぐ
+    expect(document.update.mock.calls[0][0].data).not.toHaveProperty("receiptNumber");
+  });
+  test("仕訳は内容を変えず、照合してから更新時刻だけを進める（同じ書類の別の仕訳も）", async () => {
+    const { repository, tx } = withDocument();
+    await repository.replaceDocument("1", scanned, replacement);
+    const [own, others] = tx.researchFundJournalEntry.updateMany.mock.calls.map(call => call[0]);
+    expect(own.where).toEqual(expect.objectContaining({ id: BigInt(entry.id), bookId: BigInt(1), status: { in: ["draft", "approved"] }, updatedAt: new Date(entry.updatedAt), documentId: BigInt(77) }));
+    expect(Object.keys(own.data)).toEqual(["updatedAt"]);
+    expect(others).toEqual({ where: { documentId: BigInt(77), bookId: BigInt(1), id: { not: BigInt(entry.id) } }, data: { updatedAt: expect.any(Date) } });
+  });
+  test("同じ書類に公開中の仕訳があれば差し替えない", async () => {
+    const { repository, document, countEntries } = withDocument({ published: 1 });
+    await expect(repository.replaceDocument("1", scanned, replacement)).rejects.toThrow("公開中の仕訳にも紐づいている");
+    expect(countEntries).toHaveBeenCalledWith({ where: { documentId: BigInt(77), status: "published" } });
+    expect(document.update).not.toHaveBeenCalled();
+  });
+  test("読み取り中の書類は差し替えない", async () => {
+    const { repository, document } = withDocument({ reading: 1 });
+    await expect(repository.replaceDocument("1", scanned, replacement)).rejects.toThrow("読み取り中");
+    expect(document.update).not.toHaveBeenCalled();
+  });
+  test("仕訳が競合したら（更新・公開された場合を含む）書類を変更しない", async () => {
+    const { repository, document } = withDocument({ count: 0 });
+    await expect(repository.replaceDocument("1", scanned, replacement)).rejects.toThrow("再読み込み");
+    expect(document.update).not.toHaveBeenCalled();
+  });
+  test("帳簿に書類が無ければ差し替えない", async () => {
+    const { repository, document } = withDocument({ current: null });
+    await expect(repository.replaceDocument("1", scanned, replacement)).rejects.toThrow("書類が見つかりません");
+    expect(document.update).not.toHaveBeenCalled();
+  });
+});
