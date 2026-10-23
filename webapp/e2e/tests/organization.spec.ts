@@ -67,6 +67,92 @@ test.describe("政治団体ページ", () => {
 		});
 	});
 
+	test.describe("各セクションの表示", () => {
+		// シードの sample-party の取引はすべて 2025 年度にあるため、表示がシードの値だけで決まる 2025 年度を見る。
+		// 現在の年度を見ると「現時点での貸借対照表」など年をまたいで変わる表示に依存してしまう
+		test.beforeEach(async ({ page }) => {
+			await page.goto("/o/sample-party/2025");
+		});
+
+		test("収支の流れに収入・支出の総額と収支が表示される", async ({ page }) => {
+			const cashFlow = page.locator("#cash-flow");
+
+			await expect(cashFlow).toContainText(/収入総額\s*1581万円/);
+			await expect(cashFlow).toContainText(/支出総額\s*1281万円/);
+			await expect(cashFlow).toContainText(/収支\s*300万円/);
+		});
+
+		test("月ごとの収支の推移のグラフが描画される", async ({ page }) => {
+			const monthlyTrends = page.locator("#monthly-trends");
+
+			await expect(
+				monthlyTrends.getByRole("heading", {
+					name: "サンプル党｜月ごとの収支の推移",
+					exact: true,
+				}),
+			).toBeVisible();
+			// グラフ（apexcharts）は読み込み後にクライアントで描かれるため、棒が描かれるまで待つ
+			const chart = monthlyTrends.getByRole("img", { name: "月次収支推移グラフ" });
+			await expect(chart.locator(".apexcharts-bar-area").first()).toBeVisible();
+			await expect(monthlyTrends.getByText("データがありません")).toHaveCount(0);
+			// 1月〜12月の軸と、収入・支出・収支の凡例が出ている
+			await expect(chart.locator(".apexcharts-xaxis-label tspan")).toHaveText(
+				Array.from({ length: 12 }, (_, i) => `${i + 1}月`),
+			);
+			for (const legend of ["収入", "支出", "収支"]) {
+				await expect(
+					chart.getByRole("button", { name: new RegExp(`^${legend},`) }),
+				).toBeVisible();
+			}
+		});
+
+		test("貸借対照表に年度末時点の資産と負債が表示される", async ({ page }) => {
+			const balanceSheet = page.locator("#balance-sheet");
+
+			await expect(
+				balanceSheet.getByRole("heading", {
+					name: "サンプル党｜2025年12月31日時点の貸借対照表",
+					exact: true,
+				}),
+			).toBeVisible();
+
+			const assets = balanceSheet.getByRole("region", { name: "資産", exact: true });
+			await expect(assets).toContainText(/流動資産\s*300万円/);
+			await expect(assets).toContainText(/債務超過\s*▲100万円/);
+
+			const liabilities = balanceSheet.getByRole("region", {
+				name: "負債・純資産",
+				exact: true,
+			});
+			await expect(liabilities).toContainText(/固定負債\s*400万円/);
+		});
+
+		test("すべての出入金に新しい順の取引が表示される", async ({ page }) => {
+			const table = page
+				.locator("#transactions")
+				.locator('table[aria-label="政治資金取引一覧表"]');
+
+			await expect(table).toBeVisible();
+			await expect(table.locator("tbody tr")).toHaveCount(6);
+			await expect(table.getByRole("row", { name: /振込手数料/ })).toContainText(
+				"2025.12.31",
+			);
+			await expect(table.getByRole("row", { name: /振込手数料/ })).toContainText(
+				"-5,000",
+			);
+			await expect(table.getByRole("row", { name: /税理士報酬/ })).toContainText(
+				"-150,000",
+			);
+		});
+
+		test("所属議員の調研費のサマリーが表示される", async ({ page }) => {
+			await expect(
+				page.getByRole("heading", { name: "所属議員｜調研費のサマリー", exact: true }),
+			).toBeVisible();
+			await expect(page.getByText("サンプル 太郎", { exact: true }).first()).toBeVisible();
+		});
+	});
+
 	test.describe("政治団体・年度セレクター", () => {
 		test("セレクターをクリックするとシートが開く", async ({ page }) => {
 			await page.goto("/o/sample-party/2026");
