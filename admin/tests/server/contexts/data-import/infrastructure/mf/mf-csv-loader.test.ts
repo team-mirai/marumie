@@ -1,3 +1,4 @@
+import { MfCsvFormatError } from "@/server/contexts/data-import/domain/errors/mf-csv-format-error";
 import { MfCsvLoader } from "@/server/contexts/data-import/infrastructure/mf/mf-csv-loader";
 
 describe("MfCsvLoader", () => {
@@ -108,7 +109,7 @@ describe("MfCsvLoader", () => {
     it("should handle malformed CSV gracefully", async () => {
       const csvContent = "invalid,csv,content";
 
-      await expect(loader.load(csvContent)).rejects.toThrow();
+      await expect(loader.load(csvContent)).rejects.toThrow(MfCsvFormatError);
     });
 
     it("should handle CSV with missing columns", async () => {
