@@ -60,19 +60,19 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v6
 
       - name: Setup Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
           node-version: '24'
           cache: 'pnpm'
 
       - name: Cache Prisma client
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: node_modules/.prisma
           key: ${{ runner.os }}-prisma-${{ hashFiles('prisma/schema.prisma') }}
@@ -103,7 +103,7 @@ jobs:
         run: pnpm test:dependency-diff
 
       - name: Upload admin coverage
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: admin-coverage
           path: admin/coverage/lcov.info
@@ -134,19 +134,19 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v6
 
       - name: Setup Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
           node-version: '24'
           cache: 'pnpm'
 
       - name: Cache Prisma client
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: node_modules/.prisma
           key: ${{ runner.os }}-prisma-${{ hashFiles('prisma/schema.prisma') }}
@@ -154,7 +154,7 @@ jobs:
             ${{ runner.os }}-prisma-
 
       - name: Cache Next.js build
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: webapp/.next/cache
           key: ${{ runner.os }}-nextjs-webapp-${{ hashFiles('pnpm-lock.yaml') }}-${{ hashFiles('webapp/**/*.ts', 'webapp/**/*.tsx') }}
@@ -163,7 +163,7 @@ jobs:
             ${{ runner.os }}-nextjs-webapp-
 
       - name: Cache Playwright browsers
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: ~/.cache/ms-playwright
           key: ${{ runner.os }}-playwright-${{ hashFiles('pnpm-lock.yaml') }}
@@ -207,13 +207,13 @@ jobs:
         run: pnpm --filter webapp test:e2e
 
       - name: Upload webapp coverage
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: webapp-coverage
           path: webapp/coverage/lcov.info
 
       - name: Upload webapp E2E test results
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         if: ${{ !cancelled() }}
         with:
           name: webapp-e2e-report
@@ -229,13 +229,13 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v6
 
       - name: Setup Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
           node-version: '24'
           cache: 'pnpm'
@@ -253,22 +253,22 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Download admin coverage
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: admin-coverage
           path: admin/coverage
 
       - name: Download webapp coverage
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: webapp-coverage
           path: webapp/coverage
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v7
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: ./admin/coverage/lcov.info,./webapp/coverage/lcov.info
@@ -281,10 +281,10 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Setup Supabase CLI
-        uses: supabase/setup-cli@v1
+        uses: supabase/setup-cli@v3
         with:
           version: latest
           # 最新版取得時の未認証 GitHub API レート制限を避ける。
@@ -305,16 +305,16 @@ jobs:
           ' > /tmp/supabase-start.log 2>&1 &
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v6
 
       - name: Setup Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
           node-version: '24'
           cache: 'pnpm'
 
       - name: Cache Prisma client
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: node_modules/.prisma
           key: ${{ runner.os }}-prisma-${{ hashFiles('prisma/schema.prisma') }}
@@ -322,7 +322,7 @@ jobs:
             ${{ runner.os }}-prisma-
 
       - name: Cache Next.js build (admin)
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: admin/.next/cache
           key: ${{ runner.os }}-nextjs-admin-${{ hashFiles('pnpm-lock.yaml') }}-${{ hashFiles('admin/**/*.ts', 'admin/**/*.tsx') }}
@@ -331,7 +331,7 @@ jobs:
             ${{ runner.os }}-nextjs-admin-
 
       - name: Cache Playwright browsers
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: ~/.cache/ms-playwright
           key: ${{ runner.os }}-playwright-${{ hashFiles('pnpm-lock.yaml') }}
@@ -408,7 +408,7 @@ jobs:
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ steps.supabase-keys.outputs.SUPABASE_ANON_KEY }}
 
       - name: Upload admin E2E test results
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         if: ${{ !cancelled() }}
         with:
           name: admin-e2e-report
