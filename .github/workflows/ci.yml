@@ -219,6 +219,8 @@ jobs:
           name: webapp-e2e-report
           path: webapp/e2e/.output/
           retention-days: 7
+          # .output は「.」始まりの隠しディレクトリなので、明示しないと何もアップロードされない
+          include-hidden-files: true
 
   knip:
     runs-on: ubuntu-latest
