@@ -24,6 +24,8 @@ export interface UploadCsvResponse {
   skippedCount: number;
   message: string;
   errors?: string[];
+  /** 保存はできたが webapp のキャッシュを無効化できなかったときの理由 */
+  cacheWarning?: string | null;
 }
 
 export async function uploadCsv(data: UploadCsvRequest): Promise<UploadCsvResponse> {
@@ -72,6 +74,7 @@ export async function uploadCsv(data: UploadCsvRequest): Promise<UploadCsvRespon
       savedCount: result.savedCount,
       skippedCount: result.skippedCount,
       message,
+      cacheWarning: result.cacheWarning,
     };
   } catch (error) {
     console.error("Upload CSV error:", error);

@@ -2,6 +2,7 @@
 import "client-only";
 
 import { useId, useState } from "react";
+import { toast } from "sonner";
 import { ArrowRight, CircleNotch } from "@phosphor-icons/react/dist/ssr";
 import { Button, Label, NativeSelect } from "@/client/components/ui";
 import { cn } from "@/client/lib";
@@ -112,6 +113,8 @@ export default function CsvUploadClient({
         `Successfully processed ${result.processedCount} records and saved ${result.savedCount} transactions`;
 
       setMessage(`"${uploadedFileName}" の取り込み結果: ${serverMessage}`);
+      if (result.cacheWarning)
+        toast.warning(`保存しましたが、まる見えの更新に失敗しました: ${result.cacheWarning}`);
       setFile(null);
       resetPreview();
     } catch (err) {
