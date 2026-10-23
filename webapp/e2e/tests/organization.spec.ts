@@ -86,14 +86,19 @@ test.describe("政治団体ページ", () => {
 			const monthlyTrends = page.locator("#monthly-trends");
 
 			await expect(
-				monthlyTrends.getByRole("heading", { name: "サンプル党｜月ごとの収支の推移" }),
+				monthlyTrends.getByRole("heading", {
+					name: "サンプル党｜月ごとの収支の推移",
+					exact: true,
+				}),
 			).toBeVisible();
 			// グラフ（apexcharts）は読み込み後にクライアントで描かれるため、棒が描かれるまで待つ
 			const chart = monthlyTrends.getByRole("img", { name: "月次収支推移グラフ" });
 			await expect(chart.locator(".apexcharts-bar-area").first()).toBeVisible();
 			await expect(monthlyTrends.getByText("データがありません")).toHaveCount(0);
 			// 1月〜12月の軸と、収入・支出・収支の凡例が出ている
-			await expect(chart.getByRole("application")).toContainText(/1月.*12月/);
+			await expect(chart.locator(".apexcharts-xaxis-label tspan")).toHaveText(
+				Array.from({ length: 12 }, (_, i) => `${i + 1}月`),
+			);
 			for (const legend of ["収入", "支出", "収支"]) {
 				await expect(
 					chart.getByRole("button", { name: new RegExp(`^${legend},`) }),
@@ -107,6 +112,7 @@ test.describe("政治団体ページ", () => {
 			await expect(
 				balanceSheet.getByRole("heading", {
 					name: "サンプル党｜2025年12月31日時点の貸借対照表",
+					exact: true,
 				}),
 			).toBeVisible();
 
@@ -140,8 +146,10 @@ test.describe("政治団体ページ", () => {
 		});
 
 		test("所属議員の調研費のサマリーが表示される", async ({ page }) => {
-			await expect(page.getByRole("heading", { name: "所属議員｜調研費のサマリー" })).toBeVisible();
-			await expect(page.getByText("サンプル 太郎").first()).toBeVisible();
+			await expect(
+				page.getByRole("heading", { name: "所属議員｜調研費のサマリー", exact: true }),
+			).toBeVisible();
+			await expect(page.getByText("サンプル 太郎", { exact: true }).first()).toBeVisible();
 		});
 	});
 
