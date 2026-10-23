@@ -75,10 +75,11 @@ export async function previewCsv(page: Page, year: number, name: string, content
 /** プレビュー中のデータを保存する */
 export async function saveCsv(page: Page, savedCount: number) {
 	await page.getByRole("button", { name: "このデータを保存する" }).click();
-	// 保存件数は成否どちらのメッセージにも含まれる。CI には webapp が無くキャッシュの無効化に失敗するため、
-	// 成否ではなく「何件保存したか」で確かめる（取り込まれたかどうかは取引一覧で確かめる。#1838）
+	// 重複をスキップしたときは「新規保存」と表示される。CI には webapp が無くキャッシュの無効化に失敗するが、
+	// 保存自体は成功として扱われる（#1838）ので、エラー詳細が出ていないことも確かめる
 	await expect(page.getByRole("status").filter({ hasText: "件を処理し" })).toContainText(
-		`${savedCount}件を保存`,
+		new RegExp(`${savedCount}件を(新規)?保存`),
 		{ timeout: 30_000 },
 	);
+	await expect(page.getByText("エラー詳細:", { exact: true })).toHaveCount(0);
 }
