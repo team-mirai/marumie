@@ -2,6 +2,7 @@ import {
   PreviewMfCsvUsecase,
   type PreviewMfCsvInput,
 } from "@/server/contexts/data-import/application/usecases/preview-mf-csv-usecase";
+import { MfCsvFormatError } from "@/server/contexts/data-import/domain/errors/mf-csv-format-error";
 import { MfCsvLoader } from "@/server/contexts/data-import/infrastructure/mf/mf-csv-loader";
 import { MfRecordConverter } from "@/server/contexts/data-import/infrastructure/mf/mf-record-converter";
 import { TransactionValidator } from "@/server/contexts/data-import/domain/services/transaction-validator";
@@ -62,11 +63,26 @@ describe("PreviewMfCsvUsecase", () => {
     expect(result.summary.totalCount).toBe(0);
   });
 
-  it("returns empty result when CSV parsing fails", async () => {
-    const invalidCsvContent = "invalid,csv\nwithout,proper,headers";
-
+  it("rejects with MfCsvFormatError when CSV has no recognized headers", async () => {
     const input: PreviewMfCsvInput = {
-      csvContent: invalidCsvContent,
+      csvContent: "名前,金額\n山田,1000",
+      politicalOrganizationId: "org-123",
+    };
+
+    const usecase = new PreviewMfCsvUsecase(
+      mockTransactionRepository,
+      new MfCsvLoader(),
+      new MfRecordConverter(),
+    );
+
+    await expect(usecase.execute(input)).rejects.toThrow(MfCsvFormatError);
+    await expect(usecase.execute(input)).rejects.toThrow("MFクラウド会計の仕訳帳の形式ではありません");
+    expect(mockTransactionRepository.findByTransactionNos).not.toHaveBeenCalled();
+  });
+
+  it("returns empty result when CSV has valid headers but no data rows", async () => {
+    const input: PreviewMfCsvInput = {
+      csvContent: `取引No,取引日,借方勘定科目,借方補助科目,借方税区,借方部門,借方金額(円),借方税額,貸方勘定科目,貸方補助科目,貸方税区,貸方部門,貸方金額(円),貸方税額,摘要,起訖タグ,MF仕訳タイプ,決算整理仕訳,作成日時,作成者,最終更新日時,最終更新\n`,
       politicalOrganizationId: "org-123",
     };
 
@@ -76,6 +92,22 @@ describe("PreviewMfCsvUsecase", () => {
       new MfRecordConverter(),
     );
     const result = await usecase.execute(input);
+
+    expect(result.transactions).toHaveLength(0);
+    expect(result.summary.totalCount).toBe(0);
+  });
+
+  it("returns empty result when an unexpected error occurs", async () => {
+    mockTransactionRepository.findByTransactionNos.mockRejectedValue(new Error("db down"));
+    const csvContent = `取引No,取引日,借方勘定科目,借方補助科目,借方税区,借方部門,借方金額(円),借方税額,貸方勘定科目,貸方補助科目,貸方税区,貸方部門,貸方金額(円),貸方税額,摘要,起訖タグ,MF仕訳タイプ,決算整理仕訳,作成日時,作成者,最終更新日時,最終更新
+1,2025/6/6,普通預金,【公人】テスト銀行,対象外,,1500000,0,寄附金,,対象外,,1500000,0,拠出 テスト太郎,テスト太郎,,,,,,`;
+
+    const usecase = new PreviewMfCsvUsecase(
+      mockTransactionRepository,
+      new MfCsvLoader(),
+      new MfRecordConverter(),
+    );
+    const result = await usecase.execute({ csvContent, politicalOrganizationId: "org-123" });
 
     expect(result.transactions).toHaveLength(0);
   });

@@ -1,4 +1,5 @@
 import type { MfCsvRecord } from "@/server/contexts/data-import/domain/models/mf-csv-record";
+import { MfCsvFormatError } from "@/server/contexts/data-import/domain/errors/mf-csv-format-error";
 import type { IMfCsvLoader } from "@/server/contexts/data-import/domain/repositories/mf-csv-loader.interface";
 import { parseCsv } from "@/server/contexts/shared/infrastructure/csv/parse-csv";
 
@@ -38,12 +39,14 @@ export class MfCsvLoader implements IMfCsvLoader {
     const [headers, ...dataRecords] = parseCsv(csvContent.trim());
 
     if (!headers || headers.length === 0) {
-      throw new Error("Invalid CSV format: no headers found");
+      throw new MfCsvFormatError("CSV に見出し行がありません。");
     }
 
     const hasValidHeaders = headers.some((header) => header in this.columnMapping);
     if (!hasValidHeaders) {
-      throw new Error("Invalid CSV format: no recognized headers found");
+      throw new MfCsvFormatError(
+        "MFクラウド会計の仕訳帳の形式ではありません。見出し行に「取引No」「取引日」などの列が見つかりませんでした。",
+      );
     }
 
     return dataRecords.map((values) => this.createRecord(headers, values));
