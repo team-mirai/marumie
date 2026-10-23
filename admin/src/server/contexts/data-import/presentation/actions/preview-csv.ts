@@ -48,7 +48,5 @@ export async function previewCsv(data: PreviewCsvRequest): Promise<PreviewMfCsvR
   } catch (error) {
     console.error("Preview CSV error:", error);
     throw error instanceof Error ? error : new Error("サーバー内部エラーが発生しました");
-  } finally {
-    await prisma.$disconnect();
   }
 }
