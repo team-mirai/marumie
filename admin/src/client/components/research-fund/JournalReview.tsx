@@ -56,6 +56,7 @@ import {
 import type { AdminTarget } from "@/server/contexts/shared/domain/models/admin-target";
 import { WriteFieldset } from "@/client/components/research-fund/ResearchFundWriteAccess";
 import { attachJournalDocument } from "@/server/contexts/research-fund/presentation/actions/attach-journal-document";
+import { replaceJournalDocument } from "@/server/contexts/research-fund/presentation/actions/replace-journal-document";
 import { mutateJournalReview } from "@/server/contexts/research-fund/presentation/actions/manage-journal-review";
 import type { DocumentMasking } from "@/server/contexts/research-fund/domain/models/document-masking";
 import { rereadScanDocuments } from "@/server/contexts/research-fund/presentation/actions/reread-scan-documents";
@@ -531,7 +532,13 @@ export function JournalReview({
       }
     });
   }
-  function attachDocument(entry: ReviewEntry, file: File) {
+  /** 書類ファイルを 1 つ置いてから、紐づけ・差し替えの action に渡す */
+  function sendDocument(
+    entry: ReviewEntry,
+    file: File,
+    action: typeof attachJournalDocument,
+    done: string,
+  ) {
     // 上限を超えるファイルは、アップロードする前に理由を出す
     const sizeError = documentFileSizeError([file]);
     if (sizeError) {
@@ -540,13 +547,13 @@ export function JournalReview({
     }
     startTransition(async () => {
       try {
-        // ファイル本体はストレージへ直接置き、紐づけにはキーだけを渡す（#1824）
+        // ファイル本体はストレージへ直接置き、action にはキーだけを渡す（#1824）
         const uploaded = await uploadResearchFundDocuments(target, [file]);
         if (!uploaded.success) {
           toast.error(uploaded.error);
           return;
         }
-        const result = await attachJournalDocument(
+        const result = await action(
           target.politicianId,
           target.bookId,
           entry.id,
@@ -557,12 +564,18 @@ export function JournalReview({
           toast.error(result.error);
           return;
         }
-        toast.success("領収書を紐づけました");
+        toast.success(done);
         router.refresh();
       } catch {
         toast.error("通信に失敗しました。再度お試しください");
       }
     });
+  }
+  function attachDocument(entry: ReviewEntry, file: File) {
+    sendDocument(entry, file, attachJournalDocument, "領収書を紐づけました");
+  }
+  function replaceDocument(entry: ReviewEntry, file: File) {
+    sendDocument(entry, file, replaceJournalDocument, "書類を差し替えました");
   }
   function create(input: JournalEdit) {
     startTransition(async () => {
@@ -1056,6 +1069,9 @@ export function JournalReview({
                 }}
                 onAttachDocument={(file) => {
                   if (allowLeave()) attachDocument(selected, file);
+                }}
+                onReplaceDocument={(file) => {
+                  if (allowLeave()) replaceDocument(selected, file);
                 }}
                 onLinkPayee={(targets, payeeId) => {
                   if (allowLeave()) linkPayee(targets, payeeId);

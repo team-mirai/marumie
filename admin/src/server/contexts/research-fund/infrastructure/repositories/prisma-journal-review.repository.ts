@@ -420,6 +420,62 @@ export class PrismaJournalReviewRepository implements JournalReviewRepository {
       }),
     );
   }
+  // 書類の行を書き換えて差し替える（領収書等番号・読み取りジョブ・支払先の表記は書類の行に付いたまま残る）。
+  // 仕訳の hash は書類 ID を含むが ID は変わらないので作り直さない。
+  async replaceDocument(
+    bookId: string,
+    entry: ReviewEntry,
+    document: { storageKey: string; mime: string; originalFilename: string },
+  ) {
+    if (entry.documentId === null) throw new JournalReviewError("書類の無い仕訳です");
+    const documentId = BigInt(entry.documentId);
+    return await this.prisma.$transaction(async (tx) => {
+      const current = await tx.researchFundDocument.findFirst({
+        where: { id: documentId, bookId: BigInt(bookId) },
+        select: { storageKey: true, maskedKey: true },
+      });
+      if (!current) throw new JournalReviewError("書類が見つかりません");
+      // 書類は複数の仕訳に紐づきうる。公開中の仕訳が 1 件でもあれば、その公開内容を変えないよう差し替えない
+      const published = await tx.researchFundJournalEntry.count({
+        where: { documentId, status: "published" },
+      });
+      if (published > 0)
+        throw new JournalReviewError(
+          "この書類は公開中の仕訳にも紐づいているため差し替えられません。先に確認済に戻してください",
+        );
+      // 読み取り中に差し替えると、新しい原本の読み取り結果で仕訳ができてしまう
+      const reading = await tx.researchFundScanJob.count({
+        where: { documentId, status: { in: ["queued", "running"] } },
+      });
+      if (reading > 0)
+        throw new JournalReviewError(
+          "読み取り中の書類は差し替えられません。終わってからお試しください",
+        );
+      const touched = await tx.researchFundJournalEntry.updateMany({
+        where: { ...guard(bookId, entry), documentId },
+        data: { updatedAt: new Date() },
+      });
+      if (touched.count !== 1)
+        throw new JournalReviewError("仕訳が更新・公開されました。画面を再読み込みしてください");
+      await tx.researchFundJournalEntry.updateMany({
+        where: { documentId, bookId: BigInt(bookId), id: { not: BigInt(entry.id) } },
+        data: { updatedAt: new Date() },
+      });
+      // 作成中の版は running でなくなるので、完了しても記録されない（前の原本の版が残らない）
+      await tx.researchFundDocument.update({
+        where: { id: documentId },
+        data: {
+          ...document,
+          maskedKey: null,
+          maskingStatus: "pending",
+          maskingStartedAt: null,
+          maskingError: null,
+          maskedRegionCount: null,
+        },
+      });
+      return current;
+    });
+  }
   async politicianId(bookId: string) {
     const book = await this.prisma.researchFundBook.findUnique({
       where: { id: BigInt(bookId) },

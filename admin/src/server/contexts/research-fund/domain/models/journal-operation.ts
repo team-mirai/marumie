@@ -233,6 +233,26 @@ export const JournalOperation = {
       };
     return null;
   },
+  /**
+   * 書類のある支出の仕訳の、書類ファイルを差し替える（例: 納品書で登録しておき、届いた正式な領収書に替える）。
+   * 書類は仕訳の内容と独立に差し替え、読み取りはやり直さない。公開中に差し替えると公開内容が即座に変わるので、
+   * 紐づけと同じく公開中は対象にしない。同じ書類に紐づく別の公開中の仕訳の判定はリポジトリが行う
+   */
+  replaceDocument(entry: OperableEntry): OperationRejection | null {
+    if (entry.source === "grant")
+      return { one: "支給には書類がありません", many: UNSUPPORTED_ENTRY };
+    if (entry.status === "published")
+      return {
+        one: "公開中の仕訳の書類は差し替えられません。先に確認済に戻してください",
+        many: `「${entry.description}」は公開中です`,
+      };
+    if (entry.documentId === null)
+      return {
+        one: "書類の無い仕訳です。差し替えではなく領収書を紐づけてください",
+        many: `「${entry.description}」には書類がありません`,
+      };
+    return null;
+  },
   /** 精算。精算できる立替の条件は settlementRejection が持つ */
   settle(entry: OperableEntry): OperationRejection | null {
     if (entry.source === "grant")
