@@ -122,7 +122,7 @@ export function JournalPublicFields({
         </div>
       ) : (
         <div className="space-y-2.5 pt-1">
-          <div className="grid grid-cols-[76px_minmax(0,1fr)_36px_120px] items-center gap-2.5">
+          <div className={detailRowClassName}>
             <Label htmlFor={`${fieldId}-date`} className={detailLabelClassName}>
               日付
             </Label>
@@ -142,55 +142,49 @@ export function JournalPublicFields({
                 onChange={(e) => onChange("entryDate", e.target.value)}
               />
             </Changed>
-            {grant || settled ? (
-              <>
-                <span className={detailLabelClassName}>金額</span>
-                <span
-                  className="flex items-center justify-end gap-1 font-latin text-[13px]"
-                  title={
-                    settled
-                      ? "精算済の仕訳は金額を変更できません。先に未精算に戻してください"
-                      : undefined
-                  }
-                >
-                  {yen(input.amount)}
-                  {settled && <LockSimple aria-label="変更できません" className="size-3.5" />}
-                </span>
-              </>
-            ) : (
-              <>
-                <Label htmlFor={`${fieldId}-amount`} className={detailLabelClassName}>
-                  金額
-                </Label>
-                <Changed changed={changed("amount")}>
-                  <Input
-                    id={`${fieldId}-amount`}
-                    type="number"
-                    min="1"
-                    max={MAX_JOURNAL_AMOUNT}
-                    step="1"
-                    required
-                    value={input.amount || ""}
-                    className={cn(
-                      inputClassName,
-                      "text-right font-latin",
-                      changed("amount") && changedClassName,
-                    )}
-                    onChange={(e) => onChange("amount", Number(e.target.value))}
-                  />
-                </Changed>
-              </>
-            )}
           </div>
           {grant ? (
             <>
               <p className="pl-[86px] text-[11px] text-muted-foreground">
                 支給日はその月の中の日付だけを指定できます（当選月は当選日以降）
               </p>
+              <ReadRow label="金額">{yen(input.amount)}</ReadRow>
               <ReadRow label="項目名">{input.description}</ReadRow>
             </>
           ) : (
             <>
+              <div className={detailRowClassName}>
+                <Label htmlFor={`${fieldId}-amount`} className={detailLabelClassName}>
+                  金額
+                </Label>
+                {settled ? (
+                  <span
+                    className="flex items-center gap-1 font-latin text-[13px]"
+                    title="精算済の仕訳は金額を変更できません。先に未精算に戻してください"
+                  >
+                    {yen(input.amount)}
+                    <LockSimple aria-label="変更できません" className="size-3.5" />
+                  </span>
+                ) : (
+                  <Changed changed={changed("amount")}>
+                    <Input
+                      id={`${fieldId}-amount`}
+                      type="number"
+                      min="1"
+                      max={MAX_JOURNAL_AMOUNT}
+                      step="1"
+                      required
+                      value={input.amount || ""}
+                      className={cn(
+                        inputClassName,
+                        "text-right font-latin",
+                        changed("amount") && changedClassName,
+                      )}
+                      onChange={(e) => onChange("amount", Number(e.target.value))}
+                    />
+                  </Changed>
+                )}
+              </div>
               <div className={detailRowClassName}>
                 <Label htmlFor={`${fieldId}-description`} className={detailLabelClassName}>
                   項目名
