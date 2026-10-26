@@ -52,7 +52,7 @@ pnpm supabase:start
 admin を `pnpm run dev` で起動するには `admin/.env.local` にキーが必要です。以下で取得します。
 
 ```bash
-pnpm supabase:status -- --output json
+pnpm supabase:status --output json
 ```
 
 出力された JSON から以下のキーを取得し、`admin/.env.local` に設定します。
