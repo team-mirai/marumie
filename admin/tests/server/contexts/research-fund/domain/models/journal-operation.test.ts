@@ -1,7 +1,7 @@
 import { JournalOperation, type OperableEntry } from "@/server/contexts/research-fund/domain/models/journal-operation";
 
 const base: OperableEntry = { id: "1", description: "タクシー代", source: "manual", status: "draft", advancedBy: null, settledAt: null, entryDate: "2026-08-01", amount: 1200, accountKey: "taxi", note: "公開メモ", memo: "内部メモ", documentId: null, receiptAbsent: false };
-const operations = ["edit", "approve", "revertToDraft", "discard", "unpublish", "setAdvancedBy", "setPayee", "setReceiptAbsent", "setReceiptAbsenceReason", "attachDocument", "settle", "unsettle"] as const;
+const operations = ["edit", "approve", "revertToDraft", "discard", "unpublish", "setAdvancedBy", "setPayee", "setReceiptAbsent", "setReceiptAbsenceReason", "attachDocument", "replaceDocument", "settle", "unsettle"] as const;
 type Operation = (typeof operations)[number];
 function judge(operation: Operation, entry: OperableEntry) {
   return operation === "edit" ? JournalOperation.edit(entry, entry.amount) : JournalOperation[operation](entry);
@@ -12,6 +12,7 @@ function judge(operation: Operation, entry: OperableEntry) {
 // 徴難も同じく、支給以外は書類の有無・公開中・精算済を問わず付け外しできる。
 // 徴し難かった事情も公開中・精算済でも書けるが、徴難の支出だけが持てる（書類の有無は問わない）。
 // 領収書の紐づけは公開中だと即座に公開されてしまうので、書類の無い下書き・確認済の支出だけが受け付ける。
+// 書類の差し替えも同じ理由で、書類のある下書き・確認済の支出だけが受け付ける。
 const table: [string, Partial<OperableEntry>, Operation[]][] = [
   ["下書きの支出", {}, ["edit", "approve", "discard", "setAdvancedBy", "setPayee", "setReceiptAbsent", "attachDocument"]],
   ["確認済の支出", { status: "approved" }, ["edit", "revertToDraft", "discard", "setAdvancedBy", "setPayee", "setReceiptAbsent", "attachDocument"]],
@@ -21,9 +22,10 @@ const table: [string, Partial<OperableEntry>, Operation[]][] = [
   ["公開中の未精算の立替", { status: "published", advancedBy: "秘書A" }, ["unpublish", "setAdvancedBy", "settle", "setPayee", "setReceiptAbsent"]],
   ["確認済の精算済の立替", { status: "approved", advancedBy: "秘書A", settledAt: "2026-09-01" }, ["edit", "unsettle", "setPayee", "setReceiptAbsent", "attachDocument"]],
   ["公開中の精算済の立替", { status: "published", advancedBy: "秘書A", settledAt: "2026-09-01" }, ["unpublish", "unsettle", "setPayee", "setReceiptAbsent"]],
-  ["スキャンの下書き", { source: "scan", documentId: "3" }, ["edit", "approve", "discard", "setAdvancedBy", "setPayee", "setReceiptAbsent"]],
+  ["スキャンの下書き", { source: "scan", documentId: "3" }, ["edit", "approve", "discard", "setAdvancedBy", "setPayee", "setReceiptAbsent", "replaceDocument"]],
   ["書類の無いスキャンの下書き", { source: "scan" }, ["edit", "approve", "discard", "setAdvancedBy", "setPayee", "setReceiptAbsent", "attachDocument"]],
-  ["書類のある確認済の支出", { source: "scan", documentId: "3", status: "approved" }, ["edit", "revertToDraft", "discard", "setAdvancedBy", "setPayee", "setReceiptAbsent"]],
+  ["書類のある確認済の支出", { source: "scan", documentId: "3", status: "approved" }, ["edit", "revertToDraft", "discard", "setAdvancedBy", "setPayee", "setReceiptAbsent", "replaceDocument"]],
+  ["書類のある確認済の精算済の立替", { documentId: "3", status: "approved", advancedBy: "秘書A", settledAt: "2026-09-01" }, ["edit", "unsettle", "setPayee", "setReceiptAbsent", "replaceDocument"]],
   ["徴難の書類の無い下書き", { receiptAbsent: true }, ["edit", "approve", "discard", "setAdvancedBy", "setPayee", "setReceiptAbsent", "setReceiptAbsenceReason", "attachDocument"]],
   ["徴難の書類のある公開中の支出", { source: "scan", documentId: "3", status: "published", receiptAbsent: true }, ["unpublish", "setAdvancedBy", "setPayee", "setReceiptAbsent", "setReceiptAbsenceReason"]],
   ["徴難の公開中の精算済の立替", { status: "published", advancedBy: "秘書A", settledAt: "2026-09-01", receiptAbsent: true }, ["unpublish", "unsettle", "setPayee", "setReceiptAbsent", "setReceiptAbsenceReason"]],
@@ -71,6 +73,9 @@ describe("却下理由", () => {
     ["attachDocument", grant, "支給には領収書を紐づけられません", "この画面で扱えない仕訳が選ばれています"],
     ["attachDocument", { ...base, status: "published" as const }, "公開中の仕訳には領収書を紐づけられません。先に確認済に戻してください", "「タクシー代」は公開中です"],
     ["attachDocument", { ...base, source: "scan" as const, documentId: "3" }, "すでに書類のある仕訳には領収書を紐づけられません", "「タクシー代」には書類があります"],
+    ["replaceDocument", grant, "支給には書類がありません", "この画面で扱えない仕訳が選ばれています"],
+    ["replaceDocument", { ...base, documentId: "3", status: "published" as const }, "公開中の仕訳の書類は差し替えられません。先に確認済に戻してください", "「タクシー代」は公開中です"],
+    ["replaceDocument", base, "書類の無い仕訳です。差し替えではなく領収書を紐づけてください", "「タクシー代」には書類がありません"],
   ] as const)("%s: %j", (operation, entry, one, many) => {
     expect(judge(operation, entry)).toEqual({ one, many });
   });
