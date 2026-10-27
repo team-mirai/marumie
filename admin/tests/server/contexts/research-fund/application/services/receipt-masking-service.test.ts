@@ -122,7 +122,7 @@ describe("ReceiptMaskingService（LLM のみ差し替え）", () => {
 
   it("PDF の全ページで塗る箇所を尋ね、その箇所を塗った同じページ数の PDF を返す", async () => {
     const bytes = new Uint8Array(await readFile(join(DATA_DIR, "masking-dummy-receipts.pdf")));
-    const calls: { width: number; height: number; jpeg: Uint8Array }[] = [];
+    const calls: { width: number; height: number; jpeg: Uint8Array; instruction: string | null }[] = [];
     const detector: PersonalInfoRegionDetector = {
       async detect(page) {
         calls.push(page);
@@ -136,6 +136,7 @@ describe("ReceiptMaskingService（LLM のみ差し替え）", () => {
     const result = await new ReceiptMaskingService(codec, detector).mask({
       bytes,
       mime: "application/pdf",
+      instruction: "注文者の氏名も黒塗りにして",
     });
 
     expect(result.mime).toBe("application/pdf");
@@ -147,6 +148,8 @@ describe("ReceiptMaskingService（LLM のみ差し替え）", () => {
       expect(Math.max(call.width, call.height)).toBeLessThanOrEqual(1568);
       expect(Math.ceil(call.width / 28) * Math.ceil(call.height / 28)).toBeLessThanOrEqual(1568);
       expect([...call.jpeg.slice(0, 2)]).toEqual([0xff, 0xd8]);
+      // 書類ごとの追加の指示は全ページの判定に添える
+      expect(call.instruction).toBe("注文者の氏名も黒塗りにして");
     }
     const pages = await renderAll(codec, result.bytes);
     expect(pages).toHaveLength(2);
@@ -160,7 +163,8 @@ describe("ReceiptMaskingService（LLM のみ差し替え）", () => {
 
   it("画像を渡すと 1 ページの PDF を返す", async () => {
     const bytes = new Uint8Array(await readFile(join(DATA_DIR, "amazon-receipt-01.png")));
-    const detector: PersonalInfoRegionDetector = { detect: async () => [] };
+    const detect = jest.fn().mockResolvedValue([]);
+    const detector: PersonalInfoRegionDetector = { detect };
 
     const result = await new ReceiptMaskingService(codec, detector).mask({
       bytes,
@@ -168,6 +172,8 @@ describe("ReceiptMaskingService（LLM のみ差し替え）", () => {
     });
 
     expect(await renderAll(codec, result.bytes)).toHaveLength(1);
+    // 追加の指示が無ければ指示なしで尋ねる
+    expect(detect).toHaveBeenCalledWith(expect.objectContaining({ instruction: null }));
   }, RASTER_TIMEOUT_MS);
 
   it("塗る箇所の判定に失敗したら、黒塗りしないまま返さずに失敗する", async () => {

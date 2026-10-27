@@ -18,7 +18,7 @@ import {
 import {
   canRerequestDocumentMasking,
   DocumentMaskingBadge,
-  useRequestDocumentMasking,
+  DocumentMaskingRequestDialog,
 } from "@/client/components/research-fund/DocumentMaskingStatus";
 import { useResearchFundReadOnly } from "@/client/components/research-fund/ResearchFundWriteAccess";
 import { cn, researchFundDocumentUrl } from "@/client/lib";
@@ -128,7 +128,7 @@ function JournalDocumentPanel({
   masking: DocumentMasking | undefined;
 }) {
   const readOnly = useResearchFundReadOnly();
-  const { pending, request } = useRequestDocumentMasking(target, documentId);
+  const [requesting, setRequesting] = useState(false);
   const [viewer, setViewer] = useState<ViewerMode | null>(null);
   const status = masking?.status ?? "pending";
   const unavailable = maskedUnavailableReason(masking);
@@ -224,8 +224,8 @@ function JournalDocumentPanel({
                 <p className="flex flex-wrap items-center gap-x-1.5 text-muted-foreground">
                   <button
                     type="button"
-                    disabled={pending || readOnly}
-                    onClick={request}
+                    disabled={readOnly}
+                    onClick={() => setRequesting(true)}
                     className="inline-flex cursor-pointer items-center gap-0.5 rounded-sm text-[11px] whitespace-nowrap text-muted-foreground underline underline-offset-2 transition-colors duration-150 ease-out outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:text-disabled-foreground"
                   >
                     <ArrowClockwise aria-hidden className="size-3" />
@@ -242,6 +242,13 @@ function JournalDocumentPanel({
           }
         />
       </div>
+      <DocumentMaskingRequestDialog
+        target={target}
+        documentId={documentId}
+        masking={masking}
+        open={requesting}
+        onOpenChange={setRequesting}
+      />
       <DocumentCompareDialog
         mode={viewer}
         onModeChange={setViewer}

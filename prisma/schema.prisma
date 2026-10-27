@@ -427,6 +427,8 @@ model ResearchFundDocument {
   maskingStartedAt  DateTime?                 @map("masking_started_at") // 作成中のまま止まった書類を待機に戻す判定に使う
   maskingError      String?                   @map("masking_error") // 失敗理由
   maskedRegionCount Int?                      @map("masked_region_count") // 黒塗りした箇所の数（作成済みのときだけ値を持つ）
+  // 作り直すときに付けた、この書類の黒塗りへの追加の指示（前回の 1 件だけ持つ）。NULL = 指示なし（#1867）
+  maskingInstruction String? @map("masking_instruction")
   createdAt        DateTime @default(now()) @map("created_at")
   updatedAt        DateTime @updatedAt @map("updated_at")
 

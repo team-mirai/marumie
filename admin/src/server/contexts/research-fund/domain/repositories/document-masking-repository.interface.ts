@@ -5,6 +5,8 @@ export interface ClaimedMaskingDocument {
   documentId: string;
   storageKey: string;
   mime: string;
+  /** 作り直しの依頼で付けた黒塗りへの追加の指示。無ければ null */
+  instruction: string | null;
   /** 着手した時刻。完了・失敗の記録は、この時刻のまま running の書類にだけ行う（失効後に別の実行が着手していたら記録しない） */
   startedAt: Date;
 }
@@ -42,8 +44,13 @@ export interface DocumentMaskingRepository {
   /** 失敗にして理由を残す。着手したときのまま running でなければ何もしない */
   fail(claimed: ClaimedMaskingDocument, error: string): Promise<void>;
   /**
-   * 帳簿の書類を作る・作り直す対象（pending）に戻す。前の版は作り直しが済むまで残す。
+   * 帳簿の書類を作る・作り直す対象（pending）に戻し、黒塗りへの追加の指示を書類に保存する
+   * （null なら指示を消す）。前の版は作り直しが済むまで残す。
    * 書類が無ければ not-found、作成中なら running を返して何もしない
    */
-  request(bookId: string, documentId: string): Promise<"requested" | "running" | "not-found">;
+  request(
+    bookId: string,
+    documentId: string,
+    instruction: string | null,
+  ): Promise<"requested" | "running" | "not-found">;
 }
