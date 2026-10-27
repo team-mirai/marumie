@@ -76,7 +76,7 @@ pnpm run dev:setup
 `pnpm run dev` で admin を動かす場合のみ、以下のコマンドでキー情報を取得して `admin/.env.local` に設定してください：
 
 ```bash
-pnpm run supabase:status -- --output json
+pnpm run supabase:status --output json
 ```
 
 出力（JSON）のうち使うのは次の 3 つです：
