@@ -103,8 +103,8 @@ importers:
         specifier: ^8.21.3
         version: 8.21.3(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       '@vercel/queue':
-        specifier: 0.8.0
-        version: 0.8.0(@opentelemetry/api@1.10.0)
+        specifier: 0.10.0
+        version: 0.10.0(@opentelemetry/api@1.10.0)
       '@vercel/speed-insights':
         specifier: ^1.3.1
         version: 1.3.1(next@16.3.8(@babel/core@7.29.7)(@opentelemetry/api@1.10.0)(@playwright/test@1.64.1)(@types/node@25.9.9)(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(react@19.3.1)
@@ -2266,8 +2266,8 @@ packages:
     resolution: {integrity: sha512-sPw1kIfQEA6/2dB+zlAJHnhhNBRJ8t/t4HfFvKO+g0EPBA7NbCKyGovuhgAV6Mnl865ka7HqCEguIy596czdAw==}
     engines: {node: '>= 20'}
 
-  '@vercel/queue@0.8.0':
-    resolution: {integrity: sha512-Rwaoq8DbSN2/qVPMdHzBdBXqpoD2h2s7+gOSaE3Gff9XI1NjNh281uMesP30k1kbsnjgeaibLTSiuYDlNPlw+g==}
+  '@vercel/queue@0.10.0':
+    resolution: {integrity: sha512-GKrt5p+D/drm5bkDr8j2EqEkYs29AMLAtun18iXA4PLorVzaHk39YorQ8TdCCeN9H5CDQV4ElMnfxDrbxou8Aw==}
     engines: {node: '>=20.0.0'}
     peerDependencies:
       '@opentelemetry/api': ^1.0.0
@@ -6085,7 +6085,7 @@ snapshots:
       '@vercel/cli-exec': 1.0.1
       jose: 5.10.0
 
-  '@vercel/queue@0.8.0(@opentelemetry/api@1.10.0)':
+  '@vercel/queue@0.10.0(@opentelemetry/api@1.10.0)':
     dependencies:
       '@vercel/oidc': 3.8.10
       minimatch: 10.2.6
