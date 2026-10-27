@@ -1,4 +1,5 @@
 import { RequestDocumentMaskingUsecase } from "@/server/contexts/research-fund/application/usecases/request-document-masking-usecase";
+import { MASKING_INSTRUCTION_MAX_LENGTH } from "@/server/contexts/research-fund/domain/models/document-masking";
 import type { DocumentMaskingRepository } from "@/server/contexts/research-fund/domain/repositories/document-masking-repository.interface";
 
 describe("RequestDocumentMaskingUsecase", () => {
@@ -14,7 +15,30 @@ describe("RequestDocumentMaskingUsecase", () => {
       status: "valid",
       value: undefined,
     });
-    expect(repository.request).toHaveBeenCalledWith("12", "42");
+    expect(repository.request).toHaveBeenCalledWith("12", "42", null);
+  });
+
+  it("追加の指示は前後の空白を落として書類に保存し、空欄なら指示なしにする", async () => {
+    repository.request.mockResolvedValue("requested");
+
+    await usecase.execute({ bookId: "12", documentId: "42", instruction: "  注文者の氏名も黒塗りにして\n" });
+    await usecase.execute({ bookId: "12", documentId: "42", instruction: "   " });
+
+    expect(repository.request).toHaveBeenNthCalledWith(1, "12", "42", "注文者の氏名も黒塗りにして");
+    expect(repository.request).toHaveBeenNthCalledWith(2, "12", "42", null);
+  });
+
+  it("上限を超える追加の指示は受け付けない", async () => {
+    const result = await usecase.execute({
+      bookId: "12",
+      documentId: "42",
+      instruction: "あ".repeat(MASKING_INSTRUCTION_MAX_LENGTH + 1),
+    });
+
+    expect(result.status === "invalid" && result.errors[0].message).toBe(
+      `追加の指示は${MASKING_INSTRUCTION_MAX_LENGTH}文字以内で入力してください`,
+    );
+    expect(repository.request).not.toHaveBeenCalled();
   });
 
   it("作成中の書類は二重に作らないため受け付けない", async () => {

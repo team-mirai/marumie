@@ -27,7 +27,7 @@ test("一致した帳簿の一覧と現在の対象を返す", async () => {
   const data = { entries: [], accounts: [], advancers: [], payees: [], duplicates: {} };
   const list = jest.spyOn(ListJournalReviewUsecase.prototype, "execute").mockResolvedValue(data);
   const maskings = {
-    "5": { documentId: "5", status: "succeeded" as const, error: null, regionCount: 2, hasMaskedVersion: true },
+    "5": { documentId: "5", status: "succeeded" as const, error: null, regionCount: 2, hasMaskedVersion: true, instruction: null },
   };
   const listMaskings = jest.spyOn(ListDocumentMaskingsUsecase.prototype, "execute").mockResolvedValue(maskings);
   await expect(loadJournalReview("2", "1")).resolves.toEqual({ ...data, maskings, target });

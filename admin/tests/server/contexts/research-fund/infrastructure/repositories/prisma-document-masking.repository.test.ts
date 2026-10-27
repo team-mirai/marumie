@@ -15,7 +15,13 @@ describe("PrismaDocumentMaskingRepository", () => {
   };
   const repository = new PrismaDocumentMaskingRepository(prisma as unknown as PrismaClient);
   const startedAt = new Date("2026-10-18T00:00:00.123Z");
-  const claimed = { documentId: "42", storageKey: "key", mime: "application/pdf", startedAt };
+  const claimed = {
+    documentId: "42",
+    storageKey: "key",
+    mime: "application/pdf",
+    instruction: null,
+    startedAt,
+  };
   const stillClaimed = { id: BigInt(42), maskingStatus: "running", maskingStartedAt: startedAt };
 
   beforeEach(() => {
@@ -25,16 +31,16 @@ describe("PrismaDocumentMaskingRepository", () => {
 
   it("帳簿の書類の状態を返す（版のファイルの有無は masked_key で判断する）", async () => {
     delegate.findMany.mockResolvedValue([
-      { id: BigInt(1), maskingStatus: "succeeded", maskingError: null, maskedRegionCount: 2, maskedKey: "m" },
-      { id: BigInt(2), maskingStatus: "failed", maskingError: "理由", maskedRegionCount: null, maskedKey: null },
-      { id: BigInt(3), maskingStatus: "pending", maskingError: "作り直しの印", maskedRegionCount: null, maskedKey: null },
+      { id: BigInt(1), maskingStatus: "succeeded", maskingError: null, maskedRegionCount: 2, maskedKey: "m", maskingInstruction: "氏名も塗る" },
+      { id: BigInt(2), maskingStatus: "failed", maskingError: "理由", maskedRegionCount: null, maskedKey: null, maskingInstruction: null },
+      { id: BigInt(3), maskingStatus: "pending", maskingError: "作り直しの印", maskedRegionCount: null, maskedKey: null, maskingInstruction: null },
     ]);
 
     expect(await repository.listByBook("12")).toEqual([
-      { documentId: "1", status: "succeeded", error: null, regionCount: 2, hasMaskedVersion: true },
-      { documentId: "2", status: "failed", error: "理由", regionCount: null, hasMaskedVersion: false },
+      { documentId: "1", status: "succeeded", error: null, regionCount: 2, hasMaskedVersion: true, instruction: "氏名も塗る" },
+      { documentId: "2", status: "failed", error: "理由", regionCount: null, hasMaskedVersion: false, instruction: null },
       // 作り直しの印は失敗の理由ではないので画面に出さない
-      { documentId: "3", status: "pending", error: null, regionCount: null, hasMaskedVersion: false },
+      { documentId: "3", status: "pending", error: null, regionCount: null, hasMaskedVersion: false, instruction: null },
     ]);
     expect(delegate.findMany.mock.calls[0][0].where).toEqual({ bookId: BigInt(12) });
   });
@@ -72,17 +78,19 @@ describe("PrismaDocumentMaskingRepository", () => {
 
   it("最も古い未作成の書類を作成中にして返し、別の実行が先に着手した書類は飛ばす", async () => {
     delegate.findMany.mockResolvedValue([
-      { id: BigInt(1), storageKey: "k1", mime: "image/png" },
-      { id: BigInt(2), storageKey: "k2", mime: "application/pdf" },
+      { id: BigInt(1), storageKey: "k1", mime: "image/png", maskingInstruction: null },
+      { id: BigInt(2), storageKey: "k2", mime: "application/pdf", maskingInstruction: "氏名も塗る" },
     ]);
     delegate.updateMany.mockResolvedValueOnce({ count: 0 }).mockResolvedValueOnce({ count: 1 });
 
     const result = await repository.claimNext();
 
+    // 保存した追加の指示を、キュー・定期実行から作るときにも使えるよう書類から読む
     expect(result).toEqual({
       documentId: "2",
       storageKey: "k2",
       mime: "application/pdf",
+      instruction: "氏名も塗る",
       startedAt: expect.any(Date),
     });
     expect(delegate.findMany.mock.calls[0][0]).toMatchObject({
@@ -97,7 +105,9 @@ describe("PrismaDocumentMaskingRepository", () => {
   });
 
   it("すべての候補を別の実行が先に着手していたら null を返す", async () => {
-    delegate.findMany.mockResolvedValue([{ id: BigInt(1), storageKey: "k1", mime: "image/png" }]);
+    delegate.findMany.mockResolvedValue([
+      { id: BigInt(1), storageKey: "k1", mime: "image/png", maskingInstruction: null },
+    ]);
     delegate.updateMany.mockResolvedValue({ count: 0 });
 
     expect(await repository.claimNext()).toBeNull();
@@ -140,20 +150,24 @@ describe("PrismaDocumentMaskingRepository", () => {
     });
   });
 
-  it("作成中でない書類を作り直しの対象に戻す（前の版のキーは残す）", async () => {
-    delegate.updateMany.mockResolvedValue({ count: 1 });
+  it.each([["氏名も塗る"], [null]])(
+    "作成中でない書類を作り直しの対象に戻し、追加の指示を保存する（前の版のキーは残す）: %p",
+    async (instruction) => {
+      delegate.updateMany.mockResolvedValue({ count: 1 });
 
-    expect(await repository.request("12", "42")).toBe("requested");
-    expect(delegate.updateMany).toHaveBeenCalledWith({
-      where: { id: BigInt(42), bookId: BigInt(12), maskingStatus: { not: "running" } },
-      data: {
-        maskingStatus: "pending",
-        maskingStartedAt: null,
-        maskingError: null,
-        maskedRegionCount: null,
-      },
-    });
-  });
+      expect(await repository.request("12", "42", instruction)).toBe("requested");
+      expect(delegate.updateMany).toHaveBeenCalledWith({
+        where: { id: BigInt(42), bookId: BigInt(12), maskingStatus: { not: "running" } },
+        data: {
+          maskingStatus: "pending",
+          maskingStartedAt: null,
+          maskingError: null,
+          maskedRegionCount: null,
+          maskingInstruction: instruction,
+        },
+      });
+    },
+  );
 
   it.each([
     [{ id: BigInt(42) }, "running"],
@@ -162,7 +176,7 @@ describe("PrismaDocumentMaskingRepository", () => {
     delegate.updateMany.mockResolvedValue({ count: 0 });
     delegate.findFirst.mockResolvedValue(row);
 
-    expect(await repository.request("12", "42")).toBe(expected);
+    expect(await repository.request("12", "42", null)).toBe(expected);
   });
 
   it("公開用の版のキーを帳簿の範囲で引く", async () => {
