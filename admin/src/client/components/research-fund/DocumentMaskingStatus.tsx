@@ -197,7 +197,10 @@ function DocumentMaskingRequestForm({
           disabled={pending}
           aria-invalid={error !== null || length > MASKING_INSTRUCTION_MAX_LENGTH}
           placeholder="例：注文者の氏名も黒塗りにしてください"
-          onChange={(e) => setInstruction(e.target.value)}
+          onChange={(e) => {
+            setInstruction(e.target.value);
+            setError(null);
+          }}
         />
         <p
           className={cn(
