@@ -122,7 +122,7 @@ export function JournalPublicFields({
         </div>
       ) : (
         <div className="space-y-2.5 pt-1">
-          <div className="grid grid-cols-[76px_minmax(0,1fr)_36px_120px] items-center gap-2.5">
+          <div className={detailRowClassName}>
             <Label htmlFor={`${fieldId}-date`} className={detailLabelClassName}>
               日付
             </Label>
@@ -142,11 +142,13 @@ export function JournalPublicFields({
                 onChange={(e) => onChange("entryDate", e.target.value)}
               />
             </Changed>
+          </div>
+          <div className={detailRowClassName}>
             {grant || settled ? (
               <>
                 <span className={detailLabelClassName}>金額</span>
                 <span
-                  className="flex items-center justify-end gap-1 font-latin text-[13px]"
+                  className="flex items-center gap-1 font-latin text-[13px]"
                   title={
                     settled
                       ? "精算済の仕訳は金額を変更できません。先に未精算に戻してください"
