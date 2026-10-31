@@ -75,7 +75,7 @@
     "dotenv": "^17.0.0"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.5.15",
+    "@biomejs/biome": "2.6.3",
     "concurrently": "^10.0.0",
     "dependency-cruiser": "^18.0.0",
     "dotenv-cli": "^11.0.0",
