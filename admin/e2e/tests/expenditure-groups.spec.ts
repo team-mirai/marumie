@@ -78,11 +78,18 @@ test("活用方針を保存し、仕訳を束ねた支出群を作って編集�
   await expect(card.getByRole("link", { name: "議事録" })).toHaveAttribute("href", "https://example.com/minutes");
   await expect(card).toContainText("レポート（報告は準備中）");
 
-  // 別の支出群からは、すでに紐づいた仕訳を選べない
+  // 別の支出群からは、すでに紐づいた仕訳を、どの支出群かが分かる形で選べない
   await page.getByRole("link", { name: "支出群を作る" }).click();
-  await expect(
-    page.getByRole("listitem").filter({ hasText: "視察先への移動" }).getByRole("checkbox"),
-  ).toBeDisabled();
+  const taken = page.getByRole("listitem").filter({ hasText: "視察先への移動" });
+  await expect(taken.getByRole("checkbox")).toBeDisabled();
+  await expect(taken).toContainText("「議会質問づくりの相棒」に紐づけ済み");
+  // 候補は検索で絞り込め、行を押すと中身を同じ画面で確かめられる
+  await page.getByLabel("仕訳を検索").fill("印刷");
+  await expect(page.getByRole("listitem").filter({ hasText: "視察先への移動" })).toHaveCount(0);
+  await page.getByRole("button", { name: "資料の印刷の詳細を表示" }).click();
+  const detail = page.getByRole("complementary", { name: "仕訳の詳細" });
+  await expect(detail).toContainText("資料の印刷");
+  await expect(detail).toContainText("領収書なし");
   await page.getByRole("link", { name: "支出群の一覧に戻る" }).click();
 
   // 編集は同じフォームで、自分の紐づけは外せる

@@ -4,6 +4,7 @@ import {
   ExpenditureGroupError,
   type ExpenditureGroupRecord,
   type ExpenditureGroupWrite,
+  type LinkableEntry,
 } from "@/server/contexts/research-fund/domain/models/expenditure-group";
 import type { ExpenditureGroupRepository } from "@/server/contexts/research-fund/domain/repositories/expenditure-group-repository.interface";
 
@@ -48,6 +49,28 @@ async function serializable<T>(run: () => Promise<T>): Promise<T> {
     }
     throw error;
   }
+}
+
+interface EntryRow {
+  id: bigint;
+  entryDate: Date;
+  description: string;
+  lines: readonly { amount: Prisma.Decimal; account: { type: string } }[];
+  groupItems: readonly { groupId: bigint }[];
+}
+
+/** 費用の借方を持つ仕訳を紐づけ候補にする。費用の借方が無ければ null */
+function linkableEntry(row: EntryRow): LinkableEntry | null {
+  // 1 仕訳に費用の借方が複数あることがある（取得済みの明細は借方だけ）。全部足す。
+  const expenseLines = row.lines.filter((line) => line.account.type === "expense");
+  if (expenseLines.length === 0) return null;
+  return {
+    id: String(row.id),
+    entryDate: row.entryDate.toISOString().slice(0, 10),
+    description: row.description,
+    amount: expenseLines.reduce((total, line) => total + line.amount.toNumber(), 0),
+    groupId: row.groupItems[0] ? String(row.groupItems[0].groupId) : null,
+  };
 }
 
 export class PrismaExpenditureGroupRepository implements ExpenditureGroupRepository {
@@ -96,16 +119,36 @@ export class PrismaExpenditureGroupRepository implements ExpenditureGroupReposit
       orderBy: [{ entryDate: "asc" }, { id: "asc" }],
     });
     return rows.flatMap((row) => {
-      // 1 仕訳に費用の借方が複数あることがある（取得済みの明細は借方だけ）。全部足す。
-      const expenseLines = row.lines.filter((line) => line.account.type === "expense");
-      if (expenseLines.length === 0) return [];
+      const linkable = linkableEntry(row);
+      return linkable ? [linkable] : [];
+    });
+  }
+
+  async candidates(bookId: string) {
+    const rows = await this.prisma.researchFundJournalEntry.findMany({
+      where: { bookId: BigInt(bookId), ...expenseWhere },
+      include: {
+        lines: { where: { side: "debit" }, include: { account: true } },
+        groupItems: { select: { groupId: true, group: { select: { title: true } } } },
+        payee: { select: { name: true } },
+      },
+      orderBy: [{ entryDate: "asc" }, { id: "asc" }],
+    });
+    return rows.flatMap((row) => {
+      const linkable = linkableEntry(row);
+      if (!linkable) return [];
+      const accountLabels = row.lines
+        .filter((line) => line.account.type === "expense")
+        .map((line) => line.account.label);
       return [
         {
-          id: String(row.id),
-          entryDate: row.entryDate.toISOString().slice(0, 10),
-          description: row.description,
-          amount: expenseLines.reduce((total, line) => total + line.amount.toNumber(), 0),
-          groupId: row.groupItems[0] ? String(row.groupItems[0].groupId) : null,
+          ...linkable,
+          groupTitle: row.groupItems[0]?.group.title ?? null,
+          payeeName: row.payee?.name ?? null,
+          accountLabel: [...new Set(accountLabels)].join("・"),
+          note: row.note ?? "",
+          memo: row.memo ?? "",
+          documentId: row.documentId === null ? null : String(row.documentId),
         },
       ];
     });
