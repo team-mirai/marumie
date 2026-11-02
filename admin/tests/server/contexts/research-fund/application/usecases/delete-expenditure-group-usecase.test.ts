@@ -8,6 +8,7 @@ function mockRepository() {
     list: jest.fn(),
     find: jest.fn(),
     entries: jest.fn(),
+    candidates: jest.fn(),
     create: jest.fn(),
     update: jest.fn(),
     remove: jest.fn(),

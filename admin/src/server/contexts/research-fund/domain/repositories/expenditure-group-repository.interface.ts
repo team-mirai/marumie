@@ -2,6 +2,7 @@ import type {
   ExpenditureGroupRecord,
   ExpenditureGroupWrite,
   LinkableEntry,
+  LinkCandidate,
 } from "@/server/contexts/research-fund/domain/models/expenditure-group";
 
 export interface ExpenditureGroupRepository {
@@ -12,6 +13,8 @@ export interface ExpenditureGroupRepository {
   find(bookId: string, groupId: string): Promise<ExpenditureGroupRecord | null>;
   /** 帳簿の費用仕訳。支給（収入）は成果の対象外なので含めない */
   entries(bookId: string): Promise<LinkableEntry[]>;
+  /** entries と同じ仕訳を、紐づけを判断するための中身（支払先・科目・特記事項・書類など）付きで返す */
+  candidates(bookId: string): Promise<LinkCandidate[]>;
   /**
    * 支出群・紐づけ・成果物を 1 トランザクションで作る。
    * 他の支出群に属する仕訳が含まれていれば ExpenditureGroupError を投げ、何も作らない。

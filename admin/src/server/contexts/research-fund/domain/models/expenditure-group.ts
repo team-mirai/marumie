@@ -59,6 +59,24 @@ export interface LinkableEntry {
   groupId: string | null;
 }
 
+/**
+ * 支出群の編集画面で紐づけ候補として見せる仕訳。紐づけてよいか判断するための中身も持つ。
+ * groupTitle は groupId の支出群のタイトル（未所属なら null）
+ */
+export interface LinkCandidate extends LinkableEntry {
+  groupTitle: string | null;
+  /** 支払先の名前。未設定なら null */
+  payeeName: string | null;
+  /** 費用の借方の科目名。複数あれば「・」でつなぐ */
+  accountLabel: string;
+  /** 特記事項（公開される）。未入力なら空文字 */
+  note: string;
+  /** 備考（事務所内のメモ）。未入力なら空文字 */
+  memo: string;
+  /** 領収書などの書類。無ければ null */
+  documentId: string | null;
+}
+
 export interface ExpenditureGroupRecord {
   id: string;
   title: string;
