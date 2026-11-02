@@ -80,6 +80,7 @@ test("金額の範囲は両端を含み、カンマ区切りを受け付け、�
   ];
   expect(ids(entries, { amountMin: "3,000" })).toEqual(["2", "3"]);
   expect(ids(entries, { amountMax: "3000" })).toEqual(["1", "2"]);
+  expect(ids(entries, { amountMin: "３，０００", amountMax: "１２０００" })).toEqual(["2", "3"]);
   expect(ids(entries, { amountMin: "abc", amountMax: "" })).toEqual(["1", "2", "3"]);
 });
 

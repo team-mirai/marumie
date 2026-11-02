@@ -33,7 +33,7 @@ export function isTakenByOtherGroup(entry: LinkCandidate, groupId: string | null
 }
 
 function amountBound(value: string): number | null {
-  const normalized = value.replaceAll(",", "").trim();
+  const normalized = value.normalize("NFKC").replaceAll(",", "").trim();
   if (normalized === "") return null;
   const amount = Number(normalized);
   return Number.isFinite(amount) ? amount : null;
