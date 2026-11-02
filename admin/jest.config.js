@@ -1,6 +1,8 @@
 module.exports = {
   preset: "ts-jest",
   testEnvironment: "node",
+  // 画像処理で頻繁に使う Math の VM 内グローバル参照コストを減らす。
+  sandboxInjectedGlobals: ["Math"],
   // テストは tests/ に src/ と同じ階層で置く方針（src/ 配下の *.test.ts は意図的に収集しない）。
   // src/ 配下に置かれたテストは dependency-cruiser の no-tests-in-src ルールで検出される。
   roots: ["<rootDir>/tests"],
