@@ -24,7 +24,7 @@ test.each([null, { ...target, bookId: "9" }, { ...target, politicianId: "9" },
 });
 test("一致した帳簿の一覧と現在の対象を返す", async () => {
   select(target);
-  const data = { entries: [], accounts: [], advancers: [], payees: [], duplicates: {} };
+  const data = { entries: [], accounts: [], legalCategoryOverrideAllowed: false, advancers: [], payees: [], duplicates: {} };
   const list = jest.spyOn(ListJournalReviewUsecase.prototype, "execute").mockResolvedValue(data);
   const maskings = {
     "5": { documentId: "5", status: "succeeded" as const, error: null, regionCount: 2, hasMaskedVersion: true, instruction: null },

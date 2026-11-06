@@ -31,6 +31,9 @@ function setup(journalEntries: ReturnType<typeof entry>[], publishedThrough: Dat
       findUnique: jest.fn().mockResolvedValue({ publishedThrough, journalEntries }),
       updateMany: jest.fn().mockResolvedValue({ count: 1 }),
     },
+    researchFundAccount: {
+      findMany: jest.fn().mockResolvedValue([{ legalCategoryKey: "research", legalLabel: "⑦ 調査研究費" }]),
+    },
   };
   const repository = new PrismaPublicationRepository({
     ...tx,
@@ -197,4 +200,19 @@ test("状態が変わって更新できなかった仕訳があればロール�
     "仕訳の状態が変わりました",
   );
   expect(tx.researchFundBook.updateMany).not.toHaveBeenCalled();
+});
+
+describe("法定区分の上書き（#1880）", () => {
+  test("公開済み・候補の集計行に、上書き先の区分を添える（収入の行には添えない）", async () => {
+    const override = { legalCategoryKey: "research", reason: "提出済みの報告書に合わせる" };
+    const { repository } = setup([
+      entry({ id: BigInt(1), status: "published", legalCategoryOverride: override }),
+      entry({ id: BigInt(2), status: "approved", legalCategoryOverride: override }),
+      entry({ id: BigInt(3), status: "approved", legalCategoryOverride: null }),
+    ]);
+    const snapshot = await repository.snapshot("1");
+    const research = { key: "research", label: "⑦ 調査研究費" };
+    expect(snapshot?.published[0].legalCategoryOverride).toEqual(research);
+    expect(snapshot?.candidates.map((c) => c.legalCategoryOverride)).toEqual([research, undefined]);
+  });
 });

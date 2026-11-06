@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { JournalEntry } from "@/server/contexts/research-fund/domain/models/journal-entry";
 import type { ReceiptIssuer } from "@/server/contexts/research-fund/domain/models/extracted-receipt";
+import type { LegalCategoryOverride } from "@/server/contexts/research-fund/domain/models/legal-category-override";
 import type { PayeeLinkSource } from "@/server/contexts/research-fund/domain/models/payee";
 import { MAX_JOURNAL_AMOUNT } from "@/server/contexts/research-fund/domain/models/journal-amount";
 import type {
@@ -21,6 +22,8 @@ export interface ReviewAccount extends ResearchFundAccount {
   label: string;
   /** 法律上の区分（法定区分）。科目マスタで科目ごとに一意に決まる。要確認など区分を持たない科目は null */
   legalLabel: string | null;
+  /** 法定区分のキー。legalLabel と同じく、区分を持たない科目は null */
+  legalCategoryKey: string | null;
 }
 /** 科目マスタで「要確認（科目未確定）」を表す科目キー。この文字列との比較は isAccountUnconfirmed に閉じる */
 const UNCONFIRMED_ACCOUNT_KEY = "needs-review";
@@ -28,7 +31,10 @@ const UNCONFIRMED_ACCOUNT_KEY = "needs-review";
 export function isAccountUnconfirmed(accountKey: string): boolean {
   return accountKey === UNCONFIRMED_ACCOUNT_KEY;
 }
-/** 科目に対応する法律上の区分。科目が未確定（要確認・未選択）か区分を持たない科目なら null（未定） */
+/**
+ * 科目に対応する法律上の区分（科目の既定）。科目が未確定（要確認・未選択）か区分を持たない科目なら null（未定）。
+ * 仕訳ごとの上書き（ReviewEntry.legalCategoryOverride）は含めない
+ */
 export function legalLabelOf(
   accounts: readonly ReviewAccount[],
   accountKey: string,
@@ -73,6 +79,11 @@ export interface ReviewEntry extends JournalEdit, JournalEntry {
    * 手入力の仕訳・発行元を出さない古い形式の読み取り結果では null
    */
   issuer: ReceiptIssuer | null;
+  /**
+   * 仕訳ごとの法定区分の上書き（#1880）。null なら科目の既定の区分に従う。
+   * 公開内容（法律上の区分）を変えるので、内容の編集と同じく公開中の仕訳では変更できない
+   */
+  legalCategoryOverride: LegalCategoryOverride | null;
 }
 export interface JournalWrite extends JournalEdit {
   hash: string;

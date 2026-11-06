@@ -12,6 +12,7 @@ import {
   type ReviewAccount,
   type ReviewEntry,
 } from "@/server/contexts/research-fund/domain/models/journal-review";
+import { resolveLegalLabel } from "@/shared/research-fund/legal-category";
 
 /** 詳細カードの行（ラベル 76px ＋ 値）。「事務所内の管理」の行は右端に操作の列を足す */
 export const detailRowClassName = "grid grid-cols-[76px_minmax(0,1fr)] items-center gap-2.5";
@@ -83,7 +84,14 @@ export function JournalPublicFields({
   const settled = entry != null && entry.settledAt !== null;
   const accountLabel = accounts.find((a) => a.key === input.accountKey)?.label;
   const changed = (key: keyof JournalEdit) => entry !== null && input[key] !== entry[key];
-  const legalLabel = <LegalCategoryLabel legalLabel={legalLabelOf(accounts, input.accountKey)} />;
+  // 法律上の区分は、上書きがあればそれ、無ければ科目の既定（#1880）
+  const override = entry?.legalCategoryOverride ?? null;
+  const legalLabel = (
+    <LegalCategoryLabel
+      legalLabel={resolveLegalLabel(legalLabelOf(accounts, input.accountKey), override)}
+      overridden={override !== null}
+    />
+  );
   return (
     <section aria-labelledby={`${fieldId}-public`} className="space-y-1.5">
       <h3

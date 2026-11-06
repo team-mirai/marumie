@@ -210,3 +210,22 @@ describe("buildExpenseViews", () => {
     expect(grant.groupId).toBeNull();
   });
 });
+
+describe("buildExpenseViews と法定区分の上書き（#1880）", () => {
+  const research = { key: "research", label: "⑦ 調査研究費" };
+
+  it("上書きした仕訳は、法律上の区分のラベルと色が上書き先の区分になる", () => {
+    const [view] = buildExpenseViews([expense({ legalCategoryOverride: research })], accounts);
+
+    expect(view.legal).toEqual({ label: "⑦ 調査研究費", color: "#047857" });
+  });
+
+  it("詳細の区分（科目）の表示と、科目の既定の区分は上書きの影響を受けない", () => {
+    const [overridden] = buildExpenseViews([expense({ legalCategoryOverride: research })], accounts);
+    const [plain] = buildExpenseViews([expense()], accounts);
+
+    expect(overridden.detailed).toEqual(plain.detailed);
+    expect(overridden.accountLegalLabel).toBe("⑨ 滞在費");
+    expect(plain.legal).toEqual({ label: "⑨ 滞在費", color: "#0369A1" });
+  });
+});

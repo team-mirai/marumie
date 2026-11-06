@@ -2,22 +2,33 @@ import "server-only";
 import type { Prisma, PrismaClient } from "@prisma/client";
 import type { SubmissionLedgerEntry } from "@/server/contexts/research-fund/domain/models/submission-ledger";
 import type { SubmissionLedgerRepository } from "@/server/contexts/research-fund/domain/repositories/submission-ledger-repository.interface";
+import {
+  legalCategoryOverrideSelect,
+  loadLegalCategoryCatalog,
+  overrideOf,
+} from "@/server/contexts/research-fund/infrastructure/repositories/legal-category-catalog";
+import {
+  type LegalCategoryCatalog,
+  resolveLegalLabel,
+} from "@/shared/research-fund/legal-category";
 
 const include = {
   lines: { include: { account: true } },
   payee: true,
   document: { select: { receiptNumber: true, mime: true } },
+  legalCategoryOverride: legalCategoryOverrideSelect,
 } satisfies Prisma.ResearchFundJournalEntryInclude;
 type Row = Prisma.ResearchFundJournalEntryGetPayload<{ include: typeof include }>;
 
-function model(row: Row): SubmissionLedgerEntry | null {
+function model(row: Row, catalog: LegalCategoryCatalog): SubmissionLedgerEntry | null {
   const expenseLine = row.lines.find((l) => l.side === "debit" && l.account.type === "expense");
   if (!expenseLine || row.source === "grant") return null;
   return {
     id: String(row.id),
     entryDate: row.entryDate.toISOString().slice(0, 10),
     source: row.source,
-    legalLabel: expenseLine.account.legalLabel,
+    // 支出項目と並び順は、上書きがあればそれ、無ければ科目の既定の法定区分で決める（#1880）
+    legalLabel: resolveLegalLabel(expenseLine.account.legalLabel, overrideOf(row, catalog)),
     description: row.description,
     amount: expenseLine.amount.toNumber(),
     payeeName: row.payee?.name ?? null,
@@ -49,10 +60,11 @@ export class PrismaSubmissionLedgerRepository implements SubmissionLedgerReposit
       include,
       orderBy: [{ entryDate: "asc" }, { id: "asc" }],
     });
+    const catalog = await loadLegalCategoryCatalog(this.prisma, rows);
     return {
       politicianSlug: book.politician.slug,
       financialYear: book.financialYear,
-      entries: rows.flatMap((row) => model(row) ?? []),
+      entries: rows.flatMap((row) => model(row, catalog) ?? []),
     };
   }
 
