@@ -53,3 +53,33 @@ test("帳簿に属する書類のストレージ上のキーを書類 ID ごと�
   await expect(repository.findDocumentStorageKeys("7", ["5", "6"])).resolves.toEqual(new Map([["5", "key-5"]]));
   expect(findMany).toHaveBeenCalledWith({ where: { bookId: BigInt(7), id: { in: [BigInt(5), BigInt(6)] } }, select: { id: true, storageKey: true } });
 });
+
+describe("法定区分の上書き（#1880）", () => {
+  const catalog = [
+    { legalCategoryKey: "stay", legalLabel: "⑨ 滞在費" },
+    { legalCategoryKey: "research", legalLabel: "⑦ 調査研究費" },
+  ];
+  function setupWithAccounts(rows: unknown[]) {
+    const { prisma, repository } = setup();
+    prisma.researchFundJournalEntry.findMany.mockResolvedValue(rows);
+    const accounts = { findMany: jest.fn().mockResolvedValue(catalog) };
+    (prisma as Record<string, unknown>).researchFundAccount = accounts;
+    return { repository, accounts };
+  }
+
+  test("上書きのある仕訳は、上書き先の区分を支出項目（並び順の基準）に使う", async () => {
+    const { repository } = setupWithAccounts([
+      { ...row, legalCategoryOverride: { legalCategoryKey: "research", reason: "提出済みの報告書に合わせる" } },
+      { ...row, id: BigInt(4), legalCategoryOverride: null },
+    ]);
+    const ledger = await repository.find("7");
+    expect(ledger?.entries.map((e) => e.legalLabel)).toEqual(["⑦ 調査研究費", "⑨ 滞在費"]);
+  });
+
+  test("上書きが1件も無ければ科目マスタを読まず、科目の既定の区分のまま", async () => {
+    const { repository, accounts } = setupWithAccounts([{ ...row, legalCategoryOverride: null }]);
+    const ledger = await repository.find("7");
+    expect(ledger?.entries[0].legalLabel).toBe("⑨ 滞在費");
+    expect(accounts.findMany).not.toHaveBeenCalled();
+  });
+});

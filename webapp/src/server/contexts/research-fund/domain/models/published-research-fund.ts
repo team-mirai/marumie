@@ -5,8 +5,12 @@
  * 公開されない備考（memo）はこの型に入らない（= 画面に出ない）。
  */
 import type { ResearchFundCategory, ResearchFundRow } from "@/shared/research-fund/aggregation";
+import type { ResearchFundLegalCategory } from "@/shared/research-fund/legal-category";
 
-/** 費目（科目マスタ）。法定区分のキーはカテゴリーピルの色に使う。 */
+/**
+ * 費目（科目マスタ）。法定区分のキーはカテゴリーピルの色に使う。
+ * legalLabel / legalCategoryKey は科目の既定の区分。仕訳ごとの上書きは行の legalCategoryOverride が持つ。
+ */
 export interface PublishedAccount extends ResearchFundCategory {
   legalCategoryKey: string;
 }
@@ -40,6 +44,8 @@ export interface PublishedExpense {
   receiptReady: boolean;
   /** 配信する公開用の版の MIME。公開用の版が無ければ null */
   receiptMime: string | null;
+  /** 仕訳ごとの法定区分の上書き（#1880）。上書きが無ければ省略し、科目の既定の区分に従う */
+  legalCategoryOverride?: ResearchFundLegalCategory;
 }
 
 /** 成果物。url が無ければ公開側は「報告は準備中」と表示する。 */

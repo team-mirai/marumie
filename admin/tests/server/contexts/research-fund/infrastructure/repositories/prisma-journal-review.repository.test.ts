@@ -81,6 +81,7 @@ test("手動仕訳を取得し、書類・メモの欠損値を表示用に変�
     note: "", memo: "", status: "draft", source: "manual", documentId: null, splitGroup: null,
     model: null, promptVersion: null, amount: 1200, accountKey: "taxi", advancedBy: null, settledAt: null,
     payeeId: null, payeeLinkSource: null, receiptAbsent: false, receiptAbsenceReason: null, receiptNumber: null, issuer: null,
+    legalCategoryOverride: null,
   });
   tx.researchFundJournalEntry.findFirst.mockResolvedValue(null);
   await expect(repository.find("9", entry.id)).resolves.toBeNull();
@@ -477,5 +478,56 @@ describe("領収書の紐づけ", () => {
   test("競合したら（公開・書類が付いた場合を含む）投げてトランザクションごと巻き戻させる", async () => {
     const { repository } = withDocument(0);
     await expect(repository.attachDocument("1", manual, { storageKey: "k", mime: "image/png", originalFilename: "a.png" })).rejects.toThrow("再読み込み");
+  });
+});
+
+describe("法定区分の上書き（#1880）", () => {
+  const override = { legalCategoryKey: "research", reason: "提出済みの報告書に合わせる" };
+  function setupWithOverride(count = 1) {
+    const context = setup(count);
+    const tx = context.tx as typeof context.tx & Record<string, unknown>;
+    tx.researchFundLegalCategoryOverride = { upsert: jest.fn(), deleteMany: jest.fn() };
+    (tx.researchFundJournalEntry as Record<string, unknown>).findUniqueOrThrow = jest
+      .fn()
+      .mockResolvedValue({ updatedAt: new Date("2026-08-02T00:00:00.000Z") });
+    tx.researchFundAccount.findMany.mockResolvedValue([
+      { legalCategoryKey: "stay", legalLabel: "⑨ 滞在費" },
+      { legalCategoryKey: "research", legalLabel: "⑦ 調査研究費" },
+    ]);
+    const overrides = tx.researchFundLegalCategoryOverride as { upsert: jest.Mock; deleteMany: jest.Mock };
+    return { ...context, overrides };
+  }
+
+  test("上書きのある仕訳は、指定した区分と理由を添えて返す", async () => {
+    const { repository, tx } = setupWithOverride();
+    tx.researchFundJournalEntry.findFirst.mockResolvedValue({ ...rowWithLines(), legalCategoryOverride: override });
+    const found = await repository.find("1", entry.id);
+    expect(found?.legalCategoryOverride).toEqual({ key: "research", label: "⑦ 調査研究費", reason: "提出済みの報告書に合わせる" });
+  });
+
+  test("下書き・確認済の支出だけを、帳簿の許可を同じ文の条件で確かめてから上書きし、更新時刻を進める", async () => {
+    const { repository, tx, overrides } = setupWithOverride();
+    await expect(repository.setLegalCategoryOverride("1", entry, override, "user")).resolves.toEqual({ updatedAt: "2026-08-02T00:00:00.000Z" });
+    const call = tx.researchFundJournalEntry.updateMany.mock.calls[0][0];
+    expect(call.where).toEqual(expect.objectContaining({ id: BigInt(entry.id), bookId: BigInt(1), status: { in: ["draft", "approved"] }, updatedAt: new Date(entry.updatedAt), source: { in: ["manual", "scan"] }, book: { allowLegalCategoryOverride: true } }));
+    expect(call.data).toEqual({ updatedAt: expect.any(Date) });
+    expect(overrides.upsert).toHaveBeenCalledWith({
+      where: { entryId: BigInt(entry.id) },
+      create: { entryId: BigInt(entry.id), ...override, createdById: "user" },
+      update: { ...override, createdById: "user" },
+    });
+  });
+
+  test("null なら上書きを外す", async () => {
+    const { repository, overrides } = setupWithOverride();
+    await repository.setLegalCategoryOverride("1", entry, null, "user");
+    expect(overrides.deleteMany).toHaveBeenCalledWith({ where: { entryId: BigInt(entry.id) } });
+    expect(overrides.upsert).not.toHaveBeenCalled();
+  });
+
+  test("競合・公開・許可の取り消しがあれば上書きしない", async () => {
+    const { repository, overrides } = setupWithOverride(0);
+    await expect(repository.setLegalCategoryOverride("1", entry, override, "user")).rejects.toThrow("再読み込み");
+    expect(overrides.upsert).not.toHaveBeenCalled();
   });
 });

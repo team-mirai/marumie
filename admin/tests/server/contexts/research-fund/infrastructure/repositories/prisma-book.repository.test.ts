@@ -1,8 +1,24 @@
 import { Prisma, type PrismaClient } from "@prisma/client";
 import { PrismaBookRepository } from "@/server/contexts/research-fund/infrastructure/repositories/prisma-book.repository";
 function setup() {
-  const table = { findMany: jest.fn(), create: jest.fn(), update: jest.fn() };
-  return { table, repository: new PrismaBookRepository({ researchFundBook: table } as unknown as PrismaClient) };
+  const table = { findMany: jest.fn(), findFirst: jest.fn(), create: jest.fn(), update: jest.fn(), updateMany: jest.fn().mockResolvedValue({ count: 1 }) };
+  const accounts = {
+    findMany: jest.fn().mockResolvedValue([
+      { legalCategoryKey: "office", legalLabel: "④ 事務所費" },
+      { legalCategoryKey: "research", legalLabel: "⑦ 調査研究費" },
+    ]),
+  };
+  const overrides = { count: jest.fn().mockResolvedValue(0) };
+  return {
+    table,
+    accounts,
+    overrides,
+    repository: new PrismaBookRepository({
+      researchFundBook: table,
+      researchFundAccount: accounts,
+      researchFundLegalCategoryOverride: overrides,
+    } as unknown as PrismaClient),
+  };
 }
 function line(key: string, type: string, side: string, amount: number) {
   return { accountKey: key, side, amount: new Prisma.Decimal(amount), account: { type, label: key, legalLabel: "区分" } };
@@ -58,6 +74,7 @@ test("未公開の帳簿と任意項目を一覧表示用に変換し、法定�
   table.findMany.mockResolvedValue([{
     id: BigInt(3), financialYear: 2025, status: "preparing", publishedThrough: null,
     asOfDate: new Date("2025-12-31"), nextUpdateNote: "来月更新", policyComment: null,
+    allowLegalCategoryOverride: false,
     journalEntries: [{
       status: "approved", entryDate: new Date("2025-12-01"),
       lines: [{ ...expenseLine, account: { ...expenseLine.account, legalLabel: null } }],
@@ -69,6 +86,7 @@ test("未公開の帳簿と任意項目を一覧表示用に変換し、法定�
       asOfDate: "2025-12-31", nextUpdateNote: "来月更新", policyComment: "",
     },
     draftCount: 0,
+    legalCategoryOverride: { allowed: false, count: 0 },
     rows: [{ date: "2025-12-01", accountKey: "taxi", amount: 1200, type: "expense" }],
     accounts: { taxi: { label: "taxi", legalLabel: "" } },
   }]);
@@ -80,4 +98,69 @@ test("一意制約以外のPrismaエラーは重複と誤認せず作成失敗�
     code: "P2003", clientVersion: "test",
   }));
   await expect(repository.create("1", 2026)).rejects.toThrow("帳簿の作成に失敗");
+});
+
+describe("法定区分の上書き（#1880）", () => {
+  const book = (journalEntries: unknown[], allowLegalCategoryOverride = true) => ({
+    id: BigInt(3), financialYear: 2025, status: "active", publishedThrough: null,
+    asOfDate: null, nextUpdateNote: null, policyComment: null, allowLegalCategoryOverride, journalEntries,
+  });
+  const expense = (status: string, override: string | null) => ({
+    status, entryDate: new Date("2025-12-01"),
+    lines: [line("ai-tools", "expense", "debit", 3000), line("bank", "asset", "credit", 3000)],
+    legalCategoryOverride: override === null ? null : { legalCategoryKey: override, reason: "提出済みの報告書に合わせる" },
+  });
+
+  test("一覧に許可と上書き中の件数を添え、集計行に上書き先の区分を添える", async () => {
+    const { table, repository } = setup();
+    table.findMany.mockResolvedValue([book([expense("approved", "research"), expense("draft", "research"), expense("approved", null)])]);
+    const [result] = await repository.list("1");
+    // 下書きの上書きも件数には数える（許可を取り消せるかの判断に使う）
+    expect(result.legalCategoryOverride).toEqual({ allowed: true, count: 2 });
+    expect(result.rows).toEqual([
+      { date: "2025-12-01", accountKey: "ai-tools", amount: 3000, type: "expense", legalCategoryOverride: { key: "research", label: "⑦ 調査研究費" } },
+      { date: "2025-12-01", accountKey: "ai-tools", amount: 3000, type: "expense" },
+    ]);
+  });
+
+  test("上書きが1件も無ければ科目マスタを読まない", async () => {
+    const { table, accounts, repository } = setup();
+    table.findMany.mockResolvedValue([book([expense("approved", null)], false)]);
+    await repository.list("1");
+    expect(accounts.findMany).not.toHaveBeenCalled();
+  });
+
+  test("許可の取り消しは、上書き中の仕訳が残っていないことを同じ文の条件で確かめる", async () => {
+    const { table, repository } = setup();
+    await repository.setLegalCategoryOverrideAllowed("1", "2", false);
+    expect(table.updateMany).toHaveBeenCalledWith({
+      where: {
+        id: BigInt(2), politicianId: BigInt(1),
+        journalEntries: { none: { legalCategoryOverride: { isNot: null } } },
+      },
+      data: { allowLegalCategoryOverride: false },
+    });
+    await repository.setLegalCategoryOverrideAllowed("1", "2", true);
+    expect(table.updateMany).toHaveBeenLastCalledWith({
+      where: { id: BigInt(2), politicianId: BigInt(1) },
+      data: { allowLegalCategoryOverride: true },
+    });
+  });
+
+  test("取り消しの条件に合わなければ（判定のあとに上書きされた場合を含む）変更せずに伝える", async () => {
+    const { table, repository } = setup();
+    table.updateMany.mockResolvedValue({ count: 0 });
+    await expect(repository.setLegalCategoryOverrideAllowed("1", "2", false)).rejects.toThrow("画面を再読み込み");
+  });
+
+  test("上書き中の件数は議員と帳簿の両方で絞り、帳簿が無ければ null", async () => {
+    const { table, overrides, repository } = setup();
+    table.findFirst.mockResolvedValue({ id: BigInt(2) });
+    overrides.count.mockResolvedValue(4);
+    await expect(repository.legalCategoryOverrideCount("1", "2")).resolves.toBe(4);
+    expect(table.findFirst).toHaveBeenCalledWith(expect.objectContaining({ where: { id: BigInt(2), politicianId: BigInt(1) } }));
+    expect(overrides.count).toHaveBeenCalledWith({ where: { entry: { bookId: BigInt(2) } } });
+    table.findFirst.mockResolvedValue(null);
+    await expect(repository.legalCategoryOverrideCount("9", "2")).resolves.toBeNull();
+  });
 });

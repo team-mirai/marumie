@@ -17,6 +17,8 @@ export class ListJournalReviewUsecase {
     return {
       entries: await this.repository.list(bookId),
       accounts: (await this.repository.accounts()).filter((a) => a.type === "expense"),
+      // 帳簿で仕訳ごとの法定区分の上書きが許可されているか（#1880）。許可されていなければ操作を出さない
+      legalCategoryOverrideAllowed: await this.repository.legalCategoryOverrideAllowed(bookId),
       // 立替者の入力欄の候補。表記ゆれで立替者ごとの集計が分かれないようにする。
       advancers: await this.repository.advancers(bookId),
       // 紐づけの候補は帳簿の議員の支払先だけ（別の議員の支払先は見せない）。

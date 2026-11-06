@@ -206,3 +206,55 @@ describe("GetResearchFundPageUsecase", () => {
     );
   });
 });
+
+describe("GetResearchFundPageUsecase と法定区分の上書き（#1880）", () => {
+  const research = { key: "research", label: "⑦ 調査研究費" };
+
+  /** 印刷・広報費の仕訳（id 3）だけを ⑦ 調査研究費 に上書きした帳簿 */
+  function overridden(): PublishedResearchFund {
+    const base = published();
+    return {
+      ...base,
+      rows: base.rows.map((row) =>
+        row.accountKey === "printing-pr" ? { ...row, legalCategoryOverride: research } : row,
+      ),
+      expenses: base.expenses.map((expense) =>
+        expense.entryId === "3" ? { ...expense, legalCategoryOverride: research } : expense,
+      ),
+    };
+  }
+
+  it("法律上の区分のサンキーと明細の区分が、同じ上書き先の区分になる", async () => {
+    const { usecase } = usecaseWith(overridden());
+
+    const data = await usecase.execute({ slug: "sample-taro", financialYear: 2026 });
+
+    expect(data?.sankey.legal.nodes.map((node) => node.label)).toEqual([
+      "公費から支給",
+      "合計",
+      "⑦ 調査研究費",
+      "⑨ 滞在費",
+      "未使用・未処理",
+    ]);
+    expect(data?.expenses.find((expense) => expense.entryId === "3")?.legal.label).toBe(
+      "⑦ 調査研究費",
+    );
+  });
+
+  it("詳細の区分（科目）のサンキー・明細の科目・用途カードの科目は上書きの影響を受けない", async () => {
+    const plain = await usecaseWith(published()).usecase.execute({
+      slug: "sample-taro",
+      financialYear: 2026,
+    });
+    const data = await usecaseWith(overridden()).usecase.execute({
+      slug: "sample-taro",
+      financialYear: 2026,
+    });
+
+    expect(data?.sankey.detailed).toEqual(plain?.sankey.detailed);
+    expect(data?.expenses.map((expense) => expense.detailed)).toEqual(
+      plain?.expenses.map((expense) => expense.detailed),
+    );
+    expect(data?.groups).toEqual(plain?.groups);
+  });
+});

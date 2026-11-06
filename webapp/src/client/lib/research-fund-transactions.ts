@@ -78,7 +78,8 @@ export function researchFundCategoryOptions(
     if (!options.has(row.accountKey)) {
       options.set(row.accountKey, {
         option: { key: row.accountKey, category: row.detailed },
-        legal: row.legal.label,
+        // 仕訳ごとの上書きで科目の並びが変わらないよう、科目の既定の区分で並べる。
+        legal: row.accountLegalLabel,
         isGrant: row.kind === "grant",
       });
     }

@@ -10,10 +10,10 @@ export class ListBooksUsecase {
   async execute(politicianId: string) {
     if (!isSerialId(politicianId)) throw new BookError("INVALID_ID", "IDが不正です");
     return (await this.repository.list(politicianId)).map(
-      ({ book, draftCount, rows, accounts }) => {
+      ({ book, draftCount, legalCategoryOverride, rows, accounts }) => {
         const result = aggregateResearchFund(rows, accounts);
         if (result.status === "invalid") throw new Error(result.errors[0].message);
-        return { ...book, draftCount, ...result.value.kpi };
+        return { ...book, draftCount, legalCategoryOverride, ...result.value.kpi };
       },
     );
   }

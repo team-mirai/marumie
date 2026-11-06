@@ -27,6 +27,7 @@ function view(overrides: Partial<ResearchFundExpenseView> = {}): ResearchFundExp
     amount: 1200,
     accountKey: "transportation",
     detailed: { label: "交通費", color: "#0369A1" },
+    accountLegalLabel: "⑨ 滞在費",
     legal: { label: "⑨ 滞在費", color: "#0369A1" },
     note: null,
     splitGroup: null,
@@ -133,26 +134,31 @@ describe("researchFundCategoryOptions", () => {
       view({
         accountKey: "other",
         detailed: { label: "その他", color: "#000" },
+        accountLegalLabel: "その他",
         legal: { label: "その他", color: "#000" },
       }),
       view({
         accountKey: "transportation",
         detailed: { label: "交通費", color: "#000" },
+        accountLegalLabel: "⑨ 滞在費",
         legal: { label: "⑨ 滞在費", color: "#000" },
       }),
       view({
         accountKey: "meetings",
         detailed: { label: "会議費", color: "#000" },
+        accountLegalLabel: "⑦ 調査研究費",
         legal: { label: "⑦ 調査研究費", color: "#000" },
       }),
       view({
         accountKey: "transportation",
         detailed: { label: "交通費", color: "#000" },
+        accountLegalLabel: "⑨ 滞在費",
         legal: { label: "⑨ 滞在費", color: "#000" },
       }),
       view({
         accountKey: "stationery-supplies",
         detailed: { label: "文房具・備品", color: "#000" },
+        accountLegalLabel: "③ 備品・消耗品費",
         legal: { label: "③ 備品・消耗品費", color: "#000" },
       }),
     ]);
@@ -176,12 +182,14 @@ describe("researchFundCategoryOptions", () => {
       view({
         accountKey: "transportation",
         detailed: { label: "交通費", color: "#000" },
+        accountLegalLabel: "⑨ 滞在費",
         legal: { label: "⑨ 滞在費", color: "#000" },
       }),
       view({
         kind: "grant",
         accountKey: "grant-income",
         detailed: { label: "支給（入金）", color: "#000" },
+        accountLegalLabel: "支給（入金）",
         legal: { label: "支給（入金）", color: "#000" },
       }),
     ]);
@@ -384,5 +392,27 @@ describe("revealResearchFundGroupRows", () => {
 
   it("紐づく行が無ければ null を返す", () => {
     expect(revealResearchFundGroupRows(expenses, "9")).toBeNull();
+  });
+});
+
+describe("researchFundCategoryOptions と法定区分の上書き", () => {
+  it("仕訳ごとに法定区分を上書きしても、科目の並びは科目の既定の区分のまま", () => {
+    const options = researchFundCategoryOptions([
+      // 先頭の交通費の行だけ「⑦ 調査研究費」に上書きされている（#1880）
+      view({
+        accountKey: "transportation",
+        detailed: { label: "交通費", color: "#000" },
+        accountLegalLabel: "⑨ 滞在費",
+        legal: { label: "⑦ 調査研究費", color: "#000" },
+      }),
+      view({
+        accountKey: "donation",
+        detailed: { label: "寄附", color: "#000" },
+        accountLegalLabel: "⑧ 寄附",
+        legal: { label: "⑧ 寄附", color: "#000" },
+      }),
+    ]);
+
+    expect(options.map((option) => option.key)).toEqual(["donation", "transportation"]);
   });
 });

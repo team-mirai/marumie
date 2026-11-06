@@ -9,6 +9,7 @@ import type {
 import { researchFundCategoryColor } from "@/server/contexts/research-fund/domain/services/research-fund-category-color";
 import { researchFundCategoryDescription } from "@/server/contexts/research-fund/domain/services/research-fund-category-description";
 import { receiptKindOf } from "@/server/contexts/research-fund/domain/services/research-fund-receipt-kind";
+import { resolveLegalCategoryKey, resolveLegalLabel } from "@/shared/research-fund/legal-category";
 
 /** 科目マスタに無い科目のラベル（要確認の仕訳は公開されない想定だが、表示は落とさない）。 */
 const UNKNOWN_CATEGORY_LABEL = "その他";
@@ -56,6 +57,7 @@ export function buildExpenseViews(
           description: expense.description,
           amount: expense.amount,
           accountKey: expense.accountKey,
+          accountLegalLabel: GRANT_CATEGORY.label,
           detailed: GRANT_CATEGORY,
           legal: GRANT_CATEGORY,
           note: normalizeNote(expense.note),
@@ -68,7 +70,14 @@ export function buildExpenseViews(
         };
       }
       const account = accounts[expense.accountKey];
+      // 詳細の区分（科目）は上書きの影響を受けず、科目の既定の区分の色を継承する。
       const color = researchFundCategoryColor(account?.legalCategoryKey ?? "");
+      // 法律上の区分は、上書きがあればそれ、無ければ科目の既定（#1880）。
+      const override = expense.legalCategoryOverride;
+      const legalColor = researchFundCategoryColor(
+        resolveLegalCategoryKey(account?.legalCategoryKey ?? null, override) ?? "",
+      );
+      const legalLabel = resolveLegalLabel(account?.legalLabel ?? null, override);
       const description = researchFundCategoryDescription(expense.accountKey);
       return {
         kind: expense.kind,
@@ -79,12 +88,13 @@ export function buildExpenseViews(
         description: expense.description,
         amount: expense.amount,
         accountKey: expense.accountKey,
+        accountLegalLabel: account?.legalLabel || UNKNOWN_CATEGORY_LABEL,
         detailed: {
           label: account?.label || UNKNOWN_CATEGORY_LABEL,
           color,
           ...(description && { description }),
         },
-        legal: { label: account?.legalLabel || UNKNOWN_CATEGORY_LABEL, color },
+        legal: { label: legalLabel || UNKNOWN_CATEGORY_LABEL, color: legalColor },
         note: normalizeNote(expense.note),
         splitGroup: expense.splitGroup,
         groupId: groupIdByEntryId.get(expense.entryId) ?? null,

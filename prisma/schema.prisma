@@ -20,6 +20,7 @@ model User {
   researchFundScanBatchesUploaded         ResearchFundScanBatch[]
   researchFundPromptsUpdated              ResearchFundPrompt[]
   researchFundAddressSearchPromptsUpdated ResearchFundAddressSearchPrompt[]
+  researchFundLegalCategoryOverrides      ResearchFundLegalCategoryOverride[]
 
   politicianAssignments UserPoliticianAssignment[]
 
@@ -251,6 +252,9 @@ model ResearchFundBook {
   nextUpdateNote   String?                @map("next_update_note") // 「次回更新 11月ごろ」
   policyComment    String?                @map("policy_comment") // 活用方針（議員本人が書く1〜2行）
   details          Json? // B-5「データについて」の説明文
+  // 仕訳ごとの法定区分の上書きを許すか（#1880）。管理者（admin）だけが切り替える。
+  // まる見え導入前に報告書を提出済みの年度の帳簿で、提出済みの区分に合わせるためだけに使う
+  allowLegalCategoryOverride Boolean @default(false) @map("allow_legal_category_override")
   createdAt        DateTime               @default(now()) @map("created_at")
   updatedAt        DateTime               @updatedAt @map("updated_at")
 
@@ -330,6 +334,26 @@ model ResearchFundAccount {
   @@map("research_fund_accounts")
 }
 
+// 仕訳ごとの法定区分の上書き（#1880）。上書きを許可した帳簿の支出の仕訳だけが持てる（アプリ側で検証する）。
+// 仕訳の法定区分は「上書きがあればそれ、無ければ科目の既定」で決まり、帳簿・公開ページのすべての出力が同じ決め方を使う
+// （shared/research-fund/legal-category.ts）。科目（20分類）は上書きの影響を受けない。
+// 仕訳を下書きに戻しても上書きは残し、仕訳を破棄すると一緒に消える。
+model ResearchFundLegalCategoryOverride {
+  id               BigInt   @id @default(autoincrement())
+  entryId          BigInt   @unique @map("entry_id") // 1仕訳に上書きは最大1つ
+  // 科目マスタに存在する法定区分のキーであることはアプリ側で検証する（法定区分だけのマスタ表は持たない）
+  legalCategoryKey String   @map("legal_category_key") @db.VarChar(50)
+  reason           String // 上書きの理由。空白だけの値は DB 側の CHECK 制約でも拒否する
+  createdById      String?  @map("created_by_id")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  entry     ResearchFundJournalEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  createdBy User?                    @relation(fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@map("research_fund_legal_category_overrides")
+}
+
 // 仕訳（複式）。借方合計 = 貸方合計 はドメイン層で検証する。
 model ResearchFundJournalEntry {
   id          BigInt                  @id @default(autoincrement())
@@ -381,8 +405,9 @@ model ResearchFundJournalEntry {
   // カスケードを止めないため（NoAction は文の終わりに検査する）
   payee     ResearchFundPayee?    @relation(fields: [payeeId], references: [id], onDelete: NoAction)
 
-  lines      ResearchFundJournalLine[]
-  groupItems ResearchFundGroupItem[]
+  lines                 ResearchFundJournalLine[]
+  groupItems            ResearchFundGroupItem[]
+  legalCategoryOverride ResearchFundLegalCategoryOverride?
 
   @@index([bookId, status, entryDate(sort: Desc)])
   @@unique([bookId, hash]) // 再取込・二重登録の重複検知を DB 側でも保証する

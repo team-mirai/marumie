@@ -28,6 +28,7 @@ function entry(id: string, overrides: Partial<ReviewEntry> = {}): ReviewEntry {
     receiptAbsenceReason: null,
     receiptNumber: null,
     issuer: null,
+    legalCategoryOverride: null,
     ...overrides,
   };
 }

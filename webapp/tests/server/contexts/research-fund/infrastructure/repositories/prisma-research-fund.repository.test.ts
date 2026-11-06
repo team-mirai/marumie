@@ -7,6 +7,12 @@ function setup() {
     politicalOrganization: { findUnique: jest.fn().mockResolvedValue(null) },
     politician: { findMany: jest.fn().mockResolvedValue([]) },
     researchFundJournalEntry: { findFirst: jest.fn() },
+    researchFundAccount: {
+      findMany: jest.fn().mockResolvedValue([
+        { legalCategoryKey: "stay", legalLabel: "⑨ 滞在費" },
+        { legalCategoryKey: "research", legalLabel: "⑦ 調査研究費" },
+      ]),
+    },
   };
   return {
     prisma,
@@ -175,5 +181,110 @@ describe("PrismaResearchFundRepository の領収書（公開用の版だけを�
     prisma.researchFundJournalEntry.findFirst.mockResolvedValue(null);
 
     await expect(repository.findPublishedReceipt("1")).resolves.toBeNull();
+  });
+});
+
+describe("PrismaResearchFundRepository の法定区分の上書き（#1880）", () => {
+  function entry(id: number, override: string | null) {
+    return {
+      id: BigInt(id),
+      entryDate: new Date("2026-08-13T00:00:00.000Z"),
+      description: "視察の宿泊",
+      note: null,
+      splitGroup: null,
+      documentId: null,
+      document: null,
+      legalCategoryOverride: override === null ? null : { legalCategoryKey: override },
+      lines: [
+        {
+          id: BigInt(id),
+          side: "debit",
+          accountKey: "lodging",
+          amount: { toNumber: () => 10000 },
+          account: {
+            type: "expense",
+            label: "宿泊費",
+            legalLabel: "⑨ 滞在費",
+            legalCategoryKey: "stay",
+          },
+        },
+      ],
+    };
+  }
+  function book(journalEntries: unknown[]) {
+    return {
+      financialYear: 2025,
+      publishedThrough: null,
+      asOfDate: null,
+      nextUpdateNote: null,
+      policyComment: null,
+      details: null,
+      politician: { name: "サンプル太郎", slug: "sample-taro", isResearchFundPublic: true },
+      journalEntries,
+      expenditureGroups: [],
+    };
+  }
+  const research = { key: "research", label: "⑦ 調査研究費" };
+
+  it("議員ページでは、上書きした仕訳の集計行と明細に上書き先の区分を添える", async () => {
+    const { prisma, repository } = setup();
+    prisma.researchFundBook.findFirst.mockResolvedValue(
+      book([entry(1, "research"), entry(2, null)]),
+    );
+
+    const result = await repository.findPublished("sample-taro", 2025);
+
+    expect(result?.rows.map((row) => row.legalCategoryOverride)).toEqual([research, undefined]);
+    expect(result?.expenses.map((expense) => expense.legalCategoryOverride)).toEqual([
+      research,
+      undefined,
+    ]);
+    // 科目の既定の区分（科目マスタの対応）は変えない
+    expect(result?.accounts.lodging).toEqual({
+      label: "宿泊費",
+      legalLabel: "⑨ 滞在費",
+      legalCategoryKey: "stay",
+    });
+  });
+
+  it("上書きが1件も無い帳簿では科目マスタを読まず、行に上書きの項目を足さない", async () => {
+    const { prisma, repository } = setup();
+    prisma.researchFundBook.findFirst.mockResolvedValue(book([entry(1, null)]));
+
+    const result = await repository.findPublished("sample-taro", 2025);
+
+    expect(prisma.researchFundAccount.findMany).not.toHaveBeenCalled();
+    expect(result?.rows[0]).not.toHaveProperty("legalCategoryOverride");
+    expect(result?.expenses[0]).not.toHaveProperty("legalCategoryOverride");
+  });
+
+  it("政党ページの集計行にも、上書き先の区分を添える", async () => {
+    const { prisma, repository } = setup();
+    prisma.politicalOrganization.findUnique.mockResolvedValue({
+      slug: "team-mirai",
+      displayName: "チームみらい",
+      politicianMemberships: [
+        {
+          politician: {
+            name: "サンプル太郎",
+            slug: "sample-taro",
+            books: [
+              {
+                asOfDate: null,
+                publishedThrough: null,
+                journalEntries: [entry(1, "research"), entry(2, null)],
+              },
+            ],
+          },
+        },
+      ],
+    });
+
+    const result = await repository.findPublishedByOrganization("team-mirai", 2025);
+
+    expect(result?.politicians[0].rows.map((row) => row.legalCategoryOverride)).toEqual([
+      research,
+      undefined,
+    ]);
   });
 });

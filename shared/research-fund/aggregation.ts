@@ -1,3 +1,8 @@
+import {
+  type ResearchFundLegalCategory,
+  resolveLegalLabel,
+} from "@/shared/research-fund/legal-category";
+
 /** 公開範囲・年度・議員の絞り込みと複式仕訳からの射影は呼び出し側で行う。 */
 export interface ResearchFundRow {
   /** 帳簿上の日付（YYYY-MM-DD）。タイムゾーンによる月のずれを避ける。 */
@@ -5,6 +10,11 @@ export interface ResearchFundRow {
   readonly accountKey: string;
   readonly amount: number;
   readonly type: "grant" | "expense";
+  /**
+   * 仕訳ごとの法定区分の上書き（#1880）。上書きが無ければ省略し、法定区分は科目の既定に従う。
+   * 法律上の区分の集計だけが使い、詳細の区分（科目）の集計には影響しない。
+   */
+  readonly legalCategoryOverride?: ResearchFundLegalCategory | null;
 }
 
 export interface ResearchFundCategory {
@@ -103,12 +113,14 @@ export function aggregateResearchFund(
       const account = Object.prototype.hasOwnProperty.call(accounts, row.accountKey)
         ? accounts[row.accountKey]
         : undefined;
+      const legalLabel = account
+        ? resolveLegalLabel(account.legalLabel, row.legalCategoryOverride)
+        : null;
       if (
         !account ||
         typeof account.label !== "string" ||
         !account.label.trim() ||
-        (mode === "legal" &&
-          (typeof account.legalLabel !== "string" || !account.legalLabel.trim()))
+        (mode === "legal" && (typeof legalLabel !== "string" || !legalLabel.trim()))
       ) {
         return invalid(
           `${path}.accountKey`,
@@ -116,10 +128,10 @@ export function aggregateResearchFund(
           "支出科目の区分対応が見つかりません",
         );
       }
-      const key = mode === "legal" ? account.legalLabel : row.accountKey;
+      const key = mode === "legal" && legalLabel ? legalLabel : row.accountKey;
       const category = categories.get(key) ?? {
         key,
-        label: mode === "legal" ? account.legalLabel : account.label,
+        label: mode === "legal" && legalLabel ? legalLabel : account.label,
         kind: "expense" as const,
         totalAmount: 0,
         count: 0,

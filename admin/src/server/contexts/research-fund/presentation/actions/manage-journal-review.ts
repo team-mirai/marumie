@@ -13,6 +13,7 @@ import { RevertJournalEntriesToDraftUsecase } from "@/server/contexts/research-f
 import { RevertJournalEntryToDraftUsecase } from "@/server/contexts/research-fund/application/usecases/revert-journal-entry-to-draft-usecase";
 import { SaveJournalEntryUsecase } from "@/server/contexts/research-fund/application/usecases/save-journal-entry-usecase";
 import { SetJournalEntriesPayeeUsecase } from "@/server/contexts/research-fund/application/usecases/set-journal-entries-payee-usecase";
+import { SetLegalCategoryOverrideUsecase } from "@/server/contexts/research-fund/application/usecases/set-legal-category-override-usecase";
 import { SetReceiptAbsentUsecase } from "@/server/contexts/research-fund/application/usecases/set-receipt-absent-usecase";
 import { SetReceiptAbsenceReasonUsecase } from "@/server/contexts/research-fund/application/usecases/set-receipt-absence-reason-usecase";
 import { SetJournalEntriesAdvancedByUsecase } from "@/server/contexts/research-fund/application/usecases/set-journal-entries-advanced-by-usecase";
@@ -27,6 +28,7 @@ import {
   type JournalEdit,
 } from "@/server/contexts/research-fund/domain/models/journal-review";
 import type { Payee, PayeeFormInput } from "@/server/contexts/research-fund/domain/models/payee";
+import type { LegalCategoryOverrideInput } from "@/server/contexts/research-fund/domain/models/legal-category-override";
 import { prisma } from "@/server/contexts/shared/infrastructure/prisma";
 import { WebappCacheInvalidator } from "@/server/contexts/shared/infrastructure/services/webapp-cache-invalidator";
 
@@ -65,6 +67,14 @@ type Mutation =
   // 徴難と徴し難かった事情も議員課提出用の帳簿の情報なので、公開中の仕訳でも変更でき、キャッシュも無効化しない。
   | { type: "set-receipt-absent"; id: string; updatedAt: string; receiptAbsent: boolean }
   | { type: "set-receipt-absence-reason"; id: string; updatedAt: string; reason: string }
+  // 法定区分の上書き（#1880）。公開内容を変えるので公開中の仕訳では変更できず、キャッシュも無効化しない。
+  // override が null なら上書きを外す。
+  | {
+      type: "set-legal-category-override";
+      id: string;
+      updatedAt: string;
+      override: LegalCategoryOverrideInput | null;
+    }
   // 領収書等番号も議員課提出用の帳簿の情報なので、キャッシュは無効化しない。
   | { type: "assign-receipt-numbers" };
 export async function mutateJournalReview(
@@ -174,6 +184,14 @@ export async function mutateJournalReview(
         mutation.id,
         mutation.updatedAt,
         mutation.reason,
+      );
+    else if (mutation.type === "set-legal-category-override")
+      saved = await new SetLegalCategoryOverrideUsecase(repository).execute(
+        bookId,
+        mutation.id,
+        mutation.updatedAt,
+        mutation.override,
+        user.id,
       );
     else if (mutation.type === "assign-receipt-numbers")
       receiptNumbers = await new AssignReceiptNumbersUsecase(
