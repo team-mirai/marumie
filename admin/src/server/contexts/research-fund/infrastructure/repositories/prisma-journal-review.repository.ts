@@ -221,7 +221,8 @@ export class PrismaJournalReviewRepository implements JournalReviewRepository {
     return book?.allowLegalCategoryOverride ?? false;
   }
   // 上書きは公開内容（法律上の区分）を変えるので、内容の編集と同じく下書き・確認済の支出の仕訳だけを対象にする。
-  // 帳簿の許可も同じトランザクションの条件で確かめ、判定のあとで許可が取り消されても上書きしない。
+  // 帳簿の行に共有ロックを取ってから許可を確かめる。許可の取り消し（PrismaBookRepository）は同じ行に排他ロックを
+  // 取るので、両者は直列化され、許可が取り消された帳簿に上書きが残ることはない（条件だけでは帳簿の行をロックしない）。
   // 上書きは仕訳とは別の表に持つが、仕訳の更新時刻を進めて同時更新の照合に使う（複式行と hash は作り直さない）。
   async setLegalCategoryOverride(
     bookId: string,
@@ -230,6 +231,7 @@ export class PrismaJournalReviewRepository implements JournalReviewRepository {
     userId: string,
   ) {
     return this.prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT id FROM research_fund_books WHERE id = ${BigInt(bookId)} FOR SHARE`;
       const result = await tx.researchFundJournalEntry.updateMany({
         where: {
           ...guard(bookId, entry),

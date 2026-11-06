@@ -511,11 +511,23 @@ describe("法定区分の上書き（#1880）", () => {
     const call = tx.researchFundJournalEntry.updateMany.mock.calls[0][0];
     expect(call.where).toEqual(expect.objectContaining({ id: BigInt(entry.id), bookId: BigInt(1), status: { in: ["draft", "approved"] }, updatedAt: new Date(entry.updatedAt), source: { in: ["manual", "scan"] }, book: { allowLegalCategoryOverride: true } }));
     expect(call.data).toEqual({ updatedAt: expect.any(Date) });
+    // 許可の取り消し（排他ロック）と直列化するため、許可を確かめる前に帳簿の行に共有ロックを取る
+    expect(tx.$queryRaw.mock.calls[0][0].join("?")).toContain("FOR SHARE");
+    expect(tx.$queryRaw.mock.invocationCallOrder[0]).toBeLessThan(tx.researchFundJournalEntry.updateMany.mock.invocationCallOrder[0]);
     expect(overrides.upsert).toHaveBeenCalledWith({
       where: { entryId: BigInt(entry.id) },
       create: { entryId: BigInt(entry.id), ...override, createdById: "user" },
       update: { ...override, createdById: "user" },
     });
+  });
+
+  test("帳簿の許可を返し、帳簿が無ければ許可されていないとみなす", async () => {
+    const { repository, tx } = setupWithOverride();
+    tx.researchFundBook.findUnique.mockResolvedValue({ allowLegalCategoryOverride: true });
+    await expect(repository.legalCategoryOverrideAllowed("1")).resolves.toBe(true);
+    expect(tx.researchFundBook.findUnique).toHaveBeenCalledWith({ where: { id: BigInt(1) }, select: { allowLegalCategoryOverride: true } });
+    tx.researchFundBook.findUnique.mockResolvedValue(null);
+    await expect(repository.legalCategoryOverrideAllowed("9")).resolves.toBe(false);
   });
 
   test("null なら上書きを外す", async () => {

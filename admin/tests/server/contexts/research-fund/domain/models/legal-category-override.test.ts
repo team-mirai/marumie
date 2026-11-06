@@ -39,6 +39,18 @@ describe("LegalCategoryOverridePolicy.validate（#1880）", () => {
     ).toEqual({ status: "valid", value: { legalCategoryKey: "research", reason: "提出済みの報告書に合わせる" } });
   });
 
+  it("形の不正な入力は拒否する", () => {
+    expect(
+      messageOf(
+        LegalCategoryOverridePolicy.validate(
+          { legalCategoryKey: "research", reason: 1 } as unknown as { legalCategoryKey: string; reason: string },
+          "office",
+          catalog,
+        ),
+      ),
+    ).toBe("法定区分の上書きの入力が不正です");
+  });
+
   it("理由が無い・空白だけなら拒否する", () => {
     expect(messageOf(LegalCategoryOverridePolicy.validate({ legalCategoryKey: "research", reason: " 　\n" }, "office", catalog))).toBe(
       "上書きの理由を入力してください",

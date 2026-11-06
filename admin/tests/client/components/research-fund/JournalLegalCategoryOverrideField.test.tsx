@@ -3,6 +3,7 @@
  */
 import { fireEvent, render, screen } from "@testing-library/react";
 import { JournalLegalCategoryOverrideField } from "@/client/components/research-fund/JournalLegalCategoryOverrideField";
+import { JournalPublicFields } from "@/client/components/research-fund/JournalPublicFields";
 import type {
   ReviewAccount,
   ReviewEntry,
@@ -18,7 +19,9 @@ const accounts: ReviewAccount[] = [
   { key: "ai-tools", label: "AIツール", type: "expense", legalCategoryKey: "office", legalLabel: "④ 事務所費" },
   { key: "books", label: "書籍", type: "expense", legalCategoryKey: "research", legalLabel: "⑦ 調査研究費" },
   { key: "lodging", label: "宿泊費", type: "expense", legalCategoryKey: "stay", legalLabel: "⑨ 滞在費" },
+  { key: "needs-review", label: "要確認", type: "expense", legalCategoryKey: null, legalLabel: null },
 ];
+const override = { key: "research", label: "⑦ 調査研究費", reason: "提出済みの報告書に合わせる" };
 
 const base: ReviewEntry = {
   id: "1",
@@ -107,5 +110,75 @@ describe("JournalLegalCategoryOverrideField（#1880）", () => {
     renderField({}, false);
 
     expect(screen.queryByRole("button", { name: "法定区分を上書きする" })).toBeNull();
+  });
+});
+
+describe("JournalLegalCategoryOverrideField の編集（#1880）", () => {
+  it("上書き中の区分と理由を初期値にして開き、変えなければ保存できない。キャンセルで閉じる", () => {
+    const { onSave } = renderField({ legalCategoryOverride: override });
+    fireEvent.click(screen.getByRole("button", { name: "法定区分の上書きを編集" }));
+
+    expect((screen.getByLabelText("区分の上書き") as HTMLSelectElement).value).toBe("research");
+    expect((screen.getByLabelText("上書きの理由") as HTMLTextAreaElement).value).toBe(override.reason);
+    expect((screen.getByRole("button", { name: "上書きを保存" }) as HTMLButtonElement).disabled).toBe(true);
+
+    fireEvent.change(screen.getByLabelText("区分の上書き"), { target: { value: "stay" } });
+    fireEvent.click(screen.getByRole("button", { name: "キャンセル" }));
+
+    expect(screen.queryByLabelText("区分の上書き")).toBeNull();
+    expect(onSave).not.toHaveBeenCalled();
+  });
+
+  it("外す確認でキャンセルしたら外さない", () => {
+    jest.spyOn(window, "confirm").mockReturnValue(false);
+    const { onSave } = renderField({ legalCategoryOverride: override });
+
+    fireEvent.click(screen.getByRole("button", { name: "外す" }));
+
+    expect(onSave).not.toHaveBeenCalled();
+  });
+
+  it("法定区分を持たない科目（要確認）の仕訳は上書きできず、科目の確定を促す", () => {
+    renderField({ accountKey: "needs-review", status: "draft" });
+
+    expect(screen.queryByRole("button", { name: "法定区分を上書きする" })).toBeNull();
+    expect(screen.getByText(/科目を確定すると上書きできます/)).toBeTruthy();
+  });
+
+  it("公開中で上書きの無い仕訳は、変更できない理由を添える", () => {
+    renderField({ status: "published" });
+
+    expect(screen.getByText(/公開中の仕訳の法定区分は変更できません/)).toBeTruthy();
+  });
+});
+
+describe("JournalPublicFields の法律上の区分（#1880）", () => {
+  function renderPublicFields(entry: Partial<ReviewEntry>, readOnly: boolean) {
+    const full = { ...base, ...entry };
+    render(
+      <JournalPublicFields
+        fieldId="f"
+        entry={full}
+        input={full}
+        accounts={accounts}
+        year={2025}
+        readOnly={readOnly}
+        onChange={jest.fn()}
+      />,
+    );
+  }
+
+  it.each([true, false])("上書き中の仕訳は、上書きした区分に「上書き中」を添える（readOnly: %s）", (readOnly) => {
+    renderPublicFields({ legalCategoryOverride: override }, readOnly);
+
+    expect(screen.getByText(/法律上の区分：⑦ 調査研究費/)).toBeTruthy();
+    expect(screen.getByText("（上書き中）")).toBeTruthy();
+  });
+
+  it("上書きの無い仕訳は科目の既定の区分を出す", () => {
+    renderPublicFields({}, true);
+
+    expect(screen.getByText(/法律上の区分：④ 事務所費/)).toBeTruthy();
+    expect(screen.queryByText("（上書き中）")).toBeNull();
   });
 });

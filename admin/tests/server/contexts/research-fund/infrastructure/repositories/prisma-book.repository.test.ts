@@ -9,14 +9,21 @@ function setup() {
     ]),
   };
   const overrides = { count: jest.fn().mockResolvedValue(0) };
+  const queryRaw = jest.fn();
+  const client = {
+    researchFundBook: table,
+    researchFundAccount: accounts,
+    researchFundLegalCategoryOverride: overrides,
+    $queryRaw: queryRaw,
+  };
   return {
     table,
     accounts,
     overrides,
+    queryRaw,
     repository: new PrismaBookRepository({
-      researchFundBook: table,
-      researchFundAccount: accounts,
-      researchFundLegalCategoryOverride: overrides,
+      ...client,
+      $transaction: jest.fn(async (fn: (tx: unknown) => unknown) => fn(client)),
     } as unknown as PrismaClient),
   };
 }
@@ -130,9 +137,12 @@ describe("法定区分の上書き（#1880）", () => {
     expect(accounts.findMany).not.toHaveBeenCalled();
   });
 
-  test("許可の取り消しは、上書き中の仕訳が残っていないことを同じ文の条件で確かめる", async () => {
-    const { table, repository } = setup();
+  test("許可の取り消しは、帳簿の行に排他ロックを取ってから、上書き中の仕訳が残っていないことを条件に更新する", async () => {
+    const { table, queryRaw, repository } = setup();
     await repository.setLegalCategoryOverrideAllowed("1", "2", false);
+    // 上書きの処理（共有ロック）と直列化し、コミット前の上書きを見落とさない
+    expect(queryRaw.mock.calls[0][0].join("?")).toContain("FOR UPDATE");
+    expect(queryRaw.mock.invocationCallOrder[0]).toBeLessThan(table.updateMany.mock.invocationCallOrder[0]);
     expect(table.updateMany).toHaveBeenCalledWith({
       where: {
         id: BigInt(2), politicianId: BigInt(1),

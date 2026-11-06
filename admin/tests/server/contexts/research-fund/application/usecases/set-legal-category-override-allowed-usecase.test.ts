@@ -55,4 +55,11 @@ describe("SetLegalCategoryOverrideAllowedUsecase（#1880）", () => {
     await expect(usecase.execute("x", "2", true)).rejects.toThrow("ID");
     expect(repository.legalCategoryOverrideCount).not.toHaveBeenCalled();
   });
+
+  it("真偽値でない指定は受け付けない", async () => {
+    const { repository, usecase } = setup(0);
+
+    await expect(usecase.execute("1", "2", "false" as unknown as boolean)).rejects.toThrow("操作が不正です");
+    expect(repository.setLegalCategoryOverrideAllowed).not.toHaveBeenCalled();
+  });
 });

@@ -88,16 +88,21 @@ export class PrismaBookRepository implements IBookRepository {
     }
   }
   async setLegalCategoryOverrideAllowed(politicianId: string, bookId: string, allowed: boolean) {
-    // 取り消しは、上書き中の仕訳が残っていないことを同じ文の条件で確かめる（判定のあとに上書きされても取り消さない）。
-    const result = await this.prisma.researchFundBook.updateMany({
-      where: {
-        id: BigInt(bookId),
-        politicianId: BigInt(politicianId),
-        ...(allowed
-          ? {}
-          : { journalEntries: { none: { legalCategoryOverride: { isNot: null } } } }),
-      },
-      data: { allowLegalCategoryOverride: allowed },
+    // 取り消しは、上書き中の仕訳が残っていないことを条件に含める。条件の副問い合わせは実行中の上書き（コミット前）を
+    // 見ないので、先に帳簿の行に排他ロックを取る。上書き（PrismaJournalReviewRepository）は同じ行に共有ロックを取るので、
+    // 実行中の上書きのコミットを待ってから、新しい文で上書きの有無を確かめられる。
+    const result = await this.prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT id FROM research_fund_books WHERE id = ${BigInt(bookId)} FOR UPDATE`;
+      return tx.researchFundBook.updateMany({
+        where: {
+          id: BigInt(bookId),
+          politicianId: BigInt(politicianId),
+          ...(allowed
+            ? {}
+            : { journalEntries: { none: { legalCategoryOverride: { isNot: null } } } }),
+        },
+        data: { allowLegalCategoryOverride: allowed },
+      });
     });
     if (result.count !== 1)
       throw new BookError(
