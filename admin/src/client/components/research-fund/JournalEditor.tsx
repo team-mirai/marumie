@@ -68,6 +68,7 @@ export function JournalEditor({
   onSaveReceiptAbsenceReason,
   onSetLegalCategoryOverride,
   onAttachDocument,
+  onReplaceDocument,
   onLinkPayee,
   onCreatePayee,
 }: {
@@ -106,6 +107,8 @@ export function JournalEditor({
   onSetLegalCategoryOverride: (override: LegalCategoryOverrideInput | null) => void;
   /** 書類の無い仕訳に、あとから領収書ファイルを紐づける */
   onAttachDocument: (file: File) => void;
+  /** 書類のある仕訳の書類ファイルを差し替える（読み取りはやり直さない） */
+  onReplaceDocument: (file: File) => void;
   onLinkPayee: (targets: readonly ReviewEntry[], payeeId: string | null) => void;
   onCreatePayee: (targets: readonly ReviewEntry[], input: PayeeFormInput) => void;
 }) {
@@ -184,6 +187,9 @@ export function JournalEditor({
           masking={documentMasking}
           pending={pending}
           onAttach={JournalOperation.attachDocument(entry) === null ? onAttachDocument : undefined}
+          onReplace={
+            JournalOperation.replaceDocument(entry) === null ? onReplaceDocument : undefined
+          }
         />
         {published && (
           <div className="flex items-center gap-1.5 rounded-md bg-muted px-2.5 py-[7px] text-xs">

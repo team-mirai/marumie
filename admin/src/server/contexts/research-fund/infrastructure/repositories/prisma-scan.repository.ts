@@ -1,5 +1,5 @@
 import "server-only";
-import type { Prisma, PrismaClient } from "@prisma/client";
+import { Prisma, type PrismaClient } from "@prisma/client";
 import type {
   ScanBatchView,
   ScanJobStatus,
@@ -59,14 +59,23 @@ export class PrismaScanRepository implements ScanRepository {
 
   async createRereadBatch(input: CreateRereadBatchInput): Promise<string> {
     const bookId = BigInt(input.bookId);
+    const documentIds = input.documentIds.map((documentId) => BigInt(documentId));
     return await this.prisma.$transaction(async (tx) => {
+      // 書類の差し替え（#1827）と直列化するため、ジョブを作る前に書類の行をロックする。
+      // 差し替えは書類の行をロックしてから読み取り中のジョブを数えるので、確認の後にジョブが入り込まない
+      await tx.$queryRaw`
+        SELECT id FROM research_fund_documents
+        WHERE id IN (${Prisma.join(documentIds)})
+        ORDER BY id
+        FOR UPDATE
+      `;
       const batch = await tx.researchFundScanBatch.create({
         data: { bookId, uploadedById: input.uploadedById },
       });
       await tx.researchFundScanJob.createMany({
-        data: input.documentIds.map((documentId) => ({
+        data: documentIds.map((documentId) => ({
           batchId: batch.id,
-          documentId: BigInt(documentId),
+          documentId,
           promptId: BigInt(input.promptId),
           model: input.model,
           rereadInstruction: input.instruction,
@@ -333,11 +342,20 @@ export class PrismaScanRepository implements ScanRepository {
   }
 
   async requeueJob(bookId: string, jobId: string): Promise<boolean> {
-    const result = await this.prisma.researchFundScanJob.updateMany({
-      where: { id: BigInt(jobId), batch: { bookId: BigInt(bookId) }, status: "failed" },
-      data: { status: "queued", error: null, startedAt: null, finishedAt: null },
+    return await this.prisma.$transaction(async (tx) => {
+      // 書類の差し替え（#1827）と直列化するため、ジョブを戻す前にその書類の行をロックする
+      await tx.$queryRaw`
+        SELECT d.id FROM research_fund_documents d
+        JOIN research_fund_scan_jobs j ON j.document_id = d.id
+        WHERE j.id = ${BigInt(jobId)}
+        FOR UPDATE OF d
+      `;
+      const result = await tx.researchFundScanJob.updateMany({
+        where: { id: BigInt(jobId), batch: { bookId: BigInt(bookId) }, status: "failed" },
+        data: { status: "queued", error: null, startedAt: null, finishedAt: null },
+      });
+      return result.count === 1;
     });
-    return result.count === 1;
   }
 
   async payees(bookId: string): Promise<(Payee & { aliases: string[] })[]> {

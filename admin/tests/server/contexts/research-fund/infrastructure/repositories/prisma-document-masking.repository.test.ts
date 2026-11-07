@@ -97,9 +97,10 @@ describe("PrismaDocumentMaskingRepository", () => {
       where: { maskingStatus: "pending" },
       orderBy: { id: "asc" },
     });
-    // 作り直しの印（masking_error）は消さずに残す
+    // 作り直しの印（masking_error）は消さずに残す。
+    // 候補を読んだ後に原本が差し替えられていたら着手しないよう、読んだ原本のキーも照合する（#1827）
     expect(delegate.updateMany).toHaveBeenLastCalledWith({
-      where: { id: BigInt(2), maskingStatus: "pending" },
+      where: { id: BigInt(2), storageKey: "k2", maskingStatus: "pending" },
       data: { maskingStatus: "running", maskingStartedAt: result?.startedAt },
     });
   });
