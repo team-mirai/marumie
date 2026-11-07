@@ -1,5 +1,5 @@
 import "server-only";
-import { anthropic } from "@ai-sdk/anthropic";
+import { openrouter } from "@openrouter/ai-sdk-provider";
 import { generateText, jsonSchema, LoadAPIKeyError, NoObjectGeneratedError, Output } from "ai";
 import { z } from "zod";
 import {
@@ -17,9 +17,12 @@ import {
   type ResearchFundResult,
 } from "@/server/contexts/research-fund/domain/types/validation";
 
-/** 領収書の読み取りに使うモデル。スキャンジョブにも同じ名前を記録する */
+/**
+ * 領収書の読み取りに使うモデル（OpenRouter のモデル ID。例: anthropic/claude-opus-5.5, openai/gpt-6.1-sol）。
+ * スキャンジョブにも同じ名前を記録する
+ */
 export function researchFundExtractionModel(): string {
-  return process.env.RESEARCH_FUND_EXTRACTION_MODEL?.trim() || "claude-opus-5-5";
+  return process.env.RESEARCH_FUND_EXTRACTION_MODEL?.trim() || "anthropic/claude-opus-5.5";
 }
 
 export class VercelAIReceiptExtractionGateway implements ReceiptExtractionGateway {
@@ -37,7 +40,10 @@ export class VercelAIReceiptExtractionGateway implements ReceiptExtractionGatewa
     }
     try {
       const { output } = await generateText({
-        model: anthropic(researchFundExtractionModel()),
+        // strict な JSON Schema はプロバイダごとに使えるキーワードが違い（minLength など）、
+        // 非対応のキーワードがあるとリクエストごと拒否されるモデルがある。スキーマは指示として渡し、
+        // 出力の検証は下の validate で行う。PDF はネイティブ非対応のモデルでも OpenRouter 側で変換される
+        model: openrouter(researchFundExtractionModel(), { structuredOutputs: { strict: false } }),
         system: buildReceiptExtractionPrompt(officePrompt, rereadInstruction ?? null),
         messages: [
           {
@@ -78,7 +84,7 @@ export class VercelAIReceiptExtractionGateway implements ReceiptExtractionGatewa
         return invalidResearchFundResult(
           "",
           RF_ERROR_CODES.EXTRACTION_API_KEY_MISSING,
-          "LLMのAPIキーが未設定です。ANTHROPIC_API_KEYを設定してください",
+          "LLMのAPIキーが未設定です。OPENROUTER_API_KEYを設定してください",
         );
       }
       return invalidResearchFundResult(
