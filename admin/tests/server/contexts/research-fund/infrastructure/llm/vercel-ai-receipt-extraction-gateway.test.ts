@@ -79,7 +79,7 @@ describe("VercelAIReceiptExtractionGateway（LLMのみモック、SDKの構造�
           ],
         },
       });
-      expect(openrouter).toHaveBeenCalledWith("anthropic/claude-opus-5-5", {
+      expect(openrouter).toHaveBeenCalledWith("anthropic/claude-opus-5.5", {
         structuredOutputs: { strict: false },
       });
       expect(model.doGenerateCalls).toHaveLength(1);
@@ -194,9 +194,9 @@ describe("researchFundExtractionModel", () => {
     else process.env.RESEARCH_FUND_EXTRACTION_MODEL = originalModel;
   });
 
-  it("未設定なら anthropic/claude-opus-5-5 を使う（スキャンジョブにも同じ名前を記録する）", () => {
+  it("未設定なら anthropic/claude-opus-5.5 を使う（スキャンジョブにも同じ名前を記録する）", () => {
     delete process.env.RESEARCH_FUND_EXTRACTION_MODEL;
-    expect(researchFundExtractionModel()).toBe("anthropic/claude-opus-5-5");
+    expect(researchFundExtractionModel()).toBe("anthropic/claude-opus-5.5");
   });
 
   it("環境変数があれば前後の空白を除いて使う", () => {

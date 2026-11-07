@@ -18,11 +18,11 @@ import {
 } from "@/server/contexts/research-fund/domain/types/validation";
 
 /**
- * 領収書の読み取りに使うモデル（OpenRouter のモデル ID。例: anthropic/claude-opus-5-5, openai/gpt-6.1-sol）。
+ * 領収書の読み取りに使うモデル（OpenRouter のモデル ID。例: anthropic/claude-opus-5.5, openai/gpt-6.1-sol）。
  * スキャンジョブにも同じ名前を記録する
  */
 export function researchFundExtractionModel(): string {
-  return process.env.RESEARCH_FUND_EXTRACTION_MODEL?.trim() || "anthropic/claude-opus-5-5";
+  return process.env.RESEARCH_FUND_EXTRACTION_MODEL?.trim() || "anthropic/claude-opus-5.5";
 }
 
 export class VercelAIReceiptExtractionGateway implements ReceiptExtractionGateway {
