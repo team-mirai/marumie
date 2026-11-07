@@ -14,6 +14,7 @@ export interface UserRepository {
   create(data: { authId: string; email: string; roles?: UserRole[] }): Promise<User>;
   findById(id: string): Promise<User | null>;
   findByAuthId(authId: string): Promise<User | null>;
+  /** メールアドレスでユーザーを探す（大文字・小文字の違いは区別しない） */
   findByEmail(email: string): Promise<User | null>;
   findAll(): Promise<User[]>;
   updateRoles(authId: string, roles: UserRole[]): Promise<User>;

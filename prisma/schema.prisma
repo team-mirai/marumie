@@ -23,8 +23,39 @@ model User {
   researchFundLegalCategoryOverrides      ResearchFundLegalCategoryOverride[]
 
   politicianAssignments UserPoliticianAssignment[]
+  invitationsCreated    UserInvitation[]
 
   @@map("users")
+}
+
+// 初回ログイン前の人に付けておくロールと担当議員の招待（予約）。招待メールは送らない（#1882）
+// 持ち主を確かめられた初回ログインで User を作るとき、同じトランザクションでロール・担当を付けて行を消す
+model UserInvitation {
+  id          String     @id @default(uuid())
+  // 小文字に正規化して保存する（大文字・小文字の違いで別人扱いしない）
+  email       String     @unique @db.VarChar(255)
+  roles       UserRole[] @default([])
+  createdById String?    @map("created_by_id")
+  createdAt   DateTime   @default(now()) @map("created_at")
+  updatedAt   DateTime   @updatedAt @map("updated_at")
+
+  createdBy   User?                      @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  politicians UserInvitationPolitician[]
+
+  @@map("user_invitations")
+}
+
+// 招待で付ける担当議員（#1882）
+model UserInvitationPolitician {
+  invitationId String         @map("invitation_id")
+  politicianId BigInt         @map("politician_id")
+  createdAt    DateTime       @default(now()) @map("created_at")
+  invitation   UserInvitation @relation(fields: [invitationId], references: [id], onDelete: Cascade)
+  politician   Politician     @relation(fields: [politicianId], references: [id], onDelete: Cascade)
+
+  @@unique([invitationId, politicianId])
+  @@index([politicianId])
+  @@map("user_invitation_politicians")
 }
 
 // ユーザーが担当する議員（調査研究費の書き込みを担当の議員室に絞るため。#1773）
@@ -218,7 +249,8 @@ model Politician {
 
   addressSearchPrompts ResearchFundAddressSearchPrompt[]
 
-  userAssignments UserPoliticianAssignment[]
+  userAssignments       UserPoliticianAssignment[]
+  invitationAssignments UserInvitationPolitician[]
 
   @@map("politicians")
 }

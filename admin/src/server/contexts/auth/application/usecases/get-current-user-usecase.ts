@@ -24,7 +24,10 @@ export class GetCurrentUserUsecase {
 
       let user = await this.userRepository.findByAuthId(authUser.id);
 
-      // DB にユーザーがいない場合は作成（ロールは admin がユーザー管理画面で付けるまで持たない）
+      // DB にユーザーがいない場合は作成（ロールは admin がユーザー管理画面で付けるまで持たない）。
+      // ここではメールアドレスの持ち主かどうかを確かめられない（メール確認が無効な環境では
+      // 他人のメールアドレスでパスワード登録できる）ため、招待（#1882）は使わない
+
       if (!user && authUser.email) {
         user = await this.userRepository.create({
           authId: authUser.id,
