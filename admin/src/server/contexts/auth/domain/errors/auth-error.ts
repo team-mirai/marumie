@@ -18,7 +18,10 @@ export type AuthErrorCode =
   | "INVITE_FAILED"
   | "RESET_EMAIL_FAILED"
   | "DOMAIN_NOT_ALLOWED"
-  | "PROVIDER_DISABLED";
+  | "PROVIDER_DISABLED"
+  | "USER_ALREADY_EXISTS"
+  | "INVITATION_ALREADY_EXISTS"
+  | "INVITATION_NOT_FOUND";
 
 /**
  * 認証エラークラス（単一クラス + code パターン）
@@ -53,4 +56,9 @@ export const AUTH_ERROR_MESSAGES: Record<AuthErrorCode, string> = {
   RESET_EMAIL_FAILED: "パスワードリセットメールの送信に失敗しました",
   DOMAIN_NOT_ALLOWED: "このメールアドレスのドメインではログインできません",
   PROVIDER_DISABLED: "この認証方式は現在利用できません",
+  USER_ALREADY_EXISTS:
+    "このメールアドレスのユーザーは既にいます。ロールと担当議員はユーザー一覧で変更してください",
+  INVITATION_ALREADY_EXISTS:
+    "このメールアドレスには未使用の招待が既にあります。内容を変えるときは取り消してから登録し直してください",
+  INVITATION_NOT_FOUND: "招待が見つかりません。既に使われたか、取り消されています",
 };

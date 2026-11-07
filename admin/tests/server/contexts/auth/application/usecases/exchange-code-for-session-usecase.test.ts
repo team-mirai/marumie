@@ -4,12 +4,14 @@ import { AllowedEmailDomains } from "@/server/contexts/auth/domain/models/allowe
 import { AuthProviderConfig } from "@/server/contexts/auth/domain/models/auth-provider-config";
 import type { AuthProvider } from "@/server/contexts/auth/domain/providers/auth-provider.interface";
 import type { UserRepository } from "@/server/contexts/shared/domain/repositories/user-repository.interface";
+import type { UserInvitationRepository } from "@/server/contexts/auth/domain/repositories/user-invitation-repository.interface";
 import {
   createMockSupabaseUser,
   createMockSession,
   createMockUser,
   createMockAuthProvider,
   createMockUserRepository,
+  createMockUserInvitationRepository,
 } from "../../test-helpers";
 
 const noRestriction = AllowedEmailDomains.parse(undefined);
@@ -18,14 +20,17 @@ const allProviders = AuthProviderConfig.parse("password,google");
 describe("ExchangeCodeForSessionUsecase", () => {
   let mockAuthProvider: jest.Mocked<AuthProvider>;
   let mockUserRepository: jest.Mocked<UserRepository>;
+  let mockInvitationRepository: jest.Mocked<UserInvitationRepository>;
   let usecase: ExchangeCodeForSessionUsecase;
 
   beforeEach(() => {
     mockAuthProvider = createMockAuthProvider();
     mockUserRepository = createMockUserRepository();
+    mockInvitationRepository = createMockUserInvitationRepository();
     usecase = new ExchangeCodeForSessionUsecase(
       mockAuthProvider,
       mockUserRepository,
+      mockInvitationRepository,
       noRestriction,
       allProviders,
     );
@@ -47,7 +52,7 @@ describe("ExchangeCodeForSessionUsecase", () => {
       });
       expect(mockAuthProvider.exchangeCodeForSession).toHaveBeenCalledWith("auth-code");
       expect(mockUserRepository.findByAuthId).toHaveBeenCalledWith("auth-user-id");
-      expect(mockUserRepository.create).not.toHaveBeenCalled();
+      expect(mockInvitationRepository.createUserAcceptingInvitation).not.toHaveBeenCalled();
     });
 
     it("新規ユーザーの場合はユーザーを作成して返す", async () => {
@@ -61,7 +66,7 @@ describe("ExchangeCodeForSessionUsecase", () => {
 
       mockAuthProvider.exchangeCodeForSession.mockResolvedValue(session);
       mockUserRepository.findByAuthId.mockResolvedValue(null);
-      mockUserRepository.create.mockResolvedValue(newUser);
+      mockInvitationRepository.createUserAcceptingInvitation.mockResolvedValue(newUser);
 
       const result = await usecase.execute("auth-code");
 
@@ -69,10 +74,9 @@ describe("ExchangeCodeForSessionUsecase", () => {
         user: newUser,
         requiresPasswordSetup: true,
       });
-      expect(mockUserRepository.create).toHaveBeenCalledWith({
+      expect(mockInvitationRepository.createUserAcceptingInvitation).toHaveBeenCalledWith({
         authId: "auth-user-id",
         email: "test@example.com",
-        roles: [],
       });
     });
 
@@ -90,7 +94,7 @@ describe("ExchangeCodeForSessionUsecase", () => {
       const result = await usecase.execute("auth-code");
 
       expect(result).toEqual({ user: invitedUser, requiresPasswordSetup: true });
-      expect(mockUserRepository.create).not.toHaveBeenCalled();
+      expect(mockInvitationRepository.createUserAcceptingInvitation).not.toHaveBeenCalled();
     });
 
     it("新規ユーザーでlastSignInAtがある場合はrequiresPasswordSetupがfalse", async () => {
@@ -104,7 +108,7 @@ describe("ExchangeCodeForSessionUsecase", () => {
 
       mockAuthProvider.exchangeCodeForSession.mockResolvedValue(session);
       mockUserRepository.findByAuthId.mockResolvedValue(null);
-      mockUserRepository.create.mockResolvedValue(newUser);
+      mockInvitationRepository.createUserAcceptingInvitation.mockResolvedValue(newUser);
 
       const result = await usecase.execute("auth-code");
 
@@ -122,7 +126,7 @@ describe("ExchangeCodeForSessionUsecase", () => {
 
       mockAuthProvider.exchangeCodeForSession.mockResolvedValue(session);
       mockUserRepository.findByAuthId.mockResolvedValue(null);
-      mockUserRepository.create.mockResolvedValue(newUser);
+      mockInvitationRepository.createUserAcceptingInvitation.mockResolvedValue(newUser);
 
       const result = await usecase.execute("auth-code");
 
@@ -141,7 +145,7 @@ describe("ExchangeCodeForSessionUsecase", () => {
         name: "AuthError",
         code: "AUTH_FAILED",
       });
-      expect(mockUserRepository.create).not.toHaveBeenCalled();
+      expect(mockInvitationRepository.createUserAcceptingInvitation).not.toHaveBeenCalled();
       expect(mockAuthProvider.signOut).toHaveBeenCalled();
     });
 
@@ -169,6 +173,7 @@ describe("ExchangeCodeForSessionUsecase", () => {
       usecase = new ExchangeCodeForSessionUsecase(
         mockAuthProvider,
         mockUserRepository,
+        mockInvitationRepository,
         restricted,
         allProviders,
       );
@@ -187,7 +192,7 @@ describe("ExchangeCodeForSessionUsecase", () => {
 
       mockAuthProvider.exchangeCodeForSession.mockResolvedValue(session);
       mockUserRepository.findByAuthId.mockResolvedValue(null);
-      mockUserRepository.create.mockResolvedValue(newUser);
+      mockInvitationRepository.createUserAcceptingInvitation.mockResolvedValue(newUser);
 
       const result = await usecase.execute("auth-code");
 
@@ -195,10 +200,9 @@ describe("ExchangeCodeForSessionUsecase", () => {
         user: newUser,
         requiresPasswordSetup: false,
       });
-      expect(mockUserRepository.create).toHaveBeenCalledWith({
+      expect(mockInvitationRepository.createUserAcceptingInvitation).toHaveBeenCalledWith({
         authId: "auth-user-id",
         email: "member@team-mir.ai",
-        roles: [],
       });
     });
 
@@ -215,7 +219,7 @@ describe("ExchangeCodeForSessionUsecase", () => {
         code: "DOMAIN_NOT_ALLOWED",
       });
       expect(mockAuthProvider.signOut).toHaveBeenCalled();
-      expect(mockUserRepository.create).not.toHaveBeenCalled();
+      expect(mockInvitationRepository.createUserAcceptingInvitation).not.toHaveBeenCalled();
     });
 
     it("Google経由でメールがない場合もエラーを投げる", async () => {
@@ -252,7 +256,7 @@ describe("ExchangeCodeForSessionUsecase", () => {
         code: "DOMAIN_NOT_ALLOWED",
       });
       expect(mockAuthProvider.signOut).toHaveBeenCalled();
-      expect(mockUserRepository.create).not.toHaveBeenCalled();
+      expect(mockInvitationRepository.createUserAcceptingInvitation).not.toHaveBeenCalled();
     });
 
     it("招待済みのユーザーが許可ドメインのGoogleでログインした場合はパスワード設定へ誘導しない", async () => {
@@ -268,7 +272,7 @@ describe("ExchangeCodeForSessionUsecase", () => {
 
       mockAuthProvider.exchangeCodeForSession.mockResolvedValue(session);
       mockUserRepository.findByAuthId.mockResolvedValue(null);
-      mockUserRepository.create.mockResolvedValue(newUser);
+      mockInvitationRepository.createUserAcceptingInvitation.mockResolvedValue(newUser);
 
       const result = await usecase.execute("auth-code");
 
@@ -289,7 +293,7 @@ describe("ExchangeCodeForSessionUsecase", () => {
 
       mockAuthProvider.exchangeCodeForSession.mockResolvedValue(session);
       mockUserRepository.findByAuthId.mockResolvedValue(null);
-      mockUserRepository.create.mockResolvedValue(newUser);
+      mockInvitationRepository.createUserAcceptingInvitation.mockResolvedValue(newUser);
 
       const result = await usecase.execute("auth-code");
 
@@ -305,6 +309,7 @@ describe("ExchangeCodeForSessionUsecase", () => {
       usecase = new ExchangeCodeForSessionUsecase(
         mockAuthProvider,
         mockUserRepository,
+        mockInvitationRepository,
         noRestriction,
         passwordOnly,
       );
@@ -324,7 +329,7 @@ describe("ExchangeCodeForSessionUsecase", () => {
       });
       expect(mockAuthProvider.signOut).toHaveBeenCalled();
       expect(mockUserRepository.findByAuthId).not.toHaveBeenCalled();
-      expect(mockUserRepository.create).not.toHaveBeenCalled();
+      expect(mockInvitationRepository.createUserAcceptingInvitation).not.toHaveBeenCalled();
     });
 
     it("セッション破棄に失敗しても拒否の理由をそのまま返す", async () => {
@@ -371,7 +376,7 @@ describe("ExchangeCodeForSessionUsecase", () => {
       });
       expect(mockAuthProvider.signOut).toHaveBeenCalled();
       expect(mockUserRepository.findByAuthId).not.toHaveBeenCalled();
-      expect(mockUserRepository.create).not.toHaveBeenCalled();
+      expect(mockInvitationRepository.createUserAcceptingInvitation).not.toHaveBeenCalled();
     });
 
     it("ドメイン制限が設定されていても判定不能なセッションは通さない", async () => {
@@ -381,6 +386,7 @@ describe("ExchangeCodeForSessionUsecase", () => {
       usecase = new ExchangeCodeForSessionUsecase(
         mockAuthProvider,
         mockUserRepository,
+        mockInvitationRepository,
         restricted,
         allProviders,
       );
@@ -396,6 +402,63 @@ describe("ExchangeCodeForSessionUsecase", () => {
         code: "AUTH_FAILED",
       });
       expect(mockAuthProvider.signOut).toHaveBeenCalled();
+    });
+  });
+
+  describe("execute（招待の扱い。#1882）", () => {
+    it("許可ドメインの Google で初めてログインした人は、招待を使ってユーザーを作る", async () => {
+      usecase = new ExchangeCodeForSessionUsecase(
+        mockAuthProvider,
+        mockUserRepository,
+        mockInvitationRepository,
+        AllowedEmailDomains.parse("team-mir.ai"),
+        allProviders,
+      );
+      const session = createMockSession({
+        user: createMockSupabaseUser({ email: "staff@team-mir.ai" }),
+        signInProvider: "google",
+      });
+      const newUser = createMockUser({ email: "staff@team-mir.ai", roles: ["research_fund"] });
+      mockAuthProvider.exchangeCodeForSession.mockResolvedValue(session);
+      mockUserRepository.findByAuthId.mockResolvedValue(null);
+      mockInvitationRepository.createUserAcceptingInvitation.mockResolvedValue(newUser);
+
+      const result = await usecase.execute("auth-code");
+
+      expect(result.user).toBe(newUser);
+      expect(mockInvitationRepository.createUserAcceptingInvitation).toHaveBeenCalledWith({
+        authId: "auth-user-id",
+        email: "staff@team-mir.ai",
+      });
+      expect(mockUserRepository.create).not.toHaveBeenCalled();
+    });
+
+    it("パスワードのセッションでは招待を使わず、ロールなしで作る", async () => {
+      const session = createMockSession({ signInProvider: "password" });
+      const newUser = createMockUser();
+      mockAuthProvider.exchangeCodeForSession.mockResolvedValue(session);
+      mockUserRepository.findByAuthId.mockResolvedValue(null);
+      mockUserRepository.create.mockResolvedValue(newUser);
+
+      const result = await usecase.execute("auth-code");
+
+      expect(result.user).toBe(newUser);
+      expect(mockUserRepository.create).toHaveBeenCalledWith({
+        authId: "auth-user-id",
+        email: "test@example.com",
+        roles: [],
+      });
+      expect(mockInvitationRepository.createUserAcceptingInvitation).not.toHaveBeenCalled();
+    });
+
+    it("既にユーザーがいる場合は招待を使わない", async () => {
+      mockAuthProvider.exchangeCodeForSession.mockResolvedValue(createMockSession());
+      mockUserRepository.findByAuthId.mockResolvedValue(createMockUser());
+
+      await usecase.execute("auth-code");
+
+      expect(mockInvitationRepository.createUserAcceptingInvitation).not.toHaveBeenCalled();
+      expect(mockUserRepository.create).not.toHaveBeenCalled();
     });
   });
 });

@@ -5,9 +5,7 @@ import type { ChangeEvent, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import {
   Button,
-  Checkbox,
   Input,
-  Label,
   Table,
   TableBody,
   TableCell,
@@ -16,13 +14,9 @@ import {
   TableRow,
 } from "@/client/components/ui";
 import { AssignmentDialog } from "@/client/components/user-management/AssignmentDialog";
+import { RoleCheckboxes } from "@/client/components/user-management/RoleCheckboxes";
 import { UserRoleBadge } from "@/client/components/user-management/UserRoleBadge";
-import {
-  assignedPoliticianNames,
-  formatDate,
-  resolveUserRoleBadge,
-  toggleUserRole,
-} from "@/client/lib";
+import { assignedPoliticianNames, formatDate, toggleUserRole } from "@/client/lib";
 import type { UserRole } from "@/server/contexts/auth/domain/models/user-role";
 import type { User } from "@/server/contexts/shared/domain/repositories/user-repository.interface";
 
@@ -53,46 +47,6 @@ interface UserManagementProps {
     politicianIds: string[],
   ) => Promise<{ ok: true; assignedPoliticianIds: string[] } | { ok: false; error: string }>;
   inviteUserAction: (email: string, roles: UserRole[]) => Promise<{ ok: boolean; error?: string }>;
-}
-
-/** ロールを複数選ぶチェックボックス群。招待フォームと一覧の各行で共有する */
-function RoleCheckboxes({
-  idPrefix,
-  ariaLabelPrefix,
-  availableRoles,
-  roles,
-  disabled,
-  onToggle,
-}: {
-  idPrefix: string;
-  ariaLabelPrefix: string;
-  availableRoles: readonly UserRole[];
-  roles: readonly UserRole[];
-  disabled: boolean;
-  onToggle: (role: UserRole, checked: boolean) => void;
-}) {
-  return (
-    <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-      {availableRoles.map((role) => {
-        const id = `${idPrefix}-${role}`;
-        const label = resolveUserRoleBadge(role).label;
-        return (
-          <div key={role} className="flex items-center gap-1.5">
-            <Checkbox
-              id={id}
-              aria-label={`${ariaLabelPrefix}${label}`}
-              checked={roles.includes(role)}
-              onCheckedChange={(checked) => onToggle(role, checked === true)}
-              disabled={disabled}
-            />
-            <Label htmlFor={id} className="font-normal">
-              {label}
-            </Label>
-          </div>
-        );
-      })}
-    </div>
-  );
 }
 
 /** 担当する議員の名前を一覧に並べる。担当がいなければ「なし」 */
