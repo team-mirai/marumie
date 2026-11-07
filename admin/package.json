@@ -19,6 +19,7 @@
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.2",
     "@hyzyla/pdfium": "2.1.13",
+    "@openrouter/ai-sdk-provider": "^2.10.0",
     "@phosphor-icons/react": "^2.1.10",
     "@prisma/client": "^6.19.1",
     "@radix-ui/react-checkbox": "^1.3.3",

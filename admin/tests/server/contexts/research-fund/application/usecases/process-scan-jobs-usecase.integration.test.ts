@@ -3,7 +3,7 @@ import { readFile } from "fs/promises";
 import { join } from "path";
 import { randomUUID } from "crypto";
 
-// .env.local から環境変数（DATABASE_URL・ANTHROPIC_API_KEY）を読み込む（admin ディレクトリから実行される前提）
+// .env.local から環境変数（DATABASE_URL・OPENROUTER_API_KEY）を読み込む（admin ディレクトリから実行される前提）
 config({ path: join(process.cwd(), ".env.local") });
 
 import { PrismaClient } from "@prisma/client";
@@ -20,7 +20,7 @@ import { PrismaScanRepository } from "@/server/contexts/research-fund/infrastruc
  * 書類スキャンで支払先を新しく登録し、2 枚目以降はそれに紐づくことを、実際の DB・実際の LLM API・
  * 実際の領収書の画像（黒塗り済み。#1721）で確かめる。LLM も読み取り結果もモックしない。
  *
- * 明示的に有効にしたときだけ動く（ローカルの supabase と ANTHROPIC_API_KEY が要る）:
+ * 明示的に有効にしたときだけ動く（ローカルの supabase と OPENROUTER_API_KEY が要る）:
  *   pnpm supabase:start && pnpm db:reset
  *   pnpm test:integration
  */

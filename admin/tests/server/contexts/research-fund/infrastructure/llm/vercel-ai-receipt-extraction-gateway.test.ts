@@ -1,4 +1,4 @@
-import { anthropic } from "@ai-sdk/anthropic";
+import { openrouter } from "@openrouter/ai-sdk-provider";
 import { LoadAPIKeyError } from "ai";
 import { MockLanguageModelV3 } from "ai/test";
 import {
@@ -8,7 +8,7 @@ import {
 import type { ReceiptExtractionParams } from "@/server/contexts/research-fund/domain/repositories/receipt-extraction-gateway.interface";
 import { buildReceiptExtractionPrompt } from "@/server/contexts/research-fund/domain/services/receipt-extraction-prompt";
 
-jest.mock("@ai-sdk/anthropic", () => ({ anthropic: jest.fn() }));
+jest.mock("@openrouter/ai-sdk-provider", () => ({ openrouter: jest.fn() }));
 
 const valid = {
   date: "2026-09-10",
@@ -19,6 +19,11 @@ const params: ReceiptExtractionParams = {
   officePrompt: "事務所の読み取り方針",
 };
 const gateway = new VercelAIReceiptExtractionGateway();
+
+/** openrouter() の戻り値の型は OpenRouter 固有のクラスなので、SDK のモックモデルを渡せるよう型を緩める */
+function useModel(model: MockLanguageModelV3) {
+  (openrouter as unknown as jest.Mock).mockReturnValue(model);
+}
 
 function mockOutput(text: string) {
   const model = new MockLanguageModelV3({
@@ -32,7 +37,7 @@ function mockOutput(text: string) {
       warnings: [],
     },
   });
-  jest.mocked(anthropic).mockReturnValue(model);
+  useModel(model);
   return model;
 }
 
@@ -74,7 +79,9 @@ describe("VercelAIReceiptExtractionGateway（LLMのみモック、SDKの構造�
           ],
         },
       });
-      expect(anthropic).toHaveBeenCalledWith("claude-opus-5-5");
+      expect(openrouter).toHaveBeenCalledWith("anthropic/claude-opus-5-5", {
+        structuredOutputs: { strict: false },
+      });
       expect(model.doGenerateCalls).toHaveLength(1);
       const call = model.doGenerateCalls[0];
       expect(call.responseFormat).toMatchObject({ type: "json", schema: { type: "object" } });
@@ -102,9 +109,9 @@ describe("VercelAIReceiptExtractionGateway（LLMのみモック、SDKの構造�
 
   it("環境変数でモデルを差し替えられる", async () => {
     mockOutput(JSON.stringify(valid));
-    process.env.RESEARCH_FUND_EXTRACTION_MODEL = " custom-model ";
+    process.env.RESEARCH_FUND_EXTRACTION_MODEL = " openai/gpt-6.1-sol ";
     await gateway.extract(params);
-    expect(anthropic).toHaveBeenCalledWith("custom-model");
+    expect(openrouter).toHaveBeenCalledWith("openai/gpt-6.1-sol", expect.anything());
   });
 
   it.each([
@@ -129,7 +136,7 @@ describe("VercelAIReceiptExtractionGateway（LLMのみモック、SDKの構造�
           throw error;
         },
       });
-      jest.mocked(anthropic).mockReturnValue(model);
+      useModel(model);
       const result = await gateway.extract(params);
       expect(result).toMatchObject({
         status: "invalid",
@@ -143,9 +150,9 @@ describe("VercelAIReceiptExtractionGateway（LLMのみモック、SDKの構造�
 
   it("APIキー未設定は原因が分かる文言のRFエラーにし、元の例外をログに残す", async () => {
     const error = new LoadAPIKeyError({
-      message: "Anthropic API key is missing. Pass it using the 'apiKey' parameter",
+      message: "OpenRouter API key is missing. Pass it using the 'apiKey' parameter",
     });
-    jest.mocked(anthropic).mockReturnValue(
+    useModel(
       new MockLanguageModelV3({
         doGenerate: async () => {
           throw error;
@@ -158,7 +165,7 @@ describe("VercelAIReceiptExtractionGateway（LLMのみモック、SDKの構造�
       errors: [
         {
           code: "RF_EXTRACTION_API_KEY_MISSING",
-          message: "LLMのAPIキーが未設定です。ANTHROPIC_API_KEYを設定してください",
+          message: "LLMのAPIキーが未設定です。OPENROUTER_API_KEYを設定してください",
         },
       ],
     });
@@ -176,7 +183,7 @@ describe("VercelAIReceiptExtractionGateway（LLMのみモック、SDKの構造�
         document: document as ReceiptExtractionParams["document"],
       }),
     ).toMatchObject({ status: "invalid", errors: [{ code: "RF_INVALID_DOCUMENT" }] });
-    expect(anthropic).not.toHaveBeenCalled();
+    expect(openrouter).not.toHaveBeenCalled();
   });
 });
 
@@ -187,9 +194,9 @@ describe("researchFundExtractionModel", () => {
     else process.env.RESEARCH_FUND_EXTRACTION_MODEL = originalModel;
   });
 
-  it("未設定なら claude-opus-5-5 を使う（スキャンジョブにも同じ名前を記録する）", () => {
+  it("未設定なら anthropic/claude-opus-5-5 を使う（スキャンジョブにも同じ名前を記録する）", () => {
     delete process.env.RESEARCH_FUND_EXTRACTION_MODEL;
-    expect(researchFundExtractionModel()).toBe("claude-opus-5-5");
+    expect(researchFundExtractionModel()).toBe("anthropic/claude-opus-5-5");
   });
 
   it("環境変数があれば前後の空白を除いて使う", () => {
