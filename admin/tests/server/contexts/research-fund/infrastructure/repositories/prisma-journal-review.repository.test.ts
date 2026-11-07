@@ -515,6 +515,16 @@ describe("書類の差し替え", () => {
     expect(countEntries).toHaveBeenCalledWith({ where: { documentId: BigInt(77), status: "published" } });
     expect(document.update).not.toHaveBeenCalled();
   });
+  test("並行する公開・読み取りと直列化するため、書類の行をロックしてから読み取り中を数え、同じ書類の仕訳の行ロックを取ってから公開中を数える", async () => {
+    const { repository, tx, countEntries } = withDocument();
+    const scanJobCount = (tx as unknown as { researchFundScanJob: { count: jest.Mock } }).researchFundScanJob.count;
+    await repository.replaceDocument("1", scanned, replacement);
+    const [sql] = tx.$queryRaw.mock.calls[0];
+    expect(sql.join("?")).toContain("FOR UPDATE");
+    expect(tx.$queryRaw.mock.invocationCallOrder[0]).toBeLessThan(scanJobCount.mock.invocationCallOrder[0]);
+    const lastLock = Math.max(...tx.researchFundJournalEntry.updateMany.mock.invocationCallOrder);
+    expect(lastLock).toBeLessThan(countEntries.mock.invocationCallOrder[0]);
+  });
   test("読み取り中の書類は差し替えない", async () => {
     const { repository, document } = withDocument({ reading: 1 });
     await expect(repository.replaceDocument("1", scanned, replacement)).rejects.toThrow("読み取り中");

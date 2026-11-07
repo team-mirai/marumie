@@ -87,9 +87,10 @@ export class PrismaDocumentMaskingRepository implements DocumentMaskingRepositor
     for (const document of candidates) {
       const startedAt = new Date();
       // 同時に走った別の実行が先に着手していたら count は 0 になる。その書類は諦めて次へ。
-      // masking_error（作り直しの印）は残し、また止まったときに失敗にできるようにする
+      // masking_error（作り直しの印）は残し、また止まったときに失敗にできるようにする。
+      // 候補を読んだ後に原本が差し替えられていたら（#1827）、前の原本で作らないよう着手しない
       const result = await this.prisma.researchFundDocument.updateMany({
-        where: { id: document.id, maskingStatus: "pending" },
+        where: { id: document.id, storageKey: document.storageKey, maskingStatus: "pending" },
         data: { maskingStatus: "running", maskingStartedAt: startedAt },
       });
       if (result.count !== 1) continue;

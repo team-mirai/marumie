@@ -705,6 +705,25 @@ test("読み直しのバッチを作り、既存の書類ごとに指示つき�
   });
 });
 
+test("読み直しのジョブを作る前に書類の行をロックする（書類の差し替えと直列化する）", async () => {
+  const { tx, batch, job, repository } = setup();
+  batch.create.mockResolvedValue({ id: BigInt(100) });
+  await repository.createRereadBatch({
+    bookId: "12",
+    uploadedById: "user-1",
+    promptId: "7",
+    model: "claude-sonnet-5",
+    documentIds: ["42", "43"],
+    instruction: "",
+  });
+  const [sql] = tx.$queryRaw.mock.calls[0];
+  expect(sql.join("?")).toContain("FOR UPDATE");
+  expect(sql.join("?")).toContain("research_fund_documents");
+  expect(tx.$queryRaw.mock.invocationCallOrder[0]).toBeLessThan(
+    job.createMany.mock.invocationCallOrder[0],
+  );
+});
+
 test("選んだ下書きの書類を重複なく返し、確認済・公開中を含むかを添える", async () => {
   const { entry, repository } = setup();
   entry.findMany
@@ -762,13 +781,18 @@ test("長すぎるエラーは切り詰めて保存する", async () => {
 });
 
 test("失敗したジョブだけを待機中に戻す", async () => {
-  const { job, repository } = setup();
+  const { tx, job, repository } = setup();
   job.updateMany.mockResolvedValue({ count: 1 });
   await expect(repository.requeueJob("12", "11")).resolves.toBe(true);
   expect(job.updateMany).toHaveBeenCalledWith({
     where: { id: BigInt(11), batch: { bookId: BigInt(12) }, status: "failed" },
     data: { status: "queued", error: null, startedAt: null, finishedAt: null },
-  });
+  });  // 書類の差し替えと直列化するため、戻す前にジョブの書類の行をロックする
+  const [sql] = tx.$queryRaw.mock.calls[0];
+  expect(sql.join("?")).toContain("FOR UPDATE OF d");
+  expect(tx.$queryRaw.mock.invocationCallOrder[0]).toBeLessThan(
+    job.updateMany.mock.invocationCallOrder[0],
+  );
 });
 
 test("他の帳簿や失敗していないジョブは戻せない", async () => {
