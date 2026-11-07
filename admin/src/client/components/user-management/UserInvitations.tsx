@@ -132,7 +132,10 @@ export default function UserInvitations({
             type="email"
             aria-label="招待するメールアドレス"
             value={email}
-            onChange={(e: ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
+            onChange={(e: ChangeEvent<HTMLInputElement>) => {
+              setEmail(e.target.value);
+              setError(null);
+            }}
             placeholder="メールアドレスを入力"
             disabled={isRegistering}
             className="max-w-md flex-1"
@@ -148,7 +151,10 @@ export default function UserInvitations({
           availableRoles={availableRoles}
           roles={roles}
           disabled={isRegistering}
-          onToggle={(role, checked) => setRoles((prev) => toggleUserRole(prev, role, checked))}
+          onToggle={(role, checked) => {
+            setRoles((prev) => toggleUserRole(prev, role, checked));
+            setError(null);
+          }}
         />
         {politicians.length > 0 && (
           <div className="space-y-1.5">
@@ -162,7 +168,8 @@ export default function UserInvitations({
                       id={id}
                       aria-label={`招待（予約）の担当議員: ${politician.name}`}
                       checked={politicianIds.includes(politician.id)}
-                      onCheckedChange={(checked) =>
+                      onCheckedChange={(checked) => {
+                        setError(null);
                         setPoliticianIds((prev) =>
                           togglePoliticianAssignment(
                             prev,
@@ -170,8 +177,8 @@ export default function UserInvitations({
                             checked === true,
                             politicians,
                           ),
-                        )
-                      }
+                        );
+                      }}
                       disabled={isRegistering}
                     />
                     <Label htmlFor={id} className="font-normal">
