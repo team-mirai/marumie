@@ -9,10 +9,18 @@ import {
 } from "@/server/contexts/research-fund/domain/models/publication";
 import type { PublicationRepository } from "@/server/contexts/research-fund/domain/repositories/publication-repository.interface";
 import type { ResearchFundRow } from "@/shared/research-fund/aggregation";
+import type { LegalCategoryCatalog } from "@/shared/research-fund/legal-category";
+import {
+  legalCategoryOverrideSelect,
+  loadLegalCategoryCatalog,
+  overrideOf,
+  withOverride,
+} from "@/server/contexts/research-fund/infrastructure/repositories/legal-category-catalog";
 
 const include = {
   lines: { include: { account: true } },
   document: { select: { maskingStatus: true, maskedKey: true } },
+  legalCategoryOverride: legalCategoryOverrideSelect,
 } satisfies Prisma.ResearchFundJournalEntryInclude;
 type Row = Prisma.ResearchFundJournalEntryGetPayload<{ include: typeof include }>;
 
@@ -26,8 +34,10 @@ function documentOf(entry: Row): PublicationDocument | null {
 }
 
 /** 集計に使うのは「借方の費用」と「貸方の調査研究費収入」だけ。相手勘定の普通預金は数えない。 */
-function rowsOf(entry: Row): ResearchFundRow[] {
+function rowsOf(entry: Row, catalog: LegalCategoryCatalog): ResearchFundRow[] {
   const date = entry.entryDate.toISOString().slice(0, 10);
+  // 法律上の区分の集計は、上書きがあればそれ、無ければ科目の既定で数える（#1880）
+  const override = overrideOf(entry, catalog);
   return entry.lines
     .filter(
       (line) =>
@@ -39,6 +49,7 @@ function rowsOf(entry: Row): ResearchFundRow[] {
       accountKey: line.accountKey,
       amount: line.amount.toNumber(),
       type: line.side === "debit" ? ("expense" as const) : ("grant" as const),
+      ...(line.side === "debit" ? withOverride(override) : {}),
     }));
 }
 
@@ -60,8 +71,9 @@ export class PrismaPublicationRepository implements PublicationRepository {
     const published: ResearchFundRow[] = [];
     const candidates: PublishCandidate[] = [];
     const accounts: PublicationSnapshot["accounts"] = {};
+    const catalog = await loadLegalCategoryCatalog(this.prisma, book.journalEntries);
     for (const entry of book.journalEntries) {
-      const rows = rowsOf(entry);
+      const rows = rowsOf(entry, catalog);
       for (const line of entry.lines)
         accounts[line.accountKey] = {
           label: line.account.label,
@@ -100,6 +112,7 @@ export class PrismaPublicationRepository implements PublicationRepository {
       where: { bookId: BigInt(bookId), id: { in: ids.map((id) => BigInt(id)) } },
       include,
     });
+    const catalog = await loadLegalCategoryCatalog(this.prisma, entries);
     return {
       entries: entries.map((entry) => ({
         id: String(entry.id),
@@ -108,7 +121,7 @@ export class PrismaPublicationRepository implements PublicationRepository {
         description: entry.description,
         document: documentOf(entry),
         // 候補の適格性は画面と同じ射影で測る（画面に出ない仕訳を公開させない）。
-        rowCount: rowsOf(entry).length,
+        rowCount: rowsOf(entry, catalog).length,
       })),
       publishedThrough: book.publishedThrough?.toISOString().slice(0, 10) ?? null,
     };

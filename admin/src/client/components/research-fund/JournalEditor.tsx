@@ -4,6 +4,7 @@ import { Info, LockKey, LockSimple, Trash } from "@phosphor-icons/react/dist/ssr
 import { Button, Input, Label } from "@/client/components/ui";
 import { JournalAdvanceField } from "@/client/components/research-fund/JournalAdvanceField";
 import { JournalDocumentPreview } from "@/client/components/research-fund/JournalDocumentPreview";
+import { JournalLegalCategoryOverrideField } from "@/client/components/research-fund/JournalLegalCategoryOverrideField";
 import { JournalOfficeRow, TextButton } from "@/client/components/research-fund/JournalOfficeRow";
 import { JournalPayeeField } from "@/client/components/research-fund/JournalPayeeField";
 import {
@@ -25,6 +26,7 @@ import {
   type ReviewEntry,
 } from "@/server/contexts/research-fund/domain/models/journal-review";
 import type { Payee, PayeeFormInput } from "@/server/contexts/research-fund/domain/models/payee";
+import type { LegalCategoryOverrideInput } from "@/server/contexts/research-fund/domain/models/legal-category-override";
 import {
   canHaveReceiptAbsenceReason,
   canMarkReceiptAbsent,
@@ -47,6 +49,7 @@ export function JournalEditor({
   entry,
   entries,
   accounts,
+  legalCategoryOverrideAllowed,
   advancers,
   payees,
   target,
@@ -63,6 +66,7 @@ export function JournalEditor({
   onUnsettle,
   onSetReceiptAbsent,
   onSaveReceiptAbsenceReason,
+  onSetLegalCategoryOverride,
   onAttachDocument,
   onLinkPayee,
   onCreatePayee,
@@ -71,6 +75,8 @@ export function JournalEditor({
   /** 帳簿の全仕訳（同じ書類の仕訳を探す） */
   entries: readonly ReviewEntry[];
   accounts: ReviewAccount[];
+  /** 帳簿で仕訳ごとの法定区分の上書きが許可されているか（#1880） */
+  legalCategoryOverrideAllowed: boolean;
   /** 同じ議員室で過去に入力された立替者（入力欄の候補） */
   advancers: readonly string[];
   payees: readonly Payee[];
@@ -96,6 +102,8 @@ export function JournalEditor({
   /** 徴難を付ける・外す（外すと事情も消える） */
   onSetReceiptAbsent: (receiptAbsent: boolean) => void;
   onSaveReceiptAbsenceReason: (reason: string) => void;
+  /** 法定区分を上書きする・上書きを外す（null で外す） */
+  onSetLegalCategoryOverride: (override: LegalCategoryOverrideInput | null) => void;
   /** 書類の無い仕訳に、あとから領収書ファイルを紐づける */
   onAttachDocument: (file: File) => void;
   onLinkPayee: (targets: readonly ReviewEntry[], payeeId: string | null) => void;
@@ -197,6 +205,16 @@ export function JournalEditor({
             onChange={change}
           />
         </fieldset>
+        {/* 上書きを許可していない帳簿では操作を出さない。上書きが残っていれば（許可の取り消し前）表示だけはする */}
+        {!grant && (legalCategoryOverrideAllowed || entry.legalCategoryOverride !== null) && (
+          <JournalLegalCategoryOverrideField
+            entry={entry}
+            accounts={accounts}
+            allowed={legalCategoryOverrideAllowed}
+            pending={pending}
+            onSave={onSetLegalCategoryOverride}
+          />
+        )}
         {!grant && (
           <section aria-labelledby={`${fieldId}-office`} className="space-y-0.5">
             <div className="flex items-center gap-2">

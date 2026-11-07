@@ -3,10 +3,17 @@ import { requireResearchFundWriter } from "@/server/contexts/auth/presentation/l
 import { CreateBookUsecase } from "@/server/contexts/research-fund/application/usecases/create-book-usecase";
 import { UpdateBookUsecase } from "@/server/contexts/research-fund/application/usecases/update-book-usecase";
 import { BookError } from "@/server/contexts/research-fund/domain/types/book-error";
-import { createBook, updateBook } from "@/server/contexts/research-fund/presentation/actions/manage-book";
+import { SetLegalCategoryOverrideAllowedUsecase } from "@/server/contexts/research-fund/application/usecases/set-legal-category-override-allowed-usecase";
+import { requireRole } from "@/server/contexts/auth/presentation/loaders/require-role";
+import {
+  createBook,
+  setLegalCategoryOverrideAllowed,
+  updateBook,
+} from "@/server/contexts/research-fund/presentation/actions/manage-book";
 
 jest.mock("next/cache", () => ({ revalidatePath: jest.fn() }));
 jest.mock("@/server/contexts/auth/presentation/loaders/require-research-fund-writer", () => ({ requireResearchFundWriter: jest.fn() }));
+jest.mock("@/server/contexts/auth/presentation/loaders/require-role", () => ({ requireRole: jest.fn() }));
 jest.mock("@/server/contexts/shared/infrastructure/prisma", () => ({ prisma: {} }));
 
 const metadata = { asOfDate: "", nextUpdateNote: "", policyComment: "" };
@@ -74,5 +81,46 @@ describe.each([
     await expect(run()).rejects.toBe(error);
     expect(execute).not.toHaveBeenCalled();
     expect(revalidatePath).not.toHaveBeenCalled();
+  });
+});
+
+describe("setLegalCategoryOverrideAllowed（#1880）", () => {
+  test("担当の議員室の書き込みガードと admin ロールを通ってから許可を切り替え、再検証する", async () => {
+    const execute = jest
+      .spyOn(SetLegalCategoryOverrideAllowedUsecase.prototype, "execute")
+      .mockResolvedValue({ allowed: true });
+    await expect(setLegalCategoryOverrideAllowed("1", "2", true)).resolves.toEqual({ success: true, allowed: true });
+    expect(requireResearchFundWriter).toHaveBeenCalledWith("1");
+    expect(requireRole).toHaveBeenCalledWith("admin");
+    expect(execute).toHaveBeenCalledWith("1", "2", true);
+    expect(revalidatePath).toHaveBeenCalledWith("/(auth)", "layout");
+  });
+
+  test("admin でなければ切り替えない", async () => {
+    const error = new Error("insufficient permission");
+    jest.mocked(requireRole).mockRejectedValueOnce(error);
+    const execute = jest.spyOn(SetLegalCategoryOverrideAllowedUsecase.prototype, "execute");
+    await expect(setLegalCategoryOverrideAllowed("1", "2", true)).rejects.toBe(error);
+    expect(execute).not.toHaveBeenCalled();
+    expect(revalidatePath).not.toHaveBeenCalled();
+  });
+
+  test("上書き中の仕訳が残っていて取り消せない理由は、そのまま伝える", async () => {
+    jest
+      .spyOn(SetLegalCategoryOverrideAllowedUsecase.prototype, "execute")
+      .mockRejectedValue(new BookError("RF_INVALID_LEGAL_CATEGORY_OVERRIDE", "上書き中の仕訳が2件あるため、許可を取り消せません"));
+    await expect(setLegalCategoryOverrideAllowed("1", "2", false)).resolves.toEqual({
+      success: false,
+      error: "上書き中の仕訳が2件あるため、許可を取り消せません",
+    });
+    expect(revalidatePath).not.toHaveBeenCalled();
+  });
+
+  test("未知のエラーの詳細は返さない", async () => {
+    jest.spyOn(SetLegalCategoryOverrideAllowedUsecase.prototype, "execute").mockRejectedValue(new Error("secret"));
+    await expect(setLegalCategoryOverrideAllowed("1", "2", false)).resolves.toEqual({
+      success: false,
+      error: "法定区分の上書きの許可を変更できませんでした",
+    });
   });
 });

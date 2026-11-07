@@ -42,6 +42,7 @@ import {
   type ReviewAccount,
   type ReviewEntry,
 } from "@/server/contexts/research-fund/domain/models/journal-review";
+import type { LegalCategoryOverrideInput } from "@/server/contexts/research-fund/domain/models/legal-category-override";
 import {
   isPayeeUnset,
   payeeSearchQueryFromEntries,
@@ -69,6 +70,7 @@ const statuses = { all: "すべて", draft: "下書き", approved: "確認済", 
 export function JournalReview({
   entries,
   accounts,
+  legalCategoryOverrideAllowed,
   advancers,
   payees,
   duplicates,
@@ -78,6 +80,8 @@ export function JournalReview({
 }: {
   entries: ReviewEntry[];
   accounts: ReviewAccount[];
+  /** 帳簿で仕訳ごとの法定区分の上書きが許可されているか（#1880） */
+  legalCategoryOverrideAllowed: boolean;
   /** 同じ議員室で過去に入力された立替者（入力欄の候補） */
   advancers: string[];
   /** 帳簿の議員の支払先（紐づけの候補）。別の議員の支払先は含まない */
@@ -500,6 +504,32 @@ export function JournalReview({
           return;
         }
         toast.success(receiptAbsent ? "徴難にしました" : "徴難を外しました");
+        router.refresh();
+      } catch {
+        toast.error("通信に失敗しました。再度お試しください");
+      }
+    });
+  }
+  /** 支出の仕訳の法定区分を上書きする・上書きを外す（#1880）。公開内容を変えるので公開中の仕訳では送らない */
+  function setLegalCategoryOverride(
+    entry: ReviewEntry,
+    override: LegalCategoryOverrideInput | null,
+  ) {
+    startTransition(async () => {
+      try {
+        const result = await mutateJournalReview(target.politicianId, target.bookId, {
+          type: "set-legal-category-override",
+          id: entry.id,
+          updatedAt: entry.updatedAt,
+          override,
+        });
+        if (!result.success) {
+          toast.error(result.error);
+          return;
+        }
+        toast.success(
+          override === null ? "法定区分の上書きを外しました" : "法定区分の上書きを保存しました",
+        );
         router.refresh();
       } catch {
         toast.error("通信に失敗しました。再度お試しください");
@@ -1019,6 +1049,7 @@ export function JournalReview({
                 entry={selected}
                 entries={entries}
                 accounts={accounts}
+                legalCategoryOverrideAllowed={legalCategoryOverrideAllowed}
                 advancers={advancers}
                 payees={payees}
                 target={target}
@@ -1053,6 +1084,9 @@ export function JournalReview({
                 }}
                 onSaveReceiptAbsenceReason={(reason) => {
                   if (allowLeave()) saveReceiptAbsenceReason(selected, reason);
+                }}
+                onSetLegalCategoryOverride={(override) => {
+                  if (allowLeave()) setLegalCategoryOverride(selected, override);
                 }}
                 onAttachDocument={(file) => {
                   if (allowLeave()) attachDocument(selected, file);

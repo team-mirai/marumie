@@ -4,6 +4,7 @@ import type {
   ReviewEntry,
 } from "@/server/contexts/research-fund/domain/models/journal-review";
 import type { Payee, PayeeInput } from "@/server/contexts/research-fund/domain/models/payee";
+import type { LegalCategoryOverrideInput } from "@/server/contexts/research-fund/domain/models/legal-category-override";
 export interface JournalReviewRepository {
   list(bookId: string): Promise<ReviewEntry[]>;
   accounts(): Promise<ReviewAccount[]>;
@@ -79,6 +80,18 @@ export interface JournalReviewRepository {
     politicianId: string,
     input: PayeeInput,
   ): Promise<Payee>;
+  /** 帳簿で仕訳ごとの法定区分の上書きが許可されているか（#1880）。帳簿が無ければ false */
+  legalCategoryOverrideAllowed(bookId: string): Promise<boolean>;
+  /**
+   * 下書き・確認済の支出の仕訳の法定区分を上書きする・上書きを外す（null で外す）。
+   * 帳簿で上書きが許可されていなければ変更しない。競合したら変更しない。保存後の仕訳の更新時刻を返す。
+   */
+  setLegalCategoryOverride(
+    bookId: string,
+    entry: ReviewEntry,
+    input: LegalCategoryOverrideInput | null,
+    userId: string,
+  ): Promise<{ updatedAt: string }>;
   /** 未精算の立替をまとめて精算済にする。1 件でも競合したら何も変更しない。 */
   settleMany(bookId: string, entries: readonly ReviewEntry[], settledAt: string): Promise<void>;
   /** 精算済の立替をまとめて未精算に戻す。1 件でも競合したら何も変更しない。 */

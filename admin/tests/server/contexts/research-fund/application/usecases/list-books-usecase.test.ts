@@ -1,7 +1,13 @@
 import { ListBooksUsecase } from "@/server/contexts/research-fund/application/usecases/list-books-usecase";
 
 function setup() {
-  const repository = { list: jest.fn(), create: jest.fn(), update: jest.fn() };
+  const repository = {
+    list: jest.fn(),
+    create: jest.fn(),
+    update: jest.fn(),
+    setLegalCategoryOverrideAllowed: jest.fn(),
+    legalCategoryOverrideCount: jest.fn(),
+  };
   return { repository, usecase: new ListBooksUsecase(repository) };
 }
 

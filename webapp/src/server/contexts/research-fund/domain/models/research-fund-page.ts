@@ -35,7 +35,13 @@ export interface ResearchFundExpenseView {
   amount: number;
   /** 科目のキー（支給は支給の科目）。表示名は改名されうるので、全件ページの絞り込み URL にはこちらを載せる */
   accountKey: string;
+  /**
+   * 科目の既定の法律上の区分のラベル（支給は支給の区分名）。仕訳ごとの上書き（#1880）の影響を受けないので、
+   * 科目の選択肢の並びに使う。画面に出す法律上の区分は legal（上書きがあればそれ）を使う
+   */
+  accountLegalLabel: string;
   detailed: ResearchFundCategoryView;
+  /** 法律上の区分。仕訳ごとの上書きがあればそれ、無ければ科目の既定 */
   legal: ResearchFundCategoryView;
   /** 特記事項（管理画面で入力したもの）。無ければ null */
   note: string | null;

@@ -13,6 +13,12 @@ import {
 import type { ResearchFundPoliticianSource } from "@/server/contexts/research-fund/domain/models/research-fund-politician-list";
 import type { ResearchFundRepository } from "@/server/contexts/research-fund/domain/repositories/research-fund-repository.interface";
 import type { ResearchFundRow } from "@/shared/research-fund/aggregation";
+import {
+  buildLegalCategoryCatalog,
+  type LegalCategoryCatalog,
+  legalCategoryOverrideOf,
+  type ResearchFundLegalCategory,
+} from "@/shared/research-fund/legal-category";
 
 /**
  * 公開ページに出す仕訳の取り出し方。
@@ -27,6 +33,8 @@ const entrySelect = {
   note: true,
   splitGroup: true,
   documentId: true,
+  // 仕訳ごとの法定区分の上書き（#1880）。理由は事務所内の情報なので読み出さない
+  legalCategoryOverride: { select: { legalCategoryKey: true } },
   // 原本は配信しないので、公開用の版が作成済みかだけを見る（キーは公開ページに渡さない。#1803）。
   document: { select: { maskingStatus: true, maskedKey: true } },
   lines: {
@@ -49,6 +57,7 @@ const entrySelect = {
  */
 const summaryEntrySelect = {
   entryDate: true,
+  legalCategoryOverride: { select: { legalCategoryKey: true } },
   lines: {
     select: {
       side: true,
@@ -70,6 +79,23 @@ const isExpenseLine = <T extends SummaryLine>(line: T) =>
   line.side === "debit" && line.account.type === "expense";
 const isGrantLine = <T extends SummaryLine>(line: T) =>
   line.side === "credit" && line.accountKey === "grant-income";
+
+type OverridableEntry = { legalCategoryOverride?: { legalCategoryKey: string } | null };
+
+/** 仕訳の法定区分の上書き。上書きの無い仕訳は null（科目の既定に従う） */
+function overrideOf(
+  entry: OverridableEntry,
+  catalog: LegalCategoryCatalog,
+): ResearchFundLegalCategory | null {
+  return legalCategoryOverrideOf(entry.legalCategoryOverride?.legalCategoryKey, catalog);
+}
+
+/**
+ * 上書きがあるときだけ行に添える。上書きの無い帳簿の出力は、上書きの導入前と同じ形のままにする。
+ */
+function withOverride(override: ResearchFundLegalCategory | null) {
+  return override ? { legalCategoryOverride: override } : {};
+}
 
 function dateOf(date: Date): string {
   return date.toISOString().slice(0, 10);
@@ -118,9 +144,11 @@ export class PrismaResearchFundRepository implements ResearchFundRepository {
     const rows: ResearchFundRow[] = [];
     const expenses: PublishedExpense[] = [];
     const accounts: Record<string, PublishedAccount> = {};
+    const catalog = await this.legalCategoryCatalog(book.journalEntries);
 
     for (const entry of book.journalEntries) {
       const date = dateOf(entry.entryDate);
+      const override = overrideOf(entry, catalog);
       for (const line of entry.lines) {
         if (isGrantLine(line)) {
           rows.push({
@@ -150,6 +178,7 @@ export class PrismaResearchFundRepository implements ResearchFundRepository {
           accountKey: line.accountKey,
           amount: line.amount.toNumber(),
           type: "expense",
+          ...withOverride(override),
         });
         expenses.push({
           kind: "expense",
@@ -162,6 +191,7 @@ export class PrismaResearchFundRepository implements ResearchFundRepository {
           note: entry.note,
           splitGroup: entry.splitGroup,
           ...receiptOf(entry.document),
+          ...withOverride(override),
         });
       }
     }
@@ -238,6 +268,11 @@ export class PrismaResearchFundRepository implements ResearchFundRepository {
       },
     });
     if (!organization || organization.politicianMemberships.length === 0) return null;
+    const catalog = await this.legalCategoryCatalog(
+      organization.politicianMemberships.flatMap(
+        ({ politician }) => politician.books[0]?.journalEntries ?? [],
+      ),
+    );
 
     const politicians: PublishedPoliticianResearchFund[] = organization.politicianMemberships.map(
       ({ politician }) => {
@@ -248,6 +283,7 @@ export class PrismaResearchFundRepository implements ResearchFundRepository {
 
         for (const entry of book?.journalEntries ?? []) {
           const date = dateOf(entry.entryDate);
+          const override = overrideOf(entry, catalog);
           for (const line of entry.lines) {
             if (isGrantLine(line)) {
               rows.push({
@@ -265,6 +301,7 @@ export class PrismaResearchFundRepository implements ResearchFundRepository {
               accountKey: line.accountKey,
               amount: line.amount.toNumber(),
               type: "expense",
+              ...withOverride(override),
             });
             expenseCount += 1;
           }
@@ -286,6 +323,22 @@ export class PrismaResearchFundRepository implements ResearchFundRepository {
       financialYear,
       politicians,
     };
+  }
+
+  /**
+   * 法定区分の上書きを引き当てる区分の一覧。上書きのある仕訳が無ければ科目マスタを読まない
+   * （上書きを使わない帳簿の読み出しを、上書きの導入前と同じにする）。
+   */
+  private async legalCategoryCatalog(
+    entries: readonly OverridableEntry[],
+  ): Promise<LegalCategoryCatalog> {
+    if (!entries.some((entry) => entry.legalCategoryOverride)) return new Map();
+    return buildLegalCategoryCatalog(
+      await this.prisma.researchFundAccount.findMany({
+        where: { legalCategoryKey: { not: null } },
+        select: { legalCategoryKey: true, legalLabel: true },
+      }),
+    );
   }
 
   async findPoliticians(financialYear: number): Promise<ResearchFundPoliticianSource[]> {
