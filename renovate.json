@@ -25,6 +25,11 @@
       ]
     },
     {
+      "description": "TypeScript (exclude v7: native/Go port drops the JS compiler API that ts-jest, knip, etc. depend on)",
+      "matchPackageNames": ["typescript"],
+      "allowedVersions": "<7.0.0"
+    },
+    {
       "description": "Supabase packages",
       "groupName": "supabase",
       "matchPackageNames": [
