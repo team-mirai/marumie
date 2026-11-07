@@ -85,7 +85,7 @@
     "simple-git-hooks": "^2.13.1",
     "supabase": "^2.70.5",
     "tsx": "^4.21.0",
-    "typescript": "^5"
+    "typescript": "^7.0.0"
   },
   "simple-git-hooks": {
     "pre-commit": "npx lint-staged",
