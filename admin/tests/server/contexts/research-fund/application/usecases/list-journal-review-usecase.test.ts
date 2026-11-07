@@ -37,3 +37,10 @@ test("同じ書類を二重にスキャンした可能性のある書類を、�
   expect(Object.keys(data.duplicates)).toEqual(["3", "4"]);
   expect(data.duplicates["3"]).toEqual([{ documentId: "4", originalFilename: "b.jpg", date: "2026-09-01", totalAmount: 1200 }]);
 });
+test.each([true, false])("帳簿で法定区分の上書きが許可されているか（%s）を画面に渡す（#1880）", async (allowed) => {
+  const { repository, usecase } = setupUsecase();
+  repository.legalCategoryOverrideAllowed.mockResolvedValue(allowed);
+  const data = await usecase.execute("1");
+  expect(data.legalCategoryOverrideAllowed).toBe(allowed);
+  expect(repository.legalCategoryOverrideAllowed).toHaveBeenCalledWith("1");
+});

@@ -75,6 +75,7 @@ export class ProcessDocumentMaskingUsecase {
       const masked = await this.masking.mask({
         bytes: original.value,
         mime: document.mime as MaskableMime,
+        instruction: document.instruction,
       });
       const uploaded = await this.storage.upload(masked.bytes, masked.mime);
       if (uploaded.status === "invalid") {

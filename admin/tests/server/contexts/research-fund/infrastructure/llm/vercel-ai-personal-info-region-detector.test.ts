@@ -5,7 +5,7 @@ import { VercelAIPersonalInfoRegionDetector } from "@/server/contexts/research-f
 
 jest.mock("@ai-sdk/anthropic", () => ({ anthropic: jest.fn() }));
 
-const page = { jpeg: new Uint8Array([0xff, 0xd8, 1]), width: 800, height: 1200 };
+const page = { jpeg: new Uint8Array([0xff, 0xd8, 1]), width: 800, height: 1200, instruction: null };
 const detector = new VercelAIPersonalInfoRegionDetector();
 
 function mockOutput(text: string) {
@@ -54,6 +54,17 @@ describe("VercelAIPersonalInfoRegionDetector（LLM のみモック、SDK の構�
     expect(call.prompt[1]).toMatchObject({
       role: "user",
       content: [{ type: "file", mediaType: "image/jpeg" }],
+    });
+  });
+
+  it("書類ごとの追加の指示をプロンプトに添える", async () => {
+    const model = mockOutput(JSON.stringify({ regions: [] }));
+
+    await detector.detect({ ...page, instruction: "注文者の氏名も黒塗りにして" });
+
+    expect(model.doGenerateCalls[0].prompt[0]).toEqual({
+      role: "system",
+      content: buildPersonalInfoMaskingPrompt(800, 1200, "注文者の氏名も黒塗りにして"),
     });
   });
 

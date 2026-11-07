@@ -5,11 +5,11 @@ import {
 
 // 科目マスタ（prisma/migrations/20260916170000_seed_research_fund_accounts）の対応から抜粋
 const accounts: ReviewAccount[] = [
-  { key: "needs-review", label: "要確認", type: "expense", legalLabel: null },
-  { key: "taxi", label: "タクシー代", type: "expense", legalLabel: "⑨ 滞在費" },
-  { key: "pc-electronics", label: "PC・電子機器", type: "expense", legalLabel: "③ 備品・消耗品費" },
-  { key: "books-newspapers", label: "新聞・書籍代", type: "expense", legalLabel: "⑦ 調査研究費" },
-  { key: "bank", label: "普通預金", type: "asset", legalLabel: null },
+  { key: "needs-review", label: "要確認", type: "expense", legalLabel: null, legalCategoryKey: null },
+  { key: "taxi", label: "タクシー代", type: "expense", legalLabel: "⑨ 滞在費", legalCategoryKey: "stay" },
+  { key: "pc-electronics", label: "PC・電子機器", type: "expense", legalLabel: "③ 備品・消耗品費", legalCategoryKey: "equipment-supplies" },
+  { key: "books-newspapers", label: "新聞・書籍代", type: "expense", legalLabel: "⑦ 調査研究費", legalCategoryKey: "research" },
+  { key: "bank", label: "普通預金", type: "asset", legalLabel: null, legalCategoryKey: null },
 ];
 
 describe("legalLabelOf", () => {

@@ -14,6 +14,8 @@ interface SavePreviewTransactionsResult {
   savedCount: number;
   skippedCount: number;
   errors: string[];
+  /** 保存はできたが webapp のキャッシュを無効化できなかったときの理由。保存の失敗とは分けて伝える */
+  cacheWarning: string | null;
 }
 
 export class SavePreviewTransactionsUsecase {
@@ -28,6 +30,7 @@ export class SavePreviewTransactionsUsecase {
       savedCount: 0,
       skippedCount: 0,
       errors: [],
+      cacheWarning: null,
     };
 
     try {
@@ -79,14 +82,22 @@ export class SavePreviewTransactionsUsecase {
       }
 
       result.savedCount = savedCount;
-
-      // 保存成功時に webapp のキャッシュを無効化
-      if (result.savedCount > 0) {
-        await this.cacheInvalidator.invalidateWebappCache();
-      }
     } catch (error) {
       console.error("Upload CSV error:", error);
       result.errors.push("データの保存中にエラーが発生しました");
+      return result;
+    }
+
+    // 保存成功時に webapp のキャッシュを無効化する。
+    // 保存自体は確定しているので、無効化の失敗は保存エラーにせず警告として返す。
+    if (result.savedCount > 0) {
+      try {
+        await this.cacheInvalidator.invalidateWebappCache();
+      } catch (error) {
+        console.error("Webapp cache invalidation error:", error);
+        result.cacheWarning =
+          error instanceof Error ? error.message : "ウェブアプリのキャッシュを更新できませんでした";
+      }
     }
 
     return result;

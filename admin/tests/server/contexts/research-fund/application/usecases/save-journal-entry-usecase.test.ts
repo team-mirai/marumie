@@ -96,3 +96,23 @@ test("精算済の仕訳は金額を変更できない。項目名だけなら�
   await usecase.execute("1", "2", entry.updatedAt, { ...input, description: "別の項目名" }, false);
   expect(repository.update).toHaveBeenCalled();
 });
+describe("法定区分の上書き中の仕訳の保存（#1880）", () => {
+  const legalCategoryOverride = { key: "research", label: "⑦ 調査研究費", reason: "提出済みの報告書に合わせる" };
+  const accounts = [
+    { key: "taxi", label: "タクシー代", type: "expense", legalCategoryKey: "stay", legalLabel: "⑨ 滞在費" },
+    { key: "needs-review", label: "要確認", type: "expense", legalCategoryKey: null, legalLabel: null },
+    { key: "bank", label: "普通預金", type: "asset", legalCategoryKey: null, legalLabel: null },
+  ];
+  test("法定区分を持たない科目（要確認）へは変えさせない", async () => {
+    const { repository, usecase } = setupUsecase({ legalCategoryOverride });
+    repository.accounts.mockResolvedValue(accounts);
+    await expect(usecase.execute("1", "2", entry.updatedAt, { ...input, accountKey: "needs-review" }, false)).rejects.toThrow("先に上書きを外してください");
+    expect(repository.update).not.toHaveBeenCalled();
+  });
+  test("法定区分を持つ科目への保存は、上書きを残したまま受け付ける", async () => {
+    const { repository, usecase } = setupUsecase({ legalCategoryOverride });
+    repository.accounts.mockResolvedValue(accounts);
+    await usecase.execute("1", "2", entry.updatedAt, input, false);
+    expect(repository.update).toHaveBeenCalled();
+  });
+});

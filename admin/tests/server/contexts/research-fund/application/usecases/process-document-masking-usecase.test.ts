@@ -13,6 +13,7 @@ const DOCUMENT: ClaimedMaskingDocument = {
   documentId: "42",
   storageKey: "original-key",
   mime: "application/pdf",
+  instruction: null,
   startedAt: STARTED_AT,
 };
 
@@ -58,6 +59,7 @@ describe("ProcessDocumentMaskingUsecase", () => {
     expect(masking.mask).toHaveBeenCalledWith({
       bytes: new Uint8Array([1, 2]),
       mime: "application/pdf",
+      instruction: null,
     });
     expect(storage.upload).toHaveBeenCalledWith(masked, "application/pdf");
     expect(repository.complete).toHaveBeenCalledWith({
@@ -69,6 +71,16 @@ describe("ProcessDocumentMaskingUsecase", () => {
     expect(storage.remove).not.toHaveBeenCalled();
     expect(queue.notify).not.toHaveBeenCalled();
     expect(result).toEqual({ processed: 1, succeeded: 1, failed: 0, remaining: 0 });
+  });
+
+  it("書類に保存された追加の指示を添えて黒塗りする（キュー・定期実行から作るときも使う）", async () => {
+    repository.claimNext.mockResolvedValue({ ...DOCUMENT, instruction: "注文者の氏名も黒塗りにして" });
+
+    await usecase.execute();
+
+    expect(masking.mask).toHaveBeenCalledWith(
+      expect.objectContaining({ instruction: "注文者の氏名も黒塗りにして" }),
+    );
   });
 
   it("作り直したときは、置き換えた前の版のファイルを消す", async () => {

@@ -2,6 +2,7 @@ import "server-only";
 import { acceptJournalEntry } from "@/server/contexts/research-fund/application/services/journal-review-targets";
 import { prepareExpenseJournalWrite } from "@/server/contexts/research-fund/application/services/prepare-expense-journal-write";
 import { JournalOperation } from "@/server/contexts/research-fund/domain/models/journal-operation";
+import { LegalCategoryOverridePolicy } from "@/server/contexts/research-fund/domain/models/legal-category-override";
 import {
   JournalReviewError,
   journalEditSchema,
@@ -32,6 +33,7 @@ export class SaveJournalEntryUsecase {
         // 確認済にできるかは保存後の科目で判定する（要確認の下書きでも、科目を確定する保存なら確認済にできる）
         (approve ? JournalOperation.approve(found, input.accountKey) : null),
     );
+    if (entry.legalCategoryOverride !== null) await this.guardOverride(entry, input.accountKey);
     const write =
       entry.source === "grant"
         ? await this.prepareGrant(bookId, entry, input)
@@ -44,6 +46,15 @@ export class SaveJournalEntryUsecase {
             approve ? "approved" : entry.status,
           );
     return this.repository.update(bookId, entry, write);
+  }
+  /** 法定区分を上書き中の仕訳を、法定区分を持たない科目（要確認など）に変えさせない（#1880） */
+  private async guardOverride(entry: ReviewEntry, accountKey: string) {
+    const account = (await this.repository.accounts()).find((a) => a.key === accountKey);
+    const rejection = LegalCategoryOverridePolicy.accountChangeRejection(
+      entry.legalCategoryOverride,
+      account?.legalCategoryKey ?? null,
+    );
+    if (rejection) throw new JournalReviewError(rejection);
   }
   /** 支給は支給日だけを直せる。何を直せるかは JournalOperation、組み立ては buildGrantJournalWrite が判定する */
   private async prepareGrant(

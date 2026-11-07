@@ -49,7 +49,7 @@ test("プロンプトは議員ごと・バッチは帳簿ごとに引き、現�
   const data = { batches: [], activePromptVersion: 3, model: "claude-sonnet-5", duplicates: {} };
   const list = jest.spyOn(ListScanBatchesUsecase.prototype, "execute").mockResolvedValue(data);
   const maskings = {
-    "5": { documentId: "5", status: "failed" as const, error: "理由", regionCount: null, hasMaskedVersion: false },
+    "5": { documentId: "5", status: "failed" as const, error: "理由", regionCount: null, hasMaskedVersion: false, instruction: null },
   };
   const listMaskings = jest
     .spyOn(ListDocumentMaskingsUsecase.prototype, "execute")

@@ -11,9 +11,17 @@ import type { Payee, PayeeInput } from "@/server/contexts/research-fund/domain/m
 import { payeeAliasFromIssuer } from "@/server/contexts/research-fund/domain/models/payee-alias";
 import { Publication } from "@/server/contexts/research-fund/domain/models/publication";
 import type { JournalReviewRepository } from "@/server/contexts/research-fund/domain/repositories/journal-review-repository.interface";
+import type { LegalCategoryOverrideInput } from "@/server/contexts/research-fund/domain/models/legal-category-override";
+import {
+  legalCategoryOverrideSelect,
+  loadLegalCategoryCatalog,
+  overrideOf,
+} from "@/server/contexts/research-fund/infrastructure/repositories/legal-category-catalog";
+import type { LegalCategoryCatalog } from "@/shared/research-fund/legal-category";
 
 const include = {
   lines: { include: { account: true } },
+  legalCategoryOverride: legalCategoryOverrideSelect,
   document: {
     include: {
       scanJobs: {
@@ -37,7 +45,7 @@ const grantWhere = {
 const listWhere = {
   OR: [expenseWhere, grantWhere],
 } satisfies Prisma.ResearchFundJournalEntryWhereInput;
-function model(row: Row): ReviewEntry | null {
+function model(row: Row, catalog: LegalCategoryCatalog): ReviewEntry | null {
   const grant = row.source === "grant";
   const amountLine = grant
     ? row.lines.find((l) => l.side === "credit" && l.accountKey === "grant-income")
@@ -80,7 +88,14 @@ function model(row: Row): ReviewEntry | null {
     receiptAbsenceReason: row.receiptAbsenceReason ?? null,
     receiptNumber: row.document?.receiptNumber ?? null,
     issuer: ExtractedReceipt.issuerOf(job?.rawJson),
+    legalCategoryOverride: legalCategoryOverrideOfRow(row, catalog),
   };
+}
+/** 管理画面に見せる上書き（指定した区分と理由）。上書きの無い仕訳は null */
+function legalCategoryOverrideOfRow(row: Row, catalog: LegalCategoryCatalog) {
+  const category = overrideOf(row, catalog);
+  if (!category || !row.legalCategoryOverride) return null;
+  return { ...category, reason: row.legalCategoryOverride.reason };
 }
 function data(input: JournalWrite) {
   return {
@@ -159,14 +174,18 @@ async function linkPayee(
 export class PrismaJournalReviewRepository implements JournalReviewRepository {
   constructor(private prisma: PrismaClient) {}
   async list(bookId: string) {
-    return (
+    return this.models(
       await this.prisma.researchFundJournalEntry.findMany({
         where: { bookId: BigInt(bookId), ...listWhere },
         include,
         orderBy: [{ entryDate: "desc" }, { id: "asc" }],
-      })
-    )
-      .map(model)
+      }),
+    );
+  }
+  private async models(rows: readonly Row[]) {
+    const catalog = await loadLegalCategoryCatalog(this.prisma, rows);
+    return rows
+      .map((row) => model(row, catalog))
       .filter((entry): entry is ReviewEntry => entry !== null);
   }
   async termStart(bookId: string) {
@@ -184,17 +203,60 @@ export class PrismaJournalReviewRepository implements JournalReviewRepository {
       where: { bookId: BigInt(bookId), id: BigInt(id), ...listWhere },
       include,
     });
-    return row ? model(row) : null;
+    return row ? ((await this.models([row]))[0] ?? null) : null;
   }
   async findMany(bookId: string, ids: readonly string[]) {
-    return (
+    return this.models(
       await this.prisma.researchFundJournalEntry.findMany({
         where: { bookId: BigInt(bookId), id: { in: ids.map((id) => BigInt(id)) }, ...expenseWhere },
         include,
-      })
-    )
-      .map(model)
-      .filter((entry): entry is ReviewEntry => entry !== null);
+      }),
+    );
+  }
+  async legalCategoryOverrideAllowed(bookId: string) {
+    const book = await this.prisma.researchFundBook.findUnique({
+      where: { id: BigInt(bookId) },
+      select: { allowLegalCategoryOverride: true },
+    });
+    return book?.allowLegalCategoryOverride ?? false;
+  }
+  // 上書きは公開内容（法律上の区分）を変えるので、内容の編集と同じく下書き・確認済の支出の仕訳だけを対象にする。
+  // 帳簿の行に共有ロックを取ってから許可を確かめる。許可の取り消し（PrismaBookRepository）は同じ行に排他ロックを
+  // 取るので、両者は直列化され、許可が取り消された帳簿に上書きが残ることはない（条件だけでは帳簿の行をロックしない）。
+  // 上書きは仕訳とは別の表に持つが、仕訳の更新時刻を進めて同時更新の照合に使う（複式行と hash は作り直さない）。
+  async setLegalCategoryOverride(
+    bookId: string,
+    entry: ReviewEntry,
+    input: LegalCategoryOverrideInput | null,
+    userId: string,
+  ) {
+    return this.prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT id FROM research_fund_books WHERE id = ${BigInt(bookId)} FOR SHARE`;
+      const result = await tx.researchFundJournalEntry.updateMany({
+        where: {
+          ...guard(bookId, entry),
+          ...expenseWhere,
+          book: { allowLegalCategoryOverride: true },
+        },
+        data: { updatedAt: new Date() },
+      });
+      if (result.count !== 1)
+        throw new JournalReviewError("仕訳か帳簿が更新されました。画面を再読み込みしてください");
+      const entryId = BigInt(entry.id);
+      if (input === null)
+        await tx.researchFundLegalCategoryOverride.deleteMany({ where: { entryId } });
+      else
+        await tx.researchFundLegalCategoryOverride.upsert({
+          where: { entryId },
+          create: { entryId, ...input, createdById: userId },
+          update: { ...input, createdById: userId },
+        });
+      const row = await tx.researchFundJournalEntry.findUniqueOrThrow({
+        where: { id: entryId },
+        select: { updatedAt: true },
+      });
+      return { updatedAt: row.updatedAt.toISOString() };
+    });
   }
   async year(bookId: string) {
     return (
@@ -229,7 +291,8 @@ export class PrismaJournalReviewRepository implements JournalReviewRepository {
           where: { id: BigInt(entry.id), bookId: BigInt(bookId) },
           include,
         });
-        if (!row || !model(row)) throw new JournalReviewError("この形式の仕訳は編集できません");
+        if (!row || !model(row, await loadLegalCategoryCatalog(tx, [row])))
+          throw new JournalReviewError("この形式の仕訳は編集できません");
         await tx.researchFundJournalLine.deleteMany({ where: { entryId: BigInt(entry.id) } });
         await tx.researchFundJournalLine.createMany({
           data: input.lines.map((l) => ({ ...l, entryId: BigInt(entry.id) })),

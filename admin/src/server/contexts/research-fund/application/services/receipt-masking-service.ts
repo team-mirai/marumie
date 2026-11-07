@@ -40,9 +40,11 @@ export class ReceiptMaskingService {
     private readonly detector: PersonalInfoRegionDetector,
   ) {}
 
+  /** instruction は書類ごとの黒塗りへの追加の指示（#1867）。全ページの判定に添える */
   async mask(document: {
     bytes: Uint8Array;
     mime: MaskableMime;
+    instruction?: string | null;
   }): Promise<{ bytes: Uint8Array; mime: "application/pdf"; regionCount: number }> {
     const source = await this.codec.open(document);
     try {
@@ -53,7 +55,7 @@ export class ReceiptMaskingService {
       // ページを順に処理し、LLM への同時リクエストを増やさない
       for (let index = 0; index < source.pageCount; index += 1) {
         const page = await source.renderPage(index);
-        regionCount += await this.maskPage(page, index);
+        regionCount += await this.maskPage(page, index, document.instruction ?? null);
         await pdf.addPage(page);
       }
       return { bytes: await pdf.save(), mime: "application/pdf", regionCount };
@@ -63,7 +65,11 @@ export class ReceiptMaskingService {
   }
 
   /** ページ画像の個人情報を塗る（渡した画像をそのまま塗る）。塗った箇所の数を返す */
-  private async maskPage(page: RasterImage, index: number): Promise<number> {
+  private async maskPage(
+    page: RasterImage,
+    index: number,
+    instruction: string | null,
+  ): Promise<number> {
     const preview = this.codec.shrink(page, detectionMaxEdge(page));
     let regions: MaskingRegion[];
     try {
@@ -71,6 +77,7 @@ export class ReceiptMaskingService {
         jpeg: this.codec.toJpeg(preview),
         width: preview.width,
         height: preview.height,
+        instruction,
       });
     } catch (error) {
       // 塗る箇所が分からないまま元の書類を返すことはしない

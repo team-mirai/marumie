@@ -18,6 +18,7 @@ function view(overrides: Partial<ResearchFundExpenseView>): ResearchFundExpenseV
     description: "品川駅までタクシー",
     amount: 1200,
     accountKey: "transportation",
+    accountLegalLabel: "⑨ 滞在費",
     detailed: { label: "交通費", color: "#0369A1", description: "航空券をのぞく電車・バス・タクシー代" },
     legal: { label: "⑨ 滞在費", color: "#0369A1" },
     note: null,

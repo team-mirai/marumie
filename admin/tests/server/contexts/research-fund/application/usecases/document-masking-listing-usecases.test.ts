@@ -13,6 +13,7 @@ describe("公開用の版の状態の取得", () => {
       error: null,
       regionCount: 2,
       hasMaskedVersion: true,
+      instruction: null,
     };
     repository.listByBook.mockResolvedValue([masking]);
 

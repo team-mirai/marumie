@@ -1,3 +1,9 @@
+import {
+  invalidResearchFundResult,
+  RF_ERROR_CODES,
+  type ResearchFundResult,
+} from "@/server/contexts/research-fund/domain/types/validation";
+
 /**
  * 書類の公開用の版（全ページを画像にして組み直し、個人情報を黒塗りした PDF）の状態（#1802）。
  * - pending: 未作成（作り直しの依頼を受けたものを含む）。キューから呼ばれたサーバー側の処理が順に作る（#1812）
@@ -20,7 +26,12 @@ export interface DocumentMasking {
   regionCount: number | null;
   /** 公開用の版のファイルがあるか。作り直しの間・作り直しに失敗したときは前の版が残る */
   hasMaskedVersion: boolean;
+  /** 作り直すときに付けた、この書類の黒塗りへの追加の指示（前回の 1 件）。無ければ null（#1867） */
+  instruction: string | null;
 }
+
+/** 黒塗りへの追加の指示の上限文字数。黒塗りのプロンプトに添えるので長すぎる指示は受け付けない */
+export const MASKING_INSTRUCTION_MAX_LENGTH = 1000;
 
 /**
  * 同時に running でいてよい書類の数の目安。1 書類あたりページ数ぶん LLM を呼ぶので、
@@ -64,6 +75,21 @@ export const DocumentMaskingPolicy = {
     retryNote: "前回の作成が途中で止まったため、作り直しています",
     /** 作り直しても止まった書類の失敗理由 */
     failure: "作成が途中で止まりました。ページ数を減らすなどしてから作り直してください",
+  },
+
+  /**
+   * 作り直しに付ける追加の指示を検証する。前後の空白は落とし、空（未入力）なら指示なしの null にする
+   */
+  validateInstruction(value: string | null | undefined): ResearchFundResult<string | null> {
+    const instruction = value?.trim() ?? "";
+    if (instruction.length === 0) return { status: "valid", value: null };
+    if (instruction.length > MASKING_INSTRUCTION_MAX_LENGTH)
+      return invalidResearchFundResult(
+        "instruction",
+        RF_ERROR_CODES.INVALID_MASKING_INSTRUCTION,
+        `追加の指示は${MASKING_INSTRUCTION_MAX_LENGTH}文字以内で入力してください`,
+      );
+    return { status: "valid", value: instruction };
   },
 
   /** 失敗理由を保存できる長さにする */

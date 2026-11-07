@@ -2,6 +2,7 @@
 import "client-only";
 
 import { useId, useState } from "react";
+import { toast } from "sonner";
 import { ArrowRight, CircleNotch } from "@phosphor-icons/react/dist/ssr";
 import { Button, Label, NativeSelect } from "@/client/components/ui";
 import { cn } from "@/client/lib";
@@ -12,13 +13,16 @@ import type {
   UploadCsvRequest,
   UploadCsvResponse,
 } from "@/server/contexts/data-import/presentation/actions/upload-csv";
-import type { PreviewCsvRequest } from "@/server/contexts/data-import/presentation/actions/preview-csv";
+import type {
+  PreviewCsvRequest,
+  PreviewCsvResponse,
+} from "@/server/contexts/data-import/presentation/actions/preview-csv";
 
 interface CsvUploadClientProps {
   /** グローバル対象（サイドバー上部）で選択中の政治団体 */
   politicalOrganizationId: string;
   uploadAction: (data: UploadCsvRequest) => Promise<UploadCsvResponse>;
-  previewAction: (data: PreviewCsvRequest) => Promise<PreviewMfCsvResult>;
+  previewAction: (data: PreviewCsvRequest) => Promise<PreviewCsvResponse>;
 }
 
 /** 現在サポートしているデータソース。取り込みロジックは MF クラウド会計のみ */
@@ -67,8 +71,13 @@ export default function CsvUploadClient({
     setHasError(false);
 
     try {
-      const result = await previewAction({ file, politicalOrganizationId });
-      setPreviewResult(result);
+      const response = await previewAction({ file, politicalOrganizationId });
+      if (!response.ok) {
+        setPreviewResult(null);
+        setPreviewError(response.error);
+        return;
+      }
+      setPreviewResult(response.result);
     } catch (err) {
       setPreviewResult(null);
       setPreviewError(err instanceof Error ? err.message : "CSVのプレビューに失敗しました");
@@ -112,6 +121,8 @@ export default function CsvUploadClient({
         `Successfully processed ${result.processedCount} records and saved ${result.savedCount} transactions`;
 
       setMessage(`"${uploadedFileName}" の取り込み結果: ${serverMessage}`);
+      if (result.cacheWarning)
+        toast.warning(`保存しましたが、まる見えの更新に失敗しました: ${result.cacheWarning}`);
       setFile(null);
       resetPreview();
     } catch (err) {

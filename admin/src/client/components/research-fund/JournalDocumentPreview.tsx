@@ -19,7 +19,7 @@ import {
 import {
   canRerequestDocumentMasking,
   DocumentMaskingBadge,
-  useRequestDocumentMasking,
+  DocumentMaskingRequestDialog,
 } from "@/client/components/research-fund/DocumentMaskingStatus";
 import { useResearchFundReadOnly } from "@/client/components/research-fund/ResearchFundWriteAccess";
 import { cn, researchFundDocumentUrl } from "@/client/lib";
@@ -170,7 +170,7 @@ function JournalDocumentPanel({
 }) {
   const readOnly = useResearchFundReadOnly();
   const replaceInput = useRef<HTMLInputElement>(null);
-  const { pending, request } = useRequestDocumentMasking(target, documentId);
+  const [requesting, setRequesting] = useState(false);
   const [viewer, setViewer] = useState<ViewerMode | null>(null);
   const status = masking?.status ?? "pending";
   const unavailable = maskedUnavailableReason(masking);
@@ -293,8 +293,8 @@ function JournalDocumentPanel({
                 <p className="flex flex-wrap items-center gap-x-1.5 text-muted-foreground">
                   <button
                     type="button"
-                    disabled={pending || readOnly}
-                    onClick={request}
+                    disabled={readOnly}
+                    onClick={() => setRequesting(true)}
                     className={subtleButtonClassName}
                   >
                     <ArrowClockwise aria-hidden className="size-3" />
@@ -311,6 +311,13 @@ function JournalDocumentPanel({
           }
         />
       </div>
+      <DocumentMaskingRequestDialog
+        target={target}
+        documentId={documentId}
+        masking={masking}
+        open={requesting}
+        onOpenChange={setRequesting}
+      />
       <DocumentCompareDialog
         mode={viewer}
         onModeChange={setViewer}

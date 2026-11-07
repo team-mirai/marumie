@@ -41,6 +41,77 @@ test("費用の借方が複数ある仕訳は全明細を合計し、費用の�
   ]);
 });
 
+test("紐づけ候補は支払先・科目・特記事項・書類・紐づけ先の支出群名を付けて返す", async () => {
+  const { journalEntry, repository } = setup();
+  journalEntry.findMany.mockResolvedValue([
+    {
+      id: BigInt(1),
+      entryDate: new Date("2026-08-01"),
+      description: "資料と交通費",
+      note: "視察のため",
+      memo: "事務所メモ",
+      documentId: BigInt(9),
+      lines: [
+        { ...line("expense", 1200), account: { type: "expense", label: "交通費" } },
+        { ...line("expense", 800), account: { type: "expense", label: "交通費" } },
+        { ...line("expense", 500), account: { type: "expense", label: "資料費" } },
+      ],
+      groupItems: [{ groupId: BigInt(5), group: { title: "視察のまとめ" } }],
+      payee: { name: "東京タクシー" },
+    },
+    {
+      id: BigInt(2),
+      entryDate: new Date("2026-08-02"),
+      description: "手入力の支出",
+      note: null,
+      memo: null,
+      documentId: null,
+      lines: [{ ...line("expense", 300), account: { type: "expense", label: "消耗品費" } }],
+      groupItems: [],
+      payee: null,
+    },
+    {
+      id: BigInt(3),
+      entryDate: new Date("2026-08-03"),
+      description: "費用明細なし",
+      note: null,
+      memo: null,
+      documentId: null,
+      lines: [{ ...line("asset", 500), account: { type: "asset", label: "預金" } }],
+      groupItems: [],
+      payee: null,
+    },
+  ]);
+  expect(await repository.candidates("3")).toEqual([
+    {
+      id: "1",
+      entryDate: "2026-08-01",
+      description: "資料と交通費",
+      amount: 2500,
+      groupId: "5",
+      groupTitle: "視察のまとめ",
+      payeeName: "東京タクシー",
+      accountLabel: "交通費・資料費",
+      note: "視察のため",
+      memo: "事務所メモ",
+      documentId: "9",
+    },
+    {
+      id: "2",
+      entryDate: "2026-08-02",
+      description: "手入力の支出",
+      amount: 300,
+      groupId: null,
+      groupTitle: null,
+      payeeName: null,
+      accountLabel: "消耗品費",
+      note: "",
+      memo: "",
+      documentId: null,
+    },
+  ]);
+});
+
 test("同時保存の直列化衝突は保存し直せるエラーに変換する", async () => {
   const { $transaction, repository } = setup();
   $transaction.mockRejectedValue(

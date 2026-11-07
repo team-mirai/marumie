@@ -1,26 +1,18 @@
 "use client";
-import { useId, useMemo, useState, useTransition } from "react";
+import { useId, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { CaretLeft, Plus, X } from "@phosphor-icons/react/dist/ssr";
 import { toast } from "sonner";
 import { PageHeader } from "@/client/components/layout/PageHeader";
 import { DeleteExpenditureGroupButton } from "@/client/components/research-fund/DeleteExpenditureGroupButton";
-import {
-  Button,
-  Card,
-  CardContent,
-  Checkbox,
-  Input,
-  Label,
-  Textarea,
-} from "@/client/components/ui";
-import { cn, formatCurrency, formatLinkedPeriod } from "@/client/lib";
+import { ExpenditureGroupEntryPicker } from "@/client/components/research-fund/ExpenditureGroupEntryPicker";
+import { Button, Card, CardContent, Input, Label, Textarea } from "@/client/components/ui";
+import type { DocumentMasking } from "@/server/contexts/research-fund/domain/models/document-masking";
 import type {
   ExpenditureGroupRecord,
-  LinkableEntry,
+  LinkCandidate,
 } from "@/server/contexts/research-fund/domain/models/expenditure-group";
-import { aggregateLinkedEntries } from "@/shared/research-fund/expenditure-group";
 import { saveExpenditureGroup } from "@/server/contexts/research-fund/presentation/actions/manage-expenditure-groups";
 import type { AdminTarget } from "@/server/contexts/shared/domain/models/admin-target";
 
@@ -49,10 +41,13 @@ function initialOutcomes(group: ExpenditureGroupRecord | null): OutcomeDraft[] {
 export function ExpenditureGroupForm({
   group,
   entries,
+  maskings,
   target,
 }: {
   group: ExpenditureGroupRecord | null;
-  entries: readonly LinkableEntry[];
+  entries: readonly LinkCandidate[];
+  /** 書類 ID → 公開用の版の状態 */
+  maskings: Record<string, DocumentMasking>;
   target: Extract<AdminTarget, { kind: "research-fund" }>;
 }) {
   const router = useRouter();
@@ -64,12 +59,6 @@ export function ExpenditureGroupForm({
   const [entryIds, setEntryIds] = useState<readonly string[]>(group?.entryIds ?? []);
   const [pending, startTransition] = useTransition();
   const listPath = `/politicians/${target.politicianId}/books/${target.bookId}/expenditure-groups`;
-
-  const selected = useMemo(() => new Set(entryIds), [entryIds]);
-  const summary = useMemo(
-    () => aggregateLinkedEntries(entries.filter((entry) => selected.has(entry.id))),
-    [entries, selected],
-  );
 
   function updateOutcome(index: number, patch: Partial<OutcomeDraft>) {
     setOutcomes((current) =>
@@ -120,8 +109,8 @@ export function ExpenditureGroupForm({
         </Link>
       </div>
       <PageHeader label="Groups" title={group ? "支出群を編集" : "支出群を作る"} />
-      <div className="grid max-w-[1100px] items-start gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(300px,1fr)]">
-        <Card>
+      <div className="grid max-w-[1400px] gap-4">
+        <Card className="max-w-[1100px]">
           <CardContent className="grid gap-4 p-6">
             <div>
               <Label htmlFor={titleId}>
@@ -200,100 +189,32 @@ export function ExpenditureGroupForm({
                 成果物を追加
               </Button>
             </div>
-            <div className="flex gap-2.5">
-              <Button
-                disabled={pending || title.trim() === "" || description.trim() === ""}
-                onClick={submit}
-              >
-                {group ? "保存する" : "作成する"}
-              </Button>
-              <Button asChild variant="outline">
-                <Link href={listPath}>キャンセル</Link>
-              </Button>
-              {group && (
-                <DeleteExpenditureGroupButton
-                  groupId={group.id}
-                  title={group.title}
-                  target={target}
-                />
-              )}
-            </div>
           </CardContent>
         </Card>
-        <Card className="xl:sticky xl:top-6">
-          <CardContent className="p-5">
-            <h2 className="font-bold">仕訳の紐づけ</h2>
-            <p className="mt-1 text-xs text-muted-foreground">
-              金額・件数・期間は紐づけた仕訳から自動集計されます。
-            </p>
-            <div
-              role="status"
-              aria-label="紐づけの集計"
-              className="mt-3 flex flex-wrap gap-x-4 gap-y-1 rounded-[10px] bg-accent px-3.5 py-2.5 text-[12.5px]"
-            >
-              <span className="font-latin font-bold">{formatCurrency(summary.amount)}</span>
-              <span>{summary.count}件</span>
-              <span className="font-latin">{formatLinkedPeriod(summary.period)}</span>
-            </div>
-            {entries.length === 0 ? (
-              <p className="mt-3 text-xs text-muted-foreground">
-                紐づけられる費用の仕訳がまだありません。
-              </p>
-            ) : (
-              <ul className="mt-3 grid max-h-[340px] gap-0.5 overflow-y-auto">
-                {entries.map((entry) => {
-                  const checked = selected.has(entry.id);
-                  // 1 仕訳は 1 つの支出群にしか属せない。他で使われている仕訳は選ばせない
-                  const takenByOther = entry.groupId !== null && entry.groupId !== group?.id;
-                  return (
-                    <li key={entry.id}>
-                      <label
-                        htmlFor={`link-${entry.id}`}
-                        className={cn(
-                          "flex items-center gap-2 rounded-lg p-2",
-                          checked && "bg-accent",
-                          takenByOther ? "cursor-not-allowed" : "cursor-pointer",
-                        )}
-                      >
-                        <Checkbox
-                          id={`link-${entry.id}`}
-                          aria-label={`${entry.description}を紐づける`}
-                          checked={checked}
-                          disabled={pending || takenByOther}
-                          onCheckedChange={(value) =>
-                            setEntryIds((current) =>
-                              value === true
-                                ? [...current, entry.id]
-                                : current.filter((id) => id !== entry.id),
-                            )
-                          }
-                        />
-                        <span className="font-latin w-11 shrink-0 text-[11px] text-muted-foreground">
-                          {entry.entryDate.slice(5).replace("-", "/")}
-                        </span>
-                        <span
-                          className={cn(
-                            "min-w-0 flex-1 truncate text-[12.5px]",
-                            takenByOther && "text-disabled-foreground",
-                          )}
-                          title={takenByOther ? "他の支出群に紐づいています" : entry.description}
-                        >
-                          {entry.description}
-                        </span>
-                        <span className="font-latin shrink-0 text-xs font-semibold">
-                          {formatCurrency(entry.amount)}
-                        </span>
-                      </label>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
-            <p className="mt-2.5 text-[11px] text-disabled-foreground">
-              人件費・事務所費のような運営費は成果カードの対象外です。
-            </p>
-          </CardContent>
-        </Card>
+        <ExpenditureGroupEntryPicker
+          entries={entries}
+          groupId={group?.id ?? null}
+          selectedIds={entryIds}
+          onSelectedIdsChange={setEntryIds}
+          maskings={maskings}
+          target={target}
+          pending={pending}
+        />
+        {/* 紐づけの一覧が長くても保存できるよう、画面の下に留めておく */}
+        <div className="sticky bottom-0 z-10 flex gap-2.5 border-t border-border-soft bg-background py-3">
+          <Button
+            disabled={pending || title.trim() === "" || description.trim() === ""}
+            onClick={submit}
+          >
+            {group ? "保存する" : "作成する"}
+          </Button>
+          <Button asChild variant="outline">
+            <Link href={listPath}>キャンセル</Link>
+          </Button>
+          {group && (
+            <DeleteExpenditureGroupButton groupId={group.id} title={group.title} target={target} />
+          )}
+        </div>
       </div>
     </>
   );

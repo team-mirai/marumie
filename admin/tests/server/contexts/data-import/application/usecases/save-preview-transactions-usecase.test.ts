@@ -147,6 +147,49 @@ describe("SavePreviewTransactionsUsecase", () => {
 
       expect(result.errors).toContain("データの保存中にエラーが発生しました");
       expect(result.savedCount).toBe(0);
+      expect(result.cacheWarning).toBeNull();
+      expect(mockCacheInvalidator.invalidateWebappCache).not.toHaveBeenCalled();
+    });
+
+    it("取引の保存後にキャッシュ無効化だけが失敗した場合は、保存エラーにせず警告として返す", async () => {
+      const csvContent = `取引No,取引日,借方勘定科目,借方補助科目,借方部門,借方取引先,借方税区分,借方インボイス,借方金額,貸方勘定科目,貸方補助科目,貸方部門,貸方取引先,貸方税区分,貸方インボイス,貸方金額,摘要,仕訳メモ,タグ
+1,2025/6/1,人件費,,,,,,1000,普通預金,,,,,,1000,給与支払,,人件費`;
+      const previewResult = await previewUsecase.execute({ csvContent, politicalOrganizationId: "1" });
+      mockRepository.createMany.mockImplementation(async (transactions) =>
+        transactions.map((t, index) => ({ ...t, id: `new-id-${index}`, label: t.label || '', created_at: new Date(), updated_at: new Date() })),
+      );
+      mockCacheInvalidator.invalidateWebappCache.mockRejectedValue(
+        new Error("DATA_REFRESH_TOKEN が設定されていないため、ウェブアプリのキャッシュをクリアできません"),
+      );
+
+      const result = await usecase.execute({
+        validTransactions: previewResult.transactions,
+        politicalOrganizationId: "1",
+      });
+
+      expect(result.errors).toEqual([]);
+      expect(result.savedCount).toBe(1);
+      expect(result.cacheWarning).toBe(
+        "DATA_REFRESH_TOKEN が設定されていないため、ウェブアプリのキャッシュをクリアできません",
+      );
+    });
+
+    it("取引の保存とキャッシュ無効化が成功した場合は、警告を返さない", async () => {
+      const csvContent = `取引No,取引日,借方勘定科目,借方補助科目,借方部門,借方取引先,借方税区分,借方インボイス,借方金額,貸方勘定科目,貸方補助科目,貸方部門,貸方取引先,貸方税区分,貸方インボイス,貸方金額,摘要,仕訳メモ,タグ
+1,2025/6/1,人件費,,,,,,1000,普通預金,,,,,,1000,給与支払,,人件費`;
+      const previewResult = await previewUsecase.execute({ csvContent, politicalOrganizationId: "1" });
+      mockRepository.createMany.mockImplementation(async (transactions) =>
+        transactions.map((t, index) => ({ ...t, id: `new-id-${index}`, label: t.label || '', created_at: new Date(), updated_at: new Date() })),
+      );
+
+      const result = await usecase.execute({
+        validTransactions: previewResult.transactions,
+        politicalOrganizationId: "1",
+      });
+
+      expect(result.errors).toEqual([]);
+      expect(result.cacheWarning).toBeNull();
+      expect(mockCacheInvalidator.invalidateWebappCache).toHaveBeenCalledTimes(1);
     });
 
     it("should reject invalid account labels and not call repository", async () => {

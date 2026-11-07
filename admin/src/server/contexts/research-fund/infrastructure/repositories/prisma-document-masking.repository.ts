@@ -29,6 +29,7 @@ export class PrismaDocumentMaskingRepository implements DocumentMaskingRepositor
         maskingError: true,
         maskedRegionCount: true,
         maskedKey: true,
+        maskingInstruction: true,
       },
       orderBy: { id: "asc" },
     });
@@ -39,6 +40,7 @@ export class PrismaDocumentMaskingRepository implements DocumentMaskingRepositor
       error: row.maskingStatus === "failed" ? row.maskingError : null,
       regionCount: row.maskedRegionCount,
       hasMaskedVersion: row.maskedKey !== null,
+      instruction: row.maskingInstruction,
     }));
   }
 
@@ -80,7 +82,7 @@ export class PrismaDocumentMaskingRepository implements DocumentMaskingRepositor
       where: { maskingStatus: "pending" },
       orderBy: { id: "asc" },
       take: CLAIM_CANDIDATES,
-      select: { id: true, storageKey: true, mime: true },
+      select: { id: true, storageKey: true, mime: true, maskingInstruction: true },
     });
     for (const document of candidates) {
       const startedAt = new Date();
@@ -95,6 +97,7 @@ export class PrismaDocumentMaskingRepository implements DocumentMaskingRepositor
         documentId: document.id.toString(),
         storageKey: document.storageKey,
         mime: document.mime,
+        instruction: document.maskingInstruction,
         startedAt,
       };
     }
@@ -137,6 +140,7 @@ export class PrismaDocumentMaskingRepository implements DocumentMaskingRepositor
   async request(
     bookId: string,
     documentId: string,
+    instruction: string | null,
   ): Promise<"requested" | "running" | "not-found"> {
     const where = { id: BigInt(documentId), bookId: BigInt(bookId) };
     const result = await this.prisma.researchFundDocument.updateMany({
@@ -146,6 +150,7 @@ export class PrismaDocumentMaskingRepository implements DocumentMaskingRepositor
         maskingStartedAt: null,
         maskingError: null,
         maskedRegionCount: null,
+        maskingInstruction: instruction,
       },
     });
     if (result.count === 1) return "requested";

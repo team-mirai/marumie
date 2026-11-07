@@ -1,15 +1,26 @@
 "use client";
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowClockwise, ArrowSquareOut } from "@phosphor-icons/react/dist/ssr";
 import { toast } from "sonner";
-import { Button } from "@/client/components/ui";
+import {
+  Button,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  Label,
+  Textarea,
+} from "@/client/components/ui";
 import { useResearchFundReadOnly } from "@/client/components/research-fund/ResearchFundWriteAccess";
 import { cn, researchFundDocumentUrl } from "@/client/lib";
 import {
   type DocumentMasking,
   DocumentMaskingPolicy,
   type DocumentMaskingStatus as MaskingStatus,
+  MASKING_INSTRUCTION_MAX_LENGTH,
 } from "@/server/contexts/research-fund/domain/models/document-masking";
 import { requestDocumentMasking } from "@/server/contexts/research-fund/presentation/actions/manage-document-masking";
 
@@ -78,29 +89,146 @@ export function canRerequestDocumentMasking(masking: DocumentMasking | undefined
   return status !== "pending" && DocumentMaskingPolicy.canRequest(status);
 }
 
-/** 公開用の版の作り直しを依頼する。読み取り画面の一覧と仕訳の詳細カードで共有する */
-export function useRequestDocumentMasking(
-  target: { politicianId: string; bookId: string },
-  documentId: string,
-) {
-  const router = useRouter();
+/**
+ * 公開用の版の作り直しの依頼ダイアログ。読み取り画面の一覧と仕訳の詳細カードで共有する。
+ * この書類に向けた黒塗りへの追加の指示を任意で添えられる（#1867）。前回付けた指示が最初から入っていて、
+ * 書き換え・消去してから依頼できる。空欄のまま依頼すると共通のプロンプトだけで作り直す
+ */
+export function DocumentMaskingRequestDialog({
+  target,
+  documentId,
+  masking,
+  open,
+  onOpenChange,
+}: {
+  target: { politicianId: string; bookId: string };
+  documentId: string;
+  masking: DocumentMasking | undefined;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
   const [pending, startTransition] = useTransition();
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        if (!pending) onOpenChange(next);
+      }}
+    >
+      <DialogContent>
+        {/* 開くたびに作り直し、入力欄を前回付けた指示に戻す */}
+        <DocumentMaskingRequestForm
+          target={target}
+          documentId={documentId}
+          masking={masking}
+          pending={pending}
+          startTransition={startTransition}
+          onDone={() => onOpenChange(false)}
+        />
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function DocumentMaskingRequestForm({
+  target,
+  documentId,
+  masking,
+  pending,
+  startTransition,
+  onDone,
+}: {
+  target: { politicianId: string; bookId: string };
+  documentId: string;
+  masking: DocumentMasking | undefined;
+  pending: boolean;
+  startTransition: (action: () => Promise<void>) => void;
+  onDone: () => void;
+}) {
+  const router = useRouter();
+  const [instruction, setInstruction] = useState(masking?.instruction ?? "");
+  const [error, setError] = useState<string | null>(null);
+  const length = instruction.trim().length;
+  const inputId = `masking-instruction-${documentId}`;
+
   function request() {
+    setError(null);
     startTransition(async () => {
       try {
-        const result = await requestDocumentMasking(target.politicianId, target.bookId, documentId);
+        const result = await requestDocumentMasking(
+          target.politicianId,
+          target.bookId,
+          documentId,
+          instruction,
+        );
         if (!result.success) {
-          toast.error(result.error);
+          setError(result.error);
           return;
         }
         toast.success("公開用の版を作り直します");
+        onDone();
         router.refresh();
       } catch {
         toast.error("通信に失敗しました。再度お試しください");
       }
     });
   }
-  return { pending, request };
+
+  return (
+    <>
+      <DialogHeader>
+        <DialogTitle>
+          {masking?.hasMaskedVersion ? "公開用の版を作り直しますか？" : "公開用の版を作りますか？"}
+        </DialogTitle>
+        <DialogDescription>
+          {masking?.hasMaskedVersion
+            ? "できあがると今の公開用の版は置き換わります。"
+            : "公開用の版を作ります。"}
+          この書類だけに向けた黒塗りの指示を添えられます。指示は書類に保存され、次に作り直すときも最初から入っています。
+          空欄のままなら、共通の決まりだけで作り直します。
+        </DialogDescription>
+      </DialogHeader>
+      <div className="flex flex-col gap-2">
+        <Label htmlFor={inputId}>追加の指示（任意）</Label>
+        <Textarea
+          id={inputId}
+          value={instruction}
+          rows={4}
+          disabled={pending}
+          aria-invalid={error !== null || length > MASKING_INSTRUCTION_MAX_LENGTH}
+          placeholder="例：注文者の氏名も黒塗りにしてください"
+          onChange={(e) => {
+            setInstruction(e.target.value);
+            setError(null);
+          }}
+        />
+        <p
+          className={cn(
+            "text-right text-xs text-muted-foreground",
+            length > MASKING_INSTRUCTION_MAX_LENGTH && "text-destructive",
+          )}
+        >
+          <span className="font-latin">
+            {length} / {MASKING_INSTRUCTION_MAX_LENGTH}
+          </span>
+          文字
+        </p>
+        {error !== null && (
+          <p role="alert" className="text-sm text-destructive">
+            {error}
+          </p>
+        )}
+      </div>
+      <DialogFooter>
+        <Button variant="outline" disabled={pending} onClick={onDone}>
+          キャンセル
+        </Button>
+        <Button disabled={pending} onClick={request}>
+          {masking?.hasMaskedVersion ? "作り直す" : "作る"}
+        </Button>
+      </DialogFooter>
+    </>
+  );
 }
 
 /**
@@ -121,7 +249,7 @@ export function DocumentMaskingStatus({
   className?: string;
 }) {
   const readOnly = useResearchFundReadOnly();
-  const { pending, request } = useRequestDocumentMasking(target, documentId);
+  const [requesting, setRequesting] = useState(false);
   const status = masking?.status ?? "pending";
   const requestable = canRerequestDocumentMasking(masking);
 
@@ -152,9 +280,9 @@ export function DocumentMaskingStatus({
             type="button"
             variant="outline"
             size="xs"
-            disabled={pending || readOnly}
-            title="公開用の版を作り直します。できあがると前の版は置き換わります"
-            onClick={request}
+            disabled={readOnly}
+            title="公開用の版を作り直します。この書類への黒塗りの指示を添えられます"
+            onClick={() => setRequesting(true)}
           >
             <ArrowClockwise aria-hidden />
             {masking?.hasMaskedVersion ? "作り直す" : "作る"}
@@ -163,6 +291,15 @@ export function DocumentMaskingStatus({
       </div>
       {status === "failed" && (
         <p className="text-destructive">{masking?.error ?? "公開用の版の作成に失敗しました"}</p>
+      )}
+      {requestable && (
+        <DocumentMaskingRequestDialog
+          target={target}
+          documentId={documentId}
+          masking={masking}
+          open={requesting}
+          onOpenChange={setRequesting}
+        />
       )}
     </div>
   );

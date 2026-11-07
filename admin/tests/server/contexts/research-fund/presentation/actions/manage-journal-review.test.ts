@@ -11,6 +11,7 @@ import { RevertJournalEntryToDraftUsecase } from "@/server/contexts/research-fun
 import { SaveJournalEntryUsecase } from "@/server/contexts/research-fund/application/usecases/save-journal-entry-usecase";
 import { CreatePayeeAndLinkUsecase } from "@/server/contexts/research-fund/application/usecases/create-payee-and-link-usecase";
 import { SetJournalEntriesPayeeUsecase } from "@/server/contexts/research-fund/application/usecases/set-journal-entries-payee-usecase";
+import { SetLegalCategoryOverrideUsecase } from "@/server/contexts/research-fund/application/usecases/set-legal-category-override-usecase";
 import { SetReceiptAbsentUsecase } from "@/server/contexts/research-fund/application/usecases/set-receipt-absent-usecase";
 import { SetReceiptAbsenceReasonUsecase } from "@/server/contexts/research-fund/application/usecases/set-receipt-absence-reason-usecase";
 import { SetJournalEntriesAdvancedByUsecase } from "@/server/contexts/research-fund/application/usecases/set-journal-entries-advanced-by-usecase";
@@ -206,4 +207,16 @@ test("現在の対象でない（別の議員の）帳簿には領収書等番�
   const assign = jest.spyOn(AssignReceiptNumbersUsecase.prototype, "execute");
   await expect(mutateJournalReview("9", "8", { type: "assign-receipt-numbers" })).resolves.toMatchObject({ success: false });
   expect(assign).not.toHaveBeenCalled(); expect(revalidatePath).not.toHaveBeenCalled();
+});
+test("法定区分の上書きは操作したユーザーを記録して保存し、保存後の更新時刻を返す（#1880）", async () => {
+  const set = jest.spyOn(SetLegalCategoryOverrideUsecase.prototype, "execute").mockResolvedValue({ updatedAt: "saved" });
+  const override = { legalCategoryKey: "research", reason: "提出済みの報告書に合わせる" };
+  await expect(mutateJournalReview("2", "1", { type: "set-legal-category-override", id: "3", updatedAt: "date", override })).resolves.toMatchObject({ success: true, saved: { updatedAt: "saved" } });
+  expect(set).toHaveBeenCalledWith("1", "3", "date", override, "user");
+  expect(revalidatePath).toHaveBeenCalledWith("/(auth)", "layout");
+});
+test("法定区分の上書きを拒否した理由をそのまま伝える（#1880）", async () => {
+  jest.spyOn(SetLegalCategoryOverrideUsecase.prototype, "execute").mockRejectedValue(new JournalReviewError("この帳簿では法定区分の上書きが許可されていません"));
+  await expect(mutateJournalReview("2", "1", { type: "set-legal-category-override", id: "3", updatedAt: "date", override: null })).resolves.toEqual({ success: false, error: "この帳簿では法定区分の上書きが許可されていません" });
+  expect(revalidatePath).not.toHaveBeenCalled();
 });

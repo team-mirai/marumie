@@ -3,7 +3,13 @@ import type { BookMetadata } from "@/server/contexts/research-fund/domain/models
 
 const metadata = { asOfDate: "2026-08-20", nextUpdateNote: " 11月ごろ ", policyComment: " 方針 " };
 function setup() {
-  const repository = { list: jest.fn(), create: jest.fn(), update: jest.fn() };
+  const repository = {
+    list: jest.fn(),
+    create: jest.fn(),
+    update: jest.fn(),
+    setLegalCategoryOverrideAllowed: jest.fn(),
+    legalCategoryOverrideCount: jest.fn(),
+  };
   const cacheInvalidator = { invalidateWebappCache: jest.fn().mockResolvedValue(undefined) };
   return { repository, cacheInvalidator, usecase: new UpdateBookUsecase(repository, cacheInvalidator) };
 }

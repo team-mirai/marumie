@@ -29,10 +29,11 @@ export class VercelAIPersonalInfoRegionDetector implements PersonalInfoRegionDet
     jpeg: Uint8Array;
     width: number;
     height: number;
+    instruction: string | null;
   }): Promise<MaskingRegion[]> {
     const { output } = await generateText({
       model: anthropic(maskingModel()),
-      system: buildPersonalInfoMaskingPrompt(page.width, page.height),
+      system: buildPersonalInfoMaskingPrompt(page.width, page.height, page.instruction),
       messages: [
         {
           role: "user",

@@ -76,7 +76,7 @@ pnpm run dev:setup
 `pnpm run dev` で admin を動かす場合のみ、以下のコマンドでキー情報を取得して `admin/.env.local` に設定してください：
 
 ```bash
-pnpm run supabase:status -- --output json
+pnpm run supabase:status --output json
 ```
 
 出力（JSON）のうち使うのは次の 3 つです：
@@ -176,7 +176,7 @@ curl -H "Authorization: Bearer $CRON_SECRET" http://localhost:3001/api/cron/docu
 | API | 54331 | `[api]` port | 54321 |
 | PostgreSQL (DB) | 54332 | `[db]` port | 54322 |
 | Studio | 54333 | `[studio]` port | 54323 |
-| Mailpit (メール) | 54334 | `[inbucket]` port | 54324 |
+| Mailpit (メール) | 54334 | `[local_smtp]` port | 54324 |
 | Analytics | 54337 | `[analytics]` port | 54327 |
 
 ## トラブルシューティング

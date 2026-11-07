@@ -45,4 +45,22 @@ describe("buildPersonalInfoMaskingPrompt", () => {
     expect(output).toContain("発行元の情報と議員会館の住所は塗らない");
     expect(output).toContain("議員会館の住所だけを塗らず、それ以外の住所は塗る");
   });
+
+  it("追加の指示が無ければ、追加の指示の節を含まない", () => {
+    expect(buildPersonalInfoMaskingPrompt(800, 1200)).not.toContain("追加の指示");
+    expect(buildPersonalInfoMaskingPrompt(800, 1200, null)).not.toContain("追加の指示");
+  });
+
+  it("追加の指示を、塗らない対象より優先し、出力の形式は変えないよう添える", () => {
+    const prompt = buildPersonalInfoMaskingPrompt(800, 1200, "注文者の氏名も黒塗りにして");
+    const extra = section(prompt, "この書類への追加の指示");
+
+    expect(extra).toContain("<instruction>\n注文者の氏名も黒塗りにして\n</instruction>");
+    expect(extra).toContain("「塗る対象」「塗らない対象」");
+    expect(extra).toContain("より優先する");
+    expect(extra).toContain("出力の形式");
+    // 共通の決まりは変えずに残す
+    expect(section(prompt, "出力")).toContain("発行元の情報と議員会館の住所は塗らない");
+    expect(prompt.indexOf("■ 出力")).toBeLessThan(prompt.indexOf("■ この書類への追加の指示"));
+  });
 });

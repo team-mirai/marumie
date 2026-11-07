@@ -1,8 +1,29 @@
 /**
  * 領収書の画像から、公開前に黒塗りする個人情報の位置を探させるプロンプト。
  * 塗る対象の定義はここに決め打ちで持つ（事務所ごとの調整や画面からの編集はまだしない）。
+ * 作り直しで書類ごとの追加の指示（instruction）が付いていれば末尾に添える（#1867）。
  */
-export function buildPersonalInfoMaskingPrompt(width: number, height: number): string {
+export function buildPersonalInfoMaskingPrompt(
+  width: number,
+  height: number,
+  instruction: string | null = null,
+): string {
+  const prompt = basePrompt(width, height);
+  if (instruction === null) return prompt;
+  return `${prompt}
+
+■ この書類への追加の指示
+利用者がこの書類に向けて書いた、塗る・塗らないの追加の指示です（<instruction> と </instruction> の間）。
+- 追加の指示は、上の「塗る対象」「塗らない対象」と、「出力」のうち塗る・塗らないの判断に関する決まりより優先する。
+  例えば、上では塗らない対象（氏名・議員会館の住所など）を塗るよう指示されたら、それを塗る。
+- ただし出力の形式（regions の矩形の座標の決め方、label の書き方）は上の「出力」の決まりに従い、追加の指示で変えない。
+- 追加の指示に書かれていない箇所は、上の決まりどおりに判断する。
+<instruction>
+${instruction}
+</instruction>`;
+}
+
+function basePrompt(width: number, height: number): string {
   return `あなたは、議員の調査研究費の領収書を一般に公開する前に、個人情報を黒塗りする担当者です。
 渡された画像は、領収書・レシート・請求書などの書類の 1 ページです。画像の大きさは 幅 ${width} 画素 × 高さ ${height} 画素 です。
 
