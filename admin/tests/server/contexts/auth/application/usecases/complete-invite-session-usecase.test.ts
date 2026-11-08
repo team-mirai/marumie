@@ -31,7 +31,7 @@ describe("CompleteInviteSessionUsecase", () => {
 
   describe("execute", () => {
     it("正常にセッションを設定し、新規ユーザーを作成する", async () => {
-      const session = createMockSession();
+      const session = createMockSession({ signInProvider: "invite" });
       const authUser = createMockSupabaseUser();
       const newUser = createMockUser();
 
@@ -123,7 +123,7 @@ describe("CompleteInviteSessionUsecase", () => {
   });
 
   describe("execute（招待の扱い。#1882）", () => {
-    it.each(["password", "google"] as const)(
+    it.each(["password", "google", null] as const)(
       "%s のセッションを渡されたら招待を使わず、ロールなしで作る",
       async (signInProvider) => {
         mockAuthProvider.setSession.mockResolvedValue(createMockSession({ signInProvider }));

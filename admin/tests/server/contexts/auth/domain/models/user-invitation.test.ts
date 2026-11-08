@@ -51,8 +51,12 @@ describe("UserInvitationModel", () => {
   });
 
   describe("canAcceptOnFirstLogin", () => {
-    it("メールのリンク経由（招待リンクなど）なら使える", () => {
-      expect(UserInvitationModel.canAcceptOnFirstLogin(null, false)).toBe(true);
+    it("招待メールのリンク経由なら使える", () => {
+      expect(UserInvitationModel.canAcceptOnFirstLogin("invite", false)).toBe(true);
+    });
+
+    it("パスワード再設定・マジックリンクなどほかのメールのリンク経由では使わない（第三者が先にパスワード登録できる）", () => {
+      expect(UserInvitationModel.canAcceptOnFirstLogin(null, true)).toBe(false);
     });
 
     it("許可ドメインの判定を通った Google ログインなら使える", () => {

@@ -35,7 +35,7 @@ export class CompleteInviteSessionUsecase {
       // DB にユーザーが存在しない場合は作成
       const existing = await this.userRepository.findByAuthId(authUser.id);
       if (!existing && authUser.email) {
-        // 招待リンク経由（メールのリンク経由）のセッションなら招待のロールと担当議員を付ける。
+        // 招待メールのリンク経由のセッションなら招待のロールと担当議員を付ける。
         // このアクションには任意のトークンを渡せるため、パスワードや Google のセッションでは使わない
         // （Google ログインの許可ドメインの判定はここでは行わないので、Google は確かめられていない扱い）
         if (UserInvitationModel.canAcceptOnFirstLogin(session.signInProvider, false)) {

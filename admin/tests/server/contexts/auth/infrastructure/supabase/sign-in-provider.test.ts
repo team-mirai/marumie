@@ -35,8 +35,11 @@ describe("resolveSignInProvider", () => {
     expect(resolveSignInProvider(session)).toBe("password");
   });
 
-  it("招待・リカバリーなどのメール経由フローはnullと判定する", () => {
-    expect(resolveSignInProvider(createSession(createAmrToken(["invite"]), {}))).toBeNull();
+  it("招待メールのリンク経由はinviteと判定する", () => {
+    expect(resolveSignInProvider(createSession(createAmrToken(["invite"]), {}))).toBe("invite");
+  });
+
+  it("リカバリー・マジックリンクなどほかのメール経由フローはnullと判定する", () => {
     expect(resolveSignInProvider(createSession(createAmrToken(["recovery"]), {}))).toBeNull();
     expect(resolveSignInProvider(createSession(createAmrToken(["magiclink"]), {}))).toBeNull();
   });

@@ -6,10 +6,11 @@ import type { SupabaseAuthUser } from "@/server/contexts/auth/domain/models/supa
 /**
  * このサインインで実際に使われた認証プロバイダーの判定結果
  * - password / google: 使われた認証方式を特定できた
- * - null: どちらでもない（招待・パスワードリセットなどのメール経由フロー）
+ * - invite: 招待メールのリンク経由（Supabase の inviteUserByEmail で送ったリンク）
+ * - null: どちらでもない（パスワードリセット・マジックリンクなどのメール経由フロー）
  * - "indeterminate": 認証方式を特定できなかった（認可の判定に使ってはならない）
  */
-export type SignInProvider = AuthProviderName | "indeterminate" | null;
+export type SignInProvider = AuthProviderName | "invite" | "indeterminate" | null;
 
 /**
  * 認証セッション情報

@@ -51,19 +51,22 @@ export namespace UserInvitationModel {
 
   /**
    * 初回ログインで招待を使ってよいか判定する。
-   * 招待を使うのは、メールアドレスの持ち主だと確かめられたログインに限る。
-   * - 招待リンク・マジックリンクなどメールのリンク経由（signInProvider が null）
+   * 招待を使うのは、メールアドレスの持ち主だと確かめられ、かつ第三者が先に認証ユーザーを作っておけないログインに限る。
+   * - 招待メールのリンク経由（invite）。招待メールは確認済みの既存ユーザーには送れないため、
+   *   第三者が先にパスワード登録しておくことはできない
    * - 許可ドメインの Google ログイン（ドメインの判定を通った後に限る）
    *
-   * 自分でパスワード登録したアカウントのログイン（password）では使わない。
-   * メール確認が無効な環境では他人のメールアドレスで登録できてしまい、その人が招待のロールを得てしまうため。
+   * パスワードのログイン（password）では使わない。メール確認が無効な環境では他人のメールアドレスで登録できてしまうため。
+   * パスワード再設定・マジックリンクなど、ほかのメール経由のログイン（null）でも使わない。
+   * 第三者が先にパスワード登録したアカウントでも本人がリンクからログインできてしまい、
+   * そのあと第三者がパスワードで招待のロールを使えてしまうため。
    * @param googleDomainVerified Google ログインが許可ドメインの判定を通ったか
    */
   export function canAcceptOnFirstLogin(
     signInProvider: SignInProvider,
     googleDomainVerified: boolean,
   ): boolean {
-    if (signInProvider === null) return true;
+    if (signInProvider === "invite") return true;
     return signInProvider === "google" && googleDomainVerified;
   }
 }

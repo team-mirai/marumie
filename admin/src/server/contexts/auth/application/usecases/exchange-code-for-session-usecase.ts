@@ -78,7 +78,7 @@ export class ExchangeCodeForSessionUsecase {
           throw new AuthError("AUTH_FAILED", "User email is required");
         }
 
-        // メールアドレスの持ち主だと確かめられたログイン（許可ドメインの Google・メールのリンク経由）なら
+        // メールアドレスの持ち主だと確かめられたログイン（許可ドメインの Google・招待メールのリンク経由）なら
         // 招待のロールと担当議員を付ける。ここに来た Google ログインは許可ドメインの判定を通っている
         dbUser = UserInvitationModel.canAcceptOnFirstLogin(session.signInProvider, isGoogleLogin)
           ? await this.invitationRepository.createUserAcceptingInvitation({

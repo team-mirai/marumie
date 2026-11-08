@@ -61,6 +61,7 @@ describe("ExchangeCodeForSessionUsecase", () => {
           emailConfirmedAt: "2024-01-01T00:00:00Z",
           lastSignInAt: null,
         }),
+        signInProvider: "invite",
       });
       const newUser = createMockUser();
 
@@ -433,8 +434,10 @@ describe("ExchangeCodeForSessionUsecase", () => {
       expect(mockUserRepository.create).not.toHaveBeenCalled();
     });
 
-    it("パスワードのセッションでは招待を使わず、ロールなしで作る", async () => {
-      const session = createMockSession({ signInProvider: "password" });
+    it.each(["password", null] as const)(
+      "%s のセッション（パスワード・パスワード再設定やマジックリンク）では招待を使わず、ロールなしで作る",
+      async (signInProvider) => {
+      const session = createMockSession({ signInProvider });
       const newUser = createMockUser();
       mockAuthProvider.exchangeCodeForSession.mockResolvedValue(session);
       mockUserRepository.findByAuthId.mockResolvedValue(null);
@@ -449,7 +452,8 @@ describe("ExchangeCodeForSessionUsecase", () => {
         roles: [],
       });
       expect(mockInvitationRepository.createUserAcceptingInvitation).not.toHaveBeenCalled();
-    });
+      },
+    );
 
     it("既にユーザーがいる場合は招待を使わない", async () => {
       mockAuthProvider.exchangeCodeForSession.mockResolvedValue(createMockSession());
