@@ -344,7 +344,7 @@ export class PrismaResearchFundRepository implements ResearchFundRepository {
   async findPoliticians(financialYear: number): Promise<ResearchFundPoliticianSource[]> {
     const politicians = await this.prisma.politician.findMany({
       // 帳簿の無い議員はセレクタに出さない（開いても中身が無いため）。
-      // 調研費を「公開しない」議員も出さない（URL を知っていれば開ける）。
+      // 調研費を「公開しない」議員も出さない（プレビュー URL を知っていれば開ける）。
       where: { isResearchFundPublic: true, books: { some: { financialYear } } },
       orderBy: [{ displayOrder: "asc" }, { id: "asc" }],
       select: {

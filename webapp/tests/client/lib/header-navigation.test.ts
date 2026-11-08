@@ -53,6 +53,13 @@ describe("getHeaderNavigation", () => {
     expect(items.filter((item) => item.href.startsWith("/o/"))).toEqual([]);
   });
 
+  it("プレビュー URL では、プレビュー用の文字列を保ったまま同じページのセクションを指す", () => {
+    const { homeHref, items } = getHeaderNavigation("politician", "sample-taro~0123456789abcdef0123456789abcdef", 2026);
+
+    expect(homeHref).toBe("/p/sample-taro~0123456789abcdef0123456789abcdef/2026/");
+    expect(items[0].href).toBe("/p/sample-taro~0123456789abcdef0123456789abcdef/2026/#cash-flow");
+  });
+
   it("slug は URL エンコードする", () => {
     expect(getHeaderNavigation("politician", "a/b", 2026).homeHref).toBe("/p/a%2Fb/2026/");
   });

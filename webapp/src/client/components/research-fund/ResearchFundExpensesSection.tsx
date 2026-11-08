@@ -23,6 +23,8 @@ import { RESEARCH_FUND_RECEIPTS_PUBLISHED } from "@/server/contexts/research-fun
 
 interface Props {
   data: ResearchFundPageData;
+  /** URL の slug の区間（プレビュー URL ならプレビュー用の文字列を含む）。全件ページへのリンクはこれを引き継ぐ */
+  pathSlug: string;
   updatedAt: string;
 }
 
@@ -58,7 +60,7 @@ function StarIcon() {
  * 用途カードに紐づく行は「★ 用途N」から該当カードへ飛べ、カードの「N件」からは該当行まで一覧を広げる。
  * 領収書を公開している間は、領収書のある行の「領収書」ピルから公開用の版（個人情報を黒塗りした版）をモーダルで見られる。
  */
-export default function ResearchFundExpensesSection({ data, updatedAt }: Props) {
+export default function ResearchFundExpensesSection({ data, pathSlug, updatedAt }: Props) {
   const { rowsRequest, showCard } = useResearchFundCrossLink();
   const [shown, setShown] = useState(RESEARCH_FUND_PREVIEW_COUNT);
   const [flashedGroupId, setFlashedGroupId] = useState<string | null>(null);
@@ -219,7 +221,7 @@ export default function ResearchFundExpensesSection({ data, updatedAt }: Props) 
               }
             >
               <Link
-                href={`/p/${data.politician.slug}/${data.financialYear}/transactions`}
+                href={`/p/${encodeURIComponent(pathSlug)}/${data.financialYear}/transactions`}
                 className="pointer-events-auto inline-flex h-12 w-[270px] items-center justify-center gap-2.5 rounded-[6px] border border-[#1F2937] bg-white px-6 py-2 text-base font-bold text-[#1F2937] transition-colors duration-150 hover:bg-[#F9FAFB]"
               >
                 もっと見る

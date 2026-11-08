@@ -11,7 +11,7 @@ import ResearchFundAboutSection from "@/client/components/research-fund/Research
 import ResearchFundTransactionsTable from "@/client/components/research-fund/ResearchFundTransactionsTable";
 import { formatUpdatedAt } from "@/client/lib/format-date";
 import { parseResearchFundTransactionsQuery } from "@/client/lib/research-fund-transactions";
-import { loadResearchFundPage } from "@/server/contexts/research-fund/presentation/loaders/load-research-fund-page";
+import { loadResearchFundPageByPath } from "@/server/contexts/research-fund/presentation/loaders/load-research-fund-page-by-path";
 
 export const revalidate = 300; // 5 minutes
 
@@ -30,14 +30,17 @@ export async function generateMetadata({
 }: PoliticianTransactionsPageProps): Promise<Metadata> {
   const { slug, year } = await params;
   const financialYear = parseYear(year);
-  const data = financialYear ? await loadResearchFundPage({ slug, financialYear }) : null;
+  const page = financialYear
+    ? await loadResearchFundPageByPath({ pathSlug: slug, financialYear })
+    : null;
+  const data = page?.data;
 
   return {
     title: data
       ? `${data.politician.name}の調査研究費：すべての出入金 - みらいまる見え政治資金`
       : "みらいまる見え政治資金",
-    // 調研費を「公開しない」議員のページは、URL を知っていれば開けるが検索エンジンには載せない。
-    ...(data && !data.isPublic && { robots: { index: false } }),
+    // プレビュー URL（調研費を「公開しない」議員のページはこれでしか開けない）は検索エンジンに載せない。
+    ...(page?.isPreview && { robots: { index: false } }),
   };
 }
 
@@ -51,8 +54,11 @@ export default async function PoliticianTransactionsPage({
 }: PoliticianTransactionsPageProps) {
   const { slug, year } = await params;
   const financialYear = parseYear(year);
-  const data = financialYear ? await loadResearchFundPage({ slug, financialYear }) : null;
-  if (!data) notFound();
+  const page = financialYear
+    ? await loadResearchFundPageByPath({ pathSlug: slug, financialYear })
+    : null;
+  if (!page) notFound();
+  const { data, pathSlug } = page;
 
   const query = parseResearchFundTransactionsQuery(await searchParams);
 
@@ -71,7 +77,7 @@ export default async function PoliticianTransactionsPage({
           subtitle="これまでにデータ連携された出入金の明細"
         />
         <ResearchFundTransactionsTable
-          slug={data.politician.slug}
+          pathSlug={pathSlug}
           financialYear={data.financialYear}
           expenses={data.expenses}
           query={query}

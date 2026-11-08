@@ -3,7 +3,10 @@ import "client-only";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { formatResearchFundSelectorLabel } from "@/client/lib/organization-selector";
+import {
+  formatResearchFundSelectorLabel,
+  politicianYearHref,
+} from "@/client/lib/organization-selector";
 import type { ResearchFundPoliticianEntry } from "@/server/contexts/research-fund/domain/models/research-fund-politician-list";
 import type { OrganizationsResponse } from "@/types/organization";
 
@@ -86,11 +89,13 @@ export default function OrganizationYearSheet({
 
   const handleYearSelect = (year: number) => {
     // その年度に公開済みの仕訳が無い議員ページへは送らず、政治団体ページに戻す。
-    const isPublished = (politiciansByYear[year] ?? []).some(
-      (politician) => politician.slug === currentPoliticianSlug,
+    const politicianHref = politicianYearHref(
+      currentPoliticianSlug,
+      year,
+      (politiciansByYear[year] ?? []).map((politician) => politician.slug),
     );
-    if (currentPoliticianSlug && isPublished) {
-      router.push(`/p/${encodeURIComponent(currentPoliticianSlug)}/${year}`);
+    if (politicianHref) {
+      router.push(politicianHref);
       return;
     }
     handleSelect(currentSlug, year);

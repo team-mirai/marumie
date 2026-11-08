@@ -80,7 +80,7 @@ export interface ResearchFundGroupView {
 
 export interface ResearchFundPageData {
   politician: { name: string; slug: string };
-  /** 議員が調研費を「公開する」設定か。false ならページに noindex を付ける */
+  /** 議員が調研費を「公開する」設定か。false ならプレビュー URL でだけ開ける（canViewResearchFundPage） */
   isPublic: boolean;
   financialYear: number;
   asOfDate: string | null;
