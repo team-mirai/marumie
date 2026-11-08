@@ -10,16 +10,14 @@ import { ResearchFundPublicSwitch } from "@/client/components/politicians/Resear
 import { loadPoliticians } from "@/server/contexts/shared/presentation/loaders/load-politicians";
 import { UserRoleModel } from "@/server/contexts/auth/domain/models/user-role";
 import { requireRolePage } from "@/server/contexts/auth/presentation/loaders/require-role-page";
-import { loadResearchFundWritePermission } from "@/server/contexts/auth/presentation/loaders/require-research-fund-writer";
 
 export default async function PoliticiansPage() {
   const user = await requireRolePage("research_fund");
-  // 議員の登録・編集・削除は admin だけ（一覧の閲覧は research_fund でもでき、公開切り替えは担当の議員だけできる）
+  // 議員の登録・編集・削除と調研費の公開切り替えは admin だけ（一覧の閲覧は research_fund でもできる）
   const canManagePoliticians = UserRoleModel.isAdmin(user.roles);
-  const [politicians, { currentTarget }, canWriteFor] = await Promise.all([
+  const [politicians, { currentTarget }] = await Promise.all([
     loadPoliticians(),
     loadAdminTargets(),
-    loadResearchFundWritePermission(),
   ]);
   return (
     <div>
@@ -78,7 +76,7 @@ export default async function PoliticiansPage() {
                 <ResearchFundPublicSwitch
                   id={p.id}
                   isResearchFundPublic={p.isResearchFundPublic}
-                  readOnly={!canWriteFor(p.id)}
+                  readOnly={!canManagePoliticians}
                 />
                 <div className="flex flex-wrap items-center gap-2">
                   <Button variant="outline" size="sm" asChild>
