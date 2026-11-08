@@ -379,10 +379,13 @@ test.describe("調査研究費 議員ページ", () => {
 		).toBeVisible();
 	});
 
-	test("存在しない議員のページは政治団体ページに寄せられる", async ({ page }) => {
-		await page.goto("/p/no-such-politician/2026");
+	test("存在しない議員のページは404ページが表示される", async ({ page }) => {
+		const response = await page.goto("/p/no-such-politician/2026");
 
-		await expect(page).toHaveURL(/\/o\/[\w-]+/);
+		expect(response?.status()).toBe(404);
+		await expect(
+			page.getByRole("heading", { name: "ページが見つかりません" }),
+		).toBeVisible();
 	});
 });
 

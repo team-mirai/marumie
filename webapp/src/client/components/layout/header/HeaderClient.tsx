@@ -37,21 +37,42 @@ export default function HeaderClient({
   const currentYear =
     yearFromPath && AVAILABLE_YEARS.includes(yearFromPath) ? yearFromPath : DEFAULT_YEAR;
 
-  // ナビとロゴは今いるページ（議員ページならそのページ自身）を指す。
-  const navSlug = slugFromPath ?? organizations.default;
+  const isValidPoliticianSlug = Boolean(
+    isPoliticianPage &&
+      slugFromPath &&
+      (politiciansByYear[currentYear] ?? []).some((p) => p.slug === slugFromPath),
+  );
+  const isValidOrgSlug = Boolean(
+    !isPoliticianPage &&
+      slugFromPath &&
+      organizations.organizations.some((org) => org.slug === slugFromPath),
+  );
+
+  let navType: "politician" | "organization";
+  let navSlug: string | null;
+  let currentPoliticianSlug: string | null;
+  let currentOrganizationSlug: string | null;
+
+  if (isPoliticianPage && isValidPoliticianSlug && slugFromPath) {
+    navType = "politician";
+    navSlug = slugFromPath;
+    currentPoliticianSlug = slugFromPath;
+    currentOrganizationSlug = organizations.default;
+  } else {
+    const validOrgSlug = isValidOrgSlug && slugFromPath ? slugFromPath : organizations.default;
+    navType = "organization";
+    navSlug = validOrgSlug;
+    currentOrganizationSlug = validOrgSlug;
+    currentPoliticianSlug = null;
+  }
+
   const navigation = navSlug
-    ? getHeaderNavigation(isPoliticianPage ? "politician" : "organization", navSlug, currentYear, {
+    ? getHeaderNavigation(navType, navSlug, currentYear, {
         showResearchFund: showResearchFundNavigation,
       })
     : null;
   const logoHref = navigation?.homeHref ?? "/";
   const navigationItems = navigation?.items ?? [];
-
-  // 団体セレクタは政治団体しか扱えないので、議員ページでは既定の団体を初期値にする（2グループ化は #1361）。
-  const currentOrganizationSlug = isPoliticianPage
-    ? organizations.default
-    : (slugFromPath ?? organizations.default);
-  const currentPoliticianSlug = isPoliticianPage ? slugFromPath : null;
 
   return (
     <header className="fixed top-0 left-0 right-0 z-40 px-2.5 py-3 xl:px-6 xl:py-4">

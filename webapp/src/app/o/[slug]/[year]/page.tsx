@@ -1,6 +1,6 @@
 import "server-only";
 import type { Metadata } from "next";
-import { redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import AboutSection from "@/client/components/common/AboutSection";
 import LinkCardsSection from "@/client/components/common/LinkCardsSection";
 import AnotherPageLinkSection from "@/client/components/common/AnotherPageLinkSection";
@@ -22,7 +22,6 @@ import { getBalanceSheetHeading } from "@/client/lib/balance-sheet-heading";
 export const revalidate = 300; // 5 minutes
 
 const VALID_YEARS = [2025, 2026] as const;
-const DEFAULT_YEAR = 2026;
 
 interface OrgPageProps {
   params: Promise<{
@@ -32,17 +31,28 @@ interface OrgPageProps {
 }
 
 export async function generateMetadata({ params }: OrgPageProps): Promise<Metadata> {
-  const { slug } = await params;
+  const { slug, year: yearParam } = await params;
+
+  if (
+    !/^\d{4}$/.test(yearParam) ||
+    !VALID_YEARS.includes(parseInt(yearParam, 10) as (typeof VALID_YEARS)[number])
+  ) {
+    return {
+      title: "みらいまる見え政治資金",
+    };
+  }
 
   const { organizations } = await loadOrganizations();
   const currentOrganization = organizations.find((org) => org.slug === slug);
 
-  const title = currentOrganization?.displayName
-    ? `${currentOrganization.displayName} - みらいまる見え政治資金`
-    : "みらいまる見え政治資金";
+  if (!currentOrganization) {
+    return {
+      title: "みらいまる見え政治資金",
+    };
+  }
 
   return {
-    title,
+    title: `${currentOrganization.displayName} - みらいまる見え政治資金`,
   };
 }
 
@@ -50,20 +60,21 @@ export default async function OrgPage({ params }: OrgPageProps) {
   const { slug, year: yearParam } = await params;
 
   // 年度の妥当性をチェック
-  const yearNumber = parseInt(yearParam, 10);
-  const financialYear = VALID_YEARS.includes(yearNumber as (typeof VALID_YEARS)[number])
-    ? yearNumber
-    : DEFAULT_YEAR;
-
-  // 年度が不正な場合はデフォルト年度にリダイレクト
-  if (financialYear !== yearNumber) {
-    redirect(`/o/${slug}/${DEFAULT_YEAR}`);
+  if (!/^\d{4}$/.test(yearParam)) {
+    notFound();
   }
 
-  // slugの妥当性をチェックし、必要に応じてリダイレクト
-  const { default: defaultSlug, organizations } = await loadOrganizations();
+  const yearNumber = parseInt(yearParam, 10);
+  if (!VALID_YEARS.includes(yearNumber as (typeof VALID_YEARS)[number])) {
+    notFound();
+  }
+
+  const financialYear = yearNumber as (typeof VALID_YEARS)[number];
+
+  // slugの妥当性をチェック
+  const { organizations } = await loadOrganizations();
   if (!organizations.some((org) => org.slug === slug)) {
-    redirect(`/o/${defaultSlug}/${financialYear}`);
+    notFound();
   }
 
   const slugs = [slug];

@@ -1,4 +1,7 @@
-jest.mock("next/navigation", () => ({ redirect: jest.fn() }));
+jest.mock("next/navigation", () => ({
+  redirect: jest.fn(),
+  notFound: jest.fn(),
+}));
 jest.mock("@/server/contexts/public-finance/presentation/loaders/load-organizations", () => ({
   loadOrganizations: jest.fn(),
 }));
@@ -28,49 +31,112 @@ jest.mock("@/client/components/research-fund/ResearchFundPartySection", () => ({
 }));
 
 import type { ReactElement } from "react";
-import OrgPage from "@/app/o/[slug]/[year]/page";
+import OrgPage, { generateMetadata } from "@/app/o/[slug]/[year]/page";
 import ResearchFundPartySection from "@/client/components/research-fund/ResearchFundPartySection";
+import { notFound } from "next/navigation";
 import { loadOrganizations } from "@/server/contexts/public-finance/presentation/loaders/load-organizations";
 import { loadTopPageData } from "@/server/contexts/public-finance/presentation/loaders/load-top-page-data";
 import { loadResearchFundPartySummary } from "@/server/contexts/research-fund/presentation/loaders/load-research-fund-party-summary";
 
+const notFoundMock = jest.mocked(notFound);
 const loadOrganizationsMock = loadOrganizations as jest.Mock;
 const loadTopPageDataMock = loadTopPageData as jest.Mock;
 const loadResearchFundPartySummaryMock = loadResearchFundPartySummary as jest.Mock;
 
-const params = Promise.resolve({ slug: "team-mirai", year: "2026" });
+const defaultParams = Promise.resolve({ slug: "team-mirai", year: "2026" });
 
-async function renderSections(): Promise<ReactElement[]> {
+async function renderSections(params = defaultParams): Promise<ReactElement[]> {
   const page = (await OrgPage({ params })) as ReactElement<{ children: ReactElement[] }>;
   return page.props.children.filter(Boolean);
 }
 
-describe("OrgPage の調査研究費セクション", () => {
+describe("OrgPage", () => {
   beforeEach(() => {
+    jest.clearAllMocks();
     loadOrganizationsMock.mockResolvedValue({
       default: "team-mirai",
       organizations: [{ slug: "team-mirai", orgName: null, displayName: "チームみらい" }],
     });
     loadTopPageDataMock.mockResolvedValue(null);
-    loadResearchFundPartySummaryMock.mockReset();
     loadResearchFundPartySummaryMock.mockResolvedValue({ asOfDate: null });
   });
 
-  it("調研費を公開する所属議員がいればセクションを出す", async () => {
-    const sections = await renderSections();
+  describe("generateMetadata", () => {
+    it("存在する slug かつ有効な年度でタイトルを生成する", async () => {
+      const metadata = await generateMetadata({
+        params: Promise.resolve({ slug: "team-mirai", year: "2026" }),
+      });
+      expect(metadata.title).toBe("チームみらい - みらいまる見え政治資金");
+    });
 
-    expect(sections.some((section) => section.type === ResearchFundPartySection)).toBe(true);
-    expect(loadResearchFundPartySummaryMock).toHaveBeenCalledWith({
-      slug: "team-mirai",
-      financialYear: 2026,
+    it("年度が数字でない場合はデフォルトタイトルを返す", async () => {
+      const metadata = await generateMetadata({
+        params: Promise.resolve({ slug: "team-mirai", year: "invalid-year" }),
+      });
+      expect(metadata.title).toBe("みらいまる見え政治資金");
+    });
+
+    it("年度が4桁でない場合はデフォルトタイトルを返す", async () => {
+      const metadata = await generateMetadata({
+        params: Promise.resolve({ slug: "team-mirai", year: "02026" }),
+      });
+      expect(metadata.title).toBe("みらいまる見え政治資金");
+    });
+
+    it("年度が対象外（VALID_YEARS外）の場合はデフォルトタイトルを返す", async () => {
+      const metadata = await generateMetadata({
+        params: Promise.resolve({ slug: "team-mirai", year: "2020" }),
+      });
+      expect(metadata.title).toBe("みらいまる見え政治資金");
+    });
+
+    it("存在しない slug の場合はデフォルトタイトルを返す", async () => {
+      const metadata = await generateMetadata({
+        params: Promise.resolve({ slug: "unknown-slug", year: "2026" }),
+      });
+      expect(metadata.title).toBe("みらいまる見え政治資金");
     });
   });
 
-  it("調研費を公開する所属議員がいなければ（loader が null）セクションを出さない", async () => {
-    loadResearchFundPartySummaryMock.mockResolvedValue(null);
+  describe("バリデーション", () => {
+    it("年度が数字でない場合は notFound() を呼び出す", async () => {
+      await OrgPage({ params: Promise.resolve({ slug: "team-mirai", year: "invalid-year" }) });
+      expect(notFoundMock).toHaveBeenCalled();
+    });
 
-    const sections = await renderSections();
+    it("年度が4桁でない場合（前置ゼロ付き等）は notFound() を呼び出す", async () => {
+      await OrgPage({ params: Promise.resolve({ slug: "team-mirai", year: "02026" }) });
+      expect(notFoundMock).toHaveBeenCalled();
+    });
 
-    expect(sections.some((section) => section.type === ResearchFundPartySection)).toBe(false);
+    it("年度が対象外（VALID_YEARS外）の場合は notFound() を呼び出す", async () => {
+      await OrgPage({ params: Promise.resolve({ slug: "team-mirai", year: "2020" }) });
+      expect(notFoundMock).toHaveBeenCalled();
+    });
+
+    it("存在しない slug の場合は notFound() を呼び出す", async () => {
+      await OrgPage({ params: Promise.resolve({ slug: "unknown-org", year: "2026" }) });
+      expect(notFoundMock).toHaveBeenCalled();
+    });
+  });
+
+  describe("調査研究費セクション", () => {
+    it("調研費を公開する所属議員がいればセクションを出す", async () => {
+      const sections = await renderSections();
+
+      expect(sections.some((section) => section.type === ResearchFundPartySection)).toBe(true);
+      expect(loadResearchFundPartySummaryMock).toHaveBeenCalledWith({
+        slug: "team-mirai",
+        financialYear: 2026,
+      });
+    });
+
+    it("調研費を公開する所属議員がいなければ（loader が null）セクションを出さない", async () => {
+      loadResearchFundPartySummaryMock.mockResolvedValue(null);
+
+      const sections = await renderSections();
+
+      expect(sections.some((section) => section.type === ResearchFundPartySection)).toBe(false);
+    });
   });
 });

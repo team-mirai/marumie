@@ -56,14 +56,15 @@ test.describe("政治団体ページ", () => {
 			await expect(page).toHaveURL(/\/o\/sample-party\/2026$/);
 		});
 
-		test("存在しないslugの場合はデフォルトの政治団体にリダイレクトされる", async ({
+		test("存在しないslugの場合は404ページが表示される", async ({
 			page,
 		}) => {
-			await page.goto("/o/non-existent-org/2026");
+			const response = await page.goto("/o/non-existent-org/2026");
 
-			// デフォルトの政治団体にリダイレクトされる
-			await expect(page).toHaveURL(/\/o\/[\w-]+\/2026$/);
-			await expect(page).not.toHaveURL(/non-existent-org/);
+			expect(response?.status()).toBe(404);
+			await expect(
+				page.getByRole("heading", { name: "ページが見つかりません" }),
+			).toBeVisible();
 		});
 	});
 
