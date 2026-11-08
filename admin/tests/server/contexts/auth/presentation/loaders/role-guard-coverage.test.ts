@@ -46,11 +46,6 @@ const PUBLIC_ENTRIES: Record<string, string> = {
   "app/(auth)/page.tsx#default": "ダッシュボード。データを持たず、どのロールでも開ける",
 };
 
-/** 調査研究費のデータを変えるのに research-fund コンテキストの外にあるサーバーアクション */
-const RESEARCH_FUND_WRITE_ACTIONS_OUTSIDE_CONTEXT = [
-  "server/contexts/shared/presentation/actions/manage-politician.ts#setPoliticianResearchFundPublic",
-];
-
 const HTTP_METHODS = new Set(["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"]);
 
 type EntryKind = "action" | "route" | "page";
@@ -213,8 +208,7 @@ describe("ロールのガードの網羅", () => {
     const writeActions = entries.filter(
       (entry) =>
         entry.kind === "action" &&
-        (entry.key.startsWith("server/contexts/research-fund/presentation/actions/") ||
-          RESEARCH_FUND_WRITE_ACTIONS_OUTSIDE_CONTEXT.includes(entry.key)),
+        entry.key.startsWith("server/contexts/research-fund/presentation/actions/"),
     );
     expect(writeActions.length).toBeGreaterThan(15);
 

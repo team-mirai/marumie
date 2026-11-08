@@ -115,5 +115,7 @@ test.describe("research_fund だけのユーザー", () => {
 
 		await page.goto("/politicians");
 		await expect(page.getByRole("switch").first()).toBeDisabled();
+		// 調研費の公開切り替えは、担当の議員室かどうかに関わらず admin だけができる（#1894）
+		await expect(page.getByText("（公開の切り替えは admin のみ）").first()).toBeVisible();
 	});
 });
