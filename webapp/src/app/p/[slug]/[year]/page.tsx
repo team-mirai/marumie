@@ -14,7 +14,7 @@ import ResearchFundMonthlySection from "@/client/components/research-fund/Resear
 import ResearchFundPartyLinkSection from "@/client/components/research-fund/ResearchFundPartyLinkSection";
 import ResearchFundTrialNoticeSection from "@/client/components/research-fund/ResearchFundTrialNoticeSection";
 import { formatUpdatedAt } from "@/client/lib/format-date";
-import { loadResearchFundPage } from "@/server/contexts/research-fund/presentation/loaders/load-research-fund-page";
+import { loadResearchFundPageByPath } from "@/server/contexts/research-fund/presentation/loaders/load-research-fund-page-by-path";
 
 export const revalidate = 300; // 5 minutes
 
@@ -30,22 +30,28 @@ function parseYear(year: string): number | null {
 export async function generateMetadata({ params }: PoliticianPageProps): Promise<Metadata> {
   const { slug, year } = await params;
   const financialYear = parseYear(year);
-  const data = financialYear ? await loadResearchFundPage({ slug, financialYear }) : null;
+  const page = financialYear
+    ? await loadResearchFundPageByPath({ pathSlug: slug, financialYear })
+    : null;
+  const data = page?.data;
 
   return {
     title: data
       ? `${data.politician.name}の調研費 - みらいまる見え政治資金`
       : "みらいまる見え政治資金",
-    // 調研費を「公開しない」議員のページは、URL を知っていれば開けるが検索エンジンには載せない。
-    ...(data && !data.isPublic && { robots: { index: false } }),
+    // プレビュー URL（調研費を「公開しない」議員のページはこれでしか開けない）は検索エンジンに載せない。
+    ...(page?.isPreview && { robots: { index: false } }),
   };
 }
 
 export default async function PoliticianPage({ params }: PoliticianPageProps) {
   const { slug, year } = await params;
   const financialYear = parseYear(year);
-  const data = financialYear ? await loadResearchFundPage({ slug, financialYear }) : null;
-  if (!data) notFound();
+  const page = financialYear
+    ? await loadResearchFundPageByPath({ pathSlug: slug, financialYear })
+    : null;
+  if (!page) notFound();
+  const { data, pathSlug } = page;
 
   // 「2026.8.20更新」。未設定なら公開範囲の最終日で代用する。
   const updatedAt = formatUpdatedAt(data.asOfDate ?? null);
@@ -61,7 +67,7 @@ export default async function PoliticianPage({ params }: PoliticianPageProps) {
           議員一人ひとりに支給される調研費の原資は、大切な税金。だから使わせていただいた分は1件ずつ公開し、その使用方針や主要な用途もわかりやすく伝えていくことが重要だと考えています。
         </GradientMessageCard>
         <ResearchFundMonthlySection data={data} updatedAt={updatedAt} />
-        <ResearchFundExpensesSection data={data} updatedAt={updatedAt} />
+        <ResearchFundExpensesSection data={data} pathSlug={pathSlug} updatedAt={updatedAt} />
       </ResearchFundCrossLinkProvider>
       <ResearchFundTrialNoticeSection politicianName={data.politician.name} />
       <ResearchFundAboutSection data={data} />

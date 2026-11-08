@@ -6,8 +6,9 @@ import { PageHeader } from "@/client/components/layout/PageHeader";
 import { Button, Card, CardContent } from "@/client/components/ui";
 import { cn } from "@/client/lib";
 import { DeletePoliticianButton } from "@/client/components/politicians/DeletePoliticianButton";
+import { ResearchFundPageUrl } from "@/client/components/politicians/ResearchFundPageUrl";
 import { ResearchFundPublicSwitch } from "@/client/components/politicians/ResearchFundPublicSwitch";
-import { loadPoliticians } from "@/server/contexts/shared/presentation/loaders/load-politicians";
+import { loadPoliticiansWithResearchFundPageUrl } from "@/server/contexts/shared/presentation/loaders/load-politicians";
 import { UserRoleModel } from "@/server/contexts/auth/domain/models/user-role";
 import { requireRolePage } from "@/server/contexts/auth/presentation/loaders/require-role-page";
 
@@ -16,7 +17,7 @@ export default async function PoliticiansPage() {
   // 議員の登録・編集・削除と調研費の公開切り替えは admin だけ（一覧の閲覧は research_fund でもできる）
   const canManagePoliticians = UserRoleModel.isAdmin(user.roles);
   const [politicians, { currentTarget }] = await Promise.all([
-    loadPoliticians(),
+    loadPoliticiansWithResearchFundPageUrl(),
     loadAdminTargets(),
   ]);
   return (
@@ -78,6 +79,7 @@ export default async function PoliticiansPage() {
                   isResearchFundPublic={p.isResearchFundPublic}
                   readOnly={!canManagePoliticians}
                 />
+                <ResearchFundPageUrl pageUrl={p.researchFundPageUrl} />
                 <div className="flex flex-wrap items-center gap-2">
                   <Button variant="outline" size="sm" asChild>
                     <Link href={`/politicians/${p.id}/books`}>年度帳簿</Link>

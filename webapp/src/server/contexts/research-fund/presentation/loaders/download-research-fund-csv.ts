@@ -6,7 +6,7 @@ import {
   buildResearchFundCsv,
   buildResearchFundCsvFilename,
 } from "@/server/contexts/research-fund/domain/services/research-fund-csv";
-import { loadResearchFundPage } from "@/server/contexts/research-fund/presentation/loaders/load-research-fund-page";
+import { loadResearchFundPageByPath } from "@/server/contexts/research-fund/presentation/loaders/load-research-fund-page-by-path";
 
 interface DownloadResearchFundCsvResult {
   success: boolean;
@@ -20,21 +20,22 @@ interface DownloadResearchFundCsvResult {
  *
  * 画面が読むのと同じ loader を使うので、published の支給と支出だけが対象になり、
  * 備考（memo）や未公開の仕訳は含まれない。
+ * 調研費を「公開しない」議員は、ページと同じくプレビュー用の文字列を含む slug の区間（pathSlug）でなければ返さない。
  */
 export async function downloadResearchFundCsv(
-  slug: string,
+  pathSlug: string,
   financialYear: number,
 ): Promise<DownloadResearchFundCsvResult> {
   try {
-    const data = await loadResearchFundPage({ slug, financialYear });
-    if (!data) {
+    const page = await loadResearchFundPageByPath({ pathSlug, financialYear });
+    if (!page) {
       return { success: false, error: "公開中のデータが見つかりませんでした" };
     }
 
     return {
       success: true,
-      data: buildResearchFundCsv(data.expenses),
-      filename: buildResearchFundCsvFilename(slug, financialYear),
+      data: buildResearchFundCsv(page.data.expenses),
+      filename: buildResearchFundCsvFilename(page.data.politician.slug, financialYear),
     };
   } catch (error) {
     console.error("Research fund CSV download error:", error);
