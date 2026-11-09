@@ -2,45 +2,52 @@ import { CompleteInviteSessionUsecase } from "@/server/contexts/auth/application
 import { AuthError } from "@/server/contexts/auth/domain/errors/auth-error";
 import type { AuthProvider } from "@/server/contexts/auth/domain/providers/auth-provider.interface";
 import type { UserRepository } from "@/server/contexts/shared/domain/repositories/user-repository.interface";
+import type { UserInvitationRepository } from "@/server/contexts/auth/domain/repositories/user-invitation-repository.interface";
 import {
   createMockSupabaseUser,
   createMockSession,
   createMockUser,
   createMockAuthProvider,
   createMockUserRepository,
+  createMockUserInvitationRepository,
 } from "../../test-helpers";
 
 describe("CompleteInviteSessionUsecase", () => {
   let mockAuthProvider: jest.Mocked<AuthProvider>;
   let mockUserRepository: jest.Mocked<UserRepository>;
+  let mockInvitationRepository: jest.Mocked<UserInvitationRepository>;
   let usecase: CompleteInviteSessionUsecase;
 
   beforeEach(() => {
     mockAuthProvider = createMockAuthProvider();
     mockUserRepository = createMockUserRepository();
-    usecase = new CompleteInviteSessionUsecase(mockAuthProvider, mockUserRepository);
+    mockInvitationRepository = createMockUserInvitationRepository();
+    usecase = new CompleteInviteSessionUsecase(
+      mockAuthProvider,
+      mockUserRepository,
+      mockInvitationRepository,
+    );
   });
 
   describe("execute", () => {
     it("正常にセッションを設定し、新規ユーザーを作成する", async () => {
-      const session = createMockSession();
+      const session = createMockSession({ signInProvider: "invite" });
       const authUser = createMockSupabaseUser();
       const newUser = createMockUser();
 
       mockAuthProvider.setSession.mockResolvedValue(session);
       mockAuthProvider.getUser.mockResolvedValue(authUser);
       mockUserRepository.findByAuthId.mockResolvedValue(null);
-      mockUserRepository.create.mockResolvedValue(newUser);
+      mockInvitationRepository.createUserAcceptingInvitation.mockResolvedValue(newUser);
 
       await expect(usecase.execute("access-token", "refresh-token")).resolves.toBeUndefined();
 
       expect(mockAuthProvider.setSession).toHaveBeenCalledWith("access-token", "refresh-token");
       expect(mockAuthProvider.getUser).toHaveBeenCalled();
       expect(mockUserRepository.findByAuthId).toHaveBeenCalledWith("auth-user-id");
-      expect(mockUserRepository.create).toHaveBeenCalledWith({
+      expect(mockInvitationRepository.createUserAcceptingInvitation).toHaveBeenCalledWith({
         authId: "auth-user-id",
         email: "test@example.com",
-        roles: [],
       });
     });
 
@@ -55,7 +62,7 @@ describe("CompleteInviteSessionUsecase", () => {
 
       await expect(usecase.execute("access-token", "refresh-token")).resolves.toBeUndefined();
 
-      expect(mockUserRepository.create).not.toHaveBeenCalled();
+      expect(mockInvitationRepository.createUserAcceptingInvitation).not.toHaveBeenCalled();
     });
 
     it("メールがない場合はユーザーを作成しない", async () => {
@@ -68,7 +75,7 @@ describe("CompleteInviteSessionUsecase", () => {
 
       await expect(usecase.execute("access-token", "refresh-token")).resolves.toBeUndefined();
 
-      expect(mockUserRepository.create).not.toHaveBeenCalled();
+      expect(mockInvitationRepository.createUserAcceptingInvitation).not.toHaveBeenCalled();
     });
 
     it("accessTokenが空の場合はエラーを投げる", async () => {
@@ -113,5 +120,26 @@ describe("CompleteInviteSessionUsecase", () => {
         code: "INVALID_TOKEN",
       });
     });
+  });
+
+  describe("execute（招待の扱い。#1882）", () => {
+    it.each(["password", "google", null] as const)(
+      "%s のセッションを渡されたら招待を使わず、ロールなしで作る",
+      async (signInProvider) => {
+        mockAuthProvider.setSession.mockResolvedValue(createMockSession({ signInProvider }));
+        mockAuthProvider.getUser.mockResolvedValue(createMockSupabaseUser());
+        mockUserRepository.findByAuthId.mockResolvedValue(null);
+        mockUserRepository.create.mockResolvedValue(createMockUser());
+
+        await usecase.execute("access-token", "refresh-token");
+
+        expect(mockUserRepository.create).toHaveBeenCalledWith({
+          authId: "auth-user-id",
+          email: "test@example.com",
+          roles: [],
+        });
+        expect(mockInvitationRepository.createUserAcceptingInvitation).not.toHaveBeenCalled();
+      },
+    );
   });
 });

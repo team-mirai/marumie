@@ -7,6 +7,8 @@ import type {
 } from "@/server/contexts/shared/domain/repositories/user-repository.interface";
 import { AllowedEmailDomains } from "@/server/contexts/auth/domain/models/allowed-email-domains";
 import { AuthProviderConfig } from "@/server/contexts/auth/domain/models/auth-provider-config";
+import { UserInvitationModel } from "@/server/contexts/auth/domain/models/user-invitation";
+import type { UserInvitationRepository } from "@/server/contexts/auth/domain/repositories/user-invitation-repository.interface";
 import { AuthError } from "@/server/contexts/auth/domain/errors/auth-error";
 
 interface ExchangeCodeResult {
@@ -23,6 +25,7 @@ export class ExchangeCodeForSessionUsecase {
   constructor(
     private readonly authProvider: AuthProvider,
     private readonly userRepository: UserRepository,
+    private readonly invitationRepository: UserInvitationRepository,
     private readonly allowedEmailDomains: AllowedEmailDomains,
     private readonly providerConfig: AuthProviderConfig,
   ) {}
@@ -75,11 +78,14 @@ export class ExchangeCodeForSessionUsecase {
           throw new AuthError("AUTH_FAILED", "User email is required");
         }
 
-        dbUser = await this.userRepository.create({
-          authId: session.user.id,
-          email: email,
-          roles: [],
-        });
+        // メールアドレスの持ち主だと確かめられたログイン（許可ドメインの Google・招待メールのリンク経由）なら
+        // 招待のロールと担当議員を付ける。ここに来た Google ログインは許可ドメインの判定を通っている
+        dbUser = UserInvitationModel.canAcceptOnFirstLogin(session.signInProvider, isGoogleLogin)
+          ? await this.invitationRepository.createUserAcceptingInvitation({
+              authId: session.user.id,
+              email,
+            })
+          : await this.userRepository.create({ authId: session.user.id, email, roles: [] });
       }
 
       return { user: dbUser, requiresPasswordSetup };
