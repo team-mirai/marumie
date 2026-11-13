@@ -83,7 +83,7 @@
     "lint-staged": "^17.0.0",
     "prisma": "^6.14.0",
     "simple-git-hooks": "^2.13.1",
-    "supabase": "^2.70.5",
+    "supabase": "^3.0.0",
     "tsx": "^4.21.0",
     "typescript": "^5"
   },
