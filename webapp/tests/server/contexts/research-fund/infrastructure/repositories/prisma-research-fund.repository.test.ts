@@ -1,6 +1,18 @@
 import type { PrismaClient } from "@prisma/client";
 import { PrismaResearchFundRepository } from "@/server/contexts/research-fund/infrastructure/repositories/prisma-research-fund.repository";
 
+/** 議員カードのプロフィールが未登録の議員（findPublished が読む列） */
+const BLANK_PROFILE = {
+  nameKana: null,
+  house: null,
+  constituency: null,
+  profileUrl: null,
+  websiteUrl: null,
+  snsUrls: [],
+  photoPath: null,
+  books: [{ financialYear: 2026 }],
+};
+
 function setup() {
   const prisma = {
     researchFundBook: { findFirst: jest.fn(), findMany: jest.fn().mockResolvedValue([]) },
@@ -71,14 +83,29 @@ describe("PrismaResearchFundRepository の調研費の公開フラグ", () => {
         nextUpdateNote: null,
         policyComment: null,
         details: null,
-        politician: { name: "サンプル太郎", slug: "sample-taro", isResearchFundPublic },
+        politician: {
+          name: "サンプル太郎",
+          slug: "sample-taro",
+          isResearchFundPublic,
+          ...BLANK_PROFILE,
+        },
         journalEntries: [],
         expenditureGroups: [],
       });
 
       const result = await repository.findPublished("sample-taro", 2026);
 
-      expect(result?.politician).toEqual({ name: "サンプル太郎", slug: "sample-taro" });
+      expect(result?.politician).toEqual({
+        name: "サンプル太郎",
+        slug: "sample-taro",
+        nameKana: null,
+        house: null,
+        constituency: null,
+        profileUrl: null,
+        websiteUrl: null,
+        snsUrls: [],
+        hasPhoto: false,
+      });
       expect(result?.isPublic).toBe(isResearchFundPublic);
     },
   );
@@ -115,7 +142,12 @@ describe("PrismaResearchFundRepository の領収書（公開用の版だけを�
       nextUpdateNote: null,
       policyComment: null,
       details: null,
-      politician: { name: "サンプル太郎", slug: "sample-taro", isResearchFundPublic: true },
+      politician: {
+        name: "サンプル太郎",
+        slug: "sample-taro",
+        isResearchFundPublic: true,
+        ...BLANK_PROFILE,
+      },
       journalEntries: [
         expenseEntry(1, { maskingStatus: "succeeded", maskedKey: "masked-1" }),
         expenseEntry(2, { maskingStatus: "pending", maskedKey: null }),
@@ -219,7 +251,12 @@ describe("PrismaResearchFundRepository の法定区分の上書き（#1880）", 
       nextUpdateNote: null,
       policyComment: null,
       details: null,
-      politician: { name: "サンプル太郎", slug: "sample-taro", isResearchFundPublic: true },
+      politician: {
+        name: "サンプル太郎",
+        slug: "sample-taro",
+        isResearchFundPublic: true,
+        ...BLANK_PROFILE,
+      },
       journalEntries,
       expenditureGroups: [],
     };
