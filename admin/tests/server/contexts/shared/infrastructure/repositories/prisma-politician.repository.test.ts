@@ -6,6 +6,12 @@ const input = {
   slug: "member",
   termStart: "2026-02-08",
   politicalOrganizationId: "2",
+  nameKana: "",
+  house: "" as const,
+  constituency: "",
+  profileUrl: "",
+  websiteUrl: "",
+  snsUrls: [] as string[],
 };
 const politician = {
   id: BigInt(1),
@@ -13,7 +19,22 @@ const politician = {
   slug: "member",
   termStart: new Date("2026-02-08"),
   isResearchFundPublic: false,
+  nameKana: null,
+  house: null,
+  constituency: null,
+  profileUrl: null,
+  websiteUrl: null,
+  snsUrls: [],
+  photoPath: null,
   memberships: [],
+};
+const emptyProfile = {
+  nameKana: null,
+  house: null,
+  constituency: null,
+  profileUrl: null,
+  websiteUrl: null,
+  snsUrls: [],
 };
 function setup() {
   const tx = {
@@ -107,6 +128,7 @@ test("無所属と所属ありの一覧をシリアライズする", async () =>
     politicalOrganizationId: "",
     politicalOrganizationName: null,
     isResearchFundPublic: false,
+    photoPath: null,
   });
   expect(result[1].politicalOrganizationName).toBe("政党");
 });
@@ -120,6 +142,7 @@ test("ID指定で議員を取得し、見つからなければnullを返す", as
     politicalOrganizationId: "",
     politicalOrganizationName: null,
     isResearchFundPublic: false,
+    photoPath: null,
   });
   expect(tx.politician.findUnique).toHaveBeenCalledWith({
     where: { id: BigInt(1) },
@@ -138,7 +161,12 @@ test("無所属で新規作成すると所属履歴を作らない", async () =>
   const { tx, repository } = setup();
   await repository.save(null, { ...input, politicalOrganizationId: "" });
   expect(tx.politician.create).toHaveBeenCalledWith({
-    data: { name: input.name, slug: input.slug, termStart: new Date(input.termStart) },
+    data: {
+          name: input.name,
+          slug: input.slug,
+          termStart: new Date(input.termStart),
+          ...emptyProfile,
+        },
   });
   expect(tx.politicianOrgMembership.create).not.toHaveBeenCalled();
   expect(tx.politicianOrgMembership.update).not.toHaveBeenCalled();
@@ -156,7 +184,12 @@ test.each(["2026-02-08", "2026-10-01"])(
       await repository.save("1", { ...input, politicalOrganizationId: "4" });
       expect(tx.politician.update).toHaveBeenCalledWith({
         where: { id: BigInt(1) },
-        data: { name: input.name, slug: input.slug, termStart: new Date(input.termStart) },
+        data: {
+          name: input.name,
+          slug: input.slug,
+          termStart: new Date(input.termStart),
+          ...emptyProfile,
+        },
       });
       expect(tx.politicianOrgMembership.update).toHaveBeenCalledWith({
         where: { id: BigInt(3) },
@@ -201,5 +234,60 @@ test("調研費の公開フラグだけを更新する", async () => {
   expect(tx.politician.update).toHaveBeenCalledWith({
     where: { id: BigInt(1) },
     data: { isResearchFundPublic: true },
+  });
+});
+
+test("プロフィールを保存し、未入力は null にする", async () => {
+  const { tx, repository } = setup();
+  await repository.save(null, {
+    ...input,
+    nameKana: "みねしま ゆうや",
+    house: "shugiin",
+    constituency: "比例東京（東京7区）",
+    profileUrl: "https://team-mir.ai/member/shugiin/yuya-mineshima",
+    snsUrls: ["https://x.com/a", "https://note.com/b"],
+  });
+  expect(tx.politician.create).toHaveBeenCalledWith({
+    data: expect.objectContaining({
+      nameKana: "みねしま ゆうや",
+      house: "shugiin",
+      constituency: "比例東京（東京7区）",
+      profileUrl: "https://team-mir.ai/member/shugiin/yuya-mineshima",
+      websiteUrl: null,
+      snsUrls: ["https://x.com/a", "https://note.com/b"],
+    }),
+  });
+  expect(tx.politician.create.mock.calls[0][0].data).not.toHaveProperty("photoPath");
+});
+
+test("保存したプロフィールと顔写真のキーを読み出す", async () => {
+  const { tx, repository } = setup();
+  tx.politician.findUnique.mockResolvedValue({
+    ...politician,
+    nameKana: "みねしま ゆうや",
+    house: "sangiin",
+    constituency: "比例区",
+    profileUrl: "https://team-mir.ai/member",
+    websiteUrl: "https://example.com",
+    snsUrls: ["https://x.com/a"],
+    photoPath: "politicians/1/a.jpg",
+  });
+  await expect(repository.findById("1")).resolves.toMatchObject({
+    nameKana: "みねしま ゆうや",
+    house: "sangiin",
+    constituency: "比例区",
+    profileUrl: "https://team-mir.ai/member",
+    websiteUrl: "https://example.com",
+    snsUrls: ["https://x.com/a"],
+    photoPath: "politicians/1/a.jpg",
+  });
+});
+
+test("顔写真のキーだけを更新する", async () => {
+  const { tx, repository } = setup();
+  await repository.setPhotoPath("1", null);
+  expect(tx.politician.update).toHaveBeenCalledWith({
+    where: { id: BigInt(1) },
+    data: { photoPath: null },
   });
 });

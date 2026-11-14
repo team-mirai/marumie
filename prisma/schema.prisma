@@ -239,6 +239,14 @@ model Politician {
   displayOrder         Int      @default(0) @map("display_order")
   // 調研費を公開するか。議員室ごとにプレビューしてから順次公開するため、新規・既存とも非公開から始める
   isResearchFundPublic Boolean  @default(false) @map("is_research_fund_public")
+  // 公開サイトの議員カード・議員ページの見出しに出すプロフィール（#1916）。admin から手で入力する
+  nameKana             String?  @map("name_kana") @db.VarChar(255)
+  house                PoliticianHouse?
+  constituency         String?  @db.VarChar(255)
+  profileUrl           String?  @map("profile_url") // チームみらい公式サイト内のプロフィールページ
+  websiteUrl           String?  @map("website_url") // 議員の公式サイト
+  snsUrls              String[] @default([]) @map("sns_urls") // SNS の URL（表示順どおり）
+  photoPath            String?  @map("photo_path") // 顔写真の Storage 上のキー
   createdAt            DateTime @default(now()) @map("created_at")
   updatedAt            DateTime @updatedAt @map("updated_at")
 
@@ -690,6 +698,12 @@ enum TransactionType {
   non_cash_journal
   offset_income
   offset_expense
+}
+
+// 議員の院。shugiin = 衆議院 / sangiin = 参議院
+enum PoliticianHouse {
+  shugiin
+  sangiin
 }
 
 enum UserRole {
