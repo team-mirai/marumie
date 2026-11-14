@@ -49,6 +49,12 @@ describe("sitemap", () => {
     ]);
   });
 
+  it("トップページ（/）を載せる", async () => {
+    const urls = (await sitemap()).map((entry) => entry.url);
+
+    expect(urls).toContain(`${BASE_URL}/`);
+  });
+
   it("「まる見え政治資金とは」ページ（/about）を載せる", async () => {
     const urls = (await sitemap()).map((entry) => entry.url);
 

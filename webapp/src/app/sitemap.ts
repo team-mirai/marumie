@@ -23,8 +23,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ]);
 
   // リダイレクトなしで表示されるページだけを載せる。
-  // `/`・`/o/[slug]`・`/o/[slug]/transactions` は年度つきの URL へ飛ばすだけなので載せない。
+  // `/o/[slug]`・`/o/[slug]/transactions` は年度つきの URL へ飛ばすだけなので載せない。
   const sitemap: MetadataRoute.Sitemap = [
+    {
+      url: `${baseUrl}/`,
+      changeFrequency: "weekly",
+      priority: 1,
+    },
     {
       url: `${baseUrl}/about`,
       changeFrequency: "monthly",
