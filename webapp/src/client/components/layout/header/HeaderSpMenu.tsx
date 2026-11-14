@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { useEffect, useRef } from "react";
 import PoliticianInitialAvatar from "@/client/components/layout/header/PoliticianInitialAvatar";
 import {
   ABOUT_HREF,
@@ -43,6 +44,22 @@ export default function HeaderSpMenu({
   politicians,
   onNavigate,
 }: HeaderSpMenuProps) {
+  const backButtonRef = useRef<HTMLButtonElement>(null);
+  const stepButtonRefs = useRef<Partial<Record<"pf" | "rf", HTMLButtonElement | null>>>({});
+  const previousStepRef = useRef(step);
+
+  // 段階を切り替えると押したボタンが消えるので、開いたときは「戻る」へ、戻ったときは開いた項目へフォーカスを移す
+  useEffect(() => {
+    const previous = previousStepRef.current;
+    previousStepRef.current = step;
+    if (previous === step) return;
+    if (step !== null) {
+      backButtonRef.current?.focus();
+    } else if (previous !== null) {
+      stepButtonRefs.current[previous]?.focus();
+    }
+  }, [step]);
+
   return (
     <div
       id={id}
@@ -54,6 +71,9 @@ export default function HeaderSpMenu({
             <li key={key} className="flex flex-col">
               {isMenuNavKey(key) ? (
                 <button
+                  ref={(element) => {
+                    stepButtonRefs.current[key] = element;
+                  }}
                   type="button"
                   onClick={() => onStepChange(key)}
                   className={`${ROW_CLASS} cursor-pointer text-left`}
@@ -85,6 +105,7 @@ export default function HeaderSpMenu({
       ) : (
         <>
           <button
+            ref={backButtonRef}
             type="button"
             onClick={() => onStepChange(null)}
             className="flex min-h-11 cursor-pointer items-center gap-1 self-start px-2 text-sm font-bold text-[#238778]"

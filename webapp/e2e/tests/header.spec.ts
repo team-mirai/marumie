@@ -150,10 +150,12 @@ test.describe("ヘッダー（SP）", () => {
 		await expect(menu.getByRole("link", { name: /よくあるご質問/ })).toBeVisible();
 		await expect(menu.getByRole("link", { name: "データについて" })).toBeVisible();
 
-		// 「政党・政治団体」の次の段階から「‹ 戻る」で一覧に戻れる
+		// 「政党・政治団体」の次の段階から「‹ 戻る」で一覧に戻れる。フォーカスは「戻る」→ 開いた項目へ移る
 		await menu.getByRole("button", { name: "政党・政治団体" }).click();
 		await expect(menu.getByRole("link", { name: /E2Eテスト団体.*2025年/ })).toBeVisible();
+		await expect(menu.getByRole("button", { name: "‹ 戻る" })).toBeFocused();
 		await menu.getByRole("button", { name: "‹ 戻る" }).click();
+		await expect(menu.getByRole("button", { name: "政党・政治団体" })).toBeFocused();
 
 		await menu.getByRole("button", { name: "調研費" }).click();
 		await expect(menu.getByText(/サンプル 花子/)).toHaveCount(0);

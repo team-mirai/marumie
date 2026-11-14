@@ -82,7 +82,10 @@ export default function HeaderClient({ organizations, politiciansByYear }: Heade
   return (
     <>
       {megaMenu && (
-        <div aria-hidden="true" className="fixed inset-0 z-30 bg-[rgba(17,24,39,0.2)]" />
+        <div
+          aria-hidden="true"
+          className="fixed inset-0 z-30 hidden bg-[rgba(17,24,39,0.2)] min-[1080px]:block"
+        />
       )}
       <header
         ref={headerRef}
