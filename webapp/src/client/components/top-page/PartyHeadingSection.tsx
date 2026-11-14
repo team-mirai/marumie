@@ -45,7 +45,7 @@ export default function PartyHeadingSection({
           { label: "収支・現金残高", color: "#6B7280", amount: summary?.balance ?? null },
         ]}
       />
-      <CashFlowSection political={political} friendly={friendly} />
+      <CashFlowSection id="cash-flow" political={political} friendly={friendly} />
     </MistHeadingCard>
   );
 }

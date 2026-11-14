@@ -10,6 +10,10 @@ interface SectionCardProps {
   title: string;
   /** 例: 「2026.10.23更新」。PC は見出しの右、SP はカードの末尾に出す */
   updatedAt: string;
+  /** 更新日に添える補足（例: 「2026年2月〜8月支給分」）。PC は更新日の下、SP は更新日の前に並べる */
+  updatedAtNote?: string;
+  /** ページの最初の見出しになるカードは h1 にする */
+  headingLevel?: "h1" | "h2";
   children: ReactNode;
 }
 
@@ -21,8 +25,13 @@ export default function SectionCard({
   eyebrow,
   title,
   updatedAt,
+  updatedAtNote,
+  headingLevel = "h2",
   children,
 }: SectionCardProps) {
+  const Heading = headingLevel;
+  const bottomNote = [updatedAtNote, updatedAt].filter((text) => text).join("　");
+
   return (
     <section
       id={id}
@@ -45,23 +54,24 @@ export default function SectionCard({
             <span className="text-[13px] font-bold leading-[1.4] tracking-[0.04em] text-[#238778]">
               {eyebrow}
             </span>
-            <h2 className="m-0 break-keep text-[clamp(24px,2.8vw,36px)] font-black leading-[1.22] tracking-[0.01em] text-black [overflow-wrap:anywhere]">
+            <Heading className="m-0 break-keep text-[clamp(24px,2.8vw,36px)] font-black leading-[1.22] tracking-[0.01em] text-black [overflow-wrap:anywhere]">
               {title}
-            </h2>
+            </Heading>
           </div>
         </div>
-        {updatedAt && (
-          <span className="hidden flex-shrink-0 whitespace-nowrap text-[12px] font-medium leading-[1.31] tabular-nums text-[#6B7280] md:inline">
-            {updatedAt}
+        {(updatedAt || updatedAtNote) && (
+          <span className="hidden flex-shrink-0 flex-col items-end whitespace-nowrap text-[12px] font-medium leading-[1.31] tabular-nums text-[#6B7280] md:flex">
+            {updatedAt && <span>{updatedAt}</span>}
+            {updatedAtNote && <span>{updatedAtNote}</span>}
           </span>
         )}
       </div>
 
       {children}
 
-      {updatedAt && (
+      {bottomNote && (
         <div className="-mt-4 text-right text-[12px] leading-[1.33] text-[#6B7280] md:hidden">
-          {updatedAt}
+          {bottomNote}
         </div>
       )}
     </section>

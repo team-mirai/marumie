@@ -1,10 +1,8 @@
 "use client";
 import "client-only";
-import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
-import CardHeader from "@/client/components/layout/CardHeader";
-import MainColumnCard from "@/client/components/layout/MainColumnCard";
+import SectionCard from "@/client/components/layout/SectionCard";
 import ReceiptModal from "@/client/components/research-fund/ReceiptModal";
 import ResearchFundAmount from "@/client/components/research-fund/ResearchFundAmount";
 import ResearchFundCategoryPill from "@/client/components/research-fund/ResearchFundCategoryPill";
@@ -25,6 +23,8 @@ interface Props {
   data: ResearchFundPageData;
   /** URL の slug の区間（プレビュー URL ならプレビュー用の文字列を含む）。全件ページへのリンクはこれを引き継ぐ */
   pathSlug: string;
+  /** 見出しの上の小さな行（例: 「峰島侑也の調研費・2026年」） */
+  eyebrow: string;
   updatedAt: string;
 }
 
@@ -54,13 +54,13 @@ function StarIcon() {
 }
 
 /**
- * B-4 すべての出入金。
+ * すべての出入金。
  *
  * 支給（入金）と支出（出金）を日付の新しい順に混ぜ、先頭6件だけを出し、続きは「もっと見る」から全件ページで見る。
  * 用途カードに紐づく行は「★ 用途N」から該当カードへ飛べ、カードの「N件」からは該当行まで一覧を広げる。
  * 領収書を公開している間は、領収書のある行の「領収書」ピルから公開用の版（個人情報を黒塗りした版）をモーダルで見られる。
  */
-export default function ResearchFundExpensesSection({ data, pathSlug, updatedAt }: Props) {
+export default function ResearchFundExpensesSection({ data, pathSlug, eyebrow, updatedAt }: Props) {
   const { rowsRequest, showCard } = useResearchFundCrossLink();
   const [shown, setShown] = useState(RESEARCH_FUND_PREVIEW_COUNT);
   const [flashedGroupId, setFlashedGroupId] = useState<string | null>(null);
@@ -141,15 +141,14 @@ export default function ResearchFundExpensesSection({ data, pathSlug, updatedAt 
   };
 
   return (
-    <MainColumnCard id="transactions">
-      <CardHeader
-        icon={<Image src="/icons/icon-cashback.svg" alt="Cash move icon" width={30} height={30} />}
-        organizationName={`${data.politician.name}・調研費`}
-        title="すべての出入金"
-        updatedAt={updatedAt}
-        subtitle="これまでにデータ連携された出入金の明細"
-      />
-
+    <SectionCard
+      id="transactions"
+      iconSrc="/icons/icon-cashback.svg"
+      iconLabel="Cash move icon"
+      eyebrow={eyebrow}
+      title="すべての出入金"
+      updatedAt={updatedAt}
+    >
       {rows.length === 0 ? (
         <p className="text-gray-500">公開中の出入金はまだありません</p>
       ) : (
@@ -222,7 +221,7 @@ export default function ResearchFundExpensesSection({ data, pathSlug, updatedAt 
             >
               <Link
                 href={`/p/${encodeURIComponent(pathSlug)}/${data.financialYear}/transactions`}
-                className="pointer-events-auto inline-flex h-12 w-[270px] items-center justify-center gap-2.5 rounded-[6px] border border-[#1F2937] bg-white px-6 py-2 text-base font-bold text-[#1F2937] transition-colors duration-150 hover:bg-[#F9FAFB]"
+                className="pointer-events-auto inline-flex h-[52px] w-[240px] items-center justify-center gap-2.5 rounded-full border border-[#111827] bg-white px-7 py-2 text-base font-bold text-[#1F2937] transition-colors duration-150 hover:bg-[#F9FAFB]"
               >
                 もっと見る
               </Link>
@@ -238,6 +237,6 @@ export default function ResearchFundExpensesSection({ data, pathSlug, updatedAt 
           onClose={() => setReceipt(null)}
         />
       )}
-    </MainColumnCard>
+    </SectionCard>
   );
 }

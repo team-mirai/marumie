@@ -1,9 +1,14 @@
 import "server-only";
 import type { ReactNode } from "react";
 
-const LINK_CLASS = "font-bold text-[#238778] underline hover:no-underline";
+export const DATA_NOTE_LINK_CLASS = "font-bold text-[#238778] underline hover:no-underline";
 
-const NOTES: { title: string; body: ReactNode }[] = [
+export interface DataNote {
+  title: string;
+  body: ReactNode;
+}
+
+const NOTES: DataNote[] = [
   {
     title: "まる見え政治資金について",
     body: (
@@ -13,7 +18,7 @@ const NOTES: { title: string; body: ReactNode }[] = [
           href="https://github.com/team-mirai-volunteer/marumie"
           target="_blank"
           rel="noopener noreferrer"
-          className={LINK_CLASS}
+          className={DATA_NOTE_LINK_CLASS}
         >
           こちらのGitHub
         </a>
@@ -22,7 +27,7 @@ const NOTES: { title: string; body: ReactNode }[] = [
           href="https://action.team-mir.ai/missions/join-slack"
           target="_blank"
           rel="noopener noreferrer"
-          className={LINK_CLASS}
+          className={DATA_NOTE_LINK_CLASS}
         >
           アクションボード
         </a>
@@ -44,15 +49,20 @@ const NOTES: { title: string; body: ReactNode }[] = [
   },
 ];
 
-/** 下部の共通ブロックの「データについて」（このサイト・データの出典・調査研究費・免責事項）。 */
-export default function DataNotesSection() {
+interface DataNotesSectionProps {
+  /** 項目を差し替えるページ（議員ページなど）だけ渡す。既定はこのサイト・データの出典・調査研究費・免責事項 */
+  notes?: DataNote[];
+}
+
+/** 下部の共通ブロックの「データについて」。 */
+export default function DataNotesSection({ notes = NOTES }: DataNotesSectionProps) {
   return (
     <section
       id="explanation"
       aria-label="データについて"
       className="flex scroll-mt-24 flex-col gap-9 rounded-[32px] bg-white px-[18px] py-7 md:p-[clamp(28px,4.4vw,64px)]"
     >
-      {NOTES.map((note) => (
+      {notes.map((note) => (
         <div key={note.title}>
           <h3 className="mb-3 text-lg font-extrabold text-[#1F2937]">{note.title}</h3>
           <p className="text-[15px] leading-[1.87] tracking-[0.01em] text-[#1F2937] [text-wrap:pretty]">

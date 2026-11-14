@@ -14,11 +14,15 @@ interface AmountSummaryProps {
 }
 
 /**
- * 見出しカードの金額欄（収入総額・支出総額・収支など）。罫線で区切って横に並べ、狭い画面では縦に積む。
+ * 見出しカードの金額欄（収入総額・支出総額・収支など。2つか3つ）。罫線で区切って横に並べ、狭い画面では縦に積む。
  */
 export default function AmountSummary({ items }: AmountSummaryProps) {
   return (
-    <dl className="grid grid-cols-1 border-y border-[#DCE4E1] min-[601px]:grid-cols-3">
+    <dl
+      className={`grid grid-cols-1 border-y border-[#DCE4E1] ${
+        items.length === 2 ? "min-[601px]:grid-cols-2" : "min-[601px]:grid-cols-3"
+      }`}
+    >
       {items.map((item, index) => {
         const amount = item.amount === null ? null : formatAmount(item.amount);
         return (
