@@ -114,8 +114,9 @@ test.describe("research_fund だけのユーザー", () => {
 		await expect(page.getByRole("button", { name: "帳簿を作成" })).toBeDisabled();
 
 		await page.goto("/politicians");
-		await expect(page.getByRole("switch").first()).toBeDisabled();
-		// 調研費の公開切り替えは、担当の議員室かどうかに関わらず admin だけができる（#1894）
-		await expect(page.getByText("（公開の切り替えは admin のみ）").first()).toBeVisible();
+		// 調研費の公開切り替えは、担当の議員室かどうかに関わらず admin だけができる（#1894）。
+		// admin 以外にはスイッチを出さず、公開状態のバッジだけを出す（#1899）
+		await expect(page.getByRole("heading", { name: "調研費の公開" }).first()).toBeVisible();
+		await expect(page.getByRole("switch")).toHaveCount(0);
 	});
 });

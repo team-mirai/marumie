@@ -8,16 +8,14 @@ import { setPoliticianResearchFundPublic } from "@/server/contexts/shared/presen
 /**
  * 議員ごとに調研費を「公開する／公開しない」を切り替える。
  * 公開しない議員のページはプレビュー URL（推測できない文字列を含む）でだけ開け、まる見えの導線・sitemap には出ず noindex になる。
- * 公開するかは運営が決めるので、admin 以外（readOnly）は担当の議員室でも切り替えられない（#1894）。
+ * 公開するかは運営が決めるので、admin にだけ出す（admin 以外には公開状態のバッジだけを出す。#1894, #1899）。
  */
 export function ResearchFundPublicSwitch({
   id,
   isResearchFundPublic,
-  readOnly = false,
 }: {
   id: string;
   isResearchFundPublic: boolean;
-  readOnly?: boolean;
 }) {
   const router = useRouter();
   const switchId = useId();
@@ -27,7 +25,7 @@ export function ResearchFundPublicSwitch({
       <Switch
         id={switchId}
         checked={isResearchFundPublic}
-        disabled={busy || readOnly}
+        disabled={busy}
         onCheckedChange={async (checked) => {
           setBusy(true);
           try {
@@ -49,13 +47,7 @@ export function ResearchFundPublicSwitch({
           }
         }}
       />
-      <Label htmlFor={switchId}>
-        調研費：
-        {isResearchFundPublic
-          ? "公開中"
-          : "非公開（プレビュー URL を知っている人だけが見られます）"}
-        {readOnly && <span className="text-muted-foreground">（公開の切り替えは admin のみ）</span>}
-      </Label>
+      <Label htmlFor={switchId}>公開する</Label>
     </div>
   );
 }

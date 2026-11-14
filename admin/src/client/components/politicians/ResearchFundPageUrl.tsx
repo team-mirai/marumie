@@ -7,7 +7,7 @@ import type { ResearchFundPageUrl as ResearchFundPageUrlValue } from "@/server/c
 
 const LABELS = {
   public: "公開 URL",
-  preview: "プレビュー URL（知っている人だけが開けます）",
+  preview: "プレビュー URL",
 } as const;
 
 /**
@@ -47,7 +47,13 @@ export function ResearchFundPageUrl({ pageUrl }: { pageUrl: ResearchFundPageUrlV
         >
           {pageUrl.url}
         </a>
-        <Button type="button" variant="outline" size="sm" className="text-xs" onClick={handleCopy}>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="shrink-0 text-xs"
+          onClick={handleCopy}
+        >
           {copied ? <Check /> : <Copy />}
           {copied ? "コピーしました" : "コピー"}
         </Button>
