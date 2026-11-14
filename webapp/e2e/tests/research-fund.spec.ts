@@ -430,10 +430,10 @@ test.describe("調査研究費 議員ページ", () => {
 		).toBeVisible();
 	});
 
-	test("存在しない議員のページは政治団体ページに寄せられる", async ({ page }) => {
+	test("存在しない議員のページはトップページに寄せられる", async ({ page }) => {
 		await page.goto("/p/no-such-politician/2026");
 
-		await expect(page).toHaveURL(/\/o\/[\w-]+/);
+		await expect(page).toHaveURL("/");
 	});
 });
 

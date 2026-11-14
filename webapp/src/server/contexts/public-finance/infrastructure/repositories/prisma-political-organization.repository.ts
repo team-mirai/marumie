@@ -42,6 +42,26 @@ export class PrismaPoliticalOrganizationRepository implements IPoliticalOrganiza
     return organizations.map((org) => this.mapToPoliticalOrganization(org));
   }
 
+  async findTypeCodesByIds(ids: string[]): Promise<Map<string, string[]>> {
+    const profiles = await this.prisma.organizationReportProfile.findMany({
+      where: { politicalOrganizationId: { in: ids.map((id) => BigInt(id)) } },
+      select: { politicalOrganizationId: true, details: true },
+    });
+
+    const typeCodesById = new Map<string, string[]>();
+    for (const profile of profiles) {
+      const { details } = profile;
+      const typeCode =
+        details && typeof details === "object" && !Array.isArray(details)
+          ? details.organizationType
+          : undefined;
+      if (typeof typeCode !== "string" || typeCode === "") continue;
+      const id = profile.politicalOrganizationId.toString();
+      typeCodesById.set(id, [...(typeCodesById.get(id) ?? []), typeCode]);
+    }
+    return typeCodesById;
+  }
+
   private mapToPoliticalOrganization(
     prismaOrganization: PrismaPoliticalOrganization,
   ): PoliticalOrganization {
