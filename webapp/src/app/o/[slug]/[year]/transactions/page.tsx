@@ -132,6 +132,7 @@ export default async function TransactionsPage({ params, searchParams }: Transac
               year={financialYear}
               transactions={data.transactions}
               total={data.total}
+              totalAmount={data.totalAmount}
               page={data.page}
               perPage={data.perPage}
               totalPages={data.totalPages}
