@@ -46,9 +46,9 @@ export default function MistHeadingCard({
             />
           </span>
           <span className="col-start-2 row-start-1 flex min-w-0 flex-col gap-1">
-            <b className="break-keep text-[18px] font-black leading-[1.3] tracking-[0.01em] [overflow-wrap:anywhere] md:text-[clamp(22px,2.6vw,32px)]">
+            <h1 className="m-0 break-keep text-[18px] font-black leading-[1.3] tracking-[0.01em] [overflow-wrap:anywhere] md:text-[clamp(22px,2.6vw,32px)]">
               {title}
-            </b>
+            </h1>
             <span className="text-[14px] font-semibold text-[#238778]">{subtitle}</span>
           </span>
           {updatedAt && (

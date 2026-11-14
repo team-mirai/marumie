@@ -25,7 +25,8 @@ export default function PartyHeadingSection({
   political,
   friendly,
 }: PartyHeadingSectionProps) {
-  const summary = calculateSankeyFinancialSummary(friendly);
+  // 取得に失敗したときは 0 円と区別できるよう、金額を出さない
+  const summary = friendly ? calculateSankeyFinancialSummary(friendly) : null;
 
   return (
     <MistHeadingCard
@@ -39,9 +40,9 @@ export default function PartyHeadingSection({
     >
       <AmountSummary
         items={[
-          { label: "収入総額", color: "#2AA693", amount: summary.income },
-          { label: "支出総額", color: "#DC2626", amount: summary.expense },
-          { label: "収支・現金残高", color: "#6B7280", amount: summary.balance },
+          { label: "収入総額", color: "#2AA693", amount: summary?.income ?? null },
+          { label: "支出総額", color: "#DC2626", amount: summary?.expense ?? null },
+          { label: "収支・現金残高", color: "#6B7280", amount: summary?.balance ?? null },
         ]}
       />
       <CashFlowSection political={political} friendly={friendly} />

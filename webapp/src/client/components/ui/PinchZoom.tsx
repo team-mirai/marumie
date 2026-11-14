@@ -2,6 +2,7 @@
 import "client-only";
 
 import { type ReactNode, type TouchEvent, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 
 /** 拡大の上限（元の幅の何倍まで広げるか） */
 const MAX_SCALE = 3.2;
@@ -61,8 +62,8 @@ export default function PinchZoom({ children, className = "" }: PinchZoomProps) 
       MAX_SCALE,
       Math.max(1, (pinch.scale * touchDistance(event.touches)) / pinch.distance),
     );
-    setScale(next);
-    // 指の間の位置が動かないようにスクロールを合わせる
+    // 拡大後の幅を先に DOM に反映してから、指の間の位置が動かないようにスクロールを合わせる
+    flushSync(() => setScale(next));
     container.scrollLeft = pinch.contentX * next - pinch.midX;
   };
 

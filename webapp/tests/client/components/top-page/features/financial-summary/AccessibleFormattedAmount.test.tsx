@@ -58,4 +58,18 @@ describe("AccessibleFormattedAmount", () => {
     expect(markup).toContain('<span aria-hidden="true" class="flex items-baseline');
     expect(markup.match(/aria-hidden=/g)).toHaveLength(2); // 金額と、ラベルの色の印
   });
+
+  it("見出しカードの金額欄で、取得できなかった金額を 0 円と区別して出す", () => {
+    const markup = renderToStaticMarkup(
+      <AmountSummary
+        items={[
+          { label: "収入総額", color: "#000000", amount: null },
+          { label: "支出総額", color: "#000000", amount: 0 },
+        ]}
+      />,
+    );
+
+    expect(markup).toContain("取得できませんでした");
+    expect(markup).toContain('<span class="sr-only">0万円</span>');
+  });
 });

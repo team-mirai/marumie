@@ -5,8 +5,8 @@ interface AmountSummaryItem {
   label: string;
   /** ラベルの前に置く色の印 */
   color: string;
-  /** 円単位の金額。億・万円の表記にして出す */
-  amount: number;
+  /** 円単位の金額。億・万円の表記にして出す。取得できなかったときは null */
+  amount: number | null;
 }
 
 interface AmountSummaryProps {
@@ -20,7 +20,7 @@ export default function AmountSummary({ items }: AmountSummaryProps) {
   return (
     <dl className="grid grid-cols-1 border-y border-[#DCE4E1] min-[601px]:grid-cols-3">
       {items.map((item, index) => {
-        const amount = formatAmount(item.amount);
+        const amount = item.amount === null ? null : formatAmount(item.amount);
         return (
           <div
             key={item.label}
@@ -39,27 +39,31 @@ export default function AmountSummary({ items }: AmountSummaryProps) {
               {item.label}
             </dt>
             <dd className="whitespace-nowrap">
-              <AccessibleFormattedAmount
-                amount={amount}
-                visualClassName="flex items-baseline gap-0.5"
-              >
-                <b className="text-[28px] font-bold leading-none tracking-[-0.02em] tabular-nums min-[601px]:text-[clamp(28px,3.4vw,44px)]">
-                  {amount.main}
-                </b>
-                {amount.secondary && (
-                  <em className="ml-0.5 mr-1 text-[15px] font-extrabold not-italic text-[#4B5563]">
-                    {amount.secondary}
-                  </em>
-                )}
-                {amount.tertiary && (
+              {amount === null ? (
+                <span className="text-[15px] font-bold text-[#6B7280]">取得できませんでした</span>
+              ) : (
+                <AccessibleFormattedAmount
+                  amount={amount}
+                  visualClassName="flex items-baseline gap-0.5"
+                >
                   <b className="text-[28px] font-bold leading-none tracking-[-0.02em] tabular-nums min-[601px]:text-[clamp(28px,3.4vw,44px)]">
-                    {amount.tertiary}
+                    {amount.main}
                   </b>
-                )}
-                <em className="ml-0.5 text-[15px] font-extrabold not-italic text-[#4B5563]">
-                  {amount.unit}
-                </em>
-              </AccessibleFormattedAmount>
+                  {amount.secondary && (
+                    <em className="ml-0.5 mr-1 text-[15px] font-extrabold not-italic text-[#4B5563]">
+                      {amount.secondary}
+                    </em>
+                  )}
+                  {amount.tertiary && (
+                    <b className="text-[28px] font-bold leading-none tracking-[-0.02em] tabular-nums min-[601px]:text-[clamp(28px,3.4vw,44px)]">
+                      {amount.tertiary}
+                    </b>
+                  )}
+                  <em className="ml-0.5 text-[15px] font-extrabold not-italic text-[#4B5563]">
+                    {amount.unit}
+                  </em>
+                </AccessibleFormattedAmount>
+              )}
             </dd>
           </div>
         );
