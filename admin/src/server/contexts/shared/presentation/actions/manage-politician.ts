@@ -80,7 +80,9 @@ export async function setPoliticianResearchFundPublic(id: string, isPublic: bool
 export async function deletePolitician(id: string) {
   await requireRole("admin");
   try {
-    await new DeletePoliticianUsecase(new PrismaPoliticianRepository(prisma)).execute(id);
+    await new DeletePoliticianUsecase(new PrismaPoliticianRepository(prisma), () =>
+      SupabasePoliticianPhotoStorage.fromEnv(),
+    ).execute(id);
     revalidatePath("/(auth)", "layout");
     return { success: true as const };
   } catch {
