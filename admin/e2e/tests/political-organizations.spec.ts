@@ -102,6 +102,44 @@ test.describe("政治団体管理", () => {
 			await expect(page.getByText(updatedName)).toBeVisible();
 		});
 
+		test("公式サイト・SNS を保存でき、編集画面を開き直すと表示される", async ({ page }) => {
+			await page.goto("/political-organizations/new");
+
+			const uniqueSlug = `links-test-${Date.now()}`;
+			const name = `リンクテスト用団体 ${Date.now()}`;
+			await page.getByLabel(/表示名/).fill(name);
+			await page.getByLabel(/スラッグ/).fill(uniqueSlug);
+			await page.getByRole("button", { name: "作成" }).click();
+			await expect(page).toHaveURL("/political-organizations");
+
+			const orgHeading = page.locator("h3").filter({ hasText: name });
+			const orgCard = orgHeading.locator("xpath=ancestor::div[contains(@class, 'border')]");
+			await orgCard.getByRole("link", { name: "編集" }).click();
+			await expect(page.getByText(/を編集/).first()).toBeVisible();
+			const editUrl = page.url();
+
+			// 入力欄の型（url）は通るが http(s) ではない値は、保存時にサーバーで弾かれる
+			await page.getByLabel("公式サイトの URL").fill("ftp://example.jp");
+			await page.getByRole("button", { name: "更新" }).click();
+			await expect(page.getByText("公式サイトの URL を正しく入力してください")).toBeVisible();
+			await expect(page).toHaveURL(editUrl);
+
+			await page.getByLabel("公式サイトの URL").fill("https://example.jp");
+			await page.getByRole("button", { name: "SNS を追加" }).click();
+			await page.getByLabel("SNS の URL（1件目）").fill("https://x.com/example");
+			await page.getByRole("button", { name: "SNS を追加" }).click();
+			await page.getByLabel("SNS の URL（2件目）").fill("https://www.youtube.com/@example");
+			await page.getByRole("button", { name: "更新" }).click();
+			await expect(page).toHaveURL("/political-organizations");
+
+			await page.goto(editUrl);
+			await expect(page.getByLabel("公式サイトの URL")).toHaveValue("https://example.jp");
+			await expect(page.getByLabel("SNS の URL（1件目）")).toHaveValue("https://x.com/example");
+			await expect(page.getByLabel("SNS の URL（2件目）")).toHaveValue(
+				"https://www.youtube.com/@example",
+			);
+		});
+
 		test("必須項目が空の場合は作成ボタンが無効になる", async ({ page }) => {
 			await page.goto("/political-organizations/new");
 
