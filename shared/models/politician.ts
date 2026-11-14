@@ -1,3 +1,5 @@
+import { MAX_SNS_URLS, isHttpUrl } from "@/shared/models/profile-links";
+
 /** 議員の院。shugiin = 衆議院 / sangiin = 参議院 */
 export const POLITICIAN_HOUSES = ["shugiin", "sangiin"] as const;
 export type PoliticianHouse = (typeof POLITICIAN_HOUSES)[number];
@@ -5,10 +7,6 @@ export const POLITICIAN_HOUSE_LABELS: Record<PoliticianHouse, string> = {
   shugiin: "衆議院",
   sangiin: "参議院",
 };
-
-/** SNS の URL を登録できる上限。v8 の表示例で 7 件なので余裕をもたせる */
-const MAX_SNS_URLS = 20;
-const MAX_URL_LENGTH = 2048;
 
 export interface PoliticianInput {
   name: string;
@@ -39,16 +37,6 @@ export interface Politician extends PoliticianInput {
 const VALIDATION_CODES = {
   INVALID: "POLITICIAN_INVALID_INPUT",
 } as const;
-
-function isHttpUrl(value: string) {
-  if (value.length > MAX_URL_LENGTH) return false;
-  try {
-    const url = new URL(value);
-    return (url.protocol === "https:" || url.protocol === "http:") && !!url.hostname;
-  } catch {
-    return false;
-  }
-}
 
 function invalid(path: string, message: string) {
   return {

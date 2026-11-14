@@ -51,6 +51,9 @@ export class PrismaPoliticalOrganizationRepository implements IPoliticalOrganiza
       orgName: prismaOrganization.orgName,
       slug: prismaOrganization.slug,
       description: prismaOrganization.description,
+      websiteUrl: prismaOrganization.websiteUrl,
+      snsUrls: prismaOrganization.snsUrls,
+      photoPath: prismaOrganization.photoPath,
       createdAt: prismaOrganization.createdAt,
       updatedAt: prismaOrganization.updatedAt,
     };

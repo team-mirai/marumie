@@ -1,5 +1,5 @@
 import "server-only";
-import { invalidateWebappCache } from "@/server/contexts/research-fund/application/services/invalidate-webapp-cache";
+import { invalidateWebappCache } from "@/server/contexts/shared/application/services/invalidate-webapp-cache";
 import { acceptJournalEntry } from "@/server/contexts/research-fund/application/services/journal-review-targets";
 import { JournalOperation } from "@/server/contexts/research-fund/domain/models/journal-operation";
 import type { JournalReviewRepository } from "@/server/contexts/research-fund/domain/repositories/journal-review-repository.interface";

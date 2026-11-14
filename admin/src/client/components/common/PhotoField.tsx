@@ -8,31 +8,36 @@ import {
   POLITICIAN_PHOTO_MAX_BYTES,
   POLITICIAN_PHOTO_TYPES,
 } from "@/shared/models/politician-photo";
-import {
-  deletePoliticianPhoto,
-  uploadPoliticianPhoto,
-} from "@/server/contexts/shared/presentation/actions/manage-politician";
 
-/** 議員の顔写真の登録・差し替え・削除。保存はフォームとは別に、選んだ時点で行う */
-export function PoliticianPhotoField({
-  politicianId,
+/** cacheWarning は保存後に公開サイト（まる見え）のキャッシュを更新できなかったときの理由 */
+type PhotoActionResult =
+  | { success: true; cacheWarning?: string | null }
+  | { success: false; error: string };
+
+/**
+ * 顔写真（議員・政治団体の代表者）の登録・差し替え・削除。保存はフォームとは別に、選んだ時点で行う。
+ * upload / remove には対象の ID を bind したサーバーアクションを渡す
+ */
+export function PhotoField({
+  label,
   photoUrl,
   hasPhoto,
+  upload,
+  remove,
 }: {
-  politicianId: string;
+  label: string;
   /** 今の写真のプレビュー用 URL。取得できなかったときは null */
   photoUrl: string | null;
   hasPhoto: boolean;
+  upload: (formData: FormData) => Promise<PhotoActionResult>;
+  remove: () => Promise<PhotoActionResult>;
 }) {
   const router = useRouter();
   const fileInput = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const run = async (
-    action: () => Promise<{ success: true } | { success: false; error: string }>,
-    successMessage: string,
-  ) => {
+  const run = async (action: () => Promise<PhotoActionResult>, successMessage: string) => {
     setBusy(true);
     setError(null);
     try {
@@ -42,7 +47,9 @@ export function PoliticianPhotoField({
         toast.error(result.error);
         return;
       }
-      toast.success(successMessage);
+      if (result.cacheWarning)
+        toast.warning(`${successMessage}が、まる見えの更新に失敗しました: ${result.cacheWarning}`);
+      else toast.success(successMessage);
       router.refresh();
     } catch {
       const message = "顔写真を保存できませんでした。もう一度お試しください";
@@ -63,16 +70,13 @@ export function PoliticianPhotoField({
     }
     const formData = new FormData();
     formData.append("photo", file);
-    void run(
-      () => uploadPoliticianPhoto(politicianId, formData),
-      hasPhoto ? "顔写真を差し替えました" : "顔写真を登録しました",
-    );
+    void run(() => upload(formData), hasPhoto ? "顔写真を差し替えました" : "顔写真を登録しました");
   };
 
   return (
     <Card className="mb-6">
       <CardContent className="space-y-3">
-        <Label>顔写真（任意・公開サイトに表示）</Label>
+        <Label>{label}</Label>
         <div className="flex items-center gap-5">
           {photoUrl ? (
             // 署名 URL は一時的なので next/image の最適化は通さない
@@ -106,9 +110,7 @@ export function PoliticianPhotoField({
                   variant="destructive"
                   size="sm"
                   disabled={busy}
-                  onClick={() =>
-                    void run(() => deletePoliticianPhoto(politicianId), "顔写真を削除しました")
-                  }
+                  onClick={() => void run(remove, "顔写真を削除しました")}
                 >
                   写真を削除
                 </Button>

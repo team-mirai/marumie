@@ -44,4 +44,14 @@ export const PoliticianPhoto = {
   buildPath(politicianId: string, mime: PoliticianPhotoMime, uniqueId: string) {
     return `politicians/${politicianId}/${uniqueId}.${POLITICIAN_PHOTO_TYPES[mime]}`;
   },
+  /**
+   * 政治団体の代表者の顔写真（#1917）のキー。形式・上限は議員の顔写真と同じで、同じバケットに置く
+   */
+  buildPoliticalOrganizationPath(
+    organizationId: string,
+    mime: PoliticianPhotoMime,
+    uniqueId: string,
+  ) {
+    return `political-organizations/${organizationId}/${uniqueId}.${POLITICIAN_PHOTO_TYPES[mime]}`;
+  },
 };
