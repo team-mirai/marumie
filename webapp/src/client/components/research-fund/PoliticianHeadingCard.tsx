@@ -120,19 +120,21 @@ export default function PoliticianHeadingCard({
             </span>
             <span className="text-[13px] font-semibold text-[#0A1A17]/80">議員の調研費</span>
           </span>
-          {updatedAt && (
-            <span className="col-span-full row-start-3 self-end justify-self-start text-[12px] font-semibold leading-none tracking-[0.02em] text-[#0A1A17]/80">
-              {updatedAt}
-            </span>
-          )}
-          <div className="col-span-full row-start-3 self-end justify-self-end">
-            {hasYearSwitch ? (
-              <YearSegment years={years} currentYear={currentYear} />
-            ) : (
-              <span className="whitespace-nowrap text-[13px] font-bold leading-none tracking-[0.02em]">
-                {period}
+          <div className="col-span-full row-start-3 flex flex-wrap items-end justify-between gap-2 self-end">
+            {updatedAt && (
+              <span className="text-[12px] font-semibold leading-none tracking-[0.02em] text-[#0A1A17]/80">
+                {updatedAt}
               </span>
             )}
+            <div className="ml-auto">
+              {hasYearSwitch ? (
+                <YearSegment years={years} currentYear={currentYear} />
+              ) : (
+                <span className="whitespace-nowrap text-[13px] font-bold leading-none tracking-[0.02em]">
+                  {period}
+                </span>
+              )}
+            </div>
           </div>
         </div>
 
