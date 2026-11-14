@@ -17,6 +17,9 @@ test("議員の一覧→作成→編集→削除", async ({ page }) => {
   await expect(card).toContainText("サンプル党");
   await expect(card).toContainText("2026.02");
   await expect(card.getByRole("link", { name: "年度帳簿" })).toBeVisible();
+  // admin には公開状態のバッジと切り替えスイッチが出る。新規の議員は非公開（#1899）
+  await expect(card).toContainText("非公開");
+  await expect(card.getByRole("switch", { name: "公開する" })).not.toBeChecked();
 
 
   await card.getByRole("link", { name: "編集" }).click();
