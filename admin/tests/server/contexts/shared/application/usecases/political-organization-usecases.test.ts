@@ -3,10 +3,12 @@ import { UpdatePoliticalOrganizationUsecase } from "@/server/contexts/shared/app
 import { DeletePoliticalOrganizationUsecase } from "@/server/contexts/shared/application/usecases/delete-political-organization-usecase";
 import type { IPoliticalOrganizationRepository } from "@/server/contexts/shared/domain/repositories/political-organization-repository.interface";
 import type { PoliticalOrganization } from "@/shared/models/political-organization";
+import type { ICacheInvalidator } from "@/server/contexts/shared/domain/services/cache-invalidator.interface";
 import { PoliticalOrganizationInputError } from "@/server/contexts/shared/domain/errors/political-organization-input-error";
 
 describe("Political Organization Usecases", () => {
   let mockRepository: jest.Mocked<IPoliticalOrganizationRepository>;
+  let cacheInvalidator: jest.Mocked<ICacheInvalidator>;
 
   const createMockOrganization = (overrides: Partial<PoliticalOrganization> = {}): PoliticalOrganization => ({
     id: "1",
@@ -32,6 +34,7 @@ describe("Political Organization Usecases", () => {
       delete: jest.fn(),
       countTransactions: jest.fn(),
     };
+    cacheInvalidator = { invalidateWebappCache: jest.fn().mockResolvedValue(undefined) };
   });
 
   describe("CreatePoliticalOrganizationUsecase", () => {
@@ -106,7 +109,7 @@ describe("Political Organization Usecases", () => {
     it("公式サイト・SNS を整えて保存する", async () => {
       mockRepository.update.mockResolvedValue(createMockOrganization());
 
-      await new UpdatePoliticalOrganizationUsecase(mockRepository).execute(BigInt(1), {
+      await new UpdatePoliticalOrganizationUsecase(mockRepository, cacheInvalidator).execute(BigInt(1), {
         ...basics,
         websiteUrl: " https://example.jp ",
         snsUrls: [" https://x.com/team_mirai ", "", "https://www.youtube.com/@team_mirai"],
@@ -119,10 +122,36 @@ describe("Political Organization Usecases", () => {
       });
     });
 
+    it("保存したら webapp のキャッシュを消す", async () => {
+      const updated = createMockOrganization();
+      mockRepository.update.mockResolvedValue(updated);
+
+      await expect(
+        new UpdatePoliticalOrganizationUsecase(mockRepository, cacheInvalidator).execute(
+          BigInt(1),
+          basics,
+        ),
+      ).resolves.toEqual({ organization: updated, cacheWarning: null });
+      expect(cacheInvalidator.invalidateWebappCache).toHaveBeenCalledTimes(1);
+    });
+
+    it("キャッシュを消せなくても保存は成功にして警告を返す", async () => {
+      const updated = createMockOrganization();
+      mockRepository.update.mockResolvedValue(updated);
+      cacheInvalidator.invalidateWebappCache.mockRejectedValue(new Error("接続に失敗しました"));
+
+      await expect(
+        new UpdatePoliticalOrganizationUsecase(mockRepository, cacheInvalidator).execute(
+          BigInt(1),
+          basics,
+        ),
+      ).resolves.toEqual({ organization: updated, cacheWarning: "接続に失敗しました" });
+    });
+
     it("公式サイト・SNS が未入力でも保存できる", async () => {
       mockRepository.update.mockResolvedValue(createMockOrganization());
 
-      await new UpdatePoliticalOrganizationUsecase(mockRepository).execute(BigInt(1), {
+      await new UpdatePoliticalOrganizationUsecase(mockRepository, cacheInvalidator).execute(BigInt(1), {
         ...basics,
         websiteUrl: "",
         snsUrls: [],
@@ -138,7 +167,7 @@ describe("Political Organization Usecases", () => {
     it("公式サイト・SNS を渡さなければそのまま保存する", async () => {
       mockRepository.update.mockResolvedValue(createMockOrganization());
 
-      await new UpdatePoliticalOrganizationUsecase(mockRepository).execute(BigInt(1), basics);
+      await new UpdatePoliticalOrganizationUsecase(mockRepository, cacheInvalidator).execute(BigInt(1), basics);
 
       expect(mockRepository.update).toHaveBeenCalledWith(BigInt(1), basics);
     });
@@ -146,7 +175,7 @@ describe("Political Organization Usecases", () => {
     it("公式サイトだけを渡したら公式サイトだけを保存する", async () => {
       mockRepository.update.mockResolvedValue(createMockOrganization());
 
-      await new UpdatePoliticalOrganizationUsecase(mockRepository).execute(BigInt(1), {
+      await new UpdatePoliticalOrganizationUsecase(mockRepository, cacheInvalidator).execute(BigInt(1), {
         ...basics,
         websiteUrl: " https://example.jp ",
       });
@@ -160,7 +189,7 @@ describe("Political Organization Usecases", () => {
     it("SNS だけを渡したら SNS だけを保存する", async () => {
       mockRepository.update.mockResolvedValue(createMockOrganization());
 
-      await new UpdatePoliticalOrganizationUsecase(mockRepository).execute(BigInt(1), {
+      await new UpdatePoliticalOrganizationUsecase(mockRepository, cacheInvalidator).execute(BigInt(1), {
         ...basics,
         snsUrls: ["", " https://x.com/team_mirai "],
       });
@@ -173,7 +202,7 @@ describe("Political Organization Usecases", () => {
 
     it("SNS だけを渡しても不正な URL なら保存しない", async () => {
       await expect(
-        new UpdatePoliticalOrganizationUsecase(mockRepository).execute(BigInt(1), {
+        new UpdatePoliticalOrganizationUsecase(mockRepository, cacheInvalidator).execute(BigInt(1), {
           ...basics,
           snsUrls: ["ftp://example.jp"],
         }),
@@ -183,7 +212,7 @@ describe("Political Organization Usecases", () => {
 
     it("公式サイトの URL が不正なら保存しない", async () => {
       await expect(
-        new UpdatePoliticalOrganizationUsecase(mockRepository).execute(BigInt(1), {
+        new UpdatePoliticalOrganizationUsecase(mockRepository, cacheInvalidator).execute(BigInt(1), {
           ...basics,
           websiteUrl: "javascript:alert(1)",
           snsUrls: [],
@@ -194,7 +223,7 @@ describe("Political Organization Usecases", () => {
 
     it("SNS の URL が不正なら何件目かを示して保存しない", async () => {
       await expect(
-        new UpdatePoliticalOrganizationUsecase(mockRepository).execute(BigInt(1), {
+        new UpdatePoliticalOrganizationUsecase(mockRepository, cacheInvalidator).execute(BigInt(1), {
           ...basics,
           websiteUrl: "",
           snsUrls: ["https://x.com/team_mirai", "not a url"],
@@ -205,7 +234,7 @@ describe("Political Organization Usecases", () => {
 
     it("型の合わない入力は保存しない", async () => {
       await expect(
-        new UpdatePoliticalOrganizationUsecase(mockRepository).execute(BigInt(1), {
+        new UpdatePoliticalOrganizationUsecase(mockRepository, cacheInvalidator).execute(BigInt(1), {
           ...basics,
           websiteUrl: "",
           snsUrls: [1 as unknown as string],
@@ -215,7 +244,7 @@ describe("Political Organization Usecases", () => {
 
     it("表示名がない場合はエラーを返す", async () => {
       await expect(
-        new UpdatePoliticalOrganizationUsecase(mockRepository).execute(BigInt(1), {
+        new UpdatePoliticalOrganizationUsecase(mockRepository, cacheInvalidator).execute(BigInt(1), {
           ...basics,
           displayName: " ",
         }),
@@ -226,11 +255,12 @@ describe("Political Organization Usecases", () => {
       mockRepository.update.mockRejectedValue(new Error("Database error"));
 
       await expect(
-        new UpdatePoliticalOrganizationUsecase(mockRepository).execute(BigInt(1), basics),
+        new UpdatePoliticalOrganizationUsecase(mockRepository, cacheInvalidator).execute(BigInt(1), basics),
       ).rejects.toThrow("Failed to update political organization: Database error");
       await expect(
-        new UpdatePoliticalOrganizationUsecase(mockRepository).execute(BigInt(1), basics),
+        new UpdatePoliticalOrganizationUsecase(mockRepository, cacheInvalidator).execute(BigInt(1), basics),
       ).rejects.not.toThrow(PoliticalOrganizationInputError);
+      expect(cacheInvalidator.invalidateWebappCache).not.toHaveBeenCalled();
     });
   });
 

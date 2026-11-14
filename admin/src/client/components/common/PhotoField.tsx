@@ -9,7 +9,10 @@ import {
   POLITICIAN_PHOTO_TYPES,
 } from "@/shared/models/politician-photo";
 
-type PhotoActionResult = { success: true } | { success: false; error: string };
+/** cacheWarning は保存後に公開サイト（まる見え）のキャッシュを更新できなかったときの理由 */
+type PhotoActionResult =
+  | { success: true; cacheWarning?: string | null }
+  | { success: false; error: string };
 
 /**
  * 顔写真（議員・政治団体の代表者）の登録・差し替え・削除。保存はフォームとは別に、選んだ時点で行う。
@@ -44,7 +47,9 @@ export function PhotoField({
         toast.error(result.error);
         return;
       }
-      toast.success(successMessage);
+      if (result.cacheWarning)
+        toast.warning(`${successMessage}が、まる見えの更新に失敗しました: ${result.cacheWarning}`);
+      else toast.success(successMessage);
       router.refresh();
     } catch {
       const message = "顔写真を保存できませんでした。もう一度お試しください";

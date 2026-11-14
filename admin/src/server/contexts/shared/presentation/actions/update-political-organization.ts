@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/server/contexts/shared/infrastructure/prisma";
 import { PrismaPoliticalOrganizationRepository } from "@/server/contexts/shared/infrastructure/repositories/prisma-political-organization.repository";
 import { UpdatePoliticalOrganizationUsecase } from "@/server/contexts/shared/application/usecases/update-political-organization-usecase";
+import { WebappCacheInvalidator } from "@/server/contexts/shared/infrastructure/services/webapp-cache-invalidator";
 import { requireRole } from "@/server/contexts/auth/presentation/loaders/require-role";
 import { PoliticalOrganizationInputError } from "@/server/contexts/shared/domain/errors/political-organization-input-error";
 
@@ -30,11 +31,14 @@ export async function updatePoliticalOrganization(
     }
 
     const repository = new PrismaPoliticalOrganizationRepository(prisma);
-    const usecase = new UpdatePoliticalOrganizationUsecase(repository);
-    await usecase.execute(BigInt(organizationId), data);
+    const usecase = new UpdatePoliticalOrganizationUsecase(
+      repository,
+      new WebappCacheInvalidator(),
+    );
+    const { cacheWarning } = await usecase.execute(BigInt(organizationId), data);
 
     revalidatePath("/political-organizations");
-    return { success: true as const };
+    return { success: true as const, cacheWarning };
   } catch (error) {
     console.error("Error updating political organization:", error);
     // 入力の誤りを画面に出せるよう、例外ではなく結果で返す（本番では例外のメッセージが伏せられる）
