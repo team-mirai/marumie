@@ -41,12 +41,18 @@ describe("sitemap", () => {
   it("政治団体は年度ごとのトップページと全件ページを列挙し、リダイレクトするだけの URL は出さない", async () => {
     const urls = (await sitemap()).map((entry) => entry.url);
 
-    expect(urls).toEqual([
+    expect(urls.filter((url) => url.includes("/o/"))).toEqual([
       `${BASE_URL}/o/team-mirai/2025`,
       `${BASE_URL}/o/team-mirai/2025/transactions`,
       `${BASE_URL}/o/team-mirai/2026`,
       `${BASE_URL}/o/team-mirai/2026/transactions`,
     ]);
+  });
+
+  it("「まる見え政治資金とは」ページ（/about）を載せる", async () => {
+    const urls = (await sitemap()).map((entry) => entry.url);
+
+    expect(urls).toContain(`${BASE_URL}/about`);
   });
 
   it("公開中の議員ページが無ければ /p/ の URL を出さない", async () => {
