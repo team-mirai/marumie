@@ -3,6 +3,7 @@ import { UpdatePoliticalOrganizationUsecase } from "@/server/contexts/shared/app
 import { DeletePoliticalOrganizationUsecase } from "@/server/contexts/shared/application/usecases/delete-political-organization-usecase";
 import type { IPoliticalOrganizationRepository } from "@/server/contexts/shared/domain/repositories/political-organization-repository.interface";
 import type { PoliticalOrganization } from "@/shared/models/political-organization";
+import { PoliticalOrganizationInputError } from "@/server/contexts/shared/domain/errors/political-organization-input-error";
 
 describe("Political Organization Usecases", () => {
   let mockRepository: jest.Mocked<IPoliticalOrganizationRepository>;
@@ -142,6 +143,44 @@ describe("Political Organization Usecases", () => {
       expect(mockRepository.update).toHaveBeenCalledWith(BigInt(1), basics);
     });
 
+    it("公式サイトだけを渡したら公式サイトだけを保存する", async () => {
+      mockRepository.update.mockResolvedValue(createMockOrganization());
+
+      await new UpdatePoliticalOrganizationUsecase(mockRepository).execute(BigInt(1), {
+        ...basics,
+        websiteUrl: " https://example.jp ",
+      });
+
+      expect(mockRepository.update).toHaveBeenCalledWith(BigInt(1), {
+        ...basics,
+        websiteUrl: "https://example.jp",
+      });
+    });
+
+    it("SNS だけを渡したら SNS だけを保存する", async () => {
+      mockRepository.update.mockResolvedValue(createMockOrganization());
+
+      await new UpdatePoliticalOrganizationUsecase(mockRepository).execute(BigInt(1), {
+        ...basics,
+        snsUrls: ["", " https://x.com/team_mirai "],
+      });
+
+      expect(mockRepository.update).toHaveBeenCalledWith(BigInt(1), {
+        ...basics,
+        snsUrls: ["https://x.com/team_mirai"],
+      });
+    });
+
+    it("SNS だけを渡しても不正な URL なら保存しない", async () => {
+      await expect(
+        new UpdatePoliticalOrganizationUsecase(mockRepository).execute(BigInt(1), {
+          ...basics,
+          snsUrls: ["ftp://example.jp"],
+        }),
+      ).rejects.toThrow(PoliticalOrganizationInputError);
+      expect(mockRepository.update).not.toHaveBeenCalled();
+    });
+
     it("公式サイトの URL が不正なら保存しない", async () => {
       await expect(
         new UpdatePoliticalOrganizationUsecase(mockRepository).execute(BigInt(1), {
@@ -189,6 +228,9 @@ describe("Political Organization Usecases", () => {
       await expect(
         new UpdatePoliticalOrganizationUsecase(mockRepository).execute(BigInt(1), basics),
       ).rejects.toThrow("Failed to update political organization: Database error");
+      await expect(
+        new UpdatePoliticalOrganizationUsecase(mockRepository).execute(BigInt(1), basics),
+      ).rejects.not.toThrow(PoliticalOrganizationInputError);
     });
   });
 

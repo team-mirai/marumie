@@ -5,6 +5,7 @@ import { prisma } from "@/server/contexts/shared/infrastructure/prisma";
 import { PrismaPoliticalOrganizationRepository } from "@/server/contexts/shared/infrastructure/repositories/prisma-political-organization.repository";
 import { UpdatePoliticalOrganizationUsecase } from "@/server/contexts/shared/application/usecases/update-political-organization-usecase";
 import { requireRole } from "@/server/contexts/auth/presentation/loaders/require-role";
+import { PoliticalOrganizationInputError } from "@/server/contexts/shared/domain/errors/political-organization-input-error";
 
 export interface UpdatePoliticalOrganizationData {
   displayName: string;
@@ -48,5 +49,7 @@ function toErrorMessage(error: unknown) {
   if (error instanceof Error && error.message.includes("Unique constraint")) {
     return "このスラッグは既に使用されています";
   }
-  return error instanceof Error ? error.message : "政治団体の更新に失敗しました";
+  // 内部のメッセージ（DB のエラーなど）は画面に出さない
+  if (error instanceof PoliticalOrganizationInputError) return error.message;
+  return "政治団体の更新に失敗しました";
 }
