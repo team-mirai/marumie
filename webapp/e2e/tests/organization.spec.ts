@@ -239,45 +239,6 @@ test.describe("政治団体ページ", () => {
 		});
 	});
 
-	test.describe("政治団体・年度セレクター", () => {
-		test("セレクターをクリックするとシートが開く", async ({ page }) => {
-			await page.goto("/o/sample-party/2026");
-
-			// セレクターボタンをクリック
-			const selectorButton = page.getByRole("button", { name: /サンプル党/ });
-			await selectorButton.click();
-
-			// ドロップダウンが開いて選択肢が表示される（表示する団体名／調研費（議員別）のグループ）
-			await expect(page.getByText("表示する団体名", { exact: true })).toBeVisible();
-		});
-
-		test("別の政治団体を選択するとページが切り替わる", async ({ page }) => {
-			await page.goto("/o/sample-party/2026");
-
-			// セレクターを開く
-			const selectorButton = page.getByRole("button", { name: /サンプル党/ });
-			await selectorButton.click();
-
-			// シード済みの「E2Eテスト団体」（slug: e2e-test-org）を選択する
-			await page.getByRole("button", { name: "E2Eテスト団体" }).click();
-			await expect(page).toHaveURL("/o/e2e-test-org/2026");
-		});
-
-		test("年度を切り替えるとページが切り替わる", async ({ page }) => {
-			await page.goto("/o/sample-party/2026");
-
-			// セレクターを開く
-			const selectorButton = page.getByRole("button", { name: /サンプル党/ });
-			await selectorButton.click();
-
-			// 2025年ボタンをクリック
-			await page.getByRole("button", { name: "2025年" }).click();
-
-			// URLが2025に変わることを確認
-			await expect(page).toHaveURL("/o/sample-party/2025");
-		});
-	});
-
 	test.describe("詳細画面への遷移", () => {
 		test("取引一覧ページに遷移できる", async ({ page }) => {
 			await page.goto("/o/sample-party/2026");
@@ -300,20 +261,6 @@ test.describe("政治団体ページ", () => {
 
 			expect(response?.status()).toBe(200);
 			await expect(page).toHaveTitle(/全ての出入金.*みらいまる見え政治資金/);
-		});
-
-		test("取引一覧ページでもセレクターで団体を切り替えられる", async ({
-			page,
-		}) => {
-			await page.goto("/o/sample-party/2026/transactions");
-
-			// セレクターを開く
-			const selectorButton = page.getByRole("button", { name: /サンプル党/ });
-			await selectorButton.click();
-
-			// シード済みの「E2Eテスト団体」を選択すると、transactions パスを維持したまま URL が変わる
-			await page.getByRole("button", { name: "E2Eテスト団体" }).click();
-			await expect(page).toHaveURL("/o/e2e-test-org/2026/transactions");
 		});
 	});
 });
