@@ -123,6 +123,14 @@ public = false
 file_size_limit = "200MiB"
 allowed_mime_types = ["application/json"]
 
+# 議員の顔写真（非公開。admin が置き、webapp のサーバーが service role で読む）。
+# admin の POLITICIAN_PHOTO_BUCKET の既定値と、上限は POLITICIAN_PHOTO_MAX_BYTES（3MB）と揃える。
+# ステージング・本番のバケットは Supabase のダッシュボードで用意する（#1916）。
+[storage.buckets.politician-photos]
+public = false
+file_size_limit = "3MiB"
+allowed_mime_types = ["image/jpeg", "image/png", "image/webp"]
+
 [auth]
 enabled = true
 # The base URL of your website. Used as an allow-list for redirects and for constructing URLs used

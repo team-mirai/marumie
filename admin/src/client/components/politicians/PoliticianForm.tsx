@@ -3,8 +3,14 @@ import { useState } from "react";
 import { toast } from "sonner";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { ArrowDown, ArrowUp, Plus, Trash } from "@phosphor-icons/react/dist/ssr";
 import { Button, Card, CardContent, Input, Label, NativeSelect } from "@/client/components/ui";
-import type { Politician, PoliticianInput } from "@/shared/models/politician";
+import {
+  POLITICIAN_HOUSE_LABELS,
+  POLITICIAN_HOUSES,
+  type Politician,
+  type PoliticianInput,
+} from "@/shared/models/politician";
 import { savePolitician } from "@/server/contexts/shared/presentation/actions/manage-politician";
 
 export function PoliticianForm({
@@ -16,7 +22,31 @@ export function PoliticianForm({
 }) {
   const router = useRouter();
   const [data, setData] = useState<PoliticianInput>(
-    politician ?? { name: "", slug: "", termStart: "", politicalOrganizationId: "" },
+    politician
+      ? {
+          name: politician.name,
+          slug: politician.slug,
+          termStart: politician.termStart,
+          politicalOrganizationId: politician.politicalOrganizationId,
+          nameKana: politician.nameKana,
+          house: politician.house,
+          constituency: politician.constituency,
+          profileUrl: politician.profileUrl,
+          websiteUrl: politician.websiteUrl,
+          snsUrls: politician.snsUrls,
+        }
+      : {
+          name: "",
+          slug: "",
+          termStart: "",
+          politicalOrganizationId: "",
+          nameKana: "",
+          house: "",
+          constituency: "",
+          profileUrl: "",
+          websiteUrl: "",
+          snsUrls: [],
+        },
   );
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -101,6 +131,78 @@ export function PoliticianForm({
               政党を新規作成
             </Link>
           </div>
+          <fieldset className="space-y-5 border-t border-border-soft pt-5">
+            <legend className="text-sm font-bold">プロフィール（任意・公開サイトに表示）</legend>
+            <div className="space-y-2">
+              <Label htmlFor="nameKana">ふりがな</Label>
+              <Input
+                id="nameKana"
+                disabled={busy}
+                placeholder="みねしま ゆうや"
+                value={data.nameKana}
+                onChange={(event) => setData({ ...data, nameKana: event.target.value })}
+                className="max-w-md"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="house">院</Label>
+              <NativeSelect
+                id="house"
+                disabled={busy}
+                value={data.house}
+                onChange={(event) =>
+                  setData({ ...data, house: event.target.value as PoliticianInput["house"] })
+                }
+                className="max-w-md"
+              >
+                <option value="">未設定</option>
+                {POLITICIAN_HOUSES.map((house) => (
+                  <option key={house} value={house}>
+                    {POLITICIAN_HOUSE_LABELS[house]}
+                  </option>
+                ))}
+              </NativeSelect>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="constituency">選挙区</Label>
+              <Input
+                id="constituency"
+                disabled={busy}
+                placeholder="比例東京（東京7区）"
+                value={data.constituency}
+                onChange={(event) => setData({ ...data, constituency: event.target.value })}
+                className="max-w-md"
+              />
+            </div>
+            {(
+              [
+                {
+                  key: "profileUrl",
+                  label: "プロフィールページ（チームみらい公式サイト）の URL",
+                  placeholder: "https://team-mir.ai/member/...",
+                },
+                { key: "websiteUrl", label: "公式サイトの URL", placeholder: "https://" },
+              ] as const
+            ).map((field) => (
+              <div key={field.key} className="space-y-2">
+                <Label htmlFor={field.key}>{field.label}</Label>
+                <Input
+                  id={field.key}
+                  type="url"
+                  disabled={busy}
+                  placeholder={field.placeholder}
+                  value={data[field.key]}
+                  onChange={(event) => setData({ ...data, [field.key]: event.target.value })}
+                  className="max-w-md"
+                />
+              </div>
+            ))}
+            <SnsUrlsField
+              urls={data.snsUrls}
+              disabled={busy}
+              onChange={(snsUrls) => setData({ ...data, snsUrls })}
+            />
+          </fieldset>
           <div className="flex gap-3">
             <Button type="submit" disabled={busy}>
               {busy ? "保存中..." : politician ? "更新" : "作成"}
@@ -112,5 +214,82 @@ export function PoliticianForm({
         </form>
       </CardContent>
     </Card>
+  );
+}
+
+/** SNS の URL を表示順どおりに並べる欄。空の欄は保存時に詰める */
+function SnsUrlsField({
+  urls,
+  disabled,
+  onChange,
+}: {
+  urls: string[];
+  disabled: boolean;
+  onChange: (urls: string[]) => void;
+}) {
+  const move = (from: number, to: number) => {
+    const next = [...urls];
+    [next[from], next[to]] = [next[to], next[from]];
+    onChange(next);
+  };
+  return (
+    <div className="space-y-2">
+      <Label>SNS の URL（上から順に表示）</Label>
+      {urls.map((url, index) => (
+        // 並べ替えで入力中の欄がずれないよう、位置をキーにする（値は親が持つ）
+        <div key={index} className="flex max-w-xl items-center gap-2">
+          <Input
+            type="url"
+            aria-label={`SNS の URL（${index + 1}件目）`}
+            disabled={disabled}
+            placeholder="https://x.com/..."
+            value={url}
+            onChange={(event) =>
+              onChange(urls.map((value, i) => (i === index ? event.target.value : value)))
+            }
+          />
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            aria-label="上へ"
+            disabled={disabled || index === 0}
+            onClick={() => move(index, index - 1)}
+          >
+            <ArrowUp />
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            aria-label="下へ"
+            disabled={disabled || index === urls.length - 1}
+            onClick={() => move(index, index + 1)}
+          >
+            <ArrowDown />
+          </Button>
+          <Button
+            type="button"
+            variant="destructive"
+            size="icon"
+            aria-label="削除"
+            disabled={disabled}
+            onClick={() => onChange(urls.filter((_, i) => i !== index))}
+          >
+            <Trash />
+          </Button>
+        </div>
+      ))}
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        disabled={disabled}
+        onClick={() => onChange([...urls, ""])}
+      >
+        <Plus />
+        SNS を追加
+      </Button>
+    </div>
   );
 }

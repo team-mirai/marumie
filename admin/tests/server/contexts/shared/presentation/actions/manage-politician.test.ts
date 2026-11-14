@@ -1,7 +1,11 @@
 import type { AuthUser } from "@/server/contexts/auth/domain/models/auth-user";
 import type { UserRole } from "@/server/contexts/auth/domain/models/user-role";
 import { getCurrentUser } from "@/server/contexts/auth/presentation/loaders/load-current-user";
-import { setPoliticianResearchFundPublic } from "@/server/contexts/shared/presentation/actions/manage-politician";
+import {
+  deletePoliticianPhoto,
+  setPoliticianResearchFundPublic,
+  uploadPoliticianPhoto,
+} from "@/server/contexts/shared/presentation/actions/manage-politician";
 import { PrismaPoliticianRepository } from "@/server/contexts/shared/infrastructure/repositories/prisma-politician.repository";
 import { PrismaUserRepository } from "@/server/contexts/shared/infrastructure/repositories/prisma-user.repository";
 import { WebappCacheInvalidator } from "@/server/contexts/shared/infrastructure/services/webapp-cache-invalidator";
@@ -33,6 +37,13 @@ beforeEach(() => {
     politicalOrganizationId: "",
     politicalOrganizationName: null,
     isResearchFundPublic: false,
+    nameKana: "",
+    house: "",
+    constituency: "",
+    profileUrl: "",
+    websiteUrl: "",
+    snsUrls: [],
+    photoPath: null,
   });
   setResearchFundPublic = jest
     .spyOn(PrismaPoliticianRepository.prototype, "setResearchFundPublic")
@@ -79,5 +90,38 @@ describe("setPoliticianResearchFundPublic", () => {
 
     await expect(setPoliticianResearchFundPublic("1", true)).rejects.toThrow("認証が必要です");
     expect(setResearchFundPublic).not.toHaveBeenCalled();
+  });
+});
+
+describe("顔写真の登録・削除", () => {
+  let setPhotoPath: jest.SpyInstance;
+  beforeEach(() => {
+    setPhotoPath = jest.spyOn(PrismaPoliticianRepository.prototype, "setPhotoPath").mockResolvedValue();
+  });
+  const photoForm = () => {
+    const formData = new FormData();
+    formData.append("photo", new Blob([new Uint8Array([0xff, 0xd8, 0xff, 0xe0])]), "a.jpg");
+    return formData;
+  };
+
+  it.each([["research_fund"], ["political_fund"]] as const)(
+    "%s ユーザーは admin でなければ登録できない",
+    async (role) => {
+      (getCurrentUser as jest.Mock).mockResolvedValue(userWith([role]));
+      await expect(uploadPoliticianPhoto("1", photoForm())).rejects.toThrow(
+        "この機能を使う権限がありません",
+      );
+      await expect(deletePoliticianPhoto("1")).rejects.toThrow("この機能を使う権限がありません");
+      expect(setPhotoPath).not.toHaveBeenCalled();
+    },
+  );
+
+  it("ファイルが無ければエラーを返す", async () => {
+    (getCurrentUser as jest.Mock).mockResolvedValue(userWith(["admin"]));
+    await expect(uploadPoliticianPhoto("1", new FormData())).resolves.toEqual({
+      success: false,
+      error: "画像ファイルを選択してください",
+    });
+    expect(setPhotoPath).not.toHaveBeenCalled();
   });
 });
