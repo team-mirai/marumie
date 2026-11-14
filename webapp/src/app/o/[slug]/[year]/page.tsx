@@ -1,23 +1,18 @@
 import "server-only";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import AboutSection from "@/client/components/common/AboutSection";
-import LinkCardsSection from "@/client/components/common/LinkCardsSection";
-import AnotherPageLinkSection from "@/client/components/common/AnotherPageLinkSection";
-import ExplanationSection from "@/client/components/common/ExplanationSection";
+import SiteBottomBlock from "@/client/components/common/SiteBottomBlock";
 import TransparencySection from "@/client/components/common/TransparencySection";
+import Breadcrumbs from "@/client/components/layout/Breadcrumbs";
 import MainColumn from "@/client/components/layout/MainColumn";
 import BalanceSheetSection from "@/client/components/top-page/BalanceSheetSection";
-import CashFlowSection from "@/client/components/top-page/CashFlowSection";
 import MonthlyTrendsSection from "@/client/components/top-page/MonthlyTrendsSection";
-import ResearchFundPartySection from "@/client/components/research-fund/ResearchFundPartySection";
-import ProgressSection from "@/client/components/top-page/ProgressSection";
+import PartyHeadingSection from "@/client/components/top-page/PartyHeadingSection";
 import TransactionsSection from "@/client/components/top-page/TransactionsSection";
 import { loadTopPageData } from "@/server/contexts/public-finance/presentation/loaders/load-top-page-data";
 import { loadOrganizations } from "@/server/contexts/public-finance/presentation/loaders/load-organizations";
-import { loadResearchFundPartySummary } from "@/server/contexts/research-fund/presentation/loaders/load-research-fund-party-summary";
 import { formatUpdatedAt } from "@/client/lib/format-date";
-import { getBalanceSheetHeading } from "@/client/lib/balance-sheet-heading";
+import { getBalanceSheetAsOf } from "@/client/lib/balance-sheet-heading";
 
 export const revalidate = 300; // 5 minutes
 
@@ -70,6 +65,7 @@ export default async function OrgPage({ params }: OrgPageProps) {
 
   // 現在のslugに対応する組織を取得
   const currentOrganization = organizations.find((org) => org.slug === slug);
+  const organizationName = currentOrganization?.displayName || "未登録の政治団体";
 
   // 統合アクションで全データを取得
   const data = await loadTopPageData({
@@ -82,55 +78,42 @@ export default async function OrgPage({ params }: OrgPageProps) {
     return null;
   });
 
-  // A-6 調査研究費。調研費を「公開する」所属議員がいない政治団体では null になり、セクションごと出さない。
-  const researchFund = await loadResearchFundPartySummary({ slug, financialYear }).catch(
-    (error) => {
-      console.error("loadResearchFundPartySummary error:", error);
-      return null;
-    },
-  );
-
   const updatedAt = formatUpdatedAt(data?.transactionData?.lastUpdatedAt ?? null);
-  const balanceSheetHeading = getBalanceSheetHeading(financialYear, updatedAt);
+  const eyebrow = `${organizationName}・${financialYear}年`;
 
   return (
-    <MainColumn>
-      <CashFlowSection
-        political={data?.political ?? null}
-        friendly={data?.friendly ?? null}
-        updatedAt={updatedAt}
-        organizationName={currentOrganization?.displayName}
-      />
+    <MainColumn spacing="compact">
+      <div className="flex flex-col gap-5">
+        <Breadcrumbs current={`${organizationName}の収支`} />
+        <PartyHeadingSection
+          organizationName={organizationName}
+          slug={slug}
+          year={financialYear}
+          years={VALID_YEARS}
+          updatedAt={updatedAt}
+          political={data?.political ?? null}
+          friendly={data?.friendly ?? null}
+        />
+      </div>
       <MonthlyTrendsSection
         monthlyData={data?.monthlyData}
         updatedAt={updatedAt}
-        organizationName={currentOrganization?.displayName}
+        eyebrow={eyebrow}
       />
       <TransparencySection title="党首もこれを見て、お金をやりくりしています👀" />
       <BalanceSheetSection
         data={data?.balanceSheetData}
-        title={balanceSheetHeading.title}
-        updatedAt={balanceSheetHeading.updatedAt}
-        organizationName={currentOrganization?.displayName}
+        updatedAt={getBalanceSheetAsOf(financialYear, updatedAt)}
+        eyebrow={eyebrow}
       />
       <TransactionsSection
         transactionData={data?.transactionData ?? null}
         updatedAt={updatedAt}
         slug={slug}
         year={financialYear}
-        organizationName={currentOrganization?.displayName}
+        eyebrow={eyebrow}
       />
-      {researchFund && (
-        <ResearchFundPartySection
-          data={researchFund}
-          updatedAt={formatUpdatedAt(researchFund.asOfDate)}
-        />
-      )}
-      <AnotherPageLinkSection currentSlug={slug} year={financialYear} />
-      <ProgressSection />
-      <ExplanationSection />
-      <AboutSection />
-      <LinkCardsSection />
+      <SiteBottomBlock />
     </MainColumn>
   );
 }

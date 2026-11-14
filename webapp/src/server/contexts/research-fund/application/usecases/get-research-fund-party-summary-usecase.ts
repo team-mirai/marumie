@@ -20,7 +20,7 @@ import {
 } from "@/shared/research-fund/aggregation";
 import type { SankeyData } from "@/types/sankey";
 
-export interface GetResearchFundPartySummaryParams {
+interface GetResearchFundPartySummaryParams {
   slug: string;
   financialYear: number;
 }
