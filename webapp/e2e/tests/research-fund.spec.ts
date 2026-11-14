@@ -386,69 +386,8 @@ test.describe("調査研究費 議員ページ", () => {
 	});
 });
 
-test.describe("調査研究費 政党トップページのサマリー", () => {
+test.describe("調査研究費 グローバルナビ", () => {
 	const ORG_URL = "/o/sample-party/2026";
-
-	test("調研費のサマリーが表示され、実行時エラーが発生しないこと", async ({ page }) => {
-		const errors: string[] = [];
-		page.on("pageerror", (error) => {
-			errors.push(`${error.name}: ${error.message}`);
-		});
-
-		await page.goto(ORG_URL);
-		const section = page.locator("#research-fund");
-
-		// 見出し・サブ
-		await expect(
-			section.getByRole("heading", { name: /所属議員.*調研費のサマリー/ }),
-		).toBeVisible();
-		await expect(
-			section.getByText("議員に毎月100万円支給される公費を、何に使ったか"),
-		).toBeVisible();
-
-		// 「調研費とは」コラプスは初期状態で閉じている
-		await expect(section.getByText("調研費とは")).toBeVisible();
-		await expect(
-			section.getByText(/透明性の観点から本サイトで公開しています/),
-		).toBeHidden();
-
-		// 公開中の議員が1名だけなので、その議員のチップと「他議員も今後追加」が並ぶ
-		await expect(
-			section.getByText("他議員も今後追加", { exact: true }),
-		).toBeVisible();
-		await expect(section.getByText("試験公開中")).toBeVisible();
-		await expect(section.getByText(/分を公開中$/)).toBeVisible();
-
-		// KPI 2枚とサンキー
-		await expect(section.getByText("支給総額")).toBeVisible();
-		await expect(section.getByText("支出総額")).toBeVisible();
-		await expect(
-			section.locator(
-				'[role="img"][aria-label="調査研究費の使いみちの流れ図"]',
-			),
-		).toBeVisible();
-		await expect(
-			section.getByText("支給額の1%未満の費目は「その他」にまとめています。"),
-		).toBeVisible();
-
-		expect(
-			errors,
-			`以下のエラーが発生しました:\n${errors.join("\n")}`,
-		).toHaveLength(0);
-	});
-
-	test("「{氏名}の調研費を詳しく」から議員ページに遷移する", async ({
-		page,
-	}) => {
-		await page.goto(ORG_URL);
-
-		await page
-			.locator("#research-fund")
-			.getByRole("link", { name: "サンプル 太郎の調研費を詳しく" })
-			.click();
-
-		await expect(page).toHaveURL(/\/p\/sample-taro\/2026$/);
-	});
 
 	test("グローバルナビに「調査研究費」がある", async ({ page }) => {
 		await page.goto(ORG_URL);

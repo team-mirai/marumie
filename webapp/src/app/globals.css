@@ -100,3 +100,39 @@ table:focus-visible {
   outline: 2px solid #2aa693;
   outline-offset: 2px;
 }
+
+/*
+ * 見出しカードの面（ミストグラデーション）。
+ * 政党・政治団体・議員・トップの見出しカードで共通に使う。グラデーションの重ね方と粒子のノイズは
+ * Tailwind のユーティリティでは書き切れないので、ここにまとめる。
+ */
+.mist-surface {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  color: #0a1a17;
+  background:
+    radial-gradient(90% 120% at 6% 0%, #f7fdfa 0%, rgba(247, 253, 250, 0) 58%),
+    radial-gradient(80% 100% at 100% 10%, #c6f0df 0%, rgba(198, 240, 223, 0) 60%),
+    radial-gradient(90% 110% at 80% 115%, #5fd1b4 0%, rgba(95, 209, 180, 0) 62%),
+    linear-gradient(135deg, #d9f5ea, #a3e6cf);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.95),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.35),
+    inset 0 -1px 0 rgba(10, 90, 78, 0.12),
+    0 1px 2px rgba(10, 60, 52, 0.08),
+    0 10px 20px -12px rgba(15, 132, 114, 0.35),
+    0 28px 48px -30px rgba(15, 132, 114, 0.55);
+}
+
+.mist-surface::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  border-radius: inherit;
+  opacity: 0.32;
+  mix-blend-mode: soft-light;
+  background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .55 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+}
