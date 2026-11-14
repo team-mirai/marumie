@@ -35,6 +35,51 @@ test.describe("取引一覧ページ", () => {
 		).toHaveLength(0);
 	});
 
+	test("v8 の全件画面の見た目（パンくず・見出し・共通の下部ブロック）になること", async ({
+		page,
+	}) => {
+		await page.goto("/o/sample-party/2026/transactions");
+
+		// パンくず「トップ › サンプル党の収支 › すべての出入金」
+		const breadcrumbs = page.getByRole("navigation", { name: "パンくずリスト" });
+		await expect(breadcrumbs.getByRole("link", { name: "トップ" })).toHaveAttribute("href", "/");
+		await expect(breadcrumbs.getByRole("link", { name: "サンプル党の収支" })).toHaveAttribute(
+			"href",
+			"/o/sample-party/2026",
+		);
+		await expect(breadcrumbs.locator('[aria-current="page"]')).toHaveText("すべての出入金");
+
+		// 見出し「サンプル党・2026年｜すべての出入金」と更新日
+		const section = page.locator("#transactions");
+		await expect(section.getByText("サンプル党・2026年")).toBeVisible();
+		await expect(
+			section.getByRole("heading", { level: 1, name: "すべての出入金" }),
+		).toBeVisible();
+		await expect(section.getByText(/^\d{4}\.\d{1,2}\.\d{1,2}更新$/).first()).toBeVisible();
+
+		// 件数と CSV のダウンロード
+		await expect(section.getByText(/\d+件中 \d+-\d+件を表示/).first()).toBeVisible();
+		await expect(section.getByText("出入金履歴をCSVでダウンロード").first()).toBeVisible();
+
+		// 共通の下部ブロック
+		await expect(
+			page.getByRole("heading", { name: /少しずつ進んでいますがまだまだです/ }),
+		).toBeVisible();
+		await expect(
+			page
+				.getByRole("navigation", { name: "このサイトについて" })
+				.getByRole("link", { name: /まる見え政治資金とは？/ }),
+		).toHaveAttribute("href", "/about");
+		await expect(
+			page.locator("#explanation").getByRole("heading", { name: "データの出典" }),
+		).toBeVisible();
+
+		// 外したもの：透明性の帯、他団体へのリンク、進捗、党の紹介、寄附・党員の応援カード
+		await expect(page.getByText("党内の機密データの流出事故ではありません☺️")).toHaveCount(0);
+		await expect(page.locator("main #about")).toHaveCount(0);
+		await expect(page.locator("main").getByText("寄附で応援する")).toHaveCount(0);
+	});
+
 	test("デスクトップの列見出しが現在のソート状態を公開すること", async ({ page }) => {
 		await page.goto("/o/sample-party/2026/transactions");
 
