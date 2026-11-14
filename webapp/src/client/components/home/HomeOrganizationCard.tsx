@@ -73,6 +73,7 @@ export default function HomeOrganizationCard({
       }
     >
       <AmountSummary
+        size={tone === "group" ? "compact" : "default"}
         items={[
           { label: "収入総額", color: "#2AA693", amount: summary?.income ?? null },
           { label: "支出総額", color: "#DC2626", amount: summary?.expense ?? null },
