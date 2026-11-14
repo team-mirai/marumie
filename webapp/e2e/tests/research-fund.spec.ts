@@ -225,6 +225,41 @@ test.describe("調査研究費 議員ページ", () => {
 		await expect(page.getByRole("button", { name: "領収書を見る" })).toHaveCount(0);
 	});
 
+	test("全件ページが v8 の全件画面の見た目（パンくず・見出し・共通の下部ブロック）になる", async ({
+		page,
+	}) => {
+		await page.goto(`${PAGE_URL}/transactions`);
+
+		// パンくず「トップ › サンプル 太郎の調研費 › すべての出入金」
+		const breadcrumbs = page.getByRole("navigation", { name: "パンくずリスト" });
+		await expect(breadcrumbs.getByRole("link", { name: "トップ" })).toHaveAttribute("href", "/");
+		await expect(
+			breadcrumbs.getByRole("link", { name: "サンプル 太郎の調研費" }),
+		).toHaveAttribute("href", PAGE_URL);
+		await expect(breadcrumbs.locator('[aria-current="page"]')).toHaveText("すべての出入金");
+
+		// 見出し「サンプル 太郎の調研費・2026年｜すべての出入金」と更新日
+		const section = page.locator("#transactions");
+		await expect(section.getByText("サンプル 太郎の調研費・2026年")).toBeVisible();
+		await expect(
+			section.getByRole("heading", { level: 1, name: "すべての出入金" }),
+		).toBeVisible();
+		await expect(section.getByText(/^\d{4}\.\d{1,2}\.\d{1,2}更新$/).first()).toBeVisible();
+
+		// 共通の下部ブロック（データについては議員ページ用の文言）
+		await expect(
+			page.getByRole("heading", { name: /少しずつ進んでいますがまだまだです/ }),
+		).toBeVisible();
+		await expect(page.getByRole("link", { name: /まる見え政治資金とは？/ })).toBeVisible();
+		await expect(
+			page.locator("#explanation").getByRole("heading", { name: "調研費のデータについて" }),
+		).toBeVisible();
+
+		// 外したもの：党の紹介、寄附・党員の応援カード
+		await expect(page.locator("main #about")).toHaveCount(0);
+		await expect(page.locator("main").getByText("寄附で応援する")).toHaveCount(0);
+	});
+
 	test("全件ページの SP 幅でも、タブで並び替えてカテゴリーで絞り込める", async ({ page }) => {
 		await page.setViewportSize({ width: 390, height: 844 });
 		await page.goto(`${PAGE_URL}/transactions`);
