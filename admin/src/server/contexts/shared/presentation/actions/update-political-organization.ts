@@ -5,12 +5,15 @@ import { prisma } from "@/server/contexts/shared/infrastructure/prisma";
 import { PrismaPoliticalOrganizationRepository } from "@/server/contexts/shared/infrastructure/repositories/prisma-political-organization.repository";
 import { UpdatePoliticalOrganizationUsecase } from "@/server/contexts/shared/application/usecases/update-political-organization-usecase";
 import { requireRole } from "@/server/contexts/auth/presentation/loaders/require-role";
+import { PoliticalOrganizationInputError } from "@/server/contexts/shared/domain/errors/political-organization-input-error";
 
 export interface UpdatePoliticalOrganizationData {
   displayName: string;
   orgName?: string;
   slug: string;
   description?: string;
+  websiteUrl?: string;
+  snsUrls?: string[];
 }
 
 export async function updatePoliticalOrganization(
@@ -31,18 +34,22 @@ export async function updatePoliticalOrganization(
     await usecase.execute(BigInt(organizationId), data);
 
     revalidatePath("/political-organizations");
-    return { success: true };
+    return { success: true as const };
   } catch (error) {
     console.error("Error updating political organization:", error);
-
-    if (error instanceof Error && error.message.includes("Record to update not found")) {
-      throw new Error("政治団体が見つかりません");
-    }
-
-    if (error instanceof Error && error.message.includes("Unique constraint")) {
-      throw new Error("このスラッグは既に使用されています");
-    }
-
-    throw new Error(error instanceof Error ? error.message : "政治団体の更新に失敗しました");
+    // 入力の誤りを画面に出せるよう、例外ではなく結果で返す（本番では例外のメッセージが伏せられる）
+    return { success: false as const, error: toErrorMessage(error) };
   }
+}
+
+function toErrorMessage(error: unknown) {
+  if (error instanceof Error && error.message.includes("Record to update not found")) {
+    return "政治団体が見つかりません";
+  }
+  if (error instanceof Error && error.message.includes("Unique constraint")) {
+    return "このスラッグは既に使用されています";
+  }
+  // 内部のメッセージ（DB のエラーなど）は画面に出さない
+  if (error instanceof PoliticalOrganizationInputError) return error.message;
+  return "政治団体の更新に失敗しました";
 }

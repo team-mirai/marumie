@@ -79,6 +79,10 @@ model PoliticalOrganization {
   updatedAt        DateTime          @updatedAt @map("updated_at")
   slug             String            @unique @db.VarChar(255)
   orgName          String?           @map("org_name") @db.VarChar(255)
+  // 公開サイトの政治団体カード・政治団体ページの見出しに出す（#1917）。admin から手で入力する
+  websiteUrl       String?           @map("website_url") // 公式サイト
+  snsUrls          String[]          @default([]) @map("sns_urls") // SNS の URL（表示順どおり）
+  photoPath        String?           @map("photo_path") // 代表者の顔写真の Storage 上のキー
 
   balanceSnapshots BalanceSnapshot[]
   reportProfiles   OrganizationReportProfile[]

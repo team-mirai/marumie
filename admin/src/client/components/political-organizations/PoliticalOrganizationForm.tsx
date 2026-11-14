@@ -5,24 +5,34 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button, Input, Card, CardContent, Label, Textarea } from "@/client/components/ui";
+import { SnsUrlsField } from "@/client/components/common/SnsUrlsField";
 
 interface PoliticalOrganizationFormData {
   displayName: string;
   orgName: string;
   slug: string;
   description: string;
+  /** 公式サイト・SNS（#1917）。withLinks のときだけ送る */
+  websiteUrl: string;
+  snsUrls: string[];
 }
 
 interface PoliticalOrganizationFormProps {
   initialData?: Partial<PoliticalOrganizationFormData>;
-  onSubmit: (data: PoliticalOrganizationFormData) => Promise<{ success: boolean }>;
+  onSubmit: (
+    data: Partial<PoliticalOrganizationFormData> &
+      Pick<PoliticalOrganizationFormData, "displayName" | "slug">,
+  ) => Promise<{ success: boolean; error?: string }>;
   submitButtonText: string;
+  /** 公式サイト・SNS の欄を出す（編集画面だけ） */
+  withLinks?: boolean;
 }
 
 export function PoliticalOrganizationForm({
   initialData = { displayName: "", orgName: "", slug: "", description: "" },
   onSubmit,
   submitButtonText,
+  withLinks = false,
 }: PoliticalOrganizationFormProps) {
   const router = useRouter();
   const [formData, setFormData] = useState<PoliticalOrganizationFormData>({
@@ -30,6 +40,8 @@ export function PoliticalOrganizationForm({
     orgName: initialData.orgName || "",
     slug: initialData.slug || "",
     description: initialData.description || "",
+    websiteUrl: initialData.websiteUrl || "",
+    snsUrls: initialData.snsUrls ?? [],
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -41,9 +53,12 @@ export function PoliticalOrganizationForm({
     try {
       setIsLoading(true);
       setError(null);
-      const result = await onSubmit(formData);
+      const { websiteUrl, snsUrls, ...basics } = formData;
+      const result = await onSubmit(withLinks ? { ...basics, websiteUrl, snsUrls } : basics);
       if (result.success) {
         router.push("/political-organizations");
+      } else if (result.error) {
+        setError(result.error);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "更新に失敗しました");
@@ -64,7 +79,10 @@ export function PoliticalOrganizationForm({
     <Card>
       <CardContent>
         {error && (
-          <div className="mb-4 rounded-lg border border-destructive bg-destructive-hover p-3 text-sm text-destructive">
+          <div
+            role="alert"
+            className="mb-4 rounded-lg border border-destructive bg-destructive-hover p-3 text-sm text-destructive"
+          >
             {error}
           </div>
         )}
@@ -130,6 +148,32 @@ export function PoliticalOrganizationForm({
               disabled={isLoading}
             />
           </div>
+
+          {withLinks && (
+            <fieldset className="space-y-5 border-t border-border-soft pt-5">
+              <legend className="text-sm font-bold">
+                公式サイト・SNS（任意・公開サイトに表示）
+              </legend>
+              <div className="space-y-2">
+                <Label htmlFor="websiteUrl">公式サイトの URL</Label>
+                <Input
+                  type="url"
+                  id="websiteUrl"
+                  name="websiteUrl"
+                  value={formData.websiteUrl}
+                  onChange={handleInputChange}
+                  className="max-w-md"
+                  placeholder="https://"
+                  disabled={isLoading}
+                />
+              </div>
+              <SnsUrlsField
+                urls={formData.snsUrls}
+                disabled={isLoading}
+                onChange={(snsUrls) => setFormData((prev) => ({ ...prev, snsUrls }))}
+              />
+            </fieldset>
+          )}
 
           <div className="flex gap-3">
             <Button
