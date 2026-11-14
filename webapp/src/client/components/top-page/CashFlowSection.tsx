@@ -1,6 +1,6 @@
 "use client";
 import "client-only";
-import { type KeyboardEvent, useRef, useState } from "react";
+import { type ComponentProps, type KeyboardEvent, useRef, useState } from "react";
 import SankeyChart from "@/client/components/top-page/features/charts/SankeyChart";
 import PinchZoom from "@/client/components/ui/PinchZoom";
 
@@ -9,6 +9,15 @@ import type { SankeyData } from "@/types/sankey";
 interface CashFlowSectionProps {
   political?: SankeyData | null;
   friendly?: SankeyData | null;
+  /** ページ内リンクの飛び先。外側のカードが飛び先を持つときは渡さない */
+  id?: string;
+  /** サンキー図の読み上げ用のラベル・説明と見せ方。政治資金以外の図で差し替える */
+  chart?: Pick<
+    ComponentProps<typeof SankeyChart>,
+    "ariaLabel" | "ariaDescription" | "compactEdgeLabels"
+  >;
+  /** 図のデータが無いときの文言 */
+  emptyMessage?: string;
 }
 
 const TABS = [
@@ -22,10 +31,16 @@ const PANEL_ID = "cash-flow-panel";
 const tabId = (key: TabKey) => `cash-flow-tab-${key}`;
 
 /**
- * 見出しカードの中の収支の流れ。区分（詳細の区分／法律上の区分）のタブとサンキー図。
+ * 収支の流れの区分（詳細の区分／法律上の区分）のタブとサンキー図。政党ページでは見出しカードの中、議員ページでは収支の流れのカードの中に置く。
  * SP では横スクロールさせず全体を表示し、ピンチで拡大できるようにする。
  */
-export default function CashFlowSection({ political, friendly }: CashFlowSectionProps) {
+export default function CashFlowSection({
+  political,
+  friendly,
+  id,
+  chart,
+  emptyMessage = "サンキー図データが取得できませんでした",
+}: CashFlowSectionProps) {
   const [activeTab, setActiveTab] = useState<TabKey>("friendly");
   const tabRefs = useRef<Partial<Record<TabKey, HTMLButtonElement | null>>>({});
 
@@ -43,7 +58,7 @@ export default function CashFlowSection({ political, friendly }: CashFlowSection
   };
 
   return (
-    <div id="cash-flow" className="scroll-mt-24 pt-2 -mt-4">
+    <div id={id} className={id ? "scroll-mt-24 pt-2 -mt-4" : undefined}>
       <div
         role="tablist"
         aria-label="区分の切り替え"
@@ -81,14 +96,14 @@ export default function CashFlowSection({ political, friendly }: CashFlowSection
         {currentData ? (
           <>
             <PinchZoom>
-              <SankeyChart data={currentData} />
+              <SankeyChart data={currentData} {...chart} />
             </PinchZoom>
             <p className="mt-2 text-right text-[12px] font-semibold text-[#6B7280] md:hidden">
               ピンチで拡大できます
             </p>
           </>
         ) : (
-          <div className="text-gray-500">サンキー図データが取得できませんでした</div>
+          <div className="text-gray-500">{emptyMessage}</div>
         )}
       </div>
     </div>

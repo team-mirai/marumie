@@ -2,21 +2,19 @@ jest.mock("@/server/contexts/research-fund/presentation/loaders/load-research-fu
   loadResearchFundPage: jest.fn(),
 }));
 // metadata だけを確かめるので、重い UI ライブラリを読み込む子コンポーネントは差し替える。
-jest.mock("@/client/components/common/AboutSection", () => ({ __esModule: true, default: () => null }));
-jest.mock("@/client/components/common/LinkCardsSection", () => ({ __esModule: true, default: () => null }));
 jest.mock("@/client/components/common/GradientMessageCard", () => ({ __esModule: true, default: () => null }));
 jest.mock("@/client/components/layout/MainColumn", () => ({ __esModule: true, default: () => null }));
-jest.mock("@/client/components/research-fund/ResearchFundAboutSection", () => ({ __esModule: true, default: () => null }));
+jest.mock("@/client/components/layout/Breadcrumbs", () => ({ __esModule: true, default: () => null }));
+jest.mock("@/client/components/research-fund/ResearchFundBottomBlock", () => ({ __esModule: true, default: () => null }));
 jest.mock("@/client/components/research-fund/ResearchFundExpensesSection", () => ({ __esModule: true, default: () => null }));
 jest.mock("@/client/components/research-fund/ResearchFundFlowSection", () => ({ __esModule: true, default: () => null }));
 jest.mock("@/client/components/research-fund/ResearchFundHighlightsSection", () => ({ __esModule: true, default: () => null }));
 jest.mock("@/client/components/research-fund/ResearchFundMonthlySection", () => ({ __esModule: true, default: () => null }));
-jest.mock("@/client/components/research-fund/ResearchFundPartyLinkSection", () => ({ __esModule: true, default: () => null }));
-jest.mock("@/client/components/research-fund/ResearchFundTrialNoticeSection", () => ({ __esModule: true, default: () => null }));
 jest.mock("@/client/components/research-fund/ResearchFundCrossLink", () => ({
   ResearchFundCrossLinkProvider: () => null,
 }));
 
+import type { ReactElement, ReactNode } from "react";
 import PoliticianPage, { generateMetadata } from "@/app/p/[slug]/[year]/page";
 import { loadResearchFundPage } from "@/server/contexts/research-fund/presentation/loaders/load-research-fund-page";
 import { deriveResearchFundPreviewToken } from "@/shared/research-fund/preview-token";
@@ -92,5 +90,35 @@ describe("議員ページ", () => {
     await expect(PoliticianPage({ params: paramsOf(`sample-taro~${TOKEN}`) })).rejects.toThrow(
       "NEXT_HTTP_ERROR_FALLBACK;404",
     );
+  });
+
+  it.each([
+    ["公開する議員", "sample-taro", true],
+    ["プレビュー URL", `sample-taro~${TOKEN}`, false],
+  ])("%sでも、パンくずと v8 の本文（下部ブロックは議員ページ用）を同じ組み立てで出す", async (_, slug, isPublic) => {
+    loadResearchFundPageMock.mockResolvedValue({
+      politician,
+      isPublic,
+      financialYear: 2026,
+      asOfDate: null,
+      policyComment: null,
+      groups: [],
+      dataNote: "仕訳が完了した支出を掲載しています。",
+    });
+
+    const page = (await PoliticianPage({ params: paramsOf(slug) })) as ReactElement<{
+      spacing: string;
+      children: ReactNode[];
+    }>;
+    const [heading, , bottom] = page.props.children as ReactElement<{
+      children?: ReactElement<Record<string, unknown>>[];
+      dataNote?: string;
+    }>[];
+    const [breadcrumbs, flow] = heading.props.children ?? [];
+
+    expect(page.props.spacing).toBe("compact");
+    expect(breadcrumbs.props.current).toBe("サンプル太郎の調研費");
+    expect(flow.props.eyebrow).toBe("サンプル太郎の調研費・2026年");
+    expect(bottom.props.dataNote).toBe("仕訳が完了した支出を掲載しています。");
   });
 });

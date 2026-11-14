@@ -12,6 +12,7 @@ import InteractiveRect from "./InteractiveRect";
 import {
   useMobileDetection,
   useNodeColors,
+  usePrefersReducedMotion,
   useLinkColors,
   useSankeySorting,
 } from "./useSankeyHelpers";
@@ -564,6 +565,7 @@ export default function SankeyChart({
   compactEdgeLabels = false,
 }: SankeyChartProps) {
   const isMobile = useMobileDetection();
+  const prefersReducedMotion = usePrefersReducedMotion();
   const { getNodeColor } = useNodeColors();
 
   // 空データの場合はダミーデータを渡す
@@ -663,6 +665,7 @@ export default function SankeyChart({
           enableLinkGradient={true}
           enableLabels={false}
           isInteractive={false}
+          animate={!prefersReducedMotion}
           layers={["links", CustomNodesLayer, CustomLabelsLayer]}
           theme={{
             labels: {
