@@ -239,6 +239,113 @@ test.describe("政治団体ページ", () => {
 		});
 	});
 
+	test.describe("政治団体（政党以外）のページ", () => {
+		// シードの e2e-test-org は政党以外の政治団体。取引はすべて 2025 年度にあり、公式サイトと SNS が登録されている
+		test.beforeEach(async ({ page }) => {
+			await page.goto("/o/e2e-test-org/2025");
+		});
+
+		test("パンくずにトップと今のページが表示される", async ({ page }) => {
+			const breadcrumbs = page.getByRole("navigation", { name: "パンくずリスト" });
+
+			await expect(breadcrumbs.getByRole("link", { name: "トップ" })).toHaveAttribute(
+				"href",
+				"/",
+			);
+			await expect(breadcrumbs.getByText("E2Eテスト団体の収支")).toHaveAttribute(
+				"aria-current",
+				"page",
+			);
+		});
+
+		test("PC では見出しカードに団体名・年・公式サイトと SNS（別タブ）が出る", async ({ page }) => {
+			const heading = page.getByRole("region", { name: "政治団体情報" });
+
+			await expect(heading).toBeVisible();
+			await expect(heading).toContainText("E2Eテスト団体");
+			await expect(heading).toContainText("E2Eテスト団体・2025年");
+
+			const site = heading.getByRole("link", { name: "E2Eテスト団体の公式サイト（別タブで開きます）" });
+			await expect(site).toHaveAttribute("href", "https://example.com/");
+			await expect(site).toHaveAttribute("target", "_blank");
+			const x = heading.getByRole("link", { name: "E2Eテスト団体のX（別タブで開きます）" });
+			await expect(x).toHaveAttribute("href", "https://x.com/example");
+			await expect(x).toHaveAttribute("target", "_blank");
+			await expect(
+				heading.getByRole("link", { name: "E2Eテスト団体のYouTube（別タブで開きます）" }),
+			).toHaveAttribute("href", "https://www.youtube.com/@example");
+		});
+
+		test("見出しカードの年の切り替えで年度が切り替わる", async ({ page }) => {
+			const years = page
+				.getByRole("region", { name: "政治団体情報" })
+				.getByRole("navigation", { name: "表示する年" });
+
+			await expect(years.getByRole("link", { name: "2025" })).toHaveAttribute(
+				"aria-current",
+				"page",
+			);
+			await years.getByRole("link", { name: "2026" }).click();
+
+			await expect(page).toHaveURL("/o/e2e-test-org/2026");
+			await expect(page.getByRole("region", { name: "政治団体情報" })).toContainText(
+				"E2Eテスト団体・2026年",
+			);
+		});
+
+		test("収支の流れに3つの金額と区分タブつきの図が出る", async ({ page }) => {
+			const cashFlow = page.locator("#cash-flow");
+
+			await expect(cashFlow).toContainText("E2Eテスト団体・2025年");
+			await expect(
+				cashFlow.getByRole("heading", { level: 1, name: "収支の流れ", exact: true }),
+			).toBeVisible();
+			// 金額は政党ページと同じ集計（サンキー図の「(仕訳中)」も支出に含める）
+			await expect(cashFlow).toContainText(/収入総額\s*5万円/);
+			await expect(cashFlow).toContainText(/支出総額\s*5万円/);
+			await expect(cashFlow).toContainText(/収支・現金残高\s*0万円/);
+			await cashFlow.getByRole("tab", { name: "法律上の区分" }).click();
+			await expect(cashFlow.getByRole("tab", { name: "法律上の区分" })).toHaveAttribute(
+				"aria-selected",
+				"true",
+			);
+			await expect(
+				cashFlow.locator('[role="img"][aria-label="政治資金の収支フロー図"]'),
+			).toBeVisible();
+		});
+
+		test("セクションがデザインどおりの順で並び、政党ページだけの帯は出ない", async ({ page }) => {
+			const order = await page.evaluate(() => {
+				const ids = ["cash-flow", "monthly-trends", "balance-sheet", "transactions", "explanation"];
+				return ids
+					.map((id) => ({ id, top: document.getElementById(id)?.getBoundingClientRect().top }))
+					.sort((a, b) => (a.top ?? 0) - (b.top ?? 0))
+					.map(({ id }) => id);
+			});
+			expect(order).toEqual([
+				"cash-flow",
+				"monthly-trends",
+				"balance-sheet",
+				"transactions",
+				"explanation",
+			]);
+			await expect(
+				page.getByRole("heading", { name: "党首もこれを見て、お金をやりくりしています👀" }),
+			).toHaveCount(0);
+			await expect(page.getByRole("region", { name: "政党情報" })).toHaveCount(0);
+			await expect(
+				page.locator("#transactions").locator('table[aria-label="政治資金取引一覧表"] tbody tr'),
+			).toHaveCount(2);
+		});
+
+		test("SP では見出しカードを出さない", async ({ page }) => {
+			await page.setViewportSize({ width: 390, height: 844 });
+
+			await expect(page.getByRole("region", { name: "政治団体情報" })).toBeHidden();
+			await expect(page.locator("#cash-flow").getByText("ピンチで拡大できます")).toBeVisible();
+		});
+	});
+
 	test.describe("政治団体・年度セレクター", () => {
 		test("セレクターをクリックするとシートが開く", async ({ page }) => {
 			await page.goto("/o/sample-party/2026");
