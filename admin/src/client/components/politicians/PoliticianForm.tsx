@@ -270,7 +270,7 @@ function SnsUrlsField({
           </Button>
           <Button
             type="button"
-            variant="outline"
+            variant="destructive"
             size="icon"
             aria-label="削除"
             disabled={disabled}
