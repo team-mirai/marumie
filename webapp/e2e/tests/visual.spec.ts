@@ -144,6 +144,17 @@ test.describe("主要画面の見た目", () => {
     await expectPageScreenshot(page, "organization.png");
   });
 
+  test("政治団体（政党以外）のページ", async ({ page }) => {
+    await page.goto("/o/e2e-test-org/2025");
+
+    await expect(
+      page.locator('#cash-flow [role="img"][aria-label="政治資金の収支フロー図"]'),
+    ).toBeVisible();
+    await expect(page.locator("#monthly-trends svg").first()).toBeVisible();
+
+    await expectPageScreenshot(page, "political-organization.png");
+  });
+
   test("取引一覧ページ", async ({ page }) => {
     await page.goto("/o/sample-party/2025/transactions");
 

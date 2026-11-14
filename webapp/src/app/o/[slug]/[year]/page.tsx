@@ -7,17 +7,25 @@ import Breadcrumbs from "@/client/components/layout/Breadcrumbs";
 import MainColumn from "@/client/components/layout/MainColumn";
 import BalanceSheetSection from "@/client/components/top-page/BalanceSheetSection";
 import MonthlyTrendsSection from "@/client/components/top-page/MonthlyTrendsSection";
+import OrganizationCashFlowSection from "@/client/components/top-page/OrganizationCashFlowSection";
+import OrganizationHeadingSection from "@/client/components/top-page/OrganizationHeadingSection";
 import PartyHeadingSection from "@/client/components/top-page/PartyHeadingSection";
 import TransactionsSection from "@/client/components/top-page/TransactionsSection";
 import { loadTopPageData } from "@/server/contexts/public-finance/presentation/loaders/load-top-page-data";
 import { loadOrganizations } from "@/server/contexts/public-finance/presentation/loaders/load-organizations";
+import { loadOrganizationProfile } from "@/server/contexts/public-finance/presentation/loaders/load-organization-profile";
 import { formatUpdatedAt } from "@/client/lib/format-date";
 import { getBalanceSheetAsOf } from "@/client/lib/balance-sheet-heading";
+import { buildProfileLinks } from "@/client/lib/profile-links";
 
 export const revalidate = 300; // 5 minutes
 
 const VALID_YEARS = [2025, 2026] as const;
 const DEFAULT_YEAR = 2026;
+
+// 政党ページとして見せる団体。ほかは政治団体ページ（代表者の写真・SNS の見出し）にする。
+// シードの sample-party は、E2E で政党ページを確かめるために政党として扱う
+const PARTY_SLUGS: readonly string[] = ["team-mirai", "sample-party"];
 
 interface OrgPageProps {
   params: Promise<{
@@ -80,6 +88,68 @@ export default async function OrgPage({ params }: OrgPageProps) {
 
   const updatedAt = formatUpdatedAt(data?.transactionData?.lastUpdatedAt ?? null);
   const eyebrow = `${organizationName}・${financialYear}年`;
+  const years = VALID_YEARS.map((y) => ({ year: y, href: `/o/${slug}/${y}` }));
+  const isParty = PARTY_SLUGS.includes(slug);
+
+  const profile = isParty
+    ? null
+    : await loadOrganizationProfile(slug).catch((error) => {
+        console.error("loadOrganizationProfile error:", error);
+        return null;
+      });
+  const photoVersion = profile?.photoVersion;
+
+  const latterSections = (
+    <>
+      <BalanceSheetSection
+        data={data?.balanceSheetData}
+        updatedAt={getBalanceSheetAsOf(financialYear, updatedAt)}
+        eyebrow={eyebrow}
+      />
+      <TransactionsSection
+        transactionData={data?.transactionData ?? null}
+        updatedAt={updatedAt}
+        slug={slug}
+        year={financialYear}
+        eyebrow={eyebrow}
+      />
+      <SiteBottomBlock />
+    </>
+  );
+
+  if (!isParty) {
+    return (
+      <MainColumn spacing="compact">
+        <div className="flex flex-col gap-5">
+          <Breadcrumbs current={`${organizationName}の収支`} />
+          <OrganizationHeadingSection
+            organizationName={organizationName}
+            subtitle={`${currentOrganization?.orgName || organizationName}・${financialYear}年`}
+            photoUrl={
+              photoVersion
+                ? `/api/organizations/${encodeURIComponent(slug)}/photo?v=${encodeURIComponent(photoVersion)}`
+                : null
+            }
+            links={buildProfileLinks(profile?.websiteUrl ?? null, profile?.snsUrls ?? [])}
+            years={years}
+            currentYear={financialYear}
+          />
+        </div>
+        <OrganizationCashFlowSection
+          eyebrow={eyebrow}
+          updatedAt={updatedAt}
+          political={data?.political ?? null}
+          friendly={data?.friendly ?? null}
+        />
+        <MonthlyTrendsSection
+          monthlyData={data?.monthlyData}
+          updatedAt={updatedAt}
+          eyebrow={eyebrow}
+        />
+        {latterSections}
+      </MainColumn>
+    );
+  }
 
   return (
     <MainColumn spacing="compact">
@@ -101,19 +171,7 @@ export default async function OrgPage({ params }: OrgPageProps) {
         eyebrow={eyebrow}
       />
       <TransparencySection title="党首もこれを見て、お金をやりくりしています👀" />
-      <BalanceSheetSection
-        data={data?.balanceSheetData}
-        updatedAt={getBalanceSheetAsOf(financialYear, updatedAt)}
-        eyebrow={eyebrow}
-      />
-      <TransactionsSection
-        transactionData={data?.transactionData ?? null}
-        updatedAt={updatedAt}
-        slug={slug}
-        year={financialYear}
-        eyebrow={eyebrow}
-      />
-      <SiteBottomBlock />
+      {latterSections}
     </MainColumn>
   );
 }
