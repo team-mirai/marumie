@@ -4,6 +4,7 @@ import "client-only";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { toast } from "sonner";
 import { Button, Input, Card, CardContent, Label, Textarea } from "@/client/components/ui";
 import { SnsUrlsField } from "@/client/components/common/SnsUrlsField";
 
@@ -22,7 +23,7 @@ interface PoliticalOrganizationFormProps {
   onSubmit: (
     data: Partial<PoliticalOrganizationFormData> &
       Pick<PoliticalOrganizationFormData, "displayName" | "slug">,
-  ) => Promise<{ success: boolean; error?: string }>;
+  ) => Promise<{ success: boolean; error?: string; cacheWarning?: string | null }>;
   submitButtonText: string;
   /** 公式サイト・SNS の欄を出す（編集画面だけ） */
   withLinks?: boolean;
@@ -56,6 +57,8 @@ export function PoliticalOrganizationForm({
       const { websiteUrl, snsUrls, ...basics } = formData;
       const result = await onSubmit(withLinks ? { ...basics, websiteUrl, snsUrls } : basics);
       if (result.success) {
+        if (result.cacheWarning)
+          toast.warning(`保存しましたが、まる見えの更新に失敗しました: ${result.cacheWarning}`);
         router.push("/political-organizations");
       } else if (result.error) {
         setError(result.error);

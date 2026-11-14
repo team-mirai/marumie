@@ -1,5 +1,5 @@
 import "server-only";
-import { invalidateWebappCache } from "@/server/contexts/research-fund/application/services/invalidate-webapp-cache";
+import { invalidateWebappCache } from "@/server/contexts/shared/application/services/invalidate-webapp-cache";
 import { assertValidIds } from "@/server/contexts/research-fund/domain/models/expenditure-group";
 import type { ExpenditureGroupRepository } from "@/server/contexts/research-fund/domain/repositories/expenditure-group-repository.interface";
 import type { ICacheInvalidator } from "@/server/contexts/shared/domain/services/cache-invalidator.interface";

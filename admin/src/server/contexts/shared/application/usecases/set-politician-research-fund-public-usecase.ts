@@ -2,6 +2,7 @@ import "server-only";
 import { Politician } from "@/shared/models/politician";
 import type { IPoliticianRepository } from "@/server/contexts/shared/domain/repositories/politician-repository.interface";
 import type { ICacheInvalidator } from "@/server/contexts/shared/domain/services/cache-invalidator.interface";
+import { invalidateWebappCache } from "@/server/contexts/shared/application/services/invalidate-webapp-cache";
 
 /**
  * 議員ごとに調研費を「公開する／公開しない」を切り替える。
@@ -19,17 +20,6 @@ export class SetPoliticianResearchFundPublicUsecase {
     if (!Politician.isValidId(id) || !(await this.repository.findById(id)))
       throw new Error("議員が見つかりません");
     await this.repository.setResearchFundPublic(id, isPublic);
-    return { cacheWarning: await this.invalidateWebappCache() };
-  }
-
-  private async invalidateWebappCache(): Promise<string | null> {
-    try {
-      await this.cacheInvalidator.invalidateWebappCache();
-      return null;
-    } catch (error) {
-      return error instanceof Error
-        ? error.message
-        : "ウェブアプリのキャッシュを更新できませんでした";
-    }
+    return { cacheWarning: await invalidateWebappCache(this.cacheInvalidator) };
   }
 }
