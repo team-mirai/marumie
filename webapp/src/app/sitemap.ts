@@ -24,7 +24,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   // リダイレクトなしで表示されるページだけを載せる。
   // `/`・`/o/[slug]`・`/o/[slug]/transactions` は年度つきの URL へ飛ばすだけなので載せない。
-  const sitemap: MetadataRoute.Sitemap = [];
+  const sitemap: MetadataRoute.Sitemap = [
+    {
+      url: `${baseUrl}/about`,
+      changeFrequency: "monthly",
+      priority: 0.5,
+    },
+  ];
 
   // 各組織の年度ごとのページを追加
   organizations.forEach((org) => {
