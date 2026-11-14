@@ -18,6 +18,25 @@ describe("detectSnsKind", () => {
   it("種類が分からない URL は null", () => {
     expect(detectSnsKind("https://team-mir.ai/")).toBeNull();
   });
+
+  it.each([
+    ["https://www.youtube.com/@instagram", "YouTube"],
+    ["https://x.com/search?q=facebook", "X"],
+  ])("パスやクエリに別のサービス名があってもホスト名で判定する（%s は %s）", (url, kind) => {
+    expect(detectSnsKind(url)).toBe(kind);
+  });
+
+  it.each([
+    "https://blog.example.com/x.com",
+    "https://linux.com/",
+    "https://youtube.example.com/",
+  ])("ホスト名がサービスのドメインでなければ null（%s）", (url) => {
+    expect(detectSnsKind(url)).toBeNull();
+  });
+
+  it("URL として解析できなければ null", () => {
+    expect(detectSnsKind("x.com/foo")).toBeNull();
+  });
 });
 
 describe("buildProfileLinks", () => {

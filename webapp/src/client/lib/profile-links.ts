@@ -14,20 +14,31 @@ export type ProfileLink =
   | { type: "site"; url: string; label: string }
   | { type: "sns"; url: string; label: string; kind: SnsKind };
 
-const SNS_PATTERNS: [RegExp, SnsKind][] = [
-  [/x\.com/, "X"],
-  [/instagram/, "Instagram"],
-  [/tiktok/, "TikTok"],
-  [/youtube/, "YouTube"],
-  [/threads\./, "Threads"],
-  [/note\.com/, "note"],
-  [/spotify/, "Spotify"],
-  [/line\.me/, "LINE"],
-  [/facebook/, "Facebook"],
+/** サービスのドメイン。URL のホスト名がこれと一致するか、そのサブドメインなら該当する SNS とみなす */
+const SNS_DOMAINS: [string[], SnsKind][] = [
+  [["x.com"], "X"],
+  [["instagram.com"], "Instagram"],
+  [["tiktok.com"], "TikTok"],
+  [["youtube.com"], "YouTube"],
+  [["threads.com", "threads.net"], "Threads"],
+  [["note.com"], "note"],
+  [["spotify.com"], "Spotify"],
+  [["line.me"], "LINE"],
+  [["facebook.com"], "Facebook"],
 ];
 
 export function detectSnsKind(url: string): SnsKind | null {
-  return SNS_PATTERNS.find(([pattern]) => pattern.test(url))?.[1] ?? null;
+  let hostname: string;
+  try {
+    hostname = new URL(url).hostname.toLowerCase();
+  } catch {
+    return null;
+  }
+  return (
+    SNS_DOMAINS.find(([domains]) =>
+      domains.some((domain) => hostname === domain || hostname.endsWith(`.${domain}`)),
+    )?.[1] ?? null
+  );
 }
 
 /**
