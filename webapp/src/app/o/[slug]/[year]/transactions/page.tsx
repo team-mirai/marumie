@@ -1,7 +1,7 @@
 import "server-only";
 import type { Metadata } from "next";
 import Image from "next/image";
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import AboutSection from "@/client/components/common/AboutSection";
 import AnotherPageLinkSection from "@/client/components/common/AnotherPageLinkSection";
 import ExplanationSection from "@/client/components/common/ExplanationSection";
@@ -18,7 +18,6 @@ import { loadOrganizations } from "@/server/contexts/public-finance/presentation
 import { formatUpdatedAt } from "@/client/lib/format-date";
 
 const VALID_YEARS = [2025, 2026] as const;
-const DEFAULT_YEAR = 2026;
 
 interface TransactionsPageProps {
   params: Promise<{
@@ -33,15 +32,29 @@ export async function generateMetadata({
 }: {
   params: Promise<{ slug: string; year: string }>;
 }): Promise<Metadata> {
-  const { slug } = await params;
-  const { default: defaultSlug, organizations } = await loadOrganizations();
-  const validSlug = organizations.some((org) => org.slug === slug) ? slug : defaultSlug;
+  const { slug, year: yearParam } = await params;
 
-  const organization = organizations.find((org) => org.slug === validSlug);
+  if (
+    !/^\d{4}$/.test(yearParam) ||
+    !VALID_YEARS.includes(parseInt(yearParam, 10) as (typeof VALID_YEARS)[number])
+  ) {
+    return {
+      title: "みらいまる見え政治資金",
+    };
+  }
+
+  const { organizations } = await loadOrganizations();
+  const organization = organizations.find((org) => org.slug === slug);
+
+  if (!organization) {
+    return {
+      title: "みらいまる見え政治資金",
+    };
+  }
 
   return {
-    title: `${organization?.displayName || "Unknown"}:全ての出入金 - みらいまる見え政治資金`,
-    description: `${organization?.displayName || "Unknown"}の政治資金取引一覧を表示しています。`,
+    title: `${organization.displayName}:全ての出入金 - みらいまる見え政治資金`,
+    description: `${organization.displayName}の政治資金取引一覧を表示しています。`,
   };
 }
 
@@ -49,20 +62,24 @@ export default async function TransactionsPage({ params, searchParams }: Transac
   const { slug, year: yearParam } = await params;
 
   // 年度の妥当性をチェック
-  const yearNumber = parseInt(yearParam, 10);
-  const financialYear = VALID_YEARS.includes(yearNumber as (typeof VALID_YEARS)[number])
-    ? yearNumber
-    : DEFAULT_YEAR;
-
-  // 年度が不正な場合はデフォルト年度にリダイレクト
-  if (financialYear !== yearNumber) {
-    redirect(`/o/${slug}/${DEFAULT_YEAR}/transactions`);
+  if (!/^\d{4}$/.test(yearParam)) {
+    notFound();
+    return;
   }
 
-  // slugの妥当性をチェックし、必要に応じてリダイレクト
-  const { default: defaultSlug, organizations } = await loadOrganizations();
+  const yearNumber = parseInt(yearParam, 10);
+  if (!VALID_YEARS.includes(yearNumber as (typeof VALID_YEARS)[number])) {
+    notFound();
+    return;
+  }
+
+  const financialYear = yearNumber as (typeof VALID_YEARS)[number];
+
+  // slugの妥当性をチェック
+  const { organizations } = await loadOrganizations();
   if (!organizations.some((org) => org.slug === slug)) {
-    redirect(`/o/${defaultSlug}/${financialYear}/transactions`);
+    notFound();
+    return;
   }
 
   const slugs = [slug];
@@ -151,6 +168,7 @@ export default async function TransactionsPage({ params, searchParams }: Transac
   } catch (error) {
     if (error instanceof Error && error.message.includes("not found")) {
       notFound();
+      return;
     }
 
     throw error;

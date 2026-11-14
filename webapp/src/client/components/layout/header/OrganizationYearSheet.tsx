@@ -41,21 +41,41 @@ export default function OrganizationYearSheet({
     const pathSegments = pathname.split("/");
     // URL format: /o/{slug}/{year}/... または /p/{slug}/{year}
     const isPolitician = pathSegments[1] === "p";
-    if ((pathSegments[1] === "o" || isPolitician) && pathSegments[2]) {
-      if (isPolitician) {
-        setCurrentPoliticianSlug(pathSegments[2]);
-      } else {
-        setCurrentPoliticianSlug("");
-        setCurrentSlug(pathSegments[2]);
-      }
-      if (pathSegments[3]) {
-        const yearFromPath = parseInt(pathSegments[3], 10);
-        if (AVAILABLE_YEARS.includes(yearFromPath as (typeof AVAILABLE_YEARS)[number])) {
-          setCurrentYear(yearFromPath);
-        }
+    const isOrg = pathSegments[1] === "o";
+
+    let year = DEFAULT_YEAR;
+    if (pathSegments[3]) {
+      const yearFromPath = parseInt(pathSegments[3], 10);
+      if (AVAILABLE_YEARS.includes(yearFromPath as (typeof AVAILABLE_YEARS)[number])) {
+        year = yearFromPath;
       }
     }
-  }, [pathname]);
+    setCurrentYear(year);
+
+    if ((isOrg || isPolitician) && pathSegments[2]) {
+      const rawSlug = pathSegments[2];
+      if (isPolitician) {
+        const isValid = (politiciansByYear[year] ?? []).some((p) => p.slug === rawSlug);
+        if (isValid) {
+          setCurrentPoliticianSlug(rawSlug);
+        } else {
+          setCurrentPoliticianSlug("");
+          setCurrentSlug(organizations.default || "");
+        }
+      } else {
+        setCurrentPoliticianSlug("");
+        const isValid = organizations.organizations.some((org) => org.slug === rawSlug);
+        if (isValid) {
+          setCurrentSlug(rawSlug);
+        } else {
+          setCurrentSlug(organizations.default || "");
+        }
+      }
+    } else {
+      setCurrentPoliticianSlug("");
+      setCurrentSlug(organizations.default || "");
+    }
+  }, [pathname, organizations, politiciansByYear]);
 
   const currentOrganization = organizations.organizations.find((org) => org.slug === currentSlug);
   const politicians = politiciansByYear[currentYear] ?? [];
