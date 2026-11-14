@@ -18,7 +18,7 @@ describe("GetResearchFundPoliticiansUsecase", () => {
     const { usecase, repository } = build([
       {
         slug: "sample-taro",
-        name: "サンプル 太郎",
+        name: "サンプル 太郎", house: null, constituency: null, hasPhoto: false,
         publishedMonths: ["2026-02", "2026-04"],
         publishedThrough: "2026-08",
       },
@@ -38,11 +38,11 @@ describe("GetResearchFundPoliticiansUsecase", () => {
     const { usecase } = build([
       {
         slug: "sample-taro",
-        name: "サンプル 太郎",
+        name: "サンプル 太郎", house: null, constituency: null, hasPhoto: false,
         publishedMonths: ["2026-02"],
         publishedThrough: null,
       },
-      { slug: "sample-jiro", name: "サンプル 次郎", publishedMonths: [], publishedThrough: "2026-08" },
+      { slug: "sample-jiro", name: "サンプル 次郎", house: null, constituency: null, hasPhoto: false, publishedMonths: [], publishedThrough: "2026-08" },
     ]);
 
     expect((await usecase.execute({ financialYear: 2026 })).map((entry) => entry.slug)).toEqual([
@@ -52,7 +52,7 @@ describe("GetResearchFundPoliticiansUsecase", () => {
 
   it("公開済みの仕訳がある議員が1人もいなければ空で返す", async () => {
     const { usecase } = build([
-      { slug: "sample-jiro", name: "サンプル 次郎", publishedMonths: [], publishedThrough: null },
+      { slug: "sample-jiro", name: "サンプル 次郎", house: null, constituency: null, hasPhoto: false, publishedMonths: [], publishedThrough: null },
     ]);
 
     expect(await usecase.execute({ financialYear: 2026 })).toEqual([]);
@@ -62,7 +62,7 @@ describe("GetResearchFundPoliticiansUsecase", () => {
     const { usecase } = build([
       {
         slug: "sample-hanako",
-        name: "サンプル 花子",
+        name: "サンプル 花子", house: null, constituency: null, hasPhoto: false,
         publishedMonths: ["2026-03"],
         publishedThrough: null,
       },

@@ -9,6 +9,7 @@ import type {
   ResearchFundPageData,
 } from "@/server/contexts/research-fund/domain/models/research-fund-page";
 import type { ResearchFundRepository } from "@/server/contexts/research-fund/domain/repositories/research-fund-repository.interface";
+import { buildPoliticianTitle } from "@/server/contexts/research-fund/domain/services/politician-title";
 import { buildGrantPeriodLabel } from "@/server/contexts/research-fund/domain/services/research-fund-coverage";
 import { buildResearchFundDataNote } from "@/server/contexts/research-fund/domain/services/research-fund-data-note";
 import { researchFundCategoryColor } from "@/server/contexts/research-fund/domain/services/research-fund-category-color";
@@ -46,8 +47,13 @@ export class GetResearchFundPageUsecase {
       published.publishedThrough,
     );
 
+    const { house, constituency, ...profile } = published.politician;
+
     return {
-      politician: published.politician,
+      politician: { ...profile, title: buildPoliticianTitle({ house, constituency }) },
+      years: [...new Set([...published.publishedYears, published.financialYear])].sort(
+        (a, b) => a - b,
+      ),
       isPublic: published.isPublic,
       financialYear: published.financialYear,
       asOfDate: published.asOfDate,

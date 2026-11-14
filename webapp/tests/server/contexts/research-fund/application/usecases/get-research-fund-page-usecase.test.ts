@@ -18,7 +18,18 @@ const accounts: PublishedResearchFund["accounts"] = {
 
 function published(overrides: Partial<PublishedResearchFund> = {}): PublishedResearchFund {
   return {
-    politician: { name: "サンプル 太郎", slug: "sample-taro" },
+    politician: {
+      name: "サンプル 太郎",
+      slug: "sample-taro",
+      nameKana: "さんぷる たろう",
+      house: "shugiin",
+      constituency: "比例東京（東京7区）",
+      profileUrl: "https://team-mir.ai/member/sample-taro",
+      websiteUrl: null,
+      snsUrls: ["https://x.com/sample_taro"],
+      hasPhoto: true,
+    },
+    publishedYears: [2026],
     isPublic: true,
     financialYear: 2026,
     asOfDate: "2026-08-20",
@@ -117,6 +128,31 @@ describe("GetResearchFundPageUsecase", () => {
     const data = await usecase.execute({ slug: "sample-taro", financialYear: 2026 });
 
     expect(data?.isPublic).toBe(false);
+  });
+
+  it("議員カードのプロフィールに、院と選挙区から組み立てた肩書きを添える", async () => {
+    const { usecase } = usecaseWith(published());
+
+    const data = await usecase.execute({ slug: "sample-taro", financialYear: 2026 });
+
+    expect(data?.politician).toEqual({
+      name: "サンプル 太郎",
+      slug: "sample-taro",
+      nameKana: "さんぷる たろう",
+      title: "衆議院議員・比例東京（東京7区）",
+      profileUrl: "https://team-mir.ai/member/sample-taro",
+      websiteUrl: null,
+      snsUrls: ["https://x.com/sample_taro"],
+      hasPhoto: true,
+    });
+  });
+
+  it("年の切り替えに出す年度は、公開済みの年度に表示中の年度を足して昇順に並べる", async () => {
+    const { usecase } = usecaseWith(published({ financialYear: 2026, publishedYears: [2025] }));
+
+    const data = await usecase.execute({ slug: "sample-taro", financialYear: 2026 });
+
+    expect(data?.years).toEqual([2025, 2026]);
   });
 
   it("支給・支出の合計と未使用を集計する", async () => {
