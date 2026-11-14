@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useSyncExternalStore } from "react";
 import {
   SANKEY_OTHER_LABEL,
   SANKEY_UNUSED_LABEL,
@@ -51,6 +51,26 @@ export function useMobileDetection() {
   }, []);
 
   return isMobile;
+}
+
+const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
+
+function subscribeReducedMotion(onChange: () => void) {
+  const media = window.matchMedia(REDUCED_MOTION_QUERY);
+  media.addEventListener("change", onChange);
+  return () => media.removeEventListener("change", onChange);
+}
+
+/**
+ * OS の「視差効果を減らす（動きを減らす）」設定が有効か。有効ならグラフのアニメーションを止める。
+ * 見た目の比較（e2e/tests/visual.spec.ts）もこの設定で撮り、途中で止まった線を撮らないようにしている。
+ */
+export function usePrefersReducedMotion() {
+  return useSyncExternalStore(
+    subscribeReducedMotion,
+    () => window.matchMedia(REDUCED_MOTION_QUERY).matches,
+    () => false,
+  );
 }
 
 // 色管理のカスタムフック

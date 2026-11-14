@@ -1,18 +1,15 @@
 import "server-only";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import AboutSection from "@/client/components/common/AboutSection";
-import LinkCardsSection from "@/client/components/common/LinkCardsSection";
 import GradientMessageCard from "@/client/components/common/GradientMessageCard";
+import Breadcrumbs from "@/client/components/layout/Breadcrumbs";
 import MainColumn from "@/client/components/layout/MainColumn";
-import ResearchFundAboutSection from "@/client/components/research-fund/ResearchFundAboutSection";
+import ResearchFundBottomBlock from "@/client/components/research-fund/ResearchFundBottomBlock";
 import { ResearchFundCrossLinkProvider } from "@/client/components/research-fund/ResearchFundCrossLink";
 import ResearchFundExpensesSection from "@/client/components/research-fund/ResearchFundExpensesSection";
 import ResearchFundFlowSection from "@/client/components/research-fund/ResearchFundFlowSection";
 import ResearchFundHighlightsSection from "@/client/components/research-fund/ResearchFundHighlightsSection";
 import ResearchFundMonthlySection from "@/client/components/research-fund/ResearchFundMonthlySection";
-import ResearchFundPartyLinkSection from "@/client/components/research-fund/ResearchFundPartyLinkSection";
-import ResearchFundTrialNoticeSection from "@/client/components/research-fund/ResearchFundTrialNoticeSection";
 import { formatUpdatedAt } from "@/client/lib/format-date";
 import { loadResearchFundPageByPath } from "@/server/contexts/research-fund/presentation/loaders/load-research-fund-page-by-path";
 
@@ -56,24 +53,31 @@ export default async function PoliticianPage({ params }: PoliticianPageProps) {
   // 「2026.8.20更新」。未設定なら公開範囲の最終日で代用する。
   const updatedAt = formatUpdatedAt(data.asOfDate ?? null);
   const hasHighlights = data.policyComment !== null || data.groups.length > 0;
+  const eyebrow = `${data.politician.name}の調研費・${data.financialYear}年`;
 
   return (
-    <MainColumn>
-      <ResearchFundFlowSection data={data} updatedAt={updatedAt} />
+    <MainColumn spacing="compact">
+      <div className="flex flex-col gap-5">
+        <Breadcrumbs current={`${data.politician.name}の調研費`} />
+        <ResearchFundFlowSection data={data} eyebrow={eyebrow} updatedAt={updatedAt} />
+      </div>
       {/* 用途カードと「すべての出入金」が相互にジャンプするので、その間をまとめて包む */}
       <ResearchFundCrossLinkProvider>
-        {hasHighlights && <ResearchFundHighlightsSection data={data} updatedAt={updatedAt} />}
+        {hasHighlights && (
+          <ResearchFundHighlightsSection data={data} eyebrow={eyebrow} updatedAt={updatedAt} />
+        )}
         <GradientMessageCard title="調研費もまるごと公開。意味ある使い方か、検証できるように👀">
           議員一人ひとりに支給される調研費の原資は、大切な税金。だから使わせていただいた分は1件ずつ公開し、その使用方針や主要な用途もわかりやすく伝えていくことが重要だと考えています。
         </GradientMessageCard>
-        <ResearchFundMonthlySection data={data} updatedAt={updatedAt} />
-        <ResearchFundExpensesSection data={data} pathSlug={pathSlug} updatedAt={updatedAt} />
+        <ResearchFundMonthlySection data={data} eyebrow={eyebrow} updatedAt={updatedAt} />
+        <ResearchFundExpensesSection
+          data={data}
+          pathSlug={pathSlug}
+          eyebrow={eyebrow}
+          updatedAt={updatedAt}
+        />
       </ResearchFundCrossLinkProvider>
-      <ResearchFundTrialNoticeSection politicianName={data.politician.name} />
-      <ResearchFundAboutSection data={data} />
-      <ResearchFundPartyLinkSection />
-      <AboutSection />
-      <LinkCardsSection />
+      <ResearchFundBottomBlock dataNote={data.dataNote} />
     </MainColumn>
   );
 }
