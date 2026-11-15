@@ -4,6 +4,8 @@ import { notFound } from "next/navigation";
 import GradientMessageCard from "@/client/components/common/GradientMessageCard";
 import Breadcrumbs from "@/client/components/layout/Breadcrumbs";
 import MainColumn from "@/client/components/layout/MainColumn";
+import OtherPoliticiansSection from "@/client/components/research-fund/OtherPoliticiansSection";
+import PoliticianHeadingCard from "@/client/components/research-fund/PoliticianHeadingCard";
 import ResearchFundBottomBlock from "@/client/components/research-fund/ResearchFundBottomBlock";
 import { ResearchFundCrossLinkProvider } from "@/client/components/research-fund/ResearchFundCrossLink";
 import ResearchFundExpensesSection from "@/client/components/research-fund/ResearchFundExpensesSection";
@@ -11,6 +13,10 @@ import ResearchFundFlowSection from "@/client/components/research-fund/ResearchF
 import ResearchFundHighlightsSection from "@/client/components/research-fund/ResearchFundHighlightsSection";
 import ResearchFundMonthlySection from "@/client/components/research-fund/ResearchFundMonthlySection";
 import { formatUpdatedAt } from "@/client/lib/format-date";
+import { buildPoliticianNav, politicianPageHref } from "@/client/lib/politician-nav";
+import { politicianPhotoUrl } from "@/client/lib/politician-photo-url";
+import type { ResearchFundPoliticianCard } from "@/server/contexts/research-fund/domain/models/research-fund-politician-list";
+import { loadResearchFundPoliticianCards } from "@/server/contexts/research-fund/presentation/loaders/load-research-fund-politician-cards";
 import { loadResearchFundPageByPath } from "@/server/contexts/research-fund/presentation/loaders/load-research-fund-page-by-path";
 
 export const revalidate = 300; // 5 minutes
@@ -55,12 +61,38 @@ export default async function PoliticianPage({ params }: PoliticianPageProps) {
   const hasHighlights = data.policyComment !== null || data.groups.length > 0;
   const eyebrow = `${data.politician.name}の調研費・${data.financialYear}年`;
 
+  // 前後の切り替え・ほかの議員は、調研費を公開中の議員だけ（非公開の議員はプレビュー中でも出さない）。
+  // 取れなくても本文は出せるので、失敗したら出さないだけにする。
+  const cards = await loadResearchFundPoliticianCards({
+    financialYear: data.financialYear,
+  }).catch((error) => {
+    console.error("loadResearchFundPoliticianCards error:", error);
+    return [] as ResearchFundPoliticianCard[];
+  });
+  const nav = buildPoliticianNav(
+    cards.map((card) => ({
+      ...card,
+      href: politicianPageHref(card.slug, data.financialYear),
+      photoUrl: card.hasPhoto ? politicianPhotoUrl(card.slug) : null,
+    })),
+    data.politician.slug,
+  );
+
   return (
     <MainColumn spacing="compact">
       <div className="flex flex-col gap-5">
         <Breadcrumbs current={`${data.politician.name}の調研費`} />
-        <ResearchFundFlowSection data={data} eyebrow={eyebrow} updatedAt={updatedAt} />
+        <PoliticianHeadingCard
+          politician={data.politician}
+          photoUrl={data.politician.hasPhoto ? politicianPhotoUrl(pathSlug) : null}
+          years={data.years.map((year) => ({ year, href: politicianPageHref(pathSlug, year) }))}
+          currentYear={data.financialYear}
+          updatedAt={updatedAt}
+          periodLabel={data.grantPeriodLabel}
+          nav={nav}
+        />
       </div>
+      <ResearchFundFlowSection data={data} eyebrow={eyebrow} updatedAt={updatedAt} />
       {/* 用途カードと「すべての出入金」が相互にジャンプするので、その間をまとめて包む */}
       <ResearchFundCrossLinkProvider>
         {hasHighlights && (
@@ -77,6 +109,7 @@ export default async function PoliticianPage({ params }: PoliticianPageProps) {
           updatedAt={updatedAt}
         />
       </ResearchFundCrossLinkProvider>
+      {nav && <OtherPoliticiansSection politicians={nav.others} />}
       <ResearchFundBottomBlock dataNote={data.dataNote} />
     </MainColumn>
   );
