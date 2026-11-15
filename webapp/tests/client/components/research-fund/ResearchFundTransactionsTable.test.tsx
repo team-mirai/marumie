@@ -45,10 +45,10 @@ const expenses = [
   view({ id: "3", date: "2026-04-20", description: "都営バス運賃", amount: 300 }),
 ];
 
-function render(query: ResearchFundTransactionsQuery) {
+function render(query: ResearchFundTransactionsQuery, pathSlug = "taro") {
   return renderToStaticMarkup(
     <ResearchFundTransactionsTable
-      slug="taro"
+      pathSlug={pathSlug}
       financialYear={2026}
       expenses={expenses}
       query={query}
@@ -66,6 +66,13 @@ describe("ResearchFundTransactionsTable", () => {
     expect(positions).toEqual([...positions].sort((a, b) => a - b));
     expect(html).toContain("1〜3 / 3件を表示中");
     expect(html).not.toContain("（絞り込み中）");
+  });
+
+  it("プレビュー URL で開いていれば、カテゴリーのリンクもプレビュー用の文字列を保つ", () => {
+    const html = render(parseResearchFundTransactionsQuery({}), "taro~0123456789abcdef0123456789abcdef");
+
+    expect(html).toContain('href="/p/taro~0123456789abcdef0123456789abcdef/2026/transactions?categories=');
+    expect(html).not.toContain('href="/p/taro/');
   });
 
   it("URL で指定したカテゴリーで絞り込み、件数と合計・件数バッジも揃える", () => {

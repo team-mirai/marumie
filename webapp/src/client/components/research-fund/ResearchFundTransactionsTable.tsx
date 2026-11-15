@@ -29,7 +29,8 @@ import type { ResearchFundExpenseView } from "@/server/contexts/research-fund/do
 import { RESEARCH_FUND_RECEIPTS_PUBLISHED } from "@/server/contexts/research-fund/domain/models/research-fund-receipt-publication";
 
 interface Props {
-  slug: string;
+  /** URL の slug の区間（プレビュー URL ならプレビュー用の文字列を含む）。リンクはこれを引き継ぐ */
+  pathSlug: string;
   financialYear: number;
   /** 日付の新しい順・同一注文の行が隣り合う並び（buildExpenseViews の出力） */
   expenses: ResearchFundExpenseView[];
@@ -148,7 +149,7 @@ function PagerButton({
  * 各行のカテゴリーのピルは、そのカテゴリー1つで絞り込んだ URL へのリンクにする。
  */
 export default function ResearchFundTransactionsTable({
-  slug,
+  pathSlug,
   financialYear,
   expenses,
   query,
@@ -173,7 +174,7 @@ export default function ResearchFundTransactionsTable({
   const totals = sumResearchFundTransactions(filtered);
 
   const hrefFor = (next: Partial<ResearchFundTransactionsQuery>) =>
-    researchFundTransactionsHref(slug, financialYear, { categories, sort, page: 1, ...next });
+    researchFundTransactionsHref(pathSlug, financialYear, { categories, sort, page: 1, ...next });
 
   const navigate = (next: Partial<ResearchFundTransactionsQuery>) =>
     router.push(hrefFor(next), { scroll: false });
@@ -384,7 +385,7 @@ export default function ResearchFundTransactionsTable({
         </nav>
         <div className="min-[761px]:flex min-[761px]:justify-end">
           <ResearchFundCsvDownloadLink
-            slug={slug}
+            pathSlug={pathSlug}
             financialYear={financialYear}
             label="出入金履歴をCSVでダウンロード"
             className="whitespace-nowrap hover:bg-[#F9FAFB]"

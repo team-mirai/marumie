@@ -11,13 +11,19 @@ jest.mock(
     loadTransactionsPageData: jest.fn(),
   }),
 );
-jest.mock("@/client/components/common/AboutSection", () => ({ __esModule: true, default: () => null }));
-jest.mock("@/client/components/common/LinkCardsSection", () => ({ __esModule: true, default: () => null }));
-jest.mock("@/client/components/common/AnotherPageLinkSection", () => ({ __esModule: true, default: () => null }));
-jest.mock("@/client/components/common/ExplanationSection", () => ({ __esModule: true, default: () => null }));
-jest.mock("@/client/components/common/TransparencySection", () => ({ __esModule: true, default: () => null }));
-jest.mock("@/client/components/common/FloatingBackButton", () => ({ __esModule: true, default: () => null }));
+jest.mock("@/client/components/common/SiteBottomBlock", () => ({
+  __esModule: true,
+  default: () => null,
+}));
+jest.mock("@/client/components/layout/Breadcrumbs", () => ({
+  __esModule: true,
+  default: () => null,
+}));
 jest.mock("@/client/components/layout/MainColumn", () => ({ __esModule: true, default: () => null }));
+jest.mock("@/client/components/layout/SectionCard", () => ({
+  __esModule: true,
+  default: () => null,
+}));
 jest.mock(
   "@/client/components/top-page/features/transactions-table/InteractiveTransactionTable",
   () => ({

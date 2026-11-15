@@ -5,6 +5,7 @@ import { CompleteInviteSessionUsecase } from "@/server/contexts/auth/application
 import { SupabaseAuthProvider } from "@/server/contexts/auth/infrastructure/supabase/supabase-auth-provider";
 import { prisma } from "@/server/contexts/shared/infrastructure/prisma";
 import { PrismaUserRepository } from "@/server/contexts/shared/infrastructure/repositories/prisma-user.repository";
+import { PrismaUserInvitationRepository } from "@/server/contexts/auth/infrastructure/repositories/prisma-user-invitation.repository";
 import { AuthError, AUTH_ERROR_MESSAGES } from "@/server/contexts/auth/domain/errors/auth-error";
 
 /**
@@ -16,7 +17,11 @@ export async function completeInviteSession(
 ): Promise<{ ok: boolean; error?: string }> {
   const authProvider = new SupabaseAuthProvider();
   const userRepository = new PrismaUserRepository(prisma);
-  const usecase = new CompleteInviteSessionUsecase(authProvider, userRepository);
+  const usecase = new CompleteInviteSessionUsecase(
+    authProvider,
+    userRepository,
+    new PrismaUserInvitationRepository(prisma),
+  );
 
   try {
     await usecase.execute(accessToken, refreshToken);

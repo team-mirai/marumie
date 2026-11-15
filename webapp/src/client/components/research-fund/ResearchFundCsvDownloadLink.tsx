@@ -5,7 +5,8 @@ import { useState } from "react";
 import { downloadResearchFundCsv } from "@/server/contexts/research-fund/presentation/loaders/download-research-fund-csv";
 
 interface Props {
-  slug: string;
+  /** URL の slug の区間（プレビュー URL ならプレビュー用の文字列を含む） */
+  pathSlug: string;
   financialYear: number;
   className?: string;
   /** 全件ページは「出入金履歴をCSVでダウンロード」と出す */
@@ -18,7 +19,7 @@ interface Props {
  * 画面は月ごとに区切って見せるが、CSV はその年度の公開中の支出を全件出す。
  */
 export default function ResearchFundCsvDownloadLink({
-  slug,
+  pathSlug,
   financialYear,
   className = "",
   label = "すべての支出をCSVでダウンロード",
@@ -30,7 +31,7 @@ export default function ResearchFundCsvDownloadLink({
 
     setIsDownloading(true);
     try {
-      const result = await downloadResearchFundCsv(slug, financialYear);
+      const result = await downloadResearchFundCsv(pathSlug, financialYear);
 
       if (result.success && result.data) {
         // Excel が文字化けしないよう UTF-8 BOM を付ける（既存の取引 CSV と同じ）

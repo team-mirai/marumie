@@ -1,27 +1,30 @@
 import "server-only";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import AboutSection from "@/client/components/common/AboutSection";
-import LinkCardsSection from "@/client/components/common/LinkCardsSection";
-import AnotherPageLinkSection from "@/client/components/common/AnotherPageLinkSection";
-import ExplanationSection from "@/client/components/common/ExplanationSection";
+import SiteBottomBlock from "@/client/components/common/SiteBottomBlock";
 import TransparencySection from "@/client/components/common/TransparencySection";
+import Breadcrumbs from "@/client/components/layout/Breadcrumbs";
 import MainColumn from "@/client/components/layout/MainColumn";
 import BalanceSheetSection from "@/client/components/top-page/BalanceSheetSection";
-import CashFlowSection from "@/client/components/top-page/CashFlowSection";
 import MonthlyTrendsSection from "@/client/components/top-page/MonthlyTrendsSection";
-import ResearchFundPartySection from "@/client/components/research-fund/ResearchFundPartySection";
-import ProgressSection from "@/client/components/top-page/ProgressSection";
+import OrganizationCashFlowSection from "@/client/components/top-page/OrganizationCashFlowSection";
+import OrganizationHeadingSection from "@/client/components/top-page/OrganizationHeadingSection";
+import PartyHeadingSection from "@/client/components/top-page/PartyHeadingSection";
 import TransactionsSection from "@/client/components/top-page/TransactionsSection";
 import { loadTopPageData } from "@/server/contexts/public-finance/presentation/loaders/load-top-page-data";
 import { loadOrganizations } from "@/server/contexts/public-finance/presentation/loaders/load-organizations";
-import { loadResearchFundPartySummary } from "@/server/contexts/research-fund/presentation/loaders/load-research-fund-party-summary";
+import { loadOrganizationProfile } from "@/server/contexts/public-finance/presentation/loaders/load-organization-profile";
 import { formatUpdatedAt } from "@/client/lib/format-date";
-import { getBalanceSheetHeading } from "@/client/lib/balance-sheet-heading";
+import { getBalanceSheetAsOf } from "@/client/lib/balance-sheet-heading";
+import { buildProfileLinks } from "@/client/lib/profile-links";
 
 export const revalidate = 300; // 5 minutes
 
 const VALID_YEARS = [2025, 2026] as const;
+
+// 政党ページとして見せる団体。ほかは政治団体ページ（代表者の写真・SNS の見出し）にする。
+// シードの sample-party は、E2E で政党ページを確かめるために政党として扱う
+const PARTY_SLUGS: readonly string[] = ["team-mirai", "sample-party"];
 
 interface OrgPageProps {
   params: Promise<{
@@ -73,14 +76,13 @@ export default async function OrgPage({ params }: OrgPageProps) {
 
   // slugの妥当性をチェック
   const { organizations } = await loadOrganizations();
-  if (!organizations.some((org) => org.slug === slug)) {
+  const currentOrganization = organizations.find((org) => org.slug === slug);
+  if (!currentOrganization) {
     notFound();
   }
 
   const slugs = [slug];
-
-  // 現在のslugに対応する組織を取得
-  const currentOrganization = organizations.find((org) => org.slug === slug);
+  const organizationName = currentOrganization.displayName || "未登録の政治団体";
 
   // 統合アクションで全データを取得
   const data = await loadTopPageData({
@@ -93,55 +95,92 @@ export default async function OrgPage({ params }: OrgPageProps) {
     return null;
   });
 
-  // A-6 調査研究費。調研費を「公開する」所属議員がいない政治団体では null になり、セクションごと出さない。
-  const researchFund = await loadResearchFundPartySummary({ slug, financialYear }).catch(
-    (error) => {
-      console.error("loadResearchFundPartySummary error:", error);
-      return null;
-    },
-  );
-
   const updatedAt = formatUpdatedAt(data?.transactionData?.lastUpdatedAt ?? null);
-  const balanceSheetHeading = getBalanceSheetHeading(financialYear, updatedAt);
+  const eyebrow = `${organizationName}・${financialYear}年`;
+  const years = VALID_YEARS.map((y) => ({ year: y, href: `/o/${slug}/${y}` }));
+  const isParty = PARTY_SLUGS.includes(slug);
 
-  return (
-    <MainColumn>
-      <CashFlowSection
-        political={data?.political ?? null}
-        friendly={data?.friendly ?? null}
-        updatedAt={updatedAt}
-        organizationName={currentOrganization?.displayName}
-      />
-      <MonthlyTrendsSection
-        monthlyData={data?.monthlyData}
-        updatedAt={updatedAt}
-        organizationName={currentOrganization?.displayName}
-      />
-      <TransparencySection title="党首もこれを見て、お金をやりくりしています👀" />
+  const profile = isParty
+    ? null
+    : await loadOrganizationProfile(slug).catch((error) => {
+        console.error("loadOrganizationProfile error:", error);
+        return null;
+      });
+  const photoVersion = profile?.photoVersion;
+
+  const latterSections = (
+    <>
       <BalanceSheetSection
         data={data?.balanceSheetData}
-        title={balanceSheetHeading.title}
-        updatedAt={balanceSheetHeading.updatedAt}
-        organizationName={currentOrganization?.displayName}
+        updatedAt={getBalanceSheetAsOf(financialYear, updatedAt)}
+        eyebrow={eyebrow}
       />
       <TransactionsSection
         transactionData={data?.transactionData ?? null}
         updatedAt={updatedAt}
         slug={slug}
         year={financialYear}
-        organizationName={currentOrganization?.displayName}
+        eyebrow={eyebrow}
       />
-      {researchFund && (
-        <ResearchFundPartySection
-          data={researchFund}
-          updatedAt={formatUpdatedAt(researchFund.asOfDate)}
+      <SiteBottomBlock />
+    </>
+  );
+
+  if (!isParty) {
+    return (
+      <MainColumn spacing="compact">
+        <div className="flex flex-col gap-5">
+          <Breadcrumbs current={`${organizationName}の収支`} />
+          <OrganizationHeadingSection
+            organizationName={organizationName}
+            subtitle={`${currentOrganization?.orgName || organizationName}・${financialYear}年`}
+            photoUrl={
+              photoVersion
+                ? `/api/organizations/${encodeURIComponent(slug)}/photo?v=${encodeURIComponent(photoVersion)}`
+                : null
+            }
+            links={buildProfileLinks(profile?.websiteUrl ?? null, profile?.snsUrls ?? [])}
+            years={years}
+            currentYear={financialYear}
+          />
+        </div>
+        <OrganizationCashFlowSection
+          eyebrow={eyebrow}
+          updatedAt={updatedAt}
+          political={data?.political ?? null}
+          friendly={data?.friendly ?? null}
         />
-      )}
-      <AnotherPageLinkSection currentSlug={slug} year={financialYear} />
-      <ProgressSection />
-      <ExplanationSection />
-      <AboutSection />
-      <LinkCardsSection />
+        <MonthlyTrendsSection
+          monthlyData={data?.monthlyData}
+          updatedAt={updatedAt}
+          eyebrow={eyebrow}
+        />
+        {latterSections}
+      </MainColumn>
+    );
+  }
+
+  return (
+    <MainColumn spacing="compact">
+      <div className="flex flex-col gap-5">
+        <Breadcrumbs current={`${organizationName}の収支`} />
+        <PartyHeadingSection
+          organizationName={organizationName}
+          slug={slug}
+          year={financialYear}
+          years={VALID_YEARS}
+          updatedAt={updatedAt}
+          political={data?.political ?? null}
+          friendly={data?.friendly ?? null}
+        />
+      </div>
+      <MonthlyTrendsSection
+        monthlyData={data?.monthlyData}
+        updatedAt={updatedAt}
+        eyebrow={eyebrow}
+      />
+      <TransparencySection title="党首もこれを見て、お金をやりくりしています👀" />
+      {latterSections}
     </MainColumn>
   );
 }

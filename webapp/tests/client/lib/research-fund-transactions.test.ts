@@ -276,6 +276,12 @@ describe("researchFundTransactionsHref", () => {
     ).toBe("/p/taro/2026/transactions?categories=transportation,meetings&sort=amount&order=asc&page=2");
   });
 
+  it("プレビュー URL の区間なら、プレビュー用の文字列を保つ", () => {
+    expect(
+      researchFundTransactionsHref("taro~0123456789abcdef0123456789abcdef", 2026, { categories: [], sort: "new", page: 2 }),
+    ).toBe("/p/taro~0123456789abcdef0123456789abcdef/2026/transactions?page=2");
+  });
+
   it("組み立てた URL を読み戻すと同じ状態になる", () => {
     const query = { categories: ["meetings"], sort: "old" as const, page: 4 };
     const href = researchFundTransactionsHref("taro", 2026, query);

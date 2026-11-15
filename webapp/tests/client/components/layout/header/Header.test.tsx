@@ -17,7 +17,7 @@ import { loadResearchFundPoliticians } from "@/server/contexts/research-fund/pre
 const loadOrganizationsMock = loadOrganizations as jest.Mock;
 const loadResearchFundPoliticiansMock = loadResearchFundPoliticians as jest.Mock;
 
-const POLITICIAN = { slug: "sample-taro", name: "サンプル太郎", statusLabel: "2026年2月〜8月分を公開中" };
+const POLITICIAN = { slug: "sample-taro", name: "サンプル太郎", statusLabel: "2026年2月〜8月分を公開中", hasPhoto: true };
 
 describe("Header", () => {
   beforeEach(() => {
@@ -26,23 +26,7 @@ describe("Header", () => {
     loadResearchFundPoliticiansMock.mockResolvedValue([POLITICIAN]);
   });
 
-  it("調研費を公開する議員を年度ごとにセレクターへ渡し、ナビに調査研究費を出す", async () => {
-    const element = await Header();
-
-    expect(element.props.politiciansByYear).toEqual({ 2025: [POLITICIAN], 2026: [POLITICIAN] });
-    expect(element.props.showResearchFundNavigation).toBe(true);
-  });
-
-  it("調研費を公開する議員がいなければ、ナビの調査研究費を出さない", async () => {
-    loadResearchFundPoliticiansMock.mockResolvedValue([]);
-
-    const element = await Header();
-
-    expect(element.props.politiciansByYear).toEqual({ 2025: [], 2026: [] });
-    expect(element.props.showResearchFundNavigation).toBe(false);
-  });
-
-  it("ある年度だけに公開する議員がいれば、ナビに調査研究費を出す", async () => {
+  it("調研費を公開する議員を年度ごとにメニューへ渡す", async () => {
     loadResearchFundPoliticiansMock.mockImplementation(async ({ financialYear }) =>
       financialYear === 2026 ? [POLITICIAN] : [],
     );
@@ -50,6 +34,18 @@ describe("Header", () => {
     const element = await Header();
 
     expect(element.props.politiciansByYear).toEqual({ 2025: [], 2026: [POLITICIAN] });
-    expect(element.props.showResearchFundNavigation).toBe(true);
+  });
+
+  it("議員の一覧が取れなくても、その年度を空にしてヘッダーを描く", async () => {
+    const consoleError = jest.spyOn(console, "error").mockImplementation(() => {});
+    loadResearchFundPoliticiansMock.mockImplementation(async ({ financialYear }) => {
+      if (financialYear === 2025) throw new Error("no ledger");
+      return [POLITICIAN];
+    });
+
+    const element = await Header();
+
+    expect(element.props.politiciansByYear).toEqual({ 2025: [], 2026: [POLITICIAN] });
+    consoleError.mockRestore();
   });
 });

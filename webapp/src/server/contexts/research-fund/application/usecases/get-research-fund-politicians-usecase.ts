@@ -30,5 +30,6 @@ function toEntry(source: ResearchFundPoliticianSource): ResearchFundPoliticianEn
     statusLabel: buildCoverageLabel([
       { months: source.publishedMonths, publishedThrough: source.publishedThrough },
     ]),
+    hasPhoto: source.hasPhoto,
   };
 }

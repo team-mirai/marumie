@@ -1,12 +1,12 @@
 import "server-only";
-import Image from "next/image";
-import CardHeader from "@/client/components/layout/CardHeader";
-import MainColumnCard from "@/client/components/layout/MainColumnCard";
+import SectionCard from "@/client/components/layout/SectionCard";
 import ResearchFundMonthlyChart from "@/client/components/research-fund/ResearchFundMonthlyChart";
 import type { ResearchFundPageData } from "@/server/contexts/research-fund/domain/models/research-fund-page";
 
 interface Props {
   data: ResearchFundPageData;
+  /** 見出しの上の小さな行（例: 「峰島侑也の調研費・2026年」） */
+  eyebrow: string;
   updatedAt: string;
 }
 
@@ -15,18 +15,17 @@ const LEGEND = [
   { label: "支出", color: "#DC2626" },
 ];
 
-/** B-2 1年間の推移。 */
-export default function ResearchFundMonthlySection({ data, updatedAt }: Props) {
+/** 月ごとの支出の推移。 */
+export default function ResearchFundMonthlySection({ data, eyebrow, updatedAt }: Props) {
   return (
-    <MainColumnCard id="monthly-trends">
-      <CardHeader
-        icon={<Image src="/icons/icon-barchart.svg" alt="Bar chart icon" width={30} height={30} />}
-        organizationName={`${data.politician.name}・調研費`}
-        title="月ごとの支出の推移"
-        updatedAt={updatedAt}
-        subtitle="今年の月ごとの支給と支出"
-      />
-
+    <SectionCard
+      id="monthly-trends"
+      iconSrc="/icons/icon-barchart.svg"
+      iconLabel="Bar chart icon"
+      eyebrow={eyebrow}
+      title="月ごとの支出の推移"
+      updatedAt={updatedAt}
+    >
       <div className="-mr-[18px] overflow-x-auto sm:mr-0">
         <div className="min-w-[640px]">
           <ResearchFundMonthlyChart monthly={data.monthly} />
@@ -41,10 +40,6 @@ export default function ResearchFundMonthlySection({ data, updatedAt }: Props) {
           </span>
         ))}
       </div>
-
-      <div className="text-right md:hidden">
-        <span className="text-xs font-normal leading-[1.33] text-[#9CA3AF]">{updatedAt}</span>
-      </div>
-    </MainColumnCard>
+    </SectionCard>
   );
 }

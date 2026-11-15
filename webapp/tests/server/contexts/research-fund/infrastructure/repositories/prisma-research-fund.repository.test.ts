@@ -1,6 +1,18 @@
 import type { PrismaClient } from "@prisma/client";
 import { PrismaResearchFundRepository } from "@/server/contexts/research-fund/infrastructure/repositories/prisma-research-fund.repository";
 
+/** 議員カードのプロフィールが未登録の議員（findPublished が読む列） */
+const BLANK_PROFILE = {
+  nameKana: null,
+  house: null,
+  constituency: null,
+  profileUrl: null,
+  websiteUrl: null,
+  snsUrls: [],
+  photoPath: null,
+  books: [{ financialYear: 2026 }],
+};
+
 function setup() {
   const prisma = {
     researchFundBook: { findFirst: jest.fn(), findMany: jest.fn().mockResolvedValue([]) },
@@ -60,6 +72,36 @@ describe("PrismaResearchFundRepository の調研費の公開フラグ", () => {
     });
   });
 
+  it("トップページの議員カードには、ふりがな・院・写真の有無を添える（写真のキーは渡さない）", async () => {
+    const { prisma, repository } = setup();
+    prisma.politicalOrganization.findUnique.mockResolvedValue({
+      slug: "team-mirai",
+      displayName: "チームみらい",
+      politicianMemberships: [
+        {
+          politician: {
+            name: "サンプル太郎",
+            slug: "sample-taro",
+            nameKana: "さんぷるたろう",
+            house: "sangiin",
+            photoPath: "politicians/1/photo.jpg",
+            books: [],
+          },
+        },
+      ],
+    });
+
+    const result = await repository.findPublishedByOrganization("team-mirai", 2026);
+
+    expect(result?.politicians[0].politician).toEqual({
+      name: "サンプル太郎",
+      slug: "sample-taro",
+      nameKana: "さんぷるたろう",
+      house: "sangiin",
+      hasPhoto: true,
+    });
+  });
+
   it.each([true, false])(
     "議員ページには公開フラグ（%s）を添え、公開しない議員でもデータを返す",
     async (isResearchFundPublic) => {
@@ -71,14 +113,29 @@ describe("PrismaResearchFundRepository の調研費の公開フラグ", () => {
         nextUpdateNote: null,
         policyComment: null,
         details: null,
-        politician: { name: "サンプル太郎", slug: "sample-taro", isResearchFundPublic },
+        politician: {
+          name: "サンプル太郎",
+          slug: "sample-taro",
+          isResearchFundPublic,
+          ...BLANK_PROFILE,
+        },
         journalEntries: [],
         expenditureGroups: [],
       });
 
       const result = await repository.findPublished("sample-taro", 2026);
 
-      expect(result?.politician).toEqual({ name: "サンプル太郎", slug: "sample-taro" });
+      expect(result?.politician).toEqual({
+        name: "サンプル太郎",
+        slug: "sample-taro",
+        nameKana: null,
+        house: null,
+        constituency: null,
+        profileUrl: null,
+        websiteUrl: null,
+        snsUrls: [],
+        hasPhoto: false,
+      });
       expect(result?.isPublic).toBe(isResearchFundPublic);
     },
   );
@@ -115,7 +172,12 @@ describe("PrismaResearchFundRepository の領収書（公開用の版だけを�
       nextUpdateNote: null,
       policyComment: null,
       details: null,
-      politician: { name: "サンプル太郎", slug: "sample-taro", isResearchFundPublic: true },
+      politician: {
+        name: "サンプル太郎",
+        slug: "sample-taro",
+        isResearchFundPublic: true,
+        ...BLANK_PROFILE,
+      },
       journalEntries: [
         expenseEntry(1, { maskingStatus: "succeeded", maskedKey: "masked-1" }),
         expenseEntry(2, { maskingStatus: "pending", maskedKey: null }),
@@ -219,7 +281,12 @@ describe("PrismaResearchFundRepository の法定区分の上書き（#1880）", 
       nextUpdateNote: null,
       policyComment: null,
       details: null,
-      politician: { name: "サンプル太郎", slug: "sample-taro", isResearchFundPublic: true },
+      politician: {
+        name: "サンプル太郎",
+        slug: "sample-taro",
+        isResearchFundPublic: true,
+        ...BLANK_PROFILE,
+      },
       journalEntries,
       expenditureGroups: [],
     };
@@ -268,6 +335,9 @@ describe("PrismaResearchFundRepository の法定区分の上書き（#1880）", 
           politician: {
             name: "サンプル太郎",
             slug: "sample-taro",
+            nameKana: null,
+            house: null,
+            photoPath: null,
             books: [
               {
                 asOfDate: null,

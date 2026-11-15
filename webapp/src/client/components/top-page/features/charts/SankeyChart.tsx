@@ -2,7 +2,7 @@
 import "client-only";
 
 import { ResponsiveSankey } from "@nivo/sankey";
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useId, useState } from "react";
 import type { MouseEvent } from "react";
 import { createPortal } from "react-dom";
 import { getSankeyHorizontalMargin } from "@/client/lib/sankey-label-margin";
@@ -12,6 +12,7 @@ import InteractiveRect from "./InteractiveRect";
 import {
   useMobileDetection,
   useNodeColors,
+  usePrefersReducedMotion,
   useLinkColors,
   useSankeySorting,
 } from "./useSankeyHelpers";
@@ -563,7 +564,10 @@ export default function SankeyChart({
   ariaDescription = "政治資金の収入から支出へのお金の流れを示すサンキーダイアグラムです。",
   compactEdgeLabels = false,
 }: SankeyChartProps) {
+  // 同じページに図を複数並べても読み上げの説明が混ざらないよう、id を図ごとに分ける
+  const descriptionId = useId();
   const isMobile = useMobileDetection();
+  const prefersReducedMotion = usePrefersReducedMotion();
   const { getNodeColor } = useNodeColors();
 
   // 空データの場合はダミーデータを渡す
@@ -617,9 +621,9 @@ export default function SankeyChart({
       className="sankey-container !mb-0"
       role="img"
       aria-label={ariaLabel}
-      aria-describedby="sankey-chart-description"
+      aria-describedby={descriptionId}
     >
-      <div id="sankey-chart-description" className="sr-only">
+      <div id={descriptionId} className="sr-only">
         {ariaDescription}
       </div>
       <style jsx global>{`
@@ -663,6 +667,7 @@ export default function SankeyChart({
           enableLinkGradient={true}
           enableLabels={false}
           isInteractive={false}
+          animate={!prefersReducedMotion}
           layers={["links", CustomNodesLayer, CustomLabelsLayer]}
           theme={{
             labels: {

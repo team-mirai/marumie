@@ -1,17 +1,14 @@
 import "server-only";
 import type { Metadata } from "next";
-import Image from "next/image";
 import { notFound } from "next/navigation";
-import AboutSection from "@/client/components/common/AboutSection";
-import LinkCardsSection from "@/client/components/common/LinkCardsSection";
-import CardHeader from "@/client/components/layout/CardHeader";
+import Breadcrumbs from "@/client/components/layout/Breadcrumbs";
 import MainColumn from "@/client/components/layout/MainColumn";
-import MainColumnCard from "@/client/components/layout/MainColumnCard";
-import ResearchFundAboutSection from "@/client/components/research-fund/ResearchFundAboutSection";
+import SectionCard from "@/client/components/layout/SectionCard";
+import ResearchFundBottomBlock from "@/client/components/research-fund/ResearchFundBottomBlock";
 import ResearchFundTransactionsTable from "@/client/components/research-fund/ResearchFundTransactionsTable";
 import { formatUpdatedAt } from "@/client/lib/format-date";
 import { parseResearchFundTransactionsQuery } from "@/client/lib/research-fund-transactions";
-import { loadResearchFundPage } from "@/server/contexts/research-fund/presentation/loaders/load-research-fund-page";
+import { loadResearchFundPageByPath } from "@/server/contexts/research-fund/presentation/loaders/load-research-fund-page-by-path";
 
 export const revalidate = 300; // 5 minutes
 
@@ -30,14 +27,17 @@ export async function generateMetadata({
 }: PoliticianTransactionsPageProps): Promise<Metadata> {
   const { slug, year } = await params;
   const financialYear = parseYear(year);
-  const data = financialYear ? await loadResearchFundPage({ slug, financialYear }) : null;
+  const page = financialYear
+    ? await loadResearchFundPageByPath({ pathSlug: slug, financialYear })
+    : null;
+  const data = page?.data;
 
   return {
     title: data
       ? `${data.politician.name}の調査研究費：すべての出入金 - みらいまる見え政治資金`
       : "みらいまる見え政治資金",
-    // 調研費を「公開しない」議員のページは、URL を知っていれば開けるが検索エンジンには載せない。
-    ...(data && !data.isPublic && { robots: { index: false } }),
+    // プレビュー URL（調研費を「公開しない」議員のページはこれでしか開けない）は検索エンジンに載せない。
+    ...(page?.isPreview && { robots: { index: false } }),
   };
 }
 
@@ -51,35 +51,46 @@ export default async function PoliticianTransactionsPage({
 }: PoliticianTransactionsPageProps) {
   const { slug, year } = await params;
   const financialYear = parseYear(year);
-  const data = financialYear ? await loadResearchFundPage({ slug, financialYear }) : null;
-  if (!data) notFound();
+  const page = financialYear
+    ? await loadResearchFundPageByPath({ pathSlug: slug, financialYear })
+    : null;
+  if (!page) notFound();
+  const { data, pathSlug } = page;
 
   const query = parseResearchFundTransactionsQuery(await searchParams);
 
   const updatedAt = formatUpdatedAt(data.asOfDate ?? null);
 
+  const parentLabel = `${data.politician.name}の調研費`;
+
   return (
-    <MainColumn>
-      <MainColumnCard id="transactions">
-        <CardHeader
-          icon={
-            <Image src="/icons/icon-cashback.svg" alt="Cash move icon" width={30} height={30} />
-          }
-          organizationName={`${data.politician.name}・調研費`}
+    <MainColumn spacing="compact">
+      <div className="flex flex-col gap-5">
+        <Breadcrumbs
+          parent={{
+            label: parentLabel,
+            href: `/p/${encodeURIComponent(pathSlug)}/${data.financialYear}`,
+          }}
+          current="すべての出入金"
+        />
+        <SectionCard
+          id="transactions"
+          iconSrc="/icons/icon-cashback.svg"
+          iconLabel="Cash move icon"
+          eyebrow={`${parentLabel}・${data.financialYear}年`}
           title="すべての出入金"
           updatedAt={updatedAt}
-          subtitle="これまでにデータ連携された出入金の明細"
-        />
-        <ResearchFundTransactionsTable
-          slug={data.politician.slug}
-          financialYear={data.financialYear}
-          expenses={data.expenses}
-          query={query}
-        />
-      </MainColumnCard>
-      <ResearchFundAboutSection data={data} />
-      <AboutSection />
-      <LinkCardsSection />
+          headingLevel="h1"
+        >
+          <ResearchFundTransactionsTable
+            pathSlug={pathSlug}
+            financialYear={data.financialYear}
+            expenses={data.expenses}
+            query={query}
+          />
+        </SectionCard>
+      </div>
+      <ResearchFundBottomBlock dataNote={data.dataNote} />
     </MainColumn>
   );
 }

@@ -2,10 +2,18 @@ import "server-only";
 
 import Link from "next/link";
 import { PoliticalOrganizationForm } from "@/client/components/political-organizations/PoliticalOrganizationForm";
+import { PhotoField } from "@/client/components/common/PhotoField";
 import { PageHeader } from "@/client/components/layout/PageHeader";
 import { BackLink } from "@/client/components/layout/BackLink";
 import { Button } from "@/client/components/ui";
-import { loadPoliticalOrganizationData } from "@/server/contexts/shared/presentation/loaders/load-political-organization-data";
+import {
+  loadPoliticalOrganizationData,
+  loadPoliticalOrganizationPhotoUrl,
+} from "@/server/contexts/shared/presentation/loaders/load-political-organization-data";
+import {
+  deletePoliticalOrganizationPhoto,
+  uploadPoliticalOrganizationPhoto,
+} from "@/server/contexts/shared/presentation/actions/manage-political-organization-photo";
 import { updatePoliticalOrganization } from "@/server/contexts/shared/presentation/actions/update-political-organization";
 import type { UpdatePoliticalOrganizationData } from "@/server/contexts/shared/presentation/actions/update-political-organization";
 import { requireRole } from "@/server/contexts/auth/presentation/loaders/require-role";
@@ -32,6 +40,8 @@ export default async function EditPoliticalOrganizationPage({
     );
   }
 
+  const photoUrl = await loadPoliticalOrganizationPhotoUrl(organization.photoPath);
+
   const handleSubmit = async (formData: UpdatePoliticalOrganizationData) => {
     "use server";
     await requireRole("political_fund");
@@ -44,6 +54,14 @@ export default async function EditPoliticalOrganizationPage({
 
       <PageHeader label="Organizations" title={`「${organization.displayName}」を編集`} />
 
+      <PhotoField
+        label="代表者の顔写真（任意・公開サイトに表示）"
+        photoUrl={photoUrl}
+        hasPhoto={organization.photoPath !== null}
+        upload={uploadPoliticalOrganizationPhoto.bind(null, orgId)}
+        remove={deletePoliticalOrganizationPhoto.bind(null, orgId)}
+      />
+
       <div className="space-y-4">
         <PoliticalOrganizationForm
           initialData={{
@@ -51,9 +69,12 @@ export default async function EditPoliticalOrganizationPage({
             orgName: organization.orgName || "",
             slug: organization.slug,
             description: organization.description || "",
+            websiteUrl: organization.websiteUrl || "",
+            snsUrls: organization.snsUrls,
           }}
           onSubmit={handleSubmit}
           submitButtonText="更新"
+          withLinks
         />
 
         <div className="rounded-lg border border-border bg-card p-6">

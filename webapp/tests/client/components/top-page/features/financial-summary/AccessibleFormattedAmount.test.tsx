@@ -1,6 +1,6 @@
 import { renderToStaticMarkup } from "react-dom/server";
+import AmountSummary from "@/client/components/common/AmountSummary";
 import AccessibleFormattedAmount from "@/client/components/top-page/features/financial-summary/AccessibleFormattedAmount";
-import FinancialSummaryCard from "@/client/components/top-page/features/financial-summary/FinancialSummaryCard";
 import type { FormattedAmount } from "@/client/lib/financial-calculator";
 
 describe("AccessibleFormattedAmount", () => {
@@ -49,19 +49,27 @@ describe("AccessibleFormattedAmount", () => {
     },
   );
 
-  it("サマリーカードで可視表示を隠し、連結した金額だけを読み上げ対象にする", () => {
-    const amount = { main: "5", secondary: "億", tertiary: "3210", unit: "万円" };
+  it("見出しカードの金額欄で可視表示を隠し、連結した金額だけを読み上げ対象にする", () => {
     const markup = renderToStaticMarkup(
-      <FinancialSummaryCard
-        title="収入総額"
-        amount={amount}
-        titleColor="#000000"
-        amountColor="#000000"
-      />,
+      <AmountSummary items={[{ label: "収入総額", color: "#000000", amount: 532_100_000 }]} />,
     );
 
     expect(markup).toContain('<span class="sr-only">5億3210万円</span>');
     expect(markup).toContain('<span aria-hidden="true" class="flex items-baseline');
-    expect(markup.match(/aria-hidden=/g)).toHaveLength(1);
+    expect(markup.match(/aria-hidden=/g)).toHaveLength(2); // 金額と、ラベルの色の印
+  });
+
+  it("見出しカードの金額欄で、取得できなかった金額を 0 円と区別して出す", () => {
+    const markup = renderToStaticMarkup(
+      <AmountSummary
+        items={[
+          { label: "収入総額", color: "#000000", amount: null },
+          { label: "支出総額", color: "#000000", amount: 0 },
+        ]}
+      />,
+    );
+
+    expect(markup).toContain("取得できませんでした");
+    expect(markup).toContain('<span class="sr-only">0万円</span>');
   });
 });

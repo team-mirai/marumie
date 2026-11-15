@@ -64,6 +64,13 @@ describe("getFooterTextLinks", () => {
     expect(politician).toEqual(organization);
   });
 
+  it("プレビュー URL では、プレビュー用の文字列を保ったまま同じページのセクションを指す", () => {
+    const links = getFooterTextLinks("/p/sample-taro~0123456789abcdef0123456789abcdef/2025/transactions");
+
+    expect(hrefOf(links, "収支の流れ")).toBe("/p/sample-taro~0123456789abcdef0123456789abcdef/2025/#cash-flow");
+    expect(hrefOf(links, "すべての出入金")).toBe("/p/sample-taro~0123456789abcdef0123456789abcdef/2025/#transactions");
+  });
+
   it("年度の無い調研費ページの URL では既定の年度を使う", () => {
     expect(hrefOf(getFooterTextLinks("/p/sample-taro"), "収支の流れ")).toBe(
       "/p/sample-taro/2026/#cash-flow",

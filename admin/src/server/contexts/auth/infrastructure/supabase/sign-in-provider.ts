@@ -65,6 +65,10 @@ export function resolveSignInProvider(session: Session): SignInProvider {
   if (methods.includes("password")) {
     return "password";
   }
-  // invite / recovery / magiclink などのメール経由フローはどちらでもない
+  // 招待メールのリンク経由。招待（予約）を使ってよいかの判定のため、ほかのメール経由フローと区別する
+  if (methods.includes("invite")) {
+    return "invite";
+  }
+  // recovery / magiclink などのメール経由フローはどちらでもない
   return null;
 }

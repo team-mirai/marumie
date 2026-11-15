@@ -9,7 +9,7 @@ interface PoliticianSeedData {
   /** 所属する政治団体（既存 political_organizations）の slug。null なら無所属 */
   organizationSlug: string | null;
   startedOn?: string;
-  /** 調研費を公開するか（既定は非公開）。非公開の議員は webapp の導線・sitemap に出ず、URL で開くと noindex になる */
+  /** 調研費を公開するか（既定は非公開）。非公開の議員は webapp の導線・sitemap に出ず、プレビュー URL でだけ開けて noindex になる */
   isResearchFundPublic?: boolean;
 }
 

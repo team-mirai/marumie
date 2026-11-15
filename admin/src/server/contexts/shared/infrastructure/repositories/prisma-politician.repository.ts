@@ -21,6 +21,13 @@ function toModel(row: Row): Politician {
     politicalOrganizationId: membership ? String(membership.politicalOrganizationId) : "",
     politicalOrganizationName: membership?.politicalOrganization.displayName ?? null,
     isResearchFundPublic: row.isResearchFundPublic,
+    nameKana: row.nameKana ?? "",
+    house: row.house ?? "",
+    constituency: row.constituency ?? "",
+    profileUrl: row.profileUrl ?? "",
+    websiteUrl: row.websiteUrl ?? "",
+    snsUrls: row.snsUrls,
+    photoPath: row.photoPath,
   };
 }
 
@@ -42,7 +49,17 @@ export class PrismaPoliticianRepository implements IPoliticianRepository {
     try {
       await this.prisma.$transaction(
         async (tx) => {
-          const data = { name: input.name, slug: input.slug, termStart: new Date(input.termStart) };
+          const data = {
+            name: input.name,
+            slug: input.slug,
+            termStart: new Date(input.termStart),
+            nameKana: input.nameKana || null,
+            house: input.house || null,
+            constituency: input.constituency || null,
+            profileUrl: input.profileUrl || null,
+            websiteUrl: input.websiteUrl || null,
+            snsUrls: input.snsUrls,
+          };
           const politician =
             id === null
               ? await tx.politician.create({ data })
@@ -91,6 +108,9 @@ export class PrismaPoliticianRepository implements IPoliticianRepository {
       where: { id: BigInt(id) },
       data: { isResearchFundPublic: isPublic },
     });
+  }
+  async setPhotoPath(id: string, photoPath: string | null) {
+    await this.prisma.politician.update({ where: { id: BigInt(id) }, data: { photoPath } });
   }
   async delete(id: string) {
     await this.prisma.$transaction(async (tx) => {

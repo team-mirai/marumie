@@ -6,10 +6,11 @@ export class SavePoliticianUsecase {
   constructor(private repository: IPoliticianRepository) {}
 
   async execute(id: string | null, input: PoliticianInput) {
-    const validation = Politician.validate(input);
+    const normalized = Politician.normalize(input);
+    const validation = Politician.validate(normalized);
     if (validation.status === "invalid") throw new Error(validation.errors[0].message);
     if (id !== null) await this.ensureExists(id);
-    await this.repository.save(id, { ...input, name: input.name.trim(), slug: input.slug.trim() });
+    await this.repository.save(id, normalized);
   }
 
   private async ensureExists(id: string) {

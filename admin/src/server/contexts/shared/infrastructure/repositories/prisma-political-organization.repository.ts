@@ -1,9 +1,27 @@
-import type { PrismaClient } from "@prisma/client";
+import type {
+  PrismaClient,
+  PoliticalOrganization as PrismaPoliticalOrganization,
+} from "@prisma/client";
 import type { PoliticalOrganization } from "@/shared/models/political-organization";
 import type {
   IPoliticalOrganizationRepository,
   UpdatePoliticalOrganizationInput,
 } from "@/server/contexts/shared/domain/repositories/political-organization-repository.interface";
+
+function toModel(row: PrismaPoliticalOrganization): PoliticalOrganization {
+  return {
+    id: row.id.toString(),
+    displayName: row.displayName,
+    orgName: row.orgName,
+    slug: row.slug,
+    description: row.description,
+    websiteUrl: row.websiteUrl,
+    snsUrls: row.snsUrls,
+    photoPath: row.photoPath,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+  };
+}
 
 export class PrismaPoliticalOrganizationRepository implements IPoliticalOrganizationRepository {
   constructor(private prisma: PrismaClient) {}
@@ -15,15 +33,7 @@ export class PrismaPoliticalOrganizationRepository implements IPoliticalOrganiza
       },
     });
 
-    return organizations.map((org) => ({
-      id: org.id.toString(),
-      displayName: org.displayName,
-      orgName: org.orgName,
-      slug: org.slug,
-      description: org.description,
-      createdAt: org.createdAt,
-      updatedAt: org.updatedAt,
-    }));
+    return organizations.map(toModel);
   }
 
   async findById(id: bigint): Promise<PoliticalOrganization | null> {
@@ -35,15 +45,7 @@ export class PrismaPoliticalOrganizationRepository implements IPoliticalOrganiza
       return null;
     }
 
-    return {
-      id: organization.id.toString(),
-      displayName: organization.displayName,
-      orgName: organization.orgName,
-      slug: organization.slug,
-      description: organization.description,
-      createdAt: organization.createdAt,
-      updatedAt: organization.updatedAt,
-    };
+    return toModel(organization);
   }
 
   async create(
@@ -66,15 +68,7 @@ export class PrismaPoliticalOrganizationRepository implements IPoliticalOrganiza
       },
     });
 
-    return {
-      id: organization.id.toString(),
-      displayName: organization.displayName,
-      orgName: organization.orgName,
-      slug: organization.slug,
-      description: organization.description,
-      createdAt: organization.createdAt,
-      updatedAt: organization.updatedAt,
-    };
+    return toModel(organization);
   }
 
   async update(id: bigint, data: UpdatePoliticalOrganizationInput): Promise<PoliticalOrganization> {
@@ -85,18 +79,16 @@ export class PrismaPoliticalOrganizationRepository implements IPoliticalOrganiza
         orgName: data.orgName?.trim() || null,
         slug: data.slug.trim(),
         description: data.description?.trim() || null,
+        ...(data.websiteUrl !== undefined && { websiteUrl: data.websiteUrl.trim() || null }),
+        ...(data.snsUrls !== undefined && { snsUrls: data.snsUrls }),
       },
     });
 
-    return {
-      id: organization.id.toString(),
-      displayName: organization.displayName,
-      orgName: organization.orgName,
-      slug: organization.slug,
-      description: organization.description,
-      createdAt: organization.createdAt,
-      updatedAt: organization.updatedAt,
-    };
+    return toModel(organization);
+  }
+
+  async setPhotoPath(id: bigint, photoPath: string | null): Promise<void> {
+    await this.prisma.politicalOrganization.update({ where: { id }, data: { photoPath } });
   }
 
   async delete(id: bigint): Promise<void> {

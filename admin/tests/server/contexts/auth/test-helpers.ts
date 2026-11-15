@@ -6,6 +6,7 @@ import type {
 } from "@/server/contexts/shared/domain/repositories/user-repository.interface";
 import type { SupabaseAuthUser } from "@/server/contexts/auth/domain/models/supabase-auth-user";
 import type { AuthSession } from "@/server/contexts/auth/domain/models/auth-session";
+import type { UserInvitationRepository } from "@/server/contexts/auth/domain/repositories/user-invitation-repository.interface";
 
 export const createMockSupabaseUser = (
   overrides: Partial<SupabaseAuthUser> = {}
@@ -65,3 +66,12 @@ export const createMockUserRepository = (): jest.Mocked<UserRepository> => ({
   findAllAssignedPoliticianIds: jest.fn(),
   replaceAssignedPoliticians: jest.fn(),
 });
+
+export const createMockUserInvitationRepository =
+  (): jest.Mocked<UserInvitationRepository> => ({
+    findAll: jest.fn(),
+    findByEmail: jest.fn(),
+    create: jest.fn(),
+    delete: jest.fn(),
+    createUserAcceptingInvitation: jest.fn(),
+  });

@@ -18,8 +18,7 @@
         "src/app/**/route.ts",
         "src/app/**/not-found.tsx"
       ],
-      "project": ["src/**/*.{ts,tsx}"],
-      "ignore": ["src/client/components/ui/**/*"]
+      "project": ["src/**/*.{ts,tsx}"]
     },
     "admin": {
       "entry": [

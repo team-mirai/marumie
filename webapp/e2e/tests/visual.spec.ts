@@ -37,7 +37,8 @@ import { test, expect, type Page } from "@playwright/test";
 //   - 表示がシードの値だけで決まるページ・年度を撮る。政治団体ページは 2025 年度（シードの取引はすべて 2025 年）。
 //     現在の年度を撮ると「現時点での貸借対照表」の見出しが年をまたいで変わる
 //   - 「YYYY.M.D更新」はシード投入時刻（取引の更新日時）で変わるので、撮る前に固定の文字に置き換える
-//   - グラフのアニメーションは toHaveScreenshot が「2 回続けて同じ画像になる」まで待つことで吸収する
+//   - サンキー図のアニメーションは「動きを減らす」設定（下の reducedMotion）で止める。
+//     ほかのグラフのアニメーションは toHaveScreenshot が「2 回続けて同じ画像になる」まで待つことで吸収する
 
 const VIEWPORT = { width: 1280, height: 800 };
 
@@ -53,6 +54,9 @@ test.use({
   // CI のサーバーとブラウザは UTC。手元の Mac（JST）で撮っても日付がずれないよう固定する
   timezoneId: "UTC",
   locale: "ja-JP",
+  // サンキー図（@nivo）の線のアニメーションは撮るたびに違う途中の形で止まることがあるので、
+  // 「動きを減らす」設定にしてアニメーションを止め、最終形を撮る
+  reducedMotion: "reduce",
 });
 
 /**
@@ -128,7 +132,23 @@ async function expectPageScreenshot(page: Page, name: string) {
 }
 
 test.describe("主要画面の見た目", () => {
-  test("政治団体ページ", async ({ page }) => {
+  test("トップページ", async ({ page }) => {
+    await page.goto("/");
+
+    // 政党のカードと所属議員の調研費が描画されてから撮る（年は既定の 2026 年で固定されている）
+    await expect(
+      page.getByRole("region", { name: "政党の収支" }).getByRole("heading", { name: "サンプル党の収支" }),
+    ).toBeVisible();
+    await expect(
+      page
+        .getByRole("region", { name: "所属議員の調研費" })
+        .getByRole("heading", { name: "サンプル 太郎の調研費" }),
+    ).toBeVisible();
+
+    await expectPageScreenshot(page, "home.png");
+  });
+
+  test("政党ページ", async ({ page }) => {
     await page.goto("/o/sample-party/2025");
 
     // 収支の流れ（サンキー図）と月ごとの推移のグラフが描画されてから撮る
@@ -138,6 +158,17 @@ test.describe("主要画面の見た目", () => {
     await expect(page.locator("#monthly-trends svg").first()).toBeVisible();
 
     await expectPageScreenshot(page, "organization.png");
+  });
+
+  test("政治団体（政党以外）のページ", async ({ page }) => {
+    await page.goto("/o/e2e-test-org/2025");
+
+    await expect(
+      page.locator('#cash-flow [role="img"][aria-label="政治資金の収支フロー図"]'),
+    ).toBeVisible();
+    await expect(page.locator("#monthly-trends svg").first()).toBeVisible();
+
+    await expectPageScreenshot(page, "political-organization.png");
   });
 
   test("取引一覧ページ", async ({ page }) => {

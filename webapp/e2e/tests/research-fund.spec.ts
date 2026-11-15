@@ -4,7 +4,7 @@ import { test, expect } from "@playwright/test";
 const PAGE_URL = "/p/sample-taro/2026";
 
 test.describe("調査研究費 議員ページ", () => {
-	test("B-1〜B-5 が表示され、実行時エラーが発生しないこと", async ({ page }) => {
+	test("v8 の本文が上から順に表示され、実行時エラーが発生しないこと", async ({ page }) => {
 		const errors: string[] = [];
 		page.on("pageerror", (error) => {
 			errors.push(`${error.name}: ${error.message}`);
@@ -17,24 +17,35 @@ test.describe("調査研究費 議員ページ", () => {
 			/サンプル 太郎の調研費.*みらいまる見え政治資金/,
 		);
 
-		// 収支の流れ（KPI2枚＋サンキー）
-		await expect(
-			page
-				.locator("#cash-flow")
-				.getByRole("heading", { name: /サンプル 太郎・調研費.*収支の流れ/ }),
-		).toBeVisible();
-		await expect(page.locator("#cash-flow").getByText("支給総額")).toBeVisible();
-		await expect(page.locator("#cash-flow").getByText("支出総額")).toBeVisible();
+		// パンくず
+		const breadcrumbs = page.getByRole("navigation", { name: "パンくずリスト" });
+		await expect(breadcrumbs.getByRole("link", { name: "トップ" })).toHaveAttribute("href", "/");
+		await expect(breadcrumbs.getByText("サンプル 太郎の調研費")).toBeVisible();
+
+		// 収支の流れ（ページの最初の見出し。支給総額・支出総額＋区分タブつきのサンキー）
+		const cashFlow = page.locator("#cash-flow");
+		await expect(cashFlow.getByText("サンプル 太郎の調研費・2026年")).toBeVisible();
+		await expect(cashFlow.getByRole("heading", { level: 1, name: "収支の流れ" })).toBeVisible();
+		await expect(cashFlow.getByText(/^\d{4}年\d{1,2}月〜\d{1,2}月支給分$/).first()).toBeVisible();
+		await expect(cashFlow.getByText("調研費とは")).toBeVisible();
+		await expect(cashFlow.getByText("支給総額")).toBeVisible();
+		await expect(cashFlow.getByText("支出総額")).toBeVisible();
+		await expect(cashFlow.getByRole("tab", { name: "詳細の区分" })).toHaveAttribute(
+			"aria-selected",
+			"true",
+		);
+		await expect(cashFlow.getByRole("tab", { name: "法律上の区分" })).toBeVisible();
 		await expect(
 			page.locator('[role="img"][aria-label="調査研究費の使いみちの流れ図"]'),
 		).toBeVisible();
-
-		// B-2 1年間の推移
 		await expect(
-			page.locator('#monthly-trends [role="img"][aria-label="月ごとの調査研究費の支給と支出"]'),
+			cashFlow.getByText("※年末までに使われなかった未使用分は国庫に返納されます。"),
 		).toBeVisible();
 
-		// B-3 活用方針と主な用途
+		// 活用方針と主な用途
+		await expect(
+			page.locator("#highlights").getByRole("heading", { name: "活用方針と主な用途" }),
+		).toBeVisible();
 		await expect(
 			page.locator("#highlights").getByText("サンプル 太郎の調研費の活用方針"),
 		).toBeVisible();
@@ -42,31 +53,93 @@ test.describe("調査研究費 議員ページ", () => {
 		// URL の無い成果物は「報告は準備中」と出す
 		await expect(page.getByText("開催報告：報告は準備中")).toBeVisible();
 
-		// B-4 すべての出入金
+		// 透明性の帯
 		await expect(
-			page
-				.locator("#transactions")
-				.getByRole("heading", { name: /サンプル 太郎・調研費.*すべての出入金/ }),
-		).toBeVisible();
-
-		// 透明性バンド
-		await expect(
-			page.getByRole("heading", { name: /調研費もまるごと公開/ }),
+			page.getByRole("heading", {
+				name: "調研費もまるごと公開。意味ある使い方か、検証できるように👀",
+			}),
 		).toBeVisible();
 		await expect(page.getByRole("link", { name: "こちらのnote" })).toHaveCount(0);
 
-		// B-5 データについて
-		await expect(page.getByText("調研費のデータについて")).toBeVisible();
+		// 月ごとの支出の推移・すべての出入金
 		await expect(
-			page.getByText(/仕訳が完了した支出を掲載しています。/),
+			page.locator("#monthly-trends").getByRole("heading", { name: "月ごとの支出の推移" }),
+		).toBeVisible();
+		await expect(
+			page.locator('#monthly-trends [role="img"][aria-label="月ごとの調査研究費の支給と支出"]'),
+		).toBeVisible();
+		await expect(
+			page.locator("#transactions").getByRole("heading", { name: "すべての出入金" }),
 		).toBeVisible();
 
-		// 政党ページへの導線
+		// セクションの順
+		const order = await page
+			.locator("#cash-flow, #highlights, #monthly-trends, #transactions, #explanation")
+			.evaluateAll((sections) => sections.map((section) => section.id));
+		expect(order).toEqual([
+			"cash-flow",
+			"highlights",
+			"monthly-trends",
+			"transactions",
+			"explanation",
+		]);
+
+		// 共通の下部ブロック（データについては議員ページ用の文言）
+		await expect(
+			page.getByRole("heading", { name: /少しずつ進んでいますがまだまだです/ }),
+		).toBeVisible();
+		await expect(page.getByRole("link", { name: /まる見え政治資金とは？/ })).toBeVisible();
+		const notes = page.locator("#explanation");
+		await expect(notes.getByRole("heading", { name: "まる見え政治資金について" })).toBeVisible();
+		await expect(notes.getByRole("heading", { name: "調研費のデータについて" })).toBeVisible();
+		await expect(notes.getByText(/仕訳が完了した支出を掲載しています。/)).toBeVisible();
+		await expect(notes.getByText(/調査研究広報滞在費に係る使途等報告書/)).toBeVisible();
+		await expect(notes.getByRole("heading", { name: "データの出典" })).toHaveCount(0);
+
+		// 外したもの：政党ページへの導線カード、試験公開のお知らせ、党の紹介、寄附・党員の応援カード
 		await expect(
 			page.getByRole("link", { name: /政党・チームみらいの「まる見え政治資金」も公開中/ }),
-		).toHaveAttribute("href", "/o/team-mirai");
+		).toHaveCount(0);
+		await expect(page.getByText(/法律より一足先に試験公開中/)).toHaveCount(0);
+		await expect(page.locator("main #about")).toHaveCount(0);
+		await expect(page.locator("main").getByText("寄附で応援する")).toHaveCount(0);
 
 		expect(errors, `以下のエラーが発生しました:\n${errors.join("\n")}`).toHaveLength(0);
+	});
+
+	for (const { label, viewport } of [
+		{ label: "PC", viewport: { width: 1280, height: 800 } },
+		{ label: "SP", viewport: { width: 390, height: 844 } },
+	]) {
+		test(`${label}: 冒頭に議員カードを出し、公開中の議員が1人だけなら前後の切り替えとほかの議員を出さない`, async ({
+			page,
+		}) => {
+			await page.setViewportSize(viewport);
+			await page.goto(PAGE_URL);
+			const card = page.getByRole("region", { name: "議員情報" });
+
+			await expect(card.getByText("サンプル 太郎", { exact: true }).locator("visible=true")).toBeVisible();
+			// シードの議員は顔写真が未登録なので人型のアイコンになる
+			await expect(
+				card.getByRole("img", { name: "サンプル 太郎の写真" }).locator("visible=true"),
+			).toBeVisible();
+			// シードで調研費を公開中かつ公開済みの仕訳があるのはサンプル 太郎だけ
+			await expect(card.getByRole("link", { name: /の調研費へ$/ })).toHaveCount(0);
+			await expect(page.getByRole("heading", { name: "ほかの議員の調研費" })).toHaveCount(0);
+		});
+	}
+
+	test("SP 幅では収支の流れを全体表示し、ピンチで拡大できると添える", async ({ page }) => {
+		await page.setViewportSize({ width: 390, height: 844 });
+		await page.goto(PAGE_URL);
+		const cashFlow = page.locator("#cash-flow");
+
+		await expect(cashFlow.getByText("ピンチで拡大できます")).toBeVisible();
+		// 支給期間と更新日はカードの末尾に1行で出す
+		await expect(cashFlow.getByText(/支給分　\d{4}\.\d{1,2}\.\d{1,2}更新$/)).toBeVisible();
+		const chart = page.locator('[role="img"][aria-label="調査研究費の使いみちの流れ図"]');
+		const box = await chart.boundingBox();
+		expect(box?.width ?? Number.POSITIVE_INFINITY).toBeLessThanOrEqual(390);
 	});
 
 	for (const { label, viewport } of [
@@ -172,6 +245,41 @@ test.describe("調査研究費 議員ページ", () => {
 		await page.reload();
 		await expect(page.locator("#transactions").getByText("イヤホン代").first()).toBeVisible();
 		await expect(page.getByRole("button", { name: "領収書を見る" })).toHaveCount(0);
+	});
+
+	test("全件ページが v8 の全件画面の見た目（パンくず・見出し・共通の下部ブロック）になる", async ({
+		page,
+	}) => {
+		await page.goto(`${PAGE_URL}/transactions`);
+
+		// パンくず「トップ › サンプル 太郎の調研費 › すべての出入金」
+		const breadcrumbs = page.getByRole("navigation", { name: "パンくずリスト" });
+		await expect(breadcrumbs.getByRole("link", { name: "トップ" })).toHaveAttribute("href", "/");
+		await expect(
+			breadcrumbs.getByRole("link", { name: "サンプル 太郎の調研費" }),
+		).toHaveAttribute("href", PAGE_URL);
+		await expect(breadcrumbs.locator('[aria-current="page"]')).toHaveText("すべての出入金");
+
+		// 見出し「サンプル 太郎の調研費・2026年｜すべての出入金」と更新日
+		const section = page.locator("#transactions");
+		await expect(section.getByText("サンプル 太郎の調研費・2026年")).toBeVisible();
+		await expect(
+			section.getByRole("heading", { level: 1, name: "すべての出入金" }),
+		).toBeVisible();
+		await expect(section.getByText(/^\d{4}\.\d{1,2}\.\d{1,2}更新$/).first()).toBeVisible();
+
+		// 共通の下部ブロック（データについては議員ページ用の文言）
+		await expect(
+			page.getByRole("heading", { name: /少しずつ進んでいますがまだまだです/ }),
+		).toBeVisible();
+		await expect(page.getByRole("link", { name: /まる見え政治資金とは？/ })).toBeVisible();
+		await expect(
+			page.locator("#explanation").getByRole("heading", { name: "調研費のデータについて" }),
+		).toBeVisible();
+
+		// 外したもの：党の紹介、寄附・党員の応援カード
+		await expect(page.locator("main #about")).toHaveCount(0);
+		await expect(page.locator("main").getByText("寄附で応援する")).toHaveCount(0);
 	});
 
 	test("全件ページの SP 幅でも、タブで並び替えてカテゴリーで絞り込める", async ({ page }) => {
@@ -332,26 +440,6 @@ test.describe("調査研究費 議員ページ", () => {
 		await expect(card).toHaveClass(/border-\[#2AA693\]/);
 	});
 
-	test("ヘッダーのナビが同じ議員ページ内のセクションを指す", async ({ page }) => {
-		await page.goto(PAGE_URL);
-
-		const nav = page.getByRole("navigation", { name: "メインナビゲーション" });
-
-		// 政治団体ページ（/o/...）へ飛ばず、調研費ページ内のセクションを指す。
-		// next/link は末尾スラッシュを落とすので href は /p/[slug]/[year]#... になる。
-		for (const section of [
-			"cash-flow",
-			"monthly-trends",
-			"transactions",
-			"explanation",
-		]) {
-			await expect(
-				nav.locator(`a[href="/p/sample-taro/2026#${section}"]`),
-			).toHaveCount(1);
-		}
-		await expect(nav.locator('a[href*="/o/"]')).toHaveCount(0);
-	});
-
 	test("フッターのアンカーが同じ議員ページ内のセクションを指す", async ({
 		page,
 	}) => {
@@ -371,97 +459,19 @@ test.describe("調査研究費 議員ページ", () => {
 		}
 	});
 
-	test("組織セレクタの表示名が「{氏名}（調研費）」になる", async ({ page }) => {
-		await page.goto(PAGE_URL);
-
-		await expect(
-			page.getByRole("button", { name: /サンプル 太郎（調研費）/ }),
-		).toBeVisible();
-	});
-
-	test("存在しない議員のページは404ページが表示される", async ({ page }) => {
+	test("存在しない議員のページは404エラー画面を表示する", async ({ page }) => {
 		const response = await page.goto("/p/no-such-politician/2026");
 
 		expect(response?.status()).toBe(404);
+		await expect(page).toHaveURL("/p/no-such-politician/2026");
 		await expect(
 			page.getByRole("heading", { name: "ページが見つかりません" }),
 		).toBeVisible();
 	});
 });
 
-test.describe("調査研究費 政党トップページのサマリー", () => {
+test.describe("調査研究費 グローバルナビ", () => {
 	const ORG_URL = "/o/sample-party/2026";
-
-	test("調研費のサマリーが表示され、実行時エラーが発生しないこと", async ({ page }) => {
-		const errors: string[] = [];
-		page.on("pageerror", (error) => {
-			errors.push(`${error.name}: ${error.message}`);
-		});
-
-		await page.goto(ORG_URL);
-		const section = page.locator("#research-fund");
-
-		// 見出し・サブ
-		await expect(
-			section.getByRole("heading", { name: /所属議員.*調研費のサマリー/ }),
-		).toBeVisible();
-		await expect(
-			section.getByText("議員に毎月100万円支給される公費を、何に使ったか"),
-		).toBeVisible();
-
-		// 「調研費とは」コラプスは初期状態で閉じている
-		await expect(section.getByText("調研費とは")).toBeVisible();
-		await expect(
-			section.getByText(/透明性の観点から本サイトで公開しています/),
-		).toBeHidden();
-
-		// 公開中の議員が1名だけなので、その議員のチップと「他議員も今後追加」が並ぶ
-		await expect(
-			section.getByText("他議員も今後追加", { exact: true }),
-		).toBeVisible();
-		await expect(section.getByText("試験公開中")).toBeVisible();
-		await expect(section.getByText(/分を公開中$/)).toBeVisible();
-
-		// KPI 2枚とサンキー
-		await expect(section.getByText("支給総額")).toBeVisible();
-		await expect(section.getByText("支出総額")).toBeVisible();
-		await expect(
-			section.locator(
-				'[role="img"][aria-label="調査研究費の使いみちの流れ図"]',
-			),
-		).toBeVisible();
-		await expect(
-			section.getByText("支給額の1%未満の費目は「その他」にまとめています。"),
-		).toBeVisible();
-
-		expect(
-			errors,
-			`以下のエラーが発生しました:\n${errors.join("\n")}`,
-		).toHaveLength(0);
-	});
-
-	test("「{氏名}の調研費を詳しく」から議員ページに遷移する", async ({
-		page,
-	}) => {
-		await page.goto(ORG_URL);
-
-		await page
-			.locator("#research-fund")
-			.getByRole("link", { name: "サンプル 太郎の調研費を詳しく" })
-			.click();
-
-		await expect(page).toHaveURL(/\/p\/sample-taro\/2026$/);
-	});
-
-	test("グローバルナビに「調査研究費」がある", async ({ page }) => {
-		await page.goto(ORG_URL);
-
-		await expect(
-			page
-				.getByRole("navigation", { name: "メインナビゲーション" })
-				.getByRole("link", { name: "調査研究費" }),
-		).toHaveAttribute("href", /#research-fund$/);
-	});
 
 	test("A-7 データについて に調研費の記載がある", async ({ page }) => {
 		await page.goto(ORG_URL);
@@ -469,43 +479,5 @@ test.describe("調査研究費 政党トップページのサマリー", () => {
 		await expect(
 			page.locator("#explanation").getByText("調査研究費について"),
 		).toBeVisible();
-	});
-
-	test("組織セレクタが団体と調研費（議員別）のグループになる", async ({
-		page,
-	}) => {
-		await page.goto(ORG_URL);
-
-		await page.getByRole("button", { name: /サンプル党/ }).first().click();
-
-		await expect(page.getByText("表示する団体名", { exact: true })).toBeVisible();
-		await expect(page.getByText("調研費（議員別）", { exact: true })).toBeVisible();
-		await expect(page.getByText("対象年", { exact: true })).toBeVisible();
-
-		// 議員を選ぶと議員ページに遷移する（A-6 の議員リストと取り違えないよう
-		// 調査研究費グループの中だけを探す）
-		await page
-			.getByRole("button", { name: /サンプル 太郎 2026年/ })
-			.click();
-		await expect(page).toHaveURL(/\/p\/sample-taro\/2026$/);
-	});
-
-	test("組織セレクタの調研費（議員別）には公開済みの仕訳がある議員だけが出る", async ({
-		page,
-	}) => {
-		// 政党ページの A-6 には準備中の議員が出るので、A-6 の無い議員ページで確かめる
-		await page.goto("/p/sample-taro/2026");
-
-		await page.getByRole("button", { name: /サンプル 太郎（調研費）/ }).click();
-
-		await expect(page.getByText("調研費（議員別）", { exact: true })).toBeVisible();
-		await expect(
-			page.getByRole("button", { name: /サンプル 太郎 2026年/ }),
-		).toBeVisible();
-		// サンプル 花子・次郎は帳簿はあるが公開済みの仕訳が無いので、
-		// 「〇〇 ほか N人」の準備中の行としても出ない
-		await expect(page.getByText(/サンプル 花子/)).toHaveCount(0);
-		await expect(page.getByText(/サンプル 次郎/)).toHaveCount(0);
-		await expect(page.getByText(/ほか\d+人/)).toHaveCount(0);
 	});
 });

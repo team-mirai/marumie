@@ -7,18 +7,25 @@ const input: PoliticianInput = {
   slug: " test-member ",
   termStart: "2026-02-08",
   politicalOrganizationId: "",
+  nameKana: "",
+  house: "",
+  constituency: "",
+  profileUrl: "",
+  websiteUrl: "",
+  snsUrls: [],
 };
 let repository: jest.Mocked<IPoliticianRepository>;
 let usecase: GetPoliticianUsecase;
 beforeEach(() => {
   repository = { findAll: jest.fn(), findById: jest.fn(), save: jest.fn(),
     setResearchFundPublic: jest.fn(),
+    setPhotoPath: jest.fn(),
     delete: jest.fn(),
   };
   usecase = new GetPoliticianUsecase(repository);
 });
 test("議員を取得する", async () => {
-  const politician = { ...input, id: "1", politicalOrganizationName: null, isResearchFundPublic: false };
+  const politician = { ...input, id: "1", politicalOrganizationName: null, isResearchFundPublic: false, photoPath: null };
   repository.findById.mockResolvedValue(politician);
   expect(await usecase.execute("1")).toEqual(politician);
   expect(repository.findById).toHaveBeenCalledWith("1");

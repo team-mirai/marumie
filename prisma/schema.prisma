@@ -23,8 +23,39 @@ model User {
   researchFundLegalCategoryOverrides      ResearchFundLegalCategoryOverride[]
 
   politicianAssignments UserPoliticianAssignment[]
+  invitationsCreated    UserInvitation[]
 
   @@map("users")
+}
+
+// 初回ログイン前の人に付けておくロールと担当議員の招待（予約）。招待メールは送らない（#1882）
+// 持ち主を確かめられた初回ログインで User を作るとき、同じトランザクションでロール・担当を付けて行を消す
+model UserInvitation {
+  id          String     @id @default(uuid())
+  // 小文字に正規化して保存する（大文字・小文字の違いで別人扱いしない）
+  email       String     @unique @db.VarChar(255)
+  roles       UserRole[] @default([])
+  createdById String?    @map("created_by_id")
+  createdAt   DateTime   @default(now()) @map("created_at")
+  updatedAt   DateTime   @updatedAt @map("updated_at")
+
+  createdBy   User?                      @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  politicians UserInvitationPolitician[]
+
+  @@map("user_invitations")
+}
+
+// 招待で付ける担当議員（#1882）
+model UserInvitationPolitician {
+  invitationId String         @map("invitation_id")
+  politicianId BigInt         @map("politician_id")
+  createdAt    DateTime       @default(now()) @map("created_at")
+  invitation   UserInvitation @relation(fields: [invitationId], references: [id], onDelete: Cascade)
+  politician   Politician     @relation(fields: [politicianId], references: [id], onDelete: Cascade)
+
+  @@unique([invitationId, politicianId])
+  @@index([politicianId])
+  @@map("user_invitation_politicians")
 }
 
 // ユーザーが担当する議員（調査研究費の書き込みを担当の議員室に絞るため。#1773）
@@ -48,6 +79,10 @@ model PoliticalOrganization {
   updatedAt        DateTime          @updatedAt @map("updated_at")
   slug             String            @unique @db.VarChar(255)
   orgName          String?           @map("org_name") @db.VarChar(255)
+  // 公開サイトの政治団体カード・政治団体ページの見出しに出す（#1917）。admin から手で入力する
+  websiteUrl       String?           @map("website_url") // 公式サイト
+  snsUrls          String[]          @default([]) @map("sns_urls") // SNS の URL（表示順どおり）
+  photoPath        String?           @map("photo_path") // 代表者の顔写真の Storage 上のキー
 
   balanceSnapshots BalanceSnapshot[]
   reportProfiles   OrganizationReportProfile[]
@@ -208,6 +243,14 @@ model Politician {
   displayOrder         Int      @default(0) @map("display_order")
   // 調研費を公開するか。議員室ごとにプレビューしてから順次公開するため、新規・既存とも非公開から始める
   isResearchFundPublic Boolean  @default(false) @map("is_research_fund_public")
+  // 公開サイトの議員カード・議員ページの見出しに出すプロフィール（#1916）。admin から手で入力する
+  nameKana             String?  @map("name_kana") @db.VarChar(255)
+  house                PoliticianHouse?
+  constituency         String?  @db.VarChar(255)
+  profileUrl           String?  @map("profile_url") // チームみらい公式サイト内のプロフィールページ
+  websiteUrl           String?  @map("website_url") // 議員の公式サイト
+  snsUrls              String[] @default([]) @map("sns_urls") // SNS の URL（表示順どおり）
+  photoPath            String?  @map("photo_path") // 顔写真の Storage 上のキー
   createdAt            DateTime @default(now()) @map("created_at")
   updatedAt            DateTime @updatedAt @map("updated_at")
 
@@ -218,7 +261,8 @@ model Politician {
 
   addressSearchPrompts ResearchFundAddressSearchPrompt[]
 
-  userAssignments UserPoliticianAssignment[]
+  userAssignments       UserPoliticianAssignment[]
+  invitationAssignments UserInvitationPolitician[]
 
   @@map("politicians")
 }
@@ -658,6 +702,12 @@ enum TransactionType {
   non_cash_journal
   offset_income
   offset_expense
+}
+
+// 議員の院。shugiin = 衆議院 / sangiin = 参議院
+enum PoliticianHouse {
+  shugiin
+  sangiin
 }
 
 enum UserRole {

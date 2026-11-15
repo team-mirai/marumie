@@ -6,6 +6,7 @@ import {
   type PublishedExpenditureGroup,
   type PublishedExpense,
   type PublishedPartyResearchFund,
+  type PublishedPoliticianProfile,
   type PublishedPoliticianResearchFund,
   type PublishedResearchFund,
   type PublishedResearchFundPageRef,
@@ -52,7 +53,7 @@ const entrySelect = {
 } satisfies Prisma.ResearchFundJournalEntrySelect;
 
 /**
- * 政党ページ A-6 は横棒グラフと KPI しか描かないので、明細（項目名・特記事項・領収書）は取らない。
+ * トップページの「所属議員の調研費」は金額とサンキーしか描かないので、明細（項目名・特記事項・領収書）は取らない。
  * 議員が増えるほど行数が効くため、必要な列だけに絞る。
  */
 const summaryEntrySelect = {
@@ -97,6 +98,38 @@ function withOverride(override: ResearchFundLegalCategory | null) {
   return override ? { legalCategoryOverride: override } : {};
 }
 
+/**
+ * 議員カードに出すプロフィール。顔写真は登録の有無だけを読み、キーは公開ページに渡さない
+ * （配信は議員の公開設定を確かめる API が行う）。
+ */
+const politicianProfileSelect = {
+  name: true,
+  slug: true,
+  nameKana: true,
+  house: true,
+  constituency: true,
+  profileUrl: true,
+  websiteUrl: true,
+  snsUrls: true,
+  photoPath: true,
+} satisfies Prisma.PoliticianSelect;
+
+function profileOf(
+  politician: Prisma.PoliticianGetPayload<{ select: typeof politicianProfileSelect }>,
+): PublishedPoliticianProfile {
+  return {
+    name: politician.name,
+    slug: politician.slug,
+    nameKana: politician.nameKana,
+    house: politician.house,
+    constituency: politician.constituency,
+    profileUrl: politician.profileUrl,
+    websiteUrl: politician.websiteUrl,
+    snsUrls: politician.snsUrls,
+    hasPhoto: politician.photoPath !== null,
+  };
+}
+
 function dateOf(date: Date): string {
   return date.toISOString().slice(0, 10);
 }
@@ -114,7 +147,18 @@ export class PrismaResearchFundRepository implements ResearchFundRepository {
         nextUpdateNote: true,
         policyComment: true,
         details: true,
-        politician: { select: { name: true, slug: true, isResearchFundPublic: true } },
+        politician: {
+          select: {
+            ...politicianProfileSelect,
+            isResearchFundPublic: true,
+            // 年の切り替えに出す年度。published の仕訳が 1 件も無い帳簿は開いても中身が無いので数えない
+            books: {
+              where: { journalEntries: { some: { status: "published" } } },
+              select: { financialYear: true },
+              orderBy: { financialYear: "asc" },
+            },
+          },
+        },
         journalEntries: {
           where: { status: "published" },
           select: entrySelect,
@@ -215,7 +259,8 @@ export class PrismaResearchFundRepository implements ResearchFundRepository {
     }));
 
     return {
-      politician: { name: book.politician.name, slug: book.politician.slug },
+      politician: profileOf(book.politician),
+      publishedYears: book.politician.books.map((politicianBook) => politicianBook.financialYear),
       isPublic: book.politician.isResearchFundPublic,
       financialYear: book.financialYear,
       asOfDate: book.asOfDate ? dateOf(book.asOfDate) : null,
@@ -249,6 +294,9 @@ export class PrismaResearchFundRepository implements ResearchFundRepository {
               select: {
                 name: true,
                 slug: true,
+                nameKana: true,
+                house: true,
+                photoPath: true,
                 books: {
                   where: { financialYear },
                   select: {
@@ -308,7 +356,13 @@ export class PrismaResearchFundRepository implements ResearchFundRepository {
         }
 
         return {
-          politician: { name: politician.name, slug: politician.slug },
+          politician: {
+            name: politician.name,
+            slug: politician.slug,
+            nameKana: politician.nameKana,
+            house: politician.house,
+            hasPhoto: politician.photoPath !== null,
+          },
           asOfDate: book?.asOfDate ? dateOf(book.asOfDate) : null,
           publishedThrough: book?.publishedThrough ? dateOf(book.publishedThrough) : null,
           rows,
@@ -344,12 +398,15 @@ export class PrismaResearchFundRepository implements ResearchFundRepository {
   async findPoliticians(financialYear: number): Promise<ResearchFundPoliticianSource[]> {
     const politicians = await this.prisma.politician.findMany({
       // 帳簿の無い議員はセレクタに出さない（開いても中身が無いため）。
-      // 調研費を「公開しない」議員も出さない（URL を知っていれば開ける）。
+      // 調研費を「公開しない」議員も出さない（プレビュー URL を知っていれば開ける）。
       where: { isResearchFundPublic: true, books: { some: { financialYear } } },
       orderBy: [{ displayOrder: "asc" }, { id: "asc" }],
       select: {
         name: true,
         slug: true,
+        house: true,
+        constituency: true,
+        photoPath: true,
         books: {
           where: { financialYear },
           select: {
@@ -369,6 +426,9 @@ export class PrismaResearchFundRepository implements ResearchFundRepository {
       return {
         slug: politician.slug,
         name: politician.name,
+        house: politician.house,
+        constituency: politician.constituency,
+        hasPhoto: politician.photoPath !== null,
         publishedMonths: (book?.journalEntries ?? []).map((entry) =>
           dateOf(entry.entryDate).slice(0, 7),
         ),

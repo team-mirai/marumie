@@ -1,7 +1,6 @@
 import "server-only";
 import Image from "next/image";
-import CardHeader from "@/client/components/layout/CardHeader";
-import MainColumnCard from "@/client/components/layout/MainColumnCard";
+import SectionCard from "@/client/components/layout/SectionCard";
 import ResearchFundCategoryPill from "@/client/components/research-fund/ResearchFundCategoryPill";
 import {
   ResearchFundGroupRowsLink,
@@ -14,6 +13,8 @@ import type {
 
 interface Props {
   data: ResearchFundPageData;
+  /** 見出しの上の小さな行（例: 「峰島侑也の調研費・2026年」） */
+  eyebrow: string;
   updatedAt: string;
 }
 
@@ -48,23 +49,22 @@ function StarIcon() {
 }
 
 /** 活用方針と主な用途。活用方針と、支出群ごとの用途カード。 */
-export default function ResearchFundHighlightsSection({ data, updatedAt }: Props) {
+export default function ResearchFundHighlightsSection({ data, eyebrow, updatedAt }: Props) {
   return (
-    <MainColumnCard id="highlights">
-      <CardHeader
-        icon={<Image src="/icons/icon-heart-handshake.svg" alt="" width={30} height={30} />}
-        organizationName={`${data.politician.name}・調研費`}
-        title="活用方針と主な用途"
-        updatedAt={updatedAt}
-        subtitle="調研費の活用方針と、主要な支出の目的"
-      />
-
+    <SectionCard
+      id="highlights"
+      iconSrc="/icons/icon-heart-handshake.svg"
+      iconLabel="Heart handshake icon"
+      eyebrow={eyebrow}
+      title="活用方針と主な用途"
+      updatedAt={updatedAt}
+    >
       {data.policyComment && (
         <div className="rounded-2xl border border-[#E5E7EB] bg-gradient-to-br from-[#E2F6F3] to-[#EEF6E2] p-6">
           <div className="text-base font-bold text-gray-800">
             {data.politician.name}の調研費の活用方針
           </div>
-          <p className="mt-2 text-[15px] leading-[1.87] tracking-[0.01em] text-gray-800">
+          <p className="mt-2 whitespace-pre-line text-[15px] leading-[1.87] tracking-[0.01em] text-gray-800 [text-wrap:pretty]">
             {data.policyComment}
           </p>
         </div>
@@ -143,6 +143,6 @@ export default function ResearchFundHighlightsSection({ data, updatedAt }: Props
           ))}
         </div>
       )}
-    </MainColumnCard>
+    </SectionCard>
   );
 }
