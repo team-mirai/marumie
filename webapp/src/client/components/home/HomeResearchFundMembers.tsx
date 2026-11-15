@@ -79,7 +79,7 @@ function MemberDetail({ member }: { member: HomeResearchFundMember }) {
           ariaLabel: `${member.name}の調査研究費の使いみちの流れ図`,
           ariaDescription:
             "調査研究費の支給から使いみちへのお金の流れを示すサンキーダイアグラムです。",
-          compactEdgeLabels: true,
+          variant: "research-fund-summary",
         }}
         emptyMessage="公開中の調査研究費のデータがありません"
       />

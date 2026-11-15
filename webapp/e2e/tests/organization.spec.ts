@@ -23,7 +23,7 @@ test.describe("政治団体ページ", () => {
 			).toBeVisible();
 			// サンキーチャート（SVG）が描画されるまで待機
 			await expect(
-				page.locator("#cash-flow").locator('[role="img"][aria-label="政治資金の収支フロー図"]'),
+				page.locator("#cash-flow").locator('[role="group"][aria-label="政治資金の収支フロー図"]'),
 			).toBeVisible();
 
 			// 実行時エラーが発生していないことを確認
@@ -91,8 +91,30 @@ test.describe("政治団体ページ", () => {
 				"true",
 			);
 			await expect(
-				heading.locator('#cash-flow [role="img"][aria-label="政治資金の収支フロー図"]'),
+				heading.locator('#cash-flow [role="group"][aria-label="政治資金の収支フロー図"]'),
 			).toBeVisible();
+		});
+
+		test("収支の流れの図に列の見出し・合計・各項目の金額と割合が出て、ホバーした項目を強調する", async ({
+			page,
+		}) => {
+			const chart = page.locator('#cash-flow [role="group"][aria-label="政治資金の収支フロー図"]');
+
+			await expect(chart.getByText("収入", { exact: true })).toBeVisible();
+			await expect(chart.getByText("支出・残高", { exact: true })).toBeVisible();
+			await expect(chart.getByText("合計", { exact: true })).toBeVisible();
+			await expect(chart.getByText("1,581万円", { exact: true })).toBeVisible();
+			// 各項目は「項目名 金額（割合）」で読み上げる
+			const balance = chart.getByRole("img", { name: /^現金残高 300万円（\d+%）$/ });
+			await expect(balance).toBeVisible();
+			await expect(chart.getByText(/^300万円　\d+%$/)).toBeVisible();
+
+			// 以前のホバーの吹き出しは出さず、ホバーした項目以外を薄くする
+			await balance.hover();
+			await expect(chart).toHaveClass(/has-hover/);
+			await expect(balance).toHaveClass(/is-hot/);
+			await page.mouse.move(0, 0);
+			await expect(chart).not.toHaveClass(/has-hover/);
 		});
 
 		test("見出しカードの年の切り替えで年度が切り替わる", async ({ page }) => {
@@ -296,7 +318,7 @@ test.describe("政治団体ページ", () => {
 				"true",
 			);
 			await expect(
-				cashFlow.locator('[role="img"][aria-label="政治資金の収支フロー図"]'),
+				cashFlow.locator('[role="group"][aria-label="政治資金の収支フロー図"]'),
 			).toBeVisible();
 		});
 

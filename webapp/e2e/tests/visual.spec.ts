@@ -1,7 +1,7 @@
 import { test, expect, type Page } from "@playwright/test";
 
 // 主要画面の見た目を基準画像（visual.spec.ts-snapshots/）と比べ、崩れたら CI を落とす。
-// 依存パッケージ（tailwindcss・apexcharts・@nivo など）の更新を自動マージするときの安全網。
+// 依存パッケージ（tailwindcss・apexcharts など）の更新を自動マージするときの安全網。
 //
 // ■ 基準画像は CI（Linux）の描画結果でなければならない
 //   フォントの描画が macOS と Linux で違うため、手元の Mac のブラウザで撮った画像は CI と一致しない。
@@ -54,7 +54,7 @@ test.use({
   // CI のサーバーとブラウザは UTC。手元の Mac（JST）で撮っても日付がずれないよう固定する
   timezoneId: "UTC",
   locale: "ja-JP",
-  // サンキー図（@nivo）の線のアニメーションは撮るたびに違う途中の形で止まることがあるので、
+  // サンキー図の「ノードが伸びて帯が現れる」アニメーションは撮るたびに違う途中の形で止まることがあるので、
   // 「動きを減らす」設定にしてアニメーションを止め、最終形を撮る
   reducedMotion: "reduce",
 });
@@ -90,7 +90,7 @@ async function stabilize(page: Page) {
         ),
     );
 
-    // グラフ（@nivo・apexcharts）は JS のアニメーションで描かれ、CSS の animations: "disabled" が効かない。
+    // グラフ（apexcharts）は JS のアニメーションで描かれ、CSS の animations: "disabled" が効かない。
     // SVG の中身が 1 秒間変わらなくなるまで待つ（最大 20 秒）
     const svgSnapshot = () =>
       Array.from(document.querySelectorAll("svg"))
@@ -153,7 +153,7 @@ test.describe("主要画面の見た目", () => {
 
     // 収支の流れ（サンキー図）と月ごとの推移のグラフが描画されてから撮る
     await expect(
-      page.locator('#cash-flow [role="img"][aria-label="政治資金の収支フロー図"]'),
+      page.locator('#cash-flow [role="group"][aria-label="政治資金の収支フロー図"]'),
     ).toBeVisible();
     await expect(page.locator("#monthly-trends svg").first()).toBeVisible();
 
@@ -164,7 +164,7 @@ test.describe("主要画面の見た目", () => {
     await page.goto("/o/e2e-test-org/2025");
 
     await expect(
-      page.locator('#cash-flow [role="img"][aria-label="政治資金の収支フロー図"]'),
+      page.locator('#cash-flow [role="group"][aria-label="政治資金の収支フロー図"]'),
     ).toBeVisible();
     await expect(page.locator("#monthly-trends svg").first()).toBeVisible();
 
@@ -183,7 +183,7 @@ test.describe("主要画面の見た目", () => {
     await page.goto("/p/sample-taro/2026");
 
     await expect(
-      page.locator('[role="img"][aria-label="調査研究費の使いみちの流れ図"]'),
+      page.locator('[role="group"][aria-label="調査研究費の使いみちの流れ図"]'),
     ).toBeVisible();
     await expect(
       page.locator('#monthly-trends [role="img"][aria-label="月ごとの調査研究費の支給と支出"]'),

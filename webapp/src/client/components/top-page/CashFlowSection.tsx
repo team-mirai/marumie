@@ -12,10 +12,7 @@ interface CashFlowSectionProps {
   /** ページ内リンクの飛び先。外側のカードが飛び先を持つときは渡さない */
   id?: string;
   /** サンキー図の読み上げ用のラベル・説明と見せ方。政治資金以外の図で差し替える */
-  chart?: Pick<
-    ComponentProps<typeof SankeyChart>,
-    "ariaLabel" | "ariaDescription" | "compactEdgeLabels"
-  >;
+  chart?: Pick<ComponentProps<typeof SankeyChart>, "ariaLabel" | "ariaDescription" | "variant">;
   /** 図のデータが無いときの文言 */
   emptyMessage?: string;
 }

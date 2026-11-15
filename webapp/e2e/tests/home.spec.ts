@@ -45,7 +45,7 @@ test.describe("トップページ", () => {
 		await expect(card).toContainText(/支出総額\s*1281万円/);
 		await expect(card).toContainText(/収支・現金残高\s*300万円/);
 		await expect(
-			card.locator('[role="img"][aria-label="政治資金の収支フロー図"]'),
+			card.locator('[role="group"][aria-label="政治資金の収支フロー図"]'),
 		).toBeVisible();
 		await expect(detail).toHaveAttribute("href", "/o/sample-party/2025");
 

@@ -6,8 +6,6 @@
 export type {
   SankeyData,
   SankeyNode,
-  SankeyNodeBreakdownItem,
-  SankeyLink,
 } from "@/server/contexts/shared/domain/models/sankey-data";
 export {
   SANKEY_OTHER_LABEL,
