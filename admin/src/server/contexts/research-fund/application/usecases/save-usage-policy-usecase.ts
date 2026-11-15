@@ -1,5 +1,5 @@
 import "server-only";
-import { invalidateWebappCache } from "@/server/contexts/research-fund/application/services/invalidate-webapp-cache";
+import { invalidateWebappCache } from "@/server/contexts/shared/application/services/invalidate-webapp-cache";
 import { Book } from "@/server/contexts/research-fund/domain/models/book";
 import {
   assertValidIds,

@@ -9,14 +9,23 @@ import type {
   UpdatePoliticalOrganizationInput,
 } from "@/server/contexts/shared/domain/repositories/political-organization-repository.interface";
 import { PoliticalOrganizationInputError } from "@/server/contexts/shared/domain/errors/political-organization-input-error";
+import type { ICacheInvalidator } from "@/server/contexts/shared/domain/services/cache-invalidator.interface";
+import { invalidateWebappCache } from "@/server/contexts/shared/application/services/invalidate-webapp-cache";
 
+/**
+ * 政治団体の情報（表示名・公式サイト・SNS など）を更新する。
+ * webapp の政治団体ページに時間を置かず反映されるよう、保存したら webapp のキャッシュを消す（失敗は警告として返す）。
+ */
 export class UpdatePoliticalOrganizationUsecase {
-  constructor(private repository: IPoliticalOrganizationRepository) {}
+  constructor(
+    private repository: IPoliticalOrganizationRepository,
+    private cacheInvalidator: ICacheInvalidator,
+  ) {}
 
   async execute(
     id: bigint,
     data: UpdatePoliticalOrganizationInput,
-  ): Promise<PoliticalOrganization> {
+  ): Promise<{ organization: PoliticalOrganization; cacheWarning: string | null }> {
     // 入力の誤りはそのままのメッセージで返す
     if (!data.displayName || data.displayName.trim().length === 0) {
       throw new PoliticalOrganizationInputError("表示名は必須です");
@@ -28,13 +37,15 @@ export class UpdatePoliticalOrganizationUsecase {
 
     const links = this.normalizeLinks(data);
 
+    let organization: PoliticalOrganization;
     try {
-      return await this.repository.update(id, { ...data, ...links });
+      organization = await this.repository.update(id, { ...data, ...links });
     } catch (error) {
       throw new Error(
         `Failed to update political organization: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
     }
+    return { organization, cacheWarning: await invalidateWebappCache(this.cacheInvalidator) };
   }
 
   /** 公式サイト・SNS はそれぞれ渡されたときだけ検証して保存する（省略した項目は今の値のまま） */

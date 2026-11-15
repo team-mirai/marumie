@@ -1,18 +1,11 @@
 import "server-only";
 import type { Metadata } from "next";
-import Image from "next/image";
 import { notFound, redirect } from "next/navigation";
-import AboutSection from "@/client/components/common/AboutSection";
-import AnotherPageLinkSection from "@/client/components/common/AnotherPageLinkSection";
-import ExplanationSection from "@/client/components/common/ExplanationSection";
-import FloatingBackButton from "@/client/components/common/FloatingBackButton";
-import LinkCardsSection from "@/client/components/common/LinkCardsSection";
-import TransparencySection from "@/client/components/common/TransparencySection";
-import CardHeader from "@/client/components/layout/CardHeader";
+import SiteBottomBlock from "@/client/components/common/SiteBottomBlock";
+import Breadcrumbs from "@/client/components/layout/Breadcrumbs";
 import MainColumn from "@/client/components/layout/MainColumn";
-import MainColumnCard from "@/client/components/layout/MainColumnCard";
+import SectionCard from "@/client/components/layout/SectionCard";
 import InteractiveTransactionTable from "@/client/components/top-page/features/transactions-table/InteractiveTransactionTable";
-import ProgressSection from "@/client/components/top-page/ProgressSection";
 import { loadTransactionsPageData } from "@/server/contexts/public-finance/presentation/loaders/load-transactions-page-data";
 import { loadOrganizations } from "@/server/contexts/public-finance/presentation/loaders/load-organizations";
 import { formatUpdatedAt } from "@/client/lib/format-date";
@@ -110,23 +103,25 @@ export default async function TransactionsPage({ params, searchParams }: Transac
     });
 
     const organization = data.politicalOrganizations.find((org) => org.slug === slug);
+    const organizationName = organization?.displayName || "未登録の政治団体";
     const updatedAt = formatUpdatedAt(data.lastUpdatedAt ?? null);
 
     return (
-      <>
-        <FloatingBackButton slug={slug} year={financialYear} />
-        <MainColumn>
-          <MainColumnCard>
-            <CardHeader
-              icon={
-                <Image src="/icons/icon-cashback.svg" alt="Cash move icon" width={30} height={30} />
-              }
-              organizationName={organization?.displayName || "未登録の政治団体"}
-              title="すべての出入金"
-              updatedAt={updatedAt}
-              subtitle="これまでにデータ連携された出入金の明細"
-            />
-
+      <MainColumn spacing="compact">
+        <div className="flex flex-col gap-5">
+          <Breadcrumbs
+            parent={{ label: `${organizationName}の収支`, href: `/o/${slug}/${financialYear}` }}
+            current="すべての出入金"
+          />
+          <SectionCard
+            id="transactions"
+            iconSrc="/icons/icon-cashback.svg"
+            iconLabel="Cash move icon"
+            eyebrow={`${organizationName}・${financialYear}年`}
+            title="すべての出入金"
+            updatedAt={updatedAt}
+            headingLevel="h1"
+          >
             <InteractiveTransactionTable
               slug={slug}
               year={financialYear}
@@ -137,16 +132,10 @@ export default async function TransactionsPage({ params, searchParams }: Transac
               totalPages={data.totalPages}
               selectedCategories={categories}
             />
-          </MainColumnCard>
-
-          <TransparencySection title="党内の機密データの流出事故ではありません☺️" />
-          <AnotherPageLinkSection currentSlug={slug} year={financialYear} />
-          <ProgressSection />
-          <ExplanationSection />
-          <AboutSection />
-          <LinkCardsSection />
-        </MainColumn>
-      </>
+          </SectionCard>
+        </div>
+        <SiteBottomBlock />
+      </MainColumn>
     );
   } catch (error) {
     if (error instanceof Error && error.message.includes("not found")) {
