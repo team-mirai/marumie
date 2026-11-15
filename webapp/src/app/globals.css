@@ -125,6 +125,15 @@ table:focus-visible {
     0 28px 48px -30px rgba(15, 132, 114, 0.55);
 }
 
+/* 政治団体の見出しカードの面（政党と見分けられるよう、青みのある緑にする） */
+.mist-surface-group {
+  background:
+    radial-gradient(90% 120% at 6% 0%, #f7fdfe 0%, rgba(247, 253, 254, 0) 58%),
+    radial-gradient(80% 100% at 100% 10%, #cdeff3 0%, rgba(205, 239, 243, 0) 60%),
+    radial-gradient(90% 110% at 80% 115%, #6cccd3 0%, rgba(108, 204, 211, 0) 62%),
+    linear-gradient(135deg, #e2f6f7, #b4e6ea);
+}
+
 .mist-surface::before {
   content: "";
   position: absolute;
