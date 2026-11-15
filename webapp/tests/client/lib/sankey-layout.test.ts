@@ -78,9 +78,9 @@ describe("layoutSankey", () => {
     const layout = layoutSankey(FIVE_COLUMNS, TITLES);
 
     expect(layout.headers.map((header) => header.text)).toEqual(["収入", "支出・残高"]);
-    expect(layout.hub.title.text).toBe("合計");
-    expect(layout.hub.amount.text).toBe("1,000万円");
-    expect(layout.hub.amount.y).toBeGreaterThan(layout.hub.y + layout.hub.height);
+    expect(layout.hub.title?.text).toBe("合計");
+    expect(layout.hub.amount?.text).toBe("1,000万円");
+    expect(layout.hub.amount?.y ?? 0).toBeGreaterThan(layout.hub.y + layout.hub.height);
   });
 
   it("各項目に「項目名」と「金額　割合」のラベルを出す。1%未満は「1%未満」", () => {
@@ -149,7 +149,7 @@ describe("layoutSankey", () => {
 
     expect(node.height).toBeCloseTo(layout.hub.height);
     expect(node.y + node.height).toBeLessThanOrEqual(layout.height);
-    expect(layout.hub.amount.text).toBe("100万円");
+    expect(layout.hub.amount?.text).toBe("100万円");
     expect(labelText(layout, "o0")).toEqual(["政治活動費", "150万円　150%"]);
   });
 

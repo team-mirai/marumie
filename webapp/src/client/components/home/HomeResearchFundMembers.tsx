@@ -80,6 +80,7 @@ function MemberDetail({ member }: { member: HomeResearchFundMember }) {
           ariaDescription:
             "調査研究費の支給から使いみちへのお金の流れを示すサンキーダイアグラムです。",
           variant: "research-fund-summary",
+          spLayout: "columns",
         }}
         emptyMessage="公開中の調査研究費のデータがありません"
       />

@@ -4,6 +4,7 @@ import "client-only";
 import { useEffect, useId, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { toSankeyFlow } from "@/client/lib/sankey-flow";
 import { layoutSankey, type SankeyLayoutOptions } from "@/client/lib/sankey-layout";
+import { layoutSankeySp, type SankeySpLayoutOptions } from "@/client/lib/sankey-layout-sp";
 import { type SankeyData, SANKEY_UNUSED_LABEL } from "@/types/sankey";
 
 /**
@@ -18,20 +19,39 @@ const RESEARCH_FUND_TITLES = { inTitle: "支給", outTitle: "支出・未使用"
 
 const VARIANTS: Record<
   SankeyVariant,
-  { flow: Parameters<typeof toSankeyFlow>[1]; layout: SankeyLayoutOptions }
+  {
+    flow: Parameters<typeof toSankeyFlow>[1];
+    layout: SankeyLayoutOptions;
+    /** SP の3列の図（spLayout="columns"）の見せ方 */
+    sp: SankeySpLayoutOptions;
+  }
 > = {
-  "political-fund": { flow: {}, layout: { inTitle: "収入", outTitle: "支出・残高" } },
+  "political-fund": {
+    flow: {},
+    layout: { inTitle: "収入", outTitle: "支出・残高" },
+    sp: { inTitle: "収入", outTitle: "支出・残高" },
+  },
   "research-fund": {
     flow: { balanceLabel: SANKEY_UNUSED_LABEL, groupExpensesAs: "支出" },
     layout: RESEARCH_FUND_TITLES,
+    sp: RESEARCH_FUND_TITLES,
   },
   "research-fund-summary": {
     flow: { balanceLabel: SANKEY_UNUSED_LABEL },
     layout: { ...RESEARCH_FUND_TITLES, inline: true, hubScale: 0.65 },
+    // トップの調研費はほかの図より背を低く詰める
+    sp: { ...RESEARCH_FUND_TITLES, heightScale: 0.75 },
   },
 };
 
-/** SP（≤760px）は文字と間隔を大きくした背の高い版を画面幅いっぱいに出す */
+/**
+ * SP（≤760px）での見せ方。
+ * - tall：PC と同じ5列の図を、文字と間隔を大きくした背の高い版で画面幅いっぱいに出す（政党ページ・トップの政党・政治団体のカード）
+ * - columns：内訳を親にまとめた「収入 → 合計 → 支出・残高」の3列の図を出す（政治団体・議員ページ、トップの所属議員の調研費）
+ */
+type SankeySpLayout = "tall" | "columns";
+
+/** SP の判定（この幅以下で SP 用の図を出す） */
 const SP_QUERY = "(max-width: 760px)";
 
 function subscribeSp(onChange: () => void) {
@@ -76,7 +96,6 @@ function useInView<T extends Element>() {
 
 const HALO = {
   stroke: "#fff",
-  strokeWidth: 5,
   strokeLinejoin: "round",
   paintOrder: "stroke",
 } as const;
@@ -89,6 +108,8 @@ interface SankeyChartProps {
   ariaLabel?: string;
   /** 図の詳細（何から何へのお金の流れか）を説明する読み上げ用テキスト。ariaLabel と食い違わないよう合わせて差し替える。 */
   ariaDescription?: string;
+  /** SP での見せ方（既定は背の高い版の全体表示） */
+  spLayout?: SankeySpLayout;
 }
 
 /**
@@ -100,6 +121,7 @@ export default function SankeyChart({
   variant = "political-fund",
   ariaLabel = "政治資金の収支フロー図",
   ariaDescription = "政治資金の収入から支出へのお金の流れを示すサンキーダイアグラムです。",
+  spLayout = "tall",
 }: SankeyChartProps) {
   // 同じページに図を複数並べても読み上げの説明が混ざらないよう、id を図ごとに分ける
   const descriptionId = useId();
@@ -115,8 +137,9 @@ export default function SankeyChart({
     const flow = toSankeyFlow(data, config.flow);
     // 収入が0円でも支出・残高があれば描く
     if (flow.incomes.length === 0 && flow.expenses.length === 0 && !flow.balance) return null;
+    if (isSp && spLayout === "columns") return layoutSankeySp(flow, config.sp);
     return layoutSankey(flow, { ...config.layout, tall: isSp });
-  }, [data, variant, isSp]);
+  }, [data, variant, isSp, spLayout]);
 
   if (!layout) {
     return (
@@ -148,11 +171,11 @@ export default function SankeyChart({
             key={header.text}
             x={header.x}
             y={header.y}
-            textAnchor="middle"
+            textAnchor={header.anchor}
             fontSize={header.fontSize}
             fontWeight={header.fontWeight}
-            fill="#0B0F0E"
-            letterSpacing=".08em"
+            fill={header.fill}
+            letterSpacing={header.letterSpacing}
           >
             {header.text}
           </text>
@@ -176,7 +199,7 @@ export default function SankeyChart({
             y={node.y}
             width={node.width}
             height={node.height}
-            rx={3}
+            rx={node.rx}
             fill={node.color}
             role="img"
             aria-label={node.ariaLabel}
@@ -206,7 +229,7 @@ export default function SankeyChart({
                   fontWeight={span.fontWeight}
                   fill={span.fill}
                   style={span.numeric ? NUMERIC_STYLE : undefined}
-                  {...(label.halo ? HALO : {})}
+                  {...(label.halo ? { ...HALO, strokeWidth: label.halo } : {})}
                 >
                   {span.text}
                 </tspan>
@@ -221,23 +244,25 @@ export default function SankeyChart({
             y={layout.hub.y}
             width={layout.hub.width}
             height={layout.hub.height}
-            rx={6}
+            rx={layout.hub.rx}
             fill={layout.hub.color}
           />
-          {[layout.hub.title, layout.hub.amount].map((text, i) => (
-            <text
-              key={text.text}
-              x={text.x}
-              y={text.y}
-              textAnchor="middle"
-              fontSize={text.fontSize}
-              fontWeight={text.fontWeight}
-              fill="#0B0F0E"
-              style={i === 1 ? NUMERIC_STYLE : undefined}
-            >
-              {text.text}
-            </text>
-          ))}
+          {[layout.hub.title, layout.hub.amount].map((text, i) =>
+            text ? (
+              <text
+                key={text.text}
+                x={text.x}
+                y={text.y}
+                textAnchor="middle"
+                fontSize={text.fontSize}
+                fontWeight={text.fontWeight}
+                fill="#0B0F0E"
+                style={i === 1 ? NUMERIC_STYLE : undefined}
+              >
+                {text.text}
+              </text>
+            ) : null,
+          )}
         </g>
       </svg>
       <p id={descriptionId} className="sr-only">

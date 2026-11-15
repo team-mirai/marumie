@@ -109,6 +109,24 @@ test.describe("トップページ", () => {
 		await expect(page).toHaveURL("/p/sample-taro/2026");
 	});
 
+	test("SP では議員の調研費を3列の図で、政党のカードを全体表示の図で出す", async ({ page }) => {
+		await page.setViewportSize({ width: 390, height: 844 });
+		await page.goto("/");
+		const memberChart = page
+			.getByRole("region", { name: "所属議員の調研費" })
+			.locator('[role="group"][aria-label="サンプル 太郎の調査研究費の使いみちの流れ図"]')
+			.locator("visible=true");
+		const partyChart = page
+			.getByRole("region", { name: "政党の収支" })
+			.locator('[role="group"][aria-label="政治資金の収支フロー図"]')
+			.first();
+
+		// 議員の調研費は SP の3列の図（幅 400 の座標）、政党のカードは PC と同じ図の背の高い版（幅 1200）
+		await expect(memberChart).toHaveAttribute("viewBox", /^0 0 400 /);
+		await expect(memberChart.getByText("支出・未使用", { exact: true })).toBeVisible();
+		await expect(partyChart).toHaveAttribute("viewBox", /^0 0 1200 /);
+	});
+
 	test("SP では議員のカードをタップすると開閉する", async ({ page }) => {
 		await page.setViewportSize({ width: 390, height: 844 });
 		await page.goto("/");
