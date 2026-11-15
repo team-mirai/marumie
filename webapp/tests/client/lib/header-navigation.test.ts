@@ -90,8 +90,8 @@ describe("buildOrganizationMenuItems", () => {
 });
 
 describe("buildPoliticianMenuItems", () => {
-  const TARO = { slug: "sample-taro", name: "サンプル太郎" };
-  const HANAKO = { slug: "sample-hanako", name: "サンプル花子" };
+  const TARO = { slug: "sample-taro", name: "サンプル太郎", hasPhoto: false };
+  const HANAKO = { slug: "sample-hanako", name: "サンプル花子", hasPhoto: false };
 
   it("議員ごとに公開している年度を古い順に並べ、名前は最新の年度へ移る", () => {
     const items = buildPoliticianMenuItems(
@@ -103,6 +103,7 @@ describe("buildPoliticianMenuItems", () => {
     expect(items[1]).toEqual({
       slug: "sample-hanako",
       name: "サンプル花子",
+      photoUrl: null,
       isCurrent: false,
       href: "/p/sample-hanako/2026",
       years: [
@@ -135,10 +136,20 @@ describe("buildPoliticianMenuItems", () => {
 
   it("slug はエンコードして URL にする", () => {
     const items = buildPoliticianMenuItems(
-      { 2026: [{ slug: "a/b", name: "テスト" }] },
+      { 2026: [{ slug: "a/b", name: "テスト", hasPhoto: false }] },
       parseHeaderPath("/"),
     );
 
     expect(items[0].href).toBe("/p/a%2Fb/2026");
+  });
+
+  it("顔写真を登録した議員は写真の URL を、未登録の議員は null を持つ", () => {
+    const items = buildPoliticianMenuItems(
+      { 2026: [{ ...TARO, hasPhoto: true }, HANAKO] },
+      parseHeaderPath("/"),
+    );
+
+    expect(items[0].photoUrl).toBe("/api/research-fund/politicians/sample-taro/photo");
+    expect(items[1].photoUrl).toBeNull();
   });
 });

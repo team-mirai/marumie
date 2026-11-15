@@ -141,7 +141,11 @@ export default function HeaderSpMenu({
                         aria-current={isSelected ? "page" : undefined}
                         className={LINK_ROW_CLASS}
                       >
-                        <PoliticianInitialAvatar name={politician.name} size="sm" />
+                        <PoliticianInitialAvatar
+                          name={politician.name}
+                          photoUrl={politician.photoUrl}
+                          size="sm"
+                        />
                         <span className="min-w-0 flex-1">{politician.name}</span>
                         <span className="text-xs font-medium text-[#6B7280]">{year}年</span>
                       </Link>
