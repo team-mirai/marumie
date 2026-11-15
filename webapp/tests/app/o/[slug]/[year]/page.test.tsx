@@ -1,4 +1,10 @@
-jest.mock("next/navigation", () => ({ redirect: jest.fn() }));
+const notFoundError = new Error("NEXT_HTTP_ERROR_FALLBACK;404");
+const notFoundMock = jest.fn(() => {
+  throw notFoundError;
+});
+jest.mock("next/navigation", () => ({
+  notFound: () => notFoundMock(),
+}));
 jest.mock("@/server/contexts/public-finance/presentation/loaders/load-organizations", () => ({
   loadOrganizations: jest.fn(),
 }));
@@ -39,7 +45,7 @@ jest.mock("@/client/components/top-page/TransactionsSection", () =>
 );
 
 import { Children, isValidElement, type ReactElement, type ReactNode } from "react";
-import OrgPage from "@/app/o/[slug]/[year]/page";
+import OrgPage, { generateMetadata } from "@/app/o/[slug]/[year]/page";
 import { loadOrganizations } from "@/server/contexts/public-finance/presentation/loaders/load-organizations";
 import { loadOrganizationProfile } from "@/server/contexts/public-finance/presentation/loaders/load-organization-profile";
 import { loadTopPageData } from "@/server/contexts/public-finance/presentation/loaders/load-top-page-data";
@@ -68,6 +74,7 @@ async function renderSections(year = "2026", slug = "team-mirai") {
 
 describe("OrgPage（政党ページ）", () => {
   beforeEach(() => {
+    notFoundMock.mockClear();
     loadOrganizationsMock.mockResolvedValue({
       default: "team-mirai",
       organizations: [{ slug: "team-mirai", orgName: null, displayName: "チームみらい" }],
@@ -191,6 +198,84 @@ describe("OrgPage（政治団体ページ）", () => {
     expect(sections.find((s) => s.name === "OrganizationHeadingSection")?.props).toMatchObject({
       photoUrl: null,
       links: [],
+    });
+  });
+});
+
+describe("OrgPage（404 バリデーション・メタデータ）", () => {
+  beforeEach(() => {
+    notFoundMock.mockClear();
+    loadOrganizationsMock.mockResolvedValue({
+      default: "team-mirai",
+      organizations: [{ slug: "team-mirai", orgName: null, displayName: "チームみらい" }],
+    });
+    loadTopPageDataMock.mockResolvedValue(null);
+  });
+
+  describe("generateMetadata", () => {
+    it("存在する slug かつ有効な年度でタイトルを生成する", async () => {
+      const metadata = await generateMetadata({
+        params: Promise.resolve({ slug: "team-mirai", year: "2026" }),
+      });
+      expect(metadata.title).toBe("チームみらい - みらいまる見え政治資金");
+    });
+
+    it("年度が数字でない場合はデフォルトタイトルを返す", async () => {
+      const metadata = await generateMetadata({
+        params: Promise.resolve({ slug: "team-mirai", year: "invalid-year" }),
+      });
+      expect(metadata.title).toBe("みらいまる見え政治資金");
+    });
+
+    it("年度が4桁でない場合はデフォルトタイトルを返す", async () => {
+      const metadata = await generateMetadata({
+        params: Promise.resolve({ slug: "team-mirai", year: "02026" }),
+      });
+      expect(metadata.title).toBe("みらいまる見え政治資金");
+    });
+
+    it("年度が対象外（VALID_YEARS外）の場合はデフォルトタイトルを返す", async () => {
+      const metadata = await generateMetadata({
+        params: Promise.resolve({ slug: "team-mirai", year: "2024" }),
+      });
+      expect(metadata.title).toBe("みらいまる見え政治資金");
+    });
+
+    it("存在しない slug の場合はデフォルトタイトルを返す", async () => {
+      const metadata = await generateMetadata({
+        params: Promise.resolve({ slug: "unknown-slug", year: "2026" }),
+      });
+      expect(metadata.title).toBe("みらいまる見え政治資金");
+    });
+  });
+
+  describe("バリデーション", () => {
+    it("年度が数字でない場合は notFound() を呼び出す", async () => {
+      await expect(
+        OrgPage({ params: Promise.resolve({ slug: "team-mirai", year: "2025abc" }) }),
+      ).rejects.toThrow(notFoundError);
+      expect(notFoundMock).toHaveBeenCalledTimes(1);
+    });
+
+    it("年度が4桁でない場合（前置ゼロ付き等）は notFound() を呼び出す", async () => {
+      await expect(
+        OrgPage({ params: Promise.resolve({ slug: "team-mirai", year: "02026" }) }),
+      ).rejects.toThrow(notFoundError);
+      expect(notFoundMock).toHaveBeenCalledTimes(1);
+    });
+
+    it("年度が対象外（VALID_YEARS外）の場合は notFound() を呼び出す", async () => {
+      await expect(
+        OrgPage({ params: Promise.resolve({ slug: "team-mirai", year: "2024" }) }),
+      ).rejects.toThrow(notFoundError);
+      expect(notFoundMock).toHaveBeenCalledTimes(1);
+    });
+
+    it("存在しない slug の場合は notFound() を呼び出す", async () => {
+      await expect(
+        OrgPage({ params: Promise.resolve({ slug: "unknown-org", year: "2026" }) }),
+      ).rejects.toThrow(notFoundError);
+      expect(notFoundMock).toHaveBeenCalledTimes(1);
     });
   });
 });

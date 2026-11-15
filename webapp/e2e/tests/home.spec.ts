@@ -128,9 +128,11 @@ test.describe("トップページ", () => {
 		await expect(detailLink).toHaveAttribute("href", "/p/sample-taro/2026");
 	});
 
-	test("存在しない URL はトップページへ移る", async ({ page }) => {
-		await page.goto("/no-such-page");
+	test("存在しない URL は 404 エラー画面を表示する", async ({ page }) => {
+		const response = await page.goto("/no-such-page");
 
-		await expect(page).toHaveURL("/");
+		expect(response?.status()).toBe(404);
+		await expect(page).toHaveURL("/no-such-page");
+		await expect(page.getByRole("heading", { name: "ページが見つかりません" })).toBeVisible();
 	});
 });

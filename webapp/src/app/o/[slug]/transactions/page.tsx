@@ -1,5 +1,5 @@
 import "server-only";
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { loadOrganizations } from "@/server/contexts/public-finance/presentation/loaders/load-organizations";
 
 const DEFAULT_YEAR = 2026;
@@ -13,10 +13,15 @@ interface TransactionsPageProps {
 export default async function TransactionsPage({ params }: TransactionsPageProps) {
   const { slug } = await params;
 
-  // slugの妥当性をチェックし、必要に応じてデフォルトslugを使用
-  const { default: defaultSlug, organizations } = await loadOrganizations();
-  const validSlug = organizations.some((org) => org.slug === slug) ? slug : defaultSlug;
+  // slugの妥当性をチェック
+  const { organizations } = await loadOrganizations();
+  const isValidSlug = organizations.some((org) => org.slug === slug);
+
+  if (!isValidSlug) {
+    notFound();
+    return;
+  }
 
   // デフォルト年度にリダイレクト
-  redirect(`/o/${validSlug}/${DEFAULT_YEAR}/transactions`);
+  redirect(`/o/${slug}/${DEFAULT_YEAR}/transactions`);
 }
