@@ -21,6 +21,12 @@ const SANKEY_SP_WIDTH = 400;
 /** 項目名の1行の文字数 */
 const LABEL_MAX_CHARS = 8;
 
+/** 隣り合うラベルの最小の間隔。ノードの間隔をこれ以上にして、小さな項目が続いてもラベルがノードの真横からずれないようにする */
+const LABEL_GAP = 6;
+
+/** 帯の太さの下限（PC の図と同じ）。金額がごく小さい帯も見えるようにする */
+const MIN_BAND = 3;
+
 export interface SankeySpLayoutOptions {
   /** 左右の列の見出し（例：「収入」「支出・残高」） */
   inTitle: string;
@@ -106,8 +112,8 @@ export function layoutSankeySp(flow: SankeyFlow, options: SankeySpLayoutOptions)
   const slot = (n: SpColumnNode) => Math.max(nodeHeight(n), labelHeight(n));
   const columnHeight = (arr: SpColumnNode[], gap: number) =>
     arr.reduce((sum, n) => sum + slot(n), 0) + gap * Math.max(arr.length - 1, 0);
-  const gapL = lefts.length > 1 ? 5 : 0;
-  const gapR = rights.length > 4 ? 5 : 12;
+  const gapL = lefts.length > 1 ? LABEL_GAP : 0;
+  const gapR = rights.length > 4 ? LABEL_GAP : 12;
   const sumL = columnHeight(lefts, gapL);
   const sumR = columnHeight(rights, gapR);
   // ラベルの枠の合計が合計の柱より長ければ、柱を下げて上下の余白をそろえる
@@ -115,6 +121,26 @@ export function layoutSankeySp(flow: SankeyFlow, options: SankeySpLayoutOptions)
 
   const bands: SankeyBandLayout[] = [];
   const nodes: SankeyNodeLayout[] = [];
+  // 帯：太さに下限を設け、太らせた分は中心をそろえて上下に振り分ける。細い帯は色を濃くする（PC の図と同じ）
+  const pushBand = (
+    key: string,
+    n: SpColumnNode,
+    x1: number,
+    y1: number,
+    x2: number,
+    y2: number,
+  ) => {
+    const t0 = n.value * PX;
+    const t = Math.max(t0, MIN_BAND);
+    const dy = (t0 - t) / 2;
+    bands.push({
+      key,
+      keys: [n.key],
+      d: curve(x1, y1 + dy, y1 + dy + t, x2, y2 + dy, y2 + dy + t),
+      color: n.color,
+      opacity: t0 < MIN_BAND * 2 ? Math.max(n.bandOpacity, 0.5) : n.bandOpacity,
+    });
+  };
   const pushNode = (n: SpColumnNode, x: number, right: boolean) => {
     nodes.push({
       key: n.key,
@@ -135,17 +161,10 @@ export function layoutSankeySp(flow: SankeyFlow, options: SankeySpLayoutOptions)
   for (const n of lefts) {
     n.height = nodeHeight(n);
     n.y = y + (slot(n) - n.height) / 2;
-    const t = n.value * PX;
-    bands.push({
-      key: `b${n.key}`,
-      keys: [n.key],
-      d: curve(X.L + NW, n.y, n.y + t, X.H, hy, hy + t),
-      color: n.color,
-      opacity: n.bandOpacity,
-    });
+    pushBand(`b${n.key}`, n, X.L + NW, n.y, X.H, hy);
     pushNode(n, X.L, false);
     y += slot(n) + gapL;
-    hy += t;
+    hy += n.value * PX;
   }
   // 右：合計 → 支出の項目・残高
   y = HT + HUB / 2 - sumR / 2;
@@ -153,17 +172,10 @@ export function layoutSankeySp(flow: SankeyFlow, options: SankeySpLayoutOptions)
   for (const n of rights) {
     n.height = nodeHeight(n);
     n.y = y + (slot(n) - n.height) / 2;
-    const t = n.value * PX;
-    bands.push({
-      key: `c${n.key}`,
-      keys: [n.key],
-      d: curve(X.H + HW, hy, hy + t, X.R, n.y, n.y + t),
-      color: n.color,
-      opacity: n.bandOpacity,
-    });
+    pushBand(`c${n.key}`, n, X.H + HW, hy, X.R, n.y);
     pushNode(n, X.R, true);
     y += slot(n) + gapR;
-    hy += t;
+    hy += n.value * PX;
   }
 
   // ラベル（項目名は最大2行＋「金額　割合」）。ノードの真横に置き、前のラベルと重なるときだけ下げる
@@ -174,7 +186,7 @@ export function layoutSankeySp(flow: SankeyFlow, options: SankeySpLayoutOptions)
     for (const n of arr) {
       const names = wrapSankeySpLabel(n.label, LABEL_MAX_CHARS);
       const height = names.length * LHN + LHA;
-      const center = Math.max(n.y + n.height / 2, last + height / 2 + 6);
+      const center = Math.max(n.y + n.height / 2, last + height / 2 + LABEL_GAP);
       last = center + height / 2;
       const top = center - height / 2;
       labels.push({

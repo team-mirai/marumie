@@ -113,6 +113,39 @@ describe("layoutSankeySp", () => {
     }
   });
 
+  it("小さな項目が続いても、ラベルがノードの真横からずれていかない", () => {
+    const many: SankeyFlow = {
+      incomes: [{ label: "寄附", value: 1_012_000 }],
+      expenses: [
+        { label: "人件費", value: 1_000_000 },
+        ...Array.from({ length: 12 }, (_, i) => ({ label: `費目${i}`, value: 1_000 })),
+      ],
+      balance: null,
+      total: 1_012_000,
+    };
+    const layout = layoutSankeySp(many, TITLES);
+    for (const label of layout.labels.filter((l) => l.key.startsWith("o"))) {
+      const ys = label.spans.map((span) => span.y ?? 0);
+      const node = layout.nodes.find((n) => n.key === label.key);
+      if (!node) throw new Error(`${label.key} のノードが無い`);
+      const middle = (Math.min(...ys) + Math.max(...ys)) / 2;
+      expect(Math.abs(middle - (node.y + node.height / 2))).toBeLessThan(1);
+    }
+  });
+
+  it("金額がごく小さい項目の帯も見える太さで描く", () => {
+    const layout = layoutSankeySp(
+      { ...FLOW, expenses: [{ label: "政治活動費", value: 5_999_999 }], balance: { label: "現金残高", value: 1 } },
+      TITLES,
+    );
+    const band = layout.bands.find((b) => b.key === "ccash");
+    if (!band) throw new Error("現金残高の帯が無い");
+    // d = M x1 a1 C m a1 m a2 x2 a2 L x2 b2 C ...
+    const nums = (band.d.match(/-?[\d.]+(?:e-?\d+)?/g) ?? []).map(Number);
+    expect(nums[9] - nums[7]).toBeGreaterThanOrEqual(3 - 1e-6);
+    expect(band.opacity).toBeGreaterThanOrEqual(0.5);
+  });
+
   it("背を低くする倍率を渡すと、合計の柱と図が低くなる", () => {
     const normal = layoutSankeySp(FLOW, TITLES);
     const low = layoutSankeySp(FLOW, { ...TITLES, heightScale: 0.75 });
