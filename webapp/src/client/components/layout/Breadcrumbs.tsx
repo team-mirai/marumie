@@ -2,20 +2,35 @@ import Image from "next/image";
 import Link from "next/link";
 
 interface BreadcrumbsProps {
-  /** トップの後ろに続く、いま開いているページの名前（例: 「チームみらいの収支」） */
+  /** トップとの間に挟む親ページ（例: 全件ページから見た「チームみらいの収支」） */
+  parent?: { label: string; href: string };
+  /** 末尾の、いま開いているページの名前（例: 「チームみらいの収支」） */
   current: string;
 }
 
-/** ページ冒頭のパンくず「トップ › （いまのページ）」。 */
-export default function Breadcrumbs({ current }: BreadcrumbsProps) {
+const LINK_CLASS = "font-bold text-[#238778] hover:text-[#0F8472] hover:underline";
+
+function Separator() {
+  return (
+    <li aria-hidden="true" className="flex">
+      <Image
+        src="/icons/icon-chevron-right.svg"
+        alt=""
+        width={12}
+        height={12}
+        className="opacity-50"
+      />
+    </li>
+  );
+}
+
+/** ページ冒頭のパンくず「トップ ›（親ページ ›）いまのページ」。 */
+export default function Breadcrumbs({ parent, current }: BreadcrumbsProps) {
   return (
     <nav aria-label="パンくずリスト">
       <ol className="flex flex-wrap items-center gap-1.5 text-[13px] font-medium leading-[1.5]">
         <li className="whitespace-nowrap">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-[5px] font-bold text-[#238778] hover:text-[#0F8472] hover:underline"
-          >
+          <Link href="/" className={`inline-flex items-center gap-[5px] ${LINK_CLASS}`}>
             <svg
               width="16"
               height="16"
@@ -34,15 +49,17 @@ export default function Breadcrumbs({ current }: BreadcrumbsProps) {
             トップ
           </Link>
         </li>
-        <li aria-hidden="true" className="flex">
-          <Image
-            src="/icons/icon-chevron-right.svg"
-            alt=""
-            width={12}
-            height={12}
-            className="opacity-50"
-          />
-        </li>
+        <Separator />
+        {parent && (
+          <>
+            <li className="whitespace-nowrap">
+              <Link href={parent.href} className={LINK_CLASS}>
+                {parent.label}
+              </Link>
+            </li>
+            <Separator />
+          </>
+        )}
         <li aria-current="page" className="whitespace-nowrap text-[#374151]">
           {current}
         </li>

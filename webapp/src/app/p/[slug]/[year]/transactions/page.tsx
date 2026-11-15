@@ -1,13 +1,10 @@
 import "server-only";
 import type { Metadata } from "next";
-import Image from "next/image";
 import { notFound } from "next/navigation";
-import AboutSection from "@/client/components/common/AboutSection";
-import LinkCardsSection from "@/client/components/common/LinkCardsSection";
-import CardHeader from "@/client/components/layout/CardHeader";
+import Breadcrumbs from "@/client/components/layout/Breadcrumbs";
 import MainColumn from "@/client/components/layout/MainColumn";
-import MainColumnCard from "@/client/components/layout/MainColumnCard";
-import ResearchFundAboutSection from "@/client/components/research-fund/ResearchFundAboutSection";
+import SectionCard from "@/client/components/layout/SectionCard";
+import ResearchFundBottomBlock from "@/client/components/research-fund/ResearchFundBottomBlock";
 import ResearchFundTransactionsTable from "@/client/components/research-fund/ResearchFundTransactionsTable";
 import { formatUpdatedAt } from "@/client/lib/format-date";
 import { parseResearchFundTransactionsQuery } from "@/client/lib/research-fund-transactions";
@@ -64,28 +61,36 @@ export default async function PoliticianTransactionsPage({
 
   const updatedAt = formatUpdatedAt(data.asOfDate ?? null);
 
+  const parentLabel = `${data.politician.name}の調研費`;
+
   return (
-    <MainColumn>
-      <MainColumnCard id="transactions">
-        <CardHeader
-          icon={
-            <Image src="/icons/icon-cashback.svg" alt="Cash move icon" width={30} height={30} />
-          }
-          organizationName={`${data.politician.name}・調研費`}
+    <MainColumn spacing="compact">
+      <div className="flex flex-col gap-5">
+        <Breadcrumbs
+          parent={{
+            label: parentLabel,
+            href: `/p/${encodeURIComponent(pathSlug)}/${data.financialYear}`,
+          }}
+          current="すべての出入金"
+        />
+        <SectionCard
+          id="transactions"
+          iconSrc="/icons/icon-cashback.svg"
+          iconLabel="Cash move icon"
+          eyebrow={`${parentLabel}・${data.financialYear}年`}
           title="すべての出入金"
           updatedAt={updatedAt}
-          subtitle="これまでにデータ連携された出入金の明細"
-        />
-        <ResearchFundTransactionsTable
-          pathSlug={pathSlug}
-          financialYear={data.financialYear}
-          expenses={data.expenses}
-          query={query}
-        />
-      </MainColumnCard>
-      <ResearchFundAboutSection data={data} />
-      <AboutSection />
-      <LinkCardsSection />
+          headingLevel="h1"
+        >
+          <ResearchFundTransactionsTable
+            pathSlug={pathSlug}
+            financialYear={data.financialYear}
+            expenses={data.expenses}
+            query={query}
+          />
+        </SectionCard>
+      </div>
+      <ResearchFundBottomBlock dataNote={data.dataNote} />
     </MainColumn>
   );
 }

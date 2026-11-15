@@ -78,8 +78,26 @@ export interface ResearchFundGroupView {
   outcomes: { label: string; url: string | null }[];
 }
 
+/** 議員カードに出すプロフィール。登録されていない項目は null・空配列で、画面には出さない。 */
+export interface ResearchFundPoliticianProfileView {
+  name: string;
+  slug: string;
+  nameKana: string | null;
+  /** 「衆議院議員・比例東京（東京7区）」。院も選挙区も未登録なら null */
+  title: string | null;
+  /** チームみらい公式サイト内のプロフィールページ */
+  profileUrl: string | null;
+  /** 議員の公式サイト */
+  websiteUrl: string | null;
+  /** SNS の URL（表示順どおり） */
+  snsUrls: string[];
+  hasPhoto: boolean;
+}
+
 export interface ResearchFundPageData {
-  politician: { name: string; slug: string };
+  politician: ResearchFundPoliticianProfileView;
+  /** 年の切り替えに出す年度（昇順）。表示中の年度を必ず含む */
+  years: number[];
   /** 議員が調研費を「公開する」設定か。false ならプレビュー URL でだけ開ける（canViewResearchFundPage） */
   isPublic: boolean;
   financialYear: number;

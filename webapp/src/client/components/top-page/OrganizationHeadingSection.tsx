@@ -56,7 +56,7 @@ export default function OrganizationHeadingSection({
           <ProfileLinks ownerName={organizationName} links={links} />
         </div>
         <div className="flex-shrink-0">
-          <YearSegment years={years} currentYear={currentYear} variant="outline" />
+          <YearSegment years={years} currentYear={currentYear} tone="plain" />
         </div>
       </div>
     </section>

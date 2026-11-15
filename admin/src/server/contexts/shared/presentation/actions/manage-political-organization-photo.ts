@@ -5,6 +5,7 @@ import { UploadPoliticalOrganizationPhotoUsecase } from "@/server/contexts/share
 import { DeletePoliticalOrganizationPhotoUsecase } from "@/server/contexts/shared/application/usecases/delete-political-organization-photo-usecase";
 import { PrismaPoliticalOrganizationRepository } from "@/server/contexts/shared/infrastructure/repositories/prisma-political-organization.repository";
 import { prisma } from "@/server/contexts/shared/infrastructure/prisma";
+import { WebappCacheInvalidator } from "@/server/contexts/shared/infrastructure/services/webapp-cache-invalidator";
 import { SupabasePoliticianPhotoStorage } from "@/server/contexts/shared/infrastructure/storage/supabase-politician-photo-storage";
 
 /** 代表者の顔写真の登録・差し替え。FormData の "photo" に画像ファイルを入れて呼ぶ */
@@ -13,12 +14,13 @@ export async function uploadPoliticalOrganizationPhoto(id: string, formData: For
   try {
     const file = formData.get("photo");
     if (!(file instanceof File)) throw new Error("画像ファイルを選択してください");
-    await new UploadPoliticalOrganizationPhotoUsecase(
+    const { cacheWarning } = await new UploadPoliticalOrganizationPhotoUsecase(
       new PrismaPoliticalOrganizationRepository(prisma),
       SupabasePoliticianPhotoStorage.fromEnv(),
+      new WebappCacheInvalidator(),
     ).execute(id, new Uint8Array(await file.arrayBuffer()));
     revalidatePath("/political-organizations", "layout");
-    return { success: true as const };
+    return { success: true as const, cacheWarning };
   } catch (error) {
     return {
       success: false as const,
@@ -30,12 +32,13 @@ export async function uploadPoliticalOrganizationPhoto(id: string, formData: For
 export async function deletePoliticalOrganizationPhoto(id: string) {
   await requireRole("political_fund");
   try {
-    await new DeletePoliticalOrganizationPhotoUsecase(
+    const { cacheWarning } = await new DeletePoliticalOrganizationPhotoUsecase(
       new PrismaPoliticalOrganizationRepository(prisma),
       SupabasePoliticianPhotoStorage.fromEnv(),
+      new WebappCacheInvalidator(),
     ).execute(id);
     revalidatePath("/political-organizations", "layout");
-    return { success: true as const };
+    return { success: true as const, cacheWarning };
   } catch (error) {
     return {
       success: false as const,
