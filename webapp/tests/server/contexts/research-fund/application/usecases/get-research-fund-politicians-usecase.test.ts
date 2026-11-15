@@ -18,7 +18,7 @@ describe("GetResearchFundPoliticiansUsecase", () => {
     const { usecase, repository } = build([
       {
         slug: "sample-taro",
-        name: "サンプル 太郎", house: null, constituency: null, hasPhoto: false,
+        name: "サンプル 太郎", house: null, constituency: null, hasPhoto: true,
         publishedMonths: ["2026-02", "2026-04"],
         publishedThrough: "2026-08",
       },
@@ -29,6 +29,7 @@ describe("GetResearchFundPoliticiansUsecase", () => {
         slug: "sample-taro",
         name: "サンプル 太郎",
         statusLabel: "2026年2月〜8月分を公開中",
+        hasPhoto: true,
       },
     ]);
     expect(repository.findPoliticians).toHaveBeenCalledWith(2026);

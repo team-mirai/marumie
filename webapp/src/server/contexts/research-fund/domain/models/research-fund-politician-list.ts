@@ -12,6 +12,8 @@ export interface ResearchFundPoliticianEntry {
   name: string;
   /** 「2026年2月〜8月分を公開中」 */
   statusLabel: string;
+  /** admin で顔写真を登録しているか（ヘッダーのメニューの丸アイコンに使う） */
+  hasPhoto: boolean;
 }
 
 /**

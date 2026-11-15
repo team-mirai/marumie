@@ -80,7 +80,11 @@ export default function HeaderMegaMenu({
                   aria-current={politician.isCurrent ? "page" : undefined}
                   className="flex min-h-14 items-center gap-3.5 whitespace-nowrap text-[17px] font-bold text-[#111827] hover:text-[#238778]"
                 >
-                  <PoliticianInitialAvatar name={politician.name} size="lg" />
+                  <PoliticianInitialAvatar
+                    name={politician.name}
+                    photoUrl={politician.photoUrl}
+                    size="lg"
+                  />
                   {politician.name}
                 </Link>
                 <HeaderYearSegment

@@ -1,3 +1,4 @@
+import { politicianPhotoUrl } from "@/client/lib/politician-photo-url";
 import { parsePoliticianPathSegment } from "@/shared/research-fund/preview-path";
 
 export const FAQ_URL = "https://team-mirai.notion.site/FAQ-27ef6f56bae180c085e9f97d05a5d59c";
@@ -127,6 +128,8 @@ export function buildOrganizationMenuItems(
 export interface HeaderPoliticianMenuItem {
   slug: string;
   name: string;
+  /** 丸アイコンに出す顔写真の URL。未登録なら null（名前の1文字目のアイコンにする） */
+  photoUrl: string | null;
   isCurrent: boolean;
   /** 名前を押したときの行き先（表示中ならその年度、そうでなければ最新の年度） */
   href: string;
@@ -140,23 +143,29 @@ export interface HeaderPoliticianMenuItem {
  * 並びは最新の年度の一覧の順で、それより前の年度にしかいない議員を後ろに足す。
  */
 export function buildPoliticianMenuItems(
-  politiciansByYear: Readonly<Record<number, readonly { slug: string; name: string }[]>>,
+  politiciansByYear: Readonly<
+    Record<number, readonly { slug: string; name: string; hasPhoto: boolean }[]>
+  >,
   current: HeaderCurrentPage,
 ): HeaderPoliticianMenuItem[] {
   const yearsNewestFirst = [...HEADER_YEARS].sort((a, b) => b - a);
-  const politicians = new Map<string, { name: string; years: number[] }>();
+  const politicians = new Map<string, { name: string; hasPhoto: boolean; years: number[] }>();
   for (const year of yearsNewestFirst) {
     for (const politician of politiciansByYear[year] ?? []) {
       const entry = politicians.get(politician.slug);
       if (entry) {
         entry.years.push(year);
       } else {
-        politicians.set(politician.slug, { name: politician.name, years: [year] });
+        politicians.set(politician.slug, {
+          name: politician.name,
+          hasPhoto: politician.hasPhoto,
+          years: [year],
+        });
       }
     }
   }
 
-  return [...politicians].map(([slug, { name, years }]) => {
+  return [...politicians].map(([slug, { name, hasPhoto, years }]) => {
     const isCurrent = current.kind === "politician" && current.slug === slug;
     const selectedYear =
       isCurrent && current.year !== null && years.includes(current.year) ? current.year : null;
@@ -164,6 +173,7 @@ export function buildPoliticianMenuItems(
     return {
       slug,
       name,
+      photoUrl: hasPhoto ? politicianPhotoUrl(slug) : null,
       isCurrent,
       href: politicianYearHref(slug, selectedYear ?? latestYear),
       years: [...years]
