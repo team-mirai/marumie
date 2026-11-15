@@ -63,6 +63,7 @@ export default function ResearchFundFlowSection({ data, eyebrow, updatedAt }: Pr
             ariaDescription:
               "調査研究費の支給から使いみちへのお金の流れを示すサンキーダイアグラムです。",
             variant: "research-fund",
+            spLayout: "columns",
           }}
           emptyMessage="公開中の調査研究費のデータがありません"
         />

@@ -352,6 +352,25 @@ test.describe("政治団体ページ", () => {
 			await expect(page.getByRole("region", { name: "政治団体情報" })).toBeHidden();
 			await expect(page.locator("#cash-flow").getByText("ピンチで拡大できます")).toBeVisible();
 		});
+
+		test("SP では収支の流れを「収入 → 合計 → 支出・残高」の3列の図で画面幅に収める", async ({
+			page,
+		}) => {
+			await page.setViewportSize({ width: 390, height: 844 });
+			const chart = page.locator('#cash-flow [role="group"][aria-label="政治資金の収支フロー図"]');
+
+			// SP の3列の図は幅 400 の座標で描く（PC・全体表示の版は 1200）
+			await expect(chart).toHaveAttribute("viewBox", /^0 0 400 /);
+			await expect(chart.getByText("収入", { exact: true })).toBeVisible();
+			await expect(chart.getByText("支出・残高", { exact: true })).toBeVisible();
+			// 合計は細い柱だけで「合計」の文字は出さない
+			await expect(chart.getByText("合計", { exact: true })).toHaveCount(0);
+			const box = await chart.boundingBox();
+			expect(box?.width ?? Number.POSITIVE_INFINITY).toBeLessThanOrEqual(390);
+			expect(
+				await page.evaluate(() => document.documentElement.scrollWidth),
+			).toBeLessThanOrEqual(390);
+		});
 	});
 
 	test.describe("詳細画面への遷移", () => {

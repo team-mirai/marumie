@@ -5,12 +5,12 @@ import { formatSankeyPercentage } from "@/client/lib/sankey-percentage";
 const SANKEY_WIDTH = 1200;
 
 // 色に意味：収入＝緑、支出＝赤、残高（現金残高・昨年からの現金残高・未使用）＝グレー
-const GREEN = "#2AA693";
-const RED = "#DC2626";
-const GRAY = "#6B7280";
-const HUB_COLOR = "#4F566B";
-const INK = "#0B0F0E";
-const MUTED = "#5B6470";
+export const GREEN = "#2AA693";
+export const RED = "#DC2626";
+export const GRAY = "#6B7280";
+export const HUB_COLOR = "#4F566B";
+export const INK = "#0B0F0E";
+export const MUTED = "#5B6470";
 
 export interface SankeyLayoutOptions {
   /** 左右の列の見出し（例：「収入」「支出・残高」） */
@@ -24,7 +24,7 @@ export interface SankeyLayoutOptions {
   hubScale?: number;
 }
 
-interface SankeyBandLayout {
+export interface SankeyBandLayout {
   key: string;
   /** ホバーで濃く残すかを決めるキー。先頭はホバーしたときに立てるキー */
   keys: string[];
@@ -33,13 +33,15 @@ interface SankeyBandLayout {
   opacity: number;
 }
 
-interface SankeyNodeLayout {
+export interface SankeyNodeLayout {
   key: string;
   keys: string[];
   x: number;
   y: number;
   width: number;
   height: number;
+  /** 角の丸み */
+  rx: number;
   color: string;
   /** 右側の列（伸びる向きを右端からにする） */
   right: boolean;
@@ -47,7 +49,7 @@ interface SankeyNodeLayout {
   ariaLabel: string;
 }
 
-interface SankeyTextSpan {
+export interface SankeyTextSpan {
   text: string;
   x?: number;
   y?: number;
@@ -59,16 +61,16 @@ interface SankeyTextSpan {
   numeric: boolean;
 }
 
-interface SankeyLabelLayout {
+export interface SankeyLabelLayout {
   key: string;
   keys: string[];
   anchor: "start" | "end";
-  /** ラベルの縁を白くして、下を通る帯の上でも読めるようにする */
-  halo: boolean;
+  /** ラベルの縁を白くする太さ（下を通る帯の上でも読めるようにする）。無ければ縁取りしない */
+  halo?: number;
   spans: SankeyTextSpan[];
 }
 
-interface SankeyTextLayout {
+export interface SankeyTextLayout {
   text: string;
   x: number;
   y: number;
@@ -76,10 +78,17 @@ interface SankeyTextLayout {
   fontWeight: number;
 }
 
-interface SankeyLayout {
+/** 列の見出し（「収入」「支出・残高」など） */
+export interface SankeyHeaderLayout extends SankeyTextLayout {
+  anchor: "start" | "middle" | "end";
+  fill: string;
+  letterSpacing: string;
+}
+
+export interface SankeyLayout {
   width: number;
   height: number;
-  headers: SankeyTextLayout[];
+  headers: SankeyHeaderLayout[];
   bands: SankeyBandLayout[];
   nodes: SankeyNodeLayout[];
   labels: SankeyLabelLayout[];
@@ -88,9 +97,11 @@ interface SankeyLayout {
     y: number;
     width: number;
     height: number;
+    rx: number;
     color: string;
-    title: SankeyTextLayout;
-    amount: SankeyTextLayout;
+    /** 柱の上の「合計」と下の金額。SP の3列の図では出さない */
+    title: SankeyTextLayout | null;
+    amount: SankeyTextLayout | null;
   };
 }
 
@@ -379,6 +390,7 @@ export function layoutSankey(flow: SankeyFlow, options: SankeyLayoutOptions): Sa
         y: node.y,
         width: NW,
         height: node.nh,
+        rx: 3,
         color: node.color,
         right: isRight,
         ariaLabel: `${node.label} ${formatSankeyAmount(node.value)}（${pct(node.value)}）`,
@@ -390,14 +402,15 @@ export function layoutSankey(flow: SankeyFlow, options: SankeyLayoutOptions): Sa
   pushNodes(R1, X.R1, true);
   pushNodes(R2, X.R2, true);
 
-  // ラベル（重なりを避けて上から順に積む）
+  // ラベル（重なりを避けて上から順に積む）。帯の上に重なる内側の列は縁を白くする
+  const HALO = 5;
   const labels: SankeyLabelLayout[] = [];
   let maxY = HEAD + MAXH;
   const column = (
     arr: ColumnNode[],
     x: number,
     anchor: "start" | "end",
-    halo: boolean,
+    halo: number | undefined,
     max: number,
     size: "normal" | "small" | "large" = "normal",
   ) => {
@@ -443,23 +456,26 @@ export function layoutSankey(flow: SankeyFlow, options: SankeyLayoutOptions): Sa
       });
     }
   };
-  if (tall) column(L2, X.L2 - 14, "end", false, 10, "small");
-  else column(L2, X.L2 - 20, "end", false, 10, "large");
-  if (noL2) column(L1, X.L1 - 14, "end", false, 10);
-  else column(L1, X.L1 - 10, "end", true, 7);
-  if (noR2) column(R1, X.R1 + NW + 14, "start", false, 10);
-  else column(R1, X.R1 + NW + 10, "start", true, 7);
-  column(R2, X.R2 + NW + 14, "start", false, 10, "small");
+  if (tall) column(L2, X.L2 - 14, "end", undefined, 10, "small");
+  else column(L2, X.L2 - 20, "end", undefined, 10, "large");
+  if (noL2) column(L1, X.L1 - 14, "end", undefined, 10);
+  else column(L1, X.L1 - 10, "end", HALO, 7);
+  if (noR2) column(R1, X.R1 + NW + 14, "start", undefined, 10);
+  else column(R1, X.R1 + NW + 10, "start", HALO, 7);
+  column(R2, X.R2 + NW + 14, "start", undefined, 10, "small");
 
   const TOTY = tall ? 36 : 30;
   const height = Math.ceil(Math.max(maxY, TOP + HUB + TOTY) + 32);
   const headerSize = tall ? 24 : 17;
-  const header = (x: number, text: string): SankeyTextLayout => ({
+  const header = (x: number, text: string): SankeyHeaderLayout => ({
     text,
     x,
     y: headerSize + 2,
     fontSize: headerSize,
     fontWeight: 800,
+    anchor: "middle",
+    fill: INK,
+    letterSpacing: ".08em",
   });
 
   return {
@@ -477,6 +493,7 @@ export function layoutSankey(flow: SankeyFlow, options: SankeyLayoutOptions): Sa
       y: TOP,
       width: HW,
       height: HUB,
+      rx: 6,
       color: HUB_COLOR,
       title: {
         text: "合計",
