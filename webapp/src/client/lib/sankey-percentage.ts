@@ -1,8 +1,8 @@
-/** 1%未満は「0%」ではなく「<1%」と出す（小さくても使った費目があることを伝える）。 */
-const UNDER_ONE_PERCENT = "<1%";
+/** 1%未満は「0%」ではなく「1%未満」と出す（小さくても使った費目があることを伝える）。 */
+const UNDER_ONE_PERCENT = "1%未満";
 
 /**
- * サンキーのノード上に出す割合。合計に対する整数%で、1%未満は「<1%」。
+ * サンキーの項目に出す割合。合計に対する整数%で、1%未満は「1%未満」。
  * 値か合計が無ければ空文字（割合を出さない）。
  */
 export function formatSankeyPercentage(nodeValue?: number, totalValue?: number): string {

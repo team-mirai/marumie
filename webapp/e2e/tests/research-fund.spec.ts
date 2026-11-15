@@ -35,9 +35,13 @@ test.describe("調査研究費 議員ページ", () => {
 			"true",
 		);
 		await expect(cashFlow.getByRole("tab", { name: "法律上の区分" })).toBeVisible();
-		await expect(
-			page.locator('[role="img"][aria-label="調査研究費の使いみちの流れ図"]'),
-		).toBeVisible();
+		const chart = page.locator('[role="group"][aria-label="調査研究費の使いみちの流れ図"]');
+		await expect(chart).toBeVisible();
+		// 支給 → 合計 → 支出 → 各費目・未使用の流れ
+		await expect(chart.getByText("支給", { exact: true })).toBeVisible();
+		await expect(chart.getByText("支出・未使用", { exact: true })).toBeVisible();
+		await expect(chart.getByRole("img", { name: /^公費から支給 / })).toBeVisible();
+		await expect(chart.getByRole("img", { name: /^支出 / })).toBeVisible();
 		await expect(
 			cashFlow.getByText("※年末までに使われなかった未使用分は国庫に返納されます。"),
 		).toBeVisible();
@@ -137,7 +141,7 @@ test.describe("調査研究費 議員ページ", () => {
 		await expect(cashFlow.getByText("ピンチで拡大できます")).toBeVisible();
 		// 支給期間と更新日はカードの末尾に1行で出す
 		await expect(cashFlow.getByText(/支給分　\d{4}\.\d{1,2}\.\d{1,2}更新$/)).toBeVisible();
-		const chart = page.locator('[role="img"][aria-label="調査研究費の使いみちの流れ図"]');
+		const chart = page.locator('[role="group"][aria-label="調査研究費の使いみちの流れ図"]');
 		const box = await chart.boundingBox();
 		expect(box?.width ?? Number.POSITIVE_INFINITY).toBeLessThanOrEqual(390);
 	});

@@ -5,7 +5,7 @@ import type {
   ResearchFundPartySummaryData,
 } from "@/server/contexts/research-fund/domain/models/research-fund-party-summary";
 
-// サンキー図（@nivo）は ESM のみで jest から読めないので、図の中身は描かない
+// サンキー図の中身はこのテストの対象外なので描かない（図は sankey-layout のテストで確かめる）
 jest.mock("@/client/components/top-page/features/charts/SankeyChart", () => ({
   __esModule: true,
   default: () => null,

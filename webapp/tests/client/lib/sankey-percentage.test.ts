@@ -10,8 +10,8 @@ describe("formatSankeyPercentage", () => {
     expect(formatSankeyPercentage(10_000, 1_000_000)).toBe("1%");
   });
 
-  it("1%未満は「<1%」", () => {
-    expect(formatSankeyPercentage(9_999, 1_000_000)).toBe("<1%");
+  it("1%未満は「1%未満」", () => {
+    expect(formatSankeyPercentage(9_999, 1_000_000)).toBe("1%未満");
   });
 
   it("値か合計が無ければ空文字", () => {
