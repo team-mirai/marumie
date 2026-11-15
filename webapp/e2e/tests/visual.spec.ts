@@ -132,7 +132,23 @@ async function expectPageScreenshot(page: Page, name: string) {
 }
 
 test.describe("主要画面の見た目", () => {
-  test("政治団体ページ", async ({ page }) => {
+  test("トップページ", async ({ page }) => {
+    await page.goto("/");
+
+    // 政党のカードと所属議員の調研費が描画されてから撮る（年は既定の 2026 年で固定されている）
+    await expect(
+      page.getByRole("region", { name: "政党の収支" }).getByRole("heading", { name: "サンプル党の収支" }),
+    ).toBeVisible();
+    await expect(
+      page
+        .getByRole("region", { name: "所属議員の調研費" })
+        .getByRole("heading", { name: "サンプル 太郎の調研費" }),
+    ).toBeVisible();
+
+    await expectPageScreenshot(page, "home.png");
+  });
+
+  test("政党ページ", async ({ page }) => {
     await page.goto("/o/sample-party/2025");
 
     // 収支の流れ（サンキー図）と月ごとの推移のグラフが描画されてから撮る
