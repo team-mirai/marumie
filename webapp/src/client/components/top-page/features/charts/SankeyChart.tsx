@@ -105,12 +105,16 @@ export default function SankeyChart({
   const descriptionId = useId();
   const isSp = useIsSp();
   const { ref, inView } = useInView<HTMLDivElement>();
-  const [hot, setHot] = useState<string | null>(null);
+  // ホバーが外れても、キーボードのフォーカスがある項目の強調は残す
+  const [hovered, setHovered] = useState<string | null>(null);
+  const [focused, setFocused] = useState<string | null>(null);
+  const hot = hovered ?? focused;
 
   const layout = useMemo(() => {
     const config = VARIANTS[variant];
     const flow = toSankeyFlow(data, config.flow);
-    if (flow.total <= 0) return null;
+    // 収入が0円でも支出・残高があれば描く
+    if (flow.incomes.length === 0 && flow.expenses.length === 0 && !flow.balance) return null;
     return layoutSankey(flow, { ...config.layout, tall: isSp });
   }, [data, variant, isSp]);
 
@@ -124,8 +128,8 @@ export default function SankeyChart({
 
   const isHot = (keys: string[]) => hot !== null && keys.includes(hot);
   const hover = (key: string) => ({
-    onMouseEnter: () => setHot(key),
-    onMouseLeave: () => setHot(null),
+    onMouseEnter: () => setHovered(key),
+    onMouseLeave: () => setHovered(null),
   });
   const hotClass = (keys: string[]) => (isHot(keys) ? " is-hot" : "");
 
@@ -177,8 +181,8 @@ export default function SankeyChart({
             role="img"
             aria-label={node.ariaLabel}
             tabIndex={0}
-            onFocus={() => setHot(node.key)}
-            onBlur={() => setHot(null)}
+            onFocus={() => setFocused(node.key)}
+            onBlur={() => setFocused(null)}
             {...hover(node.key)}
           />
         ))}

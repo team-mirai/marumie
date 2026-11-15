@@ -59,6 +59,18 @@ describe("wrapSankeyLabel", () => {
     expect(wrapSankeyLabel("機関紙誌+その他事業収入", 7)).toEqual(["機関紙誌+", "その他事業収入"]);
     expect(wrapSankeyLabel("政治団体からの寄附", 7)).toEqual(["政治団体からの", "寄附"]);
   });
+
+  it("区切りの前が長くても、どの行も列の文字数を超えない", () => {
+    for (const [label, max] of [
+      ["政治団体からの寄附（個人）", 7],
+      ["機関紙誌の発行その他+事業収入", 7],
+      ["機関紙誌の発行その他の事業による収入", 10],
+    ] as const) {
+      const lines = wrapSankeyLabel(label, max);
+      expect(lines.join("")).toBe(label);
+      for (const line of lines) expect(line.length).toBeLessThanOrEqual(max);
+    }
+  });
 });
 
 describe("layoutSankey", () => {
@@ -115,6 +127,45 @@ describe("layoutSankey", () => {
 
     expect(nodeByLabel(layout, "宣伝費").keys).toEqual(["r:宣伝費", "o0"]);
     expect(layout.bands.filter((band) => band.keys.includes("o0"))).toHaveLength(3);
+  });
+
+  it("内訳をホバーしたときは親のノードとラベルも濃く残す", () => {
+    const layout = layoutSankey(FIVE_COLUMNS, TITLES);
+
+    expect(nodeByLabel(layout, "政治活動費").keys).toContain("r:宣伝費");
+    expect(layout.labels.find((label) => label.key === "o0")?.keys).toContain("r:宣伝費");
+    expect(nodeByLabel(layout, "寄附").keys).toContain("l:個人からの寄附");
+  });
+
+  it("支出・残高が収入より多くても、帯は合計の柱の中に収まる", () => {
+    const overspent: SankeyFlow = {
+      incomes: [{ label: "寄附", value: 1_000_000 }],
+      expenses: [{ label: "政治活動費", value: 1_500_000 }],
+      balance: null,
+      total: 1_000_000,
+    };
+    const layout = layoutSankey(overspent, TITLES);
+    const node = nodeByLabel(layout, "政治活動費");
+
+    expect(node.height).toBeCloseTo(layout.hub.height);
+    expect(node.y + node.height).toBeLessThanOrEqual(layout.height);
+    expect(layout.hub.amount.text).toBe("100万円");
+    expect(labelText(layout, "o0")).toEqual(["政治活動費", "150万円　150%"]);
+  });
+
+  it("収入が0円でも支出を描き、割合は支出の合計に対して出す", () => {
+    const layout = layoutSankey(
+      {
+        incomes: [],
+        expenses: [{ label: "政治活動費", value: 100_000 }],
+        balance: null,
+        total: 0,
+      },
+      TITLES,
+    );
+
+    expect(nodeByLabel(layout, "政治活動費").height).toBeCloseTo(layout.hub.height);
+    expect(labelText(layout, "o0")).toEqual(["政治活動費", "10万円　100%"]);
   });
 
   it("収入側に内訳が無ければ3列を横幅いっぱいに均等に、左右とも無ければ合計を中央に置く", () => {

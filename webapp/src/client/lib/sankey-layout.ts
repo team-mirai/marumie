@@ -108,17 +108,25 @@ export function formatSankeyAmount(yen: number): string {
 
 /**
  * 長い項目名を列の幅（1行の文字数）で折り返す。
- * 「（」の前、「+」の後、「の」の後の順で区切りを探し、無ければ文字数で切る。
+ * 「（」の前、「+」の後、「の」の後の順で区切りを探し、無ければ文字数で切る。区切りの前も max を超えれば折り返す。
  */
 export function wrapSankeyLabel(label: string, max: number): string[] {
   if (label.length <= max) return [label];
   const paren = label.indexOf("（");
-  if (paren > 0) return [label.slice(0, paren), ...wrapSankeyLabel(label.slice(paren), max)];
+  if (paren > 0) {
+    return [
+      ...wrapSankeyLabel(label.slice(0, paren), max),
+      ...wrapSankeyLabel(label.slice(paren), max),
+    ];
+  }
   const plus = label.indexOf("+");
   if (plus > 0 && plus < label.length - 1) {
-    return [label.slice(0, plus + 1), ...wrapSankeyLabel(label.slice(plus + 1), max)];
+    return [
+      ...wrapSankeyLabel(label.slice(0, plus + 1), max),
+      ...wrapSankeyLabel(label.slice(plus + 1), max),
+    ];
   }
-  const no = label.lastIndexOf("の", max);
+  const no = label.lastIndexOf("の", max - 1);
   if (no > 1) return [label.slice(0, no + 1), ...wrapSankeyLabel(label.slice(no + 1), max)];
   return [label.slice(0, max), ...wrapSankeyLabel(label.slice(max), max)];
 }
@@ -169,7 +177,9 @@ function buildSubColumn(
         nodes.push(node);
       }
       node.value += sub.value;
+      // 親をホバーしたら内訳も、内訳をホバーしたら親も濃く残す
       if (!node.keys.includes(parent.key)) node.keys.push(parent.key);
+      if (!parent.keys.includes(node.key)) parent.keys.push(node.key);
       links.push({ parent, node, value: sub.value });
     }
   }
@@ -190,13 +200,19 @@ export function layoutSankey(flow: SankeyFlow, options: SankeyLayoutOptions): Sa
   const HW = 44;
   let HX = (W - HW) / 2;
   const X = { L2: tall ? 228 : 255, L1: 410, R1: W - 410 - NW, R2: W - 220 - NW };
-  const PX = flow.total > 0 ? HUB / flow.total : 0;
+  // 支出・残高が収入より多いデータもあるので、帯が合計の柱に収まるよう大きい側で縮尺を決める
+  const outTotal =
+    flow.expenses.reduce((sum, item) => sum + item.value, 0) + (flow.balance?.value ?? 0);
+  const scale = Math.max(flow.total, outTotal);
+  const PX = scale > 0 ? HUB / scale : 0;
   const G1 = tall ? 26 : inline ? 6 : 18;
   const MINH = 6;
   const MINB = 3;
   const GO = tall ? 14 : 8;
 
-  const pct = (v: number) => formatSankeyPercentage(v, flow.total) || "0%";
+  // 割合は収入の合計に対して。収入が0円のときは支出・残高の合計に対して出す
+  const pct = (v: number) =>
+    formatSankeyPercentage(v, flow.total > 0 ? flow.total : outTotal) || "0%";
   const amountText = (v: number) => `${formatSankeyAmount(v)}　${pct(v)}`;
 
   // 列を組み立てる
