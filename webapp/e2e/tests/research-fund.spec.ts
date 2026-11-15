@@ -107,6 +107,28 @@ test.describe("調査研究費 議員ページ", () => {
 		expect(errors, `以下のエラーが発生しました:\n${errors.join("\n")}`).toHaveLength(0);
 	});
 
+	for (const { label, viewport } of [
+		{ label: "PC", viewport: { width: 1280, height: 800 } },
+		{ label: "SP", viewport: { width: 390, height: 844 } },
+	]) {
+		test(`${label}: 冒頭に議員カードを出し、公開中の議員が1人だけなら前後の切り替えとほかの議員を出さない`, async ({
+			page,
+		}) => {
+			await page.setViewportSize(viewport);
+			await page.goto(PAGE_URL);
+			const card = page.getByRole("region", { name: "議員情報" });
+
+			await expect(card.getByText("サンプル 太郎", { exact: true }).locator("visible=true")).toBeVisible();
+			// シードの議員は顔写真が未登録なので人型のアイコンになる
+			await expect(
+				card.getByRole("img", { name: "サンプル 太郎の写真" }).locator("visible=true"),
+			).toBeVisible();
+			// シードで調研費を公開中かつ公開済みの仕訳があるのはサンプル 太郎だけ
+			await expect(card.getByRole("link", { name: /の調研費へ$/ })).toHaveCount(0);
+			await expect(page.getByRole("heading", { name: "ほかの議員の調研費" })).toHaveCount(0);
+		});
+	}
+
 	test("SP 幅では収支の流れを全体表示し、ピンチで拡大できると添える", async ({ page }) => {
 		await page.setViewportSize({ width: 390, height: 844 });
 		await page.goto(PAGE_URL);

@@ -4,6 +4,7 @@
  * published の仕訳だけを射影したものであり、draft / approved の仕訳と
  * 公開されない備考（memo）はこの型に入らない（= 画面に出ない）。
  */
+import type { PoliticianHouse } from "@/shared/models/politician";
 import type { ResearchFundCategory, ResearchFundRow } from "@/shared/research-fund/aggregation";
 import type { ResearchFundLegalCategory } from "@/shared/research-fund/legal-category";
 
@@ -64,8 +65,31 @@ export interface PublishedExpenditureGroup {
   entries: { entryId: string; entryDate: string; amount: number; accountKey: string }[];
 }
 
+/**
+ * 議員ページの議員カードに出すプロフィール（#1916。admin で手で入力する）。
+ * 登録されていない項目は null・空配列で、画面には出さない。
+ */
+export interface PublishedPoliticianProfile {
+  name: string;
+  slug: string;
+  nameKana: string | null;
+  house: PoliticianHouse | null;
+  /** 選挙区（例: 「比例東京（東京7区）」） */
+  constituency: string | null;
+  /** チームみらい公式サイト内のプロフィールページ */
+  profileUrl: string | null;
+  /** 議員の公式サイト */
+  websiteUrl: string | null;
+  /** SNS の URL（表示順どおり） */
+  snsUrls: string[];
+  /** 顔写真が登録されているか。写真のキーは公開ページに渡さず、配信は API が行う */
+  hasPhoto: boolean;
+}
+
 export interface PublishedResearchFund {
-  politician: { name: string; slug: string };
+  politician: PublishedPoliticianProfile;
+  /** published の仕訳を持つ帳簿の年度（昇順）。年の切り替えに使う */
+  publishedYears: number[];
   /** 議員が調研費を「公開する」設定か。false ならプレビュー URL でだけ表示し、導線・sitemap から外して noindex にする */
   isPublic: boolean;
   financialYear: number;
