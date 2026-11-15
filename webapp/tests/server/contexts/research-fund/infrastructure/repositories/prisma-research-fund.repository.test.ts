@@ -72,6 +72,36 @@ describe("PrismaResearchFundRepository の調研費の公開フラグ", () => {
     });
   });
 
+  it("トップページの議員カードには、ふりがな・院・写真の有無を添える（写真のキーは渡さない）", async () => {
+    const { prisma, repository } = setup();
+    prisma.politicalOrganization.findUnique.mockResolvedValue({
+      slug: "team-mirai",
+      displayName: "チームみらい",
+      politicianMemberships: [
+        {
+          politician: {
+            name: "サンプル太郎",
+            slug: "sample-taro",
+            nameKana: "さんぷるたろう",
+            house: "sangiin",
+            photoPath: "politicians/1/photo.jpg",
+            books: [],
+          },
+        },
+      ],
+    });
+
+    const result = await repository.findPublishedByOrganization("team-mirai", 2026);
+
+    expect(result?.politicians[0].politician).toEqual({
+      name: "サンプル太郎",
+      slug: "sample-taro",
+      nameKana: "さんぷるたろう",
+      house: "sangiin",
+      hasPhoto: true,
+    });
+  });
+
   it.each([true, false])(
     "議員ページには公開フラグ（%s）を添え、公開しない議員でもデータを返す",
     async (isResearchFundPublic) => {
@@ -305,6 +335,9 @@ describe("PrismaResearchFundRepository の法定区分の上書き（#1880）", 
           politician: {
             name: "サンプル太郎",
             slug: "sample-taro",
+            nameKana: null,
+            house: null,
+            photoPath: null,
             books: [
               {
                 asOfDate: null,

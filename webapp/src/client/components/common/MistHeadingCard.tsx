@@ -16,13 +16,19 @@ interface MistHeadingCardProps {
   yearSwitch: ReactNode;
   /** 渡すと、見出しと右上の矢印がこの URL へのリンクになる（トップページのカード） */
   href?: string;
-  /** ページの最初の見出しになるカードは h1、トップページのように並べるカードは h2 */
-  headingLevel?: "h1" | "h2";
-  /** 面の色。政党は緑、政治団体は青みのある緑 */
-  tone?: "party" | "group";
+  /** ページの最初の見出しになるカードは h1、トップページのように並べるカードは h2、セクションの中のカードは h3 */
+  headingLevel?: "h1" | "h2" | "h3";
+  /** 面の色。政党は緑、政治団体は青みのある緑、議員（トップページの所属議員の調研費）は明るい緑 */
+  tone?: "party" | "group" | "member";
   /** カードの面の下に続く本文（金額・収支の流れなど） */
   children: ReactNode;
 }
+
+const TONE_CLASSES = {
+  party: "",
+  group: "mist-surface-group",
+  member: "mist-member-0",
+} as const;
 
 /**
  * 見出しカード。ミストグラデーションの面（ロゴ・見出し・更新日・年の切り替え）の下に本文を続ける。
@@ -46,7 +52,7 @@ export default function MistHeadingCard({
     <section aria-label={ariaLabel} className="mt-[18px] md:mt-0">
       <div className="flex flex-col gap-[22px] rounded-[24px] bg-white pb-5 shadow-[0_0_0_1px_#DCE4E1,0_30px_50px_-34px_rgba(10,60,52,0.35)] md:rounded-[32px] md:p-2 md:pb-6">
         <div
-          className={`${tone === "group" ? "mist-surface mist-surface-group" : "mist-surface"} -mt-[18px] mb-1 grid aspect-[1.9825] w-[calc((100%-40px)*1.029)] ${
+          className={`mist-surface ${TONE_CLASSES[tone]} -mt-[18px] mb-1 grid aspect-[1.9825] w-[calc((100%-40px)*1.029)] ${
             href ? "grid-cols-[auto_minmax(0,1fr)_auto]" : "grid-cols-[auto_minmax(0,1fr)]"
           } grid-rows-[auto_1fr_auto] items-center gap-x-[11px] self-center rounded-[20px] pb-[14px] pl-4 pr-[14px] pt-4 md:m-0 md:aspect-auto md:min-h-[134px] md:w-auto md:gap-x-[14px] md:self-stretch md:rounded-[24px] md:pb-[18px] md:pl-[22px] md:pr-[18px] md:pt-5`}
         >

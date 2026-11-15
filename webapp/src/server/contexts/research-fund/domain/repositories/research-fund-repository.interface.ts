@@ -12,7 +12,7 @@ export interface ResearchFundRepository {
 
   /**
    * 政治団体の slug と年度から、所属議員（ended_on が NULL の membership）全員分を射影して返す。
-   * 所属議員がいなければ null（政党ページは A-6 を出さない）。
+   * 所属議員がいなければ null（トップページは「所属議員の調研費」を出さない）。
    */
   findPublishedByOrganization(
     slug: string,

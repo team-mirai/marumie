@@ -24,7 +24,13 @@ function publishedPolitician(
   overrides: Partial<PublishedPoliticianResearchFund> = {},
 ): PublishedPoliticianResearchFund {
   return {
-    politician: { name: "サンプル 太郎", slug: "sample-taro" },
+    politician: {
+      name: "サンプル 太郎",
+      slug: "sample-taro",
+      nameKana: "さんぷる たろう",
+      house: "shugiin",
+      hasPhoto: true,
+    },
     asOfDate: "2026-08-20",
     publishedThrough: "2026-08-31",
     rows: [
@@ -45,7 +51,13 @@ function preparingPolitician(
   overrides: Partial<PublishedPoliticianResearchFund> = {},
 ): PublishedPoliticianResearchFund {
   return {
-    politician: { name: "サンプル 次郎", slug: "sample-jiro" },
+    politician: {
+      name: "サンプル 次郎",
+      slug: "sample-jiro",
+      nameKana: null,
+      house: null,
+      hasPhoto: false,
+    },
     asOfDate: null,
     publishedThrough: null,
     rows: [],
@@ -110,67 +122,56 @@ describe("GetResearchFundPartySummaryUsecase", () => {
     ]);
   });
 
-  it("準備中の議員も隠さず、グラフのない議員として返す", async () => {
+  it("published の仕訳が無い（準備中の）議員は並べない", async () => {
     const { usecase } = usecaseWith(party([publishedPolitician(), preparingPolitician()]));
 
     const data = await usecase.execute({ slug: "sample-party", financialYear: 2026 });
 
-    expect(data?.politicians).toHaveLength(2);
-    expect(data?.politicians[1]).toEqual({
-      slug: "sample-jiro",
-      name: "サンプル 次郎",
-      ready: false,
-      statusLabel: "準備中",
-      kpi: { granted: 0, spent: 0 },
-      sankey: { detailed: { nodes: [], links: [] }, legal: { nodes: [], links: [] } },
-    });
+    expect(data?.politicians.map((politician) => politician.slug)).toEqual(["sample-taro"]);
   });
 
-  it("議員ごとの公開状況と、公開中の議員全員分の支給期間をラベルにする", async () => {
+  it("公開中の議員がいなければ null を返す（セクションを出さない）", async () => {
+    const { usecase } = usecaseWith(party([preparingPolitician()]));
+
+    expect(await usecase.execute({ slug: "sample-party", financialYear: 2026 })).toBeNull();
+  });
+
+  it("議員カードのプロフィールと、議員ごとの更新日・支給期間を返す", async () => {
     const { usecase } = usecaseWith(
       party([
         publishedPolitician(),
         publishedPolitician({
-          politician: { name: "サンプル 花子", slug: "sample-hanako" },
+          politician: {
+            name: "サンプル 花子",
+            slug: "sample-hanako",
+            nameKana: null,
+            house: null,
+            hasPhoto: false,
+          },
+          asOfDate: null,
           publishedThrough: "2026-09-30",
         }),
-        // 準備中の議員は支給期間に含めない
-        preparingPolitician({ publishedThrough: "2026-12-31" }),
       ]),
     );
 
     const data = await usecase.execute({ slug: "sample-party", financialYear: 2026 });
 
-    expect(data?.politicians[0].statusLabel).toBe("2026年2月〜8月分を公開中");
-    expect(data?.politicians[2].statusLabel).toBe("準備中");
-    expect(data?.grantPeriodLabel).toBe("2026年2月〜9月支給分");
-  });
-
-  it("誰も公開していなければ準備中として扱う", async () => {
-    const { usecase } = usecaseWith(party([preparingPolitician()]));
-
-    const data = await usecase.execute({ slug: "sample-party", financialYear: 2026 });
-
-    expect(data?.grantPeriodLabel).toBeNull();
-    expect(data?.asOfDate).toBeNull();
-  });
-
-  it("「◯◯更新」は公開中の議員のうち最も新しい日付を使う", async () => {
-    const { usecase } = usecaseWith(
-      party([
-        publishedPolitician({ asOfDate: "2026-07-31" }),
-        publishedPolitician({
-          politician: { name: "サンプル 花子", slug: "sample-hanako" },
-          asOfDate: "2026-08-20",
-        }),
-        // 準備中の議員の日付は代表に使わない
-        preparingPolitician({ asOfDate: "2026-12-31" }),
-      ]),
-    );
-
-    const data = await usecase.execute({ slug: "sample-party", financialYear: 2026 });
-
-    expect(data?.asOfDate).toBe("2026-08-20");
+    expect(data?.politicians[0]).toMatchObject({
+      slug: "sample-taro",
+      name: "サンプル 太郎",
+      nameKana: "さんぷる たろう",
+      house: "shugiin",
+      hasPhoto: true,
+      asOfDate: "2026-08-20",
+      grantPeriodLabel: "2026年2月〜8月支給分",
+    });
+    expect(data?.politicians[1]).toMatchObject({
+      nameKana: null,
+      house: null,
+      hasPhoto: false,
+      asOfDate: null,
+      grantPeriodLabel: "2026年2月〜9月支給分",
+    });
   });
 
   it("集計できない行があれば黙って表示せず失敗させる", async () => {

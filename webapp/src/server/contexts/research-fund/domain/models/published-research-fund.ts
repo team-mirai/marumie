@@ -122,9 +122,16 @@ export interface PublishedReceipt {
   maskedKey: string;
 }
 
-/** 政党ページ A-6 が読む、議員1人分の published 射影。 */
+/** トップページの「所属議員の調研費」が読む、議員1人分の published 射影。 */
 export interface PublishedPoliticianResearchFund {
-  politician: { name: string; slug: string };
+  politician: {
+    name: string;
+    slug: string;
+    nameKana: string | null;
+    house: PoliticianHouse | null;
+    /** 顔写真が登録されているか。写真のキーは公開ページに渡さず、配信は API が行う */
+    hasPhoto: boolean;
+  };
   /** 「2026.8.20更新」。未設定なら null */
   asOfDate: string | null;
   /** 何月分まで公開したか（YYYY-MM-DD）。未設定なら null */
@@ -136,7 +143,7 @@ export interface PublishedPoliticianResearchFund {
   expenseCount: number;
 }
 
-/** 政党ページ A-6 が読む、所属議員全員分の published 射影。 */
+/** トップページの「所属議員の調研費」が読む、所属議員全員分の published 射影。 */
 export interface PublishedPartyResearchFund {
   organization: { slug: string; displayName: string };
   financialYear: number;
