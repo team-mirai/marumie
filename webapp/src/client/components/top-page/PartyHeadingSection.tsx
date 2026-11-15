@@ -1,6 +1,8 @@
 import "server-only";
 import AmountSummary from "@/client/components/common/AmountSummary";
 import MistHeadingCard from "@/client/components/common/MistHeadingCard";
+import PartyLogo from "@/client/components/common/PartyLogo";
+import YearSegment from "@/client/components/common/YearSegment";
 import CashFlowSection from "@/client/components/top-page/CashFlowSection";
 import { calculateSankeyFinancialSummary } from "@/client/lib/sankey-financial-summary";
 import type { SankeyData } from "@/types/sankey";
@@ -31,12 +33,16 @@ export default function PartyHeadingSection({
   return (
     <MistHeadingCard
       ariaLabel="政党情報"
-      logo={{ src: "/logos/team-mirai-logo.svg", alt: "チームみらいのロゴ" }}
+      avatar={<PartyLogo />}
       title={`${organizationName}の収支`}
       subtitle={`政党・${year}年`}
       updatedAt={updatedAt}
-      years={years.map((y) => ({ year: y, href: `/o/${slug}/${y}` }))}
-      currentYear={year}
+      yearSwitch={
+        <YearSegment
+          years={years.map((y) => ({ year: y, href: `/o/${slug}/${y}` }))}
+          currentYear={year}
+        />
+      }
     >
       <AmountSummary
         items={[

@@ -1,6 +1,6 @@
 "use client";
 import "client-only";
-import { type ComponentProps, type KeyboardEvent, useRef, useState } from "react";
+import { type ComponentProps, type KeyboardEvent, useId, useRef, useState } from "react";
 import SankeyChart from "@/client/components/top-page/features/charts/SankeyChart";
 import PinchZoom from "@/client/components/ui/PinchZoom";
 
@@ -27,9 +27,6 @@ const TABS = [
 
 type TabKey = (typeof TABS)[number]["key"];
 
-const PANEL_ID = "cash-flow-panel";
-const tabId = (key: TabKey) => `cash-flow-tab-${key}`;
-
 /**
  * 収支の流れの区分（詳細の区分／法律上の区分）のタブとサンキー図。政党ページでは見出しカードの中、議員ページでは収支の流れのカードの中に置く。
  * SP では横スクロールさせず全体を表示し、ピンチで拡大できるようにする。
@@ -42,6 +39,10 @@ export default function CashFlowSection({
   emptyMessage = "サンキー図データが取得できませんでした",
 }: CashFlowSectionProps) {
   const [activeTab, setActiveTab] = useState<TabKey>("friendly");
+  // トップページでは同じ図を複数のカードに並べるので、タブとパネルの id をカードごとに分ける
+  const idPrefix = useId();
+  const panelId = `${idPrefix}-panel`;
+  const tabId = (key: TabKey) => `${idPrefix}-tab-${key}`;
   const tabRefs = useRef<Partial<Record<TabKey, HTMLButtonElement | null>>>({});
 
   const currentData = activeTab === "political" ? political : friendly;
@@ -76,7 +77,7 @@ export default function CashFlowSection({
               type="button"
               role="tab"
               aria-selected={selected}
-              aria-controls={PANEL_ID}
+              aria-controls={panelId}
               tabIndex={selected ? 0 : -1}
               onClick={() => setActiveTab(tab.key)}
               onKeyDown={handleKeyDown}
@@ -92,7 +93,7 @@ export default function CashFlowSection({
         })}
       </div>
 
-      <div id={PANEL_ID} role="tabpanel" aria-labelledby={tabId(activeTab)}>
+      <div id={panelId} role="tabpanel" aria-labelledby={tabId(activeTab)}>
         {currentData ? (
           <>
             <PinchZoom>

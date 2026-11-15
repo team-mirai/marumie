@@ -7,14 +7,11 @@ export const dynamic = "force-dynamic";
 
 /**
  * 政治団体の代表者の顔写真を配信する。非公開バケットの署名URLへリダイレクトするだけで、
- * 団体が無い・写真が未登録・ストレージが未設定のときは 404 を返す。
+ * 団体が無いか写真が未登録なら 404 を返す。
  */
 export async function GET(_request: Request, { params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const signedUrl = await loadOrganizationPhotoUrl(slug).catch((error) => {
-    console.error("Organization photo error:", error);
-    return null;
-  });
+  const signedUrl = await loadOrganizationPhotoUrl(slug);
   if (!signedUrl) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
