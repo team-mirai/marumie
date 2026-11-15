@@ -114,7 +114,8 @@ test.describe("トップページ", () => {
 		await page.goto("/");
 		const memberChart = page
 			.getByRole("region", { name: "所属議員の調研費" })
-			.locator('[role="group"][aria-label="サンプル 太郎の調査研究費の使いみちの流れ図"]');
+			.locator('[role="group"][aria-label="サンプル 太郎の調査研究費の使いみちの流れ図"]')
+			.locator("visible=true");
 		const partyChart = page
 			.getByRole("region", { name: "政党の収支" })
 			.locator('[role="group"][aria-label="政治資金の収支フロー図"]')
