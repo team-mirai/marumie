@@ -2,10 +2,12 @@ import "server-only";
 import SiteBottomBlock from "@/client/components/common/SiteBottomBlock";
 import PartyLogo from "@/client/components/common/PartyLogo";
 import HomeOrganizationCard from "@/client/components/home/HomeOrganizationCard";
+import HomeResearchFundSection from "@/client/components/home/HomeResearchFundSection";
 import OrganizationAvatar from "@/client/components/home/OrganizationAvatar";
 import MainColumn from "@/client/components/layout/MainColumn";
 import { formatUpdatedAt } from "@/client/lib/format-date";
 import { loadHomePageData } from "@/server/contexts/public-finance/presentation/loaders/load-home-page-data";
+import { loadResearchFundPartySummary } from "@/server/contexts/research-fund/presentation/loaders/load-research-fund-party-summary";
 
 export const revalidate = 300; // 5 minutes
 
@@ -13,13 +15,23 @@ export const revalidate = 300; // 5 minutes
 const YEARS = [2025, 2026] as const;
 const DEFAULT_YEAR = 2026;
 
-/** トップページ。政党と政治団体の収支をカードで並べ、それぞれのページへの入口にする。 */
+/** トップページ。政党の収支・所属議員の調研費・政治団体の収支をカードで並べ、それぞれのページへの入口にする。 */
 export default async function HomePage() {
   const data = await loadHomePageData(YEARS).catch((error) => {
     console.error("loadHomePageData error:", error);
     return null;
   });
   const updatedAt = formatUpdatedAt(data?.lastUpdatedAt ?? null);
+  // 所属議員の調研費は政党（先頭）の所属議員を出す。取れなくても他のカードは出せるので、失敗したら出さないだけにする
+  const partySlug = data?.parties[0]?.slug;
+  const researchFund = partySlug
+    ? await loadResearchFundPartySummary({ slug: partySlug, financialYear: DEFAULT_YEAR }).catch(
+        (error) => {
+          console.error("loadResearchFundPartySummary error:", error);
+          return null;
+        },
+      )
+    : null;
 
   return (
     <MainColumn spacing="compact">
@@ -41,6 +53,7 @@ export default async function HomePage() {
           ))}
         </section>
       )}
+      {researchFund && <HomeResearchFundSection data={researchFund} />}
       {data && data.groups.length > 0 && (
         <section
           id="home-groups"

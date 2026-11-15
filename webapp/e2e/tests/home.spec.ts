@@ -85,6 +85,49 @@ test.describe("トップページ", () => {
 		await expect(page.getByRole("region", { name: "データについて" })).toContainText("免責事項");
 	});
 
+	test("所属議員の調研費に公開中の議員だけがカードで並び、選んだ議員の調研費が出る", async ({
+		page,
+	}) => {
+		await page.goto("/");
+		const section = page.getByRole("region", { name: "所属議員の調研費" });
+
+		await expect(section.getByText("議員に毎月100万円支給される公費を何に使ったか")).toBeVisible();
+		await expect(
+			section.getByRole("link", { name: /チームみらいの調研費の使用方針/ }),
+		).toHaveAttribute("target", "_blank");
+
+		// シードの sample-party の所属議員のうち、published の仕訳があるのはサンプル 太郎だけ（次郎は準備中）
+		const card = section.getByRole("button", { name: "サンプル 太郎の調研費を下に表示" });
+		await expect(card).toHaveAttribute("aria-pressed", "true");
+		await expect(section.getByText("サンプル 次郎")).toHaveCount(0);
+
+		const detail = section.getByRole("region", { name: "サンプル 太郎の調研費" });
+		await expect(detail.getByRole("heading", { name: "サンプル 太郎の調研費" })).toBeVisible();
+		await expect(detail.getByText("支給総額")).toBeVisible();
+		await expect(detail.getByRole("tab", { name: "法律上の区分" })).toBeVisible();
+		await detail.getByRole("link", { name: "サンプル 太郎の調研費を詳しく" }).click();
+		await expect(page).toHaveURL("/p/sample-taro/2026");
+	});
+
+	test("SP では議員のカードをタップすると開閉する", async ({ page }) => {
+		await page.setViewportSize({ width: 390, height: 844 });
+		await page.goto("/");
+		const section = page.getByRole("region", { name: "所属議員の調研費" });
+		const card = section.getByRole("button", { name: "サンプル 太郎の調研費", exact: true });
+		const detailLink = section.getByRole("link", { name: "サンプル 太郎の調研費を詳しく" });
+
+		await expect(card).toHaveAttribute("aria-expanded", "true");
+		await expect(detailLink).toBeVisible();
+
+		await card.click();
+		await expect(card).toHaveAttribute("aria-expanded", "false");
+		await expect(detailLink).toHaveCount(0);
+
+		await card.click();
+		await expect(card).toHaveAttribute("aria-expanded", "true");
+		await expect(detailLink).toHaveAttribute("href", "/p/sample-taro/2026");
+	});
+
 	test("存在しない URL はトップページへ移る", async ({ page }) => {
 		await page.goto("/no-such-page");
 

@@ -53,7 +53,7 @@ const entrySelect = {
 } satisfies Prisma.ResearchFundJournalEntrySelect;
 
 /**
- * 政党ページ A-6 は横棒グラフと KPI しか描かないので、明細（項目名・特記事項・領収書）は取らない。
+ * トップページの「所属議員の調研費」は金額とサンキーしか描かないので、明細（項目名・特記事項・領収書）は取らない。
  * 議員が増えるほど行数が効くため、必要な列だけに絞る。
  */
 const summaryEntrySelect = {
@@ -294,6 +294,9 @@ export class PrismaResearchFundRepository implements ResearchFundRepository {
               select: {
                 name: true,
                 slug: true,
+                nameKana: true,
+                house: true,
+                photoPath: true,
                 books: {
                   where: { financialYear },
                   select: {
@@ -353,7 +356,13 @@ export class PrismaResearchFundRepository implements ResearchFundRepository {
         }
 
         return {
-          politician: { name: politician.name, slug: politician.slug },
+          politician: {
+            name: politician.name,
+            slug: politician.slug,
+            nameKana: politician.nameKana,
+            house: politician.house,
+            hasPhoto: politician.photoPath !== null,
+          },
           asOfDate: book?.asOfDate ? dateOf(book.asOfDate) : null,
           publishedThrough: book?.publishedThrough ? dateOf(book.publishedThrough) : null,
           rows,
