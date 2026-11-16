@@ -31,7 +31,8 @@ const FLOW: SankeyFlow = {
 };
 
 function labelText(layout: ReturnType<typeof layoutSankeySp>, key: string) {
-  return layout.labels.find((label) => label.key === key)?.spans.map((span) => span.text);
+  const label = layout.labels.find((l) => l.key === key);
+  return label && [...label.texts.map((text) => text.text), ...label.pills.map((pill) => pill.text)];
 }
 
 describe("wrapSankeySpLabel", () => {
@@ -102,7 +103,7 @@ describe("layoutSankeySp", () => {
     ]) {
       let prevBottom = Number.NEGATIVE_INFINITY;
       for (const label of columnLabels) {
-        const ys = label.spans.map((span) => span.y ?? 0);
+        const ys = label.texts.map((text) => text.y);
         expect(Math.min(...ys)).toBeGreaterThan(prevBottom);
         prevBottom = Math.max(...ys);
         const node = layout.nodes.find((n) => n.key === label.key);
@@ -125,7 +126,7 @@ describe("layoutSankeySp", () => {
     };
     const layout = layoutSankeySp(many, TITLES);
     for (const label of layout.labels.filter((l) => l.key.startsWith("o"))) {
-      const ys = label.spans.map((span) => span.y ?? 0);
+      const ys = label.texts.map((text) => text.y);
       const node = layout.nodes.find((n) => n.key === label.key);
       if (!node) throw new Error(`${label.key} のノードが無い`);
       const middle = (Math.min(...ys) + Math.max(...ys)) / 2;
@@ -133,7 +134,7 @@ describe("layoutSankeySp", () => {
     }
   });
 
-  it("金額がごく小さい項目の帯も見える太さで描く", () => {
+  it("金額がごく小さい項目の帯も見える太さで描き、色の濃さは変えない", () => {
     const layout = layoutSankeySp(
       { ...FLOW, expenses: [{ label: "政治活動費", value: 5_999_999 }], balance: { label: "現金残高", value: 1 } },
       TITLES,
@@ -143,7 +144,31 @@ describe("layoutSankeySp", () => {
     // d = M x1 a1 C m a1 m a2 x2 a2 L x2 b2 C ...
     const nums = (band.d.match(/-?[\d.]+(?:e-?\d+)?/g) ?? []).map(Number);
     expect(nums[9] - nums[7]).toBeGreaterThanOrEqual(3 - 1e-6);
-    expect(band.opacity).toBeGreaterThanOrEqual(0.5);
+    expect(band.opacity).toBe(0.18);
+  });
+
+  it("見出しは収入を緑、支出側は「支出」の部分だけ赤にする", () => {
+    const layout = layoutSankeySp(FLOW, TITLES);
+
+    expect(layout.headers.map((header) => header.spans)).toEqual([
+      [{ text: "収入", fill: "#0F8472" }],
+      [
+        { text: "支出", fill: "#DC2626" },
+        { text: "・残高", fill: "#5B6470" },
+      ],
+    ]);
+  });
+
+  it("低めの図は、見出しの「支出」を右の列の位置に出し、右の列を「項目名 → 金額 → 割合」の1行にする", () => {
+    const layout = layoutSankeySp(FLOW, { inTitle: "支給", outTitle: "支出・未使用", heightScale: 0.75 });
+
+    expect(layout.headers.map((header) => header.text)).toEqual(["支給", "支出"]);
+    expect(layout.headers[1].x).toBe(196);
+    expect(layout.headers[1].spans[0].fill).toBe("#DC2626");
+    expect(labelText(layout, "o0")).toEqual(["政治活動費", "595万円", "60%"]);
+    const texts = layout.labels.find((l) => l.key === "o0")?.texts ?? [];
+    expect(texts[0].y).toBe(texts[1].y);
+    expect(layout.labels.find((l) => l.key === "o1")?.pills[0].textFill).toBe("#9CA3AF");
   });
 
   it("背を低くする倍率を渡すと、合計の柱と図が低くなる", () => {

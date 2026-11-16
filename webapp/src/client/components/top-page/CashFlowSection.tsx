@@ -1,6 +1,6 @@
 "use client";
 import "client-only";
-import { type ComponentProps, type KeyboardEvent, useId, useRef, useState } from "react";
+import { type ComponentProps, type KeyboardEvent, useId, useMemo, useRef, useState } from "react";
 import SankeyChart from "@/client/components/top-page/features/charts/SankeyChart";
 import PinchZoom from "@/client/components/ui/PinchZoom";
 
@@ -11,10 +11,13 @@ interface CashFlowSectionProps {
   friendly?: SankeyData | null;
   /** ページ内リンクの飛び先。外側のカードが飛び先を持つときは渡さない */
   id?: string;
-  /** サンキー図の読み上げ用のラベル・説明と見せ方。政治資金以外の図で差し替える */
+  /**
+   * サンキー図の読み上げ用のラベル・説明と見せ方。政治資金以外の図で差し替える。
+   * alternatives には、もう一方の区分のほかに、同じ場所で切り替えて出す図（ほかの議員の図など）を渡す
+   */
   chart?: Pick<
     ComponentProps<typeof SankeyChart>,
-    "ariaLabel" | "ariaDescription" | "variant" | "spLayout"
+    "ariaLabel" | "ariaDescription" | "variant" | "spLayout" | "alternatives"
   >;
   /** 図のデータが無いときの文言 */
   emptyMessage?: string;
@@ -46,6 +49,13 @@ export default function CashFlowSection({
   const tabRefs = useRef<Partial<Record<TabKey, HTMLButtonElement | null>>>({});
 
   const currentData = activeTab === "political" ? political : friendly;
+  const otherData = activeTab === "political" ? friendly : political;
+  // 区分を切り替えても合計の柱が動かないよう、もう一方の区分の図もいっしょに測る
+  const extra = chart?.alternatives;
+  const alternatives = useMemo(
+    () => [...(otherData ? [otherData] : []), ...(extra ?? [])],
+    [otherData, extra],
+  );
 
   // 左右の矢印キーで隣のタブへ移って選ぶ（端では反対側へ回り込む）
   const handleKeyDown = (event: KeyboardEvent<HTMLButtonElement>) => {
@@ -98,7 +108,12 @@ export default function CashFlowSection({
           <>
             <PinchZoom>
               {/* 区分を切り替えたら図を作り直し、表示したときと同じく、ノードが伸びて帯が左から現れる動きで切り替える */}
-              <SankeyChart key={activeTab} data={currentData} {...chart} />
+              <SankeyChart
+                key={activeTab}
+                data={currentData}
+                {...chart}
+                alternatives={alternatives}
+              />
             </PinchZoom>
             <p className="mt-2 text-right text-[12px] font-semibold text-[#6B7280] min-[641px]:hidden">
               ピンチで拡大できます

@@ -107,7 +107,7 @@ test.describe("政治団体ページ", () => {
 			// 各項目は「項目名 金額（割合）」で読み上げる
 			const balance = chart.getByRole("img", { name: /^現金残高 300万円（\d+%）$/ });
 			await expect(balance).toBeVisible();
-			await expect(chart.getByText(/^300万円　\d+%$/)).toBeVisible();
+			await expect(chart.getByText("300万円", { exact: true }).first()).toBeVisible();
 
 			// 以前のホバーの吹き出しは出さず、ホバーした項目以外を薄くする
 			await balance.hover();
@@ -353,18 +353,17 @@ test.describe("政治団体ページ", () => {
 			await expect(page.locator("#cash-flow").getByText("ピンチで拡大できます")).toBeVisible();
 		});
 
-		test("SP では収支の流れを「収入 → 合計 → 支出・残高」の3列の図で画面幅に収める", async ({
+		test("SP でもトップ・政党ページと同じ縦長の図で、収支の流れを画面幅に収める", async ({
 			page,
 		}) => {
 			await page.setViewportSize({ width: 390, height: 844 });
 			const chart = page.locator('#cash-flow [role="group"][aria-label="政治資金の収支フロー図"]');
 
-			// SP の3列の図は幅 400 の座標で描く（PC・全体表示の版は 1200）
-			await expect(chart).toHaveAttribute("viewBox", /^0 0 400 /);
+			// 低めの3列の図（幅 400 の座標）ではなく、PC と同じ図の背の高い版で「合計」も出す
+			await expect(chart).not.toHaveAttribute("viewBox", /^0 0 400 /);
 			await expect(chart.getByText("収入", { exact: true })).toBeVisible();
 			await expect(chart.getByText("支出・残高", { exact: true })).toBeVisible();
-			// 合計は細い柱だけで「合計」の文字は出さない
-			await expect(chart.getByText("合計", { exact: true })).toHaveCount(0);
+			await expect(chart.getByText("合計", { exact: true })).toBeVisible();
 			const box = await chart.boundingBox();
 			expect(box?.width ?? Number.POSITIVE_INFINITY).toBeLessThanOrEqual(390);
 			expect(

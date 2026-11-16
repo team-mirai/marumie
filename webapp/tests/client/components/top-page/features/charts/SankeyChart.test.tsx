@@ -33,10 +33,23 @@ describe("SankeyChart", () => {
   });
 
   it("項目名は 800、金額は 600 の太さで描く", () => {
-    const spans = document.querySelectorAll(".lbl tspan");
+    const spans = document.querySelectorAll(".lbl text");
     const name = spans.find((span) => span.text === "政党交付金");
-    const amount = spans.find((span) => span.text.startsWith("100万円"));
+    const amount = spans.find((span) => span.text === "100万円");
     expect(name?.getAttribute("font-weight")).toBe("800");
     expect(amount?.getAttribute("font-weight")).toBe("600");
+  });
+
+  it("割合はグレーのピルに入れて金額の後ろに出す", () => {
+    const pill = document.querySelectorAll(".lbl rect").find((rect) => rect.getAttribute("fill") === "#F3F4F6");
+    expect(pill).toBeDefined();
+    const percents = document.querySelectorAll(".lbl text").map((text) => text.text);
+    expect(percents).toContain("60%");
+  });
+
+  it("左右の余白を詰めて viewBox を切り出す", () => {
+    const [x, , width] = (svg?.getAttribute("viewBox") ?? "").split(" ").map(Number);
+    expect(x).toBeGreaterThan(0);
+    expect(x + width).toBeLessThan(1200);
   });
 });

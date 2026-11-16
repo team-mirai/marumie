@@ -121,10 +121,13 @@ test.describe("トップページ", () => {
 			.locator('[role="group"][aria-label="政治資金の収支フロー図"]')
 			.first();
 
-		// 議員の調研費は SP の3列の図（幅 400 の座標）、政党のカードは PC と同じ図の背の高い版（幅 1200）
+		// 議員の調研費は SP の低めの3列の図（幅 400 の座標）で、見出しは「支給」と右の列の位置の「支出」。
+		// 政党のカードは PC と同じ図の背の高い版（幅 1200 の座標から左右の余白を詰めて切り出す）
 		await expect(memberChart).toHaveAttribute("viewBox", /^0 0 400 /);
-		await expect(memberChart.getByText("支出・未使用", { exact: true })).toBeVisible();
-		await expect(partyChart).toHaveAttribute("viewBox", /^0 0 1200 /);
+		await expect(memberChart.getByText("支給", { exact: true })).toBeVisible();
+		await expect(memberChart.getByText("支出", { exact: true })).toBeVisible();
+		await expect(partyChart).not.toHaveAttribute("viewBox", /^0 0 400 /);
+		await expect(partyChart.getByText("合計", { exact: true })).toBeVisible();
 	});
 
 	test("SP では議員のカードをタップすると開閉する", async ({ page }) => {
