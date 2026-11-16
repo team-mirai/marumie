@@ -47,6 +47,7 @@ test.describe("political_fund だけのユーザー", () => {
 		await expectRedirectedToDashboard(page, "/users");
 		await expectRedirectedToDashboard(page, "/sync-export");
 		await expectRedirectedToDashboard(page, "/research-fund-sync-export");
+		await expectRedirectedToDashboard(page, "/research-fund-sync-import");
 	});
 
 	test("調査研究費の Route Handler は 403 で拒否される", async ({ page }) => {
@@ -92,6 +93,7 @@ test.describe("research_fund だけのユーザー", () => {
 		await expectRedirectedToDashboard(page, "/users");
 		await expectRedirectedToDashboard(page, "/politicians/new");
 		await expectRedirectedToDashboard(page, "/research-fund-sync-export");
+		await expectRedirectedToDashboard(page, "/research-fund-sync-import");
 	});
 
 	test("政治資金の Route Handler は 403 で拒否される", async ({ page }) => {

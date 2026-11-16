@@ -1,16 +1,13 @@
-import { PrepareSyncImportUploadUsecase } from "@/server/contexts/data-import/application/usecases/prepare-sync-import-upload-usecase";
+import { PrepareSyncImportUploadUsecase } from "@/server/contexts/shared/application/usecases/prepare-sync-import-upload-usecase";
 import { ImportOrganizationSyncUsecase } from "@/server/contexts/data-import/application/usecases/import-organization-sync-usecase";
 import { PreviewOrganizationSyncImportUsecase } from "@/server/contexts/data-import/application/usecases/preview-organization-sync-import-usecase";
-import {
-  SyncImportForbiddenError,
-  SyncImportOrganizationNotFoundError,
-  SyncImportValidationError,
-} from "@/server/contexts/data-import/domain/models/organization-sync-import";
+import { SyncImportOrganizationNotFoundError } from "@/server/contexts/data-import/domain/models/organization-sync-import";
+import { SyncImportForbiddenError, SyncImportValidationError } from "@/server/contexts/shared/domain/models/sync-import-file";
 import type {
   IOrganizationSyncImportRepository,
   ReplaceOrganizationSyncDataResult,
 } from "@/server/contexts/data-import/domain/repositories/organization-sync-import-repository.interface";
-import type { ISyncImportFileStorage } from "@/server/contexts/data-import/domain/repositories/sync-import-file-storage.interface";
+import type { ISyncImportFileStorage } from "@/server/contexts/shared/domain/repositories/sync-import-file-storage.interface";
 import type { ICacheInvalidator } from "@/server/contexts/shared/domain/services/cache-invalidator.interface";
 
 const ALLOWED_ENVIRONMENT = { dataSyncImportEnabled: "true", vercelEnv: "preview" };

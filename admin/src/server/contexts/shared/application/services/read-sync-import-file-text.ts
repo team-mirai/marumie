@@ -3,8 +3,8 @@ import "server-only";
 import {
   isSyncImportStorageKey,
   SyncImportValidationError,
-} from "@/server/contexts/data-import/domain/models/organization-sync-import";
-import type { ISyncImportFileStorage } from "@/server/contexts/data-import/domain/repositories/sync-import-file-storage.interface";
+} from "@/server/contexts/shared/domain/models/sync-import-file";
+import type { ISyncImportFileStorage } from "@/server/contexts/shared/domain/repositories/sync-import-file-storage.interface";
 
 /** サーバーが発行したキーであることを確かめてから、ストレージの同期用 JSON を読み出す。 */
 export async function readSyncImportFileText(

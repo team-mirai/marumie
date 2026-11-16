@@ -6,42 +6,18 @@ import { ArrowRight, CircleNotch, Warning } from "@phosphor-icons/react/dist/ssr
 import { FileDropzone } from "@/client/components/common/FileDropzone";
 import { SyncImportPlanCard } from "@/client/components/sync-import/SyncImportPlanCard";
 import { Button, Input, Label } from "@/client/components/ui";
-import {
-  type OrganizationSyncImportPlan,
-  type OrganizationSyncImportResult,
-  SYNC_IMPORT_MAX_FILE_SIZE_LABEL,
-  validateSyncImportFileSize,
+import type {
+  OrganizationSyncImportPlan,
+  OrganizationSyncImportResult,
 } from "@/server/contexts/data-import/domain/models/organization-sync-import";
-import type { PrepareSyncImportUploadResponse } from "@/server/contexts/data-import/presentation/actions/prepare-sync-import-upload";
+import { SYNC_IMPORT_MAX_FILE_SIZE_LABEL } from "@/server/contexts/shared/domain/models/sync-import-file";
+import { toUnexpectedErrorMessage, uploadSyncImportFile } from "@/client/lib/sync-import-upload";
+import type { PrepareSyncImportUploadResponse } from "@/server/contexts/shared/presentation/actions/prepare-sync-import-upload";
 import type { PreviewSyncImportResponse } from "@/server/contexts/data-import/presentation/actions/preview-sync-import";
 import type { RunSyncImportResponse } from "@/server/contexts/data-import/presentation/actions/run-sync-import";
 
 /** 上限はストレージのバケット（supabase/config.toml の sync-imports）の上限と同じ */
 const FILE_NOTE = `同期用エクスポートのJSON ・ 最大 ${SYNC_IMPORT_MAX_FILE_SIZE_LABEL}`;
-
-/**
- * Server Action がエラーページ（HTML）を受け取ったときなどに Next.js が投げる汎用メッセージを、
- * 原因の見当が付く文言に置き換える。関数の実行時間・メモリの上限で打ち切られたときに起きる。
- */
-function toUnexpectedErrorMessage(error: unknown, fallback: string): string {
-  const message = error instanceof Error ? error.message : "";
-  if (!message || message.includes("An unexpected response was received from the server")) {
-    return `${fallback}。サーバーから応答がありませんでした（処理時間やメモリの上限を超えた可能性があります）`;
-  }
-  return `${fallback}: ${message}`;
-}
-
-/** ストレージが返すエラー本文（JSON の message）を取り出す。読めなければ HTTP ステータスだけ返す。 */
-async function describeUploadFailure(response: Response): Promise<string> {
-  const body = await response.text().catch(() => "");
-  try {
-    const parsed = JSON.parse(body) as { message?: unknown };
-    if (typeof parsed.message === "string") return `${response.status}: ${parsed.message}`;
-  } catch {
-    // JSON でなければステータスだけ見せる
-  }
-  return String(response.status);
-}
 
 interface SyncImportClientProps {
   prepareUploadAction: (data: { fileSize: number }) => Promise<PrepareSyncImportUploadResponse>;
@@ -89,35 +65,15 @@ export function SyncImportClient({
     setStorageKey(null);
 
     try {
-      const sizeError = validateSyncImportFileSize(file.size);
-      if (sizeError) {
-        setError(sizeError);
+      const uploaded = await uploadSyncImportFile(file, prepareUploadAction);
+      if (!uploaded.ok) {
+        setError(uploaded.error);
         return;
       }
 
-      // ファイル本体は Vercel の関数（リクエストボディ 4.5MB 上限）を通さず、
-      // 署名付き URL でストレージへ直接置く。サーバーにはキーだけを渡す。
-      const prepared = await prepareUploadAction({ fileSize: file.size });
-      if (!prepared.ok) {
-        setError(prepared.error);
-        return;
-      }
-
-      const uploadResponse = await fetch(prepared.target.uploadUrl, {
-        method: "PUT",
-        headers: { "content-type": "application/json", "x-upsert": "false" },
-        body: file,
-      });
-      if (!uploadResponse.ok) {
-        setError(
-          `ファイルのアップロードに失敗しました（${await describeUploadFailure(uploadResponse)}）`,
-        );
-        return;
-      }
-
-      const response = await previewAction({ storageKey: prepared.target.storageKey });
+      const response = await previewAction({ storageKey: uploaded.storageKey });
       if (response.ok) {
-        setStorageKey(prepared.target.storageKey);
+        setStorageKey(uploaded.storageKey);
         setPlan(response.plan);
       } else {
         setError(response.error);

@@ -6,7 +6,7 @@ import { NoRoleNotice } from "@/client/components/layout/NoRoleNotice";
 import { UserRoleModel } from "@/server/contexts/auth/domain/models/user-role";
 import { logout } from "@/server/contexts/auth/presentation/actions/logout";
 import { getCurrentUser } from "@/server/contexts/auth/presentation/loaders/load-current-user";
-import { isSyncImportAvailable } from "@/server/contexts/data-import/presentation/loaders/read-sync-import-environment";
+import { isSyncImportAvailable } from "@/server/contexts/shared/presentation/loaders/read-sync-import-environment";
 
 // 認証チェックでcookiesを使用するため動的レンダリングを強制
 export const dynamic = "force-dynamic";

@@ -1,10 +1,10 @@
 import "server-only";
 
 import { requireRolePage } from "@/server/contexts/auth/presentation/loaders/require-role-page";
-import { prepareSyncImportUpload } from "@/server/contexts/data-import/presentation/actions/prepare-sync-import-upload";
+import { prepareSyncImportUpload } from "@/server/contexts/shared/presentation/actions/prepare-sync-import-upload";
 import { previewSyncImport } from "@/server/contexts/data-import/presentation/actions/preview-sync-import";
 import { runSyncImport } from "@/server/contexts/data-import/presentation/actions/run-sync-import";
-import { isSyncImportAvailable } from "@/server/contexts/data-import/presentation/loaders/read-sync-import-environment";
+import { isSyncImportAvailable } from "@/server/contexts/shared/presentation/loaders/read-sync-import-environment";
 import { PageHeader } from "@/client/components/layout/PageHeader";
 import { SyncImportClient } from "@/client/components/sync-import/SyncImportClient";
 

@@ -11,12 +11,12 @@ import {
   serializeCounterpartKey,
   serializeDonorKey,
   SyncImportOrganizationNotFoundError,
-  SyncImportTimeoutError,
   type SyncImportCounterpartKey,
   type SyncImportDonorKey,
   toCounterpartKey,
   toDonorKey,
 } from "@/server/contexts/data-import/domain/models/organization-sync-import";
+import { SyncImportTimeoutError } from "@/server/contexts/shared/domain/models/sync-import-file";
 import type {
   IOrganizationSyncImportRepository,
   ReplaceOrganizationSyncDataInput,

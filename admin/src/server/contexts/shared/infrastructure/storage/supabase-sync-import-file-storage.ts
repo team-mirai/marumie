@@ -4,11 +4,11 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   SyncImportStorageError,
   type SyncImportStoredFile,
-} from "@/server/contexts/data-import/domain/models/organization-sync-import";
+} from "@/server/contexts/shared/domain/models/sync-import-file";
 import type {
   ISyncImportFileStorage,
   SyncImportUploadTarget,
-} from "@/server/contexts/data-import/domain/repositories/sync-import-file-storage.interface";
+} from "@/server/contexts/shared/domain/repositories/sync-import-file-storage.interface";
 
 /** Storage の list が 1 回で返す件数。 */
 const LIST_PAGE_SIZE = 100;

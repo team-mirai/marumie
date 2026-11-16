@@ -1,4 +1,4 @@
-import { SyncImportValidationError } from "@/server/contexts/data-import/domain/models/organization-sync-import";
+import { SyncImportValidationError } from "@/server/contexts/shared/domain/models/sync-import-file";
 import { parseOrganizationSyncImportFile } from "@/server/contexts/data-import/domain/services/organization-sync-import-parser";
 
 const EXPORTED_AT = "2026-09-18T01:23:45.678Z";

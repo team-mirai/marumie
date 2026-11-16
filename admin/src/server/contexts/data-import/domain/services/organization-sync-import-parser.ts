@@ -10,8 +10,8 @@ import type {
 import {
   collectDistinctCounterpartsAndDonors,
   SYNC_IMPORT_SUPPORTED_FORMAT_VERSIONS,
-  SyncImportValidationError,
 } from "@/server/contexts/data-import/domain/models/organization-sync-import";
+import { SyncImportValidationError } from "@/server/contexts/shared/domain/models/sync-import-file";
 
 /**
  * 環境間同期用 JSON を読み、現在のスキーマで取り込める形に検証する。

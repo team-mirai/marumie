@@ -23,11 +23,7 @@ const SCAN_ROOTS = ["admin/src", "webapp/src"];
  * 解消待ちの既存違反。キーはリポジトリルートからの相対パス、値は「何が違反か」。
  * 後続の Issue がリファクタするたびに 1 行ずつ消す。新しい違反をここに足してはいけない。
  */
-export const KNOWN_VIOLATIONS = {
-  // usecase ではなくヘルパー関数が usecases/ に置かれている（配置ごと見直す）
-  "admin/src/server/contexts/data-import/application/usecases/read-sync-import-file-text.ts":
-    "クラスではなく関数",
-};
+export const KNOWN_VIOLATIONS = {};
 
 const USECASE_PATH = /(^|\/)application\/usecases\/[^/]+\.ts$/;
 

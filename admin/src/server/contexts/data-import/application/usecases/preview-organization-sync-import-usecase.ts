@@ -2,20 +2,20 @@ import "server-only";
 
 import {
   collectDistinctCounterpartsAndDonors,
-  isSyncImportStorageKey,
   type OrganizationSyncImportPlan,
   SyncImportOrganizationNotFoundError,
   toCounterpartKey,
   toDonorKey,
 } from "@/server/contexts/data-import/domain/models/organization-sync-import";
+import { isSyncImportStorageKey } from "@/server/contexts/shared/domain/models/sync-import-file";
 import type { IOrganizationSyncImportRepository } from "@/server/contexts/data-import/domain/repositories/organization-sync-import-repository.interface";
-import type { ISyncImportFileStorage } from "@/server/contexts/data-import/domain/repositories/sync-import-file-storage.interface";
+import type { ISyncImportFileStorage } from "@/server/contexts/shared/domain/repositories/sync-import-file-storage.interface";
 import { parseOrganizationSyncImportFile } from "@/server/contexts/data-import/domain/services/organization-sync-import-parser";
 import {
   assertSyncImportAllowed,
   type SyncImportEnvironment,
-} from "@/server/contexts/data-import/domain/services/sync-import-availability";
-import { readSyncImportFileText } from "@/server/contexts/data-import/application/usecases/read-sync-import-file-text";
+} from "@/server/contexts/shared/domain/services/sync-import-availability";
+import { readSyncImportFileText } from "@/server/contexts/shared/application/services/read-sync-import-file-text";
 
 interface PreviewOrganizationSyncImportInput {
   /** ブラウザがストレージに置いた同期用 JSON のキー（{@link PrepareSyncImportUploadUsecase} が発行）。 */

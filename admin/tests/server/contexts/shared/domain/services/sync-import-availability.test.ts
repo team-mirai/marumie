@@ -1,8 +1,8 @@
-import { SyncImportForbiddenError } from "@/server/contexts/data-import/domain/models/organization-sync-import";
+import { SyncImportForbiddenError } from "@/server/contexts/shared/domain/models/sync-import-file";
 import {
   assertSyncImportAllowed,
   isSyncImportAllowed,
-} from "@/server/contexts/data-import/domain/services/sync-import-availability";
+} from "@/server/contexts/shared/domain/services/sync-import-availability";
 
 describe("isSyncImportAllowed", () => {
   it("フラグが無ければ拒否する（デフォルト拒否）", () => {
