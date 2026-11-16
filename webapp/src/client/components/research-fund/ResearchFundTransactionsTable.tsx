@@ -38,8 +38,12 @@ interface Props {
   query: ResearchFundTransactionsQuery;
 }
 
-/** SP（≤640px）ではヘッダー行の代わりに並び替えタブと絞り込みボタンを出し、1行を縦積みにする。 */
-const ROW_GRID = "min-[641px]:grid-cols-[140px_200px_1fr_180px]";
+/**
+ * SP（≤640px）ではヘッダー行の代わりに並び替えタブと絞り込みボタンを出し、1行を縦積みにする。
+ * 641〜760px は固定列を詰めて項目列の幅を残す。項目列は minmax(0,1fr) にし、中身が広くてもヘッダーと列がずれないようにする。
+ */
+const ROW_GRID =
+  "min-[641px]:grid-cols-[128px_160px_minmax(0,1fr)_160px] min-[761px]:grid-cols-[140px_200px_minmax(0,1fr)_180px]";
 
 /** SP の並び替えタブ。政治団体の全件ページ（TransactionTableMobileHeader）と同じ見た目。金額順は入金・出金を区別せず額の大きさで並べる。 */
 const MOBILE_SORT_TABS: { id: ResearchFundTransactionSort; label: string }[] = [

@@ -51,8 +51,8 @@ const VARIANTS: Record<
  */
 type SankeySpLayout = "tall" | "columns";
 
-/** SP の判定（この幅以下で SP 用の図を出す） */
-const SP_QUERY = "(max-width: 640px)";
+/** SP の判定。CSS の min-[641px]（width >= 641px）のちょうど裏返しにし、ズームで幅が小数になっても CSS と同じ側を選ぶ */
+const SP_QUERY = "(width < 641px)";
 
 function subscribeSp(onChange: () => void) {
   const media = window.matchMedia(SP_QUERY);

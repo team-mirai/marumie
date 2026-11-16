@@ -28,8 +28,12 @@ interface Props {
   updatedAt: string;
 }
 
-/** SP（≤640px）ではヘッダー行を隠し、1行を縦積みにする（全件ページの表と同じ）。 */
-const ROW_GRID = "min-[641px]:grid-cols-[140px_200px_1fr_180px]";
+/**
+ * SP（≤640px）ではヘッダー行を隠し、1行を縦積みにする（全件ページの表と同じ）。
+ * 641〜760px は固定列を詰めて項目列の幅を残す。項目列は minmax(0,1fr) にし、中身が広くてもヘッダーと列がずれないようにする。
+ */
+const ROW_GRID =
+  "min-[641px]:grid-cols-[128px_160px_minmax(0,1fr)_160px] min-[761px]:grid-cols-[140px_200px_minmax(0,1fr)_180px]";
 /** 用途カードの「N件」から飛んできた行を目立たせておく時間 */
 const ROWS_FLASH_MS = 2500;
 /** 固定ヘッダーに隠れないよう、明細の先頭行へ飛ぶときに上を空ける量 */
