@@ -60,20 +60,22 @@ export function useWalletMorph(listRef: RefObject<HTMLElement | null>) {
   /** 切り替える直前に呼ぶ。動いている途中のアニメーションは終わった状態にしてから測る。アニメーションするなら true */
   const prepare = useCallback(
     (slug: string, opening: boolean, onClosed: () => void): boolean => {
-      cancel();
       const root = listRef.current;
+      // 押したカードの位置だけは止める前に測る（閉じている途中のシートが止めた拍子に元の高さへ戻り、見えていた位置からずれるため）
+      const anchor = root?.querySelector<HTMLElement>(`[data-wallet-card="${slug}"]`);
+      const anchorTop = anchor ? anchor.getBoundingClientRect().top : null;
+      cancel();
       if (!root) return false;
       const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
       const cards = new Map<string, Geometry>();
       for (const card of root.querySelectorAll<HTMLElement>("[data-wallet-card]")) {
         cards.set(card.dataset.walletCard ?? "", cardGeometry(card));
       }
-      const anchor = root.querySelector<HTMLElement>(`[data-wallet-card="${slug}"]`);
       pending.current = {
         slug,
         opening,
         reduce,
-        anchorTop: anchor ? anchor.getBoundingClientRect().top : null,
+        anchorTop,
         cards,
         onClosed,
       };
