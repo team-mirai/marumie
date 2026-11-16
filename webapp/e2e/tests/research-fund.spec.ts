@@ -486,25 +486,6 @@ test.describe("調査研究費 議員ページ", () => {
 		await expect(card).toHaveClass(/border-\[#2AA693\]/);
 	});
 
-	test("フッターのアンカーが同じ議員ページ内のセクションを指す", async ({
-		page,
-	}) => {
-		await page.goto(PAGE_URL);
-
-		const footer = page.locator("footer");
-		for (const [label, section] of [
-			["収支の流れ", "cash-flow"],
-			["月ごとの収支推移", "monthly-trends"],
-			["すべての出入金", "transactions"],
-			["データについて", "explanation"],
-			["チームみらいについて", "about"],
-		]) {
-			await expect(
-				footer.getByRole("link", { name: label, exact: true }).first(),
-			).toHaveAttribute("href", `/p/sample-taro/2026#${section}`);
-		}
-	});
-
 	test("存在しない議員のページはトップページに寄せられる", async ({ page }) => {
 		await page.goto("/p/no-such-politician/2026");
 

@@ -1,79 +1,65 @@
-import { getFooterTextLinks } from "@/client/lib/footer-navigation";
+import {
+  FOOTER_SOCIAL_LINKS,
+  socialLinkLabel,
+  sortFooterPoliticiansByKana,
+} from "@/client/lib/footer-navigation";
+import { buildPoliticianMenuItems, parseHeaderPath } from "@/client/lib/header-navigation";
 
-const ANCHOR_LABELS = [
-  "TOP",
-  "収支の流れ",
-  "月ごとの収支推移",
-  "貸借対照表",
-  "すべての出入金",
-  "データについて",
-  "チームみらいについて",
-];
-
-function hrefOf(links: ReturnType<typeof getFooterTextLinks>, label: string) {
-  return links.find((link) => link.label === label)?.href;
-}
-
-describe("getFooterTextLinks", () => {
-  it("政治団体ページでは /o/[slug]/ のセクションを指す", () => {
-    const links = getFooterTextLinks("/o/sample-party/2026");
-
-    expect(links.slice(0, 7)).toEqual([
-      { label: "TOP", href: "/o/sample-party/#top" },
-      { label: "収支の流れ", href: "/o/sample-party/#cash-flow" },
-      { label: "月ごとの収支推移", href: "/o/sample-party/#monthly-trends" },
-      { label: "貸借対照表", href: "/o/sample-party/#balance-sheet" },
-      { label: "すべての出入金", href: "/o/sample-party/#transactions" },
-      { label: "データについて", href: "/o/sample-party/#explanation" },
-      { label: "チームみらいについて", href: "/o/sample-party/#about" },
+describe("FOOTER_SOCIAL_LINKS", () => {
+  it("デザイン v9 の6つの SNS を並べる", () => {
+    expect(FOOTER_SOCIAL_LINKS.map((link) => link.name)).toEqual([
+      "YouTube",
+      "X（旧Twitter）",
+      "LINE",
+      "Instagram",
+      "Facebook",
+      "TikTok",
     ]);
   });
 
-  it("/o/ 以外のページでは既定の政治団体を指す", () => {
-    expect(hrefOf(getFooterTextLinks("/terms"), "収支の流れ")).toBe("/o/team-mirai/#cash-flow");
+  it("v9 の新しいアイコン（LINE / Instagram / TikTok）を使う", () => {
+    expect(FOOTER_SOCIAL_LINKS.map((link) => link.icon)).toEqual([
+      "icon-yt.svg",
+      "icon-x.svg",
+      "icon-line2.svg",
+      "icon-ig.svg",
+      "icon-fb.svg",
+      "icon-tiktok2.svg",
+    ]);
   });
+});
 
-  it("調研費ページでは同じページ内のセクションを指す", () => {
-    const links = getFooterTextLinks("/p/sample-taro/2026");
-
-    expect(hrefOf(links, "収支の流れ")).toBe("/p/sample-taro/2026/#cash-flow");
-    expect(hrefOf(links, "月ごとの収支推移")).toBe("/p/sample-taro/2026/#monthly-trends");
-    expect(hrefOf(links, "すべての出入金")).toBe("/p/sample-taro/2026/#transactions");
-    expect(hrefOf(links, "データについて")).toBe("/p/sample-taro/2026/#explanation");
-    expect(hrefOf(links, "チームみらいについて")).toBe("/p/sample-taro/2026/#about");
-  });
-
-  it("調研費の全件ページでも、その調研費ページのセクションを指す", () => {
-    const links = getFooterTextLinks("/p/sample-taro/2025/transactions");
-
-    expect(hrefOf(links, "収支の流れ")).toBe("/p/sample-taro/2025/#cash-flow");
-    expect(hrefOf(links, "すべての出入金")).toBe("/p/sample-taro/2025/#transactions");
-  });
-
-  it("調研費ページでも並びは政治団体ページと同じで、貸借対照表は既定の政治団体を指す", () => {
-    const links = getFooterTextLinks("/p/sample-taro/2026");
-
-    expect(links.slice(0, 7).map((link) => link.label)).toEqual(ANCHOR_LABELS);
-    expect(hrefOf(links, "貸借対照表")).toBe("/o/team-mirai/#balance-sheet");
-  });
-
-  it("応援・規約などのリンクはページによらず同じ", () => {
-    const organization = getFooterTextLinks("/o/sample-party/2026").slice(7);
-    const politician = getFooterTextLinks("/p/sample-taro/2026").slice(7);
-
-    expect(politician).toEqual(organization);
-  });
-
-  it("プレビュー URL では、プレビュー用の文字列を保ったまま同じページのセクションを指す", () => {
-    const links = getFooterTextLinks("/p/sample-taro~0123456789abcdef0123456789abcdef/2025/transactions");
-
-    expect(hrefOf(links, "収支の流れ")).toBe("/p/sample-taro~0123456789abcdef0123456789abcdef/2025/#cash-flow");
-    expect(hrefOf(links, "すべての出入金")).toBe("/p/sample-taro~0123456789abcdef0123456789abcdef/2025/#transactions");
-  });
-
-  it("年度の無い調研費ページの URL では既定の年度を使う", () => {
-    expect(hrefOf(getFooterTextLinks("/p/sample-taro"), "収支の流れ")).toBe(
-      "/p/sample-taro/2026/#cash-flow",
+describe("socialLinkLabel", () => {
+  it("だれの何かと、別タブで開くことを読み上げる", () => {
+    expect(socialLinkLabel(FOOTER_SOCIAL_LINKS[0])).toBe("チームみらいのYouTube（別タブで開きます）");
+    expect(socialLinkLabel(FOOTER_SOCIAL_LINKS[1])).toBe(
+      "チームみらいのX（旧Twitter）（別タブで開きます）",
     );
+  });
+});
+
+describe("sortFooterPoliticiansByKana", () => {
+  const YAMADA = { slug: "yamada", name: "山田太郎", nameKana: "やまだたろう", hasPhoto: false };
+  const ABE = { slug: "abe", name: "阿部花子", nameKana: "あべはなこ", hasPhoto: false };
+  const KATO = { slug: "kato", name: "加藤次郎", nameKana: "カトウジロウ", hasPhoto: false };
+  const NO_KANA = { slug: "no-kana", name: "安藤", nameKana: null, hasPhoto: false };
+
+  it("前の年度にしかいない議員も含めて、年度をまたいでふりがなの五十音順に並べる", () => {
+    const politiciansByYear = { 2025: [ABE, KATO], 2026: [KATO, YAMADA] };
+    const items = buildPoliticianMenuItems(politiciansByYear, parseHeaderPath("/"));
+
+    expect(items.map((item) => item.slug)).toEqual(["kato", "yamada", "abe"]);
+    expect(
+      sortFooterPoliticiansByKana(items, politiciansByYear).map((item) => item.slug),
+    ).toEqual(["abe", "kato", "yamada"]);
+  });
+
+  it("ふりがなが未登録の議員は後ろに回す", () => {
+    const politiciansByYear = { 2026: [NO_KANA, YAMADA, ABE] };
+    const items = buildPoliticianMenuItems(politiciansByYear, parseHeaderPath("/"));
+
+    expect(
+      sortFooterPoliticiansByKana(items, politiciansByYear).map((item) => item.slug),
+    ).toEqual(["abe", "yamada", "no-kana"]);
   });
 });
