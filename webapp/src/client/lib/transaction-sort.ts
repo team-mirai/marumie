@@ -46,16 +46,27 @@ export function dateColumnSortState(sort: TransactionSort): ColumnSortState {
   };
 }
 
+/**
+ * 支出・収入が多い順（SP のタブで選ぶ並び）でも、金額列は「+」「-」付きの金額で並んでいるので、
+ * aria-sort と読み上げ名ではそれを伝える（支出が多い順は符号付きで昇順、収入が多い順は降順）。
+ * ボタンの見た目（選択中の色・矢印の向き）は金額列のボタンで選んだ並びのときだけ変える。
+ */
 export function amountColumnSortState(sort: TransactionSort): ColumnSortState {
   const active = sort === "amountDesc" || sort === "amountAsc";
-  const current =
-    sort === "amountDesc"
-      ? "今は大きい順"
-      : sort === "amountAsc"
-        ? "今は小さい順"
-        : "今は金額順ではありません";
+  const states: Record<
+    TransactionSort,
+    { ariaSort: ColumnSortState["ariaSort"]; current: string }
+  > = {
+    amountDesc: { ariaSort: "descending", current: "今は大きい順" },
+    amountAsc: { ariaSort: "ascending", current: "今は小さい順" },
+    expDesc: { ariaSort: "ascending", current: "今は支出が多い順" },
+    incDesc: { ariaSort: "descending", current: "今は収入が多い順" },
+    new: { ariaSort: "none", current: "今は金額順ではありません" },
+    old: { ariaSort: "none", current: "今は金額順ではありません" },
+  };
+  const { ariaSort, current } = states[sort];
   return {
-    ariaSort: sort === "amountDesc" ? "descending" : sort === "amountAsc" ? "ascending" : "none",
+    ariaSort,
     label: `金額で並び替え（${current}）`,
     active,
     flipped: sort === "amountAsc",

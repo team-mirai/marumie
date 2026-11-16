@@ -156,10 +156,21 @@ describe("dateColumnSortState / amountColumnSortState", () => {
     });
   });
 
-  it("支出・収入が多い順のときはどちらの列も選択中にしない", () => {
+  it("支出・収入が多い順のときは、金額列の aria-sort と読み上げ名で符号付きの金額順を伝え、見た目は選択中にしない", () => {
+    expect(amountColumnSortState("expDesc")).toEqual({
+      ariaSort: "ascending",
+      label: "金額で並び替え（今は支出が多い順）",
+      active: false,
+      flipped: false,
+    });
+    expect(amountColumnSortState("incDesc")).toEqual({
+      ariaSort: "descending",
+      label: "金額で並び替え（今は収入が多い順）",
+      active: false,
+      flipped: false,
+    });
     for (const sort of ["expDesc", "incDesc"] as const) {
       expect(dateColumnSortState(sort).ariaSort).toBe("none");
-      expect(amountColumnSortState(sort).ariaSort).toBe("none");
     }
   });
 });
