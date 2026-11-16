@@ -21,7 +21,7 @@ test.describe("まる見え政治資金とはページ", () => {
 
 	test("ページ下部に「データについて」のブロックが表示される", async ({ page }) => {
 		const notes = page.getByRole("region", { name: "データについて" });
-		for (const title of ["まる見え政治資金について", "データの出典", "調査研究費について", "免責事項"]) {
+		for (const title of ["データの出典", "免責事項"]) {
 			await expect(notes.getByRole("heading", { name: title, exact: true })).toBeVisible();
 		}
 	});

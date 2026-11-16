@@ -13,7 +13,7 @@ interface SiteLinkCard {
 const CARDS: SiteLinkCard[] = [
   {
     title: "まる見え政治資金とは？",
-    description: "このサイトが目指していることと、4つの特徴",
+    description: "政治とカネ解決に向けて",
     label: "ABOUT",
     href: "/about",
   },

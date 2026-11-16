@@ -117,7 +117,7 @@ describe("議員ページ", () => {
     financialYear: 2026,
     years: [2025, 2026],
     asOfDate: null,
-    grantPeriodLabel: "2026年2月〜8月支給分",
+    grantPeriodLabel: "2026年2-8月分",
     policyComment: null,
     groups: [],
     dataNote: "仕訳が完了した支出を掲載しています。",

@@ -14,7 +14,7 @@ interface Props {
   politicians: OtherPolitician[];
 }
 
-/** ページ下部の「ほかの議員の調研費」。公開中のほかの議員を 2 列で並べ、押すとその議員のページへ移る。 */
+/** ページ下部の「他の議員の調研費を見る」。公開中のほかの議員を 2 列で並べ、押すとその議員のページへ移る。 */
 export default function OtherPoliticiansSection({ politicians }: Props) {
   if (politicians.length === 0) return null;
 
@@ -27,7 +27,7 @@ export default function OtherPoliticiansSection({ politicians }: Props) {
         id="other-politicians-heading"
         className="m-0 mb-5 text-[clamp(22px,2.4vw,30px)] font-black leading-[1.4] tracking-[0.01em] text-black"
       >
-        ほかの議員の調研費
+        他の議員の調研費を見る
       </h2>
       <ul className="m-0 grid list-none grid-cols-2 gap-2 p-0 min-[641px]:gap-3">
         {politicians.map((politician) => (

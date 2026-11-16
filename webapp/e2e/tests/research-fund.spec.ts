@@ -26,8 +26,8 @@ test.describe("調査研究費 議員ページ", () => {
 		const cashFlow = page.locator("#cash-flow");
 		await expect(cashFlow.getByText("サンプル 太郎の調研費・2026年")).toBeVisible();
 		await expect(cashFlow.getByRole("heading", { level: 1, name: "収支の流れ" })).toBeVisible();
-		await expect(cashFlow.getByText(/^\d{4}年\d{1,2}月〜\d{1,2}月支給分$/).first()).toBeVisible();
-		await expect(cashFlow.getByText("調研費とは")).toBeVisible();
+		await expect(cashFlow.getByText(/^\d{4}年\d{1,2}-\d{1,2}月分$/).first()).toBeVisible();
+		await expect(cashFlow.getByText("調研費（調査研究広報滞在費）とは")).toBeVisible();
 		await expect(cashFlow.getByText("支給総額")).toBeVisible();
 		await expect(cashFlow.getByText("支出総額")).toBeVisible();
 		await expect(cashFlow.getByRole("tab", { name: "詳細の区分" })).toHaveAttribute(
@@ -43,7 +43,7 @@ test.describe("調査研究費 議員ページ", () => {
 		await expect(chart.getByRole("img", { name: /^公費から支給 / })).toBeVisible();
 		await expect(chart.getByRole("img", { name: /^支出 / })).toBeVisible();
 		await expect(
-			cashFlow.getByText("※年末までに使われなかった未使用分は国庫に返納されます。"),
+			cashFlow.getByText("※年内に使わなかった未使用分は国庫に返還します。"),
 		).toBeVisible();
 
 		// 活用方針と主な用途
@@ -94,7 +94,8 @@ test.describe("調査研究費 議員ページ", () => {
 		).toBeVisible();
 		await expect(page.getByRole("link", { name: /まる見え政治資金とは？/ })).toBeVisible();
 		const notes = page.locator("#explanation");
-		await expect(notes.getByRole("heading", { name: "まる見え政治資金について" })).toBeVisible();
+		await expect(notes.getByRole("heading", { name: "公開の範囲と出典" })).toBeVisible();
+		await expect(notes.getByRole("heading", { name: "まる見え政治資金について" })).toHaveCount(0);
 		await expect(notes.getByRole("heading", { name: "調研費のデータについて" })).toBeVisible();
 		await expect(notes.getByText(/仕訳が完了した支出を掲載しています。/)).toBeVisible();
 		await expect(notes.getByText(/調査研究広報滞在費に係る使途等報告書/)).toBeVisible();
@@ -129,7 +130,7 @@ test.describe("調査研究費 議員ページ", () => {
 			).toBeVisible();
 			// シードで調研費を公開中かつ公開済みの仕訳があるのはサンプル 太郎だけ
 			await expect(card.getByRole("link", { name: /の調研費へ$/ })).toHaveCount(0);
-			await expect(page.getByRole("heading", { name: "ほかの議員の調研費" })).toHaveCount(0);
+			await expect(page.getByRole("heading", { name: "他の議員の調研費を見る" })).toHaveCount(0);
 		});
 	}
 
@@ -149,7 +150,7 @@ test.describe("調査研究費 議員ページ", () => {
 		await cashFlow.getByRole("button", { name: "全体を表示" }).click();
 		await expect(cashFlow.getByRole("button", { name: "図を拡大する" })).toBeVisible();
 		// 支給期間と更新日はカードの末尾に1行で出す
-		await expect(cashFlow.getByText(/支給分　\d{4}\.\d{1,2}\.\d{1,2}更新$/)).toBeVisible();
+		await expect(cashFlow.getByText(/月分　\d{4}\.\d{1,2}\.\d{1,2} 更新$/)).toBeVisible();
 		const chart = page.locator('[role="group"][aria-label="調査研究費の使いみちの流れ図"]');
 		const box = await chart.boundingBox();
 		expect(box?.width ?? Number.POSITIVE_INFINITY).toBeLessThanOrEqual(390);
@@ -284,7 +285,7 @@ test.describe("調査研究費 議員ページ", () => {
 		await expect(
 			section.getByRole("heading", { level: 1, name: "すべての出入金" }),
 		).toBeVisible();
-		await expect(section.getByText(/^\d{4}\.\d{1,2}\.\d{1,2}更新$/).first()).toBeVisible();
+		await expect(section.getByText(/^\d{4}\.\d{1,2}\.\d{1,2} 更新$/).first()).toBeVisible();
 
 		// 共通の下部ブロック（データについては議員ページ用の文言）
 		await expect(
@@ -491,7 +492,7 @@ test.describe("調査研究費 グローバルナビ", () => {
 		await page.goto(ORG_URL);
 
 		await expect(
-			page.locator("#explanation").getByText("調査研究費について"),
+			page.locator("#explanation").getByText(/所属する国会議員の調研費（調査研究広報滞在費）は/),
 		).toBeVisible();
 	});
 });

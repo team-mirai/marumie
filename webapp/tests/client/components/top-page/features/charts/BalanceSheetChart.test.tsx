@@ -63,10 +63,10 @@ describe("BalanceSheetChart", () => {
       'section[aria-label="負債・純資産"]',
     );
 
-    expectAccountAndAmount(assets, "流動資産", "1億2345万円");
+    expectAccountAndAmount(assets, "流動資産", "1億2,345万円");
     expectAccountAndAmount(assets, "固定資産", "5万円");
     expectAccountAndAmount(liabilitiesAndNetAssets, "流動負債", "250万円");
     expectAccountAndAmount(liabilitiesAndNetAssets, "固定負債", "1万円");
-    expectAccountAndAmount(liabilitiesAndNetAssets, "純資産", "1億2099万円");
+    expectAccountAndAmount(liabilitiesAndNetAssets, "純資産", "1億2,099万円");
   });
 });

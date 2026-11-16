@@ -25,7 +25,7 @@ export default function HomeResearchFundSection({ data }: Props) {
     name: politician.name,
     photoUrl: politician.hasPhoto ? politicianPhotoUrl(politician.slug) : null,
     href: politicianPageHref(politician.slug, data.financialYear),
-    updatedAt: formatUpdatedAt(politician.asOfDate, { spaced: true }),
+    updatedAt: formatUpdatedAt(politician.asOfDate),
     periodLabel: politician.grantPeriodLabel,
     kpi: politician.kpi,
     sankey: politician.sankey,
@@ -85,10 +85,7 @@ export default function HomeResearchFundSection({ data }: Props) {
             </summary>
             <div className="flex max-w-[820px] flex-col gap-3 pb-3 pt-2 text-[14px] leading-[1.8] text-[#1F2937] min-[641px]:text-[15px] min-[641px]:leading-[1.9]">
               <p className="m-0">
-                調研費（調査研究広報滞在費）は、国会議員の調査研究や広報、滞在などの活動のために、国から毎月100万円支給される公費です。政治資金規正法上の「政治資金」ではありませんが、チームみらいでは透明性の観点から本サイトで公開しています。
-              </p>
-              <p className="m-0">
-                選挙運動および政党活動には使えません。年末までに使われなかった未使用分は国庫に返納されます。
+                調研費（調査研究広報滞在費）は、国会議員の調査研究や広報、国民との交流、滞在などの活動のために、国から毎月100万円支給される公費です。政治資金規正法上の「政治資金」ではありませんが、チームみらいでは透明性の観点から本サイトで公開しています。選挙運動には使えません。年内に使わなかった未使用分は国庫に返還します。
               </p>
             </div>
           </details>

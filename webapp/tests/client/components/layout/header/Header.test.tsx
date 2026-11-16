@@ -17,7 +17,7 @@ import { loadResearchFundPoliticians } from "@/server/contexts/research-fund/pre
 const loadOrganizationsMock = loadOrganizations as jest.Mock;
 const loadResearchFundPoliticiansMock = loadResearchFundPoliticians as jest.Mock;
 
-const POLITICIAN = { slug: "sample-taro", name: "サンプル太郎", statusLabel: "2026年2月〜8月分を公開中", hasPhoto: true };
+const POLITICIAN = { slug: "sample-taro", name: "サンプル太郎", statusLabel: "2026年2-8月分を公開中", hasPhoto: true };
 
 describe("Header", () => {
   beforeEach(() => {

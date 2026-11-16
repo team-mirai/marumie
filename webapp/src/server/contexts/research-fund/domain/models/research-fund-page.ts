@@ -102,7 +102,7 @@ export interface ResearchFundPageData {
   isPublic: boolean;
   financialYear: number;
   asOfDate: string | null;
-  /** 更新日に添える公開範囲「2026年2月〜8月支給分」。公開月が無ければ null */
+  /** 更新日に添える公開範囲「2026年2-8月分」。公開月が無ければ null */
   grantPeriodLabel: string | null;
   nextUpdateNote: string | null;
   policyComment: string | null;

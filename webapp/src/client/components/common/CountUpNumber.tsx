@@ -5,7 +5,7 @@ import { COUNT_UP_DURATION_MS, countUpText, parseCountUpTarget } from "@/client/
 import { useInView } from "@/client/lib/use-in-view";
 
 interface CountUpNumberProps {
-  /** 最終的に出す数字（"1537" など）。サーバーレンダリングの HTML にはこの値をそのまま入れる */
+  /** 最終的に出す数字（"1,537" など）。サーバーレンダリングの HTML にはこの値をそのまま入れる */
   value: string;
   /**
    * value を含む金額全体を表す値（円単位の金額など）。億と万を別々に数えるとき、片方の数字が同じでも

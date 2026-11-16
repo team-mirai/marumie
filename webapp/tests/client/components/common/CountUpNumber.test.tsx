@@ -15,7 +15,7 @@ describe("CountUpNumber", () => {
     );
 
     const numbers = [...markup.matchAll(/<b class="([^"]*)">([^<]*)<\/b>/g)];
-    expect(numbers.map((m) => m[2])).toEqual(["7", "2656"]);
+    expect(numbers.map((m) => m[2])).toEqual(["7", "2,656"]);
     for (const m of numbers) {
       expect(m[1].split(" ")).toContain("font-num");
     }

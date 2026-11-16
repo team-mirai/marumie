@@ -1,3 +1,4 @@
+import { formatYen } from "@/client/lib/format-yen";
 import { SANKEY_PREVIOUS_BALANCE_LABEL, type SankeyFlow } from "@/client/lib/sankey-flow";
 import { formatSankeyPercentage } from "@/client/lib/sankey-percentage";
 
@@ -175,15 +176,10 @@ export function outTitleSpans(title: string, ink: string): { text: string; fill:
 }
 
 /**
- * サンキー図の金額。億・万円で表し、1万円未満は円で出す（例：1億2345万円、3000万円、5,000円）。
+ * サンキー図の金額。公開サイト共通の書き方（formatYen）で出す（例：1億2,345万円、3,000万円、5,000円）。
  */
 export function formatSankeyAmount(yen: number): string {
-  if (yen > 0 && yen < 10_000) return `${Math.round(yen).toLocaleString("ja-JP")}円`;
-  const man = Math.round(yen / 10_000);
-  const oku = Math.floor(man / 10_000);
-  const rest = man % 10_000;
-  if (oku === 0) return `${rest.toLocaleString("ja-JP")}万円`;
-  return `${oku}億${rest ? `${String(rest).padStart(4, "0")}万円` : "円"}`;
+  return formatYen(yen);
 }
 
 /**

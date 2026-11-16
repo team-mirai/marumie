@@ -73,13 +73,13 @@ test.describe("政治団体ページ", () => {
 			);
 		});
 
-		test("見出しカードに収入・支出の総額と収支・現金残高が表示される", async ({ page }) => {
+		test("見出しカードに収入・支出の総額と現金残高が表示される", async ({ page }) => {
 			const heading = page.getByRole("region", { name: "政党情報" });
 
 			await expect(heading).toContainText("政党・2025年");
-			await expect(heading).toContainText(/収入総額\s*1581万円/);
-			await expect(heading).toContainText(/支出総額\s*1281万円/);
-			await expect(heading).toContainText(/収支・現金残高\s*300万円/);
+			await expect(heading).toContainText(/収入総額\s*1,581万円/);
+			await expect(heading).toContainText(/支出総額\s*1,281万円/);
+			await expect(heading).toContainText(/現金残高\s*300万円/);
 			// 区分タブつきの収支の流れ（サンキー図）も同じカードにある
 			await expect(heading.getByRole("tab", { name: "詳細の区分" })).toHaveAttribute(
 				"aria-selected",
@@ -246,7 +246,7 @@ test.describe("政治団体ページ", () => {
 			);
 
 			const notes = page.getByRole("region", { name: "データについて" });
-			for (const title of ["まる見え政治資金について", "データの出典", "調査研究費について", "免責事項"]) {
+			for (const title of ["データの出典", "免責事項"]) {
 				await expect(notes.getByRole("heading", { name: title, exact: true })).toBeVisible();
 			}
 		});
@@ -327,7 +327,7 @@ test.describe("政治団体ページ", () => {
 			// 金額は政党ページと同じ集計（サンキー図の「(仕訳中)」も支出に含める）
 			await expect(cashFlow).toContainText(/収入総額\s*5万円/);
 			await expect(cashFlow).toContainText(/支出総額\s*5万円/);
-			await expect(cashFlow).toContainText(/収支・現金残高\s*0万円/);
+			await expect(cashFlow).toContainText(/現金残高\s*0円/);
 			await cashFlow.getByRole("tab", { name: "法律上の区分" }).click();
 			await expect(cashFlow.getByRole("tab", { name: "法律上の区分" })).toHaveAttribute(
 				"aria-selected",
