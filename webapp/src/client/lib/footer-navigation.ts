@@ -1,65 +1,29 @@
-const DEFAULT_ORGANIZATION_SLUG = "team-mirai";
-const DEFAULT_YEAR = 2026;
+/** チームみらいの公式サイト */
+export const OFFICIAL_SITE_URL = "https://team-mir.ai/";
 
-export interface FooterTextLink {
-  label: string;
+interface FooterSocialLink {
+  /** 読み上げ名に使うサービス名 */
+  name: string;
   href: string;
+  /** public/images/social-icons/ のファイル名 */
+  icon: string;
 }
 
-/** ページ内アンカー以外の、どのページでも共通のリンク。 */
-const COMMON_LINKS: FooterTextLink[] = [
-  { label: "寄附で応援する", href: "https://team-mir.ai/support/donation" },
-  { label: "チームみらい党員になる", href: "https://team-mir.ai/support/membership" },
+/** フッターの SNS アイコン（デザイン v9 の並び） */
+export const FOOTER_SOCIAL_LINKS: readonly FooterSocialLink[] = [
+  { name: "YouTube", href: "https://www.youtube.com/@team_mirai_jp", icon: "icon-yt.svg" },
+  { name: "X（旧Twitter）", href: "https://x.com/team_mirai_jp", icon: "icon-x.svg" },
   {
-    label: "よくあるご質問",
-    href: "https://team-mirai.notion.site/FAQ-27ef6f56bae180c085e9f97d05a5d59c",
+    name: "LINE",
+    href: "https://line.me/R/ti/p/@465hhyop?oat__id=5529589",
+    icon: "icon-line2.svg",
   },
-  { label: "利用規約", href: "/terms" },
-  { label: "プライバシーポリシー", href: "/privacy" },
+  { name: "Instagram", href: "https://www.instagram.com/team_mirai_jp/", icon: "icon-ig.svg" },
+  { name: "Facebook", href: "https://www.facebook.com/teammirai.official", icon: "icon-fb.svg" },
+  { name: "TikTok", href: "https://www.tiktok.com/@team_mirai_jp", icon: "icon-tiktok2.svg" },
 ];
 
-function getOrganizationLinks(slug: string): FooterTextLink[] {
-  const base = `/o/${slug}/`;
-  return [
-    { label: "TOP", href: `${base}#top` },
-    { label: "収支の流れ", href: `${base}#cash-flow` },
-    { label: "月ごとの収支推移", href: `${base}#monthly-trends` },
-    { label: "貸借対照表", href: `${base}#balance-sheet` },
-    { label: "すべての出入金", href: `${base}#transactions` },
-    { label: "データについて", href: `${base}#explanation` },
-    { label: "チームみらいについて", href: `${base}#about` },
-  ];
-}
-
-/**
- * 調研費ページ（/p/[slug]/[year]。全件ページを含む）のアンカー。
- * 調研費ページに無い貸借対照表だけは、並びを変えずに既定の政治団体ページを指す。
- */
-function getPoliticianLinks(slug: string, year: number): FooterTextLink[] {
-  const base = `/p/${encodeURIComponent(slug)}/${year}/`;
-  return [
-    { label: "TOP", href: `${base}#top` },
-    { label: "収支の流れ", href: `${base}#cash-flow` },
-    { label: "月ごとの収支推移", href: `${base}#monthly-trends` },
-    { label: "貸借対照表", href: `/o/${DEFAULT_ORGANIZATION_SLUG}/#balance-sheet` },
-    { label: "すべての出入金", href: `${base}#transactions` },
-    { label: "データについて", href: `${base}#explanation` },
-    { label: "チームみらいについて", href: `${base}#about` },
-  ];
-}
-
-/**
- * フッターのテキストリンクを、今いるページに合わせて組み立てる。
- * 調研費ページではアンカーがそのページ内のセクションを指し、政治団体ページへ飛ばない。
- */
-export function getFooterTextLinks(pathname: string): FooterTextLink[] {
-  const [, rootSegment, slug, yearSegment] = pathname.split("/");
-
-  if (rootSegment === "p" && slug) {
-    const year = yearSegment && /^\d{4}$/.test(yearSegment) ? Number(yearSegment) : DEFAULT_YEAR;
-    return [...getPoliticianLinks(decodeURIComponent(slug), year), ...COMMON_LINKS];
-  }
-
-  const organizationSlug = rootSegment === "o" && slug ? slug : DEFAULT_ORGANIZATION_SLUG;
-  return [...getOrganizationLinks(organizationSlug), ...COMMON_LINKS];
+/** SNS アイコンの読み上げ名。アイコンだけのリンクなので、だれの何かと別タブで開くことを伝える */
+export function socialLinkLabel(link: FooterSocialLink): string {
+  return `チームみらいの${link.name}（別タブで開きます）`;
 }

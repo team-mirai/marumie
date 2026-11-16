@@ -4,16 +4,17 @@ interface PoliticianInitialAvatarProps {
   name: string;
   /** 顔写真の URL。未登録なら null（名前の1文字目にする） */
   photoUrl: string | null;
-  /** lg: 44px（メガメニュー） / face: 52px（SP メニューの顔写真） */
-  size: "lg" | "face";
+  /** lg: 44px（メガメニュー） / face: 52px（SP メニューの顔写真） / footer: 32px（フッターのサイトマップ。白い縁取り付き） */
+  size: "lg" | "face" | "footer";
 }
 
 const SIZE_CLASSES: Record<PoliticianInitialAvatarProps["size"], string> = {
   lg: "size-11 text-lg",
   face: "size-[52px] text-xl",
+  footer: "size-8 text-sm shadow-[0_0_0_2px_#fff]",
 };
 
-/** ヘッダーのメニューで議員名の左に置く丸いアイコン。顔写真が無ければ名前の1文字目にする。 */
+/** ヘッダーのメニューやフッターで議員名の左に置く丸いアイコン。顔写真が無ければ名前の1文字目にする。 */
 export default function PoliticianInitialAvatar({
   name,
   photoUrl,
