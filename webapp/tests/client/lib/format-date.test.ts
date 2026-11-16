@@ -28,4 +28,8 @@ describe("formatUpdatedAt", () => {
     const result = formatUpdatedAt(dateString);
     expect(result).toBe("2024.2.29更新");
   });
+
+  it("spaced を指定すると日付と「更新」の間に空白を入れる", () => {
+    expect(formatUpdatedAt("2025-01-15T10:30:00Z", { spaced: true })).toBe("2025.1.15 更新");
+  });
 });

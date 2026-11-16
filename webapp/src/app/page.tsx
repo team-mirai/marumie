@@ -21,7 +21,7 @@ export default async function HomePage() {
     console.error("loadHomePageData error:", error);
     return null;
   });
-  const updatedAt = formatUpdatedAt(data?.lastUpdatedAt ?? null);
+  const updatedAt = formatUpdatedAt(data?.lastUpdatedAt ?? null, { spaced: true });
   // 所属議員の調研費は、政党カードの有無に関係なく調研費を公開中の議員を全員出す。
   // 取れなくても他のカードは出せるので、失敗したら出さないだけにする
   const researchFund = await loadResearchFundHomeSummary({ financialYear: DEFAULT_YEAR }).catch(
@@ -32,7 +32,7 @@ export default async function HomePage() {
   );
 
   return (
-    <MainColumn spacing="compact">
+    <MainColumn spacing="compact" width="wide">
       <h1 className="sr-only">みらいまる見え政治資金</h1>
       {data && data.parties.length > 0 && (
         <section id="home-party" aria-label="政党の収支" className="flex flex-col gap-8">
@@ -75,6 +75,8 @@ export default async function HomePage() {
               updatedAt={updatedAt}
               years={group.years}
               defaultYear={DEFAULT_YEAR}
+              // 横に並べて幅が狭くなるときは金額を小さくする
+              amountSize={data.groups.length > 1 ? "compact" : "default"}
             />
           ))}
         </section>

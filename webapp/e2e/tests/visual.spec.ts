@@ -117,8 +117,9 @@ async function stabilize(page: Page) {
     // 更新日はシードを入れた時刻で変わるので固定の文字にする
     const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
     for (let node = walker.nextNode(); node; node = walker.nextNode()) {
-      if (node.textContent && /\d{4}\.\d{1,2}\.\d{1,2}更新/.test(node.textContent)) {
-        node.textContent = node.textContent.replace(/\d{4}\.\d{1,2}\.\d{1,2}更新/g, "2000.1.1更新");
+      // トップページのカードは日付と「更新」の間に空白を入れる（「2000.1.1 更新」）ので、空白はそのまま残す
+      if (node.textContent && /\d{4}\.\d{1,2}\.\d{1,2}( ?)更新/.test(node.textContent)) {
+        node.textContent = node.textContent.replace(/\d{4}\.\d{1,2}\.\d{1,2}( ?)更新/g, "2000.1.1$1更新");
       }
     }
   });
