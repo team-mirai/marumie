@@ -32,7 +32,7 @@ export default function ResearchFundFlowSection({ data, eyebrow, updatedAt }: Pr
       headingLevel="h1"
     >
       <details className="-mt-4">
-        <summary className="inline-flex cursor-pointer list-none items-center gap-1.5 py-1 text-sm font-bold text-[#238778] hover:underline [&::-webkit-details-marker]:hidden">
+        <summary className="inline-flex cursor-pointer list-none items-center gap-1.5 py-1 max-[640px]:min-h-11 text-sm font-bold text-[#238778] hover:underline [&::-webkit-details-marker]:hidden">
           調研費とは
           <Image src="/icons/icon-chevron-down.svg" alt="" width={18} height={18} />
         </summary>

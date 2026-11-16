@@ -1,5 +1,6 @@
 import "server-only";
 import type { ReactNode } from "react";
+import NewTabMark from "@/client/components/common/NewTabMark";
 
 export const DATA_NOTE_LINK_CLASS = "font-bold text-[#238778] underline hover:no-underline";
 
@@ -15,23 +16,15 @@ const NOTES: DataNote[] = [
       <>
         本プロジェクトは、チームみらいによって政治資金の透明化を目的に開発されたオープンソースソフトウェアです。決済データは、クレジットカード、デビットカード、銀行口座を通じて収集され、現状不定期で更新されています。すでにオープンソースで
         <a
-          href="https://github.com/team-mirai-volunteer/marumie"
+          href="https://github.com/team-mirai/marumie"
           target="_blank"
           rel="noopener noreferrer"
           className={DATA_NOTE_LINK_CLASS}
         >
           こちらのGitHub
+          <NewTabMark />
         </a>
-        にて無償公開中であり、政党や所属を問わず利用可能な形で提供しております。開発コミュニティにご興味のある方は
-        <a
-          href="https://action.team-mir.ai/missions/join-slack"
-          target="_blank"
-          rel="noopener noreferrer"
-          className={DATA_NOTE_LINK_CLASS}
-        >
-          アクションボード
-        </a>
-        からSlackにご参加ください。
+        にて無償公開中であり、政党や所属を問わず利用可能な形で提供しております。
       </>
     ),
   },
@@ -60,7 +53,7 @@ export default function DataNotesSection({ notes = NOTES }: DataNotesSectionProp
     <section
       id="explanation"
       aria-label="データについて"
-      className="flex scroll-mt-24 flex-col gap-9 rounded-[32px] bg-white px-[18px] py-7 min-[641px]:p-[clamp(28px,4.4vw,64px)]"
+      className="flex scroll-mt-[100px] flex-col gap-9 rounded-[32px] bg-white px-[18px] py-7 min-[641px]:p-[clamp(28px,4.4vw,64px)]"
     >
       {notes.map((note) => (
         <div key={note.title}>

@@ -5,7 +5,7 @@ import Breadcrumbs from "@/client/components/layout/Breadcrumbs";
 import MainColumn from "@/client/components/layout/MainColumn";
 
 export const metadata: Metadata = {
-  title: "まる見え政治資金とは - みらいまる見え政治資金",
+  title: "まる見え政治資金とは",
 };
 
 /** 「まる見え政治資金とは」ページ。本文（目指していること・4つの特徴など）は作成中なので、案内だけを出す。 */

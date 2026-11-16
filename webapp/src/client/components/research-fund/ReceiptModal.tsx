@@ -1,6 +1,7 @@
 "use client";
 import "client-only";
 import { useEffect, useRef } from "react";
+import { NewTabIcon } from "@/client/components/common/NewTabMark";
 import ResearchFundCategoryPill from "@/client/components/research-fund/ResearchFundCategoryPill";
 import type {
   ResearchFundCategoryView,
@@ -127,10 +128,11 @@ export default function ReceiptModal({ expense, category, onClose }: Props) {
               href={receiptUrl(expense.entryId)}
               target="_blank"
               rel="noopener noreferrer"
-              aria-label={`${expense.description}の領収書を開く`}
+              aria-label={`${expense.description}の領収書を開く（別タブで開きます）`}
               className="inline-flex h-9 items-center rounded-full border border-[#238778] px-4 text-sm font-bold text-[#238778] hover:bg-[#E2F6F3]"
             >
               領収書を開く
+              <NewTabIcon />
             </a>
           </div>
         )}

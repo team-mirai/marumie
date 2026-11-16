@@ -33,9 +33,7 @@ export async function generateMetadata({
   const data = page?.data;
 
   return {
-    title: data
-      ? `${data.politician.name}の調査研究費：すべての出入金 - みらいまる見え政治資金`
-      : "みらいまる見え政治資金",
+    ...(data && { title: `${data.politician.name}の調研費のすべての出入金` }),
     // プレビュー URL（調研費を「公開しない」議員のページはこれでしか開けない）は検索エンジンに載せない。
     ...(page?.isPreview && { robots: { index: false } }),
   };

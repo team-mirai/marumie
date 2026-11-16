@@ -130,6 +130,7 @@ export default function ResearchFundHighlightsSection({ data, eyebrow, updatedAt
                     className="inline-flex items-center gap-1.5 self-start text-sm font-bold text-[#238778] underline hover:no-underline"
                   >
                     {outcome.label}
+                    <span className="sr-only">（別タブで開きます）</span>
                     <Image src="/icons/icon-outerlink.svg" alt="" width={14} height={14} />
                   </a>
                 ) : (

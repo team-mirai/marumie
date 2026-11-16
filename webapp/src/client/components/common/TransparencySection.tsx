@@ -1,5 +1,6 @@
 import "server-only";
 import GradientMessageCard from "@/client/components/common/GradientMessageCard";
+import NewTabMark from "@/client/components/common/NewTabMark";
 
 interface TransparencySectionProps {
   title: string;
@@ -20,6 +21,7 @@ export default function TransparencySection({ title }: TransparencySectionProps)
         className="font-bold underline hover:no-underline"
       >
         こちらのnote
+        <NewTabMark />
       </a>
       をお読みください。
     </GradientMessageCard>

@@ -63,7 +63,7 @@ export default function ProfileLinks({ ownerName, links }: ProfileLinksProps) {
   if (links.length === 0) return null;
 
   return (
-    <ul className="mt-1 flex flex-wrap gap-1.5">
+    <ul className="mt-1 flex flex-wrap gap-2">
       {links.map((link) => (
         <li key={`${link.type}:${link.url}`} className="flex">
           {link.type === "site" ? (
