@@ -223,3 +223,102 @@ table:focus-visible {
   mix-blend-mode: soft-light;
   background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .55 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
 }
+
+/*
+ * 月ごとの推移のグラフの横スクロール（MonthlyChartScroll）。
+ * SP では右端をぼかしてまだ続きがあることを見せ、グラフが画面に入ったら中央に「左右にスクロール」を出して数秒で消す。
+ */
+.monthly-hscroll:focus-visible {
+  outline: 2px solid #0b0f0e;
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+.monthly-hscroll-hint {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .monthly-hscroll {
+    -webkit-mask-image: linear-gradient(to right, #000 82%, transparent);
+    mask-image: linear-gradient(to right, #000 82%, transparent);
+  }
+
+  .monthly-hscroll-hint {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    z-index: 4;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    padding: 10px 16px 10px 12px;
+    border-radius: 999px;
+    background: rgba(11, 15, 14, 0.8);
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+    box-shadow: 0 6px 20px rgba(11, 15, 14, 0.25);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+    pointer-events: none;
+    transform: translate(-50%, -50%);
+    opacity: 0;
+  }
+
+  .monthly-hscroll-hint .hand {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+    background:
+      center / contain no-repeat
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 11V5.5a1.5 1.5 0 0 1 3 0V11'/%3E%3Cpath d='M12 10.5V9a1.5 1.5 0 0 1 3 0v2'/%3E%3Cpath d='M15 10.5a1.5 1.5 0 0 1 3 0V15a6 6 0 0 1-6 6h-1a6 6 0 0 1-5.2-3l-1.6-2.8a1.5 1.5 0 0 1 2.5-1.6L9 15'/%3E%3C/svg%3E");
+  }
+
+  [data-in-view="true"] > .monthly-hscroll-hint {
+    animation: monthly-hscroll-hint 3.6s 0.8s ease both;
+  }
+
+  [data-in-view="true"] > .monthly-hscroll-hint .hand {
+    animation: monthly-hscroll-hand 1.4s 0.9s ease-in-out infinite;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .monthly-hscroll-hint {
+    display: none;
+  }
+}
+
+@keyframes monthly-hscroll-hint {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.94);
+  }
+  10%,
+  80% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+@keyframes monthly-hscroll-hand {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  30% {
+    transform: translateX(-7px);
+  }
+  70% {
+    transform: translateX(7px);
+  }
+}

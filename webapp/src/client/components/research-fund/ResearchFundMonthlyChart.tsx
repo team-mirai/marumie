@@ -2,13 +2,15 @@
 import "client-only";
 
 import { useState } from "react";
+import { calcSymmetricYAxisScale } from "@/client/lib/chart-axis";
+import { formatYen } from "@/client/lib/format-yen";
 import {
-  type AmountUnit,
-  calcSymmetricYAxisScale,
-  formatAmountIn,
-  MAN_YEN,
-  pickAmountUnit,
-} from "@/client/lib/chart-axis";
+  BAR_GAP,
+  barDownPath,
+  barUpPath,
+  monthlyBarHeight,
+  monthlyBarWidth,
+} from "@/client/lib/monthly-bar-path";
 import type { ResearchFundMonthView } from "@/server/contexts/research-fund/domain/models/research-fund-page";
 
 const WIDTH = 936;
@@ -16,25 +18,22 @@ const HEIGHT = 462;
 const MARGIN = { top: 20, right: 24, bottom: 44, left: 88 };
 const PLOT_HEIGHT = HEIGHT - MARGIN.top - MARGIN.bottom;
 const ZERO_Y = MARGIN.top + PLOT_HEIGHT / 2;
-const MAX_BAR_WIDTH = 52.5;
 
 const GRANT_COLOR = "#2AA693";
 const SPEND_COLOR = "#DC2626";
-const AXIS_COLOR = "#E2E8F0";
-const ZERO_LINE_COLOR = "#4B5563";
+const ZERO_LINE_COLOR = "#9CA3AF";
 const LABEL_COLOR = "#4B5563";
 const EMPTY_MONTH_LABEL_COLOR = "#B6BCC6";
 
 interface MonthlyChartScale {
   /** 下から上へ並んだ目盛りの値（0を挟んで上下対称） */
   ticks: number[];
-  unit: AmountUnit;
   yMax: number;
 }
 
 /**
  * Y軸の目盛りと単位。政治団体ページの月次グラフ（MonthlyChart）と同じく
- * chart-axis の規則（1/2/5×10ⁿ 刻み・0を挟んで対称・刻み幅に合わせた単位）で決める。
+ * chart-axis の規則（1/2/5×10ⁿ 刻み・0を挟んで対称）で決める。
  * 未公開の月は金額が 0 なので、公開済みの月だけを対象にする。
  */
 export function calcResearchFundMonthlyScale(
@@ -49,14 +48,8 @@ export function calcResearchFundMonthlyScale(
   const { max, tickInterval } = calcSymmetricYAxisScale(maxAbsValue);
   return {
     ticks: [-2, -1, 0, 1, 2].map((step) => step * tickInterval),
-    unit: pickAmountUnit(tickInterval),
     yMax: max,
   };
-}
-
-/** ツールチップの単位。1万円未満しかない月は円で出す（MonthlyChart と同じ）。 */
-function tooltipUnit(month: ResearchFundMonthView): AmountUnit {
-  return Math.max(month.granted, month.spent) < MAN_YEN ? "円" : "万円";
 }
 
 interface TooltipState {
@@ -78,12 +71,9 @@ function tooltipPosition({ x, y, width, height }: TooltipState) {
   };
 }
 
-function amountText(value: number, unit: AmountUnit): string {
-  return `${formatAmountIn(value, unit)}${unit}`;
-}
-
 /**
  * B-2 1年間の推移。中央のゼロ線から上が支給、下が支出の上下対向の棒グラフ。
+ * 棒は細めにし、外側の端だけ角を丸め、0の線側は少しあける（v9）。
  * データのない月（当選前・未到来）は棒を描かず、月ラベルを薄くして表す。
  */
 export default function ResearchFundMonthlyChart({
@@ -92,12 +82,11 @@ export default function ResearchFundMonthlyChart({
   monthly: ResearchFundMonthView[];
 }) {
   const [tooltip, setTooltip] = useState<TooltipState | null>(null);
-  const { ticks, unit, yMax } = calcResearchFundMonthlyScale(monthly);
+  const { ticks, yMax } = calcResearchFundMonthlyScale(monthly);
   const pixelsPerYen = PLOT_HEIGHT / 2 / yMax;
   const step = (WIDTH - MARGIN.left - MARGIN.right) / Math.max(monthly.length, 1);
-  const barWidth = Math.min(MAX_BAR_WIDTH, step * 0.62);
+  const barWidth = monthlyBarWidth(step);
   const tooltipMonth = tooltip ? monthly[tooltip.index] : null;
-  const tooltipRowUnit = tooltipMonth ? tooltipUnit(tooltipMonth) : "万円";
 
   return (
     <div className="relative">
@@ -136,27 +125,14 @@ export default function ResearchFundMonthlyChart({
             fontWeight={500}
             fill={LABEL_COLOR}
           >
-            {amountText(value, unit)}
+            {formatYen(value)}
           </text>
         ))}
-        <line
-          x1={MARGIN.left}
-          y1={MARGIN.top}
-          x2={MARGIN.left}
-          y2={MARGIN.top + PLOT_HEIGHT}
-          stroke={AXIS_COLOR}
-        />
-        <line
-          x1={MARGIN.left}
-          y1={MARGIN.top + PLOT_HEIGHT}
-          x2={WIDTH - MARGIN.right}
-          y2={MARGIN.top + PLOT_HEIGHT}
-          stroke={AXIS_COLOR}
-        />
         {monthly.map((month, index) => {
           const centerX = MARGIN.left + step * index + step / 2;
           const x = centerX - barWidth / 2;
           const monthLabel = `${Number(month.month.slice(5, 7))}月`;
+          const grantHeight = monthlyBarHeight(month.granted, pixelsPerYen);
           return (
             <g key={month.month}>
               {month.published && (
@@ -168,20 +144,23 @@ export default function ResearchFundMonthlyChart({
                     height={PLOT_HEIGHT}
                     fill="transparent"
                   />
-                  <rect
-                    x={x}
-                    y={ZERO_Y - month.granted * pixelsPerYen}
-                    width={barWidth}
-                    height={month.granted * pixelsPerYen}
-                    fill={GRANT_COLOR}
-                  />
-                  <rect
-                    x={x}
-                    y={ZERO_Y}
-                    width={barWidth}
-                    height={month.spent * pixelsPerYen}
-                    fill={SPEND_COLOR}
-                  />
+                  {month.granted > 0 && (
+                    <path
+                      d={barUpPath(x, ZERO_Y - BAR_GAP - grantHeight, barWidth, grantHeight)}
+                      fill={GRANT_COLOR}
+                    />
+                  )}
+                  {month.spent > 0 && (
+                    <path
+                      d={barDownPath(
+                        x,
+                        ZERO_Y + BAR_GAP,
+                        barWidth,
+                        monthlyBarHeight(month.spent, pixelsPerYen),
+                      )}
+                      fill={SPEND_COLOR}
+                    />
+                  )}
                 </g>
               )}
               <text
@@ -221,16 +200,13 @@ export default function ResearchFundMonthlyChart({
             </tr>
           </thead>
           <tbody>
-            {monthly.map((month) => {
-              const rowUnit = tooltipUnit(month);
-              return (
-                <tr key={month.month}>
-                  <th scope="row">{`${Number(month.month.slice(5, 7))}月`}</th>
-                  <td>{month.published ? amountText(month.granted, rowUnit) : "データなし"}</td>
-                  <td>{month.published ? amountText(month.spent, rowUnit) : "データなし"}</td>
-                </tr>
-              );
-            })}
+            {monthly.map((month) => (
+              <tr key={month.month}>
+                <th scope="row">{`${Number(month.month.slice(5, 7))}月`}</th>
+                <td>{month.published ? formatYen(month.granted) : "データなし"}</td>
+                <td>{month.published ? formatYen(month.spent) : "データなし"}</td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>
@@ -249,8 +225,7 @@ export default function ResearchFundMonthlyChart({
                 {row.label}
               </span>
               <span className="text-sm font-bold leading-normal" style={{ color: row.color }}>
-                {formatAmountIn(row.value, tooltipRowUnit)}
-                <span className="text-[13px] leading-[1.31]">{tooltipRowUnit}</span>
+                {formatYen(row.value)}
               </span>
             </div>
           ))}
