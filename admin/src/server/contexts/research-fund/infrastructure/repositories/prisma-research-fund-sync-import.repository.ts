@@ -208,9 +208,19 @@ export class PrismaResearchFundSyncImportRepository implements IResearchFundSync
       // 複数の議員室の置き換えを 1 つのトランザクションにまとめ、途中で失敗したらどれも変えない。
       return await this.prisma.$transaction(
         async (tx) => {
+          const existingIdBySlug = await lockPoliticians(
+            tx,
+            file.politicians.map((politician) => politician.profile.slug),
+          );
           const results: ResearchFundSyncImportResultPolitician[] = [];
           for (const politician of file.politicians) {
-            results.push(await replacePolitician(tx, politician));
+            results.push(
+              await replacePolitician(
+                tx,
+                politician,
+                existingIdBySlug.get(politician.profile.slug),
+              ),
+            );
           }
           return results;
         },
@@ -239,24 +249,40 @@ function toTimeoutErrorIfExpired(error: unknown): unknown {
   return error;
 }
 
-/** 議員室 1 件分を置き換える（議員がいなければ作る）。 */
+/**
+ * 既存の議員の行をロックし、slug → 議員 ID の対応を返す。
+ * 同じ議員への取り込みが同時に走ると、互いの登録が削除から見えず帳簿が混ざるので、議員の行をロックして直列化する。
+ * ファイル内の並び順のままロックすると、並行する取り込みどうしが逆順に取り合って循環待ちになるので、slug の昇順で取る。
+ */
+async function lockPoliticians(
+  tx: Prisma.TransactionClient,
+  slugs: string[],
+): Promise<Map<string, bigint>> {
+  const existingIdBySlug = new Map<string, bigint>();
+  for (const slug of [...slugs].sort()) {
+    const [existing] = await tx.$queryRaw<{ id: bigint }[]>`
+      SELECT id FROM politicians WHERE slug = ${slug} FOR UPDATE
+    `;
+    if (existing) existingIdBySlug.set(slug, existing.id);
+  }
+  return existingIdBySlug;
+}
+
+/** 議員室 1 件分を置き換える（議員がいなければ作る）。既存の議員の行は lockPoliticians でロック済みであること。 */
 async function replacePolitician(
   tx: Prisma.TransactionClient,
   politician: ResearchFundSyncPolitician,
+  existingId: bigint | undefined,
 ): Promise<ResearchFundSyncImportResultPolitician> {
   const { slug } = politician.profile;
-  // 同じ議員への取り込みが同時に走ると、互いの登録が削除から見えず帳簿が混ざるので、議員の行をロックして直列化する。
-  const [existing] = await tx.$queryRaw<{ id: bigint }[]>`
-    SELECT id FROM politicians WHERE slug = ${slug} FOR UPDATE
-  `;
 
   let politicianId: bigint;
   let deletedJournalEntryCount = 0;
   let createdMembershipCount = 0;
 
-  if (existing) {
+  if (existingId !== undefined) {
     // 既存の議員はプロフィール・所属履歴・担当ユーザーを変えず、調研費データだけを入れ直す。
-    politicianId = existing.id;
+    politicianId = existingId;
     deletedJournalEntryCount = await deleteResearchFundData(tx, politicianId);
   } else {
     const created = await createPolitician(tx, politician);
@@ -268,7 +294,7 @@ async function replacePolitician(
 
   return {
     slug,
-    mode: existing ? "replace" : "create",
+    mode: existingId !== undefined ? "replace" : "create",
     deletedJournalEntryCount,
     importedJournalEntryCount: politician.books.reduce(
       (sum, book) => sum + book.journalEntries.length,

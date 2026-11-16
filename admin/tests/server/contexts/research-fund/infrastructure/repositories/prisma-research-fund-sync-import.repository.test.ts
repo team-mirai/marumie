@@ -223,6 +223,15 @@ describe("PrismaResearchFundSyncImportRepository.replaceResearchFundSyncData", (
     expect(tx.politicianOrgMembership.createMany).not.toHaveBeenCalled();
   });
 
+  it("ファイルの並び順によらず、議員の行は slug の昇順でまとめてロックしてから置き換える", async () => {
+    const { repository, calls } = setup();
+
+    await repository.replaceResearchFundSyncData(buildFile(["taro", "hanako"]));
+
+    expect(calls.filter((call) => call.startsWith("lock:"))).toEqual(["lock:hanako", "lock:taro"]);
+    expect(calls.indexOf("lock:taro")).toBeLessThan(calls.indexOf("researchFundBook.deleteMany"));
+  });
+
   it("いない議員は顔写真なしで作り、この環境にある政治団体の所属履歴だけ作る。何も消さない", async () => {
     const { tx, repository } = setup();
 
