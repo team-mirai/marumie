@@ -33,10 +33,15 @@ export default async function HomePage() {
   );
 
   return (
-    <MainColumn spacing="compact" width="wide">
+    <MainColumn spacing="home" width="wide">
       <h1 className="sr-only">みらいまる見え政治資金</h1>
+      {/* セクションの間は MainColumn の間隔（clamp(40px,5vw,56px)）から、v9 と同じだけ各セクションの margin で詰める */}
       {data && data.parties.length > 0 && (
-        <section id="home-party" aria-label="政党の収支" className="flex flex-col gap-8">
+        <section
+          id="home-party"
+          aria-label="政党の収支"
+          className="flex flex-col gap-8 pb-[clamp(8px,1.5vw,16px)]"
+        >
           {data.parties.map((party) => (
             <HomeOrganizationCard
               key={party.slug}
@@ -57,7 +62,7 @@ export default async function HomePage() {
         <section
           id="home-groups"
           aria-labelledby="home-groups-heading"
-          className="flex flex-col gap-[clamp(28px,3.4vw,44px)] py-2 min-[641px]:py-4"
+          className="-mt-[13px] flex flex-col gap-[clamp(28px,3.4vw,44px)] py-[clamp(8px,1.5vw,16px)] min-[641px]:-mt-4"
         >
           <HomeSectionHeading
             id="home-groups-heading"
@@ -90,7 +95,7 @@ export default async function HomePage() {
           </div>
         </section>
       )}
-      <SiteBottomBlock />
+      <SiteBottomBlock layout="home" />
     </MainColumn>
   );
 }

@@ -170,7 +170,8 @@ export default function BalanceSheetChart({ data }: BalanceSheetChartProps) {
 
   return (
     <div className="flex justify-center mt-10">
-      <figure className="w-full max-w-[500px] flex gap-[1px] h-[380px]">
+      {/* SP は縦に場所を取りすぎないよう、PC の半分の高さにする（v9） */}
+      <figure className="w-full max-w-[500px] flex gap-[1px] h-[190px] min-[641px]:h-[380px]">
         <figcaption className="sr-only">貸借対照表</figcaption>
 
         {/* 左側（資産） */}

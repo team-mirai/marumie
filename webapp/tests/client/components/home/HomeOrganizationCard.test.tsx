@@ -8,9 +8,20 @@ jest.mock("@/client/components/top-page/features/charts/SankeyChart", () => ({
 }));
 
 const EMPTY_SANKEY = { nodes: [], links: [] };
+const SANKEY = {
+  nodes: [{ id: "income" }, { id: "total" }],
+  links: [{ source: "income", target: "total", value: 100 }],
+};
+
+type Year = { year: number; political: typeof SANKEY | null; friendly: typeof SANKEY | null };
 
 function render(
-  props: { subtitle?: string; updatedAt?: string; headingLevel?: "h2" | "h3" } = {},
+  props: {
+    subtitle?: string;
+    updatedAt?: string;
+    headingLevel?: "h2" | "h3";
+    years?: Year[];
+  } = {},
 ): string {
   return renderToStaticMarkup(
     <HomeOrganizationCard
@@ -20,10 +31,12 @@ function render(
       subtitle={props.subtitle}
       avatar={<span />}
       updatedAt={props.updatedAt ?? "2026.10.23 更新"}
-      years={[
-        { year: 2025, political: EMPTY_SANKEY, friendly: EMPTY_SANKEY },
-        { year: 2026, political: EMPTY_SANKEY, friendly: EMPTY_SANKEY },
-      ]}
+      years={
+        props.years ?? [
+          { year: 2025, political: SANKEY, friendly: SANKEY },
+          { year: 2026, political: SANKEY, friendly: SANKEY },
+        ]
+      }
       defaultYear={2026}
       headingLevel={props.headingLevel}
     />,
@@ -71,5 +84,27 @@ describe("HomeOrganizationCard", () => {
 
     expect(html).toContain('href="/o/sample-group/2026"');
     expect(html).not.toContain('href="/o/sample-group/2025"');
+  });
+
+  it("表示中の年の収支の流れが無いときは、図の代わりに準備中と出す", () => {
+    const html = render({
+      years: [{ year: 2026, political: EMPTY_SANKEY, friendly: EMPTY_SANKEY }],
+    });
+
+    expect(html).toContain("2026年の収支の流れの図は準備中です");
+    expect(html).not.toContain('role="tablist"');
+  });
+
+  it("収支の流れがあるときは図の区分の切り替えを出す", () => {
+    const html = render();
+
+    expect(html).not.toContain("準備中");
+    expect(html).toContain('role="tablist"');
+  });
+
+  it("取得に失敗したとき（null）は準備中とは出さない", () => {
+    const html = render({ years: [{ year: 2026, political: null, friendly: null }] });
+
+    expect(html).not.toContain("準備中");
   });
 });
