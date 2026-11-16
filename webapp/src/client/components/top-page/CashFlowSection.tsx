@@ -21,6 +21,8 @@ interface CashFlowSectionProps {
   >;
   /** 図のデータが無いときの文言 */
   emptyMessage?: string;
+  /** SP で図の上に「指を広げて拡大」の案内を出すか。トップでは 1 枚目（チームみらいの収支）の図にだけ出す */
+  pinchHint?: boolean;
 }
 
 const TABS = [
@@ -32,7 +34,7 @@ type TabKey = (typeof TABS)[number]["key"];
 
 /**
  * 収支の流れの区分（詳細の区分／法律上の区分）のタブとサンキー図。政党ページでは見出しカードの中、議員ページでは収支の流れのカードの中に置く。
- * SP では横スクロールさせず全体を表示し、ピンチで拡大できるようにする。
+ * SP では横スクロールさせず全体を表示し、ピンチか「拡大」ボタンで拡大できるようにする。
  */
 export default function CashFlowSection({
   political,
@@ -40,6 +42,7 @@ export default function CashFlowSection({
   id,
   chart,
   emptyMessage = "サンキー図データが取得できませんでした",
+  pinchHint = true,
 }: CashFlowSectionProps) {
   const [activeTab, setActiveTab] = useState<TabKey>("friendly");
   // トップページでは同じ図を複数のカードに並べるので、タブとパネルの id をカードごとに分ける
@@ -105,20 +108,15 @@ export default function CashFlowSection({
 
       <div id={panelId} role="tabpanel" aria-labelledby={tabId(activeTab)}>
         {currentData ? (
-          <>
-            <PinchZoom>
-              {/* 区分を切り替えたら図を作り直し、表示したときと同じく、ノードが伸びて帯が左から現れる動きで切り替える */}
-              <SankeyChart
-                key={activeTab}
-                data={currentData}
-                {...chart}
-                alternatives={alternatives}
-              />
-            </PinchZoom>
-            <p className="mt-2 text-right text-[12px] font-semibold text-[#6B7280] min-[641px]:hidden">
-              ピンチで拡大できます
-            </p>
-          </>
+          <PinchZoom hint={pinchHint}>
+            {/* 区分を切り替えたら図を作り直し、表示したときと同じく、ノードが伸びて帯が左から現れる動きで切り替える */}
+            <SankeyChart
+              key={activeTab}
+              data={currentData}
+              {...chart}
+              alternatives={alternatives}
+            />
+          </PinchZoom>
         ) : (
           <div className="text-gray-500">{emptyMessage}</div>
         )}

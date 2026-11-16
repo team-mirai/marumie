@@ -366,7 +366,9 @@ test.describe("政治団体ページ", () => {
 			await page.setViewportSize({ width: 390, height: 844 });
 
 			await expect(page.getByRole("region", { name: "政治団体情報" })).toBeHidden();
-			await expect(page.locator("#cash-flow").getByText("ピンチで拡大できます")).toBeVisible();
+			await expect(
+				page.locator("#cash-flow").getByRole("button", { name: "図を拡大する" }),
+			).toBeVisible();
 		});
 
 		test("SP でもトップ・政党ページと同じ縦長の図で、収支の流れを画面幅に収める", async ({
