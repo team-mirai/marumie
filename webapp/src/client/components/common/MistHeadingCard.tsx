@@ -18,8 +18,8 @@ interface MistHeadingCardProps {
   href?: string;
   /** ページの最初の見出しになるカードは h1、トップページのように並べるカードは h2、セクションの中のカードは h3 */
   headingLevel?: "h1" | "h2" | "h3";
-  /** 面の色。政党は緑、政治団体は青みのある緑、議員（トップページの所属議員の調研費）は明るい緑 */
-  tone?: "party" | "group" | "member";
+  /** 面の色。政党は緑、政治団体は青みのある緑 */
+  tone?: "party" | "group";
   /** カードの面の下に続く本文（金額・収支の流れなど） */
   children: ReactNode;
 }
@@ -27,7 +27,6 @@ interface MistHeadingCardProps {
 const TONE_CLASSES = {
   party: "",
   group: "mist-surface-group",
-  member: "mist-member-0",
 } as const;
 
 /**
