@@ -1,5 +1,5 @@
 import type {
-  PublishedPartyResearchFund,
+  PublishedPoliticianResearchFund,
   PublishedReceipt,
   PublishedResearchFund,
   PublishedResearchFundPageRef,
@@ -11,13 +11,10 @@ export interface ResearchFundRepository {
   findPublished(slug: string, financialYear: number): Promise<PublishedResearchFund | null>;
 
   /**
-   * 政治団体の slug と年度から、所属議員（ended_on が NULL の membership）全員分を射影して返す。
-   * 所属議員がいなければ null（トップページは「所属議員の調研費」を出さない）。
+   * トップページの「所属議員の調研費」に並べる議員を、表示順（display_order）で射影して返す。
+   * 調研費を公開中で、その年度に published の仕訳がある議員全員。政治団体への所属は問わない。
    */
-  findPublishedByOrganization(
-    slug: string,
-    financialYear: number,
-  ): Promise<PublishedPartyResearchFund | null>;
+  findPublishedForHome(financialYear: number): Promise<PublishedPoliticianResearchFund[]>;
 
   /**
    * 組織セレクタに出す議員の一覧。その年度の帳簿を持つ議員だけを当選期順で返す。

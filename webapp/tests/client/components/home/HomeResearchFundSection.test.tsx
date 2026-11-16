@@ -1,9 +1,9 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import HomeResearchFundSection from "@/client/components/home/HomeResearchFundSection";
 import type {
-  ResearchFundPartyPoliticianView,
-  ResearchFundPartySummaryData,
-} from "@/server/contexts/research-fund/domain/models/research-fund-party-summary";
+  ResearchFundHomePoliticianView,
+  ResearchFundHomeSummaryData,
+} from "@/server/contexts/research-fund/domain/models/research-fund-home-summary";
 
 // サンキー図の中身はこのテストの対象外なので描かない（図は sankey-layout のテストで確かめる）
 jest.mock("@/client/components/top-page/features/charts/SankeyChart", () => ({
@@ -14,8 +14,8 @@ jest.mock("@/client/components/top-page/features/charts/SankeyChart", () => ({
 const EMPTY_SANKEY = { nodes: [], links: [] };
 
 function politician(
-  overrides: Partial<ResearchFundPartyPoliticianView> = {},
-): ResearchFundPartyPoliticianView {
+  overrides: Partial<ResearchFundHomePoliticianView> = {},
+): ResearchFundHomePoliticianView {
   return {
     slug: "sample-taro",
     name: "サンプル太郎",
@@ -30,9 +30,8 @@ function politician(
   };
 }
 
-function render(politicians: ResearchFundPartyPoliticianView[]): string {
-  const data: ResearchFundPartySummaryData = {
-    organization: { slug: "team-mirai", displayName: "チームみらい" },
+function render(politicians: ResearchFundHomePoliticianView[]): string {
+  const data: ResearchFundHomeSummaryData = {
     financialYear: 2026,
     politicians,
   };

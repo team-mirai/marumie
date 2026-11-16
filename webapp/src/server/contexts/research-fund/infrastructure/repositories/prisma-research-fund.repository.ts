@@ -5,7 +5,6 @@ import {
   type PublishedAccount,
   type PublishedExpenditureGroup,
   type PublishedExpense,
-  type PublishedPartyResearchFund,
   type PublishedPoliticianProfile,
   type PublishedPoliticianResearchFund,
   type PublishedResearchFund,
@@ -275,108 +274,86 @@ export class PrismaResearchFundRepository implements ResearchFundRepository {
     };
   }
 
-  async findPublishedByOrganization(
-    slug: string,
-    financialYear: number,
-  ): Promise<PublishedPartyResearchFund | null> {
-    const organization = await this.prisma.politicalOrganization.findUnique({
-      where: { slug },
+  async findPublishedForHome(financialYear: number): Promise<PublishedPoliticianResearchFund[]> {
+    const politicians = await this.prisma.politician.findMany({
+      // 政治団体への所属（membership）や、団体の政党／政治団体の区分には左右させない。
+      // 調研費を「公開しない」議員と、その年度に published の仕訳が無い（準備中の）議員は出さない。
+      where: {
+        isResearchFundPublic: true,
+        books: { some: { financialYear, journalEntries: { some: { status: "published" } } } },
+      },
+      orderBy: [{ displayOrder: "asc" }, { id: "asc" }],
       select: {
+        name: true,
         slug: true,
-        displayName: true,
-        politicianMemberships: {
-          // 現在所属している議員だけを出す（ended_on が入っていれば離党・任期満了）。
-          // 調研費を「公開しない」議員は、準備中としても出さない。
-          where: { endedOn: null, politician: { isResearchFundPublic: true } },
-          orderBy: [{ politician: { displayOrder: "asc" } }, { politicianId: "asc" }],
+        nameKana: true,
+        house: true,
+        photoPath: true,
+        books: {
+          where: { financialYear },
           select: {
-            politician: {
-              select: {
-                name: true,
-                slug: true,
-                nameKana: true,
-                house: true,
-                photoPath: true,
-                books: {
-                  where: { financialYear },
-                  select: {
-                    asOfDate: true,
-                    publishedThrough: true,
-                    journalEntries: {
-                      where: { status: "published" },
-                      select: summaryEntrySelect,
-                      orderBy: [{ entryDate: "asc" }, { id: "asc" }],
-                    },
-                  },
-                },
-              },
+            asOfDate: true,
+            publishedThrough: true,
+            journalEntries: {
+              where: { status: "published" },
+              select: summaryEntrySelect,
+              orderBy: [{ entryDate: "asc" }, { id: "asc" }],
             },
           },
         },
       },
     });
-    if (!organization || organization.politicianMemberships.length === 0) return null;
     const catalog = await this.legalCategoryCatalog(
-      organization.politicianMemberships.flatMap(
-        ({ politician }) => politician.books[0]?.journalEntries ?? [],
-      ),
+      politicians.flatMap((politician) => politician.books[0]?.journalEntries ?? []),
     );
 
-    const politicians: PublishedPoliticianResearchFund[] = organization.politicianMemberships.map(
-      ({ politician }) => {
-        const book = politician.books[0];
-        const rows: ResearchFundRow[] = [];
-        const accounts: Record<string, PublishedAccount> = {};
-        let expenseCount = 0;
+    return politicians.map((politician): PublishedPoliticianResearchFund => {
+      const book = politician.books[0];
+      const rows: ResearchFundRow[] = [];
+      const accounts: Record<string, PublishedAccount> = {};
+      let expenseCount = 0;
 
-        for (const entry of book?.journalEntries ?? []) {
-          const date = dateOf(entry.entryDate);
-          const override = overrideOf(entry, catalog);
-          for (const line of entry.lines) {
-            if (isGrantLine(line)) {
-              rows.push({
-                date,
-                accountKey: line.accountKey,
-                amount: line.amount.toNumber(),
-                type: "grant",
-              });
-              continue;
-            }
-            if (!isExpenseLine(line)) continue;
-            accounts[line.accountKey] = accountOf(line);
+      for (const entry of book?.journalEntries ?? []) {
+        const date = dateOf(entry.entryDate);
+        const override = overrideOf(entry, catalog);
+        for (const line of entry.lines) {
+          if (isGrantLine(line)) {
             rows.push({
               date,
               accountKey: line.accountKey,
               amount: line.amount.toNumber(),
-              type: "expense",
-              ...withOverride(override),
+              type: "grant",
             });
-            expenseCount += 1;
+            continue;
           }
+          if (!isExpenseLine(line)) continue;
+          accounts[line.accountKey] = accountOf(line);
+          rows.push({
+            date,
+            accountKey: line.accountKey,
+            amount: line.amount.toNumber(),
+            type: "expense",
+            ...withOverride(override),
+          });
+          expenseCount += 1;
         }
+      }
 
-        return {
-          politician: {
-            name: politician.name,
-            slug: politician.slug,
-            nameKana: politician.nameKana,
-            house: politician.house,
-            hasPhoto: politician.photoPath !== null,
-          },
-          asOfDate: book?.asOfDate ? dateOf(book.asOfDate) : null,
-          publishedThrough: book?.publishedThrough ? dateOf(book.publishedThrough) : null,
-          rows,
-          accounts,
-          expenseCount,
-        };
-      },
-    );
-
-    return {
-      organization: { slug: organization.slug, displayName: organization.displayName },
-      financialYear,
-      politicians,
-    };
+      return {
+        politician: {
+          name: politician.name,
+          slug: politician.slug,
+          nameKana: politician.nameKana,
+          house: politician.house,
+          hasPhoto: politician.photoPath !== null,
+        },
+        asOfDate: book?.asOfDate ? dateOf(book.asOfDate) : null,
+        publishedThrough: book?.publishedThrough ? dateOf(book.publishedThrough) : null,
+        rows,
+        accounts,
+        expenseCount,
+      };
+    });
   }
 
   /**

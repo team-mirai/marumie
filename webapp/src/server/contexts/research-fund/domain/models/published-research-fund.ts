@@ -143,14 +143,6 @@ export interface PublishedPoliticianResearchFund {
   expenseCount: number;
 }
 
-/** トップページの「所属議員の調研費」が読む、所属議員全員分の published 射影。 */
-export interface PublishedPartyResearchFund {
-  organization: { slug: string; displayName: string };
-  financialYear: number;
-  /** 当選期順（display_order）。準備中の議員も含む。 */
-  politicians: PublishedPoliticianResearchFund[];
-}
-
 /** sitemap に載せる公開ページの所在（議員の slug と年度）。 */
 export interface PublishedResearchFundPageRef {
   slug: string;

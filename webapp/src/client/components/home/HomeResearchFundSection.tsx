@@ -5,14 +5,14 @@ import HomeResearchFundMembers, {
 import { formatUpdatedAt } from "@/client/lib/format-date";
 import { politicianPageHref } from "@/client/lib/politician-nav";
 import { politicianPhotoUrl } from "@/client/lib/politician-photo-url";
-import type { ResearchFundPartySummaryData } from "@/server/contexts/research-fund/domain/models/research-fund-party-summary";
+import type { ResearchFundHomeSummaryData } from "@/server/contexts/research-fund/domain/models/research-fund-home-summary";
 import { POLITICIAN_HOUSE_LABELS } from "@/shared/models/politician";
 
 // noteの記事URLが決まったら差し替える（現在はチームみらいのnoteトップ）
 const POLICY_NOTE_URL = "https://note.com/team_mirai_jp";
 
 interface Props {
-  data: ResearchFundPartySummaryData;
+  data: ResearchFundHomeSummaryData;
 }
 
 /**

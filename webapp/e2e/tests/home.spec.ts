@@ -96,7 +96,7 @@ test.describe("トップページ", () => {
 			section.getByRole("link", { name: /チームみらいの調研費の使用方針/ }),
 		).toHaveAttribute("target", "_blank");
 
-		// シードの sample-party の所属議員のうち、published の仕訳があるのはサンプル 太郎だけ（次郎は準備中）
+		// シードで調研費を公開中の議員のうち、published の仕訳があるのはサンプル 太郎だけ（次郎は準備中）
 		const card = section.getByRole("button", { name: "サンプル 太郎の調研費を下に表示" });
 		await expect(card).toHaveAttribute("aria-pressed", "true");
 		await expect(section.getByText("サンプル 次郎")).toHaveCount(0);
