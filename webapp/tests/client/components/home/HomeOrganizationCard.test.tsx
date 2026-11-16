@@ -10,11 +10,16 @@ jest.mock("@/client/components/top-page/features/charts/SankeyChart", () => ({
 const EMPTY_SANKEY = { nodes: [], links: [] };
 
 function render(
-  props: { subtitle?: string; updatedAt?: string; headingLevel?: "h2" | "h3" } = {},
+  props: {
+    subtitle?: string;
+    updatedAt?: string;
+    headingLevel?: "h2" | "h3";
+    tone?: "party" | "group";
+  } = {},
 ): string {
   return renderToStaticMarkup(
     <HomeOrganizationCard
-      tone="group"
+      tone={props.tone ?? "group"}
       slug="sample-group"
       name="サンプル団体"
       subtitle={props.subtitle}
@@ -71,5 +76,15 @@ describe("HomeOrganizationCard", () => {
 
     expect(html).toContain('href="/o/sample-group/2026"');
     expect(html).not.toContain('href="/o/sample-group/2025"');
+  });
+
+  it("「指を広げて拡大」は政党のカードの図にだけ出し、拡大ボタンはどちらにも出す", () => {
+    const party = render({ tone: "party" });
+    const group = render();
+
+    expect(party).toContain("指を広げて拡大");
+    expect(group).not.toContain("指を広げて拡大");
+    expect(party).toContain('aria-label="図を拡大する"');
+    expect(group).toContain('aria-label="図を拡大する"');
   });
 });
