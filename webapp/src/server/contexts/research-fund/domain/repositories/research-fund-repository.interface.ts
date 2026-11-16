@@ -11,13 +11,13 @@ export interface ResearchFundRepository {
   findPublished(slug: string, financialYear: number): Promise<PublishedResearchFund | null>;
 
   /**
-   * トップページの「所属議員の調研費」に並べる議員を、表示順（display_order）で射影して返す。
+   * トップページの「所属議員の調研費」に並べる議員を射影して返す（並び順は usecase で決める）。
    * 調研費を公開中で、その年度に published の仕訳がある議員全員。政治団体への所属は問わない。
    */
   findPublishedForHome(financialYear: number): Promise<PublishedPoliticianResearchFund[]>;
 
   /**
-   * 組織セレクタに出す議員の一覧。その年度の帳簿を持つ議員だけを当選期順で返す。
+   * 組織セレクタに出す議員の一覧。その年度の帳簿を持つ議員だけを返す（並び順は usecase で決める）。
    * 公開状況（ready / statusLabel）の判定は usecase が行う。
    */
   findPoliticians(financialYear: number): Promise<ResearchFundPoliticianSource[]>;

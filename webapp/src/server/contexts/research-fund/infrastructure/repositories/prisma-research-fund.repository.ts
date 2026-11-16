@@ -381,6 +381,7 @@ export class PrismaResearchFundRepository implements ResearchFundRepository {
       select: {
         name: true,
         slug: true,
+        nameKana: true,
         house: true,
         constituency: true,
         photoPath: true,
@@ -403,6 +404,7 @@ export class PrismaResearchFundRepository implements ResearchFundRepository {
       return {
         slug: politician.slug,
         name: politician.name,
+        nameKana: politician.nameKana,
         house: politician.house,
         constituency: politician.constituency,
         hasPhoto: politician.photoPath !== null,

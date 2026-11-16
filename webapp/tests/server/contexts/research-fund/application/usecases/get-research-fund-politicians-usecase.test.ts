@@ -21,6 +21,7 @@ describe("GetResearchFundPoliticiansUsecase", () => {
         name: "サンプル 太郎", house: null, constituency: null, hasPhoto: true,
         publishedMonths: ["2026-02", "2026-04"],
         publishedThrough: "2026-08",
+        nameKana: null,
       },
     ]);
 
@@ -42,8 +43,9 @@ describe("GetResearchFundPoliticiansUsecase", () => {
         name: "サンプル 太郎", house: null, constituency: null, hasPhoto: false,
         publishedMonths: ["2026-02"],
         publishedThrough: null,
+        nameKana: null,
       },
-      { slug: "sample-jiro", name: "サンプル 次郎", house: null, constituency: null, hasPhoto: false, publishedMonths: [], publishedThrough: "2026-08" },
+      { slug: "sample-jiro", name: "サンプル 次郎", nameKana: null, house: null, constituency: null, hasPhoto: false, publishedMonths: [], publishedThrough: "2026-08" },
     ]);
 
     expect((await usecase.execute({ financialYear: 2026 })).map((entry) => entry.slug)).toEqual([
@@ -53,7 +55,7 @@ describe("GetResearchFundPoliticiansUsecase", () => {
 
   it("公開済みの仕訳がある議員が1人もいなければ空で返す", async () => {
     const { usecase } = build([
-      { slug: "sample-jiro", name: "サンプル 次郎", house: null, constituency: null, hasPhoto: false, publishedMonths: [], publishedThrough: null },
+      { slug: "sample-jiro", name: "サンプル 次郎", nameKana: null, house: null, constituency: null, hasPhoto: false, publishedMonths: [], publishedThrough: null },
     ]);
 
     expect(await usecase.execute({ financialYear: 2026 })).toEqual([]);
@@ -66,11 +68,36 @@ describe("GetResearchFundPoliticiansUsecase", () => {
         name: "サンプル 花子", house: null, constituency: null, hasPhoto: false,
         publishedMonths: ["2026-03"],
         publishedThrough: null,
+        nameKana: null,
       },
     ]);
 
     expect((await usecase.execute({ financialYear: 2026 }))[0].statusLabel).toBe(
       "2026年3月分を公開中",
     );
+  });
+
+  it("議員をふりがなの五十音順に並べる", async () => {
+    const source = (slug: string, nameKana: string | null): ResearchFundPoliticianSource => ({
+      slug,
+      name: slug,
+      nameKana,
+      house: null,
+      constituency: null,
+      hasPhoto: false,
+      publishedMonths: ["2026-02"],
+      publishedThrough: null,
+    });
+    const { usecase } = build([
+      source("yamada", "やまだ"),
+      source("anno", "あんの"),
+      source("kawai", "かわい"),
+    ]);
+
+    expect((await usecase.execute({ financialYear: 2026 })).map((entry) => entry.slug)).toEqual([
+      "anno",
+      "kawai",
+      "yamada",
+    ]);
   });
 });

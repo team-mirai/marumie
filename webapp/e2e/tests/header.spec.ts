@@ -101,10 +101,11 @@ test.describe("ヘッダー（PC）", () => {
 		await expect(menu.getByText(/サンプル 花子/)).toHaveCount(0);
 		await expect(menu.getByText(/サンプル 次郎/)).toHaveCount(0);
 
-		await menu
-			.getByRole("navigation", { name: "サンプル 太郎の調研費の表示する年" })
-			.getByRole("link", { name: "2026" })
-			.click();
+		// 公開している年が1つだけの議員には年の切り替えが出ず、名前から最新の年のページへ移る
+		await expect(
+			menu.getByRole("navigation", { name: "サンプル 太郎の調研費の表示する年" }),
+		).toHaveCount(0);
+		await menu.getByRole("link", { name: /サンプル 太郎/ }).click();
 		await expect(page).toHaveURL(/\/p\/sample-taro\/2026$/);
 	});
 
@@ -159,7 +160,9 @@ test.describe("ヘッダー（SP）", () => {
 
 		await menu.getByRole("button", { name: "調研費" }).click();
 		await expect(menu.getByText(/サンプル 花子/)).toHaveCount(0);
-		await menu.getByRole("link", { name: /サンプル 太郎.*2026年/ }).click();
+		// 公開している年が1つだけの議員には年を出さない
+		await expect(menu.getByText("2026年")).toHaveCount(0);
+		await menu.getByRole("link", { name: /サンプル 太郎/ }).click();
 		await expect(page).toHaveURL(/\/p\/sample-taro\/2026$/);
 		await expect(page.locator("#header-sp-menu")).toHaveCount(0);
 	});
