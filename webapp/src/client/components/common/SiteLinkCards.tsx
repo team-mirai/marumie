@@ -36,24 +36,58 @@ const CARDS: SiteLinkCard[] = [
 const PANEL_CLASS =
   "group flex min-h-[240px] flex-col justify-between gap-14 rounded-[32px] bg-white p-[clamp(28px,4vw,48px)] text-[#0B0F0E] transition-colors duration-300 hover:bg-[#E2F6F3]";
 
-function CardBody({ card }: { card: SiteLinkCard }) {
+/**
+ * SP で小さくするときの見た目（v9 のトップ）。高さを約120px にし、文字は左、丸い矢印は右の中央に置く。
+ * 英字のラベルは題名・説明の下に回す
+ */
+const COMPACT_CLASSES = {
+  panel:
+    "max-[640px]:grid max-[640px]:min-h-0 max-[640px]:grid-cols-[minmax(0,1fr)_auto] max-[640px]:items-center max-[640px]:gap-x-4 max-[640px]:gap-y-2.5 max-[640px]:rounded-[24px] max-[640px]:pb-5 max-[640px]:pl-6 max-[640px]:pr-5 max-[640px]:pt-[22px]",
+  text: "max-[640px]:col-start-1 max-[640px]:row-start-1",
+  title: "max-[640px]:text-[20px]",
+  description: "max-[640px]:mt-1.5 max-[640px]:text-[14px] max-[640px]:leading-[1.7]",
+  bottom: "max-[640px]:contents",
+  label: "max-[640px]:col-start-1 max-[640px]:row-start-2",
+  circle:
+    "max-[640px]:col-start-2 max-[640px]:row-span-2 max-[640px]:row-start-1 max-[640px]:h-12 max-[640px]:w-12",
+} as const;
+
+const NO_COMPACT_CLASSES = {
+  panel: "",
+  text: "",
+  title: "",
+  description: "",
+  bottom: "",
+  label: "",
+  circle: "",
+} as const;
+
+type CardClasses = Record<keyof typeof COMPACT_CLASSES, string>;
+
+function CardBody({ card, classes }: { card: SiteLinkCard; classes: CardClasses }) {
   return (
     <>
-      <span>
-        <span className="block break-keep text-[clamp(22px,2.3vw,30px)] font-black leading-[1.25] tracking-[0.01em] [overflow-wrap:anywhere]">
+      <span className={classes.text}>
+        <span
+          className={`block break-keep text-[clamp(22px,2.3vw,30px)] font-black leading-[1.25] tracking-[0.01em] [overflow-wrap:anywhere] ${classes.title}`}
+        >
           {card.title}
         </span>
-        <span className="mt-3 block text-[15px] leading-[1.8] text-[#4B5563]">
+        <span
+          className={`mt-3 block text-[15px] leading-[1.8] text-[#4B5563] ${classes.description}`}
+        >
           {card.description}
         </span>
       </span>
-      <span className="flex items-end justify-between gap-4">
-        <span className="text-[13px] font-semibold leading-none tracking-[0.06em] text-[#0F8472]">
+      <span className={`flex items-end justify-between gap-4 ${classes.bottom}`}>
+        <span
+          className={`text-[13px] font-semibold leading-none tracking-[0.06em] text-[#0F8472] ${classes.label}`}
+        >
           {card.label}
         </span>
         <span
           aria-hidden="true"
-          className="inline-flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-full border border-black bg-white transition-colors duration-300 group-hover:border-[#30BCA7] group-hover:bg-[#30BCA7]"
+          className={`inline-flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-full border border-black bg-white transition-colors duration-300 group-hover:border-[#30BCA7] group-hover:bg-[#30BCA7] ${classes.circle}`}
         >
           <svg
             width="20"
@@ -74,8 +108,13 @@ function CardBody({ card }: { card: SiteLinkCard }) {
   );
 }
 
-/** 下部の共通ブロックのカード3枚（まる見え政治資金とは？／よくあるご質問／チームみらいについて）。 */
-export default function SiteLinkCards() {
+/**
+ * 下部の共通ブロックのカード3枚（まる見え政治資金とは？／よくあるご質問／チームみらいについて）。
+ * compactOnSp はトップページ用で、SP ではカードを低くする。
+ */
+export default function SiteLinkCards({ compactOnSp = false }: { compactOnSp?: boolean }) {
+  const classes = compactOnSp ? COMPACT_CLASSES : NO_COMPACT_CLASSES;
+  const panelClass = `${PANEL_CLASS} ${classes.panel}`;
   return (
     <nav
       aria-label="このサイトについて"
@@ -89,13 +128,13 @@ export default function SiteLinkCards() {
             target="_blank"
             rel="noopener noreferrer"
             aria-label={card.external.ariaLabel}
-            className={PANEL_CLASS}
+            className={panelClass}
           >
-            <CardBody card={card} />
+            <CardBody card={card} classes={classes} />
           </a>
         ) : (
-          <Link key={card.label} href={card.href} className={PANEL_CLASS}>
-            <CardBody card={card} />
+          <Link key={card.label} href={card.href} className={panelClass}>
+            <CardBody card={card} classes={classes} />
           </Link>
         ),
       )}

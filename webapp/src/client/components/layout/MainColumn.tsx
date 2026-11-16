@@ -1,13 +1,22 @@
 interface MainColumnProps {
   children: React.ReactNode;
   className?: string;
-  /** セクションの間隔。新デザイン（v8）のページは "compact"（32px） */
-  spacing?: "default" | "compact";
+  /**
+   * セクションの間隔。新デザイン（v8）のページは "compact"（32px）。
+   * "home" はトップページ（v9）の間隔で、縦に並べて間を clamp(40px,5vw,56px) あけ、セクションごとの詰め方は各セクションの margin で決める
+   */
+  spacing?: "default" | "compact" | "home";
   /**
    * 幅。"wide" はトップページ（v9）の幅で、本文の最大幅 1120px・左右の余白は PC 20px／SP 16px
    */
   width?: "default" | "wide";
 }
+
+const SPACING_CLASSES = {
+  default: "space-y-12",
+  compact: "space-y-8",
+  home: "flex flex-col gap-[clamp(40px,5vw,56px)]",
+} as const;
 
 const WIDTH_CLASSES = {
   default: "max-w-[1032px] px-5 min-[641px]:px-0",
@@ -20,9 +29,10 @@ export default function MainColumn({
   spacing = "default",
   width = "default",
 }: MainColumnProps) {
-  const gap = spacing === "compact" ? "space-y-8" : "space-y-12";
   return (
-    <main className={`mx-auto ${WIDTH_CLASSES[width]} py-5 min-[641px]:py-6 ${gap} ${className}`}>
+    <main
+      className={`mx-auto ${WIDTH_CLASSES[width]} py-5 min-[641px]:py-6 ${SPACING_CLASSES[spacing]} ${className}`}
+    >
       {children}
     </main>
   );
