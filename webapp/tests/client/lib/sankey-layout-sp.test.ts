@@ -189,4 +189,46 @@ describe("layoutSankeySp", () => {
     const sum = rights.reduce((s, node) => s + node.height, 0);
     expect(sum).toBeLessThanOrEqual(layout.hub.height + 1e-6);
   });
+
+  it("低めの図の1行のラベルは、項目名を詰めて割合のピルを図の幅に収める", () => {
+    const layout = layoutSankeySp(
+      {
+        incomes: [{ label: "公費から支給", value: 12_340_000 }],
+        expenses: [{ label: "広報・広聴活動費", value: 12_340_000 }],
+        balance: null,
+        total: 12_340_000,
+      },
+      { inTitle: "支給", outTitle: "支出・未使用", heightScale: 0.75 },
+    );
+    const label = layout.labels.find((l) => l.key === "o0");
+    const pill = label?.pills[0];
+    expect(pill && pill.x + pill.width).toBeLessThanOrEqual(layout.width);
+    expect(label?.texts[0].text.endsWith("…")).toBe(true);
+    // 読み上げには全文を含める
+    expect(layout.nodes.find((n) => n.key === "o0")?.ariaLabel).toContain("広報・広聴活動費");
+  });
+
+  it("切り替える図を渡すと、合計の柱の位置と図の高さをそろえる", () => {
+    const few: SankeyFlow = {
+      incomes: [{ label: "公費から支給", value: 1_000_000 }],
+      expenses: [{ label: "研究費", value: 1_000_000 }],
+      balance: null,
+      total: 1_000_000,
+    };
+    const many: SankeyFlow = {
+      incomes: [{ label: "公費から支給", value: 1_000_000 }],
+      expenses: Array.from({ length: 12 }, (_, i) => ({ label: `項目${i}`, value: 10_000 })),
+      balance: { label: "未使用", value: 880_000 },
+      total: 1_000_000,
+    };
+    const options = { inTitle: "支給", outTitle: "支出・未使用", heightScale: 0.75 };
+    const alone = layoutSankeySp(few, options);
+    const a = layoutSankeySp(few, options, [many]);
+    const b = layoutSankeySp(many, options, [few]);
+
+    expect(layoutSankeySp(many, options).hub.y).toBeGreaterThan(alone.hub.y);
+    expect(a.hub.y).toBe(b.hub.y);
+    expect(a.height).toBe(b.height);
+    expect(a.nodes.find((n) => n.key === "i0")?.y).toBe(b.nodes.find((n) => n.key === "i0")?.y);
+  });
 });

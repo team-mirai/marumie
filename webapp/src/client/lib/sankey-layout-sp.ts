@@ -72,10 +72,43 @@ function curve(x1: number, a1: number, b1: number, x2: number, a2: number, b2: n
 }
 
 /**
+ * 1行のラベルの項目名を、残りの幅に収まるよう末尾を「…」で詰める（全文は読み上げに含める）。
+ */
+function fitSankeySpLabel(label: string, fontSize: number, maxWidth: number): string {
+  if (estimateTextWidth(label, fontSize) <= maxWidth) return label;
+  const chars = [...label];
+  for (let n = chars.length - 1; n > 0; n--) {
+    const text = `${chars.slice(0, n).join("")}…`;
+    if (estimateTextWidth(text, fontSize) <= maxWidth) return text;
+  }
+  return "…";
+}
+
+/**
  * SP 用の3列のサンキー図を組む（収入（左）→ 合計 → 支出・残高（右））。内訳は親の項目にまとめる。
  * 各ノードに「帯の太さ」と「ラベルの高さ」の大きいほうの枠を取ってノードを枠の中央に置き、ラベルがノードの真横に来るようにする。
+ *
+ * alternatives には、切り替えて同じ場所に出すほかの図（もう一方の区分、ほかの議員）を渡す。
+ * すべてを測って一番低い位置の合計の柱と一番高い図に合わせ、切り替えても合計の柱の位置と図の高さが変わらないようにする。
  */
-export function layoutSankeySp(flow: SankeyFlow, options: SankeySpLayoutOptions): SankeyLayout {
+export function layoutSankeySp(
+  flow: SankeyFlow,
+  options: SankeySpLayoutOptions,
+  alternatives: SankeyFlow[] = [],
+): SankeyLayout {
+  if (alternatives.length === 0) return buildSankeySp(flow, options, 0, 0);
+  const all = [flow, ...alternatives];
+  const top = Math.max(...all.map((f) => buildSankeySp(f, options, 0, 0).hub.y));
+  const height = Math.max(...all.map((f) => buildSankeySp(f, options, top, 0).height));
+  return buildSankeySp(flow, options, top, height);
+}
+
+function buildSankeySp(
+  flow: SankeyFlow,
+  options: SankeySpLayoutOptions,
+  minTop: number,
+  minHeight: number,
+): SankeyLayout {
   const heightScale = options.heightScale ?? 1;
   const W = SANKEY_SP_WIDTH;
   const TOP = 34;
@@ -126,7 +159,8 @@ export function layoutSankeySp(flow: SankeyFlow, options: SankeySpLayoutOptions)
   const sumL = columnHeight(lefts, gapL, false);
   const sumR = columnHeight(rights, gapR, compact);
   // ラベルの枠の合計が合計の柱より長ければ、柱を下げて上下の余白をそろえる
-  const HT = TOP + Math.max(0, (Math.max(sumL, sumR) - HUB) / 2);
+  // 切り替える図があれば、その中で一番下の柱の位置に合わせる
+  const HT = Math.max(TOP + Math.max(0, (Math.max(sumL, sumR) - HUB) / 2), minTop);
 
   const bands: SankeyBandLayout[] = [];
   const nodes: SankeyNodeLayout[] = [];
@@ -218,18 +252,23 @@ export function layoutSankeySp(flow: SankeyFlow, options: SankeySpLayoutOptions)
         const cy = Math.max(n.y + n.height / 2, last + LHN / 2 + 3);
         last = cy + LHN / 2;
         const amount = formatSankeyAmount(n.value);
-        const xa = x + estimateTextWidth(n.label, FN) + 6;
+        const percent = pct(n.value);
+        // 金額と割合のピルの幅を先に取り、項目名は残りの幅に収める（図の右端からはみ出さないように）
+        const tail =
+          6 + estimateTextWidth(amount, FA) + 5 + estimateTextWidth(percent, FA * 0.92) + 10;
+        const name = fitSankeySpLabel(n.label, FN, W - x - tail);
+        const xa = x + estimateTextWidth(name, FN) + 6;
         const mute = pctBase > 0 && n.value / pctBase < 0.01;
         labels.push({
           key: n.key,
           keys: [n.key],
           texts: [
-            text(n.label, x, cy, FN, 800, INK, false),
+            text(name, x, cy, FN, 800, INK, false),
             text(amount, xa, cy, FA, 600, MUTED, true),
           ],
           pills: [
             sankeyPill(
-              pct(n.value),
+              percent,
               xa + estimateTextWidth(amount, FA) + 5,
               cy,
               FA * 0.92,
@@ -292,7 +331,7 @@ export function layoutSankeySp(flow: SankeyFlow, options: SankeySpLayoutOptions)
   return {
     x: 0,
     width: W,
-    height: Math.ceil(Math.max(HT + HUB, endR, endL) + 12),
+    height: Math.max(Math.ceil(Math.max(HT + HUB, endR, endL) + 12), minHeight),
     headers: [inHeader, outHeader],
     bands,
     nodes,

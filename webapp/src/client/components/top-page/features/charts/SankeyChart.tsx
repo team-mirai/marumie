@@ -152,12 +152,9 @@ export default function SankeyChart({
     const flow = toSankeyFlow(data, config.flow);
     // 収入が0円でも支出・残高があれば描く
     if (flow.incomes.length === 0 && flow.expenses.length === 0 && !flow.balance) return null;
-    if (isSp && spLayout === "columns") return layoutSankeySp(flow, config.sp);
-    return layoutSankey(
-      flow,
-      { ...config.layout, tall: isSp },
-      (alternatives ?? []).map((alt) => toSankeyFlow(alt, config.flow)),
-    );
+    const others = (alternatives ?? []).map((alt) => toSankeyFlow(alt, config.flow));
+    if (isSp && spLayout === "columns") return layoutSankeySp(flow, config.sp, others);
+    return layoutSankey(flow, { ...config.layout, tall: isSp }, others);
   }, [data, variant, isSp, spLayout, alternatives]);
 
   if (!layout) {
