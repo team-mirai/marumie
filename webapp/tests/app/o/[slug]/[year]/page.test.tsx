@@ -19,6 +19,7 @@ jest.mock("@/client/components/common/TransparencySection", () =>
   mockComponent("TransparencySection"),
 );
 jest.mock("@/client/components/layout/Breadcrumbs", () => mockComponent("Breadcrumbs"));
+jest.mock("@/client/components/layout/RevealOnScroll", () => mockComponent("RevealOnScroll"));
 jest.mock("@/client/components/top-page/BalanceSheetSection", () =>
   mockComponent("BalanceSheetSection"),
 );
@@ -86,7 +87,21 @@ describe("OrgPage（政党ページ）", () => {
       "BalanceSheetSection",
       "TransactionsSection",
       "SiteBottomBlock",
+      "Breadcrumbs",
+      "RevealOnScroll",
     ]);
+  });
+
+  it("政党ページの一言コメントの帯を出し、フッターのすぐ上にもパンくずを出す", async () => {
+    const sections = await renderSections();
+
+    expect(sections.find((s) => s.name === "TransparencySection")?.props).toEqual({
+      variant: "party",
+    });
+    expect(sections.filter((s) => s.name === "Breadcrumbs").at(-1)?.props).toEqual({
+      current: "チームみらいの収支",
+      position: "bottom",
+    });
   });
 
   it("パンくずと見出しカードに団体名と年を渡す", async () => {
@@ -143,6 +158,8 @@ describe("OrgPage（政治団体ページ）", () => {
       "BalanceSheetSection",
       "TransactionsSection",
       "SiteBottomBlock",
+      "Breadcrumbs",
+      "RevealOnScroll",
     ]);
   });
 
@@ -154,7 +171,7 @@ describe("OrgPage（政治団体ページ）", () => {
     });
     expect(sections.find((s) => s.name === "OrganizationHeadingSection")?.props).toEqual({
       organizationName: "安野貴博の政治団体",
-      subtitle: "デジタル民主主義を考える会・2025年",
+      formalName: "デジタル民主主義を考える会",
       photoUrl: "/api/organizations/digimin/photo?v=abc",
       links: [
         { type: "site", url: "https://example.com/", label: "公式サイト" },

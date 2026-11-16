@@ -117,6 +117,7 @@ export default function SiteLinkCards({ compactOnSp = false }: { compactOnSp?: b
   const panelClass = `${PANEL_CLASS} ${classes.panel}`;
   return (
     <nav
+      data-reveal
       aria-label="このサイトについて"
       className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,300px),1fr))] gap-[clamp(12px,1.6vw,20px)]"
     >

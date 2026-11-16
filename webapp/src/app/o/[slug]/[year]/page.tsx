@@ -5,6 +5,7 @@ import SiteBottomBlock from "@/client/components/common/SiteBottomBlock";
 import TransparencySection from "@/client/components/common/TransparencySection";
 import Breadcrumbs from "@/client/components/layout/Breadcrumbs";
 import MainColumn from "@/client/components/layout/MainColumn";
+import RevealOnScroll from "@/client/components/layout/RevealOnScroll";
 import BalanceSheetSection from "@/client/components/top-page/BalanceSheetSection";
 import MonthlyTrendsSection from "@/client/components/top-page/MonthlyTrendsSection";
 import OrganizationCashFlowSection from "@/client/components/top-page/OrganizationCashFlowSection";
@@ -87,6 +88,7 @@ export default async function OrgPage({ params }: OrgPageProps) {
   const eyebrow = `${organizationName}・${financialYear}年`;
   const years = VALID_YEARS.map((y) => ({ year: y, href: `/o/${slug}/${y}` }));
   const isParty = PARTY_SLUGS.includes(slug);
+  const pageTitle = `${organizationName}の収支`;
 
   const profile = isParty
     ? null
@@ -111,6 +113,8 @@ export default async function OrgPage({ params }: OrgPageProps) {
         eyebrow={eyebrow}
       />
       <SiteBottomBlock />
+      <Breadcrumbs current={pageTitle} position="bottom" />
+      <RevealOnScroll />
     </>
   );
 
@@ -118,10 +122,11 @@ export default async function OrgPage({ params }: OrgPageProps) {
     return (
       <MainColumn spacing="compact">
         <div className="flex flex-col gap-5">
-          <Breadcrumbs current={`${organizationName}の収支`} />
+          <Breadcrumbs current={pageTitle} />
+          <h1 className="sr-only">{pageTitle}</h1>
           <OrganizationHeadingSection
             organizationName={organizationName}
-            subtitle={`${currentOrganization?.orgName || organizationName}・${financialYear}年`}
+            formalName={currentOrganization?.orgName || organizationName}
             photoUrl={
               photoVersion
                 ? `/api/organizations/${encodeURIComponent(slug)}/photo?v=${encodeURIComponent(photoVersion)}`
@@ -151,7 +156,7 @@ export default async function OrgPage({ params }: OrgPageProps) {
   return (
     <MainColumn spacing="compact">
       <div className="flex flex-col gap-5">
-        <Breadcrumbs current={`${organizationName}の収支`} />
+        <Breadcrumbs current={pageTitle} />
         <PartyHeadingSection
           organizationName={organizationName}
           slug={slug}
@@ -167,7 +172,7 @@ export default async function OrgPage({ params }: OrgPageProps) {
         updatedAt={updatedAt}
         eyebrow={eyebrow}
       />
-      <TransparencySection title="党首もこれを見て、お金をやりくりしています👀" />
+      <TransparencySection variant="party" />
       {latterSections}
     </MainColumn>
   );

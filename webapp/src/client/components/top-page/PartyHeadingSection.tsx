@@ -35,7 +35,7 @@ export default function PartyHeadingSection({
       ariaLabel="政党情報"
       avatar={<PartyLogo />}
       title={`${organizationName}の収支`}
-      subtitle={`政党・${year}年`}
+      subtitle={`${year}年`}
       updatedAt={updatedAt}
       yearSwitch={
         <YearSegment
