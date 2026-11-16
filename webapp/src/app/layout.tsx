@@ -10,7 +10,8 @@ import Header from "@/client/components/layout/header/Header";
 const notoSansJP = Noto_Sans_JP({
   variable: "--font-noto-sans-jp",
   subsets: ["latin"],
-  weight: ["400", "500", "700", "900"],
+  // 800：サンキー図のラベルなど。読み込まないと 900 で描かれ、デザインより太くなる
+  weight: ["400", "500", "700", "800", "900"],
   display: "swap",
   style: ["normal"],
 });
