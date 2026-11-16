@@ -1,7 +1,7 @@
 "use client";
 import "client-only";
 import Link from "next/link";
-import { useId, useLayoutEffect, useRef, useState } from "react";
+import { useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import AmountSummary from "@/client/components/common/AmountSummary";
 import PoliticianAvatar from "@/client/components/research-fund/PoliticianAvatar";
 import CashFlowSection from "@/client/components/top-page/CashFlowSection";
@@ -54,8 +54,16 @@ function Chevron({ size = 16, className = "" }: { size?: number; className?: str
   );
 }
 
-/** 選んだ議員の金額と収支の流れ（区分タブつき） */
-function MemberAmountsAndFlow({ member, home }: { member: HomeResearchFundMember; home: boolean }) {
+/** 選んだ議員の金額と収支の流れ（区分タブつき）。others はほかの議員の図（切り替えても合計の柱を動かさないために測る） */
+function MemberAmountsAndFlow({
+  member,
+  home,
+  others,
+}: {
+  member: HomeResearchFundMember;
+  home: boolean;
+  others: SankeyData[];
+}) {
   return (
     <>
       {/* 未使用分は金額欄に出さない（サンキーの末尾ノードとしてのみ出す）。議員ページと同じ */}
@@ -77,6 +85,7 @@ function MemberAmountsAndFlow({ member, home }: { member: HomeResearchFundMember
             "調査研究費の支給から使いみちへのお金の流れを示すサンキーダイアグラムです。",
           variant: "research-fund-summary",
           spLayout: "columns",
+          alternatives: others,
         }}
         emptyMessage="公開中の調査研究費のデータがありません"
       />
@@ -110,6 +119,11 @@ export default function HomeResearchFundMembers({ members, financialYear }: Prop
   const idPrefix = useId();
   const pcDetailId = `${idPrefix}-detail`;
   const spDetailId = (slug: string) => `${idPrefix}-sp-${slug}`;
+  // 議員を切り替えても合計・公費から支給の位置が動かないよう、全議員の図を測って一番高い図に合わせる
+  const allSankeys = useMemo(
+    () => members.flatMap((member) => [member.sankey.detailed, member.sankey.legal]),
+    [members],
+  );
 
   // SP でカードを開閉しても、タップしたカードが画面上で跳ねないよう、選択・開閉が変わった描画のあとにずれをスクロールで打ち消す
   const spCardRefs = useRef(new Map<string, HTMLDivElement>());
@@ -218,7 +232,7 @@ export default function HomeResearchFundMembers({ members, financialYear }: Prop
           </div>
 
           <div className="@container flex flex-col gap-6">
-            <MemberAmountsAndFlow member={selected} home />
+            <MemberAmountsAndFlow member={selected} home others={allSankeys} />
             {/* 更新日はカードの右下。PC（1101px〜）は「詳しく」ボタンと同じ行の右端に重ねる */}
             {selected.updatedAt && (
               <div className="flex justify-end min-[1101px]:@min-[720px]:pointer-events-none min-[1101px]:@min-[720px]:-mb-[76px] min-[1101px]:@min-[720px]:h-[52px] min-[1101px]:@min-[720px]:items-center">
@@ -322,7 +336,7 @@ export default function HomeResearchFundMembers({ members, financialYear }: Prop
                   id={spDetailId(member.slug)}
                   className="relative z-[1] mt-[calc(18px_-_(100%_-_40px)_*_1.071_*_1.04_/_1.9825)] flex flex-col gap-[22px] rounded-[24px] bg-white px-4 pb-5 pt-[calc((100%_-_40px)_*_1.071_*_1.04_/_1.9825_+_8px)] shadow-[0_0_0_1px_#DCE4E1,0_30px_50px_-34px_rgba(10,60,52,0.35)]"
                 >
-                  <MemberAmountsAndFlow member={member} home={false} />
+                  <MemberAmountsAndFlow member={member} home={false} others={allSankeys} />
                   {/* 更新日はサンキー図の右下 */}
                   {member.updatedAt && (
                     <span className="-mt-1.5 self-end text-[12px] font-semibold leading-none text-[#4B5563] tabular-nums">

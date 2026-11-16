@@ -40,8 +40,7 @@ export default function OrganizationCashFlowSection({
           { label: "収支・現金残高", color: "#6B7280", amount: summary?.balance ?? null },
         ]}
       />
-      {/* SP では内訳を親にまとめた3列の図を出す */}
-      <CashFlowSection political={political} friendly={friendly} chart={{ spLayout: "columns" }} />
+      <CashFlowSection political={political} friendly={friendly} />
     </SectionCard>
   );
 }
