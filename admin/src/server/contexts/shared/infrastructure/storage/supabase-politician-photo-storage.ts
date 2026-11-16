@@ -3,8 +3,8 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { PoliticianPhotoMime } from "@/shared/models/politician-photo";
 import type { IPoliticianPhotoStorage } from "@/server/contexts/shared/domain/repositories/politician-photo-storage.interface";
 
-/** 顔写真を置く非公開バケットの既定名。ローカルは supabase/config.toml が同名で定義する */
-const DEFAULT_BUCKET = "politician-photos";
+/** 有権者に公開するファイル（顔写真など）を置く非公開バケットの既定名。ローカルは supabase/config.toml が同名で定義する */
+const DEFAULT_BUCKET = "published-assets";
 
 /**
  * 議員の顔写真は非公開バケットに置き、キーを politicians.photo_path に持つ。
@@ -24,7 +24,7 @@ export class SupabasePoliticianPhotoStorage implements IPoliticianPhotoStorage {
     if (!url || !key) throw new Error("顔写真のストレージが未設定です");
     return new SupabasePoliticianPhotoStorage(
       createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } }),
-      process.env.POLITICIAN_PHOTO_BUCKET?.trim() || DEFAULT_BUCKET,
+      process.env.PUBLISHED_ASSET_BUCKET?.trim() || DEFAULT_BUCKET,
     );
   }
 

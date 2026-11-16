@@ -2,8 +2,8 @@ import "server-only";
 import { createClient } from "@supabase/supabase-js";
 import type { PoliticianPhotoStorage } from "@/server/contexts/research-fund/domain/repositories/politician-photo-storage.interface";
 
-/** 顔写真を置く非公開バケットの既定名。admin の既定値・supabase/config.toml と揃える */
-const DEFAULT_BUCKET = "politician-photos";
+/** 有権者に公開するファイル（顔写真など）を置く非公開バケットの既定名。admin の既定値・supabase/config.toml と揃える */
+const DEFAULT_BUCKET = "published-assets";
 
 /** 議員の顔写真は admin が非公開バケットに置き、webapp は署名URLで配信する（#1916）。 */
 export class SupabasePoliticianPhotoStorage implements PoliticianPhotoStorage {
@@ -18,7 +18,7 @@ export class SupabasePoliticianPhotoStorage implements PoliticianPhotoStorage {
     if (!url || !key) return null;
     return new SupabasePoliticianPhotoStorage(
       createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } }),
-      process.env.POLITICIAN_PHOTO_BUCKET?.trim() || DEFAULT_BUCKET,
+      process.env.PUBLISHED_ASSET_BUCKET?.trim() || DEFAULT_BUCKET,
     );
   }
 
