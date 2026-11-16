@@ -255,7 +255,7 @@ test.describe("政治団体ページ", () => {
 				page.getByRole("heading", { name: /少しずつ進んでいますがまだまだです/ }),
 			).toBeVisible();
 
-			const cards = page.getByRole("navigation", { name: "このサイトについて" });
+			const cards = page.locator("main").getByRole("navigation", { name: "このサイトについて" });
 			await expect(cards.getByRole("link", { name: /まる見え政治資金とは？/ })).toHaveAttribute(
 				"href",
 				"/about",
