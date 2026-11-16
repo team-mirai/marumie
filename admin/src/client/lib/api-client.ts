@@ -61,6 +61,15 @@ class ApiClient {
     return this.downloadFile(`/api/export-organization-sync?${searchParams.toString()}`);
   }
 
+  /** 選んだ議員室の調研費データをまとめた環境間同期用 JSON をダウンロードする（admin ロールのみ） */
+  async downloadResearchFundSync(
+    politicianIds: string[],
+  ): Promise<{ blob: Blob; filename: string | null }> {
+    const searchParams = new URLSearchParams(politicianIds.map((id) => ["politicianId", id]));
+
+    return this.downloadFile(`/api/export-research-fund-sync?${searchParams.toString()}`);
+  }
+
   private async downloadFile(url: string): Promise<{ blob: Blob; filename: string | null }> {
     const response = await fetch(`${this.baseUrl}${url}`);
 

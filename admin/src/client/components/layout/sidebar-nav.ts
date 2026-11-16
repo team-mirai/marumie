@@ -50,6 +50,20 @@ const TARGET_MANAGEMENT_SECTION: NavSection = {
   ],
 };
 
+/** 調研費の同期用エクスポート。議員室を画面で選ぶので、対象の選択に関わらず出す。 */
+const RESEARCH_FUND_SYNC_EXPORT_ITEM: NavItem = {
+  href: "/research-fund-sync-export",
+  label: "調研費の同期用エクスポート",
+  icon: "database",
+  role: "admin",
+};
+
+/** 対象が政治団体以外（未選択・議員室）のときのデータ同期セクション。 */
+const RESEARCH_FUND_SYNC_SECTION: NavSection = {
+  title: "データ同期",
+  items: [RESEARCH_FUND_SYNC_EXPORT_ITEM],
+};
+
 /** 政治団体（× 年度）が選ばれていて初めて操作できるセクション。 */
 const ORGANIZATION_SECTIONS: NavSection[] = [
   {
@@ -100,6 +114,7 @@ const ORGANIZATION_SECTIONS: NavSection[] = [
     title: "データ同期",
     items: [
       { href: "/sync-export", label: "同期用エクスポート", icon: "database", role: "admin" },
+      RESEARCH_FUND_SYNC_EXPORT_ITEM,
       {
         href: "/sync-import",
         label: "同期用インポート",
@@ -194,9 +209,10 @@ export function getVisibleNavSections(
               },
             ],
           },
+          RESEARCH_FUND_SYNC_SECTION,
         ]
       : target === null
-        ? [TARGET_MANAGEMENT_SECTION]
+        ? [TARGET_MANAGEMENT_SECTION, RESEARCH_FUND_SYNC_SECTION]
         : [TARGET_MANAGEMENT_SECTION, ...ORGANIZATION_SECTIONS];
   return sections
     .map((section) => ({

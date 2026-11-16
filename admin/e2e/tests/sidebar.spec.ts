@@ -109,7 +109,7 @@ test.describe("サイドバー", () => {
   });
 
 test.describe("サイドバー（対象が未選択）", () => {
-	test("対象の管理だけを出し、データ取り込み・報告書は出さない", async ({ page, context }) => {
+	test("対象の管理とデータ同期だけを出し、データ取り込み・報告書は出さない", async ({ page, context }) => {
 		await context.clearCookies({ name: /^admin-target-/ });
 		await page.goto("/");
 		const sidebar = page.getByRole("complementary");
@@ -121,8 +121,9 @@ test.describe("サイドバー（対象が未選択）", () => {
 		await expect(sidebar.getByRole("link", { name: "取引先マスタ" })).toHaveCount(0);
 		await expect(sidebar.getByRole("link", { name: "報告書エクスポート" })).toHaveCount(0);
 
-		// 「まず対象を選ぶ／作る」ための入口は政治団体・議員の順で残る
+		// 「まず対象を選ぶ／作る」ための入口は政治団体・議員の順で残る。
+		// 調研費の同期用エクスポートは議員室を画面で選ぶので、対象が未選択でも出す
 		const navLinks = sidebar.getByRole("navigation").getByRole("link");
-		await expect(navLinks).toHaveText(["政治団体", "議員", "ユーザー管理"]);
+		await expect(navLinks).toHaveText(["政治団体", "議員", "ユーザー管理", "調研費の同期用エクスポート"]);
 	});
 });
