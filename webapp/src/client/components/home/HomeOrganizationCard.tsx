@@ -140,7 +140,7 @@ export default function HomeOrganizationCard({
           </div>
         </div>
 
-        <div className="mx-4 flex flex-col gap-[22px] min-[641px]:mx-0 min-[641px]:gap-6">
+        <div className="@container mx-4 flex flex-col gap-[22px] min-[641px]:mx-0 min-[641px]:gap-6">
           <AmountSummary
             size={amountSize}
             home
@@ -158,9 +158,10 @@ export default function HomeOrganizationCard({
               friendly={current.friendly}
             />
           </div>
-          {/* 更新日はカードの右下。PC（1101px〜）は「詳しく」ボタンと同じ行の右端に重ねる */}
+          {/* 更新日はカードの右下。PC（1101px〜）は「詳しく」ボタンと同じ行の右端に重ねる。
+              政治団体のカードを横に並べて内側が狭いときはボタンと重なるので、ボタンの上の行に置く */}
           {updatedAt && (
-            <div className="-mt-1 flex justify-end min-[641px]:mt-0 min-[1101px]:pointer-events-none min-[1101px]:-mb-[76px] min-[1101px]:h-[52px] min-[1101px]:items-center">
+            <div className="-mt-1 flex justify-end min-[641px]:mt-0 min-[1101px]:@min-[720px]:pointer-events-none min-[1101px]:@min-[720px]:-mb-[76px] min-[1101px]:@min-[720px]:h-[52px] min-[1101px]:@min-[720px]:items-center">
               <span className="whitespace-nowrap text-[12px] font-medium leading-none text-[#5B6470] tabular-nums">
                 {updatedAt}
               </span>
