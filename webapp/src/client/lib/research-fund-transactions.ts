@@ -1,10 +1,13 @@
+import {
+  parseTransactionSort,
+  sortTransactionRows,
+  transactionSortParams,
+  type TransactionSort,
+} from "@/client/lib/transaction-sort";
 import type {
   ResearchFundCategoryView,
   ResearchFundExpenseView,
 } from "@/server/contexts/research-fund/domain/models/research-fund-page";
-
-/** 調研費の全件ページの並び。初期は新しい順。 */
-export type ResearchFundTransactionSort = "new" | "old" | "amountDesc" | "amountAsc";
 
 const RESEARCH_FUND_TRANSACTIONS_PER_PAGE = 50;
 
@@ -14,14 +17,9 @@ export function formatResearchFundDate(date: string): string {
   return `${year}.${Number(month)}.${Number(day)}`;
 }
 
-/** 日付列のボタン。新しい順⇄古い順を行き来し、金額順からは新しい順に切り替える。 */
-export function toggleDateSort(sort: ResearchFundTransactionSort): ResearchFundTransactionSort {
-  return sort === "new" ? "old" : "new";
-}
-
-/** 金額列のボタン。降順⇄昇順を行き来し、日付順からは降順に切り替える。 */
-export function toggleAmountSort(sort: ResearchFundTransactionSort): ResearchFundTransactionSort {
-  return sort === "amountDesc" ? "amountAsc" : "amountDesc";
+/** 支給（入金）はプラス、支出（出金）はマイナスにした金額 */
+function signedAmount(row: ResearchFundExpenseView): number {
+  return row.kind === "grant" ? row.amount : -row.amount;
 }
 
 /**
@@ -32,18 +30,9 @@ export function toggleAmountSort(sort: ResearchFundTransactionSort): ResearchFun
  */
 export function sortResearchFundExpenses(
   rows: readonly ResearchFundExpenseView[],
-  sort: ResearchFundTransactionSort,
+  sort: TransactionSort,
 ): ResearchFundExpenseView[] {
-  switch (sort) {
-    case "new":
-      return [...rows];
-    case "old":
-      return [...rows].sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
-    case "amountDesc":
-      return [...rows].sort((a, b) => b.amount - a.amount);
-    case "amountAsc":
-      return [...rows].sort((a, b) => a.amount - b.amount);
-  }
+  return sortTransactionRows(rows, sort, { date: (row) => row.date, signedAmount });
 }
 
 /** 科目のキーで絞り込む。何も選んでいなければ全件を返す。 */
@@ -98,7 +87,7 @@ export function researchFundCategoryOptions(
 export interface ResearchFundTransactionsQuery {
   /** 絞り込む科目のキー。空なら絞り込みなし */
   categories: string[];
-  sort: ResearchFundTransactionSort;
+  sort: TransactionSort;
   page: number;
 }
 
@@ -108,22 +97,8 @@ function firstParam(value: string | string[] | undefined): string | undefined {
   return Array.isArray(value) ? value[0] : value;
 }
 
-const SORT_BY_PARAMS: Record<string, ResearchFundTransactionSort> = {
-  "date:desc": "new",
-  "date:asc": "old",
-  "amount:desc": "amountDesc",
-  "amount:asc": "amountAsc",
-};
-
-const PARAMS_BY_SORT: Record<ResearchFundTransactionSort, { sort: string; order: string }> = {
-  new: { sort: "date", order: "desc" },
-  old: { sort: "date", order: "asc" },
-  amountDesc: { sort: "amount", order: "desc" },
-  amountAsc: { sort: "amount", order: "asc" },
-};
-
 /**
- * URL の `categories`（カンマ区切り）・`sort`（date / amount）・`order`（asc / desc）・`page` を読む。
+ * URL の `categories`（カンマ区切り）・`sort`（date / amount / expense / income）・`order`（asc / desc）・`page` を読む。
  * 不正な値は既定（絞り込みなし・新しい順・1ページ目）に倒す。存在しないカテゴリーの除外と
  * 範囲外のページの丸めは、データを見て行う（resolveResearchFundCategories / paginateResearchFundExpenses）。
  */
@@ -134,12 +109,10 @@ export function parseResearchFundTransactionsQuery(
     .split(",")
     .map((key) => key.trim())
     .filter(Boolean);
-  const sortBy = firstParam(params.sort) ?? "date";
-  const order = firstParam(params.order) ?? "desc";
   const page = Number.parseInt(firstParam(params.page) ?? "1", 10);
   return {
     categories: [...new Set(categories)],
-    sort: SORT_BY_PARAMS[`${sortBy}:${order}`] ?? "new",
+    sort: parseTransactionSort(firstParam(params.sort), firstParam(params.order)),
     page: Number.isFinite(page) && page >= 1 ? page : 1,
   };
 }
@@ -165,7 +138,7 @@ export function researchFundTransactionsHref(
     params.push(`categories=${query.categories.map(encodeURIComponent).join(",")}`);
   }
   if (query.sort !== "new") {
-    const { sort, order } = PARAMS_BY_SORT[query.sort];
+    const { sort, order } = transactionSortParams(query.sort);
     params.push(`sort=${sort}`, `order=${order}`);
   }
   if (query.page > 1) params.push(`page=${query.page}`);

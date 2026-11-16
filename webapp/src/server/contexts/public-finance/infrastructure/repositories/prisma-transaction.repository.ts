@@ -46,16 +46,15 @@ export class PrismaTransactionRepository
     const perPage = pagination?.perPage || 50;
     const skip = (page - 1) * perPage;
 
-    // Build orderBy based on sortBy and order parameters
-    const orderBy = this.buildOrderByClause(pagination?.sortBy, pagination?.order);
-
     const [transactions, total] = await Promise.all([
-      this.prisma.transaction.findMany({
-        where,
-        orderBy,
-        skip,
-        take: perPage,
-      }),
+      pagination?.sortBy === "signedAmount"
+        ? this.findPageBySignedAmount(where, skip, perPage, pagination.order || "desc")
+        : this.prisma.transaction.findMany({
+            where,
+            orderBy: this.buildOrderByClause(pagination?.sortBy, pagination?.order),
+            skip,
+            take: perPage,
+          }),
       this.prisma.transaction.count({ where }),
     ]);
 
@@ -245,6 +244,71 @@ export class PrismaTransactionRepository
     }
 
     return where;
+  }
+
+  /**
+   * 収入をプラス、支出をマイナスとした金額で並べた1ページ分を取得する。
+   *
+   * 符号付きの金額は列に無いので、収入と支出をそれぞれ金額で並べてつなげる。
+   * 降順（収入が多い順）は「収入の大きい順 → 支出の小さい順」、
+   * 昇順（支出が多い順）は「支出の大きい順 → 収入の小さい順」になる。
+   * 前半の件数を数え、ページの範囲が前半・後半のどちらにかかるかで取得を分ける。
+   */
+  private async findPageBySignedAmount(
+    where: Prisma.TransactionWhereInput,
+    skip: number,
+    take: number,
+    order: "asc" | "desc",
+  ): Promise<PrismaTransaction[]> {
+    const incomeFirst = order === "desc";
+    const segments: {
+      transactionType: DisplayTransactionType;
+      orderBy: Prisma.TransactionOrderByWithRelationInput[];
+    }[] = [
+      {
+        transactionType: incomeFirst ? "income" : "expense",
+        orderBy: incomeFirst
+          ? [{ creditAmount: "desc" }, { transactionDate: "desc" }, { transactionNo: "desc" }]
+          : [{ debitAmount: "desc" }, { transactionDate: "desc" }, { transactionNo: "desc" }],
+      },
+      {
+        transactionType: incomeFirst ? "expense" : "income",
+        orderBy: incomeFirst
+          ? [{ debitAmount: "asc" }, { transactionDate: "desc" }, { transactionNo: "desc" }]
+          : [{ creditAmount: "asc" }, { transactionDate: "desc" }, { transactionNo: "desc" }],
+      },
+    ];
+    const segmentWhere = (transactionType: DisplayTransactionType) => ({
+      AND: [where, { transactionType }],
+    });
+
+    const firstCount = await this.prisma.transaction.count({
+      where: segmentWhere(segments[0].transactionType),
+    });
+    const firstTake = Math.max(0, Math.min(take, firstCount - skip));
+    const secondSkip = Math.max(0, skip - firstCount);
+    const secondTake = take - firstTake;
+
+    const [first, second] = await Promise.all([
+      firstTake > 0
+        ? this.prisma.transaction.findMany({
+            where: segmentWhere(segments[0].transactionType),
+            orderBy: segments[0].orderBy,
+            skip,
+            take: firstTake,
+          })
+        : [],
+      secondTake > 0
+        ? this.prisma.transaction.findMany({
+            where: segmentWhere(segments[1].transactionType),
+            orderBy: segments[1].orderBy,
+            skip: secondSkip,
+            take: secondTake,
+          })
+        : [],
+    ]);
+
+    return [...first, ...second];
   }
 
   private buildOrderByClause(

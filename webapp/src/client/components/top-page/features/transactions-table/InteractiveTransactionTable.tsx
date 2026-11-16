@@ -4,26 +4,12 @@ import "client-only";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { transactionsCategoryHref } from "@/client/lib/transactions-category-href";
 import type { DisplayTransaction } from "@/server/contexts/public-finance/domain/models/display-transaction";
+import { transactionSortParams, type TransactionSort } from "@/client/lib/transaction-sort";
 import TransactionTable from "./TransactionTable";
-import TransactionTableMobileHeader, { type SortOption } from "./TransactionTableMobileHeader";
 import PCPaginator from "./PCPaginator";
 import MobilePaginator from "./MobilePaginator";
 import CsvDownloadLink from "@/client/components/transactions/CsvDownloadLink";
-
-interface SortConfig {
-  sort: "date" | "amount";
-  order: "asc" | "desc";
-  filterType?: "income" | "expense";
-}
-
-const SORT_CONFIGS: Record<SortOption, SortConfig> = {
-  "date-desc": { sort: "date", order: "desc" },
-  "date-asc": { sort: "date", order: "asc" },
-  "amount-desc": { sort: "amount", order: "desc" },
-  "amount-asc": { sort: "amount", order: "asc" },
-  "income-desc": { sort: "amount", order: "desc", filterType: "income" },
-  "expense-desc": { sort: "amount", order: "desc", filterType: "expense" },
-};
+import TransactionSortTabs from "@/client/components/transactions/TransactionSortTabs";
 
 interface InteractiveTransactionTableProps {
   slug: string;
@@ -34,6 +20,8 @@ interface InteractiveTransactionTableProps {
   perPage: number;
   totalPages: number;
   selectedCategories?: string[];
+  /** URL で指定された並び順（parseTransactionSort の出力） */
+  sort: TransactionSort;
 }
 
 export default function InteractiveTransactionTable({
@@ -45,15 +33,11 @@ export default function InteractiveTransactionTable({
   perPage,
   totalPages,
   selectedCategories,
+  sort,
 }: InteractiveTransactionTableProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-
-  // Parse URL params once
-  const currentSort = searchParams.get("sort") as "date" | "amount" | null;
-  const currentOrder = searchParams.get("order") as "asc" | "desc" | null;
-  const filterType = searchParams.get("filterType") as "income" | "expense" | null;
 
   const handlePageChange = (newPage: number) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -61,34 +45,15 @@ export default function InteractiveTransactionTable({
     router.push(`?${params.toString()}`);
   };
 
-  const handleSort = (field: "date" | "amount") => {
+  const handleSortChange = (next: TransactionSort) => {
     const params = new URLSearchParams(searchParams.toString());
-    const currentSort = params.get("sort") ?? "date";
-    const currentOrder = params.get("order") ?? "desc";
-
-    // Toggle order if sorting the same field, otherwise default to desc
-    const nextOrder = currentSort === field && currentOrder === "desc" ? "asc" : "desc";
-    params.set("sort", field);
-    params.set("order", nextOrder);
+    const { sort, order } = transactionSortParams(next);
+    params.set("sort", sort);
+    params.set("order", order);
+    // 以前の「支出が多い順」「収入が多い順」は収入・支出だけに絞り込んでいた。並び順を変えたら絞り込みを外す
+    params.delete("filterType");
 
     // Reset to page 1 when sorting changes
-    params.set("page", "1");
-    router.push(`?${params.toString()}`);
-  };
-
-  const handleMobileSortChange = (sortOption: SortOption) => {
-    const params = new URLSearchParams(searchParams.toString());
-    const config = SORT_CONFIGS[sortOption];
-
-    params.set("sort", config.sort);
-    params.set("order", config.order);
-
-    if (config.filterType) {
-      params.set("filterType", config.filterType);
-    } else {
-      params.delete("filterType");
-    }
-
     params.set("page", "1");
     router.push(`?${params.toString()}`);
   };
@@ -112,40 +77,19 @@ export default function InteractiveTransactionTable({
   const categoryHref = (categoryKey: string) =>
     transactionsCategoryHref(pathname, new URLSearchParams(searchParams.toString()), categoryKey);
 
-  const getCurrentSortOption = (): SortOption => {
-    const sort = currentSort || "date";
-    const order = currentOrder || "desc";
-
-    // Find matching sort option from configuration
-    for (const [sortOption, config] of Object.entries(SORT_CONFIGS)) {
-      if (config.sort === sort && config.order === order && config.filterType === filterType) {
-        return sortOption as SortOption;
-      }
-    }
-
-    // Fallback to basic sort-order pattern
-    return `${sort}-${order}` as SortOption;
-  };
-
   const startItem = (page - 1) * perPage + 1;
   const endItem = Math.min(page * perPage, total);
 
   return (
     <>
-      {/* Mobile Header - 640px以下で表示 */}
-      <div className="block min-[641px]:hidden">
-        <TransactionTableMobileHeader
-          onSortChange={handleMobileSortChange}
-          currentSort={getCurrentSortOption()}
-        />
-      </div>
+      {/* SP の並び替えタブ（640px以下で表示） */}
+      <TransactionSortTabs current={sort} onChange={handleSortChange} />
 
       <TransactionTable
         transactions={transactions}
         allowControl={true}
-        onSort={handleSort}
-        currentSort={currentSort}
-        currentOrder={currentOrder}
+        sort={sort}
+        onSortChange={handleSortChange}
         onApplyFilter={handleApplyFilter}
         selectedCategories={selectedCategories}
         categoryHref={categoryHref}

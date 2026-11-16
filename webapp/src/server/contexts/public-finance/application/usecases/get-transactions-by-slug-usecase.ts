@@ -11,6 +11,7 @@ import type { IPoliticalOrganizationRepository } from "@/server/contexts/public-
 import type {
   ITransactionListRepository,
   PaginationOptions,
+  TransactionListSortBy,
 } from "@/server/contexts/public-finance/domain/repositories/transaction-list-repository.interface";
 
 export interface GetTransactionsBySlugParams {
@@ -21,7 +22,7 @@ export interface GetTransactionsBySlugParams {
   dateFrom?: Date;
   dateTo?: Date;
   financialYear: number;
-  sortBy?: "date" | "amount";
+  sortBy?: TransactionListSortBy;
   order?: "asc" | "desc";
   categories?: string[];
 }
