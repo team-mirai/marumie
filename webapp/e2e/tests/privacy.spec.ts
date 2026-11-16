@@ -5,6 +5,6 @@ test.describe("プライバシーポリシーページ", () => {
 		const response = await page.goto("/privacy");
 
 		expect(response?.status()).toBe(200);
-		await expect(page).toHaveTitle(/みらい まる見え政治資金/);
+		await expect(page).toHaveTitle("プライバシーポリシー｜まる見え政治資金｜チームみらい");
 	});
 });

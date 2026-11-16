@@ -1,9 +1,14 @@
 import "server-only";
+import type { Metadata } from "next";
 import LegalPageLayout, {
   Paragraph,
   SubSectionTitle,
   List,
 } from "@/client/components/layout/LegalPageLayout";
+
+export const metadata: Metadata = {
+  title: "利用規約",
+};
 
 export default function TermsPage() {
   return (

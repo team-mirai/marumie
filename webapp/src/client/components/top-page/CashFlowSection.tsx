@@ -81,7 +81,7 @@ export default function CashFlowSection({
               tabIndex={selected ? 0 : -1}
               onClick={() => setActiveTab(tab.key)}
               onKeyDown={handleKeyDown}
-              className={`relative -mb-px h-10 cursor-pointer border-b-[3px] text-[15px] font-bold transition-colors ${
+              className={`relative -mb-px h-10 cursor-pointer max-[640px]:h-11 border-b-[3px] text-[15px] font-bold transition-colors ${
                 selected
                   ? "border-black text-black"
                   : "border-transparent text-[#5B6470] hover:text-black"

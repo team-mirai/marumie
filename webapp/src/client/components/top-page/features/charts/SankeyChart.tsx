@@ -326,6 +326,15 @@ export default function SankeyChart({
             transition: none;
           }
         }
+        /* 印刷・ページ保存では、画面に入る前（伸びる前）の図も描き終えた形で出す */
+        @media print {
+          .sankey-chart .grow,
+          .sankey-chart .band-in {
+            transform: none !important;
+            clip-path: none !important;
+            transition: none !important;
+          }
+        }
       `}</style>
     </div>
   );

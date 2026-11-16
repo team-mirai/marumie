@@ -76,7 +76,7 @@ export default function MistHeadingCard({
             <Link
               href={href}
               aria-label={`${title}を詳しく見る`}
-              className="col-start-3 row-start-1 flex h-[42px] w-[42px] items-center justify-center rounded-full bg-white/50 text-[#0A1A17] backdrop-blur-[10px] shadow-[inset_0_1px_0_rgba(255,255,255,0.9),inset_0_0_0_1px_rgba(255,255,255,0.55),0_2px_6px_-2px_rgba(10,60,52,0.25)] transition-[background,transform] hover:translate-x-0.5 hover:bg-white/80"
+              className="relative col-start-3 row-start-1 flex h-[42px] w-[42px] items-center after:absolute after:-inset-1 after:content-[''] justify-center rounded-full bg-white/50 text-[#0A1A17] backdrop-blur-[10px] shadow-[inset_0_1px_0_rgba(255,255,255,0.9),inset_0_0_0_1px_rgba(255,255,255,0.55),0_2px_6px_-2px_rgba(10,60,52,0.25)] transition-[background,transform] hover:translate-x-0.5 hover:bg-white/80"
             >
               <svg
                 width="20"

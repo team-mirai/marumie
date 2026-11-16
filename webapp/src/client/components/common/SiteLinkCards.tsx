@@ -22,14 +22,14 @@ const CARDS: SiteLinkCard[] = [
     description: "データの見方や公開の範囲について",
     label: "FAQ",
     href: "https://team-mirai.notion.site/FAQ-27ef6f56bae180c085e9f97d05a5d59c",
-    external: { ariaLabel: "よくあるご質問（別タブで開く）" },
+    external: { ariaLabel: "よくあるご質問（別タブで開きます）" },
   },
   {
     title: "チームみらいについて",
     description: "チームみらいの公式サイトへ",
     label: "TEAM MIRAI",
     href: "https://team-mir.ai/",
-    external: { ariaLabel: "チームみらいについて（公式サイトを別タブで開く）" },
+    external: { ariaLabel: "チームみらいについて（公式サイトを別タブで開きます）" },
   },
 ];
 

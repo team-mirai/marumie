@@ -39,9 +39,7 @@ describe("議員の全件ページの metadata", () => {
 
     const metadata = await metadataOf(`sample-taro~${TOKEN}`);
 
-    expect(metadata.title).toBe(
-      "サンプル太郎の調査研究費：すべての出入金 - みらいまる見え政治資金",
-    );
+    expect(metadata.title).toBe("サンプル太郎の調研費のすべての出入金");
     expect(metadata.robots).toEqual({ index: false });
   });
 
@@ -50,6 +48,7 @@ describe("議員の全件ページの metadata", () => {
 
     const metadata = await metadataOf("sample-taro");
 
-    expect(metadata.title).toBe("みらいまる見え政治資金");
+    // タイトルはルートの既定（サイト名だけ）になる
+    expect(metadata.title).toBeUndefined();
   });
 });

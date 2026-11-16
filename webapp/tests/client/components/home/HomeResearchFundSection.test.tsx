@@ -46,7 +46,7 @@ describe("HomeResearchFundSection", () => {
     expect(html).toContain("議員に毎月100万円支給される公費を何に使ったか");
     expect(html).toContain("調研費（調査研究広報滞在費）とは");
     expect(html).toMatch(
-      /<a href="https:\/\/note\.com\/team_mirai_jp" target="_blank" rel="noopener noreferrer"[^>]*>/,
+      /<a href="https:\/\/note\.com\/team_mirai_jp\/n\/n9ec9166d0e1e" target="_blank" rel="noopener noreferrer"[^>]*>/,
     );
     expect(html).toContain("チームみらいの調研費の使用方針");
   });
