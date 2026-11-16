@@ -222,7 +222,7 @@ describe("GetResearchFundPageUsecase", () => {
     const data = await usecase.execute({ slug: "sample-taro", financialYear: 2026 });
 
     expect(data?.asOfDate).toBe("2026-08-20");
-    expect(data?.grantPeriodLabel).toBe("2026年2月〜8月支給分");
+    expect(data?.grantPeriodLabel).toBe("2026年2-8月分");
     expect(data?.nextUpdateNote).toBe("11月ごろ");
     expect(data?.policyComment).toBe("事務所の立ち上げに使っています");
     expect(data?.dataNote).toBe(

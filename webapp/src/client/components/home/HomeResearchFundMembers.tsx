@@ -16,7 +16,7 @@ export interface HomeResearchFundMember {
   href: string;
   /** 例: 「2026.10.23 更新」。未設定なら空文字 */
   updatedAt: string;
-  /** 例: 「2026年2月〜8月支給分」 */
+  /** 例: 「2026年2-8月分」 */
   periodLabel: string | null;
   kpi: { granted: number; spent: number };
   sankey: { detailed: SankeyData; legal: SankeyData };

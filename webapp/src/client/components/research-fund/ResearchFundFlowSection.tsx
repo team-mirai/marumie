@@ -18,6 +18,31 @@ function nonEmpty(sankey: SankeyData): SankeyData | null {
   return sankey.nodes.length > 0 ? sankey : null;
 }
 
+/** 「調研費（調査研究広報滞在費）とは」の頭に付ける「？」のアイコン（v9） */
+function QuestionIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      width="20"
+      height="20"
+      aria-hidden="true"
+      focusable="false"
+      className="flex-shrink-0"
+    >
+      <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" strokeWidth="2" />
+      <path
+        d="M9.2 9.3a2.9 2.9 0 0 1 5.6 1c0 1.9-2.8 2.5-2.8 4"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <circle cx="12" cy="17.4" r="1.25" fill="currentColor" />
+    </svg>
+  );
+}
+
 /** 収支の流れ。調研費の説明・支給総額と支出総額・区分タブつきのサンキー。議員ページの最初の見出しになる。 */
 export default function ResearchFundFlowSection({ data, eyebrow, updatedAt }: Props) {
   return (
@@ -33,15 +58,13 @@ export default function ResearchFundFlowSection({ data, eyebrow, updatedAt }: Pr
     >
       <details className="-mt-4">
         <summary className="inline-flex cursor-pointer list-none items-center gap-1.5 py-1 max-[640px]:min-h-11 text-sm font-bold text-[#238778] hover:underline [&::-webkit-details-marker]:hidden">
-          調研費とは
+          <QuestionIcon />
+          調研費（調査研究広報滞在費）とは
           <Image src="/icons/icon-chevron-down.svg" alt="" width={18} height={18} />
         </summary>
         <div className="mt-3 rounded-xl bg-gradient-to-br from-[#E2F6F3] to-[#EEF6E2] px-5 py-5 text-[15px] leading-[1.87] tracking-[0.01em] text-gray-800 [text-wrap:pretty]">
-          <strong className="mb-3 block text-lg font-bold leading-relaxed">
-            調研費は、国会議員の議員活動のために国から支給される公費です。
-          </strong>
-          <p>
-            年末までに使われなかった残額は国庫に返納されます。政治資金規正法上の「政治資金」ではありませんが、チームみらいでは透明性の観点から本サイトで公開しています。（正式名称：調査研究広報滞在費、旧・文書通信交通滞在費）
+          <p className="m-0">
+            調研費（調査研究広報滞在費）は、国会議員の調査研究や広報、国民との交流、滞在などの活動のために、国から毎月100万円支給される公費です。政治資金規正法上の「政治資金」ではありませんが、チームみらいでは透明性の観点から本サイトで公開しています。選挙運動には使えません。年内に使わなかった未使用分は国庫に返還します。
           </p>
         </div>
       </details>
@@ -67,7 +90,7 @@ export default function ResearchFundFlowSection({ data, eyebrow, updatedAt }: Pr
           emptyMessage="公開中の調査研究費のデータがありません"
         />
         <p className="mt-2 text-left text-[13px] leading-[1.6] text-[#4B5563] min-[641px]:text-right">
-          ※年末までに使われなかった未使用分は国庫に返納されます。
+          ※年内に使わなかった未使用分は国庫に返還します。
         </p>
       </div>
     </SectionCard>

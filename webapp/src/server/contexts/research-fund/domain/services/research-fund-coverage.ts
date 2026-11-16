@@ -6,7 +6,7 @@ interface ResearchFundCoverageInput {
 }
 
 /**
- * 「2026年2月〜8月分を公開中」。渡された議員全員分をまとめた公開範囲を返す。
+ * 「2026年2-8月分を公開中」。渡された議員全員分をまとめた公開範囲を返す。
  * 公開されている月が1つも無ければ「準備中」。
  */
 export function buildCoverageLabel(politicians: readonly ResearchFundCoverageInput[]): string {
@@ -15,15 +15,15 @@ export function buildCoverageLabel(politicians: readonly ResearchFundCoverageInp
 }
 
 /**
- * 議員ページの更新日に添える「2026年2月〜8月支給分」。範囲の取り方は buildCoverageLabel と同じ。
+ * 議員ページの更新日に添える「2026年2-8月分」。範囲の取り方は buildCoverageLabel と同じ。
  * 公開されている月が1つも無ければ null。
  */
 export function buildGrantPeriodLabel(coverage: ResearchFundCoverageInput): string | null {
   const range = buildCoverageRange([coverage]);
-  return range ? `${range}支給分` : null;
+  return range ? `${range}分` : null;
 }
 
-/** 「2026年2月〜8月」。同じ年の範囲では終端の年を省く。月が無ければ null。 */
+/** 「2026年2-8月」（年をまたぐときは「2025年11月-2026年1月」）。月が無ければ null。 */
 function buildCoverageRange(politicians: readonly ResearchFundCoverageInput[]): string | null {
   const months = politicians.flatMap((politician) =>
     politician.publishedThrough
@@ -35,18 +35,18 @@ function buildCoverageRange(politicians: readonly ResearchFundCoverageInput[]): 
   const start = months.reduce((a, b) => (a < b ? a : b));
   const end = months.reduce((a, b) => (a > b ? a : b));
   const sameYear = start.slice(0, 4) === end.slice(0, 4);
-  return start === end
-    ? monthLabel(start)
-    : `${monthLabel(start)}〜${sameYear ? monthOnly(end) : monthLabel(end)}`;
+  if (start === end) return monthLabel(start);
+  return sameYear
+    ? `${Number(start.slice(0, 4))}年${monthNumber(start)}-${monthNumber(end)}月`
+    : `${monthLabel(start)}-${monthLabel(end)}`;
 }
 
 /** 「2026年2月」 */
 function monthLabel(month: string): string {
-  const [year, monthNumber] = month.split("-");
-  return `${Number(year)}年${Number(monthNumber)}月`;
+  return `${Number(month.slice(0, 4))}年${monthNumber(month)}月`;
 }
 
-/** 「8月」。同じ年の範囲では終端の年を省く。 */
-function monthOnly(month: string): string {
-  return `${Number(month.split("-")[1])}月`;
+/** 「2026-08」→ 8 */
+function monthNumber(month: string): number {
+  return Number(month.split("-")[1]);
 }

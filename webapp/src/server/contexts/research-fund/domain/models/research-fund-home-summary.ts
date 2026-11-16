@@ -19,9 +19,9 @@ export interface ResearchFundHomePoliticianView {
   house: PoliticianHouse | null;
   /** 顔写真が登録されているか。未登録なら人型のアイコンにする */
   hasPhoto: boolean;
-  /** 「2026.8.20更新」の元になる日付（YYYY-MM-DD）。未設定なら null */
+  /** 「2026.8.20 更新」の元になる日付（YYYY-MM-DD）。未設定なら null */
   asOfDate: string | null;
-  /** 「2026年2月〜8月支給分」 */
+  /** 「2026年2-8月分」 */
   grantPeriodLabel: string | null;
   kpi: { granted: number; spent: number };
   /** 議員ページの収支の流れと同じサンキー */

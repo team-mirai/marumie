@@ -48,7 +48,7 @@ export default function PartyHeadingSection({
         items={[
           { label: "収入総額", color: "#2AA693", amount: summary?.income ?? null },
           { label: "支出総額", color: "#DC2626", amount: summary?.expense ?? null },
-          { label: "収支・現金残高", color: "#6B7280", amount: summary?.balance ?? null },
+          { label: "現金残高", color: "#6B7280", amount: summary?.balance ?? null },
         ]}
       />
       <CashFlowSection id="cash-flow" political={political} friendly={friendly} />

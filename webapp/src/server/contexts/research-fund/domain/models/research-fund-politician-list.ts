@@ -4,20 +4,20 @@ import type { PoliticianHouse } from "@/shared/models/politician";
  * 組織セレクタの「調査研究費」グループに並べる議員。
  *
  * 政治資金（政治団体）と並べて1箇所で切り替えられるようにするためのもので、
- * 公開状況（「2026年2月〜8月分を公開中」）まで含めて渡す。
+ * 公開状況（「2026年2-8月分を公開中」）まで含めて渡す。
  * published の仕訳がある議員だけが入る。
  */
 export interface ResearchFundPoliticianEntry {
   slug: string;
   name: string;
-  /** 「2026年2月〜8月分を公開中」 */
+  /** 「2026年2-8月分を公開中」 */
   statusLabel: string;
   /** admin で顔写真を登録しているか（ヘッダーのメニューの丸アイコンに使う） */
   hasPhoto: boolean;
 }
 
 /**
- * 議員ページの前後の切り替え・「ほかの議員の調研費」に並べる、調研費を公開中の議員。
+ * 議員ページの前後の切り替え・「他の議員の調研費を見る」に並べる、調研費を公開中の議員。
  * 並びはふりがなの五十音順。
  */
 export interface ResearchFundPoliticianCard {

@@ -22,7 +22,7 @@ export default async function HomePage() {
     console.error("loadHomePageData error:", error);
     return null;
   });
-  const updatedAt = formatUpdatedAt(data?.lastUpdatedAt ?? null, { spaced: true });
+  const updatedAt = formatUpdatedAt(data?.lastUpdatedAt ?? null);
   // 所属議員の調研費は、政党カードの有無に関係なく調研費を公開中の議員を全員出す。
   // 取れなくても他のカードは出せるので、失敗したら出さないだけにする
   const researchFund = await loadResearchFundHomeSummary({ financialYear: DEFAULT_YEAR }).catch(
@@ -90,7 +90,7 @@ export default async function HomePage() {
           </div>
         </section>
       )}
-      <SiteBottomBlock />
+      <SiteBottomBlock notesVariant="home" />
     </MainColumn>
   );
 }

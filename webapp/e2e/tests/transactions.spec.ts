@@ -55,7 +55,7 @@ test.describe("取引一覧ページ", () => {
 		await expect(
 			section.getByRole("heading", { level: 1, name: "すべての出入金" }),
 		).toBeVisible();
-		await expect(section.getByText(/^\d{4}\.\d{1,2}\.\d{1,2}更新$/).first()).toBeVisible();
+		await expect(section.getByText(/^\d{4}\.\d{1,2}\.\d{1,2} 更新$/).first()).toBeVisible();
 
 		// 件数と CSV のダウンロード
 		await expect(section.getByText(/\d+件中 \d+-\d+件を表示/).first()).toBeVisible();

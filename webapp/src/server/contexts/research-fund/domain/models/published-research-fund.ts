@@ -93,7 +93,7 @@ export interface PublishedResearchFund {
   /** 議員が調研費を「公開する」設定か。false ならプレビュー URL でだけ表示し、導線・sitemap から外して noindex にする */
   isPublic: boolean;
   financialYear: number;
-  /** 「2026.8.20更新」。未設定なら null */
+  /** 「2026.8.20 更新」。未設定なら null */
   asOfDate: string | null;
   /** 「次回更新 11月ごろ」。未設定なら null */
   nextUpdateNote: string | null;
@@ -132,7 +132,7 @@ export interface PublishedPoliticianResearchFund {
     /** 顔写真が登録されているか。写真のキーは公開ページに渡さず、配信は API が行う */
     hasPhoto: boolean;
   };
-  /** 「2026.8.20更新」。未設定なら null */
+  /** 「2026.8.20 更新」。未設定なら null */
   asOfDate: string | null;
   /** 何月分まで公開したか（YYYY-MM-DD）。未設定なら null */
   publishedThrough: string | null;

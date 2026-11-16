@@ -54,7 +54,7 @@ describe("AccessibleFormattedAmount", () => {
       <AmountSummary items={[{ label: "収入総額", color: "#000000", amount: 532_100_000 }]} />,
     );
 
-    expect(markup).toContain('<span class="sr-only">5億3210万円</span>');
+    expect(markup).toContain('<span class="sr-only">5億3,210万円</span>');
     expect(markup).toContain('<span aria-hidden="true" class="flex items-baseline');
     expect(markup.match(/aria-hidden=/g)).toHaveLength(2); // 金額と、ラベルの色の印
   });
@@ -70,6 +70,6 @@ describe("AccessibleFormattedAmount", () => {
     );
 
     expect(markup).toContain("取得できませんでした");
-    expect(markup).toContain('<span class="sr-only">0万円</span>');
+    expect(markup).toContain('<span class="sr-only">0円</span>');
   });
 });

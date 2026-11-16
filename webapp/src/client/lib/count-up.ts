@@ -7,15 +7,18 @@ export function easeOutQuart(progress: number): number {
   return 1 - (1 - p) ** 4;
 }
 
-/** 表示中の数字（"1537"・"-3" など）をカウントアップの終わりの値にする。整数でなければ null（数えずにそのまま出す） */
+/**
+ * 表示中の数字（"1,537"・"-3" など）をカウントアップの終わりの値にする。
+ * カンマ区切りの整数でなければ null（数えずにそのまま出す）
+ */
 export function parseCountUpTarget(text: string): number | null {
-  if (!/^-?\d+$/.test(text)) return null;
-  return Number(text);
+  if (!/^-?(\d+|\d{1,3}(,\d{3})+)$/.test(text)) return null;
+  return Number(text.replace(/,/g, ""));
 }
 
-/** カウントアップ途中の数字。終わりの値と同じ書き方（区切りなし）にする */
+/** カウントアップ途中の数字。終わりの値と同じ書き方（4桁以上はカンマ区切り・ゼロ埋めなし）にする */
 export function countUpText(target: number, progress: number): string {
   const value = Math.round(target * easeOutQuart(progress));
   // -0 を "-0" と出さない
-  return String(value === 0 ? 0 : value);
+  return (value === 0 ? 0 : value).toLocaleString("ja-JP");
 }
