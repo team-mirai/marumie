@@ -8,11 +8,11 @@ interface MistHeadingCardProps {
   avatar: ReactNode;
   /** カードの見出し（例: 「チームみらいの収支」） */
   title: string;
-  /** 見出しの下に添える区分と年・正式名など（例: 「政党・2026年」） */
+  /** 見出しの下に添える年など（例: 「2026年」） */
   subtitle?: string;
-  /** 例: 「2026.10.23 更新」 */
+  /** 例: 「2026.10.23 更新」。PC は見出しの面の左下、SP はカードの右下に出す */
   updatedAt: string;
-  /** 右下の年の切り替え */
+  /** 年の切り替え。PC は見出しの面の右下、SP は左下に置く */
   yearSwitch: ReactNode;
   /** 渡すと、見出しと右上の矢印がこの URL へのリンクになる（トップページのカード） */
   href?: string;
@@ -32,6 +32,7 @@ const TONE_CLASSES = {
 /**
  * 見出しカード。ミストグラデーションの面（ロゴ・見出し・更新日・年の切り替え）の下に本文を続ける。
  * SP ではグラデーションの面をカードの上端に重ね、一般的なカードの縦横比にそろえる。
+ * SP はトップのカードと同じく、年の切り替えを面の左下に置き、更新日は面から外してカードの右下に出す。
  */
 export default function MistHeadingCard({
   ariaLabel,
@@ -48,7 +49,7 @@ export default function MistHeadingCard({
   const Heading = headingLevel;
 
   return (
-    <section aria-label={ariaLabel} className="mt-[18px] min-[641px]:mt-0">
+    <section aria-label={ariaLabel} data-reveal className="mt-[18px] min-[641px]:mt-0">
       <div className="flex flex-col gap-[22px] rounded-[24px] bg-white pb-5 shadow-[0_0_0_1px_#DCE4E1,0_30px_50px_-34px_rgba(10,60,52,0.35)] min-[641px]:rounded-[32px] min-[641px]:p-2 min-[641px]:pb-6">
         <div
           className={`mist-surface ${TONE_CLASSES[tone]} -mt-[18px] mb-1 grid aspect-[1.9825] w-[calc((100%-40px)*1.029)] ${
@@ -69,7 +70,7 @@ export default function MistHeadingCard({
               )}
             </Heading>
             {subtitle && (
-              <span className="text-[14px] font-semibold text-[#238778]">{subtitle}</span>
+              <span className="text-[14px] font-semibold text-[#0A1A17]/80">{subtitle}</span>
             )}
           </span>
           {href && (
@@ -94,13 +95,24 @@ export default function MistHeadingCard({
             </Link>
           )}
           {updatedAt && (
-            <span className="col-span-full row-start-3 self-end justify-self-start text-[12px] font-semibold leading-none tracking-[0.02em] text-[#0A1A17]/80">
+            <span className="col-span-full row-start-3 hidden self-end justify-self-start text-[12px] font-semibold leading-none tracking-[0.02em] text-[#0A1A17]/80 min-[641px]:block">
               {updatedAt}
             </span>
           )}
-          <div className="col-span-full row-start-3 self-end justify-self-end">{yearSwitch}</div>
+          <div className="col-span-full row-start-3 self-end justify-self-start min-[641px]:justify-self-end">
+            {yearSwitch}
+          </div>
         </div>
-        <div className="mx-4 flex flex-col gap-[22px]">{children}</div>
+        <div className="mx-4 flex flex-col gap-[22px]">
+          {children}
+          {updatedAt && (
+            <div className="-mt-1 flex justify-end min-[641px]:hidden">
+              <span className="whitespace-nowrap text-[12px] font-medium leading-none text-[#5B6470] tabular-nums">
+                {updatedAt}
+              </span>
+            </div>
+          )}
+        </div>
       </div>
     </section>
   );

@@ -1,8 +1,10 @@
 import "server-only";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import TransparencySection from "@/client/components/common/TransparencySection";
 import Breadcrumbs from "@/client/components/layout/Breadcrumbs";
 import MainColumn from "@/client/components/layout/MainColumn";
+import RevealOnScroll from "@/client/components/layout/RevealOnScroll";
 import SectionCard from "@/client/components/layout/SectionCard";
 import ResearchFundBottomBlock from "@/client/components/research-fund/ResearchFundBottomBlock";
 import ResearchFundTransactionsTable from "@/client/components/research-fund/ResearchFundTransactionsTable";
@@ -60,17 +62,15 @@ export default async function PoliticianTransactionsPage({
   const updatedAt = formatUpdatedAt(data.asOfDate ?? null);
 
   const parentLabel = `${data.politician.name}の調研費`;
+  const parent = {
+    label: parentLabel,
+    href: `/p/${encodeURIComponent(pathSlug)}/${data.financialYear}`,
+  };
 
   return (
     <MainColumn spacing="compact">
       <div className="flex flex-col gap-5">
-        <Breadcrumbs
-          parent={{
-            label: parentLabel,
-            href: `/p/${encodeURIComponent(pathSlug)}/${data.financialYear}`,
-          }}
-          current="すべての出入金"
-        />
+        <Breadcrumbs parent={parent} current="すべての出入金" />
         <SectionCard
           id="transactions"
           iconSrc="/icons/icon-cashback.svg"
@@ -88,7 +88,12 @@ export default async function PoliticianTransactionsPage({
           />
         </SectionCard>
       </div>
-      <ResearchFundBottomBlock dataNote={data.dataNote} />
+      <ResearchFundBottomBlock
+        dataNote={data.dataNote}
+        band={<TransparencySection variant="transactions" />}
+      />
+      <Breadcrumbs parent={parent} current="すべての出入金" position="bottom" />
+      <RevealOnScroll />
     </MainColumn>
   );
 }

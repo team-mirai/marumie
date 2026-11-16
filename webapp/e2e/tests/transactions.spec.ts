@@ -41,7 +41,7 @@ test.describe("取引一覧ページ", () => {
 		await page.goto("/o/sample-party/2026/transactions");
 
 		// パンくず「トップ › サンプル党の収支 › すべての出入金」
-		const breadcrumbs = page.getByRole("navigation", { name: "パンくずリスト" });
+		const breadcrumbs = page.getByRole("navigation", { name: "パンくずリスト", exact: true });
 		await expect(breadcrumbs.getByRole("link", { name: "トップ" })).toHaveAttribute("href", "/");
 		await expect(breadcrumbs.getByRole("link", { name: "サンプル党の収支" })).toHaveAttribute(
 			"href",
@@ -63,8 +63,20 @@ test.describe("取引一覧ページ", () => {
 
 		// 共通の下部ブロック
 		await expect(
-			page.getByRole("heading", { name: /少しずつ進んでいますがまだまだです/ }),
+			page.getByRole("heading", { name: "党内の機密データの流出事故ではありません" }),
 		).toBeVisible();
+		await expect(page.getByRole("link", { name: /こちらのnote/ })).toHaveAttribute(
+			"target",
+			"_blank",
+		);
+		await expect(
+			page.getByRole("heading", { name: /少しずつ進んでいますがまだまだです/ }),
+		).toHaveCount(0);
+		await expect(
+			page
+				.getByRole("navigation", { name: "パンくずリスト（ページ下部）" })
+				.locator('[aria-current="page"]'),
+		).toHaveText("すべての出入金");
 		await expect(
 			page
 				.getByRole("navigation", { name: "このサイトについて" })
@@ -74,8 +86,7 @@ test.describe("取引一覧ページ", () => {
 			page.locator("#explanation").getByRole("heading", { name: "データの出典" }),
 		).toBeVisible();
 
-		// 外したもの：透明性の帯、他団体へのリンク、進捗、党の紹介、寄附・党員の応援カード
-		await expect(page.getByText("党内の機密データの流出事故ではありません☺️")).toHaveCount(0);
+		// 外したもの：他団体へのリンク、進捗、党の紹介、寄附・党員の応援カード
 		await expect(page.locator("main #about")).toHaveCount(0);
 		await expect(page.locator("main").getByText("寄附で応援する")).toHaveCount(0);
 	});

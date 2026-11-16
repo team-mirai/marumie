@@ -15,7 +15,10 @@ interface GradientMessageCardProps {
  */
 export default function GradientMessageCard({ title, emoji, children }: GradientMessageCardProps) {
   return (
-    <div className="flex items-start self-stretch rounded-[32px] bg-[linear-gradient(120deg,#A3E7DC_0%,#CFF1E0_100%)] px-[clamp(24px,3.6vw,48px)] py-[clamp(28px,3.6vw,44px)] shadow-[0_8px_24px_rgba(15,132,114,0.10)]">
+    <div
+      data-reveal
+      className="flex items-start self-stretch rounded-[32px] bg-[linear-gradient(120deg,#A3E7DC_0%,#CFF1E0_100%)] px-[clamp(24px,3.6vw,48px)] py-[clamp(28px,3.6vw,44px)] shadow-[0_8px_24px_rgba(15,132,114,0.10)]"
+    >
       <div className="flex min-w-0 flex-1 flex-col justify-center gap-2.5">
         <h2 className="m-0 text-[20px] min-[641px]:text-[26px] font-bold leading-[1.5] tracking-[0.01em] text-gray-800 font-japanese">
           {title}

@@ -13,7 +13,7 @@ interface OrganizationCashFlowSectionProps {
   friendly: SankeyData | null;
 }
 
-/** 政治団体ページの収支の流れ。収入・支出・収支の金額と区分タブつきのサンキー。ページの最初の見出しになる。 */
+/** 政治団体ページの収支の流れ。収入・支出・収支の金額と区分タブつきのサンキー。 */
 export default function OrganizationCashFlowSection({
   eyebrow,
   updatedAt,
@@ -31,7 +31,6 @@ export default function OrganizationCashFlowSection({
       eyebrow={eyebrow}
       title="収支の流れ"
       updatedAt={updatedAt}
-      headingLevel="h1"
     >
       <AmountSummary
         items={[

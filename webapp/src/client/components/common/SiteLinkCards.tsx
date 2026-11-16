@@ -78,6 +78,7 @@ function CardBody({ card }: { card: SiteLinkCard }) {
 export default function SiteLinkCards() {
   return (
     <nav
+      data-reveal
       aria-label="このサイトについて"
       className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,300px),1fr))] gap-[clamp(12px,1.6vw,20px)]"
     >

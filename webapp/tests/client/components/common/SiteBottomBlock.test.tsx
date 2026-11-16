@@ -45,3 +45,12 @@ describe("SiteBottomBlock", () => {
     expect(home).toContain('aria-label="データについて"');
   });
 });
+
+describe("SiteBottomBlock（帯の差し替え）", () => {
+  it("band を渡すと先頭の帯を差し替える", () => {
+    const html = renderToStaticMarkup(<SiteBottomBlock band={<p>差し替えた帯</p>} />);
+    expect(html).toContain("差し替えた帯");
+    expect(html).not.toContain("少しずつ進んでいますがまだまだです");
+    expect(html).toContain("政治とカネ解決に向けて");
+  });
+});
