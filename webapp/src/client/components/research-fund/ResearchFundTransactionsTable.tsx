@@ -201,98 +201,119 @@ export default function ResearchFundTransactionsTable({
             />
           )}
         </div>
-        <div
-          className={`hidden h-12 items-center border-b border-[#D5DBE1] text-sm font-bold text-gray-800 min-[641px]:grid ${ROW_GRID}`}
-        >
-          {/* 表ではなく grid で組んでいるので aria-sort は付けられない。今の並び順はボタンの読み上げ名で伝える */}
-          <div className="flex items-center px-4">
-            日付
-            <ColumnSortButton state={dateSort} onClick={() => changeSort(toggleDateSort(sort))} />
-          </div>
-          <div className="relative flex items-center gap-1 pl-4">
-            カテゴリー
-            <CategoryFilterButton
-              count={categories.length}
-              expanded={openFilter === "pc"}
-              onClick={() => toggleFilter("pc")}
-            />
-            {openFilter === "pc" && (
-              <ResearchFundCategoryFilter
-                options={options}
-                selected={categories}
-                onCancel={() => setOpenFilter(null)}
-                onApply={applyCategories}
-              />
-            )}
-          </div>
-          <div className="tracking-[0.071em]">項目</div>
-          <div className="flex items-center justify-end gap-0.5 pr-6">
-            金額
-            <ColumnSortButton
-              state={amountSort}
-              onClick={() => changeSort(toggleAmountSort(sort))}
-            />
-          </div>
-        </div>
+        {/* SP では1行を縦積みにするため、表の要素の display を grid / block に変えて組む（表の意味はそのまま残る） */}
+        <table className="block w-full">
+          <thead className="hidden min-[641px]:block">
+            <tr
+              className={`grid h-12 items-center border-b border-[#D5DBE1] text-sm font-bold text-gray-800 ${ROW_GRID}`}
+            >
+              <th
+                scope="col"
+                aria-sort={dateSort.ariaSort}
+                className="flex items-center px-4 text-left"
+              >
+                日付
+                <ColumnSortButton
+                  state={dateSort}
+                  onClick={() => changeSort(toggleDateSort(sort))}
+                />
+              </th>
+              <th scope="col" className="relative flex items-center gap-1 pl-4 text-left">
+                カテゴリー
+                <CategoryFilterButton
+                  count={categories.length}
+                  expanded={openFilter === "pc"}
+                  onClick={() => toggleFilter("pc")}
+                />
+                {openFilter === "pc" && (
+                  <ResearchFundCategoryFilter
+                    options={options}
+                    selected={categories}
+                    onCancel={() => setOpenFilter(null)}
+                    onApply={applyCategories}
+                  />
+                )}
+              </th>
+              <th scope="col" className="text-left tracking-[0.071em]">
+                項目
+              </th>
+              <th
+                scope="col"
+                aria-sort={amountSort.ariaSort}
+                className="flex items-center justify-end gap-0.5 pr-6"
+              >
+                金額
+                <ColumnSortButton
+                  state={amountSort}
+                  onClick={() => changeSort(toggleAmountSort(sort))}
+                />
+              </th>
+            </tr>
+          </thead>
+          {current.rows.length > 0 && (
+            <tbody className="block">
+              {current.rows.map((row) => (
+                <tr
+                  key={row.id}
+                  className={`grid grid-cols-1 gap-1 border-b border-[#D5DBE1] py-3 min-[641px]:min-h-16 min-[641px]:items-center min-[641px]:gap-0 min-[641px]:py-0 ${ROW_GRID}`}
+                >
+                  <td className="text-xs text-[#4B5563] min-[641px]:px-4 min-[641px]:text-base min-[641px]:font-bold min-[641px]:text-gray-800">
+                    {formatResearchFundDate(row.date)}
+                  </td>
+                  <td className="order-3 flex flex-wrap items-center gap-2 min-[641px]:order-none min-[641px]:pl-4">
+                    <ResearchFundCategoryPill
+                      category={row.detailed}
+                      href={hrefFor({ categories: [row.accountKey] })}
+                    />
+                    {RESEARCH_FUND_RECEIPTS_PUBLISHED && row.hasReceipt && (
+                      <span className="min-[641px]:hidden">
+                        <ResearchFundReceiptPill
+                          ready={row.receiptReady}
+                          onClick={() => setReceipt(row)}
+                        />
+                      </span>
+                    )}
+                  </td>
+                  <td className="order-2 flex items-baseline justify-between gap-3 min-[641px]:order-none min-[641px]:block min-[641px]:py-3">
+                    <span className="flex items-center gap-2">
+                      <span className="text-sm font-bold text-gray-800 min-[641px]:text-base">
+                        {row.description}
+                      </span>
+                      {RESEARCH_FUND_RECEIPTS_PUBLISHED && row.hasReceipt && (
+                        <span className="hidden min-[641px]:inline-flex">
+                          <ResearchFundReceiptPill
+                            ready={row.receiptReady}
+                            onClick={() => setReceipt(row)}
+                          />
+                        </span>
+                      )}
+                    </span>
+                    <ResearchFundAmount row={row} className="text-base min-[641px]:hidden" />
+                    {row.note && (
+                      <p className="mt-0.5 hidden text-xs leading-relaxed text-[#6B7280] min-[641px]:block">
+                        {row.note}
+                      </p>
+                    )}
+                  </td>
+                  <td className="hidden pr-6 text-right min-[641px]:block">
+                    <ResearchFundAmount row={row} className="text-xl" />
+                  </td>
+                  {/* SP だけで出す特記事項。PC では項目のセルの中に出すので隠す */}
+                  {row.note && (
+                    <td className="order-4 text-xs leading-relaxed text-[#6B7280] min-[641px]:hidden">
+                      {row.note}
+                    </td>
+                  )}
+                </tr>
+              ))}
+            </tbody>
+          )}
+        </table>
 
-        {current.rows.length === 0 ? (
+        {current.rows.length === 0 && (
           <p role="status" className="py-6 text-center text-gray-500">
             該当する出入金はありません
           </p>
-        ) : (
-          current.rows.map((row) => (
-            <div
-              key={row.id}
-              className={`grid grid-cols-1 gap-1 border-b border-[#D5DBE1] py-3 min-[641px]:min-h-16 min-[641px]:items-center min-[641px]:gap-0 min-[641px]:py-0 ${ROW_GRID}`}
-            >
-              <div className="text-xs text-[#4B5563] min-[641px]:px-4 min-[641px]:text-base min-[641px]:font-bold min-[641px]:text-gray-800">
-                {formatResearchFundDate(row.date)}
-              </div>
-              <div className="order-3 flex flex-wrap items-center gap-2 min-[641px]:order-none min-[641px]:pl-4">
-                <ResearchFundCategoryPill
-                  category={row.detailed}
-                  href={hrefFor({ categories: [row.accountKey] })}
-                />
-                {RESEARCH_FUND_RECEIPTS_PUBLISHED && row.hasReceipt && (
-                  <span className="min-[641px]:hidden">
-                    <ResearchFundReceiptPill
-                      ready={row.receiptReady}
-                      onClick={() => setReceipt(row)}
-                    />
-                  </span>
-                )}
-              </div>
-              <div className="order-2 flex items-baseline justify-between gap-3 min-[641px]:order-none min-[641px]:block min-[641px]:py-3">
-                <span className="flex items-center gap-2">
-                  <span className="text-sm font-bold text-gray-800 min-[641px]:text-base">
-                    {row.description}
-                  </span>
-                  {RESEARCH_FUND_RECEIPTS_PUBLISHED && row.hasReceipt && (
-                    <span className="hidden min-[641px]:inline-flex">
-                      <ResearchFundReceiptPill
-                        ready={row.receiptReady}
-                        onClick={() => setReceipt(row)}
-                      />
-                    </span>
-                  )}
-                </span>
-                <ResearchFundAmount row={row} className="text-base min-[641px]:hidden" />
-                {row.note && (
-                  <p className="mt-0.5 hidden text-xs leading-relaxed text-[#6B7280] min-[641px]:block">
-                    {row.note}
-                  </p>
-                )}
-              </div>
-              <div className="hidden pr-6 text-right min-[641px]:block">
-                <ResearchFundAmount row={row} className="text-xl" />
-              </div>
-              {row.note && (
-                <p className="order-4 text-xs leading-relaxed text-[#6B7280] min-[641px]:hidden">
-                  {row.note}
-                </p>
-              )}
-            </div>
-          ))
         )}
       </div>
 
