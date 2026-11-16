@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import GradientMessageCard from "@/client/components/common/GradientMessageCard";
 import Breadcrumbs from "@/client/components/layout/Breadcrumbs";
 import MainColumn from "@/client/components/layout/MainColumn";
+import RevealOnScroll from "@/client/components/layout/RevealOnScroll";
 import OtherPoliticiansSection from "@/client/components/research-fund/OtherPoliticiansSection";
 import PoliticianHeadingCard from "@/client/components/research-fund/PoliticianHeadingCard";
 import ResearchFundBottomBlock from "@/client/components/research-fund/ResearchFundBottomBlock";
@@ -59,6 +60,7 @@ export default async function PoliticianPage({ params }: PoliticianPageProps) {
   const updatedAt = formatUpdatedAt(data.asOfDate ?? null);
   const hasHighlights = data.policyComment !== null || data.groups.length > 0;
   const eyebrow = `${data.politician.name}の調研費・${data.financialYear}年`;
+  const pageTitle = `${data.politician.name}の調研費`;
 
   // 前後の切り替え・ほかの議員は、調研費を公開中の議員だけ（非公開の議員はプレビュー中でも出さない）。
   // 取れなくても本文は出せるので、失敗したら出さないだけにする。
@@ -80,7 +82,7 @@ export default async function PoliticianPage({ params }: PoliticianPageProps) {
   return (
     <MainColumn spacing="compact">
       <div className="flex flex-col gap-5">
-        <Breadcrumbs current={`${data.politician.name}の調研費`} />
+        <Breadcrumbs current={pageTitle} />
         <PoliticianHeadingCard
           politician={data.politician}
           photoUrl={data.politician.hasPhoto ? politicianPhotoUrl(pathSlug) : null}
@@ -110,6 +112,8 @@ export default async function PoliticianPage({ params }: PoliticianPageProps) {
       </ResearchFundCrossLinkProvider>
       {nav && <OtherPoliticiansSection politicians={nav.others} />}
       <ResearchFundBottomBlock dataNote={data.dataNote} notesVariant="member" />
+      <Breadcrumbs current={pageTitle} position="bottom" />
+      <RevealOnScroll />
     </MainColumn>
   );
 }

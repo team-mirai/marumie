@@ -2,8 +2,10 @@ import "server-only";
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import SiteBottomBlock from "@/client/components/common/SiteBottomBlock";
+import TransparencySection from "@/client/components/common/TransparencySection";
 import Breadcrumbs from "@/client/components/layout/Breadcrumbs";
 import MainColumn from "@/client/components/layout/MainColumn";
+import RevealOnScroll from "@/client/components/layout/RevealOnScroll";
 import SectionCard from "@/client/components/layout/SectionCard";
 import InteractiveTransactionTable from "@/client/components/top-page/features/transactions-table/InteractiveTransactionTable";
 import { loadTransactionsPageData } from "@/server/contexts/public-finance/presentation/loaders/load-transactions-page-data";
@@ -120,14 +122,12 @@ export default async function TransactionsPage({ params, searchParams }: Transac
     const organization = data.politicalOrganizations.find((org) => org.slug === slug);
     const organizationName = organization?.displayName || "未登録の政治団体";
     const updatedAt = formatUpdatedAt(data.lastUpdatedAt ?? null);
+    const parent = { label: `${organizationName}の収支`, href: `/o/${slug}/${financialYear}` };
 
     return (
       <MainColumn spacing="compact">
         <div className="flex flex-col gap-5">
-          <Breadcrumbs
-            parent={{ label: `${organizationName}の収支`, href: `/o/${slug}/${financialYear}` }}
-            current="すべての出入金"
-          />
+          <Breadcrumbs parent={parent} current="すべての出入金" />
           <SectionCard
             id="transactions"
             iconSrc="/icons/icon-cashback.svg"
@@ -150,7 +150,9 @@ export default async function TransactionsPage({ params, searchParams }: Transac
             />
           </SectionCard>
         </div>
-        <SiteBottomBlock />
+        <SiteBottomBlock band={<TransparencySection variant="transactions" />} />
+        <Breadcrumbs parent={parent} current="すべての出入金" position="bottom" />
+        <RevealOnScroll />
       </MainColumn>
     );
   } catch (error) {

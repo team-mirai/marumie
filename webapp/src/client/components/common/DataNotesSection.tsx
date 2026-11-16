@@ -46,6 +46,7 @@ export default function DataNotesSection({
     return (
       <section
         id="explanation"
+        data-reveal
         aria-label="データについて"
         className="flex scroll-mt-[100px] flex-col gap-9 rounded-[32px] bg-white px-[18px] py-7 min-[641px]:p-[clamp(28px,4.4vw,64px)]"
       >
@@ -64,6 +65,7 @@ export default function DataNotesSection({
   return (
     <section
       id="explanation"
+      data-reveal
       aria-label="データについて"
       className="flex scroll-mt-[100px] flex-col gap-[clamp(32px,4vw,56px)] rounded-[24px] bg-white p-[clamp(24px,5vw,72px)] min-[641px]:rounded-[32px]"
     >

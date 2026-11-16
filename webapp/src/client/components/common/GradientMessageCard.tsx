@@ -23,6 +23,7 @@ export default function GradientMessageCard({
 }: GradientMessageCardProps) {
   return (
     <div
+      data-reveal
       className={`flex items-start self-stretch rounded-[32px] bg-[linear-gradient(120deg,#A3E7DC_0%,#CFF1E0_100%)] px-[clamp(24px,3.6vw,48px)] py-[clamp(28px,3.6vw,44px)] shadow-[0_8px_24px_rgba(15,132,114,0.10)] ${className}`}
     >
       <div className="flex min-w-0 flex-1 flex-col justify-center gap-2.5">

@@ -61,7 +61,7 @@ test.describe("政治団体ページ", () => {
 		});
 
 		test("パンくずにトップと今のページが表示される", async ({ page }) => {
-			const breadcrumbs = page.getByRole("navigation", { name: "パンくずリスト" });
+			const breadcrumbs = page.getByRole("navigation", { name: "パンくずリスト", exact: true });
 
 			await expect(breadcrumbs.getByRole("link", { name: "トップ" })).toHaveAttribute(
 				"href",
@@ -73,10 +73,30 @@ test.describe("政治団体ページ", () => {
 			);
 		});
 
+		test("パンくずはナビの 20px 下にあって押せる高さが 44px 以上あり、フッターのすぐ上にも出る", async ({
+			page,
+		}) => {
+			const breadcrumbs = page.getByRole("navigation", { name: "パンくずリスト", exact: true });
+			const headerBottom = await page
+				.locator("header > div")
+				.first()
+				.evaluate((el) => el.getBoundingClientRect().bottom);
+			const crumbTop = await breadcrumbs.evaluate((el) => el.getBoundingClientRect().top);
+			expect(Math.round(crumbTop - headerBottom)).toBe(20);
+			const topLink = await breadcrumbs.getByRole("link", { name: "トップ" }).boundingBox();
+			expect(topLink?.height).toBeGreaterThanOrEqual(44);
+
+			const footer = page.getByRole("navigation", { name: "パンくずリスト（ページ下部）" });
+			await expect(footer.getByRole("link", { name: "トップ" })).toHaveAttribute("href", "/");
+			await expect(footer.getByText("サンプル党の収支")).toHaveAttribute("aria-current", "page");
+		});
+
 		test("見出しカードに収入・支出の総額と現金残高が表示される", async ({ page }) => {
 			const heading = page.getByRole("region", { name: "政党情報" });
 
-			await expect(heading).toContainText("政党・2025年");
+			await expect(heading.getByRole("heading", { level: 1, name: "サンプル党の収支" })).toBeVisible();
+			await expect(heading).toContainText("2025年");
+			await expect(heading).not.toContainText("政党・");
 			await expect(heading).toContainText(/収入総額\s*1,581万円/);
 			await expect(heading).toContainText(/支出総額\s*1,281万円/);
 			await expect(heading).toContainText(/現金残高\s*300万円/);
@@ -130,7 +150,7 @@ test.describe("政治団体ページ", () => {
 
 			await expect(page).toHaveURL("/o/sample-party/2026");
 			await expect(page.getByRole("region", { name: "政党情報" })).toContainText(
-				"政党・2026年",
+				"2026年",
 			);
 		});
 
@@ -222,8 +242,12 @@ test.describe("政治団体ページ", () => {
 			});
 			expect(order).toEqual(["monthly-trends", "balance-sheet", "transactions", "explanation"]);
 			await expect(
-				page.getByRole("heading", { name: "党首もこれを見て、お金をやりくりしています👀" }),
+				page.getByRole("heading", { name: "党首もこれを見て、お金をやりくりしています" }),
 			).toBeVisible();
+			await expect(page.getByRole("link", { name: /チームみらいのnoteの記事/ })).toHaveAttribute(
+				"target",
+				"_blank",
+			);
 		});
 
 		test("共通の下部ブロック（帯・カード3枚・データについて）が表示される", async ({ page }) => {
@@ -270,7 +294,7 @@ test.describe("政治団体ページ", () => {
 		});
 
 		test("パンくずにトップと今のページが表示される", async ({ page }) => {
-			const breadcrumbs = page.getByRole("navigation", { name: "パンくずリスト" });
+			const breadcrumbs = page.getByRole("navigation", { name: "パンくずリスト", exact: true });
 
 			await expect(breadcrumbs.getByRole("link", { name: "トップ" })).toHaveAttribute(
 				"href",
@@ -322,7 +346,7 @@ test.describe("政治団体ページ", () => {
 
 			await expect(cashFlow).toContainText("E2Eテスト団体・2025年");
 			await expect(
-				cashFlow.getByRole("heading", { level: 1, name: "収支の流れ", exact: true }),
+				cashFlow.getByRole("heading", { level: 2, name: "収支の流れ", exact: true }),
 			).toBeVisible();
 			// 金額は政党ページと同じ集計（サンキー図の「(仕訳中)」も支出に含める）
 			await expect(cashFlow).toContainText(/収入総額\s*5万円/);
@@ -354,7 +378,7 @@ test.describe("政治団体ページ", () => {
 				"explanation",
 			]);
 			await expect(
-				page.getByRole("heading", { name: "党首もこれを見て、お金をやりくりしています👀" }),
+				page.getByRole("heading", { name: "党首もこれを見て、お金をやりくりしています" }),
 			).toHaveCount(0);
 			await expect(page.getByRole("region", { name: "政党情報" })).toHaveCount(0);
 			await expect(
@@ -362,10 +386,32 @@ test.describe("政治団体ページ", () => {
 			).toHaveCount(2);
 		});
 
-		test("SP では見出しカードを出さない", async ({ page }) => {
+		test("SP では一番上にプロフィールカード（団体名・正式名と年・年の切り替え）を出す", async ({
+			page,
+		}) => {
 			await page.setViewportSize({ width: 390, height: 844 });
 
-			await expect(page.getByRole("region", { name: "政治団体情報" })).toBeHidden();
+			const profile = page.getByRole("region", { name: "政治団体情報" });
+			await expect(profile).toBeVisible();
+			await expect(profile).toContainText("E2Eテスト団体");
+			await expect(profile).toContainText("E2Eテスト団体・2025年");
+			// SNS は PC の見出しカードだけに出す
+			await expect(profile.getByRole("link", { name: /公式サイト/ })).toHaveCount(0);
+			const years = profile.getByRole("navigation", { name: "表示する年" });
+			await expect(years.getByRole("link", { name: "2025" })).toHaveAttribute(
+				"aria-current",
+				"page",
+			);
+			// パンくずの直後（ページの一番上）に出る
+			const crumbBottom = await page
+				.getByRole("navigation", { name: "パンくずリスト", exact: true })
+				.evaluate((el) => el.getBoundingClientRect().bottom);
+			const profileTop = await profile.evaluate((el) => el.getBoundingClientRect().top);
+			const cashFlowTop = await page
+				.locator("#cash-flow")
+				.evaluate((el) => el.getBoundingClientRect().top);
+			expect(profileTop).toBeGreaterThan(crumbBottom);
+			expect(profileTop).toBeLessThan(cashFlowTop);
 			await expect(
 				page.locator("#cash-flow").getByRole("button", { name: "図を拡大する" }),
 			).toBeVisible();

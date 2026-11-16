@@ -16,7 +16,7 @@ async function expectPartyPage(page: Page, year: number) {
 	await expect(page).toHaveURL(`/o/sample-party/${year}`);
 	const heading = page.getByRole("region", { name: "政党情報" });
 	await expect(heading.getByText("サンプル党の収支")).toBeVisible();
-	await expect(heading).toContainText(`政党・${year}年`);
+	await expect(heading).toContainText(`${year}年`);
 }
 
 async function expectGroupPage(page: Page, year: number) {
@@ -25,8 +25,9 @@ async function expectGroupPage(page: Page, year: number) {
 		`E2Eテスト団体・${year}年`,
 	);
 	await expect(
-		page.locator("#cash-flow").getByRole("heading", { level: 1, name: "収支の流れ" }),
+		page.locator("#cash-flow").getByRole("heading", { level: 2, name: "収支の流れ" }),
 	).toBeVisible();
+	await expect(page.getByRole("heading", { level: 1, name: "E2Eテスト団体の収支" })).toBeAttached();
 }
 
 async function expectPoliticianPage(page: Page) {

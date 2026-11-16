@@ -18,7 +18,7 @@ test.describe("調査研究費 議員ページ", () => {
 		);
 
 		// パンくず
-		const breadcrumbs = page.getByRole("navigation", { name: "パンくずリスト" });
+		const breadcrumbs = page.getByRole("navigation", { name: "パンくずリスト", exact: true });
 		await expect(breadcrumbs.getByRole("link", { name: "トップ" })).toHaveAttribute("href", "/");
 		await expect(breadcrumbs.getByText("サンプル 太郎の調研費")).toBeVisible();
 
@@ -26,7 +26,8 @@ test.describe("調査研究費 議員ページ", () => {
 		const cashFlow = page.locator("#cash-flow");
 		await expect(cashFlow.getByText("サンプル 太郎の調研費・2026年")).toBeVisible();
 		await expect(cashFlow.getByRole("heading", { level: 1, name: "収支の流れ" })).toBeVisible();
-		await expect(cashFlow.getByText(/^\d{4}年\d{1,2}-\d{1,2}月分$/).first()).toBeVisible();
+		// 期間は更新日といっしょにカードの右下に出す
+		await expect(cashFlow.getByText(/^\d{4}年\d{1,2}-\d{1,2}月分　/).first()).toBeVisible();
 		await expect(cashFlow.getByText("調研費（調査研究広報滞在費）とは")).toBeVisible();
 		await expect(cashFlow.getByText("支給総額")).toBeVisible();
 		await expect(cashFlow.getByText("支出総額")).toBeVisible();
@@ -272,7 +273,7 @@ test.describe("調査研究費 議員ページ", () => {
 		await page.goto(`${PAGE_URL}/transactions`);
 
 		// パンくず「トップ › サンプル 太郎の調研費 › すべての出入金」
-		const breadcrumbs = page.getByRole("navigation", { name: "パンくずリスト" });
+		const breadcrumbs = page.getByRole("navigation", { name: "パンくずリスト", exact: true });
 		await expect(breadcrumbs.getByRole("link", { name: "トップ" })).toHaveAttribute("href", "/");
 		await expect(
 			breadcrumbs.getByRole("link", { name: "サンプル 太郎の調研費" }),
@@ -289,8 +290,20 @@ test.describe("調査研究費 議員ページ", () => {
 
 		// 共通の下部ブロック（データについては議員ページ用の文言）
 		await expect(
-			page.getByRole("heading", { name: /少しずつ進んでいますがまだまだです/ }),
+			page.getByRole("heading", { name: "党内の機密データの流出事故ではありません" }),
 		).toBeVisible();
+		await expect(page.getByRole("link", { name: /こちらのnote/ })).toHaveAttribute(
+			"target",
+			"_blank",
+		);
+		await expect(
+			page.getByRole("heading", { name: /少しずつ進んでいますがまだまだです/ }),
+		).toHaveCount(0);
+		await expect(
+			page
+				.getByRole("navigation", { name: "パンくずリスト（ページ下部）" })
+				.locator('[aria-current="page"]'),
+		).toHaveText("すべての出入金");
 		await expect(page.getByRole("link", { name: /まる見え政治資金とは？/ })).toBeVisible();
 		await expect(
 			page.locator("#explanation").getByRole("heading", { name: "調研費のデータについて" }),
