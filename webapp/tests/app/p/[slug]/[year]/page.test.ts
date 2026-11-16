@@ -131,9 +131,17 @@ describe("議員ページ", () => {
       children: ReactNode[];
     }>;
     const children = page.props.children as (Child | false | null)[];
-    const [heading, flow, , others, bottom] = children;
+    const [heading, flow, , survey, others, bottom] = children;
     const [breadcrumbs, card] = (heading as Child).props.children ?? [];
-    return { page, breadcrumbs, card, flow: flow as Child, others, bottom: bottom as Child };
+    return {
+      page,
+      breadcrumbs,
+      card,
+      flow: flow as Child,
+      survey: survey as Child,
+      others,
+      bottom: bottom as Child,
+    };
   }
 
   it.each([
@@ -142,7 +150,7 @@ describe("議員ページ", () => {
   ])("%sでも、パンくず・議員カードと v8 の本文（下部ブロックは議員ページ用）を同じ組み立てで出す", async (_, slug, isPublic) => {
     loadResearchFundPageMock.mockResolvedValue(pageData(isPublic));
 
-    const { page, breadcrumbs, card, flow, bottom } = await render(slug);
+    const { page, breadcrumbs, card, flow, survey, bottom } = await render(slug);
 
     expect(page.props.spacing).toBe("compact");
     expect(breadcrumbs.props.current).toBe("サンプル太郎の調研費");
@@ -156,6 +164,7 @@ describe("議員ページ", () => {
       `/api/research-fund/politicians/${encodeURIComponent(slug)}/photo`,
     );
     expect(flow.props.eyebrow).toBe("サンプル太郎の調研費・2026年");
+    expect(survey.props.headingId).toBe("politician-survey-heading");
     expect(bottom.props.dataNote).toBe("仕訳が完了した支出を掲載しています。");
   });
 
