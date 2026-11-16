@@ -22,6 +22,11 @@ interface AmountSummaryProps {
    * SP（〜600px）は 1 行ごとに項目名を左・金額を右に並べる
    */
   home?: boolean;
+  /**
+   * 狭い画面でも縦に積まず、横に並べる（ラベルの下に金額、左揃え）。
+   * トップの議員カード（SP）を開いた中身で使う。数字は政党・政治団体のカードの SP と同じ 26px
+   */
+  columns?: boolean;
 }
 
 const HOME_CLASSES = {
@@ -29,6 +34,13 @@ const HOME_CLASSES = {
   cell: "max-[600px]:flex-row max-[600px]:items-baseline max-[600px]:justify-between max-[600px]:gap-3 max-[600px]:py-3.5",
   amount: "max-[600px]:ml-auto max-[600px]:text-right",
   number: "max-[600px]:text-[26px]",
+} as const;
+
+const COLUMNS_CLASSES = {
+  list: "grid-cols-2",
+  cell: "pr-4",
+  divider: "border-l border-[#DCE4E1] pl-4",
+  number: "font-num text-[26px] font-bold leading-none tracking-[-0.02em] tabular-nums",
 } as const;
 
 const SIZE_CLASSES = {
@@ -62,28 +74,32 @@ export default function AmountSummary({
   items,
   size = "default",
   home = false,
+  columns = false,
 }: AmountSummaryProps) {
   const classes = SIZE_CLASSES[size];
-  const numberClass = home ? `${classes.number} ${HOME_CLASSES.number}` : classes.number;
+  const numberClass = columns
+    ? COLUMNS_CLASSES.number
+    : home
+      ? `${classes.number} ${HOME_CLASSES.number}`
+      : classes.number;
+  const listClass = columns
+    ? COLUMNS_CLASSES.list
+    : `grid-cols-1 ${items.length === 2 ? "min-[601px]:grid-cols-2" : "min-[601px]:grid-cols-3"}`;
+  const cellClass = (index: number) => {
+    if (columns)
+      return `gap-2 py-3.5 ${index > 0 ? COLUMNS_CLASSES.divider : COLUMNS_CLASSES.cell}`;
+    return `gap-2.5 py-3 min-[601px]:py-[19px] ${classes.cell} ${home ? HOME_CLASSES.cell : ""} ${
+      index > 0
+        ? `border-t border-[#DCE4E1] min-[601px]:border-t-0 min-[601px]:border-l ${classes.divider}`
+        : ""
+    }`;
+  };
   return (
-    <dl
-      className={`grid grid-cols-1 border-y border-[#DCE4E1] ${
-        items.length === 2 ? "min-[601px]:grid-cols-2" : "min-[601px]:grid-cols-3"
-      } ${home ? HOME_CLASSES.list : ""}`}
-    >
+    <dl className={`grid border-y border-[#DCE4E1] ${listClass} ${home ? HOME_CLASSES.list : ""}`}>
       {items.map((item, index) => {
         const amount = item.amount === null ? null : formatAmount(item.amount);
         return (
-          <div
-            key={item.label}
-            className={`flex min-w-0 flex-col gap-2.5 py-3 min-[601px]:py-[19px] ${classes.cell} ${
-              home ? HOME_CLASSES.cell : ""
-            } ${
-              index > 0
-                ? `border-t border-[#DCE4E1] min-[601px]:border-t-0 min-[601px]:border-l ${classes.divider}`
-                : ""
-            }`}
-          >
+          <div key={item.label} className={`flex min-w-0 flex-col ${cellClass(index)}`}>
             <dt className={`flex items-center gap-2 font-extrabold ${classes.label}`}>
               <i
                 aria-hidden="true"
@@ -92,7 +108,7 @@ export default function AmountSummary({
               />
               {item.label}
             </dt>
-            <dd className={`whitespace-nowrap ${home ? HOME_CLASSES.amount : ""}`}>
+            <dd className={`whitespace-nowrap ${home && !columns ? HOME_CLASSES.amount : ""}`}>
               {amount === null ? (
                 <span className={`font-bold text-[#6B7280] ${classes.unavailable}`}>
                   取得できませんでした

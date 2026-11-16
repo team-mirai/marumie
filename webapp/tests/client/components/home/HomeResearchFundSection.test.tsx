@@ -112,4 +112,29 @@ describe("HomeResearchFundSection", () => {
     );
     expect(html).not.toContain('aria-label="表示する年"');
   });
+
+  it("期間が無い議員は名前の下を「調研費・準備中」にし、かなは出さない", () => {
+    const html = render([politician({ grantPeriodLabel: null })]);
+
+    expect(html).toContain("調研費・準備中");
+    expect(html).not.toContain("さんぷるたろう");
+  });
+
+  it("図の下に未使用分の返還の注記を PC・SP の両方に出す", () => {
+    const html = render([politician()]);
+
+    expect(html.split("※年内に使わなかった未使用分は国庫に返還します。")).toHaveLength(3);
+  });
+
+  it("SP は先頭の議員のカードだけを開いた状態で始め、カードに開いているかの印を付ける", () => {
+    const html = render([
+      politician(),
+      politician({ slug: "sample-hanako", name: "サンプル花子" }),
+    ]);
+
+    expect(html).toContain('data-wallet-card="sample-taro" data-on="true"');
+    expect(html).toContain('data-wallet-card="sample-hanako" data-on="false"');
+    expect(html).toContain('data-wallet-sheet="sample-taro"');
+    expect(html).not.toContain('data-wallet-sheet="sample-hanako"');
+  });
 });

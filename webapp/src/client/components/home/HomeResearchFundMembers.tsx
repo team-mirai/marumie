@@ -5,6 +5,8 @@ import { useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import AmountSummary from "@/client/components/common/AmountSummary";
 import PoliticianAvatar from "@/client/components/research-fund/PoliticianAvatar";
 import CashFlowSection from "@/client/components/top-page/CashFlowSection";
+import { useWalletMorph } from "@/client/lib/use-wallet-morph";
+import { toggleOpen } from "@/client/lib/wallet-deck";
 import type { SankeyData } from "@/types/sankey";
 
 export interface HomeResearchFundMember {
@@ -54,21 +56,25 @@ function Chevron({ size = 16, className = "" }: { size?: number; className?: str
   );
 }
 
-/** 選んだ議員の金額と収支の流れ（区分タブつき）。others はほかの議員の図（切り替えても合計の柱を動かさないために測る） */
+/**
+ * 選んだ議員の金額と収支の流れ（区分タブつき）。others はほかの議員の図（切り替えても合計の柱を動かさないために測る）。
+ * SP の開いたカードでは、支給総額と支出総額を横に並べる（ラベルの下に金額）
+ */
 function MemberAmountsAndFlow({
   member,
-  home,
+  layout,
   others,
 }: {
   member: HomeResearchFundMember;
-  home: boolean;
+  layout: "pc" | "sp";
   others: SankeyData[];
 }) {
   return (
     <>
       {/* 未使用分は金額欄に出さない（サンキーの末尾ノードとしてのみ出す）。議員ページと同じ */}
       <AmountSummary
-        home={home}
+        home={layout === "pc"}
+        columns={layout === "sp"}
         items={[
           { label: "支給総額", color: "#2AA693", amount: member.kpi.granted },
           { label: "支出総額", color: "#DC2626", amount: member.kpi.spent },
@@ -95,6 +101,15 @@ function MemberAmountsAndFlow({
   );
 }
 
+/** 図の下に小さく右揃えで出す注記 */
+function ReturnNote({ className }: { className: string }) {
+  return (
+    <p className={`m-0 text-right text-[12px] leading-[1.6] text-[#4B5563] ${className}`}>
+      ※年内に使わなかった未使用分は国庫に返還します。
+    </p>
+  );
+}
+
 /** その議員のページへの黒いボタン */
 function MemberDetailButton({ member }: { member: HomeResearchFundMember }) {
   return (
@@ -112,11 +127,15 @@ function MemberDetailButton({ member }: { member: HomeResearchFundMember }) {
  * トップページの所属議員の切り替えと、選んだ議員の調研費（v9）。カードに金額は出さない。
  * PC（641px〜）は左右分割にし、左の名簿で選んだ議員の調研費を右の白いカードに出す。
  * SP はカードを縦に重ねたウォレットにし、タップしたカードを開いてその議員の調研費を出す（開いたカードをもう一度タップすると閉じる）。
+ * SP は複数枚を同時に開けて、開いたカードそれぞれにその議員の調研費を出す。
  * 調研費を公開している年は1つだけなので、年の切り替えは出さない（SP の開いたカードには年を押せないラベルで出す）。
  */
 export default function HomeResearchFundMembers({ members, financialYear }: Props) {
   const [selectedSlug, setSelectedSlug] = useState(members[0].slug);
-  const [spOpen, setSpOpen] = useState(true);
+  // SP は複数枚を同時に開ける。最初は先頭の議員を開いておく
+  const [spOpen, setSpOpen] = useState<string[]>(() => [members[0].slug]);
+  // 閉じる動きの途中で、まだシートを描いている議員
+  const [spClosing, setSpClosing] = useState<string[]>([]);
   const selected = members.find((member) => member.slug === selectedSlug) ?? members[0];
   const idPrefix = useId();
   const pcDetailId = `${idPrefix}-detail`;
@@ -127,32 +146,21 @@ export default function HomeResearchFundMembers({ members, financialYear }: Prop
     [members],
   );
 
-  // SP でカードを開閉しても、タップしたカードが画面上で跳ねないよう、選択・開閉が変わった描画のあとにずれをスクロールで打ち消す
-  const spCardRefs = useRef(new Map<string, HTMLDivElement>());
-  const anchor = useRef<{ slug: string; top: number } | null>(null);
+  // SP の開閉は高さ・余白を前後の状態のあいだでなめらかにつなぎ、押したカードは指の下から動かさない
+  const spListRef = useRef<HTMLUListElement>(null);
+  const walletMorph = useWalletMorph(spListRef);
+  const runWalletMorph = walletMorph.run;
   useLayoutEffect(() => {
-    const pending = anchor.current;
-    anchor.current = null;
-    const element = pending && spCardRefs.current.get(pending.slug);
-    if (!pending || !element) return;
-    const diff = element.getBoundingClientRect().top - pending.top;
-    if (Math.abs(diff) > 0.5) window.scrollBy(0, diff);
-  }, [selectedSlug, spOpen]);
-
-  const pickOnPc = (slug: string) => {
-    setSelectedSlug(slug);
-    setSpOpen(true);
-  };
+    runWalletMorph();
+  }, [spOpen, runWalletMorph]);
 
   const toggleOnSp = (slug: string) => {
-    const element = spCardRefs.current.get(slug);
-    if (element) anchor.current = { slug, top: element.getBoundingClientRect().top };
-    if (slug === selected.slug && spOpen) {
-      setSpOpen(false);
-    } else {
-      setSelectedSlug(slug);
-      setSpOpen(true);
-    }
+    const opening = !spOpen.includes(slug);
+    const animated = walletMorph.prepare(slug, opening, () =>
+      setSpClosing((closing) => closing.filter((item) => item !== slug)),
+    );
+    setSpOpen((open) => toggleOpen(open, slug));
+    if (!opening && animated) setSpClosing((closing) => [...closing, slug]);
   };
 
   return (
@@ -173,7 +181,7 @@ export default function HomeResearchFundMembers({ members, financialYear }: Prop
                   aria-pressed={pressed}
                   aria-controls={pcDetailId}
                   aria-label={`${member.name}の調研費を下に表示`}
-                  onClick={() => pickOnPc(member.slug)}
+                  onClick={() => setSelectedSlug(member.slug)}
                   className={`relative flex w-full cursor-pointer items-center gap-2 rounded-[14px] border-0 px-3 py-2 text-left transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0F8472] ${
                     pressed
                       ? "bg-[#E2F6F3] text-[#0B0F0E] after:absolute after:right-[-37px] after:top-1/2 after:z-[3] after:h-3.5 after:w-3.5 after:-translate-y-1/2 after:rotate-45 after:rounded-[2px] after:bg-white after:content-['']"
@@ -234,7 +242,8 @@ export default function HomeResearchFundMembers({ members, financialYear }: Prop
           </div>
 
           <div className="@container flex flex-col gap-6">
-            <MemberAmountsAndFlow member={selected} home others={allSankeys} />
+            <MemberAmountsAndFlow member={selected} layout="pc" others={allSankeys} />
+            <ReturnNote className="-mt-2" />
             {/* 更新日はカードの右下。PC（1101px〜）は「詳しく」ボタンと同じ行の右端に重ねる */}
             {selected.updatedAt && (
               <div className="flex justify-end min-[1101px]:@min-[720px]:pointer-events-none min-[1101px]:@min-[720px]:-mb-[76px] min-[1101px]:@min-[720px]:h-[52px] min-[1101px]:@min-[720px]:items-center">
@@ -248,32 +257,33 @@ export default function HomeResearchFundMembers({ members, financialYear }: Prop
         </section>
       </div>
 
-      {/* SP：カードを縦に重ねたウォレット。タップしたカードを開き、その下にその議員の調研費を出す */}
+      {/* SP：カードを縦に重ねたウォレット。タップしたカードを開き、その下にその議員の調研費を出す（複数枚を同時に開ける） */}
       <ul
+        ref={spListRef}
         aria-label="議員を選ぶ"
         className="m-0 flex list-none flex-col p-0 pb-1 pt-1.5 min-[641px]:hidden"
       >
         {members.map((member, index) => {
-          const open = spOpen && member.slug === selected.slug;
-          const afterOpen = index > 0 && spOpen && members[index - 1].slug === selected.slug;
+          const open = spOpen.includes(member.slug);
+          const closing = !open && spClosing.includes(member.slug);
+          const afterOpen = index > 0 && spOpen.includes(members[index - 1].slug);
           const isLast = index === members.length - 1;
           return (
-            <li key={member.slug} className={`flex flex-col ${afterOpen ? "mt-[18px]" : ""}`}>
-              {/* 畳んだカードは政党・政治団体の見出しの面より一回り小さく、開いたカードは同じ大きさにする */}
+            <li key={member.slug} className="flex flex-col">
+              {/* 畳んだカードは束に重ね、開いたカードの次のカードは白いパネルの下に 18px あけて置く。
+                  幅は開いても変わらない（政党・政治団体の見出しの面と同じ幅） */}
               <div
-                ref={(element) => {
-                  if (element) spCardRefs.current.set(member.slug, element);
-                  else spCardRefs.current.delete(member.slug);
-                }}
-                className={`mist-surface mist-member-${index % 4} mist-wallet-card relative z-[2] flex items-start gap-3 self-center text-[#0A1A17] ${
-                  index > 0 && !afterOpen ? "-mt-[30px]" : ""
+                data-wallet-card={member.slug}
+                data-on={open}
+                className={`mist-surface mist-member-${index % 4} mist-wallet-card relative z-[2] flex w-[calc((100%-40px)*1.071*1.04)] items-start gap-3 self-center text-[#0A1A17] ${
+                  afterOpen ? "mt-[18px]" : index > 0 ? "-mt-[30px]" : ""
                 } ${
                   open
-                    ? "aspect-[1.9825] w-[calc((100%-40px)*1.071*1.04)] rounded-[20px] py-[18px] pl-[18px] pr-[66px]"
-                    : `w-[calc((100%-40px)*1.071)] ${isLast ? "min-h-[62px]" : "min-h-[92px]"} rounded-[18px] px-4 pt-3.5 active:translate-y-0.5`
+                    ? "aspect-[1.9825] rounded-[20px] py-[18px] pl-[18px] pr-[66px]"
+                    : `${isLast ? "min-h-[62px]" : "min-h-[92px]"} rounded-[18px] px-4 pt-3.5 active:translate-y-0.5`
                 }`}
               >
-                {/* カード全体を覆う開閉ボタン（「詳しく見る」はこの上に重ね、ボタンの入れ子にしない） */}
+                {/* カード全体を覆う開閉ボタン（「詳しく見る」と年のラベルはこの上に重ね、ボタンの入れ子にしない） */}
                 <button
                   type="button"
                   aria-expanded={open}
@@ -299,7 +309,7 @@ export default function HomeResearchFundMembers({ members, financialYear }: Prop
                   </span>
                   {open && (
                     <span className="truncate text-[12px] font-semibold leading-[1.4] tracking-[0.08em] text-[#0A1A17]/80">
-                      調研費{member.periodLabel ? `・${member.periodLabel}` : ""}
+                      調研費・{member.periodLabel ?? "準備中"}
                     </span>
                   )}
                 </span>
@@ -318,8 +328,9 @@ export default function HomeResearchFundMembers({ members, financialYear }: Prop
                 </span>
                 {open && (
                   <>
-                    {/* 年は1つだけなので、押せる切り替えと見分けられるよう枠のない文字だけのラベルにする */}
-                    <span className="absolute bottom-3.5 left-5 flex h-10 items-center text-[14px] font-bold leading-none tabular-nums text-[#0A1A17]/80">
+                    {/* 年は1つだけなので、押せる切り替えと見分けられるよう枠のない文字だけのラベルにする。
+                        開閉ボタンより上に重ね、押してもカードを閉じない */}
+                    <span className="absolute bottom-3.5 left-5 z-[2] flex h-10 cursor-default items-center text-[14px] font-bold leading-none tabular-nums text-[#0A1A17]/80">
                       {financialYear}年
                     </span>
                     <Link
@@ -332,14 +343,19 @@ export default function HomeResearchFundMembers({ members, financialYear }: Prop
                   </>
                 )}
               </div>
-              {open && (
-                // 開いたカードを白いパネルの上端から 18px はみ出させ、カードの下から金額まで 26px あける（政党・政治団体のカードと同じ重なり）
+              {(open || closing) && (
+                // 開いたカードを白いパネルの上端から 18px はみ出させ、カードの下から金額まで 26px あける（政党・政治団体のカードと同じ重なり）。
+                // 閉じる動きの途中のシートは読み上げ・操作の対象から外す
                 <div
                   id={spDetailId(member.slug)}
+                  data-wallet-sheet={member.slug}
+                  aria-hidden={closing || undefined}
+                  inert={closing || undefined}
                   className="relative z-[1] mt-[calc(18px_-_(100%_-_40px)_*_1.071_*_1.04_/_1.9825)] flex flex-col gap-[22px] rounded-[24px] bg-white px-4 pb-5 pt-[calc((100%_-_40px)_*_1.071_*_1.04_/_1.9825_+_8px)] shadow-[0_0_0_1px_#DCE4E1,0_30px_50px_-34px_rgba(10,60,52,0.35)]"
                 >
-                  <MemberAmountsAndFlow member={member} home={false} others={allSankeys} />
-                  {/* 更新日はサンキー図の右下 */}
+                  <MemberAmountsAndFlow member={member} layout="sp" others={allSankeys} />
+                  <ReturnNote className="-mt-1.5" />
+                  {/* 更新日はカードの外（サンキー図の右下） */}
                   {member.updatedAt && (
                     <span className="-mt-1.5 self-end text-[12px] font-semibold leading-none text-[#4B5563] tabular-nums">
                       {member.updatedAt}
