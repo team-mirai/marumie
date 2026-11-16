@@ -1,9 +1,4 @@
-import {
-  isSyncImportStorageKey,
-  selectStaleSyncImportStorageKeys,
-  SYNC_IMPORT_MAX_FILE_BYTES,
-  validateSyncImportFileSize,
-} from "@/server/contexts/data-import/domain/models/organization-sync-import";
+import { isSyncImportStorageKey, selectStaleSyncImportStorageKeys, SYNC_IMPORT_MAX_FILE_BYTES, validateSyncImportFileSize } from "@/server/contexts/shared/domain/models/sync-import-file";
 
 describe("validateSyncImportFileSize", () => {
   it("上限ちょうどまでは受け付ける", () => {

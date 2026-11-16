@@ -134,6 +134,37 @@ describe("getVisibleNavSections", () => {
     expect(hrefsFor(BOTH, { syncImportEnabled: true })).not.toContain("/sync-import");
   });
 
+  it("調研費の同期用インポートは、対象の選択に関わらず有効な環境の admin にだけ出す", () => {
+    const researchFundTarget = {
+      kind: "research-fund" as const,
+      key: "book:7",
+      name: "議員A",
+      year: 2026,
+      politicianId: "3",
+      bookId: "7",
+      draftCount: 0,
+    };
+
+    for (const target of [null, organizationTarget, researchFundTarget]) {
+      const hrefsFor = (roles: Roles, environment?: { syncImportEnabled?: boolean }) =>
+        hrefsOf(getVisibleNavSections(roles, target, environment));
+
+      // 既定（本番・フラグ未設定）では admin にも出さない
+      expect(hrefsFor(["admin"])).not.toContain("/research-fund-sync-import");
+      expect(hrefsFor(["admin"], { syncImportEnabled: false })).not.toContain(
+        "/research-fund-sync-import",
+      );
+      expect(hrefsFor(["admin"], { syncImportEnabled: true })).toContain(
+        "/research-fund-sync-import",
+      );
+      for (const roles of [PF_ONLY, RF_ONLY, BOTH]) {
+        expect(hrefsFor(roles, { syncImportEnabled: true })).not.toContain(
+          "/research-fund-sync-import",
+        );
+      }
+    }
+  });
+
   it("各項目にハンドオフ対応表どおりのアイコン識別子が設定されている", () => {
     const iconByHref = Object.fromEntries(
       getVisibleNavSections(["admin"], organizationTarget).flatMap((s) =>

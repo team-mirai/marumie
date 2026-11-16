@@ -186,6 +186,38 @@ function firstStatementCallsGuard(body: ts.Block | undefined, guards: readonly s
   return found;
 }
 
+/**
+ * 最初の文が `requireRole("admin")` か。admin だけが使える操作（議員室をまたぐ同期用インポートなど）は、
+ * 担当の議員室で絞るガードより厳しいので、調査研究費のサーバーアクションでも許す。
+ */
+function firstStatementRequiresAdmin(body: ts.Block | undefined): boolean {
+  if (!body) return false;
+  const first = body.statements.find(
+    (s) => !(ts.isExpressionStatement(s) && ts.isStringLiteral(s.expression)),
+  );
+  if (!first) return false;
+
+  let found = false;
+  const visit = (node: ts.Node) => {
+    if (found) return;
+    if (ts.isArrowFunction(node) || ts.isFunctionExpression(node) || ts.isFunctionDeclaration(node)) return;
+    if (
+      ts.isCallExpression(node) &&
+      ts.isIdentifier(node.expression) &&
+      node.expression.text === "requireRole" &&
+      node.arguments.length === 1 &&
+      ts.isStringLiteral(node.arguments[0]) &&
+      node.arguments[0].text === "admin"
+    ) {
+      found = true;
+      return;
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(first);
+  return found;
+}
+
 describe("ロールのガードの網羅", () => {
   const entries = collectEntries();
 
@@ -204,7 +236,7 @@ describe("ロールのガードの網羅", () => {
     expect(missing).toEqual([]);
   });
 
-  it("調査研究費のサーバーアクションは、担当の議員室だけに書き込めるガード（requireResearchFundWriter）を最初に通る", () => {
+  it("調査研究費のサーバーアクションは、担当の議員室だけに書き込めるガード（requireResearchFundWriter）か admin 限定のガードを最初に通る", () => {
     const writeActions = entries.filter(
       (entry) =>
         entry.kind === "action" &&
@@ -213,7 +245,11 @@ describe("ロールのガードの網羅", () => {
     expect(writeActions.length).toBeGreaterThan(15);
 
     const missing = writeActions
-      .filter((entry) => !firstStatementCallsGuard(entry.body, ["requireResearchFundWriter"]))
+      .filter(
+        (entry) =>
+          !firstStatementCallsGuard(entry.body, ["requireResearchFundWriter"]) &&
+          !firstStatementRequiresAdmin(entry.body),
+      )
       .map((entry) => `${entry.key}（requireResearchFundWriter を最初に呼ぶ）`);
     expect(missing).toEqual([]);
   });

@@ -4,15 +4,15 @@ import {
   SyncImportValidationError,
   selectStaleSyncImportStorageKeys,
   validateSyncImportFileSize,
-} from "@/server/contexts/data-import/domain/models/organization-sync-import";
+} from "@/server/contexts/shared/domain/models/sync-import-file";
 import type {
   ISyncImportFileStorage,
   SyncImportUploadTarget,
-} from "@/server/contexts/data-import/domain/repositories/sync-import-file-storage.interface";
+} from "@/server/contexts/shared/domain/repositories/sync-import-file-storage.interface";
 import {
   assertSyncImportAllowed,
   type SyncImportEnvironment,
-} from "@/server/contexts/data-import/domain/services/sync-import-availability";
+} from "@/server/contexts/shared/domain/services/sync-import-availability";
 
 interface PrepareSyncImportUploadInput {
   /** ブラウザで選ばれたファイルのバイト数。 */

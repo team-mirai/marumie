@@ -1,11 +1,11 @@
 "use server";
 
 import { requireRole } from "@/server/contexts/auth/presentation/loaders/require-role";
-import { PrepareSyncImportUploadUsecase } from "@/server/contexts/data-import/application/usecases/prepare-sync-import-upload-usecase";
-import type { SyncImportUploadTarget } from "@/server/contexts/data-import/domain/repositories/sync-import-file-storage.interface";
-import { buildSyncImportFileStorage } from "@/server/contexts/data-import/infrastructure/storage/build-sync-import-file-storage";
-import { toSyncImportErrorMessage } from "@/server/contexts/data-import/presentation/actions/sync-import-error-message";
-import { readSyncImportEnvironment } from "@/server/contexts/data-import/presentation/loaders/read-sync-import-environment";
+import { PrepareSyncImportUploadUsecase } from "@/server/contexts/shared/application/usecases/prepare-sync-import-upload-usecase";
+import type { SyncImportUploadTarget } from "@/server/contexts/shared/domain/repositories/sync-import-file-storage.interface";
+import { buildSyncImportFileStorage } from "@/server/contexts/shared/infrastructure/storage/build-sync-import-file-storage";
+import { toSyncImportErrorMessage } from "@/server/contexts/shared/presentation/actions/sync-import-error-message";
+import { readSyncImportEnvironment } from "@/server/contexts/shared/presentation/loaders/read-sync-import-environment";
 
 export type PrepareSyncImportUploadResponse =
   | { ok: true; target: SyncImportUploadTarget }

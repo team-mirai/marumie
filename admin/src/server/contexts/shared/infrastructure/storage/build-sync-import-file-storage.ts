@@ -1,6 +1,6 @@
 import "server-only";
 import { createClient } from "@supabase/supabase-js";
-import { SupabaseSyncImportFileStorage } from "@/server/contexts/data-import/infrastructure/storage/supabase-sync-import-file-storage";
+import { SupabaseSyncImportFileStorage } from "@/server/contexts/shared/infrastructure/storage/supabase-sync-import-file-storage";
 
 /** 同期用JSONを置く非公開バケットの既定名。ローカルは supabase/config.toml が同名で定義する */
 const DEFAULT_BUCKET = "sync-imports";

@@ -58,10 +58,19 @@ const RESEARCH_FUND_SYNC_EXPORT_ITEM: NavItem = {
   role: "admin",
 };
 
+/** 調研費の同期用インポート。ファイルに入っている議員室を置き換えるので、対象の選択に関わらず出す。 */
+const RESEARCH_FUND_SYNC_IMPORT_ITEM: NavItem = {
+  href: "/research-fund-sync-import",
+  label: "調研費の同期用インポート",
+  icon: "database",
+  role: "admin",
+  syncImportOnly: true,
+};
+
 /** 対象が政治団体以外（未選択・議員室）のときのデータ同期セクション。 */
 const RESEARCH_FUND_SYNC_SECTION: NavSection = {
   title: "データ同期",
-  items: [RESEARCH_FUND_SYNC_EXPORT_ITEM],
+  items: [RESEARCH_FUND_SYNC_EXPORT_ITEM, RESEARCH_FUND_SYNC_IMPORT_ITEM],
 };
 
 /** 政治団体（× 年度）が選ばれていて初めて操作できるセクション。 */
@@ -122,6 +131,7 @@ const ORGANIZATION_SECTIONS: NavSection[] = [
         role: "admin",
         syncImportOnly: true,
       },
+      RESEARCH_FUND_SYNC_IMPORT_ITEM,
     ],
   },
 ];

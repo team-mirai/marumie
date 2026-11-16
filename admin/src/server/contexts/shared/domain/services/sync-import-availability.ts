@@ -1,4 +1,4 @@
-import { SyncImportForbiddenError } from "@/server/contexts/data-import/domain/models/organization-sync-import";
+import { SyncImportForbiddenError } from "@/server/contexts/shared/domain/models/sync-import-file";
 
 /**
  * 取り込みの可否を決める環境の値。

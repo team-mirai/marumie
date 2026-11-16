@@ -1,4 +1,4 @@
-import type { SyncImportStoredFile } from "@/server/contexts/data-import/domain/models/organization-sync-import";
+import type { SyncImportStoredFile } from "@/server/contexts/shared/domain/models/sync-import-file";
 
 /** ブラウザがファイル本体を直接置くための、一度きりのアップロード先。 */
 export interface SyncImportUploadTarget {

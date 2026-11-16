@@ -3,7 +3,7 @@ import "server-only";
 import {
   isSyncImportAllowed,
   type SyncImportEnvironment,
-} from "@/server/contexts/data-import/domain/services/sync-import-availability";
+} from "@/server/contexts/shared/domain/services/sync-import-availability";
 
 /** 取り込みの可否判定に使う環境変数をまとめて読む。 */
 export function readSyncImportEnvironment(): SyncImportEnvironment {
