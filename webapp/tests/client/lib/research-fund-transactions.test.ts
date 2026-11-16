@@ -11,8 +11,6 @@ import {
   revealResearchFundGroupRows,
   sortResearchFundExpenses,
   sumResearchFundTransactions,
-  toggleAmountSort,
-  toggleDateSort,
 } from "@/client/lib/research-fund-transactions";
 import type { ResearchFundExpenseView } from "@/server/contexts/research-fund/domain/models/research-fund-page";
 
@@ -45,20 +43,6 @@ describe("formatResearchFundDate", () => {
   it("月日の先頭の0を落として「.」でつなぐ", () => {
     expect(formatResearchFundDate("2026-05-08")).toBe("2026.5.8");
     expect(formatResearchFundDate("2026-10-20")).toBe("2026.10.20");
-  });
-});
-
-describe("toggleDateSort / toggleAmountSort", () => {
-  it("日付のボタンは新しい順⇄古い順を行き来し、金額順からは新しい順にする", () => {
-    expect(toggleDateSort("new")).toBe("old");
-    expect(toggleDateSort("old")).toBe("new");
-    expect(toggleDateSort("amountDesc")).toBe("new");
-  });
-
-  it("金額のボタンは降順⇄昇順を行き来し、日付順からは降順にする", () => {
-    expect(toggleAmountSort("amountDesc")).toBe("amountAsc");
-    expect(toggleAmountSort("amountAsc")).toBe("amountDesc");
-    expect(toggleAmountSort("new")).toBe("amountDesc");
   });
 });
 
@@ -100,6 +84,17 @@ describe("sortResearchFundExpenses（入出金の混在）", () => {
 
     expect(ids(sortResearchFundExpenses(rows, "amountDesc"))).toEqual(["2", "3", "1"]);
     expect(ids(sortResearchFundExpenses(rows, "amountAsc"))).toEqual(["1", "3", "2"]);
+  });
+
+  it("支出が多い順・収入が多い順は、支給（入金）をプラス・支出をマイナスとして比べる", () => {
+    const rows = [
+      view({ id: "small", amount: 1200 }),
+      view({ id: "grant", kind: "grant", amount: 1_000_000 }),
+      view({ id: "large", amount: 99_000 }),
+    ];
+
+    expect(ids(sortResearchFundExpenses(rows, "expDesc"))).toEqual(["large", "small", "grant"]);
+    expect(ids(sortResearchFundExpenses(rows, "incDesc"))).toEqual(["grant", "small", "large"]);
   });
 });
 
@@ -218,7 +213,7 @@ describe("parseResearchFundTransactionsQuery", () => {
     ).toEqual({ categories: ["transportation", "meetings"], sort: "amountAsc", page: 3 });
   });
 
-  it("sort / order の組み合わせを4通りの並びに対応させる（order が無ければ降順）", () => {
+  it("sort / order の組み合わせを6通りの並びに対応させる（order が無ければ降順）", () => {
     const sortOf = (params: Record<string, string>) =>
       parseResearchFundTransactionsQuery(params).sort;
     expect(sortOf({ sort: "date", order: "desc" })).toBe("new");
@@ -226,6 +221,8 @@ describe("parseResearchFundTransactionsQuery", () => {
     expect(sortOf({ sort: "amount", order: "desc" })).toBe("amountDesc");
     expect(sortOf({ sort: "amount" })).toBe("amountDesc");
     expect(sortOf({ order: "asc" })).toBe("old");
+    expect(sortOf({ sort: "expense", order: "desc" })).toBe("expDesc");
+    expect(sortOf({ sort: "income" })).toBe("incDesc");
   });
 
   it("不正な並び順・ページは既定に倒す", () => {

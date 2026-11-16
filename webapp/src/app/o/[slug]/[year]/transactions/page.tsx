@@ -9,9 +9,24 @@ import InteractiveTransactionTable from "@/client/components/top-page/features/t
 import { loadTransactionsPageData } from "@/server/contexts/public-finance/presentation/loaders/load-transactions-page-data";
 import { loadOrganizations } from "@/server/contexts/public-finance/presentation/loaders/load-organizations";
 import { formatUpdatedAt } from "@/client/lib/format-date";
+import { parseTransactionSort, type TransactionSort } from "@/client/lib/transaction-sort";
+import type { TransactionListSortBy } from "@/server/contexts/public-finance/domain/repositories/transaction-list-repository.interface";
 
 const VALID_YEARS = [2025, 2026] as const;
 const DEFAULT_YEAR = 2026;
+
+/** 並び順をサーバーでの並べ方にする。支出・収入が多い順は、収入をプラス・支出をマイナスとした金額で並べる */
+const SERVER_SORT: Record<
+  TransactionSort,
+  { sortBy: TransactionListSortBy; order: "asc" | "desc" }
+> = {
+  new: { sortBy: "date", order: "desc" },
+  old: { sortBy: "date", order: "asc" },
+  amountDesc: { sortBy: "amount", order: "desc" },
+  amountAsc: { sortBy: "amount", order: "asc" },
+  expDesc: { sortBy: "signedAmount", order: "asc" },
+  incDesc: { sortBy: "signedAmount", order: "desc" },
+};
 
 interface TransactionsPageProps {
   params: Promise<{
@@ -76,15 +91,15 @@ export default async function TransactionsPage({ params, searchParams }: Transac
 
   const transactionType = filterType as "income" | "expense" | undefined;
 
-  // sortBy: 'date' | 'amount' (read from 'sort' URL parameter)
-  const sortBy = Array.isArray(searchParamsResolved.sort)
-    ? searchParamsResolved.sort[0]
-    : searchParamsResolved.sort;
-
-  // order: 'asc' | 'desc'
-  const order = Array.isArray(searchParamsResolved.order)
-    ? searchParamsResolved.order[0]
-    : searchParamsResolved.order;
+  // sort / order: 並び順（date / amount / expense / income と asc / desc）
+  const sort = parseTransactionSort(
+    Array.isArray(searchParamsResolved.sort)
+      ? searchParamsResolved.sort[0]
+      : searchParamsResolved.sort,
+    Array.isArray(searchParamsResolved.order)
+      ? searchParamsResolved.order[0]
+      : searchParamsResolved.order,
+  );
 
   // categories: multiple category keys for filtering (comma-separated)
   const categories = searchParamsResolved.categories
@@ -98,8 +113,7 @@ export default async function TransactionsPage({ params, searchParams }: Transac
       perPage,
       transactionType,
       financialYear,
-      sortBy: sortBy as "date" | "amount" | undefined,
-      order: order as "asc" | "desc" | undefined,
+      ...SERVER_SORT[sort],
       categories,
     });
 
@@ -132,6 +146,7 @@ export default async function TransactionsPage({ params, searchParams }: Transac
               perPage={data.perPage}
               totalPages={data.totalPages}
               selectedCategories={categories}
+              sort={sort}
             />
           </SectionCard>
         </div>
