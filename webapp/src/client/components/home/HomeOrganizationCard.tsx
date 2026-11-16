@@ -32,6 +32,8 @@ interface HomeOrganizationCardProps {
   defaultYear: number;
   /** 金額の文字の大きさ。政治団体のカードを横に並べるときは "compact" */
   amountSize?: "default" | "compact";
+  /** 見出しの階層。トップページに直接並べるカードは h2、「議員の政治団体」のようにセクションの中に並べるカードは h3 */
+  headingLevel?: "h2" | "h3";
 }
 
 const CHEVRON_PATH = "M9 5l7 7-7 7";
@@ -53,7 +55,9 @@ export default function HomeOrganizationCard({
   years,
   defaultYear,
   amountSize = "default",
+  headingLevel = "h2",
 }: HomeOrganizationCardProps) {
+  const Heading = headingLevel;
   const [currentYear, setCurrentYear] = useState(defaultYear);
   const current = years.find((y) => y.year === currentYear) ?? years[0];
   const detailHref = `/o/${slug}/${current.year}`;
@@ -63,11 +67,11 @@ export default function HomeOrganizationCard({
   const yearOptions = years.map(({ year }) => ({ year }));
 
   const heading = (
-    <h2 className="m-0 break-keep text-[18px] font-black leading-[1.3] tracking-[0.01em] [overflow-wrap:anywhere] min-[641px]:text-[clamp(22px,2.6vw,32px)]">
+    <Heading className="m-0 break-keep text-[18px] font-black leading-[1.3] tracking-[0.01em] [overflow-wrap:anywhere] min-[641px]:text-[clamp(22px,2.6vw,32px)]">
       <Link href={detailHref} className="text-inherit hover:underline hover:underline-offset-[3px]">
         {title}
       </Link>
-    </h2>
+    </Heading>
   );
   const sub = (
     <span className="text-[14px] font-semibold text-[#238778]">

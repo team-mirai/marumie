@@ -51,19 +51,25 @@ describe("HomeResearchFundSection", () => {
     expect(html).toContain("チームみらいの調研費の使用方針");
   });
 
-  it("議員カードに名前・ふりがな・院・番号を表示順に出し、金額は出さない", () => {
+  it("見出しを h2 にし、セクションの名前にする", () => {
+    const html = render([politician()]);
+
+    expect(html).toMatch(/<section id="home-rf" aria-labelledby="home-rf-heading"/);
+    expect(html).toMatch(/<h2 id="home-rf-heading"[^>]*>所属議員の調研費<\/h2>/);
+  });
+
+  it("議員を表示順に並べ、ふりがな・院・番号・金額はカードに出さない", () => {
     const html = render([
       politician(),
-      politician({ slug: "sample-hanako", name: "サンプル花子", nameKana: null, house: "sangiin" }),
+      politician({ slug: "sample-hanako", name: "サンプル花子", house: "sangiin" }),
     ]);
 
-    expect(html).toContain("さんぷるたろう");
-    expect(html).toContain("衆議院");
-    expect(html).toContain("No.01");
-    expect(html).toContain("参議院");
-    expect(html).toContain("No.02");
     expect(html.indexOf("サンプル太郎")).toBeLessThan(html.indexOf("サンプル花子"));
     expect(html).toContain('aria-label="サンプル花子の調研費を下に表示"');
+    expect(html).toContain('aria-label="サンプル花子の調研費"');
+    expect(html).not.toContain("さんぷるたろう");
+    expect(html).not.toContain("参議院");
+    expect(html).not.toContain("No.01");
   });
 
   it("顔写真があれば写真の API を、無ければ人型のアイコンを出す", () => {
@@ -77,20 +83,31 @@ describe("HomeResearchFundSection", () => {
     expect(html).toContain('role="img" aria-label="サンプル花子の写真"');
   });
 
-  it("最初は先頭の議員の調研費（年度・更新日・支給総額・支出総額・詳しく）を出す", () => {
+  it("最初は先頭の議員の調研費（期間・更新日・支給総額・支出総額・詳しく）を出す", () => {
     const html = render([
       politician(),
       politician({ slug: "sample-hanako", name: "サンプル花子" }),
     ]);
 
-    expect(html).toContain("サンプル太郎の調研費</h3>");
+    expect(html).toMatch(
+      /<h3[^>]*><a [^>]*href="\/p\/sample-taro\/2026"[^>]*>サンプル太郎の調研費<\/a><\/h3>/,
+    );
     expect(html).toContain("2026年2月〜8月支給分");
-    expect(html).toContain("2026.8.20更新");
-    expect(html).toContain("2026年");
+    expect(html).toContain("2026.8.20 更新");
     expect(html).toContain("支給総額");
     expect(html).toContain("支出総額");
-    expect(html).toContain('href="/p/sample-taro/2026"');
     expect(html).toContain("サンプル太郎の調研費を詳しく");
     expect(html).not.toContain("サンプル花子の調研費を詳しく");
+  });
+
+  it("SP の開いたカードに、名前の下の期間・押せない年のラベル・「詳しく見る」を出し、年の切り替えは出さない", () => {
+    const html = render([politician()]);
+
+    expect(html).toContain("調研費・2026年2月〜8月支給分");
+    expect(html).toMatch(/>2026(<!-- -->)?年<\/span>/);
+    expect(html).toMatch(
+      /<a [^>]*aria-label="サンプル太郎の調研費を詳しく見る"[^>]*>詳しく見る<\/a>/,
+    );
+    expect(html).not.toContain('aria-label="表示する年"');
   });
 });

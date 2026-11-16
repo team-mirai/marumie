@@ -56,7 +56,7 @@ test.describe("トップページ", () => {
 	test("政治団体ごとのカードが出て、その年の政治団体ページへ移れる", async ({ page }) => {
 		await page.goto("/");
 		const card = page
-			.getByRole("region", { name: "政治団体の収支" })
+			.getByRole("region", { name: "議員の政治団体" })
 			.getByRole("region", { name: "E2Eテスト団体" });
 
 		await expect(card.getByRole("heading", { name: "E2Eテスト団体" })).toBeVisible();
@@ -73,7 +73,7 @@ test.describe("トップページ", () => {
 		await page.goto("/");
 
 		await expect(
-			page.getByRole("region", { name: "政治団体の収支" }).getByRole("region", { name: "サンプル党の収支" }),
+			page.getByRole("region", { name: "議員の政治団体" }).getByRole("region", { name: "サンプル党の収支" }),
 		).toHaveCount(0);
 	});
 
@@ -105,7 +105,7 @@ test.describe("トップページ", () => {
 		await expect(detail.getByRole("heading", { name: "サンプル 太郎の調研費" })).toBeVisible();
 		await expect(detail.getByText("支給総額")).toBeVisible();
 		await expect(detail.getByRole("tab", { name: "法律上の区分" })).toBeVisible();
-		await detail.getByRole("link", { name: "サンプル 太郎の調研費を詳しく" }).click();
+		await detail.getByRole("link", { name: "サンプル 太郎の調研費を詳しく", exact: true }).click();
 		await expect(page).toHaveURL("/p/sample-taro/2026");
 	});
 
@@ -132,7 +132,7 @@ test.describe("トップページ", () => {
 		await page.goto("/");
 		const section = page.getByRole("region", { name: "所属議員の調研費" });
 		const card = section.getByRole("button", { name: "サンプル 太郎の調研費", exact: true });
-		const detailLink = section.getByRole("link", { name: "サンプル 太郎の調研費を詳しく" });
+		const detailLink = section.getByRole("link", { name: "サンプル 太郎の調研費を詳しく", exact: true });
 
 		await expect(card).toHaveAttribute("aria-expanded", "true");
 		await expect(detailLink).toBeVisible();

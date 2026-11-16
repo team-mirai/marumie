@@ -58,7 +58,7 @@ test.describe("主要な導線", () => {
 
 		await page
 			.getByRole("region", { name: "所属議員の調研費" })
-			.getByRole("link", { name: "サンプル 太郎の調研費を詳しく" })
+			.getByRole("link", { name: "サンプル 太郎の調研費を詳しく", exact: true })
 			.click();
 
 		await expectPoliticianPage(page);
