@@ -1,14 +1,16 @@
 import "client-only";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 
-/** 要素が画面に入ったら true にする（一度 true になったら戻さない）。出現の動きの合図に使う。 */
+/**
+ * 要素が画面に入ったら true にする（一度 true になったら戻さない）。出現の動きの合図に使う。
+ * ref はコールバック ref なので、最初は描かれず後から現れた要素も、現れた時点から監視する。
+ */
 export function useInView<T extends Element>() {
-  const ref = useRef<T>(null);
+  const [el, setEl] = useState<T | null>(null);
   const [inView, setInView] = useState(false);
   useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
+    if (!el || inView) return;
     if (typeof IntersectionObserver === "undefined") {
       setInView(true);
       return;
@@ -24,6 +26,6 @@ export function useInView<T extends Element>() {
     );
     observer.observe(el);
     return () => observer.disconnect();
-  }, []);
-  return { ref, inView };
+  }, [el, inView]);
+  return { ref: setEl, inView };
 }
