@@ -87,10 +87,7 @@ test.describe("主要な導線", () => {
 		await expectGroupPage(page, 2025);
 
 		await nav.getByRole("button", { name: "調研費" }).click();
-		await menu
-			.getByRole("navigation", { name: "サンプル 太郎の調研費の表示する年" })
-			.getByRole("link", { name: "2026" })
-			.click();
+		await menu.getByRole("link", { name: /サンプル 太郎/ }).click();
 		await expectPoliticianPage(page);
 
 		await nav.getByRole("link", { name: "まる見え政治資金とは" }).click();
