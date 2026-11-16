@@ -23,11 +23,15 @@ import { test, expect, type Page } from "@playwright/test";
 //        export DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:55432/postgres
 //        export DIRECT_URL="$DATABASE_URL"
 //        pnpm db:migrate:deploy && SUPABASE_ENV_OPTIONAL=1 pnpm db:seed
-//        # 2. Linux のブラウザを起動する（バージョンは webapp の @playwright/test に合わせる）
+//        # 2. Linux のブラウザを起動する。バージョンが webapp の @playwright/test と違うと
+//        #    `Playwright version mismatch`（428）で全テストが落ちるので、入っているバージョンを読んで合わせる
+//        PW_VERSION=$(pnpm --filter webapp exec node -p "require('@playwright/test/package.json').version")
 //        docker run -d --rm --name visual-browser --platform linux/amd64 --init -p 127.0.0.1:53333:3000 \
-//          mcr.microsoft.com/playwright:v1.64.1-noble \
-//          npx -y playwright@1.64.1 run-server --port 3000 --host 0.0.0.0
+//          "mcr.microsoft.com/playwright:v${PW_VERSION}-noble" \
+//          npx -y "playwright@${PW_VERSION}" run-server --port 3000 --host 0.0.0.0
 //        # 3. UTC のサーバーに対して、Linux のブラウザで撮り直す（webapp/.env.local の Supabase 設定は空で上書きする）
+//        #    Apple Silicon の Mac では amd64 のエミュレーションでブラウザが落ちる（Target crashed）ことがある。
+//        #    そのときは --workers=1 を付けて 1 つずつ撮る
 //        TZ=UTC SUPABASE_URL= SUPABASE_SERVICE_ROLE_KEY= \
 //          PW_TEST_CONNECT_WS_ENDPOINT=ws://127.0.0.1:53333/ PW_TEST_CONNECT_EXPOSE_NETWORK='<loopback>' \
 //          pnpm --filter webapp exec playwright test visual.spec.ts --update-snapshots
