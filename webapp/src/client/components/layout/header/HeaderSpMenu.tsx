@@ -147,7 +147,10 @@ export default function HeaderSpMenu({
                           size="sm"
                         />
                         <span className="min-w-0 flex-1">{politician.name}</span>
-                        <span className="text-xs font-medium text-[#6B7280]">{year}年</span>
+                        {/* 公開している年が1つだけなら年で見分ける必要が無いので出さない */}
+                        {politician.years.length > 1 && (
+                          <span className="text-xs font-medium text-[#6B7280]">{year}年</span>
+                        )}
                       </Link>
                     </li>
                   )),

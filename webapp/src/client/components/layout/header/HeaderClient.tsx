@@ -112,29 +112,15 @@ export default function HeaderClient({ organizations, politiciansByYear }: Heade
                 </div>
               </div>
 
-              {/* Title and Subtitle - Mobile: Vertical Stack, Desktop: Horizontal with baseline alignment */}
-              <div className="flex flex-col gap-1.5 2xl:flex-row 2xl:items-end 2xl:gap-2 min-w-0">
-                {/* SP用ロゴ (xl未満で表示) */}
-                <div className="h-[45px] relative w-[126px] xl:hidden">
-                  <Image
-                    src="/logos/service-logo-sp.svg"
-                    alt="みらいまる見え政治資金"
-                    fill
-                    className="object-contain object-left"
-                    priority
-                  />
-                </div>
-                {/* PC用ロゴ (xl以上で表示) */}
-                <div className="hidden xl:block h-7 relative w-[300px]">
-                  <Image
-                    src="/logos/service-logo-pc.svg"
-                    alt="みらいまる見え政治資金"
-                    fill
-                    className="object-contain object-left"
-                    priority
-                  />
-                </div>
-              </div>
+              {/* サービス名のロゴ（デザイン v9）。SP でも PC 用のロゴを幅に合わせて縮めて1行で出す */}
+              <Image
+                src="/logos/service-logo-pc-marumie.svg"
+                alt="みらいまる見え政治資金"
+                width={187}
+                height={26}
+                className="block h-[22px] w-auto max-w-[min(240px,calc(100vw-120px))] object-contain object-left xl:h-7 xl:max-w-[300px]"
+                priority
+              />
             </Link>
 
             <div className="flex flex-1 items-center justify-end h-12 min-w-0">
