@@ -88,6 +88,8 @@ function MemberAmountsAndFlow({
           alternatives: others,
         }}
         emptyMessage="公開中の調査研究費のデータがありません"
+        // 「指を広げて拡大」はトップの 1 枚目（チームみらいの収支）の図だけに出す
+        pinchHint={false}
       />
     </>
   );

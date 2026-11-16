@@ -133,12 +133,21 @@ test.describe("調査研究費 議員ページ", () => {
 		});
 	}
 
-	test("SP 幅では収支の流れを全体表示し、ピンチで拡大できると添える", async ({ page }) => {
+	test("SP 幅では収支の流れを全体表示し、指を広げるか「拡大」ボタンで拡大できる", async ({
+		page,
+	}) => {
 		await page.setViewportSize({ width: 390, height: 844 });
 		await page.goto(PAGE_URL);
 		const cashFlow = page.locator("#cash-flow");
 
-		await expect(cashFlow.getByText("ピンチで拡大できます")).toBeVisible();
+		// 案内は図の上に重ねて数秒で消えるので、出ていること（DOM にあること）だけを見る
+		await expect(cashFlow.getByText("指を広げて拡大")).toBeAttached();
+		// 「拡大」で拡大し、拡大中は「全体を表示」に入れ替わる
+		await cashFlow.getByRole("button", { name: "図を拡大する" }).click();
+		await expect(cashFlow.getByRole("button", { name: "全体を表示" })).toBeVisible();
+		await expect(cashFlow.getByRole("button", { name: "図を拡大する" })).toHaveCount(0);
+		await cashFlow.getByRole("button", { name: "全体を表示" }).click();
+		await expect(cashFlow.getByRole("button", { name: "図を拡大する" })).toBeVisible();
 		// 支給期間と更新日はカードの末尾に1行で出す
 		await expect(cashFlow.getByText(/支給分　\d{4}\.\d{1,2}\.\d{1,2}更新$/)).toBeVisible();
 		const chart = page.locator('[role="group"][aria-label="調査研究費の使いみちの流れ図"]');

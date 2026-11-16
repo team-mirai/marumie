@@ -160,6 +160,8 @@ export default function HomeOrganizationCard({
               key={current.year}
               political={current.political}
               friendly={current.friendly}
+              // 「指を広げて拡大」はトップの 1 枚目（チームみらいの収支）の図だけに出す
+              pinchHint={tone === "party"}
             />
           </div>
           {/* 更新日はカードの右下。PC（1101px〜）は「詳しく」ボタンと同じ行の右端に重ねる。
