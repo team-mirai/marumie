@@ -18,6 +18,9 @@ test.describe("フッター", () => {
 		await expect(
 			politicians.getByRole("link", { name: "サンプル 太郎" }),
 		).toHaveAttribute("href", "/p/sample-taro/2026");
+		await expect(
+			politicians.getByRole("link", { name: "サンプル 美咲" }),
+		).toHaveAttribute("href", "/p/sample-misaki/2026");
 		await expect(politicians.getByText(/サンプル 花子/)).toHaveCount(0);
 		await expect(politicians.getByText(/サンプル 次郎/)).toHaveCount(0);
 

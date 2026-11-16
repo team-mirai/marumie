@@ -1,6 +1,7 @@
 import type { PrismaClient } from "@prisma/client";
 import {
   buildResearchFundJournalEntries,
+  buildSecondPoliticianJournalEntries,
   researchFundJournalEntriesSeeder,
 } from "@/prisma/seeds/researchFundJournalEntries";
 
@@ -99,35 +100,58 @@ describe("research fund journal seed", () => {
     for (const entry of matching) expect(lines(entry)[0]).toMatchObject({ accountKey: key });
   });
 
-  it("seeds only sample-taro's 2026 book and does not duplicate entries on rerun", async () => {
-    const saved: { hash: string }[] = [];
+  it("gives sample-misaki a small set of published expenses and grants with their own hashes", () => {
+    const second = buildSecondPoliticianJournalEntries();
+    expect(second.every((entry) => entry.status === "published")).toBe(true);
+    expect(second.filter((entry) => entry.source === "grant")).toHaveLength(5);
+    expect(second.filter((entry) => entry.source === "manual")).toHaveLength(10);
+    expect(new Set(second.map((entry) => entry.hash)).size).toBe(second.length);
+    const taroHashes = new Set(entries.map((entry) => entry.hash));
+    for (const entry of second) expect(taroHashes.has(entry.hash)).toBe(false);
+  });
+
+  it("seeds sample-taro's and sample-misaki's 2026 books and does not duplicate entries on rerun", async () => {
+    const saved = new Map<bigint, { hash: string }[]>();
     const tx = {
       researchFundJournalEntry: {
-        findMany: jest.fn(async () => [...saved]),
+        findMany: jest.fn(async ({ where }) => [...(saved.get(where.bookId) ?? [])]),
         create: jest.fn(async ({ data }) => {
-          saved.push({ hash: data.hash });
+          const bookId = data.book.connect.id;
+          saved.set(bookId, [...(saved.get(bookId) ?? []), { hash: data.hash }]);
         }),
       },
       researchFundBook: { update: jest.fn() },
     };
+    const politicianIds: Record<string, bigint> = {
+      "sample-taro": BigInt(10),
+      "sample-misaki": BigInt(11),
+    };
     const prisma = {
-      politician: { findUnique: jest.fn().mockResolvedValue({ id: BigInt(10) }) },
-      researchFundBook: { findUnique: jest.fn().mockResolvedValue({ id: BigInt(20) }) },
+      politician: {
+        findUnique: jest.fn(async ({ where }) => ({ id: politicianIds[where.slug] })),
+      },
+      researchFundBook: {
+        findUnique: jest.fn(async ({ where }) => ({
+          id: where.politicianId_financialYear.politicianId + BigInt(10),
+        })),
+      },
       $transaction: jest.fn(async (callback) => callback(tx)),
     };
     await researchFundJournalEntriesSeeder.seed(prisma as unknown as PrismaClient);
     await researchFundJournalEntriesSeeder.seed(prisma as unknown as PrismaClient);
     expect(prisma.politician.findUnique).toHaveBeenCalledWith({ where: { slug: "sample-taro" } });
+    expect(prisma.politician.findUnique).toHaveBeenCalledWith({ where: { slug: "sample-misaki" } });
     expect(prisma.researchFundBook.findUnique).toHaveBeenCalledWith({
       where: { politicianId_financialYear: { politicianId: BigInt(10), financialYear: 2026 } },
     });
-    expect(tx.researchFundJournalEntry.create).toHaveBeenCalledTimes(303);
-    for (const [input] of tx.researchFundJournalEntry.create.mock.calls) {
-      expect(input.data.book).toEqual({ connect: { id: BigInt(20) } });
+    expect(saved.get(BigInt(20))).toHaveLength(303);
+    expect(saved.get(BigInt(21))).toHaveLength(15);
+    expect(tx.researchFundJournalEntry.create).toHaveBeenCalledTimes(318);
+    for (const bookId of [BigInt(20), BigInt(21)]) {
+      expect(tx.researchFundBook.update).toHaveBeenCalledWith({
+        where: { id: bookId },
+        data: { publishedThrough: new Date("2026-08-31T00:00:00.000Z") },
+      });
     }
-    expect(tx.researchFundBook.update).toHaveBeenCalledWith({
-      where: { id: BigInt(20) },
-      data: { publishedThrough: new Date("2026-08-31T00:00:00.000Z") },
-    });
   });
 });

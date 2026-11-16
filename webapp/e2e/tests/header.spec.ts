@@ -97,7 +97,8 @@ test.describe("ヘッダー（PC）", () => {
 		await expect(
 			menu.getByText("所属議員の調研費｜毎月支給される公費を何に使ったか"),
 		).toBeVisible();
-		// サンプル 花子・次郎は帳簿はあるが公開済みの仕訳が無いので出ない
+		// 公開済みの仕訳があるサンプル 太郎・美咲が出る。花子・次郎は帳簿はあるが公開済みの仕訳が無いので出ない
+		await expect(menu.getByRole("link", { name: /サンプル 美咲/ })).toBeVisible();
 		await expect(menu.getByText(/サンプル 花子/)).toHaveCount(0);
 		await expect(menu.getByText(/サンプル 次郎/)).toHaveCount(0);
 

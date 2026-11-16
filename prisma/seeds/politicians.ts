@@ -41,6 +41,17 @@ const data: PoliticianSeedData[] = [
     isResearchFundPublic: true,
   },
   {
+    // トップの SP で議員カードを複数枚同時に開けることを E2E で確かめるための、2人目の調研費の公開議員。
+    // ふりがな未登録の議員は名前の順に並ぶので、サンプル 太郎の後ろに来る名前にしている。
+    name: 'サンプル 美咲',
+    slug: 'sample-misaki',
+    termStart: '2025-07-21',
+    displayOrder: 4,
+    organizationSlug: 'sample-party',
+    startedOn: '2025-07-21',
+    isResearchFundPublic: true,
+  },
+  {
     name: 'E2E 議員',
     slug: 'e2e-politician',
     termStart: '2025-07-21',
