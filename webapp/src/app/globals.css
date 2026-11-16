@@ -7,6 +7,11 @@
   .font-english {
     font-family: var(--font-noto-sans), "Noto Sans", sans-serif;
   }
+  /* 金額の数字（v9 の --num）。数字は Poppins、それ以外の文字は Noto Sans JP */
+  .font-num {
+    font-family:
+      var(--font-poppins), var(--font-noto-sans-jp), "Noto Sans JP", system-ui, sans-serif;
+  }
 
   /* Screen Reader Only - スクリーンリーダー専用コンテンツ */
   .sr-only {
