@@ -14,7 +14,7 @@ interface HeaderMegaMenuProps {
   onNavigate: () => void;
 }
 
-/** PC のナビの「政党・政治団体▼」「調研費▼」で開くメニュー（デザイン v8 のメガメニュー）。 */
+/** PC のナビの「政党・政治団体▼」「調研費▼」で開くメニュー（デザイン v8 のメガメニュー。調研費の見出しと年の切り替えは v9）。 */
 export default function HeaderMegaMenu({
   id,
   menu,
@@ -68,9 +68,26 @@ export default function HeaderMegaMenu({
         </section>
       ) : (
         <section aria-label="調研費" className="flex flex-col gap-3.5">
-          <p className="text-[13px] font-bold tracking-[0.04em] text-[#374151]">
+          <Link
+            href="/#home-rf"
+            onClick={onNavigate}
+            className="inline-flex items-center gap-1 self-start text-[13px] font-bold tracking-[0.04em] text-[#374151] hover:text-[#0F8472]"
+          >
             所属議員の調研費｜毎月支給される公費を何に使ったか
-          </p>
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.4"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M9 5l7 7-7 7" />
+            </svg>
+          </Link>
           <ul className="grid grid-cols-3 gap-x-6 gap-y-2">
             {politicians.map((politician) => (
               <li key={politician.slug} className="flex min-w-0 items-center gap-3">
@@ -87,11 +104,14 @@ export default function HeaderMegaMenu({
                   />
                   {politician.name}
                 </Link>
-                <HeaderYearSegment
-                  name={`${politician.name}の調研費`}
-                  years={politician.years}
-                  onNavigate={onNavigate}
-                />
+                {/* 公開している年が1つだけなら切り替える先が無いので出さない */}
+                {politician.years.length > 1 && (
+                  <HeaderYearSegment
+                    name={`${politician.name}の調研費`}
+                    years={politician.years}
+                    onNavigate={onNavigate}
+                  />
+                )}
               </li>
             ))}
           </ul>
