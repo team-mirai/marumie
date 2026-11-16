@@ -84,6 +84,7 @@ export default async function HomePage() {
                 defaultYear={DEFAULT_YEAR}
                 // 横に並べて幅が狭くなるときは金額を小さくする
                 amountSize={data.groups.length > 1 ? "compact" : "default"}
+                headingLevel="h3"
               />
             ))}
           </div>

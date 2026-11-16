@@ -9,7 +9,9 @@ jest.mock("@/client/components/top-page/features/charts/SankeyChart", () => ({
 
 const EMPTY_SANKEY = { nodes: [], links: [] };
 
-function render(props: { subtitle?: string; updatedAt?: string } = {}): string {
+function render(
+  props: { subtitle?: string; updatedAt?: string; headingLevel?: "h2" | "h3" } = {},
+): string {
   return renderToStaticMarkup(
     <HomeOrganizationCard
       tone="group"
@@ -23,11 +25,21 @@ function render(props: { subtitle?: string; updatedAt?: string } = {}): string {
         { year: 2026, political: EMPTY_SANKEY, friendly: EMPTY_SANKEY },
       ]}
       defaultYear={2026}
+      headingLevel={props.headingLevel}
     />,
   );
 }
 
 describe("HomeOrganizationCard", () => {
+  it("見出しは既定で h2、指定すれば h3 にする", () => {
+    expect(render()).toMatch(/<h2[^>]*>.*サンプル団体/);
+    expect(render()).not.toContain("<h3");
+
+    const html = render({ headingLevel: "h3" });
+    expect(html).toMatch(/<h3[^>]*>.*サンプル団体/);
+    expect(html).not.toContain("<h2");
+  });
+
   it("見出しの下に正式名と表示中の年を出す", () => {
     const html = render({ subtitle: "サンプルの会" });
 
