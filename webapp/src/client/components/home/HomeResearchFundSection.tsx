@@ -35,7 +35,7 @@ export default function HomeResearchFundSection({ data }: Props) {
     <section
       id="home-rf"
       aria-labelledby="home-rf-heading"
-      className="flex flex-col gap-[clamp(28px,3.4vw,44px)] py-2 min-[641px]:py-4"
+      className="mt-[7px] flex flex-col gap-[clamp(28px,3.4vw,44px)] py-[clamp(8px,1.5vw,16px)] min-[641px]:-mt-4"
     >
       {/* 見出しと「調研費とは」の間は詰める（PC 20px・SP 16px） */}
       <div className="flex flex-col gap-[clamp(16px,1.6vw,20px)]">

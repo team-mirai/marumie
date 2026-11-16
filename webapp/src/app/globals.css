@@ -340,6 +340,85 @@ table:focus-visible {
 }
 
 /*
+ * 「詳しく見る」の矢印リンク（v9 の案A1）。下線の右端から左上へ短い矢じりを出す。
+ * ホバー・押下・キーボードで選んだときは緑に変わり、下線を左から引き直し、最後に矢じりがポンと出る（案C）。
+ */
+.more-link {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  padding: 12px 0 13px;
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.3;
+  color: #0a1a17;
+  text-decoration: none;
+  transition: color 0.25s;
+}
+
+.more-link::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: -14px;
+  bottom: 8px;
+  height: 1.5px;
+  border-radius: 1px;
+  background: currentColor;
+}
+
+.more-link::before {
+  content: "";
+  position: absolute;
+  right: -14px;
+  bottom: 8px;
+  width: 9px;
+  height: 1.5px;
+  border-radius: 1px;
+  background: currentColor;
+  transform-origin: 100% 50%;
+  transform: rotate(38deg);
+}
+
+.more-link:is(:hover, :active, :focus-visible) {
+  color: #0f8472;
+}
+
+.more-link:is(:hover, :active, :focus-visible)::after {
+  transform-origin: 0 50%;
+  animation: more-link-redraw 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.more-link:is(:hover, :active, :focus-visible)::before {
+  animation: more-link-pop 0.3s 0.32s cubic-bezier(0.3, 1.6, 0.5, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .more-link:is(:hover, :active, :focus-visible)::before,
+  .more-link:is(:hover, :active, :focus-visible)::after {
+    animation: none;
+  }
+}
+
+@keyframes more-link-redraw {
+  0% {
+    transform: scaleX(0);
+  }
+  100% {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes more-link-pop {
+  0% {
+    transform: rotate(38deg) scaleX(0);
+  }
+  100% {
+    transform: rotate(38deg) scaleX(1);
+  }
+}
+
+/*
  * SP のメニュー（HeaderSpMenu）の開閉の動き（デザイン v9）。
  * 開くとき: 背景がヘッダーのすぐ下から幕が下りるように広がり、中身は少し遅れて上から順にすべり込む。
  * 閉じるとき（header[data-sp-menu="closing"]）: 中身がすっと消え、幕が下から上へ巻き上がる。
