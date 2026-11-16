@@ -292,6 +292,24 @@ describe("layoutSankey", () => {
     expect(layout.x + layout.width).toBeLessThan(1200);
   });
 
+  it("ラベルが短くても、列の見出しは切り出す範囲からはみ出さない", () => {
+    const layout = layoutSankey(
+      {
+        incomes: [{ label: "昨年からの現金残高", value: 3_000_000 }],
+        expenses: [{ label: "(仕訳中)", value: 3_000_000 }],
+        balance: null,
+        total: 3_000_000,
+      },
+      TITLES,
+    );
+
+    for (const header of layout.headers) {
+      const half = (header.text.length * header.fontSize) / 2;
+      expect(header.x - half).toBeGreaterThanOrEqual(layout.x);
+      expect(header.x + half).toBeLessThanOrEqual(layout.x + layout.width);
+    }
+  });
+
   it("SP の背の高い版は合計の柱を長く、文字を大きくする", () => {
     const pc = layoutSankey(FIVE_COLUMNS, TITLES);
     const tall = layoutSankey(FIVE_COLUMNS, { ...TITLES, tall: true });

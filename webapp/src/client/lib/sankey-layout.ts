@@ -687,6 +687,17 @@ function buildSankey(flow: SankeyFlow, options: SankeyLayoutOptions, lock: Sanke
     letterSpacing: ".08em",
     spans,
   });
+  const headers = [
+    header((X.L2 + X.L1 + NW) / 2, options.inTitle, [
+      { text: options.inTitle, fill: IN_TITLE_COLOR },
+    ]),
+    header((X.R1 + X.R2 + NW) / 2, options.outTitle, outTitleSpans(options.outTitle, INK)),
+  ];
+  // 列見出しも切り出す範囲に含める（ラベルが短いと「支出・残高」が右端で切れるため）。字間 .08em の分も足す
+  for (const h of headers) {
+    const half = (estimateTextWidth(h.text, h.fontSize) * 1.08) / 2;
+    extend(h.x - half, "start", half * 2);
+  }
   // 左右の余白を詰める（ラベルの外側に16の余白を残して切り出す。図の中身は動かさない）
   const vx = Math.min(
     Number.isFinite(minX) ? Math.max(0, Math.floor(minX - 16)) : 0,
@@ -702,12 +713,7 @@ function buildSankey(flow: SankeyFlow, options: SankeyLayoutOptions, lock: Sanke
     x: vx,
     width: vr - vx,
     height,
-    headers: [
-      header((X.L2 + X.L1 + NW) / 2, options.inTitle, [
-        { text: options.inTitle, fill: IN_TITLE_COLOR },
-      ]),
-      header((X.R1 + X.R2 + NW) / 2, options.outTitle, outTitleSpans(options.outTitle, INK)),
-    ],
+    headers,
     bands,
     nodes,
     labels,
