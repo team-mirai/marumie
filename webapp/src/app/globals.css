@@ -20,6 +20,33 @@
     white-space: nowrap;
     border: 0;
   }
+
+  /*
+   * SP で押せる範囲を高さ 44px 以上にする。見た目の大きさはそのままで、当たり判定だけを上下に広げる。
+   * 年の切り替えのように、見た目は 44px より低いボタン・リンクに付ける。
+   */
+  @media (max-width: 640px) {
+    .tap-44 {
+      position: relative;
+    }
+    .tap-44::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 50%;
+      height: 44px;
+      transform: translateY(-50%);
+    }
+  }
+}
+
+/* ページ内リンクで移ったとき、見出しが固定ヘッダーの下に隠れないようにする */
+@layer base {
+  main section[id],
+  main h2[id] {
+    scroll-margin-top: 100px;
+  }
 }
 
 :root {

@@ -15,7 +15,7 @@ test.describe("政治団体ページ", () => {
 			const response = await page.goto("/o/sample-party/2026");
 
 			expect(response?.status()).toBe(200);
-			await expect(page).toHaveTitle(/サンプル党.*みらいまる見え政治資金/);
+			await expect(page).toHaveTitle(/^サンプル党の収支｜まる見え政治資金｜チームみらい$/);
 
 			// 見出しカードが描画されるまで待機（networkidle依存を避ける）
 			await expect(
@@ -393,7 +393,7 @@ test.describe("政治団体ページ", () => {
 			const response = await page.goto("/o/sample-party/2026/transactions");
 
 			expect(response?.status()).toBe(200);
-			await expect(page).toHaveTitle(/全ての出入金.*みらいまる見え政治資金/);
+			await expect(page).toHaveTitle(/すべての出入金｜まる見え政治資金｜チームみらい$/);
 		});
 	});
 });

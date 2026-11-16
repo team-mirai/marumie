@@ -3,6 +3,7 @@ import "client-only";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import NewTabMark from "@/client/components/common/NewTabMark";
 import { type FooterTextLink, getFooterTextLinks } from "@/client/lib/footer-navigation";
 
 // SNSリンク集
@@ -46,7 +47,7 @@ const socialLinks = [
   },
   {
     name: "GitHub",
-    href: "https://github.com/team-mirai-volunteer/marumie",
+    href: "https://github.com/team-mirai/marumie",
     icon: "icon-github.svg",
   },
 ];
@@ -63,9 +64,10 @@ export default function Footer() {
         key={link.href}
         href={link.href}
         className="text-gray-800 text-sm font-bold leading-[1.36em] hover:opacity-80 transition-opacity"
-        {...(isExternal && { target: "_blank", rel: "noopener" })}
+        {...(isExternal && { target: "_blank", rel: "noopener noreferrer" })}
       >
         {link.label}
+        {isExternal && <NewTabMark />}
       </Link>
     );
   };
@@ -108,14 +110,14 @@ export default function Footer() {
                 key={social.name}
                 href={social.href}
                 target="_blank"
-                rel="noopener"
+                rel="noopener noreferrer"
                 className="flex lg:flex-row items-center gap-1 lg:gap-1 hover:opacity-80 transition-opacity"
-                aria-label={social.name}
+                aria-label={`${social.name}（別タブで開きます）`}
               >
                 <div className="w-12 h-12 lg:w-7 lg:h-7 rounded-full flex items-center justify-center relative bg-white">
                   <Image
                     src={`/images/social-icons/${social.icon}`}
-                    alt={social.name}
+                    alt=""
                     width={48}
                     height={48}
                     className="lg:w-7 lg:h-7"

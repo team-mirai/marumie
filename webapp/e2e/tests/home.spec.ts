@@ -13,7 +13,7 @@ test.describe("トップページ", () => {
 
 		expect(response?.status()).toBe(200);
 		await expect(page).toHaveURL("/");
-		await expect(page).toHaveTitle(/みらい まる見え政治資金/);
+		await expect(page).toHaveTitle("まる見え政治資金｜チームみらい");
 		await expect(
 			page.getByRole("region", { name: "政党の収支" }).getByRole("heading", { name: "サンプル党の収支" }),
 		).toBeVisible();

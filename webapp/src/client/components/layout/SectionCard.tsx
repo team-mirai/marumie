@@ -35,7 +35,7 @@ export default function SectionCard({
   return (
     <section
       id={id}
-      className="flex scroll-mt-24 flex-col gap-8 rounded-[32px] bg-white px-[18px] py-7 min-[641px]:p-[clamp(28px,4.4vw,64px)]"
+      className="flex scroll-mt-[100px] flex-col gap-8 rounded-[32px] bg-white px-[18px] py-7 min-[641px]:p-[clamp(28px,4.4vw,64px)]"
     >
       <div className="flex items-start justify-between gap-2">
         <div className="flex min-w-0 flex-auto items-center gap-4">

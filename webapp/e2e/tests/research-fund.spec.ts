@@ -14,7 +14,7 @@ test.describe("調査研究費 議員ページ", () => {
 
 		expect(response?.status()).toBe(200);
 		await expect(page).toHaveTitle(
-			/サンプル 太郎の調研費.*みらいまる見え政治資金/,
+			"サンプル 太郎の調研費｜まる見え政治資金｜チームみらい",
 		);
 
 		// パンくず

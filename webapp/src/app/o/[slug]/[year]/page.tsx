@@ -40,13 +40,10 @@ export async function generateMetadata({ params }: OrgPageProps): Promise<Metada
   const { organizations } = await loadOrganizations();
   const currentOrganization = organizations.find((org) => org.slug === slug);
 
-  const title = currentOrganization?.displayName
-    ? `${currentOrganization.displayName} - みらいまる見え政治資金`
-    : "みらいまる見え政治資金";
-
-  return {
-    title,
-  };
+  // 見つからなければサイト名だけのタイトル（ルートの既定）にする
+  return currentOrganization?.displayName
+    ? { title: `${currentOrganization.displayName}の収支` }
+    : {};
 }
 
 export default async function OrgPage({ params }: OrgPageProps) {

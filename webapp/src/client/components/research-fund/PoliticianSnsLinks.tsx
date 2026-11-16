@@ -103,7 +103,7 @@ export default function PoliticianSnsLinks({ name, profileUrl, websiteUrl, snsUr
   if (labeled.length === 0 && snsUrls.length === 0) return null;
 
   return (
-    <ul className="mt-1 flex list-none flex-wrap gap-1.5 p-0">
+    <ul className="mt-1 flex list-none flex-wrap gap-2 p-0">
       {labeled.map(({ url, label }) => (
         <li key={label}>
           <a

@@ -7,7 +7,7 @@ test.describe("まる見え政治資金とはページ", () => {
 	});
 
 	test("パンくず・見出し・作成中の案内が表示される", async ({ page }) => {
-		await expect(page).toHaveTitle(/まる見え政治資金とは/);
+		await expect(page).toHaveTitle("まる見え政治資金とは｜まる見え政治資金｜チームみらい");
 
 		const breadcrumbs = page.getByRole("navigation", { name: "パンくずリスト" });
 		await expect(breadcrumbs.getByRole("link", { name: "トップ" })).toHaveAttribute("href", "/");

@@ -17,7 +17,7 @@ test.describe("取引一覧ページ", () => {
 
 		expect(response, "page.goto() が失敗しました").not.toBeNull();
 		expect(response!.status()).toBe(200);
-		await expect(page).toHaveTitle(/全ての出入金.*みらいまる見え政治資金/);
+		await expect(page).toHaveTitle(/すべての出入金｜まる見え政治資金｜チームみらい$/);
 
 		// 取引一覧の見出しが描画されるまで待機（networkidle依存を避ける）
 		await expect(

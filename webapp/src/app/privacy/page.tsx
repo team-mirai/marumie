@@ -1,9 +1,14 @@
 import "server-only";
+import type { Metadata } from "next";
 import LegalPageLayout, {
   Paragraph,
   SubSectionTitle,
   List,
 } from "@/client/components/layout/LegalPageLayout";
+
+export const metadata: Metadata = {
+  title: "プライバシーポリシー",
+};
 
 export default function PrivacyPage() {
   return (

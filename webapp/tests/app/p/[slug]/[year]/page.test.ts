@@ -60,7 +60,7 @@ describe("議員ページの metadata", () => {
 
     const metadata = await generateMetadata({ params: paramsOf("sample-taro") });
 
-    expect(metadata.title).toBe("サンプル太郎の調研費 - みらいまる見え政治資金");
+    expect(metadata.title).toBe("サンプル太郎の調研費");
     expect(metadata.robots).toBeUndefined();
   });
 
@@ -70,7 +70,7 @@ describe("議員ページの metadata", () => {
     const metadata = await generateMetadata({ params: paramsOf(`sample-taro~${TOKEN}`) });
 
     expect(loadResearchFundPageMock).toHaveBeenCalledWith({ slug: "sample-taro", financialYear: 2026 });
-    expect(metadata.title).toBe("サンプル太郎の調研費 - みらいまる見え政治資金");
+    expect(metadata.title).toBe("サンプル太郎の調研費");
     expect(metadata.robots).toEqual({ index: false });
   });
 

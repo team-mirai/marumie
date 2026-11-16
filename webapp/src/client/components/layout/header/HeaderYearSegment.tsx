@@ -20,7 +20,7 @@ export default function HeaderYearSegment({ name, years, onNavigate }: HeaderYea
           href={href}
           onClick={onNavigate}
           aria-current={isSelected ? "page" : undefined}
-          className={`inline-flex h-[26px] min-w-[50px] items-center justify-center rounded-full px-2.5 text-xs font-semibold leading-none transition-colors ${
+          className={`tap-44 inline-flex h-[26px] min-w-[50px] items-center justify-center rounded-full px-2.5 text-xs font-semibold leading-none transition-colors ${
             isSelected ? "bg-black text-white" : "text-black hover:bg-[#F3F7F6]"
           }`}
         >

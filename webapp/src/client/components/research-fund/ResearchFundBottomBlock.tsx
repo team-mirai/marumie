@@ -1,5 +1,6 @@
 import "server-only";
 import { DATA_NOTE_LINK_CLASS } from "@/client/components/common/DataNotesSection";
+import NewTabMark from "@/client/components/common/NewTabMark";
 import SiteBottomBlock from "@/client/components/common/SiteBottomBlock";
 
 interface Props {
@@ -18,23 +19,15 @@ export default function ResearchFundBottomBlock({ dataNote }: Props) {
             <>
               本プロジェクトは、チームみらいによって政治資金の透明化を目的に開発されたオープンソースソフトウェアです。すでにオープンソースで
               <a
-                href="https://github.com/team-mirai-volunteer/marumie"
+                href="https://github.com/team-mirai/marumie"
                 target="_blank"
                 rel="noopener noreferrer"
                 className={DATA_NOTE_LINK_CLASS}
               >
                 こちらのGitHub
+                <NewTabMark />
               </a>
-              にて無償公開中であり、政党や所属を問わず利用可能な形で提供しております。開発コミュニティにご興味のある方は
-              <a
-                href="https://action.team-mir.ai/missions/join-slack"
-                target="_blank"
-                rel="noopener noreferrer"
-                className={DATA_NOTE_LINK_CLASS}
-              >
-                アクションボード
-              </a>
-              からSlackにご参加ください。
+              にて無償公開中であり、政党や所属を問わず利用可能な形で提供しております。
             </>
           ),
         },

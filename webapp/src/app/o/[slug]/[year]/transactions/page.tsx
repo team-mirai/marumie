@@ -33,8 +33,9 @@ export async function generateMetadata({
   const organization = organizations.find((org) => org.slug === validSlug);
 
   return {
-    title: `${organization?.displayName || "Unknown"}:全ての出入金 - みらいまる見え政治資金`,
-    description: `${organization?.displayName || "Unknown"}の政治資金取引一覧を表示しています。`,
+    title: organization?.displayName
+      ? `${organization.displayName}のすべての出入金`
+      : "すべての出入金",
   };
 }
 
