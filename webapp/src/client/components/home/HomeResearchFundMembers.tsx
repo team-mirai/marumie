@@ -86,7 +86,7 @@ function MemberDetail({ member }: { member: HomeResearchFundMember }) {
       />
       <Link
         href={member.href}
-        className="inline-flex h-12 items-center justify-center gap-1 self-stretch whitespace-nowrap rounded-full bg-[#0B0F0E] px-3.5 text-[clamp(12px,3.8vw,15px)] font-extrabold text-white transition-colors hover:bg-[#0F8472] md:h-[52px] md:min-w-[360px] md:self-center md:px-7 md:text-[15px]"
+        className="inline-flex h-12 items-center justify-center gap-1 self-stretch whitespace-nowrap rounded-full bg-[#0B0F0E] px-3.5 text-[clamp(12px,3.8vw,15px)] font-extrabold text-white transition-colors hover:bg-[#0F8472] min-[641px]:h-[52px] min-[641px]:min-w-[360px] min-[641px]:self-center min-[641px]:px-7 min-[641px]:text-[15px]"
       >
         {member.name}の調研費を詳しく
         <Chevron />
@@ -139,7 +139,7 @@ export default function HomeResearchFundMembers({ members, financialYear }: Prop
   return (
     <>
       {/* PC：議員カードを並べ、押した議員の調研費を下のカードに出す */}
-      <div className="hidden flex-col gap-5 md:flex">
+      <div className="hidden flex-col gap-5 min-[641px]:flex">
         <ul
           aria-label="議員を選ぶ"
           className="m-0 grid list-none grid-cols-[repeat(auto-fill,minmax(min(100%,272px),1fr))] gap-3 p-0"
@@ -212,7 +212,10 @@ export default function HomeResearchFundMembers({ members, financialYear }: Prop
       </div>
 
       {/* SP：カードを縦に重ねたウォレット。タップしたカードを開き、その下にその議員の調研費を出す */}
-      <ul aria-label="議員を選ぶ" className="m-0 flex list-none flex-col p-0 pb-1 pt-1.5 md:hidden">
+      <ul
+        aria-label="議員を選ぶ"
+        className="m-0 flex list-none flex-col p-0 pb-1 pt-1.5 min-[641px]:hidden"
+      >
         {members.map((member, index) => {
           const open = spOpen && member.slug === selected.slug;
           const afterOpen = index > 0 && spOpen && members[index - 1].slug === selected.slug;

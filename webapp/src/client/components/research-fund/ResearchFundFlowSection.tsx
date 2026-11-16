@@ -67,7 +67,7 @@ export default function ResearchFundFlowSection({ data, eyebrow, updatedAt }: Pr
           }}
           emptyMessage="公開中の調査研究費のデータがありません"
         />
-        <p className="mt-2 text-left text-[13px] leading-[1.6] text-[#4B5563] min-[761px]:text-right">
+        <p className="mt-2 text-left text-[13px] leading-[1.6] text-[#4B5563] min-[641px]:text-right">
           ※年末までに使われなかった未使用分は国庫に返納されます。
         </p>
       </div>

@@ -26,7 +26,7 @@ export default function ResearchFundMonthlySection({ data, eyebrow, updatedAt }:
       title="月ごとの支出の推移"
       updatedAt={updatedAt}
     >
-      <div className="-mr-[18px] overflow-x-auto sm:mr-0">
+      <div className="-mr-[18px] overflow-x-auto min-[641px]:mr-0">
         <div className="min-w-[640px]">
           <ResearchFundMonthlyChart monthly={data.monthly} />
         </div>

@@ -30,7 +30,7 @@ export default function MonthlyTrendsSection({
       updatedAt={updatedAt}
     >
       {/* 月次チャート表示 - モバイルのみ右端まで拡張 */}
-      <div className="-mr-[18px] sm:mr-0">
+      <div className="-mr-[18px] min-[641px]:mr-0">
         <MonthlyChart data={monthlyData || []} />
       </div>
     </SectionCard>

@@ -35,7 +35,7 @@ export default function SectionCard({
   return (
     <section
       id={id}
-      className="flex scroll-mt-24 flex-col gap-8 rounded-[32px] bg-white px-[18px] py-7 md:p-[clamp(28px,4.4vw,64px)]"
+      className="flex scroll-mt-24 flex-col gap-8 rounded-[32px] bg-white px-[18px] py-7 min-[641px]:p-[clamp(28px,4.4vw,64px)]"
     >
       <div className="flex items-start justify-between gap-2">
         <div className="flex min-w-0 flex-auto items-center gap-4">
@@ -60,7 +60,7 @@ export default function SectionCard({
           </div>
         </div>
         {(updatedAt || updatedAtNote) && (
-          <span className="hidden flex-shrink-0 flex-col items-end whitespace-nowrap text-[12px] font-medium leading-[1.31] tabular-nums text-[#6B7280] md:flex">
+          <span className="hidden flex-shrink-0 flex-col items-end whitespace-nowrap text-[12px] font-medium leading-[1.31] tabular-nums text-[#6B7280] min-[641px]:flex">
             {updatedAt && <span>{updatedAt}</span>}
             {updatedAtNote && <span>{updatedAtNote}</span>}
           </span>
@@ -70,7 +70,7 @@ export default function SectionCard({
       {children}
 
       {bottomNote && (
-        <div className="-mt-4 text-right text-[12px] leading-[1.33] text-[#6B7280] md:hidden">
+        <div className="-mt-4 text-right text-[12px] leading-[1.33] text-[#6B7280] min-[641px]:hidden">
           {bottomNote}
         </div>
       )}

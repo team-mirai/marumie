@@ -56,7 +56,7 @@ export default async function HomePage() {
         <section
           id="home-groups"
           aria-label="政治団体の収支"
-          className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,420px),1fr))] gap-8 md:gap-3"
+          className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,420px),1fr))] gap-8 min-[641px]:gap-3"
         >
           {data.groups.map((group) => (
             <HomeOrganizationCard

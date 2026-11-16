@@ -28,8 +28,8 @@ interface Props {
   updatedAt: string;
 }
 
-/** SP（≤760px）ではヘッダー行を隠し、1行を縦積みにする（全件ページの表と同じ）。 */
-const ROW_GRID = "min-[761px]:grid-cols-[140px_200px_1fr_180px]";
+/** SP（≤640px）ではヘッダー行を隠し、1行を縦積みにする（全件ページの表と同じ）。 */
+const ROW_GRID = "min-[641px]:grid-cols-[140px_200px_1fr_180px]";
 /** 用途カードの「N件」から飛んできた行を目立たせておく時間 */
 const ROWS_FLASH_MS = 2500;
 /** 固定ヘッダーに隠れないよう、明細の先頭行へ飛ぶときに上を空ける量 */
@@ -154,7 +154,7 @@ export default function ResearchFundExpensesSection({ data, pathSlug, eyebrow, u
       ) : (
         <div className="relative">
           <div
-            className={`hidden h-12 items-center border-b border-[#D5DBE1] text-sm font-bold text-gray-800 min-[761px]:grid ${ROW_GRID}`}
+            className={`hidden h-12 items-center border-b border-[#D5DBE1] text-sm font-bold text-gray-800 min-[641px]:grid ${ROW_GRID}`}
           >
             <div className="px-4">日付</div>
             <div className="pl-4">カテゴリー</div>
@@ -169,40 +169,40 @@ export default function ResearchFundExpensesSection({ data, pathSlug, eyebrow, u
                 key={row.id}
                 id={`tx-${row.id}`}
                 data-flashed={flashedGroupId !== null && row.groupId === flashedGroupId}
-                className={`grid grid-cols-1 gap-1 border-b border-[#D5DBE1] py-3 transition-colors duration-400 data-[flashed=true]:bg-[#E2F6F3] min-[761px]:min-h-16 min-[761px]:items-center min-[761px]:gap-0 min-[761px]:py-0 ${ROW_GRID}`}
+                className={`grid grid-cols-1 gap-1 border-b border-[#D5DBE1] py-3 transition-colors duration-400 data-[flashed=true]:bg-[#E2F6F3] min-[641px]:min-h-16 min-[641px]:items-center min-[641px]:gap-0 min-[641px]:py-0 ${ROW_GRID}`}
               >
-                <div className="text-xs text-[#4B5563] min-[761px]:px-4 min-[761px]:text-base min-[761px]:font-bold min-[761px]:text-gray-800">
+                <div className="text-xs text-[#4B5563] min-[641px]:px-4 min-[641px]:text-base min-[641px]:font-bold min-[641px]:text-gray-800">
                   {formatResearchFundDate(row.date)}
                 </div>
-                <div className="order-3 flex flex-wrap items-center gap-2 min-[761px]:order-none min-[761px]:pl-4">
+                <div className="order-3 flex flex-wrap items-center gap-2 min-[641px]:order-none min-[641px]:pl-4">
                   <ResearchFundCategoryPill category={row.detailed} />
                   {rowBadges && (
-                    <span className="flex items-center gap-2 min-[761px]:hidden">{rowBadges}</span>
+                    <span className="flex items-center gap-2 min-[641px]:hidden">{rowBadges}</span>
                   )}
                 </div>
-                <div className="order-2 flex items-baseline justify-between gap-3 min-[761px]:order-none min-[761px]:block min-[761px]:py-3">
+                <div className="order-2 flex items-baseline justify-between gap-3 min-[641px]:order-none min-[641px]:block min-[641px]:py-3">
                   <span className="flex items-center gap-2">
-                    <span className="text-sm font-bold text-gray-800 min-[761px]:text-base">
+                    <span className="text-sm font-bold text-gray-800 min-[641px]:text-base">
                       {row.description}
                     </span>
                     {rowBadges && (
-                      <span className="hidden items-center gap-2 min-[761px]:inline-flex">
+                      <span className="hidden items-center gap-2 min-[641px]:inline-flex">
                         {rowBadges}
                       </span>
                     )}
                   </span>
-                  <ResearchFundAmount row={row} className="text-base min-[761px]:hidden" />
+                  <ResearchFundAmount row={row} className="text-base min-[641px]:hidden" />
                   {row.note && (
-                    <p className="mt-0.5 hidden text-xs leading-relaxed text-[#6B7280] min-[761px]:block">
+                    <p className="mt-0.5 hidden text-xs leading-relaxed text-[#6B7280] min-[641px]:block">
                       {row.note}
                     </p>
                   )}
                 </div>
-                <div className="hidden pr-6 text-right min-[761px]:block">
+                <div className="hidden pr-6 text-right min-[641px]:block">
                   <ResearchFundAmount row={row} className="text-xl" />
                 </div>
                 {row.note && (
-                  <p className="order-4 text-xs leading-relaxed text-[#6B7280] min-[761px]:hidden">
+                  <p className="order-4 text-xs leading-relaxed text-[#6B7280] min-[641px]:hidden">
                     {row.note}
                   </p>
                 )}

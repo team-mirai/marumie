@@ -38,7 +38,7 @@ export default function HomeResearchFundSection({ data }: Props) {
     <section
       id="home-rf"
       aria-labelledby="home-rf-heading"
-      className="flex flex-col gap-4 py-2 md:gap-5 md:py-4"
+      className="flex flex-col gap-4 py-2 min-[641px]:gap-5 min-[641px]:py-4"
     >
       <div className="flex flex-col gap-2">
         <h2
@@ -47,14 +47,14 @@ export default function HomeResearchFundSection({ data }: Props) {
         >
           所属議員の調研費
         </h2>
-        <p className="m-0 text-[14px] font-medium leading-[1.85] text-[#4B5563] md:text-[15px]">
+        <p className="m-0 text-[14px] font-medium leading-[1.85] text-[#4B5563] min-[641px]:text-[15px]">
           議員に毎月100万円支給される公費を何に使ったか
         </p>
       </div>
 
       <div className="flex flex-col gap-2">
         <details className="group">
-          <summary className="flex min-h-[30px] w-fit cursor-pointer list-none items-center gap-2.5 text-[16px] font-extrabold text-[#0F8472] hover:text-[#089781] md:text-[15px] [&::-webkit-details-marker]:hidden">
+          <summary className="flex min-h-[30px] w-fit cursor-pointer list-none items-center gap-2.5 text-[16px] font-extrabold text-[#0F8472] hover:text-[#089781] min-[641px]:text-[15px] [&::-webkit-details-marker]:hidden">
             <svg
               viewBox="0 0 24 24"
               width="20"
@@ -90,7 +90,7 @@ export default function HomeResearchFundSection({ data }: Props) {
               <path d="M6 9l6 6 6-6" />
             </svg>
           </summary>
-          <div className="flex max-w-[820px] flex-col gap-3 pb-3 pt-2 text-[14px] leading-[1.8] text-[#1F2937] md:text-[15px] md:leading-[1.9]">
+          <div className="flex max-w-[820px] flex-col gap-3 pb-3 pt-2 text-[14px] leading-[1.8] text-[#1F2937] min-[641px]:text-[15px] min-[641px]:leading-[1.9]">
             <p className="m-0">
               調研費（調査研究広報滞在費）は、国会議員の調査研究や広報、滞在などの活動のために、国から毎月100万円支給される公費です。政治資金規正法上の「政治資金」ではありませんが、チームみらいでは透明性の観点から本サイトで公開しています。
             </p>
@@ -105,7 +105,7 @@ export default function HomeResearchFundSection({ data }: Props) {
           target="_blank"
           rel="noopener noreferrer"
           aria-label="チームみらいの調研費の使用方針を読む（noteが別タブで開きます）"
-          className="group flex min-h-[30px] w-fit items-center gap-2.5 text-[16px] font-extrabold text-[#0F8472] no-underline hover:text-[#089781] md:text-[15px]"
+          className="group flex min-h-[30px] w-fit items-center gap-2.5 text-[16px] font-extrabold text-[#0F8472] no-underline hover:text-[#089781] min-[641px]:text-[15px]"
         >
           <svg
             viewBox="0 0 24 24"

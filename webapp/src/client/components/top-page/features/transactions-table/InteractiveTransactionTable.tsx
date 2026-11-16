@@ -132,8 +132,8 @@ export default function InteractiveTransactionTable({
 
   return (
     <>
-      {/* Mobile Header - 768px未満で表示 */}
-      <div className="block md:hidden">
+      {/* Mobile Header - 640px以下で表示 */}
+      <div className="block min-[641px]:hidden">
         <TransactionTableMobileHeader
           onSortChange={handleMobileSortChange}
           currentSort={getCurrentSortOption()}
@@ -153,8 +153,8 @@ export default function InteractiveTransactionTable({
 
       {/* ページネーション */}
 
-      {/* PC版レイアウト（768px以上で表示） */}
-      <div className="hidden md:block py-3.5">
+      {/* PC版レイアウト（641px以上で表示） */}
+      <div className="hidden min-[641px]:block py-3.5">
         {/* ページャーとCSVダウンロードリンクのレイアウト */}
         <div className="flex justify-between items-center">
           {/* 左側のスペース（バランス調整用） */}
@@ -185,8 +185,8 @@ export default function InteractiveTransactionTable({
         </div>
       </div>
 
-      {/* モバイル版レイアウト（768px未満で表示） */}
-      <div className="md:hidden py-3.5">
+      {/* モバイル版レイアウト（640px以下で表示） */}
+      <div className="min-[641px]:hidden py-3.5">
         <div className="flex items-center justify-between">
           <div className="text-sm font-medium text-[#6A7383] leading-5 tracking-[0.5%]">
             {total}件中 {startItem}-{endItem}件を表示

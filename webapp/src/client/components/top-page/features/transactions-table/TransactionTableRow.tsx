@@ -86,7 +86,7 @@ export default function TransactionTableRow({
   return (
     <tr className="w-full border-b border-[#D5DBE1]">
       {/* SP Layout - Mobile Card Layout */}
-      <td colSpan={4} className="md:hidden p-0">
+      <td colSpan={4} className="min-[641px]:hidden p-0">
         <div className="flex flex-col bg-white gap-1 px-0 py-2">
           {/* Date section */}
           <div className="flex">
@@ -126,14 +126,14 @@ export default function TransactionTableRow({
 
       {/* Desktop Layout - Table row layout */}
       {/* Date column - 140px width */}
-      <td className="hidden md:table-cell px-4 h-16 w-[140px]">
+      <td className="hidden min-[641px]:table-cell px-4 h-16 w-[140px]">
         <span className="leading-4 font-bold text-base text-gray-800">
           {formatDate(transaction.date)}
         </span>
       </td>
 
       {/* Category column - 160px width */}
-      <td className="hidden md:table-cell pl-4 h-16 w-[160px]">
+      <td className="hidden min-[641px]:table-cell pl-4 h-16 w-[160px]">
         <div className="flex justify-start items-center h-11">
           <TransactionCategoryPill
             label={getCategoryLabel(transaction)}
@@ -146,14 +146,14 @@ export default function TransactionTableRow({
       </td>
 
       {/* Title column - flexible width */}
-      <td className="hidden md:table-cell h-16">
+      <td className="hidden min-[641px]:table-cell h-16">
         <span className="leading-7 font-bold text-base text-gray-800">
           {getDisplayTitle(transaction)}
         </span>
       </td>
 
       {/* Amount column - 180px width */}
-      <td className="hidden md:table-cell text-right pr-6 h-16 w-[180px]">
+      <td className="hidden min-[641px]:table-cell text-right pr-6 h-16 w-[180px]">
         <span
           className={`leading-[1em] font-bold text-xl tracking-[0.01em] ${
             isIncome ? "text-[#238778]" : "text-[#DC2626]"

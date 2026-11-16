@@ -28,7 +28,7 @@ export default function TransactionTableHeader({
     activeSort === "amount" ? (activeOrder === "asc" ? "ascending" : "descending") : undefined;
 
   return (
-    <thead className="hidden md:table-header-group bg-white">
+    <thead className="hidden min-[641px]:table-header-group bg-white">
       <tr className="h-12 border-b border-[#D5DBE1]">
         {/* 日付 - 140px width to match row */}
         <th

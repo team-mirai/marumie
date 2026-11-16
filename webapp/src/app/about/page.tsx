@@ -16,7 +16,7 @@ export default function AboutPage() {
         <Breadcrumbs current="まる見え政治資金とは" />
         <section
           aria-labelledby="about-title"
-          className="flex flex-col gap-6 rounded-[32px] bg-white px-[18px] py-7 md:p-[clamp(28px,4.4vw,64px)]"
+          className="flex flex-col gap-6 rounded-[32px] bg-white px-[18px] py-7 min-[641px]:p-[clamp(28px,4.4vw,64px)]"
         >
           <span
             role="note"
