@@ -20,11 +20,17 @@ import {
   resolveResearchFundCategories,
   sortResearchFundExpenses,
   sumResearchFundTransactions,
-  toggleAmountSort,
-  toggleDateSort,
-  type ResearchFundTransactionSort,
   type ResearchFundTransactionsQuery,
 } from "@/client/lib/research-fund-transactions";
+import {
+  amountColumnSortState,
+  dateColumnSortState,
+  toggleAmountSort,
+  toggleDateSort,
+  type TransactionSort,
+} from "@/client/lib/transaction-sort";
+import ColumnSortButton from "@/client/components/transactions/ColumnSortButton";
+import TransactionSortTabs from "@/client/components/transactions/TransactionSortTabs";
 import type { ResearchFundExpenseView } from "@/server/contexts/research-fund/domain/models/research-fund-page";
 import { RESEARCH_FUND_RECEIPTS_PUBLISHED } from "@/server/contexts/research-fund/domain/models/research-fund-receipt-publication";
 
@@ -39,19 +45,11 @@ interface Props {
 }
 
 /**
- * SP（≤640px）ではヘッダー行の代わりに並び替えタブと絞り込みボタンを出し、1行を縦積みにする。
+ * SP（≤640px）ではヘッダー行の代わりに並び替えタブ（新しい順・古い順・支出が多い順・収入が多い順）と絞り込みボタンを出し、1行を縦積みにする。
  * 641〜760px は固定列を詰めて項目列の幅を残す。項目列は minmax(0,1fr) にし、中身が広くてもヘッダーと列がずれないようにする。
  */
 const ROW_GRID =
   "min-[641px]:grid-cols-[128px_160px_minmax(0,1fr)_160px] min-[761px]:grid-cols-[140px_200px_minmax(0,1fr)_180px]";
-
-/** SP の並び替えタブ。政治団体の全件ページ（TransactionTableMobileHeader）と同じ見た目。金額順は入金・出金を区別せず額の大きさで並べる。 */
-const MOBILE_SORT_TABS: { id: ResearchFundTransactionSort; label: string }[] = [
-  { id: "new", label: "新しい順" },
-  { id: "old", label: "古い順" },
-  { id: "amountDesc", label: "金額が多い順" },
-  { id: "amountAsc", label: "金額が少ない順" },
-];
 
 /** カテゴリー絞り込みを開くボタン。絞り込み中は件数を出す。 */
 function CategoryFilterButton({
@@ -90,25 +88,6 @@ function CategoryFilterButton({
       </svg>
       {count > 0 && count}
     </button>
-  );
-}
-
-function SortChevron({ flipped }: { flipped: boolean }) {
-  return (
-    <svg
-      width="21"
-      height="21"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2.6"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-      className={`transition-transform ${flipped ? "rotate-180" : ""}`}
-    >
-      <polyline points="6 9 12 15 18 9" />
-    </svg>
   );
 }
 
@@ -183,7 +162,9 @@ export default function ResearchFundTransactionsTable({
   const navigate = (next: Partial<ResearchFundTransactionsQuery>) =>
     router.push(hrefFor(next), { scroll: false });
 
-  const changeSort = (next: ResearchFundTransactionSort) => navigate({ sort: next });
+  const changeSort = (next: TransactionSort) => navigate({ sort: next });
+  const dateSort = dateColumnSortState(sort);
+  const amountSort = amountColumnSortState(sort);
 
   const toggleFilter = (at: "pc" | "sp") => setOpenFilter((open) => (open === at ? null : at));
 
@@ -200,38 +181,16 @@ export default function ResearchFundTransactionsTable({
   return (
     <div className="flex flex-col gap-5">
       <div>
-        <div className="relative flex items-center gap-4 min-[641px]:hidden">
-          <fieldset className="m-0 flex min-w-0 flex-1 gap-6 overflow-x-auto border-0 p-0 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            <legend className="sr-only">並び順</legend>
-            {MOBILE_SORT_TABS.map((tab) => {
-              const isActive = sort === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  type="button"
-                  onClick={() => changeSort(tab.id)}
-                  aria-pressed={isActive}
-                  className="relative flex cursor-pointer touch-manipulation flex-col items-center justify-center whitespace-nowrap px-0 py-2"
-                >
-                  <span
-                    className={`text-sm font-bold leading-[1.2857142857142858em] ${
-                      isActive ? "text-[#2AA693]" : "text-[#9CA3AF]"
-                    }`}
-                  >
-                    {tab.label}
-                  </span>
-                  {isActive && (
-                    <span className="absolute right-0 bottom-0 left-0 h-[2px] bg-[#2AA693]" />
-                  )}
-                </button>
-              );
-            })}
-          </fieldset>
-          <CategoryFilterButton
-            count={categories.length}
-            expanded={openFilter === "sp"}
-            onClick={() => toggleFilter("sp")}
-          />
+        {/* 並び替えの4つのタブで1行を使い切るので、絞り込みボタンはその下の右端に置く */}
+        <div className="relative min-[641px]:hidden">
+          <TransactionSortTabs current={sort} onChange={changeSort} />
+          <div className="flex justify-end pt-2">
+            <CategoryFilterButton
+              count={categories.length}
+              expanded={openFilter === "sp"}
+              onClick={() => toggleFilter("sp")}
+            />
+          </div>
           {openFilter === "sp" && (
             <ResearchFundCategoryFilter
               options={options}
@@ -245,16 +204,10 @@ export default function ResearchFundTransactionsTable({
         <div
           className={`hidden h-12 items-center border-b border-[#D5DBE1] text-sm font-bold text-gray-800 min-[641px]:grid ${ROW_GRID}`}
         >
-          <div className="flex items-center gap-1 px-4">
+          {/* 表ではなく grid で組んでいるので aria-sort は付けられない。今の並び順はボタンの読み上げ名で伝える */}
+          <div className="flex items-center px-4">
             日付
-            <button
-              type="button"
-              onClick={() => changeSort(toggleDateSort(sort))}
-              aria-label="日付で並び替え"
-              className="inline-flex h-6 w-6 cursor-pointer items-center justify-center text-[#238778]"
-            >
-              <SortChevron flipped={sort === "old"} />
-            </button>
+            <ColumnSortButton state={dateSort} onClick={() => changeSort(toggleDateSort(sort))} />
           </div>
           <div className="relative flex items-center gap-1 pl-4">
             カテゴリー
@@ -275,14 +228,10 @@ export default function ResearchFundTransactionsTable({
           <div className="tracking-[0.071em]">項目</div>
           <div className="flex items-center justify-end gap-0.5 pr-6">
             金額
-            <button
-              type="button"
+            <ColumnSortButton
+              state={amountSort}
               onClick={() => changeSort(toggleAmountSort(sort))}
-              aria-label="金額で並び替え"
-              className="inline-flex h-6 w-6 cursor-pointer items-center justify-center text-[#238778]"
-            >
-              <SortChevron flipped={sort === "amountAsc"} />
-            </button>
+            />
           </div>
         </div>
 

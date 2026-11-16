@@ -316,6 +316,20 @@ test.describe("調査研究費 議員ページ", () => {
 		await expect(table.getByRole("button", { name: "新しい順" })).toHaveAttribute("aria-pressed", "true");
 		const newest = toTime(await firstDate());
 
+		// 4つのタブ（新しい順・古い順・支出が多い順・収入が多い順）が1行に収まる
+		const sortGroup = table.getByRole("group", { name: "並び順" });
+		const groupBox = await sortGroup.boundingBox();
+		const tabBoxes = await Promise.all(
+			(await sortGroup.getByRole("button").all()).map((tab) => tab.boundingBox()),
+		);
+		expect(tabBoxes).toHaveLength(4);
+		for (const box of tabBoxes) {
+			expect(box?.y).toBe(tabBoxes[0]?.y);
+			expect((box?.x ?? 0) + (box?.width ?? 0)).toBeLessThanOrEqual(
+				(groupBox?.x ?? 0) + (groupBox?.width ?? 0),
+			);
+		}
+
 		const oldTab = table.getByRole("button", { name: "古い順" });
 		await expect(async () => {
 			await oldTab.click();

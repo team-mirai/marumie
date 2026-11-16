@@ -1,5 +1,6 @@
 import type { Transaction } from "@/shared/models/transaction";
 import type { TransactionFilters } from "@/types/transaction-filters";
+import type { TransactionListSortBy } from "@/server/contexts/public-finance/domain/repositories/transaction-list-repository.interface";
 
 export interface PaginatedResult<T> {
   items: T[];
@@ -12,7 +13,7 @@ export interface PaginatedResult<T> {
 export interface PaginationOptions {
   page: number;
   perPage: number;
-  sortBy?: "date" | "amount";
+  sortBy?: TransactionListSortBy;
   order?: "asc" | "desc";
 }
 

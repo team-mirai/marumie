@@ -84,27 +84,29 @@ test.describe("取引一覧ページ", () => {
 		await page.goto("/o/sample-party/2026/transactions");
 
 		const table = page.getByRole("table", { name: "政治資金取引一覧表" });
-		const dateSortButton = table.getByRole("button", { name: "日付順でソート" });
-		const amountSortButton = table.getByRole("button", { name: "金額順でソート" });
+		const dateSortButton = table.getByRole("button", { name: /^日付で並び替え/ });
+		const amountSortButton = table.getByRole("button", { name: /^金額で並び替え/ });
 		const dateHeader = dateSortButton.locator("xpath=ancestor::th");
 		const amountHeader = amountSortButton.locator("xpath=ancestor::th");
 
-		await expect(table.locator("th[aria-sort]")).toHaveCount(1);
 		await expect(dateHeader).toHaveAttribute("aria-sort", "descending");
-		expect(await amountHeader.getAttribute("aria-sort")).toBeNull();
-		expect(await dateSortButton.getAttribute("aria-describedby")).toBeNull();
-		expect(await amountSortButton.getAttribute("aria-describedby")).toBeNull();
-		await expect(dateSortButton.locator("img")).toHaveAttribute("alt", "");
-		await expect(amountSortButton.locator("img")).toHaveAttribute("alt", "");
+		await expect(amountHeader).toHaveAttribute("aria-sort", "none");
+		await expect(dateSortButton).toHaveAccessibleName("日付で並び替え（今は新しい順）");
+		await expect(amountSortButton).toHaveAccessibleName("金額で並び替え（今は金額順ではありません）");
+
+		// 押せる範囲は 44px 四方
+		const box = await dateSortButton.boundingBox();
+		expect(box?.width).toBe(44);
+		expect(box?.height).toBe(44);
 
 		await dateSortButton.click();
 		await expect(page).toHaveURL(/sort=date.*order=asc/);
 		await expect(dateHeader).toHaveAttribute("aria-sort", "ascending");
+		await expect(dateSortButton).toHaveAccessibleName("日付で並び替え（今は古い順）");
 
 		await amountSortButton.click();
 		await expect(page).toHaveURL(/sort=amount.*order=desc/);
-		await expect(table.locator("th[aria-sort]")).toHaveCount(1);
-		expect(await dateHeader.getAttribute("aria-sort")).toBeNull();
+		await expect(dateHeader).toHaveAttribute("aria-sort", "none");
 		await expect(amountHeader).toHaveAttribute("aria-sort", "descending");
 
 		await amountSortButton.click();
@@ -129,6 +131,17 @@ test.describe("取引一覧ページ", () => {
 		await expect(sortGroup.locator('button[aria-pressed="true"]')).toHaveCount(1);
 		await expect(newestButton).toHaveAttribute("aria-pressed", "false");
 		await expect(oldestButton).toHaveAttribute("aria-pressed", "true");
+
+		// 支出が多い順は収入・支出で絞り込まず、並べ替えたら1ページ目に戻る
+		await page.goto("/o/sample-party/2026/transactions?page=2");
+		await sortGroup.getByRole("button", { name: "支出が多い順" }).click();
+		await expect(page).toHaveURL(/sort=expense&order=desc/);
+		await expect(page).toHaveURL(/page=1/);
+		await expect(page).not.toHaveURL(/filterType=/);
+		await expect(sortGroup.getByRole("button", { name: "支出が多い順" })).toHaveAttribute(
+			"aria-pressed",
+			"true",
+		);
 	});
 
 	test("行のカテゴリーのラベルから、そのカテゴリーで絞り込めること", async ({ page }) => {
