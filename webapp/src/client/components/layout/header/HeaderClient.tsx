@@ -28,6 +28,10 @@ interface HeaderClientProps {
 
 const MEGA_MENU_ID = "header-mega-menu";
 const SP_MENU_ID = "header-sp-menu";
+/** SP のメニューを画面全体に広げ、開閉の動きを付ける幅（デザイン v9 の SP） */
+const SP_FULLSCREEN_QUERY = "(max-width: 640px)";
+/** 閉じる動き（globals.css の sp-menu-lift）を見せてから閉じるまでの時間 */
+const SP_MENU_CLOSE_MS = 330;
 
 const NAV_ITEM_CLASS =
   "inline-flex h-11 items-center gap-1 whitespace-nowrap rounded-full px-2.5 text-sm font-bold text-black decoration-2 underline-offset-8 transition-colors hover:bg-[#F3F7F6] cursor-pointer";
@@ -42,18 +46,41 @@ export default function HeaderClient({ organizations, politiciansByYear }: Heade
 
   // PC のメガメニュー
   const [megaMenu, setMegaMenu] = useState<"pf" | "rf" | null>(null);
-  // SP のメニュー。spStep は「政党・政治団体」「調研費」の次の段階
+  // SP のメニュー。isSpMenuClosing は閉じる動きを見せている間
   const [isSpMenuOpen, setIsSpMenuOpen] = useState(false);
-  const [spStep, setSpStep] = useState<"pf" | "rf" | null>(null);
+  const [isSpMenuClosing, setIsSpMenuClosing] = useState(false);
+  const spCloseTimerRef = useRef<number | null>(null);
 
   const headerRef = useRef<HTMLElement>(null);
   const megaTriggerRefs = useRef<Partial<Record<"pf" | "rf", HTMLButtonElement | null>>>({});
   const spTriggerRef = useRef<HTMLButtonElement>(null);
 
+  const clearSpCloseTimer = () => {
+    if (spCloseTimerRef.current === null) return;
+    window.clearTimeout(spCloseTimerRef.current);
+    spCloseTimerRef.current = null;
+  };
+
+  /** ページを移るときなど、動きを付けずにすぐ閉じる */
   const closeMenus = () => {
+    clearSpCloseTimer();
     setMegaMenu(null);
     setIsSpMenuOpen(false);
-    setSpStep(null);
+    setIsSpMenuClosing(false);
+  };
+
+  /** SP のメニューを、開くときの逆の動き（中身が消え、幕が巻き上がる）を見せてから閉じる。動きを減らす設定ならすぐ閉じる */
+  const closeSpMenuAnimated = () => {
+    if (spCloseTimerRef.current !== null) return;
+    const shouldAnimate =
+      window.matchMedia(SP_FULLSCREEN_QUERY).matches &&
+      !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (!shouldAnimate) {
+      closeMenus();
+      return;
+    }
+    setIsSpMenuClosing(true);
+    spCloseTimerRef.current = window.setTimeout(closeMenus, SP_MENU_CLOSE_MS);
   };
 
   const isAnyMenuOpen = megaMenu !== null || isSpMenuOpen;
@@ -67,9 +94,14 @@ export default function HeaderClient({ organizations, politiciansByYear }: Heade
     };
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key !== "Escape") return;
-      const trigger = megaMenu ? megaTriggerRefs.current[megaMenu] : spTriggerRef.current;
-      closeMenus();
-      trigger?.focus();
+      if (megaMenu) {
+        const trigger = megaTriggerRefs.current[megaMenu];
+        closeMenus();
+        trigger?.focus();
+        return;
+      }
+      closeSpMenuAnimated();
+      spTriggerRef.current?.focus();
     };
     document.addEventListener("pointerdown", handlePointerDown);
     document.addEventListener("keydown", handleKeyDown);
@@ -78,6 +110,24 @@ export default function HeaderClient({ organizations, politiciansByYear }: Heade
       document.removeEventListener("keydown", handleKeyDown);
     };
   }, [isAnyMenuOpen, megaMenu]);
+
+  // SP のメニューが画面全体を覆っている間は、後ろのページをスクロールさせない
+  useEffect(() => {
+    if (!isSpMenuOpen) return;
+    const query = window.matchMedia(SP_FULLSCREEN_QUERY);
+    const root = document.documentElement;
+    const apply = () => {
+      root.style.overflow = query.matches ? "hidden" : "";
+    };
+    apply();
+    query.addEventListener("change", apply);
+    return () => {
+      query.removeEventListener("change", apply);
+      root.style.overflow = "";
+    };
+  }, [isSpMenuOpen]);
+
+  useEffect(() => clearSpCloseTimer, []);
 
   return (
     <>
@@ -89,10 +139,26 @@ export default function HeaderClient({ organizations, politiciansByYear }: Heade
       )}
       <header
         ref={headerRef}
-        className="fixed top-0 left-0 right-0 z-40 px-2.5 py-3 xl:px-6 xl:py-4"
+        data-sp-menu={isSpMenuClosing ? "closing" : isSpMenuOpen ? "open" : undefined}
+        className={`fixed top-0 left-0 right-0 z-40 px-2.5 py-3 xl:px-6 xl:py-4 ${
+          // SP のメニューを開いたら画面全体を覆う。ヘッダーの行は白、その下は薄いグリーン
+          isSpMenuOpen ? "max-[640px]:bottom-0 max-[640px]:p-0" : ""
+        }`}
       >
-        <div className="bg-white rounded-[20px] px-3 py-3 xl:px-6 xl:py-0 relative z-10">
-          <div className="flex items-center gap-2 xl:h-16">
+        <div
+          className={`bg-white rounded-[20px] px-3 py-3 xl:px-6 xl:py-0 relative z-10 ${
+            isSpMenuOpen
+              ? "max-[640px]:flex max-[640px]:h-full max-[640px]:flex-col max-[640px]:rounded-none max-[640px]:bg-transparent max-[640px]:p-0"
+              : ""
+          }`}
+        >
+          <div
+            className={`flex items-center gap-2 xl:h-16 ${
+              isSpMenuOpen
+                ? "max-[640px]:min-h-[60px] max-[640px]:flex-none max-[640px]:bg-white max-[640px]:pt-3 max-[640px]:pr-4 max-[640px]:pl-[22px] max-[640px]:shadow-[0_1px_0_#DCE4E1]"
+                : ""
+            }`}
+          >
             {/* Logo and Title Section */}
             <Link
               href="/"
@@ -193,13 +259,10 @@ export default function HeaderClient({ organizations, politiciansByYear }: Heade
               <button
                 ref={spTriggerRef}
                 type="button"
-                aria-label="メニュー"
+                aria-label={isSpMenuOpen ? "メニューを閉じる" : "メニュー"}
                 aria-expanded={isSpMenuOpen}
                 aria-controls={isSpMenuOpen ? SP_MENU_ID : undefined}
-                onClick={() => {
-                  setIsSpMenuOpen(!isSpMenuOpen);
-                  setSpStep(null);
-                }}
+                onClick={() => (isSpMenuOpen ? closeSpMenuAnimated() : setIsSpMenuOpen(true))}
                 className="flex min-[1080px]:hidden size-11 items-center justify-center rounded-lg cursor-pointer"
               >
                 <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true">
@@ -227,12 +290,9 @@ export default function HeaderClient({ organizations, politiciansByYear }: Heade
             </div>
           )}
           {isSpMenuOpen && (
-            <div className="min-[1080px]:hidden">
+            <div className="min-[1080px]:hidden max-[640px]:flex max-[640px]:min-h-0 max-[640px]:flex-1 max-[640px]:flex-col">
               <HeaderSpMenu
                 id={SP_MENU_ID}
-                navItems={navItems}
-                step={spStep}
-                onStepChange={setSpStep}
                 organizations={organizationItems}
                 politicians={politicianItems}
                 onNavigate={closeMenus}

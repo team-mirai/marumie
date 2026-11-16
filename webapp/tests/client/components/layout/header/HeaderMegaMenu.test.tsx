@@ -1,6 +1,9 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import HeaderMegaMenu from "@/client/components/layout/header/HeaderMegaMenu";
-import type { HeaderPoliticianMenuItem } from "@/client/lib/header-navigation";
+import type {
+  HeaderOrganizationMenuItem,
+  HeaderPoliticianMenuItem,
+} from "@/client/lib/header-navigation";
 
 function politician(years: number[], overrides: Partial<HeaderPoliticianMenuItem> = {}): HeaderPoliticianMenuItem {
   return {
@@ -40,5 +43,56 @@ describe("HeaderMegaMenu（調研費）", () => {
 
     expect(html).toContain('aria-label="サンプル太郎の調研費の表示する年"');
     expect(html).toContain('href="/p/sample-taro/2025"');
+  });
+});
+
+function organization(
+  years: number[],
+  selectedYear: number | null = null,
+): HeaderOrganizationMenuItem {
+  return {
+    slug: "sample-party",
+    name: "サンプル党",
+    officialName: null,
+    isCurrent: selectedYear !== null,
+    href: "/o/sample-party/2026",
+    years: years.map((year) => ({
+      year,
+      href: `/o/sample-party/${year}`,
+      isSelected: year === selectedYear,
+    })),
+  };
+}
+
+function renderOrganizations(organizations: HeaderOrganizationMenuItem[]): string {
+  return renderToStaticMarkup(
+    <HeaderMegaMenu id="menu" menu="pf" organizations={organizations} politicians={[]} onNavigate={() => {}} />,
+  );
+}
+
+describe("HeaderMegaMenu（政党・政治団体）", () => {
+  it("説明文「政治資金｜政党・政治団体が集めて使うお金」を出さない", () => {
+    const html = renderOrganizations([organization([2025, 2026])]);
+
+    expect(html).not.toContain("政治資金｜政党・政治団体が集めて使うお金");
+  });
+
+  it("年を「2025年」「2026年」の個別のピルで並べ、表示中の年だけ黒にする", () => {
+    const html = renderOrganizations([organization([2025, 2026], 2026)]);
+
+    const pill2025 = html.match(/<a [^>]*>2025年<\/a>/)?.[0] ?? "";
+    const pill2026 = html.match(/<a [^>]*>2026年<\/a>/)?.[0] ?? "";
+    expect(pill2025).toContain('href="/o/sample-party/2025"');
+    expect(pill2025).toContain("bg-white");
+    expect(pill2025).not.toContain("aria-current");
+    expect(pill2026).toContain('href="/o/sample-party/2026"');
+    expect(pill2026).toContain('aria-current="page"');
+    expect(pill2026).toContain("bg-black");
+  });
+
+  it("年が1つしかない団体にはピルを出さない", () => {
+    const html = renderOrganizations([organization([2026])]);
+
+    expect(html).not.toContain("サンプル党の表示する年");
   });
 });

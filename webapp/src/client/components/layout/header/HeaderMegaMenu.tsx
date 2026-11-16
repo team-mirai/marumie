@@ -1,5 +1,5 @@
 import Link from "next/link";
-import HeaderYearSegment from "@/client/components/layout/header/HeaderYearSegment";
+import HeaderYearPills from "@/client/components/layout/header/HeaderYearPills";
 import PoliticianInitialAvatar from "@/client/components/layout/header/PoliticianInitialAvatar";
 import type {
   HeaderOrganizationMenuItem,
@@ -14,7 +14,7 @@ interface HeaderMegaMenuProps {
   onNavigate: () => void;
 }
 
-/** PC のナビの「政党・政治団体▼」「調研費▼」で開くメニュー（デザイン v8 のメガメニュー。調研費の見出しと年の切り替えは v9）。 */
+/** PC のナビの「政党・政治団体▼」「調研費▼」で開くメニュー（デザイン v8 のメガメニュー。調研費の見出しと年のピルは v9）。 */
 export default function HeaderMegaMenu({
   id,
   menu,
@@ -29,9 +29,6 @@ export default function HeaderMegaMenu({
     >
       {menu === "pf" ? (
         <section aria-label="政党・政治団体" className="flex flex-col gap-1">
-          <p className="mb-1.5 text-[11px] font-bold tracking-[0.06em] text-[#6B7280]">
-            政治資金｜政党・政治団体が集めて使うお金
-          </p>
           <ul>
             {organizations.map((organization) => (
               <li
@@ -57,11 +54,14 @@ export default function HeaderMegaMenu({
                     </span>
                   )}
                 </Link>
-                <HeaderYearSegment
-                  name={organization.name}
-                  years={organization.years}
-                  onNavigate={onNavigate}
-                />
+                {/* 年が1つだけなら切り替える先が無いので出さない */}
+                {organization.years.length > 1 && (
+                  <HeaderYearPills
+                    name={organization.name}
+                    years={organization.years}
+                    onNavigate={onNavigate}
+                  />
+                )}
               </li>
             ))}
           </ul>
@@ -106,7 +106,7 @@ export default function HeaderMegaMenu({
                 </Link>
                 {/* 公開している年が1つだけなら切り替える先が無いので出さない */}
                 {politician.years.length > 1 && (
-                  <HeaderYearSegment
+                  <HeaderYearPills
                     name={`${politician.name}の調研費`}
                     years={politician.years}
                     onNavigate={onNavigate}
