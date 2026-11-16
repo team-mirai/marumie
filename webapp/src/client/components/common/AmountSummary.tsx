@@ -99,7 +99,11 @@ export default function AmountSummary({
                 </span>
               ) : (
                 <AccessibleFormattedAmount amount={amount} visualClassName={classes.visual}>
-                  <CountUpNumber value={amount.main} className={numberClass} />
+                  <CountUpNumber
+                    value={amount.main}
+                    amountKey={String(item.amount)}
+                    className={numberClass}
+                  />
                   {amount.secondary && (
                     <em
                       className={`ml-0.5 mr-1 font-extrabold not-italic text-[#4B5563] ${classes.unit}`}
@@ -107,9 +111,12 @@ export default function AmountSummary({
                       {amount.secondary}
                     </em>
                   )}
-                  {amount.tertiary && (
-                    <CountUpNumber value={amount.tertiary} className={numberClass} />
-                  )}
+                  {/* 万が 0 で空のときも部品は残す（切り替えで現れたときに 0 から数え直さないように） */}
+                  <CountUpNumber
+                    value={amount.tertiary}
+                    amountKey={String(item.amount)}
+                    className={numberClass}
+                  />
                   <em className={`ml-0.5 font-extrabold not-italic text-[#4B5563] ${classes.unit}`}>
                     {amount.unit}
                   </em>

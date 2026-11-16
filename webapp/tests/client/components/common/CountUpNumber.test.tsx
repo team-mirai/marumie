@@ -20,4 +20,13 @@ describe("CountUpNumber", () => {
       expect(m[1].split(" ")).toContain("font-num");
     }
   });
+
+  it("億の下の万が 0 の金額では、万の数字を描かない", () => {
+    const markup = renderToStaticMarkup(
+      <AmountSummary items={[{ label: "収入総額", color: "#000000", amount: 100_000_000 }]} />,
+    );
+
+    const numbers = [...markup.matchAll(/<b class="[^"]*">([^<]*)<\/b>/g)];
+    expect(numbers.map((m) => m[1])).toEqual(["1"]);
+  });
 });
