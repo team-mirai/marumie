@@ -12,7 +12,11 @@ import { useInView } from "@/client/lib/use-in-view";
 export default function MonthlyChartScroll({ children }: { children: ReactNode }) {
   const { ref, inView } = useInView<HTMLDivElement>();
   return (
-    <div ref={ref} className="relative" data-in-view={inView ? "true" : undefined}>
+    <div
+      ref={ref}
+      className="monthly-hscroll-frame relative"
+      data-in-view={inView ? "true" : undefined}
+    >
       {/* 名前の付いた section は region として読み上げられる */}
       <section
         className="monthly-hscroll overflow-x-auto"

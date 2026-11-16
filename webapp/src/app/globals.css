@@ -228,7 +228,12 @@ table:focus-visible {
  * 月ごとの推移のグラフの横スクロール（MonthlyChartScroll）。
  * SP では右端をぼかしてまだ続きがあることを見せ、グラフが画面に入ったら中央に「左右にスクロール」を出して数秒で消す。
  */
+/* SP ではスクロール領域自身に mask-image がかかり自分のフォーカス枠まで消えるので、マスクの無い親に枠を描く */
 .monthly-hscroll:focus-visible {
+  outline: none;
+}
+
+.monthly-hscroll-frame:has(> .monthly-hscroll:focus-visible) {
   outline: 2px solid #0b0f0e;
   outline-offset: 2px;
   border-radius: 8px;

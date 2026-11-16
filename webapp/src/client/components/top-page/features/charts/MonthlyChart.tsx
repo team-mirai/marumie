@@ -43,14 +43,16 @@ interface TooltipState {
   /** ホバー時点の描画サイズ。端の月でツールチップを内側へ反転させるのに使う */
   width: number;
   height: number;
+  /** カーソルが見えている範囲の右半分にあるか。true ならツールチップを左側に出す */
+  flipX: boolean;
 }
 
 const TOOLTIP_OFFSET = 12;
 
 /** カーソルが右半分・下半分にあるときは、表示領域からはみ出さないよう左側・上側に出す。 */
-function tooltipPosition({ x, y, width, height }: TooltipState) {
+function tooltipPosition({ x, y, width, height, flipX }: TooltipState) {
   return {
-    ...(x > width / 2 ? { right: width - x + TOOLTIP_OFFSET } : { left: x + TOOLTIP_OFFSET }),
+    ...(flipX ? { right: width - x + TOOLTIP_OFFSET } : { left: x + TOOLTIP_OFFSET }),
     ...(y > height / 2 ? { bottom: height - y + TOOLTIP_OFFSET } : { top: y + TOOLTIP_OFFSET }),
   };
 }
@@ -106,6 +108,12 @@ export default function MonthlyChart({ data }: MonthlyChartProps) {
         aria-label={CHART_LABEL}
         onMouseMove={(event) => {
           const rect = event.currentTarget.getBoundingClientRect();
+          // SP の横スクロール（MonthlyChartScroll）の中ではグラフの一部しか見えないので、
+          // グラフ全体ではなく見えている範囲の中央を境に左右を決める
+          const visible =
+            event.currentTarget.closest(".monthly-hscroll")?.getBoundingClientRect() ?? rect;
+          const visibleCenter =
+            (Math.max(rect.left, visible.left) + Math.min(rect.right, visible.right)) / 2;
           const viewBoxX = ((event.clientX - rect.left) / rect.width) * WIDTH;
           const index = Math.floor((viewBoxX - MARGIN.left) / step);
           setTooltip(
@@ -116,6 +124,7 @@ export default function MonthlyChart({ data }: MonthlyChartProps) {
                   y: event.clientY - rect.top,
                   width: rect.width,
                   height: rect.height,
+                  flipX: event.clientX > visibleCenter,
                 }
               : null,
           );
