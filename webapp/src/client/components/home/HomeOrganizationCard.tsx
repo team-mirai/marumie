@@ -64,6 +64,13 @@ export default function HomeOrganizationCard({
   // 取得に失敗したときは 0 円と区別できるよう、金額を出さない
   const summary = current.friendly ? calculateSankeyFinancialSummary(current.friendly) : null;
   const yearLabel = `${current.year}年`;
+  // その年の収支がまだ無い（取得はできたが流れが1本も無い）ときは、図の代わりに準備中と出す。
+  // 取得に失敗したとき（null）は、図の欄で取得できなかったことを伝える
+  const hasNoFlow =
+    current.friendly !== null &&
+    current.political !== null &&
+    current.friendly.links.length === 0 &&
+    current.political.links.length === 0;
   const yearOptions = years.map(({ year }) => ({ year }));
 
   const heading = (
@@ -100,7 +107,7 @@ export default function HomeOrganizationCard({
           <Link
             href={detailHref}
             aria-label={`${title}を詳しく見る`}
-            className="relative z-[1] col-span-full row-start-3 mb-[-4px] mr-[14px] inline-flex items-center self-end justify-self-end py-3 pb-[13px] text-[14px] font-extrabold leading-[1.3] text-[#0A1A17] no-underline transition-colors before:absolute before:bottom-2 before:right-[-14px] before:h-[1.5px] before:w-[9px] before:origin-right before:rotate-[38deg] before:rounded-[1px] before:bg-current before:content-[''] after:absolute after:bottom-2 after:left-0 after:right-[-14px] after:h-[1.5px] after:rounded-[1px] after:bg-current after:content-[''] hover:text-[#0F8472] focus-visible:text-[#0F8472] active:text-[#0F8472]"
+            className="more-link z-[1] col-span-full row-start-3 mb-[-4px] mr-[14px] self-end justify-self-end"
           >
             詳しく見る
           </Link>
@@ -154,16 +161,22 @@ export default function HomeOrganizationCard({
               { label: "現金残高", color: "#6B7280", amount: summary?.balance ?? null },
             ]}
           />
-          {/* 年を切り替えたらタブの選択を初期に戻す */}
-          <div className="min-[641px]:-mt-2">
-            <CashFlowSection
-              key={current.year}
-              political={current.political}
-              friendly={current.friendly}
-              // 「指を広げて拡大」はトップの 1 枚目（チームみらいの収支）の図だけに出す
-              pinchHint={tone === "party"}
-            />
-          </div>
+          {hasNoFlow ? (
+            <p className="m-0 text-[13px] font-semibold text-[#5B6470]">
+              {yearLabel}の収支の流れの図は準備中です
+            </p>
+          ) : (
+            // 年を切り替えたらタブの選択を初期に戻す
+            <div className="min-[641px]:-mt-2">
+              <CashFlowSection
+                key={current.year}
+                political={current.political}
+                friendly={current.friendly}
+                // 「指を広げて拡大」はトップの 1 枚目（チームみらいの収支）の図だけに出す
+                pinchHint={tone === "party"}
+              />
+            </div>
+          )}
           {/* 更新日はカードの右下。PC（1101px〜）は「詳しく」ボタンと同じ行の右端に重ねる。
               政治団体のカードを横に並べて内側が狭いときはボタンと重なるので、ボタンの上の行に置く */}
           {updatedAt && (
