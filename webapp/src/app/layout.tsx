@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Noto_Sans, Noto_Sans_JP } from "next/font/google";
+import { Noto_Sans, Noto_Sans_JP, Poppins } from "next/font/google";
 import "./globals.css";
 import { GoogleAnalytics } from "@next/third-parties/google";
 import { SpeedInsights } from "@vercel/speed-insights/next";
@@ -22,6 +22,14 @@ const notoSans = Noto_Sans({
   weight: ["400", "500", "700", "800", "900"],
   display: "swap",
   preload: true,
+});
+
+// 見出しカードの金額の数字（v9 の --num）。太さは 700 だけ使う
+const poppins = Poppins({
+  variable: "--font-poppins",
+  subsets: ["latin"],
+  weight: ["700"],
+  display: "swap",
 });
 
 const SITE_TITLE = "まる見え政治資金｜チームみらい";
@@ -63,7 +71,7 @@ export default function RootLayout({
     <html lang="ja">
       <head />
       <body
-        className={`${notoSans.variable} ${notoSansJP.variable} antialiased pt-24 flex flex-col min-h-screen`}
+        className={`${notoSans.variable} ${notoSansJP.variable} ${poppins.variable} antialiased pt-24 flex flex-col min-h-screen`}
       >
         <Header />
         <div className="flex-grow">{children}</div>
