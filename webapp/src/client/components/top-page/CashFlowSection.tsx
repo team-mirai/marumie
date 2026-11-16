@@ -97,7 +97,8 @@ export default function CashFlowSection({
         {currentData ? (
           <>
             <PinchZoom>
-              <SankeyChart data={currentData} {...chart} />
+              {/* 区分を切り替えたら図を作り直し、表示したときと同じく、ノードが伸びて帯が左から現れる動きで切り替える */}
+              <SankeyChart key={activeTab} data={currentData} {...chart} />
             </PinchZoom>
             <p className="mt-2 text-right text-[12px] font-semibold text-[#6B7280] md:hidden">
               ピンチで拡大できます
