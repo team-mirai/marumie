@@ -60,40 +60,41 @@ describe("PrismaResearchFundRepository の調研費の公開フラグ", () => {
     );
   });
 
-  it("政党ページの調査研究費セクションには調研費を公開する所属議員だけを出す", async () => {
+  it("トップページの調研費には、所属する政治団体を問わず、調研費を公開中でその年度に published の仕訳がある議員を表示順に出す", async () => {
     const { prisma, repository } = setup();
 
-    await repository.findPublishedByOrganization("team-mirai", 2026);
+    await repository.findPublishedForHome(2026);
 
-    const args = prisma.politicalOrganization.findUnique.mock.calls[0][0];
-    expect(args.select.politicianMemberships.where).toEqual({
-      endedOn: null,
-      politician: { isResearchFundPublic: true },
-    });
+    expect(prisma.politicalOrganization.findUnique).not.toHaveBeenCalled();
+    expect(prisma.politician.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          isResearchFundPublic: true,
+          books: {
+            some: { financialYear: 2026, journalEntries: { some: { status: "published" } } },
+          },
+        },
+        orderBy: [{ displayOrder: "asc" }, { id: "asc" }],
+      }),
+    );
   });
 
   it("トップページの議員カードには、ふりがな・院・写真の有無を添える（写真のキーは渡さない）", async () => {
     const { prisma, repository } = setup();
-    prisma.politicalOrganization.findUnique.mockResolvedValue({
-      slug: "team-mirai",
-      displayName: "チームみらい",
-      politicianMemberships: [
-        {
-          politician: {
-            name: "サンプル太郎",
-            slug: "sample-taro",
-            nameKana: "さんぷるたろう",
-            house: "sangiin",
-            photoPath: "politicians/1/photo.jpg",
-            books: [],
-          },
-        },
-      ],
-    });
+    prisma.politician.findMany.mockResolvedValue([
+      {
+        name: "サンプル太郎",
+        slug: "sample-taro",
+        nameKana: "さんぷるたろう",
+        house: "sangiin",
+        photoPath: "politicians/1/photo.jpg",
+        books: [],
+      },
+    ]);
 
-    const result = await repository.findPublishedByOrganization("team-mirai", 2026);
+    const result = await repository.findPublishedForHome(2026);
 
-    expect(result?.politicians[0].politician).toEqual({
+    expect(result[0].politician).toEqual({
       name: "サンプル太郎",
       slug: "sample-taro",
       nameKana: "さんぷるたろう",
@@ -325,36 +326,27 @@ describe("PrismaResearchFundRepository の法定区分の上書き（#1880）", 
     expect(result?.expenses[0]).not.toHaveProperty("legalCategoryOverride");
   });
 
-  it("政党ページの集計行にも、上書き先の区分を添える", async () => {
+  it("トップページの集計行にも、上書き先の区分を添える", async () => {
     const { prisma, repository } = setup();
-    prisma.politicalOrganization.findUnique.mockResolvedValue({
-      slug: "team-mirai",
-      displayName: "チームみらい",
-      politicianMemberships: [
-        {
-          politician: {
-            name: "サンプル太郎",
-            slug: "sample-taro",
-            nameKana: null,
-            house: null,
-            photoPath: null,
-            books: [
-              {
-                asOfDate: null,
-                publishedThrough: null,
-                journalEntries: [entry(1, "research"), entry(2, null)],
-              },
-            ],
+    prisma.politician.findMany.mockResolvedValue([
+      {
+        name: "サンプル太郎",
+        slug: "sample-taro",
+        nameKana: null,
+        house: null,
+        photoPath: null,
+        books: [
+          {
+            asOfDate: null,
+            publishedThrough: null,
+            journalEntries: [entry(1, "research"), entry(2, null)],
           },
-        },
-      ],
-    });
-
-    const result = await repository.findPublishedByOrganization("team-mirai", 2025);
-
-    expect(result?.politicians[0].rows.map((row) => row.legalCategoryOverride)).toEqual([
-      research,
-      undefined,
+        ],
+      },
     ]);
+
+    const result = await repository.findPublishedForHome(2025);
+
+    expect(result[0].rows.map((row) => row.legalCategoryOverride)).toEqual([research, undefined]);
   });
 });

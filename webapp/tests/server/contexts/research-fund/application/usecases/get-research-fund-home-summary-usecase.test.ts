@@ -1,8 +1,5 @@
-import { GetResearchFundPartySummaryUsecase } from "@/server/contexts/research-fund/application/usecases/get-research-fund-party-summary-usecase";
-import type {
-  PublishedPartyResearchFund,
-  PublishedPoliticianResearchFund,
-} from "@/server/contexts/research-fund/domain/models/published-research-fund";
+import { GetResearchFundHomeSummaryUsecase } from "@/server/contexts/research-fund/application/usecases/get-research-fund-home-summary-usecase";
+import type { PublishedPoliticianResearchFund } from "@/server/contexts/research-fund/domain/models/published-research-fund";
 import type { ResearchFundRepository } from "@/server/contexts/research-fund/domain/repositories/research-fund-repository.interface";
 
 const accounts: PublishedPoliticianResearchFund["accounts"] = {
@@ -67,46 +64,60 @@ function preparingPolitician(
   };
 }
 
-function party(
-  politicians: PublishedPoliticianResearchFund[],
-): PublishedPartyResearchFund | null {
-  return {
-    organization: { slug: "sample-party", displayName: "サンプル政党" },
-    financialYear: 2026,
-    politicians,
-  };
-}
-
-function usecaseWith(value: PublishedPartyResearchFund | null) {
+function usecaseWith(value: PublishedPoliticianResearchFund[]) {
   const repository: ResearchFundRepository = {
     findPublished: jest.fn().mockResolvedValue(null),
-    findPublishedByOrganization: jest.fn().mockResolvedValue(value),
+    findPublishedForHome: jest.fn().mockResolvedValue(value),
     findPoliticians: jest.fn().mockResolvedValue([]),
     findPublishedPageRefs: jest.fn().mockResolvedValue([]),
     findPublishedReceipt: jest.fn().mockResolvedValue(null),
   };
-  return { usecase: new GetResearchFundPartySummaryUsecase(repository), repository };
+  return { usecase: new GetResearchFundHomeSummaryUsecase(repository), repository };
 }
 
-describe("GetResearchFundPartySummaryUsecase", () => {
-  it("所属議員がいなければ null を返す（セクションを出さない）", async () => {
-    const { usecase } = usecaseWith(null);
+describe("GetResearchFundHomeSummaryUsecase", () => {
+  it("並べる議員がいなければ null を返す（セクションを出さない）", async () => {
+    const { usecase } = usecaseWith([]);
 
-    expect(await usecase.execute({ slug: "no-members", financialYear: 2026 })).toBeNull();
+    expect(await usecase.execute({ financialYear: 2026 })).toBeNull();
+  });
+
+  it("政治団体を指定せず、年度だけで公開中の議員を読み、表示順のまま並べる", async () => {
+    const { usecase, repository } = usecaseWith([
+      publishedPolitician(),
+      publishedPolitician({
+        politician: {
+          name: "サンプル 花子",
+          slug: "sample-hanako",
+          nameKana: null,
+          house: null,
+          hasPhoto: false,
+        },
+      }),
+    ]);
+
+    const data = await usecase.execute({ financialYear: 2026 });
+
+    expect(repository.findPublishedForHome).toHaveBeenCalledWith(2026);
+    expect(data?.financialYear).toBe(2026);
+    expect(data?.politicians.map((politician) => politician.slug)).toEqual([
+      "sample-taro",
+      "sample-hanako",
+    ]);
   });
 
   it("議員ごとに支給・支出を集計する", async () => {
-    const { usecase } = usecaseWith(party([publishedPolitician()]));
+    const { usecase } = usecaseWith([publishedPolitician()]);
 
-    const data = await usecase.execute({ slug: "sample-party", financialYear: 2026 });
+    const data = await usecase.execute({ financialYear: 2026 });
 
     expect(data?.politicians[0].kpi).toEqual({ granted: 2_000_000, spent: 104_000 });
   });
 
   it("サンキーは費目の多い順に並べ、1%未満の費目を「その他」にまとめ、末尾に未使用分を置く", async () => {
-    const { usecase } = usecaseWith(party([publishedPolitician()]));
+    const { usecase } = usecaseWith([publishedPolitician()]);
 
-    const data = await usecase.execute({ slug: "sample-party", financialYear: 2026 });
+    const data = await usecase.execute({ financialYear: 2026 });
 
     // 支給 200万円の 1% = 2万円未満のタクシー代・電車・バス代は「その他」にまとまる
     const expenseLabels = (mode: "detailed" | "legal") =>
@@ -123,22 +134,21 @@ describe("GetResearchFundPartySummaryUsecase", () => {
   });
 
   it("published の仕訳が無い（準備中の）議員は並べない", async () => {
-    const { usecase } = usecaseWith(party([publishedPolitician(), preparingPolitician()]));
+    const { usecase } = usecaseWith([publishedPolitician(), preparingPolitician()]);
 
-    const data = await usecase.execute({ slug: "sample-party", financialYear: 2026 });
+    const data = await usecase.execute({ financialYear: 2026 });
 
     expect(data?.politicians.map((politician) => politician.slug)).toEqual(["sample-taro"]);
   });
 
   it("公開中の議員がいなければ null を返す（セクションを出さない）", async () => {
-    const { usecase } = usecaseWith(party([preparingPolitician()]));
+    const { usecase } = usecaseWith([preparingPolitician()]);
 
-    expect(await usecase.execute({ slug: "sample-party", financialYear: 2026 })).toBeNull();
+    expect(await usecase.execute({ financialYear: 2026 })).toBeNull();
   });
 
   it("議員カードのプロフィールと、議員ごとの更新日・支給期間を返す", async () => {
-    const { usecase } = usecaseWith(
-      party([
+    const { usecase } = usecaseWith([
         publishedPolitician(),
         publishedPolitician({
           politician: {
@@ -151,10 +161,9 @@ describe("GetResearchFundPartySummaryUsecase", () => {
           asOfDate: null,
           publishedThrough: "2026-09-30",
         }),
-      ]),
-    );
+    ]);
 
-    const data = await usecase.execute({ slug: "sample-party", financialYear: 2026 });
+    const data = await usecase.execute({ financialYear: 2026 });
 
     expect(data?.politicians[0]).toMatchObject({
       slug: "sample-taro",
@@ -175,15 +184,13 @@ describe("GetResearchFundPartySummaryUsecase", () => {
   });
 
   it("集計できない行があれば黙って表示せず失敗させる", async () => {
-    const { usecase } = usecaseWith(
-      party([
+    const { usecase } = usecaseWith([
         publishedPolitician({
           rows: [{ date: "2026-13-99", accountKey: "taxi", amount: 1, type: "expense" }],
         }),
-      ]),
-    );
+    ]);
 
-    await expect(usecase.execute({ slug: "sample-party", financialYear: 2026 })).rejects.toThrow(
+    await expect(usecase.execute({ financialYear: 2026 })).rejects.toThrow(
       /調研費の集計に失敗しました/,
     );
   });

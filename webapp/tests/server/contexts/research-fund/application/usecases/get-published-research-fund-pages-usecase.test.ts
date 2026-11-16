@@ -4,7 +4,7 @@ import type { ResearchFundRepository } from "@/server/contexts/research-fund/dom
 function build(refs: { slug: string; financialYear: number }[]) {
   const repository: ResearchFundRepository = {
     findPublished: jest.fn().mockResolvedValue(null),
-    findPublishedByOrganization: jest.fn().mockResolvedValue(null),
+    findPublishedForHome: jest.fn().mockResolvedValue([]),
     findPoliticians: jest.fn().mockResolvedValue([]),
     findPublishedPageRefs: jest.fn().mockResolvedValue(refs),
     findPublishedReceipt: jest.fn().mockResolvedValue(null),

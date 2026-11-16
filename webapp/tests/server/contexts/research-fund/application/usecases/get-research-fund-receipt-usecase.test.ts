@@ -5,7 +5,7 @@ import type { ResearchFundRepository } from "@/server/contexts/research-fund/dom
 function build(receipt: { maskedKey: string } | null) {
   const repository: ResearchFundRepository = {
     findPublished: jest.fn().mockResolvedValue(null),
-    findPublishedByOrganization: jest.fn().mockResolvedValue(null),
+    findPublishedForHome: jest.fn().mockResolvedValue([]),
     findPoliticians: jest.fn().mockResolvedValue([]),
     findPublishedPageRefs: jest.fn().mockResolvedValue([]),
     findPublishedReceipt: jest.fn().mockResolvedValue(receipt),

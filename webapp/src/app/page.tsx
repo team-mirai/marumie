@@ -7,7 +7,7 @@ import OrganizationAvatar from "@/client/components/home/OrganizationAvatar";
 import MainColumn from "@/client/components/layout/MainColumn";
 import { formatUpdatedAt } from "@/client/lib/format-date";
 import { loadHomePageData } from "@/server/contexts/public-finance/presentation/loaders/load-home-page-data";
-import { loadResearchFundPartySummary } from "@/server/contexts/research-fund/presentation/loaders/load-research-fund-party-summary";
+import { loadResearchFundHomeSummary } from "@/server/contexts/research-fund/presentation/loaders/load-research-fund-home-summary";
 
 export const revalidate = 300; // 5 minutes
 
@@ -22,16 +22,14 @@ export default async function HomePage() {
     return null;
   });
   const updatedAt = formatUpdatedAt(data?.lastUpdatedAt ?? null);
-  // 所属議員の調研費は政党（先頭）の所属議員を出す。取れなくても他のカードは出せるので、失敗したら出さないだけにする
-  const partySlug = data?.parties[0]?.slug;
-  const researchFund = partySlug
-    ? await loadResearchFundPartySummary({ slug: partySlug, financialYear: DEFAULT_YEAR }).catch(
-        (error) => {
-          console.error("loadResearchFundPartySummary error:", error);
-          return null;
-        },
-      )
-    : null;
+  // 所属議員の調研費は、政党カードの有無に関係なく調研費を公開中の議員を全員出す。
+  // 取れなくても他のカードは出せるので、失敗したら出さないだけにする
+  const researchFund = await loadResearchFundHomeSummary({ financialYear: DEFAULT_YEAR }).catch(
+    (error) => {
+      console.error("loadResearchFundHomeSummary error:", error);
+      return null;
+    },
+  );
 
   return (
     <MainColumn spacing="compact">

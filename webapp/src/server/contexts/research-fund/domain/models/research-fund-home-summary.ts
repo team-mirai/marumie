@@ -10,7 +10,7 @@ import type { PoliticianHouse } from "@/shared/models/politician";
 import type { SankeyData } from "@/types/sankey";
 
 /** 議員カード1枚分。published の仕訳がある議員だけが入る（準備中の議員は出さない）。 */
-export interface ResearchFundPartyPoliticianView {
+export interface ResearchFundHomePoliticianView {
   slug: string;
   name: string;
   /** ふりがな。未登録なら null */
@@ -28,9 +28,8 @@ export interface ResearchFundPartyPoliticianView {
   sankey: Record<ResearchFundCategoryMode, SankeyData>;
 }
 
-export interface ResearchFundPartySummaryData {
-  organization: { slug: string; displayName: string };
+export interface ResearchFundHomeSummaryData {
   financialYear: number;
   /** 表示順（display_order）。1人以上いる */
-  politicians: ResearchFundPartyPoliticianView[];
+  politicians: ResearchFundHomePoliticianView[];
 }

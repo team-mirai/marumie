@@ -4,9 +4,9 @@ import type {
   PublishedPoliticianResearchFund,
 } from "@/server/contexts/research-fund/domain/models/published-research-fund";
 import type {
-  ResearchFundPartyPoliticianView,
-  ResearchFundPartySummaryData,
-} from "@/server/contexts/research-fund/domain/models/research-fund-party-summary";
+  ResearchFundHomePoliticianView,
+  ResearchFundHomeSummaryData,
+} from "@/server/contexts/research-fund/domain/models/research-fund-home-summary";
 import type { ResearchFundRepository } from "@/server/contexts/research-fund/domain/repositories/research-fund-repository.interface";
 import { buildGrantPeriodLabel } from "@/server/contexts/research-fund/domain/services/research-fund-coverage";
 import { buildResearchFundSankey } from "@/server/contexts/research-fund/domain/services/research-fund-sankey-builder";
@@ -16,45 +16,35 @@ import {
   type ResearchFundRow,
 } from "@/shared/research-fund/aggregation";
 
-export interface GetResearchFundPartySummaryParams {
-  slug: string;
+export interface GetResearchFundHomeSummaryParams {
   financialYear: number;
 }
 
-export class GetResearchFundPartySummaryUsecase {
+export class GetResearchFundHomeSummaryUsecase {
   constructor(private repository: ResearchFundRepository) {}
 
   /**
-   * トップページの「所属議員の調研費」のデータ。調研費を公開中で、その年度に published の仕訳がある議員だけを並べる。
+   * トップページの「所属議員の調研費」のデータ。調研費を公開中で、その年度に published の仕訳がある議員を全員並べる。
+   * どの政治団体に所属しているか（所属があるか）には左右されない。
    * 調研費を「公開しない」議員は repository の段階で外れる。
    * 並べる議員がいなければ null を返し、呼び出し側がセクションを出さない。
    */
   async execute(
-    params: GetResearchFundPartySummaryParams,
-  ): Promise<ResearchFundPartySummaryData | null> {
-    const published = await this.repository.findPublishedByOrganization(
-      params.slug,
-      params.financialYear,
-    );
-    if (!published) return null;
+    params: GetResearchFundHomeSummaryParams,
+  ): Promise<ResearchFundHomeSummaryData | null> {
+    const published = await this.repository.findPublishedForHome(params.financialYear);
 
     // published の仕訳が1件も無い議員は「準備中」。カードもグラフも出さない。
-    const politicians = published.politicians
-      .filter((item) => item.rows.length > 0)
-      .map(buildPoliticianView);
+    const politicians = published.filter((item) => item.rows.length > 0).map(buildPoliticianView);
     if (politicians.length === 0) return null;
 
-    return {
-      organization: published.organization,
-      financialYear: published.financialYear,
-      politicians,
-    };
+    return { financialYear: params.financialYear, politicians };
   }
 }
 
 function buildPoliticianView(
   published: PublishedPoliticianResearchFund,
-): ResearchFundPartyPoliticianView {
+): ResearchFundHomePoliticianView {
   const detailed = aggregate(published.rows, published.accounts, "detailed");
   const legal = aggregate(published.rows, published.accounts, "legal");
 
