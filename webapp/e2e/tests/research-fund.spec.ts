@@ -358,14 +358,35 @@ test.describe("調査研究費 議員ページ", () => {
 		await expect(filterButton).not.toHaveText("");
 	});
 
+	test("全件ページの PC の表は、列見出しの aria-sort で今の並び順を伝える", async ({ page }) => {
+		await page.goto(`${PAGE_URL}/transactions`);
+		const table = page.locator("#transactions").getByRole("table");
+		const dateHeader = table.getByRole("columnheader", { name: /^日付/ });
+		const amountHeader = table.getByRole("columnheader", { name: /^金額/ });
+
+		await expect(table.getByRole("columnheader")).toHaveCount(4);
+		await expect(dateHeader).toHaveAttribute("aria-sort", "descending");
+		await expect(amountHeader).toHaveAttribute("aria-sort", "none");
+		await expect(table.getByRole("cell").first()).toBeVisible();
+
+		await page.goto(`${PAGE_URL}/transactions?sort=date&order=asc`);
+		await expect(dateHeader).toHaveAttribute("aria-sort", "ascending");
+		await expect(amountHeader).toHaveAttribute("aria-sort", "none");
+
+		await page.goto(`${PAGE_URL}/transactions?sort=amount&order=desc`);
+		await expect(dateHeader).toHaveAttribute("aria-sort", "none");
+		await expect(amountHeader).toHaveAttribute("aria-sort", "descending");
+
+		await page.goto(`${PAGE_URL}/transactions?sort=amount&order=asc`);
+		await expect(amountHeader).toHaveAttribute("aria-sort", "ascending");
+	});
+
 	test("公開済みの支給が入金の行として出金と同じ一覧に並ぶ", async ({ page }) => {
 		await page.goto(`${PAGE_URL}/transactions`);
 		const table = page.locator("#transactions");
 
 		// シードでは 2〜8 月の 1 日に公開済みの支給が 100 万円ずつある
-		const grantRow = table
-			.locator("div.grid")
-			.filter({ hasText: "調査研究広報滞在費 8月分" });
+		const grantRow = table.getByRole("row").filter({ hasText: "調査研究広報滞在費 8月分" });
 		await expect(grantRow).toHaveCount(1);
 		await expect(grantRow.getByText("支給（入金）")).toBeVisible();
 		await expect(grantRow).toContainText("+1,000,000");
@@ -408,7 +429,7 @@ test.describe("調査研究費 議員ページ", () => {
 		// 行のカテゴリーのラベルは、そのカテゴリー1つで絞り込む通常のリンク
 		await page.goto(`${PAGE_URL}/transactions`);
 		const grantLink = table
-			.locator("div.grid")
+			.getByRole("row")
 			.filter({ hasText: "調査研究広報滞在費 8月分" })
 			.getByRole("link", { name: /^支給/ });
 		await expect(grantLink).toHaveAttribute(
