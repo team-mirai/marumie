@@ -334,6 +334,12 @@ export default function SankeyChart({
             clip-path: none !important;
             transition: none !important;
           }
+          /* ホバー・フォーカス中に印刷しても、ほかの帯やラベルを薄くしない */
+          .sankey-chart .band,
+          .sankey-chart .lbl,
+          .sankey-chart .node {
+            opacity: 1 !important;
+          }
         }
       `}</style>
     </div>
