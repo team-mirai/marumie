@@ -197,6 +197,26 @@ test.describe("ヘッダー（SP）", () => {
 			.toBe("");
 	});
 
+	test("開いている間は Tab のフォーカスがメニューの中で循環し、後ろのページへ移らない", async ({
+		page,
+	}) => {
+		await page.goto(ORG_URL);
+
+		await page.getByRole("button", { name: "メニュー", exact: true }).click();
+		const menu = page.locator("#header-sp-menu");
+		const lastLink = menu.getByRole("link", { name: /調研費についてのご意見/ });
+		await expect(lastLink).toBeVisible();
+
+		await lastLink.focus();
+		await page.keyboard.press("Tab");
+		const isFocusInHeader = () =>
+			page.evaluate(() => document.querySelector("header")?.contains(document.activeElement));
+		await expect.poll(isFocusInHeader).toBe(true);
+
+		await page.keyboard.press("Shift+Tab");
+		await expect(lastLink).toBeFocused();
+	});
+
 	test.describe("動きを減らす設定", () => {
 		test.use({ reducedMotion: "reduce" });
 

@@ -85,6 +85,28 @@ export default function HeaderClient({ organizations, politiciansByYear }: Heade
 
   const isAnyMenuOpen = megaMenu !== null || isSpMenuOpen;
 
+  /** SP のメニューが画面全体を覆っている間は、Tab のフォーカスをヘッダー（閉じるボタンとメニュー）の中で循環させる */
+  const trapSpMenuFocus = (event: KeyboardEvent) => {
+    const header = headerRef.current;
+    if (!header || !window.matchMedia(SP_FULLSCREEN_QUERY).matches) return;
+    // 隠れている PC のナビなどを除き、いま見えているものだけを対象にする
+    const focusables = Array.from(
+      header.querySelectorAll<HTMLElement>("a[href], button:not([disabled])"),
+    ).filter((element) => element.getClientRects().length > 0);
+    const first = focusables[0];
+    const last = focusables[focusables.length - 1];
+    if (!first || !last) return;
+    const active = document.activeElement;
+    const isInside = active instanceof Node && header.contains(active);
+    if (event.shiftKey && (!isInside || active === first)) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && (!isInside || active === last)) {
+      event.preventDefault();
+      first.focus();
+    }
+  };
+
   // メニューの外側のクリックと Esc で閉じる。Esc では開いたボタンにフォーカスを戻す
   useEffect(() => {
     if (!isAnyMenuOpen) return;
@@ -93,6 +115,10 @@ export default function HeaderClient({ organizations, politiciansByYear }: Heade
       closeMenus();
     };
     const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Tab" && megaMenu === null) {
+        trapSpMenuFocus(event);
+        return;
+      }
       if (event.key !== "Escape") return;
       if (megaMenu) {
         const trigger = megaTriggerRefs.current[megaMenu];
