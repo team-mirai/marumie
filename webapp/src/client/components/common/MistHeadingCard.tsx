@@ -10,7 +10,7 @@ interface MistHeadingCardProps {
   title: string;
   /** 見出しの下に添える区分と年・正式名など（例: 「政党・2026年」） */
   subtitle?: string;
-  /** 例: 「2026.10.23更新」 */
+  /** 例: 「2026.10.23 更新」 */
   updatedAt: string;
   /** 右下の年の切り替え */
   yearSwitch: ReactNode;

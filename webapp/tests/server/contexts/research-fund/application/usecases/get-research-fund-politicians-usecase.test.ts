@@ -29,7 +29,7 @@ describe("GetResearchFundPoliticiansUsecase", () => {
       {
         slug: "sample-taro",
         name: "サンプル 太郎",
-        statusLabel: "2026年2月〜8月分を公開中",
+        statusLabel: "2026年2-8月分を公開中",
         hasPhoto: true,
       },
     ]);

@@ -5,7 +5,7 @@ import BalanceSheetChart from "./features/charts/BalanceSheetChart";
 
 interface BalanceSheetSectionProps {
   data?: BalanceSheetData;
-  /** 例: 「2026.10.23更新」。過去年度は「2025.12.31時点」のように基準日を出す */
+  /** 例: 「2026.10.23 更新」。過去年度は「2025.12.31時点」のように基準日を出す */
   updatedAt: string;
   /** 見出しの上の小さな行（例: 「チームみらい・2026年」） */
   eyebrow: string;

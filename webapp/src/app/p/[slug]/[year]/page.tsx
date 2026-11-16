@@ -55,7 +55,7 @@ export default async function PoliticianPage({ params }: PoliticianPageProps) {
   if (!page) notFound();
   const { data, pathSlug } = page;
 
-  // 「2026.8.20更新」。未設定なら公開範囲の最終日で代用する。
+  // 「2026.8.20 更新」。未設定なら公開範囲の最終日で代用する。
   const updatedAt = formatUpdatedAt(data.asOfDate ?? null);
   const hasHighlights = data.policyComment !== null || data.groups.length > 0;
   const eyebrow = `${data.politician.name}の調研費・${data.financialYear}年`;
@@ -109,7 +109,7 @@ export default async function PoliticianPage({ params }: PoliticianPageProps) {
         />
       </ResearchFundCrossLinkProvider>
       {nav && <OtherPoliticiansSection politicians={nav.others} />}
-      <ResearchFundBottomBlock dataNote={data.dataNote} />
+      <ResearchFundBottomBlock dataNote={data.dataNote} notesVariant="member" />
     </MainColumn>
   );
 }

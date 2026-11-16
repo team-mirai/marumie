@@ -4,8 +4,14 @@ interface PoliticianInitialAvatarProps {
   name: string;
   /** 顔写真の URL。未登録なら null（名前の1文字目にする） */
   photoUrl: string | null;
-  size: "sm" | "lg";
+  /** lg: 44px（メガメニュー） / face: 52px（SP メニューの顔写真） */
+  size: "lg" | "face";
 }
+
+const SIZE_CLASSES: Record<PoliticianInitialAvatarProps["size"], string> = {
+  lg: "size-11 text-lg",
+  face: "size-[52px] text-xl",
+};
 
 /** ヘッダーのメニューで議員名の左に置く丸いアイコン。顔写真が無ければ名前の1文字目にする。 */
 export default function PoliticianInitialAvatar({
@@ -16,13 +22,11 @@ export default function PoliticianInitialAvatar({
   return (
     <span
       aria-hidden="true"
-      className={`relative inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#E2F6F3] font-bold text-[#0F8472] ${
-        size === "lg" ? "size-11 text-lg" : "size-7 text-[11px]"
-      }`}
+      className={`relative inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#E2F6F3] font-bold text-[#0F8472] ${SIZE_CLASSES[size]}`}
     >
       {photoUrl ? (
         // 写真は署名URLへのリダイレクトで配信するので、Next の画像最適化を通さない
-        <Image src={photoUrl} alt="" fill unoptimized sizes="44px" className="object-cover" />
+        <Image src={photoUrl} alt="" fill unoptimized sizes="52px" className="object-cover" />
       ) : (
         name.slice(0, 1)
       )}

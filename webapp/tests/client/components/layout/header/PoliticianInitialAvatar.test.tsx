@@ -18,7 +18,7 @@ describe("PoliticianInitialAvatar", () => {
 
   it("顔写真が未登録なら名前の1文字目を出す", () => {
     const html = renderToStaticMarkup(
-      <PoliticianInitialAvatar name="サンプル太郎" photoUrl={null} size="sm" />,
+      <PoliticianInitialAvatar name="サンプル太郎" photoUrl={null} size="face" />,
     );
 
     expect(html).not.toContain("<img");

@@ -417,3 +417,86 @@ table:focus-visible {
     transform: rotate(38deg) scaleX(1);
   }
 }
+
+/*
+ * SP のメニュー（HeaderSpMenu）の開閉の動き（デザイン v9）。
+ * 開くとき: 背景がヘッダーのすぐ下から幕が下りるように広がり、中身は少し遅れて上から順にすべり込む。
+ * 閉じるとき（header[data-sp-menu="closing"]）: 中身がすっと消え、幕が下から上へ巻き上がる。
+ */
+@media (max-width: 640px) {
+  .sp-menu {
+    animation: sp-menu-drop 0.5s cubic-bezier(0.32, 0.72, 0, 1) both;
+  }
+  .sp-menu > * {
+    animation: sp-menu-item-in 0.42s cubic-bezier(0.32, 0.72, 0, 1) both;
+  }
+  .sp-menu > :nth-child(1) {
+    animation-delay: 0.08s;
+  }
+  .sp-menu > :nth-child(2) {
+    animation-delay: 0.13s;
+  }
+  .sp-menu > :nth-child(3) {
+    animation-delay: 0.18s;
+  }
+  .sp-menu > :nth-child(4) {
+    animation-delay: 0.23s;
+  }
+  .sp-menu > :nth-child(n + 5) {
+    animation-delay: 0.28s;
+  }
+  header[data-sp-menu="closing"] .sp-menu {
+    animation: sp-menu-lift 0.32s cubic-bezier(0.55, 0, 0.75, 0.2) both;
+  }
+  header[data-sp-menu="closing"] .sp-menu > * {
+    animation: sp-menu-item-out 0.16s ease-in both;
+    animation-delay: 0s;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sp-menu,
+  .sp-menu > * {
+    animation: none;
+  }
+}
+
+@keyframes sp-menu-drop {
+  from {
+    clip-path: inset(0 0 100% 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+@keyframes sp-menu-lift {
+  from {
+    clip-path: inset(0 0 0 0);
+  }
+  to {
+    clip-path: inset(0 0 100% 0);
+  }
+}
+
+@keyframes sp-menu-item-in {
+  from {
+    opacity: 0;
+    transform: translateY(-14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes sp-menu-item-out {
+  from {
+    opacity: 1;
+    transform: none;
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+}

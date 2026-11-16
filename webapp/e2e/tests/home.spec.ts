@@ -41,9 +41,9 @@ test.describe("トップページ", () => {
 			"aria-pressed",
 			"true",
 		);
-		await expect(card).toContainText(/収入総額\s*1581万円/);
-		await expect(card).toContainText(/支出総額\s*1281万円/);
-		await expect(card).toContainText(/収支・現金残高\s*300万円/);
+		await expect(card).toContainText(/収入総額\s*1,581万円/);
+		await expect(card).toContainText(/支出総額\s*1,281万円/);
+		await expect(card).toContainText(/現金残高\s*300万円/);
 		await expect(
 			card.locator('[role="group"][aria-label="政治資金の収支フロー図"]'),
 		).toBeVisible();

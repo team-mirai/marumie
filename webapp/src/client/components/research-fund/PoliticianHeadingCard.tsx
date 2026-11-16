@@ -19,9 +19,9 @@ interface Props {
   /** 年の切り替え。年度が 1 つだけなら切り替えを出さない */
   years: { year: number; href: string }[];
   currentYear: number;
-  /** 例: 「2026.10.23更新」 */
+  /** 例: 「2026.10.23 更新」 */
   updatedAt: string;
-  /** 例: 「2026年2月〜8月支給分」。公開月が無ければ null */
+  /** 例: 「2026年2-8月分」。公開月が無ければ null */
   periodLabel: string | null;
   /** 前後の議員への切り替え。公開中の議員が 1 人以下なら null（出さない） */
   nav: PoliticianNav<PoliticianNavLink> | null;

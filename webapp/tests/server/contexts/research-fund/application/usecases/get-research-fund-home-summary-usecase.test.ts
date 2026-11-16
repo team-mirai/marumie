@@ -196,14 +196,14 @@ describe("GetResearchFundHomeSummaryUsecase", () => {
       house: "shugiin",
       hasPhoto: true,
       asOfDate: "2026-08-20",
-      grantPeriodLabel: "2026年2月〜8月支給分",
+      grantPeriodLabel: "2026年2-8月分",
     });
     expect(data?.politicians[1]).toMatchObject({
       nameKana: null,
       house: null,
       hasPhoto: false,
       asOfDate: null,
-      grantPeriodLabel: "2026年2月〜9月支給分",
+      grantPeriodLabel: "2026年2-9月分",
     });
   });
 

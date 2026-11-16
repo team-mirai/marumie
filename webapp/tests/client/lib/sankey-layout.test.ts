@@ -42,9 +42,9 @@ function labelText(layout: ReturnType<typeof layoutSankey>, key: string) {
 }
 
 describe("formatSankeyAmount", () => {
-  it("億・万円で表し、1万円未満は円で出す", () => {
-    expect(formatSankeyAmount(123_450_000)).toBe("1億2345万円");
-    expect(formatSankeyAmount(100_120_000)).toBe("1億0012万円");
+  it("億・万円で表し、1万円未満は円で出す（カンマ区切り・ゼロ埋めなし）", () => {
+    expect(formatSankeyAmount(123_450_000)).toBe("1億2,345万円");
+    expect(formatSankeyAmount(100_120_000)).toBe("1億12万円");
     expect(formatSankeyAmount(200_000_000)).toBe("2億円");
     expect(formatSankeyAmount(30_004_000)).toBe("3,000万円");
     expect(formatSankeyAmount(5_000)).toBe("5,000円");

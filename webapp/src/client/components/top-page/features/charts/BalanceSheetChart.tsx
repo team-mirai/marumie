@@ -2,6 +2,7 @@
 
 import type { BalanceSheetData } from "@/types/balance-sheet";
 import { BALANCE_SHEET_LABELS } from "@/types/balance-sheet";
+import { formatYen } from "@/client/lib/format-yen";
 
 interface BalanceSheetChartProps {
   data: BalanceSheetData;
@@ -27,24 +28,10 @@ interface BalanceSheetItem {
 }
 
 export default function BalanceSheetChart({ data }: BalanceSheetChartProps) {
-  // 金額フォーマット関数
-  const formatAmount = (amount: number) => {
-    if (amount >= 100000000) {
-      const oku = Math.floor(amount / 100000000);
-      const man = Math.floor((amount % 100000000) / 10000);
-      return man > 0 ? `${oku}億${man}万円` : `${oku}億円`;
-    } else if (amount >= 10000) {
-      const man = Math.floor(amount / 10000);
-      const en = amount % 10000;
-      return en > 0 ? `${man}万${en}円` : `${man}万円`;
-    }
-    return `${amount}円`;
-  };
-
   // 金額を数値と単位に分割して表示
   const renderFormattedAmount = (amount: number, isDebtExcess = false) => {
-    const formatted = formatAmount(amount);
-    const parts = formatted.split(/(\d+)/);
+    const formatted = formatYen(amount);
+    const parts = formatted.split(/(\d[\d,]*)/);
 
     return (
       <span className="inline-flex items-baseline gap-0.5">
@@ -53,7 +40,7 @@ export default function BalanceSheetChart({ data }: BalanceSheetChartProps) {
           .map((part, index) => ({ part, index }))
           .filter(({ part }) => part !== "")
           .map(({ part, index }) => {
-            const isNumber = /^\d+$/.test(part);
+            const isNumber = /^\d[\d,]*$/.test(part);
             return (
               <span
                 key={`part-${index}-${part}`}
