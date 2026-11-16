@@ -30,6 +30,6 @@ export interface ResearchFundHomePoliticianView {
 
 export interface ResearchFundHomeSummaryData {
   financialYear: number;
-  /** 表示順（display_order）。1人以上いる */
+  /** ふりがなの五十音順。1人以上いる */
   politicians: ResearchFundHomePoliticianView[];
 }

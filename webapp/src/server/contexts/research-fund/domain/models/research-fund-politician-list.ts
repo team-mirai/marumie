@@ -18,7 +18,7 @@ export interface ResearchFundPoliticianEntry {
 
 /**
  * 議員ページの前後の切り替え・「ほかの議員の調研費」に並べる、調研費を公開中の議員。
- * 並びは表示順（display_order）。
+ * 並びはふりがなの五十音順。
  */
 export interface ResearchFundPoliticianCard {
   slug: string;
@@ -35,6 +35,8 @@ export interface ResearchFundPoliticianCard {
 export interface ResearchFundPoliticianSource {
   slug: string;
   name: string;
+  /** ふりがな。未登録なら null（並び順に使う） */
+  nameKana: string | null;
   house: PoliticianHouse | null;
   constituency: string | null;
   hasPhoto: boolean;

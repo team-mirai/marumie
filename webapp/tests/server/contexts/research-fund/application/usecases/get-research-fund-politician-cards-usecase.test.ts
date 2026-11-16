@@ -14,7 +14,7 @@ function build(politicians: ResearchFundPoliticianSource[]) {
 }
 
 describe("GetResearchFundPoliticianCardsUsecase", () => {
-  it("公開済みの仕訳がある議員を表示順のまま、肩書きと写真の有無を添えて返す", async () => {
+  it("公開済みの仕訳がある議員を、肩書きと写真の有無を添えて返す", async () => {
     const { usecase, repository } = build([
       {
         slug: "sample-taro",
@@ -24,6 +24,7 @@ describe("GetResearchFundPoliticianCardsUsecase", () => {
         hasPhoto: true,
         publishedMonths: ["2026-02"],
         publishedThrough: null,
+        nameKana: "さんぷる たろう",
       },
       {
         slug: "sample-jiro",
@@ -33,6 +34,7 @@ describe("GetResearchFundPoliticianCardsUsecase", () => {
         hasPhoto: false,
         publishedMonths: ["2026-03"],
         publishedThrough: null,
+        nameKana: null,
       },
     ]);
 
@@ -53,9 +55,36 @@ describe("GetResearchFundPoliticianCardsUsecase", () => {
         hasPhoto: false,
         publishedMonths: [],
         publishedThrough: null,
+        nameKana: null,
       },
     ]);
 
     expect(await usecase.execute({ financialYear: 2026 })).toEqual([]);
+  });
+
+  it("議員をふりがなの五十音順に並べる", async () => {
+    const source = (slug: string, nameKana: string | null): ResearchFundPoliticianSource => ({
+      slug,
+      name: slug,
+      nameKana,
+      house: null,
+      constituency: null,
+      hasPhoto: false,
+      publishedMonths: ["2026-02"],
+      publishedThrough: null,
+    });
+    const { usecase } = build([
+      source("mineshima", "みねしま"),
+      source("no-kana", null),
+      source("anno", "あんの"),
+      source("usami", "うさみ"),
+    ]);
+
+    expect((await usecase.execute({ financialYear: 2026 })).map((card) => card.slug)).toEqual([
+      "anno",
+      "usami",
+      "mineshima",
+      "no-kana",
+    ]);
   });
 });
