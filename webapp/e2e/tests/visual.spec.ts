@@ -45,7 +45,7 @@ import { test, expect, type Page } from "@playwright/test";
 //     ほかのグラフのアニメーションは toHaveScreenshot が「2 回続けて同じ画像になる」まで待つことで吸収する
 
 const VIEWPORT = { width: 1280, height: 800 };
-// SP（≤760px）はサンキー図などの描き方が PC と違うので、iPhone 相当の幅でも撮る
+// SP（≤640px）はサンキー図などの描き方が PC と違うので、iPhone 相当の幅でも撮る
 const SP_VIEWPORT = { width: 390, height: 844 };
 
 // 基準画像は Linux の描画結果だけを持つ（playwright.config.ts の snapshotPathTemplate で OS 名を外している）。

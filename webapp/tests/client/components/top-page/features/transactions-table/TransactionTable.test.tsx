@@ -25,11 +25,11 @@ function transaction(overrides: Partial<DisplayTransaction>): DisplayTransaction
 const categoryHref = (categoryKey: string) =>
   `/o/sample-party/2026/transactions?categories=${categoryKey}`;
 
-/** 行のカテゴリーのラベル。SP 用（md:hidden）と PC 用（hidden md:table-cell）の 2 つを返す */
+/** 行のカテゴリーのラベル。SP 用（min-[641px]:hidden）と PC 用（hidden min-[641px]:table-cell）の 2 つを返す */
 function categoryCells(html: string) {
   const cells = parse(html).querySelectorAll("tbody td");
-  const sp = cells.find((cell) => cell.classNames.includes("md:hidden"));
-  const pc = cells.filter((cell) => cell.classNames.includes("md:table-cell"))[1];
+  const sp = cells.find((cell) => cell.classNames.includes("min-[641px]:hidden"));
+  const pc = cells.filter((cell) => cell.classNames.includes("min-[641px]:table-cell"))[1];
   return { sp, pc };
 }
 

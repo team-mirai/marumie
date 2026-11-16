@@ -10,7 +10,7 @@ interface MainColumnProps {
 }
 
 const WIDTH_CLASSES = {
-  default: "max-w-[1032px] px-5 sm:px-0",
+  default: "max-w-[1032px] px-5 min-[641px]:px-0",
   wide: "max-w-[1160px] px-4 min-[641px]:px-5",
 } as const;
 
@@ -22,7 +22,7 @@ export default function MainColumn({
 }: MainColumnProps) {
   const gap = spacing === "compact" ? "space-y-8" : "space-y-12";
   return (
-    <main className={`mx-auto ${WIDTH_CLASSES[width]} py-5 sm:py-6 ${gap} ${className}`}>
+    <main className={`mx-auto ${WIDTH_CLASSES[width]} py-5 min-[641px]:py-6 ${gap} ${className}`}>
       {children}
     </main>
   );

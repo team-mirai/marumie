@@ -28,7 +28,7 @@ export default function OrganizationHeadingSection({
   currentYear,
 }: OrganizationHeadingSectionProps) {
   return (
-    <section aria-label="政治団体情報" className="hidden md:block">
+    <section aria-label="政治団体情報" className="hidden min-[641px]:block">
       <div className="flex items-center gap-5 rounded-[32px] bg-white px-8 py-7 shadow-[inset_0_0_0_1px_#DCE4E1]">
         {photoUrl ? (
           <span

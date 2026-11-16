@@ -46,7 +46,7 @@ function Chevron({ direction }: { direction: "prev" | "next" }) {
 }
 
 const NAV_BUTTON_CLASS =
-  "absolute top-1/2 z-10 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/90 bg-white/60 text-[#0B0F0E] shadow-[inset_0_1px_0_rgba(255,255,255,0.95),0_12px_26px_-12px_rgba(10,60,52,0.5),0_2px_6px_rgba(10,60,52,0.1)] backdrop-blur-[14px] transition hover:bg-white/80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0F8472] active:scale-[0.86] md:h-10 md:w-10 md:border-0 md:bg-white md:shadow-[0_2px_6px_rgba(11,15,14,0.10),0_8px_20px_rgba(11,15,14,0.10)] md:backdrop-blur-none md:hover:bg-[#E2F6F3] md:hover:text-[#0F8472]";
+  "absolute top-1/2 z-10 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/90 bg-white/60 text-[#0B0F0E] shadow-[inset_0_1px_0_rgba(255,255,255,0.95),0_12px_26px_-12px_rgba(10,60,52,0.5),0_2px_6px_rgba(10,60,52,0.1)] backdrop-blur-[14px] transition hover:bg-white/80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0F8472] active:scale-[0.86] min-[641px]:h-10 min-[641px]:w-10 min-[641px]:border-0 min-[641px]:bg-white min-[641px]:shadow-[0_2px_6px_rgba(11,15,14,0.10),0_8px_20px_rgba(11,15,14,0.10)] min-[641px]:backdrop-blur-none min-[641px]:hover:bg-[#E2F6F3] min-[641px]:hover:text-[#0F8472]";
 
 /**
  * 議員ページ冒頭の議員カード。
@@ -72,7 +72,7 @@ export default function PoliticianHeadingCard({
     <section aria-label="議員情報">
       <div className="relative">
         {/* PC */}
-        <div className="hidden items-center gap-5 rounded-[32px] bg-white px-8 py-7 md:flex">
+        <div className="hidden items-center gap-5 rounded-[32px] bg-white px-8 py-7 min-[641px]:flex">
           <PoliticianAvatar photoUrl={photoUrl} alt={photoAlt} className="h-[88px] w-[88px]" />
           <div className="flex min-w-0 flex-1 flex-col gap-1.5">
             <div className="flex flex-col">
@@ -108,7 +108,7 @@ export default function PoliticianHeadingCard({
         </div>
 
         {/* SP */}
-        <div className="mist-surface grid min-h-[134px] grid-cols-[auto_minmax(0,1fr)] grid-rows-[auto_1fr_auto] items-center gap-x-3 gap-y-3 rounded-[24px] px-[18px] pb-4 pt-[18px] md:hidden">
+        <div className="mist-surface grid min-h-[134px] grid-cols-[auto_minmax(0,1fr)] grid-rows-[auto_1fr_auto] items-center gap-x-3 gap-y-3 rounded-[24px] px-[18px] pb-4 pt-[18px] min-[641px]:hidden">
           <PoliticianAvatar
             photoUrl={photoUrl}
             alt={photoAlt}
@@ -144,7 +144,7 @@ export default function PoliticianHeadingCard({
               href={nav.prev.href}
               aria-label={`前の議員（${nav.prev.name}）の調研費へ`}
               title={`前の議員（${nav.prev.name}）の調研費へ`}
-              className={`${NAV_BUTTON_CLASS} -left-3.5 md:-left-5`}
+              className={`${NAV_BUTTON_CLASS} -left-3.5 min-[641px]:-left-5`}
             >
               <Chevron direction="prev" />
             </Link>
@@ -152,7 +152,7 @@ export default function PoliticianHeadingCard({
               href={nav.next.href}
               aria-label={`次の議員（${nav.next.name}）の調研費へ`}
               title={`次の議員（${nav.next.name}）の調研費へ`}
-              className={`${NAV_BUTTON_CLASS} -right-3.5 md:-right-5`}
+              className={`${NAV_BUTTON_CLASS} -right-3.5 min-[641px]:-right-5`}
             >
               <Chevron direction="next" />
             </Link>
@@ -167,7 +167,7 @@ export default function PoliticianHeadingCard({
               ? "議員を選ぶ"
               : `議員を選ぶ（${currentIndex + 1} / ${nav.members.length}）`
           }
-          className="mt-3.5 flex items-center justify-center gap-0.5 md:hidden"
+          className="mt-3.5 flex items-center justify-center gap-0.5 min-[641px]:hidden"
         >
           {nav.members.map((member) => (
             <Link

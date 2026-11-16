@@ -64,7 +64,7 @@ export default async function HomePage() {
             title="議員の政治団体"
             description="議員の政治団体はどこからお金を得て何に使っているか"
           />
-          <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,420px),1fr))] gap-8 md:gap-3">
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,420px),1fr))] gap-8 min-[641px]:gap-3">
             {data.groups.map((group) => (
               <HomeOrganizationCard
                 key={group.slug}

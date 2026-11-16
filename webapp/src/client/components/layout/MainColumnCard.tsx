@@ -7,7 +7,7 @@ interface MainColumnCardProps {
 export default function MainColumnCard({ children, className = "", id }: MainColumnCardProps) {
   return (
     <div
-      className={`bg-white rounded-[24px] px-[18px] py-8 sm:p-12 space-y-8 scroll-mt-24 ${className}`}
+      className={`bg-white rounded-[24px] px-[18px] py-8 min-[641px]:p-12 space-y-8 scroll-mt-24 ${className}`}
       id={id}
     >
       {children}

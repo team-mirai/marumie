@@ -38,8 +38,12 @@ interface Props {
   query: ResearchFundTransactionsQuery;
 }
 
-/** SP（≤760px）ではヘッダー行の代わりに並び替えタブと絞り込みボタンを出し、1行を縦積みにする。 */
-const ROW_GRID = "min-[761px]:grid-cols-[140px_200px_1fr_180px]";
+/**
+ * SP（≤640px）ではヘッダー行の代わりに並び替えタブと絞り込みボタンを出し、1行を縦積みにする。
+ * 641〜760px は固定列を詰めて項目列の幅を残す。項目列は minmax(0,1fr) にし、中身が広くてもヘッダーと列がずれないようにする。
+ */
+const ROW_GRID =
+  "min-[641px]:grid-cols-[128px_160px_minmax(0,1fr)_160px] min-[761px]:grid-cols-[140px_200px_minmax(0,1fr)_180px]";
 
 /** SP の並び替えタブ。政治団体の全件ページ（TransactionTableMobileHeader）と同じ見た目。金額順は入金・出金を区別せず額の大きさで並べる。 */
 const MOBILE_SORT_TABS: { id: ResearchFundTransactionSort; label: string }[] = [
@@ -196,7 +200,7 @@ export default function ResearchFundTransactionsTable({
   return (
     <div className="flex flex-col gap-5">
       <div>
-        <div className="relative flex items-center gap-4 min-[761px]:hidden">
+        <div className="relative flex items-center gap-4 min-[641px]:hidden">
           <fieldset className="m-0 flex min-w-0 flex-1 gap-6 overflow-x-auto border-0 p-0 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             <legend className="sr-only">並び順</legend>
             {MOBILE_SORT_TABS.map((tab) => {
@@ -239,7 +243,7 @@ export default function ResearchFundTransactionsTable({
           )}
         </div>
         <div
-          className={`hidden h-12 items-center border-b border-[#D5DBE1] text-sm font-bold text-gray-800 min-[761px]:grid ${ROW_GRID}`}
+          className={`hidden h-12 items-center border-b border-[#D5DBE1] text-sm font-bold text-gray-800 min-[641px]:grid ${ROW_GRID}`}
         >
           <div className="flex items-center gap-1 px-4">
             日付
@@ -290,18 +294,18 @@ export default function ResearchFundTransactionsTable({
           current.rows.map((row) => (
             <div
               key={row.id}
-              className={`grid grid-cols-1 gap-1 border-b border-[#D5DBE1] py-3 min-[761px]:min-h-16 min-[761px]:items-center min-[761px]:gap-0 min-[761px]:py-0 ${ROW_GRID}`}
+              className={`grid grid-cols-1 gap-1 border-b border-[#D5DBE1] py-3 min-[641px]:min-h-16 min-[641px]:items-center min-[641px]:gap-0 min-[641px]:py-0 ${ROW_GRID}`}
             >
-              <div className="text-xs text-[#4B5563] min-[761px]:px-4 min-[761px]:text-base min-[761px]:font-bold min-[761px]:text-gray-800">
+              <div className="text-xs text-[#4B5563] min-[641px]:px-4 min-[641px]:text-base min-[641px]:font-bold min-[641px]:text-gray-800">
                 {formatResearchFundDate(row.date)}
               </div>
-              <div className="order-3 flex flex-wrap items-center gap-2 min-[761px]:order-none min-[761px]:pl-4">
+              <div className="order-3 flex flex-wrap items-center gap-2 min-[641px]:order-none min-[641px]:pl-4">
                 <ResearchFundCategoryPill
                   category={row.detailed}
                   href={hrefFor({ categories: [row.accountKey] })}
                 />
                 {RESEARCH_FUND_RECEIPTS_PUBLISHED && row.hasReceipt && (
-                  <span className="min-[761px]:hidden">
+                  <span className="min-[641px]:hidden">
                     <ResearchFundReceiptPill
                       ready={row.receiptReady}
                       onClick={() => setReceipt(row)}
@@ -309,13 +313,13 @@ export default function ResearchFundTransactionsTable({
                   </span>
                 )}
               </div>
-              <div className="order-2 flex items-baseline justify-between gap-3 min-[761px]:order-none min-[761px]:block min-[761px]:py-3">
+              <div className="order-2 flex items-baseline justify-between gap-3 min-[641px]:order-none min-[641px]:block min-[641px]:py-3">
                 <span className="flex items-center gap-2">
-                  <span className="text-sm font-bold text-gray-800 min-[761px]:text-base">
+                  <span className="text-sm font-bold text-gray-800 min-[641px]:text-base">
                     {row.description}
                   </span>
                   {RESEARCH_FUND_RECEIPTS_PUBLISHED && row.hasReceipt && (
-                    <span className="hidden min-[761px]:inline-flex">
+                    <span className="hidden min-[641px]:inline-flex">
                       <ResearchFundReceiptPill
                         ready={row.receiptReady}
                         onClick={() => setReceipt(row)}
@@ -323,18 +327,18 @@ export default function ResearchFundTransactionsTable({
                     </span>
                   )}
                 </span>
-                <ResearchFundAmount row={row} className="text-base min-[761px]:hidden" />
+                <ResearchFundAmount row={row} className="text-base min-[641px]:hidden" />
                 {row.note && (
-                  <p className="mt-0.5 hidden text-xs leading-relaxed text-[#6B7280] min-[761px]:block">
+                  <p className="mt-0.5 hidden text-xs leading-relaxed text-[#6B7280] min-[641px]:block">
                     {row.note}
                   </p>
                 )}
               </div>
-              <div className="hidden pr-6 text-right min-[761px]:block">
+              <div className="hidden pr-6 text-right min-[641px]:block">
                 <ResearchFundAmount row={row} className="text-xl" />
               </div>
               {row.note && (
-                <p className="order-4 text-xs leading-relaxed text-[#6B7280] min-[761px]:hidden">
+                <p className="order-4 text-xs leading-relaxed text-[#6B7280] min-[641px]:hidden">
                   {row.note}
                 </p>
               )}
@@ -343,8 +347,8 @@ export default function ResearchFundTransactionsTable({
         )}
       </div>
 
-      <div className="flex flex-col items-center gap-3 min-[761px]:grid min-[761px]:grid-cols-[1fr_auto_1fr]">
-        <div className="hidden min-[761px]:block" />
+      <div className="flex flex-col items-center gap-3 min-[641px]:grid min-[641px]:grid-cols-[1fr_auto_1fr]">
+        <div className="hidden min-[641px]:block" />
         <nav aria-label="ページ" className="flex flex-wrap items-center justify-center gap-1.5">
           <PagerButton
             onClick={() => goToPage(current.page - 1)}
@@ -383,7 +387,7 @@ export default function ResearchFundTransactionsTable({
             次へ
           </PagerButton>
         </nav>
-        <div className="min-[761px]:flex min-[761px]:justify-end">
+        <div className="min-[641px]:flex min-[641px]:justify-end">
           <ResearchFundCsvDownloadLink
             pathSlug={pathSlug}
             financialYear={financialYear}

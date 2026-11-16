@@ -45,14 +45,14 @@ const VARIANTS: Record<
 };
 
 /**
- * SP（≤760px）での見せ方。
+ * SP（≤640px）での見せ方。
  * - tall：PC と同じ5列の図を、文字と間隔を大きくした背の高い版で画面幅いっぱいに出す（政党ページ・トップの政党・政治団体のカード）
  * - columns：内訳を親にまとめた「収入 → 合計 → 支出・残高」の3列の図を出す（政治団体・議員ページ、トップの所属議員の調研費）
  */
 type SankeySpLayout = "tall" | "columns";
 
-/** SP の判定（この幅以下で SP 用の図を出す） */
-const SP_QUERY = "(max-width: 760px)";
+/** SP の判定。CSS の min-[641px]（width >= 641px）のちょうど裏返しにし、ズームで幅が小数になっても CSS と同じ側を選ぶ */
+const SP_QUERY = "(width < 641px)";
 
 function subscribeSp(onChange: () => void) {
   const media = window.matchMedia(SP_QUERY);

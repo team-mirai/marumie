@@ -60,7 +60,7 @@ export default function DataNotesSection({ notes = NOTES }: DataNotesSectionProp
     <section
       id="explanation"
       aria-label="データについて"
-      className="flex scroll-mt-24 flex-col gap-9 rounded-[32px] bg-white px-[18px] py-7 md:p-[clamp(28px,4.4vw,64px)]"
+      className="flex scroll-mt-24 flex-col gap-9 rounded-[32px] bg-white px-[18px] py-7 min-[641px]:p-[clamp(28px,4.4vw,64px)]"
     >
       {notes.map((note) => (
         <div key={note.title}>

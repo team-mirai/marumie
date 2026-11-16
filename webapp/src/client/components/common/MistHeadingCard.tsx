@@ -48,18 +48,18 @@ export default function MistHeadingCard({
   const Heading = headingLevel;
 
   return (
-    <section aria-label={ariaLabel} className="mt-[18px] md:mt-0">
-      <div className="flex flex-col gap-[22px] rounded-[24px] bg-white pb-5 shadow-[0_0_0_1px_#DCE4E1,0_30px_50px_-34px_rgba(10,60,52,0.35)] md:rounded-[32px] md:p-2 md:pb-6">
+    <section aria-label={ariaLabel} className="mt-[18px] min-[641px]:mt-0">
+      <div className="flex flex-col gap-[22px] rounded-[24px] bg-white pb-5 shadow-[0_0_0_1px_#DCE4E1,0_30px_50px_-34px_rgba(10,60,52,0.35)] min-[641px]:rounded-[32px] min-[641px]:p-2 min-[641px]:pb-6">
         <div
           className={`mist-surface ${TONE_CLASSES[tone]} -mt-[18px] mb-1 grid aspect-[1.9825] w-[calc((100%-40px)*1.029)] ${
             href ? "grid-cols-[auto_minmax(0,1fr)_auto]" : "grid-cols-[auto_minmax(0,1fr)]"
-          } grid-rows-[auto_1fr_auto] items-center gap-x-[11px] self-center rounded-[20px] pb-[14px] pl-4 pr-[14px] pt-4 md:m-0 md:aspect-auto md:min-h-[134px] md:w-auto md:gap-x-[14px] md:self-stretch md:rounded-[24px] md:pb-[18px] md:pl-[22px] md:pr-[18px] md:pt-5`}
+          } grid-rows-[auto_1fr_auto] items-center gap-x-[11px] self-center rounded-[20px] pb-[14px] pl-4 pr-[14px] pt-4 min-[641px]:m-0 min-[641px]:aspect-auto min-[641px]:min-h-[134px] min-[641px]:w-auto min-[641px]:gap-x-[14px] min-[641px]:self-stretch min-[641px]:rounded-[24px] min-[641px]:pb-[18px] min-[641px]:pl-[22px] min-[641px]:pr-[18px] min-[641px]:pt-5`}
         >
-          <span className="col-start-1 row-start-1 flex h-[46px] w-[46px] items-center justify-center overflow-hidden rounded-full bg-white shadow-[0_0_0_2px_rgba(255,255,255,0.95),0_4px_10px_-4px_rgba(10,60,52,0.35)] md:h-[72px] md:w-[72px]">
+          <span className="col-start-1 row-start-1 flex h-[46px] w-[46px] items-center justify-center overflow-hidden rounded-full bg-white shadow-[0_0_0_2px_rgba(255,255,255,0.95),0_4px_10px_-4px_rgba(10,60,52,0.35)] min-[641px]:h-[72px] min-[641px]:w-[72px]">
             {avatar}
           </span>
           <span className="col-start-2 row-start-1 flex min-w-0 flex-col gap-1">
-            <Heading className="m-0 break-keep text-[18px] font-black leading-[1.3] tracking-[0.01em] [overflow-wrap:anywhere] md:text-[clamp(22px,2.6vw,32px)]">
+            <Heading className="m-0 break-keep text-[18px] font-black leading-[1.3] tracking-[0.01em] [overflow-wrap:anywhere] min-[641px]:text-[clamp(22px,2.6vw,32px)]">
               {href ? (
                 <Link href={href} className="hover:underline">
                   {title}
