@@ -3,7 +3,6 @@ import "client-only";
 import Link from "next/link";
 import { type ReactNode, useState } from "react";
 import AmountSummary from "@/client/components/common/AmountSummary";
-import MistHeadingCard from "@/client/components/common/MistHeadingCard";
 import YearSegment from "@/client/components/common/YearSegment";
 import CashFlowSection from "@/client/components/top-page/CashFlowSection";
 import { calculateSankeyFinancialSummary } from "@/client/lib/sankey-financial-summary";
@@ -16,26 +15,32 @@ interface HomeOrganizationCardYear {
 }
 
 interface HomeOrganizationCardProps {
-  /** 政党は緑、政治団体は青みのある緑の面にする */
+  /** SP の見出しの面の色。政党は緑、政治団体は青みのある緑にする */
   tone: "party" | "group";
   slug: string;
   /** 団体名（例: 「チームみらい」） */
   name: string;
   /** 見出し（例: 「チームみらいの収支」）。省略時は団体名 */
   title?: string;
-  /** 見出しの下に添える正式名など */
+  /** 見出しの下に、表示中の年の前に添える正式名など（例: 「デジタル民主主義を考える会」） */
   subtitle?: string;
   avatar: ReactNode;
-  /** 例: 「2026.10.23更新」 */
+  /** 例: 「2026.10.23 更新」 */
   updatedAt: string;
   years: HomeOrganizationCardYear[];
   /** 最初に表示する年 */
   defaultYear: number;
+  /** 金額の文字の大きさ。政治団体のカードを横に並べるときは "compact" */
+  amountSize?: "default" | "compact";
 }
 
+const CHEVRON_PATH = "M9 5l7 7-7 7";
+
 /**
- * トップページの政党・政治団体の収支カード。年の切り替えでその場の金額と収支の流れを差し替え、
+ * トップページの政党・政治団体の収支カード（v9）。年の切り替えでその場の金額と収支の流れを差し替え、
  * 「詳しく」から選んでいる年の政党・政治団体ページへ移る。
+ * PC（641px〜）は白いカードの中に見出しの行（ロゴ・見出し・矢印・年の切り替え）を置く。
+ * SP はミストグラデーションの見出しの面をカードの上端に重ね、左下に年の切り替え、右下に「詳しく見る」を置く。
  */
 export default function HomeOrganizationCard({
   tone,
@@ -47,65 +52,142 @@ export default function HomeOrganizationCard({
   updatedAt,
   years,
   defaultYear,
+  amountSize = "default",
 }: HomeOrganizationCardProps) {
   const [currentYear, setCurrentYear] = useState(defaultYear);
   const current = years.find((y) => y.year === currentYear) ?? years[0];
   const detailHref = `/o/${slug}/${current.year}`;
   // 取得に失敗したときは 0 円と区別できるよう、金額を出さない
   const summary = current.friendly ? calculateSankeyFinancialSummary(current.friendly) : null;
+  const yearLabel = `${current.year}年`;
+  const yearOptions = years.map(({ year }) => ({ year }));
+
+  const heading = (
+    <h2 className="m-0 break-keep text-[18px] font-black leading-[1.3] tracking-[0.01em] [overflow-wrap:anywhere] min-[641px]:text-[clamp(22px,2.6vw,32px)]">
+      <Link href={detailHref} className="text-inherit hover:underline hover:underline-offset-[3px]">
+        {title}
+      </Link>
+    </h2>
+  );
+  const sub = (
+    <span className="text-[14px] font-semibold text-[#238778]">
+      {subtitle ? `${subtitle}・` : ""}
+      <span className="whitespace-nowrap">{yearLabel}</span>
+    </span>
+  );
 
   return (
-    <MistHeadingCard
-      ariaLabel={title}
-      avatar={avatar}
-      title={title}
-      subtitle={subtitle}
-      updatedAt={updatedAt}
-      href={detailHref}
-      headingLevel="h2"
-      tone={tone}
-      yearSwitch={
-        <YearSegment
-          years={years.map(({ year }) => ({ year }))}
-          currentYear={current.year}
-          onSelect={setCurrentYear}
-        />
-      }
-    >
-      <AmountSummary
-        size={tone === "group" ? "compact" : "default"}
-        items={[
-          { label: "収入総額", color: "#2AA693", amount: summary?.income ?? null },
-          { label: "支出総額", color: "#DC2626", amount: summary?.expense ?? null },
-          { label: "収支・現金残高", color: "#6B7280", amount: summary?.balance ?? null },
-        ]}
-      />
-      {/* 年を切り替えたらタブの選択を初期に戻す */}
-      <CashFlowSection
-        key={current.year}
-        political={current.political}
-        friendly={current.friendly}
-      />
-      <Link
-        href={detailHref}
-        className="inline-flex h-12 items-center justify-center gap-1 self-stretch whitespace-nowrap rounded-full bg-[#0B0F0E] px-3.5 text-[clamp(12px,3.8vw,15px)] font-extrabold text-white transition-colors hover:bg-[#0F8472] md:h-[52px] md:min-w-[360px] md:self-center md:px-7 md:text-[15px]"
-      >
-        {name}の収支を詳しく
-        <svg
-          width="16"
-          height="16"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2.2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          aria-hidden="true"
-          className="flex-shrink-0"
+    <section aria-label={title} className="mt-[18px] min-[641px]:mt-0">
+      <div className="flex flex-col gap-[22px] rounded-[24px] bg-white pb-5 shadow-[0_0_0_1px_#DCE4E1,0_30px_50px_-34px_rgba(10,60,52,0.35)] min-[641px]:gap-6 min-[641px]:rounded-[32px] min-[641px]:p-[clamp(24px,3.6vw,48px)] min-[641px]:shadow-[0_2px_6px_rgba(11,15,14,0.06),0_8px_24px_rgba(11,15,14,0.06)]">
+        {/* SP：ミストグラデーションの見出しの面（カードの上端に重ねる） */}
+        <div
+          className={`mist-surface ${tone === "group" ? "mist-surface-group" : ""} -mt-[18px] mb-1 grid aspect-[1.9825] w-[calc((100%-40px)*1.071*1.04)] grid-cols-[auto_minmax(0,1fr)] grid-rows-[auto_1fr_auto] items-center gap-x-[11px] self-center rounded-[20px] pb-[14px] pl-4 pr-[14px] pt-4 min-[641px]:hidden`}
         >
-          <path d="M9 5l7 7-7 7" />
-        </svg>
-      </Link>
-    </MistHeadingCard>
+          <span className="col-start-1 row-start-1 flex h-[46px] w-[46px] items-center justify-center overflow-hidden rounded-full bg-white shadow-[0_0_0_2px_rgba(255,255,255,0.95),0_4px_10px_-4px_rgba(10,60,52,0.35)]">
+            {avatar}
+          </span>
+          <span className="col-start-2 row-start-1 flex min-w-0 flex-col gap-1">
+            {heading}
+            {sub}
+          </span>
+          <div className="col-span-full row-start-3 self-end justify-self-start">
+            <YearSegment years={yearOptions} currentYear={current.year} onSelect={setCurrentYear} />
+          </div>
+          <Link
+            href={detailHref}
+            aria-label={`${title}を詳しく見る`}
+            className="relative z-[1] col-span-full row-start-3 mb-[-4px] mr-[14px] inline-flex items-center self-end justify-self-end py-3 pb-[13px] text-[14px] font-extrabold leading-[1.3] text-[#0A1A17] no-underline transition-colors before:absolute before:bottom-2 before:right-[-14px] before:h-[1.5px] before:w-[9px] before:origin-right before:rotate-[38deg] before:rounded-[1px] before:bg-current before:content-[''] after:absolute after:bottom-2 after:left-0 after:right-[-14px] after:h-[1.5px] after:rounded-[1px] after:bg-current after:content-[''] hover:text-[#0F8472] focus-visible:text-[#0F8472] active:text-[#0F8472]"
+          >
+            詳しく見る
+          </Link>
+        </div>
+
+        {/* PC：白いカードの中の見出しの行 */}
+        <div className="hidden items-center gap-4 min-[641px]:flex">
+          <span className="flex h-[72px] w-[72px] flex-shrink-0 items-center justify-center overflow-hidden rounded-full bg-white shadow-[inset_0_0_0_1px_rgba(0,0,0,0.06)]">
+            {avatar}
+          </span>
+          <span className="flex min-w-0 flex-[0_1_auto] flex-col gap-1">
+            {heading}
+            {sub}
+          </span>
+          <Link
+            href={detailHref}
+            aria-label={`${title}を詳しく見る`}
+            className="relative -ml-1.5 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md text-[#0B0F0E] transition-[color,transform] after:absolute after:-inset-3 after:content-[''] hover:translate-x-[3px] hover:text-[#0F8472]"
+          >
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.6"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <path d={CHEVRON_PATH} />
+            </svg>
+          </Link>
+          <div className="ml-auto flex-shrink-0">
+            <YearSegment
+              years={yearOptions}
+              currentYear={current.year}
+              onSelect={setCurrentYear}
+              tone="plain"
+            />
+          </div>
+        </div>
+
+        <div className="mx-4 flex flex-col gap-[22px] min-[641px]:mx-0 min-[641px]:gap-6">
+          <AmountSummary
+            size={amountSize}
+            home
+            items={[
+              { label: "収入総額", color: "#2AA693", amount: summary?.income ?? null },
+              { label: "支出総額", color: "#DC2626", amount: summary?.expense ?? null },
+              { label: "収支・現金残高", color: "#6B7280", amount: summary?.balance ?? null },
+            ]}
+          />
+          {/* 年を切り替えたらタブの選択を初期に戻す */}
+          <div className="min-[641px]:-mt-2">
+            <CashFlowSection
+              key={current.year}
+              political={current.political}
+              friendly={current.friendly}
+            />
+          </div>
+          {/* 更新日はカードの右下。PC（1101px〜）は「詳しく」ボタンと同じ行の右端に重ねる */}
+          {updatedAt && (
+            <div className="-mt-1 flex justify-end min-[641px]:mt-0 min-[1101px]:pointer-events-none min-[1101px]:-mb-[76px] min-[1101px]:h-[52px] min-[1101px]:items-center">
+              <span className="whitespace-nowrap text-[12px] font-medium leading-none text-[#5B6470] tabular-nums">
+                {updatedAt}
+              </span>
+            </div>
+          )}
+          <Link
+            href={detailHref}
+            className="inline-flex h-12 items-center justify-center gap-1 self-stretch whitespace-nowrap rounded-full bg-[#0B0F0E] px-3.5 text-[clamp(12px,3.8vw,15px)] font-extrabold text-white transition-colors hover:bg-[#0F8472] min-[641px]:h-[52px] min-[641px]:min-w-[min(100%,360px)] min-[641px]:gap-1.5 min-[641px]:self-center min-[641px]:px-7 min-[641px]:text-[15px]"
+          >
+            {name}の収支を詳しく
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+              className="flex-shrink-0"
+            >
+              <path d={CHEVRON_PATH} />
+            </svg>
+          </Link>
+        </div>
+      </div>
+    </section>
   );
 }

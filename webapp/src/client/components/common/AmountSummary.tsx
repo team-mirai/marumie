@@ -16,7 +16,19 @@ interface AmountSummaryProps {
    * 金額を小さくし、収まらないときは折り返す
    */
   size?: "default" | "compact";
+  /**
+   * トップページの政党・政治団体のカード（v9）。PC は金額欄の上の罫線を黒にし、
+   * SP（〜600px）は 1 行ごとに項目名を左・金額を右に並べる
+   */
+  home?: boolean;
 }
+
+const HOME_CLASSES = {
+  list: "min-[641px]:border-t-black",
+  cell: "max-[600px]:flex-row max-[600px]:items-baseline max-[600px]:justify-between max-[600px]:gap-3 max-[600px]:py-3.5",
+  amount: "max-[600px]:ml-auto max-[600px]:text-right",
+  number: "max-[600px]:text-[26px]",
+} as const;
 
 const SIZE_CLASSES = {
   default: {
@@ -43,13 +55,18 @@ const SIZE_CLASSES = {
 /**
  * 見出しカードの金額欄（収入総額・支出総額・収支など。2つか3つ）。罫線で区切って横に並べ、狭い画面では縦に積む。
  */
-export default function AmountSummary({ items, size = "default" }: AmountSummaryProps) {
+export default function AmountSummary({
+  items,
+  size = "default",
+  home = false,
+}: AmountSummaryProps) {
   const classes = SIZE_CLASSES[size];
+  const numberClass = home ? `${classes.number} ${HOME_CLASSES.number}` : classes.number;
   return (
     <dl
       className={`grid grid-cols-1 border-y border-[#DCE4E1] ${
         items.length === 2 ? "min-[601px]:grid-cols-2" : "min-[601px]:grid-cols-3"
-      }`}
+      } ${home ? HOME_CLASSES.list : ""}`}
     >
       {items.map((item, index) => {
         const amount = item.amount === null ? null : formatAmount(item.amount);
@@ -57,6 +74,8 @@ export default function AmountSummary({ items, size = "default" }: AmountSummary
           <div
             key={item.label}
             className={`flex min-w-0 flex-col gap-2.5 py-3 min-[601px]:py-[19px] ${classes.cell} ${
+              home ? HOME_CLASSES.cell : ""
+            } ${
               index > 0
                 ? `border-t border-[#DCE4E1] min-[601px]:border-t-0 min-[601px]:border-l ${classes.divider}`
                 : ""
@@ -70,14 +89,14 @@ export default function AmountSummary({ items, size = "default" }: AmountSummary
               />
               {item.label}
             </dt>
-            <dd className="whitespace-nowrap">
+            <dd className={`whitespace-nowrap ${home ? HOME_CLASSES.amount : ""}`}>
               {amount === null ? (
                 <span className={`font-bold text-[#6B7280] ${classes.unavailable}`}>
                   取得できませんでした
                 </span>
               ) : (
                 <AccessibleFormattedAmount amount={amount} visualClassName={classes.visual}>
-                  <b className={classes.number}>{amount.main}</b>
+                  <b className={numberClass}>{amount.main}</b>
                   {amount.secondary && (
                     <em
                       className={`ml-0.5 mr-1 font-extrabold not-italic text-[#4B5563] ${classes.unit}`}
@@ -85,7 +104,7 @@ export default function AmountSummary({ items, size = "default" }: AmountSummary
                       {amount.secondary}
                     </em>
                   )}
-                  {amount.tertiary && <b className={classes.number}>{amount.tertiary}</b>}
+                  {amount.tertiary && <b className={numberClass}>{amount.tertiary}</b>}
                   <em className={`ml-0.5 font-extrabold not-italic text-[#4B5563] ${classes.unit}`}>
                     {amount.unit}
                   </em>
