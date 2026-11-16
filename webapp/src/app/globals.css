@@ -209,7 +209,7 @@ table:focus-visible {
     0 -6px 14px -10px rgba(10, 60, 52, 0.35);
 }
 
-.mist-wallet-card[aria-expanded="true"] {
+.mist-wallet-card[data-on="true"] {
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.95),
     inset 0 0 0 1px rgba(255, 255, 255, 0.35),

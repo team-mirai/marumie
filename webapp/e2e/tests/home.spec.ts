@@ -141,6 +141,13 @@ test.describe("トップページ", () => {
 
 		await expect(card).toHaveAttribute("aria-expanded", "true");
 		await expect(detailLink).toBeVisible();
+		await expect(
+			section.getByText("※年内に使わなかった未使用分は国庫に返還します。").locator("visible=true"),
+		).toBeVisible();
+
+		// 年が1つだけの議員の「2026年」は押せないラベルで、押してもカードは閉じない
+		await section.getByText("2026年", { exact: true }).locator("visible=true").click();
+		await expect(card).toHaveAttribute("aria-expanded", "true");
 
 		await card.click();
 		await expect(card).toHaveAttribute("aria-expanded", "false");
