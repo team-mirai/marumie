@@ -98,9 +98,13 @@ test.describe("トップページ", () => {
 			section.getByRole("link", { name: /チームみらいの調研費の使用方針/ }),
 		).toHaveAttribute("target", "_blank");
 
-		// シードで調研費を公開中の議員のうち、published の仕訳があるのはサンプル 太郎だけ（次郎は準備中）
+		// シードで調研費を公開中の議員のうち、published の仕訳があるのはサンプル 太郎と美咲（次郎は準備中）。
+		// 五十音順の先頭の太郎が最初に選ばれている
 		const card = section.getByRole("button", { name: "サンプル 太郎の調研費を下に表示" });
 		await expect(card).toHaveAttribute("aria-pressed", "true");
+		await expect(
+			section.getByRole("button", { name: "サンプル 美咲の調研費を下に表示" }),
+		).toHaveAttribute("aria-pressed", "false");
 		await expect(section.getByText("サンプル 次郎")).toHaveCount(0);
 
 		const detail = section.getByRole("region", { name: "サンプル 太郎の調研費" });
@@ -156,6 +160,61 @@ test.describe("トップページ", () => {
 		await card.click();
 		await expect(card).toHaveAttribute("aria-expanded", "true");
 		await expect(detailLink).toHaveAttribute("href", "/p/sample-taro/2026");
+	});
+
+	test("SP では議員のカードを複数枚同時に開け、片方を閉じてももう片方は開いたまま", async ({
+		page,
+	}) => {
+		await page.setViewportSize({ width: 390, height: 844 });
+		await page.goto("/");
+		const section = page.getByRole("region", { name: "所属議員の調研費" });
+		const members = [
+			{ name: "サンプル 太郎", slug: "sample-taro", granted: "700万円", spent: "220万円" },
+			{ name: "サンプル 美咲", slug: "sample-misaki", granted: "500万円", spent: "60万円" },
+		].map((member) => {
+			const card = section.getByRole("button", { name: `${member.name}の調研費`, exact: true });
+			return { ...member, card };
+		});
+		const panelOf = async (card: (typeof members)[number]["card"]) =>
+			page.locator(`[id="${await card.getAttribute("aria-controls")}"]`);
+		const expectOpenWithOwnNumbers = async (member: (typeof members)[number]) => {
+			await expect(member.card).toHaveAttribute("aria-expanded", "true");
+			const panel = await panelOf(member.card);
+			await expect(panel).toContainText(new RegExp(`支給総額\\s*${member.granted}`));
+			await expect(panel).toContainText(new RegExp(`支出総額\\s*${member.spent}`));
+			await expect(
+				panel.locator(
+					`[role="group"][aria-label="${member.name}の調査研究費の使いみちの流れ図"]`,
+				),
+			).toBeVisible();
+			await expect(
+				panel.getByRole("link", { name: `${member.name}の調研費を詳しく`, exact: true }),
+			).toHaveAttribute("href", `/p/${member.slug}/2026`);
+		};
+		const [taro, misaki] = members;
+
+		// 最初は先頭の太郎だけが開いている
+		await expectOpenWithOwnNumbers(taro);
+		await expect(misaki.card).toHaveAttribute("aria-expanded", "false");
+
+		// 美咲を開いても太郎は閉じず、2枚とも開いてそれぞれの数字と図が出る
+		await misaki.card.click();
+		await expectOpenWithOwnNumbers(misaki);
+		await expectOpenWithOwnNumbers(taro);
+
+		// 太郎を閉じても美咲は開いたまま
+		await taro.card.click();
+		await expect(taro.card).toHaveAttribute("aria-expanded", "false");
+		await expect(
+			section.getByRole("link", { name: "サンプル 太郎の調研費を詳しく", exact: true }),
+		).toHaveCount(0);
+		await expectOpenWithOwnNumbers(misaki);
+
+		// 美咲を閉じて太郎を開き直しても同じ
+		await misaki.card.click();
+		await taro.card.click();
+		await expect(misaki.card).toHaveAttribute("aria-expanded", "false");
+		await expectOpenWithOwnNumbers(taro);
 	});
 
 	test("存在しない URL はトップページへ移る", async ({ page }) => {

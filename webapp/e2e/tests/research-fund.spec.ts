@@ -117,7 +117,7 @@ test.describe("調査研究費 議員ページ", () => {
 		{ label: "PC", viewport: { width: 1280, height: 800 } },
 		{ label: "SP", viewport: { width: 390, height: 844 } },
 	]) {
-		test(`${label}: 冒頭に議員カードを出し、公開中の議員が1人だけなら前後の切り替えとほかの議員を出さない`, async ({
+		test(`${label}: 冒頭に議員カードを出し、前後の切り替えとページ下部からほかの公開中の議員へ移れる`, async ({
 			page,
 		}) => {
 			await page.setViewportSize(viewport);
@@ -129,9 +129,20 @@ test.describe("調査研究費 議員ページ", () => {
 			await expect(
 				card.getByRole("img", { name: "サンプル 太郎の写真" }).locator("visible=true"),
 			).toBeVisible();
-			// シードで調研費を公開中かつ公開済みの仕訳があるのはサンプル 太郎だけ
-			await expect(card.getByRole("link", { name: /の調研費へ$/ })).toHaveCount(0);
-			await expect(page.getByRole("heading", { name: "他の議員の調研費を見る" })).toHaveCount(0);
+			// シードで調研費を公開中かつ公開済みの仕訳があるのはサンプル 太郎と美咲の2人なので、前後とも美咲になる
+			await expect(
+				card.getByRole("link", { name: "前の議員（サンプル 美咲）の調研費へ" }),
+			).toHaveAttribute("href", /^\/p\/sample-misaki(\/2026)?$/);
+			await expect(
+				card.getByRole("link", { name: "次の議員（サンプル 美咲）の調研費へ" }),
+			).toHaveAttribute("href", /^\/p\/sample-misaki(\/2026)?$/);
+
+			const others = page.locator("section", {
+				has: page.getByRole("heading", { name: "他の議員の調研費を見る" }),
+			});
+			await expect(others.getByRole("link")).toHaveCount(1);
+			await others.getByRole("link", { name: "サンプル 美咲の調研費を見る" }).click();
+			await expect(page).toHaveURL(/\/p\/sample-misaki(\/2026)?$/);
 		});
 	}
 
