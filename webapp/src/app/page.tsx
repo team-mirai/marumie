@@ -3,6 +3,7 @@ import SiteBottomBlock from "@/client/components/common/SiteBottomBlock";
 import PartyLogo from "@/client/components/common/PartyLogo";
 import HomeOrganizationCard from "@/client/components/home/HomeOrganizationCard";
 import HomeResearchFundSection from "@/client/components/home/HomeResearchFundSection";
+import HomeSectionHeading from "@/client/components/home/HomeSectionHeading";
 import OrganizationAvatar from "@/client/components/home/OrganizationAvatar";
 import MainColumn from "@/client/components/layout/MainColumn";
 import { formatUpdatedAt } from "@/client/lib/format-date";
@@ -55,30 +56,37 @@ export default async function HomePage() {
       {data && data.groups.length > 0 && (
         <section
           id="home-groups"
-          aria-label="政治団体の収支"
-          className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,420px),1fr))] gap-8 md:gap-3"
+          aria-labelledby="home-groups-heading"
+          className="flex flex-col gap-[clamp(28px,3.4vw,44px)] py-2 min-[641px]:py-4"
         >
-          {data.groups.map((group) => (
-            <HomeOrganizationCard
-              key={group.slug}
-              tone="group"
-              slug={group.slug}
-              name={group.displayName}
-              subtitle={group.orgName ?? undefined}
-              avatar={
-                <OrganizationAvatar
-                  slug={group.slug}
-                  alt={`${group.displayName}の代表者の写真`}
-                  hasPhoto={group.hasPhoto}
-                />
-              }
-              updatedAt={updatedAt}
-              years={group.years}
-              defaultYear={DEFAULT_YEAR}
-              // 横に並べて幅が狭くなるときは金額を小さくする
-              amountSize={data.groups.length > 1 ? "compact" : "default"}
-            />
-          ))}
+          <HomeSectionHeading
+            id="home-groups-heading"
+            title="議員の政治団体"
+            description="議員の政治団体はどこからお金を得て何に使っているか"
+          />
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,420px),1fr))] gap-8 md:gap-3">
+            {data.groups.map((group) => (
+              <HomeOrganizationCard
+                key={group.slug}
+                tone="group"
+                slug={group.slug}
+                name={group.displayName}
+                subtitle={group.orgName ?? undefined}
+                avatar={
+                  <OrganizationAvatar
+                    slug={group.slug}
+                    alt={`${group.displayName}の代表者の写真`}
+                    hasPhoto={group.hasPhoto}
+                  />
+                }
+                updatedAt={updatedAt}
+                years={group.years}
+                defaultYear={DEFAULT_YEAR}
+                // 横に並べて幅が狭くなるときは金額を小さくする
+                amountSize={data.groups.length > 1 ? "compact" : "default"}
+              />
+            ))}
+          </div>
         </section>
       )}
       <SiteBottomBlock />
