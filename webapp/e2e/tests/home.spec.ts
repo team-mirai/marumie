@@ -61,9 +61,11 @@ test.describe("トップページ", () => {
 
 		await expect(card.getByRole("heading", { name: "E2Eテスト団体" })).toBeVisible();
 		await expect(card.getByText("収入総額")).toBeVisible();
-		await expect(card.getByRole("tab", { name: "詳細の区分" })).toBeVisible();
+		// シードの E2Eテスト団体には 2025 年の取引しか無いので、既定の 2026 年は図の代わりに準備中と出る
+		await expect(card.getByText("2026年の収支の流れの図は準備中です")).toBeVisible();
 
 		await card.getByRole("group", { name: "表示する年" }).getByRole("button", { name: "2025" }).click();
+		await expect(card.getByRole("tab", { name: "詳細の区分" })).toBeVisible();
 		await expect(
 			card.getByRole("link", { name: "E2Eテスト団体の収支を詳しく", exact: true }),
 		).toHaveAttribute("href", "/o/e2e-test-org/2025");
