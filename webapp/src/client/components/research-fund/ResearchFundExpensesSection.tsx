@@ -8,11 +8,15 @@ import ResearchFundAmount from "@/client/components/research-fund/ResearchFundAm
 import ResearchFundCategoryPill from "@/client/components/research-fund/ResearchFundCategoryPill";
 import { useResearchFundCrossLink } from "@/client/components/research-fund/ResearchFundCrossLink";
 import ResearchFundReceiptPill from "@/client/components/research-fund/ResearchFundReceiptPill";
+import TransactionSortTabs from "@/client/components/transactions/TransactionSortTabs";
 import {
   formatResearchFundDate,
   RESEARCH_FUND_PREVIEW_COUNT,
+  researchFundTransactionsHref,
   revealResearchFundGroupRows,
+  sortResearchFundExpenses,
 } from "@/client/lib/research-fund-transactions";
+import type { TransactionSort } from "@/client/lib/transaction-sort";
 import type {
   ResearchFundExpenseView,
   ResearchFundPageData,
@@ -61,11 +65,13 @@ function StarIcon() {
  * すべての出入金。
  *
  * 支給（入金）と支出（出金）を日付の新しい順に混ぜ、先頭6件だけを出し、続きは「もっと見る」から全件ページで見る。
+ * SP では表の上のタブで並び順（新しい順・古い順・支出が多い順・収入が多い順）を変えられ、変えたら先頭6件に戻す。
  * 用途カードに紐づく行は「★ 用途N」から該当カードへ飛べ、カードの「N件」からは該当行まで一覧を広げる。
  * 領収書を公開している間は、領収書のある行の「領収書」ピルから公開用の版（個人情報を黒塗りした版）をモーダルで見られる。
  */
 export default function ResearchFundExpensesSection({ data, pathSlug, eyebrow, updatedAt }: Props) {
   const { rowsRequest, showCard } = useResearchFundCrossLink();
+  const [sort, setSort] = useState<TransactionSort>("new");
   const [shown, setShown] = useState(RESEARCH_FUND_PREVIEW_COUNT);
   const [flashedGroupId, setFlashedGroupId] = useState<string | null>(null);
   const [receipt, setReceipt] = useState<ResearchFundExpenseView | null>(null);
@@ -78,16 +84,22 @@ export default function ResearchFundExpensesSection({ data, pathSlug, eyebrow, u
     [data.groups],
   );
 
+  const expenses = useMemo(
+    () => sortResearchFundExpenses(data.expenses, sort),
+    [data.expenses, sort],
+  );
+
+  // 用途カードから飛んできたときだけ広げる。並び順を変えたときは広げ直さない
   useEffect(() => {
     if (!rowsRequest) return;
-    const reveal = revealResearchFundGroupRows(data.expenses, rowsRequest.groupId);
+    const reveal = revealResearchFundGroupRows(expenses, rowsRequest.groupId);
     if (!reveal) return;
     setShown((current) => Math.max(current, reveal.minShown));
     setFlashedGroupId(rowsRequest.groupId);
     scrollTargetId.current = reveal.firstId;
     if (flashTimer.current) clearTimeout(flashTimer.current);
     flashTimer.current = setTimeout(() => setFlashedGroupId(null), ROWS_FLASH_MS);
-  }, [rowsRequest, data.expenses]);
+  }, [rowsRequest]);
 
   // 一覧を広げた描画のあとで、先頭行へスクロールする。
   useEffect(() => {
@@ -109,8 +121,13 @@ export default function ResearchFundExpensesSection({ data, pathSlug, eyebrow, u
     [],
   );
 
-  const rows = data.expenses.slice(0, shown);
-  const hasMore = data.expenses.length > rows.length;
+  const rows = expenses.slice(0, shown);
+  const hasMore = expenses.length > rows.length;
+
+  const changeSort = (next: TransactionSort) => {
+    setSort(next);
+    setShown(RESEARCH_FUND_PREVIEW_COUNT);
+  };
 
   const groupLink = (row: ResearchFundExpenseView) => {
     const number = row.groupId ? groupNumbers.get(row.groupId) : undefined;
@@ -156,82 +173,91 @@ export default function ResearchFundExpensesSection({ data, pathSlug, eyebrow, u
       {rows.length === 0 ? (
         <p className="text-gray-500">公開中の出入金はまだありません</p>
       ) : (
-        <div className="relative">
-          <div
-            className={`hidden h-12 items-center border-b border-[#D5DBE1] text-sm font-bold text-gray-800 min-[641px]:grid ${ROW_GRID}`}
-          >
-            <div className="px-4">日付</div>
-            <div className="pl-4">カテゴリー</div>
-            <div className="tracking-[0.071em]">項目</div>
-            <div className="pr-6 text-right">金額</div>
-          </div>
+        <>
+          <TransactionSortTabs current={sort} onChange={changeSort} />
+          <div className="relative">
+            <div
+              className={`hidden h-12 items-center border-b border-[#D5DBE1] text-sm font-bold text-gray-800 min-[641px]:grid ${ROW_GRID}`}
+            >
+              <div className="px-4">日付</div>
+              <div className="pl-4">カテゴリー</div>
+              <div className="tracking-[0.071em]">項目</div>
+              <div className="pr-6 text-right">金額</div>
+            </div>
 
-          {rows.map((row) => {
-            const rowBadges = badges(row);
-            return (
-              <div
-                key={row.id}
-                id={`tx-${row.id}`}
-                data-flashed={flashedGroupId !== null && row.groupId === flashedGroupId}
-                className={`grid grid-cols-1 gap-1 border-b border-[#D5DBE1] py-3 transition-colors duration-400 data-[flashed=true]:bg-[#E2F6F3] min-[641px]:min-h-16 min-[641px]:items-center min-[641px]:gap-0 min-[641px]:py-0 ${ROW_GRID}`}
-              >
-                <div className="text-xs text-[#4B5563] min-[641px]:px-4 min-[641px]:text-base min-[641px]:font-bold min-[641px]:text-gray-800">
-                  {formatResearchFundDate(row.date)}
-                </div>
-                <div className="order-3 flex flex-wrap items-center gap-2 min-[641px]:order-none min-[641px]:pl-4">
-                  <ResearchFundCategoryPill category={row.detailed} />
-                  {rowBadges && (
-                    <span className="flex items-center gap-2 min-[641px]:hidden">{rowBadges}</span>
-                  )}
-                </div>
-                <div className="order-2 flex items-baseline justify-between gap-3 min-[641px]:order-none min-[641px]:block min-[641px]:py-3">
-                  <span className="flex items-center gap-2">
-                    <span className="text-sm font-bold text-gray-800 min-[641px]:text-base">
-                      {row.description}
-                    </span>
+            {rows.map((row) => {
+              const rowBadges = badges(row);
+              return (
+                <div
+                  key={row.id}
+                  id={`tx-${row.id}`}
+                  data-flashed={flashedGroupId !== null && row.groupId === flashedGroupId}
+                  className={`grid grid-cols-1 gap-1 border-b border-[#D5DBE1] py-3 transition-colors duration-400 data-[flashed=true]:bg-[#E2F6F3] min-[641px]:min-h-16 min-[641px]:items-center min-[641px]:gap-0 min-[641px]:py-0 ${ROW_GRID}`}
+                >
+                  <div className="text-xs text-[#4B5563] min-[641px]:px-4 min-[641px]:text-base min-[641px]:font-bold min-[641px]:text-gray-800">
+                    {formatResearchFundDate(row.date)}
+                  </div>
+                  <div className="order-3 flex flex-wrap items-center gap-2 min-[641px]:order-none min-[641px]:pl-4">
+                    <ResearchFundCategoryPill category={row.detailed} />
                     {rowBadges && (
-                      <span className="hidden items-center gap-2 min-[641px]:inline-flex">
+                      <span className="flex items-center gap-2 min-[641px]:hidden">
                         {rowBadges}
                       </span>
                     )}
-                  </span>
-                  <ResearchFundAmount row={row} className="text-base min-[641px]:hidden" />
+                  </div>
+                  <div className="order-2 flex items-baseline justify-between gap-3 min-[641px]:order-none min-[641px]:block min-[641px]:py-3">
+                    <span className="flex items-center gap-2">
+                      <span className="text-sm font-bold text-gray-800 min-[641px]:text-base">
+                        {row.description}
+                      </span>
+                      {rowBadges && (
+                        <span className="hidden items-center gap-2 min-[641px]:inline-flex">
+                          {rowBadges}
+                        </span>
+                      )}
+                    </span>
+                    <ResearchFundAmount row={row} className="text-base min-[641px]:hidden" />
+                    {row.note && (
+                      <p className="mt-0.5 hidden text-xs leading-relaxed text-[#6B7280] min-[641px]:block">
+                        {row.note}
+                      </p>
+                    )}
+                  </div>
+                  <div className="hidden pr-6 text-right min-[641px]:block">
+                    <ResearchFundAmount row={row} className="text-xl" />
+                  </div>
                   {row.note && (
-                    <p className="mt-0.5 hidden text-xs leading-relaxed text-[#6B7280] min-[641px]:block">
+                    <p className="order-4 text-xs leading-relaxed text-[#6B7280] min-[641px]:hidden">
                       {row.note}
                     </p>
                   )}
                 </div>
-                <div className="hidden pr-6 text-right min-[641px]:block">
-                  <ResearchFundAmount row={row} className="text-xl" />
-                </div>
-                {row.note && (
-                  <p className="order-4 text-xs leading-relaxed text-[#6B7280] min-[641px]:hidden">
-                    {row.note}
-                  </p>
-                )}
-              </div>
-            );
-          })}
+              );
+            })}
 
-          {/* 白グラデのフェードは先頭6件のときだけ。用途カードから広げたあとは、該当行を隠さないようボタンを行の下に置く */}
-          {hasMore && (
-            <div
-              className={
-                shown > RESEARCH_FUND_PREVIEW_COUNT
-                  ? "flex justify-center pt-6"
-                  : "pointer-events-none absolute inset-x-0 bottom-0 flex h-[108px] items-end justify-center bg-[linear-gradient(180deg,rgba(255,255,255,0)_0%,rgba(255,255,255,0.3)_34%,rgba(255,255,255,0.8)_66%,#fff_90%)] pb-[5px]"
-              }
-            >
-              <Link
-                href={`/p/${encodeURIComponent(pathSlug)}/${data.financialYear}/transactions`}
-                className="pointer-events-auto inline-flex h-[52px] w-[240px] items-center justify-center gap-2.5 rounded-full border border-[#111827] bg-white px-7 py-2 text-base font-bold text-[#1F2937] transition-colors duration-150 hover:bg-[#F9FAFB]"
+            {/* 白グラデのフェードは先頭6件のときだけ。用途カードから広げたあとは、該当行を隠さないようボタンを行の下に置く */}
+            {hasMore && (
+              <div
+                className={
+                  shown > RESEARCH_FUND_PREVIEW_COUNT
+                    ? "flex justify-center pt-6"
+                    : "pointer-events-none absolute inset-x-0 bottom-0 flex h-[108px] items-end justify-center bg-[linear-gradient(180deg,rgba(255,255,255,0)_0%,rgba(255,255,255,0.3)_34%,rgba(255,255,255,0.8)_66%,#fff_90%)] pb-[5px]"
+                }
               >
-                もっと見る
-              </Link>
-            </div>
-          )}
-        </div>
+                <Link
+                  href={researchFundTransactionsHref(pathSlug, data.financialYear, {
+                    categories: [],
+                    sort,
+                    page: 1,
+                  })}
+                  className="pointer-events-auto inline-flex h-[52px] w-[240px] items-center justify-center gap-2.5 rounded-full border border-[#111827] bg-white px-7 py-2 text-base font-bold text-[#1F2937] transition-colors duration-150 hover:bg-[#F9FAFB]"
+                >
+                  もっと見る
+                </Link>
+              </div>
+            )}
+          </div>
+        </>
       )}
 
       {receipt && (
