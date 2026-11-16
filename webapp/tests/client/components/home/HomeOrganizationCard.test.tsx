@@ -21,11 +21,12 @@ function render(
     updatedAt?: string;
     headingLevel?: "h2" | "h3";
     years?: Year[];
+    tone?: "party" | "group";
   } = {},
 ): string {
   return renderToStaticMarkup(
     <HomeOrganizationCard
-      tone="group"
+      tone={props.tone ?? "group"}
       slug="sample-group"
       name="サンプル団体"
       subtitle={props.subtitle}
@@ -106,5 +107,15 @@ describe("HomeOrganizationCard", () => {
     const html = render({ years: [{ year: 2026, political: null, friendly: null }] });
 
     expect(html).not.toContain("準備中");
+  });
+
+  it("「指を広げて拡大」は政党のカードの図にだけ出し、拡大ボタンはどちらにも出す", () => {
+    const party = render({ tone: "party" });
+    const group = render();
+
+    expect(party).toContain("指を広げて拡大");
+    expect(group).not.toContain("指を広げて拡大");
+    expect(party).toContain('aria-label="図を拡大する"');
+    expect(group).toContain('aria-label="図を拡大する"');
   });
 });

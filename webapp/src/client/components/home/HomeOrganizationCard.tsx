@@ -172,6 +172,8 @@ export default function HomeOrganizationCard({
                 key={current.year}
                 political={current.political}
                 friendly={current.friendly}
+                // 「指を広げて拡大」はトップの 1 枚目（チームみらいの収支）の図だけに出す
+                pinchHint={tone === "party"}
               />
             </div>
           )}

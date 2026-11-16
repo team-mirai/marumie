@@ -227,6 +227,7 @@ table:focus-visible {
 /*
  * 月ごとの推移のグラフの横スクロール（MonthlyChartScroll）。
  * SP では右端をぼかしてまだ続きがあることを見せ、グラフが画面に入ったら中央に「左右にスクロール」を出して数秒で消す。
+ * サンキー図の「指を広げて拡大」（PinchZoom）も同じ見た目の濃い半透明のピルで図の上に重ねる。
  */
 /* SP ではスクロール領域自身に mask-image がかかり自分のフォーカス枠まで消えるので、マスクの無い親に枠を描く */
 .monthly-hscroll:focus-visible {
@@ -239,7 +240,8 @@ table:focus-visible {
   border-radius: 8px;
 }
 
-.monthly-hscroll-hint {
+.monthly-hscroll-hint,
+.pinch-zoom-hint {
   display: none;
 }
 
@@ -249,7 +251,8 @@ table:focus-visible {
     mask-image: linear-gradient(to right, #000 82%, transparent);
   }
 
-  .monthly-hscroll-hint {
+  .monthly-hscroll-hint,
+  .pinch-zoom-hint {
     position: absolute;
     left: 50%;
     top: 50%;
@@ -275,7 +278,8 @@ table:focus-visible {
     opacity: 0;
   }
 
-  .monthly-hscroll-hint .hand {
+  .monthly-hscroll-hint .hand,
+  .pinch-zoom-hint .hand {
     width: 20px;
     height: 20px;
     flex-shrink: 0;
@@ -284,8 +288,9 @@ table:focus-visible {
       url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 11V5.5a1.5 1.5 0 0 1 3 0V11'/%3E%3Cpath d='M12 10.5V9a1.5 1.5 0 0 1 3 0v2'/%3E%3Cpath d='M15 10.5a1.5 1.5 0 0 1 3 0V15a6 6 0 0 1-6 6h-1a6 6 0 0 1-5.2-3l-1.6-2.8a1.5 1.5 0 0 1 2.5-1.6L9 15'/%3E%3C/svg%3E");
   }
 
-  [data-in-view="true"] > .monthly-hscroll-hint {
-    animation: monthly-hscroll-hint 3.6s 0.8s ease both;
+  [data-in-view="true"] > .monthly-hscroll-hint,
+  [data-in-view="true"] > .pinch-zoom-hint {
+    animation: chart-overlay-hint 3.6s 0.8s ease both;
   }
 
   [data-in-view="true"] > .monthly-hscroll-hint .hand {
@@ -294,12 +299,13 @@ table:focus-visible {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .monthly-hscroll-hint {
+  .monthly-hscroll-hint,
+  .pinch-zoom-hint {
     display: none;
   }
 }
 
-@keyframes monthly-hscroll-hint {
+@keyframes chart-overlay-hint {
   0% {
     opacity: 0;
     transform: translate(-50%, -50%) scale(0.94);
