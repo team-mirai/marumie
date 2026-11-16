@@ -38,7 +38,10 @@ function labelOf(node: SankeyNode): string {
   return node.label ?? node.id;
 }
 
-/** 大きい順。ただし sinks に当たる項目は後ろへ（先に書いたものほど前）。 */
+/**
+ * 大きい順。ただし sinks に当たる項目は後ろへ（先に書いたものほど前）。
+ * 同額ならラベルの文字コード順にし、DB の返却順（groupBy に ORDER BY が無い）に並びが左右されないようにする。
+ */
 function sortByValue<T extends { label: string; value: number }>(
   items: T[],
   sinks: ((label: string) => boolean)[] = [],
@@ -47,7 +50,15 @@ function sortByValue<T extends { label: string; value: number }>(
     const i = sinks.findIndex((match) => match(label));
     return i < 0 ? -1 : i;
   };
-  return [...items].sort((a, b) => rank(a.label) - rank(b.label) || b.value - a.value);
+  return [...items].sort(
+    (a, b) => rank(a.label) - rank(b.label) || b.value - a.value || compareLabel(a.label, b.label),
+  );
+}
+
+/** 文字コード順。localeCompare は実行環境の ICU で結果が変わりうるので使わない。 */
+function compareLabel(a: string, b: string): number {
+  if (a === b) return 0;
+  return a < b ? -1 : 1;
 }
 
 /** 内訳の並び：「収支」を最後、「その他」を含む項目をその手前、ほかは大きい順。 */
