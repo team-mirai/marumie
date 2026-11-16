@@ -82,7 +82,7 @@ describe("GetResearchFundHomeSummaryUsecase", () => {
     expect(await usecase.execute({ financialYear: 2026 })).toBeNull();
   });
 
-  it("政治団体を指定せず、年度だけで公開中の議員を読み、表示順のまま並べる", async () => {
+  it("政治団体を指定せず、年度だけで公開中の議員を読む", async () => {
     const { usecase, repository } = usecaseWith([
       publishedPolitician(),
       publishedPolitician({
@@ -103,6 +103,30 @@ describe("GetResearchFundHomeSummaryUsecase", () => {
     expect(data?.politicians.map((politician) => politician.slug)).toEqual([
       "sample-taro",
       "sample-hanako",
+    ]);
+  });
+
+  it("議員をふりがなの五十音順に並べ、先頭（最初に選ばれる議員）はデータを公開している議員になる", async () => {
+    const profile = (slug: string, nameKana: string) => ({
+      name: slug,
+      slug,
+      nameKana,
+      house: null,
+      hasPhoto: false,
+    });
+    const { usecase } = usecaseWith([
+      publishedPolitician({ politician: profile("mineshima", "みねしま") }),
+      preparingPolitician({ politician: profile("anno", "あんの") }),
+      publishedPolitician({ politician: profile("yamada", "やまだ") }),
+      publishedPolitician({ politician: profile("usami", "うさみ") }),
+    ]);
+
+    const data = await usecase.execute({ financialYear: 2026 });
+
+    expect(data?.politicians.map((politician) => politician.slug)).toEqual([
+      "usami",
+      "mineshima",
+      "yamada",
     ]);
   });
 
