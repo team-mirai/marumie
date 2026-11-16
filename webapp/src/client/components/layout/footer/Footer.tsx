@@ -2,8 +2,8 @@ import "server-only";
 import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
-import OrganizationAvatar from "@/client/components/home/OrganizationAvatar";
 import { ExternalIcon } from "@/client/components/layout/header/HeaderSpMenu";
+import OrganizationMenuIcon from "@/client/components/layout/header/OrganizationMenuIcon";
 import PoliticianInitialAvatar from "@/client/components/layout/header/PoliticianInitialAvatar";
 import {
   FOOTER_SOCIAL_LINKS,
@@ -62,11 +62,14 @@ export default async function Footer() {
   ]);
 
   const notCurrent = { kind: "other" } as const;
-  const parties = buildOrganizationMenuItems(homeData?.parties ?? [], notCurrent);
-  const groups = (homeData?.groups ?? []).map((group) => ({
-    ...buildOrganizationMenuItems([group], notCurrent)[0],
-    hasPhoto: group.hasPhoto,
-  }));
+  const parties = buildOrganizationMenuItems(
+    (homeData?.parties ?? []).map((party) => ({ ...party, kind: "party" as const })),
+    notCurrent,
+  );
+  const groups = buildOrganizationMenuItems(
+    (homeData?.groups ?? []).map((group) => ({ ...group, kind: "group" as const })),
+    notCurrent,
+  );
   const politiciansByYear = Object.fromEntries(
     HEADER_YEARS.map((year, index) => [year, politicianLists[index]]),
   );
@@ -83,29 +86,18 @@ export default async function Footer() {
             <div className={PEOPLE_CLASS}>
               {parties.map((party) => (
                 <Link key={party.slug} href={party.href} className={PERSON_LINK_CLASS}>
-                  <span
-                    aria-hidden="true"
-                    className="inline-flex size-8 shrink-0 items-center justify-center"
-                  >
-                    <Image
-                      src="/logos/team-mirai-logo.svg"
-                      alt=""
-                      width={33}
-                      height={28}
-                      className="block h-7 w-auto"
-                    />
-                  </span>
+                  <OrganizationMenuIcon slug={party.slug} kind="party" hasPhoto={party.hasPhoto} />
                   {party.name}の収支
                 </Link>
               ))}
               {groups.map((group) => (
                 <Link key={group.slug} href={group.href} className={PERSON_LINK_CLASS}>
-                  <span
-                    aria-hidden="true"
-                    className="inline-flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#E2F6F3] shadow-[0_0_0_2px_#fff]"
-                  >
-                    <OrganizationAvatar slug={group.slug} alt="" hasPhoto={group.hasPhoto} />
-                  </span>
+                  <OrganizationMenuIcon
+                    slug={group.slug}
+                    kind="group"
+                    hasPhoto={group.hasPhoto}
+                    ringed
+                  />
                   {group.name}の収支
                 </Link>
               ))}

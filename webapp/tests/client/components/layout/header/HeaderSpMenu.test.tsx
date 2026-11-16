@@ -5,11 +5,16 @@ import type {
   HeaderPoliticianMenuItem,
 } from "@/client/lib/header-navigation";
 
-function organization(slug: string, name: string): HeaderOrganizationMenuItem {
+function organization(
+  slug: string,
+  name: string,
+  icon: Pick<HeaderOrganizationMenuItem, "kind" | "hasPhoto"> = { kind: "party", hasPhoto: false },
+): HeaderOrganizationMenuItem {
   return {
     slug,
     name,
     officialName: null,
+    ...icon,
     isCurrent: false,
     href: `/o/${slug}/2026`,
     years: [2025, 2026].map((year) => ({ year, href: `/o/${slug}/${year}`, isSelected: false })),
@@ -75,6 +80,35 @@ describe("HeaderSpMenu", () => {
     expect(html).toContain('href="/p/sample-hanako/2026"');
     expect(html).not.toContain('href="/p/sample-hanako/2025"');
     expect(html).not.toContain("2025年");
+  });
+
+  it("政党の行にはチームみらいのロゴ、それ以外の政治団体の行には代表者の顔写真を出す", () => {
+    const html = render(
+      [
+        organization("team-mirai", "チームみらい", { kind: "party", hasPhoto: false }),
+        organization("sample-group", "サンプル会", { kind: "group", hasPhoto: true }),
+      ],
+      [],
+    );
+
+    const partyRow = html.slice(html.indexOf('href="/o/team-mirai/2026"'), html.indexOf("チームみらいの収支"));
+    const groupRow = html.slice(html.indexOf('href="/o/sample-group/2026"'), html.indexOf("サンプル会の収支"));
+    expect(partyRow).toContain("team-mirai-logo.svg");
+    expect(partyRow).not.toContain("/photo");
+    expect(groupRow).toContain('src="/api/organizations/sample-group/photo"');
+    expect(groupRow).not.toContain("team-mirai-logo.svg");
+  });
+
+  it("顔写真が未登録の政治団体は、トップのカードと同じく人型のアイコンにする", () => {
+    const html = render(
+      [organization("sample-group", "サンプル会", { kind: "group", hasPhoto: false })],
+      [],
+    );
+
+    const groupRow = html.slice(html.indexOf('href="/o/sample-group/2026"'), html.indexOf("サンプル会の収支"));
+    expect(groupRow).toContain("<svg");
+    expect(groupRow).not.toContain("<img");
+    expect(groupRow).not.toContain("team-mirai-logo.svg");
   });
 
   it("v8 の2段階メニューの「戻る」と仮のメニューの注記、寄附・党員のボタンを出さない", () => {

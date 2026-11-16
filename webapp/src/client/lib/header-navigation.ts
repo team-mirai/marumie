@@ -97,6 +97,10 @@ export interface HeaderOrganizationMenuItem {
   name: string;
   /** 正式名（未登録なら null） */
   officialName: string | null;
+  /** アイコンの出し分け。政党はロゴ、それ以外の政治団体は代表者の顔写真 */
+  kind: "party" | "group";
+  /** 代表者の顔写真を配信できるか */
+  hasPhoto: boolean;
   /** そのページを表示中か（「表示中」を付ける） */
   isCurrent: boolean;
   /** 名前を押したときの行き先 */
@@ -106,7 +110,13 @@ export interface HeaderOrganizationMenuItem {
 }
 
 export function buildOrganizationMenuItems(
-  organizations: readonly { slug: string; displayName: string; orgName: string | null }[],
+  organizations: readonly {
+    slug: string;
+    displayName: string;
+    orgName: string | null;
+    kind: "party" | "group";
+    hasPhoto: boolean;
+  }[],
   current: HeaderCurrentPage,
 ): HeaderOrganizationMenuItem[] {
   return organizations.map((organization) => {
@@ -116,6 +126,8 @@ export function buildOrganizationMenuItems(
       slug: organization.slug,
       name: organization.displayName,
       officialName: organization.orgName,
+      kind: organization.kind,
+      hasPhoto: organization.hasPhoto,
       isCurrent,
       href: organizationYearHref(organization.slug, selectedYear ?? DEFAULT_HEADER_YEAR),
       years: HEADER_YEARS.map((year) => ({

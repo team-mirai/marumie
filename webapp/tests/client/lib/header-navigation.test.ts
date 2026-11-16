@@ -62,9 +62,9 @@ describe("parseHeaderPath / getCurrentNavKey", () => {
 
 describe("buildOrganizationMenuItems", () => {
   const ORGANIZATIONS = [
-    { slug: "team-mirai", displayName: "チームみらい", orgName: "政党" },
-    { slug: "digimin", displayName: "安野貴博の政治団体", orgName: null },
-  ];
+    { slug: "team-mirai", displayName: "チームみらい", orgName: "政党", kind: "party", hasPhoto: false },
+    { slug: "digimin", displayName: "安野貴博の政治団体", orgName: null, kind: "group", hasPhoto: true },
+  ] as const;
 
   it("表示中の団体に「表示中」を付け、その年を選ぶ", () => {
     const items = buildOrganizationMenuItems(
@@ -76,6 +76,8 @@ describe("buildOrganizationMenuItems", () => {
       slug: "team-mirai",
       name: "チームみらい",
       officialName: "政党",
+      kind: "party",
+      hasPhoto: false,
       isCurrent: true,
       href: "/o/team-mirai/2025",
       years: [
@@ -84,6 +86,8 @@ describe("buildOrganizationMenuItems", () => {
       ],
     });
     expect(items[1].isCurrent).toBe(false);
+    expect(items[1].kind).toBe("group");
+    expect(items[1].hasPhoto).toBe(true);
     expect(items[1].href).toBe("/o/digimin/2026");
     expect(items[1].years.some((year) => year.isSelected)).toBe(false);
   });

@@ -54,6 +54,8 @@ function organization(
     slug: "sample-party",
     name: "サンプル党",
     officialName: null,
+    kind: "party",
+    hasPhoto: false,
     isCurrent: selectedYear !== null,
     href: "/o/sample-party/2026",
     years: years.map((year) => ({
