@@ -1,3 +1,4 @@
+import CountUpNumber from "@/client/components/common/CountUpNumber";
 import AccessibleFormattedAmount from "@/client/components/top-page/features/financial-summary/AccessibleFormattedAmount";
 import { formatAmount } from "@/client/lib/financial-calculator";
 
@@ -37,7 +38,7 @@ const SIZE_CLASSES = {
     label: "text-[14px]",
     visual: "flex items-baseline gap-0.5",
     number:
-      "text-[28px] font-bold leading-none tracking-[-0.02em] tabular-nums min-[601px]:text-[clamp(28px,3.4vw,44px)]",
+      "font-num text-[28px] font-bold leading-none tracking-[-0.02em] tabular-nums min-[601px]:text-[clamp(28px,3.4vw,44px)]",
     unit: "text-[15px]",
     unavailable: "text-[15px]",
   },
@@ -46,7 +47,8 @@ const SIZE_CLASSES = {
     divider: "min-[601px]:pl-3",
     label: "text-[13px]",
     visual: "flex flex-wrap items-baseline gap-0.5",
-    number: "text-[clamp(17px,1.7vw,22px)] font-bold leading-[1.1] tracking-[-0.01em] tabular-nums",
+    number:
+      "font-num text-[clamp(17px,1.7vw,22px)] font-bold leading-[1.1] tracking-[-0.01em] tabular-nums",
     unit: "text-[13px]",
     unavailable: "whitespace-normal text-[13px]",
   },
@@ -54,6 +56,7 @@ const SIZE_CLASSES = {
 
 /**
  * 見出しカードの金額欄（収入総額・支出総額・収支など。2つか3つ）。罫線で区切って横に並べ、狭い画面では縦に積む。
+ * 数字は v9 と同じ書体（Poppins）で、画面に入ったときにカウントアップする。
  */
 export default function AmountSummary({
   items,
@@ -96,7 +99,11 @@ export default function AmountSummary({
                 </span>
               ) : (
                 <AccessibleFormattedAmount amount={amount} visualClassName={classes.visual}>
-                  <b className={numberClass}>{amount.main}</b>
+                  <CountUpNumber
+                    value={amount.main}
+                    amountKey={String(item.amount)}
+                    className={numberClass}
+                  />
                   {amount.secondary && (
                     <em
                       className={`ml-0.5 mr-1 font-extrabold not-italic text-[#4B5563] ${classes.unit}`}
@@ -104,7 +111,12 @@ export default function AmountSummary({
                       {amount.secondary}
                     </em>
                   )}
-                  {amount.tertiary && <b className={numberClass}>{amount.tertiary}</b>}
+                  {/* 万が 0 で空のときも部品は残す（切り替えで現れたときに 0 から数え直さないように） */}
+                  <CountUpNumber
+                    value={amount.tertiary}
+                    amountKey={String(item.amount)}
+                    className={numberClass}
+                  />
                   <em className={`ml-0.5 font-extrabold not-italic text-[#4B5563] ${classes.unit}`}>
                     {amount.unit}
                   </em>
