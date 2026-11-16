@@ -36,7 +36,7 @@ describe("getVisibleNavSections", () => {
       "データ同期",
     ]);
     expect(hrefs).toContain("/users");
-    expect(hrefs).toHaveLength(13);
+    expect(hrefs).toHaveLength(14);
   });
 
   it("対象の管理は政治団体・議員の順に並べる", () => {
@@ -50,11 +50,16 @@ describe("getVisibleNavSections", () => {
     ]);
   });
 
-  it("対象が未選択なら対象の管理だけを出し、データ取り込み・報告書は出さない", () => {
+  it("対象が未選択なら対象の管理とデータ同期だけを出し、データ取り込み・報告書は出さない", () => {
     const sections = getVisibleNavSections(["admin"], null);
 
-    expect(sections.map((s) => s.title)).toEqual(["対象の管理"]);
-    expect(hrefsOf(sections)).toEqual(["/political-organizations", "/politicians", "/users"]);
+    expect(sections.map((s) => s.title)).toEqual(["対象の管理", "データ同期"]);
+    expect(hrefsOf(sections)).toEqual([
+      "/political-organizations",
+      "/politicians",
+      "/users",
+      "/research-fund-sync-export",
+    ]);
   });
 
   it("political_fund だけのユーザーには議員（調査研究費）とユーザー管理を出さない", () => {
@@ -95,6 +100,29 @@ describe("getVisibleNavSections", () => {
     expect(titlesFor(BOTH)).not.toContain("データ同期");
   });
 
+  it("調研費の同期用エクスポートは、対象の選択に関わらず admin にだけ出す", () => {
+    const researchFundTarget = {
+      kind: "research-fund" as const,
+      key: "book:7",
+      name: "議員A",
+      year: 2026,
+      politicianId: "3",
+      bookId: "7",
+      draftCount: 0,
+    };
+
+    for (const target of [null, organizationTarget, researchFundTarget]) {
+      expect(hrefsOf(getVisibleNavSections(["admin"], target))).toContain(
+        "/research-fund-sync-export",
+      );
+      for (const roles of [PF_ONLY, RF_ONLY, BOTH]) {
+        const sections = getVisibleNavSections(roles, target);
+        expect(hrefsOf(sections)).not.toContain("/research-fund-sync-export");
+        expect(sections.map((s) => s.title)).not.toContain("データ同期");
+      }
+    }
+  });
+
   it("同期用インポートは、有効な環境の admin にだけ出す", () => {
     const hrefsFor = (roles: Roles, environment?: { syncImportEnabled?: boolean }) =>
       hrefsOf(getVisibleNavSections(roles, organizationTarget, environment));
@@ -127,6 +155,7 @@ describe("getVisibleNavSections", () => {
       "/assign/donors": "link-simple",
       "/export-report": "export",
       "/sync-export": "database",
+      "/research-fund-sync-export": "database",
     });
   });
 });
