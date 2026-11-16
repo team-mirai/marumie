@@ -39,7 +39,8 @@ const VARIANTS: Record<
   },
   "research-fund-summary": {
     flow: { balanceLabel: SANKEY_UNUSED_LABEL },
-    layout: { ...RESEARCH_FUND_TITLES, inline: true, hubScale: 0.65 },
+    // 帯を高く（合計の柱を1.25倍に）し、左の帯を縮めて空いた幅を支出側のラベルに使う
+    layout: { ...RESEARCH_FUND_TITLES, inline: true, hubScale: 1.25, narrowIn: true },
     // トップの調研費はほかの図より背を低く詰める
     sp: { ...RESEARCH_FUND_TITLES, heightScale: 0.75 },
   },
@@ -47,8 +48,8 @@ const VARIANTS: Record<
 
 /**
  * SP（≤640px）での見せ方。
- * - tall：PC と同じ5列の図を、文字と間隔を大きくした背の高い版で画面幅いっぱいに出す（政党ページ・トップの政党・政治団体のカード）
- * - columns：内訳を親にまとめた「収入 → 合計 → 支出・残高」の3列の図を出す（政治団体・議員ページ、トップの所属議員の調研費）
+ * - tall：PC と同じ5列の図を、文字と間隔を大きくした背の高い版で画面幅いっぱいに出す（トップ・政党・政治団体・議員ページ）
+ * - columns：内訳を親にまとめた「収入 → 合計 → 支出・残高」の低めの3列の図を出す（トップの所属議員の調研費）
  */
 type SankeySpLayout = "tall" | "columns";
 
@@ -93,6 +94,11 @@ interface SankeyChartProps {
   ariaDescription?: string;
   /** SP での見せ方（既定は背の高い版の全体表示） */
   spLayout?: SankeySpLayout;
+  /**
+   * 同じ場所で切り替えて出すほかの図（もう一方の区分、ほかの議員）。いっしょに測って大きいほうに合わせ、
+   * 切り替えても合計の柱の位置と大きさ、図の高さが変わらないようにする
+   */
+  alternatives?: SankeyData[];
 }
 
 /**
@@ -105,6 +111,7 @@ export default function SankeyChart({
   ariaLabel = "政治資金の収支フロー図",
   ariaDescription = "政治資金の収入から支出へのお金の流れを示すサンキーダイアグラムです。",
   spLayout = "tall",
+  alternatives,
 }: SankeyChartProps) {
   // 同じページに図を複数並べても読み上げの説明が混ざらないよう、id を図ごとに分ける
   const descriptionId = useId();
@@ -120,9 +127,10 @@ export default function SankeyChart({
     const flow = toSankeyFlow(data, config.flow);
     // 収入が0円でも支出・残高があれば描く
     if (flow.incomes.length === 0 && flow.expenses.length === 0 && !flow.balance) return null;
-    if (isSp && spLayout === "columns") return layoutSankeySp(flow, config.sp);
-    return layoutSankey(flow, { ...config.layout, tall: isSp });
-  }, [data, variant, isSp, spLayout]);
+    const others = (alternatives ?? []).map((alt) => toSankeyFlow(alt, config.flow));
+    if (isSp && spLayout === "columns") return layoutSankeySp(flow, config.sp, others);
+    return layoutSankey(flow, { ...config.layout, tall: isSp }, others);
+  }, [data, variant, isSp, spLayout, alternatives]);
 
   if (!layout) {
     return (
@@ -143,7 +151,7 @@ export default function SankeyChart({
     <div ref={ref} className={`sankey-chart${inView ? " is-in" : ""}`}>
       {/* biome-ignore lint/a11y/useSemanticElements: SVG の中では fieldset を使えないので、図全体を role="group" でまとめる */}
       <svg
-        viewBox={`0 0 ${layout.width} ${layout.height}`}
+        viewBox={`${layout.x} 0 ${layout.width} ${layout.height}`}
         className={`block h-auto w-full overflow-visible${hot ? " has-hover" : ""}`}
         style={FONT_STYLE}
         role="group"
@@ -158,10 +166,13 @@ export default function SankeyChart({
             textAnchor={header.anchor}
             fontSize={header.fontSize}
             fontWeight={header.fontWeight}
-            fill={header.fill}
             letterSpacing={header.letterSpacing}
           >
-            {header.text}
+            {header.spans.map((span) => (
+              <tspan key={span.text} fill={span.fill}>
+                {span.text}
+              </tspan>
+            ))}
           </text>
         ))}
         {layout.bands.map((band) => (
@@ -197,28 +208,48 @@ export default function SankeyChart({
         {/* biome-ignore lint/a11y/noAriaHiddenOnFocusable: SVG の g・text はフォーカスを受けない（誤検知） */}
         <g aria-hidden="true">
           {layout.labels.map((label) => (
-            <text
-              key={label.key}
-              className={`lbl${hotClass(label.keys)}`}
-              textAnchor={label.anchor}
-            >
-              {label.spans.map((span, i) => (
-                <tspan
+            <g key={label.key} className={`lbl${hotClass(label.keys)}`}>
+              {label.texts.map((text, i) => (
+                <text
                   key={i}
-                  x={span.x}
-                  y={span.y}
-                  dx={span.dx}
+                  x={text.x}
+                  y={text.y}
+                  textAnchor={text.anchor}
                   dominantBaseline="middle"
-                  fontSize={span.fontSize}
-                  fontWeight={span.fontWeight}
-                  fill={span.fill}
-                  style={span.numeric ? NUMERIC_STYLE : undefined}
-                  {...(label.halo ? { ...HALO, strokeWidth: label.halo } : {})}
+                  fontSize={text.fontSize}
+                  fontWeight={text.fontWeight}
+                  fill={text.fill}
+                  style={text.numeric ? NUMERIC_STYLE : undefined}
+                  {...(text.halo ? { ...HALO, strokeWidth: text.halo } : {})}
                 >
-                  {span.text}
-                </tspan>
+                  {text.text}
+                </text>
               ))}
-            </text>
+              {label.pills.map((pill, i) => (
+                <g key={`p${i}`}>
+                  <rect
+                    x={pill.x}
+                    y={pill.y}
+                    width={pill.width}
+                    height={pill.height}
+                    rx={pill.height / 2}
+                    fill={pill.fill}
+                  />
+                  <text
+                    x={pill.x + pill.width / 2}
+                    y={pill.y + pill.height / 2 + 0.5}
+                    textAnchor="middle"
+                    dominantBaseline="middle"
+                    fontSize={pill.fontSize}
+                    fontWeight={700}
+                    fill={pill.textFill}
+                    style={NUMERIC_STYLE}
+                  >
+                    {pill.text}
+                  </text>
+                </g>
+              ))}
+            </g>
           ))}
         </g>
         <g>
@@ -231,6 +262,7 @@ export default function SankeyChart({
             rx={layout.hub.rx}
             fill={layout.hub.color}
           />
+          {/* 柱の上に「合計」と金額を2段で置く */}
           {[layout.hub.title, layout.hub.amount].map((text, i) =>
             text ? (
               <text

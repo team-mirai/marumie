@@ -144,8 +144,9 @@ test.describe("調査研究費 議員ページ", () => {
 		const chart = page.locator('[role="group"][aria-label="調査研究費の使いみちの流れ図"]');
 		const box = await chart.boundingBox();
 		expect(box?.width ?? Number.POSITIVE_INFINITY).toBeLessThanOrEqual(390);
-		// SP は内訳を親にまとめた3列の図（幅 400 の座標）で、見出しは「支給」「支出・未使用」
-		await expect(chart).toHaveAttribute("viewBox", /^0 0 400 /);
+		// SP もトップ・政党ページと同じ縦長の図（低めの3列の図の幅 400 の座標ではない）で、見出しは「支給」「支出・未使用」
+		await expect(chart).not.toHaveAttribute("viewBox", /^0 0 400 /);
+		await expect(chart.getByText("合計", { exact: true })).toBeVisible();
 		await expect(chart.getByText("支給", { exact: true })).toBeVisible();
 		await expect(chart.getByText("支出・未使用", { exact: true })).toBeVisible();
 	});
