@@ -100,6 +100,14 @@ const HALO = {
   paintOrder: "stroke",
 } as const;
 const NUMERIC_STYLE = { fontVariantNumeric: "tabular-nums" } as const;
+/**
+ * 図の文字の書体。デザイン（v9）と同じくヒラギノを先に使い、無い環境では Noto Sans JP にする。
+ * Noto Sans JP の太字（800）は、ヒラギノの太字（W6）よりかなり太く見えるため。
+ */
+const FONT_STYLE = {
+  fontFamily:
+    '"Hiragino Kaku Gothic ProN", var(--font-noto-sans-jp), "Noto Sans JP", system-ui, sans-serif',
+} as const;
 
 interface SankeyChartProps {
   data: SankeyData;
@@ -161,7 +169,8 @@ export default function SankeyChart({
       {/* biome-ignore lint/a11y/useSemanticElements: SVG の中では fieldset を使えないので、図全体を role="group" でまとめる */}
       <svg
         viewBox={`0 0 ${layout.width} ${layout.height}`}
-        className={`block h-auto w-full overflow-visible font-japanese${hot ? " has-hover" : ""}`}
+        className={`block h-auto w-full overflow-visible${hot ? " has-hover" : ""}`}
+        style={FONT_STYLE}
         role="group"
         aria-label={ariaLabel}
         aria-describedby={descriptionId}
