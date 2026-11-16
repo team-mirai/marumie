@@ -134,29 +134,45 @@ test.describe("政治団体ページ", () => {
 			);
 		});
 
-		test("毎月の収支推移のグラフが描画される", async ({ page }) => {
+		test("月ごとの収支推移のグラフが描画される", async ({ page }) => {
 			const monthlyTrends = page.locator("#monthly-trends");
 
 			await expect(monthlyTrends).toContainText("サンプル党・2025年");
 			await expect(
 				monthlyTrends.getByRole("heading", {
-					name: "毎月の収支推移",
+					name: "月ごとの収支推移",
 					exact: true,
 				}),
 			).toBeVisible();
-			// グラフ（apexcharts）は読み込み後にクライアントで描かれるため、棒が描かれるまで待つ
-			const chart = monthlyTrends.getByRole("img", { name: "月次収支推移グラフ" });
-			await expect(chart.locator(".apexcharts-bar-area").first()).toBeVisible();
+			const chart = monthlyTrends.getByRole("img", { name: "月ごとの収入・支出" });
+			await expect(chart).toBeVisible();
 			await expect(monthlyTrends.getByText("データがありません")).toHaveCount(0);
 			// 1月〜12月の軸と、収入・支出・収支の凡例が出ている
-			await expect(chart.locator(".apexcharts-xaxis-label tspan")).toHaveText(
+			await expect(chart.locator("text").filter({ hasText: /^\d+月$/ })).toHaveText(
 				Array.from({ length: 12 }, (_, i) => `${i + 1}月`),
 			);
 			for (const legend of ["収入", "支出", "収支"]) {
-				await expect(
-					chart.getByRole("button", { name: new RegExp(`^${legend},`) }),
-				).toBeVisible();
+				await expect(monthlyTrends.getByText(legend, { exact: true }).first()).toBeVisible();
 			}
+		});
+
+		test("SP では月ごとの収支推移のグラフを横にスクロールでき、キーボードでもフォーカスできる", async ({
+			page,
+		}) => {
+			await page.setViewportSize({ width: 390, height: 844 });
+			const region = page
+				.locator("#monthly-trends")
+				.getByRole("region", { name: "月ごとの推移のグラフ（横にスクロールできます）" });
+			await expect(region).toHaveAttribute("tabindex", "0");
+			const { scrollWidth, clientWidth } = await region.evaluate((el) => ({
+				scrollWidth: el.scrollWidth,
+				clientWidth: el.clientWidth,
+			}));
+			expect(scrollWidth).toBeGreaterThan(clientWidth);
+
+			await region.focus();
+			await page.keyboard.press("ArrowRight");
+			await expect.poll(() => region.evaluate((el) => el.scrollLeft)).toBeGreaterThan(0);
 		});
 
 		test("貸借対照表に年度末時点の資産と負債が表示される", async ({ page }) => {

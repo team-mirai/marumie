@@ -65,9 +65,9 @@ test.describe("調査研究費 議員ページ", () => {
 		).toBeVisible();
 		await expect(page.getByRole("link", { name: "こちらのnote" })).toHaveCount(0);
 
-		// 月ごとの支出の推移・すべての出入金
+		// 月ごとの収支推移・すべての出入金
 		await expect(
-			page.locator("#monthly-trends").getByRole("heading", { name: "月ごとの支出の推移" }),
+			page.locator("#monthly-trends").getByRole("heading", { name: "月ごとの収支推移" }),
 		).toBeVisible();
 		await expect(
 			page.locator('#monthly-trends [role="img"][aria-label="月ごとの調査研究費の支給と支出"]'),

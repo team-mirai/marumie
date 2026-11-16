@@ -1,9 +1,4 @@
-import {
-  calcNiceTickInterval,
-  calcSymmetricYAxisScale,
-  formatAmountIn,
-  pickAmountUnit,
-} from "@/client/lib/chart-axis";
+import { calcNiceTickInterval, calcSymmetricYAxisScale } from "@/client/lib/chart-axis";
 
 describe("calcNiceTickInterval", () => {
   const testCases: Array<{ input: number; expected: number }> = [
@@ -57,41 +52,5 @@ describe("calcSymmetricYAxisScale", () => {
     for (const value of [1, 999, 12345, 3456789, 987654321]) {
       expect(calcSymmetricYAxisScale(value).max).toBeGreaterThanOrEqual(value);
     }
-  });
-});
-
-describe("pickAmountUnit", () => {
-  const testCases: Array<{ input: number; expected: string }> = [
-    { input: 0, expected: "円" },
-    { input: 9999, expected: "円" },
-    { input: 10000, expected: "万円" },
-    { input: 99999999, expected: "万円" },
-    { input: 100000000, expected: "億円" },
-    { input: -100000000, expected: "億円" },
-  ];
-
-  it.each(testCases)("$input → $expected", ({ input, expected }) => {
-    expect(pickAmountUnit(input)).toBe(expected);
-  });
-});
-
-describe("formatAmountIn", () => {
-  it("円単位はそのまま3桁区切りで表示する", () => {
-    expect(formatAmountIn(3000, "円")).toBe("3,000");
-    expect(formatAmountIn(-450, "円")).toBe("-450");
-  });
-
-  it("万円単位では10未満のとき小数第1位まで表示する", () => {
-    expect(formatAmountIn(3000, "万円")).toBe("0.3");
-    expect(formatAmountIn(25000, "万円")).toBe("2.5");
-    expect(formatAmountIn(50000, "万円")).toBe("5");
-  });
-
-  it("万円単位で10以上のときは整数に丸める", () => {
-    expect(formatAmountIn(12345678, "万円")).toBe("1,235");
-  });
-
-  it("億円単位に換算できる", () => {
-    expect(formatAmountIn(1200000000, "億円")).toBe("12");
   });
 });

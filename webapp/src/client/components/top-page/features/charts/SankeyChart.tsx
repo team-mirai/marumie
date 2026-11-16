@@ -1,7 +1,8 @@
 "use client";
 import "client-only";
 
-import { useEffect, useId, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { useId, useMemo, useState, useSyncExternalStore } from "react";
+import { useInView } from "@/client/lib/use-in-view";
 import { toSankeyFlow } from "@/client/lib/sankey-flow";
 import { layoutSankey, type SankeyLayoutOptions } from "@/client/lib/sankey-layout";
 import { layoutSankeySp, type SankeySpLayoutOptions } from "@/client/lib/sankey-layout-sp";
@@ -67,32 +68,6 @@ function useIsSp() {
     () => window.matchMedia(SP_QUERY).matches,
     () => false,
   );
-}
-
-/** 図が画面に入ったら true にする（ノードが伸びて帯が左から現れる動きの合図） */
-function useInView<T extends Element>() {
-  const ref = useRef<T>(null);
-  const [inView, setInView] = useState(false);
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    if (typeof IntersectionObserver === "undefined") {
-      setInView(true);
-      return;
-    }
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries.some((entry) => entry.isIntersecting)) {
-          setInView(true);
-          observer.disconnect();
-        }
-      },
-      { threshold: 0.15 },
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
-  return { ref, inView };
 }
 
 const HALO = {

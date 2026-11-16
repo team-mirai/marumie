@@ -132,7 +132,7 @@ describe("OrgPage（政治団体ページ）", () => {
     });
   });
 
-  it("パンくず・見出しカードの後に、収支の流れ → 毎月の収支推移 → 貸借対照表 → すべての出入金の順で並べる", async () => {
+  it("パンくず・見出しカードの後に、収支の流れ → 月ごとの収支推移 → 貸借対照表 → すべての出入金の順で並べる", async () => {
     const sections = await renderSections("2026", "digimin");
 
     expect(sections.map((section) => section.name)).toEqual([

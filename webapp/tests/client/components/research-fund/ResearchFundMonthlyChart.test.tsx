@@ -24,20 +24,17 @@ describe("calcResearchFundMonthlyScale", () => {
     );
     expect(scale.ticks).toEqual([-2_000_000, -1_000_000, 0, 1_000_000, 2_000_000]);
     expect(scale.yMax).toBe(2_000_000);
-    expect(scale.unit).toBe("万円");
   });
 
-  it("金額が小さければ円で表示する", () => {
+  it("金額が小さければ刻みも小さくする", () => {
     const scale = calcResearchFundMonthlyScale(year({ 1: { granted: 5_000, spent: 1_000 } }));
     // 5,000円 × 1.2 / 2 = 3,000円 → 刻み5,000円
     expect(scale.ticks).toEqual([-10_000, -5_000, 0, 5_000, 10_000]);
-    expect(scale.unit).toBe("円");
   });
 
   it("公開済みの月が無くても軸が潰れない", () => {
     const scale = calcResearchFundMonthlyScale(year({}));
     expect(scale.yMax).toBeGreaterThan(0);
-    expect(scale.unit).toBe("円");
   });
 });
 
@@ -62,10 +59,18 @@ describe("ResearchFundMonthlyChart", () => {
     expect(markup.match(/fill="#DC2626"/g)).toHaveLength(1);
   });
 
-  it("Y軸ラベルを chart-axis の単位で描く", () => {
+  it("Y軸ラベルを他の金額と同じ書き方（formatYen）で描く", () => {
     expect(markup).toContain(">200万円<");
     expect(markup).toContain(">-100万円<");
-    expect(markup).toContain(">0万円<");
+    expect(markup).toContain(">0円<");
+  });
+
+  it("棒は外側の端だけ角を丸めた path で描き、0の線は薄いグレーにする", () => {
+    expect(markup).toMatch(/<path d="M[^"]+Q[^"]+" fill="#2AA693"/);
+    expect(markup).toMatch(/<path d="M[^"]+Q[^"]+" fill="#DC2626"/);
+    expect(markup).toContain('stroke="#9CA3AF"');
+    expect(markup).not.toContain('stroke="#4B5563"');
+    expect(markup).not.toContain('stroke="#E2E8F0"');
   });
 
   it("月別の金額を支援技術向けの表でも提供する", () => {

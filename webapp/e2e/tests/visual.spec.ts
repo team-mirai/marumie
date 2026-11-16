@@ -1,7 +1,7 @@
 import { test, expect, type Page } from "@playwright/test";
 
 // 主要画面の見た目を基準画像（visual.spec.ts-snapshots/）と比べ、崩れたら CI を落とす。
-// 依存パッケージ（tailwindcss・apexcharts など）の更新を自動マージするときの安全網。
+// 依存パッケージ（tailwindcss など）の更新を自動マージするときの安全網。
 //
 // ■ 基準画像は CI（Linux）の描画結果でなければならない
 //   フォントの描画が macOS と Linux で違うため、手元の Mac のブラウザで撮った画像は CI と一致しない。
@@ -96,7 +96,7 @@ async function stabilize(page: Page) {
         ),
     );
 
-    // グラフ（apexcharts）は JS のアニメーションで描かれ、CSS の animations: "disabled" が効かない。
+    // グラフはクライアントの JS で描かれ、CSS の animations: "disabled" では描き終わりを待てない。
     // SVG の中身が 1 秒間変わらなくなるまで待つ（最大 20 秒）
     const svgSnapshot = () =>
       Array.from(document.querySelectorAll("svg"))

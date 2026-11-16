@@ -68,8 +68,6 @@
       "description": "Chart libraries",
       "groupName": "charts",
       "matchPackageNames": [
-        "/^apexcharts$/",
-        "/^react-apexcharts$/",
         "/^@nivo//"
       ]
     },
