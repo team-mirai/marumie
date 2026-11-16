@@ -29,6 +29,13 @@ const data: ResearchFundBookSeedData[] = [
         '2026年2月の当選以降、仕訳が完了した支出を掲載しています。費目はチームみらい独自の詳細区分にマッピングし、使途等報告書で定められた法律上の区分にも切り替えて表示できます。',
     },
   },
+  {
+    politicianSlug: 'sample-misaki',
+    financialYear: 2026,
+    status: 'active',
+    asOfDate: '2026-08-20',
+    nextUpdateNote: '11月ごろ',
+  },
   { politicianSlug: 'sample-hanako', financialYear: 2026, status: 'preparing' },
   { politicianSlug: 'sample-jiro', financialYear: 2026, status: 'preparing' },
   { politicianSlug: 'e2e-politician', financialYear: 2026, status: 'active' },

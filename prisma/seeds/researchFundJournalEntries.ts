@@ -105,37 +105,89 @@ export function buildResearchFundJournalEntries(): Prisma.ResearchFundJournalEnt
   return entries;
 }
 
+// 2人目の公開議員（サンプル 美咲）の仕訳。トップの SP で議員カードを複数枚開く E2E のため、
+// 太郎とは金額の違う少数の published の仕訳と支給だけを持つ。
+const secondPoliticianExpenses: [date: string, key: string, description: string, amount: number][] = [
+  ["04/03", "transportation", "電車代", 12_400],
+  ["04/10", "books-newspapers", "書籍代", 38_500],
+  ["04/22", "telecom-it", "携帯電話料金", 9_800],
+  ["05/08", "meetings", "会議室利用料", 66_000],
+  ["05/20", "transportation", "航空券代", 54_300],
+  ["06/05", "advertising", "チラシ印刷代", 220_000],
+  ["06/18", "books-newspapers", "新聞購読料", 4_900],
+  ["07/01", "housing", "事務所家賃", 180_000],
+  ["07/15", "telecom-it", "携帯電話料金", 9_800],
+  ["08/02", "transportation", "タクシー代", 3_600],
+];
+
+export function buildSecondPoliticianJournalEntries(): Prisma.ResearchFundJournalEntryCreateWithoutBookInput[] {
+  const publishedAt = new Date("2026-08-31T00:00:00.000Z");
+  const entries: Prisma.ResearchFundJournalEntryCreateWithoutBookInput[] =
+    secondPoliticianExpenses.map(([date, key, description, amount], index) => ({
+      entryDate: new Date(`2026-${date.replace("/", "-")}T00:00:00.000Z`),
+      description,
+      source: "manual",
+      status: "published",
+      hash: `seed:choken-misaki:2026:row:${index}`,
+      publishedAt,
+      lines: { create: generateLines("expense", key, amount) },
+    }));
+  for (let month = 4; month <= 8; month++) {
+    entries.push({
+      entryDate: new Date(Date.UTC(2026, month - 1, 1)),
+      description: `調査研究広報滞在費 ${month}月分`,
+      source: "grant",
+      status: "published",
+      hash: `seed:choken-misaki:2026:grant:${month}`,
+      publishedAt,
+      lines: { create: generateLines("grant", "grant-income", 1_000_000) },
+    });
+  }
+  return entries;
+}
+
+const seedTargets = [
+  { slug: "sample-taro", hashPrefix: "seed:choken:2026:", build: buildResearchFundJournalEntries },
+  {
+    slug: "sample-misaki",
+    hashPrefix: "seed:choken-misaki:2026:",
+    build: buildSecondPoliticianJournalEntries,
+  },
+];
+
 export const researchFundJournalEntriesSeeder: Seeder = {
   name: "Research Fund Journal Entries",
   async seed(prisma: PrismaClient) {
-    // 所属ありの開発用議員だけに投入。E2E 用・無所属議員には投入しない。
-    const politician = await prisma.politician.findUnique({ where: { slug: "sample-taro" } });
-    if (!politician) throw new Error("Seed politician sample-taro not found");
-    const book = await prisma.researchFundBook.findUnique({
-      where: { politicianId_financialYear: { politicianId: politician.id, financialYear: 2026 } },
-    });
-    if (!book) throw new Error("Seed research fund book for sample-taro (2026) not found");
-    const entries = buildResearchFundJournalEntries();
-    await prisma.$transaction(
-      async (tx) => {
-        const existing = await tx.researchFundJournalEntry.findMany({
-          where: { bookId: book.id, hash: { startsWith: "seed:choken:2026:" } },
-          select: { hash: true },
-        });
-        const hashes = new Set(existing.map((entry) => entry.hash));
-        for (const entry of entries) {
-          if (hashes.has(entry.hash ?? "")) continue;
-          await tx.researchFundJournalEntry.create({
-            data: { ...entry, book: { connect: { id: book.id } } },
+    // 調研費を公開する開発用議員だけに投入。E2E 用・無所属・準備中の議員には投入しない。
+    for (const target of seedTargets) {
+      const politician = await prisma.politician.findUnique({ where: { slug: target.slug } });
+      if (!politician) throw new Error(`Seed politician ${target.slug} not found`);
+      const book = await prisma.researchFundBook.findUnique({
+        where: { politicianId_financialYear: { politicianId: politician.id, financialYear: 2026 } },
+      });
+      if (!book) throw new Error(`Seed research fund book for ${target.slug} (2026) not found`);
+      const entries = target.build();
+      await prisma.$transaction(
+        async (tx) => {
+          const existing = await tx.researchFundJournalEntry.findMany({
+            where: { bookId: book.id, hash: { startsWith: target.hashPrefix } },
+            select: { hash: true },
           });
-        }
-        await tx.researchFundBook.update({
-          where: { id: book.id },
-          data: { publishedThrough: new Date("2026-08-31T00:00:00.000Z") },
-        });
-      },
-      { timeout: 30_000 },
-    );
-    console.log("✅ Seeded sample-taro: 296 expenses + 7 grants (existing entries preserved)");
+          const hashes = new Set(existing.map((entry) => entry.hash));
+          for (const entry of entries) {
+            if (hashes.has(entry.hash ?? "")) continue;
+            await tx.researchFundJournalEntry.create({
+              data: { ...entry, book: { connect: { id: book.id } } },
+            });
+          }
+          await tx.researchFundBook.update({
+            where: { id: book.id },
+            data: { publishedThrough: new Date("2026-08-31T00:00:00.000Z") },
+          });
+        },
+        { timeout: 30_000 },
+      );
+      console.log(`✅ Seeded ${target.slug}: ${entries.length} entries (existing entries preserved)`);
+    }
   },
 };
