@@ -288,7 +288,15 @@ export default function HeaderClient({ organizations, politiciansByYear }: Heade
                 aria-label={isSpMenuOpen ? "メニューを閉じる" : "メニュー"}
                 aria-expanded={isSpMenuOpen}
                 aria-controls={isSpMenuOpen ? SP_MENU_ID : undefined}
-                onClick={() => (isSpMenuOpen ? closeSpMenuAnimated() : setIsSpMenuOpen(true))}
+                onClick={() => {
+                  if (isSpMenuOpen) {
+                    closeSpMenuAnimated();
+                    return;
+                  }
+                  // PC 幅で開いたメガメニューが隠れたまま残っていると、Tab の循環と Esc が SP のメニューに効かないので閉じておく
+                  setMegaMenu(null);
+                  setIsSpMenuOpen(true);
+                }}
                 className="flex min-[1080px]:hidden size-11 items-center justify-center rounded-lg cursor-pointer"
               >
                 <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true">
