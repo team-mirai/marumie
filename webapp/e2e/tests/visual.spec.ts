@@ -41,6 +41,8 @@ import { test, expect, type Page } from "@playwright/test";
 //     ほかのグラフのアニメーションは toHaveScreenshot が「2 回続けて同じ画像になる」まで待つことで吸収する
 
 const VIEWPORT = { width: 1280, height: 800 };
+// SP（≤760px）はサンキー図などの描き方が PC と違うので、iPhone 相当の幅でも撮る
+const SP_VIEWPORT = { width: 390, height: 844 };
 
 // 基準画像は Linux の描画結果だけを持つ（playwright.config.ts の snapshotPathTemplate で OS 名を外している）。
 // Mac で普通に E2E を回したときは比べられないので飛ばす。手元で Linux のブラウザにつないだとき（手順 B）は回す
@@ -190,5 +192,54 @@ test.describe("主要画面の見た目", () => {
     ).toBeVisible();
 
     await expectPageScreenshot(page, "research-fund.png");
+  });
+});
+
+test.describe("主要画面の見た目（SP）", () => {
+  test.use({ viewport: SP_VIEWPORT });
+
+  test("トップページ", async ({ page }) => {
+    await page.goto("/");
+
+    // 政党のカードの図と、SP 用の3列の議員の調研費の図が描画されてから撮る
+    // （議員の図は PC 用のものも DOM にあって隠れているので、見えているものに絞る）
+    await expect(
+      page
+        .getByRole("region", { name: "政党の収支" })
+        .locator('[role="group"][aria-label="政治資金の収支フロー図"]')
+        .first(),
+    ).toBeVisible();
+    await expect(
+      page
+        .getByRole("region", { name: "所属議員の調研費" })
+        .locator('[role="group"][aria-label="サンプル 太郎の調査研究費の使いみちの流れ図"]')
+        .locator("visible=true"),
+    ).toBeVisible();
+
+    await expectPageScreenshot(page, "home-sp.png");
+  });
+
+  test("政治団体のページ", async ({ page }) => {
+    await page.goto("/o/sample-party/2025");
+
+    await expect(
+      page.locator('#cash-flow [role="group"][aria-label="政治資金の収支フロー図"]'),
+    ).toBeVisible();
+    await expect(page.locator("#monthly-trends svg").first()).toBeVisible();
+
+    await expectPageScreenshot(page, "organization-sp.png");
+  });
+
+  test("調査研究費のページ", async ({ page }) => {
+    await page.goto("/p/sample-taro/2026");
+
+    await expect(
+      page.locator('[role="group"][aria-label="調査研究費の使いみちの流れ図"]'),
+    ).toBeVisible();
+    await expect(
+      page.locator('#monthly-trends [role="img"][aria-label="月ごとの調査研究費の支給と支出"]'),
+    ).toBeVisible();
+
+    await expectPageScreenshot(page, "research-fund-sp.png");
   });
 });
