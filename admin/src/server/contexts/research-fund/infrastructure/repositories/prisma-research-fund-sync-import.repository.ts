@@ -245,7 +245,10 @@ async function replacePolitician(
   politician: ResearchFundSyncPolitician,
 ): Promise<ResearchFundSyncImportResultPolitician> {
   const { slug } = politician.profile;
-  const existing = await tx.politician.findUnique({ where: { slug }, select: { id: true } });
+  // 同じ議員への取り込みが同時に走ると、互いの登録が削除から見えず帳簿が混ざるので、議員の行をロックして直列化する。
+  const [existing] = await tx.$queryRaw<{ id: bigint }[]>`
+    SELECT id FROM politicians WHERE slug = ${slug} FOR UPDATE
+  `;
 
   let politicianId: bigint;
   let deletedJournalEntryCount = 0;

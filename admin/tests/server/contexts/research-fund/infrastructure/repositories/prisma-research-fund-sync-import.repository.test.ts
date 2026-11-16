@@ -122,10 +122,13 @@ function setup() {
 
   let nextId = 100;
   const tx = {
+    // 議員の行を slug で引いてロックする（SELECT ... FOR UPDATE）。
+    $queryRaw: jest.fn(async (strings: TemplateStringsArray, slug: string) => {
+      calls.push(`lock:${slug}`);
+      expect(strings.join("?")).toMatch(/FOR UPDATE/);
+      return slug === "taro" ? [{ id: BigInt(3) }] : [];
+    }),
     politician: {
-      findUnique: jest.fn(async ({ where }: { where: { slug: string } }) =>
-        where.slug === "taro" ? { id: BigInt(3) } : null,
-      ),
       create: record("politician.create", { id: BigInt(9) }),
     },
     politicalOrganization: {
@@ -196,12 +199,13 @@ describe("PrismaResearchFundSyncImportRepository.replaceResearchFundSyncData", (
     ]);
   });
 
-  it("既存の議員はファイルの議員室だけ、帳簿→支払先→プロンプトの順に消し、議員自体は作り直さない", async () => {
+  it("既存の議員は行をロックしてから、ファイルの議員室だけ帳簿→支払先→プロンプトの順に消し、議員自体は作り直さない", async () => {
     const { tx, repository, calls } = setup();
 
     await repository.replaceResearchFundSyncData(buildFile(["taro"]));
 
     expect(calls).toEqual([
+      "lock:taro",
       "researchFundBook.deleteMany",
       "researchFundPayee.deleteMany",
       "researchFundPrompt.deleteMany",
