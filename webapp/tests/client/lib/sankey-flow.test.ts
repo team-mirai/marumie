@@ -104,6 +104,38 @@ describe("toSankeyFlow", () => {
     expect(flow.balance?.value).toBe(600);
   });
 
+  it("同額の項目と内訳は入力順によらずラベルの文字コード順に並べる", () => {
+    const nodes: SankeyData["nodes"] = [
+      { id: "t", label: "合計", nodeType: "total" },
+      { id: "i", label: "寄附", nodeType: "income" },
+      { id: "e-b", label: "調査委託費", nodeType: "expense" },
+      { id: "e-a", label: "支部交付金", nodeType: "expense" },
+      { id: "es-b", label: "委託費B", nodeType: "expense-sub" },
+      { id: "es-a", label: "委託費A", nodeType: "expense-sub" },
+    ];
+    const links: SankeyData["links"] = [
+      { source: "i", target: "t", value: 600 },
+      { source: "t", target: "e-b", value: 300 },
+      { source: "t", target: "e-a", value: 300 },
+      { source: "e-b", target: "es-b", value: 150 },
+      { source: "e-b", target: "es-a", value: 150 },
+    ];
+    const expected = [
+      { label: "支部交付金", value: 300, subs: undefined },
+      {
+        label: "調査委託費",
+        value: 300,
+        subs: [
+          { label: "委託費A", value: 150 },
+          { label: "委託費B", value: 150 },
+        ],
+      },
+    ];
+
+    expect(toSankeyFlow({ nodes, links }).expenses).toEqual(expected);
+    expect(toSankeyFlow({ nodes: [...nodes].reverse(), links: [...links].reverse() }).expenses).toEqual(expected);
+  });
+
   it("合計のノードが無ければ空の図にする", () => {
     expect(toSankeyFlow({ nodes: [], links: [] })).toEqual({
       incomes: [],
