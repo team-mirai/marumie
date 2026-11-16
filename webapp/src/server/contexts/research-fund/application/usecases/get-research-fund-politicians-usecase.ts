@@ -31,6 +31,7 @@ function toEntry(source: ResearchFundPoliticianSource): ResearchFundPoliticianEn
   return {
     slug: source.slug,
     name: source.name,
+    nameKana: source.nameKana,
     statusLabel: buildCoverageLabel([
       { months: source.publishedMonths, publishedThrough: source.publishedThrough },
     ]),

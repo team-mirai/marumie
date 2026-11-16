@@ -9,6 +9,7 @@ import {
   FOOTER_SOCIAL_LINKS,
   OFFICIAL_SITE_URL,
   socialLinkLabel,
+  sortFooterPoliticiansByKana,
 } from "@/client/lib/footer-navigation";
 import {
   ABOUT_HREF,
@@ -66,9 +67,12 @@ export default async function Footer() {
     ...buildOrganizationMenuItems([group], notCurrent)[0],
     hasPhoto: group.hasPhoto,
   }));
-  const politicians = buildPoliticianMenuItems(
-    Object.fromEntries(HEADER_YEARS.map((year, index) => [year, politicianLists[index]])),
-    notCurrent,
+  const politiciansByYear = Object.fromEntries(
+    HEADER_YEARS.map((year, index) => [year, politicianLists[index]]),
+  );
+  const politicians = sortFooterPoliticiansByKana(
+    buildPoliticianMenuItems(politiciansByYear, notCurrent),
+    politiciansByYear,
   );
 
   return (

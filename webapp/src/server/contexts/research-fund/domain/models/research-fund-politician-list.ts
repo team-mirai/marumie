@@ -10,6 +10,8 @@ import type { PoliticianHouse } from "@/shared/models/politician";
 export interface ResearchFundPoliticianEntry {
   slug: string;
   name: string;
+  /** ふりがな。未登録なら null（年度をまたいで並べ直すときに使う） */
+  nameKana: string | null;
   /** 「2026年2-8月分を公開中」 */
   statusLabel: string;
   /** admin で顔写真を登録しているか（ヘッダーのメニューの丸アイコンに使う） */

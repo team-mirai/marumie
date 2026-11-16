@@ -1,4 +1,9 @@
-import { FOOTER_SOCIAL_LINKS, socialLinkLabel } from "@/client/lib/footer-navigation";
+import {
+  FOOTER_SOCIAL_LINKS,
+  socialLinkLabel,
+  sortFooterPoliticiansByKana,
+} from "@/client/lib/footer-navigation";
+import { buildPoliticianMenuItems, parseHeaderPath } from "@/client/lib/header-navigation";
 
 describe("FOOTER_SOCIAL_LINKS", () => {
   it("デザイン v9 の6つの SNS を並べる", () => {
@@ -30,5 +35,31 @@ describe("socialLinkLabel", () => {
     expect(socialLinkLabel(FOOTER_SOCIAL_LINKS[1])).toBe(
       "チームみらいのX（旧Twitter）（別タブで開きます）",
     );
+  });
+});
+
+describe("sortFooterPoliticiansByKana", () => {
+  const YAMADA = { slug: "yamada", name: "山田太郎", nameKana: "やまだたろう", hasPhoto: false };
+  const ABE = { slug: "abe", name: "阿部花子", nameKana: "あべはなこ", hasPhoto: false };
+  const KATO = { slug: "kato", name: "加藤次郎", nameKana: "カトウジロウ", hasPhoto: false };
+  const NO_KANA = { slug: "no-kana", name: "安藤", nameKana: null, hasPhoto: false };
+
+  it("前の年度にしかいない議員も含めて、年度をまたいでふりがなの五十音順に並べる", () => {
+    const politiciansByYear = { 2025: [ABE, KATO], 2026: [KATO, YAMADA] };
+    const items = buildPoliticianMenuItems(politiciansByYear, parseHeaderPath("/"));
+
+    expect(items.map((item) => item.slug)).toEqual(["kato", "yamada", "abe"]);
+    expect(
+      sortFooterPoliticiansByKana(items, politiciansByYear).map((item) => item.slug),
+    ).toEqual(["abe", "kato", "yamada"]);
+  });
+
+  it("ふりがなが未登録の議員は後ろに回す", () => {
+    const politiciansByYear = { 2026: [NO_KANA, YAMADA, ABE] };
+    const items = buildPoliticianMenuItems(politiciansByYear, parseHeaderPath("/"));
+
+    expect(
+      sortFooterPoliticiansByKana(items, politiciansByYear).map((item) => item.slug),
+    ).toEqual(["abe", "yamada", "no-kana"]);
   });
 });
