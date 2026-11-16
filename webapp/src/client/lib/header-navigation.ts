@@ -2,6 +2,9 @@ import { politicianPhotoUrl } from "@/client/lib/politician-photo-url";
 import { parsePoliticianPathSegment } from "@/shared/research-fund/preview-path";
 
 export const FAQ_URL = "https://team-mirai.notion.site/FAQ-27ef6f56bae180c085e9f97d05a5d59c";
+export const SOURCE_CODE_URL = "https://github.com/team-mirai/marumie";
+/** 調研費についてのご意見の募集（Google フォーム） */
+export const RESEARCH_FUND_FEEDBACK_URL = "https://forms.gle/MSYSfpJRU9AR1B7s9";
 export const ABOUT_HREF = "/about";
 /** トップの「データについて」（共通の下部ブロック） */
 export const DATA_NOTES_HREF = "/#explanation";
@@ -12,12 +15,12 @@ const DEFAULT_HEADER_YEAR = 2026;
 
 /**
  * ヘッダーのナビの項目（デザイン v8 の B 案・5項目）。
- * - pf / rf はメガメニュー（SP では次の段階）を開く
+ * - pf / rf はメガメニューを開く（SP のメニューは HeaderSpMenu で項目を並べ直す）
  * - about / data は同じタブで、faq は別タブで移る
  */
-export type HeaderNavKey = "pf" | "rf" | "about" | "faq" | "data";
+type HeaderNavKey = "pf" | "rf" | "about" | "faq" | "data";
 
-export interface HeaderNavItem {
+interface HeaderNavItem {
   key: HeaderNavKey;
   label: string;
 }
@@ -40,7 +43,7 @@ export function getHeaderNavItems(hasResearchFundPoliticians: boolean): readonly
     : HEADER_NAV_ITEMS.filter((item) => item.key !== "rf");
 }
 
-/** メガメニュー（SP では次の段階）を開く項目か */
+/** メガメニューを開く項目か */
 export function isMenuNavKey(key: HeaderNavKey): key is "pf" | "rf" {
   return key === "pf" || key === "rf";
 }

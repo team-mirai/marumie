@@ -75,14 +75,14 @@ test.describe("主要な導線", () => {
 		await nav.getByRole("button", { name: "政党・政治団体" }).click();
 		await menu
 			.getByRole("navigation", { name: "サンプル党の表示する年" })
-			.getByRole("link", { name: "2025" })
+			.getByRole("link", { name: "2025年" })
 			.click();
 		await expectPartyPage(page, 2025);
 
 		await nav.getByRole("button", { name: "政党・政治団体" }).click();
 		await menu
 			.getByRole("navigation", { name: "E2Eテスト団体の表示する年" })
-			.getByRole("link", { name: "2025" })
+			.getByRole("link", { name: "2025年" })
 			.click();
 		await expectGroupPage(page, 2025);
 
