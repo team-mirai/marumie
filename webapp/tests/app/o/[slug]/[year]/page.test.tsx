@@ -40,7 +40,7 @@ jest.mock("@/client/components/top-page/TransactionsSection", () =>
 );
 
 import { Children, isValidElement, type ReactElement, type ReactNode } from "react";
-import OrgPage from "@/app/o/[slug]/[year]/page";
+import OrgPage, { generateMetadata } from "@/app/o/[slug]/[year]/page";
 import { loadOrganizations } from "@/server/contexts/public-finance/presentation/loaders/load-organizations";
 import { loadOrganizationProfile } from "@/server/contexts/public-finance/presentation/loaders/load-organization-profile";
 import { loadTopPageData } from "@/server/contexts/public-finance/presentation/loaders/load-top-page-data";
@@ -232,5 +232,35 @@ describe("OrgPage（政治団体ページ）", () => {
       photoUrl: null,
       links: [],
     });
+  });
+});
+
+describe("generateMetadata（シェアしたときのカード）", () => {
+  beforeEach(() => {
+    loadOrganizationsMock.mockResolvedValue({
+      default: "team-mirai",
+      organizations: [{ slug: "team-mirai", orgName: null, displayName: "チームみらい" }],
+    });
+  });
+
+  const metadataFor = (slug: string, year: string) =>
+    generateMetadata({ params: Promise.resolve({ slug, year }) });
+
+  it("og:image と twitter:image を、その団体・その年の画像にする", async () => {
+    const metadata = await metadataFor("team-mirai", "2025");
+
+    expect(metadata.title).toBe("チームみらいの収支");
+    expect(metadata.openGraph?.images).toEqual([
+      expect.objectContaining({ url: "/o/team-mirai/2025/og-image", width: 1200, height: 630 }),
+    ]);
+    expect(metadata.twitter?.images).toEqual([
+      expect.objectContaining({ url: "/o/team-mirai/2025/og-image" }),
+    ]);
+    // ページで openGraph を書くとルートの文言が消えるので、文言もいっしょに入れる
+    expect(metadata.openGraph?.title).toBe("まる見え政治資金｜チームみらい");
+  });
+
+  it("団体が無ければルートの既定（トップの画像）のままにする", async () => {
+    expect(await metadataFor("unknown", "2026")).toEqual({});
   });
 });

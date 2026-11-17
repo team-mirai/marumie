@@ -470,4 +470,39 @@ test.describe("政治団体ページ", () => {
 			await expect(page).toHaveTitle(/すべての出入金｜まる見え政治資金｜チームみらい$/);
 		});
 	});
+
+	test.describe("シェアしたときの画像", () => {
+		/** PNG の幅と高さ（IHDR） */
+		const pngSize = (body: Buffer) => ({
+			signature: body.subarray(1, 4).toString(),
+			width: body.readUInt32BE(16),
+			height: body.readUInt32BE(20),
+		});
+
+		test("og:image がその団体・その年の画像を指し、1200×630 の PNG が 200 で返る", async ({
+			page,
+			request,
+		}) => {
+			await page.goto("/o/sample-party/2026");
+			const ogImage = await page.locator('meta[property="og:image"]').getAttribute("content");
+			const twitterImage = await page.locator('meta[name="twitter:image"]').getAttribute("content");
+			expect(ogImage).toMatch(/\/o\/sample-party\/2026\/og-image$/);
+			expect(twitterImage).toBe(ogImage);
+
+			const response = await request.get("/o/sample-party/2026/og-image");
+			expect(response.status()).toBe(200);
+			expect(response.headers()["content-type"]).toBe("image/png");
+			expect(pngSize(await response.body())).toEqual({ signature: "PNG", width: 1200, height: 630 });
+		});
+
+		test("データが無い団体では、トップの画像を返す", async ({ request }) => {
+			const [response, top] = await Promise.all([
+				request.get("/o/no-such-organization/2026/og-image"),
+				request.get("/social/og-top.png"),
+			]);
+			expect(response.status()).toBe(200);
+			expect(response.headers()["content-type"]).toBe("image/png");
+			expect(await response.body()).toEqual(await top.body());
+		});
+	});
 });

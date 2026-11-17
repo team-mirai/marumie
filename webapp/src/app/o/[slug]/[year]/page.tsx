@@ -18,15 +18,15 @@ import { loadOrganizationProfile } from "@/server/contexts/public-finance/presen
 import { formatUpdatedAt } from "@/client/lib/format-date";
 import { getBalanceSheetAsOf } from "@/client/lib/balance-sheet-heading";
 import { buildProfileLinks } from "@/client/lib/profile-links";
+import { shareMetadata } from "@/app/site-metadata";
+import {
+  DEFAULT_YEAR,
+  PARTY_SLUGS,
+  VALID_YEARS,
+  isValidYear,
+} from "@/app/o/[slug]/[year]/organization-page-config";
 
 export const revalidate = 300; // 5 minutes
-
-const VALID_YEARS = [2025, 2026] as const;
-const DEFAULT_YEAR = 2026;
-
-// 政党ページとして見せる団体。ほかは政治団体ページ（代表者の写真・SNS の見出し）にする。
-// シードの sample-party は、E2E で政党ページを確かめるために政党として扱う
-const PARTY_SLUGS: readonly string[] = ["team-mirai", "sample-party"];
 
 interface OrgPageProps {
   params: Promise<{
@@ -36,15 +36,24 @@ interface OrgPageProps {
 }
 
 export async function generateMetadata({ params }: OrgPageProps): Promise<Metadata> {
-  const { slug } = await params;
+  const { slug, year } = await params;
 
   const { organizations } = await loadOrganizations();
   const currentOrganization = organizations.find((org) => org.slug === slug);
 
-  // 見つからなければサイト名だけのタイトル（ルートの既定）にする
-  return currentOrganization?.displayName
-    ? { title: `${currentOrganization.displayName}の収支` }
-    : {};
+  // 見つからなければサイト名だけのタイトルとトップの画像（ルートの既定）にする
+  if (!currentOrganization?.displayName) return {};
+  const title = `${currentOrganization.displayName}の収支`;
+  // シェアしたときの画像は、その団体・その年の収支の図（データが無ければ画像の側でトップの画像を返す）
+  return isValidYear(Number(year))
+    ? {
+        title,
+        ...shareMetadata({
+          url: `/o/${encodeURIComponent(slug)}/${year}/og-image`,
+          alt: `${title}（${year}年）`,
+        }),
+      }
+    : { title };
 }
 
 export default async function OrgPage({ params }: OrgPageProps) {
@@ -52,9 +61,7 @@ export default async function OrgPage({ params }: OrgPageProps) {
 
   // 年度の妥当性をチェック
   const yearNumber = parseInt(yearParam, 10);
-  const financialYear = VALID_YEARS.includes(yearNumber as (typeof VALID_YEARS)[number])
-    ? yearNumber
-    : DEFAULT_YEAR;
+  const financialYear = isValidYear(yearNumber) ? yearNumber : DEFAULT_YEAR;
 
   // 年度が不正な場合はデフォルト年度にリダイレクト
   if (financialYear !== yearNumber) {
