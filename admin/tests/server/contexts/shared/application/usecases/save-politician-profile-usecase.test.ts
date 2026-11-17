@@ -1,4 +1,5 @@
 import { SavePoliticianProfileUsecase } from "@/server/contexts/shared/application/usecases/save-politician-profile-usecase";
+import type { ICacheInvalidator } from "@/server/contexts/shared/domain/services/cache-invalidator.interface";
 import type { IPoliticianRepository } from "@/server/contexts/shared/domain/repositories/politician-repository.interface";
 import type { Politician, PoliticianProfileInput } from "@/shared/models/politician";
 
@@ -27,6 +28,7 @@ const profile: PoliticianProfileInput = {
   snsUrls: ["https://x.com/test", " "],
 };
 let repository: jest.Mocked<IPoliticianRepository>;
+let cacheInvalidator: jest.Mocked<ICacheInvalidator>;
 let usecase: SavePoliticianProfileUsecase;
 beforeEach(() => {
   repository = {
@@ -37,7 +39,8 @@ beforeEach(() => {
     setPhotoPath: jest.fn(),
     delete: jest.fn(),
   };
-  usecase = new SavePoliticianProfileUsecase(repository);
+  cacheInvalidator = { invalidateWebappCache: jest.fn().mockResolvedValue(undefined) };
+  usecase = new SavePoliticianProfileUsecase(repository, cacheInvalidator);
 });
 
 test("プロフィールを正規化して保存し、氏名・スラッグ・当選日・所属は保存済みの値を残す", async () => {
@@ -54,6 +57,13 @@ test("プロフィールを正規化して保存し、氏名・スラッグ・�
     websiteUrl: "",
     snsUrls: ["https://x.com/test"],
   });
+  expect(cacheInvalidator.invalidateWebappCache).toHaveBeenCalledTimes(1);
+});
+
+test("webapp のキャッシュを消せなくても保存は成功にし、警告を返す", async () => {
+  cacheInvalidator.invalidateWebappCache.mockRejectedValue(new Error("webapp down"));
+  await expect(usecase.execute("1", profile)).resolves.toEqual({ cacheWarning: "webapp down" });
+  expect(repository.save).toHaveBeenCalled();
 });
 
 test("プロフィール以外の項目が入力に含まれていても無視する", async () => {
@@ -78,6 +88,7 @@ test.each([
     usecase.execute("1", { ...profile, ...invalid } as unknown as PoliticianProfileInput),
   ).rejects.toThrow();
   expect(repository.save).not.toHaveBeenCalled();
+  expect(cacheInvalidator.invalidateWebappCache).not.toHaveBeenCalled();
 });
 
 test("存在しない議員・不正な ID は保存しない", async () => {

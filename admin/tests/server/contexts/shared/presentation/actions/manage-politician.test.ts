@@ -123,7 +123,7 @@ describe("savePoliticianProfile（担当の議員室もプロフィールを編�
         termStart: "2020-01-01",
         politicalOrganizationId: "9",
       } as typeof profile),
-    ).resolves.toEqual({ success: true });
+    ).resolves.toEqual({ success: true, cacheWarning: null });
     expect(save).toHaveBeenCalledWith("1", {
       name: "議員名",
       slug: "test-member",
@@ -147,7 +147,7 @@ describe("savePoliticianProfile（担当の議員室もプロフィールを編�
     jest.spyOn(PrismaUserRepository.prototype, "findAssignedPoliticianIds").mockResolvedValue([]);
     (getCurrentUser as jest.Mock).mockResolvedValue(userWith(["admin"]));
 
-    await expect(savePoliticianProfile("1", profile)).resolves.toEqual({ success: true });
+    await expect(savePoliticianProfile("1", profile)).resolves.toEqual({ success: true, cacheWarning: null });
     expect(save).toHaveBeenCalled();
   });
 
@@ -227,7 +227,7 @@ describe("顔写真の登録・削除", () => {
     async (roles) => {
       mockStorage();
       (getCurrentUser as jest.Mock).mockResolvedValue(userWith([...roles]));
-      await expect(uploadPoliticianPhoto("1", photoForm())).resolves.toEqual({ success: true });
+      await expect(uploadPoliticianPhoto("1", photoForm())).resolves.toEqual({ success: true, cacheWarning: null });
       expect(setPhotoPath).toHaveBeenCalledWith("1", expect.any(String));
       setPhotoPath.mockClear();
       jest.spyOn(PrismaPoliticianRepository.prototype, "findById").mockResolvedValue({
@@ -241,7 +241,7 @@ describe("顔写真の登録・削除", () => {
         ...profile,
         photoPath: "politicians/1/a.jpg",
       });
-      await expect(deletePoliticianPhoto("1")).resolves.toEqual({ success: true });
+      await expect(deletePoliticianPhoto("1")).resolves.toEqual({ success: true, cacheWarning: null });
       expect(setPhotoPath).toHaveBeenCalledWith("1", null);
     },
   );

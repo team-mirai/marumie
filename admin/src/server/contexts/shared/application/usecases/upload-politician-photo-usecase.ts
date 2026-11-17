@@ -4,15 +4,19 @@ import { Politician } from "@/shared/models/politician";
 import { PoliticianPhoto } from "@/shared/models/politician-photo";
 import type { IPoliticianPhotoStorage } from "@/server/contexts/shared/domain/repositories/politician-photo-storage.interface";
 import type { IPoliticianRepository } from "@/server/contexts/shared/domain/repositories/politician-repository.interface";
+import type { ICacheInvalidator } from "@/server/contexts/shared/domain/services/cache-invalidator.interface";
+import { invalidateWebappCache } from "@/server/contexts/shared/application/services/invalidate-webapp-cache";
 
 /**
  * 議員の顔写真を登録・差し替える。新しい写真を置いてから議員の参照を付け替え、古い写真を消す。
  * 古い写真の削除に失敗しても、登録は確定しているので失敗にしない（Storage に残るだけ）。
+ * 公開サイトに写真の有無が出るので、付け替えたら webapp のキャッシュを消す。
  */
 export class UploadPoliticianPhotoUsecase {
   constructor(
     private repository: IPoliticianRepository,
     private storage: IPoliticianPhotoStorage,
+    private cacheInvalidator: ICacheInvalidator,
   ) {}
 
   async execute(id: string, bytes: Uint8Array) {
@@ -30,6 +34,7 @@ export class UploadPoliticianPhotoUsecase {
       throw error;
     }
     if (politician.photoPath) await this.removeQuietly(politician.photoPath);
+    return { cacheWarning: await invalidateWebappCache(this.cacheInvalidator) };
   }
 
   private async removeQuietly(path: string) {

@@ -17,9 +17,12 @@ import { WebappCacheInvalidator } from "@/server/contexts/shared/infrastructure/
 export async function savePolitician(id: string | null, input: PoliticianInput) {
   await requireRole("admin");
   try {
-    await new SavePoliticianUsecase(new PrismaPoliticianRepository(prisma)).execute(id, input);
+    const { cacheWarning } = await new SavePoliticianUsecase(
+      new PrismaPoliticianRepository(prisma),
+      new WebappCacheInvalidator(),
+    ).execute(id, input);
     revalidatePath("/(auth)", "layout");
-    return { success: true as const };
+    return { success: true as const, cacheWarning };
   } catch (error) {
     return {
       success: false as const,
@@ -34,12 +37,12 @@ export async function savePolitician(id: string | null, input: PoliticianInput) 
 export async function savePoliticianProfile(id: string, profile: PoliticianProfileInput) {
   await requireResearchFundWriter(id);
   try {
-    await new SavePoliticianProfileUsecase(new PrismaPoliticianRepository(prisma)).execute(
-      id,
-      profile,
-    );
+    const { cacheWarning } = await new SavePoliticianProfileUsecase(
+      new PrismaPoliticianRepository(prisma),
+      new WebappCacheInvalidator(),
+    ).execute(id, profile);
     revalidatePath("/(auth)", "layout");
-    return { success: true as const };
+    return { success: true as const, cacheWarning };
   } catch (error) {
     return {
       success: false as const,
@@ -56,12 +59,13 @@ export async function uploadPoliticianPhoto(id: string, formData: FormData) {
   try {
     const file = formData.get("photo");
     if (!(file instanceof File)) throw new Error("画像ファイルを選択してください");
-    await new UploadPoliticianPhotoUsecase(
+    const { cacheWarning } = await new UploadPoliticianPhotoUsecase(
       new PrismaPoliticianRepository(prisma),
       SupabasePoliticianPhotoStorage.fromEnv(),
+      new WebappCacheInvalidator(),
     ).execute(id, new Uint8Array(await file.arrayBuffer()));
     revalidatePath("/(auth)", "layout");
-    return { success: true as const };
+    return { success: true as const, cacheWarning };
   } catch (error) {
     return {
       success: false as const,
@@ -73,12 +77,13 @@ export async function uploadPoliticianPhoto(id: string, formData: FormData) {
 export async function deletePoliticianPhoto(id: string) {
   await requireResearchFundWriter(id);
   try {
-    await new DeletePoliticianPhotoUsecase(
+    const { cacheWarning } = await new DeletePoliticianPhotoUsecase(
       new PrismaPoliticianRepository(prisma),
       SupabasePoliticianPhotoStorage.fromEnv(),
+      new WebappCacheInvalidator(),
     ).execute(id);
     revalidatePath("/(auth)", "layout");
-    return { success: true as const };
+    return { success: true as const, cacheWarning };
   } catch (error) {
     return {
       success: false as const,

@@ -87,13 +87,16 @@ export function PoliticianForm({
                 toast.error(result.error);
                 return;
               }
-              toast.success(
-                profileOnly
-                  ? "プロフィールを更新しました"
-                  : politician
-                    ? "議員を更新しました"
-                    : "議員を作成しました",
-              );
+              const successMessage = profileOnly
+                ? "プロフィールを更新しました"
+                : politician
+                  ? "議員を更新しました"
+                  : "議員を作成しました";
+              if (result.cacheWarning)
+                toast.warning(
+                  `${successMessage}が、まる見えの更新に失敗しました: ${result.cacheWarning}`,
+                );
+              else toast.success(successMessage);
               router.push("/politicians");
               router.refresh();
             } catch {
