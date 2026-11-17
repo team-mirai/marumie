@@ -472,10 +472,21 @@ table:focus-visible {
  * SP のメニュー（HeaderSpMenu）の開閉の動き（デザイン v9）。
  * 開くとき: 背景がヘッダーのすぐ下から幕が下りるように広がり、中身は少し遅れて上から順にすべり込む。
  * 閉じるとき（header[data-sp-menu="closing"]）: 中身がすっと消え、幕が下から上へ巻き上がる。
+ *
+ * 幕は clip-path ではなく transform で動かす（clip-path の動きは iOS Safari などで毎フレーム描き直しになりカクつく）。
+ * 外枠（.sp-menu-clip。はみ出しを隠す）を上へずらした位置から下ろし、中のメニュー（.sp-menu）を同じだけ逆向きにずらすと、
+ * メニューは動かずに、見える範囲だけが上から下へ広がる。両方を同じ速さで動かすので、見た目は clip-path の幕と同じ。
+ * 外枠はヘッダーの行に重なって動くので、外枠ではクリックを受けない（メニューの上だけで受ける）。
  */
 @media (max-width: 640px) {
+  .sp-menu-clip {
+    overflow: hidden;
+    pointer-events: none;
+    animation: sp-menu-drop-outer 0.5s cubic-bezier(0.32, 0.72, 0, 1) both;
+  }
   .sp-menu {
-    animation: sp-menu-drop 0.5s cubic-bezier(0.32, 0.72, 0, 1) both;
+    pointer-events: auto;
+    animation: sp-menu-drop-inner 0.5s cubic-bezier(0.32, 0.72, 0, 1) both;
   }
   .sp-menu > * {
     animation: sp-menu-item-in 0.42s cubic-bezier(0.32, 0.72, 0, 1) both;
@@ -495,8 +506,11 @@ table:focus-visible {
   .sp-menu > :nth-child(n + 5) {
     animation-delay: 0.28s;
   }
+  header[data-sp-menu="closing"] .sp-menu-clip {
+    animation: sp-menu-lift-outer 0.32s cubic-bezier(0.55, 0, 0.75, 0.2) both;
+  }
   header[data-sp-menu="closing"] .sp-menu {
-    animation: sp-menu-lift 0.32s cubic-bezier(0.55, 0, 0.75, 0.2) both;
+    animation: sp-menu-lift-inner 0.32s cubic-bezier(0.55, 0, 0.75, 0.2) both;
   }
   header[data-sp-menu="closing"] .sp-menu > * {
     animation: sp-menu-item-out 0.16s ease-in both;
@@ -505,9 +519,46 @@ table:focus-visible {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .sp-menu-clip,
   .sp-menu,
   .sp-menu > * {
     animation: none;
+  }
+}
+
+@keyframes sp-menu-drop-outer {
+  from {
+    transform: translateY(-100%);
+  }
+  to {
+    transform: none;
+  }
+}
+
+@keyframes sp-menu-drop-inner {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: none;
+  }
+}
+
+@keyframes sp-menu-lift-outer {
+  from {
+    transform: none;
+  }
+  to {
+    transform: translateY(-100%);
+  }
+}
+
+@keyframes sp-menu-lift-inner {
+  from {
+    transform: none;
+  }
+  to {
+    transform: translateY(100%);
   }
 }
 
@@ -517,15 +568,6 @@ table:focus-visible {
   }
   to {
     clip-path: inset(0 0 0 0);
-  }
-}
-
-@keyframes sp-menu-lift {
-  from {
-    clip-path: inset(0 0 0 0);
-  }
-  to {
-    clip-path: inset(0 0 100% 0);
   }
 }
 
