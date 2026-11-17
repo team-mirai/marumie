@@ -32,6 +32,7 @@ export default function PartyHeadingSection({
 }: PartyHeadingSectionProps) {
   // 取得に失敗したときは 0 円と区別できるよう、金額を出さない
   const summary = friendly ? calculateSankeyFinancialSummary(friendly) : null;
+  const yearOptions = years.map((y) => ({ year: y, href: `/o/${slug}/${y}` }));
 
   return (
     <MistHeadingCard
@@ -46,14 +47,13 @@ export default function PartyHeadingSection({
       title={`${organizationName}の収支`}
       subtitle={`${year}年`}
       updatedAt={updatedAt}
-      yearSwitch={
-        <YearSegment
-          years={years.map((y) => ({ year: y, href: `/o/${slug}/${y}` }))}
-          currentYear={year}
-        />
-      }
+      yearSwitch={{
+        sp: <YearSegment years={yearOptions} currentYear={year} />,
+        pc: <YearSegment years={yearOptions} currentYear={year} tone="plain" />,
+      }}
     >
       <AmountSummary
+        darkTopRule
         items={[
           { label: "収入総額", color: "#2AA693", amount: summary?.income ?? null },
           { label: "支出総額", color: "#DC2626", amount: summary?.expense ?? null },
