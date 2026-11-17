@@ -29,6 +29,7 @@ let usecase: DeletePoliticianUsecase;
 beforeEach(() => {
   repository = { findAll: jest.fn(), findById: jest.fn(), save: jest.fn(),
     setResearchFundPublic: jest.fn(),
+    saveProfile: jest.fn(),
     setPhotoPath: jest.fn(),
     delete: jest.fn(),
   };

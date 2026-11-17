@@ -106,9 +106,9 @@ const profile = {
 };
 
 describe("savePoliticianProfile（担当の議員室もプロフィールを編集できる。#2031）", () => {
-  let save: jest.SpyInstance;
+  let saveProfile: jest.SpyInstance;
   beforeEach(() => {
-    save = jest.spyOn(PrismaPoliticianRepository.prototype, "save").mockResolvedValue();
+    saveProfile = jest.spyOn(PrismaPoliticianRepository.prototype, "saveProfile").mockResolvedValue();
   });
 
   it("担当の議員の research_fund ユーザーはプロフィールを保存でき、氏名・スラッグ・当選日・所属は変わらない", async () => {
@@ -124,13 +124,7 @@ describe("savePoliticianProfile（担当の議員室もプロフィールを編�
         politicalOrganizationId: "9",
       } as typeof profile),
     ).resolves.toEqual({ success: true, cacheWarning: null });
-    expect(save).toHaveBeenCalledWith("1", {
-      name: "議員名",
-      slug: "test-member",
-      termStart: "2026-02-08",
-      politicalOrganizationId: "",
-      ...profile,
-    });
+    expect(saveProfile).toHaveBeenCalledWith("1", profile);
     expect(revalidatePath).toHaveBeenCalledWith("/(auth)", "layout");
   });
 
@@ -140,7 +134,7 @@ describe("savePoliticianProfile（担当の議員室もプロフィールを編�
     await expect(savePoliticianProfile("2", profile)).rejects.toThrow(
       "担当外の議員室のため閲覧のみです",
     );
-    expect(save).not.toHaveBeenCalled();
+    expect(saveProfile).not.toHaveBeenCalled();
   });
 
   it("admin は担当に関係なく保存できる", async () => {
@@ -148,7 +142,7 @@ describe("savePoliticianProfile（担当の議員室もプロフィールを編�
     (getCurrentUser as jest.Mock).mockResolvedValue(userWith(["admin"]));
 
     await expect(savePoliticianProfile("1", profile)).resolves.toEqual({ success: true, cacheWarning: null });
-    expect(save).toHaveBeenCalled();
+    expect(saveProfile).toHaveBeenCalled();
   });
 
   it.each([[["political_fund"]], [[]]] as const)(
@@ -159,7 +153,7 @@ describe("savePoliticianProfile（担当の議員室もプロフィールを編�
       await expect(savePoliticianProfile("1", profile)).rejects.toThrow(
         "この機能を使う権限がありません",
       );
-      expect(save).not.toHaveBeenCalled();
+      expect(saveProfile).not.toHaveBeenCalled();
     },
   );
 });

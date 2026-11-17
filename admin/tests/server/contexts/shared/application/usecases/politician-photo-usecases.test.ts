@@ -32,6 +32,7 @@ beforeEach(() => {
     findAll: jest.fn(),
     findById: jest.fn().mockResolvedValue(politician),
     save: jest.fn(),
+    saveProfile: jest.fn(),
     setResearchFundPublic: jest.fn(),
     setPhotoPath: jest.fn(),
     delete: jest.fn(),

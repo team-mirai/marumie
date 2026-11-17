@@ -1,6 +1,10 @@
 import "server-only";
 import { Prisma, type PrismaClient } from "@prisma/client";
-import type { Politician, PoliticianInput } from "@/shared/models/politician";
+import type {
+  Politician,
+  PoliticianInput,
+  PoliticianProfileInput,
+} from "@/shared/models/politician";
 import type { IPoliticianRepository } from "@/server/contexts/shared/domain/repositories/politician-repository.interface";
 
 const include = {
@@ -100,6 +104,25 @@ export class PrismaPoliticianRepository implements IPoliticianRepository {
         if (error.code === "P2034")
           throw new Error("他の操作と競合しました。もう一度保存してください");
       }
+      throw new Error("議員の保存に失敗しました。もう一度お試しください");
+    }
+  }
+  async saveProfile(id: string, profile: PoliticianProfileInput) {
+    try {
+      await this.prisma.politician.update({
+        where: { id: BigInt(id) },
+        data: {
+          nameKana: profile.nameKana || null,
+          house: profile.house || null,
+          constituency: profile.constituency || null,
+          profileUrl: profile.profileUrl || null,
+          websiteUrl: profile.websiteUrl || null,
+          snsUrls: profile.snsUrls,
+        },
+      });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025")
+        throw new Error("議員が見つかりません");
       throw new Error("議員の保存に失敗しました。もう一度お試しください");
     }
   }

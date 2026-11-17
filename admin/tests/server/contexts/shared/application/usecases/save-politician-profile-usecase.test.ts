@@ -35,6 +35,7 @@ beforeEach(() => {
     findAll: jest.fn(),
     findById: jest.fn().mockResolvedValue(current),
     save: jest.fn(),
+    saveProfile: jest.fn(),
     setResearchFundPublic: jest.fn(),
     setPhotoPath: jest.fn(),
     delete: jest.fn(),
@@ -43,13 +44,10 @@ beforeEach(() => {
   usecase = new SavePoliticianProfileUsecase(repository, cacheInvalidator);
 });
 
-test("プロフィールを正規化して保存し、氏名・スラッグ・当選日・所属は保存済みの値を残す", async () => {
+test("プロフィールを正規化し、プロフィールの列だけを保存する", async () => {
   await usecase.execute("1", profile);
-  expect(repository.save).toHaveBeenCalledWith("1", {
-    name: "議員名",
-    slug: "test-member",
-    termStart: "2026-02-08",
-    politicalOrganizationId: "2",
+  expect(repository.save).not.toHaveBeenCalled();
+  expect(repository.saveProfile).toHaveBeenCalledWith("1", {
     nameKana: "ぎいんめい",
     house: "shugiin",
     constituency: "東京7区",
@@ -63,7 +61,7 @@ test("プロフィールを正規化して保存し、氏名・スラッグ・�
 test("webapp のキャッシュを消せなくても保存は成功にし、警告を返す", async () => {
   cacheInvalidator.invalidateWebappCache.mockRejectedValue(new Error("webapp down"));
   await expect(usecase.execute("1", profile)).resolves.toEqual({ cacheWarning: "webapp down" });
-  expect(repository.save).toHaveBeenCalled();
+  expect(repository.saveProfile).toHaveBeenCalled();
 });
 
 test("プロフィール以外の項目が入力に含まれていても無視する", async () => {
@@ -73,10 +71,11 @@ test("プロフィール以外の項目が入力に含まれていても無視�
     slug: "other",
     politicalOrganizationId: "",
   } as PoliticianProfileInput);
-  expect(repository.save).toHaveBeenCalledWith(
-    "1",
-    expect.objectContaining({ name: "議員名", slug: "test-member", politicalOrganizationId: "2" }),
-  );
+  const saved = repository.saveProfile.mock.calls[0][1];
+  expect(saved).not.toHaveProperty("name");
+  expect(saved).not.toHaveProperty("slug");
+  expect(saved).not.toHaveProperty("politicalOrganizationId");
+  expect(repository.save).not.toHaveBeenCalled();
 });
 
 test.each([
@@ -87,7 +86,7 @@ test.each([
   await expect(
     usecase.execute("1", { ...profile, ...invalid } as unknown as PoliticianProfileInput),
   ).rejects.toThrow();
-  expect(repository.save).not.toHaveBeenCalled();
+  expect(repository.saveProfile).not.toHaveBeenCalled();
   expect(cacheInvalidator.invalidateWebappCache).not.toHaveBeenCalled();
 });
 
@@ -95,5 +94,5 @@ test("存在しない議員・不正な ID は保存しない", async () => {
   repository.findById.mockResolvedValue(null);
   await expect(usecase.execute("1", profile)).rejects.toThrow("議員が見つかりません");
   await expect(usecase.execute("abc", profile)).rejects.toThrow("議員が見つかりません");
-  expect(repository.save).not.toHaveBeenCalled();
+  expect(repository.saveProfile).not.toHaveBeenCalled();
 });

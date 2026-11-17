@@ -11,7 +11,8 @@ import { invalidateWebappCache } from "@/server/contexts/shared/application/serv
 
 /**
  * 議員のプロフィール（ふりがな・院・選挙区・URL・SNS）だけを保存する（#2031）。
- * 担当の議員室（research_fund）が使うため、氏名・スラッグ・当選日・所属は入力に含まれていても無視し、保存済みの値を残す。
+ * 担当の議員室（research_fund）が使うため、氏名・スラッグ・当選日・所属は入力に含まれていても無視し、保存済みの値に触れない。
+ * 検証は保存済みの値と合わせた全体で行い、書き込みはプロフィールの列だけにする（取得後の admin の変更を古い値で戻さないため）。
  * 公開サイトの議員カード・議員ページに出るので、保存したら webapp のキャッシュを消す。
  */
 export class SavePoliticianProfileUsecase {
@@ -33,7 +34,7 @@ export class SavePoliticianProfileUsecase {
     const normalized = Politician.normalize(merged);
     const validation = Politician.validate(normalized);
     if (validation.status === "invalid") throw new Error(validation.errors[0].message);
-    await this.repository.save(id, normalized);
+    await this.repository.saveProfile(id, pickProfile(normalized));
     return { cacheWarning: await invalidateWebappCache(this.cacheInvalidator) };
   }
 }

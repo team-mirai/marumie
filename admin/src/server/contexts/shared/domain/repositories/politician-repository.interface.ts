@@ -1,10 +1,16 @@
 import "server-only";
-import type { Politician, PoliticianInput } from "@/shared/models/politician";
+import type {
+  Politician,
+  PoliticianInput,
+  PoliticianProfileInput,
+} from "@/shared/models/politician";
 
 export interface IPoliticianRepository {
   findAll(): Promise<Politician[]>;
   findById(id: string): Promise<Politician | null>;
   save(id: string | null, input: PoliticianInput): Promise<void>;
+  /** プロフィールの列だけを更新する。氏名・スラッグ・当選日・所属には触れない（#2031） */
+  saveProfile(id: string, profile: PoliticianProfileInput): Promise<void>;
   setResearchFundPublic(id: string, isPublic: boolean): Promise<void>;
   /** 顔写真の Storage 上のキーを付け替える。null で写真なし */
   setPhotoPath(id: string, photoPath: string | null): Promise<void>;
