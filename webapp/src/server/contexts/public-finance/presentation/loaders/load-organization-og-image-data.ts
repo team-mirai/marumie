@@ -1,5 +1,6 @@
 import "server-only";
 
+import { POLITICIAN_PHOTO_MAX_BYTES } from "@/shared/models/politician-photo";
 import type { SankeyData } from "@/types/sankey";
 import { loadOrganizationPhotoUrl } from "@/server/contexts/public-finance/presentation/loaders/load-organization-photo-url";
 import { loadOrganizations } from "@/server/contexts/public-finance/presentation/loaders/load-organizations";
@@ -34,9 +35,19 @@ export async function loadOrganizationOgImageData(
   return { displayName: organization.displayName, friendly: data.friendly, photo };
 }
 
+/** ストレージが応答しないときに、画像の生成ごと待ち続けないための上限 */
+const PHOTO_FETCH_TIMEOUT_MS = 3000;
+
+/** 代表者の顔写真を取る。取れない・時間がかかりすぎる・登録の上限（3MB）より大きいときは null（人型にする） */
 async function fetchPhoto(slug: string): Promise<Uint8Array | null> {
   const url = await loadOrganizationPhotoUrl(slug);
   if (!url) return null;
-  const response = await fetch(url, { cache: "no-store" });
-  return response.ok ? new Uint8Array(await response.arrayBuffer()) : null;
+  const response = await fetch(url, {
+    cache: "no-store",
+    signal: AbortSignal.timeout(PHOTO_FETCH_TIMEOUT_MS),
+  });
+  if (!response.ok) return null;
+  if (Number(response.headers.get("content-length") ?? 0) > POLITICIAN_PHOTO_MAX_BYTES) return null;
+  const bytes = new Uint8Array(await response.arrayBuffer());
+  return bytes.byteLength <= POLITICIAN_PHOTO_MAX_BYTES ? bytes : null;
 }
