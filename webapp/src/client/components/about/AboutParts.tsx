@@ -44,7 +44,7 @@ export function AboutSectionHeading({
       <span className="text-[13px] font-bold tracking-[0.04em] text-[#238778]">{eyebrow}</span>
       <h2
         id={id}
-        className="m-0 break-keep text-[20px] font-bold leading-[1.4] text-black [overflow-wrap:anywhere] [text-wrap:balance] min-[641px]:text-[27px]"
+        className="m-0 break-keep text-[20px] font-black leading-[1.4] text-black [overflow-wrap:anywhere] [text-wrap:balance] min-[641px]:text-[27px]"
       >
         {title}
       </h2>

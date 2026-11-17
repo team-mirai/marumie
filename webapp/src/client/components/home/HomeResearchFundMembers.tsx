@@ -227,9 +227,7 @@ export default function HomeResearchFundMembers({ members, financialYear }: Prop
                 </Link>
               </h3>
               {selected.periodLabel && (
-                <span className="text-[14px] font-semibold text-[#238778]">
-                  {selected.periodLabel}
-                </span>
+                <span className="text-[14px] font-bold text-[#238778]">{selected.periodLabel}</span>
               )}
             </div>
             <Link
@@ -308,7 +306,7 @@ export default function HomeResearchFundMembers({ members, financialYear }: Prop
                     {member.name}
                   </span>
                   {open && (
-                    <span className="truncate text-[12px] font-semibold leading-[1.4] tracking-[0.08em] text-[#0A1A17]/80">
+                    <span className="truncate text-[12px] font-bold leading-[1.4] tracking-[0.08em] text-[#0A1A17]/80">
                       調研費・{member.periodLabel ?? "準備中"}
                     </span>
                   )}
@@ -357,7 +355,7 @@ export default function HomeResearchFundMembers({ members, financialYear }: Prop
                   <ReturnNote className="-mt-1.5" />
                   {/* 更新日はカードの外（サンキー図の右下） */}
                   {member.updatedAt && (
-                    <span className="-mt-1.5 self-end text-[12px] font-semibold leading-none text-[#4B5563] tabular-nums">
+                    <span className="-mt-1.5 self-end text-[12px] font-bold leading-none text-[#4B5563] tabular-nums">
                       {member.updatedAt}
                     </span>
                   )}

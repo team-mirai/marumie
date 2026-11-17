@@ -81,7 +81,7 @@ function CardBody({ card, classes }: { card: SiteLinkCard; classes: CardClasses 
       </span>
       <span className={`flex items-end justify-between gap-4 ${classes.bottom}`}>
         <span
-          className={`text-[13px] font-semibold leading-none tracking-[0.06em] text-[#0F8472] ${classes.label}`}
+          className={`text-[13px] font-bold leading-none tracking-[0.06em] text-[#0F8472] ${classes.label}`}
         >
           {card.label}
         </span>

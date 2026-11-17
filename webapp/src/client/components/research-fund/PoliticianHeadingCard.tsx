@@ -120,7 +120,7 @@ export default function PoliticianHeadingCard({
           <span className="text-[20px] font-black leading-[1.3] tracking-[0.01em]">
             {politician.name}
           </span>
-          <span className="text-[13px] font-semibold text-[#0A1A17]/80">調研費・{period}</span>
+          <span className="text-[13px] font-bold text-[#0A1A17]/80">調研費・{period}</span>
         </span>
         {/* トップの議員カードと同じく左下に年。年が1つだけなら押せる切り替えと見分けがつくよう枠のない文字だけのタグにする */}
         <div className="col-span-full row-start-3 self-end justify-self-start">
@@ -170,7 +170,7 @@ export default function PoliticianHeadingCard({
               ))}
             </div>
             {currentIndex !== -1 && (
-              <span className="ml-2.5 text-[12px] font-semibold leading-none tabular-nums text-[#4B5563]">
+              <span className="ml-2.5 text-[12px] font-bold leading-none tabular-nums text-[#4B5563]">
                 <span aria-hidden="true">
                   {currentIndex + 1} / {nav.members.length}
                 </span>

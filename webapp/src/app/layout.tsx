@@ -6,7 +6,8 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 import Footer from "@/client/components/layout/footer/Footer";
 import Header from "@/client/components/layout/header/Header";
 
-// Noto Sans JP for Japanese text with proper weights
+// ページ全体の日本語の書体（globals.css の body で指定）。太さは v9 で読み込んでいるものだけにする。
+// 600 は読み込まない（v9 でも 600 の指定は 700 で描かれる）ので、実装では font-semibold を使わず font-bold にする
 const notoSansJP = Noto_Sans_JP({
   variable: "--font-noto-sans-jp",
   subsets: ["latin"],
