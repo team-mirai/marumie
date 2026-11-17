@@ -64,10 +64,13 @@ function MemberAmountsAndFlow({
   member,
   layout,
   others,
+  drawIn = true,
 }: {
   member: HomeResearchFundMember;
   layout: "pc" | "sp";
   others: SankeyData[];
+  /** 図を描き出しの動きで出すか。PC で議員を切り替えた後は false にし、描き終えた形で出す */
+  drawIn?: boolean;
 }) {
   return (
     <>
@@ -96,6 +99,7 @@ function MemberAmountsAndFlow({
         emptyMessage="公開中の調査研究費のデータがありません"
         // 「指を広げて拡大」はトップの 1 枚目（チームみらいの収支）の図だけに出す
         pinchHint={false}
+        initialDrawIn={drawIn}
       />
     </>
   );
@@ -132,6 +136,8 @@ function MemberDetailButton({ member }: { member: HomeResearchFundMember }) {
  */
 export default function HomeResearchFundMembers({ members, financialYear }: Props) {
   const [selectedSlug, setSelectedSlug] = useState(members[0].slug);
+  // PC で議員を切り替えたら、図を見比べやすいよう描き出しの動きなしで出す（初めて画面に入ったときだけ描き出す）
+  const [pcSwitched, setPcSwitched] = useState(false);
   // SP は複数枚を同時に開ける。最初は先頭の議員を開いておく
   const [spOpen, setSpOpen] = useState<string[]>(() => [members[0].slug]);
   // 閉じる動きの途中で、まだシートを描いている議員
@@ -181,7 +187,10 @@ export default function HomeResearchFundMembers({ members, financialYear }: Prop
                   aria-pressed={pressed}
                   aria-controls={pcDetailId}
                   aria-label={`${member.name}の調研費を下に表示`}
-                  onClick={() => setSelectedSlug(member.slug)}
+                  onClick={() => {
+                    if (member.slug !== selected.slug) setPcSwitched(true);
+                    setSelectedSlug(member.slug);
+                  }}
                   className={`relative flex w-full cursor-pointer items-center gap-2 rounded-[14px] border-0 px-3 py-2 text-left transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0F8472] ${
                     pressed
                       ? "bg-[#E2F6F3] text-[#0B0F0E] after:absolute after:right-[-37px] after:top-1/2 after:z-[3] after:h-3.5 after:w-3.5 after:-translate-y-1/2 after:rotate-45 after:rounded-[2px] after:bg-white after:content-['']"
@@ -240,7 +249,12 @@ export default function HomeResearchFundMembers({ members, financialYear }: Prop
           </div>
 
           <div className="@container flex flex-col gap-6">
-            <MemberAmountsAndFlow member={selected} layout="pc" others={allSankeys} />
+            <MemberAmountsAndFlow
+              member={selected}
+              layout="pc"
+              others={allSankeys}
+              drawIn={!pcSwitched}
+            />
             <ReturnNote className="-mt-2" />
             {/* 更新日はカードの右下。PC（1101px〜）は「詳しく」ボタンと同じ行の右端に重ねる */}
             {selected.updatedAt && (

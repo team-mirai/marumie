@@ -52,4 +52,15 @@ describe("SankeyChart", () => {
     expect(x).toBeGreaterThan(0);
     expect(x + width).toBeLessThan(1200);
   });
+
+  it("既定では画面に入るまで描き出し前（is-in なし）の形で描く", () => {
+    expect(document.querySelector(".sankey-chart")?.classList.contains("is-in")).toBe(false);
+  });
+
+  it("drawIn を false にすると最初から描き終えた形（is-in）で描く", () => {
+    const consoleError = jest.spyOn(console, "error").mockImplementation(() => {});
+    const html = renderToStaticMarkup(<SankeyChart data={DATA} drawIn={false} />);
+    consoleError.mockRestore();
+    expect(parse(html).querySelector(".sankey-chart")?.classList.contains("is-in")).toBe(true);
+  });
 });
