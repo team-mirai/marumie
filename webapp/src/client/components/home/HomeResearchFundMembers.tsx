@@ -172,7 +172,10 @@ export default function HomeResearchFundMembers({ members, financialYear }: Prop
   return (
     <>
       {/* PC：左右分割。左の名簿は約2割（最小196px）、残りを右の選んだ議員の調研費に */}
-      <div className="hidden grid-cols-[minmax(196px,1fr)_minmax(0,4.2fr)] items-start gap-x-5 min-[641px]:grid">
+      <div
+        data-reveal
+        className="hidden grid-cols-[minmax(196px,1fr)_minmax(0,4.2fr)] items-start gap-x-5 min-[641px]:grid"
+      >
         <ul
           aria-label="議員を選ぶ"
           className="sticky top-24 z-[2] m-0 flex list-none flex-col gap-0.5 rounded-[24px] bg-white p-2.5 shadow-[0_1px_2px_rgba(11,15,14,0.04)]"
@@ -272,6 +275,7 @@ export default function HomeResearchFundMembers({ members, financialYear }: Prop
       {/* SP：カードを縦に重ねたウォレット。タップしたカードを開き、その下にその議員の調研費を出す（複数枚を同時に開ける） */}
       <ul
         ref={spListRef}
+        data-reveal
         aria-label="議員を選ぶ"
         className="m-0 flex list-none flex-col p-0 pb-1 pt-1.5 min-[641px]:hidden"
       >

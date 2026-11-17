@@ -8,7 +8,7 @@ const POLICY_NOTE_URL = "https://note.com/team_mirai_jp/n/n9ec9166d0e1e";
 export default function ResearchFundIntroLinks() {
   return (
     <div className="flex flex-col gap-2">
-      <details className="group">
+      <details data-reveal className="group">
         <summary className="flex min-h-[30px] w-fit max-[640px]:min-h-11 cursor-pointer list-none items-center gap-2.5 text-[16px] font-extrabold text-[#0F8472] hover:text-[#089781] min-[641px]:text-[15px] [&::-webkit-details-marker]:hidden">
           <svg
             viewBox="0 0 24 24"
@@ -56,6 +56,7 @@ export default function ResearchFundIntroLinks() {
         href={POLICY_NOTE_URL}
         target="_blank"
         rel="noopener noreferrer"
+        data-reveal
         aria-label="チームみらいの調研費の使用方針を読む（noteが別タブで開きます）"
         className="group flex min-h-[30px] w-fit max-[640px]:min-h-11 items-center gap-2.5 text-[16px] font-extrabold text-[#0F8472] no-underline hover:text-[#089781] min-[641px]:text-[15px]"
       >

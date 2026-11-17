@@ -3,6 +3,7 @@ import Image from "next/image";
 import type { ReactNode } from "react";
 import OrganizationAvatar from "@/client/components/home/OrganizationAvatar";
 import { AboutCard } from "@/client/components/about/AboutParts";
+import RevealHeadingText from "@/client/components/common/RevealHeadingText";
 import PoliticianAvatar from "@/client/components/research-fund/PoliticianAvatar";
 import {
   type AboutPublishedCategory,
@@ -38,11 +39,14 @@ export default function AboutHeroSection({ summary, asOf }: AboutHeroSectionProp
         </span>
         <h1
           id="about-title"
+          data-reveal="mask"
           className="m-0 break-keep text-[30px] font-black leading-[1.3] tracking-[0.01em] text-black [overflow-wrap:anywhere] [text-wrap:balance] min-[641px]:text-[clamp(30px,3.5vw,42px)]"
         >
-          政党と議員のお金の流れを
-          <wbr />
-          まる見えに
+          <RevealHeadingText>
+            政党と議員のお金の流れを
+            <wbr />
+            まる見えに
+          </RevealHeadingText>
         </h1>
         <p className="m-0 max-w-[560px] text-[16px] leading-[1.9] tracking-[0.02em] text-[#374151] [text-wrap:pretty]">
           チームみらいに関するお金の流れをわかりやすく公開しています

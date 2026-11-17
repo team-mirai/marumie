@@ -54,6 +54,8 @@ export default function ResearchFundFlowSection({ data, eyebrow, updatedAt }: Pr
       title="収支の流れ"
       updatedAt={updatedAt}
       updatedAtNote={data.grantPeriodLabel ?? undefined}
+      // v9 でも議員ページの「収支の流れ」の見出しは動かさない
+      revealHeading={false}
     >
       <details className="-mt-4">
         <summary className="inline-flex cursor-pointer list-none items-center gap-1.5 py-1 max-[640px]:min-h-11 text-sm font-bold text-[#238778] hover:underline [&::-webkit-details-marker]:hidden">

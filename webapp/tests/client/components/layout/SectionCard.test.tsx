@@ -1,7 +1,7 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import SectionCard from "@/client/components/layout/SectionCard";
 
-function render(props: { updatedAt: string; updatedAtNote?: string }) {
+function render(props: { updatedAt: string; updatedAtNote?: string; revealHeading?: boolean }) {
   return renderToStaticMarkup(
     <SectionCard
       id="balance-sheet"
@@ -32,5 +32,17 @@ describe("SectionCard", () => {
 
   it("画面に入るときのフェードインの対象にする", () => {
     expect(render({ updatedAt: "" })).toMatch(/<section id="balance-sheet" data-reveal="true"/);
+  });
+
+  it("見出しは画面に入るときに下からせり上がる（v9 の mask）", () => {
+    expect(render({ updatedAt: "" })).toMatch(
+      /<h2 data-reveal="mask"[^>]*><span class="reveal-line"><span>貸借対照表<\/span><\/span><\/h2>/,
+    );
+  });
+
+  it("revealHeading を false にすると見出しは動かさない", () => {
+    const html = render({ updatedAt: "", revealHeading: false });
+    expect(html).toMatch(/<h2 class="[^"]*">貸借対照表<\/h2>/);
+    expect(html).not.toContain("reveal-line");
   });
 });

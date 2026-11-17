@@ -625,11 +625,38 @@ table:focus-visible {
   transition:
     opacity 0.7s cubic-bezier(0.2, 0.7, 0.1, 1),
     transform 0.8s cubic-bezier(0.2, 0.7, 0.1, 1);
+  /* 並んだカードに時差をつけるときは --reveal-delay を渡す */
+  transition-delay: var(--reveal-delay, 0s);
 }
 
 .reveal-armed.is-in {
   opacity: 1;
   transform: none;
+}
+
+/*
+ * セクションの見出しのせり上がり（v9 の data-hqrv="mask"）。
+ * RevealOnScroll が画面の外にある見出しにだけ reveal-mask-armed を付け、行（.reveal-line）ごとに隠して下から出す
+ */
+.reveal-mask-armed .reveal-line {
+  display: block;
+  overflow: hidden;
+  padding-bottom: 0.06em;
+  margin-bottom: -0.06em;
+}
+
+.reveal-mask-armed .reveal-line > span {
+  display: inline-block;
+  transform: translateY(105%);
+  transition: transform 1.1s cubic-bezier(0.2, 0.7, 0.1, 1);
+}
+
+.reveal-mask-armed.is-in .reveal-line > span {
+  transform: none;
+}
+
+.reveal-mask-armed .reveal-line:nth-child(2) > span {
+  transition-delay: 0.08s;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -638,10 +665,15 @@ table:focus-visible {
     transform: none;
     transition: none;
   }
+  .reveal-mask-armed .reveal-line > span {
+    transform: none;
+    transition: none;
+  }
 }
 
 @media print {
-  .reveal-armed {
+  .reveal-armed,
+  .reveal-mask-armed .reveal-line > span {
     opacity: 1;
     transform: none;
   }

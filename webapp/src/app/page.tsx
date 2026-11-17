@@ -6,6 +6,7 @@ import HomeResearchFundSection from "@/client/components/home/HomeResearchFundSe
 import HomeSectionHeading from "@/client/components/home/HomeSectionHeading";
 import OrganizationAvatar from "@/client/components/home/OrganizationAvatar";
 import MainColumn from "@/client/components/layout/MainColumn";
+import RevealOnScroll from "@/client/components/layout/RevealOnScroll";
 import { formatUpdatedAt } from "@/client/lib/format-date";
 import { loadHomePageData } from "@/server/contexts/public-finance/presentation/loaders/load-home-page-data";
 import { loadResearchFundHomeSummary } from "@/server/contexts/research-fund/presentation/loaders/load-research-fund-home-summary";
@@ -81,7 +82,7 @@ export default async function HomePage() {
             description="議員の政治団体はどこからお金を得て何に使っているか"
           />
           <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,420px),1fr))] gap-8 min-[641px]:gap-3">
-            {data.groups.map((group) => (
+            {data.groups.map((group, index) => (
               <HomeOrganizationCard
                 key={group.slug}
                 tone="group"
@@ -101,12 +102,15 @@ export default async function HomePage() {
                 // 横に並べて幅が狭くなるときは金額を小さくする
                 amountSize={data.groups.length > 1 ? "compact" : "default"}
                 headingLevel="h3"
+                // v9 と同じく、並べたカードは 0.08 秒ずつ遅れて現れる
+                revealDelaySeconds={index * 0.08}
               />
             ))}
           </div>
         </section>
       )}
       <SiteBottomBlock layout="home" notesVariant="home" />
+      <RevealOnScroll />
     </MainColumn>
   );
 }

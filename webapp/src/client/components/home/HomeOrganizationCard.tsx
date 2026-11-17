@@ -1,7 +1,7 @@
 "use client";
 import "client-only";
 import Link from "next/link";
-import { type ReactNode, useState } from "react";
+import { type CSSProperties, type ReactNode, useState } from "react";
 import AmountSummary from "@/client/components/common/AmountSummary";
 import YearSegment from "@/client/components/common/YearSegment";
 import CashFlowSection from "@/client/components/top-page/CashFlowSection";
@@ -34,6 +34,8 @@ interface HomeOrganizationCardProps {
   amountSize?: "default" | "compact";
   /** 見出しの階層。トップページに直接並べるカードは h2、「議員の政治団体」のようにセクションの中に並べるカードは h3 */
   headingLevel?: "h2" | "h3";
+  /** 画面に入るときのフェードインを遅らせる秒数。並べた政治団体のカードに時差をつける */
+  revealDelaySeconds?: number;
 }
 
 const CHEVRON_PATH = "M9 5l7 7-7 7";
@@ -56,6 +58,7 @@ export default function HomeOrganizationCard({
   defaultYear,
   amountSize = "default",
   headingLevel = "h2",
+  revealDelaySeconds = 0,
 }: HomeOrganizationCardProps) {
   const Heading = headingLevel;
   const [currentYear, setCurrentYear] = useState(defaultYear);
@@ -88,7 +91,12 @@ export default function HomeOrganizationCard({
   );
 
   return (
-    <section aria-label={title} className="mt-[18px] min-[641px]:mt-0">
+    <section
+      aria-label={title}
+      data-reveal
+      className="mt-[18px] min-[641px]:mt-0"
+      style={{ "--reveal-delay": `${revealDelaySeconds}s` } as CSSProperties}
+    >
       <div className="flex flex-col gap-[22px] rounded-[24px] bg-white pb-5 shadow-[0_0_0_1px_#DCE4E1,0_30px_50px_-34px_rgba(10,60,52,0.35)] min-[641px]:gap-6 min-[641px]:rounded-[32px] min-[641px]:p-[clamp(24px,3.6vw,48px)] min-[641px]:shadow-[0_2px_6px_rgba(11,15,14,0.06),0_8px_24px_rgba(11,15,14,0.06)]">
         {/* SP：ミストグラデーションの見出しの面（カードの上端に重ねる） */}
         <div
