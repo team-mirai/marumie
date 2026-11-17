@@ -113,7 +113,7 @@ export default function AboutFeaturesSection() {
         </span>
         <h2
           id="about-feat"
-          className="m-0 text-[20px] font-bold leading-[1.4] text-black min-[641px]:text-[27px]"
+          className="m-0 text-[20px] font-black leading-[1.4] text-black min-[641px]:text-[27px]"
         >
           これまでの収支報告書との違い
         </h2>
@@ -143,7 +143,7 @@ export default function AboutFeaturesSection() {
             <span className="font-num -mb-2 text-[clamp(44px,4.6vw,64px)] font-bold leading-none tracking-[-0.02em] text-[#30BCA7]">
               {feature.no}
             </span>
-            <h3 className="m-0 break-keep text-[20px] font-bold leading-[1.4] text-black [overflow-wrap:anywhere] [text-wrap:balance] min-[641px]:text-[26px]">
+            <h3 className="m-0 break-keep text-[20px] font-extrabold leading-[1.4] text-black [overflow-wrap:anywhere] [text-wrap:balance] min-[641px]:text-[26px]">
               {feature.title}
             </h3>
             {feature.extra}
@@ -158,7 +158,7 @@ export default function AboutFeaturesSection() {
         <span className="text-[13px] font-bold tracking-[0.04em] text-[#6B7280] min-[641px]:col-start-1">
           これまで
         </span>
-        <h3 className="m-0 -mt-1.5 text-[18px] font-bold leading-[1.4] text-black min-[641px]:col-start-1 min-[641px]:text-[20px]">
+        <h3 className="m-0 -mt-1.5 text-[18px] font-extrabold leading-[1.4] text-black min-[641px]:col-start-1 min-[641px]:text-[20px]">
           政治資金収支報告書
         </h3>
         <ul className="m-0 flex list-none flex-col gap-2 p-0 min-[641px]:col-start-1">

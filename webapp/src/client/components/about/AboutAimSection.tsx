@@ -45,7 +45,7 @@ export default function AboutAimSection({ partyHref }: AboutAimSectionProps) {
           </span>
           <h3
             id="about-new-t"
-            className="m-0 -mt-1.5 text-[18px] font-bold leading-[1.4] text-black min-[641px]:text-[20px]"
+            className="m-0 -mt-1.5 text-[18px] font-extrabold leading-[1.4] text-black min-[641px]:text-[20px]"
           >
             まる見え政治資金
           </h3>

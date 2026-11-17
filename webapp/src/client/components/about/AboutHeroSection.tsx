@@ -38,7 +38,7 @@ export default function AboutHeroSection({ summary, asOf }: AboutHeroSectionProp
         </span>
         <h1
           id="about-title"
-          className="m-0 break-keep text-[30px] font-bold leading-[1.3] tracking-[0.01em] text-black [overflow-wrap:anywhere] [text-wrap:balance] min-[641px]:text-[clamp(30px,3.5vw,42px)]"
+          className="m-0 break-keep text-[30px] font-black leading-[1.3] tracking-[0.01em] text-black [overflow-wrap:anywhere] [text-wrap:balance] min-[641px]:text-[clamp(30px,3.5vw,42px)]"
         >
           政党と議員のお金の流れを
           <wbr />

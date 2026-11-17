@@ -70,7 +70,7 @@ export default function MistHeadingCard({
               )}
             </Heading>
             {subtitle && (
-              <span className="text-[14px] font-semibold text-[#0A1A17]/80">{subtitle}</span>
+              <span className="text-[14px] font-bold text-[#0A1A17]/80">{subtitle}</span>
             )}
           </span>
           {href && (
@@ -95,7 +95,7 @@ export default function MistHeadingCard({
             </Link>
           )}
           {updatedAt && (
-            <span className="col-span-full row-start-3 hidden self-end justify-self-start text-[12px] font-semibold leading-none tracking-[0.02em] text-[#0A1A17]/80 min-[641px]:block">
+            <span className="col-span-full row-start-3 hidden self-end justify-self-start text-[12px] font-bold leading-none tracking-[0.02em] text-[#0A1A17]/80 min-[641px]:block">
               {updatedAt}
             </span>
           )}

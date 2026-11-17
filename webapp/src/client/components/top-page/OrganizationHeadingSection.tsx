@@ -107,7 +107,7 @@ export default function OrganizationHeadingSection({
             <b className="break-keep text-[18px] font-black leading-[1.3] tracking-[0.01em] [overflow-wrap:anywhere]">
               {organizationName}
             </b>
-            <span className="text-[14px] font-semibold text-[#238778]">
+            <span className="text-[14px] font-bold text-[#238778]">
               {formalName}・<span className="whitespace-nowrap">{yearLabel}</span>
             </span>
           </span>

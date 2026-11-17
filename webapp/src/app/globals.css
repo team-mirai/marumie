@@ -90,7 +90,12 @@ body {
   background: var(--background);
   background-color: #e2f6f3; /* バウンスエフェクト時の背景色 */
   color: var(--foreground);
-  /* font-family: sans-serif; */
+  /*
+   * ページ全体の書体（v9 と同じく Noto Sans JP を先頭にする）。
+   * 指定しないと OS の書体で描かれ、ヒラギノ（W3・W6 の2段）では 800・900 も W6 に頭打ちになって細く見える。
+   * Noto Sans JP は next/font で読み込むため、書体名ではなく変数で指定する（"Noto Sans JP" の名前では見つからない）
+   */
+  font-family: var(--font-noto-sans-jp), "Hiragino Kaku Gothic ProN", sans-serif;
 }
 
 /* フォーカスインジケーター - キーボードナビゲーション用のみ */

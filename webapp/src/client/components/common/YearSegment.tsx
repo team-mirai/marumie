@@ -38,7 +38,7 @@ const containerClass = (tone: "mist" | "plain") =>
   `inline-flex rounded-full p-[3px] ${CONTAINER_CLASS[tone]}`;
 
 const itemClass = (isCurrent: boolean, tone: "mist" | "plain") =>
-  `tap-44 inline-flex h-[34px] min-w-16 items-center justify-center rounded-full px-4 text-[13px] font-semibold leading-none transition-colors ${
+  `tap-44 inline-flex h-[34px] min-w-16 items-center justify-center rounded-full px-4 text-[13px] font-bold leading-none transition-colors ${
     isCurrent ? CURRENT_CLASS[tone] : "text-[#0A1A17]/80 hover:text-[#0A1A17]"
   }`;
 

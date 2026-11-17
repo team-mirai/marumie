@@ -102,7 +102,7 @@ export default function ResearchFundHighlightsSection({
               </div>
 
               <div className="flex flex-col gap-1">
-                <span className="text-lg font-bold text-gray-800">{group.title}</span>
+                <span className="text-lg font-extrabold text-gray-800">{group.title}</span>
                 <span className="whitespace-nowrap text-xl font-bold tracking-[0.01em] text-[#DC2626]">
                   -{group.amount.toLocaleString("ja-JP")}
                   <span className="text-xs font-normal text-[#4B5563]"> 円</span>
@@ -111,7 +111,7 @@ export default function ResearchFundHighlightsSection({
                   // 見た目はそのままで、押せる範囲を上下に広げる
                   <ResearchFundGroupRowsLink
                     groupId={group.id}
-                    className="-mx-1 -my-2.5 inline-block self-start px-1 py-2.5 text-sm font-bold text-[#238778] underline underline-offset-2 hover:no-underline"
+                    className="-mx-1 -my-2.5 inline-block self-start px-1 py-2.5 text-sm font-extrabold text-[#238778] underline underline-offset-2 hover:no-underline"
                   >
                     明細{group.count}件を見る
                   </ResearchFundGroupRowsLink>

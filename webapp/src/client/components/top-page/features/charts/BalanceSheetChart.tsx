@@ -45,11 +45,11 @@ export default function BalanceSheetChart({ data }: BalanceSheetChartProps) {
               <span
                 key={`part-${index}-${part}`}
                 className={isNumber ? "text-lg font-bold" : "text-xs font-medium"}
-                style={{
-                  fontFamily: isNumber
-                    ? "'SF Pro', -apple-system, system-ui, sans-serif"
-                    : "'Noto Sans JP', sans-serif",
-                }}
+                style={
+                  isNumber
+                    ? { fontFamily: "'SF Pro', -apple-system, system-ui, sans-serif" }
+                    : undefined
+                }
               >
                 {part}
               </span>
@@ -114,9 +114,7 @@ export default function BalanceSheetChart({ data }: BalanceSheetChartProps) {
     <div
       className={`text-center ${item.isDebtExcess ? "text-red-600" : "text-black"} ${className}`}
     >
-      <span className="text-sm font-bold" style={{ fontFamily: "'Noto Sans JP', sans-serif" }}>
-        {item.name}{" "}
-      </span>
+      <span className="text-sm font-bold">{item.name} </span>
       {renderFormattedAmount(item.value, item.isDebtExcess)}
     </div>
   );
@@ -126,7 +124,6 @@ export default function BalanceSheetChart({ data }: BalanceSheetChartProps) {
     <div className={`flex flex-col items-center ${className}`}>
       <div
         className={`text-base font-bold mb-1 ${item.isDebtExcess ? "text-red-600" : "text-black"}`}
-        style={{ fontFamily: "'Noto Sans JP', sans-serif" }}
       >
         {item.name}
       </div>

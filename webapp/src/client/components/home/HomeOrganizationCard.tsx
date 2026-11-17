@@ -81,7 +81,7 @@ export default function HomeOrganizationCard({
     </Heading>
   );
   const sub = (
-    <span className="text-[14px] font-semibold text-[#238778]">
+    <span className="text-[14px] font-bold text-[#238778]">
       {subtitle ? `${subtitle}・` : ""}
       <span className="whitespace-nowrap">{yearLabel}</span>
     </span>
@@ -162,7 +162,7 @@ export default function HomeOrganizationCard({
             ]}
           />
           {hasNoFlow ? (
-            <p className="m-0 text-[13px] font-semibold text-[#5B6470]">
+            <p className="m-0 text-[13px] font-bold text-[#5B6470]">
               {yearLabel}の収支の流れの図は準備中です
             </p>
           ) : (

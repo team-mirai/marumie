@@ -46,7 +46,7 @@ function CheckRow({
       </span>
       <span
         className={`flex-1 text-left text-[13px] leading-[1.54] text-[#47474C] ${
-          checked ? "font-semibold" : "font-medium"
+          checked ? "font-bold" : "font-medium"
         }`}
       >
         {label}
