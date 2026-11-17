@@ -183,7 +183,7 @@ export default function HeaderClient({ organizations, politiciansByYear }: Heade
           <div
             className={`flex items-center gap-2 xl:h-16 ${
               isSpMenuOpen
-                ? "max-[640px]:flex-none max-[640px]:bg-white max-[640px]:px-[22px] max-[640px]:pt-6 max-[640px]:pb-3 max-[640px]:shadow-[0_1px_0_#DCE4E1]"
+                ? "max-[640px]:flex-none max-[640px]:bg-white max-[640px]:px-[1.375rem] max-[640px]:pt-6 max-[640px]:pb-3 max-[640px]:shadow-[0_1px_0_#DCE4E1]"
                 : ""
             }`}
           >
