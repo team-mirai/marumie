@@ -82,6 +82,7 @@ const isPlainClick = (event: MouseEvent) =>
 export default function YearSegment(props: YearSegmentProps) {
   const { currentYear, years, tone = "mist" } = props;
   const pillRef = useRef<HTMLSpanElement>(null);
+  const continuedSlideRef = useRef<Animation | null>(null);
   // リンクを押してから遷移先のページが出るまで、押した年に丸を寄せておく
   const [pending, setPending] = useState<{ from: number; to: number } | null>(null);
   const shownYear = pending?.from === currentYear ? pending.to : currentYear;
@@ -101,6 +102,7 @@ export default function YearSegment(props: YearSegmentProps) {
       { duration: SLIDE_DURATION_MS, easing: SLIDE_EASING },
     );
     animation.currentTime = elapsed;
+    continuedSlideRef.current = animation;
   }, []); // マウント時に一度だけ確かめる
 
   const pill =
@@ -143,6 +145,15 @@ export default function YearSegment(props: YearSegmentProps) {
     if (year === shownYear || !isPlainClick(event)) return;
     const fromIndex = years.findIndex((option) => option.year === shownYear);
     pendingSlide = { yearsKey, fromIndex, toYear: year, startedAt: performance.now() };
+    // 続きを再生している途中で押し直したら、今の位置で止めてからそこを起点に滑らせる
+    const continuedSlide = continuedSlideRef.current;
+    const pillElement = pillRef.current;
+    if (continuedSlide?.playState === "running" && pillElement) {
+      pillElement.style.transform = getComputedStyle(pillElement).transform;
+      continuedSlide.cancel();
+      pillElement.getBoundingClientRect();
+    }
+    continuedSlideRef.current = null;
     setPending({ from: currentYear, to: year });
   };
 
