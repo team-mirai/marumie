@@ -314,7 +314,9 @@ export default function HeaderClient({ organizations, politiciansByYear }: Heade
 
           {megaMenu && (
             <div className="hidden min-[1080px]:block">
+              {/* 開いたまま別のメニューに切り替えたら作り直し、幕が下りる動きを初めから流す */}
               <HeaderMegaMenu
+                key={megaMenu}
                 id={MEGA_MENU_ID}
                 menu={megaMenu}
                 organizations={organizationItems}

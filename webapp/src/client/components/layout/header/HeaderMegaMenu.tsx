@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { CSSProperties } from "react";
 import HeaderYearPills from "@/client/components/layout/header/HeaderYearPills";
 import PoliticianInitialAvatar from "@/client/components/layout/header/PoliticianInitialAvatar";
 import type {
@@ -14,7 +15,18 @@ interface HeaderMegaMenuProps {
   onNavigate: () => void;
 }
 
-/** PC のナビの「政党・政治団体▼」「調研費▼」で開くメニュー（デザイン v8 のメガメニュー。調研費の見出しと年のピルは v9）。 */
+/** 調研費の議員を並べる列数。項目が入ってくる時差を行ごとにそろえるのに使う */
+const POLITICIAN_COLUMNS = 3;
+
+/** 開くときに項目が入ってくる順番（globals.css の `.mega-menu-item` が時差に使う） */
+function itemOrderStyle(order: number): CSSProperties {
+  return { "--mega-menu-item-order": order } as CSSProperties;
+}
+
+/**
+ * PC のナビの「政党・政治団体▼」「調研費▼」で開くメニュー（デザイン v8 のメガメニュー。調研費の見出しと年のピルは v9）。
+ * 開くときの動き（幕が下りる・項目が順に入る。v9）は globals.css の `.mega-menu` に置く。
+ */
 export default function HeaderMegaMenu({
   id,
   menu,
@@ -25,15 +37,16 @@ export default function HeaderMegaMenu({
   return (
     <div
       id={id}
-      className="mt-3 max-h-[calc(100vh-140px)] overflow-y-auto border-t border-[#EEF0EF] px-4 pt-7 pb-5"
+      className="mega-menu mt-3 max-h-[calc(100vh-140px)] overflow-y-auto border-t border-[#EEF0EF] px-4 pt-7 pb-5"
     >
       {menu === "pf" ? (
         <section aria-label="政党・政治団体" className="flex flex-col gap-1">
           <ul>
-            {organizations.map((organization) => (
+            {organizations.map((organization, index) => (
               <li
                 key={organization.slug}
-                className="flex items-center gap-5 border-b border-[#F3F4F6] py-3"
+                style={itemOrderStyle(index)}
+                className="mega-menu-item flex items-center gap-5 border-b border-[#F3F4F6] py-3"
               >
                 <Link
                   href={organization.href}
@@ -71,7 +84,8 @@ export default function HeaderMegaMenu({
           <Link
             href="/#home-rf"
             onClick={onNavigate}
-            className="inline-flex items-center gap-1 self-start text-[13px] font-bold tracking-[0.04em] text-[#374151] hover:text-[#0F8472]"
+            style={itemOrderStyle(0)}
+            className="mega-menu-item inline-flex items-center gap-1 self-start text-[13px] font-bold tracking-[0.04em] text-[#374151] hover:text-[#0F8472]"
           >
             所属議員の調研費｜毎月支給される公費を何に使ったか
             <svg
@@ -89,8 +103,12 @@ export default function HeaderMegaMenu({
             </svg>
           </Link>
           <ul className="grid grid-cols-3 gap-x-6 gap-y-2">
-            {politicians.map((politician) => (
-              <li key={politician.slug} className="flex min-w-0 items-center gap-3">
+            {politicians.map((politician, index) => (
+              <li
+                key={politician.slug}
+                style={itemOrderStyle(1 + Math.floor(index / POLITICIAN_COLUMNS))}
+                className="mega-menu-item flex min-w-0 items-center gap-3"
+              >
                 <Link
                   href={politician.href}
                   onClick={onNavigate}
