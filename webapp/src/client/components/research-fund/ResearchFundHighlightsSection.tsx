@@ -149,7 +149,7 @@ export default function ResearchFundHighlightsSection({
               key={group.id}
               groupId={group.id}
               // ヘッダーが固定表示なので、ページ内リンクで飛んだときに行が隠れないよう上を空ける。
-              className="grid scroll-mt-[120px] grid-cols-[auto_minmax(0,1fr)] gap-x-3.5 gap-y-3 py-7 max-[640px]:border-t max-[640px]:border-[#DCE4E1] max-[640px]:first-of-type:border-t-2 max-[640px]:first-of-type:border-[#0A1A17] max-[640px]:last-of-type:pb-1 min-[641px]:grid-cols-[72px_minmax(0,1fr)_minmax(0,1.15fr)_176px] min-[641px]:gap-x-7 min-[641px]:gap-y-2 min-[641px]:border-b min-[641px]:border-[#DCE4E1] min-[641px]:pt-[34px] min-[641px]:pb-8"
+              className="grid scroll-mt-[120px] grid-cols-[auto_minmax(0,1fr)] gap-x-3.5 gap-y-3 py-7 max-[641px]:border-t max-[641px]:border-[#DCE4E1] max-[641px]:first-of-type:border-t-2 max-[641px]:first-of-type:border-[#0A1A17] max-[641px]:last-of-type:pb-1 min-[641px]:grid-cols-[72px_minmax(0,1fr)_minmax(0,1.15fr)_176px] min-[641px]:gap-x-7 min-[641px]:gap-y-2 min-[641px]:border-b min-[641px]:border-[#DCE4E1] min-[641px]:pt-[34px] min-[641px]:pb-8"
             >
               <span
                 aria-hidden="true"
@@ -161,17 +161,17 @@ export default function ResearchFundHighlightsSection({
               </span>
 
               <div className={`${SP_FLAT} min-[641px]:gap-2.5`}>
-                <span className="font-num text-[13px] font-medium leading-normal tracking-[0.01em] text-[#4B5563] tabular-nums max-[640px]:order-1 max-[640px]:self-center">
+                <span className="font-num text-[13px] font-medium leading-normal tracking-[0.01em] text-[#4B5563] tabular-nums max-[641px]:order-1 max-[641px]:self-center">
                   {formatPeriod(group.period)}
                 </span>
                 <h3
-                  className={`${SP_FULL} m-0 break-keep text-[19px] font-bold leading-[1.4] text-gray-800 [overflow-wrap:anywhere] max-[640px]:order-2 min-[641px]:text-[21px] min-[641px]:leading-[1.45]`}
+                  className={`${SP_FULL} m-0 break-keep text-[19px] font-bold leading-[1.4] text-gray-800 [overflow-wrap:anywhere] max-[641px]:order-2 min-[641px]:text-[21px] min-[641px]:leading-[1.45]`}
                 >
                   <span className="sr-only">用途{index + 1} </span>
                   {group.title}
                 </h3>
                 {group.categories.length > 0 && (
-                  <div className={`${SP_FULL} flex flex-wrap gap-1.5 max-[640px]:order-4`}>
+                  <div className={`${SP_FULL} flex flex-wrap gap-1.5 max-[641px]:order-4`}>
                     {group.categories.map((category) => (
                       <ResearchFundCategoryPill key={category.label} category={category} />
                     ))}
@@ -181,13 +181,13 @@ export default function ResearchFundHighlightsSection({
 
               <div className={`${SP_FLAT} min-[641px]:gap-3.5`}>
                 <p
-                  className={`${SP_FULL} m-0 text-sm leading-[1.87] text-gray-800 text-pretty max-[640px]:order-5 min-[641px]:text-[15px] min-[641px]:leading-[1.9]`}
+                  className={`${SP_FULL} m-0 text-sm leading-[1.87] text-gray-800 text-pretty max-[641px]:order-5 min-[641px]:text-[15px] min-[641px]:leading-[1.9]`}
                 >
                   {group.description}
                 </p>
                 {group.outcomes.length > 0 && (
                   <div
-                    className={`${SP_FULL} flex flex-wrap gap-x-[18px] gap-y-2 max-[640px]:order-6 max-[640px]:mt-0.5`}
+                    className={`${SP_FULL} flex flex-wrap gap-x-[18px] gap-y-2 max-[641px]:order-6 max-[641px]:mt-0.5`}
                   >
                     {group.outcomes.map((outcome) =>
                       outcome.url ? (
@@ -207,7 +207,7 @@ export default function ResearchFundHighlightsSection({
                 className={`${SP_FLAT} min-[641px]:items-end min-[641px]:gap-3 min-[641px]:text-right`}
               >
                 <span
-                  className={`${SP_FULL} font-num justify-self-start whitespace-nowrap text-[26px] font-bold leading-none tracking-[0.01em] text-[#DC2626] tabular-nums max-[640px]:order-3 min-[641px]:text-[28px] min-[641px]:leading-[1.1]`}
+                  className={`${SP_FULL} font-num justify-self-start whitespace-nowrap text-[26px] font-bold leading-none tracking-[0.01em] text-[#DC2626] tabular-nums max-[641px]:order-3 min-[641px]:text-[28px] min-[641px]:leading-[1.1]`}
                 >
                   -{group.amount.toLocaleString("ja-JP")}
                   <small className="font-japanese ml-0.5 text-xs font-normal text-[#4B5563]">
@@ -217,7 +217,7 @@ export default function ResearchFundHighlightsSection({
                 {group.count > 0 && (
                   <ResearchFundGroupRowsLink
                     groupId={group.id}
-                    className={`${SP_FULL} more-link more-link-tight mr-3.5 justify-self-start whitespace-nowrap focus-visible:rounded focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#0F8472] max-[640px]:order-7 max-[640px]:mt-0.5`}
+                    className={`${SP_FULL} more-link more-link-tight mr-3.5 justify-self-start whitespace-nowrap focus-visible:rounded focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#0F8472] max-[641px]:order-7 max-[641px]:mt-0.5`}
                   >
                     明細{group.count}件を見る
                   </ResearchFundGroupRowsLink>
