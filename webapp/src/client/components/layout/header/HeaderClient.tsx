@@ -190,7 +190,25 @@ export default function HeaderClient({ organizations, politiciansByYear }: Heade
             {/* Logo and Title Section */}
             <Link
               href="/"
-              onClick={closeMenus}
+              onClick={(event) => {
+                closeMenus();
+                // トップを表示中は同じ URL への遷移になり、Next.js はスクロール位置を戻さないので、自分で先頭へ戻す
+                // 修飾キー付き（新しいタブで開くなど）はブラウザに任せる
+                const isPlainClick =
+                  event.button === 0 &&
+                  !event.metaKey &&
+                  !event.ctrlKey &&
+                  !event.shiftKey &&
+                  !event.altKey;
+                const isOnTop =
+                  window.location.pathname === "/" &&
+                  !window.location.search &&
+                  !window.location.hash;
+                if (isPlainClick && isOnTop) {
+                  event.preventDefault();
+                  window.scrollTo({ top: 0 });
+                }
+              }}
               className="flex items-center gap-2 xl:gap-4 hover:opacity-80 transition-opacity cursor-pointer"
             >
               {/* Logo */}

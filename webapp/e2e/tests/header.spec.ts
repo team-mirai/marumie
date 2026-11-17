@@ -218,6 +218,28 @@ test.describe("ヘッダー（SP）", () => {
 		await expect(lastLink).toBeFocused();
 	});
 
+	test("下部までスクロールした状態でロゴを押すと、トップの先頭が表示される", async ({ page }) => {
+		const logo = page.locator("header").getByRole("link", { name: /みらいまる見え政治資金/ });
+		const scrollToBottom = async () => {
+			await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+			await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
+		};
+
+		// トップを表示中（同じ URL への遷移）でも先頭へ戻る
+		await page.goto("/");
+		await scrollToBottom();
+		await logo.click();
+		await expect(page).toHaveURL(/\/$/);
+		await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+
+		// トップ以外のページからはトップへ移動する
+		await page.goto(ORG_URL);
+		await scrollToBottom();
+		await logo.click();
+		await expect(page).toHaveURL(/\/$/);
+		await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+	});
+
 	test.describe("動きを減らす設定", () => {
 		test.use({ reducedMotion: "reduce" });
 
