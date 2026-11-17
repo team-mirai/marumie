@@ -115,6 +115,21 @@ describe("HomeResearchFundSection", () => {
     expect(html).not.toContain('aria-label="表示する年"');
   });
 
+  it("SP の開いたカードの「詳しく見る」は政党・政治団体と同じ動きの more-link にし、開いたシートは上から滑り込ませる", () => {
+    const html = render([politician()]);
+
+    expect(html).toMatch(
+      /<a [^>]*class="more-link"[^>]*aria-label="サンプル太郎の調研費を詳しく見る"|<a [^>]*aria-label="サンプル太郎の調研費を詳しく見る"[^>]*class="more-link"/,
+    );
+    expect(html).toMatch(/data-wallet-sheet="sample-taro"[^>]*class="wallet-sheet-in /);
+  });
+
+  it("黒いピルボタンはホバーで矢印を動かす pill-arrow を付ける", () => {
+    const html = render([politician()]);
+
+    expect(html).toMatch(/<a [^>]*class="pill-arrow [^"]*"[^>]*>サンプル太郎の調研費を詳しく/);
+  });
+
   it("期間が無い議員は名前の下を「調研費・準備中」にし、かなは出さない", () => {
     const html = render([politician({ grantPeriodLabel: null })]);
 

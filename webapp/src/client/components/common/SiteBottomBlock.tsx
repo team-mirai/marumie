@@ -18,7 +18,7 @@ interface SiteBottomBlockProps {
 /**
  * 全ページの本文の末尾に置く共通の下部ブロック。
  * 「少しずつ進んでいますが…」の帯 → カード3枚 → データについて の順に並べる。
- * layout="home" はトップページ（v9）用で、上のセクションとの間を詰め、SP ではカード3枚を低くする。
+ * layout="home" はトップページ（v9）用で、上のセクションとの間を詰め、カード3枚を 1 枚ずつフェードインさせる。
  */
 export default function SiteBottomBlock({
   dataNotes,
@@ -40,7 +40,7 @@ export default function SiteBottomBlock({
       ) : (
         band
       )}
-      <SiteLinkCards compactOnSp={isHome} />
+      <SiteLinkCards staggerReveal={isHome} />
       <DataNotesSection notes={dataNotes} variant={notesVariant} />
     </>
   );
