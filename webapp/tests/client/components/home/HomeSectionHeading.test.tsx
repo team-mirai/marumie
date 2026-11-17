@@ -21,4 +21,10 @@ describe("HomeSectionHeading", () => {
     expect(className).not.toContain("font-family");
     expect(className).not.toContain("Hiragino");
   });
+
+  it("見出しは画面に入るときに下からせり上がり、説明文はフェードインする（v9 の mask）", () => {
+    expect(heading?.getAttribute("data-reveal")).toBe("mask");
+    expect(heading?.querySelector(".reveal-line > span")?.text).toBe("所属議員の調研費");
+    expect(document.querySelector("p")?.getAttribute("data-reveal")).toBe("true");
+  });
 });

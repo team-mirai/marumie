@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { CSSProperties } from "react";
 
 interface SiteLinkCard {
   title: string;
@@ -108,35 +109,51 @@ function CardBody({ card, classes }: { card: SiteLinkCard; classes: CardClasses 
   );
 }
 
+function CardLink({ card, classes }: { card: SiteLinkCard; classes: CardClasses }) {
+  const className = `${PANEL_CLASS} ${classes.panel}`;
+  return card.external ? (
+    <a
+      href={card.href}
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label={card.external.ariaLabel}
+      className={className}
+    >
+      <CardBody card={card} classes={classes} />
+    </a>
+  ) : (
+    <Link href={card.href} className={className}>
+      <CardBody card={card} classes={classes} />
+    </Link>
+  );
+}
+
 /**
  * 下部の共通ブロックのカード3枚（まる見え政治資金とは？／よくあるご質問／チームみらいについて）。
- * compactOnSp はトップページ用で、SP ではカードを低くする。
+ * compactOnSp はトップページ用で、SP ではカードを低くし、カードを 1 枚ずつ時差をつけてフェードインさせる（v9）。
+ * ほかのページはカード3枚をまとめてフェードインさせる。
  */
 export default function SiteLinkCards({ compactOnSp = false }: { compactOnSp?: boolean }) {
   const classes = compactOnSp ? COMPACT_CLASSES : NO_COMPACT_CLASSES;
-  const panelClass = `${PANEL_CLASS} ${classes.panel}`;
   return (
     <nav
-      data-reveal
+      data-reveal={compactOnSp ? undefined : true}
       aria-label="このサイトについて"
       className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,300px),1fr))] gap-[clamp(12px,1.6vw,20px)]"
     >
-      {CARDS.map((card) =>
-        card.external ? (
-          <a
+      {CARDS.map((card, index) =>
+        compactOnSp ? (
+          // フェードインはカードを包む枠で行う（カード自身の背景色の transition を上書きしないため）
+          <div
             key={card.label}
-            href={card.href}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label={card.external.ariaLabel}
-            className={panelClass}
+            data-reveal
+            className="grid"
+            style={{ "--reveal-delay": `${index * 0.08}s` } as CSSProperties}
           >
-            <CardBody card={card} classes={classes} />
-          </a>
+            <CardLink card={card} classes={classes} />
+          </div>
         ) : (
-          <Link key={card.label} href={card.href} className={panelClass}>
-            <CardBody card={card} classes={classes} />
-          </Link>
+          <CardLink key={card.label} card={card} classes={classes} />
         ),
       )}
     </nav>

@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import RevealHeadingText from "@/client/components/common/RevealHeadingText";
 
 interface SectionCardProps {
   id: string;
@@ -14,6 +15,8 @@ interface SectionCardProps {
   updatedAtNote?: string;
   /** ページの最初の見出しになるカードは h1 にする */
   headingLevel?: "h1" | "h2";
+  /** 見出しを画面に入るときに下からせり上がらせる（v9 の mask）。v9 で動かない見出し（議員ページの「収支の流れ」）だけ false にする */
+  revealHeading?: boolean;
   children: ReactNode;
 }
 
@@ -27,6 +30,7 @@ export default function SectionCard({
   updatedAt,
   updatedAtNote,
   headingLevel = "h2",
+  revealHeading = true,
   children,
 }: SectionCardProps) {
   const Heading = headingLevel;
@@ -54,8 +58,11 @@ export default function SectionCard({
           <span className="text-[13px] font-bold leading-[1.4] tracking-[0.04em] text-[#238778]">
             {eyebrow}
           </span>
-          <Heading className="m-0 break-keep text-[clamp(24px,2.8vw,36px)] font-black leading-[1.22] tracking-[0.01em] text-black [overflow-wrap:anywhere]">
-            {title}
+          <Heading
+            data-reveal={revealHeading ? "mask" : undefined}
+            className="m-0 break-keep text-[clamp(24px,2.8vw,36px)] font-black leading-[1.22] tracking-[0.01em] text-black [overflow-wrap:anywhere]"
+          >
+            {revealHeading ? <RevealHeadingText>{title}</RevealHeadingText> : title}
           </Heading>
         </div>
       </div>

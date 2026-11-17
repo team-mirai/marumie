@@ -2,6 +2,7 @@ import "server-only";
 import Image from "next/image";
 import type { ReactNode } from "react";
 import { AboutCard } from "@/client/components/about/AboutParts";
+import RevealHeadingText from "@/client/components/common/RevealHeadingText";
 
 interface Feature {
   no: string;
@@ -113,15 +114,17 @@ export default function AboutFeaturesSection() {
         </span>
         <h2
           id="about-feat"
+          data-reveal="mask"
           className="m-0 text-[20px] font-black leading-[1.4] text-black min-[641px]:text-[27px]"
         >
-          これまでの収支報告書との違い
+          <RevealHeadingText>これまでの収支報告書との違い</RevealHeadingText>
         </h2>
       </div>
 
       {FEATURES.map((feature, index) => (
         <div
           key={feature.no}
+          data-reveal
           className={`flex flex-wrap items-center gap-5 py-7 min-[641px]:gap-14 min-[641px]:py-12 ${
             index % 2 === 1 ? "flex-row-reverse" : ""
           }`}

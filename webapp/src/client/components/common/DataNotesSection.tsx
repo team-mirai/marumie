@@ -1,5 +1,6 @@
 import "server-only";
 import type { ReactNode } from "react";
+import RevealHeadingText from "@/client/components/common/RevealHeadingText";
 
 export interface DataNote {
   title: string;
@@ -72,9 +73,10 @@ export default function DataNotesSection({
       <div className="flex min-w-0 flex-col gap-2">
         <span className="text-[13px] font-extrabold text-[#0F8472]">データについて</span>
         <h2
+          data-reveal="mask"
           className={`m-0 break-keep font-black tracking-[0.01em] text-black [font-feature-settings:'palt'] [overflow-wrap:anywhere] ${TITLED_HEADING_CLASS[variant]}`}
         >
-          公開の範囲と出典
+          <RevealHeadingText>公開の範囲と出典</RevealHeadingText>
         </h2>
       </div>
       <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,480px),1fr))] gap-x-16 gap-y-10">

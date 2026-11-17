@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { NewTabIcon } from "@/client/components/common/NewTabMark";
+import RevealHeadingText from "@/client/components/common/RevealHeadingText";
 
 /** 「まる見え政治資金とは」の白いカード。画面に入るときにフェードインする */
 export function AboutCard({
@@ -23,7 +24,7 @@ export function AboutCard({
   );
 }
 
-/** セクションの小見出し（緑の小さな行）と見出し・説明文 */
+/** セクションの小見出し（緑の小さな行）と見出し・説明文。見出しは画面に入るときに下からせり上がる */
 export function AboutSectionHeading({
   id,
   eyebrow,
@@ -44,9 +45,10 @@ export function AboutSectionHeading({
       <span className="text-[13px] font-bold tracking-[0.04em] text-[#238778]">{eyebrow}</span>
       <h2
         id={id}
+        data-reveal="mask"
         className="m-0 break-keep text-[20px] font-black leading-[1.4] text-black [overflow-wrap:anywhere] [text-wrap:balance] min-[641px]:text-[27px]"
       >
-        {title}
+        <RevealHeadingText>{title}</RevealHeadingText>
       </h2>
       {children && <AboutParagraph>{children}</AboutParagraph>}
     </div>

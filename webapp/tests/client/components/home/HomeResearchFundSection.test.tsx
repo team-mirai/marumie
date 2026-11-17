@@ -57,7 +57,9 @@ describe("HomeResearchFundSection", () => {
     const html = render([politician()]);
 
     expect(html).toMatch(/<section id="home-rf" aria-labelledby="home-rf-heading"/);
-    expect(html).toMatch(/<h2 id="home-rf-heading"[^>]*>所属議員の調研費<\/h2>/);
+    expect(html).toMatch(
+      /<h2 id="home-rf-heading"[^>]*><span class="reveal-line"><span>所属議員の調研費<\/span><\/span><\/h2>/,
+    );
   });
 
   it("議員を表示順に並べ、ふりがな・院・番号・金額はカードに出さない", () => {

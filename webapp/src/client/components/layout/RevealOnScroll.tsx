@@ -4,7 +4,8 @@ import "client-only";
 import { useEffect } from "react";
 
 /**
- * 下層ページのカード（`data-reveal` を付けた要素）を、画面に入るときに控えめにフェードインさせる。
+ * カード（`data-reveal` を付けた要素）を、画面に入るときに控えめにフェードインさせる。
+ * `data-reveal="mask"` を付けた見出しは、行（RevealHeadingText）ごとに下からせり上がらせる。
  * 描画しない部品で、ページに 1 つ置く。
  * 表示した時点で画面に入っているカードと、「動きを減らす」設定のときは動かさない（最初から見せる）。
  * JS が動かないときも隠れたままにならないよう、隠すのは JS で印を付けた要素だけにする。
@@ -28,14 +29,18 @@ export default function RevealOnScroll() {
       { threshold: 0.1 },
     );
     for (const el of targets) {
-      el.classList.add("reveal-armed");
+      el.classList.add(armedClassOf(el));
       observer.observe(el);
     }
     return () => {
       observer.disconnect();
-      for (const el of targets) el.classList.remove("reveal-armed", "is-in");
+      for (const el of targets) el.classList.remove(armedClassOf(el), "is-in");
     };
   }, []);
 
   return null;
+}
+
+function armedClassOf(el: HTMLElement): string {
+  return el.dataset.reveal === "mask" ? "reveal-mask-armed" : "reveal-armed";
 }

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import RevealHeadingText from "@/client/components/common/RevealHeadingText";
 import PoliticianAvatar from "@/client/components/research-fund/PoliticianAvatar";
 
 interface OtherPolitician {
@@ -27,9 +28,10 @@ export default function OtherPoliticiansSection({ politicians }: Props) {
     >
       <h2
         id="other-politicians-heading"
+        data-reveal="mask"
         className="m-0 mb-5 text-[clamp(22px,2.4vw,30px)] font-black leading-[1.4] tracking-[0.01em] text-black"
       >
-        他の議員の調研費を見る
+        <RevealHeadingText>他の議員の調研費を見る</RevealHeadingText>
       </h2>
       <ul className="m-0 grid list-none grid-cols-2 gap-2 p-0 min-[641px]:gap-3">
         {politicians.map((politician) => (
