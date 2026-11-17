@@ -1,4 +1,15 @@
-import { countUpText, easeOutQuart, parseCountUpTarget } from "@/client/lib/count-up";
+import {
+  COUNT_UP_DURATION_MS,
+  countUpText,
+  easeOutQuart,
+  parseCountUpTarget,
+} from "@/client/lib/count-up";
+
+describe("COUNT_UP_DURATION_MS", () => {
+  it("v9 と同じ 800ms で数え終わる", () => {
+    expect(COUNT_UP_DURATION_MS).toBe(800);
+  });
+});
 
 describe("easeOutQuart", () => {
   it("始まりは 0、終わりは 1 になる", () => {

@@ -285,17 +285,18 @@ export default function SankeyChart({
         {ariaDescription}
       </p>
       <style jsx global>{`
+        /* 画面に入ったときの描き出しは v9 の「A：ワイプ（左から速く）」（.mt-sk.mt-ska-a）と同じ速さ */
         .sankey-chart .band {
           transition:
             fill-opacity 0.35s,
             opacity 0.35s cubic-bezier(0.2, 0.7, 0.1, 1),
-            clip-path 1.6s cubic-bezier(0.65, 0, 0.35, 1) 0.2s;
+            clip-path 0.8s cubic-bezier(0.3, 0.7, 0.2, 1) 0.1s;
         }
         .sankey-chart .node {
           outline: none;
           transition:
             opacity 0.35s cubic-bezier(0.2, 0.7, 0.1, 1),
-            transform 1.4s cubic-bezier(0.65, 0, 0.35, 1);
+            transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
         }
         .sankey-chart .lbl {
           transition: opacity 0.35s cubic-bezier(0.2, 0.7, 0.1, 1);
