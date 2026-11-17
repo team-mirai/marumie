@@ -22,10 +22,10 @@ test.describe("調査研究費 議員ページ", () => {
 		await expect(breadcrumbs.getByRole("link", { name: "トップ" })).toHaveAttribute("href", "/");
 		await expect(breadcrumbs.getByText("サンプル 太郎の調研費")).toBeVisible();
 
-		// 収支の流れ（ページの最初の見出し。支給総額・支出総額＋区分タブつきのサンキー）
+		// 収支の流れ（h1 は読み上げ用に別にあるので h2。支給総額・支出総額＋区分タブつきのサンキー）
 		const cashFlow = page.locator("#cash-flow");
 		await expect(cashFlow.getByText("サンプル 太郎の調研費・2026年")).toBeVisible();
-		await expect(cashFlow.getByRole("heading", { level: 1, name: "収支の流れ" })).toBeVisible();
+		await expect(cashFlow.getByRole("heading", { level: 2, name: "収支の流れ" })).toBeVisible();
 		// 期間は更新日といっしょにカードの右下に出す
 		await expect(cashFlow.getByText(/^\d{4}年\d{1,2}-\d{1,2}月分　/).first()).toBeVisible();
 		await expect(cashFlow.getByText("調研費（調査研究広報滞在費）とは")).toBeVisible();
