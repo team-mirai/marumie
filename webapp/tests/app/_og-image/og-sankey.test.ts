@@ -55,6 +55,18 @@ describe("layoutSankey（nameOnly）", () => {
     expect(texts.some((t) => /円|%/.test(t))).toBe(false);
     expect(layout.labels.flatMap((l) => l.pills)).toHaveLength(0);
   });
+
+  it("inline と同時に指定しても、金額・割合を出さない", () => {
+    const layout = layoutSankey(toSankeyFlow(data), {
+      inTitle: "収入",
+      outTitle: "支出・残高",
+      nameOnly: true,
+      inline: true,
+    });
+    const texts = layout.labels.flatMap((l) => l.texts.map((t) => t.text));
+    expect(texts.some((t) => /円|%/.test(t))).toBe(false);
+    expect(layout.labels.flatMap((l) => l.pills)).toHaveLength(0);
+  });
 });
 
 describe("fitSankeyToBox", () => {
@@ -97,5 +109,39 @@ describe("fitSankeyToBox", () => {
     );
     expect(Math.max(...rights)).toBeLessThanOrEqual(900.1);
   });
-});
 
+  it("右端の列のラベルが多くても、上へ送ったラベルが枠の上端を越えない", () => {
+    const many: SankeyData = {
+      nodes: [
+        { id: "t", label: "合計", nodeType: "total" },
+        { id: "i1", label: "寄附", nodeType: "income" },
+        { id: "e1", label: "政治活動費", nodeType: "expense" },
+        ...Array.from({ length: 20 }, (_, i) => ({
+          id: `x${i}`,
+          label: `支出の区分${i + 1}`,
+          nodeType: "expense-sub" as const,
+        })),
+      ],
+      links: [
+        { source: "i1", target: "t", value: 1000 * M },
+        { source: "t", target: "e1", value: 1000 * M },
+        ...Array.from({ length: 20 }, (_, i) => ({ source: "e1", target: `x${i}`, value: 50 * M })),
+      ],
+    };
+    const layout = layoutSankey(toSankeyFlow(many), {
+      inTitle: "収入",
+      outTitle: "支出・残高",
+      nameOnly: true,
+      labelScale: 1.3,
+    });
+    const groupBox = { x: 64, y: 186, width: 1072, height: 344 };
+    const limit = 468;
+    const { texts } = fitSankeyToBox(layout, groupBox, { labelBottomLimit: limit, labelOffset: 24 });
+    const outer = texts.filter((t) => t.text.startsWith("支出の区分"));
+    expect(outer).toHaveLength(20);
+    for (const t of outer) {
+      expect(t.y - t.fontSize * 0.6).toBeGreaterThanOrEqual(groupBox.y - 0.01);
+      expect(t.y + t.fontSize * 0.6).toBeLessThanOrEqual(limit + 0.01);
+    }
+  });
+});

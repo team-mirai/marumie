@@ -425,7 +425,8 @@ function buildSankey(flow: SankeyFlow, options: SankeyLayoutOptions, lock: Sanke
   const linesHeight = (lines: { sub: boolean }[]) =>
     lines.reduce((sum, line) => sum + (line.sub ? PLH : NLH), 0);
   // 項目名と金額を1行に並べるか。項目が1つだけの列（調研費の「公費から支給」など）は2行に分けて大きく見せる
-  const isOneLine = (lineCount: number, single: boolean) => inline && lineCount === 1 && !single;
+  const isOneLine = (lineCount: number, single: boolean) =>
+    inline && !nameOnly && lineCount === 1 && !single;
   const labelHeight = (node: ColumnNode, max: number, single: boolean) => {
     const lines = wrapNameLines(node.label, max);
     return isOneLine(lines.length, single) ? NLH : linesHeight(lines) + ALH;

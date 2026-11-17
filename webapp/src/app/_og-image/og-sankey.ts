@@ -103,12 +103,32 @@ export function fitSankeyToBox(
   const fixedL = hubCenter - minX - gapL;
   const fixedR = maxX - hubCenter - gapR;
 
+  // 右端の列のラベル。下端の上限から上へ積み上げても枠の上端を越えないよう、縮尺の上限に含める
+  const rightmost = Math.max(
+    ...layout.nodes.filter((n) => n.right).map((n) => n.x),
+    Number.NEGATIVE_INFINITY,
+  );
+  const outerKeys = new Set(
+    layout.nodes.filter((n) => n.right && n.x === rightmost).map((n) => n.key),
+  );
+  const outerLabels = layout.labels.filter((l) => outerKeys.has(l.key) && l.texts.length > 0);
+  const outerHeight = outerLabels.reduce(
+    (sum, l) =>
+      sum +
+      Math.max(...l.texts.map((t) => t.y + t.fontSize * TEXT_HALF)) -
+      Math.min(...l.texts.map((t) => t.y - t.fontSize * TEXT_HALF)),
+    0,
+  );
+  const outerRoom =
+    options.labelBottomLimit - box.y - LABEL_GAP * Math.max(outerLabels.length - 1, 0);
+
   const left = box.x;
   const right = box.x + box.width;
   const roomL = centerX - left;
   const roomR = right - centerX - options.labelOffset;
   const scale = Math.min(
     box.height / (bottom - top),
+    outerHeight > 0 ? outerRoom / outerHeight : Number.POSITIVE_INFINITY,
     roomL / (fixedL + MIN_GAP_RATIO * gapL),
     roomR / (fixedR + MIN_GAP_RATIO * gapR),
   );
@@ -162,10 +182,6 @@ export function fitSankeyToBox(
 
   // ラベル：棒からの距離は文字と同じ縮尺で保つ（帯の伸び縮みに引きずられない）
   const nodeByKey = new Map(layout.nodes.map((n) => [n.key, n]));
-  const rightmost = Math.max(
-    ...layout.nodes.filter((n) => n.right).map((n) => n.x),
-    Number.NEGATIVE_INFINITY,
-  );
   const texts: OgSankeyText[] = [];
   const outer: { node: (typeof layout.nodes)[number]; texts: OgSankeyText[] }[] = [];
   for (const label of layout.labels) {
