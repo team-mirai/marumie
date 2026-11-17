@@ -1,5 +1,5 @@
-/** 金額のカウントアップにかける時間（v9 と同じ） */
-export const COUNT_UP_DURATION_MS = 1600;
+/** 金額のカウントアップにかける時間（v9 の hqCountIn(e.target, 800) と同じ） */
+export const COUNT_UP_DURATION_MS = 800;
 
 /** 経過の割合（0〜1）を、v9 と同じ ease-out（4 乗）で進み具合に変える */
 export function easeOutQuart(progress: number): number {
