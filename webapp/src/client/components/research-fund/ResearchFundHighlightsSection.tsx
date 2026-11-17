@@ -1,6 +1,7 @@
 import "server-only";
 import Image from "next/image";
 import SectionCard from "@/client/components/layout/SectionCard";
+import PoliticianAvatar from "@/client/components/research-fund/PoliticianAvatar";
 import ResearchFundCategoryPill from "@/client/components/research-fund/ResearchFundCategoryPill";
 import {
   ResearchFundGroupRowsLink,
@@ -13,6 +14,8 @@ import type {
 
 interface Props {
   data: ResearchFundPageData;
+  /** 活用方針に添える議員の顔写真の URL。未登録なら null */
+  photoUrl: string | null;
   /** 見出しの上の小さな行（例: 「峰島侑也の調研費・2026年」） */
   eyebrow: string;
   updatedAt: string;
@@ -48,8 +51,20 @@ function StarIcon() {
   );
 }
 
-/** 活用方針と主な用途。活用方針と、支出群ごとの用途カード。 */
-export default function ResearchFundHighlightsSection({ data, eyebrow, updatedAt }: Props) {
+/**
+ * 「明細N件を見る」。トップの「詳しく見る」と同じ、下線とつながった矢印のリンク。
+ * 見た目は変えずに上下へ押せる範囲を広げる（UX監査 L57）。
+ */
+const ROWS_LINK_CLASS =
+  "relative mr-3.5 inline-flex items-center self-start whitespace-nowrap border-0 bg-transparent pb-[9px] pt-1.5 text-[14px] font-extrabold leading-[1.3] text-[#0A1A17] transition-colors before:absolute before:bottom-1 before:right-[-14px] before:h-[1.5px] before:w-[9px] before:origin-right before:rotate-[38deg] before:rounded-[1px] before:bg-current before:content-[''] after:absolute after:bottom-1 after:left-0 after:right-[-14px] after:h-[1.5px] after:rounded-[1px] after:bg-current after:content-[''] hover:text-[#0F8472] focus-visible:rounded focus-visible:text-[#0F8472] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#0F8472]";
+
+/** 活用方針と主な用途。議員の顔写真を添えた活用方針と、支出群ごとの用途カード。 */
+export default function ResearchFundHighlightsSection({
+  data,
+  photoUrl,
+  eyebrow,
+  updatedAt,
+}: Props) {
   return (
     <SectionCard
       id="highlights"
@@ -60,11 +75,23 @@ export default function ResearchFundHighlightsSection({ data, eyebrow, updatedAt
       updatedAt={updatedAt}
     >
       {data.policyComment && (
-        <div className="rounded-2xl border border-[#E5E7EB] bg-gradient-to-br from-[#E2F6F3] to-[#EEF6E2] p-6">
-          <div className="text-base font-bold text-gray-800">
-            {data.politician.name}の調研費の活用方針
+        // PC は顔写真を円形で左に、SP は写真と見出しを 1 行にして本文をその下に幅いっぱいに出す
+        <div className="grid grid-cols-[56px_minmax(0,1fr)] items-center gap-x-4 gap-y-3.5 min-[641px]:grid-cols-[88px_minmax(0,1fr)] min-[641px]:items-start min-[641px]:gap-9">
+          <PoliticianAvatar
+            photoUrl={photoUrl}
+            alt={`${data.politician.name}の写真`}
+            className="h-14 w-14 shadow-[0_0_0_3px_#fff,0_2px_8px_rgba(11,15,14,0.12)] min-[641px]:row-span-2 min-[641px]:h-[88px] min-[641px]:w-[88px]"
+          />
+          <div className="text-[16px] font-bold leading-[1.5] text-gray-800 min-[641px]:flex min-[641px]:items-center min-[641px]:gap-3 min-[641px]:text-[15px] min-[641px]:before:h-0.5 min-[641px]:before:w-6 min-[641px]:before:flex-none min-[641px]:before:rounded-[1px] min-[641px]:before:bg-[#2AA693] min-[641px]:before:content-['']">
+            <span
+              aria-hidden="true"
+              className="mb-0.5 block text-[12px] font-bold tracking-[0.14em] text-[#238778] min-[641px]:hidden"
+            >
+              POLICY
+            </span>
+            {data.politician.name}の調研費活用方針
           </div>
-          <p className="mt-2 whitespace-pre-line text-[15px] leading-[1.87] tracking-[0.01em] text-gray-800 [text-wrap:pretty]">
+          <p className="col-span-full m-0 whitespace-pre-line text-[16px] font-medium leading-[1.95] tracking-[0.02em] text-[#0A1A17] [text-wrap:pretty] min-[641px]:col-span-1 min-[641px]:col-start-2 min-[641px]:max-w-[46em] min-[641px]:text-[19px] min-[641px]:leading-[2]">
             {data.policyComment}
           </p>
         </div>
@@ -84,20 +111,7 @@ export default function ResearchFundHighlightsSection({ data, eyebrow, updatedAt
                   <StarIcon />
                   用途{index + 1}
                 </span>
-                <span className="text-xs text-[#4B5563]">
-                  {formatPeriod(group.period)}
-                  {group.count > 0 && (
-                    <>
-                      {"　"}
-                      <ResearchFundGroupRowsLink
-                        groupId={group.id}
-                        className="font-bold text-[#238778] underline underline-offset-2 hover:no-underline"
-                      >
-                        {group.count}件
-                      </ResearchFundGroupRowsLink>
-                    </>
-                  )}
-                </span>
+                <span className="text-xs text-[#4B5563]">{formatPeriod(group.period)}</span>
               </div>
 
               <div className="flex flex-col gap-1">
@@ -139,6 +153,12 @@ export default function ResearchFundHighlightsSection({ data, eyebrow, updatedAt
                     {outcome.label}：報告は準備中
                   </span>
                 ),
+              )}
+
+              {group.count > 0 && (
+                <ResearchFundGroupRowsLink groupId={group.id} className={ROWS_LINK_CLASS}>
+                  明細{group.count}件を見る
+                </ResearchFundGroupRowsLink>
               )}
             </ResearchFundHighlightCard>
           ))}

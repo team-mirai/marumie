@@ -62,6 +62,7 @@ export default async function PoliticianPage({ params }: PoliticianPageProps) {
   const hasHighlights = data.policyComment !== null || data.groups.length > 0;
   const eyebrow = `${data.politician.name}の調研費・${data.financialYear}年`;
   const pageTitle = `${data.politician.name}の調研費`;
+  const photoUrl = data.politician.hasPhoto ? politicianPhotoUrl(pathSlug) : null;
 
   // 前後の切り替え・ほかの議員は、調研費を公開中の議員だけ（非公開の議員はプレビュー中でも出さない）。
   // 取れなくても本文は出せるので、失敗したら出さないだけにする。
@@ -86,10 +87,9 @@ export default async function PoliticianPage({ params }: PoliticianPageProps) {
         <Breadcrumbs current={pageTitle} />
         <PoliticianHeadingCard
           politician={data.politician}
-          photoUrl={data.politician.hasPhoto ? politicianPhotoUrl(pathSlug) : null}
+          photoUrl={photoUrl}
           years={data.years.map((year) => ({ year, href: politicianPageHref(pathSlug, year) }))}
           currentYear={data.financialYear}
-          updatedAt={updatedAt}
           periodLabel={data.grantPeriodLabel}
           nav={nav}
         />
@@ -98,7 +98,12 @@ export default async function PoliticianPage({ params }: PoliticianPageProps) {
       {/* 用途カードと「すべての出入金」が相互にジャンプするので、その間をまとめて包む */}
       <ResearchFundCrossLinkProvider>
         {hasHighlights && (
-          <ResearchFundHighlightsSection data={data} eyebrow={eyebrow} updatedAt={updatedAt} />
+          <ResearchFundHighlightsSection
+            data={data}
+            photoUrl={photoUrl}
+            eyebrow={eyebrow}
+            updatedAt={updatedAt}
+          />
         )}
         <GradientMessageCard title="調研費もまるごと公開。意味ある使い方か、検証できるように👀">
           議員一人ひとりに支給される調研費の原資は、大切な税金。だから使わせていただいた分は1件ずつ公開し、その使用方針や主要な用途もわかりやすく伝えていくことが重要だと考えています。

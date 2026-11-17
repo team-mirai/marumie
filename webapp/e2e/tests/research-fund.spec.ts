@@ -52,7 +52,7 @@ test.describe("調査研究費 議員ページ", () => {
 			page.locator("#highlights").getByRole("heading", { name: "活用方針と主な用途" }),
 		).toBeVisible();
 		await expect(
-			page.locator("#highlights").getByText("サンプル 太郎の調研費の活用方針"),
+			page.locator("#highlights").getByText("サンプル 太郎の調研費活用方針"),
 		).toBeVisible();
 		await expect(page.getByText("タウンミーティングの開催")).toBeVisible();
 		// URL の無い成果物は「報告は準備中」と出す
@@ -124,7 +124,21 @@ test.describe("調査研究費 議員ページ", () => {
 			await page.goto(PAGE_URL);
 			const card = page.getByRole("region", { name: "議員情報" });
 
-			await expect(card.getByText("サンプル 太郎", { exact: true }).locator("visible=true")).toBeVisible();
+			// PC は「{名前}の調研費」と期間、SP は名前と「調研費・{期間}」を出し、カードの中に更新日を置かない
+			const name = label === "PC" ? "サンプル 太郎の調研費" : "サンプル 太郎";
+			await expect(card.getByText(name, { exact: true }).locator("visible=true")).toBeVisible();
+			if (label === "SP") {
+				await expect(card.getByText(/^調研費・\d{4}年/).locator("visible=true")).toBeVisible();
+				// 年が1つだけなので、押せる切り替えではなくその年だけのタグになる
+				await expect(card.getByRole("navigation", { name: "表示する年" })).toHaveCount(0);
+				// ほかの年が無い理由も読み上げで分かる
+				await expect(
+					card.getByText("2026年（2025年分の調研費はありません）").locator("visible=true"),
+				).toBeVisible();
+				// 何人目かは文字で出し、点は飾りなので押せない
+				await expect(card.getByText(/\d+ \/ 2$/)).toBeVisible();
+			}
+			await expect(card.getByText(/ 更新$/).locator("visible=true")).toHaveCount(0);
 			// シードの議員は顔写真が未登録なので人型のアイコンになる
 			await expect(
 				card.getByRole("img", { name: "サンプル 太郎の写真" }).locator("visible=true"),
@@ -247,7 +261,7 @@ test.describe("調査研究費 議員ページ", () => {
 			.filter({ hasText: "意見受付窓口の開設" });
 
 		await expect(async () => {
-			await card.getByRole("button", { name: "1件" }).click();
+			await card.getByRole("button", { name: "明細1件を見る" }).click();
 			await expect(section.getByRole("button", { name: "用途1を見る" })).toBeVisible({
 				timeout: 1_000,
 			});
@@ -477,7 +491,7 @@ test.describe("調査研究費 議員ページ", () => {
 		).toBeVisible();
 	});
 
-	test("用途カードの件数を押すと、該当行まで一覧が広がって目立つ", async ({
+	test("用途カードの「明細N件を見る」を押すと、該当行まで一覧が広がって目立つ", async ({
 		page,
 	}) => {
 		await page.goto(PAGE_URL);
@@ -488,7 +502,7 @@ test.describe("調査研究費 議員ページ", () => {
 
 		// 会場費（4/10）は先頭6件の外にある。ハイドレーション前のクリックを取りこぼさないよう押し直す。
 		await expect(async () => {
-			await card.getByRole("button", { name: "3件" }).click();
+			await card.getByRole("button", { name: "明細3件を見る" }).click();
 			await expect(section.locator('[data-flashed="true"]')).toHaveCount(3, {
 				timeout: 1_000,
 			});
@@ -509,7 +523,7 @@ test.describe("調査研究費 議員ページ", () => {
 
 		// 紐づく行（ボネクタ利用料）を件数リンクで一覧に出してから、行の「用途1」を押す。
 		await expect(async () => {
-			await card.getByRole("button", { name: "1件" }).click();
+			await card.getByRole("button", { name: "明細1件を見る" }).click();
 			await expect(section.getByRole("button", { name: "用途1を見る" })).toBeVisible({
 				timeout: 1_000,
 			});
