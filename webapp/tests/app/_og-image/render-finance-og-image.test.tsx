@@ -64,6 +64,27 @@ describe("renderFinanceOgImage", () => {
     );
   });
 
+  it("議員の調研費は、見出しの総額を「支給」「支出」にし、渡した総額を使う", async () => {
+    (ImageResponse as unknown as jest.Mock).mockClear();
+    const response = await renderFinanceOgImage({
+      key: "p/sample-taro/2026",
+      variant: "member",
+      face: { kind: "person" },
+      title: "サンプル太郎の調研費",
+      sankey: data,
+      totals: { in: 6_750_000, out: 3_260_000 },
+    });
+
+    expect(response?.status).toBe(200);
+    const card = (ImageResponse as unknown as jest.Mock).mock.calls[0][0];
+    expect(card.props.totals).toEqual([
+      expect.objectContaining({ label: "支給", yen: 6_750_000 }),
+      expect.objectContaining({ label: "支出", yen: 3_260_000 }),
+    ]);
+    expect(card.props.name).toBe("サンプル太郎");
+    expect(card.props.suffix).toBe("の調研費");
+  });
+
   it("図に描くものが無ければ null を返す（呼び出し側でトップの画像にする）", async () => {
     expect(await renderFinanceOgImage({ ...input, sankey: { nodes: [], links: [] } })).toBeNull();
   });

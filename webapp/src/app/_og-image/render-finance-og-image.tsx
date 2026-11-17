@@ -5,12 +5,12 @@ import { join } from "node:path";
 import { ImageResponse } from "next/og";
 import { calculateSankeyFinancialSummary } from "@/client/lib/sankey-financial-summary";
 import { toSankeyFlow } from "@/client/lib/sankey-flow";
-import { GREEN, RED, layoutSankey } from "@/client/lib/sankey-layout";
+import { GREEN, RED, type SankeyLayoutOptions, layoutSankey } from "@/client/lib/sankey-layout";
 import { type OgFace, OgFinanceCard, type OgHeadingVariant } from "@/app/_og-image/og-finance-card";
 import { loadOgFonts } from "@/app/_og-image/og-fonts";
 import { OG_HEIGHT, OG_WIDTH, TOP_OG_IMAGE_PATH, ogPatternIndex } from "@/app/_og-image/og-frame";
 import { type OgBox, fitSankeyToBox } from "@/app/_og-image/og-sankey";
-import type { SankeyData } from "@/types/sankey";
+import { SANKEY_UNUSED_LABEL, type SankeyData } from "@/types/sankey";
 
 /** シェア用の画像の HTTP ヘッダー。サイトのページの作り直し（5分）と同じ間隔で CDN に持たせる */
 const OG_IMAGE_HEADERS = {
@@ -18,22 +18,56 @@ const OG_IMAGE_HEADERS = {
   "Cache-Control": "public, max-age=0, s-maxage=300, stale-while-revalidate=86400",
 };
 
-/**
- * 図（帯・棒・ラベル）を収める枠。見出しの下端に少し入りこませ、入りこんだぶんの帯と棒はぼかして見出しを読めるようにする。
- * 下端は「まる見え政治資金」の文字の上まで
- */
-const SANKEY_BOX: Record<OgHeadingVariant, OgBox> = {
-  party: { x: 64, y: 170, width: 1072, height: 360 },
-  group: { x: 64, y: 186, width: 1072, height: 344 },
+interface OgChartConfig {
+  /**
+   * 図（帯・棒・ラベル）を収める枠。見出しの下端に少し入りこませ、入りこんだぶんの帯と棒はぼかして見出しを読めるようにする。
+   * 下端は「まる見え政治資金」の文字の上まで
+   */
+  box: OgBox;
+  /** 右端の列のラベルの下端の上限（右下のロゴと「まる見え政治資金」にかからない高さ） */
+  labelBottomLimit: number;
+  /** 画像は縮めて描くので、サイトより項目名を大きめに組む */
+  labelScale: number;
+  /** サイトの図と同じ組み立て方（議員ページは「支出」の下に各費目、右端に「未使用・未処理」） */
+  flow: Parameters<typeof toSankeyFlow>[1];
+  titles: Pick<SankeyLayoutOptions, "inTitle" | "outTitle">;
+  /** 見出しの右の2つの総額のラベル（左が入ってきたお金、右が使ったお金） */
+  totalLabels: [string, string];
+}
+
+const POLITICAL_FUND = {
+  flow: {},
+  titles: { inTitle: "収入", outTitle: "支出・残高" },
+  totalLabels: ["収入", "支出"],
+} satisfies Pick<OgChartConfig, "flow" | "titles" | "totalLabels">;
+
+const CHART: Record<OgHeadingVariant, OgChartConfig> = {
+  party: {
+    ...POLITICAL_FUND,
+    box: { x: 64, y: 170, width: 1072, height: 360 },
+    labelBottomLimit: 468,
+    labelScale: 1.3,
+  },
+  group: {
+    ...POLITICAL_FUND,
+    box: { x: 64, y: 186, width: 1072, height: 344 },
+    labelBottomLimit: 468,
+    labelScale: 1.3,
+  },
+  // 議員の調研費は右端の区分が多いので、区分名を大きめに組み、ラベルの下端を少し上げる
+  member: {
+    flow: { balanceLabel: SANKEY_UNUSED_LABEL, groupExpensesAs: "支出" },
+    titles: { inTitle: "支給", outTitle: "支出・未使用" },
+    totalLabels: ["支給", "支出"],
+    box: { x: 64, y: 172, width: 1072, height: 358 },
+    labelBottomLimit: 452,
+    labelScale: 1.5,
+  },
 };
-/** 右端の列のラベルの下端の上限（右下のロゴと「まる見え政治資金」にかからない高さ） */
-const LABEL_BOTTOM_LIMIT = 468;
 const LABEL_OFFSET = 24;
 /** 右端の列の棒の右端の上限（右下のロゴの左端より手前） */
 const COLUMN_RIGHT_LIMIT = 990;
 const FADE_TOP: [number, number, number] = [132, 168, 196];
-/** 画像は縮めて描くので、サイトより項目名を大きめに組む */
-const LABEL_SCALE = 1.3;
 
 interface FinanceOgImageInput {
   /** 外周の模様を決めるページのキー（例：`o/team-mirai/2026`） */
@@ -44,6 +78,11 @@ interface FinanceOgImageInput {
   title: string;
   /** サイトの「詳細の区分」の図と同じデータ */
   sankey: SankeyData;
+  /**
+   * 見出しの右の2つの総額（円）。サイトの見出しと同じ数字にする（議員ページは支給総額・支出総額）。
+   * 渡さなければ図のデータの収入と支出の合計にする
+   */
+  totals?: { in: number; out: number };
 }
 
 /** 見出しを、大きく描く名前と、小さく描く最後の「の〜」に分ける。「の」が無ければ全体を名前にする */
@@ -76,24 +115,24 @@ const readPublic = (path: string) => readFile(join(process.cwd(), "public", path
  * 図に描くものが無いときは null を返す（呼び出し側でトップの画像にする）。
  */
 export async function renderFinanceOgImage(input: FinanceOgImageInput): Promise<Response | null> {
-  const flow = toSankeyFlow(input.sankey);
+  const chart = CHART[input.variant];
+  const flow = toSankeyFlow(input.sankey, chart.flow);
   if (flow.incomes.length === 0 && flow.expenses.length === 0 && !flow.balance) return null;
   const layout = layoutSankey(flow, {
-    inTitle: "収入",
-    outTitle: "支出・残高",
+    ...chart.titles,
     nameOnly: true,
-    labelScale: LABEL_SCALE,
+    labelScale: chart.labelScale,
   });
-  const sankey = fitSankeyToBox(layout, SANKEY_BOX[input.variant], {
-    labelBottomLimit: LABEL_BOTTOM_LIMIT,
+  const sankey = fitSankeyToBox(layout, chart.box, {
+    labelBottomLimit: chart.labelBottomLimit,
     labelOffset: LABEL_OFFSET,
     columnRightLimit: COLUMN_RIGHT_LIMIT,
     fadeTop: FADE_TOP,
   });
-  const summary = calculateSankeyFinancialSummary(input.sankey);
+  const amounts = input.totals ?? summaryTotals(input.sankey);
   const totals = [
-    { label: "収入", color: GREEN, yen: summary.income },
-    { label: "支出", color: RED, yen: summary.expense },
+    { label: chart.totalLabels[0], color: GREEN, yen: amounts.in },
+    { label: chart.totalLabels[1], color: RED, yen: amounts.out },
   ];
 
   const { name, suffix } = splitOgTitle(input.title);
@@ -125,6 +164,11 @@ export async function renderFinanceOgImage(input: FinanceOgImageInput): Promise<
   // ImageResponse は描画を遅らせて行うので、失敗をここで拾えるよう描き終えてから返す
   const body = await image.arrayBuffer();
   return new Response(body, { status: 200, headers: OG_IMAGE_HEADERS });
+}
+
+function summaryTotals(sankey: SankeyData): { in: number; out: number } {
+  const summary = calculateSankeyFinancialSummary(sankey);
+  return { in: summary.income, out: summary.expense };
 }
 
 /** トップの画像（データに依存しない既定の画像）を返す */

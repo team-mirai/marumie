@@ -15,6 +15,7 @@ import ResearchFundFlowSection from "@/client/components/research-fund/ResearchF
 import ResearchFundHighlightsSection from "@/client/components/research-fund/ResearchFundHighlightsSection";
 import ResearchFundMonthlySection from "@/client/components/research-fund/ResearchFundMonthlySection";
 import { formatUpdatedAt } from "@/client/lib/format-date";
+import { shareMetadata } from "@/app/site-metadata";
 import { buildPoliticianNav, politicianPageHref } from "@/client/lib/politician-nav";
 import { politicianPhotoUrl } from "@/client/lib/politician-photo-url";
 import type { ResearchFundPoliticianCard } from "@/server/contexts/research-fund/domain/models/research-fund-politician-list";
@@ -38,13 +39,20 @@ export async function generateMetadata({ params }: PoliticianPageProps): Promise
   const page = financialYear
     ? await loadResearchFundPageByPath({ pathSlug: slug, financialYear })
     : null;
-  const data = page?.data;
+  // 見つからなければサイト名だけのタイトルとトップの画像（ルートの既定）にする
+  if (!page) return {};
+  const title = `${page.data.politician.name}の調研費`;
 
   return {
-    // 見つからなければサイト名だけのタイトル（ルートの既定）にする
-    ...(data && { title: `${data.politician.name}の調研費` }),
+    title,
+    // シェアしたときの画像は、その議員・その年の調研費の図（データが無ければ画像の側でトップの画像を返す）。
+    // プレビュー URL のページは、画像もプレビュー URL で作る（公開していない議員の画像は公開 URL から取れない）
+    ...shareMetadata({
+      url: `/p/${encodeURIComponent(slug)}/${year}/og-image`,
+      alt: `${title}（${year}年）`,
+    }),
     // プレビュー URL（調研費を「公開しない」議員のページはこれでしか開けない）は検索エンジンに載せない。
-    ...(page?.isPreview && { robots: { index: false } }),
+    ...(page.isPreview && { robots: { index: false } }),
   };
 }
 
