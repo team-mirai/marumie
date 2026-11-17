@@ -1,6 +1,7 @@
 import "server-only";
 import SiteBottomBlock from "@/client/components/common/SiteBottomBlock";
 import PartyLogo from "@/client/components/common/PartyLogo";
+import ResearchFundSurveyCard from "@/client/components/common/ResearchFundSurveyCard";
 import HomeOrganizationCard from "@/client/components/home/HomeOrganizationCard";
 import HomeResearchFundSection from "@/client/components/home/HomeResearchFundSection";
 import HomeSectionHeading from "@/client/components/home/HomeSectionHeading";
@@ -58,6 +59,11 @@ export default async function HomePage() {
         </section>
       )}
       {researchFund && <HomeResearchFundSection data={researchFund} />}
+      {/* 調研費の公開についてのアンケート。SP は上の調研費との間を、下の見出しとの間（56px）にそろえる */}
+      <ResearchFundSurveyCard
+        headingId="home-survey-heading"
+        className="-mt-[9px] pb-7 pt-[clamp(8px,1.5vw,16px)] min-[641px]:-mt-8 min-[641px]:pb-[clamp(8px,1.5vw,16px)]"
+      />
       {data && data.groups.length > 0 && (
         <section
           id="home-groups"

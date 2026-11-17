@@ -2,6 +2,7 @@ import "server-only";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import GradientMessageCard from "@/client/components/common/GradientMessageCard";
+import ResearchFundSurveyCard from "@/client/components/common/ResearchFundSurveyCard";
 import Breadcrumbs from "@/client/components/layout/Breadcrumbs";
 import MainColumn from "@/client/components/layout/MainColumn";
 import RevealOnScroll from "@/client/components/layout/RevealOnScroll";
@@ -110,6 +111,7 @@ export default async function PoliticianPage({ params }: PoliticianPageProps) {
           updatedAt={updatedAt}
         />
       </ResearchFundCrossLinkProvider>
+      <ResearchFundSurveyCard headingId="politician-survey-heading" />
       {nav && <OtherPoliticiansSection politicians={nav.others} />}
       <ResearchFundBottomBlock dataNote={data.dataNote} notesVariant="member" />
       <Breadcrumbs current={pageTitle} position="bottom" />
