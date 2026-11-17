@@ -415,6 +415,37 @@ table:focus-visible {
   }
 }
 
+/*
+ * 区分のタブ（CashFlowSection）と SP の出入金の並び順タブ（TransactionSortTabs）の下線（v9 の .mt-tabs / .mt-txsort）。
+ * 選んだタブの 3px の黒い下線が中央から横に伸びて現れる。下線はボタンの透明な下ボーダーの上に重ねるので、止まった状態の位置は変わらない
+ */
+.tab-underline {
+  transition: color 0.2s;
+}
+
+.tab-underline::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -3px;
+  height: 3px;
+  background: #000;
+  transform: scaleX(0);
+  transition: transform 0.45s cubic-bezier(0.2, 0.7, 0.1, 1);
+}
+
+.tab-underline:is([aria-selected="true"], [aria-pressed="true"])::after {
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tab-underline,
+  .tab-underline::after {
+    transition: none;
+  }
+}
+
 @keyframes more-link-redraw {
   0% {
     transform: scaleX(0);
