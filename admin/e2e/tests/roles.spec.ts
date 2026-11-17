@@ -115,6 +115,12 @@ test.describe("research_fund だけのユーザー", () => {
 		await expect(page.getByRole("button", { name: "削除" })).toHaveCount(0);
 	});
 
+	test("担当外の議員のプロフィール編集画面は開けない（#2031）", async ({ page }) => {
+		// シードの baz@example.com は担当の議員を持たないので、どの議員のプロフィールも編集できない
+		const response = await page.goto("/politicians/1/edit");
+		expect(response?.status()).toBe(404);
+	});
+
 	test("担当外の議員室は閲覧できるが、書き込み用のボタン・フォームは無効になる（#1773）", async ({ page }) => {
 		// シードの baz@example.com は担当の議員を持たないので、どの議員室も担当外になる
 		await page.goto("/politicians/1/books");

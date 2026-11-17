@@ -25,6 +25,17 @@ export interface PoliticianInput {
   snsUrls: string[];
 }
 
+/** プロフィールとして扱う項目。担当の議員室（research_fund）が編集できるのはこれだけ（#2031） */
+export const POLITICIAN_PROFILE_KEYS = [
+  "nameKana",
+  "house",
+  "constituency",
+  "profileUrl",
+  "websiteUrl",
+  "snsUrls",
+] as const satisfies readonly (keyof PoliticianInput)[];
+export type PoliticianProfileInput = Pick<PoliticianInput, (typeof POLITICIAN_PROFILE_KEYS)[number]>;
+
 export interface Politician extends PoliticianInput {
   id: string;
   politicalOrganizationName: string | null;

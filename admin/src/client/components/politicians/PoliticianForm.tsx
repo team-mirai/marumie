@@ -10,15 +10,25 @@ import {
   type Politician,
   type PoliticianInput,
 } from "@/shared/models/politician";
-import { savePolitician } from "@/server/contexts/shared/presentation/actions/manage-politician";
+import {
+  savePolitician,
+  savePoliticianProfile,
+} from "@/server/contexts/shared/presentation/actions/manage-politician";
 import { SnsUrlsField } from "@/client/components/common/SnsUrlsField";
+import { cn } from "@/client/lib";
 
+/**
+ * 議員の登録・編集フォーム。
+ * profileOnly のときは氏名・スラッグ・当選日・所属を出さず、プロフィールだけを保存する（担当の議員室の research_fund ユーザー向け。#2031）
+ */
 export function PoliticianForm({
   politician,
   organizations,
+  profileOnly = false,
 }: {
   politician?: Politician;
   organizations: { id: string; displayName: string }[];
+  profileOnly?: boolean;
 }) {
   const router = useRouter();
   const [data, setData] = useState<PoliticianInput>(
@@ -61,13 +71,29 @@ export function PoliticianForm({
             setBusy(true);
             setError(null);
             try {
-              const result = await savePolitician(politician?.id ?? null, data);
+              const result =
+                profileOnly && politician
+                  ? await savePoliticianProfile(politician.id, {
+                      nameKana: data.nameKana,
+                      house: data.house,
+                      constituency: data.constituency,
+                      profileUrl: data.profileUrl,
+                      websiteUrl: data.websiteUrl,
+                      snsUrls: data.snsUrls,
+                    })
+                  : await savePolitician(politician?.id ?? null, data);
               if (!result.success) {
                 setError(result.error);
                 toast.error(result.error);
                 return;
               }
-              toast.success(politician ? "議員を更新しました" : "議員を作成しました");
+              toast.success(
+                profileOnly
+                  ? "プロフィールを更新しました"
+                  : politician
+                    ? "議員を更新しました"
+                    : "議員を作成しました",
+              );
               router.push("/politicians");
               router.refresh();
             } catch {
@@ -84,54 +110,65 @@ export function PoliticianForm({
               {error}
             </p>
           )}
-          {(
-            [
-              { key: "name", label: "氏名", type: "text" },
-              { key: "slug", label: "スラッグ", type: "text" },
-              { key: "termStart", label: "当選日（支給の起点）", type: "date" },
-            ] as const
-          ).map((field) => (
-            <div key={field.key} className="space-y-2">
-              <Label htmlFor={field.key}>
-                {field.label} <span className="text-destructive">*</span>
-              </Label>
-              <Input
-                id={field.key}
-                type={field.type}
-                required
-                disabled={busy}
-                value={data[field.key]}
-                onChange={(event) => setData({ ...data, [field.key]: event.target.value })}
-                className="max-w-md"
-              />
-            </div>
-          ))}
-          <div className="space-y-2">
-            <Label htmlFor="organization">所属（任意）</Label>
-            <NativeSelect
-              id="organization"
-              disabled={busy}
-              value={data.politicalOrganizationId}
-              onChange={(event) =>
-                setData({ ...data, politicalOrganizationId: event.target.value })
-              }
-              className="max-w-md"
-            >
-              <option value="">無所属（政党なし）</option>
-              {organizations.map((org) => (
-                <option key={org.id} value={org.id}>
-                  {org.displayName}
-                </option>
+          {!profileOnly && (
+            <>
+              {(
+                [
+                  { key: "name", label: "氏名", type: "text" },
+                  { key: "slug", label: "スラッグ", type: "text" },
+                  {
+                    key: "termStart",
+                    label: "当選日（支給の起点）",
+                    type: "date",
+                  },
+                ] as const
+              ).map((field) => (
+                <div key={field.key} className="space-y-2">
+                  <Label htmlFor={field.key}>
+                    {field.label} <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    id={field.key}
+                    type={field.type}
+                    required
+                    disabled={busy}
+                    value={data[field.key]}
+                    onChange={(event) => setData({ ...data, [field.key]: event.target.value })}
+                    className="max-w-md"
+                  />
+                </div>
               ))}
-            </NativeSelect>
-            <Link
-              className="text-sm text-primary-active underline"
-              href="/political-organizations/new"
-            >
-              政党を新規作成
-            </Link>
-          </div>
-          <fieldset className="space-y-5 border-t border-border-soft pt-5">
+              <div className="space-y-2">
+                <Label htmlFor="organization">所属（任意）</Label>
+                <NativeSelect
+                  id="organization"
+                  disabled={busy}
+                  value={data.politicalOrganizationId}
+                  onChange={(event) =>
+                    setData({
+                      ...data,
+                      politicalOrganizationId: event.target.value,
+                    })
+                  }
+                  className="max-w-md"
+                >
+                  <option value="">無所属（政党なし）</option>
+                  {organizations.map((org) => (
+                    <option key={org.id} value={org.id}>
+                      {org.displayName}
+                    </option>
+                  ))}
+                </NativeSelect>
+                <Link
+                  className="text-sm text-primary-active underline"
+                  href="/political-organizations/new"
+                >
+                  政党を新規作成
+                </Link>
+              </div>
+            </>
+          )}
+          <fieldset className={cn("space-y-5", !profileOnly && "border-t border-border-soft pt-5")}>
             <legend className="text-sm font-bold">プロフィール（任意・公開サイトに表示）</legend>
             <div className="space-y-2">
               <Label htmlFor="nameKana">ふりがな</Label>
@@ -155,7 +192,10 @@ export function PoliticianForm({
                 disabled={busy}
                 value={data.house}
                 onChange={(event) =>
-                  setData({ ...data, house: event.target.value as PoliticianInput["house"] })
+                  setData({
+                    ...data,
+                    house: event.target.value as PoliticianInput["house"],
+                  })
                 }
                 className="max-w-md"
               >
@@ -185,7 +225,11 @@ export function PoliticianForm({
                   label: "プロフィールページ（チームみらい公式サイト）の URL",
                   placeholder: "https://team-mir.ai/member/...",
                 },
-                { key: "websiteUrl", label: "公式サイトの URL", placeholder: "https://" },
+                {
+                  key: "websiteUrl",
+                  label: "公式サイトの URL",
+                  placeholder: "https://",
+                },
               ] as const
             ).map((field) => (
               <div key={field.key} className="space-y-2">

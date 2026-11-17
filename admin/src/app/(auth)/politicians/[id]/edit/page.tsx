@@ -12,20 +12,29 @@ import {
   uploadPoliticianPhoto,
 } from "@/server/contexts/shared/presentation/actions/manage-politician";
 import { loadPoliticalOrganizationsData } from "@/server/contexts/shared/presentation/loaders/load-political-organizations-data";
+import { UserRoleModel } from "@/server/contexts/auth/domain/models/user-role";
 import { requireRolePage } from "@/server/contexts/auth/presentation/loaders/require-role-page";
+import { loadResearchFundWritePermission } from "@/server/contexts/auth/presentation/loaders/require-research-fund-writer";
 
 export default async function EditPoliticianPage({ params }: { params: Promise<{ id: string }> }) {
-  await requireRolePage("admin");
+  const user = await requireRolePage("research_fund");
   const { id } = await params;
+  // admin は全項目を編集できる。担当の議員室の research_fund ユーザーはプロフィールと顔写真だけ（#2031）
+  const isAdmin = UserRoleModel.isAdmin(user.roles);
+  const canWrite = await loadResearchFundWritePermission();
+  if (!canWrite(id)) notFound();
   const [politician, organizations] = await Promise.all([
     loadPolitician(id),
-    loadPoliticalOrganizationsData(),
+    isAdmin ? loadPoliticalOrganizationsData() : Promise.resolve([]),
   ]);
   if (!politician) notFound();
   const photoUrl = await loadPoliticianPhotoUrl(politician.photoPath);
   return (
     <div>
-      <PageHeader label="Politicians" title={`${politician.name} を編集`} />
+      <PageHeader
+        label="Politicians"
+        title={isAdmin ? `${politician.name} を編集` : `${politician.name} のプロフィールを編集`}
+      />
       <PhotoField
         label="顔写真（任意・公開サイトに表示）"
         photoUrl={photoUrl}
@@ -36,6 +45,7 @@ export default async function EditPoliticianPage({ params }: { params: Promise<{
       <PoliticianForm
         politician={politician}
         organizations={organizations.map(({ id, displayName }) => ({ id, displayName }))}
+        profileOnly={!isAdmin}
       />
     </div>
   );
