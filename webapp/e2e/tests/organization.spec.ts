@@ -69,7 +69,7 @@ test.describe("政治団体ページ", () => {
 				"href",
 				"/",
 			);
-			await expect(breadcrumbs.getByText("サンプル党の収支")).toHaveAttribute(
+			await expect(breadcrumbs.getByText("サンプル党の収支・2025年")).toHaveAttribute(
 				"aria-current",
 				"page",
 			);
@@ -90,7 +90,7 @@ test.describe("政治団体ページ", () => {
 
 			const footer = page.getByRole("navigation", { name: "パンくずリスト（ページ下部）" });
 			await expect(footer.getByRole("link", { name: "トップ" })).toHaveAttribute("href", "/");
-			await expect(footer.getByText("サンプル党の収支")).toHaveAttribute("aria-current", "page");
+			await expect(footer.getByText("サンプル党の収支・2025年")).toHaveAttribute("aria-current", "page");
 		});
 
 		test("見出しカードに収入・支出の総額と現金残高が表示される", async ({ page }) => {
@@ -312,7 +312,7 @@ test.describe("政治団体ページ", () => {
 				"href",
 				"/",
 			);
-			await expect(breadcrumbs.getByText("E2Eテスト団体の収支")).toHaveAttribute(
+			await expect(breadcrumbs.getByText("E2Eテスト団体の収支・2025年")).toHaveAttribute(
 				"aria-current",
 				"page",
 			);

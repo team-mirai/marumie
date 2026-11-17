@@ -122,7 +122,10 @@ export default async function TransactionsPage({ params, searchParams }: Transac
     const organization = data.politicalOrganizations.find((org) => org.slug === slug);
     const organizationName = organization?.displayName || "未登録の政治団体";
     const updatedAt = formatUpdatedAt(data.lastUpdatedAt ?? null);
-    const parent = { label: `${organizationName}の収支`, href: `/o/${slug}/${financialYear}` };
+    const parent = {
+      label: `${organizationName}の収支・${financialYear}年`,
+      href: `/o/${slug}/${financialYear}`,
+    };
 
     return (
       <MainColumn spacing="compact">

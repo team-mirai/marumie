@@ -2,9 +2,9 @@ import Image from "next/image";
 import Link from "next/link";
 
 interface BreadcrumbsProps {
-  /** トップとの間に挟む親ページ（例: 全件ページから見た「チームみらいの収支」） */
+  /** トップとの間に挟む親ページ（例: 全件ページから見た「チームみらいの収支・2026年」） */
   parent?: { label: string; href: string };
-  /** 末尾の、いま開いているページの名前（例: 「チームみらいの収支」） */
+  /** 末尾の、いま開いているページの名前（例: 「チームみらいの収支・2026年」） */
   current: string;
   /**
    * 置き場所。"top" はページ冒頭（ナビの下 20px に寄せる）、"bottom" はフッターのすぐ上に重ねて出すもの

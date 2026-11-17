@@ -40,10 +40,10 @@ test.describe("取引一覧ページ", () => {
 	}) => {
 		await page.goto("/o/sample-party/2026/transactions");
 
-		// パンくず「トップ › サンプル党の収支 › すべての出入金」
+		// パンくず「トップ › サンプル党の収支・2026年 › すべての出入金」
 		const breadcrumbs = page.getByRole("navigation", { name: "パンくずリスト", exact: true });
 		await expect(breadcrumbs.getByRole("link", { name: "トップ" })).toHaveAttribute("href", "/");
-		await expect(breadcrumbs.getByRole("link", { name: "サンプル党の収支" })).toHaveAttribute(
+		await expect(breadcrumbs.getByRole("link", { name: "サンプル党の収支・2026年" })).toHaveAttribute(
 			"href",
 			"/o/sample-party/2026",
 		);

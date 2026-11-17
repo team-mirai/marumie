@@ -182,7 +182,7 @@ describe("議員ページ", () => {
     const { page, breadcrumbs, title, card, flow, survey, bottom } = await render(slug);
 
     expect(page.props.spacing).toBe("compact");
-    expect(breadcrumbs.props.current).toBe("サンプル太郎の調研費");
+    expect(breadcrumbs.props.current).toBe("サンプル太郎の調研費・2026年");
     // 見出しは画面には出さず（議員カードが見出しの役）、読み上げ用に h1 を置く
     expect(title.type).toBe("h1");
     expect(title.props.children).toBe("サンプル太郎の調研費");

@@ -61,7 +61,7 @@ export default async function PoliticianTransactionsPage({
 
   const updatedAt = formatUpdatedAt(data.asOfDate ?? null);
 
-  const parentLabel = `${data.politician.name}の調研費`;
+  const parentLabel = `${data.politician.name}の調研費・${data.financialYear}年`;
   const parent = {
     label: parentLabel,
     href: `/p/${encodeURIComponent(pathSlug)}/${data.financialYear}`,
@@ -75,7 +75,7 @@ export default async function PoliticianTransactionsPage({
           id="transactions"
           iconSrc="/icons/icon-cashback.svg"
           iconLabel="Cash move icon"
-          eyebrow={`${parentLabel}・${data.financialYear}年`}
+          eyebrow={parentLabel}
           title="すべての出入金"
           updatedAt={updatedAt}
           headingLevel="h1"
