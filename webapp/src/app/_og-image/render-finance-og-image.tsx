@@ -3,6 +3,7 @@ import "server-only";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { ImageResponse } from "next/og";
+import sharp from "sharp";
 import { calculateSankeyFinancialSummary } from "@/client/lib/sankey-financial-summary";
 import { toSankeyFlow } from "@/client/lib/sankey-flow";
 import { GREEN, RED, type SankeyLayoutOptions, layoutSankey } from "@/client/lib/sankey-layout";
@@ -93,18 +94,31 @@ export function splitOgTitle(title: string): { name: string; suffix: string } {
     : { name: title, suffix: "" };
 }
 
+/** 顔写真を描く大きさの上限（px）。見出しの丸より十分大きく、data URI が重くならない大きさ */
+const PHOTO_MAX_SIZE = 512;
+
 /**
- * 顔写真の画像を img の src に渡せる data URI にする。画像の生成（satori）が読める PNG・JPEG だけを通し、
- * それ以外（WebP など）は null を返す（呼び出し側で人型にする）
+ * 顔写真の画像を img の src に渡せる data URI にする。画像の生成（satori）が読める PNG・JPEG はそのまま通し、
+ * 読めない WebP は PNG に変換する。それ以外の形式や変換に失敗したときは null を返す（呼び出し側で人型にする）
  */
-export function ogPhotoDataUri(bytes: Uint8Array): string | null {
-  const starts = (sig: number[]) => sig.every((b, i) => bytes[i] === b);
-  const mime = starts([0x89, 0x50, 0x4e, 0x47])
-    ? "image/png"
-    : starts([0xff, 0xd8, 0xff])
-      ? "image/jpeg"
-      : null;
-  return mime ? `data:${mime};base64,${Buffer.from(bytes).toString("base64")}` : null;
+export async function ogPhotoDataUri(bytes: Uint8Array): Promise<string | null> {
+  const starts = (sig: number[], offset = 0) => sig.every((b, i) => bytes[offset + i] === b);
+  const toUri = (mime: string, data: Uint8Array) =>
+    `data:${mime};base64,${Buffer.from(data).toString("base64")}`;
+  if (starts([0x89, 0x50, 0x4e, 0x47])) return toUri("image/png", bytes);
+  if (starts([0xff, 0xd8, 0xff])) return toUri("image/jpeg", bytes);
+  // RIFF....WEBP
+  if (!starts([0x52, 0x49, 0x46, 0x46]) || !starts([0x57, 0x45, 0x42, 0x50], 8)) return null;
+  try {
+    const png = await sharp(bytes)
+      .resize(PHOTO_MAX_SIZE, PHOTO_MAX_SIZE, { fit: "inside", withoutEnlargement: true })
+      .png()
+      .toBuffer();
+    return toUri("image/png", png);
+  } catch (error) {
+    console.error("og-image photo conversion error:", error);
+    return null;
+  }
 }
 
 const readPublic = (path: string) => readFile(join(process.cwd(), "public", path));

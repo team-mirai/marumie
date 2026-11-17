@@ -8,6 +8,7 @@ jest.mock("@/app/_og-image/render-finance-og-image", () => ({
 
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import sharp from "sharp";
 import { GET } from "@/app/o/[slug]/[year]/og-image/route";
 import { loadOrganizationOgImageData } from "@/server/contexts/public-finance/presentation/loaders/load-organization-og-image-data";
 import { renderFinanceOgImage } from "@/app/_og-image/render-finance-og-image";
@@ -68,6 +69,40 @@ describe("GET /o/[slug]/[year]/og-image", () => {
         title: "安野貴博の政治団体",
       }),
     );
+  });
+
+  it("WebP の顔写真は PNG に変換して見出しの丸に出す", async () => {
+    const webp = await sharp({
+      create: { width: 64, height: 64, channels: 3, background: { r: 0, g: 128, b: 255 } },
+    })
+      .webp()
+      .toBuffer();
+    loadMock.mockResolvedValue({
+      displayName: "安野貴博の政治団体",
+      friendly,
+      photo: new Uint8Array(webp),
+    });
+
+    await get("anno", "2026");
+
+    expect(renderMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        face: { kind: "photo", src: expect.stringMatching(/^data:image\/png;base64,/) },
+      }),
+    );
+  });
+
+  it("WebP の変換に失敗したら人型にする", async () => {
+    jest.spyOn(console, "error").mockImplementation(() => {});
+    loadMock.mockResolvedValue({
+      displayName: "安野貴博の政治団体",
+      friendly,
+      photo: new TextEncoder().encode("RIFF....WEBPbroken"),
+    });
+
+    await get("anno", "2026");
+
+    expect(renderMock).toHaveBeenCalledWith(expect.objectContaining({ face: { kind: "person" } }));
   });
 
   it("写真が無ければ人型にする", async () => {

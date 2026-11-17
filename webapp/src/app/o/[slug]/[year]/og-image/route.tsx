@@ -24,7 +24,7 @@ export async function GET(
     const isParty = PARTY_SLUGS.includes(slug);
     const data = await loadOrganizationOgImageData(slug, financialYear, { withPhoto: !isParty });
     if (!data) return await topOgImageResponse();
-    const photo = data.photo ? ogPhotoDataUri(data.photo) : null;
+    const photo = data.photo ? await ogPhotoDataUri(data.photo) : null;
     const image = await renderFinanceOgImage({
       key: `o/${slug}/${financialYear}`,
       variant: isParty ? "party" : "group",

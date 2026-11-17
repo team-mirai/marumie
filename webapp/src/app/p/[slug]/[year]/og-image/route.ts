@@ -22,7 +22,7 @@ export async function GET(
   try {
     const data = await loadResearchFundOgImageData(slug, financialYear);
     if (!data) return await topOgImageResponse();
-    const photo = data.photo ? ogPhotoDataUri(data.photo) : null;
+    const photo = data.photo ? await ogPhotoDataUri(data.photo) : null;
     const image = await renderFinanceOgImage({
       key: `p/${data.slug}/${financialYear}`,
       variant: "member",
