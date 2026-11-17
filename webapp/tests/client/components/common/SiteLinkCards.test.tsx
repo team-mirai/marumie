@@ -4,7 +4,7 @@ import SiteLinkCards from "@/client/components/common/SiteLinkCards";
 
 describe("SiteLinkCards", () => {
   it("トップでは、カードを 1 枚ずつ 0.08 秒の時差をつけてフェードインさせる（v9）", () => {
-    const document = parse(renderToStaticMarkup(<SiteLinkCards compactOnSp />));
+    const document = parse(renderToStaticMarkup(<SiteLinkCards staggerReveal />));
     expect(document.querySelector("nav")?.hasAttribute("data-reveal")).toBe(false);
     const wrappers = document.querySelectorAll("nav > [data-reveal]");
     expect(wrappers.map((el) => el.getAttribute("style"))).toEqual([
@@ -25,9 +25,25 @@ describe("SiteLinkCards", () => {
     expect(document.querySelectorAll("nav > a")).toHaveLength(3);
   });
 
+  it("SP では、トップでも下層ページでもカードを低くし、丸い矢印を右の中央に置く（v9）", () => {
+    for (const document of [
+      parse(renderToStaticMarkup(<SiteLinkCards staggerReveal />)),
+      parse(renderToStaticMarkup(<SiteLinkCards />)),
+    ]) {
+      for (const card of document.querySelectorAll("nav a")) {
+        const className = card.getAttribute("class") ?? "";
+        expect(className).toContain("max-[640px]:grid");
+        expect(className).toContain("max-[640px]:min-h-0");
+        const circle = card.querySelector('[aria-hidden="true"]')?.getAttribute("class") ?? "";
+        expect(circle).toContain("max-[640px]:row-span-2");
+        expect(circle).toContain("max-[640px]:h-12");
+      }
+    }
+  });
+
   it("ホバーで内側に緑の枠を出し、外側の影は残し、丸い矢印は緑の地に白い矢印にする（v9）", () => {
     for (const document of [
-      parse(renderToStaticMarkup(<SiteLinkCards compactOnSp />)),
+      parse(renderToStaticMarkup(<SiteLinkCards staggerReveal />)),
       parse(renderToStaticMarkup(<SiteLinkCards />)),
     ]) {
       for (const card of document.querySelectorAll("nav a")) {
