@@ -99,6 +99,8 @@ interface SankeyChartProps {
    * 切り替えても合計の柱の位置と大きさ、図の高さが変わらないようにする
    */
   alternatives?: SankeyData[];
+  /** 画面に入ったときに描き出しの動きを付けるか。false なら最初から描き終えた形で出す（既定は true） */
+  drawIn?: boolean;
 }
 
 /**
@@ -112,6 +114,7 @@ export default function SankeyChart({
   ariaDescription = "政治資金の収入から支出へのお金の流れを示すサンキーダイアグラムです。",
   spLayout = "tall",
   alternatives,
+  drawIn = true,
 }: SankeyChartProps) {
   // 同じページに図を複数並べても読み上げの説明が混ざらないよう、id を図ごとに分ける
   const descriptionId = useId();
@@ -148,7 +151,8 @@ export default function SankeyChart({
   const hotClass = (keys: string[]) => (isHot(keys) ? " is-hot" : "");
 
   return (
-    <div ref={ref} className={`sankey-chart${inView ? " is-in" : ""}`}>
+    // 描き出さない図は最初から描き終えた形（is-in）で描くので、伸びる・現れる動きは起きない
+    <div ref={ref} className={`sankey-chart${inView || !drawIn ? " is-in" : ""}`}>
       {/* biome-ignore lint/a11y/useSemanticElements: SVG の中では fieldset を使えないので、図全体を role="group" でまとめる */}
       <svg
         viewBox={`${layout.x} 0 ${layout.width} ${layout.height}`}

@@ -23,6 +23,8 @@ interface CashFlowSectionProps {
   emptyMessage?: string;
   /** SP で図の上に「指を広げて拡大」の案内を出すか。トップでは 1 枚目（チームみらいの収支）の図にだけ出す */
   pinchHint?: boolean;
+  /** 最初に出す図を描き出しの動きで出すか。false なら描き終えた形で出す（区分を切り替えた後の図は今どおり描き出す） */
+  initialDrawIn?: boolean;
 }
 
 const TABS = [
@@ -43,8 +45,15 @@ export default function CashFlowSection({
   chart,
   emptyMessage = "サンキー図データが取得できませんでした",
   pinchHint = true,
+  initialDrawIn = true,
 }: CashFlowSectionProps) {
   const [activeTab, setActiveTab] = useState<TabKey>("friendly");
+  // 区分を一度でも切り替えたら、その後の図は描き出しの動きで出す
+  const [tabSwitched, setTabSwitched] = useState(false);
+  const selectTab = (key: TabKey) => {
+    if (key !== activeTab) setTabSwitched(true);
+    setActiveTab(key);
+  };
   // トップページでは同じ図を複数のカードに並べるので、タブとパネルの id をカードごとに分ける
   const idPrefix = useId();
   const panelId = `${idPrefix}-panel`;
@@ -67,7 +76,7 @@ export default function CashFlowSection({
     const index = TABS.findIndex((tab) => tab.key === activeTab);
     const step = event.key === "ArrowRight" ? 1 : -1;
     const next = TABS[(index + step + TABS.length) % TABS.length].key;
-    setActiveTab(next);
+    selectTab(next);
     tabRefs.current[next]?.focus();
   };
 
@@ -92,7 +101,7 @@ export default function CashFlowSection({
               aria-selected={selected}
               aria-controls={panelId}
               tabIndex={selected ? 0 : -1}
-              onClick={() => setActiveTab(tab.key)}
+              onClick={() => selectTab(tab.key)}
               onKeyDown={handleKeyDown}
               className={`tab-underline relative -mb-px h-10 cursor-pointer max-[640px]:h-11 border-b-[3px] border-transparent text-[15px] font-bold ${
                 selected ? "text-black" : "text-[#5B6470] hover:text-black"
@@ -114,6 +123,7 @@ export default function CashFlowSection({
               data={currentData}
               {...chart}
               alternatives={alternatives}
+              drawIn={initialDrawIn || tabSwitched}
             />
           </PinchZoom>
         ) : (
