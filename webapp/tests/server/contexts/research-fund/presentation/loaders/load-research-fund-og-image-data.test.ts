@@ -76,6 +76,26 @@ describe("loadResearchFundOgImageData", () => {
     expect((await loadResearchFundOgImageData("sample-taro", 2026))?.photo).toBeNull();
   });
 
+  it("写真の取得に時間制限を付け、登録の上限（3MB）より大きい写真は写真なしにする", async () => {
+    loadResearchFundPageMock.mockResolvedValue(pageData(true, true));
+    loadPoliticianPhotoUrlMock.mockResolvedValue("https://storage.example/photo.jpg");
+    fetchMock.mockResolvedValue(new Response(new Uint8Array(3 * 1024 * 1024 + 1)));
+
+    expect((await loadResearchFundOgImageData("sample-taro", 2026))?.photo).toBeNull();
+    expect(fetchMock).toHaveBeenCalledWith(
+      "https://storage.example/photo.jpg",
+      expect.objectContaining({ signal: expect.any(AbortSignal) }),
+    );
+  });
+
+  it("写真の取得が時間切れになっても、写真なしでデータを返す", async () => {
+    loadResearchFundPageMock.mockResolvedValue(pageData(true, true));
+    loadPoliticianPhotoUrlMock.mockResolvedValue("https://storage.example/photo.jpg");
+    fetchMock.mockRejectedValue(new DOMException("timeout", "TimeoutError"));
+
+    expect((await loadResearchFundOgImageData("sample-taro", 2026))?.photo).toBeNull();
+  });
+
   it("議員・年のデータが無ければ null", async () => {
     loadResearchFundPageMock.mockResolvedValue(null);
 
