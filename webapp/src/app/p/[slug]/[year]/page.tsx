@@ -71,6 +71,7 @@ export default async function PoliticianPage({ params }: PoliticianPageProps) {
   const hasHighlights = data.policyComment !== null || data.groups.length > 0;
   const eyebrow = `${data.politician.name}の調研費・${data.financialYear}年`;
   const pageTitle = `${data.politician.name}の調研費`;
+  const breadcrumbLabel = `${pageTitle}・${data.financialYear}年`;
 
   // 前後の切り替え・ほかの議員は、調研費を公開中の議員だけ（非公開の議員はプレビュー中でも出さない）。
   // 取れなくても本文は出せるので、失敗したら出さないだけにする。
@@ -92,7 +93,7 @@ export default async function PoliticianPage({ params }: PoliticianPageProps) {
   return (
     <MainColumn spacing="compact">
       <div className="flex flex-col gap-5">
-        <Breadcrumbs current={pageTitle} />
+        <Breadcrumbs current={breadcrumbLabel} />
         <h1 className="sr-only">{pageTitle}</h1>
         <PoliticianHeadingCard
           politician={data.politician}
@@ -128,7 +129,7 @@ export default async function PoliticianPage({ params }: PoliticianPageProps) {
       <ResearchFundSurveyCard headingId="politician-survey-heading" />
       {nav && <OtherPoliticiansSection politicians={nav.others} />}
       <ResearchFundBottomBlock dataNote={data.dataNote} notesVariant="member" />
-      <Breadcrumbs current={pageTitle} position="bottom" />
+      <Breadcrumbs current={breadcrumbLabel} position="bottom" />
       <RevealOnScroll />
     </MainColumn>
   );

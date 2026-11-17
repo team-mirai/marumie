@@ -20,7 +20,7 @@ test.describe("調査研究費 議員ページ", () => {
 		// パンくず
 		const breadcrumbs = page.getByRole("navigation", { name: "パンくずリスト", exact: true });
 		await expect(breadcrumbs.getByRole("link", { name: "トップ" })).toHaveAttribute("href", "/");
-		await expect(breadcrumbs.getByText("サンプル 太郎の調研費")).toBeVisible();
+		await expect(breadcrumbs.getByText("サンプル 太郎の調研費・2026年")).toBeVisible();
 
 		// 収支の流れ（h1 は読み上げ用に別にあるので h2。支給総額・支出総額＋区分タブつきのサンキー）
 		const cashFlow = page.locator("#cash-flow");
@@ -291,11 +291,11 @@ test.describe("調査研究費 議員ページ", () => {
 	}) => {
 		await page.goto(`${PAGE_URL}/transactions`);
 
-		// パンくず「トップ › サンプル 太郎の調研費 › すべての出入金」
+		// パンくず「トップ › サンプル 太郎の調研費・2026年 › すべての出入金」
 		const breadcrumbs = page.getByRole("navigation", { name: "パンくずリスト", exact: true });
 		await expect(breadcrumbs.getByRole("link", { name: "トップ" })).toHaveAttribute("href", "/");
 		await expect(
-			breadcrumbs.getByRole("link", { name: "サンプル 太郎の調研費" }),
+			breadcrumbs.getByRole("link", { name: "サンプル 太郎の調研費・2026年" }),
 		).toHaveAttribute("href", PAGE_URL);
 		await expect(breadcrumbs.locator('[aria-current="page"]')).toHaveText("すべての出入金");
 

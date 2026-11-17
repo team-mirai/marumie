@@ -99,7 +99,7 @@ describe("OrgPage（政党ページ）", () => {
       variant: "party",
     });
     expect(sections.filter((s) => s.name === "Breadcrumbs").at(-1)?.props).toEqual({
-      current: "チームみらいの収支",
+      current: "チームみらいの収支・2026年",
       position: "bottom",
     });
   });
@@ -108,7 +108,7 @@ describe("OrgPage（政党ページ）", () => {
     const sections = await renderSections("2025");
 
     expect(sections.find((s) => s.name === "Breadcrumbs")?.props).toEqual({
-      current: "チームみらいの収支",
+      current: "チームみらいの収支・2025年",
     });
     expect(sections.find((s) => s.name === "PartyHeadingSection")?.props).toMatchObject({
       organizationName: "チームみらい",
@@ -190,7 +190,7 @@ describe("OrgPage（政治団体ページ）", () => {
     const sections = await renderSections("2025", "digimin");
 
     expect(sections.find((s) => s.name === "Breadcrumbs")?.props).toEqual({
-      current: "安野貴博の政治団体の収支",
+      current: "安野貴博の政治団体の収支・2025年",
     });
     expect(sections.find((s) => s.name === "OrganizationHeadingSection")?.props).toEqual({
       organizationName: "安野貴博の政治団体",

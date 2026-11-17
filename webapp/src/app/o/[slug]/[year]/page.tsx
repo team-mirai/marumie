@@ -96,6 +96,7 @@ export default async function OrgPage({ params }: OrgPageProps) {
   const years = VALID_YEARS.map((y) => ({ year: y, href: `/o/${slug}/${y}` }));
   const isParty = PARTY_SLUGS.includes(slug);
   const pageTitle = `${organizationName}の収支`;
+  const breadcrumbLabel = `${pageTitle}・${financialYear}年`;
 
   const profile = isParty
     ? null
@@ -120,7 +121,7 @@ export default async function OrgPage({ params }: OrgPageProps) {
         eyebrow={eyebrow}
       />
       <SiteBottomBlock />
-      <Breadcrumbs current={pageTitle} position="bottom" />
+      <Breadcrumbs current={breadcrumbLabel} position="bottom" />
       <RevealOnScroll />
     </>
   );
@@ -129,7 +130,7 @@ export default async function OrgPage({ params }: OrgPageProps) {
     return (
       <MainColumn spacing="compact">
         <div className="flex flex-col gap-5">
-          <Breadcrumbs current={pageTitle} />
+          <Breadcrumbs current={breadcrumbLabel} />
           <h1 className="sr-only">{pageTitle}</h1>
           <OrganizationHeadingSection
             organizationName={organizationName}
@@ -163,7 +164,7 @@ export default async function OrgPage({ params }: OrgPageProps) {
   return (
     <MainColumn spacing="compact">
       <div className="flex flex-col gap-5">
-        <Breadcrumbs current={pageTitle} />
+        <Breadcrumbs current={breadcrumbLabel} />
         <PartyHeadingSection
           organizationName={organizationName}
           slug={slug}
