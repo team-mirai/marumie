@@ -31,14 +31,22 @@ export default function AboutLoopVideo({
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
-    const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
-    setReduceMotion(reduce);
-    if (reduce) {
-      video.pause();
-      return;
-    }
-    // 自動再生をブラウザに止められたときは、ポスター画像のままにする
-    video.play()?.catch(() => {});
+    const query = window.matchMedia?.("(prefers-reduced-motion: reduce)");
+    const apply = (reduce: boolean) => {
+      setReduceMotion(reduce);
+      if (reduce) {
+        video.pause();
+        return;
+      }
+      // 自動再生をブラウザに止められたときは、ポスター画像のままにする
+      video.play()?.catch(() => {});
+    };
+    apply(query?.matches ?? false);
+    if (!query) return;
+    // 表示中に「動きを減らす」設定が変わったときも合わせる
+    const handleChange = (event: MediaQueryListEvent) => apply(event.matches);
+    query.addEventListener("change", handleChange);
+    return () => query.removeEventListener("change", handleChange);
   }, []);
 
   return (
