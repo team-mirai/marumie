@@ -119,7 +119,7 @@ function MemberDetailButton({ member }: { member: HomeResearchFundMember }) {
   return (
     <Link
       href={member.href}
-      className="inline-flex h-12 items-center justify-center gap-1 self-stretch whitespace-nowrap rounded-full bg-[#0B0F0E] px-3.5 text-[clamp(12px,3.8vw,15px)] font-extrabold text-white transition-colors hover:bg-[#0F8472] min-[641px]:h-[52px] min-[641px]:min-w-[min(100%,360px)] min-[641px]:gap-1.5 min-[641px]:self-center min-[641px]:px-7 min-[641px]:text-[15px]"
+      className="pill-arrow inline-flex h-12 items-center justify-center gap-1 self-stretch whitespace-nowrap rounded-full bg-[#0B0F0E] px-3.5 text-[clamp(12px,3.8vw,15px)] font-extrabold text-white transition-colors hover:bg-[#0F8472] min-[641px]:h-[52px] min-[641px]:min-w-[min(100%,360px)] min-[641px]:gap-1.5 min-[641px]:self-center min-[641px]:px-7 min-[641px]:text-[15px]"
     >
       {member.name}の調研費を詳しく
       <Chevron />
@@ -223,7 +223,8 @@ export default function HomeResearchFundMembers({ members, financialYear }: Prop
           aria-live="polite"
           className="flex min-w-0 flex-col gap-6 rounded-[32px] bg-white p-[clamp(24px,3.6vw,48px)] shadow-[0_1px_2px_rgba(11,15,14,0.04)]"
         >
-          <div className="flex items-center gap-4">
+          {/* 題名にホバーしたときも、横の矢印を右へ動かして緑にする（v9 の .mt-msel-hd a.t-go:hover ~ .hd-go） */}
+          <div className="group/hd flex items-center gap-4">
             <PoliticianAvatar
               photoUrl={selected.photoUrl}
               alt={`${selected.name}の写真`}
@@ -245,7 +246,7 @@ export default function HomeResearchFundMembers({ members, financialYear }: Prop
             <Link
               href={selected.href}
               aria-label={`${selected.name}の調研費を詳しく見る`}
-              className="relative -ml-1.5 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md text-[#0B0F0E] transition-[color,transform] after:absolute after:-inset-3 after:content-[''] hover:translate-x-[3px] hover:text-[#0F8472]"
+              className="relative -ml-1.5 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md text-[#0B0F0E] transition-[color,translate] duration-300 ease-[cubic-bezier(.2,.7,.1,1)] after:absolute after:-inset-3 after:content-[''] hover:text-[#0F8472] group-has-[h3_a:hover]/hd:text-[#0F8472] motion-safe:hover:translate-x-[3px] motion-safe:group-has-[h3_a:hover]/hd:translate-x-[3px]"
             >
               <Chevron size={18} />
             </Link>
@@ -296,7 +297,7 @@ export default function HomeResearchFundMembers({ members, financialYear }: Prop
                 } ${
                   open
                     ? "aspect-[1.9825] rounded-[20px] py-[18px] pl-[18px] pr-[66px]"
-                    : `${isLast ? "min-h-[62px]" : "min-h-[92px]"} rounded-[18px] px-4 pt-3.5 active:translate-y-0.5`
+                    : `${isLast ? "min-h-[62px]" : "min-h-[92px]"} rounded-[18px] px-4 pt-3.5`
                 }`}
               >
                 {/* カード全体を覆う開閉ボタン（「詳しく見る」と年のラベルはこの上に重ね、ボタンの入れ子にしない） */}
@@ -349,13 +350,16 @@ export default function HomeResearchFundMembers({ members, financialYear }: Prop
                     <span className="absolute bottom-3.5 left-5 z-[2] flex h-10 cursor-default items-center text-[14px] font-bold leading-none tabular-nums text-[#0A1A17]/80">
                       {financialYear}年
                     </span>
-                    <Link
-                      href={member.href}
-                      aria-label={`${member.name}の調研費を詳しく見る`}
-                      className="absolute bottom-2.5 right-8 z-[2] inline-flex items-center pb-[13px] pt-3 text-[14px] font-extrabold leading-[1.3] text-[#0A1A17] no-underline transition-colors before:absolute before:bottom-2 before:right-[-14px] before:h-[1.5px] before:w-[9px] before:origin-right before:rotate-[38deg] before:rounded-[1px] before:bg-current before:content-[''] after:absolute after:bottom-2 after:left-0 after:right-[-14px] after:h-[1.5px] after:rounded-[1px] after:bg-current after:content-[''] hover:text-[#0F8472] focus-visible:text-[#0F8472] active:text-[#0F8472]"
-                    >
-                      詳しく見る
-                    </Link>
+                    {/* 政党・政治団体のカードと同じ「詳しく見る」（.more-link は position: relative なので、置く位置は外の枠で決める） */}
+                    <span className="absolute bottom-2.5 right-8 z-[2] flex">
+                      <Link
+                        href={member.href}
+                        aria-label={`${member.name}の調研費を詳しく見る`}
+                        className="more-link"
+                      >
+                        詳しく見る
+                      </Link>
+                    </span>
                   </>
                 )}
               </div>
@@ -367,7 +371,7 @@ export default function HomeResearchFundMembers({ members, financialYear }: Prop
                   data-wallet-sheet={member.slug}
                   aria-hidden={closing || undefined}
                   inert={closing || undefined}
-                  className="relative z-[1] mt-[calc(18px_-_(100%_-_40px)_*_1.071_*_1.04_/_1.9825)] flex flex-col gap-[22px] rounded-[24px] bg-white px-4 pb-5 pt-[calc((100%_-_40px)_*_1.071_*_1.04_/_1.9825_+_8px)] shadow-[0_0_0_1px_#DCE4E1,0_30px_50px_-34px_rgba(10,60,52,0.35)]"
+                  className={`${open ? "wallet-sheet-in " : ""}relative z-[1] mt-[calc(18px_-_(100%_-_40px)_*_1.071_*_1.04_/_1.9825)] flex flex-col gap-[22px] rounded-[24px] bg-white px-4 pb-5 pt-[calc((100%_-_40px)_*_1.071_*_1.04_/_1.9825_+_8px)] shadow-[0_0_0_1px_#DCE4E1,0_30px_50px_-34px_rgba(10,60,52,0.35)]`}
                 >
                   <MemberAmountsAndFlow member={member} layout="sp" others={allSankeys} />
                   <ReturnNote className="-mt-1.5" />
