@@ -733,3 +733,139 @@ table:focus-visible {
     transform: none;
   }
 }
+
+/*
+ * 議員ページの見出しカードの前後の議員への切り替え（デザイン v9 の .mt-lp-mem、PoliticianCardSwitcher）。
+ * 前後ボタン：PC はホバーで押す向きへ 2px 動く。SP は押すと縮み、中の矢印が押す向きへ 3px 動き、離すと少し弾んで戻る
+ */
+.politician-switch-nav {
+  transition:
+    transform 0.25s cubic-bezier(0.2, 0.7, 0.1, 1),
+    color 0.25s,
+    background-color 0.25s;
+}
+
+@media (min-width: 641px) {
+  .politician-switch-nav.is-prev:hover {
+    transform: translateX(-2px);
+  }
+  .politician-switch-nav.is-next:hover {
+    transform: translateX(2px);
+  }
+}
+
+@media (max-width: 640px) {
+  .politician-switch-nav {
+    transition:
+      transform 0.45s cubic-bezier(0.2, 0.9, 0.25, 1.2),
+      background-color 0.3s,
+      box-shadow 0.3s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .politician-switch-nav > svg {
+    transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  .politician-switch-nav:active {
+    transform: scale(0.86);
+    background: #fff;
+    box-shadow:
+      inset 0 1px 0 #fff,
+      0 6px 14px -8px rgba(10, 60, 52, 0.5);
+  }
+  .politician-switch-nav.is-prev:active > svg {
+    transform: translateX(-3px);
+  }
+  .politician-switch-nav.is-next:active > svg {
+    transform: translateX(3px);
+  }
+
+  /* 切り替えた向き（次へなら右から、前へなら左から）からカードが入り、顔写真は少し回転しながら弾み、名前は下から入る */
+  .politician-switch-in-r {
+    animation: politician-switch-in-r 0.62s cubic-bezier(0.16, 0.84, 0.24, 1) both;
+  }
+  .politician-switch-in-l {
+    animation: politician-switch-in-l 0.62s cubic-bezier(0.16, 0.84, 0.24, 1) both;
+  }
+  :is(.politician-switch-in-r, .politician-switch-in-l) .politician-switch-avatar {
+    animation: politician-switch-avatar-in 0.7s 0.06s cubic-bezier(0.2, 0.9, 0.25, 1.2) both;
+  }
+  :is(.politician-switch-in-r, .politician-switch-in-l) .politician-switch-text {
+    animation: politician-switch-text-in 0.5s 0.12s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+}
+
+/* 位置の点：切り替え後に選ばれた点が伸びる */
+.politician-switch-dot {
+  transition:
+    width 0.5s cubic-bezier(0.2, 0.9, 0.25, 1),
+    background-color 0.4s;
+}
+
+@keyframes politician-switch-in-r {
+  from {
+    opacity: 0;
+    transform: translate3d(32px, 0, 0) scale(0.975);
+    filter: blur(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+}
+
+@keyframes politician-switch-in-l {
+  from {
+    opacity: 0;
+    transform: translate3d(-32px, 0, 0) scale(0.975);
+    filter: blur(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+}
+
+@keyframes politician-switch-avatar-in {
+  from {
+    transform: scale(0.82) rotate(-6deg);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.04) rotate(0);
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+
+@keyframes politician-switch-text-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .politician-switch-in-r,
+  .politician-switch-in-l,
+  :is(.politician-switch-in-r, .politician-switch-in-l) * {
+    animation: none !important;
+  }
+  .politician-switch-nav,
+  .politician-switch-nav > svg,
+  .politician-switch-dot {
+    transition: none;
+  }
+  .politician-switch-nav:hover,
+  .politician-switch-nav:active,
+  .politician-switch-nav:active > svg {
+    transform: none !important;
+  }
+}
