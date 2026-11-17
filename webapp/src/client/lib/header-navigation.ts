@@ -97,7 +97,7 @@ export interface HeaderOrganizationMenuItem {
   name: string;
   /** 正式名（未登録なら null） */
   officialName: string | null;
-  /** アイコンの出し分け。政党はロゴ、それ以外の政治団体は代表者の顔写真 */
+  /** 政党か、それ以外の政治団体か */
   kind: "party" | "group";
   /** 代表者の顔写真を配信できるか */
   hasPhoto: boolean;

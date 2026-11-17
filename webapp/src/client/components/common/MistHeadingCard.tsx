@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 interface MistHeadingCardProps {
   /** セクションの読み上げ名（例: 「政党情報」） */
   ariaLabel: string;
-  /** 左上の丸の中身（政党のロゴ、政治団体の代表者の写真など） */
+  /** 左上の丸の中身（代表者の写真など） */
   avatar: ReactNode;
   /** カードの見出し（例: 「チームみらいの収支」） */
   title: string;

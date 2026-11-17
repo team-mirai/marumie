@@ -160,6 +160,7 @@ export default async function OrgPage({ params }: OrgPageProps) {
         <PartyHeadingSection
           organizationName={organizationName}
           slug={slug}
+          hasPhoto={currentOrganization?.hasPhoto ?? false}
           year={financialYear}
           years={VALID_YEARS}
           updatedAt={updatedAt}

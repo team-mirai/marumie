@@ -53,6 +53,19 @@ test.describe("トップページ", () => {
 		await expect(page).toHaveURL("/o/sample-party/2025");
 	});
 
+	test("政党のカードの丸は、政治団体と同じく代表者の写真（未登録なら人型のアイコン）でロゴは出さない", async ({
+		page,
+	}) => {
+		await page.goto("/");
+		const card = page
+			.getByRole("region", { name: "政党の収支" })
+			.getByRole("region", { name: "サンプル党の収支" });
+
+		// シードの sample-party は顔写真が未登録なので人型のアイコンになる
+		await expect(card.locator("svg[aria-hidden='true'] circle[r='5']").first()).toBeAttached();
+		await expect(card.locator('img[src*="team-mirai-logo"]')).toHaveCount(0);
+	});
+
 	test("政治団体ごとのカードが出て、その年の政治団体ページへ移れる", async ({ page }) => {
 		await page.goto("/");
 		const card = page
