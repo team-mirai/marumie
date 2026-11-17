@@ -29,6 +29,15 @@ test.describe("調査研究費 議員ページ", () => {
 		// 期間は更新日といっしょにカードの右下に出す
 		await expect(cashFlow.getByText(/^\d{4}年\d{1,2}-\d{1,2}月分　/).first()).toBeVisible();
 		await expect(cashFlow.getByText("調研費（調査研究広報滞在費）とは")).toBeVisible();
+		// 「調研費とは」の下に、トップと同じ使用方針の note へのリンク（別タブ）
+		const policyLink = cashFlow.getByRole("link", {
+			name: "チームみらいの調研費の使用方針を読む（noteが別タブで開きます）",
+		});
+		await expect(policyLink).toHaveAttribute(
+			"href",
+			"https://note.com/team_mirai_jp/n/n9ec9166d0e1e",
+		);
+		await expect(policyLink).toHaveAttribute("target", "_blank");
 		await expect(cashFlow.getByText("支給総額")).toBeVisible();
 		await expect(cashFlow.getByText("支出総額")).toBeVisible();
 		await expect(cashFlow.getByRole("tab", { name: "詳細の区分" })).toHaveAttribute(

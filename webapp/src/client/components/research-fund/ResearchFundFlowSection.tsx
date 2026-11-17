@@ -2,6 +2,7 @@ import "server-only";
 import Image from "next/image";
 import AmountSummary from "@/client/components/common/AmountSummary";
 import SectionCard from "@/client/components/layout/SectionCard";
+import { POLICY_NOTE_URL } from "@/client/components/research-fund/ResearchFundIntroLinks";
 import CashFlowSection from "@/client/components/top-page/CashFlowSection";
 import type { ResearchFundPageData } from "@/server/contexts/research-fund/domain/models/research-fund-page";
 import type { SankeyData } from "@/types/sankey";
@@ -43,6 +44,36 @@ function QuestionIcon() {
   );
 }
 
+/** 「チームみらいの調研費の使用方針」の頭に付ける書類のアイコン（v9） */
+function NoteIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      width="20"
+      height="20"
+      aria-hidden="true"
+      focusable="false"
+      className="flex-shrink-0"
+    >
+      <path
+        d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M14 3v5h5M9 13h6M9 17h6"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 /** 収支の流れ。調研費の説明・支給総額と支出総額・区分タブつきのサンキー。ページの h1 は議員カードの上に別に置くので h2 にする。 */
 export default function ResearchFundFlowSection({ data, eyebrow, updatedAt }: Props) {
   return (
@@ -57,18 +88,45 @@ export default function ResearchFundFlowSection({ data, eyebrow, updatedAt }: Pr
       // v9 でも議員ページの「収支の流れ」の見出しは動かさない
       revealHeading={false}
     >
-      <details className="-mt-4">
-        <summary className="inline-flex cursor-pointer list-none items-center gap-1.5 py-1 max-[640px]:min-h-11 text-sm font-bold text-[#238778] hover:underline [&::-webkit-details-marker]:hidden">
-          <QuestionIcon />
-          調研費（調査研究広報滞在費）とは
-          <Image src="/icons/icon-chevron-down.svg" alt="" width={18} height={18} />
-        </summary>
-        <div className="mt-3 rounded-xl bg-gradient-to-br from-[#E2F6F3] to-[#EEF6E2] px-5 py-5 text-[15px] leading-[1.87] tracking-[0.01em] text-gray-800 [text-wrap:pretty]">
-          <p className="m-0">
-            調研費（調査研究広報滞在費）は、国会議員の調査研究や広報、国民との交流、滞在などの活動のために、国から毎月100万円支給される公費です。政治資金規正法上の「政治資金」ではありませんが、チームみらいでは透明性の観点から本サイトで公開しています。選挙運動には使えません。年内に使わなかった未使用分は国庫に返還します。
-          </p>
-        </div>
-      </details>
+      {/* 「調研費とは」のすぐ下に、チームみらいの調研費の使用方針（v9） */}
+      <div className="-mt-4 flex flex-col items-start">
+        <details className="w-full">
+          <summary className="inline-flex cursor-pointer list-none items-center gap-1.5 py-1 max-[640px]:min-h-11 text-sm font-bold text-[#238778] hover:underline [&::-webkit-details-marker]:hidden">
+            <QuestionIcon />
+            調研費（調査研究広報滞在費）とは
+            <Image src="/icons/icon-chevron-down.svg" alt="" width={18} height={18} />
+          </summary>
+          <div className="mt-3 rounded-xl bg-gradient-to-br from-[#E2F6F3] to-[#EEF6E2] px-5 py-5 text-[15px] leading-[1.87] tracking-[0.01em] text-gray-800 [text-wrap:pretty]">
+            <p className="m-0">
+              調研費（調査研究広報滞在費）は、国会議員の調査研究や広報、国民との交流、滞在などの活動のために、国から毎月100万円支給される公費です。政治資金規正法上の「政治資金」ではありませんが、チームみらいでは透明性の観点から本サイトで公開しています。選挙運動には使えません。年内に使わなかった未使用分は国庫に返還します。
+            </p>
+          </div>
+        </details>
+        <a
+          href={POLICY_NOTE_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="チームみらいの調研費の使用方針を読む（noteが別タブで開きます）"
+          className="inline-flex items-center gap-1.5 py-1 max-[640px]:min-h-11 text-sm font-bold text-[#238778] no-underline hover:underline"
+        >
+          <NoteIcon />
+          チームみらいの調研費の使用方針
+          <svg
+            width="15"
+            height="15"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+            className="flex-shrink-0"
+          >
+            <path d="M7 17L17 7M9 7h8v8" />
+          </svg>
+        </a>
+      </div>
 
       {/* 未使用分は金額欄に出さない（サンキーの末尾ノードとしてのみ出す） */}
       <AmountSummary
