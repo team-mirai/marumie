@@ -4,8 +4,6 @@ import PoliticianAvatar from "@/client/components/research-fund/PoliticianAvatar
 interface OtherPolitician {
   slug: string;
   name: string;
-  /** 「衆議院議員・比例東京（東京7区）」。未登録なら null */
-  title: string | null;
   photoUrl: string | null;
   href: string;
 }
@@ -14,7 +12,10 @@ interface Props {
   politicians: OtherPolitician[];
 }
 
-/** ページ下部の「他の議員の調研費を見る」。公開中のほかの議員を 2 列で並べ、押すとその議員のページへ移る。 */
+/**
+ * ページ下部の「他の議員の調研費を見る」。公開中のほかの議員を 2 列で並べ、押すとその議員のページへ移る。
+ * 選挙区は出さず、SP もアイコンの右に名前を並べる。
+ */
 export default function OtherPoliticiansSection({ politicians }: Props) {
   if (politicians.length === 0) return null;
 
@@ -36,22 +37,15 @@ export default function OtherPoliticiansSection({ politicians }: Props) {
             <Link
               href={politician.href}
               aria-label={`${politician.name}の調研費を見る`}
-              className="group flex h-full flex-col items-center gap-2 rounded-2xl bg-[#F5F7F6] px-2 py-3.5 text-center text-black no-underline transition-colors hover:bg-[#EAF6F2] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#238778] min-[641px]:flex-row min-[641px]:gap-3.5 min-[641px]:px-4 min-[641px]:text-left"
+              className="group flex h-full items-center gap-2.5 rounded-2xl bg-[#F5F7F6] px-3 py-2.5 text-black no-underline transition-colors hover:bg-[#EAF6F2] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#238778] min-[641px]:gap-3.5 min-[641px]:px-4 min-[641px]:py-3.5"
             >
               <PoliticianAvatar
                 photoUrl={politician.photoUrl}
                 alt={`${politician.name}の写真`}
-                className="h-14 w-14 min-[641px]:h-[52px] min-[641px]:w-[52px]"
+                className="h-10 w-10 min-[641px]:h-[52px] min-[641px]:w-[52px]"
               />
-              <span className="flex min-w-0 flex-1 flex-col gap-[3px]">
-                <span className="text-[14px] font-bold leading-[1.4] min-[641px]:text-[16px]">
-                  {politician.name}
-                </span>
-                {politician.title && (
-                  <span className="line-clamp-2 text-[11px] leading-[1.5] text-[#4B5563] min-[641px]:line-clamp-1 min-[641px]:text-[12px]">
-                    {politician.title}
-                  </span>
-                )}
+              <span className="min-w-0 flex-1 truncate text-[14px] font-bold leading-[1.4] min-[641px]:whitespace-normal min-[641px]:text-[16px]">
+                {politician.name}
               </span>
               <svg
                 width="20"

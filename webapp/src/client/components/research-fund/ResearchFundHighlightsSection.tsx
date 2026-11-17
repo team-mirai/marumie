@@ -1,6 +1,7 @@
 import "server-only";
 import Image from "next/image";
 import SectionCard from "@/client/components/layout/SectionCard";
+import PoliticianAvatar from "@/client/components/research-fund/PoliticianAvatar";
 import ResearchFundCategoryPill from "@/client/components/research-fund/ResearchFundCategoryPill";
 import {
   ResearchFundGroupRowsLink,
@@ -13,6 +14,8 @@ import type {
 
 interface Props {
   data: ResearchFundPageData;
+  /** 議員の顔写真の URL。未登録なら null（人型のアイコンにする） */
+  photoUrl: string | null;
   /** 見出しの上の小さな行（例: 「峰島侑也の調研費・2026年」） */
   eyebrow: string;
   updatedAt: string;
@@ -49,7 +52,12 @@ function StarIcon() {
 }
 
 /** 活用方針と主な用途。活用方針と、支出群ごとの用途カード。 */
-export default function ResearchFundHighlightsSection({ data, eyebrow, updatedAt }: Props) {
+export default function ResearchFundHighlightsSection({
+  data,
+  photoUrl,
+  eyebrow,
+  updatedAt,
+}: Props) {
   return (
     <SectionCard
       id="highlights"
@@ -60,11 +68,17 @@ export default function ResearchFundHighlightsSection({ data, eyebrow, updatedAt
       updatedAt={updatedAt}
     >
       {data.policyComment && (
-        <div className="rounded-2xl border border-[#E5E7EB] bg-gradient-to-br from-[#E2F6F3] to-[#EEF6E2] p-6">
+        // PC は議員の顔写真を円形で左に置き、SP は顔写真と見出しを並べてその下に本文を出す
+        <div className="grid grid-cols-[56px_minmax(0,1fr)] items-center gap-x-4 gap-y-3.5 rounded-2xl border border-[#E5E7EB] bg-gradient-to-br from-[#E2F6F3] to-[#EEF6E2] p-6 min-[641px]:grid-cols-[88px_minmax(0,1fr)] min-[641px]:grid-rows-[auto_1fr] min-[641px]:items-start min-[641px]:gap-x-9 min-[641px]:gap-y-2">
+          <PoliticianAvatar
+            photoUrl={photoUrl}
+            alt={`${data.politician.name}の写真`}
+            className="h-14 w-14 shadow-[0_0_0_3px_#fff,0_2px_8px_rgba(11,15,14,0.12)] min-[641px]:row-span-2 min-[641px]:h-[88px] min-[641px]:w-[88px]"
+          />
           <div className="text-base font-bold text-gray-800">
             {data.politician.name}の調研費の活用方針
           </div>
-          <p className="mt-2 whitespace-pre-line text-[15px] leading-[1.87] tracking-[0.01em] text-gray-800 [text-wrap:pretty]">
+          <p className="col-span-full whitespace-pre-line text-[15px] leading-[1.87] tracking-[0.01em] text-gray-800 [text-wrap:pretty] min-[641px]:col-span-1 min-[641px]:col-start-2">
             {data.policyComment}
           </p>
         </div>
@@ -84,20 +98,7 @@ export default function ResearchFundHighlightsSection({ data, eyebrow, updatedAt
                   <StarIcon />
                   用途{index + 1}
                 </span>
-                <span className="text-xs text-[#4B5563]">
-                  {formatPeriod(group.period)}
-                  {group.count > 0 && (
-                    <>
-                      {"　"}
-                      <ResearchFundGroupRowsLink
-                        groupId={group.id}
-                        className="font-bold text-[#238778] underline underline-offset-2 hover:no-underline"
-                      >
-                        {group.count}件
-                      </ResearchFundGroupRowsLink>
-                    </>
-                  )}
-                </span>
+                <span className="text-xs text-[#4B5563]">{formatPeriod(group.period)}</span>
               </div>
 
               <div className="flex flex-col gap-1">
@@ -106,6 +107,15 @@ export default function ResearchFundHighlightsSection({ data, eyebrow, updatedAt
                   -{group.amount.toLocaleString("ja-JP")}
                   <span className="text-xs font-normal text-[#4B5563]"> 円</span>
                 </span>
+                {group.count > 0 && (
+                  // 見た目はそのままで、押せる範囲を上下に広げる
+                  <ResearchFundGroupRowsLink
+                    groupId={group.id}
+                    className="-mx-1 -my-2.5 inline-block self-start px-1 py-2.5 text-sm font-bold text-[#238778] underline underline-offset-2 hover:no-underline"
+                  >
+                    明細{group.count}件を見る
+                  </ResearchFundGroupRowsLink>
+                )}
               </div>
 
               {group.categories.length > 0 && (

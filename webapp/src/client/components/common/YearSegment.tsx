@@ -2,8 +2,14 @@ import Link from "next/link";
 
 type YearSegmentProps = (
   | {
-      /** 切り替え先の年と、その年のページの URL。年ごとのページへのリンクで切り替える */
-      years: { year: number; href: string }[];
+      /**
+       * 切り替え先の年と、その年のページの URL。年ごとのページへのリンクで切り替える。
+       * データの無い年は href を null にし、押せない理由（例: 「2025年分の調研費はありません」）を unavailableReason に入れる
+       */
+      years: (
+        | { year: number; href: string }
+        | { year: number; href: null; unavailableReason: string }
+      )[];
       currentYear: number;
       onSelect?: never;
     }
@@ -64,8 +70,23 @@ export default function YearSegment(props: YearSegmentProps) {
 
   return (
     <nav aria-label="表示する年" className={containerClass(tone)}>
-      {props.years.map(({ year, href }) => {
+      {props.years.map((option) => {
+        const { year, href } = option;
         const isCurrent = year === currentYear;
+        if (href === null) {
+          // データの無い年は押せない。見た目を薄くし、理由は title と読み上げで伝える
+          return (
+            <span
+              key={year}
+              aria-disabled="true"
+              title={option.unavailableReason}
+              className={`cursor-default opacity-[0.38] ${itemClass(false, tone)}`}
+            >
+              {year}
+              <span className="sr-only">（{option.unavailableReason}）</span>
+            </span>
+          );
+        }
         return (
           <Link
             key={year}

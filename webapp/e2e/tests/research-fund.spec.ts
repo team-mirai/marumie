@@ -124,7 +124,15 @@ test.describe("調査研究費 議員ページ", () => {
 			await page.goto(PAGE_URL);
 			const card = page.getByRole("region", { name: "議員情報" });
 
-			await expect(card.getByText("サンプル 太郎", { exact: true }).locator("visible=true")).toBeVisible();
+			// PC は「{名前}の調研費」、SP はトップの議員カードと同じく名前の下に「調研費・期間」
+			await expect(
+				card.getByText(label === "PC" ? "サンプル 太郎の調研費" : "サンプル 太郎", { exact: true }).locator("visible=true"),
+			).toBeVisible();
+			if (label === "SP") {
+				await expect(card.getByText(/^調研費・/).locator("visible=true")).toBeVisible();
+				// 何人目かは点ではなく文字で出す（点は飾り）
+				await expect(card.getByText(/^\d+ \/ 2$/)).toBeVisible();
+			}
 			// シードの議員は顔写真が未登録なので人型のアイコンになる
 			await expect(
 				card.getByRole("img", { name: "サンプル 太郎の写真" }).locator("visible=true"),

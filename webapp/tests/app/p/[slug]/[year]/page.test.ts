@@ -132,10 +132,11 @@ describe("議員ページ", () => {
     }>;
     const children = page.props.children as (Child | false | null)[];
     const [heading, flow, , survey, others, bottom] = children;
-    const [breadcrumbs, card] = (heading as Child).props.children ?? [];
+    const [breadcrumbs, title, card] = (heading as Child).props.children ?? [];
     return {
       page,
       breadcrumbs,
+      title,
       card,
       flow: flow as Child,
       survey: survey as Child,
@@ -150,10 +151,13 @@ describe("議員ページ", () => {
   ])("%sでも、パンくず・議員カードと v8 の本文（下部ブロックは議員ページ用）を同じ組み立てで出す", async (_, slug, isPublic) => {
     loadResearchFundPageMock.mockResolvedValue(pageData(isPublic));
 
-    const { page, breadcrumbs, card, flow, survey, bottom } = await render(slug);
+    const { page, breadcrumbs, title, card, flow, survey, bottom } = await render(slug);
 
     expect(page.props.spacing).toBe("compact");
     expect(breadcrumbs.props.current).toBe("サンプル太郎の調研費");
+    // 見出しは画面には出さず（議員カードが見出しの役）、読み上げ用に h1 を置く
+    expect(title.type).toBe("h1");
+    expect(title.props.children).toBe("サンプル太郎の調研費");
     expect(card.props.politician).toBe(politician);
     // 年の切り替え・写真は、プレビュー用の文字列を含む slug の区間のまま引き継ぐ
     expect(card.props.years).toEqual([

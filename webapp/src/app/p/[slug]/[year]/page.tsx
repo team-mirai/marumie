@@ -56,6 +56,7 @@ export default async function PoliticianPage({ params }: PoliticianPageProps) {
     : null;
   if (!page) notFound();
   const { data, pathSlug } = page;
+  const photoUrl = data.politician.hasPhoto ? politicianPhotoUrl(pathSlug) : null;
 
   // 「2026.8.20 更新」。未設定なら公開範囲の最終日で代用する。
   const updatedAt = formatUpdatedAt(data.asOfDate ?? null);
@@ -84,12 +85,12 @@ export default async function PoliticianPage({ params }: PoliticianPageProps) {
     <MainColumn spacing="compact">
       <div className="flex flex-col gap-5">
         <Breadcrumbs current={pageTitle} />
+        <h1 className="sr-only">{pageTitle}</h1>
         <PoliticianHeadingCard
           politician={data.politician}
-          photoUrl={data.politician.hasPhoto ? politicianPhotoUrl(pathSlug) : null}
+          photoUrl={photoUrl}
           years={data.years.map((year) => ({ year, href: politicianPageHref(pathSlug, year) }))}
           currentYear={data.financialYear}
-          updatedAt={updatedAt}
           periodLabel={data.grantPeriodLabel}
           nav={nav}
         />
@@ -98,7 +99,12 @@ export default async function PoliticianPage({ params }: PoliticianPageProps) {
       {/* 用途カードと「すべての出入金」が相互にジャンプするので、その間をまとめて包む */}
       <ResearchFundCrossLinkProvider>
         {hasHighlights && (
-          <ResearchFundHighlightsSection data={data} eyebrow={eyebrow} updatedAt={updatedAt} />
+          <ResearchFundHighlightsSection
+            data={data}
+            photoUrl={photoUrl}
+            eyebrow={eyebrow}
+            updatedAt={updatedAt}
+          />
         )}
         <GradientMessageCard title="調研費もまるごと公開。意味ある使い方か、検証できるように👀">
           議員一人ひとりに支給される調研費の原資は、大切な税金。だから使わせていただいた分は1件ずつ公開し、その使用方針や主要な用途もわかりやすく伝えていくことが重要だと考えています。
