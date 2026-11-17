@@ -141,8 +141,12 @@ export function PoliticianForm({
                 placeholder="みねしま ゆうや"
                 value={data.nameKana}
                 onChange={(event) => setData({ ...data, nameKana: event.target.value })}
+                aria-describedby="nameKana-hint"
                 className="max-w-md"
               />
+              <p id="nameKana-hint" className="text-xs text-muted-foreground">
+                議員の並び順（あいうえお順）に使われます
+              </p>
             </div>
             <div className="space-y-2">
               <Label htmlFor="house">院</Label>
