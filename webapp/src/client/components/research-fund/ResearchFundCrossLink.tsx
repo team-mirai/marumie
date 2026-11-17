@@ -79,8 +79,8 @@ export function ResearchFundCrossLinkProvider({ children }: { children: React.Re
   return <CrossLinkContext.Provider value={value}>{children}</CrossLinkContext.Provider>;
 }
 
-/** 用途カードの外枠。明細の「★ 用途N」から飛んできたときだけ枠を強調する。 */
-export function ResearchFundHighlightCard({
+/** 用途の行。明細の「★ 用途N」から飛んできたときだけ背景を塗って目立たせる。 */
+export function ResearchFundHighlightRow({
   groupId,
   className,
   children,
@@ -92,14 +92,15 @@ export function ResearchFundHighlightCard({
   const { flashedCardId } = useResearchFundCrossLink();
   const flashed = flashedCardId === groupId;
   return (
-    <div
+    <article
       id={`highlight-${groupId}`}
-      className={`${className} transition-[border-color,box-shadow] duration-300 ${
-        flashed ? "border-[#2AA693] shadow-[0_0_0_4px_#E2F6F3]" : "border-[#E5E7EB]"
+      data-flashed={flashed}
+      className={`${className} transition-[background-color,box-shadow] duration-[400ms] ${
+        flashed ? "bg-[#E2F6F3] shadow-[0_0_0_12px_#E2F6F3]" : ""
       }`}
     >
       {children}
-    </div>
+    </article>
   );
 }
 

@@ -398,6 +398,16 @@ table:focus-visible {
   animation: more-link-pop 0.3s 0.32s cubic-bezier(0.3, 1.6, 0.5, 1) both;
 }
 
+/* 議員ページの「明細N件を見る」。上下の余白を詰め、下線と矢じりを文字に寄せる */
+.more-link.more-link-tight {
+  padding: 6px 0 9px;
+}
+
+.more-link.more-link-tight::after,
+.more-link.more-link-tight::before {
+  bottom: 4px;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .more-link:is(:hover, :active, :focus-visible)::before,
   .more-link:is(:hover, :active, :focus-visible)::after {
