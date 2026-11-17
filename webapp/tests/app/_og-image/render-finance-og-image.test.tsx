@@ -9,6 +9,7 @@ jest.mock("@/app/_og-image/og-fonts", () => ({
 }));
 
 import { ImageResponse } from "next/og";
+import sharp from "sharp";
 import {
   ogPhotoDataUri,
   renderFinanceOgImage,
@@ -45,10 +46,32 @@ describe("splitOgTitle", () => {
 });
 
 describe("ogPhotoDataUri", () => {
-  it("PNG・JPEG は data URI にし、画像の生成で描けない WebP などは null にする", () => {
-    expect(ogPhotoDataUri(new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0]))).toMatch(/^data:image\/png;base64,/);
-    expect(ogPhotoDataUri(new Uint8Array([0xff, 0xd8, 0xff, 0]))).toMatch(/^data:image\/jpeg;base64,/);
-    expect(ogPhotoDataUri(new TextEncoder().encode("RIFF....WEBP"))).toBeNull();
+  it("PNG・JPEG はそのまま data URI にする", async () => {
+    const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0]);
+    expect(await ogPhotoDataUri(png)).toBe(`data:image/png;base64,${Buffer.from(png).toString("base64")}`);
+    expect(await ogPhotoDataUri(new Uint8Array([0xff, 0xd8, 0xff, 0]))).toMatch(/^data:image\/jpeg;base64,/);
+  });
+
+  it("画像の生成で描けない WebP は PNG に変換して data URI にする", async () => {
+    const webp = await sharp({
+      create: { width: 800, height: 600, channels: 3, background: { r: 200, g: 100, b: 50 } },
+    })
+      .webp()
+      .toBuffer();
+
+    const uri = await ogPhotoDataUri(new Uint8Array(webp));
+
+    expect(uri).toMatch(/^data:image\/png;base64,/);
+    const png = Buffer.from(uri!.replace(/^data:image\/png;base64,/, ""), "base64");
+    const meta = await sharp(png).metadata();
+    expect(meta.format).toBe("png");
+    expect(Math.max(meta.width!, meta.height!)).toBeLessThanOrEqual(512);
+  });
+
+  it("壊れた WebP やそれ以外の形式は null にする（呼び出し側で人型にする）", async () => {
+    jest.spyOn(console, "error").mockImplementation(() => {});
+    expect(await ogPhotoDataUri(new TextEncoder().encode("RIFF....WEBPbroken"))).toBeNull();
+    expect(await ogPhotoDataUri(new TextEncoder().encode("GIF89a"))).toBeNull();
   });
 });
 
