@@ -1,4 +1,5 @@
 import { SavePoliticianUsecase } from "@/server/contexts/shared/application/usecases/save-politician-usecase";
+import type { ICacheInvalidator } from "@/server/contexts/shared/domain/services/cache-invalidator.interface";
 import type { IPoliticianRepository } from "@/server/contexts/shared/domain/repositories/politician-repository.interface";
 import type { PoliticianInput } from "@/shared/models/politician";
 
@@ -15,14 +16,17 @@ const input: PoliticianInput = {
   snsUrls: [],
 };
 let repository: jest.Mocked<IPoliticianRepository>;
+let cacheInvalidator: jest.Mocked<ICacheInvalidator>;
 let usecase: SavePoliticianUsecase;
 beforeEach(() => {
   repository = { findAll: jest.fn(), findById: jest.fn(), save: jest.fn(),
     setResearchFundPublic: jest.fn(),
+    saveProfile: jest.fn(),
     setPhotoPath: jest.fn(),
     delete: jest.fn(),
   };
-  usecase = new SavePoliticianUsecase(repository);
+  cacheInvalidator = { invalidateWebappCache: jest.fn().mockResolvedValue(undefined) };
+  usecase = new SavePoliticianUsecase(repository, cacheInvalidator);
 });
 test("必須値を正規化して無所属で作成する", async () => {
   await usecase.execute(null, input);
@@ -31,6 +35,7 @@ test("必須値を正規化して無所属で作成する", async () => {
     name: "議員名",
     slug: "test-member",
   });
+  expect(cacheInvalidator.invalidateWebappCache).toHaveBeenCalledTimes(1);
 });
 test.each([
   { name: " " },

@@ -10,14 +10,18 @@ import { ResearchFundPublication } from "@/client/components/politicians/Researc
 import { loadPoliticiansWithResearchFundPageUrl } from "@/server/contexts/shared/presentation/loaders/load-politicians";
 import { UserRoleModel } from "@/server/contexts/auth/domain/models/user-role";
 import { requireRolePage } from "@/server/contexts/auth/presentation/loaders/require-role-page";
+import { loadResearchFundWritePermission } from "@/server/contexts/auth/presentation/loaders/require-research-fund-writer";
 
 export default async function PoliticiansPage() {
   const user = await requireRolePage("research_fund");
-  // 議員の登録・編集・削除と調研費の公開切り替えは admin だけ（一覧の閲覧は research_fund でもできる）
+  // 議員の登録・編集・削除と調研費の公開切り替えは admin だけ（一覧の閲覧は research_fund でもできる。
+  // プロフィールと顔写真は担当の議員室の research_fund ユーザーも編集できる）
   const canManagePoliticians = UserRoleModel.isAdmin(user.roles);
-  const [politicians, { currentTarget }] = await Promise.all([
+  const [politicians, { currentTarget }, canEditProfile] = await Promise.all([
     loadPoliticiansWithResearchFundPageUrl(),
     loadAdminTargets(),
+    // 担当の議員室の research_fund ユーザーは、プロフィールと顔写真だけを編集できる（#2031）
+    loadResearchFundWritePermission(),
   ]);
   return (
     <div>
@@ -76,6 +80,11 @@ export default async function PoliticiansPage() {
                     <Button size="sm" asChild>
                       <Link href={`/politicians/${p.id}/books`}>年度帳簿</Link>
                     </Button>
+                    {!canManagePoliticians && canEditProfile(p.id) && (
+                      <Button variant="outline" size="sm" asChild>
+                        <Link href={`/politicians/${p.id}/edit`}>プロフィール編集</Link>
+                      </Button>
+                    )}
                     {canManagePoliticians && (
                       <>
                         <Button variant="outline" size="sm" asChild>

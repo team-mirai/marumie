@@ -260,6 +260,33 @@ test("プロフィールを保存し、未入力は null にする", async () =>
   expect(tx.politician.create.mock.calls[0][0].data).not.toHaveProperty("photoPath");
 });
 
+test("プロフィールだけの保存は、氏名・スラッグ・当選日・所属に触れない", async () => {
+  const { prisma, tx, repository } = setup();
+  await repository.saveProfile("1", {
+    nameKana: "ぎいん",
+    house: "sangiin",
+    constituency: "",
+    profileUrl: "",
+    websiteUrl: "https://example.com",
+    snsUrls: ["https://x.com/a"],
+  });
+  expect(tx.politician.update).toHaveBeenCalledWith({
+    where: { id: BigInt(1) },
+    data: {
+      nameKana: "ぎいん",
+      house: "sangiin",
+      constituency: null,
+      profileUrl: null,
+      websiteUrl: "https://example.com",
+      snsUrls: ["https://x.com/a"],
+    },
+  });
+  expect(prisma.$transaction).not.toHaveBeenCalled();
+  expect(tx.politicianOrgMembership.findMany).not.toHaveBeenCalled();
+  expect(tx.politicianOrgMembership.create).not.toHaveBeenCalled();
+  expect(tx.politicianOrgMembership.update).not.toHaveBeenCalled();
+});
+
 test("保存したプロフィールと顔写真のキーを読み出す", async () => {
   const { tx, repository } = setup();
   tx.politician.findUnique.mockResolvedValue({
