@@ -94,10 +94,8 @@ export default function CashFlowSection({
               tabIndex={selected ? 0 : -1}
               onClick={() => setActiveTab(tab.key)}
               onKeyDown={handleKeyDown}
-              className={`relative -mb-px h-10 cursor-pointer max-[640px]:h-11 border-b-[3px] text-[15px] font-bold transition-colors ${
-                selected
-                  ? "border-black text-black"
-                  : "border-transparent text-[#5B6470] hover:text-black"
+              className={`tab-underline relative -mb-px h-10 cursor-pointer max-[640px]:h-11 border-b-[3px] border-transparent text-[15px] font-bold ${
+                selected ? "text-black" : "text-[#5B6470] hover:text-black"
               }`}
             >
               {tab.label}
@@ -108,7 +106,8 @@ export default function CashFlowSection({
 
       <div id={panelId} role="tabpanel" aria-labelledby={tabId(activeTab)}>
         {currentData ? (
-          <PinchZoom hint={pinchHint}>
+          // 区分を切り替えたら図の入場といっしょに「指を広げて拡大」の案内も出し直す
+          <PinchZoom hint={pinchHint} hintKey={activeTab}>
             {/* 区分を切り替えたら図を作り直し、表示したときと同じく、ノードが伸びて帯が左から現れる動きで切り替える */}
             <SankeyChart
               key={activeTab}

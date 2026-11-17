@@ -15,6 +15,8 @@ interface PinchZoomProps {
   className?: string;
   /** SP で図の上に「指を広げて拡大」の案内を数秒だけ重ねるか。トップでは 1 枚目の図にだけ出す */
   hint?: boolean;
+  /** 変わったら案内を出し直す（区分の切り替えで図を作り直したときなど） */
+  hintKey?: string;
 }
 
 interface PinchState {
@@ -36,7 +38,12 @@ function touchDistance(touches: TouchEvent["touches"]): number {
  * 文字や線もいっしょに大きくなる。元の大きさ近くまで縮めると全体表示に戻す。
  * ピンチできない人のために、SP では右上に「拡大」ボタンを置き、拡大中は「全体を表示」に入れ替える（スタイルの一部は globals.css）。
  */
-export default function PinchZoom({ children, className = "", hint = true }: PinchZoomProps) {
+export default function PinchZoom({
+  children,
+  className = "",
+  hint = true,
+  hintKey,
+}: PinchZoomProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const zoomButtonRef = useRef<HTMLButtonElement>(null);
@@ -141,7 +148,7 @@ export default function PinchZoom({ children, className = "", hint = true }: Pin
         </div>
       </div>
       {hint && !zoomed && (
-        <p className="pinch-zoom-hint" aria-hidden="true">
+        <p key={hintKey} className="pinch-zoom-hint" aria-hidden="true">
           <span className="hand" />
           指を広げて拡大
         </p>
