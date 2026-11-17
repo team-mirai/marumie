@@ -22,6 +22,8 @@ interface AmountSummaryProps {
    * SP（〜600px）は 1 行ごとに項目名を左・金額を右に並べる
    */
   home?: boolean;
+  /** PC（641px〜）は金額欄の上の罫線を黒にする（v9 の政党ページの白いカード）。home を指定したときも黒になる */
+  darkTopRule?: boolean;
   /**
    * 狭い画面でも縦に積まず、横に並べる（ラベルの下に金額、左揃え）。
    * トップの議員カード（SP）を開いた中身で使う。数字は政党・政治団体のカードの SP と同じ 26px
@@ -29,8 +31,9 @@ interface AmountSummaryProps {
   columns?: boolean;
 }
 
+const DARK_TOP_RULE_CLASS = "min-[641px]:border-t-black";
+
 const HOME_CLASSES = {
-  list: "min-[641px]:border-t-black",
   cell: "max-[600px]:flex-row max-[600px]:items-baseline max-[600px]:justify-between max-[600px]:gap-3 max-[600px]:py-3.5",
   amount: "max-[600px]:ml-auto max-[600px]:text-right",
   number: "max-[600px]:text-[26px]",
@@ -74,6 +77,7 @@ export default function AmountSummary({
   items,
   size = "default",
   home = false,
+  darkTopRule = false,
   columns = false,
 }: AmountSummaryProps) {
   const classes = SIZE_CLASSES[size];
@@ -95,7 +99,9 @@ export default function AmountSummary({
     }`;
   };
   return (
-    <dl className={`grid border-y border-[#DCE4E1] ${listClass} ${home ? HOME_CLASSES.list : ""}`}>
+    <dl
+      className={`grid border-y border-[#DCE4E1] ${listClass} ${home || darkTopRule ? DARK_TOP_RULE_CLASS : ""}`}
+    >
       {items.map((item, index) => {
         const amount = item.amount === null ? null : formatAmount(item.amount);
         return (

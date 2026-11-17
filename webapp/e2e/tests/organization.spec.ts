@@ -19,7 +19,9 @@ test.describe("政治団体ページ", () => {
 
 			// 見出しカードが描画されるまで待機（networkidle依存を避ける）
 			await expect(
-				page.getByRole("region", { name: "政党情報" }).getByText("サンプル党の収支"),
+				page
+					.getByRole("region", { name: "政党情報" })
+					.getByRole("heading", { level: 1, name: "サンプル党の収支" }),
 			).toBeVisible();
 			// サンキーチャート（SVG）が描画されるまで待機
 			await expect(

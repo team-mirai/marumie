@@ -15,7 +15,7 @@ function collectPageErrors(page: Page): string[] {
 async function expectPartyPage(page: Page, year: number) {
 	await expect(page).toHaveURL(`/o/sample-party/${year}`);
 	const heading = page.getByRole("region", { name: "政党情報" });
-	await expect(heading.getByText("サンプル党の収支")).toBeVisible();
+	await expect(heading.getByRole("heading", { level: 1, name: "サンプル党の収支" })).toBeVisible();
 	await expect(heading).toContainText(`${year}年`);
 }
 
