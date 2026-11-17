@@ -178,10 +178,12 @@ export default function HeaderClient({ organizations, politiciansByYear }: Heade
               : ""
           }`}
         >
+          {/* SP でメニューを開いても、ロゴ・サービス名・メニューボタンが動かないよう、
+              閉じているとき（header の px-2.5 py-3 ＋ 白い枠の px-3 py-3）と同じ位置に置く */}
           <div
             className={`flex items-center gap-2 xl:h-16 ${
               isSpMenuOpen
-                ? "max-[640px]:min-h-[60px] max-[640px]:flex-none max-[640px]:bg-white max-[640px]:pt-3 max-[640px]:pr-4 max-[640px]:pl-[22px] max-[640px]:shadow-[0_1px_0_#DCE4E1]"
+                ? "max-[640px]:flex-none max-[640px]:bg-white max-[640px]:px-[1.375rem] max-[640px]:pt-6 max-[640px]:pb-3 max-[640px]:shadow-[0_1px_0_#DCE4E1]"
                 : ""
             }`}
           >
@@ -326,7 +328,7 @@ export default function HeaderClient({ organizations, politiciansByYear }: Heade
             </div>
           )}
           {isSpMenuOpen && (
-            <div className="min-[1080px]:hidden max-[640px]:flex max-[640px]:min-h-0 max-[640px]:flex-1 max-[640px]:flex-col">
+            <div className="sp-menu-clip min-[1080px]:hidden max-[640px]:flex max-[640px]:min-h-0 max-[640px]:flex-1 max-[640px]:flex-col">
               <HeaderSpMenu
                 id={SP_MENU_ID}
                 organizations={organizationItems}
