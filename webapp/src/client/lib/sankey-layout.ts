@@ -28,6 +28,10 @@ export interface SankeyLayoutOptions {
    * 支出側のラベルも政党の図に近い大きさにする（トップの調研費）
    */
   narrowIn?: boolean;
+  /** ラベルを項目名だけにする（金額・割合を出さない）。シェア用の画像（OGP）で使う */
+  nameOnly?: boolean;
+  /** 項目名の文字と行送りの倍率（シェア用の画像で、縮めて描いても読める大きさにする） */
+  labelScale?: number;
 }
 
 export interface SankeyBandLayout {
@@ -336,7 +340,7 @@ export function layoutSankey(
 }
 
 function buildSankey(flow: SankeyFlow, options: SankeyLayoutOptions, lock: SankeyLock) {
-  const { tall = false, inline = false, hubScale = 1 } = options;
+  const { tall = false, inline = false, hubScale = 1, nameOnly = false, labelScale = 1 } = options;
   const W = SANKEY_WIDTH;
   const HEAD = 56;
   const HUB = (tall ? 620 : inline ? 340 : 440) * hubScale;
@@ -411,10 +415,11 @@ function buildSankey(flow: SankeyFlow, options: SankeyLayoutOptions, lock: Sanke
   }
 
   // ラベル：項目名は大きく太字、金額と割合は小さく。列の幅に収まるよう折り返す
-  const NMF = tall ? 23 : 19;
-  const NLH = tall ? 28 : 23;
+  const NMF = (tall ? 23 : 19) * labelScale;
+  const NLH = (tall ? 28 : 23) * labelScale;
   const AMF = tall ? 16 : 13;
-  const ALH = tall ? 21 : 18;
+  // 項目名だけのラベルは、金額と割合の行の高さを取らない
+  const ALH = nameOnly ? 0 : tall ? 21 : 18;
   // （）内の補足の行の行送り
   const PLH = NLH * 0.78;
   const linesHeight = (lines: { sub: boolean }[]) =>
@@ -590,7 +595,7 @@ function buildSankey(flow: SankeyFlow, options: SankeyLayoutOptions, lock: Sanke
       const mute = pctBase > 0 && node.value / pctBase < 0.01;
       const amountWidth = estimateTextWidth(amount, amountSize) + 6;
       const pillWidth = estimateTextWidth(percent, pillSize) + 12;
-      const rowWidth = amountWidth + pillWidth;
+      const rowWidth = nameOnly ? 0 : amountWidth + pillWidth;
       const oneLine = isOneLine(lines.length, single);
       const namesHeight = linesHeight(lines);
       const H = oneLine ? oneLineHeight : namesHeight + ALH;
@@ -657,7 +662,9 @@ function buildSankey(flow: SankeyFlow, options: SankeyLayoutOptions, lock: Sanke
         });
         y += lh;
       }
-      const pills = amountRow(anchor === "end" ? x - rowWidth : x, top + namesHeight + ALH / 2 + 1);
+      const pills = nameOnly
+        ? []
+        : amountRow(anchor === "end" ? x - rowWidth : x, top + namesHeight + ALH / 2 + 1);
       labels.push({ key: node.key, keys: node.keys, texts, pills });
     }
   };

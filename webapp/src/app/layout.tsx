@@ -5,6 +5,7 @@ import { GoogleAnalytics } from "@next/third-parties/google";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import Footer from "@/client/components/layout/footer/Footer";
 import Header from "@/client/components/layout/header/Header";
+import { SITE_DESCRIPTION, SITE_TITLE, shareMetadata } from "@/app/site-metadata";
 
 // ページ全体の日本語の書体（globals.css の body で指定）。太さは v9 で読み込んでいるものだけにする。
 // 600 は読み込まない（v9 でも 600 の指定は 700 で描かれる）ので、実装では font-semibold を使わず font-bold にする
@@ -33,34 +34,11 @@ const poppins = Poppins({
   display: "swap",
 });
 
-const SITE_TITLE = "まる見え政治資金｜チームみらい";
-const SITE_DESCRIPTION =
-  "チームみらいの政治資金と、所属議員の調研費の使い道を、だれでもいつでも確かめられるツールです。";
-
 export const metadata: Metadata = {
   // 下層ページは「チームみらいの収支｜まる見え政治資金｜チームみらい」のように、ページ名を前に付ける
   title: { default: SITE_TITLE, template: `%s｜${SITE_TITLE}` },
   description: SITE_DESCRIPTION,
-  openGraph: {
-    title: SITE_TITLE,
-    description: SITE_DESCRIPTION,
-    images: [
-      {
-        url: "/social/og_image.png",
-        width: 1200,
-        height: 630,
-        alt: "まる見え政治資金",
-      },
-    ],
-    type: "website",
-    locale: "ja_JP",
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: SITE_TITLE,
-    description: SITE_DESCRIPTION,
-    images: ["/social/og_image.png"],
-  },
+  ...shareMetadata(),
 };
 
 export default function RootLayout({
