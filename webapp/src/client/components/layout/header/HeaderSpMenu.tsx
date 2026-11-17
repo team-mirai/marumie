@@ -53,11 +53,7 @@ export default function HeaderSpMenu({
                 aria-current={organization.isCurrent ? "page" : undefined}
                 className={`flex min-h-[52px] items-center gap-3 text-base font-extrabold ${FOCUS_CLASS}`}
               >
-                <OrganizationMenuIcon
-                  slug={organization.slug}
-                  kind={organization.kind}
-                  hasPhoto={organization.hasPhoto}
-                />
+                <OrganizationMenuIcon slug={organization.slug} hasPhoto={organization.hasPhoto} />
                 <span className="min-w-0 flex-1">{organization.name}の収支</span>
                 <ChevronRightIcon />
               </Link>

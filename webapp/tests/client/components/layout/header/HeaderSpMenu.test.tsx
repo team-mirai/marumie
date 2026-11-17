@@ -82,10 +82,10 @@ describe("HeaderSpMenu", () => {
     expect(html).not.toContain("2025年");
   });
 
-  it("政党の行にはチームみらいのロゴ、それ以外の政治団体の行には代表者の顔写真を出す", () => {
+  it("政党の行も政治団体の行も、admin で登録した代表者の顔写真を出す", () => {
     const html = render(
       [
-        organization("team-mirai", "チームみらい", { kind: "party", hasPhoto: false }),
+        organization("team-mirai", "チームみらい", { kind: "party", hasPhoto: true }),
         organization("sample-group", "サンプル会", { kind: "group", hasPhoto: true }),
       ],
       [],
@@ -93,10 +93,21 @@ describe("HeaderSpMenu", () => {
 
     const partyRow = html.slice(html.indexOf('href="/o/team-mirai/2026"'), html.indexOf("チームみらいの収支"));
     const groupRow = html.slice(html.indexOf('href="/o/sample-group/2026"'), html.indexOf("サンプル会の収支"));
-    expect(partyRow).toContain("team-mirai-logo.svg");
-    expect(partyRow).not.toContain("/photo");
+    expect(partyRow).toContain('src="/api/organizations/team-mirai/photo"');
+    expect(partyRow).not.toContain("team-mirai-logo.svg");
     expect(groupRow).toContain('src="/api/organizations/sample-group/photo"');
-    expect(groupRow).not.toContain("team-mirai-logo.svg");
+  });
+
+  it("顔写真が未登録の政党は、政治団体と同じく人型のアイコンにする", () => {
+    const html = render(
+      [organization("team-mirai", "チームみらい", { kind: "party", hasPhoto: false })],
+      [],
+    );
+
+    const partyRow = html.slice(html.indexOf('href="/o/team-mirai/2026"'), html.indexOf("チームみらいの収支"));
+    expect(partyRow).toContain("<svg");
+    expect(partyRow).not.toContain("<img");
+    expect(partyRow).not.toContain("team-mirai-logo.svg");
   });
 
   it("顔写真が未登録の政治団体は、トップのカードと同じく人型のアイコンにする", () => {

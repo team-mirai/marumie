@@ -115,6 +115,16 @@ test.describe("政治団体ページ", () => {
 			).toBeVisible();
 		});
 
+		test("見出しカードの丸は、政治団体と同じく代表者の写真（未登録なら人型のアイコン）でロゴは出さない", async ({
+			page,
+		}) => {
+			const heading = page.getByRole("region", { name: "政党情報" });
+
+			// シードの sample-party は顔写真が未登録なので人型のアイコンになる
+			await expect(heading.locator("svg[aria-hidden='true'] circle[r='5']").first()).toBeAttached();
+			await expect(heading.locator('img[src*="team-mirai-logo"]')).toHaveCount(0);
+		});
+
 		test("収支の流れの図に列の見出し・合計・各項目の金額と割合が出て、ホバーした項目を強調する", async ({
 			page,
 		}) => {

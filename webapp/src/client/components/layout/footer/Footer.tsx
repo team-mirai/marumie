@@ -44,7 +44,7 @@ const EXTERNAL_ICON_CLASS = "ml-1 size-[0.75em] shrink-0";
  */
 export default async function Footer() {
   const [homeData, politicianLists] = await Promise.all([
-    // 政党はロゴ、それ以外の政治団体は代表者の写真を出すため、政党かどうかと写真の有無が分かるトップの集計を使う。
+    // 政党と政治団体を分けて並べ、代表者の写真を出すため、政党かどうかと写真の有無が分かるトップの集計を使う。
     // DB に届かない環境（CI のビルド時など）でもフッターは描けるようにする
     loadHomePageData(HEADER_YEARS).catch((error) => {
       console.error("loadHomePageData error:", error);
@@ -86,18 +86,13 @@ export default async function Footer() {
             <div className={PEOPLE_CLASS}>
               {parties.map((party) => (
                 <Link key={party.slug} href={party.href} className={PERSON_LINK_CLASS}>
-                  <OrganizationMenuIcon slug={party.slug} kind="party" hasPhoto={party.hasPhoto} />
+                  <OrganizationMenuIcon slug={party.slug} hasPhoto={party.hasPhoto} ringed />
                   {party.name}の収支
                 </Link>
               ))}
               {groups.map((group) => (
                 <Link key={group.slug} href={group.href} className={PERSON_LINK_CLASS}>
-                  <OrganizationMenuIcon
-                    slug={group.slug}
-                    kind="group"
-                    hasPhoto={group.hasPhoto}
-                    ringed
-                  />
+                  <OrganizationMenuIcon slug={group.slug} hasPhoto={group.hasPhoto} ringed />
                   {group.name}の収支
                 </Link>
               ))}
