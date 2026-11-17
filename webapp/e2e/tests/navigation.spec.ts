@@ -34,7 +34,7 @@ async function expectPoliticianPage(page: Page) {
 	await expect(page).toHaveURL("/p/sample-taro/2026");
 	const cashFlow = page.locator("#cash-flow");
 	await expect(cashFlow.getByText("サンプル 太郎の調研費・2026年")).toBeVisible();
-	await expect(cashFlow.getByRole("heading", { level: 1, name: "収支の流れ" })).toBeVisible();
+	await expect(cashFlow.getByRole("heading", { level: 2, name: "収支の流れ" })).toBeVisible();
 }
 
 test.describe("主要な導線", () => {

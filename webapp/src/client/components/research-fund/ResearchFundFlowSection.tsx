@@ -43,7 +43,7 @@ function QuestionIcon() {
   );
 }
 
-/** 収支の流れ。調研費の説明・支給総額と支出総額・区分タブつきのサンキー。議員ページの最初の見出しになる。 */
+/** 収支の流れ。調研費の説明・支給総額と支出総額・区分タブつきのサンキー。ページの h1 は議員カードの上に別に置くので h2 にする。 */
 export default function ResearchFundFlowSection({ data, eyebrow, updatedAt }: Props) {
   return (
     <SectionCard
@@ -54,7 +54,6 @@ export default function ResearchFundFlowSection({ data, eyebrow, updatedAt }: Pr
       title="収支の流れ"
       updatedAt={updatedAt}
       updatedAtNote={data.grantPeriodLabel ?? undefined}
-      headingLevel="h1"
     >
       <details className="-mt-4">
         <summary className="inline-flex cursor-pointer list-none items-center gap-1.5 py-1 max-[640px]:min-h-11 text-sm font-bold text-[#238778] hover:underline [&::-webkit-details-marker]:hidden">
