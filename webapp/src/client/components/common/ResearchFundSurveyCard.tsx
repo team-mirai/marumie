@@ -67,7 +67,7 @@ export default function ResearchFundSurveyCard({
           target="_blank"
           rel="noopener noreferrer"
           aria-label="アンケートに答える（Googleフォームが別タブで開きます）"
-          className="col-span-full row-start-4 mt-[18px] inline-flex h-[52px] w-full flex-none items-center justify-center gap-1 whitespace-nowrap rounded-full bg-[#0B0F0E] px-8 text-[16px] font-extrabold text-white transition-colors hover:bg-[#0F8472] focus-visible:bg-[#0F8472] focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-[#0F8472] min-[641px]:mt-0 min-[641px]:h-14 min-[641px]:w-auto min-[641px]:min-w-[240px] min-[641px]:gap-1.5"
+          className="pill-arrow col-span-full row-start-4 mt-[18px] inline-flex h-[52px] w-full flex-none items-center justify-center gap-1 whitespace-nowrap rounded-full bg-[#0B0F0E] px-8 text-[16px] font-extrabold text-white transition-colors hover:bg-[#0F8472] focus-visible:bg-[#0F8472] focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-[#0F8472] min-[641px]:mt-0 min-[641px]:h-14 min-[641px]:w-auto min-[641px]:min-w-[240px] min-[641px]:gap-1.5"
         >
           アンケートに答える
           <svg

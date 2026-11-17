@@ -34,8 +34,12 @@ const CARDS: SiteLinkCard[] = [
   },
 ];
 
+/**
+ * ホバーすると薄い緑の地に、内側に 1.5px の緑の枠を出す（v9 の .mt-home .mt-panel:hover / .mt-links .mt-panel:hover）。
+ * ホバー中もカードの外側の影は残す
+ */
 const PANEL_CLASS =
-  "group flex min-h-[240px] flex-col justify-between gap-14 rounded-[32px] bg-white p-[clamp(28px,4vw,48px)] text-[#0B0F0E] transition-colors duration-300 hover:bg-[#E2F6F3]";
+  "group flex min-h-[240px] flex-col justify-between gap-14 rounded-[32px] bg-white p-[clamp(28px,4vw,48px)] text-[#0B0F0E] [transition:background-color_0.3s_cubic-bezier(.2,.7,.1,1),box-shadow_0.2s_ease-out] hover:bg-[#E2F6F3] hover:shadow-[inset_0_0_0_1.5px_#0F8472,0_2px_6px_rgba(11,15,14,0.06),0_8px_24px_rgba(11,15,14,0.06)]";
 
 /**
  * SP で小さくするときの見た目（v9 のトップ）。高さを約120px にし、文字は左、丸い矢印は右の中央に置く。
@@ -88,7 +92,7 @@ function CardBody({ card, classes }: { card: SiteLinkCard; classes: CardClasses 
         </span>
         <span
           aria-hidden="true"
-          className={`inline-flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-full border border-black bg-white transition-colors duration-300 group-hover:border-[#30BCA7] group-hover:bg-[#30BCA7] ${classes.circle}`}
+          className={`inline-flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-full border border-black bg-white transition-colors duration-300 group-hover:border-[#0F8472] group-hover:bg-[#0F8472] group-hover:text-white ${classes.circle}`}
         >
           <svg
             width="20"

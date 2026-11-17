@@ -226,6 +226,61 @@ table:focus-visible {
     0 26px 44px -24px rgba(15, 132, 114, 0.6);
 }
 
+/*
+ * ウォレットのカードを押したときの沈み（v9 の #home-rf.sp-wallet .mt-mlink:active）。
+ * 閉じたカードは 2px、開いたカードは 1px 沈んでわずかに縮み、離すとなめらかに戻る
+ */
+.mist-wallet-card {
+  transform-origin: 50% 0;
+  transition: transform 0.4s cubic-bezier(0.2, 0.7, 0.1, 1);
+}
+
+.mist-wallet-card:active {
+  transform: translateY(2px);
+}
+
+.mist-wallet-card[data-on="true"]:active {
+  transform: translateY(1px) scale(0.992);
+}
+
+/* 開くシートは、高さの広がり（useWalletMorph）と一緒に 8px 上から滑り込む（v9 の mtDetailIn） */
+.wallet-sheet-in {
+  animation: wallet-sheet-in 0.45s cubic-bezier(0.2, 0.7, 0.1, 1);
+}
+
+@keyframes wallet-sheet-in {
+  from {
+    transform: translateY(-8px);
+  }
+  to {
+    transform: none;
+  }
+}
+
+/* 黒いピルボタンの矢印（v9 の .mt-card-btn svg）。ボタンにホバーすると右へ 4px 動く */
+.pill-arrow > svg {
+  transition: transform 0.25s cubic-bezier(0.2, 0.7, 0.1, 1);
+}
+
+.pill-arrow:hover > svg {
+  transform: translateX(4px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mist-wallet-card,
+  .pill-arrow > svg {
+    transition: none;
+  }
+  .mist-wallet-card:active,
+  .mist-wallet-card[data-on="true"]:active,
+  .pill-arrow:hover > svg {
+    transform: none;
+  }
+  .wallet-sheet-in {
+    animation: none;
+  }
+}
+
 .mist-surface::before {
   content: "";
   position: absolute;

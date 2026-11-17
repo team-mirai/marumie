@@ -24,4 +24,22 @@ describe("SiteLinkCards", () => {
     expect(document.querySelector("nav")?.getAttribute("data-reveal")).toBe("true");
     expect(document.querySelectorAll("nav > a")).toHaveLength(3);
   });
+
+  it("ホバーで内側に緑の枠を出し、外側の影は残し、丸い矢印は緑の地に白い矢印にする（v9）", () => {
+    for (const document of [
+      parse(renderToStaticMarkup(<SiteLinkCards compactOnSp />)),
+      parse(renderToStaticMarkup(<SiteLinkCards />)),
+    ]) {
+      for (const card of document.querySelectorAll("nav a")) {
+        const className = card.getAttribute("class") ?? "";
+        expect(className).toContain("hover:bg-[#E2F6F3]");
+        expect(className).toContain(
+          "hover:shadow-[inset_0_0_0_1.5px_#0F8472,0_2px_6px_rgba(11,15,14,0.06),0_8px_24px_rgba(11,15,14,0.06)]",
+        );
+        const circle = card.querySelector('[aria-hidden="true"]')?.getAttribute("class") ?? "";
+        expect(circle).toContain("group-hover:bg-[#0F8472]");
+        expect(circle).toContain("group-hover:text-white");
+      }
+    }
+  });
 });
