@@ -485,7 +485,7 @@ test.describe("調査研究費 議員ページ", () => {
 		).toBeVisible();
 	});
 
-	test("用途カードの件数を押すと、該当行まで一覧が広がって目立つ", async ({
+	test("用途の「明細N件を見る」を押すと、該当行まで一覧が広がって目立つ", async ({
 		page,
 	}) => {
 		await page.goto(PAGE_URL);
@@ -506,7 +506,7 @@ test.describe("調査研究費 議員ページ", () => {
 		);
 	});
 
-	test("明細の「用途N」を押すと、該当の用途カードが目立つ", async ({
+	test("明細の「用途N」を押すと、該当の用途の行が目立つ", async ({
 		page,
 	}) => {
 		await page.goto(PAGE_URL);
@@ -523,7 +523,7 @@ test.describe("調査研究費 議員ページ", () => {
 			});
 		}).toPass();
 		await section.getByRole("button", { name: "用途1を見る" }).click();
-		await expect(card).toHaveClass(/border-\[#2AA693\]/);
+		await expect(card).toHaveAttribute("data-flashed", "true");
 	});
 
 	test("存在しない議員のページはトップページに寄せられる", async ({ page }) => {
