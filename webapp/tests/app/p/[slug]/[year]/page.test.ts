@@ -64,6 +64,34 @@ describe("議員ページの metadata", () => {
     expect(metadata.robots).toBeUndefined();
   });
 
+  it("シェアしたときの画像は、その議員・その年の調研費の画像にする", async () => {
+    loadResearchFundPageMock.mockResolvedValue({ politician, isPublic: true });
+
+    const metadata = await generateMetadata({ params: paramsOf("sample-taro") });
+
+    expect(metadata.openGraph?.images).toEqual([
+      {
+        url: "/p/sample-taro/2026/og-image",
+        width: 1200,
+        height: 630,
+        alt: "サンプル太郎の調研費（2026年）",
+      },
+    ]);
+    expect(metadata.twitter?.images).toEqual([
+      { url: "/p/sample-taro/2026/og-image", alt: "サンプル太郎の調研費（2026年）" },
+    ]);
+  });
+
+  it("プレビュー URL のページの画像は、プレビュー URL で作る", async () => {
+    loadResearchFundPageMock.mockResolvedValue({ politician, isPublic: false });
+
+    const metadata = await generateMetadata({ params: paramsOf(`sample-taro~${TOKEN}`) });
+
+    expect(metadata.openGraph?.images).toEqual([
+      expect.objectContaining({ url: `/p/sample-taro~${TOKEN}/2026/og-image` }),
+    ]);
+  });
+
   it("プレビュー URL で開いたページには noindex を付ける", async () => {
     loadResearchFundPageMock.mockResolvedValue({ politician, isPublic: false });
 
