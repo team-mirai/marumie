@@ -98,3 +98,35 @@ describe("HeaderMegaMenu（政党・政治団体）", () => {
     expect(html).not.toContain("サンプル党の表示する年");
   });
 });
+
+describe("HeaderMegaMenu（開くときの動き）", () => {
+  it("パネルに幕が下りる動きのクラスを付ける", () => {
+    const html = renderOrganizations([organization([2026])]);
+
+    expect(html).toMatch(/<div id="menu" class="mega-menu /);
+  });
+
+  it("政党・政治団体は1行ずつ順番に入る", () => {
+    const html = renderOrganizations([
+      { ...organization([2026]), slug: "a" },
+      { ...organization([2026]), slug: "b" },
+    ]);
+
+    const orders = [...html.matchAll(/<li style="--mega-menu-item-order:(\d+)" class="mega-menu-item /g)].map(
+      (match) => match[1],
+    );
+    expect(orders).toEqual(["0", "1"]);
+  });
+
+  it("調研費は見出しのあと、議員を3人ずつの行ごとに同じ時差で入れる", () => {
+    const html = render(
+      ["a", "b", "c", "d"].map((slug) => politician([2026], { slug })),
+    );
+
+    expect(html).toMatch(/<a style="--mega-menu-item-order:0" class="mega-menu-item [^"]*" href="\/#home-rf"/);
+    const orders = [...html.matchAll(/<li style="--mega-menu-item-order:(\d+)" class="mega-menu-item /g)].map(
+      (match) => match[1],
+    );
+    expect(orders).toEqual(["1", "1", "1", "2"]);
+  });
+});

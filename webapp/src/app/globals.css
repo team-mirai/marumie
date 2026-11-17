@@ -517,6 +517,28 @@ table:focus-visible {
 }
 
 /*
+ * PC のメガメニュー（HeaderMegaMenu）を開くときの動き（デザイン v9 の mmDrop / mmItem）。
+ * パネルが上から幕が下りるように現れ、中の項目は少し遅れて上から順に入る。
+ * 項目の順番は --mega-menu-item-order（調研費の議員は行ごと）。閉じるときは動かさずにすぐ消す。
+ * 動きは SP のメニューと同じ keyframes を使う。
+ */
+.mega-menu {
+  animation: sp-menu-drop 0.5s cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+
+.mega-menu-item {
+  animation: sp-menu-item-in 0.42s cubic-bezier(0.32, 0.72, 0, 1) both;
+  animation-delay: min(calc(0.08s + var(--mega-menu-item-order, 0) * 0.05s), 0.4s);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mega-menu,
+  .mega-menu-item {
+    animation: none;
+  }
+}
+
+/*
  * 下層ページのカードの控えめなフェードイン（v9 の data-hqrv="1"）。
  * RevealOnScroll が画面の外にあるカードにだけ reveal-armed を付け、画面に入ったら is-in を付ける
  */
