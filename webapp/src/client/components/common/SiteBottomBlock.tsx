@@ -9,8 +9,8 @@ interface SiteBottomBlockProps {
   dataNotes?: DataNote[];
   /** データについての見出しの付け方。トップは "home"、議員ページは "member"、ほかは既定の "page" */
   notesVariant?: "page" | "home" | "member";
-  /** 先頭の一言コメントの帯を差し替える（出入金ページなど） */
-  band?: ReactNode;
+  /** 先頭の一言コメントの帯を差し替える（出入金ページなど）。null なら帯を出さない（「まる見え政治資金とは」） */
+  band?: ReactNode | null;
   /** "home" はトップページ（v9）用の詰めた配置 */
   layout?: "default" | "home";
 }
@@ -29,7 +29,7 @@ export default function SiteBottomBlock({
   const isHome = layout === "home";
   return (
     <>
-      {band ?? (
+      {band === undefined ? (
         <GradientMessageCard
           className={isHome ? "-mt-3 min-[641px]:-mt-4" : ""}
           title="少しずつ進んでいますがまだまだです。今後も改善を続けます"
@@ -37,6 +37,8 @@ export default function SiteBottomBlock({
         >
           政治資金の徹底的な透明化に向けて、国民の皆さまとともに着実に歩んでまいります。
         </GradientMessageCard>
+      ) : (
+        band
       )}
       <SiteLinkCards compactOnSp={isHome} />
       <DataNotesSection notes={dataNotes} variant={notesVariant} />
