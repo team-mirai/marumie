@@ -1,8 +1,8 @@
 import "server-only";
 import AmountSummary from "@/client/components/common/AmountSummary";
 import MistHeadingCard from "@/client/components/common/MistHeadingCard";
-import PartyLogo from "@/client/components/common/PartyLogo";
 import YearSegment from "@/client/components/common/YearSegment";
+import OrganizationAvatar from "@/client/components/home/OrganizationAvatar";
 import CashFlowSection from "@/client/components/top-page/CashFlowSection";
 import { calculateSankeyFinancialSummary } from "@/client/lib/sankey-financial-summary";
 import type { SankeyData } from "@/types/sankey";
@@ -10,6 +10,8 @@ import type { SankeyData } from "@/types/sankey";
 interface PartyHeadingSectionProps {
   organizationName: string;
   slug: string;
+  /** 代表者の顔写真を配信できるか。false なら人型のアイコンにする */
+  hasPhoto: boolean;
   year: number;
   years: readonly number[];
   updatedAt: string;
@@ -21,6 +23,7 @@ interface PartyHeadingSectionProps {
 export default function PartyHeadingSection({
   organizationName,
   slug,
+  hasPhoto,
   year,
   years,
   updatedAt,
@@ -33,7 +36,13 @@ export default function PartyHeadingSection({
   return (
     <MistHeadingCard
       ariaLabel="政党情報"
-      avatar={<PartyLogo />}
+      avatar={
+        <OrganizationAvatar
+          slug={slug}
+          alt={`${organizationName}の代表者の写真`}
+          hasPhoto={hasPhoto}
+        />
+      }
       title={`${organizationName}の収支`}
       subtitle={`${year}年`}
       updatedAt={updatedAt}

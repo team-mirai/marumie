@@ -1,6 +1,5 @@
 import "server-only";
 import SiteBottomBlock from "@/client/components/common/SiteBottomBlock";
-import PartyLogo from "@/client/components/common/PartyLogo";
 import ResearchFundSurveyCard from "@/client/components/common/ResearchFundSurveyCard";
 import HomeOrganizationCard from "@/client/components/home/HomeOrganizationCard";
 import HomeResearchFundSection from "@/client/components/home/HomeResearchFundSection";
@@ -50,7 +49,13 @@ export default async function HomePage() {
               slug={party.slug}
               name={party.displayName}
               title={`${party.displayName}の収支`}
-              avatar={<PartyLogo />}
+              avatar={
+                <OrganizationAvatar
+                  slug={party.slug}
+                  alt={`${party.displayName}の代表者の写真`}
+                  hasPhoto={party.hasPhoto}
+                />
+              }
               updatedAt={updatedAt}
               years={party.years}
               defaultYear={DEFAULT_YEAR}

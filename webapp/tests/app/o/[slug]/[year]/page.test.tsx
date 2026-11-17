@@ -121,6 +121,29 @@ describe("OrgPage（政党ページ）", () => {
     });
   });
 
+  it("見出しカードの丸に、admin で登録した代表者の写真を出せるかを渡す", async () => {
+    loadOrganizationsMock.mockResolvedValue({
+      default: "team-mirai",
+      organizations: [
+        { slug: "team-mirai", orgName: null, displayName: "チームみらい", hasPhoto: true },
+      ],
+    });
+
+    const sections = await renderSections();
+
+    expect(sections.find((s) => s.name === "PartyHeadingSection")?.props).toMatchObject({
+      hasPhoto: true,
+    });
+  });
+
+  it("写真が未登録（配信できない）なら、見出しカードの丸を人型のアイコンにするよう渡す", async () => {
+    const sections = await renderSections();
+
+    expect(sections.find((s) => s.name === "PartyHeadingSection")?.props).toMatchObject({
+      hasPhoto: false,
+    });
+  });
+
   it("過去年度の貸借対照表には年度末の基準日を出す", async () => {
     const sections = await renderSections("2025");
 
