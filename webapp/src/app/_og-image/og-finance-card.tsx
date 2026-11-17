@@ -23,27 +23,31 @@ interface OgTotal {
 
 /**
  * 見出しの大きさの組み合わせ。政党は横長のロゴと3つの金額の桁が多いので、文字を詰めて金額を小さめにする。
- * 議員の調研費のページを足すときは、ここに組み合わせを足して同じ枠・見出し・図の描き方を使い回す。
+ * 議員（member）は調研費のページで、名前が長い（5文字以上）ときは long の値で「の調研費」を小さくして名前に幅を回す。
  */
-export type OgHeadingVariant = "party" | "group";
+export type OgHeadingVariant = "party" | "group" | "member";
 
-const HEADING: Record<
-  OgHeadingVariant,
-  {
-    top: number;
-    gap: number;
-    /** 金額の区切り線の左右の余白 */
-    totalPad: number;
-    amountSize: number;
-    labelSize: number;
-    /** 「の収支」などの後ろの部分の大きさ（名前に対する倍率） */
-    suffixScale: number;
-    /** 見出しの文字に使える横幅（金額の欄を除く） */
-    titleWidth: number;
-    /** 文字の大きさの最終的な倍率 */
-    titleBoost: number;
-  }
-> = {
+interface HeadingSize {
+  top: number;
+  gap: number;
+  /** 金額の区切り線の左右の余白 */
+  totalPad: number;
+  amountSize: number;
+  labelSize: number;
+  /** 「の収支」などの後ろの部分の大きさ（名前に対する倍率） */
+  suffixScale: number;
+  /** 見出しの文字に使える横幅（金額の欄を除く） */
+  titleWidth: number;
+  /** 文字の大きさの最終的な倍率 */
+  titleBoost: number;
+  /** 総額の桁が多いときに、総額にかからない幅まで見出しを小さくする（議員は支給・支出が1,000万円を超えうる） */
+  fitTotals?: boolean;
+}
+
+/** 名前がこの文字数以上なら、long の値を使う */
+const LONG_NAME = 5;
+
+const HEADING: Record<OgHeadingVariant, HeadingSize & { long?: Partial<HeadingSize> }> = {
   party: {
     top: 44,
     gap: 18,
@@ -64,18 +68,60 @@ const HEADING: Record<
     titleWidth: 512,
     titleBoost: 1,
   },
+  member: {
+    top: 54,
+    gap: 26,
+    totalPad: 22,
+    amountSize: 60,
+    labelSize: 20,
+    suffixScale: 0.78,
+    titleWidth: 540,
+    titleBoost: 1,
+    fitTotals: true,
+    long: { gap: 22, totalPad: 18, suffixScale: 0.66, titleBoost: 1.03 },
+  },
 };
 
-const TITLE_MAX = 76;
+function headingSize(variant: OgHeadingVariant, name: string): HeadingSize {
+  const { long, ...base } = HEADING[variant];
+  return long && name.length >= LONG_NAME ? { ...base, ...long } : base;
+}
 
-/** 見出しの名前の文字の大きさ。名前が長いほど小さくし、決まった横幅に収める */
-function ogTitleSize(name: string, suffix: string, variant: OgHeadingVariant): number {
-  const h = HEADING[variant];
-  const n = Math.min(
-    TITLE_MAX,
-    Math.floor(h.titleWidth / ((name.length + suffix.length * h.suffixScale) * 1.04)),
-  );
-  return Math.round(n * h.titleBoost);
+const TITLE_MAX = 76;
+/** 見出しの行の横幅（左右の余白 64px を除く） */
+const HEADING_WIDTH = OG_WIDTH - 64 * 2;
+/** 丸（顔写真・人型）の大きさ */
+const FACE_SIZE = 122;
+/** 見出しの文字と総額のあいだに最低限あける幅 */
+const TITLE_TOTALS_GAP = 16;
+
+/**
+ * 見出しの名前の文字の大きさ。名前が長いほど小さくし、決まった横幅に収める。
+ * fitTotals なら、総額の桁が多いときに総額にかからない幅までさらに小さくする
+ */
+function ogTitleSize(name: string, suffix: string, h: HeadingSize, totals: OgTotal[]): number {
+  const em = (name.length + suffix.length * h.suffixScale) * 1.04;
+  const size = Math.round(Math.min(TITLE_MAX, Math.floor(h.titleWidth / em)) * h.titleBoost);
+  if (!h.fitTotals) return size;
+  const room = HEADING_WIDTH - FACE_SIZE - h.gap - totalsWidth(totals, h) - TITLE_TOTALS_GAP;
+  return Math.min(size, Math.floor(room / em));
+}
+
+/** 総額の欄の横幅の見積もり（区切り線の左右の余白と、金額の数字・単位の幅） */
+function totalsWidth(totals: OgTotal[], h: HeadingSize): number {
+  return totals.reduce((sum, total) => {
+    const amount = formatOgAmount(total.yen).reduce((w, part) => {
+      if (part.kind === "num") {
+        // Poppins の太字の数字はおよそ 0.64em、カンマは 0.28em
+        const commas = part.text.split(",").length - 1;
+        return w + ((part.text.length - commas) * 0.64 + commas * 0.28) * h.amountSize;
+      }
+      if (part.kind === "oku") return w + h.amountSize * 0.6;
+      return w + h.labelSize * 1.04 + 4;
+    }, 0);
+    const label = (total.label.length * 1.16 + 0.6) * h.labelSize + 9;
+    return sum + h.totalPad * 2 + Math.max(amount, label);
+  }, 0);
 }
 
 interface OgFinanceCardProps {
@@ -113,8 +159,8 @@ export function OgFinanceCard({
   sankey,
   logoSrc,
 }: OgFinanceCardProps) {
-  const h = HEADING[variant];
-  const titleSize = ogTitleSize(name, suffix, variant);
+  const h = headingSize(variant, name);
+  const titleSize = ogTitleSize(name, suffix, h, totals);
   return (
     <div
       style={{
