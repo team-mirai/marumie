@@ -116,7 +116,7 @@ export function PhotoField({
                 </Button>
               )}
             </div>
-            <p className="text-xs text-muted-foreground">JPEG・PNG・WebP、3MBまで</p>
+            <p className="text-xs text-muted-foreground">JPEG・PNG、3MBまで</p>
           </div>
         </div>
         {error && (

@@ -1,6 +1,7 @@
 /**
  * 議員の顔写真（#1916）。公開サイトの議員カード・議員ページの見出しに出す。
  * 形式はファイルの先頭バイトで判定し、ブラウザが申告する MIME は信用しない。
+ * WebP は受け付けない。シェア用画像（OGP）を描く satori が読めず、そのまま出せる JPEG・PNG に揃える（#2042）。
  */
 
 /** 上限。Vercel の関数が受け取れるリクエスト本体（4.5MB）に収まるようにする */
@@ -9,7 +10,6 @@ export const POLITICIAN_PHOTO_MAX_BYTES = 3 * 1024 * 1024;
 export const POLITICIAN_PHOTO_TYPES = {
   "image/jpeg": "jpg",
   "image/png": "png",
-  "image/webp": "webp",
 } as const;
 export type PoliticianPhotoMime = keyof typeof POLITICIAN_PHOTO_TYPES;
 
@@ -20,9 +20,6 @@ function startsWith(bytes: Uint8Array, signature: number[], offset = 0) {
 function detectMime(bytes: Uint8Array): PoliticianPhotoMime | null {
   if (startsWith(bytes, [0xff, 0xd8, 0xff])) return "image/jpeg";
   if (startsWith(bytes, [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])) return "image/png";
-  // RIFF....WEBP
-  if (startsWith(bytes, [0x52, 0x49, 0x46, 0x46]) && startsWith(bytes, [0x57, 0x45, 0x42, 0x50], 8))
-    return "image/webp";
   return null;
 }
 
@@ -36,8 +33,7 @@ export const PoliticianPhoto = {
     if (bytes.length > POLITICIAN_PHOTO_MAX_BYTES)
       return { status: "invalid", message: "顔写真は3MB以下の画像にしてください" };
     const mime = detectMime(bytes);
-    if (!mime)
-      return { status: "invalid", message: "顔写真は JPEG・PNG・WebP の画像にしてください" };
+    if (!mime) return { status: "invalid", message: "顔写真は JPEG・PNG の画像にしてください" };
     return { status: "valid", mime };
   },
   /** Storage 上のキー。差し替えのたびに別のキーにして、古い写真がキャッシュから出続けないようにする */

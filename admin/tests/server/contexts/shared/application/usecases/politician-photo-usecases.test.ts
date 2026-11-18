@@ -92,7 +92,7 @@ describe("UploadPoliticianPhotoUsecase", () => {
   it("画像でないファイルは置かない", async () => {
     await expect(
       new UploadPoliticianPhotoUsecase(repository, storage, cacheInvalidator).execute("1", new Uint8Array([1, 2])),
-    ).rejects.toThrow("顔写真は JPEG・PNG・WebP の画像にしてください");
+    ).rejects.toThrow("顔写真は JPEG・PNG の画像にしてください");
     expect(storage.upload).not.toHaveBeenCalled();
   });
 

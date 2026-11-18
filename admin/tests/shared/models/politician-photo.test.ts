@@ -11,7 +11,6 @@ describe("PoliticianPhoto.validate", () => {
   it.each([
     [jpeg, "image/jpeg"],
     [png, "image/png"],
-    [webp, "image/webp"],
   ])("先頭バイトから形式を判定する", (bytes, mime) => {
     expect(PoliticianPhoto.validate(bytes)).toEqual({ status: "valid", mime });
   });
@@ -20,10 +19,14 @@ describe("PoliticianPhoto.validate", () => {
     expect(PoliticianPhoto.validate(new Uint8Array())).toMatchObject({ status: "invalid" });
   });
 
-  it("対応していない形式はエラー", () => {
-    expect(PoliticianPhoto.validate(new Uint8Array(Buffer.from("%PDF-1.7")))).toMatchObject({
+  it.each([
+    ["PDF", new Uint8Array(Buffer.from("%PDF-1.7"))],
+    // シェア用画像（OGP）で描けないので受け付けない（#2042）
+    ["WebP", webp],
+  ])("対応していない形式（%s）はエラー", (_, bytes) => {
+    expect(PoliticianPhoto.validate(bytes)).toMatchObject({
       status: "invalid",
-      message: "顔写真は JPEG・PNG・WebP の画像にしてください",
+      message: "顔写真は JPEG・PNG の画像にしてください",
     });
   });
 
@@ -45,8 +48,8 @@ describe("PoliticianPhoto.validate", () => {
 
 describe("PoliticianPhoto.buildPath", () => {
   it("議員ごとのディレクトリに形式の拡張子で置く", () => {
-    expect(PoliticianPhoto.buildPath("12", "image/webp", "uuid")).toBe(
-      "politicians/12/uuid.webp",
+    expect(PoliticianPhoto.buildPath("12", "image/png", "uuid")).toBe(
+      "politicians/12/uuid.png",
     );
   });
 });
