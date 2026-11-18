@@ -41,6 +41,20 @@ describe("SiteLinkCards", () => {
     }
   });
 
+  it("止まった状態でもカードに外側の影を付ける（v9）", () => {
+    for (const document of [
+      parse(renderToStaticMarkup(<SiteLinkCards staggerReveal />)),
+      parse(renderToStaticMarkup(<SiteLinkCards />)),
+    ]) {
+      for (const card of document.querySelectorAll("nav a")) {
+        const classes = (card.getAttribute("class") ?? "").split(/\s+/);
+        expect(classes).toContain(
+          "shadow-[0_2px_6px_rgba(11,15,14,0.06),0_8px_24px_rgba(11,15,14,0.06)]",
+        );
+      }
+    }
+  });
+
   it("ホバーで内側に緑の枠を出し、外側の影は残し、丸い矢印は緑の地に白い矢印にする（v9）", () => {
     for (const document of [
       parse(renderToStaticMarkup(<SiteLinkCards staggerReveal />)),

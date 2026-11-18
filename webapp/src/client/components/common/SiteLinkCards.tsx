@@ -35,11 +35,12 @@ const CARDS: SiteLinkCard[] = [
 ];
 
 /**
+ * 止まった状態でも外側の影を付ける（v9 の .mt-links .mt-panel。全ページ・全幅）。
  * ホバーすると薄い緑の地に、内側に 1.5px の緑の枠を出す（v9 の .mt-home .mt-panel:hover / .mt-links .mt-panel:hover）。
  * ホバー中もカードの外側の影は残す
  */
 const PANEL_CLASS =
-  "group flex min-h-[240px] flex-col justify-between gap-14 rounded-[32px] bg-white p-[clamp(28px,4vw,48px)] text-[#0B0F0E] [transition:background-color_0.3s_cubic-bezier(.2,.7,.1,1),box-shadow_0.2s_ease-out] hover:bg-[#E2F6F3] hover:shadow-[inset_0_0_0_1.5px_#0F8472,0_2px_6px_rgba(11,15,14,0.06),0_8px_24px_rgba(11,15,14,0.06)]";
+  "group flex min-h-[240px] flex-col justify-between gap-14 rounded-[32px] bg-white p-[clamp(28px,4vw,48px)] text-[#0B0F0E] shadow-[0_2px_6px_rgba(11,15,14,0.06),0_8px_24px_rgba(11,15,14,0.06)] [transition:background-color_0.3s_cubic-bezier(.2,.7,.1,1),box-shadow_0.2s_ease-out] hover:bg-[#E2F6F3] hover:shadow-[inset_0_0_0_1.5px_#0F8472,0_2px_6px_rgba(11,15,14,0.06),0_8px_24px_rgba(11,15,14,0.06)]";
 
 /**
  * SP（640px 以下）の見た目。全ページでトップ（v9）と同じ低いカードにする。
