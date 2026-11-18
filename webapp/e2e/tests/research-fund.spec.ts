@@ -61,7 +61,7 @@ test.describe("調査研究費 議員ページ", () => {
 			page.locator("#highlights").getByRole("heading", { name: "活用方針と主な用途" }),
 		).toBeVisible();
 		await expect(
-			page.locator("#highlights").getByText("サンプル 太郎の調研費の活用方針"),
+			page.locator("#highlights").getByText("サンプル 太郎の調研費活用方針"),
 		).toBeVisible();
 		await expect(page.getByText("タウンミーティングの開催")).toBeVisible();
 		// URL の無い成果物は「報告は準備中」と出す

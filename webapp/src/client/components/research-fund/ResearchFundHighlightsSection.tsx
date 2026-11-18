@@ -122,19 +122,30 @@ export default function ResearchFundHighlightsSection({
       updatedAt={updatedAt}
     >
       {data.policyComment && (
-        // PC は議員の顔写真を円形で左に置き、SP は顔写真と見出しを並べてその下に本文を出す
-        <div className="grid grid-cols-[56px_minmax(0,1fr)] items-center gap-x-4 gap-y-3.5 rounded-2xl border border-[#E5E7EB] bg-gradient-to-br from-[#E2F6F3] to-[#EEF6E2] p-6 min-[641px]:grid-cols-[88px_minmax(0,1fr)] min-[641px]:grid-rows-[auto_1fr] min-[641px]:items-start min-[641px]:gap-x-9 min-[641px]:gap-y-2">
+        // PC は顔写真を左に置き、右に緑の短い線つきの小見出しと本文。SP は顔写真と「POLICY」・小見出しを並べ、本文は幅いっぱい
+        <div className="grid grid-cols-[56px_minmax(0,1fr)] items-center gap-x-4 gap-y-3.5 min-[641px]:grid-cols-[88px_minmax(0,1fr)] min-[641px]:items-start min-[641px]:gap-9">
           <PoliticianAvatar
             photoUrl={photoUrl}
             alt={`${data.politician.name}の写真`}
-            className="h-14 w-14 shadow-[0_0_0_3px_#fff,0_2px_8px_rgba(11,15,14,0.12)] min-[641px]:row-span-2 min-[641px]:h-[88px] min-[641px]:w-[88px]"
+            className="h-14 w-14 shadow-[0_0_0_3px_#fff,0_2px_8px_rgba(11,15,14,0.12)] min-[641px]:h-[88px] min-[641px]:w-[88px]"
           />
-          <div className="text-base font-bold text-gray-800">
-            {data.politician.name}の調研費の活用方針
+          <div className="contents min-[641px]:block min-[641px]:min-w-0 min-[641px]:max-w-[46em]">
+            <div className="block leading-normal font-bold text-gray-800 min-[641px]:mb-3 min-[641px]:flex min-[641px]:items-center min-[641px]:gap-3 min-[641px]:text-[15px]">
+              <span
+                aria-hidden="true"
+                className="hidden h-0.5 w-6 flex-none rounded-[1px] bg-[#2AA693] min-[641px]:block"
+              />
+              <span className="mb-0.5 block text-xs tracking-[0.14em] text-[#238778] min-[641px]:hidden">
+                POLICY
+              </span>
+              <b className="block text-base font-bold min-[641px]:text-[15px]">
+                {data.politician.name}の調研費活用方針
+              </b>
+            </div>
+            <p className="col-span-full m-0 whitespace-pre-line text-base leading-[1.95] font-medium tracking-[0.02em] text-[#0A1A17] [text-wrap:pretty] min-[641px]:text-[19px] min-[641px]:leading-[2]">
+              {data.policyComment}
+            </p>
           </div>
-          <p className="col-span-full whitespace-pre-line text-[15px] leading-[1.87] tracking-[0.01em] text-gray-800 [text-wrap:pretty] min-[641px]:col-span-1 min-[641px]:col-start-2">
-            {data.policyComment}
-          </p>
         </div>
       )}
 
