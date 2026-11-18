@@ -68,6 +68,7 @@ export default async function HomePage() {
       {/* 調研費の公開についてのアンケート。SP は上の調研費との間を、下の見出しとの間（56px）にそろえる */}
       <ResearchFundSurveyCard
         headingId="home-survey-heading"
+        layout="home"
         className="-mt-[9px] pb-7 pt-[clamp(8px,1.5vw,16px)] min-[641px]:-mt-8 min-[641px]:pb-[clamp(8px,1.5vw,16px)]"
       />
       {data && data.groups.length > 0 && (

@@ -18,6 +18,13 @@ describe("SiteBottomBlock", () => {
     expect(html).toMatch(/<p class="[^"]*text-\[14px\] min-\[641px\]:text-\[18px\]/);
   });
 
+  it("一言コメントの帯の見出しは v9 の描画に合わせ、トップ以外は 900、トップは 700", () => {
+    expect(html).toMatch(/<h2 class="[^"]*font-black/);
+    const home = renderToStaticMarkup(<SiteBottomBlock layout="home" />);
+    expect(home).toMatch(/<h2 class="[^"]*font-bold/);
+    expect(home).not.toMatch(/<h2 class="[^"]*font-black/);
+  });
+
   it("ABOUT カードの説明は「政治とカネ解決に向けて」", () => {
     expect(html).toContain("政治とカネ解決に向けて");
     expect(html).not.toContain("4つの特徴");

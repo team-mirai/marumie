@@ -31,4 +31,13 @@ describe("ResearchFundSurveyCard", () => {
     expect(html).toContain('<h3 id="about-survey-heading"');
     expect(html).not.toContain("<h2");
   });
+
+  it("見出しの太さは v9 の描画に合わせ、トップ以外の h2 は 900、トップと h3 は 800", () => {
+    const member = renderToStaticMarkup(<ResearchFundSurveyCard headingId="m" />);
+    expect(member).toMatch(/<h2 id="m" class="[^"]*font-black/);
+    const home = renderToStaticMarkup(<ResearchFundSurveyCard headingId="h" layout="home" />);
+    expect(home).toMatch(/<h2 id="h" class="[^"]*font-extrabold/);
+    const about = renderToStaticMarkup(<ResearchFundSurveyCard headingId="a" headingLevel="h3" />);
+    expect(about).toMatch(/<h3 id="a" class="[^"]*font-extrabold/);
+  });
 });

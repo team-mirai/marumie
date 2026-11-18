@@ -8,18 +8,23 @@ interface ResearchFundSurveyCardProps {
   headingLevel?: "h2" | "h3";
   /** 置く場所ごとの余白など（外側のセクションに付ける） */
   className?: string;
+  /** "home" はトップページ用。h2 の見出しの太さがトップだけ 800 になる */
+  layout?: "default" | "home";
 }
 
 /**
  * 調研費の公開についてのアンケート（Google フォーム）への入口（v9 の .ab-voice.mt-survey-band）。
  * 緑グラデーションのカードに、丸いアイコン・「アンケート」・見出し・説明・「アンケートに答える」ボタンを載せる。
  * PC はアイコン・文・ボタンを横に並べる。SP はアイコンと見出しを横組みにし、説明とボタンはカードの幅いっぱいにする。
+ * 見出しの太さは v9 の描画に合わせ、トップと h3 は 800、ほかのページの h2 は 900（v9 の h2 への 900 !important が効くため）。
  */
 export default function ResearchFundSurveyCard({
   headingId,
   headingLevel: Heading = "h2",
   className = "",
+  layout = "default",
 }: ResearchFundSurveyCardProps) {
+  const headingWeight = layout === "home" || Heading === "h3" ? "font-extrabold" : "font-black";
   return (
     <section aria-labelledby={headingId} className={className}>
       <div
@@ -52,7 +57,7 @@ export default function ResearchFundSurveyCard({
           </span>
           <Heading
             id={headingId}
-            className="col-start-2 row-start-2 m-0 self-start text-[19px] font-extrabold leading-[1.45] text-black break-keep [overflow-wrap:anywhere] [text-wrap:balance] min-[641px]:self-auto min-[641px]:text-[clamp(20px,2.2vw,26px)]"
+            className={`col-start-2 row-start-2 m-0 self-start text-[19px] ${headingWeight} leading-[1.45] text-black break-keep [overflow-wrap:anywhere] [text-wrap:balance] min-[641px]:self-auto min-[641px]:text-[clamp(20px,2.2vw,26px)]`}
           >
             調研費の公開について
             <wbr />
