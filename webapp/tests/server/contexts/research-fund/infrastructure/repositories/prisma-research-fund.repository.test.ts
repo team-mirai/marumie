@@ -350,3 +350,53 @@ describe("PrismaResearchFundRepository の法定区分の上書き（#1880）", 
     expect(result[0].rows.map((row) => row.legalCategoryOverride)).toEqual([research, undefined]);
   });
 });
+
+describe("PrismaResearchFundRepository の支出群（#1903）", () => {
+  function linkedEntry(id: number) {
+    return {
+      entry: {
+        id: BigInt(id),
+        entryDate: new Date("2026-05-01T00:00:00Z"),
+        lines: [
+          {
+            id: BigInt(id),
+            side: "debit",
+            accountKey: "taxi",
+            amount: { toNumber: () => 1500 },
+            account: { type: "expense", label: "タクシー代", legalLabel: "交通費", legalCategoryKey: "travel" },
+          },
+        ],
+      },
+    };
+  }
+
+  function group(id: number, items: ReturnType<typeof linkedEntry>[]) {
+    return { id: BigInt(id), title: `支出群${id}`, description: "説明", outcomes: [], items };
+  }
+
+  it("published の仕訳が 1 件も紐づかない支出群（紐づけ無しを含む）は出さず、1 件以上紐づくものは出す", async () => {
+    const { prisma, repository } = setup();
+    prisma.researchFundBook.findFirst.mockResolvedValue({
+      financialYear: 2026,
+      publishedThrough: null,
+      asOfDate: null,
+      nextUpdateNote: null,
+      policyComment: null,
+      details: null,
+      politician: { name: "サンプル太郎", slug: "sample-taro", isResearchFundPublic: true, ...BLANK_PROFILE },
+      journalEntries: [],
+      // items は published の仕訳だけに絞った結果が返る
+      expenditureGroups: [group(1, [linkedEntry(10)]), group(2, []), group(3, [linkedEntry(11), linkedEntry(12)])],
+    });
+
+    const result = await repository.findPublished("sample-taro", 2026);
+
+    expect(result?.groups.map((g) => ({ id: g.id, count: g.entries.length }))).toEqual([
+      { id: "1", count: 1 },
+      { id: "3", count: 2 },
+    ]);
+    // 集計に含めるのは published の仕訳だけ
+    const select = prisma.researchFundBook.findFirst.mock.calls[0][0].select;
+    expect(select.expenditureGroups.select.items.where).toEqual({ entry: { status: "published" } });
+  });
+});

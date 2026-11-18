@@ -126,6 +126,14 @@ export function ExpenditureGroupList({
             <Card key={group.id}>
               <CardContent className="p-5">
                 <h2 className="text-[15.5px] font-bold">{group.title}</h2>
+                {!group.shownOnPublicPage && (
+                  <p className="mt-1.5 text-xs text-muted-foreground">
+                    <span className="mr-1.5 rounded-full bg-muted px-2.5 py-0.5 text-[11px] font-bold">
+                      公開ページに非表示
+                    </span>
+                    公開済みの仕訳が紐づくと表示されます
+                  </p>
+                )}
                 <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
                   <span>
                     <span className="font-latin font-bold text-foreground">

@@ -55,6 +55,7 @@ interface EntryRow {
   id: bigint;
   entryDate: Date;
   description: string;
+  status: string;
   lines: readonly { amount: Prisma.Decimal; account: { type: string } }[];
   groupItems: readonly { groupId: bigint }[];
 }
@@ -70,6 +71,7 @@ function linkableEntry(row: EntryRow): LinkableEntry | null {
     description: row.description,
     amount: expenseLines.reduce((total, line) => total + line.amount.toNumber(), 0),
     groupId: row.groupItems[0] ? String(row.groupItems[0].groupId) : null,
+    published: row.status === "published",
   };
 }
 

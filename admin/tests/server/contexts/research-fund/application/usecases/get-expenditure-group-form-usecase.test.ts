@@ -33,6 +33,7 @@ const linkable: LinkCandidate = {
   description: "明細10",
   amount: 3000,
   groupId: null,
+  published: false,
   groupTitle: null,
   payeeName: "東京タクシー",
   accountLabel: "交通費",

@@ -239,23 +239,27 @@ export class PrismaResearchFundRepository implements ResearchFundRepository {
       }
     }
 
-    const groups: PublishedExpenditureGroup[] = book.expenditureGroups.map((group) => ({
-      id: String(group.id),
-      title: group.title,
-      description: group.description,
-      outcomes: group.outcomes.map((outcome) => ({ label: outcome.label, url: outcome.url })),
-      entries: group.items.flatMap(({ entry }) =>
-        entry.lines.filter(isExpenseLine).map((line) => {
-          accounts[line.accountKey] = accountOf(line);
-          return {
-            entryId: String(entry.id),
-            entryDate: dateOf(entry.entryDate),
-            amount: line.amount.toNumber(),
-            accountKey: line.accountKey,
-          };
-        }),
-      ),
-    }));
+    // 公開済みの仕訳が 1 件も紐づかない支出群は、先の月の下書きとして公開ページに出さない（#1903）。
+    // items は published の仕訳だけに絞ってあるので、空なら紐づけ無し・未公開の仕訳だけのどちらか。
+    const groups: PublishedExpenditureGroup[] = book.expenditureGroups
+      .filter((group) => group.items.length > 0)
+      .map((group) => ({
+        id: String(group.id),
+        title: group.title,
+        description: group.description,
+        outcomes: group.outcomes.map((outcome) => ({ label: outcome.label, url: outcome.url })),
+        entries: group.items.flatMap(({ entry }) =>
+          entry.lines.filter(isExpenseLine).map((line) => {
+            accounts[line.accountKey] = accountOf(line);
+            return {
+              entryId: String(entry.id),
+              entryDate: dateOf(entry.entryDate),
+              amount: line.amount.toNumber(),
+              accountKey: line.accountKey,
+            };
+          }),
+        ),
+      }));
 
     return {
       politician: profileOf(book.politician),

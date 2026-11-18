@@ -20,15 +20,18 @@ export class ListExpenditureGroupsUsecase {
       this.repository.entries(bookId),
     ]);
     const byId = new Map(entries.map((entry) => [entry.id, entry]));
-    const groups: ExpenditureGroupSummary[] = records.map((record) => ({
-      ...record,
-      ...aggregateLinkedEntries(
-        record.entryIds.flatMap((entryId) => {
-          const entry = byId.get(entryId);
-          return entry ? [entry] : [];
-        }),
-      ),
-    }));
+    const groups: ExpenditureGroupSummary[] = records.map((record) => {
+      const linked = record.entryIds.flatMap((entryId) => {
+        const entry = byId.get(entryId);
+        return entry ? [entry] : [];
+      });
+      return {
+        ...record,
+        ...aggregateLinkedEntries(linked),
+        // 公開ページは公開済みの仕訳が 1 件も無い支出群を出さない（webapp の findPublished と同じ判定）
+        shownOnPublicPage: linked.some((entry) => entry.published),
+      };
+    });
     return { groups, policyComment: book.policyComment };
   }
 }

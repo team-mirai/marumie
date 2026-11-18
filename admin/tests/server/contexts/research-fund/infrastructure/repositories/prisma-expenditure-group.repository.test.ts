@@ -25,6 +25,7 @@ test("費用の借方が複数ある仕訳は全明細を合計し、費用の�
       id: BigInt(1),
       entryDate: new Date("2026-08-01"),
       description: "資料と交通費",
+      status: "published",
       lines: [line("expense", 1200), line("expense", 800)],
       groupItems: [{ groupId: BigInt(5) }],
     },
@@ -32,12 +33,13 @@ test("費用の借方が複数ある仕訳は全明細を合計し、費用の�
       id: BigInt(2),
       entryDate: new Date("2026-08-02"),
       description: "費用明細なし",
+      status: "draft",
       lines: [line("asset", 500)],
       groupItems: [],
     },
   ]);
   expect(await repository.entries("3")).toEqual([
-    { id: "1", entryDate: "2026-08-01", description: "資料と交通費", amount: 2000, groupId: "5" },
+    { id: "1", entryDate: "2026-08-01", description: "資料と交通費", amount: 2000, groupId: "5", published: true },
   ]);
 });
 
@@ -48,6 +50,7 @@ test("紐づけ候補は支払先・科目・特記事項・書類・紐づけ�
       id: BigInt(1),
       entryDate: new Date("2026-08-01"),
       description: "資料と交通費",
+      status: "published",
       note: "視察のため",
       memo: "事務所メモ",
       documentId: BigInt(9),
@@ -63,6 +66,7 @@ test("紐づけ候補は支払先・科目・特記事項・書類・紐づけ�
       id: BigInt(2),
       entryDate: new Date("2026-08-02"),
       description: "手入力の支出",
+      status: "draft",
       note: null,
       memo: null,
       documentId: null,
@@ -89,6 +93,7 @@ test("紐づけ候補は支払先・科目・特記事項・書類・紐づけ�
       description: "資料と交通費",
       amount: 2500,
       groupId: "5",
+      published: true,
       groupTitle: "視察のまとめ",
       payeeName: "東京タクシー",
       accountLabel: "交通費・資料費",
@@ -102,6 +107,7 @@ test("紐づけ候補は支払先・科目・特記事項・書類・紐づけ�
       description: "手入力の支出",
       amount: 300,
       groupId: null,
+      published: false,
       groupTitle: null,
       payeeName: null,
       accountLabel: "消耗品費",
