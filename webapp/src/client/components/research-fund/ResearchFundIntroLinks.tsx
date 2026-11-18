@@ -1,5 +1,5 @@
 /** チームみらいの調研費の使用方針（note） */
-const POLICY_NOTE_URL = "https://note.com/team_mirai_jp/n/n9ec9166d0e1e";
+export const POLICY_NOTE_URL = "https://note.com/team_mirai_jp/n/n9ec9166d0e1e";
 
 /**
  * 「調研費（調査研究広報滞在費）とは」の開閉と、「チームみらいの調研費の使用方針」（note）へのリンク。
