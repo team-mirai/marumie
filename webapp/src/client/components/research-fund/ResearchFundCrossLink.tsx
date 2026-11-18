@@ -15,8 +15,8 @@ const CARD_FLASH_MS = 1800;
 /** 固定ヘッダーに隠れないよう、用途カードへ飛ぶときに上を空ける量 */
 const CARD_SCROLL_OFFSET = 120;
 
-/** 用途カードの「N件」が押されたことを明細一覧に伝える。同じカードを続けて押しても届くよう nonce を持つ。 */
-interface RowsRequest {
+/** 用途カードの「明細N件を見る」で選んだ用途。同じカードを続けて押しても一覧へ移動し直せるよう nonce を持つ。 */
+interface RowsFilter {
   groupId: string;
   nonce: number;
 }
@@ -24,11 +24,14 @@ interface RowsRequest {
 interface CrossLinkValue {
   /** 枠で目立たせている用途カード（支出群のID） */
   flashedCardId: string | null;
-  rowsRequest: RowsRequest | null;
-  /** 明細の「★ 用途N」から、該当の用途カードへスクロールして一時的に目立たせる */
+  /** すべての出入金を絞り込んでいる用途。絞り込んでいなければ null */
+  rowsFilter: RowsFilter | null;
+  /** 明細の「用途NN」から、該当の用途カードへスクロールして一時的に目立たせる */
   showCard: (groupId: string) => void;
-  /** 用途カードの「N件」から、明細一覧に該当行の表示を頼む */
+  /** 用途カードの「明細N件を見る」から、すべての出入金をその用途の明細だけに絞り込む */
   showRows: (groupId: string) => void;
+  /** 用途での絞り込みを解除する */
+  clearRowsFilter: () => void;
 }
 
 const CrossLinkContext = createContext<CrossLinkValue | null>(null);
@@ -45,7 +48,7 @@ export function useResearchFundCrossLink(): CrossLinkValue {
  */
 export function ResearchFundCrossLinkProvider({ children }: { children: React.ReactNode }) {
   const [flashedCardId, setFlashedCardId] = useState<string | null>(null);
-  const [rowsRequest, setRowsRequest] = useState<RowsRequest | null>(null);
+  const [rowsFilter, setRowsFilter] = useState<RowsFilter | null>(null);
   const cardTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(
@@ -68,18 +71,20 @@ export function ResearchFundCrossLinkProvider({ children }: { children: React.Re
   }, []);
 
   const showRows = useCallback((groupId: string) => {
-    setRowsRequest((previous) => ({ groupId, nonce: (previous?.nonce ?? 0) + 1 }));
+    setRowsFilter((previous) => ({ groupId, nonce: (previous?.nonce ?? 0) + 1 }));
   }, []);
 
+  const clearRowsFilter = useCallback(() => setRowsFilter(null), []);
+
   const value = useMemo(
-    () => ({ flashedCardId, rowsRequest, showCard, showRows }),
-    [flashedCardId, rowsRequest, showCard, showRows],
+    () => ({ flashedCardId, rowsFilter, showCard, showRows, clearRowsFilter }),
+    [flashedCardId, rowsFilter, showCard, showRows, clearRowsFilter],
   );
 
   return <CrossLinkContext.Provider value={value}>{children}</CrossLinkContext.Provider>;
 }
 
-/** 用途の行。明細の「★ 用途N」から飛んできたときだけ背景を塗って目立たせる。 */
+/** 用途の行。明細の「用途NN」から飛んできたときだけ背景を塗って目立たせる。 */
 export function ResearchFundHighlightRow({
   groupId,
   className,
@@ -104,7 +109,7 @@ export function ResearchFundHighlightRow({
   );
 }
 
-/** 用途カードの「N件」。押すと明細一覧の該当行へ飛ぶ。 */
+/** 用途カードの「明細N件を見る」。押すとすべての出入金をその用途の明細だけに絞り込み、一覧へ飛ぶ。 */
 export function ResearchFundGroupRowsLink({
   groupId,
   className,

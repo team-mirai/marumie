@@ -494,11 +494,15 @@ test.describe("調査研究費 議員ページ", () => {
 		).toBeVisible();
 	});
 
-	test("用途の「明細N件を見る」を押すと、該当行まで一覧が広がって目立つ", async ({
+	test("用途の「明細N件を見る」を押すと、その用途の明細だけに絞り込み、解除すると元に戻る", async ({
 		page,
 	}) => {
 		await page.goto(PAGE_URL);
 		const section = page.locator("#transactions");
+		// 絞り込みの帯（id="tx-hlf"）は行に数えない
+		const rows = section.locator('[id^="tx-"]:not(#tx-hlf)');
+		const band = section.locator("#tx-hlf");
+		const announcement = section.getByRole("status");
 		const card = page
 			.locator('[id^="highlight-"]')
 			.filter({ hasText: "タウンミーティングの開催" });
@@ -506,12 +510,56 @@ test.describe("調査研究費 議員ページ", () => {
 		// 会場費（4/10）は先頭6件の外にある。ハイドレーション前のクリックを取りこぼさないよう押し直す。
 		await expect(async () => {
 			await card.getByRole("button", { name: "3件" }).click();
-			await expect(section.locator('[data-flashed="true"]')).toHaveCount(3, {
-				timeout: 1_000,
-			});
+			await expect(band).toBeVisible({ timeout: 1_000 });
 		}).toPass();
-		await expect(section.locator('[data-flashed="true"]').last()).toContainText(
-			"会場費",
+		await expect(band).toContainText("用途02");
+		await expect(band).toContainText("タウンミーティングの開催の明細3件を表示中");
+		await expect(announcement).toHaveText("タウンミーティングの開催の明細3件を表示中");
+		await expect(band).toBeInViewport();
+		await expect(rows).toHaveCount(3);
+		await expect(rows.filter({ hasText: "会場費" })).toBeVisible();
+		await expect(section.getByRole("link", { name: "もっと見る" })).toHaveCount(0);
+
+		// 絞り込み中に別の用途を選ぶと、その用途に絞り込み直す
+		await page
+			.locator('[id^="highlight-"]')
+			.filter({ hasText: "意見受付窓口の開設" })
+			.getByRole("button", { name: "1件" })
+			.click();
+		await expect(band).toContainText("意見受付窓口の開設の明細1件を表示中");
+		await expect(rows).toHaveCount(1);
+
+		await band.getByRole("button", { name: "絞り込みを解除" }).click();
+		await expect(band).toHaveCount(0);
+		await expect(announcement).toHaveText("");
+		await expect(rows).toHaveCount(6);
+		await expect(section.getByRole("link", { name: "もっと見る" })).toBeVisible();
+	});
+
+	test("SP で絞り込み中に並べ替えても、解除すると絞り込む前の並び順に戻る", async ({ page }) => {
+		await page.setViewportSize({ width: 390, height: 844 });
+		await page.goto(PAGE_URL);
+		const section = page.locator("#transactions");
+		const band = section.locator("#tx-hlf");
+		const card = page
+			.locator('[id^="highlight-"]')
+			.filter({ hasText: "タウンミーティングの開催" });
+
+		await expect(async () => {
+			await card.getByRole("button", { name: "3件" }).click();
+			await expect(band).toBeVisible({ timeout: 1_000 });
+		}).toPass();
+		await section.getByRole("button", { name: "古い順" }).click();
+		await expect(section.getByRole("button", { name: "古い順" })).toHaveAttribute(
+			"aria-pressed",
+			"true",
+		);
+
+		await band.getByRole("button", { name: "絞り込みを解除" }).click();
+		await expect(band).toHaveCount(0);
+		await expect(section.getByRole("button", { name: "新しい順" })).toHaveAttribute(
+			"aria-pressed",
+			"true",
 		);
 	});
 
