@@ -25,6 +25,15 @@ describe("SiteBottomBlock", () => {
     expect(home).not.toMatch(/<h2 class="[^"]*font-black/);
   });
 
+  it("帯とカード3枚の間に、導入希望のフォームへのボタンが付いたオープンソースの案内を出す", () => {
+    const band = html.indexOf("少しずつ進んでいますがまだまだです");
+    const oss = html.indexOf("まる見え政治資金を使いたい");
+    const cards = html.indexOf("政治とカネ解決に向けて");
+    expect(band).toBeLessThan(oss);
+    expect(oss).toBeLessThan(cards);
+    expect(html).toContain('href="https://forms.gle/sPx3jFbYCSRamqEE6"');
+  });
+
   it("ABOUT カードの説明は「政治とカネ解決に向けて」", () => {
     expect(html).toContain("政治とカネ解決に向けて");
     expect(html).not.toContain("4つの特徴");
@@ -58,6 +67,7 @@ describe("SiteBottomBlock（帯の差し替え）", () => {
     const html = renderToStaticMarkup(<SiteBottomBlock band={<p>差し替えた帯</p>} />);
     expect(html).toContain("差し替えた帯");
     expect(html).not.toContain("少しずつ進んでいますがまだまだです");
+    expect(html).toContain("まる見え政治資金を使いたい");
     expect(html).toContain("政治とカネ解決に向けて");
   });
 });

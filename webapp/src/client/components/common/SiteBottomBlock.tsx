@@ -2,6 +2,7 @@ import "server-only";
 import type { ReactNode } from "react";
 import DataNotesSection, { type DataNote } from "@/client/components/common/DataNotesSection";
 import GradientMessageCard from "@/client/components/common/GradientMessageCard";
+import OpenSourceAdoptionSection from "@/client/components/common/OpenSourceAdoptionSection";
 import SiteLinkCards from "@/client/components/common/SiteLinkCards";
 
 interface SiteBottomBlockProps {
@@ -17,7 +18,7 @@ interface SiteBottomBlockProps {
 
 /**
  * 全ページの本文の末尾に置く共通の下部ブロック。
- * 「少しずつ進んでいますが…」の帯 → カード3枚 → データについて の順に並べる。
+ * 「少しずつ進んでいますが…」の帯 → オープンソースの案内（導入希望のフォーム） → カード3枚 → データについて の順に並べる。
  * layout="home" はトップページ（v9）用で、上のセクションとの間を詰め、カード3枚を 1 枚ずつフェードインさせる。
  */
 export default function SiteBottomBlock({
@@ -41,6 +42,7 @@ export default function SiteBottomBlock({
       ) : (
         band
       )}
+      <OpenSourceAdoptionSection />
       <SiteLinkCards staggerReveal={isHome} />
       <DataNotesSection notes={dataNotes} variant={notesVariant} />
     </>
