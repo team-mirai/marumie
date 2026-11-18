@@ -79,7 +79,7 @@ function GroupLabelContent({ number }: { number: number }) {
   );
 }
 
-/** 「明細N件を見る」で用途を選んだときに一覧の上に出す帯。読み上げにも絞り込み中であることを伝える */
+/** 「明細N件を見る」で用途を選んだときに一覧の上に出す帯。読み上げは常に置いておく status 領域が伝える */
 function GroupFilterBand({
   number,
   title,
@@ -94,7 +94,6 @@ function GroupFilterBand({
   return (
     <div
       id="tx-hlf"
-      role="status"
       className="-my-2 flex flex-wrap items-center justify-between gap-x-4 gap-y-2.5 rounded-[14px] bg-[#F4FBF9] py-3 pr-3 pl-3.5 min-[641px]:pl-4"
     >
       <span className="flex min-w-0 flex-wrap items-center gap-2.5">
@@ -150,6 +149,15 @@ function filterBandScrollTop(): number | null {
 export default function ResearchFundExpensesSection({ data, pathSlug, eyebrow, updatedAt }: Props) {
   const { rowsFilter, showCard, clearRowsFilter } = useResearchFundCrossLink();
   const [sort, setSort] = useState<TransactionSort>("new");
+  // 絞り込みを解除したら、絞り込み中に並べ替えていても絞り込む前の並び順に戻す
+  const [sortBeforeFilter, setSortBeforeFilter] = useState<TransactionSort | null>(null);
+  const filterActive = rowsFilter !== null;
+  if (filterActive && sortBeforeFilter === null) {
+    setSortBeforeFilter(sort);
+  } else if (!filterActive && sortBeforeFilter !== null) {
+    setSort(sortBeforeFilter);
+    setSortBeforeFilter(null);
+  }
   const [receipt, setReceipt] = useState<ResearchFundExpenseView | null>(null);
 
   // 「用途N」の番号は用途カードの並び順
@@ -178,14 +186,22 @@ export default function ResearchFundExpensesSection({ data, pathSlug, eyebrow, u
     if (top === null) return;
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     window.scrollTo({ top, behavior: reduce ? "auto" : "smooth" });
-    // スクロール中に上の要素の高さが変わって位置がずれたら合わせ直す
+    // スクロール中に上の要素の高さが変わって位置がずれたら合わせ直す。
+    // それまでに利用者が操作したら（スクロールや「用途NN」で用途カードへ移動するなど）、その移動を優先して合わせ直さない。
+    const userEvents = ["wheel", "touchstart", "keydown", "pointerdown"] as const;
+    const cancel = () => {
+      clearTimeout(timer);
+      for (const type of userEvents) window.removeEventListener(type, cancel);
+    };
     const timer = setTimeout(() => {
+      cancel();
       const settled = filterBandScrollTop();
       if (settled !== null && Math.abs(window.scrollY - settled) > 24) {
         window.scrollTo({ top: settled, behavior: "auto" });
       }
     }, FILTER_SCROLL_SETTLE_MS);
-    return () => clearTimeout(timer);
+    for (const type of userEvents) window.addEventListener(type, cancel, { passive: true });
+    return cancel;
   }, [rowsFilter]);
 
   // 用途で絞り込み中は、その用途の明細を全件並べる（「もっと見る」で隠さない）
@@ -235,6 +251,10 @@ export default function ResearchFundExpensesSection({ data, pathSlug, eyebrow, u
       title="すべての出入金"
       updatedAt={updatedAt}
     >
+      {/* 絞り込みの開始を確実に読み上げるよう、status 領域は絞り込む前から置いておき中身だけを入れ替える */}
+      <p role="status" className="sr-only">
+        {filtering ? `${filterGroup.title}の明細${rows.length}件を表示中` : ""}
+      </p>
       {filtering && (
         <GroupFilterBand
           number={filterNumber}

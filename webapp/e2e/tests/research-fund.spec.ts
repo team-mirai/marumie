@@ -501,7 +501,8 @@ test.describe("調査研究費 議員ページ", () => {
 		const section = page.locator("#transactions");
 		// 絞り込みの帯（id="tx-hlf"）は行に数えない
 		const rows = section.locator('[id^="tx-"]:not(#tx-hlf)');
-		const band = section.getByRole("status").filter({ hasText: "絞り込みを解除" });
+		const band = section.locator("#tx-hlf");
+		const announcement = section.getByRole("status");
 		const card = page
 			.locator('[id^="highlight-"]')
 			.filter({ hasText: "タウンミーティングの開催" });
@@ -513,6 +514,7 @@ test.describe("調査研究費 議員ページ", () => {
 		}).toPass();
 		await expect(band).toContainText("用途02");
 		await expect(band).toContainText("タウンミーティングの開催の明細3件を表示中");
+		await expect(announcement).toHaveText("タウンミーティングの開催の明細3件を表示中");
 		await expect(band).toBeInViewport();
 		await expect(rows).toHaveCount(3);
 		await expect(rows.filter({ hasText: "会場費" })).toBeVisible();
@@ -529,8 +531,36 @@ test.describe("調査研究費 議員ページ", () => {
 
 		await band.getByRole("button", { name: "絞り込みを解除" }).click();
 		await expect(band).toHaveCount(0);
+		await expect(announcement).toHaveText("");
 		await expect(rows).toHaveCount(6);
 		await expect(section.getByRole("link", { name: "もっと見る" })).toBeVisible();
+	});
+
+	test("SP で絞り込み中に並べ替えても、解除すると絞り込む前の並び順に戻る", async ({ page }) => {
+		await page.setViewportSize({ width: 390, height: 844 });
+		await page.goto(PAGE_URL);
+		const section = page.locator("#transactions");
+		const band = section.locator("#tx-hlf");
+		const card = page
+			.locator('[id^="highlight-"]')
+			.filter({ hasText: "タウンミーティングの開催" });
+
+		await expect(async () => {
+			await card.getByRole("button", { name: "3件" }).click();
+			await expect(band).toBeVisible({ timeout: 1_000 });
+		}).toPass();
+		await section.getByRole("button", { name: "古い順" }).click();
+		await expect(section.getByRole("button", { name: "古い順" })).toHaveAttribute(
+			"aria-pressed",
+			"true",
+		);
+
+		await band.getByRole("button", { name: "絞り込みを解除" }).click();
+		await expect(band).toHaveCount(0);
+		await expect(section.getByRole("button", { name: "新しい順" })).toHaveAttribute(
+			"aria-pressed",
+			"true",
+		);
 	});
 
 	test("明細の「用途N」を押すと、該当の用途の行が目立つ", async ({
