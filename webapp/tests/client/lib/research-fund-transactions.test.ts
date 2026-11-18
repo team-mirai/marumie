@@ -1,6 +1,8 @@
 import {
   filterResearchFundExpenses,
+  filterResearchFundGroupRows,
   formatResearchFundDate,
+  formatResearchFundGroupNumber,
   paginateResearchFundExpenses,
   parseResearchFundTransactionsQuery,
   researchFundCategoryOptions,
@@ -8,7 +10,6 @@ import {
   researchFundTransactionsHref,
   researchFundTransactionsSummary,
   resolveResearchFundCategories,
-  revealResearchFundGroupRows,
   sortResearchFundExpenses,
   sumResearchFundTransactions,
 } from "@/client/lib/research-fund-transactions";
@@ -379,7 +380,7 @@ describe("researchFundTransactionsSummary", () => {
   });
 });
 
-describe("revealResearchFundGroupRows", () => {
+describe("filterResearchFundGroupRows", () => {
   const expenses = [
     view({ id: "a" }),
     view({ id: "b", groupId: "7" }),
@@ -388,34 +389,19 @@ describe("revealResearchFundGroupRows", () => {
     view({ id: "e", groupId: "8" }),
   ];
 
-  it("紐づいた行の最後までが見える件数と、先頭行のIDを返す", () => {
-    expect(revealResearchFundGroupRows(expenses, "7")).toEqual({ minShown: 4, firstId: "b" });
-    expect(revealResearchFundGroupRows(expenses, "8")).toEqual({ minShown: 5, firstId: "e" });
+  it("用途に紐づく行だけを、入力の並びのまま全件返す", () => {
+    expect(filterResearchFundGroupRows(expenses, "7").map((row) => row.id)).toEqual(["b", "d"]);
+    expect(filterResearchFundGroupRows(expenses, "8").map((row) => row.id)).toEqual(["e"]);
   });
 
-  it("紐づく行が無ければ null を返す", () => {
-    expect(revealResearchFundGroupRows(expenses, "9")).toBeNull();
+  it("紐づく行が無ければ空にする", () => {
+    expect(filterResearchFundGroupRows(expenses, "9")).toEqual([]);
   });
 });
 
-describe("researchFundCategoryOptions と法定区分の上書き", () => {
-  it("仕訳ごとに法定区分を上書きしても、科目の並びは科目の既定の区分のまま", () => {
-    const options = researchFundCategoryOptions([
-      // 先頭の交通費の行だけ「⑦ 調査研究費」に上書きされている（#1880）
-      view({
-        accountKey: "transportation",
-        detailed: { label: "交通費", color: "#000" },
-        accountLegalLabel: "⑨ 滞在費",
-        legal: { label: "⑦ 調査研究費", color: "#000" },
-      }),
-      view({
-        accountKey: "donation",
-        detailed: { label: "寄附", color: "#000" },
-        accountLegalLabel: "⑧ 寄附",
-        legal: { label: "⑧ 寄附", color: "#000" },
-      }),
-    ]);
-
-    expect(options.map((option) => option.key)).toEqual(["donation", "transportation"]);
+describe("formatResearchFundGroupNumber", () => {
+  it("2桁にゼロ埋めする", () => {
+    expect(formatResearchFundGroupNumber(3)).toBe("03");
+    expect(formatResearchFundGroupNumber(12)).toBe("12");
   });
 });

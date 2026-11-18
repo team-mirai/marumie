@@ -228,16 +228,15 @@ export function researchFundTransactionsSummary({
 /** 調研費ページの「すべての出入金」に最初に出す件数。続きは全件ページで見る。 */
 export const RESEARCH_FUND_PREVIEW_COUNT = 6;
 
-/**
- * 用途カードの「N件」を押したとき、紐づいた行がすべて見える所まで一覧を広げる。
- * 少なくとも何件出せばよいかと、スクロール先の先頭行のIDを返す。紐づく行が無ければ null。
- */
-export function revealResearchFundGroupRows(
+/** 用途の番号を2桁にする（「用途 03」）。活用方針と主な用途の番号と揃える */
+export function formatResearchFundGroupNumber(number: number): string {
+  return String(number).padStart(2, "0");
+}
+
+/** 用途カードの「明細N件を見る」で、その用途に紐づく行だけに絞り込む。並びは入力のまま */
+export function filterResearchFundGroupRows(
   expenses: readonly ResearchFundExpenseView[],
   groupId: string,
-): { minShown: number; firstId: string } | null {
-  const first = expenses.findIndex((expense) => expense.groupId === groupId);
-  if (first < 0) return null;
-  const last = expenses.findLastIndex((expense) => expense.groupId === groupId);
-  return { minShown: last + 1, firstId: expenses[first].id };
+): ResearchFundExpenseView[] {
+  return expenses.filter((expense) => expense.groupId === groupId);
 }
