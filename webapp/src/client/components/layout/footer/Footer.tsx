@@ -29,9 +29,10 @@ const FOCUS_CLASS =
   "rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#30BCA7]";
 const ROW_CLASS =
   "grid grid-cols-1 gap-2.5 border-b border-black/14 pb-5 min-[641px]:grid-cols-[200px_minmax(0,1fr)] min-[641px]:gap-4 min-[641px]:pb-6";
-// PC は左の見出しを、右側 1 行目（高さ 44px のリンク）の上下中央にそろえる
+// PC は左の見出しを、右側 1 行目（高さ 44px のリンク）の上下中央にそろえる。
+// 太さは v9 の描画に合わせて 900（v9 の宣言は 700 だが、h2 への 900 !important が効く）
 const HEADING_CLASS =
-  "m-0 text-sm leading-[1.6] font-bold text-black min-[641px]:flex min-[641px]:min-h-11 min-[641px]:flex-wrap min-[641px]:items-center min-[641px]:self-start";
+  "m-0 text-sm leading-[1.6] font-black text-black min-[641px]:flex min-[641px]:min-h-11 min-[641px]:flex-wrap min-[641px]:items-center min-[641px]:self-start";
 const PEOPLE_CLASS = "flex flex-wrap gap-x-5 gap-y-0.5";
 const PERSON_LINK_CLASS = `inline-flex min-h-11 items-center gap-2 text-[13px] font-bold text-black hover:underline hover:underline-offset-3 ${FOCUS_CLASS}`;
 const TEXT_LINK_CLASS = `inline-flex min-h-11 items-center hover:text-black hover:underline hover:underline-offset-3 ${FOCUS_CLASS}`;

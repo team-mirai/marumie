@@ -32,6 +32,7 @@ export default function SiteBottomBlock({
       {band === undefined ? (
         <GradientMessageCard
           className={isHome ? "-mt-3 min-[641px]:-mt-4" : ""}
+          layout={layout}
           title="少しずつ進んでいますがまだまだです。今後も改善を続けます"
           emoji="🏃🏃‍♀️"
         >
