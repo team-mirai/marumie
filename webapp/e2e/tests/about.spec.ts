@@ -33,6 +33,7 @@ test.describe("まる見え政治資金とはページ", () => {
 		].map((title) => titles.indexOf(title));
 		expect(order.every((index) => index >= 0)).toBe(true);
 		expect([...order].sort((a, b) => a - b)).toEqual(order);
+		expect(titles.filter((title) => title === "まる見え政治資金を使いたい議員／政治団体の方へ")).toHaveLength(1);
 	});
 
 	test("現時点で公開している収支の数を、公開中のデータから数えて出す", async ({ page }) => {
@@ -44,8 +45,8 @@ test.describe("まる見え政治資金とはページ", () => {
 	test("外部リンクは v9 と同じ先を別タブで開く", async ({ page }) => {
 		const links = [
 			{
-				name: "導入希望の登録フォーム（Googleフォームが別タブで開きます）",
-				href: "https://docs.google.com/forms/d/e/1FAIpQLSc44gK0ce3a1e_i6raz56Zan49MlxExvnqYd4B5dngMvf-qbw/viewform",
+				name: "導入を希望する（Googleフォームが別タブで開きます）",
+				href: "https://forms.gle/sPx3jFbYCSRamqEE6",
 			},
 			{
 				name: "ソースコードを見る（GitHubが別タブで開きます）",

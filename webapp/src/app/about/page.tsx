@@ -3,7 +3,6 @@ import type { Metadata } from "next";
 import AboutAimSection from "@/client/components/about/AboutAimSection";
 import AboutFeaturesSection from "@/client/components/about/AboutFeaturesSection";
 import AboutHeroSection from "@/client/components/about/AboutHeroSection";
-import AboutOpenSourceSection from "@/client/components/about/AboutOpenSourceSection";
 import AboutResearchFundSection from "@/client/components/about/AboutResearchFundSection";
 import SiteBottomBlock from "@/client/components/common/SiteBottomBlock";
 import Breadcrumbs from "@/client/components/layout/Breadcrumbs";
@@ -27,7 +26,7 @@ const PARTY_PAGE_YEAR = 2026;
 
 /**
  * 「まる見え政治資金とは」ページ（v9）。
- * 公開している収支の数 → 4つの特徴とこれまでの収支報告書との違い → 目指していること → 調研費の公開 → オープンソース の順に並べる。
+ * 公開している収支の数 → 4つの特徴とこれまでの収支報告書との違い → 目指していること → 調研費の公開 → 下部ブロック（オープンソースの案内から）の順に並べる。
  * 公開している収支の数は、ヘッダー・フッターと同じく公開中のデータから数える。
  */
 export default async function AboutPage() {
@@ -65,8 +64,7 @@ export default async function AboutPage() {
           <AboutFeaturesSection />
           <AboutAimSection partyHref={partyHref} />
           <AboutResearchFundSection />
-          <AboutOpenSourceSection />
-          {/* v9 のこのページは一言コメントの帯を出さず、カード3枚とデータについてだけを置く */}
+          {/* v9 のこのページは一言コメントの帯を出さず、オープンソースの案内・カード3枚・データについてだけを置く */}
           <SiteBottomBlock band={null} />
         </div>
       </div>

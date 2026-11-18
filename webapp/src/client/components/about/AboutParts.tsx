@@ -63,16 +63,16 @@ function AboutParagraph({ children }: { children: ReactNode }) {
 
 const CHEVRON_PATH = "M9 5l7 7-7 7";
 
+const CTA_CLASS_NAME =
+  "group inline-flex min-h-12 max-w-full min-w-[min(100%,220px)] items-center justify-center gap-1 self-center rounded-full bg-[#0B0F0E] px-3.5 py-2 text-center text-[clamp(12px,3.8vw,15px)] font-extrabold text-white no-underline transition-colors hover:bg-[#0F8472] focus-visible:bg-[#0F8472] focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-[#0F8472] min-[641px]:h-[52px] min-[641px]:min-w-[220px] min-[641px]:gap-1.5 min-[641px]:whitespace-nowrap min-[641px]:px-7 min-[641px]:py-0 min-[641px]:text-[15px]";
+
 /**
  * 黒い丸ボタン（v9 の .mt-card-btn.mt-btn-sm）。サイト内のページへ移る。
  * SP は v9 と同じく文字を画面幅に合わせて小さくし、それでも収まらない狭い画面（幅320pxなど）では折り返してカードからはみ出さないようにする
  */
 export function AboutCtaLink({ href, children }: { href: string; children: ReactNode }) {
   return (
-    <Link
-      href={href}
-      className="group inline-flex min-h-12 max-w-full min-w-[min(100%,220px)] items-center justify-center gap-1 self-center rounded-full bg-[#0B0F0E] px-3.5 py-2 text-center text-[clamp(12px,3.8vw,15px)] font-extrabold text-white no-underline transition-colors hover:bg-[#0F8472] focus-visible:bg-[#0F8472] focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-[#0F8472] min-[641px]:h-[52px] min-[641px]:min-w-[220px] min-[641px]:gap-1.5 min-[641px]:whitespace-nowrap min-[641px]:px-7 min-[641px]:py-0 min-[641px]:text-[15px]"
-    >
+    <Link href={href} className={CTA_CLASS_NAME}>
       {children}
       <svg
         width="16"
@@ -89,6 +89,30 @@ export function AboutCtaLink({ href, children }: { href: string; children: React
         <path d={CHEVRON_PATH} />
       </svg>
     </Link>
+  );
+}
+
+/** 黒い丸ボタン（AboutCtaLink と同じ見た目）で外部のページを別タブで開く。aria-label に「（〜が別タブで開きます）」を入れる */
+export function AboutCtaExternalLink({
+  href,
+  ariaLabel,
+  children,
+}: {
+  href: string;
+  ariaLabel: string;
+  children: ReactNode;
+}) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label={ariaLabel}
+      className={CTA_CLASS_NAME}
+    >
+      {children}
+      <NewTabIcon />
+    </a>
   );
 }
 
