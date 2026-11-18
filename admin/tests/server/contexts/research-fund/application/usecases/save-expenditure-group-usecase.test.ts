@@ -36,7 +36,7 @@ function setup() {
 }
 
 function entry(id: string, groupId: string | null = null): LinkableEntry {
-  return { id, entryDate: "2026-05-14", description: `明細${id}`, amount: 3000, groupId };
+  return { id, entryDate: "2026-05-14", description: `明細${id}`, amount: 3000, groupId, published: false };
 }
 
 const edit: ExpenditureGroupEdit = {

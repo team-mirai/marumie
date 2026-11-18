@@ -55,7 +55,10 @@ export interface PublishedOutcome {
   url: string | null;
 }
 
-/** 支出群（主要な支出の成果）。金額・件数・期間は紐づいた仕訳から集計する。 */
+/**
+ * 支出群（主要な支出の成果）。金額・件数・期間は紐づいた仕訳から集計する。
+ * published の仕訳が 1 件も紐づかない支出群は含めない。
+ */
 export interface PublishedExpenditureGroup {
   id: string;
   title: string;

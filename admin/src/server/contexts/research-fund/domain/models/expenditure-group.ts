@@ -57,6 +57,8 @@ export interface LinkableEntry {
   description: string;
   amount: number;
   groupId: string | null;
+  /** 公開済み（published）の仕訳か。公開済みの仕訳が 1 件も無い支出群は公開ページに出ない（#1903） */
+  published: boolean;
 }
 
 /**
@@ -85,8 +87,13 @@ export interface ExpenditureGroupRecord {
   entryIds: readonly string[];
 }
 
-/** 一覧カードに出す支出群。金額・件数・期間は紐づけから自動集計する */
-export interface ExpenditureGroupSummary extends ExpenditureGroupRecord, LinkedEntrySummary {}
+/**
+ * 一覧カードに出す支出群。金額・件数・期間は紐づけから自動集計する。
+ * shownOnPublicPage は公開ページに表示されるか（公開済みの仕訳が 1 件以上紐づいているか）
+ */
+export interface ExpenditureGroupSummary extends ExpenditureGroupRecord, LinkedEntrySummary {
+  shownOnPublicPage: boolean;
+}
 
 const URL_PATTERN = /^https?:\/\/\S+$/;
 

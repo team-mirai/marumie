@@ -25,6 +25,7 @@ function candidate(id: string, patch: Partial<LinkCandidate> = {}): LinkCandidat
     description: `明細${id}`,
     amount: 1000,
     groupId: null,
+    published: false,
     groupTitle: null,
     payeeName: null,
     accountLabel: "交通費",
