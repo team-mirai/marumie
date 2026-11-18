@@ -130,7 +130,7 @@ allowed_mime_types = ["application/json"]
 [storage.buckets.published-assets]
 public = false
 file_size_limit = "3MiB"
-allowed_mime_types = ["image/jpeg", "image/png", "image/webp"]
+allowed_mime_types = ["image/jpeg", "image/png"]
 
 [auth]
 enabled = true
