@@ -7,7 +7,8 @@ interface MainColumnProps {
    */
   spacing?: "default" | "compact" | "home";
   /**
-   * 幅。"wide" はトップページ（v9）の幅で、本文の最大幅 1120px・左右の余白は PC 20px／SP 16px
+   * 幅。"wide" はトップページ（v9）の幅で、本文の最大幅 1120px・左右の余白は PC 20px／SP 8px
+   * SP の左右の余白は v9（トップ 16px・それ以外 20px）の半分にしてカードを広げている（意図的な逸脱）
    */
   width?: "default" | "wide";
 }
@@ -19,8 +20,8 @@ const SPACING_CLASSES = {
 } as const;
 
 const WIDTH_CLASSES = {
-  default: "max-w-[1032px] px-5 min-[641px]:px-0",
-  wide: "max-w-[1160px] px-4 min-[641px]:px-5",
+  default: "max-w-[1032px] px-2.5 min-[641px]:px-0",
+  wide: "max-w-[1160px] px-2 min-[641px]:px-5",
 } as const;
 
 export default function MainColumn({
