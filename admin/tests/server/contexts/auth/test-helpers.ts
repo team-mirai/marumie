@@ -6,6 +6,7 @@ import type {
 } from "@/server/contexts/shared/domain/repositories/user-repository.interface";
 import type { SupabaseAuthUser } from "@/server/contexts/auth/domain/models/supabase-auth-user";
 import type { AuthSession } from "@/server/contexts/auth/domain/models/auth-session";
+import type { UserInvitationRepository } from "@/server/contexts/auth/domain/repositories/user-invitation-repository.interface";
 
 export const createMockSupabaseUser = (
   overrides: Partial<SupabaseAuthUser> = {}
@@ -23,6 +24,7 @@ export const createMockSession = (
   accessToken: "access-token",
   refreshToken: "refresh-token",
   user: createMockSupabaseUser(),
+  signInProvider: null,
   ...overrides,
 });
 
@@ -30,7 +32,7 @@ export const createMockUser = (overrides: Partial<User> = {}): User => ({
   id: "user-id",
   authId: "auth-user-id",
   email: "test@example.com",
-  role: "user",
+  roles: [],
   createdAt: new Date("2024-01-01"),
   updatedAt: new Date("2024-01-01"),
   ...overrides,
@@ -43,6 +45,7 @@ export const createMockAuthProvider = (): jest.Mocked<AuthProvider> => ({
   updateUser: jest.fn(),
   setSession: jest.fn(),
   exchangeCodeForSession: jest.fn(),
+  signInWithOAuth: jest.fn(),
   resetPasswordForEmail: jest.fn(),
 });
 
@@ -57,6 +60,18 @@ export const createMockUserRepository = (): jest.Mocked<UserRepository> => ({
   findByAuthId: jest.fn(),
   findByEmail: jest.fn(),
   findAll: jest.fn(),
-  updateRole: jest.fn(),
+  updateRoles: jest.fn(),
   delete: jest.fn(),
+  findAssignedPoliticianIds: jest.fn(),
+  findAllAssignedPoliticianIds: jest.fn(),
+  replaceAssignedPoliticians: jest.fn(),
 });
+
+export const createMockUserInvitationRepository =
+  (): jest.Mocked<UserInvitationRepository> => ({
+    findAll: jest.fn(),
+    findByEmail: jest.fn(),
+    create: jest.fn(),
+    delete: jest.fn(),
+    createUserAcceptingInvitation: jest.fn(),
+  });

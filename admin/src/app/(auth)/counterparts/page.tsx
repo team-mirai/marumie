@@ -2,6 +2,7 @@ import "server-only";
 
 import { loadCounterpartsData } from "@/server/contexts/report/presentation/loaders/counterparts-loader";
 import { CounterpartMasterClient } from "@/client/components/counterparts/CounterpartMasterClient";
+import { requireRolePage } from "@/server/contexts/auth/presentation/loaders/require-role-page";
 
 interface CounterpartMasterPageProps {
   searchParams: Promise<{
@@ -11,6 +12,7 @@ interface CounterpartMasterPageProps {
 }
 
 export default async function CounterpartMasterPage({ searchParams }: CounterpartMasterPageProps) {
+  await requireRolePage("political_fund");
   const params = await searchParams;
   const searchQuery = params.q;
   const parsedPage = params.page ? Number.parseInt(params.page, 10) : 1;

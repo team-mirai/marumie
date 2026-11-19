@@ -1,5 +1,5 @@
 import { PL_CATEGORIES, BS_CATEGORIES } from "@/shared/accounting/account-category";
-import type { PreviewTransaction } from "@/server/contexts/data-import/domain/models/preview-transaction";
+import { PreviewTransaction } from "@/server/contexts/data-import/domain/models/preview-transaction";
 import type { Transaction } from "@/shared/models/transaction";
 
 const OFFSET_EXPENSE_ACCOUNT = "相殺項目（費用）";
@@ -41,8 +41,12 @@ export class TransactionValidator {
     }
 
     // 2. transaction_noチェック（早期リターン）
+    // MF の取引No は年度ごとに振り直されるため、同じ年度の取引だけを同一とみなす
+    const financialYear = PreviewTransaction.extractFinancialYear(transaction.transaction_date);
     const duplicateByTransactionNo = existingTransactions.find(
-      (existing) => existing.transaction_no === transaction.transaction_no,
+      (existing) =>
+        existing.transaction_no === transaction.transaction_no &&
+        existing.financial_year === financialYear,
     );
 
     if (!duplicateByTransactionNo) {
@@ -96,9 +100,12 @@ export class TransactionValidator {
     const isOffsetTransaction =
       transaction.debit_account === OFFSET_EXPENSE_ACCOUNT ||
       transaction.credit_account === OFFSET_INCOME_ACCOUNT;
+    // 非現金仕訳（BS科目同士の仕訳）は収支として表示されないため、独自のカテゴリを必須にしない
+    const isNonCashJournal = transaction.transaction_type === "non_cash_journal";
 
     if (
       !isOffsetTransaction &&
+      !isNonCashJournal &&
       (!transaction.friendly_category || transaction.friendly_category.trim() === "")
     ) {
       return "独自のカテゴリが設定されていません";

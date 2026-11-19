@@ -1,8 +1,17 @@
+import "server-only";
+
 import { TransactionsClient } from "@/client/components/transactions/TransactionsClient";
-import { loadPoliticalOrganizationsData } from "@/server/contexts/shared/presentation/loaders/load-political-organizations-data";
+import { TargetRequiredNotice } from "@/client/components/layout/TargetRequiredNotice";
+import { loadCurrentOrganizationTarget } from "@/server/contexts/shared/presentation/loaders/load-current-organization-target";
+import { requireRolePage } from "@/server/contexts/auth/presentation/loaders/require-role-page";
 
 export default async function TransactionsPage() {
-  const organizations = await loadPoliticalOrganizationsData();
+  await requireRolePage("political_fund");
+  const target = await loadCurrentOrganizationTarget();
 
-  return <TransactionsClient organizations={organizations} />;
+  if (!target) {
+    return <TargetRequiredNotice label="Transactions" title="取引一覧" />;
+  }
+
+  return <TransactionsClient key={`${target.organizationId}:${target.year}`} target={target} />;
 }

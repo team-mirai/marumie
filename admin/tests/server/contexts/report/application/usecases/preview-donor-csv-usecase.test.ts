@@ -7,7 +7,7 @@ import type { DonorCsvRecordConverter } from "@/server/contexts/report/infrastru
 import type { DonorCsvValidator } from "@/server/contexts/report/domain/services/donor-csv-validator";
 import type { IDonorRepository } from "@/server/contexts/report/domain/repositories/donor-repository.interface";
 import type { ITransactionWithDonorRepository } from "@/server/contexts/report/domain/repositories/transaction-with-donor-repository.interface";
-import type { DonorCsvRecord } from "@/server/contexts/report/infrastructure/donor-csv/donor-csv-record";
+import type { DonorCsvRecord } from "@/server/contexts/report/domain/models/donor-csv-record";
 import type {
   PreviewDonorCsvRow,
   TransactionForDonorCsv,
@@ -105,6 +105,7 @@ describe("PreviewDonorCsvUsecase", () => {
     const input: PreviewDonorCsvInput = {
       csvContent: "dummy csv content",
       politicalOrganizationId: "org-123",
+      financialYear: 2025,
     };
 
     const result = await usecase.execute(input);
@@ -116,6 +117,7 @@ describe("PreviewDonorCsvUsecase", () => {
     expect(mockTransactionRepository.findByTransactionNosForDonorCsv).toHaveBeenCalledWith(
       ["T2025-0001"],
       "org-123",
+      2025,
     );
   });
 
@@ -133,6 +135,7 @@ describe("PreviewDonorCsvUsecase", () => {
     const input: PreviewDonorCsvInput = {
       csvContent: "",
       politicalOrganizationId: "org-123",
+      financialYear: 2025,
     };
 
     const result = await usecase.execute(input);
@@ -174,6 +177,7 @@ describe("PreviewDonorCsvUsecase", () => {
     const input: PreviewDonorCsvInput = {
       csvContent: "dummy csv content",
       politicalOrganizationId: "org-123",
+      financialYear: 2025,
     };
 
     const result = await usecase.execute(input);
@@ -220,6 +224,7 @@ describe("PreviewDonorCsvUsecase", () => {
     const input: PreviewDonorCsvInput = {
       csvContent: "dummy csv content",
       politicalOrganizationId: "org-123",
+      financialYear: 2025,
     };
 
     const result = await usecase.execute(input);
@@ -230,6 +235,7 @@ describe("PreviewDonorCsvUsecase", () => {
     expect(mockTransactionRepository.findByTransactionNosForDonorCsv).toHaveBeenCalledWith(
       ["T2025-0001", "T2025-0002"],
       "org-123",
+      2025,
     );
   });
 
@@ -249,6 +255,7 @@ describe("PreviewDonorCsvUsecase", () => {
     const input: PreviewDonorCsvInput = {
       csvContent: "invalid csv",
       politicalOrganizationId: "org-123",
+      financialYear: 2025,
     };
 
     await expect(usecase.execute(input)).rejects.toThrow("プレビュー処理に失敗しました");
@@ -276,6 +283,7 @@ describe("PreviewDonorCsvUsecase", () => {
     const input: PreviewDonorCsvInput = {
       csvContent: "dummy csv content",
       politicalOrganizationId: "org-123",
+      financialYear: 2025,
     };
 
     const result = await usecase.execute(input);

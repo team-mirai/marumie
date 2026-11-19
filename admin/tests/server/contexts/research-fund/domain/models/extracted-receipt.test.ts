@@ -1,0 +1,232 @@
+import { ExtractedReceipt } from "@/server/contexts/research-fund/domain/models/extracted-receipt";
+import { RECEIPT_CATEGORIES } from "@/server/contexts/research-fund/domain/models/receipt-categories";
+
+const receipt = {
+  date: "2026-09-10",
+  items: [{ item: "書籍", amount: 1200, category_key: "books-newspapers" }],
+};
+
+describe("ExtractedReceipt.normalize", () => {
+  it.each([...Object.keys(RECEIPT_CATEGORIES), "needs-review"])(
+    "分類 %s を受け付ける",
+    (category_key) => {
+      expect(
+        ExtractedReceipt.normalize({ ...receipt, items: [{ ...receipt.items[0], category_key }] })
+          .status,
+      ).toBe("valid");
+    },
+  );
+
+  it.each([" BOOKS_NEWSPAPERS ", "books newspapers", "新聞・書籍代"])(
+    "カテゴリ表記 %s と金額文字列・省略された任意項目を正規化する",
+    (category_key) => {
+      expect(
+        ExtractedReceipt.normalize({
+          date: " 2026-09-10 ",
+          items: [{ item: " 書籍 ", amount: "￥１，２００円", category_key }],
+        }),
+      ).toEqual({
+        status: "valid",
+        value: {
+          date: "2026-09-10",
+          issuer: null,
+          items: [{ ...receipt.items[0], date: null, note: null, memo: null, split_group: null }],
+        },
+      });
+    },
+  );
+
+  it("複数明細の特記事項と分割グループを保持する", () => {
+    const items = [
+      { ...receipt.items[0], note: " 調査用 ", split_group: " order-1 " },
+      {
+        item: "ペン",
+        amount: 100,
+        category_key: "stationery-supplies",
+        note: null,
+        split_group: "order-1",
+      },
+    ];
+    expect(ExtractedReceipt.normalize({ ...receipt, items })).toEqual({
+      status: "valid",
+      value: {
+        date: receipt.date,
+        issuer: null,
+        items: [
+          { ...items[0], date: null, note: "調査用", memo: null, split_group: "order-1" },
+          { ...items[1], date: null, memo: null },
+        ],
+      },
+    });
+  });
+
+  it("公開されない備考（memo）を特記事項（note）と分けて保持する", () => {
+    expect(
+      ExtractedReceipt.normalize({
+        ...receipt,
+        items: [{ ...receipt.items[0], note: "調査用", memo: " 領収書ではない（出荷明細書） " }],
+      }),
+    ).toMatchObject({
+      status: "valid",
+      value: { items: [{ note: "調査用", memo: "領収書ではない（出荷明細書）" }] },
+    });
+  });
+
+  it.each([
+    ["キー欠落", {}],
+    ["null", { memo: null }],
+    ["空文字", { memo: "" }],
+    ["空白のみ", { memo: "  " }],
+  ])("memo を出さない古い形式の読み取り結果（%s）も備考なしで受け付ける", (_, memo) => {
+    expect(
+      ExtractedReceipt.normalize({ ...receipt, items: [{ ...receipt.items[0], ...memo }] }),
+    ).toMatchObject({ status: "valid", value: { items: [{ memo: null }] } });
+  });
+
+  it("明細ごとの利用日を保持する", () => {
+    expect(
+      ExtractedReceipt.normalize({
+        ...receipt,
+        items: [{ ...receipt.items[0], date: " 2026-02-12 " }],
+      }),
+    ).toMatchObject({ status: "valid", value: { items: [{ date: "2026-02-12" }] } });
+  });
+
+  it.each([
+    ["キー欠落", {}],
+    ["null", { date: null }],
+    ["空文字", { date: "" }],
+    ["空白のみ", { date: "  " }],
+  ])("明細の日付を出さない古い形式の読み取り結果（%s）も書類の日付に任せて受け付ける", (_, date) => {
+    expect(
+      ExtractedReceipt.normalize({ ...receipt, items: [{ ...receipt.items[0], ...date }] }),
+    ).toMatchObject({ status: "valid", value: { items: [{ date: null }] } });
+  });
+
+  it.each([
+    0,
+    -1,
+    1.5,
+    Infinity,
+    NaN,
+    1_000_000_000_000,
+    null,
+    undefined,
+    true,
+    "",
+    "1,20",
+    "12abc",
+    "1e3",
+    "1.5",
+    "-100",
+  ])("不正な金額 %s をRFエラーにする", (amount) => {
+    const result = ExtractedReceipt.normalize({
+      ...receipt,
+      items: [{ ...receipt.items[0], amount }],
+    });
+    expect(result).toMatchObject({
+      status: "invalid",
+      errors: [{ path: "items.0.amount", code: "RF_INVALID_EXTRACTION_OUTPUT", severity: "error" }],
+    });
+  });
+
+  it.each([
+    null,
+    {},
+    { ...receipt, date: "2026-02-29" },
+    { ...receipt, date: "2026-13-01" },
+    { items: receipt.items },
+    { ...receipt, items: [] },
+    { ...receipt, items: [null] },
+    ...["unknown", "bank", "grant-income", undefined].map((category_key) => ({
+      ...receipt,
+      items: [{ ...receipt.items[0], category_key }],
+    })),
+    { ...receipt, items: [{ ...receipt.items[0], item: " " }] },
+    { ...receipt, items: [{ ...receipt.items[0], note: 12 }] },
+    { ...receipt, items: [{ ...receipt.items[0], memo: 12 }] },
+    { ...receipt, items: [{ ...receipt.items[0], date: "2026-02-30" }] },
+    { ...receipt, items: [{ ...receipt.items[0], date: "02/12" }] },
+    { ...receipt, items: [{ ...receipt.items[0], date: 0 }] },
+    { ...receipt, items: [{ ...receipt.items[0], date: false }] },
+  ])("欠損や不正な抽出結果を拒否する: %j", (input) => {
+    expect(ExtractedReceipt.normalize(input)).toMatchObject({
+      status: "invalid",
+      errors: expect.arrayContaining([
+        expect.objectContaining({ code: "RF_INVALID_EXTRACTION_OUTPUT" }),
+      ]),
+    });
+  });
+
+  it("閏日と上限金額を受け付ける", () => {
+    expect(
+      ExtractedReceipt.normalize({
+        date: "2024-02-29",
+        items: [{ ...receipt.items[0], amount: 999_999_999_999 }],
+      }).status,
+    ).toBe("valid");
+  });
+});
+
+describe("書類の発行元", () => {
+  it("発行元を書類単位で保持し、空白を整える", () => {
+    const result = ExtractedReceipt.normalize({
+      ...receipt,
+      issuer: {
+        name: " 東京タクシー株式会社 ",
+        address: "東京都千代田区千代田1-1",
+        phone: "03-1234-5678",
+        invoice_registration_number: " T1234567890123 ",
+      },
+    });
+    expect(result).toMatchObject({
+      status: "valid",
+      value: {
+        issuer: {
+          name: "東京タクシー株式会社",
+          address: "東京都千代田区千代田1-1",
+          phone: "03-1234-5678",
+          invoice_registration_number: "T1234567890123",
+        },
+      },
+    });
+  });
+
+  it("発行元を出さない古い形式の読み取り結果も受け付ける", () => {
+    expect(ExtractedReceipt.normalize(receipt)).toMatchObject({
+      status: "valid",
+      value: { issuer: null },
+    });
+  });
+
+  it.each([
+    ["空の項目だけ", { name: " ", address: "", phone: null }],
+    ["不正な形", "東京タクシー"],
+  ])("発行元が %s なら読み取り全体を失敗させず null にする", (_, issuer) => {
+    expect(ExtractedReceipt.normalize({ ...receipt, issuer })).toMatchObject({
+      status: "valid",
+      value: { issuer: null },
+    });
+  });
+
+  it("読み取れなかった項目は null にする", () => {
+    expect(
+      ExtractedReceipt.normalize({ ...receipt, issuer: { name: "JR東日本", phone: 123 } }),
+    ).toMatchObject({
+      value: {
+        issuer: { name: "JR東日本", address: null, phone: null, invoice_registration_number: null },
+      },
+    });
+  });
+
+  it("保存済みの原文から発行元を取り出す（古い形式・原文が無いときは null）", () => {
+    expect(ExtractedReceipt.issuerOf({ ...receipt, issuer: { name: "JR東日本" } })).toEqual({
+      name: "JR東日本",
+      address: null,
+      phone: null,
+      invoice_registration_number: null,
+    });
+    expect(ExtractedReceipt.issuerOf(receipt)).toBeNull();
+    expect(ExtractedReceipt.issuerOf(null)).toBeNull();
+  });
+});

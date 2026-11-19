@@ -1,3 +1,5 @@
 {
-  "buildCommand": "pnpm run build:vercel"
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "pnpm run build:vercel",
+  "ignoreCommand": "[ \"$VERCEL_ENV\" = \"production\" ] && [ \"$MANUAL_DEPLOY\" != \"1\" ] && exit 0 || exit 1"
 }

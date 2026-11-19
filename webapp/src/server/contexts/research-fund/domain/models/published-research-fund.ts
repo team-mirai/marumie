@@ -1,0 +1,153 @@
+/**
+ * 公開ページが読む調研費データ。
+ *
+ * published の仕訳だけを射影したものであり、draft / approved の仕訳と
+ * 公開されない備考（memo）はこの型に入らない（= 画面に出ない）。
+ */
+import type { PoliticianHouse } from "@/shared/models/politician";
+import type { ResearchFundCategory, ResearchFundRow } from "@/shared/research-fund/aggregation";
+import type { ResearchFundLegalCategory } from "@/shared/research-fund/legal-category";
+
+/**
+ * 費目（科目マスタ）。法定区分のキーはカテゴリーピルの色に使う。
+ * legalLabel / legalCategoryKey は科目の既定の区分。仕訳ごとの上書きは行の legalCategoryOverride が持つ。
+ */
+export interface PublishedAccount extends ResearchFundCategory {
+  legalCategoryKey: string;
+}
+
+/**
+ * 「すべての出入金」に並べる公開済みの1行。
+ * 支出は仕訳の借方・費用行1つ、支給は貸方の調査研究費収入の行1つ。
+ * 同一注文の分割行は splitGroup が同じになる。
+ */
+export interface PublishedExpense {
+  /** grant は支給（入金）、expense は支出（出金） */
+  kind: "grant" | "expense";
+  /** 行の一意キー（仕訳明細のID） */
+  id: string;
+  /** 領収書の取得に使う仕訳のID */
+  entryId: string;
+  /** 帳簿上の日付（YYYY-MM-DD）。タイムゾーンによる月のずれを避ける。 */
+  date: string;
+  accountKey: string;
+  description: string;
+  amount: number;
+  /** 特記事項（公開される）。備考（memo）は含まない。 */
+  note: string | null;
+  splitGroup: string | null;
+  /** 書類（領収書など）が付いているか。公開用の版がまだ無くても true */
+  hasReceipt: boolean;
+  /**
+   * 書類の公開用の版（個人情報を黒塗りし、メタデータを消した版）が作成済みか。
+   * 原本は配信しないので、false の間は領収書を表示せず準備中とする（#1803）
+   */
+  receiptReady: boolean;
+  /** 配信する公開用の版の MIME。公開用の版が無ければ null */
+  receiptMime: string | null;
+  /** 仕訳ごとの法定区分の上書き（#1880）。上書きが無ければ省略し、科目の既定の区分に従う */
+  legalCategoryOverride?: ResearchFundLegalCategory;
+}
+
+/** 成果物。url が無ければ公開側は「報告は準備中」と表示する。 */
+export interface PublishedOutcome {
+  label: string;
+  url: string | null;
+}
+
+/**
+ * 支出群（主要な支出の成果）。金額・件数・期間は紐づいた仕訳から集計する。
+ * published の仕訳が 1 件も紐づかない支出群は含めない。
+ */
+export interface PublishedExpenditureGroup {
+  id: string;
+  title: string;
+  description: string;
+  outcomes: PublishedOutcome[];
+  /** 紐づいた published の仕訳。未公開の仕訳は含めない。 */
+  entries: { entryId: string; entryDate: string; amount: number; accountKey: string }[];
+}
+
+/**
+ * 議員ページの議員カードに出すプロフィール（#1916。admin で手で入力する）。
+ * 登録されていない項目は null・空配列で、画面には出さない。
+ */
+export interface PublishedPoliticianProfile {
+  name: string;
+  slug: string;
+  nameKana: string | null;
+  house: PoliticianHouse | null;
+  /** 選挙区（例: 「比例東京（東京7区）」） */
+  constituency: string | null;
+  /** チームみらい公式サイト内のプロフィールページ */
+  profileUrl: string | null;
+  /** 議員の公式サイト */
+  websiteUrl: string | null;
+  /** SNS の URL（表示順どおり） */
+  snsUrls: string[];
+  /** 顔写真が登録されているか。写真のキーは公開ページに渡さず、配信は API が行う */
+  hasPhoto: boolean;
+}
+
+export interface PublishedResearchFund {
+  politician: PublishedPoliticianProfile;
+  /** published の仕訳を持つ帳簿の年度（昇順）。年の切り替えに使う */
+  publishedYears: number[];
+  /** 議員が調研費を「公開する」設定か。false ならプレビュー URL でだけ表示し、導線・sitemap から外して noindex にする */
+  isPublic: boolean;
+  financialYear: number;
+  /** 「2026.8.20 更新」。未設定なら null */
+  asOfDate: string | null;
+  /** 「次回更新 11月ごろ」。未設定なら null */
+  nextUpdateNote: string | null;
+  /** 活用方針（議員本人が書く1〜2行）。未設定なら null */
+  policyComment: string | null;
+  /** B-5「データについて」の説明文。未設定なら null */
+  details: unknown;
+  /** 何月分まで公開したか（YYYY-MM-DD）。未設定なら null */
+  publishedThrough: string | null;
+  /** 集計に渡す行（支給と支出）。 */
+  rows: ResearchFundRow[];
+  accounts: Record<string, PublishedAccount>;
+  /** 明細に並べる支給と支出 */
+  expenses: PublishedExpense[];
+  groups: PublishedExpenditureGroup[];
+}
+
+/** 書類の公開用の版は、全ページを画像にして組み直した PDF（#1802） */
+export const MASKED_RECEIPT_MIME = "application/pdf";
+
+/**
+ * 公開された領収書。published の仕訳に紐づく書類の、作成済みの公開用の版だけを配信する。
+ * 原本のキーは持たせない（取り違えて原本を配信する余地を無くす。#1803）
+ */
+export interface PublishedReceipt {
+  maskedKey: string;
+}
+
+/** トップページの「所属議員の調研費」が読む、議員1人分の published 射影。 */
+export interface PublishedPoliticianResearchFund {
+  politician: {
+    name: string;
+    slug: string;
+    nameKana: string | null;
+    house: PoliticianHouse | null;
+    /** 顔写真が登録されているか。写真のキーは公開ページに渡さず、配信は API が行う */
+    hasPhoto: boolean;
+  };
+  /** 「2026.8.20 更新」。未設定なら null */
+  asOfDate: string | null;
+  /** 何月分まで公開したか（YYYY-MM-DD）。未設定なら null */
+  publishedThrough: string | null;
+  /** 集計に渡す行（支給と支出）。published の仕訳が無ければ空配列。 */
+  rows: ResearchFundRow[];
+  accounts: Record<string, PublishedAccount>;
+  /** published の支出の件数（B-4 の行数と同じ数え方）。 */
+  expenseCount: number;
+}
+
+/** sitemap に載せる公開ページの所在（議員の slug と年度）。 */
+export interface PublishedResearchFundPageRef {
+  slug: string;
+  financialYear: number;
+}

@@ -26,15 +26,19 @@ export interface ITransactionRepository {
   ): Promise<PaginatedResult<TransactionWithOrganization>>;
   updateMany(
     data: Array<{
-      where: { politicalOrganizationId: bigint; transactionNo: string };
+      where: { politicalOrganizationId: bigint; financialYear: number; transactionNo: string };
       update: UpdateTransactionInput;
     }>,
   ): Promise<Transaction[]>;
   delete(id: string): Promise<void>;
   deleteAll(filters?: TransactionFilters): Promise<number>;
   createMany(inputs: CreateTransactionInput[]): Promise<Transaction[]>;
+  /**
+   * transaction_no は年度ごとに振り直されるため、financialYear を渡すとその年度の取引だけに絞る。
+   */
   findByTransactionNos(
     transactionNos: string[],
     politicalOrganizationIds?: string[],
+    financialYear?: number,
   ): Promise<Transaction[]>;
 }

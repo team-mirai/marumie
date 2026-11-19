@@ -1,56 +1,50 @@
 import Image from "next/image";
 import { useState } from "react";
+import ColumnSortButton from "@/client/components/transactions/ColumnSortButton";
+import {
+  amountColumnSortState,
+  dateColumnSortState,
+  toggleAmountSort,
+  toggleDateSort,
+  type TransactionSort,
+} from "@/client/lib/transaction-sort";
 import CategoryFilter from "./CategoryFilter";
 
 interface TransactionTableHeaderProps {
   allowControl?: boolean;
-  onSort?: (field: "date" | "amount") => void;
-  currentSort?: "date" | "amount" | null;
-  currentOrder?: "asc" | "desc" | null;
+  sort?: TransactionSort;
+  onSortChange?: (sort: TransactionSort) => void;
   onApplyFilter?: (selectedKeys: string[]) => void;
   selectedCategories?: string[];
 }
 
 export default function TransactionTableHeader({
   allowControl = false,
-  onSort,
-  currentSort,
-  currentOrder,
+  sort = "new",
+  onSortChange,
   onApplyFilter,
   selectedCategories,
 }: TransactionTableHeaderProps) {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const sortChange = allowControl ? onSortChange : undefined;
+  const dateSort = dateColumnSortState(sort);
+  const amountSort = amountColumnSortState(sort);
+
   return (
-    <thead className="hidden md:table-header-group bg-white">
+    <thead className="hidden min-[641px]:table-header-group bg-white">
       <tr className="h-12 border-b border-[#D5DBE1]">
         {/* 日付 - 140px width to match row */}
-        <th className="text-left px-4 h-12 font-normal w-[140px]" scope="col">
-          {allowControl && onSort ? (
-            <button
-              type="button"
-              onClick={() => onSort("date")}
-              className="flex items-center gap-1 h-5 hover:opacity-70 transition-opacity cursor-pointer"
-              aria-label="日付順でソート"
-              aria-describedby="sort-date-description"
-            >
-              <span className="text-gray-800 text-sm font-bold leading-[1.5]">日付</span>
-              <div className="w-5 h-5 flex items-center justify-center">
-                <Image
-                  src="/icons/icon-chevron-down.svg"
-                  alt="Sort by date"
-                  width={20}
-                  height={20}
-                  className={`w-5 h-5 transition-transform ${
-                    currentSort === "date" ? (currentOrder === "asc" ? "rotate-180" : "") : ""
-                  } ${currentSort === "date" ? "opacity-100" : "opacity-50"}`}
-                />
-              </div>
-            </button>
-          ) : (
-            <div className="flex items-center gap-1 h-5">
-              <span className="text-gray-800 text-sm font-bold leading-[1.5]">日付</span>
-            </div>
-          )}
+        <th
+          className="text-left px-4 h-12 font-normal w-[140px]"
+          scope="col"
+          aria-sort={sortChange ? dateSort.ariaSort : undefined}
+        >
+          <div className="flex items-center h-5">
+            <span className="text-gray-800 text-sm font-bold leading-[1.5]">日付</span>
+            {sortChange && (
+              <ColumnSortButton state={dateSort} onClick={() => sortChange(toggleDateSort(sort))} />
+            )}
+          </div>
         </th>
 
         {/* カテゴリー - 160px width to match row */}
@@ -81,12 +75,13 @@ export default function TransactionTableHeader({
               <span className="text-gray-800 text-sm font-bold leading-[1.5]">カテゴリー</span>
             </div>
           )}
-          <CategoryFilter
-            isOpen={isFilterOpen}
-            onClose={() => setIsFilterOpen(false)}
-            onApplyFilter={onApplyFilter || (() => {})}
-            selectedCategories={selectedCategories}
-          />
+          {isFilterOpen && (
+            <CategoryFilter
+              onClose={() => setIsFilterOpen(false)}
+              onApplyFilter={onApplyFilter || (() => {})}
+              selectedCategories={selectedCategories}
+            />
+          )}
         </th>
 
         {/* 項目項目 - flexible width to match row */}
@@ -99,33 +94,20 @@ export default function TransactionTableHeader({
         </th>
 
         {/* 金額 - 180px width to match row (combined plus/minus + amount) */}
-        <th className="text-right pr-6 h-12 font-normal w-[180px]" scope="col">
-          {allowControl && onSort ? (
-            <button
-              type="button"
-              onClick={() => onSort("amount")}
-              className="flex items-center gap-1 h-5 hover:opacity-70 transition-opacity ml-auto cursor-pointer"
-              aria-label="金額順でソート"
-              aria-describedby="sort-amount-description"
-            >
-              <span className="text-gray-800 text-sm font-bold leading-[1.5]">金額</span>
-              <div className="w-5 h-5 flex items-center justify-center">
-                <Image
-                  src="/icons/icon-chevron-down.svg"
-                  alt="Sort by amount"
-                  width={20}
-                  height={20}
-                  className={`w-5 h-5 transition-transform ${
-                    currentSort === "amount" ? (currentOrder === "asc" ? "rotate-180" : "") : ""
-                  } ${currentSort === "amount" ? "opacity-100" : "opacity-50"}`}
-                />
-              </div>
-            </button>
-          ) : (
-            <div className="flex items-center justify-end gap-1 h-5">
-              <span className="text-gray-800 text-sm font-bold leading-[1.5]">金額</span>
-            </div>
-          )}
+        <th
+          className="text-right pr-6 h-12 font-normal w-[180px]"
+          scope="col"
+          aria-sort={sortChange ? amountSort.ariaSort : undefined}
+        >
+          <div className="flex items-center justify-end h-5">
+            <span className="text-gray-800 text-sm font-bold leading-[1.5]">金額</span>
+            {sortChange && (
+              <ColumnSortButton
+                state={amountSort}
+                onClick={() => sortChange(toggleAmountSort(sort))}
+              />
+            )}
+          </div>
         </th>
       </tr>
     </thead>

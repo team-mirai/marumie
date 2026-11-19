@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>調研費まる見え｜Lofiワイヤー v1.3（峰島事務所 実データ）</title>
+<style>
+  :root{
+    --paper:#FAFAF7; --card:#FFF; --ink:#26251F; --sub:#6B6A62; --faint:#9C9A8F;
+    --line:#DDDBD2; --line2:#B9B7AC;
+    --red:#B5462A; --redbg:#FBF1EE; --in:#8E8C82; --out:#B4B2A9;
+  }
+  *{box-sizing:border-box;margin:0}
+  body{background:var(--paper);color:var(--ink);font-family:"Hiragino Kaku Gothic ProN","Hiragino Sans","Noto Sans JP",sans-serif;font-size:14px;line-height:1.7;padding-bottom:80px}
+  .mono{font-family:ui-monospace,"SF Mono",Menlo,monospace}
+  header{position:sticky;top:0;z-index:20;background:var(--paper);border-bottom:1px solid var(--line2);padding:10px 20px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .tag{font-size:11px;letter-spacing:.08em;color:var(--sub);border:1px solid var(--line2);padding:3px 8px;border-radius:3px}
+  .tag.real{border-color:var(--ink);color:var(--ink)}
+  #noteBtn{font-size:12px;padding:5px 12px;border:1px solid var(--red);border-radius:3px;background:transparent;color:var(--red);cursor:pointer}
+  .selwrap{margin-left:auto;position:relative}
+  .selbtn{display:flex;align-items:center;gap:14px;border:2px solid var(--ink);border-radius:8px;background:#fff;padding:8px 14px;cursor:pointer}
+  .selbtn .n{font-size:14px;font-weight:600;line-height:1.3}
+  .selbtn .y{font-size:11.5px;color:var(--sub)}
+  .selpanel{position:absolute;right:0;top:calc(100% + 8px);width:340px;background:#fff;border:1px solid var(--line2);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.10);display:none;max-height:72vh;overflow:auto}
+  .selpanel.open{display:block}
+  .selgrp{padding:12px 16px 4px;font-size:11.5px;color:var(--faint)}
+  .selitem{display:flex;gap:10px;align-items:baseline;padding:7px 16px;cursor:pointer}
+  .selitem:hover{background:#F4F3EE}
+  .selitem .ck{width:14px;color:var(--ink);font-size:12px}
+  .selitem .nm{font-size:13.5px}
+  .selitem .ds{font-size:11.5px;color:var(--faint)}
+  .selitem.off{color:var(--faint);cursor:default}
+  .selitem.off:hover{background:transparent}
+  .seldiv{border-top:1px solid var(--line);margin-top:8px}
+  .selfoot{border-top:1px solid var(--line);padding:10px 16px;text-align:right;font-size:13px;color:var(--sub);cursor:pointer}
+  .yr{display:inline-block;font-size:12.5px;border-radius:14px;padding:4px 14px;margin-right:6px;background:#F1F0EA;color:var(--sub);cursor:pointer}
+  .yr.on{background:var(--ink);color:#fff}
+  main{max-width:900px;margin:0 auto;padding:24px 20px}
+  .wf{background:var(--card);border:1px solid var(--line2);border-radius:4px;padding:16px 18px;margin-bottom:14px}
+  .wf.new{border-color:var(--ink);border-width:2px}
+  .secid{font-size:11px;letter-spacing:.06em;color:var(--faint);margin-bottom:8px}
+  .secid .badge{background:var(--ink);color:#fff;border-radius:2px;padding:1px 6px;margin-left:6px;letter-spacing:0}
+  .h1{font-size:19px;font-weight:600}
+  .h2{font-size:15px;font-weight:600}
+  .sub{font-size:13px;color:var(--sub)}
+  .stamp{font-size:12px;color:var(--faint);margin-top:6px}
+  .stamp b{color:var(--sub);font-weight:400}
+  .note{font-size:12px;color:var(--red);background:var(--redbg);border-left:3px solid var(--red);padding:8px 10px;margin-top:12px;line-height:1.7}
+  .note .nh{font-weight:600;display:block;margin-bottom:2px}
+  body.noNotes .note{display:none}
+  .box{background:#F4F3EE;border:1px solid var(--line);border-radius:3px;padding:10px 12px}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin:10px 0}
+  .kpi .l{font-size:12px;color:var(--sub)} .kpi .v{font-size:19px;font-weight:600}
+  .chip{display:inline-block;font-size:11px;color:var(--sub);border:1px solid var(--line2);border-radius:3px;padding:1px 7px;margin:0 3px 0 0;white-space:nowrap}
+  table{width:100%;border-collapse:collapse;table-layout:fixed}
+  td,th{font-size:13px;padding:6px 4px 6px 0;text-align:left;border-top:1px solid var(--line);font-weight:400;vertical-align:top}
+  th{color:var(--faint);font-size:12px;border-top:none}
+  .amt{text-align:right} .dim{color:var(--sub)}
+  tr.nrow td{border-top:none;padding-top:0;padding-bottom:8px}
+  .nbox{font-size:12px;color:var(--sub);background:#F4F3EE;border-left:2px solid var(--line2);padding:5px 9px}
+  .ico{display:inline-block;width:15px;height:15px;border:1px solid var(--line2);border-radius:50%;font-size:10px;line-height:13px;text-align:center;color:var(--sub);cursor:pointer;margin-left:4px;vertical-align:1px}
+  .opt{font-size:12.5px;padding:4px 12px;border:1px solid var(--line2);border-radius:3px;background:#fff;color:var(--sub);cursor:pointer}
+  .opt.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .segl{font-size:12px;color:var(--faint);margin-right:6px}
+  .seg{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:10px 0}
+  details{border-top:1px solid var(--line);padding:8px 0}
+  summary{cursor:pointer;font-size:13.5px;list-style:none}
+  summary::-webkit-details-marker{display:none}
+  summary::before{content:"▸ ";color:var(--faint)}
+  details[open] summary::before{content:"▾ "}
+  details .body{font-size:13px;color:var(--sub);padding:8px 0 2px;line-height:1.9}
+  .legend{font-size:12px;color:var(--sub);display:flex;gap:14px;flex-wrap:wrap;margin-top:8px}
+  .sw{display:inline-block;width:10px;height:10px;border-radius:2px;vertical-align:-1px;margin-right:5px}
+  .btn{display:inline-block;font-size:12.5px;border:1px solid var(--ink);border-radius:3px;padding:3px 12px;color:var(--ink);background:#fff;cursor:pointer;white-space:nowrap}
+  .btn.off{border-color:var(--line2);color:var(--faint);cursor:default;background:transparent}
+  .policy{background:#F4F3EE;border-left:3px solid var(--ink);padding:12px 14px;margin-top:10px}
+  .mlist{border-top:1px solid var(--line);margin-top:14px}
+  .mrow{display:grid;grid-template-columns:20px 1fr 96px 92px 78px;gap:10px;align-items:center;padding:9px 8px;border-bottom:1px solid var(--line)}
+  .mrow.head{border-bottom:1px solid var(--line2);padding:4px 8px 6px}
+  .mrow.head span{font-size:12px;color:var(--faint)}
+  .mrow.dis{color:var(--faint)}
+  .dot{width:11px;height:11px;border-radius:50%;justify-self:center}
+  .mname{font-size:13.5px}
+  .mrow.on{background:#F1F0EA}
+  .mrow.on .mname{font-weight:600}
+  .mnum{font-size:13px;text-align:right;color:var(--sub)}
+  .mstat{font-size:12px;color:var(--faint)}
+  .mrow.sel{cursor:pointer}
+  .mrow.sel:hover{background:#F7F6F1}
+  footer{max-width:900px;margin:20px auto 0;padding:0 20px;font-size:12px;color:var(--faint)}
+</style>
+</head>
+<body>
+
+<header>
+  <span class="tag mono">WIREFRAME v1.3</span>
+  <span class="tag real mono">峰島事務所 実データ</span>
+  <button id="noteBtn" onclick="toggleNotes()">朱書きを隠す</button>
+  <div class="selwrap">
+    <div class="selbtn" onclick="toggleSel(event)">
+      <div><div class="n" id="selName">峰島侑也</div><div class="y">2026年</div></div>
+      <div style="font-size:12px;color:var(--sub)">▾</div>
+    </div>
+    <div class="selpanel" id="selPanel">
+      <div class="selgrp">政治資金　2団体</div>
+      <div class="selitem" onclick="pick('party')"><span class="ck" id="ck-party"></span><span><span class="nm">政党・チームみらい</span></span></div>
+      <div class="selitem off"><span class="ck"></span><span><span class="nm">党首・安野の政治団体</span><br><span class="ds">デジタル民主主義を考える会</span></span></div>
+      <div class="seldiv"></div>
+      <div class="selgrp">調査研究費　議員12人</div>
+      <div class="selitem" onclick="pick('min')"><span class="ck" id="ck-min">✓</span><span><span class="nm">峰島侑也</span><br><span class="ds">8月分まで公開</span></span></div>
+      <div class="selitem off"><span class="ck"></span><span><span class="nm">安野貴博</span><br><span class="ds">準備中・記録シートは作成済</span></span></div>
+      <div class="selitem off"><span class="ck"></span><span><span class="nm">…他10人</span><br><span class="ds">準備中</span></span></div>
+      <div class="seldiv"></div>
+      <div class="selgrp">対象年</div>
+      <div style="padding:4px 16px 12px"><span class="yr">2025年</span><span class="yr on">2026年</span></div>
+      <div class="selfoot" onclick="closeSel()">閉じる</div>
+    </div>
+  </div>
+</header>
+
+<main>
+
+<!-- ============ 政党ページ ============ -->
+<div id="page-party" style="display:none">
+
+<div class="wf">
+  <div class="secid mono">A-0〜A-5 既存セクション</div>
+  <div class="sub">収支の流れ／1年間の推移／一人称の語り／貸借対照表／すべての出入金　＜v1.2と同じ・ここでは省略＞</div>
+</div>
+
+<div class="wf new">
+  <div class="secid mono">A-6 調査研究費<span class="badge">新規</span></div>
+  <div class="h1">議員12人の調査研究費サマリー</div>
+  <div class="sub">国会議員に毎月支給される公費を、何に使ったか</div>
+  <div class="stamp"><b>2026年2月〜8月分を公開中（峰島事務所のみ）</b>　2026.8.20時点</div>
+
+  <details>
+    <summary>調査研究費とは</summary>
+    <div class="body">
+      正式名称は「調査研究広報滞在費」、2022年までは「文書通信交通滞在費」と呼ばれていました。国会議員1人あたり毎月100万円、年1200万円が支給される公費です。<br>
+      ・全額が税金です。歳費（議員の給与）とは別に支給されます<br>
+      ・使えるのは議員活動のみ。選挙運動には使えません<br>
+      ・2025年8月の法改正で、使途の報告と残額の国庫返還が義務になりました<br>
+      ・チームみらいでは、法令に加えて党の自主基準（公務・議員活動に限定／第三者による承認）を設けています
+    </div>
+  </details>
+
+  <div class="seg" style="margin-top:14px">
+    <span class="segl">区分</span>
+    <span class="opt on" id="k-plain" onclick="setKubun('plain')">詳細の区分</span>
+    <span class="opt" id="k-legal" onclick="setKubun('legal')">法律上の区分</span>
+  </div>
+
+  <div class="sub" style="margin-bottom:4px">峰島侑也の使いみち（2026年2〜8月）</div>
+  <div class="kpis">
+    <div class="box kpi"><div class="l">支給された</div><div class="v">700万円</div></div>
+    <div class="box kpi"><div class="l">議員活動に使った</div><div class="v">221万円</div></div>
+  </div>
+  <div id="viz"></div>
+
+  <div class="mlist">
+    <div class="mrow head"><span></span><span>議員</span><span style="text-align:right">支出</span><span>公開状況</span><span></span></div>
+    <div class="mrow on sel"><span class="dot" style="background:#26251F"></span><span class="mname">峰島侑也</span><span class="mnum">221万円</span><span class="mstat">8月分まで</span><span><span class="btn" onclick="pick('min')">詳細 ▸</span></span></div>
+    <div class="mrow dis"><span class="dot" style="background:#EFEEE7"></span><span class="mname">安野貴博</span><span class="mnum">—</span><span class="mstat">準備中</span><span><span class="btn off">準備中</span></span></div>
+    <div class="mrow dis"><span class="dot" style="background:#EFEEE7"></span><span class="mname">…他10人</span><span class="mnum">—</span><span class="mstat">準備中</span><span><span class="btn off">準備中</span></span></div>
+  </div>
+
+  <div class="note">
+    <span class="nh">データについて</span>
+    数値・費目・項目名はすべて<b>峰島事務所の実データ</b>（Drive「調研費_2026_転記用データ.tsv」2026.8.20時点、296件・¥2,212,581）。金額のダミーはありません。<br>
+    費目は指定の15分類にマッピング済み。<b>人件費・事務所費（家賃・維持費）・寄附は実績0件</b>のため表示されません。0円の費目を出すかは論点。<br>
+    12人全体の集計は作れません。実データがあるのは峰島事務所のみで、安野議員室は記録シートのみ（中身は空）、他10議員室は調研費フォルダ未作成です。
+  </div>
+</div>
+
+</div>
+
+<!-- ============ 議員ページ ============ -->
+<div id="page-min">
+
+<div class="wf">
+  <div class="secid mono" style="cursor:pointer" onclick="pick('party')">◂ 政党ページにもどる</div>
+  <div class="sub">使いみちの流れ　1年間の推移　主要な支出の成果　すべての支出　データについて</div>
+</div>
+
+<div class="wf">
+  <div class="secid mono">B-1 使いみちの流れ</div>
+  <div class="h1">峰島侑也｜調査研究費の使いみち</div>
+  <div class="sub">毎月100万円支給される公費を、何に使ったか</div>
+  <div class="stamp"><b>2026年2月〜8月分を公開中</b>　2026.8.20時点　次回更新 11月ごろ</div>
+  <details>
+    <summary>調査研究費とは</summary>
+    <div class="body">正式名称は「調査研究広報滞在費」（旧・文書通信交通滞在費）。国会議員1人あたり毎月100万円、年1200万円の公費です。全額が税金で、議員活動にのみ使えます。選挙運動には使えません。余った分は国庫に返します。</div>
+  </details>
+  <div class="kpis">
+    <div class="box kpi"><div class="l">支給された（7ヶ月）</div><div class="v">700万円</div></div>
+    <div class="box kpi"><div class="l">議員活動に使った</div><div class="v">221万円</div></div>
+  </div>
+  <div class="seg">
+    <span class="segl">区分</span>
+    <span class="opt on" id="mk-plain" onclick="setMinKubun('plain')">詳細の区分</span>
+    <span class="opt" id="mk-legal" onclick="setMinKubun('legal')">法律上の区分</span>
+  </div>
+  <div id="sankey"></div>
+  <div class="legend"><span><span class="sw" style="background:#888780"></span>使った分</span><span><span class="sw" style="background:#EFEEE7;border:1px solid var(--line2)"></span>未使用</span></div>
+  <div class="note">
+    <span class="nh">実データ</span>
+    IT機器・周辺機器費が43%で最大（MacBook Air 2台 ¥369,600、iPhone 17 Pro ¥179,800、カメラ ¥98,881、ScanSnap 2台 ¥98,653、テレビ ¥62,172 ほか）。事務所立ち上げ期の備品購入が支配的です。<br>
+    調査研究費（資料・研修）は¥57,267で全体の2.6%。ワイヤ設計時に前提としていた構成と大きく異なります。<br>
+    未使用¥4,787,419は7ヶ月分の支給額700万円との差。年末までの支出でこの比率は変わります。
+  </div>
+</div>
+
+<div class="wf">
+  <div class="secid mono">B-2 1年間の推移</div>
+  <div class="h1">峰島侑也｜月ごとの支出の推移</div>
+  <div class="sub">今年の月ごとの支給と支出</div>
+  <div class="stamp">2026.8.20時点</div>
+  <div id="minMonthly" style="margin-top:10px"></div>
+  <div class="legend"><span><span class="sw" style="background:var(--in)"></span>支給</span><span><span class="sw" style="background:var(--out)"></span>支出</span><span><span class="sw" style="border:1px dashed var(--line2);background:transparent"></span>未公開</span></div>
+  <div class="note"><span class="nh">実データ</span>1月は支出なし（2月当選のため）。4月が¥861,279で突出（MacBook 2台・スキャナー2台などの立ち上げ購入）。8月は月中までのデータ。</div>
+</div>
+
+<div class="wf new">
+  <div class="secid mono">B-3 主要な支出の成果<span class="badge">新規</span></div>
+  <div class="h1">峰島侑也｜主要な支出の成果</div>
+
+  <div class="policy">
+    <div class="h2">峰島侑也の調査研究費の活用方針</div>
+    <div class="sub" style="margin-top:4px">2026年2月の当選後、まずは議員事務所の立ち上げに使っています。今後は調査活動や広報の比重を増やしていく予定です。</div>
+  </div>
+
+  <div class="sub" style="margin-top:16px;margin-bottom:2px"><b style="color:var(--ink)">主要な支出の成果</b></div>
+  <div class="sub">金額の大きい支出について、使った目的と、そこから生まれたものを載せています</div>
+
+  <div style="border-top:1px solid var(--line);padding:14px 0">
+    <div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:baseline"><span class="h2">ボネクタ利用料</span><span class="h2">99,000円</span></div>
+    <div class="sub" style="font-size:12px">2026.6.30　広報費　1件</div>
+    <div class="sub" style="margin-top:6px">有権者からの意見や陳情を受け付ける窓口として導入しました。2月〜6月分の初期費用および利用料です。</div>
+    <div style="margin-top:8px"><span class="chip" style="font-size:12px;padding:3px 10px">↗ 受付窓口</span></div>
+  </div>
+  <div style="border-top:1px solid var(--line);padding:14px 0">
+    <div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:baseline"><span class="h2">タウンミーティング会場費</span><span class="h2">50,445円</span></div>
+    <div class="sub" style="font-size:12px">2026.4.10〜7.23　交流費　3件</div>
+    <div class="sub" style="margin-top:6px">有権者と直接意見交換する場として、貸会議室を3回借りました。</div>
+    <div style="margin-top:8px"><span class="chip" style="font-size:12px;padding:3px 10px">□ 開催報告</span></div>
+  </div>
+  <div style="border-top:1px solid var(--line);padding:14px 0 0">
+    <div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:baseline"><span class="h2">広島平和記念資料館 視察</span><span class="h2">44,800円</span></div>
+    <div class="sub" style="font-size:12px">2026.7.29　滞在費・調査研究費　2件</div>
+    <div class="sub" style="margin-top:6px">入館料と宿泊費です。視察の報告はまだ公開していません。</div>
+  </div>
+
+  <div class="note">
+    <span class="nh">実データで作ってみて分かったこと</span>
+    <b>金額上位で機械的に選ぶと成果セクションが成立しません。</b>上位はパソコン代¥369,600、宿舎使用料¥321,928、タクシー代¥301,780（86件）で、いずれも成果物と紐づきません。<br>
+    上に並べたのは「成果を語れる支出」を人が選んだ結果で、金額順では9位・11位・15位あたりです。選定を金額順にするか裁量にするかの論点が、実データで具体化しました。<br>
+    活用方針も、当選1年目は「立ち上げ中」としか書けません。方針欄が機能するのは2年目以降かもしれません。
+  </div>
+</div>
+
+<div class="wf">
+  <div class="secid mono">B-4 すべての支出</div>
+  <div class="h1">峰島侑也｜すべての支出</div>
+  <div class="sub">金額にかかわらず、すべての支出を1件ずつ、領収書つきで公開しています</div>
+  <div class="stamp">2026.8.20時点　全296件</div>
+  <div class="seg">
+    <span class="segl">区分</span>
+    <span class="opt on" id="c-plain" onclick="setCat('plain')">詳細の区分</span>
+    <span class="opt" id="c-legal" onclick="setCat('legal')">法律上の区分</span>
+    <span class="segl" style="margin-left:10px">月</span>
+    <span id="monBtns"></span>
+  </div>
+  <table id="b4table"></table>
+  <div class="sub" style="margin-top:8px" id="b4foot"></div>
+  <div class="note">
+    <span class="nh">実データで分かった負荷</span>
+    <b>1万円以下が296件中277件（94%）、金額では36%。</b>全件表示すると月40件前後の行が並びます。4月は99件。月切り替えは必須です。<br>
+    <b>同一注文の分割行が多数あります。</b>4/23のトナー代¥7,722が10行、4/1のクリアファイル¥850が7行、8/16のグラス代¥683が5行。Amazonの明細を1品目ずつ起こしているためで、市民には「同じものを何度も買っている」と読まれます。注文単位でまとめるか、まとめ買いと明記するかの判断が要ります。<br>
+    タクシー代は86件・¥301,780。行き先を伏せる運用にすると、この件数がすべて非公開になります。
+  </div>
+</div>
+
+<div class="wf" style="margin-bottom:0">
+  <div class="secid mono">B-5 データについて</div>
+  <div class="sub" style="line-height:1.9">
+    調研費とは／使える範囲と使えない範囲／チームみらいの自主基準／集計方法と更新頻度／免責<br>
+    すべての支出を1件ずつ、領収書つきで公開しています。領収書を徴し難かったものが1件あります（5/12 電気代 ¥8,300：電力会社より請求書のみ発行）。<br>
+    余った分：221万円を使い、479万円は使っていません（7ヶ月分・年末時点で確定します）
+  </div>
+  <div class="note"><span class="nh">実データ</span>「領収書等を徴し難かった事情」欄に記載があるのは全296件中1件のみ。この欄をどう表示するかは未設計でしたが、実データでは例外的に少ないため、B-5に文章で書く形で足りそうです。</div>
+</div>
+
+</div>
+</main>
+
+<footer>調研費まる見え Lofiワイヤー v1.3｜数値・費目・項目名はすべて峰島事務所の実データ（2026.8.20時点）</footer>
+
+<script>
+var GRAYS=['#5F5E5A','#6E6D66','#7C7B74','#888780','#94928A','#9E9C93','#A8A69C','#B1AFA5','#B9B7AC','#C1BFB4','#C9C7BC','#D0CEC4'];
+var UNUSED='#EFEEE7';
+function man(v){return Math.round(v/10000).toLocaleString('ja-JP')+'万円'}
+function yen(v){return v.toLocaleString('ja-JP')}
+function toggleNotes(){document.body.classList.toggle('noNotes');document.getElementById('noteBtn').textContent=document.body.classList.contains('noNotes')?'朱書きを表示':'朱書きを隠す'}
+function toggleSel(e){e.stopPropagation();document.getElementById('selPanel').classList.toggle('open')}
+function closeSel(){document.getElementById('selPanel').classList.remove('open')}
+document.addEventListener('click',closeSel);
+document.getElementById('selPanel').addEventListener('click',function(e){e.stopPropagation()});
+function pick(id){
+  document.getElementById('selName').textContent=(id==='party')?'政党・チームみらい':'峰島侑也';
+  document.getElementById('ck-party').textContent=(id==='party')?'✓':'';
+  document.getElementById('ck-min').textContent=(id==='min')?'✓':'';
+  document.getElementById('page-party').style.display=(id==='party')?'block':'none';
+  document.getElementById('page-min').style.display=(id==='min')?'block':'none';
+  closeSel();window.scrollTo(0,0);
+}
+
+var C15=[["住居費（議員宿舎・宿泊費）",370848],["交通費（出張・移動）",302820],["光熱水費",8300],["通信費（電話・ネット）",662],["IT機器・周辺機器費",948405],["文具・事務用消耗品費",213317],["日用消耗品費",86776],["システム・サーバ利用料",7498],["調査研究費（資料・研修）",57267],["広報費",99000],["交流費",117688]];
+var LEGAL=[["② 光熱水費",8300],["③ 備品・消耗品費",1248498],["④ 事務所費",662],["⑤ 交流費",117688],["⑥ 広報紙誌の発行その他の事業費",99000],["⑦ 調査研究費",64765],["⑨ 滞在費",673668]];
+var SPENT=2212581, GRANT=7000000;
+
+function items(legal){
+  var a=(legal?LEGAL:C15).map(function(x){return {n:x[0],v:x[1]}});
+  a.sort(function(p,q){return q.v-p.v});
+  return a;
+}
+function hBar(list,total){
+  var LX=250,RX=850,y=12,r='';
+  list.forEach(function(d,i){
+    var w=(RX-LX)*(d.v/total),col=GRAYS[i%GRAYS.length];
+    r+='<text x="'+(LX-10)+'" y="'+(y+11)+'" text-anchor="end" font-size="12" fill="#26251F">'+d.n+'</text>';
+    r+='<rect x="'+LX+'" y="'+y+'" width="'+Math.max(w,1)+'" height="16" rx="2" fill="'+col+'"><title>'+d.n+' ¥'+yen(d.v)+'</title></rect>';
+    r+='<text x="'+(LX+Math.max(w,1)+8)+'" y="'+(y+11)+'" font-size="11.5" fill="#6B6A62">¥'+yen(d.v)+'</text>';
+    y+=24;
+  });
+  return '<svg width="100%" viewBox="0 0 880 '+(y+6)+'" role="img" aria-label="使いみちの横棒グラフ">'+r+'</svg>';
+}
+var kubun='plain';
+function setKubun(k){kubun=k;['plain','legal'].forEach(function(x){document.getElementById('k-'+x).classList.toggle('on',x===k)});
+  document.getElementById('viz').innerHTML=hBar(items(k==='legal'),SPENT)}
+setKubun('plain');
+
+var minKubun='plain';
+function setMinKubun(k){minKubun=k;['plain','legal'].forEach(function(x){document.getElementById('mk-'+x).classList.toggle('on',x===k)});drawSankey()}
+function drawSankey(){
+  var list=items(minKubun==='legal'), unused=GRANT-SPENT;
+  var total=GRANT,PX=340/total,GAP=7,TOP=14,x0=130,x1=200,x2=470,LX=492,hub=total*PX;
+  var s='<rect x="'+(x0-70)+'" y="'+TOP+'" width="60" height="'+hub+'" rx="3" fill="#8E8C82" opacity="0.5"/>';
+  s+='<text x="'+(x0-40)+'" y="'+(TOP+hub+16)+'" text-anchor="middle" font-size="11.5" fill="#6B6A62">支給 700万円</text>';
+  s+='<path d="M'+(x0-10)+' '+TOP+' L'+x1+' '+TOP+' L'+x1+' '+(TOP+hub)+' L'+(x0-10)+' '+(TOP+hub)+' Z" fill="#8E8C82" opacity="0.22"/>';
+  var all=list.concat([{n:'未使用',v:unused,u:true}]);
+  var yL=TOP,yR=TOP,p='',b='',l='';
+  all.forEach(function(d,i){
+    var h=d.v*PX,m=(x1+x2)/2,col=d.u?UNUSED:GRAYS[i%GRAYS.length];
+    p+='<path d="M'+x1+' '+yL+' C'+m+' '+yL+' '+m+' '+yR+' '+x2+' '+yR+' L'+x2+' '+(yR+h)+' C'+m+' '+(yR+h)+' '+m+' '+(yL+h)+' '+x1+' '+(yL+h)+' Z" fill="'+col+'" opacity="'+(d.u?1:0.38)+'"'+(d.u?' stroke="#DDDBD2" stroke-width="0.5"':'')+'/>';
+    b+='<rect x="'+x2+'" y="'+yR+'" width="10" height="'+Math.max(h,2)+'" rx="2" fill="'+col+'"'+(d.u?' stroke="#DDDBD2" stroke-width="0.5"':'')+'/>';
+    l+='<text x="'+LX+'" y="'+(yR+Math.max(h,10)/2)+'" dominant-baseline="central" font-size="12" fill="'+(d.u?'#9C9A8F':'#26251F')+'">'+d.n+'　¥'+yen(d.v)+'</text>';
+    yL+=h;yR+=Math.max(h,10)+GAP;
+  });
+  document.getElementById('sankey').innerHTML='<svg width="100%" viewBox="0 0 880 '+Math.ceil(Math.max(TOP+hub+26,yR+8))+'" role="img" aria-label="調査研究費の使いみちの流れ">'+s+p+b+l+'</svg>';
+}
+drawSankey();
+
+(function(){
+  var out=[0,126860,362307,861279,364704,369940,106156,21335,0,0,0,0];
+  var W=760,MID=110,MAXH=86,mx=900000,L=34,step=(W-L-20)/12,bw=step*0.44,s='';
+  for(var i=0;i<12;i++){
+    var x=L+i*step+(step-bw)/2;
+    if(i<8){
+      s+='<rect x="'+x+'" y="'+(MID-1000000/mx*MAXH)+'" width="'+bw+'" height="'+(1000000/mx*MAXH)+'" fill="#8E8C82"/>';
+      s+='<rect x="'+x+'" y="'+MID+'" width="'+bw+'" height="'+Math.max(out[i]/mx*MAXH,1)+'" fill="#B4B2A9"><title>'+(i+1)+'月 ¥'+yen(out[i])+'</title></rect>';
+    } else { s+='<rect x="'+x+'" y="'+(MID-MAXH)+'" width="'+bw+'" height="'+(MAXH*2)+'" fill="none" stroke="#DDDBD2" stroke-dasharray="3 3"/>'; }
+    s+='<text x="'+(x+bw/2)+'" y="'+(MID+MAXH+22)+'" text-anchor="middle" font-size="11" fill="#9C9A8F">'+(i+1)+'</text>';
+  }
+  s+='<line x1="'+(L-8)+'" y1="'+MID+'" x2="'+(W-12)+'" y2="'+MID+'" stroke="#B9B7AC"/>';
+  s+='<text x="'+(L-12)+'" y="'+(MID-MAXH+16)+'" text-anchor="end" font-size="11" fill="#9C9A8F">支給</text>';
+  s+='<text x="'+(L-12)+'" y="'+(MID+MAXH)+'" text-anchor="end" font-size="11" fill="#9C9A8F">支出</text>';
+  document.getElementById('minMonthly').innerHTML='<svg width="100%" viewBox="0 0 '+W+' '+(MID+MAXH+32)+'" role="img" aria-label="月ごとの支給と支出">'+s+'</svg>';
+})();
+
+var CATMAP={'住居費（議員宿舎・宿泊費）':'⑨ 滞在費','交通費（出張・移動）':'⑨ 滞在費','光熱水費':'② 光熱水費','通信費（電話・ネット）':'④ 事務所費','IT機器・周辺機器費':'③ 備品・消耗品費','文具・事務用消耗品費':'③ 備品・消耗品費','日用消耗品費':'③ 備品・消耗品費','システム・サーバ利用料':'⑦ 調査研究費','調査研究費（資料・研修）':'⑦ 調査研究費','広報費':'⑥ 広報紙誌の発行その他の事業費','交流費':'⑤ 交流費'};
+var ROWS=[
+["05/01","調査研究費（資料・研修）","新聞購読料",4277,"日経電子版 個人プラン 5月分サービス利用料"],
+["05/06","調査研究費（資料・研修）","書籍代",2310,"東京マネー・マーケット第8版（有斐閣選書）"],
+["05/06","IT機器・周辺機器費","スマートフォンケース代",1614,"ESR iPhone17 Proケース"],
+["05/07","交通費（出張・移動）","タクシー代",800,""],
+["05/08","交通費（出張・移動）","電車代",180,"国会議事堂前駅"],
+["05/08","交通費（出張・移動）","電車代",280,"新宿駅"],
+["05/08","住居費（議員宿舎・宿泊費）","宿舎使用料",124747,"令和8年4月分議員宿舎使用料"],
+["05/08","日用消耗品費","ウェットティッシュ代",293,"エリエール除菌アルコールタオル100枚・3点購入につき行分割"],
+["05/08","日用消耗品費","ウェットティッシュ代",293,"エリエール除菌アルコールタオル100枚・3点購入につき行分割"],
+["05/08","日用消耗品費","ウェットティッシュ代",293,"エリエール除菌アルコールタオル100枚・3点購入につき行分割"],
+["05/08","IT機器・周辺機器費","スマートフォン代",179800,"iPhone 17 Pro 256GB シルバー"],
+["05/09","日用消耗品費","フック代",2200,"山崎実業マグネットハンガーフックL 2個組"],
+["05/09","IT機器・周辺機器費","キーボード代",7425,"ロジクールK835 メカニカルキーボード"],
+["05/10","文具・事務用消耗品費","文具代",529,"ジェットストリーム油性ボールペン5本・3点購入につき行分割"],
+["05/10","文具・事務用消耗品費","文具代",529,"ジェットストリーム油性ボールペン5本・3点購入につき行分割"],
+["05/10","文具・事務用消耗品費","文具代",529,"ジェットストリーム油性ボールペン5本・3点購入につき行分割"],
+["05/12","IT機器・周辺機器費","スマートフォン保護フィルム代",1583,"NIMASOガラスフィルム iPhone17Pro"],
+["05/12","IT機器・周辺機器費","充電器代",2658,"MagSafeワイヤレス充電器"],
+["05/12","光熱水費","電気代",8300,"2026年5月分電気料金。電力会社より請求書のみ発行され領収書の発行なし"],
+["05/13","IT機器・周辺機器費","ケーブル結束バンド代",1299,"結束バンド＋ケーブルタイ"],
+["05/14","日用消耗品費","ペーパータオル代",2097,"ペーパータオル ダブル12パック"],
+["05/15","交通費（出張・移動）","タクシー代",3000,"kmグループ"],
+["05/17","交通費（出張・移動）","タクシー代",2600,"kmグループ"],
+["05/19","日用消耗品費","飲料水代",1190,"割引後（小計¥1,253、割引-¥63）"],
+["05/22","交通費（出張・移動）","タクシー代",1500,"個人タクシー（東京都個人タクシー協同組合練馬支部）"],
+["05/22","交通費（出張・移動）","電車代",220,"都営地下鉄 麻布十番駅"],
+["05/22","日用消耗品費","トレー代",1851,"山崎実業マグネットトレー"],
+["05/22","日用消耗品費","食器用スポンジ代",1411,"圧縮食器用スポンジ12個入"],
+["05/22","日用消耗品費","食器用洗剤代",146,"キュキュット Natural Days+除菌"],
+["05/22","交流費","手土産代",6750,"青のり・おとぼけ豆・黒胡椒ビーンズ"],
+["05/25","交通費（出張・移動）","タクシー代",1900,"平成交通（長野県松本市）"],
+["05/25","交通費（出張・移動）","タクシー代",2100,"アルピコタクシー 松本支社"]
+];
+var MONTHS=[["02",33,126860],["03",65,362307],["04",99,861279],["05",32,364704],["06",37,369940],["07",13,106156],["08",17,21335]];
+var curMon='05', cat='plain';
+(function(){
+  var h='';
+  MONTHS.forEach(function(m){h+='<span class="opt'+(m[0]==='05'?' on':'')+'" id="mo-'+m[0]+'" onclick="setMon(\''+m[0]+'\')">'+parseInt(m[0])+'月</span>'});
+  document.getElementById('monBtns').innerHTML=h;
+})();
+function setMon(m){curMon=m;MONTHS.forEach(function(x){document.getElementById('mo-'+x[0]).classList.toggle('on',x[0]===m)});drawB4()}
+function setCat(c){cat=c;['plain','legal'].forEach(function(x){document.getElementById('c-'+x).classList.toggle('on',x===c)});drawB4()}
+function cn(n){return cat==='legal'?(CATMAP[n]||n):n}
+function toggleNote(i){var el=document.getElementById('nr-'+i);el.style.display=(el.style.display==='none'?'table-row':'none')}
+function drawB4(){
+  var mi=MONTHS.filter(function(x){return x[0]===curMon})[0];
+  var h='<tr><th style="width:66px">日付</th><th style="width:172px">カテゴリー</th><th>項目</th><th class="amt" style="width:92px">金額</th></tr>';
+  if(curMon==='05'){
+    ROWS.forEach(function(r,i){
+      var ico=r[4]?'<span class="ico" onclick="toggleNote('+i+')" title="'+r[4].replace(/"/g,'')+'">i</span>':'';
+      h+='<tr><td>2026.'+r[0].replace('/','.')+'</td><td>'+cn(r[1])+'</td><td>'+r[2]+ico+' <span class="chip">領収書</span></td><td class="amt">−'+yen(r[3])+' 円</td></tr>';
+      if(r[4]) h+='<tr class="nrow" id="nr-'+i+'" style="display:none"><td></td><td></td><td colspan="2"><div class="nbox">'+r[4]+'</div></td></tr>';
+    });
+    document.getElementById('b4foot').innerHTML='2026年5月分 全'+mi[1]+'件・¥'+yen(mi[2])+'　全件表示中';
+  } else {
+    h+='<tr><td colspan="4" style="color:var(--faint);padding:16px 0">このワイヤでは5月分のみ明細を実装しています（'+parseInt(curMon)+'月：'+mi[1]+'件・¥'+yen(mi[2])+'）</td></tr>';
+    document.getElementById('b4foot').innerHTML='2026年'+parseInt(curMon)+'月分 全'+mi[1]+'件・¥'+yen(mi[2]);
+  }
+  document.getElementById('b4table').innerHTML=h;
+}
+drawB4();
+</script>
+</body>
+</html>

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/server/contexts/shared/infrastructure/prisma";
 import { PrismaPoliticalOrganizationRepository } from "@/server/contexts/shared/infrastructure/repositories/prisma-political-organization.repository";
 import { CreatePoliticalOrganizationUsecase } from "@/server/contexts/shared/application/usecases/create-political-organization-usecase";
+import { requireRole } from "@/server/contexts/auth/presentation/loaders/require-role";
 
 const repository = new PrismaPoliticalOrganizationRepository(prisma);
 const usecase = new CreatePoliticalOrganizationUsecase(repository);
@@ -16,6 +17,8 @@ export interface CreatePoliticalOrganizationData {
 }
 
 export async function createPoliticalOrganization(data: CreatePoliticalOrganizationData) {
+  await requireRole("political_fund");
+
   try {
     const { displayName, orgName, slug, description } = data;
 

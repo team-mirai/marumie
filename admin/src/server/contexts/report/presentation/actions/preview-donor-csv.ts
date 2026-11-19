@@ -13,17 +13,21 @@ import {
 } from "@/server/contexts/report/domain/errors/donor-csv-error";
 import { PreviewDonorCsvUsecase } from "@/server/contexts/report/application/usecases/preview-donor-csv-usecase";
 import type { PreviewDonorCsvResult } from "@/server/contexts/report/presentation/types/preview-donor-csv-types";
+import { requireRole } from "@/server/contexts/auth/presentation/loaders/require-role";
 
 export interface PreviewDonorCsvRequest {
   file: File;
   politicalOrganizationId: string;
+  financialYear: number;
 }
 
 export async function previewDonorCsv(
   data: PreviewDonorCsvRequest,
 ): Promise<PreviewDonorCsvResult> {
+  await requireRole("political_fund");
+
   try {
-    const { file, politicalOrganizationId } = data;
+    const { file, politicalOrganizationId, financialYear } = data;
 
     if (!file) {
       throw new Error("ファイルが選択されていません");
@@ -31,6 +35,10 @@ export async function previewDonorCsv(
 
     if (!politicalOrganizationId) {
       throw new Error("政治団体IDが指定されていません");
+    }
+
+    if (!Number.isInteger(financialYear)) {
+      throw new Error("年度が指定されていません");
     }
 
     const csvBuffer = Buffer.from(await file.arrayBuffer());
@@ -53,6 +61,7 @@ export async function previewDonorCsv(
     const result = await usecase.execute({
       csvContent,
       politicalOrganizationId,
+      financialYear,
     });
 
     return result;

@@ -1,0 +1,131 @@
+import { test, expect } from "@playwright/test";
+import { clickUntil } from "../helpers/interactions";
+
+test("確認済の仕訳を選んでbefore/afterを見比べ、公開して公開範囲を更新する", async ({ page }) => {
+  const year = new Date().getFullYear();
+  const name = `e2e-publish-${Date.now()}`;
+  await page.goto("/politicians/new");
+  await page.getByLabel("氏名").fill(name);
+  await page.getByLabel("スラッグ").fill(name);
+  await page.getByLabel("当選日").fill(`${year}-01-01`);
+  await page.getByRole("button", { name: "作成", exact: true }).click();
+  await expect(page).toHaveURL("/politicians");
+  const politicianCard = page.locator('[data-slot="card"]').filter({ has: page.getByRole("heading", { name, exact: true }) });
+  await politicianCard.getByRole("link", { name: "年度帳簿" }).click();
+  await page.getByLabel(/^年度/).fill(String(year));
+  await page.getByRole("button", { name: "帳簿を作成" }).click();
+  await expect(page.getByRole("heading", { name: `${year}年度` })).toBeVisible();
+  await page.getByRole("button", { name: "現在の対象を切り替え" }).click();
+  await Promise.all([
+    page.waitForNavigation({ waitUntil: "load" }),
+    page.getByRole("button", { name: `${name}／${year}年度` }).click(),
+  ]);
+
+  // 公開できる材料をつくる: 支給1件（確認済）と、確認済にした支出1件
+  await page.getByRole("link", { name: "支給の登録" }).click();
+  await expect(page.getByRole("heading", { name: "支給の登録" })).toBeVisible();
+  const january = page.getByRole("listitem").filter({ hasText: "1月" }).first();
+  await clickUntil(january.getByRole("button", { name: "この月を登録" }), (options) =>
+    expect(january).toContainText("登録済み", options),
+  );
+  await page.getByRole("link", { name: "仕訳の確認・編集" }).click();
+  await expect(page.getByRole("heading", { name: "仕訳の確認・編集" })).toBeVisible();
+  const dialog = page.getByRole("dialog");
+  await clickUntil(page.getByRole("button", { name: "手動で仕訳を作成" }), (options) =>
+    expect(dialog.getByLabel("日付", { exact: true })).toBeVisible(options),
+  );
+  await dialog.getByLabel("日付", { exact: true }).fill(`${year}-03-15`);
+  await dialog.getByLabel("金額", { exact: true }).fill("1500");
+  await dialog.getByLabel("項目名", { exact: true }).fill("視察先への移動");
+  await dialog.getByLabel("科目", { exact: true }).selectOption("transportation");
+  await dialog.getByRole("button", { name: "下書きを作成" }).click();
+  await expect(dialog).toBeHidden();
+  await page.getByRole("row").filter({ hasText: "視察先への移動" }).click();
+  await page.getByRole("button", { name: "確認済にする", exact: true }).click();
+  await expect(page.getByRole("row").filter({ hasText: "視察先への移動" })).toContainText("確認済");
+
+  await page.getByRole("link", { name: "公開", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "公開", exact: true })).toBeVisible();
+  await expect(page.getByText("確認済・未公開 2件")).toBeVisible();
+  await expect(page.getByRole("button", { name: "公開する仕訳を選んでください" })).toBeDisabled();
+  await expect(page.getByText("仕訳を選ぶとこちらが変化します")).toBeVisible();
+  await expect(page.getByText("現在の公開状態（未公開）")).toBeVisible();
+
+  // チェックすると after と差分文が即時に変わる
+  const selectAll = page.getByRole("checkbox", { name: "確認済・未公開の仕訳をすべて選択" });
+  await expect(selectAll).not.toBeChecked();
+  await page.getByRole("checkbox", { name: "調査研究広報滞在費 1月分を公開対象にする" }).click();
+  await expect(page.getByText("公開すると：未使用 +¥1,000,000")).toBeVisible();
+  // 一部だけ選んでいるときは、すべて選択済とは見えない
+  await expect(selectAll).toBeChecked({ indeterminate: true });
+  await page.getByRole("checkbox", { name: "視察先への移動を公開対象にする" }).click();
+  await expect(page.getByText("公開すると：交通費 +¥1,500・未使用 +¥998,500")).toBeVisible();
+  await expect(page.getByText("選択中の 2件 を公開した場合")).toBeVisible();
+  await expect(selectAll).toBeChecked();
+
+  // すべて選択済みで押すとすべて外れ、もう一度押すとすべて選ばれる
+  await selectAll.click();
+  await expect(page.getByRole("checkbox", { name: "視察先への移動を公開対象にする" })).not.toBeChecked();
+  await expect(page.getByRole("button", { name: "公開する仕訳を選んでください" })).toBeDisabled();
+  await expect(page.getByText("仕訳を選ぶとこちらが変化します")).toBeVisible();
+  await selectAll.click();
+  await expect(page.getByRole("checkbox", { name: "調査研究広報滞在費 1月分を公開対象にする" })).toBeChecked();
+  await expect(page.getByText("公開すると：交通費 +¥1,500・未使用 +¥998,500")).toBeVisible();
+  await expect(page.getByText("選択中の 2件 を公開した場合")).toBeVisible();
+
+  const publishButton = page.getByRole("button", { name: "2件（¥1,001,500）を公開する" });
+  await expect(publishButton).toBeEnabled();
+  await publishButton.click();
+  await expect(page.getByText(`2件を公開しました（公開範囲 〜${year}.03.31）`)).toBeVisible();
+  await expect(page.getByText("確認済・未公開 0件")).toBeVisible();
+  await expect(page.getByText("公開できる確認済の仕訳はありません")).toBeVisible();
+  await expect(selectAll).toBeDisabled();
+  await page.reload();
+  await expect(page.getByText(`現在の公開状態（〜${year}.03.31・¥1,500）`)).toBeVisible();
+
+  // 公開済みは仕訳一覧で「公開中」になり、帳簿の公開範囲も更新される
+  await page.getByRole("link", { name: "仕訳の確認・編集" }).click();
+  await expect(page.getByRole("heading", { name: "仕訳の確認・編集" })).toBeVisible();
+  await expect(page.getByRole("row").filter({ hasText: "視察先への移動" })).toContainText("公開中");
+
+  // 公開中の仕訳を確認済に戻すと、修正できるようになり、公開の候補に戻る
+  const publishedRow = page.getByRole("row").filter({ hasText: "視察先への移動" });
+  await publishedRow.click();
+  // 公開中は公開される内容を読み取り表示にし、事務所内の管理（立替者など）だけを行ごとに変更できる
+  await expect(page.getByText("公開中のため、公開される内容は編集できません")).toBeVisible();
+  await expect(page.getByLabel("金額", { exact: true })).toHaveCount(0);
+  await expect(page.getByLabel("備考", { exact: true })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "保存", exact: true })).toHaveCount(0);
+  await page.getByRole("button", { name: "立替者を編集" }).click();
+  await page.getByLabel("立替者", { exact: true }).fill("秘書A");
+  await page.getByRole("button", { name: "立替者を保存" }).click();
+  await expect(page.getByText("1件の立替者を「秘書A」にしました")).toBeVisible();
+  await expect(publishedRow).toContainText("立替 秘書A");
+  const unpublishDialog = page.getByRole("dialog");
+  await clickUntil(page.getByRole("button", { name: "確認済に戻す", exact: true }).first(), (options) =>
+    expect(unpublishDialog.getByText("確認済に戻しますか？")).toBeVisible(options),
+  );
+  await unpublishDialog.getByRole("button", { name: "確認済に戻す", exact: true }).click();
+  await expect(unpublishDialog).toBeHidden();
+  await expect(publishedRow).toContainText("確認済");
+  await publishedRow.click();
+  await page.getByLabel("金額", { exact: true }).fill("1800");
+  await page.getByRole("button", { name: "保存", exact: true }).click();
+  await expect(publishedRow).toContainText("1,800");
+
+  await page.getByRole("link", { name: "公開", exact: true }).click();
+  await expect(page.getByText("確認済・未公開 1件")).toBeVisible();
+  await expect(page.getByRole("checkbox", { name: "視察先への移動を公開対象にする" })).toBeVisible();
+  // 取り下げると公開範囲は残った公開中の仕訳（1月分の支給）の月末まで戻り、公開済みの支出額も減る
+  await expect(page.getByText(`現在の公開状態（〜${year}.01.31・¥0）`)).toBeVisible();
+
+  await page.getByRole("link", { name: "年度帳簿" }).click();
+  const bookCard = page.locator('[data-slot="card"]').filter({ has: page.getByRole("heading", { name: `${year}年度` }) });
+  await expect(bookCard).toContainText("公開中");
+  await expect(bookCard).toContainText(`${year}.01.31まで`);
+
+  await page.goto("/politicians");
+  await politicianCard.getByRole("button", { name: "削除", exact: true }).click();
+  await page.getByRole("button", { name: "削除する", exact: true }).click();
+  await expect(politicianCard).toHaveCount(0);
+});

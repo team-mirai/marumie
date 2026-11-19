@@ -7,8 +7,12 @@ import { XmlExportUsecase } from "@/server/contexts/report/application/usecases/
 import { DonationAssembler } from "@/server/contexts/report/application/services/donation-assembler";
 import { ExpenseAssembler } from "@/server/contexts/report/application/services/expense-assembler";
 import { IncomeAssembler } from "@/server/contexts/report/application/services/income-assembler";
+import { requireRoleResponse } from "@/server/contexts/auth/presentation/loaders/require-role-response";
 
 export async function GET(request: Request) {
+  const unauthorized = await requireRoleResponse("political_fund");
+  if (unauthorized) return unauthorized;
+
   const url = new URL(request.url);
   const politicalOrganizationId = url.searchParams.get("politicalOrganizationId");
   const financialYearRaw = url.searchParams.get("financialYear");

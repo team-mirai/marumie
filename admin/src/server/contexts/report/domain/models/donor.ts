@@ -63,6 +63,26 @@ export function parseDonorType(value: string): DonorType | null {
   return isValidDonorType(normalized) ? normalized : null;
 }
 
+/**
+ * 同一寄付者とみなすためのキーを生成する
+ *
+ * 政治資金報告書では同一寄付者の寄付を合算して判定する必要があるため、
+ * 「どの寄付者を同一とみなすか」は寄付者そのもののルールとしてここに集約する。
+ * 現在の同一性判定は (name, address, donorType) の完全一致。
+ *
+ * @param name 寄付者名
+ * @param address 住所（null は空文字と同一視する）
+ * @param donorType 寄付者種別
+ * @returns 同一性判定に使うキー文字列
+ */
+export function buildDonorMatchKey(
+  name: string,
+  address: string | null,
+  donorType: DonorType,
+): string {
+  return JSON.stringify({ name, address: address ?? "", donorType });
+}
+
 export function validateDonorInput(input: CreateDonorInput): string[] {
   const errors: string[] = [];
   const trimmedName = input.name?.trim() ?? "";

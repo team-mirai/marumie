@@ -2,14 +2,22 @@
 import "client-only";
 
 import { useState, useId } from "react";
-import { Button, Input, Label } from "@/client/components/ui";
+import { Button, Input, Label, NativeSelect } from "@/client/components/ui";
+import { FormErrorAlert } from "@/client/components/assignment/FormErrorAlert";
+import {
+  coerceDonorType,
+  isDonorFormValid,
+  resolveAllowedDonorTypes,
+  toDonorFormSubmitData,
+  type DonorFormSubmitData,
+  type DonorFormValues,
+} from "@/client/lib";
 import type { DonorType } from "@/server/contexts/report/domain/models/donor";
 import {
   MAX_NAME_LENGTH,
   MAX_ADDRESS_LENGTH,
   MAX_OCCUPATION_LENGTH,
   DONOR_TYPE_LABELS,
-  VALID_DONOR_TYPES,
 } from "@/server/contexts/report/domain/models/donor";
 
 interface DonorFormContentProps {
@@ -22,25 +30,34 @@ interface DonorFormContentProps {
     occupation: string | null;
     usageCount?: number;
   };
-  onSubmit: (data: {
-    donorType: DonorType;
-    name: string;
-    address: string | null;
-    occupation: string | null;
-  }) => Promise<void>;
+  /** 新規作成時の名前の初期値（紐付けダイアログで取引の摘要を流し込む用途）。initialData があればそちらを優先する */
+  defaultName?: string;
+  onSubmit: (data: DonorFormSubmitData) => Promise<void>;
   disabled?: boolean;
   submitLabel?: string;
+  /** 選択可能な種別を制限する（紐付け対象のカテゴリによる制約）。未指定・空配列なら全種別 */
+  allowedDonorTypes?: DonorType[];
 }
 
+/**
+ * 寄付者フォーム本体。寄付者マスタの作成・編集ダイアログと、寄付者紐付けダイアログの「新規作成」タブの両方から使う。
+ * 種別が許可外になった場合は許可リストの先頭に自動補正して表示・送信する。
+ */
 export function DonorFormContent({
   mode,
   initialData,
+  defaultName,
   onSubmit,
   disabled = false,
   submitLabel,
+  allowedDonorTypes,
 }: DonorFormContentProps) {
-  const [donorType, setDonorType] = useState<DonorType>(initialData?.donorType ?? "individual");
-  const [name, setName] = useState(initialData?.name ?? "");
+  const effectiveAllowedTypes = resolveAllowedDonorTypes(allowedDonorTypes);
+
+  const [selectedDonorType, setSelectedDonorType] = useState<DonorType>(
+    initialData?.donorType ?? effectiveAllowedTypes[0],
+  );
+  const [name, setName] = useState(initialData?.name ?? defaultName ?? "");
   const [address, setAddress] = useState(initialData?.address ?? "");
   const [occupation, setOccupation] = useState(initialData?.occupation ?? "");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -51,8 +68,10 @@ export function DonorFormContent({
   const addressId = useId();
   const occupationId = useId();
 
+  const donorType = coerceDonorType(selectedDonorType, effectiveAllowedTypes);
   const isIndividual = donorType === "individual";
-  const isFormValid = name.trim() !== "" && (!isIndividual || occupation.trim() !== "");
+  const values: DonorFormValues = { donorType, name, address, occupation };
+  const isFormValid = isDonorFormValid(values);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,12 +80,7 @@ export function DonorFormContent({
     try {
       setIsSubmitting(true);
       setError(null);
-      await onSubmit({
-        donorType,
-        name: name.trim(),
-        address: address.trim() || null,
-        occupation: isIndividual ? occupation.trim() : null,
-      });
+      await onSubmit(toDonorFormSubmitData(values));
     } catch (err) {
       setError(err instanceof Error ? err.message : "エラーが発生しました");
     } finally {
@@ -75,7 +89,7 @@ export function DonorFormContent({
   };
 
   const handleDonorTypeChange = (newType: DonorType) => {
-    setDonorType(newType);
+    setSelectedDonorType(newType);
     if (newType !== "individual") {
       setOccupation("");
     }
@@ -88,35 +102,31 @@ export function DonorFormContent({
   const loadingLabel = submitLabel ? `${submitLabel}中...` : defaultLoadingLabel;
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      {error && (
-        <div className="text-red-500 p-3 bg-red-900/20 rounded-lg border border-red-900/30">
-          {error}
-        </div>
-      )}
+    <form onSubmit={handleSubmit} className="space-y-5">
+      {error && <FormErrorAlert message={error} />}
 
-      <div>
+      <div className="space-y-2">
         <Label htmlFor={donorTypeId}>
-          種別 <span className="text-red-500">*</span>
+          寄付者種別 <span className="text-destructive">*</span>
         </Label>
-        <select
+        <NativeSelect
           id={donorTypeId}
           value={donorType}
           onChange={(e) => handleDonorTypeChange(e.target.value as DonorType)}
           disabled={isDisabled}
-          className="w-full bg-input text-white border border-border rounded-lg px-3 py-2.5 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-ring focus:border-primary disabled:opacity-50 disabled:cursor-not-allowed"
+          wrapperClassName="w-full"
         >
-          {VALID_DONOR_TYPES.map((type) => (
+          {effectiveAllowedTypes.map((type) => (
             <option key={type} value={type}>
               {DONOR_TYPE_LABELS[type]}
             </option>
           ))}
-        </select>
+        </NativeSelect>
       </div>
 
-      <div>
+      <div className="space-y-2">
         <Label htmlFor={nameId}>
-          名前 <span className="text-red-500">*</span>
+          名前 <span className="text-destructive">*</span>
         </Label>
         <Input
           type="text"
@@ -130,7 +140,7 @@ export function DonorFormContent({
         />
       </div>
 
-      <div>
+      <div className="space-y-2">
         <Label htmlFor={addressId}>住所</Label>
         <Input
           type="text"
@@ -144,9 +154,9 @@ export function DonorFormContent({
       </div>
 
       {isIndividual && (
-        <div>
+        <div className="space-y-2">
           <Label htmlFor={occupationId}>
-            職業 <span className="text-red-500">*</span>
+            職業 <span className="text-destructive">*</span>
           </Label>
           <Input
             type="text"
@@ -158,17 +168,21 @@ export function DonorFormContent({
             disabled={isDisabled}
             required
           />
+          <p className="text-xs text-muted-foreground">
+            個人からの寄附の場合、職業の記載が必要です
+          </p>
         </div>
       )}
 
       {mode === "edit" && initialData?.usageCount !== undefined && (
-        <div className="text-muted-foreground text-sm">
-          使用状況: {initialData.usageCount}件のTransactionで使用中
-        </div>
+        <p className="text-[13px] text-muted-foreground">
+          使用状況: <span className="font-latin">{initialData.usageCount}</span>
+          件の取引で使用中
+        </p>
       )}
 
       {mode === "create" && (
-        <p className="text-muted-foreground text-sm">
+        <p className="text-[13px] text-muted-foreground">
           ※ 同じ名前・住所・種別の組み合わせは登録できません
         </p>
       )}

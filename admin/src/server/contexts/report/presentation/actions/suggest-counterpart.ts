@@ -7,12 +7,15 @@ import {
 } from "@/server/contexts/report/application/usecases/suggest-counterpart-usecase";
 import { PrismaReportTransactionRepository } from "@/server/contexts/report/infrastructure/repositories/prisma-report-transaction.repository";
 import { PrismaCounterpartRepository } from "@/server/contexts/report/infrastructure/repositories/prisma-counterpart.repository";
+import { requireRole } from "@/server/contexts/auth/presentation/loaders/require-role";
 
 export async function suggestCounterpartAction(
   transactionId: string,
   politicalOrganizationId: string,
   limit?: number,
 ): Promise<SuggestCounterpartResult> {
+  await requireRole("political_fund");
+
   try {
     const transactionRepository = new PrismaReportTransactionRepository(prisma);
     const counterpartRepository = new PrismaCounterpartRepository(prisma);

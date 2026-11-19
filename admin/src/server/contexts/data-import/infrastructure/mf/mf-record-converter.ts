@@ -1,9 +1,10 @@
-import type { MfCsvRecord } from "@/server/contexts/data-import/infrastructure/mf/mf-csv-loader";
+import type { MfCsvRecord } from "@/server/contexts/data-import/domain/models/mf-csv-record";
+import type { IMfRecordConverter } from "@/server/contexts/data-import/domain/repositories/mf-record-converter.interface";
 import { PL_CATEGORIES, BS_CATEGORIES, CASH_ACCOUNTS } from "@/shared/accounting/account-category";
 import type { TransactionType } from "@/shared/models/transaction";
 import { PreviewTransaction } from "@/server/contexts/data-import/domain/models/preview-transaction";
 
-export class MfRecordConverter {
+export class MfRecordConverter implements IMfRecordConverter {
   public convertRow(record: MfCsvRecord, politicalOrganizationId: string): PreviewTransaction {
     const debitAmount = this.parseAmount(record.debit_amount);
     const creditAmount = this.parseAmount(record.credit_amount);
@@ -149,6 +150,11 @@ export class MfRecordConverter {
     }
     if (isDebitBS && isCreditPL) {
       return PL_CATEGORIES[creditAccount]?.type === "expense" ? "expense" : "income";
+    }
+    // BS科目同士の仕訳（未収入金の回収、未払金・未払費用の支払など）は収支ではないが、
+    // 貸借対照表の債権・負債残高の集計に必要なため、非現金仕訳として取り込む
+    if (isDebitBS && isCreditBS) {
+      return "non_cash_journal";
     }
 
     return null;

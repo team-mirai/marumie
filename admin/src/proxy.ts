@@ -47,6 +47,12 @@ async function performBasicAuth(request: NextRequest): Promise<NextResponse | nu
   return null;
 }
 
+/**
+ * Vercel Queues・Vercel Cron から呼ばれる入口。利用者のログインではなく、それぞれの Route Handler で
+ * 呼び出し元を確かめる（キューは配送の受領確認、定期実行は CRON_SECRET。#1812）
+ */
+const machinePaths = ["/api/queues/", "/api/cron/"];
+
 // publicパス以外は全て認証を必須とする（セキュアデフォルト）
 export async function proxy(request: NextRequest): Promise<NextResponse> {
   // メンテナンスモードチェック
@@ -77,6 +83,10 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
       headers: request.headers,
     },
   });
+
+  if (machinePaths.some((path) => request.nextUrl.pathname.startsWith(path))) {
+    return response;
+  }
 
   const supabaseUrl = process.env.SUPABASE_URL;
   const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
@@ -114,6 +124,7 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     "/auth/callback",
     "/auth/setup",
     "/auth/reset-password",
+    "/api/auth/callback",
   ];
   const isPublicPath = publicPaths.some((path) => request.nextUrl.pathname.startsWith(path));
 
@@ -149,6 +160,10 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   return response;
 }
 
+// 除外は静的アセットのプレフィックスのみに限定する。
+// パス中の拡張子一致で除外すると `/political-organizations/1.png` のような
+// 動的ルートが認証ゲートを素通りし、そこにバンドルされたサーバーアクションを
+// 未認証で実行できてしまう。
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
 };

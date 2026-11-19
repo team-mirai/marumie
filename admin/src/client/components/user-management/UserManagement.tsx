@@ -3,7 +3,20 @@ import "client-only";
 import { useState } from "react";
 import type { ChangeEvent, FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { Button, Input, Card } from "../ui";
+import {
+  Button,
+  Input,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/client/components/ui";
+import { AssignmentDialog } from "@/client/components/user-management/AssignmentDialog";
+import { RoleCheckboxes } from "@/client/components/user-management/RoleCheckboxes";
+import { UserRoleBadge } from "@/client/components/user-management/UserRoleBadge";
+import { assignedPoliticianNames, formatDate, toggleUserRole } from "@/client/lib";
 import type { UserRole } from "@/server/contexts/auth/domain/models/user-role";
 import type { User } from "@/server/contexts/shared/domain/repositories/user-repository.interface";
 
@@ -14,46 +27,72 @@ import type { User } from "@/server/contexts/shared/domain/repositories/user-rep
 interface UserDisplayData {
   id: string;
   email: string;
-  role: UserRole;
+  roles: UserRole[];
+  /** 担当する議員の ID（調査研究費の書き込みは担当の議員室だけ。#1773） */
+  assignedPoliticianIds: string[];
   createdAt: Date;
 }
 
 interface UserManagementProps {
   users: UserDisplayData[];
-  availableRoles: UserRole[];
-  updateUserRoleAction: (
+  availableRoles: readonly UserRole[];
+  /** 担当として選べる議員 */
+  politicians: readonly { id: string; name: string }[];
+  updateUserRolesAction: (
     userId: string,
-    role: UserRole,
+    roles: UserRole[],
   ) => Promise<{ ok: true; user: User } | { ok: false; error: string }>;
-  inviteUserAction: (email: string) => Promise<{ ok: boolean; error?: string }>;
+  updateUserAssignmentsAction: (
+    userId: string,
+    politicianIds: string[],
+  ) => Promise<{ ok: true; assignedPoliticianIds: string[] } | { ok: false; error: string }>;
+  inviteUserAction: (email: string, roles: UserRole[]) => Promise<{ ok: boolean; error?: string }>;
+}
+
+/** 担当する議員の名前を一覧に並べる。担当がいなければ「なし」 */
+function AssignedPoliticianNames({
+  assignedPoliticianIds,
+  politicians,
+}: {
+  assignedPoliticianIds: readonly string[];
+  politicians: readonly { id: string; name: string }[];
+}) {
+  const names = assignedPoliticianNames(assignedPoliticianIds, politicians);
+  if (names.length === 0) return <span className="text-xs text-muted-foreground">なし</span>;
+  return <span className="text-[13px] text-foreground">{names.join("、")}</span>;
 }
 
 export default function UserManagement({
   users: initialUsers,
   availableRoles,
-  updateUserRoleAction,
+  politicians,
+  updateUserRolesAction,
+  updateUserAssignmentsAction,
   inviteUserAction,
 }: UserManagementProps) {
   const router = useRouter();
   const [users, setUsers] = useState(initialUsers);
   const [isLoading, setIsLoading] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteRoles, setInviteRoles] = useState<UserRole[]>([]);
   const [isInviting, setIsInviting] = useState(false);
+  const [editingAssignmentUser, setEditingAssignmentUser] = useState<UserDisplayData | null>(null);
 
-  const handleRoleChange = async (userId: string, newRole: UserRole) => {
+  const handleRolesChange = async (userId: string, newRoles: UserRole[]) => {
     setIsLoading(true);
 
     try {
-      const result = await updateUserRoleAction(userId, newRole);
+      const result = await updateUserRolesAction(userId, newRoles);
       if (result.ok) {
         // result.userからUserDisplayDataに必要なフィールドのみを取得して更新
         setUsers((prev) =>
           prev.map((user) =>
             user.id === userId
               ? {
+                  ...user,
                   id: result.user.id,
                   email: result.user.email,
-                  role: result.user.role,
+                  roles: result.user.roles,
                   createdAt: result.user.createdAt,
                 }
               : user,
@@ -63,13 +102,27 @@ export default function UserManagement({
         alert(`ロールの更新に失敗しました: ${result.error}`);
       }
     } catch (error) {
-      console.error("Error updating role:", error);
+      console.error("Error updating roles:", error);
       alert(
         `ロールの更新に失敗しました: ${error instanceof Error ? error.message : "不明なエラー"}`,
       );
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleAssignmentSave = async (
+    userId: string,
+    politicianIds: string[],
+  ): Promise<{ ok: true } | { ok: false; error: string }> => {
+    const result = await updateUserAssignmentsAction(userId, politicianIds);
+    if (!result.ok) return result;
+    setUsers((prev) =>
+      prev.map((u) =>
+        u.id === userId ? { ...u, assignedPoliticianIds: result.assignedPoliticianIds } : u,
+      ),
+    );
+    return { ok: true };
   };
 
   const handleInviteUser = async (e: FormEvent) => {
@@ -79,10 +132,11 @@ export default function UserManagement({
     setIsInviting(true);
 
     try {
-      const result = await inviteUserAction(inviteEmail.trim());
+      const result = await inviteUserAction(inviteEmail.trim(), inviteRoles);
       if (result.ok) {
         alert(`${inviteEmail}に招待を送信しました`);
         setInviteEmail("");
+        setInviteRoles([]);
         // Server ActionのrevalidatePath()によりキャッシュが無効化されるため、ルーターのrefreshで十分
         router.refresh();
       } else {
@@ -99,84 +153,120 @@ export default function UserManagement({
   return (
     <div className="space-y-4">
       {/* Invite User Form */}
-      <Card className="p-4">
-        <h2 className="text-lg font-medium text-white mb-4">新規ユーザー招待</h2>
-        <form onSubmit={handleInviteUser} className="flex gap-4">
-          <div className="flex-1">
+      <div className="rounded-lg border border-border bg-card p-6">
+        <h2 className="mb-4 text-base font-bold text-foreground">新規ユーザー招待</h2>
+        <form onSubmit={handleInviteUser} className="space-y-3">
+          <div className="flex flex-wrap gap-3">
             <Input
               type="email"
               value={inviteEmail}
               onChange={(e: ChangeEvent<HTMLInputElement>) => setInviteEmail(e.target.value)}
               placeholder="メールアドレスを入力"
               disabled={isInviting}
+              className="max-w-md flex-1"
               required
             />
+            <Button type="submit" disabled={isInviting || !inviteEmail.trim()}>
+              {isInviting ? "送信中..." : "招待を送信"}
+            </Button>
           </div>
-          <Button type="submit" disabled={isInviting || !inviteEmail.trim()}>
-            {isInviting ? "送信中..." : "招待を送信"}
-          </Button>
+          <RoleCheckboxes
+            idPrefix="invite-role"
+            ariaLabelPrefix="招待するユーザーのロール: "
+            availableRoles={availableRoles}
+            roles={inviteRoles}
+            disabled={isInviting}
+            onToggle={(role, checked) =>
+              setInviteRoles((prev) => toggleUserRole(prev, role, checked))
+            }
+          />
+          <p className="text-xs text-muted-foreground">
+            ロールを選ばずに招待すると、管理者がロールを付けるまでどの機能も使えません。
+          </p>
         </form>
-      </Card>
+      </div>
 
-      <Card className="overflow-hidden p-0">
-        <table className="min-w-full divide-y divide-border">
-          <thead className="bg-secondary">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                メール
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                ロール
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                作成日
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                操作
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-card divide-y divide-border">
+      <div className="rounded-lg border border-border bg-card p-6">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>メール</TableHead>
+              <TableHead>ロール</TableHead>
+              <TableHead>作成日</TableHead>
+              <TableHead>ロールの変更</TableHead>
+              <TableHead>担当議員（調査研究費）</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {users.map((user) => (
-              <tr key={user.id}>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-white">{user.email}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-white">
-                  <span
-                    className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                      user.role === "admin"
-                        ? "bg-red-900 text-red-200"
-                        : "bg-green-900 text-green-200"
-                    }`}
-                  >
-                    {user.role}
-                  </span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
-                  {new Date(user.createdAt).toLocaleDateString()}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                  <select
-                    value={user.role}
-                    onChange={(e) => handleRoleChange(user.id, e.target.value as UserRole)}
+              <TableRow key={user.id}>
+                <TableCell className="font-latin text-[13px] text-foreground">
+                  {user.email}
+                </TableCell>
+                <TableCell>
+                  {user.roles.length === 0 ? (
+                    <span className="text-xs text-muted-foreground">なし</span>
+                  ) : (
+                    <div className="flex flex-wrap gap-1">
+                      {user.roles.map((role) => (
+                        <UserRoleBadge key={role} role={role} />
+                      ))}
+                    </div>
+                  )}
+                </TableCell>
+                <TableCell className="font-latin text-[13px] text-muted-foreground">
+                  {formatDate(user.createdAt)}
+                </TableCell>
+                <TableCell>
+                  <RoleCheckboxes
+                    idPrefix={`user-${user.id}-role`}
+                    ariaLabelPrefix={`${user.email} のロール: `}
+                    availableRoles={availableRoles}
+                    roles={user.roles}
                     disabled={isLoading}
-                    className="bg-input text-white border border-border rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                  >
-                    {availableRoles.map((role) => (
-                      <option key={role} value={role}>
-                        {role.charAt(0).toUpperCase() + role.slice(1)}
-                      </option>
-                    ))}
-                  </select>
-                </td>
-              </tr>
+                    onToggle={(role, checked) =>
+                      handleRolesChange(user.id, toggleUserRole(user.roles, role, checked))
+                    }
+                  />
+                </TableCell>
+                <TableCell>
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+                    <AssignedPoliticianNames
+                      assignedPoliticianIds={user.assignedPoliticianIds}
+                      politicians={politicians}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="xs"
+                      aria-label={`${user.email} の担当議員を変更`}
+                      onClick={() => setEditingAssignmentUser(user)}
+                      disabled={isLoading}
+                    >
+                      変更
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
             ))}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
 
         {users.length === 0 && (
-          <div className="text-center py-8 text-muted-foreground">ユーザーが見つかりません</div>
+          <div className="py-8 text-center text-sm text-muted-foreground">
+            ユーザーが見つかりません
+          </div>
         )}
-      </Card>
+      </div>
+
+      {editingAssignmentUser && (
+        <AssignmentDialog
+          user={editingAssignmentUser}
+          politicians={politicians}
+          onSave={(politicianIds) => handleAssignmentSave(editingAssignmentUser.id, politicianIds)}
+          onClose={() => setEditingAssignmentUser(null)}
+        />
+      )}
     </div>
   );
 }

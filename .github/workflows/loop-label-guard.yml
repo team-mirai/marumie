@@ -1,0 +1,38 @@
+name: Loop Label Guard
+
+# `loop:ready` は「AIエージェント（ループ）が自律実装してよい」という許可ラベルであり、
+# ループはこのラベルが付いたIssueの本文を指示として読む。
+# そのため、リポジトリ外部の人が書いた本文がそのままエージェントへの指示にならないよう、
+# メンテナ以外が起票したIssueからは自動でラベルを剥がす。
+#
+# 外部からの提案を採用する場合は、メンテナが内容を確認したうえで
+# 自分の言葉で書き直したIssueを新たに起票する（元Issueへのリンクを添える）。
+
+on:
+  issues:
+    types: [opened, reopened, labeled]
+
+permissions:
+  issues: write
+
+jobs:
+  guard:
+    if: >-
+      contains(github.event.issue.labels.*.name, 'loop:ready') &&
+      !contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.issue.author_association)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Remove loop:ready from an externally authored issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          NUMBER: ${{ github.event.issue.number }}
+        run: |
+          set -euo pipefail
+          gh issue edit "$NUMBER" --repo "$REPO" --remove-label 'loop:ready'
+          gh issue comment "$NUMBER" --repo "$REPO" --body "$(printf '%s\n' \
+            '🤖 `loop:ready` ラベルを自動的に外しました。' \
+            '' \
+            'このラベルはAIエージェントによる自動実装の対象を示すもので、メンテナが起票したIssueにのみ付与されます（詳細は [docs/loop-engineering.md](https://github.com/team-mirai/marumie/blob/main/docs/loop-engineering.md)）。' \
+            '' \
+            'Issueの内容自体は通常どおり確認します。ご報告ありがとうございます！')"

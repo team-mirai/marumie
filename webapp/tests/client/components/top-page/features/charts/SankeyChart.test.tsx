@@ -1,0 +1,66 @@
+import { parse } from "node-html-parser";
+import { renderToStaticMarkup } from "react-dom/server";
+import SankeyChart from "@/client/components/top-page/features/charts/SankeyChart";
+import type { SankeyData } from "@/types/sankey";
+
+const DATA: SankeyData = {
+  nodes: [
+    { id: "i-grant", label: "政党交付金", nodeType: "income" },
+    { id: "t", label: "合計", nodeType: "total" },
+    { id: "e-act", label: "政治活動費", nodeType: "expense" },
+    { id: "e-cash", label: "現金残高", nodeType: "expense" },
+  ],
+  links: [
+    { source: "i-grant", target: "t", value: 1_000_000 },
+    { source: "t", target: "e-act", value: 600_000 },
+    { source: "t", target: "e-cash", value: 400_000 },
+  ],
+};
+
+describe("SankeyChart", () => {
+  // styled-jsx の <style jsx> は jest では変換されず、属性の警告が出るので黙らせる
+  const consoleError = jest.spyOn(console, "error").mockImplementation(() => {});
+  const document = parse(renderToStaticMarkup(<SankeyChart data={DATA} />));
+  consoleError.mockRestore();
+  const svg = document.querySelector("svg");
+
+  it("ラベルの書体はデザインと同じくヒラギノを先に使い、無い環境では Noto Sans JP にする", () => {
+    const style = svg?.getAttribute("style") ?? "";
+    const hiragino = style.indexOf("Hiragino Kaku Gothic ProN");
+    const noto = style.indexOf("var(--font-noto-sans-jp)");
+    expect(hiragino).toBeGreaterThanOrEqual(0);
+    expect(noto).toBeGreaterThan(hiragino);
+  });
+
+  it("項目名は 800、金額は 600 の太さで描く", () => {
+    const spans = document.querySelectorAll(".lbl text");
+    const name = spans.find((span) => span.text === "政党交付金");
+    const amount = spans.find((span) => span.text === "100万円");
+    expect(name?.getAttribute("font-weight")).toBe("800");
+    expect(amount?.getAttribute("font-weight")).toBe("600");
+  });
+
+  it("割合はグレーのピルに入れて金額の後ろに出す", () => {
+    const pill = document.querySelectorAll(".lbl rect").find((rect) => rect.getAttribute("fill") === "#F3F4F6");
+    expect(pill).toBeDefined();
+    const percents = document.querySelectorAll(".lbl text").map((text) => text.text);
+    expect(percents).toContain("60%");
+  });
+
+  it("左右の余白を詰めて viewBox を切り出す", () => {
+    const [x, , width] = (svg?.getAttribute("viewBox") ?? "").split(" ").map(Number);
+    expect(x).toBeGreaterThan(0);
+    expect(x + width).toBeLessThan(1200);
+  });
+
+  it("既定では画面に入るまで描き出し前（is-in なし）の形で描く", () => {
+    expect(document.querySelector(".sankey-chart")?.classList.contains("is-in")).toBe(false);
+  });
+
+  it("drawIn を false にすると最初から描き終えた形（is-in）で描く", () => {
+    const consoleError = jest.spyOn(console, "error").mockImplementation(() => {});
+    const html = renderToStaticMarkup(<SankeyChart data={DATA} drawIn={false} />);
+    consoleError.mockRestore();
+    expect(parse(html).querySelector(".sankey-chart")?.classList.contains("is-in")).toBe(true);
+  });
+});

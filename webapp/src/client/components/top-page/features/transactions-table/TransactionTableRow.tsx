@@ -1,14 +1,20 @@
 "use client";
 import "client-only";
 
+import TransactionCategoryPill from "@/client/components/top-page/features/transactions-table/TransactionCategoryPill";
 import { PL_CATEGORIES } from "@/shared/accounting/account-category";
 import type { DisplayTransaction } from "@/server/contexts/public-finance/domain/models/display-transaction";
 
 interface TransactionTableRowProps {
   transaction: DisplayTransaction;
+  /** 渡すとカテゴリーのラベルを、そのカテゴリーで絞り込むリンクにする */
+  categoryHref?: (categoryKey: string) => string;
 }
 
-export default function TransactionTableRow({ transaction }: TransactionTableRowProps) {
+export default function TransactionTableRow({
+  transaction,
+  categoryHref,
+}: TransactionTableRowProps) {
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("ja-JP", {
       style: "decimal",
@@ -69,11 +75,18 @@ export default function TransactionTableRow({ transaction }: TransactionTableRow
 
   const isIncome = transaction.transactionType === "income";
   const categoryColors = getCategoryColors(transaction);
+  // 絞り込みはサーバーが保存済みの category_key で照合するので、行の勘定科目から決まるキーと
+  // 一致するときだけリンクにする。マッピングの無い科目（ラベルが「不明」になる行）や、
+  // 保存済みのキーが科目と食い違う行は、絞り込んでもその行自身が出てこないためリンクにしない。
+  const accountCategoryKey = PL_CATEGORIES[transaction.account]?.key;
+  const categoryKey =
+    accountCategoryKey === transaction.categoryKey ? accountCategoryKey : undefined;
+  const categoryLinkHref = categoryKey && categoryHref ? categoryHref(categoryKey) : undefined;
 
   return (
     <tr className="w-full border-b border-[#D5DBE1]">
       {/* SP Layout - Mobile Card Layout */}
-      <td colSpan={4} className="md:hidden p-0">
+      <td colSpan={4} className="min-[641px]:hidden p-0">
         <div className="flex flex-col bg-white gap-1 px-0 py-2">
           {/* Date section */}
           <div className="flex">
@@ -100,65 +113,47 @@ export default function TransactionTableRow({ transaction }: TransactionTableRow
 
           {/* Category label section */}
           <div className="flex items-center">
-            <div
+            <TransactionCategoryPill
+              label={getCategoryLabel(transaction)}
+              href={categoryLinkHref}
+              colors={categoryColors}
               className="flex items-center gap-2 px-2 py-0.5 rounded-full border h-[18px]"
-              style={{
-                backgroundColor: categoryColors.bgColor,
-                borderColor: categoryColors.borderColor,
-              }}
-            >
-              <span
-                className="text-xs font-medium text-left leading-[1em]"
-                style={{
-                  color: categoryColors.fontColor,
-                }}
-              >
-                {getCategoryLabel(transaction)}
-              </span>
-            </div>
+              labelClassName="text-xs font-medium text-left leading-[1em]"
+            />
           </div>
         </div>
       </td>
 
       {/* Desktop Layout - Table row layout */}
       {/* Date column - 140px width */}
-      <td className="hidden md:table-cell px-4 h-16 w-[140px]">
+      <td className="hidden min-[641px]:table-cell px-4 h-16 w-[140px]">
         <span className="leading-4 font-bold text-base text-gray-800">
           {formatDate(transaction.date)}
         </span>
       </td>
 
       {/* Category column - 160px width */}
-      <td className="hidden md:table-cell pl-4 h-16 w-[160px]">
+      <td className="hidden min-[641px]:table-cell pl-4 h-16 w-[160px]">
         <div className="flex justify-start items-center h-11">
-          <div
+          <TransactionCategoryPill
+            label={getCategoryLabel(transaction)}
+            href={categoryLinkHref}
+            colors={categoryColors}
             className="flex flex-col justify-center items-center gap-2 px-3 rounded-full border"
-            style={{
-              backgroundColor: categoryColors.bgColor,
-              borderColor: categoryColors.borderColor,
-            }}
-          >
-            <span
-              className="font-medium text-xs leading-[1.67em] text-left"
-              style={{
-                color: categoryColors.fontColor,
-              }}
-            >
-              {getCategoryLabel(transaction)}
-            </span>
-          </div>
+            labelClassName="font-medium text-xs leading-[1.67em] text-left"
+          />
         </div>
       </td>
 
       {/* Title column - flexible width */}
-      <td className="hidden md:table-cell h-16">
+      <td className="hidden min-[641px]:table-cell h-16">
         <span className="leading-7 font-bold text-base text-gray-800">
           {getDisplayTitle(transaction)}
         </span>
       </td>
 
       {/* Amount column - 180px width */}
-      <td className="hidden md:table-cell text-right pr-6 h-16 w-[180px]">
+      <td className="hidden min-[641px]:table-cell text-right pr-6 h-16 w-[180px]">
         <span
           className={`leading-[1em] font-bold text-xl tracking-[0.01em] ${
             isIncome ? "text-[#238778]" : "text-[#DC2626]"

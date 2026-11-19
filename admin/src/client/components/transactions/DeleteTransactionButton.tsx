@@ -2,7 +2,7 @@
 import "client-only";
 
 import { useState } from "react";
-import { Trash2 } from "lucide-react";
+import { Trash } from "@phosphor-icons/react/dist/ssr";
 import { toast } from "sonner";
 import { deleteTransactionAction } from "@/server/contexts/data-import/presentation/actions/delete-transaction";
 import {
@@ -15,18 +15,11 @@ import {
   DialogDescription,
 } from "@/client/components/ui";
 import type { TransactionWithOrganization } from "@/server/contexts/shared/domain/transaction";
+import { formatAmount, formatDate } from "@/client/lib";
 
 interface DeleteTransactionButtonProps {
   transaction: TransactionWithOrganization;
   onDeleted?: () => void;
-}
-
-function formatDate(date: Date | string) {
-  return new Date(date).toLocaleDateString("ja-JP");
-}
-
-function formatAmount(amount: number) {
-  return `¥${amount.toLocaleString()}`;
 }
 
 export function DeleteTransactionButton({ transaction, onDeleted }: DeleteTransactionButtonProps) {
@@ -55,12 +48,14 @@ export function DeleteTransactionButton({ transaction, onDeleted }: DeleteTransa
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <Button
+        type="button"
         variant="ghost"
-        size="icon"
-        className="h-8 w-8 text-muted-foreground hover:text-destructive"
+        size="icon-sm"
+        className="text-subtle-foreground hover:bg-transparent hover:text-destructive"
         onClick={() => setOpen(true)}
+        aria-label="取引を削除"
       >
-        <Trash2 className="h-4 w-4" />
+        <Trash className="size-4" />
       </Button>
       <DialogContent className="max-w-md">
         <DialogHeader>

@@ -1,51 +1,16 @@
 import { test, expect } from "@playwright/test";
 
 test.describe("取引先マスタ管理", () => {
-	test.beforeEach(async ({ page }) => {
-		await page.goto("/login");
-		await page.getByLabel("Email").fill("foo@example.com");
-		await page.getByLabel("Password").fill("foo@example.com");
-		await page.getByRole("button", { name: "ログイン" }).click();
-		await expect(page).toHaveURL("/");
-	});
-
 	test.describe("読み込み", () => {
-		test("取引先マスタページが正常に表示される", async ({ page }) => {
+		test("取引先マスタページにシードデータと検索フォームが表示される", async ({ page }) => {
 			await page.goto("/counterparts");
 
 			await expect(page.getByRole("heading", { name: "取引先マスタ管理" })).toBeVisible();
 			await expect(page.getByRole("button", { name: "新規作成" })).toBeVisible();
-		});
-
-		test("シードデータの取引先が一覧に表示される", async ({ page }) => {
-			await page.goto("/counterparts");
+			await expect(page.getByLabel("取引先を名前または住所で検索")).toBeVisible();
 
 			await expect(page.getByRole("link", { name: "寄附　太郎" })).toBeVisible();
 			await expect(page.getByRole("link", { name: "東京電力株式会社" })).toBeVisible();
-		});
-
-		test("検索フォームが表示される", async ({ page }) => {
-			await page.goto("/counterparts");
-
-			await expect(
-				page.getByLabel("取引先を名前または住所で検索")
-			).toBeVisible();
-			await expect(page.getByRole("button", { name: "検索" })).toBeVisible();
-		});
-
-		test("テーブルヘッダーが正しく表示される", async ({ page }) => {
-			await page.goto("/counterparts");
-
-			await expect(page.getByRole("columnheader", { name: "名前" })).toBeVisible();
-			await expect(page.getByRole("columnheader", { name: "住所" })).toBeVisible();
-			await expect(page.getByRole("columnheader", { name: "使用数" })).toBeVisible();
-			await expect(page.getByRole("columnheader", { name: "操作" })).toBeVisible();
-		});
-
-		test("取引先の件数が表示される", async ({ page }) => {
-			await page.goto("/counterparts");
-
-			await expect(page.getByText(/\d+件の取引先/)).toBeVisible();
 		});
 	});
 

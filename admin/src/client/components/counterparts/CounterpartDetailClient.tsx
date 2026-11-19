@@ -3,9 +3,9 @@ import "client-only";
 
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
+import { PencilSimple } from "@phosphor-icons/react/dist/ssr";
 import type { RowSelectionState } from "@tanstack/react-table";
-import type { PoliticalOrganization } from "@/shared/models/political-organization";
+import type { OrganizationTarget } from "@/server/contexts/shared/domain/models/admin-target";
 import type { TransactionWithCounterpart } from "@/server/contexts/report/domain/models/transaction-with-counterpart";
 import type {
   Counterpart,
@@ -14,10 +14,12 @@ import type {
 import { TransactionWithCounterpartTable } from "@/client/components/counterpart-assignment/TransactionWithCounterpartTable";
 import { AssignCounterpartDialog } from "@/client/components/counterpart-assignment/AssignCounterpartDialog";
 import { CounterpartFormDialog } from "@/client/components/counterparts/CounterpartFormDialog";
-import { ClientPagination } from "@/client/components/ui/ClientPagination";
-import { Card, Input, Button, Label } from "@/client/components/ui";
+import { PageHeader } from "@/client/components/layout/PageHeader";
+import { BackLink } from "@/client/components/layout/BackLink";
+import { CurrentTargetBar } from "@/client/components/layout/CurrentTargetBar";
+import { StaticPagination } from "@/client/components/ui/StaticPagination";
+import { Button } from "@/client/components/ui";
 import { formatDate } from "@/client/lib";
-import { PoliticalOrganizationSelect } from "@/client/components/political-organizations/PoliticalOrganizationSelect";
 import { bulkUnassignCounterpartAction } from "@/server/contexts/report/presentation/actions/bulk-unassign-counterpart";
 
 interface CounterpartDetailClientProps {
@@ -26,11 +28,9 @@ interface CounterpartDetailClientProps {
   total: number;
   page: number;
   perPage: number;
-  organizations: PoliticalOrganization[];
+  target: OrganizationTarget;
   allCounterparts: Counterpart[];
   initialFilters: {
-    politicalOrganizationId: string;
-    financialYear: number;
     sortField: "transactionDate" | "debitAmount" | "categoryKey";
     sortOrder: "asc" | "desc";
   };
@@ -42,21 +42,13 @@ export function CounterpartDetailClient({
   total,
   page,
   perPage,
-  organizations,
+  target,
   allCounterparts,
   initialFilters,
 }: CounterpartDetailClientProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
-  const initialFinancialYear = useMemo(() => new Date().getFullYear(), []);
-
-  const [selectedOrganizationId, setSelectedOrganizationId] = useState(
-    initialFilters.politicalOrganizationId || "",
-  );
-  const [financialYear, setFinancialYear] = useState(
-    initialFilters.financialYear || initialFinancialYear,
-  );
   const [sortField, setSortField] = useState(initialFilters.sortField);
   const [sortOrder, setSortOrder] = useState(initialFilters.sortOrder);
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
@@ -123,39 +115,12 @@ export function CounterpartDetailClient({
 
   const totalPages = Math.ceil(total / perPage);
 
-  const buildUrl = (params: {
-    orgId?: string;
-    year?: number;
-    sort?: string;
-    order?: string;
-    page?: number;
-  }) => {
+  const buildUrl = (params: { sort?: string; order?: string; page?: number }) => {
     const searchParams = new URLSearchParams();
-    if (params.orgId ?? selectedOrganizationId) {
-      searchParams.set("orgId", params.orgId ?? selectedOrganizationId);
-    }
-    searchParams.set("year", String(params.year ?? financialYear));
     searchParams.set("sort", params.sort ?? sortField);
     searchParams.set("order", params.order ?? sortOrder);
     searchParams.set("page", String(params.page ?? 1));
     return `/counterparts/${counterpart.id}?${searchParams.toString()}`;
-  };
-
-  const handleOrganizationChange = (value: string) => {
-    setSelectedOrganizationId(value);
-    startTransition(() => {
-      router.push(buildUrl({ orgId: value, page: 1 }));
-    });
-  };
-
-  const handleYearChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const year = Number.parseInt(e.target.value, 10);
-    if (!Number.isNaN(year)) {
-      setFinancialYear(year);
-      startTransition(() => {
-        router.push(buildUrl({ year, page: 1 }));
-      });
-    }
   };
 
   const handleSortChange = (field: "transactionDate" | "debitAmount" | "categoryKey") => {
@@ -170,154 +135,140 @@ export function CounterpartDetailClient({
     });
   };
 
-  const handlePageChange = (newPage: number) => {
-    startTransition(() => {
-      router.push(buildUrl({ page: newPage }));
-    });
-  };
-
   const handleEditSuccess = () => {
     setIsEditDialogOpen(false);
     router.refresh();
   };
 
   return (
-    <div className="bg-card rounded-xl p-4 space-y-6">
-      <div className="flex items-center gap-4">
-        <Link
-          href="/counterparts"
-          className="text-muted-foreground hover:text-white transition-colors"
-        >
-          ← 一覧に戻る
-        </Link>
-      </div>
+    <div>
+      <BackLink href="/counterparts">一覧に戻る</BackLink>
 
-      <Card className="p-6">
-        <div className="flex justify-between items-start mb-4">
-          <h2 className="text-lg font-semibold text-white">カウンターパート情報</h2>
+      <PageHeader
+        label="Counterparts"
+        title="取引先詳細"
+        actions={
           <Button
             type="button"
-            variant="secondary"
-            size="sm"
+            variant="outline"
+            className="text-[13px]"
             onClick={() => setIsEditDialogOpen(true)}
           >
+            <PencilSimple />
             編集
           </Button>
-        </div>
+        }
+      />
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <div className="text-muted-foreground text-sm mb-1">名前</div>
-            <div className="text-white font-medium">{counterpart.name}</div>
-          </div>
-          <div>
-            <div className="text-muted-foreground text-sm mb-1">住所</div>
-            <div className="text-white">{counterpart.address || "-"}</div>
-          </div>
-          <div>
-            <div className="text-muted-foreground text-sm mb-1">作成日</div>
-            <div className="text-white">{formatDate(counterpart.createdAt)}</div>
-          </div>
-          <div>
-            <div className="text-muted-foreground text-sm mb-1">更新日</div>
-            <div className="text-white">{formatDate(counterpart.updatedAt)}</div>
-          </div>
-          <div>
-            <div className="text-muted-foreground text-sm mb-1">使用回数</div>
-            <div className="text-white">{counterpart.usageCount}件</div>
-          </div>
-        </div>
-      </Card>
+      <div className="flex flex-col gap-6">
+        <section className="rounded-lg border border-border bg-card p-6">
+          <h2 className="mb-4 text-[17px] font-bold tracking-[0.04em] text-foreground">
+            取引先情報
+          </h2>
 
-      <Card className="p-6">
-        <h2 className="text-lg font-semibold text-white mb-4">紐づいている取引</h2>
+          <dl className="grid grid-cols-1 gap-x-8 gap-y-4 md:grid-cols-2">
+            <div>
+              <dt className="mb-1 text-xs font-bold text-muted-foreground">名前</dt>
+              <dd className="text-sm font-semibold text-foreground">{counterpart.name}</dd>
+            </div>
+            <div>
+              <dt className="mb-1 text-xs font-bold text-muted-foreground">住所</dt>
+              <dd className="text-sm text-foreground">{counterpart.address || "-"}</dd>
+            </div>
+            <div>
+              <dt className="mb-1 text-xs font-bold text-muted-foreground">作成日</dt>
+              <dd className="font-latin text-sm text-foreground">
+                {formatDate(counterpart.createdAt)}
+              </dd>
+            </div>
+            <div>
+              <dt className="mb-1 text-xs font-bold text-muted-foreground">更新日</dt>
+              <dd className="font-latin text-sm text-foreground">
+                {formatDate(counterpart.updatedAt)}
+              </dd>
+            </div>
+            <div>
+              <dt className="mb-1 text-xs font-bold text-muted-foreground">使用回数</dt>
+              <dd className="font-latin text-sm font-semibold text-foreground">
+                {counterpart.usageCount}件
+              </dd>
+            </div>
+          </dl>
+        </section>
 
-        <div className="flex flex-col md:flex-row md:items-end gap-4 mb-6">
-          <div className="w-fit">
-            <PoliticalOrganizationSelect
-              organizations={organizations}
-              value={selectedOrganizationId}
-              onValueChange={handleOrganizationChange}
+        <section className="rounded-lg border border-border bg-card p-6">
+          <h2 className="mb-4 text-[17px] font-bold tracking-[0.04em] text-foreground">
+            紐づいている取引
+          </h2>
+
+          <CurrentTargetBar target={target} note="の取引を表示しています" />
+
+          <div className="mb-3 flex items-center justify-between">
+            <p className="text-[13px] text-muted-foreground">{total}件の取引</p>
+            {isPending && <p className="text-[13px] text-muted-foreground">読み込み中...</p>}
+          </div>
+
+          {selectedTransactions.length > 0 && (
+            <div className="mb-4 flex flex-wrap items-center gap-3 rounded-lg border border-border-soft bg-secondary p-3">
+              <span className="text-[13px] text-foreground">
+                選択中:{" "}
+                <span className="font-latin font-semibold">{selectedTransactions.length}</span>件
+              </span>
+              <Button type="button" size="sm" onClick={handleBulkAssignClick}>
+                一括紐付け変更
+              </Button>
+              <Button
+                type="button"
+                variant="destructive"
+                size="sm"
+                onClick={handleBulkUnassign}
+                disabled={isUnassigning}
+              >
+                {isUnassigning ? "処理中..." : "一括紐付け解除"}
+              </Button>
+              <Button type="button" variant="outline" size="sm" onClick={() => setRowSelection({})}>
+                選択解除
+              </Button>
+            </div>
+          )}
+
+          <TransactionWithCounterpartTable
+            transactions={transactions}
+            sortField={sortField}
+            sortOrder={sortOrder}
+            onSortChange={handleSortChange}
+            rowSelection={rowSelection}
+            onRowSelectionChange={setRowSelection}
+            onAssignClick={handleAssignClick}
+          />
+
+          {totalPages > 1 && (
+            <StaticPagination
+              currentPage={page}
+              totalPages={totalPages}
+              buildPageUrl={(nextPage) => buildUrl({ page: nextPage })}
             />
-          </div>
-          <div className="w-fit space-y-2">
-            <Label>報告年 (西暦)</Label>
-            <Input
-              type="number"
-              value={String(financialYear)}
-              onChange={handleYearChange}
-              min={1900}
-              max={2100}
-              required
-              className="w-24"
-            />
-          </div>
-        </div>
+          )}
+        </section>
 
-        <div className="flex justify-between items-center mb-4">
-          <div className="text-muted-foreground text-sm">{total}件の取引</div>
-          {isPending && <div className="text-muted-foreground text-sm">読み込み中...</div>}
-        </div>
-
-        {selectedTransactions.length > 0 && (
-          <div className="flex items-center gap-4 mb-4 p-3 bg-secondary/30 border border-border rounded-lg">
-            <span className="text-white text-sm">
-              選択中: <span className="font-medium">{selectedTransactions.length}件</span>
-            </span>
-            <Button type="button" size="sm" onClick={handleBulkAssignClick}>
-              一括紐付け変更
-            </Button>
-            <Button
-              type="button"
-              variant="destructive"
-              size="sm"
-              onClick={handleBulkUnassign}
-              disabled={isUnassigning}
-            >
-              {isUnassigning ? "処理中..." : "一括紐付け解除"}
-            </Button>
-            <Button type="button" variant="ghost" size="sm" onClick={() => setRowSelection({})}>
-              選択解除
-            </Button>
-          </div>
-        )}
-
-        <TransactionWithCounterpartTable
-          transactions={transactions}
-          sortField={sortField}
-          sortOrder={sortOrder}
-          onSortChange={handleSortChange}
-          rowSelection={rowSelection}
-          onRowSelectionChange={setRowSelection}
-          onAssignClick={handleAssignClick}
-        />
-
-        {totalPages > 1 && (
-          <ClientPagination
-            currentPage={page}
-            totalPages={totalPages}
-            onPageChange={handlePageChange}
+        {isEditDialogOpen && (
+          <CounterpartFormDialog
+            mode="edit"
+            counterpart={counterpart}
+            onClose={() => setIsEditDialogOpen(false)}
+            onSuccess={handleEditSuccess}
           />
         )}
-      </Card>
 
-      {isEditDialogOpen && (
-        <CounterpartFormDialog
-          mode="edit"
-          counterpart={counterpart}
-          onClose={() => setIsEditDialogOpen(false)}
-          onSuccess={handleEditSuccess}
+        <AssignCounterpartDialog
+          isOpen={isAssignDialogOpen}
+          transactions={assignDialogTransactions}
+          allCounterparts={allCounterparts}
+          politicalOrganizationId={target.organizationId}
+          onClose={handleAssignDialogClose}
+          onSuccess={handleAssignSuccess}
         />
-      )}
-
-      <AssignCounterpartDialog
-        isOpen={isAssignDialogOpen}
-        transactions={assignDialogTransactions}
-        allCounterparts={allCounterparts}
-        politicalOrganizationId={selectedOrganizationId || organizations[0]?.id || ""}
-        onClose={handleAssignDialogClose}
-        onSuccess={handleAssignSuccess}
-      />
+      </div>
     </div>
   );
 }

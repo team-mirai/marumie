@@ -1,11 +1,15 @@
 "use client";
 import "client-only";
-import Image from "next/image";
 import Link from "next/link";
-import CardHeader from "@/client/components/layout/CardHeader";
-import MainColumnCard from "@/client/components/layout/MainColumnCard";
+import { useMemo, useState } from "react";
+import SectionCard from "@/client/components/layout/SectionCard";
 import TransactionTable from "@/client/components/top-page/features/transactions-table/TransactionTable";
-import MainButton from "@/client/components/ui/MainButton";
+import TransactionSortTabs from "@/client/components/transactions/TransactionSortTabs";
+import {
+  sortTransactionRows,
+  transactionSortParams,
+  type TransactionSort,
+} from "@/client/lib/transaction-sort";
 
 import type { DisplayTransaction } from "@/server/contexts/public-finance/domain/models/display-transaction";
 
@@ -22,48 +26,66 @@ interface TransactionsSectionProps {
   updatedAt: string;
   slug: string;
   year: number;
-  organizationName?: string;
+  /** 見出しの上の小さな行（例: 「チームみらい・2026年」） */
+  eyebrow: string;
 }
 
+/**
+ * 政党・政治団体ページの「すべての出入金」。最新の数件だけを出し、続きは「もっと見る」から全件ページで見る。
+ * SP では表の上のタブで、出している行の並び順を変えられる。全件ページへはその並び順のまま移る。
+ */
 export default function TransactionsSection({
   transactionData,
   updatedAt,
   slug,
   year,
-  organizationName,
+  eyebrow,
 }: TransactionsSectionProps) {
-  return (
-    <MainColumnCard id="transactions">
-      <CardHeader
-        icon={<Image src="/icons/icon-cashback.svg" alt="Cash move icon" width={30} height={30} />}
-        organizationName={organizationName || "未登録の政治団体"}
-        title="すべての出入金"
-        updatedAt={updatedAt}
-        subtitle="これまでにデータ連携された出入金の明細"
-      />
+  const [sort, setSort] = useState<TransactionSort>("new");
+  const transactions = useMemo(
+    () =>
+      sortTransactionRows(transactionData?.transactions ?? [], sort, {
+        date: (transaction) => new Date(transaction.date).getTime(),
+        signedAmount: (transaction) => transaction.amount,
+      }),
+    [transactionData, sort],
+  );
+  const { sort: sortParam, order } = transactionSortParams(sort);
+  const allHref = `/o/${slug}/${year}/transactions${sort === "new" ? "" : `?sort=${sortParam}&order=${order}`}`;
 
+  return (
+    <SectionCard
+      id="transactions"
+      iconSrc="/icons/icon-cashback.svg"
+      iconLabel="Cash move icon"
+      eyebrow={eyebrow}
+      title="すべての出入金"
+      updatedAt={updatedAt}
+    >
       {transactionData ? (
         <div className="relative">
+          <TransactionSortTabs current={sort} onChange={setSort} />
           <TransactionTable
-            transactions={transactionData.transactions}
+            transactions={transactions}
             total={transactionData.total}
             page={transactionData.page}
             perPage={transactionData.perPage}
           />
 
-          {/* グラデーションオーバーレイ - テーブルの一番下の部分にかかる */}
-          <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-white via-white/70 to-transparent">
-            {/* もっと見るボタン - グラデーション内に配置 */}
-            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2">
-              <Link href={`/o/${slug}/${year}/transactions`}>
-                <MainButton>もっと見る</MainButton>
-              </Link>
-            </div>
+          {/* テーブルの下端にかかるグラデーションと、全件ページへの「もっと見る」 */}
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 flex h-32 items-end justify-center bg-gradient-to-t from-white via-white/80 to-transparent pb-[5px]">
+            <Link
+              href={allHref}
+              aria-label="すべての出入金を見る"
+              className="pointer-events-auto inline-flex h-[52px] w-[240px] items-center justify-center rounded-full border border-[#111827] bg-white text-base font-bold text-[#1F2937] hover:bg-[#F9FAFB]"
+            >
+              もっと見る
+            </Link>
           </div>
         </div>
       ) : (
         <div className="text-gray-500 text-center py-8">取引データが取得できませんでした</div>
       )}
-    </MainColumnCard>
+    </SectionCard>
   );
 }

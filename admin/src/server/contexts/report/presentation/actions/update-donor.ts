@@ -3,8 +3,9 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/server/contexts/shared/infrastructure/prisma";
 import { PrismaDonorRepository } from "@/server/contexts/report/infrastructure/repositories/prisma-donor.repository";
-import { UpdateDonorUsecase } from "@/server/contexts/report/application/usecases/manage-donor-usecase";
+import { UpdateDonorUsecase } from "@/server/contexts/report/application/usecases/update-donor-usecase";
 import type { UpdateDonorInput } from "@/server/contexts/report/domain/models/donor";
+import { requireRole } from "@/server/contexts/auth/presentation/loaders/require-role";
 
 interface UpdateDonorActionResult {
   success: boolean;
@@ -15,6 +16,8 @@ export async function updateDonorAction(
   id: string,
   input: UpdateDonorInput,
 ): Promise<UpdateDonorActionResult> {
+  await requireRole("political_fund");
+
   try {
     const repository = new PrismaDonorRepository(prisma);
     const usecase = new UpdateDonorUsecase(repository);

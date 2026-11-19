@@ -1,0 +1,603 @@
+import { test, expect } from "@playwright/test";
+
+// シードで公開済みの調研費データを持つ議員（prisma/seeds/researchFundJournalEntries.ts）。
+const PAGE_URL = "/p/sample-taro/2026";
+
+test.describe("調査研究費 議員ページ", () => {
+	test("v8 の本文が上から順に表示され、実行時エラーが発生しないこと", async ({ page }) => {
+		const errors: string[] = [];
+		page.on("pageerror", (error) => {
+			errors.push(`${error.name}: ${error.message}`);
+		});
+
+		const response = await page.goto(PAGE_URL);
+
+		expect(response?.status()).toBe(200);
+		await expect(page).toHaveTitle(
+			"サンプル 太郎の調研費｜まる見え政治資金｜チームみらい",
+		);
+
+		// パンくず
+		const breadcrumbs = page.getByRole("navigation", { name: "パンくずリスト", exact: true });
+		await expect(breadcrumbs.getByRole("link", { name: "トップ" })).toHaveAttribute("href", "/");
+		await expect(breadcrumbs.getByText("サンプル 太郎の調研費・2026年")).toBeVisible();
+
+		// 収支の流れ（h1 は読み上げ用に別にあるので h2。支給総額・支出総額＋区分タブつきのサンキー）
+		const cashFlow = page.locator("#cash-flow");
+		await expect(cashFlow.getByText("サンプル 太郎の調研費・2026年")).toBeVisible();
+		await expect(cashFlow.getByRole("heading", { level: 2, name: "収支の流れ" })).toBeVisible();
+		// 期間は更新日といっしょにカードの右下に出す
+		await expect(cashFlow.getByText(/^\d{4}年\d{1,2}-\d{1,2}月分　/).first()).toBeVisible();
+		await expect(cashFlow.getByText("調研費（調査研究広報滞在費）とは")).toBeVisible();
+		// 「調研費とは」の下に、トップと同じ使用方針の note へのリンク（別タブ）
+		const policyLink = cashFlow.getByRole("link", {
+			name: "チームみらいの調研費の使用方針を読む（noteが別タブで開きます）",
+		});
+		await expect(policyLink).toHaveAttribute(
+			"href",
+			"https://note.com/team_mirai_jp/n/n9ec9166d0e1e",
+		);
+		await expect(policyLink).toHaveAttribute("target", "_blank");
+		await expect(cashFlow.getByText("支給総額")).toBeVisible();
+		await expect(cashFlow.getByText("支出総額")).toBeVisible();
+		await expect(cashFlow.getByRole("tab", { name: "詳細の区分" })).toHaveAttribute(
+			"aria-selected",
+			"true",
+		);
+		await expect(cashFlow.getByRole("tab", { name: "法律上の区分" })).toBeVisible();
+		const chart = page.locator('[role="group"][aria-label="調査研究費の使いみちの流れ図"]');
+		await expect(chart).toBeVisible();
+		// 支給 → 合計 → 支出 → 各費目・未使用の流れ
+		await expect(chart.getByText("支給", { exact: true })).toBeVisible();
+		await expect(chart.getByText("支出・未使用", { exact: true })).toBeVisible();
+		await expect(chart.getByRole("img", { name: /^公費から支給 / })).toBeVisible();
+		await expect(chart.getByRole("img", { name: /^支出 / })).toBeVisible();
+		await expect(
+			cashFlow.getByText("※年内に使わなかった未使用分は国庫に返還します。"),
+		).toBeVisible();
+
+		// 活用方針と主な用途
+		await expect(
+			page.locator("#highlights").getByRole("heading", { name: "活用方針と主な用途" }),
+		).toBeVisible();
+		await expect(
+			page.locator("#highlights").getByText("サンプル 太郎の調研費活用方針"),
+		).toBeVisible();
+		await expect(page.getByText("タウンミーティングの開催")).toBeVisible();
+		// URL の無い成果物は「報告は準備中」と出す
+		await expect(page.getByText("開催報告：報告は準備中")).toBeVisible();
+
+		// 透明性の帯
+		await expect(
+			page.getByRole("heading", {
+				name: "調研費もまるごと公開。意味ある使い方か、検証できるように👀",
+			}),
+		).toBeVisible();
+		await expect(page.getByRole("link", { name: "こちらのnote" })).toHaveCount(0);
+
+		// 月ごとの収支推移・すべての出入金
+		await expect(
+			page.locator("#monthly-trends").getByRole("heading", { name: "月ごとの収支推移" }),
+		).toBeVisible();
+		await expect(
+			page.locator('#monthly-trends [role="img"][aria-label="月ごとの調査研究費の支給と支出"]'),
+		).toBeVisible();
+		await expect(
+			page.locator("#transactions").getByRole("heading", { name: "すべての出入金" }),
+		).toBeVisible();
+
+		// セクションの順
+		const order = await page
+			.locator("#cash-flow, #highlights, #monthly-trends, #transactions, #explanation")
+			.evaluateAll((sections) => sections.map((section) => section.id));
+		expect(order).toEqual([
+			"cash-flow",
+			"highlights",
+			"monthly-trends",
+			"transactions",
+			"explanation",
+		]);
+
+		// 共通の下部ブロック（データについては議員ページ用の文言）
+		await expect(
+			page.getByRole("heading", { name: /少しずつ進んでいますがまだまだです/ }),
+		).toBeVisible();
+		await expect(page.getByRole("link", { name: /まる見え政治資金とは？/ })).toBeVisible();
+		const notes = page.locator("#explanation");
+		await expect(notes.getByRole("heading", { name: "公開の範囲と出典" })).toBeVisible();
+		await expect(notes.getByRole("heading", { name: "まる見え政治資金について" })).toHaveCount(0);
+		await expect(notes.getByRole("heading", { name: "調研費のデータについて" })).toBeVisible();
+		await expect(notes.getByText(/仕訳が完了した支出を掲載しています。/)).toBeVisible();
+		await expect(notes.getByText(/調査研究広報滞在費に係る使途等報告書/)).toBeVisible();
+		await expect(notes.getByRole("heading", { name: "データの出典" })).toHaveCount(0);
+
+		// 外したもの：政党ページへの導線カード、試験公開のお知らせ、党の紹介、寄附・党員の応援カード
+		await expect(
+			page.getByRole("link", { name: /政党・チームみらいの「まる見え政治資金」も公開中/ }),
+		).toHaveCount(0);
+		await expect(page.getByText(/法律より一足先に試験公開中/)).toHaveCount(0);
+		await expect(page.locator("main #about")).toHaveCount(0);
+		await expect(page.locator("main").getByText("寄附で応援する")).toHaveCount(0);
+
+		expect(errors, `以下のエラーが発生しました:\n${errors.join("\n")}`).toHaveLength(0);
+	});
+
+	for (const { label, viewport } of [
+		{ label: "PC", viewport: { width: 1280, height: 800 } },
+		{ label: "SP", viewport: { width: 390, height: 844 } },
+	]) {
+		test(`${label}: 冒頭に議員カードを出し、前後の切り替えとページ下部からほかの公開中の議員へ移れる`, async ({
+			page,
+		}) => {
+			await page.setViewportSize(viewport);
+			await page.goto(PAGE_URL);
+			const card = page.getByRole("region", { name: "議員情報" });
+
+			// PC は「{名前}の調研費」、SP はトップの議員カードと同じく名前の下に「調研費・期間」
+			await expect(
+				card.getByText(label === "PC" ? "サンプル 太郎の調研費" : "サンプル 太郎", { exact: true }).locator("visible=true"),
+			).toBeVisible();
+			if (label === "SP") {
+				await expect(card.getByText(/^調研費・/).locator("visible=true")).toBeVisible();
+				// 何人目かは点ではなく文字で出す（点は飾り）
+				await expect(card.getByText(/^\d+ \/ 2$/)).toBeVisible();
+			}
+			// シードの議員は顔写真が未登録なので人型のアイコンになる
+			await expect(
+				card.getByRole("img", { name: "サンプル 太郎の写真" }).locator("visible=true"),
+			).toBeVisible();
+			// シードで調研費を公開中かつ公開済みの仕訳があるのはサンプル 太郎と美咲の2人なので、前後とも美咲になる
+			await expect(
+				card.getByRole("link", { name: "前の議員（サンプル 美咲）の調研費へ" }),
+			).toHaveAttribute("href", /^\/p\/sample-misaki(\/2026)?$/);
+			await expect(
+				card.getByRole("link", { name: "次の議員（サンプル 美咲）の調研費へ" }),
+			).toHaveAttribute("href", /^\/p\/sample-misaki(\/2026)?$/);
+
+			const others = page.locator("section", {
+				has: page.getByRole("heading", { name: "他の議員の調研費を見る" }),
+			});
+			await expect(others.getByRole("link")).toHaveCount(1);
+			await others.getByRole("link", { name: "サンプル 美咲の調研費を見る" }).click();
+			await expect(page).toHaveURL(/\/p\/sample-misaki(\/2026)?$/);
+		});
+	}
+
+	test("SP 幅では収支の流れを全体表示し、指を広げるか「拡大」ボタンで拡大できる", async ({
+		page,
+	}) => {
+		await page.setViewportSize({ width: 390, height: 844 });
+		await page.goto(PAGE_URL);
+		const cashFlow = page.locator("#cash-flow");
+
+		// 案内は図の上に重ねて数秒で消えるので、出ていること（DOM にあること）だけを見る
+		await expect(cashFlow.getByText("指を広げて拡大")).toBeAttached();
+		// 「拡大」で拡大し、拡大中は「全体を表示」に入れ替わる
+		await cashFlow.getByRole("button", { name: "図を拡大する" }).click();
+		await expect(cashFlow.getByRole("button", { name: "全体を表示" })).toBeVisible();
+		await expect(cashFlow.getByRole("button", { name: "図を拡大する" })).toHaveCount(0);
+		await cashFlow.getByRole("button", { name: "全体を表示" }).click();
+		await expect(cashFlow.getByRole("button", { name: "図を拡大する" })).toBeVisible();
+		// 支給期間と更新日はカードの末尾に1行で出す
+		await expect(cashFlow.getByText(/月分　\d{4}\.\d{1,2}\.\d{1,2} 更新$/)).toBeVisible();
+		const chart = page.locator('[role="group"][aria-label="調査研究費の使いみちの流れ図"]');
+		const box = await chart.boundingBox();
+		expect(box?.width ?? Number.POSITIVE_INFINITY).toBeLessThanOrEqual(390);
+		// SP もトップ・政党ページと同じ縦長の図（低めの3列の図の幅 400 の座標ではない）で、見出しは「支給」「支出・未使用」
+		await expect(chart).not.toHaveAttribute("viewBox", /^0 0 400 /);
+		await expect(chart.getByText("合計", { exact: true })).toBeVisible();
+		await expect(chart.getByText("支給", { exact: true })).toBeVisible();
+		await expect(chart.getByText("支出・未使用", { exact: true })).toBeVisible();
+	});
+
+	for (const { label, viewport } of [
+		{ label: "PC", viewport: { width: 1280, height: 800 } },
+		{ label: "SP", viewport: { width: 390, height: 844 } },
+	]) {
+		test(`${label} 幅で月次グラフの領域に縦スクロールが出ない`, async ({ page }) => {
+			await page.setViewportSize(viewport);
+			await page.goto(PAGE_URL);
+			const chart = page.locator(
+				'#monthly-trends [role="img"][aria-label="月ごとの調査研究費の支給と支出"]',
+			);
+			await expect(chart).toBeVisible();
+
+			// 横スクロール用のラッパー（overflow-x: auto）が縦方向にはみ出していないこと
+			const overflow = await chart.evaluate((svg) => {
+				let node = svg.parentElement;
+				while (node && getComputedStyle(node).overflowX !== "auto") {
+					node = node.parentElement;
+				}
+				if (!node) throw new Error("横スクロール用のラッパーが見つからない");
+				return { scrollHeight: node.scrollHeight, clientHeight: node.clientHeight };
+			});
+			expect(overflow.scrollHeight).toBeLessThanOrEqual(overflow.clientHeight);
+
+			// 読み上げ用の月別金額は引き続き支援技術に公開されている
+			await expect(
+				page.locator("#monthly-trends").getByRole("table", {
+					name: "月ごとの調査研究費の支給と支出",
+				}),
+			).toHaveCount(1);
+		});
+	}
+
+	test("未公開（下書き・確認済）の仕訳は表示されない", async ({ page }) => {
+		await page.goto(PAGE_URL);
+		const section = page.locator("#transactions");
+
+		// シードでは 8/10 以降が未公開（確認済・下書き）。新しい順の先頭は公開済みの 8/2 になる。
+		await expect(section.getByText(/^2026\.8\.(1|2|3)\d$/)).toHaveCount(0);
+		await expect(section.locator('[id^="tx-"]').first()).toContainText("2026.8.2");
+	});
+
+	test("新しい順に先頭6件だけが出て、もっと見るで全件ページに遷移する", async ({
+		page,
+	}) => {
+		await page.goto(PAGE_URL);
+		const section = page.locator("#transactions");
+
+		await expect(section.locator('[id^="tx-"]')).toHaveCount(6);
+		// 月切り替え・区分タブは出さない
+		await expect(section.getByRole("button", { name: "8月", exact: true })).toHaveCount(0);
+		await expect(section.getByRole("button", { name: "法律上の区分" })).toHaveCount(0);
+
+		await section.getByRole("link", { name: "もっと見る" }).click();
+		await expect(page).toHaveURL(/\/p\/sample-taro\/2026\/transactions$/);
+	});
+
+	test("領収書のある行にも「領収書」ピルが出ず、モーダルも開けない", async ({ page }) => {
+		await page.goto(PAGE_URL);
+		const section = page.locator("#transactions");
+
+		// シードでは 8/2 イヤホン代と 8/1 新聞購読料に領収書があるが、当面は領収書を公開しない
+		await expect(section.locator('[id^="tx-"]').filter({ hasText: "イヤホン代" })).toBeVisible();
+		await expect(page.getByRole("button", { name: "領収書を見る" })).toHaveCount(0);
+		await expect(page.getByRole("dialog", { name: "領収書" })).toHaveCount(0);
+	});
+
+	test("「用途N」のピルは、領収書のある行でも今までどおり出る", async ({ page }) => {
+		await page.goto(PAGE_URL);
+		const section = page.locator("#transactions");
+		const card = page
+			.locator('[id^="highlight-"]')
+			.filter({ hasText: "意見受付窓口の開設" });
+
+		await expect(async () => {
+			await card.getByRole("button", { name: "1件" }).click();
+			await expect(section.getByRole("button", { name: "用途1を見る" })).toBeVisible({
+				timeout: 1_000,
+			});
+		}).toPass();
+		const row = section.locator('[id^="tx-"]').filter({ hasText: "ボネクタ利用料" });
+		await expect(row.getByRole("button", { name: "用途1を見る" })).toBeVisible();
+		await expect(row.getByRole("button", { name: "領収書を見る" })).toHaveCount(0);
+	});
+
+	test("SP 幅でも「領収書」ピルが出ない", async ({ page }) => {
+		await page.setViewportSize({ width: 390, height: 844 });
+		await page.goto(PAGE_URL);
+
+		await expect(
+			page.locator("#transactions").locator('[id^="tx-"]').filter({ hasText: "イヤホン代" }),
+		).toBeVisible();
+		await expect(page.getByRole("button", { name: "領収書を見る" })).toHaveCount(0);
+	});
+
+	test("全件ページでも、PC・SP とも「領収書」ピルが出ない", async ({ page }) => {
+		await page.goto(`${PAGE_URL}/transactions`);
+		await expect(page.locator("#transactions").getByText("イヤホン代").first()).toBeVisible();
+		await expect(page.getByRole("button", { name: "領収書を見る" })).toHaveCount(0);
+
+		await page.setViewportSize({ width: 390, height: 844 });
+		await page.reload();
+		await expect(page.locator("#transactions").getByText("イヤホン代").first()).toBeVisible();
+		await expect(page.getByRole("button", { name: "領収書を見る" })).toHaveCount(0);
+	});
+
+	test("全件ページが v8 の全件画面の見た目（パンくず・見出し・共通の下部ブロック）になる", async ({
+		page,
+	}) => {
+		await page.goto(`${PAGE_URL}/transactions`);
+
+		// パンくず「トップ › サンプル 太郎の調研費・2026年 › すべての出入金」
+		const breadcrumbs = page.getByRole("navigation", { name: "パンくずリスト", exact: true });
+		await expect(breadcrumbs.getByRole("link", { name: "トップ" })).toHaveAttribute("href", "/");
+		await expect(
+			breadcrumbs.getByRole("link", { name: "サンプル 太郎の調研費・2026年" }),
+		).toHaveAttribute("href", PAGE_URL);
+		await expect(breadcrumbs.locator('[aria-current="page"]')).toHaveText("すべての出入金");
+
+		// 見出し「サンプル 太郎の調研費・2026年｜すべての出入金」と更新日
+		const section = page.locator("#transactions");
+		await expect(section.getByText("サンプル 太郎の調研費・2026年")).toBeVisible();
+		await expect(
+			section.getByRole("heading", { level: 1, name: "すべての出入金" }),
+		).toBeVisible();
+		await expect(section.getByText(/^\d{4}\.\d{1,2}\.\d{1,2} 更新$/).first()).toBeVisible();
+
+		// 共通の下部ブロック（データについては議員ページ用の文言）
+		await expect(
+			page.getByRole("heading", { name: "党内の機密データの流出事故ではありません" }),
+		).toBeVisible();
+		await expect(page.getByRole("link", { name: /こちらのnote/ })).toHaveAttribute(
+			"target",
+			"_blank",
+		);
+		await expect(
+			page.getByRole("heading", { name: /少しずつ進んでいますがまだまだです/ }),
+		).toHaveCount(0);
+		await expect(
+			page
+				.getByRole("navigation", { name: "パンくずリスト（ページ下部）" })
+				.locator('[aria-current="page"]'),
+		).toHaveText("すべての出入金");
+		await expect(page.getByRole("link", { name: /まる見え政治資金とは？/ })).toBeVisible();
+		await expect(
+			page.locator("#explanation").getByRole("heading", { name: "調研費のデータについて" }),
+		).toBeVisible();
+
+		// 外したもの：党の紹介、寄附・党員の応援カード
+		await expect(page.locator("main #about")).toHaveCount(0);
+		await expect(page.locator("main").getByText("寄附で応援する")).toHaveCount(0);
+	});
+
+	test("全件ページの SP 幅でも、タブで並び替えてカテゴリーで絞り込める", async ({ page }) => {
+		await page.setViewportSize({ width: 390, height: 844 });
+		await page.goto(`${PAGE_URL}/transactions`);
+		const table = page.locator("#transactions");
+		const toTime = (text: string) => {
+			const [y, m, d] = text.split(".").map(Number);
+			return new Date(y, m - 1, d).getTime();
+		};
+		const firstDate = () => table.getByText(/^\d{4}\.\d{1,2}\.\d{1,2}$/).first().innerText();
+
+		// PC のヘッダー行は隠れ、SP のタブで操作する
+		await expect(table.getByRole("button", { name: "日付で並び替え" })).toBeHidden();
+		await expect(table.getByRole("button", { name: "新しい順" })).toHaveAttribute("aria-pressed", "true");
+		const newest = toTime(await firstDate());
+
+		// 4つのタブ（新しい順・古い順・支出が多い順・収入が多い順）が1行に収まる
+		const sortGroup = table.getByRole("group", { name: "並び順" });
+		const groupBox = await sortGroup.boundingBox();
+		const tabBoxes = await Promise.all(
+			(await sortGroup.getByRole("button").all()).map((tab) => tab.boundingBox()),
+		);
+		expect(tabBoxes).toHaveLength(4);
+		for (const box of tabBoxes) {
+			expect(box?.y).toBe(tabBoxes[0]?.y);
+			expect((box?.x ?? 0) + (box?.width ?? 0)).toBeLessThanOrEqual(
+				(groupBox?.x ?? 0) + (groupBox?.width ?? 0),
+			);
+		}
+
+		const oldTab = table.getByRole("button", { name: "古い順" });
+		await expect(async () => {
+			await oldTab.click();
+			await expect(oldTab).toHaveAttribute("aria-pressed", "true", { timeout: 1_000 });
+		}).toPass();
+		expect(toTime(await firstDate())).toBeLessThan(newest);
+
+		const filterButton = table.getByRole("button", { name: "カテゴリーで絞り込む" });
+		await filterButton.click();
+		await table.getByRole("button", { name: "（すべて選択）" }).click();
+		await table.getByRole("button", { name: "OK" }).click();
+		await expect(table.getByRole("status").filter({ hasText: "（絞り込み中）" })).toBeVisible();
+		await expect(filterButton).not.toHaveText("");
+	});
+
+	test("全件ページの PC の表は、列見出しの aria-sort で今の並び順を伝える", async ({ page }) => {
+		await page.goto(`${PAGE_URL}/transactions`);
+		const table = page.locator("#transactions").getByRole("table");
+		const dateHeader = table.getByRole("columnheader", { name: /^日付/ });
+		const amountHeader = table.getByRole("columnheader", { name: /^金額/ });
+
+		await expect(table.getByRole("columnheader")).toHaveCount(4);
+		await expect(dateHeader).toHaveAttribute("aria-sort", "descending");
+		await expect(amountHeader).toHaveAttribute("aria-sort", "none");
+		await expect(table.getByRole("cell").first()).toBeVisible();
+
+		await page.goto(`${PAGE_URL}/transactions?sort=date&order=asc`);
+		await expect(dateHeader).toHaveAttribute("aria-sort", "ascending");
+		await expect(amountHeader).toHaveAttribute("aria-sort", "none");
+
+		await page.goto(`${PAGE_URL}/transactions?sort=amount&order=desc`);
+		await expect(dateHeader).toHaveAttribute("aria-sort", "none");
+		await expect(amountHeader).toHaveAttribute("aria-sort", "descending");
+
+		await page.goto(`${PAGE_URL}/transactions?sort=amount&order=asc`);
+		await expect(amountHeader).toHaveAttribute("aria-sort", "ascending");
+	});
+
+	test("公開済みの支給が入金の行として出金と同じ一覧に並ぶ", async ({ page }) => {
+		await page.goto(`${PAGE_URL}/transactions`);
+		const table = page.locator("#transactions");
+
+		// シードでは 2〜8 月の 1 日に公開済みの支給が 100 万円ずつある
+		const grantRow = table.getByRole("row").filter({ hasText: "調査研究広報滞在費 8月分" });
+		await expect(grantRow).toHaveCount(1);
+		await expect(grantRow.getByText("支給（入金）")).toBeVisible();
+		await expect(grantRow).toContainText("+1,000,000");
+
+		// 入金と出金の合計は足し合わせず、別々に出す
+		const summary = table.getByRole("status").filter({ hasText: "件を表示中" });
+		await expect(summary).toContainText("入金 7,000,000円");
+		await expect(summary).toContainText("出金");
+
+		// カテゴリー絞り込みで入金だけに絞れる。ハイドレーション前のクリックを取りこぼさないよう押し直す。
+		const filterButton = table.getByRole("button", { name: "カテゴリーで絞り込む" });
+		await expect(async () => {
+			await filterButton.click();
+			await expect(table.getByRole("button", { name: "支給（入金）" })).toBeVisible({
+				timeout: 1_000,
+			});
+		}).toPass();
+		await table.getByRole("button", { name: "支給（入金）" }).click();
+		await table.getByRole("button", { name: "OK" }).click();
+		await expect(summary).toHaveText(
+			"1〜7 / 7件を表示中　入金 7,000,000円・出金 0円（絞り込み中）",
+		);
+	});
+
+	test("全件ページの絞り込み・並び順・ページを URL で指定・共有でき、戻る操作で直前に戻る", async ({
+		page,
+	}) => {
+		await page.goto(`${PAGE_URL}/transactions?categories=grant-income`);
+		const table = page.locator("#transactions");
+		const summary = table.getByRole("status").filter({ hasText: "件を表示中" });
+		await expect(summary).toHaveText(
+			"1〜7 / 7件を表示中　入金 7,000,000円・出金 0円（絞り込み中）",
+		);
+
+		// 不正な指定でもエラーにならず、一覧が出る
+		await page.goto(`${PAGE_URL}/transactions?categories=nope&sort=name&order=up&page=999`);
+		await expect(summary).toBeVisible();
+		await expect(summary).not.toContainText("（絞り込み中）");
+
+		// 行のカテゴリーのラベルは、そのカテゴリー1つで絞り込む通常のリンク
+		await page.goto(`${PAGE_URL}/transactions`);
+		const grantLink = table
+			.getByRole("row")
+			.filter({ hasText: "調査研究広報滞在費 8月分" })
+			.getByRole("link", { name: /^支給/ });
+		await expect(grantLink).toHaveAttribute(
+			"href",
+			"/p/sample-taro/2026/transactions?categories=grant-income",
+		);
+		await grantLink.click();
+		await expect(page).toHaveURL(/\/transactions\?categories=grant-income$/);
+		await expect(summary).toContainText("（絞り込み中）");
+
+		// 画面上の並び替えで URL が変わり、リロードしても同じ状態で開く
+		await table.getByRole("button", { name: "金額で並び替え" }).click();
+		await expect(page).toHaveURL(
+			/\/transactions\?categories=grant-income&sort=amount&order=desc$/,
+		);
+		await page.reload();
+		await expect(summary).toContainText("（絞り込み中）");
+
+		// 戻る操作で直前の状態（並び替え前）に戻る
+		await page.goBack();
+		await expect(page).toHaveURL(/\/transactions\?categories=grant-income$/);
+		await page.goBack();
+		await expect(page).toHaveURL(/\/transactions$/);
+		await expect(summary).not.toContainText("（絞り込み中）");
+	});
+
+	test("特記事項はⓘで開かず、項目名の下に常に出る", async ({ page }) => {
+		await page.goto(PAGE_URL);
+		const section = page.locator("#transactions");
+
+		await expect(section.getByRole("button", { name: /の特記事項$/ })).toHaveCount(0);
+		await expect(
+			section.getByText("日経電子版 個人プラン 8月分サービス利用料").first(),
+		).toBeVisible();
+	});
+
+	test("用途の「明細N件を見る」を押すと、その用途の明細だけに絞り込み、解除すると元に戻る", async ({
+		page,
+	}) => {
+		await page.goto(PAGE_URL);
+		const section = page.locator("#transactions");
+		// 絞り込みの帯（id="tx-hlf"）は行に数えない
+		const rows = section.locator('[id^="tx-"]:not(#tx-hlf)');
+		const band = section.locator("#tx-hlf");
+		const announcement = section.getByRole("status");
+		const card = page
+			.locator('[id^="highlight-"]')
+			.filter({ hasText: "タウンミーティングの開催" });
+
+		// 会場費（4/10）は先頭6件の外にある。ハイドレーション前のクリックを取りこぼさないよう押し直す。
+		await expect(async () => {
+			await card.getByRole("button", { name: "3件" }).click();
+			await expect(band).toBeVisible({ timeout: 1_000 });
+		}).toPass();
+		await expect(band).toContainText("用途02");
+		await expect(band).toContainText("タウンミーティングの開催の明細3件を表示中");
+		await expect(announcement).toHaveText("タウンミーティングの開催の明細3件を表示中");
+		await expect(band).toBeInViewport();
+		await expect(rows).toHaveCount(3);
+		await expect(rows.filter({ hasText: "会場費" })).toBeVisible();
+		await expect(section.getByRole("link", { name: "もっと見る" })).toHaveCount(0);
+
+		// 絞り込み中に別の用途を選ぶと、その用途に絞り込み直す
+		await page
+			.locator('[id^="highlight-"]')
+			.filter({ hasText: "意見受付窓口の開設" })
+			.getByRole("button", { name: "1件" })
+			.click();
+		await expect(band).toContainText("意見受付窓口の開設の明細1件を表示中");
+		await expect(rows).toHaveCount(1);
+
+		await band.getByRole("button", { name: "絞り込みを解除" }).click();
+		await expect(band).toHaveCount(0);
+		await expect(announcement).toHaveText("");
+		await expect(rows).toHaveCount(6);
+		await expect(section.getByRole("link", { name: "もっと見る" })).toBeVisible();
+	});
+
+	test("SP で絞り込み中に並べ替えても、解除すると絞り込む前の並び順に戻る", async ({ page }) => {
+		await page.setViewportSize({ width: 390, height: 844 });
+		await page.goto(PAGE_URL);
+		const section = page.locator("#transactions");
+		const band = section.locator("#tx-hlf");
+		const card = page
+			.locator('[id^="highlight-"]')
+			.filter({ hasText: "タウンミーティングの開催" });
+
+		await expect(async () => {
+			await card.getByRole("button", { name: "3件" }).click();
+			await expect(band).toBeVisible({ timeout: 1_000 });
+		}).toPass();
+		await section.getByRole("button", { name: "古い順" }).click();
+		await expect(section.getByRole("button", { name: "古い順" })).toHaveAttribute(
+			"aria-pressed",
+			"true",
+		);
+
+		await band.getByRole("button", { name: "絞り込みを解除" }).click();
+		await expect(band).toHaveCount(0);
+		await expect(section.getByRole("button", { name: "新しい順" })).toHaveAttribute(
+			"aria-pressed",
+			"true",
+		);
+	});
+
+	test("明細の「用途N」を押すと、該当の用途の行が目立つ", async ({
+		page,
+	}) => {
+		await page.goto(PAGE_URL);
+		const section = page.locator("#transactions");
+		const card = page
+			.locator('[id^="highlight-"]')
+			.filter({ hasText: "意見受付窓口の開設" });
+
+		// 紐づく行（ボネクタ利用料）を件数リンクで一覧に出してから、行の「用途1」を押す。
+		await expect(async () => {
+			await card.getByRole("button", { name: "1件" }).click();
+			await expect(section.getByRole("button", { name: "用途1を見る" })).toBeVisible({
+				timeout: 1_000,
+			});
+		}).toPass();
+		await section.getByRole("button", { name: "用途1を見る" }).click();
+		await expect(card).toHaveAttribute("data-flashed", "true");
+	});
+
+	test("存在しない議員のページはトップページに寄せられる", async ({ page }) => {
+		await page.goto("/p/no-such-politician/2026");
+
+		await expect(page).toHaveURL("/");
+	});
+});
+
+test.describe("調査研究費 グローバルナビ", () => {
+	const ORG_URL = "/o/sample-party/2026";
+
+	test("A-7 データについて に調研費の記載がある", async ({ page }) => {
+		await page.goto(ORG_URL);
+
+		await expect(
+			page.locator("#explanation").getByText(/所属する国会議員の調研費（調査研究広報滞在費）は/),
+		).toBeVisible();
+	});
+});

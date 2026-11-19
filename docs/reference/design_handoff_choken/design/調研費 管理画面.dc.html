@@ -1,0 +1,983 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Poppins:wght@600;700&display=swap">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
+<link rel="stylesheet" href="_ds/team-mirai-design-system-remix-2a300789-1a0e-4f29-8893-6e06fbf24d63/colors_and_type.css">
+<script src="_ds/team-mirai-design-system-remix-2a300789-1a0e-4f29-8893-6e06fbf24d63/_ds_bundle.js"></script>
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;background:#F8F8F8}
+  a{color:#0F8472;text-decoration:none}
+  a:hover{color:#089781;text-decoration:underline}
+  input:focus,textarea:focus,select:focus,button:focus-visible{outline:2px solid #30BCA7;outline-offset:2px}
+</style>
+</helmet>
+
+<div data-screen-label="調研費 管理画面" style="display:grid;grid-template-columns:236px minmax(0,1fr);height:100vh;font-family:'Hiragino Kaku Gothic ProN','Noto Sans JP',sans-serif;color:#000;font-size:14px;line-height:1.7;-webkit-font-smoothing:antialiased">
+
+  <aside style="position:sticky;top:0;height:100vh;overflow-y:auto;background:#fff;border-right:1px solid #e5e5e5;padding:24px 14px 20px;display:flex;flex-direction:column">
+    <div style="display:flex;align-items:center;gap:8px;padding:0 6px 14px">
+      <span style="width:9px;height:9px;border-radius:50%;background:#30BCA7;flex-shrink:0"></span>
+      <span style="font-size:13.5px;font-weight:700;letter-spacing:0.02em">まる見え政治資金 <span style="font-family:Poppins,sans-serif;color:#089781">admin</span></span>
+    </div>
+    <button type="button" onClick="{{ openCtx }}" title="対象を切り替え" style="display:block;width:100%;text-align:left;background:#E2F6F3;border:1.5px solid #30BCA7;border-radius:12px;padding:12px 14px;margin-bottom:18px;cursor:pointer;font-family:inherit">
+      <div style="font-size:10px;font-weight:700;letter-spacing:0.1em;color:#0F8472;margin-bottom:3px">{{ ctxKindLabel }}</div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="flex:1;min-width:0;font-size:14px;font-weight:700;color:#000;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ ctxName }}</span>
+        <span style="font-family:Poppins,sans-serif;font-size:13px;font-weight:700;color:#0F8472">{{ ctxYear }}</span>
+        <i class="ph ph-caret-up-down" style="font-size:14px;color:#0F8472;flex-shrink:0"></i>
+      </div>
+    </button>
+    <nav style="display:flex;flex-direction:column;gap:20px;flex:1">
+      <sc-for list="{{ navSections }}" as="sec" hint-placeholder-count="3">
+        <div>
+          <div style="margin:0 12px 6px;font-size:11px;font-weight:600;letter-spacing:0.12em;color:#089781">{{ sec.title }}</div>
+          <div style="display:flex;flex-direction:column;gap:2px">
+            <sc-for list="{{ sec.items }}" as="n" hint-placeholder-count="4">
+              <button type="button" data-p="{{ n.p }}" onClick="{{ go }}" style="{{ n.style }}">
+                <i class="{{ n.icon }}" style="font-size:16px;flex-shrink:0"></i>
+                <span style="flex:1;text-align:left">{{ n.label }}</span>
+                <sc-if value="{{ n.badge }}" hint-placeholder-val="{{ false }}">
+                  <span style="font-family:Poppins,sans-serif;font-size:10.5px;font-weight:700;color:#fff;background:#E63946;border-radius:999px;padding:1px 7px">{{ n.badge }}</span>
+                </sc-if>
+              </button>
+            </sc-for>
+          </div>
+        </div>
+      </sc-for>
+    </nav>
+    <div style="border-top:1px solid #e5e5e5;padding-top:14px;display:flex;flex-direction:column;gap:10px">
+      <div style="display:flex;align-items:center;gap:8px;padding:0 8px" title="mineshima-office@team-mir.ai">
+        <i class="ph ph-user-circle" style="font-size:20px;color:#0F8472;flex-shrink:0"></i>
+        <span style="font-family:Poppins,'Noto Sans',sans-serif;font-size:11.5px;color:#666;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">mineshima-office@team-mir.ai</span>
+      </div>
+      <button type="button" style="display:flex;align-items:center;justify-content:center;gap:8px;height:34px;border-radius:999px;border:1.5px solid #000;background:#fff;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit"><i class="ph ph-sign-out" style="font-size:15px"></i>ログアウト</button>
+    </div>
+  </aside>
+
+  <main style="overflow-y:auto;padding:24px 28px 60px">
+
+    <sc-if value="{{ pPol }}" hint-placeholder-val="{{ false }}">
+      <section data-screen-label="議員">
+        <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:22px">
+          <div>
+            <p style="margin:0;font-family:Poppins,sans-serif;font-size:13px;font-weight:600;letter-spacing:0.1em;color:#089781">Politicians</p>
+            <h1 style="margin:2px 0 0;font-size:26px;font-weight:700;letter-spacing:0.06em"><span style="text-decoration:underline;text-decoration-color:#64D8C6;text-decoration-thickness:3px;text-underline-offset:6px">議員</span></h1>
+            <p style="margin:10px 0 0;font-size:13.5px;color:#666">調研費の公開主体。政党への紐づけは任意です。</p>
+          </div>
+          <button type="button" onClick="{{ goPolNew }}" style="height:36px;padding:0 18px;border-radius:999px;border:1.5px solid #30BCA7;background:#30BCA7;color:#fff;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:7px"><i class="ph ph-plus" style="font-size:14px"></i>議員を追加</button>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,420px));gap:16px">
+          <sc-for list="{{ politicians }}" as="p" hint-placeholder-count="3">
+            <div style="background:#fff;border:1px solid #000;border-radius:8px;padding:20px 22px">
+              <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap">
+                <span style="font-size:16.5px;font-weight:700">{{ p.name }}</span>
+                <span style="font-family:Poppins,'Noto Sans',sans-serif;font-size:11.5px;color:#939393;white-space:nowrap">/{{ p.slug }}</span>
+              </div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;align-items:center">
+                <span style="{{ p.partyStyle }}">{{ p.party }}</span>
+                <span style="font-size:12px;color:#666">当選 {{ p.term }}</span>
+              </div>
+              <div style="display:flex;gap:8px;margin-top:16px;align-items:center">
+                <button type="button" data-p="books" onClick="{{ go }}" style="height:28px;padding:0 14px;border-radius:999px;border:1.5px solid #000;background:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">年度帳簿</button>
+                <button type="button" data-id="{{ p.id }}" onClick="{{ goPolEdit }}" style="height:28px;padding:0 14px;border-radius:999px;border:1.5px solid #000;background:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">編集</button>
+                <button type="button" data-id="{{ p.id }}" onClick="{{ askDelPol }}" style="margin-left:auto;height:28px;padding:0 14px;border-radius:999px;border:1.5px solid #E63946;background:#fff;color:#E63946;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">削除</button>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+        <sc-if value="{{ delTarget }}" hint-placeholder-val="{{ false }}">
+          <div style="position:fixed;inset:0;background:rgba(0,0,0,0.35);z-index:60;display:flex;align-items:center;justify-content:center;padding:20px">
+            <div style="background:#fff;border:1px solid #000;border-radius:8px;padding:26px 28px;max-width:440px;width:100%">
+              <div style="display:flex;align-items:flex-start;gap:10px">
+                <i class="ph ph-warning-circle" style="font-size:24px;color:#E63946;flex-shrink:0;margin-top:1px"></i>
+                <span style="font-size:15.5px;font-weight:700;flex:1;min-width:0;line-height:1.6">{{ delName }} を削除しますか？</span>
+              </div>
+              <p style="margin:12px 0 0;font-size:13px;color:#4A5754;line-height:1.8">年度帳簿・仕訳・領収書・公開ページもすべて削除されます。この操作は取り消せません。公開済みのデータがある場合は、削除ではなく非公開化を検討してください。</p>
+              <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:18px">
+                <button type="button" onClick="{{ cancelDelPol }}" style="height:36px;padding:0 20px;border-radius:999px;border:1.5px solid #000;background:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">キャンセル</button>
+                <button type="button" onClick="{{ confirmDelPol }}" style="height:36px;padding:0 20px;border-radius:999px;border:1.5px solid #E63946;background:#fff;color:#E63946;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">削除する</button>
+              </div>
+            </div>
+          </div>
+        </sc-if>
+      </section>
+    </sc-if>
+
+    <sc-if value="{{ pPolForm }}" hint-placeholder-val="{{ false }}">
+      <section data-screen-label="議員フォーム">
+        <div style="margin-bottom:22px">
+          <button type="button" data-p="pol" onClick="{{ go }}" style="display:inline-flex;align-items:center;gap:6px;border:none;background:transparent;padding:0;font-size:12.5px;font-weight:700;color:#0F8472;cursor:pointer;font-family:inherit;margin-bottom:10px"><i class="ph ph-caret-left" style="font-size:13px"></i>議員一覧に戻る</button>
+          <p style="margin:0;font-family:Poppins,sans-serif;font-size:13px;font-weight:600;letter-spacing:0.1em;color:#089781">Politicians</p>
+          <h1 style="margin:2px 0 0;font-size:26px;font-weight:700;letter-spacing:0.06em"><span style="text-decoration:underline;text-decoration-color:#64D8C6;text-decoration-thickness:3px;text-underline-offset:6px">{{ polFormTitle }}</span></h1>
+        </div>
+        <div style="background:#fff;border:1px solid #000;border-radius:8px;padding:24px 26px;max-width:560px">
+          <div style="display:grid;gap:14px">
+            <div><label style="display:block;font-size:12.5px;font-weight:700;margin-bottom:5px">氏名 <span style="color:#E63946">*</span></label><input type="text" data-f="name" value="{{ polDraftName }}" onChange="{{ editPolField }}" placeholder="峰島 侑也" style="width:100%;max-width:380px;height:36px;border:1.5px solid #000;border-radius:8px;padding:0 12px;font-size:13.5px;font-family:inherit;background:#fff"></div>
+            <div><label style="display:block;font-size:12.5px;font-weight:700;margin-bottom:5px">スラッグ <span style="color:#E63946">*</span></label><input type="text" data-f="slug" value="{{ polDraftSlug }}" onChange="{{ editPolField }}" placeholder="mineshima" style="width:100%;max-width:380px;height:36px;border:1.5px solid #000;border-radius:8px;padding:0 12px;font-size:13.5px;font-family:inherit;background:#fff"></div>
+            <div><label style="display:block;font-size:12.5px;font-weight:700;margin-bottom:5px">当選日（支給の起点）<span style="color:#E63946">*</span></label><input type="date" data-f="termDate" value="{{ polDraftTerm }}" onChange="{{ editPolField }}" style="width:200px;height:36px;border:1.5px solid #000;border-radius:8px;padding:0 12px;font-size:13.5px;font-family:inherit;background:#fff"></div>
+            <div>
+              <label style="display:block;font-size:12.5px;font-weight:700;margin-bottom:5px">政党（任意）</label>
+              <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+                <select data-f="party" ref="{{ partyRef }}" onChange="{{ editPolField }}" style="width:220px;height:36px;border:1.5px solid #000;border-radius:8px;padding:0 10px;font-size:13.5px;font-family:inherit;background:#fff">
+                  <option value="">なし（無所属）</option>
+                  <option value="チームみらい">チームみらい</option>
+                </select>
+                <button type="button" style="height:30px;padding:0 14px;border-radius:999px;border:1.5px solid #000;background:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">＋ 政党を新規作成</button>
+              </div>
+              <p style="margin:6px 0 0;font-size:11.5px;color:#939393">紐づけは membership として別テーブルに保存され、後から変更できます。</p>
+            </div>
+            <div style="display:flex;gap:10px;margin-top:4px">
+              <button type="button" onClick="{{ savePol }}" style="height:36px;padding:0 20px;border-radius:999px;border:1.5px solid #30BCA7;background:#30BCA7;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">{{ polFormSubmit }}</button>
+              <button type="button" data-p="pol" onClick="{{ go }}" style="height:36px;padding:0 20px;border-radius:999px;border:1.5px solid #000;background:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">キャンセル</button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </sc-if>
+
+    <sc-if value="{{ pBooks }}" hint-placeholder-val="{{ false }}">
+      <section data-screen-label="年度帳簿">
+        <div style="margin-bottom:22px">
+          <p style="margin:0;font-family:Poppins,sans-serif;font-size:13px;font-weight:600;letter-spacing:0.1em;color:#089781">Books</p>
+          <h1 style="margin:2px 0 0;font-size:26px;font-weight:700;letter-spacing:0.06em"><span style="text-decoration:underline;text-decoration-color:#64D8C6;text-decoration-thickness:3px;text-underline-offset:6px">年度帳簿</span></h1>
+          <p style="margin:10px 0 0;font-size:13.5px;color:#666">議員 × 年度の「1年間のお財布」。作成すると最初のスキャンに誘導します。</p>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;font-size:13px;color:#666">
+          <i class="ph ph-user-circle" style="font-size:17px;color:#0F8472"></i>
+          <span style="font-weight:700;color:#000">{{ ctxName }}</span>の帳簿一覧　<button type="button" onClick="{{ openCtx }}" style="border:none;background:transparent;padding:0;font-size:12px;font-weight:700;color:#0F8472;cursor:pointer;font-family:inherit;text-decoration:underline;text-underline-offset:3px">別の議員に切り替え</button>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,400px));gap:16px">
+          <div style="background:#fff;border:1px solid #000;border-radius:8px;padding:22px 24px">
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+              <span style="font-family:Poppins,sans-serif;font-size:20px;font-weight:700">2026</span>
+              <span style="font-size:11px;font-weight:700;color:#fff;background:#30BCA7;border-radius:999px;padding:2px 10px">公開中</span>
+            </div>
+            <div style="display:grid;gap:6px;margin-top:14px;font-size:13px">
+              <div style="display:flex;justify-content:space-between;gap:12px"><span style="color:#666">公開範囲</span><span style="font-weight:600">2月〜8月分（2026.8.20時点）</span></div>
+              <div style="display:flex;justify-content:space-between;gap:12px"><span style="color:#666">支給累計</span><span style="font-family:Poppins,'Noto Sans',sans-serif;font-weight:600">¥7,000,000</span></div>
+              <div style="display:flex;justify-content:space-between;gap:12px"><span style="color:#666">支出累計</span><span style="font-family:Poppins,'Noto Sans',sans-serif;font-weight:600">¥2,212,581</span></div>
+              <div style="display:flex;justify-content:space-between;gap:12px"><span style="color:#666">確認待ち</span><span style="font-weight:700;color:#E63946">{{ draftCount }}件の下書き</span></div>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:18px;flex-wrap:wrap">
+              <button type="button" data-p="scan" onClick="{{ go }}" style="height:32px;padding:0 16px;border-radius:999px;border:1.5px solid #30BCA7;background:#30BCA7;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">スキャンする</button>
+              <button type="button" data-p="entries" onClick="{{ go }}" style="height:32px;padding:0 16px;border-radius:999px;border:1.5px solid #000;background:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">仕訳を確認</button>
+            </div>
+          </div>
+          <div style="border:1.5px dashed #CCCCCC;border-radius:8px;padding:22px 24px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;min-height:200px;background:#fff">
+            <i class="ph ph-plus-circle" style="font-size:28px;color:#939393"></i>
+            <div style="font-size:13.5px;font-weight:700;color:#666">2027年度の帳簿を作る</div>
+            <div style="font-size:11.5px;color:#939393">作成すると空の帳簿とスキャン画面が用意されます</div>
+          </div>
+        </div>
+      </section>
+    </sc-if>
+
+    <sc-if value="{{ pScan }}" hint-placeholder-val="{{ false }}">
+      <section data-screen-label="書類スキャン">
+        <div style="margin-bottom:22px">
+          <p style="margin:0;font-family:Poppins,sans-serif;font-size:13px;font-weight:600;letter-spacing:0.1em;color:#089781">Scan</p>
+          <h1 style="margin:2px 0 0;font-size:26px;font-weight:700;letter-spacing:0.06em"><span style="text-decoration:underline;text-decoration-color:#64D8C6;text-decoration-thickness:3px;text-underline-offset:6px">書類スキャン</span></h1>
+          <p style="margin:10px 0 0;font-size:13.5px;color:#666">領収書の写真やPDFをまとめてアップロードすると、順番に読み取って下書き仕訳を作ります。</p>
+        </div>
+        <div style="background:#fff;border:1px solid #000;border-radius:8px;padding:24px 26px;max-width:720px;margin-bottom:20px">
+          <div style="border:1.5px dashed #30BCA7;border-radius:8px;background:#F4FBFA;padding:34px 20px;display:flex;flex-direction:column;align-items:center;gap:8px">
+            <i class="ph ph-upload-simple" style="font-size:30px;color:#089781"></i>
+            <div style="font-size:12px;font-weight:700;color:#0F8472;background:#E2F6F3;border-radius:999px;padding:3px 14px">{{ ctxName }} ／ {{ ctxYear }} の帳簿に追加されます</div>
+            <div style="font-size:14px;font-weight:700">ここに領収書・請求書をドロップ</div>
+            <div style="font-size:12px;color:#666">JPG / PNG / PDF ・ 1回に最大30枚 ・ スマホ写真もそのままでOK</div>
+            <button type="button" style="margin-top:6px;height:32px;padding:0 18px;border-radius:999px;border:1.5px solid #000;background:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">ファイルを選ぶ</button>
+          </div>
+        </div>
+        <div style="background:#fff;border:1px solid #000;border-radius:8px;padding:24px 26px">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:6px">
+            <div style="font-size:15px;font-weight:700">2026.9.9 のバッチ <span style="font-size:12.5px;font-weight:400;color:#666;margin-left:6px">12件中 8件完了・1件失敗</span></div>
+            <button type="button" data-p="entries" onClick="{{ go }}" style="height:30px;padding:0 16px;border-radius:999px;border:1.5px solid #30BCA7;background:#30BCA7;color:#fff;font-size:11.5px;font-weight:700;cursor:pointer;font-family:inherit">完了分を確認へ ›</button>
+          </div>
+          <div style="height:6px;border-radius:999px;background:#F0F0F0;overflow:hidden;margin-bottom:16px"><div style="width:67%;height:100%;background:#30BCA7"></div></div>
+          <div style="overflow-x:auto">
+            <table style="width:100%;border-collapse:collapse;font-size:13px;min-width:640px">
+              <thead>
+                <tr style="border-bottom:1.5px solid #000">
+                  <th style="text-align:left;padding:8px 10px;font-size:12px">ファイル</th>
+                  <th style="text-align:left;padding:8px 10px;font-size:12px">状態</th>
+                  <th style="text-align:left;padding:8px 10px;font-size:12px">抽出結果</th>
+                  <th style="text-align:right;padding:8px 10px;font-size:12px">操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                <sc-for list="{{ jobs }}" as="j" hint-placeholder-count="6">
+                  <tr style="border-bottom:1px solid #e5e5e5">
+                    <td style="padding:9px 10px;white-space:nowrap"><span style="display:inline-flex;align-items:center;gap:8px"><i class="{{ j.icon }}" style="font-size:17px;color:#666"></i><span style="font-family:Poppins,'Noto Sans',sans-serif;font-size:12px">{{ j.file }}</span></span></td>
+                    <td style="padding:9px 10px;white-space:nowrap"><span style="{{ j.pillStyle }}">{{ j.pill }}</span></td>
+                    <td style="padding:9px 10px;color:{{ j.resColor }}">{{ j.result }}</td>
+                    <td style="padding:9px 10px;text-align:right;white-space:nowrap">
+                      <sc-if value="{{ j.retry }}" hint-placeholder-val="{{ false }}">
+                        <button type="button" style="height:26px;padding:0 13px;border-radius:999px;border:1.5px solid #E63946;background:#fff;color:#E63946;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">再実行</button>
+                      </sc-if>
+                    </td>
+                  </tr>
+                </sc-for>
+              </tbody>
+            </table>
+          </div>
+          <p style="margin:14px 0 0;font-size:11.5px;color:#939393">読み取りは議員室のプロンプト v3 ＋ claude-opus-4-1（vercel ai 経由）。原文JSONは各ジョブに保存されます。</p>
+        </div>
+      </section>
+    </sc-if>
+
+    <sc-if value="{{ pEntries }}" hint-placeholder-val="{{ false }}">
+      <section data-screen-label="仕訳の確認・編集">
+        <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:18px">
+          <div>
+            <p style="margin:0;font-family:Poppins,sans-serif;font-size:13px;font-weight:600;letter-spacing:0.1em;color:#089781">Entries</p>
+            <h1 style="margin:2px 0 0;font-size:26px;font-weight:700;letter-spacing:0.06em"><span style="text-decoration:underline;text-decoration-color:#64D8C6;text-decoration-thickness:3px;text-underline-offset:6px">仕訳の確認・編集</span></h1>
+          </div>
+          <button type="button" style="height:36px;padding:0 18px;border-radius:999px;border:1.5px solid #000;background:#fff;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:7px"><i class="ph ph-plus" style="font-size:14px"></i>手動で仕訳を作成</button>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px">
+          <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="4">
+            <button type="button" data-tab="{{ t.k }}" onClick="{{ setTab }}" style="{{ t.style }}">{{ t.label }}</button>
+          </sc-for>
+          <select style="margin-left:auto;width:130px;height:32px;border:1.5px solid #000;border-radius:8px;padding:0 10px;font-size:12.5px;font-family:inherit;background:#fff"><option>8月</option><option>7月</option><option>すべての月</option></select>
+        </div>
+        <div style="display:grid;grid-template-columns:minmax(0,1fr) 372px;gap:16px;align-items:start">
+          <div style="background:#fff;border:1px solid #000;border-radius:8px;padding:6px 0;overflow-x:auto">
+            <table style="width:100%;border-collapse:collapse;font-size:13px;min-width:520px">
+              <thead>
+                <tr style="border-bottom:1.5px solid #000">
+                  <th style="text-align:left;padding:8px 12px;font-size:12px;width:88px">日付</th>
+                  <th style="text-align:left;padding:8px 10px;font-size:12px">カテゴリー</th>
+                  <th style="text-align:left;padding:8px 10px;font-size:12px">項目</th>
+                  <th style="text-align:right;padding:8px 10px;font-size:12px">金額</th>
+                  <th style="text-align:left;padding:8px 12px;font-size:12px;width:80px">状態</th>
+                </tr>
+              </thead>
+              <tbody>
+                <sc-for list="{{ rows }}" as="r" hint-placeholder-count="8">
+                  <tr data-id="{{ r.id }}" onClick="{{ selectEntry }}" style="{{ r.rowStyle }}">
+                    <td style="padding:9px 12px;white-space:nowrap;font-family:Poppins,'Noto Sans',sans-serif;font-size:12px">{{ r.date }}</td>
+                    <td style="padding:9px 10px;white-space:nowrap"><span style="{{ r.catStyle }}">{{ r.catLabel }}</span></td>
+                    <td style="padding:9px 10px">
+                      <span>{{ r.item }}</span>
+                      <sc-if value="{{ r.splitBadge }}" hint-placeholder-val="{{ false }}">
+                        <span style="font-size:10.5px;color:#666;background:#F0F0F0;border-radius:999px;padding:1px 8px;margin-left:6px;white-space:nowrap">{{ r.splitBadge }}</span>
+                      </sc-if>
+                      <sc-if value="{{ r.noReceipt }}" hint-placeholder-val="{{ false }}">
+                        <span style="font-size:10.5px;color:#8A6D1F;background:#FDF8E3;border-radius:999px;padding:1px 8px;margin-left:6px;white-space:nowrap">領収書なし</span>
+                      </sc-if>
+                    </td>
+                    <td style="padding:9px 10px;text-align:right;white-space:nowrap;font-family:Poppins,'Noto Sans',sans-serif;font-weight:600">{{ r.amtFmt }}</td>
+                    <td style="padding:9px 12px;white-space:nowrap"><span style="{{ r.stStyle }}">{{ r.stLabel }}</span></td>
+                  </tr>
+                </sc-for>
+              </tbody>
+            </table>
+            <div style="padding:10px 14px 6px;font-size:11.5px;color:#939393">クリックで選択 ／ ↑↓キーで移動</div>
+          </div>
+
+          <div style="background:#fff;border:1px solid #000;border-radius:8px;padding:18px 20px;position:sticky;top:0">
+            <sc-if value="{{ hasSel }}" hint-placeholder-val="{{ true }}">
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px">
+                <span style="{{ selStStyle }}">{{ selStLabel }}</span>
+                <span style="display:inline-flex;gap:6px">
+                  <button type="button" onClick="{{ prevSel }}" title="前へ" style="width:26px;height:26px;border-radius:50%;border:1.5px solid #000;background:#fff;cursor:pointer;display:inline-flex;align-items:center;justify-content:center"><i class="ph ph-caret-up" style="font-size:13px"></i></button>
+                  <button type="button" onClick="{{ nextSel }}" title="次へ" style="width:26px;height:26px;border-radius:50%;border:1.5px solid #000;background:#fff;cursor:pointer;display:inline-flex;align-items:center;justify-content:center"><i class="ph ph-caret-down" style="font-size:13px"></i></button>
+                </span>
+              </div>
+              <sc-if value="{{ selHasReceipt }}" hint-placeholder-val="{{ true }}">
+                <div style="border:1px solid #e5e5e5;border-radius:8px;background:#F8F8F8;height:170px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;margin-bottom:14px">
+                  <i class="ph ph-receipt" style="font-size:34px;color:#939393"></i>
+                  <span style="font-family:Poppins,'Noto Sans',sans-serif;font-size:11.5px;color:#666">{{ selReceipt }}</span>
+                  <button type="button" style="height:24px;padding:0 12px;border-radius:999px;border:1.5px solid #000;background:#fff;font-size:10.5px;font-weight:700;cursor:pointer;font-family:inherit">原寸で開く</button>
+                </div>
+              </sc-if>
+              <sc-if value="{{ selNoReceipt }}" hint-placeholder-val="{{ false }}">
+                <div style="border:1.5px dashed #CCCCCC;border-radius:8px;height:88px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;margin-bottom:14px">
+                  <span style="font-size:12px;font-weight:700;color:#8A6D1F">領収書なし（手動作成）</span>
+                  <span style="font-size:11px;color:#939393">領収書を徴し難かった支出として公開されます</span>
+                </div>
+              </sc-if>
+              <div style="display:grid;gap:11px">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+                  <div><label style="display:block;font-size:11.5px;font-weight:700;margin-bottom:4px">日付</label><input type="date" data-f="date" value="{{ selDate }}" onChange="{{ editField }}" style="width:100%;height:33px;border:1.5px solid #000;border-radius:8px;padding:0 9px;font-size:12.5px;font-family:inherit;background:#fff"></div>
+                  <div><label style="display:block;font-size:11.5px;font-weight:700;margin-bottom:4px">金額</label><input type="text" data-f="amt" value="{{ selAmt }}" onChange="{{ editField }}" style="width:100%;height:33px;border:1.5px solid #000;border-radius:8px;padding:0 9px;font-size:12.5px;font-family:Poppins,'Noto Sans',sans-serif;background:#fff;text-align:right"></div>
+                </div>
+                <div><label style="display:block;font-size:11.5px;font-weight:700;margin-bottom:4px">項目名（公開されます）</label><input type="text" data-f="item" value="{{ selItem }}" onChange="{{ editField }}" style="width:100%;height:33px;border:1.5px solid #000;border-radius:8px;padding:0 9px;font-size:12.5px;font-family:inherit;background:#fff"></div>
+                <div><label style="display:block;font-size:11.5px;font-weight:700;margin-bottom:4px">科目</label>
+                  <select data-f="cat" value="{{ selCat }}" onChange="{{ editField }}" style="width:100%;height:33px;border:1.5px solid #000;border-radius:8px;padding:0 9px;font-size:12.5px;font-family:inherit;background:#fff">
+                    <sc-for list="{{ catOptions }}" as="c" hint-placeholder-count="6"><option value="{{ c.k }}">{{ c.label }}</option></sc-for>
+                  </select>
+                  <p style="margin:4px 0 0;font-size:10.5px;color:#939393">複式の仕訳（借方 {{ selCatLabel }} ／ 貸方 普通預金）は自動で作られます</p>
+                </div>
+                <div><label style="display:block;font-size:11.5px;font-weight:700;margin-bottom:4px">特記事項（任意・公開されます）</label><textarea data-f="note" value="{{ selNote }}" onChange="{{ editField }}" placeholder="為替換算・利用期間・割引など" style="width:100%;min-height:52px;border:1.5px solid #000;border-radius:8px;padding:7px 9px;font-size:12.5px;font-family:inherit;background:#fff;resize:vertical"></textarea></div>
+                <div><label style="display:flex;align-items:center;gap:6px;font-size:11.5px;font-weight:700;margin-bottom:4px">備考<span style="font-size:10px;font-weight:700;color:#666;background:#F0F0F0;border-radius:999px;padding:1px 8px">公開されない</span></label><textarea data-f="memo" value="{{ selMemo }}" onChange="{{ editField }}" placeholder="事務所内メモ（立替精算の状況・確認中の点など）" style="width:100%;min-height:44px;border:1.5px solid #CCC;border-radius:8px;padding:7px 9px;font-size:12.5px;font-family:inherit;background:#F8F8F8;resize:vertical"></textarea></div>
+              </div>
+              <div style="display:flex;gap:8px;margin-top:16px">
+                <sc-if value="{{ selIsDraft }}" hint-placeholder-val="{{ true }}">
+                  <button type="button" onClick="{{ approveSel }}" style="flex:1;height:36px;border-radius:999px;border:1.5px solid #30BCA7;background:#30BCA7;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;justify-content:center;gap:7px"><i class="ph ph-check" style="font-size:15px"></i>確認済にする</button>
+                </sc-if>
+                <sc-if value="{{ selIsApproved }}" hint-placeholder-val="{{ false }}">
+                  <button type="button" data-p="publish" onClick="{{ go }}" style="flex:1;height:36px;border-radius:999px;border:1.5px solid #000;background:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">公開画面へ ›</button>
+                </sc-if>
+                <button type="button" style="height:36px;padding:0 16px;border-radius:999px;border:1.5px solid #E63946;background:#fff;color:#E63946;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit">破棄</button>
+              </div>
+              <div style="margin-top:12px;border-top:1px solid #e5e5e5;padding-top:10px;font-size:11px;color:#939393;line-height:1.7">{{ selMeta }}</div>
+            </sc-if>
+          </div>
+        </div>
+      </section>
+    </sc-if>
+
+    <sc-if value="{{ pGrants }}" hint-placeholder-val="{{ false }}">
+      <section data-screen-label="支給の登録">
+        <div style="margin-bottom:22px">
+          <p style="margin:0;font-family:Poppins,sans-serif;font-size:13px;font-weight:600;letter-spacing:0.1em;color:#089781">Grants</p>
+          <h1 style="margin:2px 0 0;font-size:26px;font-weight:700;letter-spacing:0.06em"><span style="text-decoration:underline;text-decoration-color:#64D8C6;text-decoration-thickness:3px;text-underline-offset:6px">支給の登録</span></h1>
+          <p style="margin:10px 0 0;font-size:13.5px;color:#666">毎月固定日に振り込まれる100万円を、1クリックで収入仕訳にします。</p>
+        </div>
+        <div style="background:#fff;border:1px solid #000;border-radius:8px;padding:22px 26px;max-width:680px;margin-bottom:18px;display:flex;gap:26px;flex-wrap:wrap;align-items:center">
+          <div><div style="font-size:11.5px;color:#666">支給日テンプレート</div><div style="font-size:14px;font-weight:700">毎月 1日</div></div>
+          <div><div style="font-size:11.5px;color:#666">金額</div><div style="font-family:Poppins,'Noto Sans',sans-serif;font-size:14px;font-weight:700">¥1,000,000</div></div>
+          <div><div style="font-size:11.5px;color:#666">仕訳の型</div><div style="font-size:13px">借方 普通預金 ／ 貸方 調査研究費収入</div></div>
+          <button type="button" style="margin-left:auto;height:30px;padding:0 14px;border-radius:999px;border:1.5px solid #000;background:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">テンプレートを編集</button>
+        </div>
+        <div style="background:#fff;border:1px solid #000;border-radius:8px;padding:14px 26px 20px;max-width:680px">
+          <sc-for list="{{ grantRows }}" as="g" hint-placeholder-count="6">
+            <div style="display:flex;align-items:center;gap:14px;padding:11px 0;border-bottom:1px solid #e5e5e5">
+              <span style="font-family:Poppins,sans-serif;font-size:14px;font-weight:700;width:52px">{{ g.m }}</span>
+              <span style="font-family:Poppins,'Noto Sans',sans-serif;font-size:13px;color:#333;width:110px">{{ g.amt }}</span>
+              <span style="font-size:12px;color:#666;flex:1">{{ g.note }}</span>
+              <sc-if value="{{ g.done }}" hint-placeholder-val="{{ true }}">
+                <span style="display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:700;color:#0F8472"><i class="ph ph-check-circle" style="font-size:15px"></i>登録済み</span>
+              </sc-if>
+              <sc-if value="{{ g.ready }}" hint-placeholder-val="{{ false }}">
+                <button type="button" data-m="{{ g.m }}" onClick="{{ genGrant }}" style="height:28px;padding:0 15px;border-radius:999px;border:1.5px solid #30BCA7;background:#30BCA7;color:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">この月を登録</button>
+              </sc-if>
+              <sc-if value="{{ g.future }}" hint-placeholder-val="{{ false }}">
+                <span style="font-size:11.5px;color:#B1B1B1">未到来</span>
+              </sc-if>
+            </div>
+          </sc-for>
+          <p style="margin:12px 0 0;font-size:11.5px;color:#939393">登録した支給は下書きを経ずに「確認済」で作成されます（振込は機械的なため）。公開は公開画面から。</p>
+        </div>
+      </section>
+    </sc-if>
+
+    <sc-if value="{{ pPublish }}" hint-placeholder-val="{{ false }}">
+      <section data-screen-label="公開">
+        <div style="margin-bottom:22px">
+          <p style="margin:0;font-family:Poppins,sans-serif;font-size:13px;font-weight:600;letter-spacing:0.1em;color:#089781">Publish</p>
+          <h1 style="margin:2px 0 0;font-size:26px;font-weight:700;letter-spacing:0.06em"><span style="text-decoration:underline;text-decoration-color:#64D8C6;text-decoration-thickness:3px;text-underline-offset:6px">公開</span></h1>
+          <p style="margin:10px 0 0;font-size:13.5px;color:#666">確認済の仕訳を選ぶと、公開したときのサンキー図の変化を並べて確認できます。</p>
+        </div>
+        <div style="display:grid;grid-template-columns:minmax(280px,380px) minmax(0,1fr);gap:16px;align-items:start">
+          <div style="background:#fff;border:1px solid #000;border-radius:8px;padding:18px 20px">
+            <div style="font-size:14px;font-weight:700;margin-bottom:10px">確認済・未公開 <span style="font-family:Poppins,sans-serif;color:#089781">{{ approvedCount }}</span>件</div>
+            <div style="display:grid;gap:2px">
+              <sc-for list="{{ pubRows }}" as="r" hint-placeholder-count="3">
+                <label style="display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:8px;cursor:pointer;background:{{ r.bg }}">
+                  <input type="checkbox" data-id="{{ r.id }}" checked="{{ r.checked }}" onChange="{{ toggleCheck }}" style="width:16px;height:16px;accent-color:#30BCA7;flex-shrink:0">
+                  <span style="font-family:Poppins,'Noto Sans',sans-serif;font-size:11.5px;color:#666;width:44px">{{ r.date }}</span>
+                  <span style="flex:1;font-size:13px">{{ r.item }}</span>
+                  <span style="font-family:Poppins,'Noto Sans',sans-serif;font-size:12.5px;font-weight:600">{{ r.amtFmt }}</span>
+                </label>
+              </sc-for>
+            </div>
+            <button type="button" onClick="{{ publishChecked }}" disabled="{{ pubDisabled }}" style="{{ pubBtnStyle }}"><i class="ph ph-globe" style="font-size:15px"></i>{{ pubBtnLabel }}</button>
+            <p style="margin:10px 0 0;font-size:11px;color:#939393;line-height:1.7">公開すると「調研費まる見え」に即時反映され、公開範囲の表記（〜8月分）も更新されます。</p>
+          </div>
+          <div style="display:grid;gap:14px">
+            <sc-for list="{{ sankeys }}" as="sk" hint-placeholder-count="2">
+              <div style="background:#fff;border:1px solid #000;border-radius:8px;padding:16px 20px">
+                <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:6px">
+                  <span style="{{ sk.tagStyle }}">{{ sk.tag }}</span>
+                  <span style="font-size:12.5px;color:#666">{{ sk.caption }}</span>
+                </div>
+                <svg viewBox="0 0 560 216" style="width:100%;height:auto;display:block">
+                  <rect x="30" y="0" width="12" height="{{ sk.leftH }}" fill="#30BCA7"></rect>
+                  <text x="30" y="{{ sk.leftLabelY }}" font-size="10" fill="#333">支給 ¥7,000,000</text>
+                  <sc-for list="{{ sk.ribbons }}" as="rb"><path d="{{ rb.d }}" fill="{{ rb.f }}" opacity="{{ rb.o }}"></path></sc-for>
+                  <sc-for list="{{ sk.right }}" as="rn">
+                    <rect x="380" y="{{ rn.y }}" width="12" height="{{ rn.h }}" fill="{{ rn.color }}" stroke="{{ rn.stroke }}" stroke-width="1"></rect>
+                    <text x="398" y="{{ rn.ty }}" font-size="10" fill="#333">{{ rn.label }}　{{ rn.amt }}</text>
+                  </sc-for>
+                </svg>
+              </div>
+            </sc-for>
+            <div style="font-size:12px;color:#4A5754;background:#E2F6F3;border-radius:8px;padding:9px 14px;line-height:1.7">{{ deltaText }}</div>
+          </div>
+        </div>
+      </section>
+    </sc-if>
+
+    <sc-if value="{{ pGroups }}" hint-placeholder-val="{{ false }}">
+      <section data-screen-label="支出群と成果">
+        <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:22px">
+          <div>
+            <p style="margin:0;font-family:Poppins,sans-serif;font-size:13px;font-weight:600;letter-spacing:0.1em;color:#089781">Groups</p>
+            <h1 style="margin:2px 0 0;font-size:26px;font-weight:700;letter-spacing:0.06em"><span style="text-decoration:underline;text-decoration-color:#64D8C6;text-decoration-thickness:3px;text-underline-offset:6px">支出群と成果</span></h1>
+            <p style="margin:10px 0 0;font-size:13.5px;color:#666">支出をまとめて「活用方針」と「主要な成果」を書く。金額・件数・期間は紐づけた仕訳から自動集計されます。</p>
+          </div>
+          <button type="button" onClick="{{ goGroupNew }}" style="height:36px;padding:0 18px;border-radius:999px;border:1.5px solid #30BCA7;background:#30BCA7;color:#fff;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:7px"><i class="ph ph-plus" style="font-size:14px"></i>支出群を作る</button>
+        </div>
+        <div style="background:#fff;border:1px solid #000;border-radius:8px;padding:20px 24px;max-width:860px;margin-bottom:18px">
+          <div style="font-size:12.5px;font-weight:700;margin-bottom:6px">活用方針（帳簿全体・議員本人が書く1〜2行）</div>
+          <textarea style="width:100%;min-height:56px;border:1.5px solid #000;border-radius:8px;padding:9px 12px;font-size:13.5px;font-family:inherit;background:#fff;resize:vertical">議会質問の質を上げるための調査ツールと、政策づくりに使うIT環境の整備に重点を置いて使います。</textarea>
+          <div style="display:flex;justify-content:flex-end;margin-top:8px"><button type="button" style="height:30px;padding:0 16px;border-radius:999px;border:1.5px solid #30BCA7;background:#30BCA7;color:#fff;font-size:11.5px;font-weight:700;cursor:pointer;font-family:inherit">保存</button></div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,420px));gap:16px">
+          <sc-for list="{{ groups }}" as="g" hint-placeholder-count="2">
+            <div style="background:#fff;border:1px solid #000;border-radius:8px;padding:20px 22px">
+              <div style="font-size:15.5px;font-weight:700">{{ g.title }}</div>
+              <div style="display:flex;gap:16px;margin-top:8px;font-size:12px;color:#666;flex-wrap:wrap">
+                <span><span style="font-family:Poppins,'Noto Sans',sans-serif;font-weight:700;color:#000">{{ g.amt }}</span>（自動集計）</span>
+                <span>{{ g.count }}件</span>
+                <span>{{ g.period }}</span>
+              </div>
+              <p style="margin:10px 0 0;font-size:13px;color:#4A5754;line-height:1.8;border-left:3px solid #64D8C6;padding-left:10px">{{ g.desc }}</p>
+              <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:12px">
+                <sc-for list="{{ g.outcomes }}" as="o" hint-placeholder-count="2"><span style="{{ o.style }}">{{ o.label }}</span></sc-for>
+              </div>
+              <div style="display:flex;gap:8px;margin-top:16px">
+                <button type="button" data-id="{{ g.id }}" onClick="{{ goGroupEdit }}" style="height:28px;padding:0 14px;border-radius:999px;border:1.5px solid #000;background:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">編集</button>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </section>
+    </sc-if>
+
+    <sc-if value="{{ pPrompt }}" hint-placeholder-val="{{ false }}">
+      <section data-screen-label="読み取りプロンプト">
+        <div style="margin-bottom:22px">
+          <p style="margin:0;font-family:Poppins,sans-serif;font-size:13px;font-weight:600;letter-spacing:0.1em;color:#089781">Prompt</p>
+          <h1 style="margin:2px 0 0;font-size:26px;font-weight:700;letter-spacing:0.06em"><span style="text-decoration:underline;text-decoration-color:#64D8C6;text-decoration-thickness:3px;text-underline-offset:6px">読み取りプロンプト</span></h1>
+          <p style="margin:10px 0 0;font-size:13.5px;color:#666">この議員室のスキャンで使う整理プロンプト。保存すると新しい版になり、各ジョブは使った版を記録します。</p>
+        </div>
+        <div style="display:grid;grid-template-columns:minmax(0,1.5fr) minmax(280px,1fr);gap:16px;align-items:start">
+          <div style="display:grid;gap:16px">
+            <div style="background:#fff;border:1px solid #000;border-radius:8px;padding:20px 24px">
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+                <span style="font-size:14px;font-weight:700">プロンプト本文</span>
+                <span style="font-family:Poppins,sans-serif;font-size:11px;font-weight:700;color:#fff;background:#30BCA7;border-radius:999px;padding:2px 10px">v3 有効</span>
+              </div>
+              <textarea style="width:100%;min-height:220px;border:1.5px solid #000;border-radius:8px;padding:12px 14px;font-size:12.5px;font-family:ui-monospace,'SF Mono',Menlo,monospace;line-height:1.8;background:#fff;resize:vertical">あなたは峰島侑也議員室の調査研究費の記帳係です。渡された領収書・請求書から次のJSONを作ってください。
+- date: 支払日（YYYY-MM-DD）
+- items: 明細の配列。同一注文に複数商品がある場合は1商品=1明細に分け、split_group に注文番号を入れる
+- 各明細: item（公開用の項目名。店名ではなく何に使ったか）, amount（円・税込）, category_key（15分類から選ぶ）, note（外貨は為替換算を明記）
+- タクシーは item を「タクシー代」に統一。Amazonの品名は一般名詞に直す（例: SP-4586 → クリアファイル）
+- 判断に迷ったら category_key を "needs-review" にして note に理由を書く</textarea>
+              <div style="display:flex;gap:10px;margin-top:12px">
+                <button type="button" style="height:34px;padding:0 18px;border-radius:999px;border:1.5px solid #30BCA7;background:#30BCA7;color:#fff;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit">保存して v4 にする</button>
+                <button type="button" style="height:34px;padding:0 18px;border-radius:999px;border:1.5px solid #000;background:#fff;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit">変更を破棄</button>
+              </div>
+            </div>
+            <div style="background:#fff;border:1px solid #000;border-radius:8px;padding:20px 24px">
+              <div style="font-size:14px;font-weight:700;margin-bottom:4px">テスト実行</div>
+              <p style="margin:0 0 12px;font-size:12.5px;color:#666">編集中のプロンプトで1枚だけ読み取り、結果を確認できます（仕訳は作られません）。</p>
+              <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+                <select style="width:240px;height:34px;border:1.5px solid #000;border-radius:8px;padding:0 10px;font-size:12.5px;font-family:inherit;background:#fff"><option>IMG_4102.jpg（グラス代）</option><option>invoice_openai_08.pdf</option></select>
+                <button type="button" onClick="{{ runTest }}" style="height:34px;padding:0 18px;border-radius:999px;border:1.5px solid #000;background:#fff;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:7px"><i class="ph ph-play" style="font-size:14px"></i>テスト実行</button>
+              </div>
+              <sc-if value="{{ testRan }}" hint-placeholder-val="{{ false }}">
+                <pre style="margin:14px 0 0;background:#F4F9F8;border-radius:8px;padding:14px 16px;font-size:11.5px;font-family:ui-monospace,'SF Mono',Menlo,monospace;line-height:1.8;overflow-x:auto;white-space:pre-wrap">{{ testJson }}</pre>
+              </sc-if>
+            </div>
+          </div>
+          <div style="background:#fff;border:1px solid #000;border-radius:8px;padding:20px 22px">
+            <div style="font-size:14px;font-weight:700;margin-bottom:12px">版履歴</div>
+            <div style="display:grid;gap:2px">
+              <sc-for list="{{ promptVersions }}" as="v" hint-placeholder-count="3">
+                <div style="display:flex;align-items:center;gap:10px;padding:10px 10px;border-radius:8px;background:{{ v.bg }}">
+                  <span style="font-family:Poppins,sans-serif;font-size:13px;font-weight:700;width:30px">{{ v.v }}</span>
+                  <div style="flex:1;min-width:0">
+                    <div style="font-size:12px;line-height:1.5">{{ v.summary }}</div>
+                    <div style="font-family:Poppins,'Noto Sans',sans-serif;font-size:10.5px;color:#939393">{{ v.date }}・{{ v.jobs }}</div>
+                  </div>
+                  <sc-if value="{{ v.active }}" hint-placeholder-val="{{ false }}"><span style="font-size:10.5px;font-weight:700;color:#0F8472">有効</span></sc-if>
+                  <sc-if value="{{ v.rollback }}" hint-placeholder-val="{{ false }}"><button type="button" style="height:24px;padding:0 12px;border-radius:999px;border:1.5px solid #000;background:#fff;font-size:10.5px;font-weight:700;cursor:pointer;font-family:inherit">巻き戻し</button></sc-if>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+      </section>
+    </sc-if>
+
+    <sc-if value="{{ pGroupForm }}" hint-placeholder-val="{{ false }}">
+      <section data-screen-label="支出群フォーム">
+        <div style="margin-bottom:22px">
+          <button type="button" data-p="groups" onClick="{{ go }}" style="display:inline-flex;align-items:center;gap:6px;border:none;background:transparent;padding:0;font-size:12.5px;font-weight:700;color:#0F8472;cursor:pointer;font-family:inherit;margin-bottom:10px"><i class="ph ph-caret-left" style="font-size:13px"></i>支出群の一覧に戻る</button>
+          <p style="margin:0;font-family:Poppins,sans-serif;font-size:13px;font-weight:600;letter-spacing:0.1em;color:#089781">Groups</p>
+          <h1 style="margin:2px 0 0;font-size:26px;font-weight:700;letter-spacing:0.06em"><span style="text-decoration:underline;text-decoration-color:#64D8C6;text-decoration-thickness:3px;text-underline-offset:6px">{{ groupFormTitle }}</span></h1>
+        </div>
+        <div style="display:grid;grid-template-columns:minmax(0,1.2fr) minmax(300px,1fr);gap:16px;align-items:start;max-width:1100px">
+          <div style="background:#fff;border:1px solid #000;border-radius:8px;padding:24px 26px">
+            <div style="display:grid;gap:16px">
+              <div><label style="display:block;font-size:12.5px;font-weight:700;margin-bottom:5px">タイトル <span style="color:#E63946">*</span></label><input type="text" data-f="title" value="{{ grpTitle }}" onChange="{{ editGroupField }}" placeholder="議会質問づくりの相棒（ボネクタ）" style="width:100%;height:36px;border:1.5px solid #000;border-radius:8px;padding:0 12px;font-size:13.5px;font-family:inherit;background:#fff"></div>
+              <div><label style="display:block;font-size:12.5px;font-weight:700;margin-bottom:5px">使った目的と、そこから生まれたもの <span style="color:#E63946">*</span></label><textarea data-f="desc" value="{{ grpDesc }}" onChange="{{ editGroupField }}" placeholder="何のために使い、何ができたかを1〜3行で" style="width:100%;min-height:80px;border:1.5px solid #000;border-radius:8px;padding:9px 12px;font-size:13.5px;font-family:inherit;background:#fff;resize:vertical"></textarea></div>
+              <div>
+                <label style="display:block;font-size:12.5px;font-weight:700;margin-bottom:5px">成果物（動画・レポート・議事録など）</label>
+                <div style="display:grid;gap:8px">
+                  <sc-for list="{{ grpOutcomes }}" as="o" hint-placeholder-count="2">
+                    <div style="display:flex;gap:8px;align-items:center">
+                      <input type="text" data-i="{{ o.i }}" data-f="label" value="{{ o.label }}" onChange="{{ editOutcome }}" placeholder="ラベル（例：開催報告）" style="width:170px;height:33px;border:1.5px solid #000;border-radius:8px;padding:0 10px;font-size:12.5px;font-family:inherit;background:#fff">
+                      <input type="text" data-i="{{ o.i }}" data-f="url" value="{{ o.url }}" onChange="{{ editOutcome }}" placeholder="URL（空なら「報告は準備中」と表示）" style="flex:1;height:33px;border:1.5px solid #000;border-radius:8px;padding:0 10px;font-size:12.5px;font-family:Poppins,'Noto Sans',sans-serif;background:#fff">
+                      <button type="button" data-i="{{ o.i }}" onClick="{{ delOutcome }}" title="削除" style="width:28px;height:28px;border-radius:50%;border:1.5px solid #E63946;background:#fff;color:#E63946;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0"><i class="ph ph-x" style="font-size:12px"></i></button>
+                    </div>
+                  </sc-for>
+                </div>
+                <button type="button" onClick="{{ addOutcome }}" style="margin-top:8px;height:28px;padding:0 14px;border-radius:999px;border:1.5px solid #000;background:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:6px"><i class="ph ph-plus" style="font-size:12px"></i>成果物を追加</button>
+              </div>
+              <div style="display:flex;gap:10px;margin-top:4px">
+                <button type="button" onClick="{{ saveGroup }}" style="height:36px;padding:0 20px;border-radius:999px;border:1.5px solid #30BCA7;background:#30BCA7;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">{{ groupFormSubmit }}</button>
+                <button type="button" data-p="groups" onClick="{{ go }}" style="height:36px;padding:0 20px;border-radius:999px;border:1.5px solid #000;background:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">キャンセル</button>
+              </div>
+            </div>
+          </div>
+          <div style="background:#fff;border:1px solid #000;border-radius:8px;padding:20px 22px">
+            <div style="font-size:14px;font-weight:700">仕訳の紐づけ</div>
+            <p style="margin:4px 0 12px;font-size:12px;color:#666">金額・件数・期間は紐づけた仕訳から自動集計されます。</p>
+            <div style="background:#E2F6F3;border-radius:10px;padding:10px 14px;margin-bottom:12px;display:flex;gap:16px;flex-wrap:wrap;font-size:12.5px">
+              <span><span style="font-family:Poppins,'Noto Sans',sans-serif;font-weight:700">{{ grpSumAmt }}</span></span>
+              <span>{{ grpSumCount }}件</span>
+              <span>{{ grpSumPeriod }}</span>
+            </div>
+            <div style="display:grid;gap:2px;max-height:340px;overflow-y:auto;overflow-x:hidden;min-width:0">
+              <sc-for list="{{ grpEntryRows }}" as="r" hint-placeholder-count="6">
+                <label style="display:flex;align-items:center;gap:7px;padding:8px 8px;border-radius:8px;cursor:pointer;min-width:0;background:{{ r.bg }}">
+                  <input type="checkbox" data-id="{{ r.id }}" checked="{{ r.checked }}" onChange="{{ toggleGroupEntry }}" style="width:15px;height:15px;accent-color:#30BCA7;flex-shrink:0">
+                  <span style="font-family:Poppins,'Noto Sans',sans-serif;font-size:11px;color:#666;width:38px;flex-shrink:0">{{ r.date }}</span>
+                  <span style="flex:1;min-width:0;font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ r.item }}</span>
+                  <span style="font-family:Poppins,'Noto Sans',sans-serif;font-size:12px;font-weight:600;white-space:nowrap;flex-shrink:0">{{ r.amtFmt }}</span>
+                </label>
+              </sc-for>
+            </div>
+            <p style="margin:10px 0 0;font-size:11px;color:#939393">人件費・事務所費のような運営費は成果カードの対象外です。</p>
+          </div>
+        </div>
+      </section>
+    </sc-if>
+
+    <sc-if value="{{ pOrg }}" hint-placeholder-val="{{ false }}">
+      <section data-screen-label="政治資金（既存画面）">
+        <div style="margin-bottom:22px">
+          <p style="margin:0;font-family:Poppins,sans-serif;font-size:13px;font-weight:600;letter-spacing:0.1em;color:#089781">Political Funds</p>
+          <h1 style="margin:2px 0 0;font-size:26px;font-weight:700;letter-spacing:0.06em"><span style="text-decoration:underline;text-decoration-color:#64D8C6;text-decoration-thickness:3px;text-underline-offset:6px">{{ orgPageTitle }}</span></h1>
+          <p style="margin:10px 0 0;font-size:13.5px;color:#666">対象：{{ ctxName }}・{{ ctxYear }}年</p>
+        </div>
+        <div style="background:#fff;border:1px solid #000;border-radius:8px;padding:40px 30px;max-width:720px;display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center">
+          <i class="ph ph-bank" style="font-size:34px;color:#939393"></i>
+          <div style="font-size:14.5px;font-weight:700">既存の管理画面（変更なし）</div>
+          <p style="margin:0;font-size:13px;color:#666;line-height:1.9;max-width:480px">「{{ orgPageTitle }}」は現行の政治資金向け画面がそのまま入ります。本プロトタイプの対象は左メニューが「調査研究費」モードのときの新規画面です。</p>
+        </div>
+      </section>
+    </sc-if>
+
+  </main>
+
+  <sc-if value="{{ ctxOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeCtx }}" style="position:fixed;inset:0;background:rgba(0,0,0,0.35);z-index:70;display:flex;align-items:flex-start;justify-content:center;padding:80px 20px 20px">
+      <div onClick="{{ stopProp }}" style="background:#fff;border:1px solid #000;border-radius:12px;padding:22px 24px;max-width:460px;width:100%">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:4px">
+          <span style="font-size:15px;font-weight:700">帳簿を切り替え</span>
+          <button type="button" onClick="{{ closeCtx }}" style="width:28px;height:28px;border-radius:50%;border:none;background:transparent;cursor:pointer;display:inline-flex;align-items:center;justify-content:center"><i class="ph ph-x" style="font-size:16px;color:#666"></i></button>
+        </div>
+        <p style="margin:0 0 14px;font-size:12px;color:#939393">切り替えるまで、すべての画面はこの対象に対して操作されます。メニューも対象に合わせて変わります。</p>
+        <div style="display:grid;gap:14px">
+          <sc-for list="{{ ctxGroups }}" as="grp" hint-placeholder-count="2">
+            <div>
+              <div style="font-size:11px;font-weight:700;letter-spacing:0.08em;color:#939393;margin-bottom:6px">{{ grp.title }}</div>
+              <div style="display:grid;gap:6px">
+                <sc-for list="{{ grp.options }}" as="o" hint-placeholder-count="3">
+                  <button type="button" data-key="{{ o.key }}" onClick="{{ pickCtx }}" style="{{ o.style }}">
+                    <i class="{{ o.icon }}" style="font-size:17px;color:#0F8472;flex-shrink:0"></i>
+                    <span style="flex:1;min-width:0;text-align:left;font-size:14px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ o.name }}</span>
+                    <span style="font-family:Poppins,sans-serif;font-size:12.5px;font-weight:700;color:#0F8472">{{ o.year }}</span>
+                    <sc-if value="{{ o.current }}" hint-placeholder-val="{{ false }}"><i class="ph ph-check-circle" style="font-size:17px;color:#0F8472"></i></sc-if>
+                  </button>
+                </sc-for>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;startPage&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;entries&quot;,&quot;options&quot;:[&quot;pol&quot;,&quot;books&quot;,&quot;scan&quot;,&quot;entries&quot;,&quot;grants&quot;,&quot;publish&quot;,&quot;groups&quot;,&quot;prompt&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;表示&quot;}}">
+const CATS = [
+  { k: "it", label: "IT機器・周辺機器費", color: "#0F8472" },
+  { k: "transport", label: "交通費", color: "#089781" },
+  { k: "stationery", label: "文具・事務用消耗品費", color: "#238778" },
+  { k: "daily", label: "日用消耗品費", color: "#4A5754" },
+  { k: "pr", label: "広報費", color: "#8A6D1F" },
+  { k: "housing", label: "住居費", color: "#666666" },
+  { k: "research", label: "調査研究費（資料・研修）", color: "#0F8472" }
+];
+const ST = {
+  draft: { label: "下書き", style: "white-space:nowrap;font-size:11px;font-weight:700;color:#666;background:#fff;border:1px solid #CCC;border-radius:999px;padding:2px 10px" },
+  approved: { label: "確認済", style: "white-space:nowrap;font-size:11px;font-weight:700;color:#089781;background:#fff;border:1px solid #089781;border-radius:999px;padding:2px 10px" },
+  published: { label: "公開中", style: "white-space:nowrap;font-size:11px;font-weight:700;color:#fff;background:#30BCA7;border:1px solid #30BCA7;border-radius:999px;padding:2px 10px" }
+};
+const fmt = n => "¥" + (n || 0).toLocaleString();
+const ENTRIES = [
+  { id: 1, date: "2026-08-16", item: "グラス代", cat: "daily", amt: 683, st: "draft", src: "scan", split: "1/5", receipt: "IMG_4102.jpg" },
+  { id: 2, date: "2026-08-16", item: "グラス代", cat: "daily", amt: 683, st: "draft", src: "scan", split: "2/5", receipt: "IMG_4102.jpg" },
+  { id: 3, date: "2026-08-16", item: "グラス代", cat: "daily", amt: 683, st: "draft", src: "scan", split: "3/5", receipt: "IMG_4102.jpg" },
+  { id: 4, date: "2026-08-12", item: "タクシー代", cat: "transport", amt: 1660, st: "draft", src: "scan", receipt: "IMG_4088.jpg" },
+  { id: 5, date: "2026-08-10", item: "ChatGPT Plus 利用料", cat: "it", amt: 3000, st: "draft", src: "scan", note: "20.02 USD・支払日の為替で換算", memo: "個人カード立替。9月の精算に含める", receipt: "invoice_openai_08.pdf" },
+  { id: 6, date: "2026-08-05", item: "バス運賃", cat: "transport", amt: 210, st: "draft", src: "manual", memo: "領収書なし。ICカード履歴のスクショはDriveに保存", receipt: null },
+  { id: 7, date: "2026-08-02", item: "コピー用紙 A4 2500枚", cat: "stationery", amt: 1078, st: "approved", src: "scan", receipt: "IMG_4051.jpg" },
+  { id: 8, date: "2026-08-01", item: "モバイルバッテリー", cat: "it", amt: 4980, st: "approved", src: "scan", receipt: "IMG_4046.jpg" },
+  { id: 9, date: "2026-07-23", item: "ボネクタ利用料", cat: "pr", amt: 99000, st: "published", src: "scan", receipt: "bonekta_2026.pdf" },
+  { id: 10, date: "2026-05-12", item: "iPhone 17 Pro", cat: "it", amt: 179800, st: "published", src: "scan", receipt: "IMG_3277.jpg" }
+];
+const BEFORE = [
+  { l: "IT機器・周辺機器費", v: 948405, color: "#0F8472" },
+  { l: "住居費", v: 370848, color: "#666666" },
+  { l: "交通費", v: 302820, color: "#089781" },
+  { l: "文具・事務用消耗品費", v: 213317, color: "#238778" },
+  { l: "その他", v: 377191, color: "#4A5754" },
+  { l: "未使用", v: 4787419, color: "#EFEEE7", unused: true }
+];
+function mkSankey(cats) {
+  const H = 200, gap = 8, x1 = 42, x2 = 380, total = 7000000;
+  const n = cats.length, scale = (H - gap * (n - 1)) / total, mx = (x1 + x2) / 2;
+  let ly = 4, ry = 4;
+  const ribbons = [], right = [];
+  for (const c of cats) {
+    const h = Math.max(c.v * scale, 2);
+    ribbons.push({ d: `M${x1},${ly} C${mx},${ly} ${mx},${ry} ${x2},${ry} L${x2},${ry + h} C${mx},${ry + h} ${mx},${ly + h} ${x1},${ly + h} Z`, f: c.unused ? "#EFEEE7" : c.color, o: c.unused ? 0.9 : 0.45 });
+    right.push({ y: ry, h, ty: ry + h / 2 + 3.5, label: c.l, amt: fmt(c.v), color: c.unused ? "#EFEEE7" : c.color, stroke: c.unused ? "#D8D6C8" : "none" });
+    ly += h; ry += h + gap;
+  }
+  return { ribbons, right, leftH: ly - 4 };
+}
+class Component extends DCLogic {
+  state = { page: this.props.startPage ?? "entries", selId: 1, tab: "all", checked: {}, entries: ENTRIES, grant9: false, testRan: false,
+    politicians: [
+      { id: 1, name: "峰島 侑也", slug: "mineshima", party: "チームみらい", termDate: "2026-02-08" },
+      { id: 2, name: "山田 えり", slug: "yamada-eri", party: "チームみらい", termDate: "2026-02-08" },
+      { id: 3, name: "佐藤 剛", slug: "sato-go", party: "", termDate: "2026-02-08" }
+    ],
+    polMode: null, polEditId: null, polDraft: null, delId: null,
+    ctx: { kind: "giin", polId: 1, orgId: "tm", year: 2026 }, ctxOpen: false,
+    groups: [
+      { id: 1, title: "議会質問づくりの相棒（ボネクタ）", desc: "議会答弁・議事録の横断検索に使い、質問主意書2本の下調べ時間を大幅に短縮した。", entryIds: [9], outcomes: [{ label: "質問主意書（公開）", url: "https://example.com/q1" }, { label: "議事録", url: "https://example.com/minutes" }] },
+      { id: 2, title: "AI開発環境の整備", desc: "政策シミュレーションの開発機材とAIツールの利用料。成果物のレポートは準備中。", entryIds: [10, 8, 5], outcomes: [{ label: "報告は準備中", url: "" }] }
+    ],
+    groupMode: null, groupEditId: null, groupDraft: null };
+  static ORGS = [
+    { id: "tm", name: "チームみらい" },
+    { id: "dd", name: "デジタル民主主義を考える会" }
+  ];
+  static ORG_NAV = [
+    { title: "政治団体", items: [{ p: "org:政治団体", label: "政治団体", icon: "ph ph-bank" }] },
+    { title: "データ取り込み", items: [
+      { p: "org:取引一覧", label: "取引一覧", icon: "ph ph-list-bullets" },
+      { p: "org:取引一括削除", label: "取引一括削除", icon: "ph ph-trash" },
+      { p: "org:CSVアップロード", label: "CSVアップロード", icon: "ph ph-upload-simple" },
+      { p: "org:残高登録", label: "残高登録", icon: "ph ph-coins" }
+    ] },
+    { title: "報告書", items: [
+      { p: "org:取引先マスタ", label: "取引先マスタ", icon: "ph ph-address-book" },
+      { p: "org:取引先紐付け", label: "取引先紐付け", icon: "ph ph-link" },
+      { p: "org:寄付者マスタ", label: "寄付者マスタ", icon: "ph ph-hand-heart" },
+      { p: "org:寄付者紐付け", label: "寄付者紐付け", icon: "ph ph-link-simple" },
+      { p: "org:報告書エクスポート", label: "報告書エクスポート", icon: "ph ph-export" }
+    ] }
+  ];
+  componentDidMount() {
+    this.kd = (e) => {
+      if (this.state.page !== "entries") return;
+      if (["INPUT", "TEXTAREA", "SELECT"].includes(e.target.tagName)) return;
+      if (e.key === "ArrowDown") { e.preventDefault(); this.move(1); }
+      if (e.key === "ArrowUp") { e.preventDefault(); this.move(-1); }
+    };
+    window.addEventListener("keydown", this.kd);
+  }
+  componentWillUnmount() { window.removeEventListener("keydown", this.kd); }
+  fmtPeriod(linked) {
+    if (!linked.length) return "—";
+    const ds = linked.map(x => x.date).sort();
+    const f = d => d.slice(0, 10).replace(/-0?/g, ".");
+    if (ds.length === 1 || ds[0] === ds[ds.length - 1]) return f(ds[0]);
+    const a = ds[0], b = ds[ds.length - 1];
+    const bShort = a.slice(0, 4) === b.slice(0, 4) ? f(b).slice(5) : f(b);
+    return f(a) + " 〜 " + bShort;
+  }
+  filtered() { const t = this.state.tab; return this.state.entries.filter(x => t === "all" || x.st === t); }
+  move(dir) {
+    const list = this.filtered(), i = list.findIndex(x => x.id === this.state.selId);
+    const next = list[Math.min(Math.max(i + dir, 0), list.length - 1)];
+    if (next) this.setState({ selId: next.id });
+  }
+  renderVals() {
+    const s = this.state;
+    const navBase = "display:flex;align-items:center;gap:10px;width:100%;padding:8px 14px;border-radius:999px;border:none;background:transparent;font-size:13px;font-weight:500;color:#1F2937;cursor:pointer;font-family:inherit;white-space:nowrap";
+    const navActive = navBase.replace("background:transparent", "background:#E2F6F3").replace("font-weight:500;color:#1F2937", "font-weight:700;color:#0F8472");
+    const draftCount = s.entries.filter(x => x.st === "draft").length;
+    const isGiin = s.ctx.kind === "giin";
+    const GIIN_NAV = [
+      { title: "議員室", items: [
+        { p: "pol", label: "議員", icon: "ph ph-identification-badge" },
+        { p: "books", label: "年度帳簿", icon: "ph ph-notebook" }
+      ] },
+      { title: "調査研究費", items: [
+        { p: "scan", label: "書類スキャン", icon: "ph ph-scan" },
+        { p: "entries", label: "仕訳の確認・編集", icon: "ph ph-list-checks", badge: draftCount || false },
+        { p: "grants", label: "支給の登録", icon: "ph ph-coins" },
+        { p: "publish", label: "公開", icon: "ph ph-globe" },
+        { p: "groups", label: "支出群と成果", icon: "ph ph-squares-four" },
+        { p: "prompt", label: "読み取りプロンプト", icon: "ph ph-sparkle" }
+      ] }
+    ];
+    const navSections = (isGiin ? GIIN_NAV : Component.ORG_NAV).map(sec => ({
+      ...sec,
+      items: sec.items.map(n => ({ ...n, style: (n.p === s.page || (n.p === "pol" && s.page === "polForm") || (n.p === "groups" && s.page === "groupForm")) ? navActive : navBase }))
+    }));
+    const catOf = k => CATS.find(c => c.k === k) || CATS[0];
+    const catStyle = c => `white-space:nowrap;font-size:11px;font-weight:700;color:${c.color};background:#fff;border:1px solid ${c.color};border-radius:999px;padding:2px 10px`;
+    const list = this.filtered();
+    const rows = list.map(r => {
+      const sel = r.id === s.selId, c = catOf(r.cat);
+      return {
+        ...r, amtFmt: fmt(r.amt), catLabel: c.label, catStyle: catStyle(c),
+        stLabel: ST[r.st].label, stStyle: ST[r.st].style,
+        splitBadge: r.split ? "分割 " + r.split : false, noReceipt: !r.receipt,
+        rowStyle: "cursor:pointer;border-bottom:1px solid #e5e5e5;" + (sel ? "background:#E2F6F3;box-shadow:inset 3px 0 0 #30BCA7" : "background:transparent")
+      };
+    });
+    const tabDefs = [["all", "すべて"], ["draft", "下書き"], ["approved", "確認済"], ["published", "公開中"]];
+    const tabs = tabDefs.map(([k, label]) => {
+      const count = k === "all" ? s.entries.length : s.entries.filter(x => x.st === k).length;
+      const on = s.tab === k;
+      return { k, label: `${label} ${count}`, style: `height:32px;padding:0 16px;border-radius:999px;border:1.5px solid ${on ? "#30BCA7" : "#000"};background:${on ? "#30BCA7" : "#fff"};color:${on ? "#fff" : "#000"};font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap` };
+    });
+    const sel = s.entries.find(x => x.id === s.selId) || null;
+    const approvedList = s.entries.filter(x => x.st === "approved");
+    const checkedList = approvedList.filter(x => s.checked[x.id]);
+    const checkedSum = checkedList.reduce((a, x) => a + x.amt, 0);
+    const after = BEFORE.map(c => {
+      const add = checkedList.filter(x => catOf(x.cat).label === c.l).reduce((a, x) => a + x.amt, 0);
+      return c.unused ? { ...c, v: c.v - checkedSum } : { ...c, v: c.v + add };
+    });
+    const sb = mkSankey(BEFORE), sa = mkSankey(after);
+    const tagB = "white-space:nowrap;font-size:11px;font-weight:700;color:#666;background:#F0F0F0;border-radius:999px;padding:2px 12px";
+    const tagA = "white-space:nowrap;font-size:11px;font-weight:700;color:#fff;background:#30BCA7;border-radius:999px;padding:2px 12px";
+    const deltas = checkedList.map(x => `${catOf(x.cat).label} +${fmt(x.amt)}`).join("・");
+    const grantRows = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(m => {
+      const done = m <= 8 || (m === 9 && s.grant9);
+      const ready = m === 9 && !s.grant9;
+      return { m: m + "月", amt: "¥1,000,000", done, ready, future: m > 9, note: done ? (m === 2 ? "2026.2.8 当選・初月分" : "支給日 " + m + "/1") : ready ? "支給日 9/1・振込を確認したら登録" : "" };
+    });
+    const pillQ = "white-space:nowrap;font-size:11px;font-weight:700;color:#666;background:#fff;border:1px solid #CCC;border-radius:999px;padding:2px 10px";
+    const pillR = "white-space:nowrap;font-size:11px;font-weight:700;color:#089781;background:#fff;border:1px solid #089781;border-radius:999px;padding:2px 10px";
+    const pillOK = "white-space:nowrap;font-size:11px;font-weight:700;color:#fff;background:#30BCA7;border:1px solid #30BCA7;border-radius:999px;padding:2px 10px";
+    const pillNG = "white-space:nowrap;font-size:11px;font-weight:700;color:#fff;background:#E63946;border:1px solid #E63946;border-radius:999px;padding:2px 10px";
+    return {
+      navSections, draftCount,
+      go: e => this.setState({ page: e.currentTarget.dataset.p }),
+      pPol: s.page === "pol", pBooks: s.page === "books", pScan: s.page === "scan", pEntries: s.page === "entries",
+      pGrants: s.page === "grants", pPublish: s.page === "publish", pGroups: s.page === "groups", pPrompt: s.page === "prompt",
+      pPolForm: s.page === "polForm",
+      politicians: s.politicians.map(p => ({
+        ...p,
+        term: p.termDate ? p.termDate.slice(0, 7).replace("-", ".").replace(".0", ".") : "—",
+        party: p.party || "無所属（政党なし）",
+        partyStyle: p.party
+          ? "font-size:11px;font-weight:700;color:#0F8472;background:#E2F6F3;border-radius:999px;padding:2px 10px;white-space:nowrap"
+          : "font-size:11px;font-weight:700;color:#666;background:#F0F0F0;border-radius:999px;padding:2px 10px;white-space:nowrap"
+      })),
+      goPolNew: () => this.setState({ page: "polForm", polMode: "new", polEditId: null, polDraft: { name: "", slug: "", party: "", termDate: "2026-02-08" } }),
+      goPolEdit: e => {
+        const id = Number(e.currentTarget.dataset.id);
+        const p = s.politicians.find(x => x.id === id);
+        this.setState({ page: "polForm", polMode: "edit", polEditId: id, polDraft: { name: p.name, slug: p.slug, party: p.party, termDate: p.termDate } });
+      },
+      polFormTitle: s.polMode === "edit" ? "議員を編集" : "議員を追加",
+      polFormSubmit: s.polMode === "edit" ? "保存する" : "作成する",
+      polDraftName: s.polDraft?.name ?? "", polDraftSlug: s.polDraft?.slug ?? "",
+      polDraftTerm: s.polDraft?.termDate ?? "",
+      partyRef: el => { if (el) el.value = this.state.polDraft?.party ?? ""; },
+      editPolField: e => {
+        const f = e.target.dataset.f, v = e.target.value;
+        this.setState(st => ({ polDraft: { ...st.polDraft, [f]: v } }));
+      },
+      savePol: () => this.setState(st => {
+        const d = st.polDraft;
+        if (!d || !d.name.trim() || !d.slug.trim()) return null;
+        if (st.polMode === "edit") {
+          return { page: "pol", politicians: st.politicians.map(x => x.id === st.polEditId ? { ...x, ...d } : x) };
+        }
+        const nid = Math.max(0, ...st.politicians.map(x => x.id)) + 1;
+        return { page: "pol", politicians: [...st.politicians, { id: nid, ...d }] };
+      }),
+      askDelPol: e => this.setState({ delId: Number(e.currentTarget.dataset.id) }),
+      cancelDelPol: () => this.setState({ delId: null }),
+      confirmDelPol: () => this.setState(st => ({ delId: null, politicians: st.politicians.filter(x => x.id !== st.delId) })),
+      delTarget: !!s.delId,
+      delName: s.politicians.find(x => x.id === s.delId)?.name ?? "",
+      ctxName: isGiin
+        ? (s.politicians.find(x => x.id === s.ctx.polId)?.name ?? "—")
+        : (Component.ORGS.find(o => o.id === s.ctx.orgId)?.name ?? "—"),
+      ctxYear: s.ctx.year,
+      ctxKindLabel: isGiin ? "調査研究費・議員室" : "政治資金・政治団体",
+      ctxOpen: s.ctxOpen,
+      openCtx: () => this.setState({ ctxOpen: true }),
+      closeCtx: () => this.setState({ ctxOpen: false }),
+      stopProp: e => e.stopPropagation(),
+      pickCtx: e => {
+        const [kind, id, year] = e.currentTarget.dataset.key.split(":");
+        if (kind === "org") {
+          this.setState({ ctx: { kind: "org", orgId: id, polId: s.ctx.polId, year: Number(year) }, ctxOpen: false, page: "org:取引一覧" });
+        } else {
+          this.setState({ ctx: { kind: "giin", polId: Number(id), orgId: s.ctx.orgId, year: Number(year) }, ctxOpen: false, page: "entries" });
+        }
+      },
+      ctxGroups: [
+        { title: "政治資金（政治団体）", options: Component.ORGS.flatMap(o => [2025, 2026].map(y => {
+          const cur = !isGiin && s.ctx.orgId === o.id && s.ctx.year === y;
+          return { key: `org:${o.id}:${y}`, name: o.name, year: y, icon: "ph ph-bank", current: cur,
+            style: `display:flex;align-items:center;gap:10px;width:100%;padding:11px 14px;border-radius:10px;border:1.5px solid ${cur ? "#30BCA7" : "#e5e5e5"};background:${cur ? "#E2F6F3" : "#fff"};cursor:pointer;font-family:inherit` };
+        })) },
+        { title: "調査研究費（議員室）", options: s.politicians.map(p => {
+          const cur = isGiin && s.ctx.polId === p.id;
+          return { key: `giin:${p.id}:2026`, name: p.name, year: 2026, icon: "ph ph-identification-badge", current: cur,
+            style: `display:flex;align-items:center;gap:10px;width:100%;padding:11px 14px;border-radius:10px;border:1.5px solid ${cur ? "#30BCA7" : "#e5e5e5"};background:${cur ? "#E2F6F3" : "#fff"};cursor:pointer;font-family:inherit` };
+        }) }
+      ],
+      pOrg: s.page.startsWith("org:"),
+      orgPageTitle: s.page.startsWith("org:") ? s.page.slice(4) : "",
+      jobs: [
+        { file: "IMG_4102.jpg", icon: "ph ph-image", pill: "完了", pillStyle: pillOK, result: "グラス代 ¥683 × 5明細（分割 A-0816）", resColor: "#333", retry: false },
+        { file: "IMG_4088.jpg", icon: "ph ph-image", pill: "完了", pillStyle: pillOK, result: "タクシー代 ¥1,660", resColor: "#333", retry: false },
+        { file: "invoice_openai_08.pdf", icon: "ph ph-file-pdf", pill: "完了", pillStyle: pillOK, result: "ChatGPT Plus 利用料 ¥3,000（為替換算をnoteに記載）", resColor: "#333", retry: false },
+        { file: "IMG_4079.jpg", icon: "ph ph-image", pill: "失敗", pillStyle: pillNG, result: "画像が不鮮明で金額を読めませんでした", resColor: "#E63946", retry: true },
+        { file: "IMG_4075.jpg", icon: "ph ph-image", pill: "処理中", pillStyle: pillR, result: "—", resColor: "#939393", retry: false },
+        { file: "IMG_4071.jpg", icon: "ph ph-image", pill: "待機中", pillStyle: pillQ, result: "—", resColor: "#939393", retry: false }
+      ],
+      tabs, setTab: e => this.setState({ tab: e.currentTarget.dataset.tab }),
+      rows, selectEntry: e => this.setState({ selId: Number(e.currentTarget.dataset.id) }),
+      hasSel: !!sel,
+      selStLabel: sel ? ST[sel.st].label : "", selStStyle: sel ? ST[sel.st].style : "",
+      selHasReceipt: !!(sel && sel.receipt), selNoReceipt: !!(sel && !sel.receipt),
+      selReceipt: sel?.receipt || "", selDate: sel?.date || "", selItem: sel?.item || "",
+      selAmt: sel ? (sel.amt || 0).toLocaleString() : "", selCat: sel?.cat || "it", selNote: sel?.note || "", selMemo: sel?.memo || "",
+      selCatLabel: sel ? catOf(sel.cat).label : "",
+      selIsDraft: sel?.st === "draft", selIsApproved: sel?.st === "approved",
+      selMeta: sel ? (sel.src === "scan" ? "source: scan ・ claude-opus-4-1 ・ プロンプト v3 ・ 原文JSONを見る" : sel.src === "manual" ? "source: manual ・ " + "作成 mineshima-office" : "source: grant") : "",
+      catOptions: CATS.map(c => ({ k: c.k, label: c.label })),
+      editField: e => {
+        const f = e.target.dataset.f; let v = e.target.value;
+        if (f === "amt") v = parseInt(v.replace(/[^0-9]/g, ""), 10) || 0;
+        this.setState(st => ({ entries: st.entries.map(x => x.id === st.selId ? { ...x, [f]: v } : x) }));
+      },
+      approveSel: () => {
+        this.setState(st => ({ entries: st.entries.map(x => x.id === st.selId ? { ...x, st: "approved" } : x) }), () => this.move(1));
+      },
+      prevSel: () => this.move(-1), nextSel: () => this.move(1),
+      grantRows,
+      genGrant: () => this.setState({ grant9: true }),
+      approvedCount: approvedList.length,
+      pubRows: approvedList.map(r => ({ id: r.id, date: r.date.slice(5).replace("-", "/"), item: r.item, amtFmt: fmt(r.amt), checked: !!s.checked[r.id], bg: s.checked[r.id] ? "#E2F6F3" : "transparent" })),
+      toggleCheck: e => { const id = Number(e.target.dataset.id); this.setState(st => ({ checked: { ...st.checked, [id]: !st.checked[id] } })); },
+      publishChecked: () => this.setState(st => ({ entries: st.entries.map(x => st.checked[x.id] ? { ...x, st: "published" } : x), checked: {} })),
+      pubDisabled: checkedList.length === 0,
+      pubBtnStyle: `margin-top:14px;width:100%;height:38px;border-radius:999px;border:1.5px solid ${checkedList.length ? "#30BCA7" : "#CCC"};background:${checkedList.length ? "#30BCA7" : "#fff"};color:${checkedList.length ? "#fff" : "#B1B1B1"};font-size:13px;font-weight:700;cursor:${checkedList.length ? "pointer" : "not-allowed"};font-family:inherit;display:inline-flex;align-items:center;justify-content:center;gap:8px`,
+      pubBtnLabel: checkedList.length ? `${checkedList.length}件（${fmt(checkedSum)}）を公開する` : "公開する仕訳を選んでください",
+      sankeys: [
+        { tag: "BEFORE", tagStyle: tagB, caption: "現在の公開状態（2月〜8月分・¥2,212,581）", ...sb, leftLabelY: sb.leftH + 14 },
+        { tag: "AFTER", tagStyle: tagA, caption: checkedList.length ? `選択中の ${checkedList.length}件 を公開した場合` : "仕訳を選ぶとこちらが変化します", ...sa, leftLabelY: sa.leftH + 14 }
+      ],
+      deltaText: checkedList.length ? `公開すると：${deltas}（未使用 −${fmt(checkedSum)}）` : "左のリストで仕訳にチェックを入れると、費目ごとの増分と未使用の減少をここに表示します。",
+      groups: s.groups.map(g => {
+        const linked = s.entries.filter(x => g.entryIds.includes(x.id));
+        return {
+          id: g.id, title: g.title, desc: g.desc,
+          amt: fmt(linked.reduce((a, x) => a + x.amt, 0)),
+          count: String(linked.length),
+          period: this.fmtPeriod(linked),
+          outcomes: g.outcomes.map(o => ({
+            label: o.url ? o.label : (o.label || "報告は準備中"),
+            style: o.url
+              ? "display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;color:#0F8472;background:#E2F6F3;border-radius:999px;padding:3px 12px;white-space:nowrap"
+              : "display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;color:#666;background:#F0F0F0;border-radius:999px;padding:3px 12px;white-space:nowrap"
+          }))
+        };
+      }),
+      pGroupForm: s.page === "groupForm",
+      groupFormTitle: s.groupMode === "edit" ? "支出群を編集" : "支出群を作る",
+      groupFormSubmit: s.groupMode === "edit" ? "保存する" : "作成する",
+      goGroupNew: () => this.setState({ page: "groupForm", groupMode: "new", groupEditId: null, groupDraft: { title: "", desc: "", entryIds: [], outcomes: [{ label: "", url: "" }] } }),
+      goGroupEdit: e => {
+        const id = Number(e.currentTarget.dataset.id);
+        const g = s.groups.find(x => x.id === id);
+        this.setState({ page: "groupForm", groupMode: "edit", groupEditId: id, groupDraft: { title: g.title, desc: g.desc, entryIds: [...g.entryIds], outcomes: g.outcomes.map(o => ({ ...o })) } });
+      },
+      grpTitle: s.groupDraft?.title ?? "", grpDesc: s.groupDraft?.desc ?? "",
+      grpOutcomes: (s.groupDraft?.outcomes ?? []).map((o, i) => ({ ...o, i })),
+      editGroupField: e => {
+        const f = e.target.dataset.f, v = e.target.value;
+        this.setState(st => ({ groupDraft: { ...st.groupDraft, [f]: v } }));
+      },
+      editOutcome: e => {
+        const i = Number(e.target.dataset.i), f = e.target.dataset.f, v = e.target.value;
+        this.setState(st => ({ groupDraft: { ...st.groupDraft, outcomes: st.groupDraft.outcomes.map((o, j) => j === i ? { ...o, [f]: v } : o) } }));
+      },
+      addOutcome: () => this.setState(st => ({ groupDraft: { ...st.groupDraft, outcomes: [...st.groupDraft.outcomes, { label: "", url: "" }] } })),
+      delOutcome: e => {
+        const i = Number(e.currentTarget.dataset.i);
+        this.setState(st => ({ groupDraft: { ...st.groupDraft, outcomes: st.groupDraft.outcomes.filter((_, j) => j !== i) } }));
+      },
+      toggleGroupEntry: e => {
+        const id = Number(e.target.dataset.id);
+        this.setState(st => {
+          const ids = st.groupDraft.entryIds;
+          return { groupDraft: { ...st.groupDraft, entryIds: ids.includes(id) ? ids.filter(x => x !== id) : [...ids, id] } };
+        });
+      },
+      grpEntryRows: s.entries.map(r => {
+        const on = !!s.groupDraft?.entryIds.includes(r.id);
+        return { id: r.id, date: r.date.slice(5).replace("-", "/"), item: r.item, amtFmt: fmt(r.amt), checked: on, bg: on ? "#E2F6F3" : "transparent" };
+      }),
+      grpSumAmt: fmt(s.entries.filter(x => s.groupDraft?.entryIds.includes(x.id)).reduce((a, x) => a + x.amt, 0)),
+      grpSumCount: s.groupDraft?.entryIds.length ?? 0,
+      grpSumPeriod: this.fmtPeriod(s.entries.filter(x => s.groupDraft?.entryIds.includes(x.id))),
+      saveGroup: () => this.setState(st => {
+        const d = st.groupDraft;
+        if (!d || !d.title.trim()) return null;
+        const clean = { ...d, outcomes: d.outcomes.filter(o => o.label.trim() || o.url.trim()) };
+        if (st.groupMode === "edit") {
+          return { page: "groups", groups: st.groups.map(x => x.id === st.groupEditId ? { ...x, ...clean } : x) };
+        }
+        const nid = Math.max(0, ...st.groups.map(x => x.id)) + 1;
+        return { page: "groups", groups: [...st.groups, { id: nid, ...clean }] };
+      }),
+      runTest: () => this.setState({ testRan: true }),
+      testRan: s.testRan,
+      testJson: JSON.stringify({ date: "2026-08-16", items: [{ item: "グラス代", amount: 683, category_key: "daily", split_group: "A-0816", note: "5点購入につき行分割 1/5" }], model: "claude-opus-4-1", prompt_version: "v3(編集中)" }, null, 2),
+      promptVersions: [
+        { v: "v3", summary: "タクシー・Amazon品名の正規化ルールを追加", date: "2026.9.2", jobs: "42ジョブで使用", active: true, rollback: false, bg: "#E2F6F3" },
+        { v: "v2", summary: "外貨の為替換算を note に必須化", date: "2026.6.14", jobs: "180ジョブで使用", active: false, rollback: true, bg: "transparent" },
+        { v: "v1", summary: "初版（15分類への振り分けのみ）", date: "2026.2.20", jobs: "74ジョブで使用", active: false, rollback: true, bg: "transparent" }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

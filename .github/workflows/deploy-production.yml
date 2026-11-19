@@ -1,0 +1,76 @@
+name: Deploy Production
+
+on:
+  workflow_dispatch:
+
+# デプロイ成功時に release tag を push するため contents: write が必要
+permissions:
+  contents: write
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+
+    env:
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      # promote / inspect 用のチームスコープ（機密ではない。Vercel の URL に出ているスラッグ）
+      VERCEL_SCOPE: team-mirai
+
+    steps:
+      # workflow_dispatch は任意の ref を選択できるため、
+      # 検証済みの main 以外からの本番デプロイを拒否する
+      - name: Verify ref is main
+        run: |
+          if [ "$GITHUB_REF" != "refs/heads/main" ]; then
+            echo "本番デプロイは main からのみ実行できます (指定: $GITHUB_REF)"
+            exit 1
+          fi
+
+      # 前回の release タグとの比較（依存パッケージの一覧）に履歴とタグが要るため、全履歴を取る
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      # 前回の本番デプロイ（release タグ）から変わった直接依存パッケージを job summary に出す。
+      # 確認用の情報なので、失敗しても本番デプロイは止めない
+      - name: Summarize dependency changes since last release
+        continue-on-error: true
+        run: node scripts/dependency-diff.mjs "$GITHUB_SHA" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Install Vercel CLI
+        run: npm install --global vercel@latest
+
+      # デプロイ・本番ドメインの付け替え（promote）・付け替え結果の検証までを
+      # スクリプト側で行う。詳細は scripts/vercel-deploy-production.sh を参照
+      #
+      # webapp のビルドに prisma migrate deploy が含まれるため、
+      # 先に webapp をデプロイして本番DBのスキーマを更新する
+      - name: Deploy webapp
+        run: ./scripts/vercel-deploy-production.sh webapp marumie.team-mir.ai
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_WEBAPP }}
+
+      - name: Deploy admin
+        run: ./scripts/vercel-deploy-production.sh admin admin.marumie.team-mir.ai
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_ADMIN }}
+
+      # webapp / admin の両方のデプロイが成功したときだけタグを付ける
+      # （途中のステップが失敗するとこのステップは実行されない）
+      #
+      # タグ名は JST の日時から自動生成する。名前順に並べるとデプロイ順になり、
+      # 名前だけでいつのデプロイか分かる
+      - name: Create release tag
+        run: |
+          TAG="release-$(TZ=Asia/Tokyo date '+%Y%m%d-%H%M%S')"
+          git tag "$TAG" "$GITHUB_SHA"
+          git push origin "$TAG"
+          echo "Created release tag: $TAG ($GITHUB_SHA)" >> "$GITHUB_STEP_SUMMARY"

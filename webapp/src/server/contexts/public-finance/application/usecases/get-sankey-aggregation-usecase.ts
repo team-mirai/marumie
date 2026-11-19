@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { SankeyData } from "@/server/contexts/public-finance/domain/models/sankey-data";
+import type { SankeyData } from "@/server/contexts/shared/domain/models/sankey-data";
 import type { IPoliticalOrganizationRepository } from "@/server/contexts/public-finance/domain/repositories/political-organization-repository.interface";
 import type { IBalanceSheetRepository } from "@/server/contexts/public-finance/domain/repositories/balance-sheet-repository.interface";
 import type { ITransactionRepository } from "@/server/contexts/public-finance/domain/repositories/transaction-repository.interface";

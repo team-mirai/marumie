@@ -8,10 +8,13 @@ import {
   type BulkUnassignCounterpartInput,
   type BulkUnassignCounterpartResult,
 } from "@/server/contexts/report/application/usecases/bulk-unassign-counterpart-usecase";
+import { requireRole } from "@/server/contexts/auth/presentation/loaders/require-role";
 
 export async function bulkUnassignCounterpartAction(
   input: BulkUnassignCounterpartInput,
 ): Promise<BulkUnassignCounterpartResult> {
+  await requireRole("political_fund");
+
   const repository = new PrismaTransactionCounterpartRepository(prisma);
   const usecase = new BulkUnassignCounterpartUsecase(repository);
   const result = await usecase.execute(input);

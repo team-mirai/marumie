@@ -19,7 +19,7 @@ export function BasicInfoSection({ formData, updateFormData }: BasicInfoSectionP
         <div className="space-y-2">
           <Label>
             団体名称
-            <span className="text-muted-foreground text-sm ml-2">
+            <span className="text-muted-foreground text-sm font-normal ml-2">
               ({formData.officialName?.length ?? 0}/120)
             </span>
           </Label>
@@ -36,7 +36,7 @@ export function BasicInfoSection({ formData, updateFormData }: BasicInfoSectionP
         <div className="space-y-2">
           <Label>
             団体名称（カナ）
-            <span className="text-muted-foreground text-sm ml-2">
+            <span className="text-muted-foreground text-sm font-normal ml-2">
               ({formData.officialNameKana?.length ?? 0}/120)
             </span>
           </Label>
@@ -53,7 +53,7 @@ export function BasicInfoSection({ formData, updateFormData }: BasicInfoSectionP
         <div className="space-y-2">
           <Label>
             事務所所在地
-            <span className="text-muted-foreground text-sm ml-2">
+            <span className="text-muted-foreground text-sm font-normal ml-2">
               ({formData.officeAddress?.length ?? 0}/80)
             </span>
           </Label>
@@ -70,7 +70,7 @@ export function BasicInfoSection({ formData, updateFormData }: BasicInfoSectionP
         <div className="space-y-2">
           <Label>
             建物名等
-            <span className="text-muted-foreground text-sm ml-2">
+            <span className="text-muted-foreground text-sm font-normal ml-2">
               ({formData.officeAddressBuilding?.length ?? 0}/60)
             </span>
           </Label>

@@ -1,15 +1,14 @@
 "use client";
+import "client-only";
 
-import { useState } from "react";
+import { useId, useState } from "react";
+import { CircleNotch, MagnifyingGlass, Trash } from "@phosphor-icons/react/dist/ssr";
 import { toast } from "sonner";
-import type { PoliticalOrganization } from "@/shared/models/political-organization";
-import { PoliticalOrganizationSelect } from "@/client/components/political-organizations/PoliticalOrganizationSelect";
+import type { OrganizationTarget } from "@/server/contexts/shared/domain/models/admin-target";
+import { PageHeader } from "@/client/components/layout/PageHeader";
+import { CurrentTargetBar } from "@/client/components/layout/CurrentTargetBar";
 import {
   Button,
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
   Input,
   Label,
   Table,
@@ -25,23 +24,21 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/client/components/ui";
+import { formatAmount, formatDate } from "@/client/lib";
 import { bulkDeleteTransactionsAction } from "@/server/contexts/data-import/presentation/actions/bulk-delete-transactions";
 import type { BulkDeleteSearchResult } from "@/server/contexts/data-import/presentation/types";
 
-export function BulkDeleteTransactionsClient({
-  organizations,
-}: {
-  organizations: PoliticalOrganization[];
-}) {
-  const [selectedOrgId, setSelectedOrgId] = useState("");
+export function BulkDeleteTransactionsClient({ target }: { target: OrganizationTarget }) {
+  const transactionNosInputId = useId();
   const [transactionNosInput, setTransactionNosInput] = useState("");
   const [searchResult, setSearchResult] = useState<BulkDeleteSearchResult | null>(null);
   const [isSearching, setIsSearching] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
-  const handleSearch = async () => {
-    if (!selectedOrgId || !transactionNosInput.trim()) return;
+  const handleSearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!transactionNosInput.trim()) return;
 
     const nos = transactionNosInput
       .split(",")
@@ -54,7 +51,8 @@ export function BulkDeleteTransactionsClient({
     setSearchResult(null);
 
     const params = new URLSearchParams({
-      orgId: selectedOrgId,
+      orgId: target.organizationId,
+      year: String(target.year),
       nos: nos.join(","),
     });
     const response = await fetch(`/api/transactions/search-by-nos?${params}`);
@@ -81,138 +79,181 @@ export function BulkDeleteTransactionsClient({
     }
   };
 
+  const foundTransactions = searchResult?.success ? (searchResult.foundTransactions ?? []) : [];
+  const notFoundNos = searchResult?.success ? (searchResult.notFoundNos ?? []) : [];
+
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold">取引一括削除</h1>
+    <div>
+      <PageHeader label="Bulk Delete" title="取引一括削除" />
 
-      <Card>
-        <CardHeader>
-          <CardTitle>検索条件</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <PoliticalOrganizationSelect
-            organizations={organizations}
-            value={selectedOrgId}
-            onValueChange={(value) => {
-              setSelectedOrgId(value);
-              setSearchResult(null);
-            }}
-            required
-          />
+      <CurrentTargetBar target={target} note="の取引を削除します" />
 
-          <div className="space-y-2">
-            <Label>取引番号（カンマ区切り）</Label>
-            <Input
-              placeholder="例: 1,5,8,20"
-              value={transactionNosInput}
-              onChange={(e) => setTransactionNosInput(e.target.value)}
-            />
+      <div className="space-y-6">
+        <form
+          onSubmit={handleSearch}
+          className="max-w-[720px] rounded-lg border border-border bg-card p-7"
+        >
+          <h2 className="text-base font-bold text-foreground">検索条件</h2>
+          <div className="mt-4 grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-4">
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor={transactionNosInputId}>
+                取引番号（カンマ区切り） <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id={transactionNosInputId}
+                placeholder="例: 1,5,8,20"
+                value={transactionNosInput}
+                onChange={(e) => setTransactionNosInput(e.target.value)}
+                className="border-[1.5px] font-latin text-[13px]"
+              />
+            </div>
           </div>
 
-          <Button
-            onClick={handleSearch}
-            disabled={!selectedOrgId || !transactionNosInput.trim() || isSearching}
+          <div className="mt-6 flex justify-end">
+            <Button
+              type="submit"
+              variant="outline"
+              className="text-[13px]"
+              disabled={!transactionNosInput.trim() || isSearching}
+            >
+              {isSearching ? (
+                <>
+                  <CircleNotch aria-hidden className="animate-spin" />
+                  検索中...
+                </>
+              ) : (
+                <>
+                  <MagnifyingGlass aria-hidden />
+                  検索
+                </>
+              )}
+            </Button>
+          </div>
+        </form>
+
+        {searchResult && !searchResult.success && (
+          <div
+            role="alert"
+            className="max-w-[720px] rounded-lg border border-destructive bg-destructive-hover p-4 text-sm text-destructive"
           >
-            {isSearching ? "検索中..." : "検索"}
-          </Button>
-        </CardContent>
-      </Card>
+            エラー: {searchResult.error}
+          </div>
+        )}
 
-      {searchResult && !searchResult.success && (
-        <Card>
-          <CardContent className="pt-6">
-            <p className="text-red-600 font-medium">エラー: {searchResult.error}</p>
-          </CardContent>
-        </Card>
-      )}
-
-      {searchResult?.success && (
-        <>
-          {searchResult.notFoundNos && searchResult.notFoundNos.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-amber-600">
-                  該当なし ({searchResult.notFoundNos.length}件)
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">
+        {searchResult?.success && (
+          <>
+            {notFoundNos.length > 0 && (
+              <div className="max-w-[720px] rounded-lg border border-border bg-card p-6">
+                <h2 className="text-base font-bold text-foreground">
+                  該当なし <span className="font-latin">({notFoundNos.length}件)</span>
+                </h2>
+                <p className="mt-2 text-sm text-muted-foreground">
                   以下の取引番号は見つかりませんでした:{" "}
-                  <span className="font-mono">{searchResult.notFoundNos.join(", ")}</span>
+                  <span className="font-latin text-foreground">{notFoundNos.join(", ")}</span>
                 </p>
-              </CardContent>
-            </Card>
-          )}
-
-          {searchResult.foundTransactions && searchResult.foundTransactions.length > 0 && (
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle>削除対象 ({searchResult.foundTransactions.length}件)</CardTitle>
-                <Button variant="destructive" onClick={() => setShowConfirmDialog(true)}>
-                  削除
-                </Button>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>取引番号</TableHead>
-                      <TableHead>取引日</TableHead>
-                      <TableHead>摘要</TableHead>
-                      <TableHead className="text-right">借方金額</TableHead>
-                      <TableHead className="text-right">貸方金額</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {searchResult.foundTransactions.map((t) => (
-                      <TableRow key={t.id}>
-                        <TableCell className="font-mono">{t.transactionNo}</TableCell>
-                        <TableCell>{t.transactionDate}</TableCell>
-                        <TableCell>{t.description}</TableCell>
-                        <TableCell className="text-right">
-                          {t.debitAmount.toLocaleString()}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {t.creditAmount.toLocaleString()}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          )}
-
-          {searchResult.foundTransactions?.length === 0 &&
-            searchResult.notFoundNos?.length === 0 && (
-              <Card>
-                <CardContent className="pt-6">
-                  <p className="text-muted-foreground">該当する取引はありません。</p>
-                </CardContent>
-              </Card>
+              </div>
             )}
-        </>
-      )}
 
-      <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>取引の一括削除</DialogTitle>
-            <DialogDescription>
-              {searchResult?.foundTransactions?.length}
-              件の取引を削除します。この操作は取り消せません。
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowConfirmDialog(false)}>
-              キャンセル
-            </Button>
-            <Button variant="destructive" onClick={handleDelete} disabled={isDeleting}>
-              {isDeleting ? "削除中..." : "削除する"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            {foundTransactions.length > 0 && (
+              <div className="rounded-lg border border-border bg-card p-6">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <h2 className="text-base font-bold text-foreground">
+                    削除対象 <span className="font-latin">({foundTransactions.length}件)</span>
+                  </h2>
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    className="text-[13px]"
+                    onClick={() => setShowConfirmDialog(true)}
+                  >
+                    <Trash aria-hidden />
+                    削除
+                  </Button>
+                </div>
+                <div className="mt-4">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="hover:bg-transparent">
+                        <TableHead>取引番号</TableHead>
+                        <TableHead>取引日</TableHead>
+                        <TableHead>摘要</TableHead>
+                        <TableHead className="text-right">借方金額</TableHead>
+                        <TableHead className="text-right">貸方金額</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {foundTransactions.map((t) => (
+                        <TableRow key={t.id}>
+                          <TableCell className="font-latin text-xs text-muted-foreground">
+                            {t.transactionNo}
+                          </TableCell>
+                          <TableCell className="font-latin text-[13px]">
+                            {formatDate(t.transactionDate)}
+                          </TableCell>
+                          <TableCell className="max-w-[200px] text-xs text-muted-foreground">
+                            <div className="truncate" title={t.description || undefined}>
+                              {t.description || "-"}
+                            </div>
+                          </TableCell>
+                          <TableCell className="font-latin text-right text-[13px] font-semibold">
+                            {formatAmount(t.debitAmount)}
+                          </TableCell>
+                          <TableCell className="font-latin text-right text-[13px] font-semibold">
+                            {formatAmount(t.creditAmount)}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+            )}
+
+            {foundTransactions.length === 0 && notFoundNos.length === 0 && (
+              <div className="max-w-[720px] rounded-lg border border-border bg-card px-6 py-8 text-center">
+                <p className="text-sm text-muted-foreground">該当する取引はありません。</p>
+              </div>
+            )}
+          </>
+        )}
+
+        <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>取引の一括削除</DialogTitle>
+              <DialogDescription>
+                <span className="font-latin">{foundTransactions.length}</span>
+                件の取引を削除します。この操作は取り消せません。
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowConfirmDialog(false)}
+                disabled={isDeleting}
+              >
+                キャンセル
+              </Button>
+              <Button
+                type="button"
+                variant="destructive"
+                onClick={handleDelete}
+                disabled={isDeleting}
+              >
+                {isDeleting ? (
+                  <>
+                    <CircleNotch aria-hidden className="animate-spin" />
+                    削除中...
+                  </>
+                ) : (
+                  "削除する"
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
     </div>
   );
 }

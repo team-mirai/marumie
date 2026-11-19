@@ -1,0 +1,277 @@
+import { buildNetCategoryAggregation } from "@/server/contexts/public-finance/domain/services/net-category-aggregator";
+
+describe("buildNetCategoryAggregation", () => {
+  describe("通常の仕訳", () => {
+    it("貸方の収入科目を収入に、借方の支出科目を支出に集計する", () => {
+      const result = buildNetCategoryAggregation(
+        [
+          { account: "個人からの寄附", amount: 1000000 },
+          { account: "普通預金", amount: 800000 },
+        ],
+        [
+          { account: "普通預金", amount: 1000000 },
+          { account: "宣伝事業費", amount: 800000 },
+        ],
+      );
+
+      expect(result.income).toEqual([
+        { category: "寄附", subcategory: "個人からの寄附", totalAmount: 1000000 },
+      ]);
+      expect(result.expense).toEqual([
+        { category: "政治活動費", subcategory: "宣伝費", totalAmount: 800000 },
+      ]);
+    });
+
+    it("同じカテゴリ・サブカテゴリの科目は合算される", () => {
+      const result = buildNetCategoryAggregation(
+        [
+          { account: "個人からの寄附", amount: 1000000 },
+          { account: "個人からの寄附（特定寄附）", amount: 300000 },
+        ],
+        [],
+      );
+
+      expect(result.income).toEqual([
+        { category: "寄附", subcategory: "個人からの寄附", totalAmount: 1300000 },
+      ]);
+    });
+  });
+
+  describe("返金の仕訳", () => {
+    it("借方に来た収入科目は支出ノードにせず、同じ収入から差し引く", () => {
+      const result = buildNetCategoryAggregation(
+        [
+          { account: "個人からの寄附", amount: 1000000 },
+          { account: "普通預金", amount: 150000 },
+        ],
+        [
+          { account: "普通預金", amount: 1000000 },
+          { account: "個人からの寄附", amount: 150000 },
+        ],
+      );
+
+      expect(result.income).toEqual([
+        { category: "寄附", subcategory: "個人からの寄附", totalAmount: 850000 },
+      ]);
+      expect(result.expense).toEqual([]);
+    });
+
+    it("貸方に来た支出科目は収入ノードにせず、同じ支出から差し引く", () => {
+      const result = buildNetCategoryAggregation(
+        [
+          { account: "組織活動費", amount: 20000 },
+          { account: "普通預金", amount: 500000 },
+        ],
+        [
+          { account: "組織活動費", amount: 500000 },
+          { account: "普通預金", amount: 20000 },
+        ],
+      );
+
+      expect(result.expense).toEqual([
+        { category: "政治活動費", subcategory: "組織活動費", totalAmount: 480000 },
+      ]);
+      expect(result.income).toEqual([]);
+    });
+
+    it("返金だけの収入科目は正味がマイナスのまま返る", () => {
+      const result = buildNetCategoryAggregation(
+        [],
+        [{ account: "個人からの寄附", amount: 50000 }],
+      );
+
+      expect(result.income).toEqual([
+        { category: "寄附", subcategory: "個人からの寄附", totalAmount: -50000 },
+      ]);
+      expect(result.expense).toEqual([]);
+    });
+  });
+
+  describe("借入金", () => {
+    it("貸方の借入金（借入れ）は収入に集計する", () => {
+      const result = buildNetCategoryAggregation(
+        [{ account: "借入金", amount: 20000000 }],
+        [{ account: "普通預金", amount: 20000000 }],
+      );
+
+      expect(result.income).toEqual([{ category: "借入金", totalAmount: 20000000 }]);
+      expect(result.expense).toEqual([]);
+    });
+
+    it("借方の借入金（返済）は収入から差し引かず、政治活動費 / その他の経費として支出に集計する", () => {
+      const result = buildNetCategoryAggregation(
+        [
+          { account: "個人からの寄附", amount: 17000000 },
+          { account: "普通預金", amount: 20683013 },
+        ],
+        [
+          { account: "普通預金", amount: 17000000 },
+          { account: "借入金", amount: 20683013 },
+        ],
+      );
+
+      expect(result.income).toEqual([
+        { category: "寄附", subcategory: "個人からの寄附", totalAmount: 17000000 },
+      ]);
+      expect(result.expense).toEqual([
+        { category: "政治活動費", subcategory: "その他の経費", totalAmount: 20683013 },
+      ]);
+    });
+
+    it("同じ年度に借入れと返済がある場合も相殺せず、収入と支出の両方に計上する", () => {
+      const result = buildNetCategoryAggregation(
+        [{ account: "借入金", amount: 5000000 }],
+        [{ account: "借入金", amount: 3000000 }],
+      );
+
+      expect(result.income).toEqual([{ category: "借入金", totalAmount: 5000000 }]);
+      expect(result.expense).toEqual([
+        { category: "政治活動費", subcategory: "その他の経費", totalAmount: 3000000 },
+      ]);
+    });
+
+    it("返済額が借入額を上回っても、借入金収入はグロスのまま正の値で残る", () => {
+      const result = buildNetCategoryAggregation(
+        [
+          { account: "借入金", amount: 3000000 },
+          { account: "普通預金", amount: 5000000 },
+        ],
+        [
+          { account: "普通預金", amount: 3000000 },
+          { account: "借入金", amount: 5000000 },
+        ],
+      );
+
+      expect(result.income).toEqual([{ category: "借入金", totalAmount: 3000000 }]);
+      expect(result.expense).toEqual([
+        { category: "政治活動費", subcategory: "その他の経費", totalAmount: 5000000 },
+      ]);
+    });
+
+    it("返済は「その他の経費」科目の支出と同じ項目に合算される", () => {
+      const result = buildNetCategoryAggregation(
+        [{ account: "普通預金", amount: 3100000 }],
+        [
+          { account: "その他の経費", amount: 100000 },
+          { account: "借入金", amount: 3000000 },
+        ],
+      );
+
+      expect(result.expense).toEqual([
+        { category: "政治活動費", subcategory: "その他の経費", totalAmount: 3100000 },
+      ]);
+    });
+
+    it("返済があっても借入金以外の収入科目の返金は従来どおり収入から差し引く", () => {
+      const result = buildNetCategoryAggregation(
+        [{ account: "個人からの寄附", amount: 1000000 }],
+        [
+          { account: "個人からの寄附", amount: 200000 },
+          { account: "借入金", amount: 3000000 },
+        ],
+      );
+
+      expect(result.income).toEqual([
+        { category: "寄附", subcategory: "個人からの寄附", totalAmount: 800000 },
+      ]);
+      expect(result.expense).toEqual([
+        { category: "政治活動費", subcategory: "その他の経費", totalAmount: 3000000 },
+      ]);
+    });
+
+    it("friendly-category モードでは返済も政治活動費に積み、タグを subcategory にする", () => {
+      const result = buildNetCategoryAggregation(
+        [{ account: "普通預金", tag: "", amount: 20683013 }],
+        [{ account: "借入金", tag: "借入返済", amount: 20683013 }],
+        { useTagAsSubcategory: true },
+      );
+
+      expect(result.income).toEqual([]);
+      expect(result.expense).toEqual([
+        { category: "政治活動費", subcategory: "借入返済", totalAmount: 20683013 },
+      ]);
+    });
+  });
+
+  describe("BS科目", () => {
+    it("BS科目は収入・支出のどちらにも現れない", () => {
+      const result = buildNetCategoryAggregation(
+        [
+          { account: "普通預金", amount: 100000 },
+          { account: "未払金", amount: 30000 },
+          { account: "未払費用", amount: 20000 },
+        ],
+        [
+          { account: "仮払金", amount: 100000 },
+          { account: "立替金", amount: 30000 },
+          { account: "未収入金", amount: 20000 },
+        ],
+      );
+
+      expect(result.income).toEqual([]);
+      expect(result.expense).toEqual([]);
+    });
+  });
+
+  describe("friendly-category モード", () => {
+    it("subcategory をタグで置き換えたうえで正味を計算する", () => {
+      const result = buildNetCategoryAggregation(
+        [
+          { account: "個人からの寄附", tag: "寄附", amount: 1000000 },
+          { account: "普通預金", tag: "", amount: 150000 },
+        ],
+        [
+          { account: "普通預金", tag: "寄附", amount: 1000000 },
+          { account: "個人からの寄附", tag: "寄附", amount: 150000 },
+        ],
+        { useTagAsSubcategory: true },
+      );
+
+      expect(result.income).toEqual([
+        { category: "寄附", subcategory: "寄附", totalAmount: 850000 },
+      ]);
+      expect(result.expense).toEqual([]);
+    });
+
+    it("タグが空文字の場合は subcategory なしとして扱う", () => {
+      const result = buildNetCategoryAggregation(
+        [{ account: "個人からの寄附", tag: "", amount: 1000000 }],
+        [],
+        { useTagAsSubcategory: true },
+      );
+
+      expect(result.income).toEqual([{ category: "寄附", totalAmount: 1000000 }]);
+    });
+
+    it("タグが異なれば別の項目として集計する", () => {
+      const result = buildNetCategoryAggregation(
+        [
+          { account: "宣伝事業費", tag: "広報", amount: 10000 },
+          { account: "普通預金", tag: "", amount: 300000 },
+        ],
+        [
+          { account: "宣伝事業費", tag: "イベント", amount: 300000 },
+          { account: "普通預金", tag: "広報", amount: 10000 },
+        ],
+        { useTagAsSubcategory: true },
+      );
+
+      expect(result.expense).toEqual([
+        { category: "政治活動費", subcategory: "広報", totalAmount: -10000 },
+        { category: "政治活動費", subcategory: "イベント", totalAmount: 300000 },
+      ]);
+    });
+  });
+
+  describe("未知の科目", () => {
+    it("PL・BSどちらにも無い科目は現れた側の項目として扱う", () => {
+      const result = buildNetCategoryAggregation(
+        [{ account: "未知の収入", amount: 1000 }],
+        [{ account: "未知の支出", amount: 2000 }],
+      );
+
+      expect(result.income).toEqual([{ category: "未知の収入", totalAmount: 1000 }]);
+      expect(result.expense).toEqual([{ category: "未知の支出", totalAmount: 2000 }]);
+    });
+  });
+});

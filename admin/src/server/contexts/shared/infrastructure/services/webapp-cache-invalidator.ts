@@ -1,5 +1,34 @@
 import type { ICacheInvalidator } from "@/server/contexts/shared/domain/services/cache-invalidator.interface";
 
+/** 開発用に http を許可する loopback ホスト（IPv6 は URL.hostname が角括弧付きで返す） */
+const LOOPBACK_HOSTNAMES = ["localhost", "127.0.0.1", "[::1]"];
+
+/**
+ * リフレッシュトークンを平文で送らないよう、宛先 URL が https（または開発用 loopback の http）であることを検証する
+ */
+function assertSecureWebappUrl(webappUrl: string): void {
+  let url: URL;
+  try {
+    url = new URL(webappUrl);
+  } catch {
+    throw new Error(
+      `WEBAPP_URL (${webappUrl}) を URL として解釈できないため、ウェブアプリのキャッシュをクリアできません`,
+    );
+  }
+
+  if (url.protocol === "https:") {
+    return;
+  }
+
+  if (url.protocol === "http:" && LOOPBACK_HOSTNAMES.includes(url.hostname)) {
+    return;
+  }
+
+  throw new Error(
+    `WEBAPP_URL (${webappUrl}) が https ではないため、リフレッシュトークンを送信できません。本番環境では https の URL を設定してください`,
+  );
+}
+
 /**
  * webapp のキャッシュを HTTP API 経由で無効化する実装
  */
@@ -15,6 +44,8 @@ export class WebappCacheInvalidator implements ICacheInvalidator {
         "DATA_REFRESH_TOKEN が設定されていないため、ウェブアプリのキャッシュをクリアできません",
       );
     }
+
+    assertSecureWebappUrl(this.webappUrl);
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 5000); // 5秒タイムアウト

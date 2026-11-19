@@ -5,7 +5,8 @@ import "server-only";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/server/contexts/shared/infrastructure/prisma";
 import { PrismaCounterpartRepository } from "@/server/contexts/report/infrastructure/repositories/prisma-counterpart.repository";
-import { DeleteCounterpartUsecase } from "@/server/contexts/report/application/usecases/manage-counterpart-usecase";
+import { DeleteCounterpartUsecase } from "@/server/contexts/report/application/usecases/delete-counterpart-usecase";
+import { requireRole } from "@/server/contexts/auth/presentation/loaders/require-role";
 
 interface DeleteCounterpartActionResult {
   success: boolean;
@@ -13,6 +14,8 @@ interface DeleteCounterpartActionResult {
 }
 
 export async function deleteCounterpartAction(id: string): Promise<DeleteCounterpartActionResult> {
+  await requireRole("political_fund");
+
   try {
     const repository = new PrismaCounterpartRepository(prisma);
     const usecase = new DeleteCounterpartUsecase(repository);

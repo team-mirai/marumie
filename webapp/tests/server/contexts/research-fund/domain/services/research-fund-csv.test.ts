@@ -1,0 +1,119 @@
+import type { ResearchFundExpenseView } from "@/server/contexts/research-fund/domain/models/research-fund-page";
+import {
+  buildResearchFundCsv,
+  buildResearchFundCsvFilename,
+  RESEARCH_FUND_CSV_HEADERS,
+} from "@/server/contexts/research-fund/domain/services/research-fund-csv";
+
+function view(overrides: Partial<ResearchFundExpenseView> = {}): ResearchFundExpenseView {
+  return {
+    kind: "expense",
+    id: "1",
+    entryId: "1",
+    date: "2026-04-23",
+    month: "2026-04",
+    description: "タクシー代",
+    amount: 1200,
+    accountKey: "transportation",
+    accountLegalLabel: "⑨ 滞在費",
+    detailed: { label: "タクシー代", color: "#111111" },
+    legal: { label: "⑨ 滞在費", color: "#111111" },
+    note: null,
+    splitGroup: null,
+    groupId: null,
+    hasReceipt: false,
+    receiptReady: false,
+    receiptKind: null,
+    ...overrides,
+  };
+}
+
+describe("buildResearchFundCsv", () => {
+  it("完了条件の列を順番どおりに出す", () => {
+    const [header] = buildResearchFundCsv([]).split("\n");
+
+    expect(header).toBe(
+      '"日付","入出金","詳細の区分","法律上の区分","項目","金額","特記事項"');
+    expect(RESEARCH_FUND_CSV_HEADERS).toHaveLength(7);
+  });
+
+  it("支出1件を1行に書き出す", () => {
+    const csv = buildResearchFundCsv([
+      view({
+        date: "2026-04-23",
+        detailed: { label: "文房具・備品", color: "#111111" },
+        legal: { label: "③ 備品・消耗品費", color: "#111111" },
+        description: "ボールペン",
+        amount: 330,
+        note: "会派で按分",
+        splitGroup: "order-1",
+        hasReceipt: true,
+        receiptReady: true,
+      }),
+    ]);
+
+    expect(csv.split("\n")[1]).toBe(
+      '"2026-04-23","出金","文房具・備品","③ 備品・消耗品費","ボールペン","330","会派で按分"',
+    );
+  });
+
+  it("特記事項が無ければ空欄にする", () => {
+    const csv = buildResearchFundCsv([view({ note: null })]);
+
+    expect(csv.split("\n")[1]).toBe(
+      '"2026-04-23","出金","タクシー代","⑨ 滞在費","タクシー代","1200",""',
+    );
+  });
+
+  it("支給は「入金」として書き出し、CSV だけで入金か出金かを見分けられる", () => {
+    const csv = buildResearchFundCsv([
+      view({
+        kind: "grant",
+        date: "2026-05-01",
+        detailed: { label: "支給（入金）", color: "#238778" },
+        legal: { label: "支給（入金）", color: "#238778" },
+        description: "調査研究広報滞在費 5月分",
+        amount: 1_000_000,
+      }),
+    ]);
+
+    expect(csv.split("\n")[1]).toBe(
+      '"2026-05-01","入金","支給（入金）","支給（入金）","調査研究広報滞在費 5月分","1000000",""',
+    );
+  });
+
+  it("ダブルクォートを含む値をエスケープする", () => {
+    const csv = buildResearchFundCsv([view({ description: '書籍「"AI"入門」' })]);
+
+    expect(csv).toContain('"書籍「""AI""入門」"');
+  });
+
+  it("カンマや改行を含む値でも列がずれない", () => {
+    const csv = buildResearchFundCsv([view({ note: "打ち合わせ, 資料作成" })]);
+
+    expect(csv.split("\n")[1]).toContain('"打ち合わせ, 資料作成"');
+    // 区切りのカンマだけで数えると列が増えてしまうので、行は増えない
+    expect(csv.split("\n")).toHaveLength(2);
+  });
+
+  it("渡された順序をそのまま保つ（並べ替えは明細の組み立て側の責務）", () => {
+    const csv = buildResearchFundCsv([
+      view({ id: "1", description: "先頭" }),
+      view({ id: "2", description: "2番目" }),
+    ]);
+
+    const rows = csv.split("\n");
+    expect(rows[1]).toContain("先頭");
+    expect(rows[2]).toContain("2番目");
+  });
+
+  it("支出が無ければヘッダーだけを返す", () => {
+    expect(buildResearchFundCsv([]).split("\n")).toHaveLength(1);
+  });
+});
+
+describe("buildResearchFundCsvFilename", () => {
+  it("議員の slug と年度からファイル名を作る", () => {
+    expect(buildResearchFundCsvFilename("mineshima", 2026)).toBe("research_fund_mineshima_2026.csv");
+  });
+});

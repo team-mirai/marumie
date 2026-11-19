@@ -1,10 +1,14 @@
 import { CreatePoliticalOrganizationUsecase } from "@/server/contexts/shared/application/usecases/create-political-organization-usecase";
+import { UpdatePoliticalOrganizationUsecase } from "@/server/contexts/shared/application/usecases/update-political-organization-usecase";
 import { DeletePoliticalOrganizationUsecase } from "@/server/contexts/shared/application/usecases/delete-political-organization-usecase";
 import type { IPoliticalOrganizationRepository } from "@/server/contexts/shared/domain/repositories/political-organization-repository.interface";
 import type { PoliticalOrganization } from "@/shared/models/political-organization";
+import type { ICacheInvalidator } from "@/server/contexts/shared/domain/services/cache-invalidator.interface";
+import { PoliticalOrganizationInputError } from "@/server/contexts/shared/domain/errors/political-organization-input-error";
 
 describe("Political Organization Usecases", () => {
   let mockRepository: jest.Mocked<IPoliticalOrganizationRepository>;
+  let cacheInvalidator: jest.Mocked<ICacheInvalidator>;
 
   const createMockOrganization = (overrides: Partial<PoliticalOrganization> = {}): PoliticalOrganization => ({
     id: "1",
@@ -12,6 +16,9 @@ describe("Political Organization Usecases", () => {
     slug: "test-org",
     orgName: "テスト政治団体正式名称",
     description: "テスト用の政治団体です",
+    websiteUrl: null,
+    snsUrls: [],
+    photoPath: null,
     createdAt: new Date("2024-01-01"),
     updatedAt: new Date("2024-01-01"),
     ...overrides,
@@ -23,9 +30,11 @@ describe("Political Organization Usecases", () => {
       findById: jest.fn(),
       create: jest.fn(),
       update: jest.fn(),
+      setPhotoPath: jest.fn(),
       delete: jest.fn(),
       countTransactions: jest.fn(),
     };
+    cacheInvalidator = { invalidateWebappCache: jest.fn().mockResolvedValue(undefined) };
   });
 
   describe("CreatePoliticalOrganizationUsecase", () => {
@@ -91,6 +100,167 @@ describe("Political Organization Usecases", () => {
       const usecase = new CreatePoliticalOrganizationUsecase(mockRepository);
 
       await expect(usecase.execute("テスト政治団体", "test-org")).rejects.toThrow("Failed to create organization: Database error");
+    });
+  });
+
+  describe("UpdatePoliticalOrganizationUsecase", () => {
+    const basics = { displayName: "テスト政治団体", slug: "test-org" };
+
+    it("公式サイト・SNS を整えて保存する", async () => {
+      mockRepository.update.mockResolvedValue(createMockOrganization());
+
+      await new UpdatePoliticalOrganizationUsecase(mockRepository, cacheInvalidator).execute(BigInt(1), {
+        ...basics,
+        websiteUrl: " https://example.jp ",
+        snsUrls: [" https://x.com/team_mirai ", "", "https://www.youtube.com/@team_mirai"],
+      });
+
+      expect(mockRepository.update).toHaveBeenCalledWith(BigInt(1), {
+        ...basics,
+        websiteUrl: "https://example.jp",
+        snsUrls: ["https://x.com/team_mirai", "https://www.youtube.com/@team_mirai"],
+      });
+    });
+
+    it("保存したら webapp のキャッシュを消す", async () => {
+      const updated = createMockOrganization();
+      mockRepository.update.mockResolvedValue(updated);
+
+      await expect(
+        new UpdatePoliticalOrganizationUsecase(mockRepository, cacheInvalidator).execute(
+          BigInt(1),
+          basics,
+        ),
+      ).resolves.toEqual({ organization: updated, cacheWarning: null });
+      expect(cacheInvalidator.invalidateWebappCache).toHaveBeenCalledTimes(1);
+    });
+
+    it("キャッシュを消せなくても保存は成功にして警告を返す", async () => {
+      const updated = createMockOrganization();
+      mockRepository.update.mockResolvedValue(updated);
+      cacheInvalidator.invalidateWebappCache.mockRejectedValue(new Error("接続に失敗しました"));
+
+      await expect(
+        new UpdatePoliticalOrganizationUsecase(mockRepository, cacheInvalidator).execute(
+          BigInt(1),
+          basics,
+        ),
+      ).resolves.toEqual({ organization: updated, cacheWarning: "接続に失敗しました" });
+    });
+
+    it("公式サイト・SNS が未入力でも保存できる", async () => {
+      mockRepository.update.mockResolvedValue(createMockOrganization());
+
+      await new UpdatePoliticalOrganizationUsecase(mockRepository, cacheInvalidator).execute(BigInt(1), {
+        ...basics,
+        websiteUrl: "",
+        snsUrls: [],
+      });
+
+      expect(mockRepository.update).toHaveBeenCalledWith(BigInt(1), {
+        ...basics,
+        websiteUrl: "",
+        snsUrls: [],
+      });
+    });
+
+    it("公式サイト・SNS を渡さなければそのまま保存する", async () => {
+      mockRepository.update.mockResolvedValue(createMockOrganization());
+
+      await new UpdatePoliticalOrganizationUsecase(mockRepository, cacheInvalidator).execute(BigInt(1), basics);
+
+      expect(mockRepository.update).toHaveBeenCalledWith(BigInt(1), basics);
+    });
+
+    it("公式サイトだけを渡したら公式サイトだけを保存する", async () => {
+      mockRepository.update.mockResolvedValue(createMockOrganization());
+
+      await new UpdatePoliticalOrganizationUsecase(mockRepository, cacheInvalidator).execute(BigInt(1), {
+        ...basics,
+        websiteUrl: " https://example.jp ",
+      });
+
+      expect(mockRepository.update).toHaveBeenCalledWith(BigInt(1), {
+        ...basics,
+        websiteUrl: "https://example.jp",
+      });
+    });
+
+    it("SNS だけを渡したら SNS だけを保存する", async () => {
+      mockRepository.update.mockResolvedValue(createMockOrganization());
+
+      await new UpdatePoliticalOrganizationUsecase(mockRepository, cacheInvalidator).execute(BigInt(1), {
+        ...basics,
+        snsUrls: ["", " https://x.com/team_mirai "],
+      });
+
+      expect(mockRepository.update).toHaveBeenCalledWith(BigInt(1), {
+        ...basics,
+        snsUrls: ["https://x.com/team_mirai"],
+      });
+    });
+
+    it("SNS だけを渡しても不正な URL なら保存しない", async () => {
+      await expect(
+        new UpdatePoliticalOrganizationUsecase(mockRepository, cacheInvalidator).execute(BigInt(1), {
+          ...basics,
+          snsUrls: ["ftp://example.jp"],
+        }),
+      ).rejects.toThrow(PoliticalOrganizationInputError);
+      expect(mockRepository.update).not.toHaveBeenCalled();
+    });
+
+    it("公式サイトの URL が不正なら保存しない", async () => {
+      await expect(
+        new UpdatePoliticalOrganizationUsecase(mockRepository, cacheInvalidator).execute(BigInt(1), {
+          ...basics,
+          websiteUrl: "javascript:alert(1)",
+          snsUrls: [],
+        }),
+      ).rejects.toThrow("公式サイトの URL を正しく入力してください");
+      expect(mockRepository.update).not.toHaveBeenCalled();
+    });
+
+    it("SNS の URL が不正なら何件目かを示して保存しない", async () => {
+      await expect(
+        new UpdatePoliticalOrganizationUsecase(mockRepository, cacheInvalidator).execute(BigInt(1), {
+          ...basics,
+          websiteUrl: "",
+          snsUrls: ["https://x.com/team_mirai", "not a url"],
+        }),
+      ).rejects.toThrow("SNS の URL（2件目）を正しく入力してください");
+      expect(mockRepository.update).not.toHaveBeenCalled();
+    });
+
+    it("型の合わない入力は保存しない", async () => {
+      await expect(
+        new UpdatePoliticalOrganizationUsecase(mockRepository, cacheInvalidator).execute(BigInt(1), {
+          ...basics,
+          websiteUrl: "",
+          snsUrls: [1 as unknown as string],
+        }),
+      ).rejects.toThrow("公式サイト・SNS の入力内容を確認してください");
+    });
+
+    it("表示名がない場合はエラーを返す", async () => {
+      await expect(
+        new UpdatePoliticalOrganizationUsecase(mockRepository, cacheInvalidator).execute(BigInt(1), {
+          ...basics,
+          displayName: " ",
+        }),
+      ).rejects.toThrow("表示名は必須です");
+    });
+
+    it("リポジトリのエラーは包んで投げる", async () => {
+      mockRepository.update.mockRejectedValue(new Error("Database error"));
+
+      await expect(
+        new UpdatePoliticalOrganizationUsecase(mockRepository, cacheInvalidator).execute(BigInt(1), basics),
+      ).rejects.toThrow("Failed to update political organization: Database error");
+      await expect(
+        new UpdatePoliticalOrganizationUsecase(mockRepository, cacheInvalidator).execute(BigInt(1), basics),
+      ).rejects.not.toThrow(PoliticalOrganizationInputError);
+      expect(cacheInvalidator.invalidateWebappCache).not.toHaveBeenCalled();
     });
   });
 

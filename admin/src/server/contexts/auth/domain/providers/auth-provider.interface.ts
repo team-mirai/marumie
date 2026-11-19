@@ -51,6 +51,16 @@ export interface AuthProvider {
   exchangeCodeForSession(code: string): Promise<AuthSession>;
 
   /**
+   * OAuth プロバイダーの認可 URL を取得（リダイレクトは呼び出し元で行う）
+   * @throws {AuthError} AUTH_FAILED - 認可 URL の取得失敗
+   * @throws {AuthError} NETWORK_ERROR - ネットワークエラー
+   */
+  signInWithOAuth(
+    provider: "google",
+    options: { redirectTo: string; queryParams?: Record<string, string> },
+  ): Promise<{ url: string }>;
+
+  /**
    * パスワードリセットメールを送信
    * @throws {AuthError} RESET_EMAIL_FAILED - 送信失敗
    * @throws {AuthError} NETWORK_ERROR - ネットワークエラー

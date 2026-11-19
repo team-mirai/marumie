@@ -65,7 +65,7 @@ contexts/{コンテキスト名}/
 ├── domain/            # ドメイン層
 │   ├── models/        # ドメインモデル
 │   ├── services/      # ドメインサービス
-│   └── repositories/  # リポジトリインターフェース
+│   └── repositories/  # 外部への出口インターフェース（リポジトリ／CSVローダー／LLMゲートウェイ等）
 └── infrastructure/    # インフラストラクチャ層
     ├── repositories/  # リポジトリ実装（Prisma等）
     └── (外部連携)     # mf/, llm/ など
@@ -76,18 +76,26 @@ contexts/{コンテキスト名}/
 ```
 ✓ 許可される依存:
   - Presentation → Application
-  - Presentation → Infrastructure（リポジトリ実装をインスタンス化するため）
+  - Presentation → Infrastructure（リポジトリ実装・外部サービス実装をインスタンス化するため）
   - Application → Domain（インターフェースのみ）
-  - Application → Infrastructure（外部サービスのみ）
   - Infrastructure → Domain（インターフェース実装のため）
   - Domain → Domain（同一コンテキスト内のみ）
 
 ✗ 禁止される依存:
+  - Application → Infrastructure（型参照も含めて禁止）
+  - Application → Presentation
   - Domain → Application
   - Domain → Presentation
   - Domain → Infrastructure（直接実装への依存）
   - Infrastructure → Application
+  - Infrastructure → Presentation
 ```
+
+**Application → Infrastructure が禁止される理由**: CSVローダーやLLMゲートウェイのような外部サービスも、
+実装を直接参照すると Usecase から差し替えられなくなり、テストで実物を動かさざるを得なくなる。
+外部サービスのインターフェースは `domain/repositories/` に置き、Usecase はそのインターフェースだけに依存する。
+実装のインスタンス化は Presentation 層（actions / loaders）で行い、コンストラクタ経由で注入する。
+外部形式の生データ型（`MfCsvRecord`、`DonorCsvRecord` 等）も同様に `domain/models/` に置く。
 
 ### 3.2.1 クライアント層（UI）からの依存ルール
 
@@ -126,9 +134,11 @@ contexts/{コンテキスト名}/
 ### 4.1 Presentation層（loaders / actions）
 
 #### loaders
-- **責務**: サーバーコンポーネントからのデータ取得、キャッシング
-- **実装**: `unstable_cache` でラップし、リポジトリとUsecaseを組み立てる
-- **キャッシュキー**: 明示的に指定する
+- **責務**: サーバーコンポーネントからのデータ取得（必要な場合のみキャッシング）
+- **実装**: リポジトリとUsecaseを組み立てて呼び出す
+- **キャッシュ**: admin（認証必須・低トラフィック）では原則 `unstable_cache` を使わず DB を直接読む。
+  webapp（公開・高トラフィック）などでキャッシュが本当に必要な場合のみ `unstable_cache` でラップし、
+  キャッシュキーと `tags` を明示する（詳細は [6.4 キャッシング](#64-キャッシング)）
 
 #### actions
 - **責務**: フォーム送信、データ更新、バリデーション、キャッシュ無効化
@@ -145,6 +155,91 @@ contexts/{コンテキスト名}/
   - 複数ステップ: CSVロード → 変換 → バリデーション → 統計計算
   - バリデーション＋永続化: 分類 → bulk操作 → キャッシュ無効化
 - **エラー**: 詳細なエラーメッセージでラップして投げる
+
+##### Usecase の形（必須）
+
+1. **1 ファイルに 1 クラス。** 1 つのクラスに複数の操作をまとめた `Manage〜Usecase` は作らない
+2. **public メソッドは `execute` だけ。** constructor と private / protected メソッドは置いてよい
+3. **「この状態のエンティティにこの操作をしてよいか」の判定は Domain Model に置く。**
+   却下理由（ユーザーに見せるメッセージ）を返すのはドメインの仕事。usecase に書くのは段取りだけ
+   — 取得・ドメインの判定の呼び出し・同時更新の検出・永続化・キャッシュ無効化
+
+**なぜ**: 1 つのクラスに操作メソッドを並べると、各メソッドが同じ業務ルールを `if` で書き足すことになり、
+同じルールが 1 つのクラスの中で何か所にも重複する。実際に `ManageJournalReviewUsecase` では
+「公開中の仕訳は編集・破棄できない」という 1 つのルールが 6 か所に散っていた。
+1 クラス 1 操作に割ると、複数の操作が共有するルールを置ける場所がドメインしか無くなる。
+
+**自動検証**: `pnpm check:usecase-shape`（`pnpm verify` および CI に含まれる）が 1. と 2. を検査する。
+3. は機械的に検査できないのでレビューで見る。
+解消待ちの既存違反は [scripts/check-usecase-shape.mjs](../scripts/check-usecase-shape.mjs) の `KNOWN_VIOLATIONS` に
+列挙してあり、リファクタで解消したら該当行を 1 行消す（解消済みなのに例外が残っていると検査が落ちるので消し忘れない）。
+**新しく書く usecase をこのリストに足してはいけない。**
+
+```typescript
+// ✗ 悪い例: 操作メソッドが並び、同じ業務ルールが各メソッドに重複する
+export class ManageJournalReviewUsecase {
+  async save(bookId: string, id: string, updatedAt: string, input: JournalEdit) {
+    const entry = await this.repository.find(bookId, id);
+    if (!entry) throw new JournalReviewError("仕訳が見つかりません");
+    if (entry.status === "published")
+      throw new JournalReviewError("公開中の仕訳は編集できません"); // ← ルールがここにある
+    // ...
+  }
+
+  async discard(bookId: string, id: string, updatedAt: string) {
+    const entry = await this.repository.find(bookId, id);
+    if (!entry) throw new JournalReviewError("仕訳が見つかりません");
+    if (entry.status === "published")
+      throw new JournalReviewError("公開中の仕訳は破棄できません"); // ← 同じルールがまた増える
+    // ...
+  }
+}
+```
+
+```typescript
+// ✓ 良い例: 可否の判定と却下理由は Domain Model が返す
+// domain/models/journal-entry.ts
+export const JournalEntry = {
+  transition(
+    entry: JournalEntry,
+    nextStatus: JournalEntryStatus,
+  ): ResearchFundResult<JournalEntry> {
+    if (!allowed.some(([from, to]) => from === entry.status && to === nextStatus)) {
+      return invalidResearchFundResult(
+        "status",
+        RF_ERROR_CODES.INVALID_STATUS_TRANSITION,
+        "仕訳は下書きと確認済みの間、確認済みから公開済み、公開済みから確認済みへのみ変更できます",
+      );
+    }
+    return { status: "valid", value: Object.freeze({ ...entry, status: nextStatus }) };
+  },
+};
+```
+
+```typescript
+// ✓ 良い例: usecase は段取りだけを書く。public は execute だけ
+// application/usecases/revert-journal-entry-to-draft-usecase.ts
+export class RevertJournalEntryToDraftUsecase {
+  constructor(private repository: JournalReviewRepository) {}
+
+  async execute(bookId: string, id: string, updatedAt: string) {
+    const entry = await this.find(bookId, id, updatedAt);
+    // 可否の判定と却下理由はドメインが持つ
+    const result = JournalEntry.transition(entry, "draft");
+    if (result.status === "invalid") throw new JournalReviewError(result.errors[0].message);
+    await this.repository.revertToDraft(bookId, entry);
+  }
+
+  /** 取得と同時更新の検出は段取りなので usecase に置く（private） */
+  private async find(bookId: string, id: string, updatedAt: string) {
+    const entry = await this.repository.find(bookId, id);
+    if (!entry) throw new JournalReviewError("仕訳が見つかりません");
+    if (entry.updatedAt !== updatedAt)
+      throw new JournalReviewError("別の操作で更新されました。画面を再読み込みしてください");
+    return entry;
+  }
+}
+```
 
 #### Application Services（オプション）
 - **責務**: ドメインロジックに直接依存しない、アプリケーション層の処理のカプセル化
@@ -291,9 +386,30 @@ Domain層でエラーを扱う場合は、拡張エラー型とエラーコー�
 
 ### 6.4 キャッシング
 
-- **loaders**: `unstable_cache` でラップ、キャッシュキーとtagsを明示
-- **actions**: 処理成功後に `revalidateTag`/`revalidatePath` で無効化
+- **原則**: admin の loaders は `unstable_cache` を使わない。認証必須・低トラフィックの管理画面では
+  60秒キャッシュの利益がほぼ無く、更新直後に古いデータが表示される実バグの温床になる
+- **キャッシュする場合**（webapp の公開ページなど）: `unstable_cache` に必ず `tags` を付与し、
+  対応する更新アクションで `revalidateTag` を呼んで整合させる。
+  `revalidatePath` は `unstable_cache` のエントリを無効化しない（無効化は tag か revalidate 時間経過のみ）
+- **actions**: 処理成功後に `revalidatePath`（キャッシュを残す場合はあわせて `revalidateTag`）で無効化
 - **外部キャッシュ**: インターフェース経由でベストエフォート無効化
+
+### 6.5 テストの配置
+
+- **原則**: ユニットテストは `{webapp,admin}/tests/` に、`src/` と同じ階層構造で置く。
+  クライアント側（`src/client/`）のロジックも同様に `tests/client/` へ置き、コンポーネントの隣には置かない
+
+  | 実装 | テスト |
+  |---|---|
+  | `src/client/lib/format.ts` | `tests/client/lib/format.test.ts` |
+  | `src/client/components/layout/sidebar-nav.ts` | `tests/client/components/layout/sidebar-nav.test.ts` |
+  | `src/server/contexts/report/domain/services/xxx.ts` | `tests/server/contexts/report/domain/services/xxx.test.ts` |
+
+- **`src/` 配下に `*.test.ts` / `*.test.tsx` を置かない**。jest の `roots` は `tests/` のみを対象にしているため、
+  `src/` 配下のテストは収集されず、落ちていても CI では気づけない
+- **自動検証**: dependency-cruiser の `no-tests-in-src` / `no-orphan-tests-in-src` ルールが `src/` 配下のテストファイルを検出し、
+  `pnpm depcruise`（`pnpm verify` および CI に含まれる）を失敗させる
+- テストが実際に収集されているかは `pnpm --filter admin test --listTests` で確認できる
 
 ---
 
@@ -315,18 +431,23 @@ Domain層でエラーを扱う場合は、拡張エラー型とエラーコー�
 - [ ] Repositoryインターフェースはdomain層に配置されている
 - [ ] Repository実装はinfrastructure層に配置されている
 
+### Usecase の形
+- [ ] 1 ファイルに 1 クラスで、public メソッドは `execute` だけになっている
+- [ ] 「この状態でこの操作をしてよいか」の判定（却下理由を返すもの）は Domain Model にあり、usecase には段取りだけが書かれている
+
 ### Domain Model
 - [ ] ビジネスルールはドメインモデルに実装されている
 - [ ] 単一エンティティのロジックはDomain Modelに、複数エンティティのロジックはDomain Serviceに分けられている
 
 ### キャッシング
-- [ ] loadersで`unstable_cache`を使用している
+- [ ] admin の loaders で `unstable_cache` を使っていない（使う場合は `tags` を付与し、更新アクションの `revalidateTag` と整合している）
 - [ ] actionsで適切に`revalidateTag`/`revalidatePath`を呼び出している
 - [ ] 外部キャッシュの無効化はインターフェース経由で行っている
 
 ### テスタビリティ
 - [ ] UsecaseはConstructor Injectionを使用している
 - [ ] インターフェースを通じて依存を注入できる
+- [ ] テストは `tests/` に `src/` と同じ階層で置かれている（`src/` 配下に `*.test.ts` を置いていない）
 
 ---
 
@@ -344,12 +465,15 @@ pnpm depcruise
 
 | ルール | 説明 |
 |--------|------|
+| no-tests-in-src / no-orphan-tests-in-src | `src/` 配下に `*.test.ts(x)` / `*.spec.ts(x)` を置くこと禁止（テストは `tests/` に置く。6.5 参照） |
 | no-client-to-infrastructure | Client → Infrastructure 禁止 |
 | no-client-to-application | Client → Application 禁止 |
 | no-presentation-to-client | Presentation → Client 禁止 |
 | no-domain-to-application | Domain → Application 禁止 |
 | no-domain-to-presentation | Domain → Presentation 禁止 |
 | no-domain-to-infrastructure-impl | Domain → Infrastructure実装 禁止 |
+| no-application-to-infrastructure | Application → Infrastructure 禁止 |
+| no-application-to-presentation | Application → Presentation 禁止 |
 | no-infrastructure-to-application | Infrastructure → Application 禁止 |
 | no-infrastructure-to-presentation | Infrastructure → Presentation 禁止 |
 | Bounded Context間 | data-import ↔ report, auth ↔ 他コンテキスト 禁止 |

@@ -1,0 +1,224 @@
+"use server";
+import "server-only";
+import { revalidatePath } from "next/cache";
+import { requireResearchFundWriter } from "@/server/contexts/auth/presentation/loaders/require-research-fund-writer";
+import { requireJournalTarget } from "@/server/contexts/research-fund/presentation/loaders/load-journal-review";
+import { ApproveJournalEntriesUsecase } from "@/server/contexts/research-fund/application/usecases/approve-journal-entries-usecase";
+import { AssignReceiptNumbersUsecase } from "@/server/contexts/research-fund/application/usecases/assign-receipt-numbers-usecase";
+import { CreatePayeeAndLinkUsecase } from "@/server/contexts/research-fund/application/usecases/create-payee-and-link-usecase";
+import { CreateJournalEntryUsecase } from "@/server/contexts/research-fund/application/usecases/create-journal-entry-usecase";
+import { DiscardJournalEntriesUsecase } from "@/server/contexts/research-fund/application/usecases/discard-journal-entries-usecase";
+import { DiscardJournalEntryUsecase } from "@/server/contexts/research-fund/application/usecases/discard-journal-entry-usecase";
+import { RevertJournalEntriesToDraftUsecase } from "@/server/contexts/research-fund/application/usecases/revert-journal-entries-to-draft-usecase";
+import { RevertJournalEntryToDraftUsecase } from "@/server/contexts/research-fund/application/usecases/revert-journal-entry-to-draft-usecase";
+import { SaveJournalEntryUsecase } from "@/server/contexts/research-fund/application/usecases/save-journal-entry-usecase";
+import { SetJournalEntriesPayeeUsecase } from "@/server/contexts/research-fund/application/usecases/set-journal-entries-payee-usecase";
+import { SetLegalCategoryOverrideUsecase } from "@/server/contexts/research-fund/application/usecases/set-legal-category-override-usecase";
+import { SetReceiptAbsentUsecase } from "@/server/contexts/research-fund/application/usecases/set-receipt-absent-usecase";
+import { SetReceiptAbsenceReasonUsecase } from "@/server/contexts/research-fund/application/usecases/set-receipt-absence-reason-usecase";
+import { SetJournalEntriesAdvancedByUsecase } from "@/server/contexts/research-fund/application/usecases/set-journal-entries-advanced-by-usecase";
+import { SettleJournalEntriesUsecase } from "@/server/contexts/research-fund/application/usecases/settle-journal-entries-usecase";
+import { UnpublishJournalEntryUsecase } from "@/server/contexts/research-fund/application/usecases/unpublish-journal-entry-usecase";
+import { UnsettleJournalEntriesUsecase } from "@/server/contexts/research-fund/application/usecases/unsettle-journal-entries-usecase";
+import { PrismaJournalReviewRepository } from "@/server/contexts/research-fund/infrastructure/repositories/prisma-journal-review.repository";
+import { PrismaPayeeRepository } from "@/server/contexts/research-fund/infrastructure/repositories/prisma-payee.repository";
+import { PrismaReceiptNumberRepository } from "@/server/contexts/research-fund/infrastructure/repositories/prisma-receipt-number.repository";
+import {
+  JournalReviewError,
+  type JournalEdit,
+} from "@/server/contexts/research-fund/domain/models/journal-review";
+import type { Payee, PayeeFormInput } from "@/server/contexts/research-fund/domain/models/payee";
+import type { LegalCategoryOverrideInput } from "@/server/contexts/research-fund/domain/models/legal-category-override";
+import { prisma } from "@/server/contexts/shared/infrastructure/prisma";
+import { WebappCacheInvalidator } from "@/server/contexts/shared/infrastructure/services/webapp-cache-invalidator";
+
+type Mutation =
+  | { type: "create"; input: JournalEdit }
+  | { type: "save"; id: string; updatedAt: string; input: JournalEdit; approve: boolean }
+  | { type: "discard"; id: string; updatedAt: string }
+  | { type: "approve-many"; targets: readonly { id: string; updatedAt: string }[] }
+  | { type: "discard-many"; targets: readonly { id: string; updatedAt: string }[] }
+  | { type: "revert-many-to-draft"; targets: readonly { id: string; updatedAt: string }[] }
+  | { type: "unpublish"; id: string; updatedAt: string }
+  | { type: "revert-to-draft"; id: string; updatedAt: string }
+  // 立替情報は事務所内の管理情報なので、公開中の仕訳でも変更でき、公開ページのキャッシュも無効化しない。
+  | {
+      type: "set-advanced-by";
+      targets: readonly { id: string; updatedAt: string }[];
+      advancedBy: string;
+    }
+  | {
+      type: "settle-many";
+      targets: readonly { id: string; updatedAt: string }[];
+      settledAt: string;
+    }
+  | { type: "unsettle-many"; targets: readonly { id: string; updatedAt: string }[] }
+  // 支払先も議員課提出用の帳簿の情報で公開内容を変えないので、公開中の仕訳でも変更でき、キャッシュも無効化しない。
+  | {
+      type: "set-payee";
+      targets: readonly { id: string; updatedAt: string }[];
+      payeeId: string | null;
+    }
+  | {
+      type: "create-payee-and-link";
+      targets: readonly { id: string; updatedAt: string }[];
+      payee: PayeeFormInput;
+    }
+  // 徴難と徴し難かった事情も議員課提出用の帳簿の情報なので、公開中の仕訳でも変更でき、キャッシュも無効化しない。
+  | { type: "set-receipt-absent"; id: string; updatedAt: string; receiptAbsent: boolean }
+  | { type: "set-receipt-absence-reason"; id: string; updatedAt: string; reason: string }
+  // 法定区分の上書き（#1880）。公開内容を変えるので公開中の仕訳では変更できず、キャッシュも無効化しない。
+  // override が null なら上書きを外す。
+  | {
+      type: "set-legal-category-override";
+      id: string;
+      updatedAt: string;
+      override: LegalCategoryOverrideInput | null;
+    }
+  // 領収書等番号も議員課提出用の帳簿の情報なので、キャッシュは無効化しない。
+  | { type: "assign-receipt-numbers" };
+export async function mutateJournalReview(
+  politicianId: string,
+  bookId: string,
+  mutation: Mutation,
+) {
+  const user = await requireResearchFundWriter(politicianId);
+  if (!(await requireJournalTarget(politicianId, bookId)))
+    return { success: false as const, error: "現在の対象帳簿を選択し直してください" };
+  try {
+    const repository = new PrismaJournalReviewRepository(prisma);
+    let id: string | undefined;
+    // 保存後の更新時刻。画面が続けて同じ仕訳に立替者の変更などを送るときの照合に使う
+    let saved: { updatedAt: string } | undefined;
+    let approved: { approved: number; skipped: number } | undefined;
+    let discarded: number | undefined;
+    let reverted: number | undefined;
+    let cacheWarning: string | null | undefined;
+    let advance: { updated: number; advancedBy: string | null } | undefined;
+    let settlement: { settled: number; settledAt: string } | undefined;
+    let unsettled: number | undefined;
+    let payeeLink: { updated: number; payee: Payee | null } | undefined;
+    let receiptAbsent: { receiptAbsent: boolean } | undefined;
+    let receiptAbsence: { receiptAbsenceReason: string | null } | undefined;
+    let receiptNumbers: { assigned: number } | undefined;
+    if (mutation.type === "create")
+      id = await new CreateJournalEntryUsecase(repository).execute(bookId, mutation.input, user.id);
+    else if (mutation.type === "save")
+      saved = await new SaveJournalEntryUsecase(repository).execute(
+        bookId,
+        mutation.id,
+        mutation.updatedAt,
+        mutation.input,
+        mutation.approve,
+      );
+    else if (mutation.type === "discard")
+      await new DiscardJournalEntryUsecase(repository).execute(
+        bookId,
+        mutation.id,
+        mutation.updatedAt,
+      );
+    else if (mutation.type === "approve-many")
+      approved = await new ApproveJournalEntriesUsecase(repository).execute(
+        bookId,
+        mutation.targets,
+      );
+    else if (mutation.type === "discard-many")
+      ({ discarded } = await new DiscardJournalEntriesUsecase(repository).execute(
+        bookId,
+        mutation.targets,
+      ));
+    else if (mutation.type === "revert-many-to-draft")
+      ({ reverted } = await new RevertJournalEntriesToDraftUsecase(repository).execute(
+        bookId,
+        mutation.targets,
+      ));
+    else if (mutation.type === "unpublish")
+      ({ cacheWarning } = await new UnpublishJournalEntryUsecase(
+        repository,
+        new WebappCacheInvalidator(),
+      ).execute(bookId, mutation.id, mutation.updatedAt));
+    else if (mutation.type === "revert-to-draft")
+      await new RevertJournalEntryToDraftUsecase(repository).execute(
+        bookId,
+        mutation.id,
+        mutation.updatedAt,
+      );
+    else if (mutation.type === "set-advanced-by")
+      advance = await new SetJournalEntriesAdvancedByUsecase(repository).execute(
+        bookId,
+        mutation.targets,
+        mutation.advancedBy,
+      );
+    else if (mutation.type === "settle-many")
+      settlement = await new SettleJournalEntriesUsecase(repository).execute(
+        bookId,
+        mutation.targets,
+        mutation.settledAt,
+      );
+    else if (mutation.type === "unsettle-many")
+      ({ unsettled } = await new UnsettleJournalEntriesUsecase(repository).execute(
+        bookId,
+        mutation.targets,
+      ));
+    else if (mutation.type === "set-payee")
+      payeeLink = await new SetJournalEntriesPayeeUsecase(
+        repository,
+        new PrismaPayeeRepository(prisma),
+      ).execute(bookId, mutation.targets, mutation.payeeId);
+    else if (mutation.type === "create-payee-and-link")
+      payeeLink = await new CreatePayeeAndLinkUsecase(repository).execute(
+        bookId,
+        mutation.targets,
+        mutation.payee,
+      );
+    else if (mutation.type === "set-receipt-absent")
+      receiptAbsent = await new SetReceiptAbsentUsecase(repository).execute(
+        bookId,
+        mutation.id,
+        mutation.updatedAt,
+        mutation.receiptAbsent,
+      );
+    else if (mutation.type === "set-receipt-absence-reason")
+      receiptAbsence = await new SetReceiptAbsenceReasonUsecase(repository).execute(
+        bookId,
+        mutation.id,
+        mutation.updatedAt,
+        mutation.reason,
+      );
+    else if (mutation.type === "set-legal-category-override")
+      saved = await new SetLegalCategoryOverrideUsecase(repository).execute(
+        bookId,
+        mutation.id,
+        mutation.updatedAt,
+        mutation.override,
+        user.id,
+      );
+    else if (mutation.type === "assign-receipt-numbers")
+      receiptNumbers = await new AssignReceiptNumbersUsecase(
+        new PrismaReceiptNumberRepository(prisma),
+      ).execute(bookId);
+    else throw new JournalReviewError("操作が不正です");
+    revalidatePath("/(auth)", "layout");
+    return {
+      success: true as const,
+      id,
+      saved,
+      approved,
+      discarded,
+      reverted,
+      cacheWarning,
+      advance,
+      settlement,
+      unsettled,
+      payeeLink,
+      receiptAbsent,
+      receiptAbsence,
+      receiptNumbers,
+    };
+  } catch (error) {
+    return {
+      success: false as const,
+      error: error instanceof JournalReviewError ? error.message : "仕訳の保存に失敗しました",
+    };
+  }
+}

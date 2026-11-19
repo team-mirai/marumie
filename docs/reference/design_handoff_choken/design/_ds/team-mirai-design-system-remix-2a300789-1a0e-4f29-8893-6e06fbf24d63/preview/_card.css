@@ -1,0 +1,38 @@
+@import url("../colors_and_type.css");
+
+* { box-sizing: border-box; }
+html, body {
+  margin: 0;
+  padding: 0;
+  background: #FFFFFF;
+  font-family: var(--tm-font-jp);
+  color: var(--tm-fg);
+  -webkit-font-smoothing: antialiased;
+}
+.card {
+  width: 700px;
+  padding: 24px;
+  background: #FFFFFF;
+}
+.row { display: flex; align-items: stretch; gap: 12px; }
+.col { display: flex; flex-direction: column; gap: 8px; }
+.meta {
+  font-family: var(--tm-font-latin);
+  font-size: 11px;
+  color: var(--tm-gray-500);
+  letter-spacing: 0.04em;
+}
+.swatch {
+  flex: 1;
+  border-radius: 6px;
+  border: 1px solid rgba(0,0,0,0.06);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 10px 12px;
+  color: #000;
+  min-height: 88px;
+}
+.swatch.dark { color: #fff; }
+.swatch .name { font-weight: 700; font-size: 12px; letter-spacing: 0.02em; }
+.swatch .hex { font-family: var(--tm-font-latin); font-size: 11px; opacity: 0.75; }

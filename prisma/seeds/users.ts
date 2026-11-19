@@ -6,27 +6,26 @@ import type { Seeder } from './lib/types';
 interface UserSeedData {
   email: string;
   password: string;
-  role: 'admin' | 'user';
-  tenantMemberships: { tenantSlug: string; tenantRole: 'owner' | 'admin' | 'editor' }[];
+  roles: ('admin' | 'political_fund' | 'research_fund')[];
 }
 
 const data: UserSeedData[] = [
   {
     email: 'foo@example.com',
     password: 'foo@example.com',
-    role: 'admin',
-    tenantMemberships: [
-      { tenantSlug: 'sample-party', tenantRole: 'owner' },
-      { tenantSlug: 'e2e-test-org', tenantRole: 'owner' },
-    ],
+    roles: ['admin'],
   },
   {
+    // 政治資金担当（調査研究費の画面は使えない）
     email: 'bar@example.com',
     password: 'bar@example.com',
-    role: 'user',
-    tenantMemberships: [
-      { tenantSlug: 'sample-party', tenantRole: 'editor' },
-    ],
+    roles: ['political_fund'],
+  },
+  {
+    // 調査研究費担当（議員室の秘書を想定。政治資金系の画面は使えない）
+    email: 'baz@example.com',
+    password: 'baz@example.com',
+    roles: ['research_fund'],
   },
 ];
 
@@ -37,7 +36,7 @@ async function ensureSupabaseUser(
 ): Promise<string> {
   const existing = existingUsers.find((u) => u.email === userData.email);
   if (existing) {
-    console.log(`⏭️  Already exists: ${userData.email} (${userData.role})`);
+    console.log(`⏭️  Already exists: ${userData.email} (${userData.roles.join(', ')})`);
     return existing.id;
   }
 
@@ -51,7 +50,7 @@ async function ensureSupabaseUser(
     throw new Error(`Failed to create user ${userData.email}: ${error.message}`);
   }
 
-  console.log(`✅ Created: ${userData.email} (${userData.role})`);
+  console.log(`✅ Created: ${userData.email} (${userData.roles.join(', ')})`);
   return newUser.user.id;
 }
 
@@ -60,54 +59,29 @@ async function ensureDbUser(
   authId: string,
   userData: UserSeedData
 ): Promise<void> {
-  let user = await prisma.user.findUnique({ where: { authId } });
+  const user = await prisma.user.findUnique({ where: { authId } });
   if (!user) {
-    user = await prisma.user.create({
+    await prisma.user.create({
       data: {
         authId,
         email: userData.email,
-        role: userData.role,
+        roles: userData.roles,
       },
     });
     console.log(`✅ DB record created: ${userData.email}`);
-  }
-
-  // Create tenant memberships
-  for (const membership of userData.tenantMemberships) {
-    const tenant = await prisma.tenant.findFirst({
-      where: { slug: membership.tenantSlug },
-    });
-    if (!tenant) {
-      console.log(`⚠️  Tenant not found: ${membership.tenantSlug}, skipping membership for ${userData.email}`);
-      continue;
-    }
-
-    const existingMembership = await prisma.userTenantMembership.findUnique({
-      where: {
-        userId_tenantId: { userId: user.id, tenantId: tenant.id },
-      },
-    });
-
-    if (!existingMembership) {
-      await prisma.userTenantMembership.create({
-        data: {
-          userId: user.id,
-          tenantId: tenant.id,
-          role: membership.tenantRole,
-        },
-      });
-      console.log(`✅ Membership created: ${userData.email} -> ${membership.tenantSlug} (${membership.tenantRole})`);
-    } else {
-      console.log(`⏭️  Membership already exists: ${userData.email} -> ${membership.tenantSlug}`);
-    }
+  } else if (user.roles.join(',') !== userData.roles.join(',')) {
+    // ロールを複数持てるようにした（#1772）より前に作られたローカルのユーザーも、シードのロールに揃える
+    await prisma.user.update({ where: { authId }, data: { roles: userData.roles } });
+    console.log(`DB record roles updated: ${userData.email}`);
   }
 }
 
 function printLoginCredentials(): void {
   console.log('');
   console.log('📋 Login credentials:');
-  console.log(`   Admin: ${data[0].email} / ${data[0].password}`);
-  console.log(`   User:  ${data[1].email} / ${data[1].password}`);
+  console.log(`   Admin:          ${data[0].email} / ${data[0].password}`);
+  console.log(`   Political fund: ${data[1].email} / ${data[1].password}`);
+  console.log(`   Research fund:  ${data[2].email} / ${data[2].password}`);
   console.log(`   URL:   http://localhost:3001/login`);
 }
 

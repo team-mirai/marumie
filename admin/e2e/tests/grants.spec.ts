@@ -1,0 +1,78 @@
+import { test, expect } from "@playwright/test";
+import { clickUntil } from "../helpers/interactions";
+
+test("支給日と金額を指定して確認済登録し、二重生成を拒み、仕訳一覧に並べる", async ({ page }) => {
+  const year = new Date().getFullYear();
+  const currentMonth = new Date().getMonth() + 1;
+  const name = `e2e-grant-${Date.now()}`;
+  await page.goto("/politicians/new");
+  await page.getByLabel("氏名").fill(name);
+  await page.getByLabel("スラッグ").fill(name);
+  await page.getByLabel("当選日").fill(`${year}-01-01`);
+  await page.getByRole("button", { name: "作成", exact: true }).click();
+  await expect(page).toHaveURL("/politicians");
+  const politicianCard = page.locator('[data-slot="card"]').filter({ has: page.getByRole("heading", { name, exact: true }) });
+  await politicianCard.getByRole("link", { name: "年度帳簿" }).click();
+  await page.getByLabel(/^年度/).fill(String(year));
+  await page.getByRole("button", { name: "帳簿を作成" }).click();
+  await expect(page.getByRole("heading", { name: `${year}年度` })).toBeVisible();
+  await page.getByRole("button", { name: "現在の対象を切り替え" }).click();
+  await Promise.all([
+    page.waitForNavigation({ waitUntil: "load" }),
+    page.getByRole("button", { name: `${name}／${year}年度` }).click(),
+  ]);
+
+  await page.getByRole("link", { name: "支給の登録" }).click();
+  await expect(page.getByRole("heading", { name: "支給の登録" })).toBeVisible();
+  await expect(page.getByText("借方 普通預金 ／ 貸方 調査研究費収入")).toBeVisible();
+  await expect(page.getByText("下書きを経ずに「確認済」で作成されます")).toBeVisible();
+
+  const january = page.getByRole("listitem").filter({ hasText: "1月" }).first();
+  // 金額の初期値は自動計算の額（当選日が1/1なので当選月も満額）
+  const januaryAmount = january.getByLabel("1月分の金額");
+  await expect(januaryAmount).toHaveValue("1000000");
+  // 支給日の初期値はその月の1日（当選日が1/1なので当選月も1日）
+  const januaryDate = january.getByLabel("1月分の支給日");
+  await expect(januaryDate).toHaveValue(`${year}-01-01`);
+  // 実際の入金日に合わせて変更して登録する
+  await januaryDate.fill(`${year}-01-15`);
+  // 実際の振込額に合わせて金額も変更して登録する
+  await januaryAmount.fill("980000");
+  await clickUntil(january.getByRole("button", { name: "この月を登録" }), (options) =>
+    expect(january).toContainText("登録済み", options),
+  );
+  // 同月の二重生成は拒否される（登録済みの月にボタンは出ない）
+  await expect(january.getByRole("button", { name: "この月を登録" })).toHaveCount(0);
+  await page.reload();
+  const registeredJanuary = page.getByRole("listitem").filter({ hasText: "1月" }).first();
+  await expect(registeredJanuary).toContainText("登録済み");
+  // 登録済みの月は入力した金額で表示される
+  await expect(registeredJanuary).toContainText("¥980,000");
+  if (currentMonth < 12) {
+    await expect(page.getByRole("listitem").filter({ hasText: "12月" }).first()).toContainText("未到来");
+  }
+
+  await page.getByRole("link", { name: "仕訳の確認・編集" }).click();
+  const grantRow = page.getByRole("row").filter({ hasText: "調査研究広報滞在費 1月分" });
+  // 手入力した支給日が仕訳日として保存されている（一覧は帳簿の年度内なので年を省く）
+  await expect(grantRow).toContainText("01.15");
+  await expect(grantRow).toContainText("確認済");
+  await expect(grantRow).toContainText("支給");
+  await expect(grantRow).toContainText("980,000");
+
+  // 支給も選んで支給日だけを直せる（金額・項目名は変えられない）
+  await grantRow.click();
+  const publicGroup = page.getByRole("region", { name: "公開される内容" });
+  await expect(publicGroup).toContainText("調査研究広報滞在費 1月分");
+  await expect(page.getByLabel("金額", { exact: true })).toHaveCount(0);
+  await expect(page.getByLabel("項目名", { exact: true })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "破棄" })).toHaveCount(0);
+  await page.getByLabel("日付", { exact: true }).fill(`${year}-01-20`);
+  await page.getByRole("button", { name: "保存", exact: true }).click();
+  await expect(grantRow).toContainText("01.20");
+
+  await page.goto("/politicians");
+  await politicianCard.getByRole("button", { name: "削除", exact: true }).click();
+  await page.getByRole("button", { name: "削除する", exact: true }).click();
+  await expect(politicianCard).toHaveCount(0);
+});

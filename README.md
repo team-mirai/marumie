@@ -2,7 +2,7 @@
 
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 [![CI](https://github.com/team-mirai/marumie/actions/workflows/ci.yml/badge.svg)](https://github.com/team-mirai/marumie/actions/workflows/ci.yml)
-[![codecov](https://codecov.io/gh/team-mirai/marumie/branch/develop/graph/badge.svg)](https://codecov.io/gh/team-mirai/marumie)
+[![codecov](https://codecov.io/gh/team-mirai/marumie/branch/main/graph/badge.svg)](https://codecov.io/gh/team-mirai/marumie)
 [![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Next.js](https://img.shields.io/badge/Next.js-000000?logo=next.js&logoColor=white)](https://nextjs.org/)
 [![Prisma](https://img.shields.io/badge/Prisma-2D3748?logo=prisma&logoColor=white)](https://www.prisma.io/)
@@ -53,7 +53,7 @@ marumie/
 ├── data/             # サンプルデータ
 ├── supabase/         # Supabaseローカル開発環境設定
 ├── prisma/           # データベーススキーマ・マイグレーション
-└── docs/             # 設計ドキュメント（その時点での設計メモなので必ずしも正確ではないです）
+└── docs/             # ドキュメント（正本とスナップショットの分類は docs/README.md を参照）
 ```
 
 ### 各ディレクトリの役割
@@ -64,7 +64,7 @@ marumie/
 - **data/**: サンプルデータファイル
 - **supabase/**: Supabaseローカル開発環境の設定ファイルとテンプレート
 - **prisma/**: データベーススキーマ定義、マイグレーションファイル、シードデータ
-- **docs/**: プロジェクトの設計ドキュメント
+- **docs/**: プロジェクトのドキュメント。現行のルールを規定する「正本」と、実装当時の設計メモである「スナップショット」（`docs/old/`）に分かれています。読み方は [docs/README.md](docs/README.md) を参照してください
 
 ## 技術スタック
 
@@ -86,6 +86,24 @@ marumie/
 ## ローカル開発手順
 
 ローカル開発環境のセットアップ手順は [開発環境セットアップガイド](docs/getting-started.md) を参照してください。
+
+## 本番デプロイとリリースタグ
+
+本番デプロイは GitHub Actions の **Deploy Production** ワークフローを `main` から手動実行して行います。
+webapp / admin の両方のデプロイが成功すると、デプロイしたコミットに release tag が自動で作成・push されます（どちらかが失敗した場合はタグは付きません）。
+
+デプロイは「ビルド → `vercel promote` で本番ドメインを付け替え → ドメインが今回のデプロイを指したか検証」の順に行います（[scripts/vercel-deploy-production.sh](scripts/vercel-deploy-production.sh)）。
+CLI からのデプロイは本番ドメインが自動では付け替わらないため、promote と検証まで通って初めてデプロイ成功とみなします。
+
+- タグ名の形式: `release-YYYYMMDD-HHMMSS`（日本時間。例: `release-20260911-153012`）
+- 名前順に並べるとデプロイ順になります
+
+現在本番に出ているコミットは、最新の release tag で確認できます。
+
+```bash
+git fetch --tags
+git log -1 "$(git tag -l 'release-*' --sort=-refname | head -n 1)"
+```
 
 ## ライセンス
 

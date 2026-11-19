@@ -6,6 +6,7 @@ import { PrismaTransactionRepository } from "@/server/contexts/shared/infrastruc
 import { WebappCacheInvalidator } from "@/server/contexts/shared/infrastructure/services/webapp-cache-invalidator";
 import { SavePreviewTransactionsUsecase } from "@/server/contexts/data-import/application/usecases/save-preview-transactions-usecase";
 import type { PreviewTransaction } from "@/server/contexts/data-import/domain/models/preview-transaction";
+import { requireRole } from "@/server/contexts/auth/presentation/loaders/require-role";
 
 const transactionRepository = new PrismaTransactionRepository(prisma);
 const cacheInvalidator = new WebappCacheInvalidator();
@@ -23,10 +24,14 @@ export interface UploadCsvResponse {
   skippedCount: number;
   message: string;
   errors?: string[];
+  /** 保存はできたが webapp のキャッシュを無効化できなかったときの理由 */
+  cacheWarning?: string | null;
 }
 
 export async function uploadCsv(data: UploadCsvRequest): Promise<UploadCsvResponse> {
   "use server";
+  await requireRole("political_fund");
+
   try {
     const { validTransactions, politicalOrganizationId } = data;
 
@@ -69,6 +74,7 @@ export async function uploadCsv(data: UploadCsvRequest): Promise<UploadCsvRespon
       savedCount: result.savedCount,
       skippedCount: result.skippedCount,
       message,
+      cacheWarning: result.cacheWarning,
     };
   } catch (error) {
     console.error("Upload CSV error:", error);

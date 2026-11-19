@@ -2,9 +2,7 @@ import { test, expect } from "@playwright/test";
 
 test.describe("政治団体ページ", () => {
 	test.describe("読み込み", () => {
-		test("ルートにアクセスすると政治団体ページにリダイレクトされる", async ({
-			page,
-		}) => {
+		test("政治団体ページが正常に表示される", async ({ page }) => {
 			const errors: string[] = [];
 
 			// ページ内で発生する未キャッチ例外を収集
@@ -14,19 +12,20 @@ test.describe("政治団体ページ", () => {
 				);
 			});
 
-			await page.goto("/");
+			const response = await page.goto("/o/sample-party/2026");
 
-			// /o/{slug}/{year} にリダイレクトされることを確認
-			await expect(page).toHaveURL(/\/o\/[\w-]+\/\d{4}$/);
-			await expect(page).toHaveTitle(/みらいまる見え政治資金/);
+			expect(response?.status()).toBe(200);
+			await expect(page).toHaveTitle(/^サンプル党の収支｜まる見え政治資金｜チームみらい$/);
 
-			// 収支の流れセクションが描画されるまで待機（networkidle依存を避ける）
+			// 見出しカードが描画されるまで待機（networkidle依存を避ける）
 			await expect(
-				page.locator("#cash-flow").getByText("収支の流れ"),
+				page
+					.getByRole("region", { name: "政党情報" })
+					.getByRole("heading", { level: 1, name: "サンプル党の収支" }),
 			).toBeVisible();
 			// サンキーチャート（SVG）が描画されるまで待機
 			await expect(
-				page.locator("#cash-flow").locator('[role="img"][aria-label="政治資金の収支フロー図"]'),
+				page.locator("#cash-flow").locator('[role="group"][aria-label="政治資金の収支フロー図"]'),
 			).toBeVisible();
 
 			// 実行時エラーが発生していないことを確認
@@ -34,13 +33,6 @@ test.describe("政治団体ページ", () => {
 				errors,
 				`以下のエラーが発生しました:\n${errors.join("\n")}`,
 			).toHaveLength(0);
-		});
-
-		test("政治団体ページが正常に表示される", async ({ page }) => {
-			const response = await page.goto("/o/sample-party/2026");
-
-			expect(response?.status()).toBe(200);
-			await expect(page).toHaveTitle(/サンプル党.*みらいまる見え政治資金/);
 		});
 
 		test("年度なしのURLはデフォルト年度にリダイレクトされる", async ({
@@ -61,61 +53,398 @@ test.describe("政治団体ページ", () => {
 			await expect(page).toHaveURL(/\/o\/[\w-]+\/2026$/);
 			await expect(page).not.toHaveURL(/non-existent-org/);
 		});
-
-		test("収支の流れセクションが表示される", async ({ page }) => {
-			await page.goto("/o/sample-party/2026");
-
-			// 収支の流れセクションが存在することを確認（メインコンテンツ内のセクション）
-			await expect(page.locator("#cash-flow").getByText("収支の流れ")).toBeVisible();
-		});
 	});
 
-	test.describe("政治団体・年度セレクター", () => {
-		test("セレクターをクリックするとシートが開く", async ({ page }) => {
-			await page.goto("/o/sample-party/2026");
-
-			// セレクターボタンをクリック
-			const selectorButton = page.getByRole("button", { name: /サンプル党/ });
-			await selectorButton.click();
-
-			// ドロップダウンが開いて選択肢が表示される
-			await expect(page.getByText("表示する団体名")).toBeVisible();
+	test.describe("各セクションの表示", () => {
+		// シードの sample-party の取引はすべて 2025 年度にあるため、表示がシードの値だけで決まる 2025 年度を見る。
+		// 現在の年度を見ると「現時点での貸借対照表」など年をまたいで変わる表示に依存してしまう
+		test.beforeEach(async ({ page }) => {
+			await page.goto("/o/sample-party/2025");
 		});
 
-		test("別の政治団体を選択するとページが切り替わる", async ({ page }) => {
-			await page.goto("/o/sample-party/2026");
+		test("パンくずにトップと今のページが表示される", async ({ page }) => {
+			const breadcrumbs = page.getByRole("navigation", { name: "パンくずリスト", exact: true });
 
-			// セレクターを開く
-			const selectorButton = page.getByRole("button", { name: /サンプル党/ });
-			await selectorButton.click();
-
-			// シート内の選択肢をクリック（E2Eテスト団体が存在する場合）
-			const options = page.locator(
-				'button:has-text("E2Eテスト団体")',
+			await expect(breadcrumbs.getByRole("link", { name: "トップ" })).toHaveAttribute(
+				"href",
+				"/",
 			);
-			const optionCount = await options.count();
+			await expect(breadcrumbs.getByText("サンプル党の収支・2025年")).toHaveAttribute(
+				"aria-current",
+				"page",
+			);
+		});
 
-			if (optionCount > 0) {
-				await options.first().click();
-				await expect(page).toHaveURL("/o/e2e-test-org/2026");
-			} else {
-				// E2Eテスト団体がない場合はスキップ
-				test.skip();
+		test("パンくずはナビの 20px 下にあって押せる高さが 44px 以上あり、フッターのすぐ上にも出る", async ({
+			page,
+		}) => {
+			const breadcrumbs = page.getByRole("navigation", { name: "パンくずリスト", exact: true });
+			const headerBottom = await page
+				.locator("header > div")
+				.first()
+				.evaluate((el) => el.getBoundingClientRect().bottom);
+			const crumbTop = await breadcrumbs.evaluate((el) => el.getBoundingClientRect().top);
+			expect(Math.round(crumbTop - headerBottom)).toBe(20);
+			const topLink = await breadcrumbs.getByRole("link", { name: "トップ" }).boundingBox();
+			expect(topLink?.height).toBeGreaterThanOrEqual(44);
+
+			const footer = page.getByRole("navigation", { name: "パンくずリスト（ページ下部）" });
+			await expect(footer.getByRole("link", { name: "トップ" })).toHaveAttribute("href", "/");
+			await expect(footer.getByText("サンプル党の収支・2025年")).toHaveAttribute("aria-current", "page");
+		});
+
+		test("見出しカードに収入・支出の総額と現金残高が表示される", async ({ page }) => {
+			const heading = page.getByRole("region", { name: "政党情報" });
+
+			await expect(heading.getByRole("heading", { level: 1, name: "サンプル党の収支" })).toBeVisible();
+			await expect(heading).toContainText("2025年");
+			await expect(heading).not.toContainText("政党・");
+			await expect(heading).toContainText(/収入総額\s*1,581万円/);
+			await expect(heading).toContainText(/支出総額\s*1,281万円/);
+			await expect(heading).toContainText(/現金残高\s*300万円/);
+			// 区分タブつきの収支の流れ（サンキー図）も同じカードにある
+			await expect(heading.getByRole("tab", { name: "詳細の区分" })).toHaveAttribute(
+				"aria-selected",
+				"true",
+			);
+			await heading.getByRole("tab", { name: "法律上の区分" }).click();
+			await expect(heading.getByRole("tab", { name: "法律上の区分" })).toHaveAttribute(
+				"aria-selected",
+				"true",
+			);
+			await expect(
+				heading.locator('#cash-flow [role="group"][aria-label="政治資金の収支フロー図"]'),
+			).toBeVisible();
+		});
+
+		test("見出しカードの丸は、政治団体と同じく代表者の写真（未登録なら人型のアイコン）でロゴは出さない", async ({
+			page,
+		}) => {
+			const heading = page.getByRole("region", { name: "政党情報" });
+
+			// シードの sample-party は顔写真が未登録なので人型のアイコンになる
+			await expect(heading.locator("svg[aria-hidden='true'] circle[r='5']").first()).toBeAttached();
+			await expect(heading.locator('img[src*="team-mirai-logo"]')).toHaveCount(0);
+		});
+
+		test("収支の流れの図に列の見出し・合計・各項目の金額と割合が出て、ホバーした項目を強調する", async ({
+			page,
+		}) => {
+			const chart = page.locator('#cash-flow [role="group"][aria-label="政治資金の収支フロー図"]');
+
+			await expect(chart.getByText("収入", { exact: true })).toBeVisible();
+			await expect(chart.getByText("支出・残高", { exact: true })).toBeVisible();
+			await expect(chart.getByText("合計", { exact: true })).toBeVisible();
+			await expect(chart.getByText("1,581万円", { exact: true })).toBeVisible();
+			// 各項目は「項目名 金額（割合）」で読み上げる
+			const balance = chart.getByRole("img", { name: /^現金残高 300万円（\d+%）$/ });
+			await expect(balance).toBeVisible();
+			await expect(chart.getByText("300万円", { exact: true }).first()).toBeVisible();
+
+			// 以前のホバーの吹き出しは出さず、ホバーした項目以外を薄くする
+			await balance.hover();
+			await expect(chart).toHaveClass(/has-hover/);
+			await expect(balance).toHaveClass(/is-hot/);
+			await page.mouse.move(0, 0);
+			await expect(chart).not.toHaveClass(/has-hover/);
+		});
+
+		test("見出しカードの年の切り替えで年度が切り替わる", async ({ page }) => {
+			const years = page
+				.getByRole("region", { name: "政党情報" })
+				.getByRole("navigation", { name: "表示する年" });
+
+			await expect(years.getByRole("link", { name: "2025" })).toHaveAttribute(
+				"aria-current",
+				"page",
+			);
+			await years.getByRole("link", { name: "2026" }).click();
+
+			await expect(page).toHaveURL("/o/sample-party/2026");
+			await expect(page.getByRole("region", { name: "政党情報" })).toContainText(
+				"2026年",
+			);
+		});
+
+		test("月ごとの収支推移のグラフが描画される", async ({ page }) => {
+			const monthlyTrends = page.locator("#monthly-trends");
+
+			await expect(monthlyTrends).toContainText("サンプル党・2025年");
+			await expect(
+				monthlyTrends.getByRole("heading", {
+					name: "月ごとの収支推移",
+					exact: true,
+				}),
+			).toBeVisible();
+			const chart = monthlyTrends.getByRole("img", { name: "月ごとの収入・支出" });
+			await expect(chart).toBeVisible();
+			await expect(monthlyTrends.getByText("データがありません")).toHaveCount(0);
+			// 1月〜12月の軸と、収入・支出・収支の凡例が出ている
+			await expect(chart.locator("text").filter({ hasText: /^\d+月$/ })).toHaveText(
+				Array.from({ length: 12 }, (_, i) => `${i + 1}月`),
+			);
+			for (const legend of ["収入", "支出", "収支"]) {
+				await expect(monthlyTrends.getByText(legend, { exact: true }).first()).toBeVisible();
 			}
 		});
 
-		test("年度を切り替えるとページが切り替わる", async ({ page }) => {
-			await page.goto("/o/sample-party/2026");
+		test("SP では月ごとの収支推移のグラフを横にスクロールでき、キーボードでもフォーカスできる", async ({
+			page,
+		}) => {
+			await page.setViewportSize({ width: 390, height: 844 });
+			const region = page
+				.locator("#monthly-trends")
+				.getByRole("region", { name: "月ごとの推移のグラフ（横にスクロールできます）" });
+			await expect(region).toHaveAttribute("tabindex", "0");
+			const { scrollWidth, clientWidth } = await region.evaluate((el) => ({
+				scrollWidth: el.scrollWidth,
+				clientWidth: el.clientWidth,
+			}));
+			expect(scrollWidth).toBeGreaterThan(clientWidth);
 
-			// セレクターを開く
-			const selectorButton = page.getByRole("button", { name: /サンプル党/ });
-			await selectorButton.click();
+			await region.focus();
+			await page.keyboard.press("ArrowRight");
+			await expect.poll(() => region.evaluate((el) => el.scrollLeft)).toBeGreaterThan(0);
+		});
 
-			// 2025年ボタンをクリック
-			await page.getByRole("button", { name: "2025年" }).click();
+		test("貸借対照表に年度末時点の資産と負債が表示される", async ({ page }) => {
+			const balanceSheet = page.locator("#balance-sheet");
 
-			// URLが2025に変わることを確認
-			await expect(page).toHaveURL("/o/sample-party/2025");
+			await expect(
+				balanceSheet.getByRole("heading", { name: "貸借対照表", exact: true }),
+			).toBeVisible();
+			await expect(balanceSheet).toContainText("2025.12.31時点");
+
+			const assets = balanceSheet.getByRole("region", { name: "資産", exact: true });
+			await expect(assets).toContainText(/流動資産\s*300万円/);
+			await expect(assets).toContainText(/債務超過\s*▲100万円/);
+
+			const liabilities = balanceSheet.getByRole("region", {
+				name: "負債・純資産",
+				exact: true,
+			});
+			await expect(liabilities).toContainText(/固定負債\s*400万円/);
+		});
+
+		test("すべての出入金に新しい順の取引が表示される", async ({ page }) => {
+			const table = page
+				.locator("#transactions")
+				.locator('table[aria-label="政治資金取引一覧表"]');
+
+			await expect(table).toBeVisible();
+			await expect(table.locator("tbody tr")).toHaveCount(6);
+			await expect(table.getByRole("row", { name: /振込手数料/ })).toContainText(
+				"2025.12.31",
+			);
+			await expect(table.getByRole("row", { name: /振込手数料/ })).toContainText(
+				"-5,000",
+			);
+			await expect(table.getByRole("row", { name: /税理士報酬/ })).toContainText(
+				"-150,000",
+			);
+		});
+
+		test("セクションがデザインどおりの順で並ぶ", async ({ page }) => {
+			const order = await page.evaluate(() => {
+				const ids = ["monthly-trends", "balance-sheet", "transactions", "explanation"];
+				return ids
+					.map((id) => ({ id, top: document.getElementById(id)?.getBoundingClientRect().top }))
+					.sort((a, b) => (a.top ?? 0) - (b.top ?? 0))
+					.map(({ id }) => id);
+			});
+			expect(order).toEqual(["monthly-trends", "balance-sheet", "transactions", "explanation"]);
+			await expect(
+				page.getByRole("heading", { name: "党首もこれを見て、お金をやりくりしています" }),
+			).toBeVisible();
+			await expect(page.getByRole("link", { name: /チームみらいのnoteの記事/ })).toHaveAttribute(
+				"target",
+				"_blank",
+			);
+		});
+
+		test("共通の下部ブロック（帯・カード3枚・データについて）が表示される", async ({ page }) => {
+			await expect(
+				page.getByRole("heading", { name: /少しずつ進んでいますがまだまだです/ }),
+			).toBeVisible();
+
+			const cards = page.locator("main").getByRole("navigation", { name: "このサイトについて" });
+			await expect(cards.getByRole("link", { name: /まる見え政治資金とは？/ })).toHaveAttribute(
+				"href",
+				"/about",
+			);
+			await expect(cards.getByRole("link", { name: /よくあるご質問/ })).toHaveAttribute(
+				"target",
+				"_blank",
+			);
+			await expect(cards.getByRole("link", { name: /チームみらいについて/ })).toHaveAttribute(
+				"href",
+				"https://team-mir.ai/",
+			);
+
+			const notes = page.getByRole("region", { name: "データについて" });
+			for (const title of ["データの出典", "免責事項"]) {
+				await expect(notes.getByRole("heading", { name: title, exact: true })).toBeVisible();
+			}
+		});
+
+		test("調研費のサマリー・他団体へのリンク・寄附と党員の応援カードは出ない", async ({ page }) => {
+			// ヘッダー・フッターのリンクは対象外（別 Issue）なので、本文の中だけを見る
+			const main = page.locator("main");
+			await expect(main.getByText("調研費のサマリー")).toHaveCount(0);
+			await expect(main.getByText("寄附で応援する")).toHaveCount(0);
+			await expect(main.getByText("チームみらい党員になる")).toHaveCount(0);
+			await expect(main.getByText(/「まる見え政治資金」も公開中/)).toHaveCount(0);
+			await expect(main.getByText(/これはまだ第一歩/)).toHaveCount(0);
+			await expect(main.locator("#about")).toHaveCount(0);
+		});
+	});
+
+	test.describe("政治団体（政党以外）のページ", () => {
+		// シードの e2e-test-org は政党以外の政治団体。取引はすべて 2025 年度にあり、公式サイトと SNS が登録されている
+		test.beforeEach(async ({ page }) => {
+			await page.goto("/o/e2e-test-org/2025");
+		});
+
+		test("パンくずにトップと今のページが表示される", async ({ page }) => {
+			const breadcrumbs = page.getByRole("navigation", { name: "パンくずリスト", exact: true });
+
+			await expect(breadcrumbs.getByRole("link", { name: "トップ" })).toHaveAttribute(
+				"href",
+				"/",
+			);
+			await expect(breadcrumbs.getByText("E2Eテスト団体の収支・2025年")).toHaveAttribute(
+				"aria-current",
+				"page",
+			);
+		});
+
+		test("PC では見出しカードに団体名・年・公式サイトと SNS（別タブ）が出る", async ({ page }) => {
+			const heading = page.getByRole("region", { name: "政治団体情報" });
+
+			await expect(heading).toBeVisible();
+			await expect(heading).toContainText("E2Eテスト団体");
+			await expect(heading).toContainText("E2Eテスト団体・2025年");
+
+			const site = heading.getByRole("link", { name: "E2Eテスト団体の公式サイト（別タブで開きます）" });
+			await expect(site).toHaveAttribute("href", "https://example.com/");
+			await expect(site).toHaveAttribute("target", "_blank");
+			const x = heading.getByRole("link", { name: "E2Eテスト団体のX（別タブで開きます）" });
+			await expect(x).toHaveAttribute("href", "https://x.com/example");
+			await expect(x).toHaveAttribute("target", "_blank");
+			await expect(
+				heading.getByRole("link", { name: "E2Eテスト団体のYouTube（別タブで開きます）" }),
+			).toHaveAttribute("href", "https://www.youtube.com/@example");
+		});
+
+		test("見出しカードの年の切り替えで年度が切り替わる", async ({ page }) => {
+			const years = page
+				.getByRole("region", { name: "政治団体情報" })
+				.getByRole("navigation", { name: "表示する年" });
+
+			await expect(years.getByRole("link", { name: "2025" })).toHaveAttribute(
+				"aria-current",
+				"page",
+			);
+			await years.getByRole("link", { name: "2026" }).click();
+
+			await expect(page).toHaveURL("/o/e2e-test-org/2026");
+			await expect(page.getByRole("region", { name: "政治団体情報" })).toContainText(
+				"E2Eテスト団体・2026年",
+			);
+		});
+
+		test("収支の流れに3つの金額と区分タブつきの図が出る", async ({ page }) => {
+			const cashFlow = page.locator("#cash-flow");
+
+			await expect(cashFlow).toContainText("E2Eテスト団体・2025年");
+			await expect(
+				cashFlow.getByRole("heading", { level: 2, name: "収支の流れ", exact: true }),
+			).toBeVisible();
+			// 金額は政党ページと同じ集計（サンキー図の「(仕訳中)」も支出に含める）
+			await expect(cashFlow).toContainText(/収入総額\s*5万円/);
+			await expect(cashFlow).toContainText(/支出総額\s*5万円/);
+			await expect(cashFlow).toContainText(/現金残高\s*0円/);
+			await cashFlow.getByRole("tab", { name: "法律上の区分" }).click();
+			await expect(cashFlow.getByRole("tab", { name: "法律上の区分" })).toHaveAttribute(
+				"aria-selected",
+				"true",
+			);
+			await expect(
+				cashFlow.locator('[role="group"][aria-label="政治資金の収支フロー図"]'),
+			).toBeVisible();
+		});
+
+		test("セクションがデザインどおりの順で並び、政党ページだけの帯は出ない", async ({ page }) => {
+			const order = await page.evaluate(() => {
+				const ids = ["cash-flow", "monthly-trends", "balance-sheet", "transactions", "explanation"];
+				return ids
+					.map((id) => ({ id, top: document.getElementById(id)?.getBoundingClientRect().top }))
+					.sort((a, b) => (a.top ?? 0) - (b.top ?? 0))
+					.map(({ id }) => id);
+			});
+			expect(order).toEqual([
+				"cash-flow",
+				"monthly-trends",
+				"balance-sheet",
+				"transactions",
+				"explanation",
+			]);
+			await expect(
+				page.getByRole("heading", { name: "党首もこれを見て、お金をやりくりしています" }),
+			).toHaveCount(0);
+			await expect(page.getByRole("region", { name: "政党情報" })).toHaveCount(0);
+			await expect(
+				page.locator("#transactions").locator('table[aria-label="政治資金取引一覧表"] tbody tr'),
+			).toHaveCount(2);
+		});
+
+		test("SP では一番上にプロフィールカード（団体名・正式名と年・年の切り替え）を出す", async ({
+			page,
+		}) => {
+			await page.setViewportSize({ width: 390, height: 844 });
+
+			const profile = page.getByRole("region", { name: "政治団体情報" });
+			await expect(profile).toBeVisible();
+			await expect(profile).toContainText("E2Eテスト団体");
+			await expect(profile).toContainText("E2Eテスト団体・2025年");
+			// SNS は PC の見出しカードだけに出す
+			await expect(profile.getByRole("link", { name: /公式サイト/ })).toHaveCount(0);
+			const years = profile.getByRole("navigation", { name: "表示する年" });
+			await expect(years.getByRole("link", { name: "2025" })).toHaveAttribute(
+				"aria-current",
+				"page",
+			);
+			// パンくずの直後（ページの一番上）に出る
+			const crumbBottom = await page
+				.getByRole("navigation", { name: "パンくずリスト", exact: true })
+				.evaluate((el) => el.getBoundingClientRect().bottom);
+			const profileTop = await profile.evaluate((el) => el.getBoundingClientRect().top);
+			const cashFlowTop = await page
+				.locator("#cash-flow")
+				.evaluate((el) => el.getBoundingClientRect().top);
+			expect(profileTop).toBeGreaterThan(crumbBottom);
+			expect(profileTop).toBeLessThan(cashFlowTop);
+			await expect(
+				page.locator("#cash-flow").getByRole("button", { name: "図を拡大する" }),
+			).toBeVisible();
+		});
+
+		test("SP でもトップ・政党ページと同じ縦長の図で、収支の流れを画面幅に収める", async ({
+			page,
+		}) => {
+			await page.setViewportSize({ width: 390, height: 844 });
+			const chart = page.locator('#cash-flow [role="group"][aria-label="政治資金の収支フロー図"]');
+
+			// 低めの3列の図（幅 400 の座標）ではなく、PC と同じ図の背の高い版で「合計」も出す
+			await expect(chart).not.toHaveAttribute("viewBox", /^0 0 400 /);
+			await expect(chart.getByText("収入", { exact: true })).toBeVisible();
+			await expect(chart.getByText("支出・残高", { exact: true })).toBeVisible();
+			await expect(chart.getByText("合計", { exact: true })).toBeVisible();
+			const box = await chart.boundingBox();
+			expect(box?.width ?? Number.POSITIVE_INFINITY).toBeLessThanOrEqual(390);
+			expect(
+				await page.evaluate(() => document.documentElement.scrollWidth),
+			).toBeLessThanOrEqual(390);
 		});
 	});
 
@@ -140,32 +469,42 @@ test.describe("政治団体ページ", () => {
 			const response = await page.goto("/o/sample-party/2026/transactions");
 
 			expect(response?.status()).toBe(200);
-			await expect(page).toHaveTitle(/全ての出入金.*みらいまる見え政治資金/);
+			await expect(page).toHaveTitle(/すべての出入金｜まる見え政治資金｜チームみらい$/);
+		});
+	});
+
+	test.describe("シェアしたときの画像", () => {
+		/** PNG の幅と高さ（IHDR） */
+		const pngSize = (body: Buffer) => ({
+			signature: body.subarray(1, 4).toString(),
+			width: body.readUInt32BE(16),
+			height: body.readUInt32BE(20),
 		});
 
-		test("取引一覧ページでもセレクターで団体を切り替えられる", async ({
+		test("og:image がその団体・その年の画像を指し、1200×630 の PNG が 200 で返る", async ({
 			page,
+			request,
 		}) => {
-			await page.goto("/o/sample-party/2026/transactions");
+			await page.goto("/o/sample-party/2026");
+			const ogImage = await page.locator('meta[property="og:image"]').getAttribute("content");
+			const twitterImage = await page.locator('meta[name="twitter:image"]').getAttribute("content");
+			expect(ogImage).toMatch(/\/o\/sample-party\/2026\/og-image$/);
+			expect(twitterImage).toBe(ogImage);
 
-			// セレクターを開く
-			const selectorButton = page.getByRole("button", { name: /サンプル党/ });
-			await selectorButton.click();
+			const response = await request.get("/o/sample-party/2026/og-image");
+			expect(response.status()).toBe(200);
+			expect(response.headers()["content-type"]).toBe("image/png");
+			expect(pngSize(await response.body())).toEqual({ signature: "PNG", width: 1200, height: 630 });
+		});
 
-			// シート内の選択肢をクリック
-			const options = page.locator(
-				'button:has-text("E2Eテスト団体")',
-			);
-			const optionCount = await options.count();
-
-			if (optionCount > 0) {
-				await options.first().click();
-				// URLが変更されることを確認（transactionsパスは維持）
-				await expect(page).toHaveURL("/o/e2e-test-org/2026/transactions");
-			} else {
-				// E2Eテスト団体がない場合はスキップ
-				test.skip();
-			}
+		test("データが無い団体では、トップの画像を返す", async ({ request }) => {
+			const [response, top] = await Promise.all([
+				request.get("/o/no-such-organization/2026/og-image"),
+				request.get("/social/og-top.png"),
+			]);
+			expect(response.status()).toBe(200);
+			expect(response.headers()["content-type"]).toBe("image/png");
+			expect(await response.body()).toEqual(await top.body());
 		});
 	});
 });

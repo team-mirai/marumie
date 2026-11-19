@@ -2,6 +2,7 @@ import { LoginUsecase } from "@/server/contexts/auth/application/usecases/login-
 import { AuthError } from "@/server/contexts/auth/domain/errors/auth-error";
 import type { AuthProvider } from "@/server/contexts/auth/domain/providers/auth-provider.interface";
 import type { AuthSession } from "@/server/contexts/auth/domain/models/auth-session";
+import { AuthProviderConfig } from "@/server/contexts/auth/domain/models/auth-provider-config";
 
 describe("LoginUsecase", () => {
   let mockAuthProvider: jest.Mocked<AuthProvider>;
@@ -16,6 +17,7 @@ describe("LoginUsecase", () => {
       emailConfirmedAt: "2024-01-01T00:00:00Z",
       lastSignInAt: "2024-01-01T00:00:00Z",
     },
+    signInProvider: "password",
   });
 
   beforeEach(() => {
@@ -26,9 +28,10 @@ describe("LoginUsecase", () => {
       updateUser: jest.fn(),
       setSession: jest.fn(),
       exchangeCodeForSession: jest.fn(),
+      signInWithOAuth: jest.fn(),
       resetPasswordForEmail: jest.fn(),
     };
-    usecase = new LoginUsecase(mockAuthProvider);
+    usecase = new LoginUsecase(mockAuthProvider, AuthProviderConfig.parse("password,google"));
   });
 
   describe("execute", () => {
@@ -66,6 +69,16 @@ describe("LoginUsecase", () => {
       await expect(usecase.execute("test@example.com", "password123")).rejects.toThrow(
         authError
       );
+    });
+
+    it("パスワード認証が無効な場合はAuthProviderを呼ばずに拒否する", async () => {
+      usecase = new LoginUsecase(mockAuthProvider, AuthProviderConfig.parse("google"));
+
+      await expect(usecase.execute("test@example.com", "password123")).rejects.toMatchObject({
+        name: "AuthError",
+        code: "PROVIDER_DISABLED",
+      });
+      expect(mockAuthProvider.signInWithPassword).not.toHaveBeenCalled();
     });
 
     it("AuthProvider以外のエラーはAuthErrorにラップされる", async () => {

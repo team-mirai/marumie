@@ -234,7 +234,13 @@ export const BS_CATEGORIES: Record<string, { type: "asset" | "liability" | "net_
   "立替金": {
     type: "asset"
   },
-  "未払金/未払費用": {
+  "未収入金": {
+    type: "asset"
+  },
+  "未払金": {
+    type: "liability"
+  },
+  "未払費用": {
     type: "liability"
   },
   "仮受金": {
@@ -246,3 +252,40 @@ export const BS_CATEGORIES: Record<string, { type: "asset" | "liability" | "net_
  * 現金類の科目
  */
 export const CASH_ACCOUNTS = new Set(["現金", "普通預金"]);
+
+/**
+ * 債権科目（未収入金など）
+ *
+ * 現金類でない資産科目のうち、貸借対照表の流動資産に取引の残高（借方 − 貸方）で計上するもの。
+ * 現金類は残高スナップショットで計上する。仮払金・立替金は現金の一時的な振替として扱い、残高は計上しない。
+ */
+export const RECEIVABLE_ACCOUNTS = new Set(["未収入金"]);
+
+/**
+ * 収入科目（PL科目のうち type が income のもの）
+ */
+export const INCOME_ACCOUNTS: string[] = Object.entries(PL_CATEGORIES)
+  .filter(([, mapping]) => mapping.type === "income")
+  .map(([account]) => account);
+
+/**
+ * 借入金の科目名
+ *
+ * 政治資金収支報告書では借入れを収入に、返済を支出（借入金返済）に計上する。
+ * 借方に来た借入金は収入の返金ではなく返済なので、収入から差し引かず支出として扱う。
+ */
+export const LOAN_ACCOUNT = "借入金";
+
+/**
+ * 借方に来たときに収入の返金として収入から差し引く科目（借入金を除く収入科目）
+ */
+export const REFUNDABLE_INCOME_ACCOUNTS: string[] = INCOME_ACCOUNTS.filter(
+  (account) => account !== LOAN_ACCOUNT,
+);
+
+/**
+ * 支出科目（PL科目のうち type が expense のもの）
+ */
+export const EXPENSE_ACCOUNTS: string[] = Object.entries(PL_CATEGORIES)
+  .filter(([, mapping]) => mapping.type === "expense")
+  .map(([account]) => account);

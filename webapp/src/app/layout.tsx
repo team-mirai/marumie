@@ -1,28 +1,21 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Inter, Noto_Sans, Noto_Sans_JP } from "next/font/google";
+import { Noto_Sans, Noto_Sans_JP, Poppins } from "next/font/google";
 import "./globals.css";
 import { GoogleAnalytics } from "@next/third-parties/google";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import Footer from "@/client/components/layout/footer/Footer";
 import Header from "@/client/components/layout/header/Header";
+import { SITE_DESCRIPTION, SITE_TITLE, shareMetadata } from "@/app/site-metadata";
 
-// Noto Sans JP for Japanese text with proper weights
+// ページ全体の日本語の書体（globals.css の body で指定）。太さは v9 で読み込んでいるものだけにする。
+// 600 は読み込まない（v9 でも 600 の指定は 700 で描かれる）ので、実装では font-semibold を使わず font-bold にする
 const notoSansJP = Noto_Sans_JP({
   variable: "--font-noto-sans-jp",
   subsets: ["latin"],
-  weight: ["400", "500", "700", "900"],
+  // 800：サンキー図のラベルなど。読み込まないと 900 で描かれ、デザインより太くなる
+  weight: ["400", "500", "700", "800", "900"],
   display: "swap",
   style: ["normal"],
-});
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
 });
 
 const notoSans = Noto_Sans({
@@ -33,35 +26,19 @@ const notoSans = Noto_Sans({
   preload: true,
 });
 
-const inter = Inter({
-  variable: "--font-inter",
+// 見出しカードの金額の数字（v9 の --num）。太さは 700 だけ使う
+const poppins = Poppins({
+  variable: "--font-poppins",
   subsets: ["latin"],
-  weight: ["400", "700"],
+  weight: ["700"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "みらい まる見え政治資金 - チームみらいの政治資金をオープンに",
-  description: "チームみらいの政治資金の流れを透明性を持って公開するプラットフォームです。",
-  openGraph: {
-    title: "みらい まる見え政治資金 - チームみらいの政治資金をオープンに",
-    description: "チームみらいの政治資金の流れを透明性を持って公開するプラットフォームです。",
-    images: [
-      {
-        url: "/social/og_image.png",
-        width: 1200,
-        height: 630,
-        alt: "みらい まる見え政治資金",
-      },
-    ],
-    type: "website",
-    locale: "ja_JP",
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "みらい まる見え政治資金 - チームみらいの政治資金をオープンに",
-    description: "チームみらいの政治資金の流れを透明性を持って公開するプラットフォームです。",
-    images: ["/social/og_image.png"],
-  },
+  // 下層ページは「チームみらいの収支｜まる見え政治資金｜チームみらい」のように、ページ名を前に付ける
+  title: { default: SITE_TITLE, template: `%s｜${SITE_TITLE}` },
+  description: SITE_DESCRIPTION,
+  ...shareMetadata(),
 };
 
 export default function RootLayout({
@@ -73,11 +50,11 @@ export default function RootLayout({
     <html lang="ja">
       <head />
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${notoSans.variable} ${notoSansJP.variable} ${inter.variable} antialiased pt-24 flex flex-col min-h-screen`}
+        className={`${notoSans.variable} ${notoSansJP.variable} ${poppins.variable} antialiased pt-24 flex flex-col min-h-screen`}
       >
         <Header />
         <div className="flex-grow">{children}</div>
-        <div className="mt-0 sm:mt-16">
+        <div className="mt-0 min-[641px]:mt-16">
           <Footer />
         </div>
         <SpeedInsights sampleRate={0.1} />

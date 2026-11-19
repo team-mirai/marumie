@@ -1,47 +1,43 @@
 "use client";
 import "client-only";
 
-import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { CircleNotch } from "@phosphor-icons/react/dist/ssr";
 import { toast } from "sonner";
-import type { PoliticalOrganization } from "@/shared/models/political-organization";
 import type { PreviewDonorCsvResult } from "@/server/contexts/report/presentation/types/preview-donor-csv-types";
 import type { PreviewDonorCsvRequest } from "@/server/contexts/report/presentation/actions/preview-donor-csv";
 import type {
   ImportDonorCsvRequest,
   ImportDonorCsvResult,
 } from "@/server/contexts/report/presentation/actions/import-donor-csv";
-import DonorCsvPreview from "./DonorCsvPreview";
-import { Input, Label } from "@/client/components/ui";
-import { PoliticalOrganizationSelect } from "@/client/components/political-organizations/PoliticalOrganizationSelect";
+import DonorCsvPreview from "@/client/components/donor-csv-import/DonorCsvPreview";
+import { FileDropzone } from "@/client/components/common/FileDropzone";
 
 interface DonorCsvImportClientProps {
-  organizations: PoliticalOrganization[];
+  /** グローバル対象（サイドバー上部）で選択中の政治団体 */
+  politicalOrganizationId: string;
+  /** グローバル対象で選択中の年度。取引No はこの年度の取引から探す */
+  financialYear: number;
   previewAction: (data: PreviewDonorCsvRequest) => Promise<PreviewDonorCsvResult>;
   importAction: (data: ImportDonorCsvRequest) => Promise<ImportDonorCsvResult>;
 }
 
+/** 対応形式と上限サイズ（上限は next.config.ts の serverActions.bodySizeLimit に合わせる） */
+const FILE_NOTE = "UTF-8 ・ 最大 100MB";
+
 export default function DonorCsvImportClient({
-  organizations,
+  politicalOrganizationId,
+  financialYear,
   previewAction,
   importAction,
 }: DonorCsvImportClientProps) {
-  const csvFileInputId = useId();
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
-  const [politicalOrganizationId, setPoliticalOrganizationId] = useState<string>("");
   const [previewResult, setPreviewResult] = useState<PreviewDonorCsvResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const previewActionRef = useRef(previewAction);
   const importActionRef = useRef(importAction);
-
-  // 最初の組織を自動選択
-  useEffect(() => {
-    if (organizations.length > 0 && !politicalOrganizationId) {
-      setPoliticalOrganizationId(organizations[0].id);
-    }
-  }, [organizations, politicalOrganizationId]);
 
   useEffect(() => {
     previewActionRef.current = previewAction;
@@ -56,6 +52,7 @@ export default function DonorCsvImportClient({
     [],
   );
 
+  // ファイルと政治団体が揃ったら自動でプレビューを取得する
   useEffect(() => {
     if (!file || !politicalOrganizationId) {
       setPreviewResult(null);
@@ -71,6 +68,7 @@ export default function DonorCsvImportClient({
         const result = await stablePreviewAction({
           file,
           politicalOrganizationId,
+          financialYear,
         });
         setPreviewResult(result);
       } catch (err) {
@@ -83,15 +81,12 @@ export default function DonorCsvImportClient({
     };
 
     previewFile();
-  }, [file, politicalOrganizationId, stablePreviewAction]);
+  }, [file, politicalOrganizationId, financialYear, stablePreviewAction]);
 
   const resetFileInput = useCallback(() => {
     setFile(null);
     setPreviewResult(null);
     setError(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
   }, []);
 
   const handleImport = useCallback(async () => {
@@ -106,6 +101,7 @@ export default function DonorCsvImportClient({
       const result = await importActionRef.current({
         csvContent,
         politicalOrganizationId,
+        financialYear,
       });
 
       if (result.ok) {
@@ -120,40 +116,39 @@ export default function DonorCsvImportClient({
     } finally {
       setIsImporting(false);
     }
-  }, [file, politicalOrganizationId, resetFileInput]);
+  }, [file, politicalOrganizationId, financialYear, resetFileInput]);
 
   return (
-    <div className="space-y-3">
-      <PoliticalOrganizationSelect
-        organizations={organizations}
-        value={politicalOrganizationId}
-        onValueChange={setPoliticalOrganizationId}
-        required
-      />
-      <div>
-        <Label htmlFor={csvFileInputId}>CSV File:</Label>
-        <Input
-          ref={fileInputRef}
-          id={csvFileInputId}
-          className="h-10 border-0 bg-transparent shadow-none file:mr-4 file:h-full file:px-6 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90 file:cursor-pointer"
-          type="file"
-          accept=".csv,text/csv"
-          onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-          required
-        />
+    <div className="space-y-6">
+      <div className="max-w-[720px] rounded-lg border border-border bg-card p-7">
+        <div>
+          <FileDropzone
+            file={file}
+            onFileChange={setFile}
+            disabled={loading || isImporting}
+            note={FILE_NOTE}
+          />
+        </div>
+
+        {loading && (
+          <div
+            role="status"
+            className="mt-4 flex items-center gap-2 rounded-lg border border-primary-active bg-accent p-3 text-sm text-primary-active"
+          >
+            <CircleNotch aria-hidden className="size-4 animate-spin" />
+            ファイルを処理中...
+          </div>
+        )}
+
+        {error && (
+          <div
+            role="alert"
+            className="mt-4 rounded-lg border border-destructive bg-destructive-hover p-3 text-sm text-destructive"
+          >
+            エラー: {error}
+          </div>
+        )}
       </div>
-
-      {loading && (
-        <div className="bg-card/50 rounded-lg p-4">
-          <p className="text-muted-foreground">ファイルを処理中...</p>
-        </div>
-      )}
-
-      {error && (
-        <div className="bg-red-500/20 rounded-lg p-4">
-          <p className="text-red-500">エラー: {error}</p>
-        </div>
-      )}
 
       {previewResult && !loading && (
         <DonorCsvPreview result={previewResult} onImport={handleImport} isImporting={isImporting} />

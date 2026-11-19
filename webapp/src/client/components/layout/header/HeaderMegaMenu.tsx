@@ -1,0 +1,140 @@
+import Link from "next/link";
+import type { CSSProperties } from "react";
+import HeaderYearPills from "@/client/components/layout/header/HeaderYearPills";
+import PoliticianInitialAvatar from "@/client/components/layout/header/PoliticianInitialAvatar";
+import type {
+  HeaderOrganizationMenuItem,
+  HeaderPoliticianMenuItem,
+} from "@/client/lib/header-navigation";
+
+interface HeaderMegaMenuProps {
+  id: string;
+  menu: "pf" | "rf";
+  organizations: HeaderOrganizationMenuItem[];
+  politicians: HeaderPoliticianMenuItem[];
+  onNavigate: () => void;
+}
+
+/** 調研費の議員を並べる列数。項目が入ってくる時差を行ごとにそろえるのに使う */
+const POLITICIAN_COLUMNS = 3;
+
+/** 開くときに項目が入ってくる順番（globals.css の `.mega-menu-item` が時差に使う） */
+function itemOrderStyle(order: number): CSSProperties {
+  return { "--mega-menu-item-order": order } as CSSProperties;
+}
+
+/**
+ * PC のナビの「政党・政治団体▼」「調研費▼」で開くメニュー（デザイン v8 のメガメニュー。調研費の見出しと年のピルは v9）。
+ * 開くときの動き（幕が下りる・項目が順に入る。v9）は globals.css の `.mega-menu` に置く。
+ */
+export default function HeaderMegaMenu({
+  id,
+  menu,
+  organizations,
+  politicians,
+  onNavigate,
+}: HeaderMegaMenuProps) {
+  return (
+    <div
+      id={id}
+      className="mega-menu mt-3 max-h-[calc(100vh-140px)] overflow-y-auto border-t border-[#EEF0EF] px-4 pt-7 pb-5"
+    >
+      {menu === "pf" ? (
+        <section aria-label="政党・政治団体" className="flex flex-col gap-1">
+          <ul>
+            {organizations.map((organization, index) => (
+              <li
+                key={organization.slug}
+                style={itemOrderStyle(index)}
+                className="mega-menu-item flex items-center gap-5 border-b border-[#F3F4F6] py-3"
+              >
+                <Link
+                  href={organization.href}
+                  onClick={onNavigate}
+                  className="flex min-w-0 flex-col gap-0.5 text-[#111827] hover:text-[#238778]"
+                >
+                  <span className="flex items-center gap-2.5 whitespace-nowrap text-[22px] font-bold leading-[1.3]">
+                    {organization.name}
+                    {organization.isCurrent && (
+                      <span className="rounded-full bg-black px-2 py-0.5 text-[11px] font-bold leading-normal text-white">
+                        表示中
+                      </span>
+                    )}
+                  </span>
+                  {organization.officialName && (
+                    <span className="whitespace-nowrap text-xs text-[#6B7280]">
+                      {organization.officialName}
+                    </span>
+                  )}
+                </Link>
+                {/* 年が1つだけなら切り替える先が無いので出さない */}
+                {organization.years.length > 1 && (
+                  <HeaderYearPills
+                    name={organization.name}
+                    years={organization.years}
+                    onNavigate={onNavigate}
+                  />
+                )}
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : (
+        <section aria-label="調研費" className="flex flex-col gap-3.5">
+          <Link
+            href="/#home-rf"
+            onClick={onNavigate}
+            style={itemOrderStyle(0)}
+            className="mega-menu-item inline-flex items-center gap-1 self-start text-[13px] font-bold tracking-[0.04em] text-[#374151] hover:text-[#0F8472]"
+          >
+            所属議員の調研費｜毎月支給される公費を何に使ったか
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.4"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M9 5l7 7-7 7" />
+            </svg>
+          </Link>
+          <ul className="grid grid-cols-3 gap-x-6 gap-y-2">
+            {politicians.map((politician, index) => (
+              <li
+                key={politician.slug}
+                style={itemOrderStyle(1 + Math.floor(index / POLITICIAN_COLUMNS))}
+                className="mega-menu-item flex min-w-0 items-center gap-3"
+              >
+                <Link
+                  href={politician.href}
+                  onClick={onNavigate}
+                  aria-current={politician.isCurrent ? "page" : undefined}
+                  className="flex min-h-14 items-center gap-3.5 whitespace-nowrap text-[17px] font-bold text-[#111827] hover:text-[#238778]"
+                >
+                  <PoliticianInitialAvatar
+                    name={politician.name}
+                    photoUrl={politician.photoUrl}
+                    size="lg"
+                  />
+                  {politician.name}
+                </Link>
+                {/* 公開している年が1つだけなら切り替える先が無いので出さない */}
+                {politician.years.length > 1 && (
+                  <HeaderYearPills
+                    name={`${politician.name}の調研費`}
+                    years={politician.years}
+                    onNavigate={onNavigate}
+                  />
+                )}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+    </div>
+  );
+}

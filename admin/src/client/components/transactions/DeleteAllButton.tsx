@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Trash } from "@phosphor-icons/react/dist/ssr";
 import { deleteAllTransactionsAction } from "@/server/contexts/data-import/presentation/actions/delete-all-transactions";
 import { Button } from "@/client/components/ui";
 
@@ -47,10 +48,14 @@ export function DeleteAllButton({
     <Button
       type="button"
       variant="destructive"
+      size="sm"
+      className="text-xs"
       onClick={handleDeleteAll}
       disabled={deleting || disabled}
+      title={organizationId ? "この政治団体の全取引を削除" : "全ての取引を削除"}
     >
-      {deleting ? "削除中..." : organizationId ? "この政治団体の全取引を削除" : "全ての取引を削除"}
+      <Trash />
+      {deleting ? "削除中..." : "全件削除"}
     </Button>
   );
 }

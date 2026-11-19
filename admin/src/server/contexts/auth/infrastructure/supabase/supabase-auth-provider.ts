@@ -7,6 +7,7 @@ import type { SupabaseAuthUser } from "@/server/contexts/auth/domain/models/supa
 import { AuthError } from "@/server/contexts/auth/domain/errors/auth-error";
 import { createSupabaseClient } from "@/server/contexts/auth/infrastructure/supabase/supabase-client";
 import { createSupabaseAdminClient } from "@/server/contexts/auth/infrastructure/supabase/supabase-admin-client";
+import { resolveSignInProvider } from "@/server/contexts/auth/infrastructure/supabase/sign-in-provider";
 import type { User as SupabaseUser, Session } from "@supabase/supabase-js";
 
 /**
@@ -29,6 +30,7 @@ function mapToAuthSession(session: Session): AuthSession {
     accessToken: session.access_token,
     refreshToken: session.refresh_token,
     user: mapToSupabaseAuthUser(session.user),
+    signInProvider: resolveSignInProvider(session),
   };
 }
 
@@ -170,6 +172,36 @@ export class SupabaseAuthProvider implements AuthProvider {
     }
   }
 
+  async signInWithOAuth(
+    provider: "google",
+    options: { redirectTo: string; queryParams?: Record<string, string> },
+  ): Promise<{ url: string }> {
+    try {
+      const supabase = await createSupabaseClient();
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: {
+          redirectTo: options.redirectTo,
+          queryParams: options.queryParams,
+          skipBrowserRedirect: true,
+        },
+      });
+
+      if (error) {
+        throw new AuthError("AUTH_FAILED", error.message, error);
+      }
+
+      if (!data.url) {
+        throw new AuthError("AUTH_FAILED", "No authorization URL returned");
+      }
+
+      return { url: data.url };
+    } catch (e) {
+      if (e instanceof AuthError) throw e;
+      throw new AuthError("NETWORK_ERROR", "認証サービスに接続できません", e);
+    }
+  }
+
   async resetPasswordForEmail(email: string, redirectTo: string): Promise<void> {
     try {
       const supabase = await createSupabaseClient();
@@ -191,10 +223,10 @@ export class SupabaseAuthProvider implements AuthProvider {
  * AdminAuthProvider インターフェースの Supabase 実装
  */
 export class SupabaseAdminAuthProvider implements AdminAuthProvider {
-  async inviteUserByEmail(email: string, redirectTo: string): Promise<void> {
+  async inviteUserByEmail(email: string, redirectTo: string): Promise<{ authId: string }> {
     try {
       const supabase = createSupabaseAdminClient();
-      const { error } = await supabase.auth.admin.inviteUserByEmail(email, {
+      const { data, error } = await supabase.auth.admin.inviteUserByEmail(email, {
         redirectTo,
       });
 
@@ -205,6 +237,7 @@ export class SupabaseAdminAuthProvider implements AdminAuthProvider {
         }
         throw new AuthError("INVITE_FAILED", error.message, error);
       }
+      return { authId: data.user.id };
     } catch (e) {
       if (e instanceof AuthError) throw e;
       throw new AuthError("NETWORK_ERROR", "認証サービスに接続できません", e);

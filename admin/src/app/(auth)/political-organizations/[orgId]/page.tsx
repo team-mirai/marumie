@@ -2,9 +2,22 @@ import "server-only";
 
 import Link from "next/link";
 import { PoliticalOrganizationForm } from "@/client/components/political-organizations/PoliticalOrganizationForm";
-import { loadPoliticalOrganizationData } from "@/server/contexts/shared/presentation/loaders/load-political-organization-data";
+import { PhotoField } from "@/client/components/common/PhotoField";
+import { PageHeader } from "@/client/components/layout/PageHeader";
+import { BackLink } from "@/client/components/layout/BackLink";
+import { Button } from "@/client/components/ui";
+import {
+  loadPoliticalOrganizationData,
+  loadPoliticalOrganizationPhotoUrl,
+} from "@/server/contexts/shared/presentation/loaders/load-political-organization-data";
+import {
+  deletePoliticalOrganizationPhoto,
+  uploadPoliticalOrganizationPhoto,
+} from "@/server/contexts/shared/presentation/actions/manage-political-organization-photo";
 import { updatePoliticalOrganization } from "@/server/contexts/shared/presentation/actions/update-political-organization";
 import type { UpdatePoliticalOrganizationData } from "@/server/contexts/shared/presentation/actions/update-political-organization";
+import { requireRole } from "@/server/contexts/auth/presentation/loaders/require-role";
+import { requireRolePage } from "@/server/contexts/auth/presentation/loaders/require-role-page";
 
 interface EditPoliticalOrganizationPageProps {
   params: Promise<{ orgId: string }>;
@@ -13,6 +26,7 @@ interface EditPoliticalOrganizationPageProps {
 export default async function EditPoliticalOrganizationPage({
   params,
 }: EditPoliticalOrganizationPageProps) {
+  await requireRolePage("political_fund");
   const { orgId } = await params;
 
   let organization;
@@ -20,42 +34,58 @@ export default async function EditPoliticalOrganizationPage({
     organization = await loadPoliticalOrganizationData(orgId);
   } catch (error) {
     return (
-      <div className="bg-card rounded-xl p-4">
-        <div className="text-red-500 text-center p-10">
-          {error instanceof Error ? error.message : "政治団体の取得に失敗しました"}
-        </div>
+      <div className="rounded-lg border border-border bg-card p-10 text-center text-sm text-destructive">
+        {error instanceof Error ? error.message : "政治団体の取得に失敗しました"}
       </div>
     );
   }
 
+  const photoUrl = await loadPoliticalOrganizationPhotoUrl(organization.photoPath);
+
   const handleSubmit = async (formData: UpdatePoliticalOrganizationData) => {
     "use server";
+    await requireRole("political_fund");
     return await updatePoliticalOrganization(orgId, formData);
   };
 
   return (
-    <div className="space-y-4">
-      <PoliticalOrganizationForm
-        initialData={{
-          displayName: organization.displayName,
-          orgName: organization.orgName || "",
-          slug: organization.slug,
-          description: organization.description || "",
-        }}
-        onSubmit={handleSubmit}
-        submitButtonText="更新"
-        title={`「${organization.displayName}」を編集`}
+    <div>
+      <BackLink href="/political-organizations">政治団体一覧に戻る</BackLink>
+
+      <PageHeader label="Organizations" title={`「${organization.displayName}」を編集`} />
+
+      <PhotoField
+        label="代表者の顔写真（任意・公開サイトに表示）"
+        photoUrl={photoUrl}
+        hasPhoto={organization.photoPath !== null}
+        upload={uploadPoliticalOrganizationPhoto.bind(null, orgId)}
+        remove={deletePoliticalOrganizationPhoto.bind(null, orgId)}
       />
 
-      <div className="bg-card rounded-xl p-4">
-        <h2 className="text-lg font-semibold text-white mb-3">関連機能</h2>
-        <div className="flex gap-3">
-          <Link
-            href={`/political-organizations/${orgId}/report-profile`}
-            className="bg-secondary text-white border border-border rounded-lg px-4 py-2.5 hover:bg-primary transition-colors no-underline"
-          >
-            報告書プロフィール
-          </Link>
+      <div className="space-y-4">
+        <PoliticalOrganizationForm
+          initialData={{
+            displayName: organization.displayName,
+            orgName: organization.orgName || "",
+            slug: organization.slug,
+            description: organization.description || "",
+            websiteUrl: organization.websiteUrl || "",
+            snsUrls: organization.snsUrls,
+          }}
+          onSubmit={handleSubmit}
+          submitButtonText="更新"
+          withLinks
+        />
+
+        <div className="rounded-lg border border-border bg-card p-6">
+          <h2 className="mb-3 text-base font-bold text-foreground">関連機能</h2>
+          <div className="flex gap-3">
+            <Button variant="outline" asChild>
+              <Link href={`/political-organizations/${orgId}/report-profile`}>
+                報告書プロフィール
+              </Link>
+            </Button>
+          </div>
         </div>
       </div>
     </div>

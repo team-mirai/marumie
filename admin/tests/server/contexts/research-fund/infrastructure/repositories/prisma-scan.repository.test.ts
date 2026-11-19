@@ -1,0 +1,814 @@
+import type { PrismaClient } from "@prisma/client";
+import { ScanJobError } from "@/server/contexts/research-fund/domain/models/scan-job";
+import { PrismaScanRepository } from "@/server/contexts/research-fund/infrastructure/repositories/prisma-scan.repository";
+
+function setup() {
+  const batch = { create: jest.fn(), findMany: jest.fn() };
+  const document = { create: jest.fn() };
+  const job = {
+    create: jest.fn(),
+    createMany: jest.fn(),
+    findMany: jest.fn(),
+    update: jest.fn(),
+    updateMany: jest.fn(),
+    groupBy: jest.fn(),
+  };
+  const entry = {
+    createManyAndReturn: jest.fn(),
+    findMany: jest.fn().mockResolvedValue([]),
+    count: jest.fn(),
+    deleteMany: jest.fn(),
+  };
+  const line = { createMany: jest.fn() };
+  const account = { findMany: jest.fn() };
+  const payee = {
+    count: jest.fn(),
+    findMany: jest.fn(),
+    createMany: jest.fn(),
+    findUniqueOrThrow: jest.fn(),
+  };
+  const book = { findUniqueOrThrow: jest.fn() };
+  const alias = { createMany: jest.fn() };
+  const tx = {
+    researchFundScanBatch: batch,
+    researchFundDocument: document,
+    researchFundScanJob: job,
+    researchFundJournalEntry: entry,
+    researchFundJournalLine: line,
+    researchFundAccount: account,
+    researchFundPayee: payee,
+    researchFundBook: book,
+    researchFundPayeeAlias: alias,
+    $queryRaw: jest.fn(),
+  };
+  const client = {
+    ...tx,
+    $transaction: jest.fn((run: (tx: unknown) => unknown) => run(tx)),
+  };
+  return {
+    tx,
+    batch,
+    document,
+    job,
+    entry,
+    line,
+    account,
+    payee,
+    book,
+    alias,
+    client,
+    repository: new PrismaScanRepository(client as unknown as PrismaClient),
+  };
+}
+
+const INPUT = {
+  bookId: "12",
+  uploadedById: "user-1",
+  promptId: "7",
+  model: "claude-sonnet-5",
+  documents: [
+    { storageKey: "key-1", mime: "image/jpeg", originalFilename: "IMG_1.jpg" },
+    { storageKey: "key-2", mime: "application/pdf", originalFilename: "invoice.pdf" },
+  ],
+};
+
+test("バッチ・書類・1書類1ジョブを1トランザクションで作る", async () => {
+  const { batch, document, job, client, repository } = setup();
+  batch.create.mockResolvedValue({ id: BigInt(99) });
+  document.create
+    .mockResolvedValueOnce({ id: BigInt(21) })
+    .mockResolvedValueOnce({ id: BigInt(22) });
+  await expect(repository.createBatch(INPUT)).resolves.toBe("99");
+  expect(client.$transaction).toHaveBeenCalled();
+  expect(batch.create).toHaveBeenCalledWith({
+    data: { bookId: BigInt(12), uploadedById: "user-1" },
+  });
+  expect(document.create).toHaveBeenCalledTimes(2);
+  expect(document.create).toHaveBeenNthCalledWith(1, {
+    data: {
+      bookId: BigInt(12),
+      batchId: BigInt(99),
+      storageKey: "key-1",
+      mime: "image/jpeg",
+      originalFilename: "IMG_1.jpg",
+    },
+  });
+  // ジョブは queued（schema の既定値）で作り、使ったプロンプト版とモデルを記録する
+  expect(job.create).toHaveBeenNthCalledWith(2, {
+    data: {
+      batchId: BigInt(99),
+      documentId: BigInt(22),
+      promptId: BigInt(7),
+      model: "claude-sonnet-5",
+    },
+  });
+});
+
+test("バッチは新しい順、ジョブはアップロード順で返す", async () => {
+  const { batch, repository } = setup();
+  batch.findMany.mockResolvedValue([
+    {
+      id: BigInt(2),
+      createdAt: new Date("2026-09-09T01:02:03.000Z"),
+      jobs: [
+        {
+          id: BigInt(5),
+          documentId: BigInt(31),
+          status: "queued",
+          rawJson: null,
+          error: null,
+          document: { originalFilename: "IMG_1.jpg", mime: "image/jpeg" },
+        },
+      ],
+    },
+  ]);
+  await expect(repository.listBatches("12")).resolves.toEqual([
+    {
+      id: "2",
+      createdAt: "2026-09-09T01:02:03.000Z",
+      jobs: [
+        {
+          id: "5",
+          documentId: "31",
+          status: "queued",
+          originalFilename: "IMG_1.jpg",
+          mime: "image/jpeg",
+          summary: null,
+          error: null,
+        },
+      ],
+    },
+  ]);
+  expect(batch.findMany).toHaveBeenCalledWith(
+    expect.objectContaining({ where: { bookId: BigInt(12) }, orderBy: { id: "desc" } }),
+  );
+});
+
+test.each([
+  {
+    name: "日付と先頭明細と件数",
+    rawJson: {
+      date: "2026-08-16",
+      items: [
+        { item: "グラス代", amount: 683 },
+        { item: "皿", amount: 1200 },
+      ],
+    },
+    expected: "2026.08.16・グラス代 ¥683 ほか1件",
+  },
+  { name: "読めない原文", rawJson: { items: [] }, expected: null },
+  { name: "未読み取り", rawJson: null, expected: null },
+  { name: "配列の原文", rawJson: [1, 2], expected: null },
+])("抽出結果の要約は $name を扱う", async ({ rawJson, expected }) => {
+  const { batch, repository } = setup();
+  batch.findMany.mockResolvedValue([
+    {
+      id: BigInt(1),
+      createdAt: new Date("2026-09-09T00:00:00.000Z"),
+      jobs: [
+        {
+          id: BigInt(1),
+          documentId: BigInt(3),
+          status: "succeeded",
+          rawJson,
+          error: null,
+          document: { originalFilename: "a.jpg", mime: "image/jpeg" },
+        },
+      ],
+    },
+  ]);
+  const [result] = await repository.listBatches("12");
+  expect(result.jobs[0].summary).toBe(expected);
+});
+
+const CLAIMED_ROW = {
+  id: BigInt(11),
+  document: {
+    id: BigInt(42),
+    storageKey: "key-1",
+    mime: "image/jpeg",
+    originalFilename: "IMG_1.jpg",
+  },
+  prompt: { body: "議員室プロンプト" },
+  rereadInstruction: null,
+};
+
+test("帳簿の未処理ジョブを待機中・処理中に分けて数える", async () => {
+  const { job, repository } = setup();
+  job.groupBy.mockResolvedValue([
+    { status: "queued", _count: { _all: 3 } },
+    { status: "running", _count: { _all: 1 } },
+  ]);
+  await expect(repository.countUnfinished("12")).resolves.toEqual({ queued: 3, running: 1 });
+  expect(job.groupBy).toHaveBeenCalledWith(
+    expect.objectContaining({
+      where: { batch: { bookId: BigInt(12) }, status: { in: ["queued", "running"] } },
+    }),
+  );
+});
+
+test("1件も未処理がなければ0を返す", async () => {
+  const { job, repository } = setup();
+  job.groupBy.mockResolvedValue([]);
+  await expect(repository.countUnfinished("12")).resolves.toEqual({ queued: 0, running: 0 });
+});
+
+test("待機中のジョブを古い順に処理中へ移し、読み取りに要る情報を返す", async () => {
+  const { job, repository } = setup();
+  job.findMany.mockResolvedValue([CLAIMED_ROW]);
+  job.updateMany.mockResolvedValue({ count: 1 });
+  await expect(repository.claimJobs("12", 2)).resolves.toEqual([
+    {
+      id: "11",
+      documentId: "42",
+      storageKey: "key-1",
+      mime: "image/jpeg",
+      originalFilename: "IMG_1.jpg",
+      officePrompt: "議員室プロンプト",
+      rereadInstruction: null,
+    },
+  ]);
+  expect(job.findMany).toHaveBeenCalledWith(
+    expect.objectContaining({ orderBy: { id: "asc" }, take: 2 }),
+  );
+  // 他の実行に先を越されていないか、状態を条件に入れて更新する
+  expect(job.updateMany).toHaveBeenCalledWith({
+    where: { id: BigInt(11), status: "queued" },
+    data: expect.objectContaining({ status: "running", error: null }),
+  });
+});
+
+test("他の実行が先に掴んだジョブは返さない（多重実行の防止）", async () => {
+  const { job, repository } = setup();
+  job.findMany.mockResolvedValue([CLAIMED_ROW, { ...CLAIMED_ROW, id: BigInt(12) }]);
+  job.updateMany.mockResolvedValueOnce({ count: 0 }).mockResolvedValueOnce({ count: 1 });
+  const claimed = await repository.claimJobs("12", 2);
+  expect(claimed.map((entry) => entry.id)).toEqual(["12"]);
+});
+
+test("処理中のまま失効したジョブを待機中に戻す", async () => {
+  const { job, repository } = setup();
+  job.updateMany.mockResolvedValue({ count: 2 });
+  const staleBefore = new Date("2026-09-12T09:00:00.000Z");
+  await expect(repository.releaseStaleJobs("12", staleBefore)).resolves.toBe(2);
+  expect(job.updateMany).toHaveBeenCalledWith({
+    where: {
+      batch: { bookId: BigInt(12) },
+      status: "running",
+      OR: [{ startedAt: null }, { startedAt: { lt: staleBefore } }],
+    },
+    data: { status: "queued", startedAt: null },
+  });
+});
+
+const COMPLETE_INPUT = {
+  bookId: "12",
+  jobId: "11",
+  documentId: "42",
+  rawJson: { date: "2026-04-01" },
+  userId: "user-1",
+  replaceDrafts: false,
+  payeeId: null,
+  newPayee: null,
+  payeeAlias: null,
+  entries: [
+    {
+      entryDate: "2026-04-01",
+      description: "タクシー代",
+      accountKey: "taxi",
+      amount: 1200,
+      note: null,
+      memo: null,
+      splitGroup: null,
+      hash: "hash-a",
+      lines: [
+        { side: "debit" as const, accountKey: "taxi", amount: 1200 },
+        { side: "credit" as const, accountKey: "bank", amount: 1200 },
+      ],
+    },
+  ],
+};
+
+test("下書き仕訳と原文JSONを保存してジョブを完了にする", async () => {
+  const { entry, line, job, client, repository } = setup();
+  entry.createManyAndReturn.mockResolvedValue([{ id: BigInt(101), hash: "hash-a" }]);
+  await repository.completeJob(COMPLETE_INPUT);
+  expect(client.$transaction).toHaveBeenCalled();
+  // 既にある hash は (book_id, hash) の一意制約に任せて読み飛ばす
+  expect(entry.createManyAndReturn).toHaveBeenCalledWith({
+    data: [
+      expect.objectContaining({
+        bookId: BigInt(12),
+        entryDate: new Date("2026-04-01T00:00:00.000Z"),
+        description: "タクシー代",
+        status: "draft",
+        source: "scan",
+        documentId: BigInt(42),
+        hash: "hash-a",
+        createdById: "user-1",
+      }),
+    ],
+    skipDuplicates: true,
+    select: { id: true, hash: true },
+  });
+  // 明細は作れた仕訳の id に付ける
+  expect(line.createMany).toHaveBeenCalledWith({
+    data: COMPLETE_INPUT.entries[0].lines.map((l) => ({ ...l, entryId: BigInt(101) })),
+  });
+  expect(job.update).toHaveBeenCalledWith({
+    where: { id: BigInt(11) },
+    data: expect.objectContaining({ status: "succeeded", rawJson: { date: "2026-04-01" } }),
+  });
+});
+
+test("特記事項（note）と備考（memo）を別のカラムに保存する", async () => {
+  const { entry, repository } = setup();
+  entry.createManyAndReturn.mockResolvedValue([]);
+  await repository.completeJob({
+    ...COMPLETE_INPUT,
+    entries: [{ ...COMPLETE_INPUT.entries[0], note: "調査用", memo: "領収書ではない" }],
+  });
+  expect(entry.createManyAndReturn.mock.calls[0][0].data).toEqual([
+    expect.objectContaining({ note: "調査用", memo: "領収書ではない" }),
+  ]);
+});
+
+test("同じhashの仕訳が既にあれば明細を作らずジョブだけ完了にする（再処理で二重にしない）", async () => {
+  const { entry, line, job, repository } = setup();
+  entry.createManyAndReturn.mockResolvedValue([]);
+  await repository.completeJob(COMPLETE_INPUT);
+  expect(line.createMany).not.toHaveBeenCalled();
+  // 仕訳を作らなくてもジョブ自体は完了させる
+  expect(job.update).toHaveBeenCalledWith(
+    expect.objectContaining({ data: expect.objectContaining({ status: "succeeded" }) }),
+  );
+});
+
+test("同じ抽出結果に同じhashの明細が並んでも1件しか作らない", async () => {
+  const { entry, repository } = setup();
+  entry.createManyAndReturn.mockResolvedValue([]);
+  await repository.completeJob({
+    ...COMPLETE_INPUT,
+    entries: [COMPLETE_INPUT.entries[0], { ...COMPLETE_INPUT.entries[0] }],
+  });
+  expect(entry.createManyAndReturn.mock.calls[0][0].data).toHaveLength(1);
+});
+
+test("一部の仕訳だけ既にある場合は新しく作れた分にだけ明細を付ける", async () => {
+  const { entry, line, repository } = setup();
+  const second = {
+    ...COMPLETE_INPUT.entries[0],
+    description: "書籍代",
+    hash: "hash-b",
+    lines: [
+      { side: "debit" as const, accountKey: "books-newspapers", amount: 1200 },
+      { side: "credit" as const, accountKey: "bank", amount: 1200 },
+    ],
+  };
+  entry.createManyAndReturn.mockResolvedValue([{ id: BigInt(102), hash: "hash-b" }]);
+  await repository.completeJob({
+    ...COMPLETE_INPUT,
+    entries: [COMPLETE_INPUT.entries[0], second],
+  });
+  expect(line.createMany).toHaveBeenCalledWith({
+    data: second.lines.map((l) => ({ ...l, entryId: BigInt(102) })),
+  });
+});
+
+test("発行元の照合で決まった支払先を、作った仕訳すべてに「ルール照合」として紐づける", async () => {
+  const { entry, payee, repository } = setup();
+  payee.count.mockResolvedValue(1);
+  entry.createManyAndReturn.mockResolvedValue([]);
+  const second = { ...COMPLETE_INPUT.entries[0], description: "書籍代", hash: "hash-b" };
+  await repository.completeJob({
+    ...COMPLETE_INPUT,
+    entries: [COMPLETE_INPUT.entries[0], second],
+    payeeId: "7",
+  });
+  // 支払先が帳簿と同じ議員のものかを同じトランザクションで確かめる（#1674）
+  expect(payee.count).toHaveBeenCalledWith({
+    where: { id: BigInt(7), politician: { books: { some: { id: BigInt(12) } } } },
+  });
+  expect(entry.createManyAndReturn.mock.calls[0][0].data).toEqual([
+    expect.objectContaining({ payeeId: BigInt(7), payeeLinkSource: "rule" }),
+    expect.objectContaining({ payeeId: BigInt(7), payeeLinkSource: "rule" }),
+  ]);
+});
+
+test("帳簿と別の議員の支払先は紐づけずに下書きを作る", async () => {
+  const { entry, job, payee, repository } = setup();
+  payee.count.mockResolvedValue(0);
+  entry.createManyAndReturn.mockResolvedValue([]);
+  await repository.completeJob({ ...COMPLETE_INPUT, payeeId: "7" });
+  expect(entry.createManyAndReturn.mock.calls[0][0].data).toEqual([
+    expect.objectContaining({ payeeId: null, payeeLinkSource: null }),
+  ]);
+  expect(job.update).toHaveBeenCalledWith(
+    expect.objectContaining({ data: expect.objectContaining({ status: "succeeded" }) }),
+  );
+});
+
+const ALIAS = { name: "Amazon.co.jp", normalizedName: "amazon.co.jp" };
+
+test("紐づけた支払先に、発行元の名称を紐づけ元と書類つきの表記として記録する（同じ表記は二重に記録しない）", async () => {
+  const { entry, payee, alias, repository } = setup();
+  payee.count.mockResolvedValue(1);
+  entry.createManyAndReturn.mockResolvedValue([]);
+  await repository.completeJob({ ...COMPLETE_INPUT, payeeId: "7", payeeAlias: ALIAS });
+  expect(alias.createMany).toHaveBeenCalledWith({
+    data: [{ payeeId: BigInt(7), name: "Amazon.co.jp", normalizedName: "amazon.co.jp", source: "rule", documentId: BigInt(42) }],
+    skipDuplicates: true,
+  });
+});
+
+test("発行元から登録した支払先には「AI」として表記を記録する", async () => {
+  const { entry, payee, book, alias, repository } = setup();
+  entry.createManyAndReturn.mockResolvedValue([]);
+  book.findUniqueOrThrow.mockResolvedValue({ politicianId: BigInt(5) });
+  payee.findUniqueOrThrow.mockResolvedValue({ id: BigInt(9), invoiceRegistrationNumber: null });
+  await repository.completeJob({
+    ...COMPLETE_INPUT,
+    newPayee: { name: "Amazon.co.jp", postalCode: null, address: "", invoiceRegistrationNumber: null },
+    payeeAlias: ALIAS,
+  });
+  expect(alias.createMany).toHaveBeenCalledWith({
+    data: [expect.objectContaining({ payeeId: BigInt(9), source: "ai", documentId: BigInt(42) })],
+    skipDuplicates: true,
+  });
+});
+
+test("支払先を紐づけなければ表記を記録しない", async () => {
+  const { entry, payee, alias, repository } = setup();
+  payee.count.mockResolvedValue(0);
+  entry.createManyAndReturn.mockResolvedValue([]);
+  await repository.completeJob({ ...COMPLETE_INPUT, payeeId: "7", payeeAlias: ALIAS });
+  expect(alias.createMany).not.toHaveBeenCalled();
+});
+
+test("発行元の名称が読み取れていなければ表記を記録しない", async () => {
+  const { entry, payee, alias, repository } = setup();
+  payee.count.mockResolvedValue(1);
+  entry.createManyAndReturn.mockResolvedValue([]);
+  await repository.completeJob({ ...COMPLETE_INPUT, payeeId: "7" });
+  expect(alias.createMany).not.toHaveBeenCalled();
+});
+
+test("照合で支払先が決まらなければ未紐づけのまま作る", async () => {
+  const { entry, payee, repository } = setup();
+  entry.createManyAndReturn.mockResolvedValue([]);
+  await repository.completeJob(COMPLETE_INPUT);
+  expect(payee.count).not.toHaveBeenCalled();
+  expect(entry.createManyAndReturn.mock.calls[0][0].data).toEqual([
+    expect.objectContaining({ payeeId: null, payeeLinkSource: null }),
+  ]);
+});
+
+const NEW_PAYEE = {
+  name: "Amazon.co.jp",
+  postalCode: null,
+  address: "",
+  invoiceRegistrationNumber: null,
+};
+
+test("照合で決まらず新しい支払先があれば、帳簿の議員の支払先として登録し「AI」として紐づける", async () => {
+  const { entry, payee, book, repository } = setup();
+  entry.createManyAndReturn.mockResolvedValue([]);
+  book.findUniqueOrThrow.mockResolvedValue({ politicianId: BigInt(5) });
+  payee.findUniqueOrThrow.mockResolvedValue({ id: BigInt(9), invoiceRegistrationNumber: null });
+  await repository.completeJob({ ...COMPLETE_INPUT, newPayee: NEW_PAYEE });
+  expect(book.findUniqueOrThrow).toHaveBeenCalledWith({
+    where: { id: BigInt(12) },
+    select: { politicianId: true },
+  });
+  // 並行して同じ支払先を登録しても一意制約のエラーにしない
+  expect(payee.createMany).toHaveBeenCalledWith({
+    data: [{ ...NEW_PAYEE, politicianId: BigInt(5) }],
+    skipDuplicates: true,
+  });
+  expect(payee.findUniqueOrThrow).toHaveBeenCalledWith({
+    where: { politicianId_name_address: { politicianId: BigInt(5), name: "Amazon.co.jp", address: "" } },
+    select: { id: true, invoiceRegistrationNumber: true },
+  });
+  expect(entry.createManyAndReturn.mock.calls[0][0].data).toEqual([
+    expect.objectContaining({ payeeId: BigInt(9), payeeLinkSource: "ai" }),
+  ]);
+});
+
+test("同じ名称・住所の支払先が既にありインボイス登録番号が食い違えば、紐づけずに下書きを作る", async () => {
+  const { entry, payee, book, repository } = setup();
+  entry.createManyAndReturn.mockResolvedValue([]);
+  book.findUniqueOrThrow.mockResolvedValue({ politicianId: BigInt(5) });
+  payee.findUniqueOrThrow.mockResolvedValue({ id: BigInt(9), invoiceRegistrationNumber: "T1111111111111" });
+  await repository.completeJob({
+    ...COMPLETE_INPUT,
+    newPayee: { ...NEW_PAYEE, invoiceRegistrationNumber: "T2222222222222" },
+  });
+  expect(entry.createManyAndReturn.mock.calls[0][0].data).toEqual([
+    expect.objectContaining({ payeeId: null, payeeLinkSource: null }),
+  ]);
+});
+
+test("照合で支払先が決まれば新しい支払先は登録しない", async () => {
+  const { entry, payee, repository } = setup();
+  payee.count.mockResolvedValue(1);
+  entry.createManyAndReturn.mockResolvedValue([]);
+  await repository.completeJob({ ...COMPLETE_INPUT, payeeId: "7", newPayee: NEW_PAYEE });
+  expect(payee.createMany).not.toHaveBeenCalled();
+  expect(entry.createManyAndReturn.mock.calls[0][0].data).toEqual([
+    expect.objectContaining({ payeeId: BigInt(7), payeeLinkSource: "rule" }),
+  ]);
+});
+
+test("発行元の照合に使う支払先は帳簿の議員のものだけを、記録された表記つきで返す", async () => {
+  const { payee, repository } = setup();
+  payee.findMany.mockResolvedValue([
+    { id: BigInt(7), politicianId: BigInt(5), name: "JR東日本", postalCode: null, address: "", invoiceRegistrationNumber: null, aliases: [{ normalizedName: "jr東日本品川駅" }] },
+  ]);
+  await expect(repository.payees("12")).resolves.toEqual([
+    { id: "7", politicianId: "5", name: "JR東日本", postalCode: null, address: "", invoiceRegistrationNumber: null, aliases: ["jr東日本品川駅"] },
+  ]);
+  expect(payee.findMany).toHaveBeenCalledWith(
+    expect.objectContaining({ where: { politician: { books: { some: { id: BigInt(12) } } } } }),
+  );
+});
+
+test("通常のスキャンでは既存の仕訳を消さない", async () => {
+  const { entry, repository } = setup();
+  entry.createManyAndReturn.mockResolvedValue([{ id: BigInt(101), hash: "hash-a" }]);
+  await repository.completeJob(COMPLETE_INPUT);
+  expect(entry.count).not.toHaveBeenCalled();
+  expect(entry.deleteMany).not.toHaveBeenCalled();
+});
+
+test("読み直しでは書類の下書きを消してから新しい下書きを作る（同じトランザクション）", async () => {
+  const { tx, entry, line, job, client, repository } = setup();
+  entry.count.mockResolvedValue(0);
+  entry.deleteMany.mockResolvedValue({ count: 1 });
+  entry.createManyAndReturn.mockResolvedValue([{ id: BigInt(101), hash: "hash-a" }]);
+  await repository.completeJob({ ...COMPLETE_INPUT, replaceDrafts: true });
+  expect(client.$transaction).toHaveBeenCalledTimes(1);
+  expect(entry.count).toHaveBeenCalledWith({
+    where: { bookId: BigInt(12), documentId: BigInt(42), status: { not: "draft" } },
+  });
+  expect(entry.deleteMany).toHaveBeenCalledWith({
+    where: { bookId: BigInt(12), documentId: BigInt(42), status: "draft" },
+  });
+  // 同じ書類の読み直しと直列化するため、消す前に書類の行をロックする
+  const [sql, ...values] = tx.$queryRaw.mock.calls[0];
+  expect(sql.join("?")).toContain("FOR UPDATE");
+  expect(values).toEqual([BigInt(42)]);
+  expect(tx.$queryRaw.mock.invocationCallOrder[0]).toBeLessThan(
+    entry.deleteMany.mock.invocationCallOrder[0],
+  );
+  // 消して行ロックを取ってから数えるので、並行して確認済にされた仕訳を見落とさない
+  expect(entry.deleteMany.mock.invocationCallOrder[0]).toBeLessThan(
+    entry.count.mock.invocationCallOrder[0],
+  );
+  // 消したあとに作るので、元の下書きと同じ hash でも読み飛ばされず二重にもならない
+  expect(entry.deleteMany.mock.invocationCallOrder[0]).toBeLessThan(
+    entry.createManyAndReturn.mock.invocationCallOrder[0],
+  );
+  expect(line.createMany).toHaveBeenCalled();
+  expect(job.update).toHaveBeenCalledWith(
+    expect.objectContaining({ data: expect.objectContaining({ status: "succeeded" }) }),
+  );
+});
+
+test("読み直しは、元の下書きの立替者が1種類だけなら作り直した下書きに引き継ぐ", async () => {
+  const { entry, repository } = setup();
+  entry.count.mockResolvedValue(0);
+  entry.deleteMany.mockResolvedValue({ count: 1 });
+  entry.createManyAndReturn.mockResolvedValue([{ id: BigInt(101), hash: "hash-a" }]);
+  entry.findMany.mockResolvedValue([{ advancedBy: "秘書A", payeeId: null, payeeLinkSource: null }, { advancedBy: "秘書A", payeeId: null, payeeLinkSource: null }]);
+  await repository.completeJob({ ...COMPLETE_INPUT, replaceDrafts: true });
+  // 立替者は消す前に読む（消したあとでは引き継ぐ値が分からない）
+  expect(entry.findMany.mock.invocationCallOrder[0]).toBeLessThan(
+    entry.deleteMany.mock.invocationCallOrder[0],
+  );
+  expect(entry.createManyAndReturn.mock.calls[0][0].data[0]).toMatchObject({
+    advancedBy: "秘書A",
+  });
+});
+
+test.each([
+  ["複数の立替者が混ざっている", [{ advancedBy: "秘書A", payeeId: null, payeeLinkSource: null }, { advancedBy: "秘書B", payeeId: null, payeeLinkSource: null }]],
+  ["立替なしが混ざっている", [{ advancedBy: "秘書A", payeeId: null, payeeLinkSource: null }, { advancedBy: null, payeeId: null, payeeLinkSource: null }]],
+  ["立替者が入っていない", [{ advancedBy: null, payeeId: null, payeeLinkSource: null }]],
+])("読み直しで %s 書類は立替者を引き継がない", async (_name, replaced) => {
+  const { entry, repository } = setup();
+  entry.count.mockResolvedValue(0);
+  entry.deleteMany.mockResolvedValue({ count: 1 });
+  entry.createManyAndReturn.mockResolvedValue([{ id: BigInt(101), hash: "hash-a" }]);
+  entry.findMany.mockResolvedValue(replaced);
+  await repository.completeJob({ ...COMPLETE_INPUT, replaceDrafts: true });
+  expect(entry.createManyAndReturn.mock.calls[0][0].data[0]).toMatchObject({ advancedBy: null, payeeId: null, payeeLinkSource: null });
+});
+
+test("読み直しは、元の下書きで人が選んだ支払先を引き継ぎ、帳簿と同じ議員のものかを確かめる", async () => {
+  const { entry, payee, repository } = setup();
+  entry.count.mockResolvedValue(0);
+  entry.deleteMany.mockResolvedValue({ count: 2 });
+  entry.createManyAndReturn.mockResolvedValue([{ id: BigInt(101), hash: "hash-a" }]);
+  entry.findMany.mockResolvedValue([
+    { advancedBy: null, payeeId: BigInt(7), payeeLinkSource: "manual" },
+    { advancedBy: null, payeeId: BigInt(7), payeeLinkSource: "manual" },
+  ]);
+  payee.count.mockResolvedValue(1);
+  // 発行元の照合で別の支払先が決まっても、人が選んだ支払先を優先する
+  await repository.completeJob({ ...COMPLETE_INPUT, replaceDrafts: true, payeeId: "8" });
+  expect(payee.count).toHaveBeenCalledWith({
+    where: { id: BigInt(7), politician: { books: { some: { id: BigInt(12) } } } },
+  });
+  expect(entry.createManyAndReturn.mock.calls[0][0].data[0]).toMatchObject({
+    payeeId: BigInt(7),
+    payeeLinkSource: "manual",
+  });
+});
+
+test("読み直しで引き継ぐ支払先が帳簿と別の議員のものなら紐づけない", async () => {
+  const { entry, payee, repository } = setup();
+  entry.count.mockResolvedValue(0);
+  entry.deleteMany.mockResolvedValue({ count: 1 });
+  entry.createManyAndReturn.mockResolvedValue([{ id: BigInt(101), hash: "hash-a" }]);
+  entry.findMany.mockResolvedValue([
+    { advancedBy: null, payeeId: BigInt(7), payeeLinkSource: "manual" },
+  ]);
+  payee.count.mockResolvedValue(0);
+  await repository.completeJob({ ...COMPLETE_INPUT, replaceDrafts: true });
+  expect(entry.createManyAndReturn.mock.calls[0][0].data[0]).toMatchObject({
+    payeeId: null,
+    payeeLinkSource: null,
+  });
+});
+
+test("読み直しで元の下書きの支払先が混ざっていれば、照合結果だけで紐づける", async () => {
+  const { entry, payee, repository } = setup();
+  entry.count.mockResolvedValue(0);
+  entry.deleteMany.mockResolvedValue({ count: 2 });
+  entry.createManyAndReturn.mockResolvedValue([{ id: BigInt(101), hash: "hash-a" }]);
+  entry.findMany.mockResolvedValue([
+    { advancedBy: null, payeeId: BigInt(7), payeeLinkSource: "manual" },
+    { advancedBy: null, payeeId: BigInt(9), payeeLinkSource: "manual" },
+  ]);
+  payee.count.mockResolvedValue(1);
+  await repository.completeJob({ ...COMPLETE_INPUT, replaceDrafts: true, payeeId: "8" });
+  expect(entry.createManyAndReturn.mock.calls[0][0].data[0]).toMatchObject({
+    payeeId: BigInt(8),
+    payeeLinkSource: "rule",
+  });
+});
+
+test("通常のスキャンでは立替者を付けない（読み取れないので空のまま）", async () => {
+  const { entry, repository } = setup();
+  entry.createManyAndReturn.mockResolvedValue([{ id: BigInt(101), hash: "hash-a" }]);
+  await repository.completeJob({ ...COMPLETE_INPUT, replaceDrafts: false });
+  expect(entry.findMany).not.toHaveBeenCalled();
+  expect(entry.createManyAndReturn.mock.calls[0][0].data[0]).toMatchObject({ advancedBy: null, payeeId: null, payeeLinkSource: null });
+});
+
+test("読み直しの時点で確認済・公開中の仕訳がある書類は、新しい下書きを作らずに失敗させる", async () => {
+  const { entry, job, repository } = setup();
+  entry.deleteMany.mockResolvedValue({ count: 1 });
+  entry.count.mockResolvedValue(1);
+  // 例外でトランザクションが巻き戻るので、先に消した下書きも元に戻る
+  await expect(repository.completeJob({ ...COMPLETE_INPUT, replaceDrafts: true })).rejects.toThrow(
+    ScanJobError,
+  );
+  expect(entry.createManyAndReturn).not.toHaveBeenCalled();
+  expect(job.update).not.toHaveBeenCalled();
+});
+
+test("読み直しのバッチを作り、既存の書類ごとに指示つきのジョブを作る", async () => {
+  const { batch, document, job, client, repository } = setup();
+  batch.create.mockResolvedValue({ id: BigInt(100) });
+  await expect(
+    repository.createRereadBatch({
+      bookId: "12",
+      uploadedById: "user-1",
+      promptId: "7",
+      model: "claude-sonnet-5",
+      documentIds: ["42", "43"],
+      instruction: "別の科目に分けてください",
+    }),
+  ).resolves.toBe("100");
+  expect(client.$transaction).toHaveBeenCalled();
+  // 書類は作り直さない（元のバッチに属したまま）
+  expect(document.create).not.toHaveBeenCalled();
+  expect(job.createMany).toHaveBeenCalledWith({
+    data: ["42", "43"].map((documentId) => ({
+      batchId: BigInt(100),
+      documentId: BigInt(documentId),
+      promptId: BigInt(7),
+      model: "claude-sonnet-5",
+      rereadInstruction: "別の科目に分けてください",
+    })),
+  });
+});
+
+test("読み直しのジョブを作る前に書類の行をロックする（書類の差し替えと直列化する）", async () => {
+  const { tx, batch, job, repository } = setup();
+  batch.create.mockResolvedValue({ id: BigInt(100) });
+  await repository.createRereadBatch({
+    bookId: "12",
+    uploadedById: "user-1",
+    promptId: "7",
+    model: "claude-sonnet-5",
+    documentIds: ["42", "43"],
+    instruction: "",
+  });
+  const [sql] = tx.$queryRaw.mock.calls[0];
+  expect(sql.join("?")).toContain("FOR UPDATE");
+  expect(sql.join("?")).toContain("research_fund_documents");
+  expect(tx.$queryRaw.mock.invocationCallOrder[0]).toBeLessThan(
+    job.createMany.mock.invocationCallOrder[0],
+  );
+});
+
+test("選んだ下書きの書類を重複なく返し、確認済・公開中を含むかを添える", async () => {
+  const { entry, repository } = setup();
+  entry.findMany
+    .mockResolvedValueOnce([{ documentId: BigInt(42) }, { documentId: BigInt(43) }])
+    .mockResolvedValueOnce([{ documentId: BigInt(43) }]);
+  await expect(repository.findRereadCandidates("12", ["101", "102"])).resolves.toEqual([
+    { documentId: "42", hasReviewedEntries: false },
+    { documentId: "43", hasReviewedEntries: true },
+  ]);
+  // 書類の紐づく帳簿の下書きだけが候補になる
+  expect(entry.findMany).toHaveBeenNthCalledWith(1, {
+    where: {
+      bookId: BigInt(12),
+      id: { in: [BigInt(101), BigInt(102)] },
+      status: "draft",
+      documentId: { not: null },
+    },
+    select: { documentId: true },
+    distinct: ["documentId"],
+    orderBy: { documentId: "asc" },
+  });
+  expect(entry.findMany).toHaveBeenNthCalledWith(2, {
+    where: {
+      bookId: BigInt(12),
+      documentId: { in: [BigInt(42), BigInt(43)] },
+      status: { not: "draft" },
+    },
+    select: { documentId: true },
+    distinct: ["documentId"],
+  });
+});
+
+test("書類の紐づく下書きがなければ候補は空", async () => {
+  const { entry, repository } = setup();
+  entry.findMany.mockResolvedValueOnce([]);
+  await expect(repository.findRereadCandidates("12", ["101"])).resolves.toEqual([]);
+  expect(entry.findMany).toHaveBeenCalledTimes(1);
+});
+
+test("ジョブを失敗にしてエラーを記録する", async () => {
+  const { job, repository } = setup();
+  await repository.failJob("11", "読み取りに失敗しました");
+  expect(job.update).toHaveBeenCalledWith({
+    where: { id: BigInt(11) },
+    data: expect.objectContaining({ status: "failed", error: "読み取りに失敗しました" }),
+  });
+  // rawJson を渡さなければ既存の値を消さない
+  expect(job.update.mock.calls[0][0].data).not.toHaveProperty("rawJson");
+});
+
+test("長すぎるエラーは切り詰めて保存する", async () => {
+  const { job, repository } = setup();
+  await repository.failJob("11", "あ".repeat(600));
+  expect(job.update.mock.calls[0][0].data.error).toHaveLength(500);
+});
+
+test("失敗したジョブだけを待機中に戻す", async () => {
+  const { tx, job, repository } = setup();
+  job.updateMany.mockResolvedValue({ count: 1 });
+  await expect(repository.requeueJob("12", "11")).resolves.toBe(true);
+  expect(job.updateMany).toHaveBeenCalledWith({
+    where: { id: BigInt(11), batch: { bookId: BigInt(12) }, status: "failed" },
+    data: { status: "queued", error: null, startedAt: null, finishedAt: null },
+  });  // 書類の差し替えと直列化するため、戻す前にジョブの書類の行をロックする
+  const [sql] = tx.$queryRaw.mock.calls[0];
+  expect(sql.join("?")).toContain("FOR UPDATE OF d");
+  expect(tx.$queryRaw.mock.invocationCallOrder[0]).toBeLessThan(
+    job.updateMany.mock.invocationCallOrder[0],
+  );
+});
+
+test("他の帳簿や失敗していないジョブは戻せない", async () => {
+  const { job, repository } = setup();
+  job.updateMany.mockResolvedValue({ count: 0 });
+  await expect(repository.requeueJob("12", "11")).resolves.toBe(false);
+});
+
+test("科目マスタをキーと種別だけにして返す", async () => {
+  const { account, repository } = setup();
+  account.findMany.mockResolvedValue([
+    { key: "bank", type: "asset" },
+    { key: "taxi", type: "expense" },
+  ]);
+  await expect(repository.accounts()).resolves.toEqual([
+    { key: "bank", type: "asset" },
+    { key: "taxi", type: "expense" },
+  ]);
+});

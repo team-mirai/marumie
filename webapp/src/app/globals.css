@@ -7,6 +7,11 @@
   .font-english {
     font-family: var(--font-noto-sans), "Noto Sans", sans-serif;
   }
+  /* 金額の数字（v9 の --num）。数字は Poppins、それ以外の文字は Noto Sans JP */
+  .font-num {
+    font-family:
+      var(--font-poppins), var(--font-noto-sans-jp), "Noto Sans JP", system-ui, sans-serif;
+  }
 
   /* Screen Reader Only - スクリーンリーダー専用コンテンツ */
   .sr-only {
@@ -20,10 +25,38 @@
     white-space: nowrap;
     border: 0;
   }
+
+  /*
+   * SP で押せる範囲を高さ 44px 以上にする。見た目の大きさはそのままで、当たり判定だけを上下に広げる。
+   * 年の切り替えのように、見た目は 44px より低いボタン・リンクに付ける。
+   */
+  @media (max-width: 640px) {
+    .tap-44 {
+      position: relative;
+    }
+    .tap-44::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 50%;
+      height: 44px;
+      transform: translateY(-50%);
+    }
+  }
+}
+
+/* ページ内リンクで移ったとき、見出しが固定ヘッダーの下に隠れないようにする */
+@layer base {
+  main section[id],
+  main h2[id] {
+    scroll-margin-top: 100px;
+  }
 }
 
 :root {
-  --background: linear-gradient(135deg, rgba(226, 246, 243, 1) 0%, rgba(238, 246, 226, 1) 100%);
+  /* ページ全体の背景（v9 の body と同じ。ミントから黄緑への淡いグラデーション） */
+  --background: linear-gradient(135deg, #e6f4f1 0%, #eef4e9 100%);
   --foreground: #171717;
 
   /* Figma Design System Colors */
@@ -56,9 +89,17 @@
 
 body {
   background: var(--background);
-  background-color: #e2f6f3; /* バウンスエフェクト時の背景色 */
+  /* バウンス時（iOS Safari で上下に引っ張ったとき）に見える色。v9 の body の単色指定に合わせ、グラデーションの中間の色にする */
+  background-color: #e8f3f0;
+  /* スクロールしても背景を流さず、画面に対してグラデーションを固定する（v9 と同じ） */
+  background-attachment: fixed;
   color: var(--foreground);
-  /* font-family: sans-serif; */
+  /*
+   * ページ全体の書体（v9 と同じく Noto Sans JP を先頭にする）。
+   * 指定しないと OS の書体で描かれ、ヒラギノ（W3・W6 の2段）では 800・900 も W6 に頭打ちになって細く見える。
+   * Noto Sans JP は next/font で読み込むため、書体名ではなく変数で指定する（"Noto Sans JP" の名前では見つからない）
+   */
+  font-family: var(--font-noto-sans-jp), "Hiragino Kaku Gothic ProN", sans-serif;
 }
 
 /* フォーカスインジケーター - キーボードナビゲーション用のみ */
@@ -99,4 +140,732 @@ table:focus {
 table:focus-visible {
   outline: 2px solid #2aa693;
   outline-offset: 2px;
+}
+
+/*
+ * 見出しカードの面（ミストグラデーション）。
+ * 政党・政治団体・議員・トップの見出しカードで共通に使う。グラデーションの重ね方と粒子のノイズは
+ * Tailwind のユーティリティでは書き切れないので、ここにまとめる。
+ */
+.mist-surface {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  color: #0a1a17;
+  background:
+    radial-gradient(90% 120% at 6% 0%, #f7fdfa 0%, rgba(247, 253, 250, 0) 58%),
+    radial-gradient(80% 100% at 100% 10%, #c6f0df 0%, rgba(198, 240, 223, 0) 60%),
+    radial-gradient(90% 110% at 80% 115%, #5fd1b4 0%, rgba(95, 209, 180, 0) 62%),
+    linear-gradient(135deg, #d9f5ea, #a3e6cf);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.95),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.35),
+    inset 0 -1px 0 rgba(10, 90, 78, 0.12),
+    0 1px 2px rgba(10, 60, 52, 0.08),
+    0 10px 20px -12px rgba(15, 132, 114, 0.35),
+    0 28px 48px -30px rgba(15, 132, 114, 0.55);
+}
+
+/* 政治団体の見出しカードの面（政党と見分けられるよう、青みのある緑にする） */
+.mist-surface-group {
+  background:
+    radial-gradient(90% 120% at 6% 0%, #f7fdfe 0%, rgba(247, 253, 254, 0) 58%),
+    radial-gradient(80% 100% at 100% 10%, #cdeff3 0%, rgba(205, 239, 243, 0) 60%),
+    radial-gradient(90% 110% at 80% 115%, #6cccd3 0%, rgba(108, 204, 211, 0) 62%),
+    linear-gradient(135deg, #e2f6f7, #b4e6ea);
+}
+
+/*
+ * トップの「所属議員の調研費」の議員カードの面。4段の濃淡を上から順に繰り返す（SP のウォレット）。
+ */
+.mist-member-0 {
+  background:
+    radial-gradient(90% 120% at 8% 0%, #e8fbf4 0%, rgba(232, 251, 244, 0) 55%),
+    radial-gradient(70% 90% at 100% 18%, #9be7d6 0%, rgba(155, 231, 214, 0) 60%),
+    radial-gradient(90% 110% at 78% 110%, #22b39e 0%, rgba(34, 179, 158, 0) 62%),
+    linear-gradient(135deg, #7fdcc8, #45c6b0);
+}
+
+.mist-member-1 {
+  background:
+    radial-gradient(90% 120% at 0% 10%, #f6fdfa 0%, rgba(246, 253, 250, 0) 58%),
+    radial-gradient(80% 90% at 92% 0%, #c7f0e6 0%, rgba(199, 240, 230, 0) 60%),
+    radial-gradient(80% 100% at 70% 115%, #6fd5c3 0%, rgba(111, 213, 195, 0) 62%),
+    linear-gradient(135deg, #bdede2, #93e0d0);
+}
+
+.mist-member-2 {
+  background:
+    radial-gradient(90% 120% at 12% 100%, #bdf0d9 0%, rgba(189, 240, 217, 0) 60%),
+    radial-gradient(70% 100% at 100% 0%, #effbf6 0%, rgba(239, 251, 246, 0) 55%),
+    radial-gradient(80% 110% at 96% 100%, #2ebba3 0%, rgba(46, 187, 163, 0) 60%),
+    linear-gradient(135deg, #9ae3cf, #5acdb7);
+}
+
+.mist-member-3 {
+  background:
+    radial-gradient(100% 120% at 20% 0%, #fafefc 0%, rgba(250, 254, 252, 0) 60%),
+    radial-gradient(80% 100% at 100% 80%, #a9e9d6 0%, rgba(169, 233, 214, 0) 62%),
+    radial-gradient(70% 90% at 0% 100%, #d4f4e7 0%, rgba(212, 244, 231, 0) 60%),
+    linear-gradient(135deg, #ddf6ee, #b5ebdc);
+}
+
+/* SP のウォレットのカードは束に重ねるので、影を上に落とす。開いたカードだけ下にも影を出す */
+.mist-wallet-card {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.95),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.35),
+    0 -6px 14px -10px rgba(10, 60, 52, 0.35);
+}
+
+.mist-wallet-card[data-on="true"] {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.95),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.35),
+    0 -6px 14px -10px rgba(10, 60, 52, 0.35),
+    0 26px 44px -24px rgba(15, 132, 114, 0.6);
+}
+
+/*
+ * ウォレットのカードを押したときの沈み（v9 の #home-rf.sp-wallet .mt-mlink:active）。
+ * 閉じたカードは 2px、開いたカードは 1px 沈んでわずかに縮み、離すとなめらかに戻る
+ */
+.mist-wallet-card {
+  transform-origin: 50% 0;
+  transition: transform 0.4s cubic-bezier(0.2, 0.7, 0.1, 1);
+}
+
+.mist-wallet-card:active {
+  transform: translateY(2px);
+}
+
+.mist-wallet-card[data-on="true"]:active {
+  transform: translateY(1px) scale(0.992);
+}
+
+/* 開くシートは、高さの広がり（useWalletMorph）と一緒に 8px 上から滑り込む（v9 の mtDetailIn） */
+.wallet-sheet-in {
+  animation: wallet-sheet-in 0.45s cubic-bezier(0.2, 0.7, 0.1, 1);
+}
+
+@keyframes wallet-sheet-in {
+  from {
+    transform: translateY(-8px);
+  }
+  to {
+    transform: none;
+  }
+}
+
+/* 黒いピルボタンの矢印（v9 の .mt-card-btn svg）。ボタンにホバーすると右へ 4px 動く */
+.pill-arrow > svg {
+  transition: transform 0.25s cubic-bezier(0.2, 0.7, 0.1, 1);
+}
+
+.pill-arrow:hover > svg {
+  transform: translateX(4px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mist-wallet-card,
+  .pill-arrow > svg {
+    transition: none;
+  }
+  .mist-wallet-card:active,
+  .mist-wallet-card[data-on="true"]:active,
+  .pill-arrow:hover > svg {
+    transform: none;
+  }
+  .wallet-sheet-in {
+    animation: none;
+  }
+}
+
+.mist-surface::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  border-radius: inherit;
+  opacity: 0.32;
+  mix-blend-mode: soft-light;
+  background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .55 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+}
+
+/*
+ * 月ごとの推移のグラフの横スクロール（MonthlyChartScroll）。
+ * SP では右端をぼかしてまだ続きがあることを見せ、グラフが画面に入ったら中央に「左右にスクロール」を出して数秒で消す。
+ * サンキー図の「指を広げて拡大」（PinchZoom）も同じ見た目の濃い半透明のピルで図の上に重ねる。
+ */
+/* SP ではスクロール領域自身に mask-image がかかり自分のフォーカス枠まで消えるので、マスクの無い親に枠を描く */
+.monthly-hscroll:focus-visible {
+  outline: none;
+}
+
+.monthly-hscroll-frame:has(> .monthly-hscroll:focus-visible) {
+  outline: 2px solid #0b0f0e;
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+.monthly-hscroll-hint,
+.pinch-zoom-hint {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .monthly-hscroll {
+    -webkit-mask-image: linear-gradient(to right, #000 82%, transparent);
+    mask-image: linear-gradient(to right, #000 82%, transparent);
+  }
+
+  .monthly-hscroll-hint,
+  .pinch-zoom-hint {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    z-index: 4;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    padding: 10px 16px 10px 12px;
+    border-radius: 999px;
+    background: rgba(11, 15, 14, 0.8);
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+    box-shadow: 0 6px 20px rgba(11, 15, 14, 0.25);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+    pointer-events: none;
+    transform: translate(-50%, -50%);
+    opacity: 0;
+  }
+
+  .monthly-hscroll-hint .hand,
+  .pinch-zoom-hint .hand {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+    background:
+      center / contain no-repeat
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 11V5.5a1.5 1.5 0 0 1 3 0V11'/%3E%3Cpath d='M12 10.5V9a1.5 1.5 0 0 1 3 0v2'/%3E%3Cpath d='M15 10.5a1.5 1.5 0 0 1 3 0V15a6 6 0 0 1-6 6h-1a6 6 0 0 1-5.2-3l-1.6-2.8a1.5 1.5 0 0 1 2.5-1.6L9 15'/%3E%3C/svg%3E");
+  }
+
+  [data-in-view="true"] > .monthly-hscroll-hint,
+  [data-in-view="true"] > .pinch-zoom-hint {
+    animation: chart-overlay-hint 3.6s 0.8s ease both;
+  }
+
+  [data-in-view="true"] > .monthly-hscroll-hint .hand {
+    animation: monthly-hscroll-hand 1.4s 0.9s ease-in-out infinite;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .monthly-hscroll-hint,
+  .pinch-zoom-hint {
+    display: none;
+  }
+}
+
+@keyframes chart-overlay-hint {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.94);
+  }
+  10%,
+  80% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+@keyframes monthly-hscroll-hand {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  30% {
+    transform: translateX(-7px);
+  }
+  70% {
+    transform: translateX(7px);
+  }
+}
+
+/*
+ * 「詳しく見る」の矢印リンク（v9 の案A1）。下線の右端から左上へ短い矢じりを出す。
+ * ホバー・押下・キーボードで選んだときは緑に変わり、下線を左から引き直し、最後に矢じりがポンと出る（案C）。
+ */
+.more-link {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  padding: 12px 0 13px;
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.3;
+  color: #0a1a17;
+  text-decoration: none;
+  transition: color 0.25s;
+}
+
+.more-link::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: -14px;
+  bottom: 8px;
+  height: 1.5px;
+  border-radius: 1px;
+  background: currentColor;
+}
+
+.more-link::before {
+  content: "";
+  position: absolute;
+  right: -14px;
+  bottom: 8px;
+  width: 9px;
+  height: 1.5px;
+  border-radius: 1px;
+  background: currentColor;
+  transform-origin: 100% 50%;
+  transform: rotate(38deg);
+}
+
+.more-link:is(:hover, :active, :focus-visible) {
+  color: #0f8472;
+}
+
+.more-link:is(:hover, :active, :focus-visible)::after {
+  transform-origin: 0 50%;
+  animation: more-link-redraw 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.more-link:is(:hover, :active, :focus-visible)::before {
+  animation: more-link-pop 0.3s 0.32s cubic-bezier(0.3, 1.6, 0.5, 1) both;
+}
+
+/* 議員ページの「明細N件を見る」。上下の余白を詰め、下線と矢じりを文字に寄せる */
+.more-link.more-link-tight {
+  padding: 6px 0 9px;
+}
+
+.more-link.more-link-tight::after,
+.more-link.more-link-tight::before {
+  bottom: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .more-link:is(:hover, :active, :focus-visible)::before,
+  .more-link:is(:hover, :active, :focus-visible)::after {
+    animation: none;
+  }
+}
+
+/*
+ * 区分のタブ（CashFlowSection）と SP の出入金の並び順タブ（TransactionSortTabs）の下線（v9 の .mt-tabs / .mt-txsort）。
+ * 選んだタブの 3px の黒い下線が中央から横に伸びて現れる。下線はボタンの透明な下ボーダーの上に重ねるので、止まった状態の位置は変わらない
+ */
+.tab-underline {
+  transition: color 0.2s;
+}
+
+.tab-underline::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -3px;
+  height: 3px;
+  background: #000;
+  transform: scaleX(0);
+  transition: transform 0.45s cubic-bezier(0.2, 0.7, 0.1, 1);
+}
+
+.tab-underline:is([aria-selected="true"], [aria-pressed="true"])::after {
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tab-underline,
+  .tab-underline::after {
+    transition: none;
+  }
+}
+
+@keyframes more-link-redraw {
+  0% {
+    transform: scaleX(0);
+  }
+  100% {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes more-link-pop {
+  0% {
+    transform: rotate(38deg) scaleX(0);
+  }
+  100% {
+    transform: rotate(38deg) scaleX(1);
+  }
+}
+
+/*
+ * SP のメニュー（HeaderSpMenu）の開閉の動き（デザイン v9）。
+ * 開くとき: 背景がヘッダーのすぐ下から幕が下りるように広がり、中身は少し遅れて上から順にすべり込む。
+ * 閉じるとき（header[data-sp-menu="closing"]）: 中身がすっと消え、幕が下から上へ巻き上がる。
+ *
+ * 幕は clip-path ではなく transform で動かす（clip-path の動きは iOS Safari などで毎フレーム描き直しになりカクつく）。
+ * 外枠（.sp-menu-clip。はみ出しを隠す）を上へずらした位置から下ろし、中のメニュー（.sp-menu）を同じだけ逆向きにずらすと、
+ * メニューは動かずに、見える範囲だけが上から下へ広がる。両方を同じ速さで動かすので、見た目は clip-path の幕と同じ。
+ * 外枠はヘッダーの行に重なって動くので、外枠ではクリックを受けない（メニューの上だけで受ける）。
+ */
+@media (max-width: 640px) {
+  .sp-menu-clip {
+    overflow: hidden;
+    pointer-events: none;
+    animation: sp-menu-drop-outer 0.5s cubic-bezier(0.32, 0.72, 0, 1) both;
+  }
+  .sp-menu {
+    pointer-events: auto;
+    animation: sp-menu-drop-inner 0.5s cubic-bezier(0.32, 0.72, 0, 1) both;
+  }
+  .sp-menu > * {
+    animation: sp-menu-item-in 0.42s cubic-bezier(0.32, 0.72, 0, 1) both;
+  }
+  .sp-menu > :nth-child(1) {
+    animation-delay: 0.08s;
+  }
+  .sp-menu > :nth-child(2) {
+    animation-delay: 0.13s;
+  }
+  .sp-menu > :nth-child(3) {
+    animation-delay: 0.18s;
+  }
+  .sp-menu > :nth-child(4) {
+    animation-delay: 0.23s;
+  }
+  .sp-menu > :nth-child(n + 5) {
+    animation-delay: 0.28s;
+  }
+  header[data-sp-menu="closing"] .sp-menu-clip {
+    animation: sp-menu-lift-outer 0.32s cubic-bezier(0.55, 0, 0.75, 0.2) both;
+  }
+  header[data-sp-menu="closing"] .sp-menu {
+    animation: sp-menu-lift-inner 0.32s cubic-bezier(0.55, 0, 0.75, 0.2) both;
+  }
+  header[data-sp-menu="closing"] .sp-menu > * {
+    animation: sp-menu-item-out 0.16s ease-in both;
+    animation-delay: 0s;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sp-menu-clip,
+  .sp-menu,
+  .sp-menu > * {
+    animation: none;
+  }
+}
+
+@keyframes sp-menu-drop-outer {
+  from {
+    transform: translateY(-100%);
+  }
+  to {
+    transform: none;
+  }
+}
+
+@keyframes sp-menu-drop-inner {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: none;
+  }
+}
+
+@keyframes sp-menu-lift-outer {
+  from {
+    transform: none;
+  }
+  to {
+    transform: translateY(-100%);
+  }
+}
+
+@keyframes sp-menu-lift-inner {
+  from {
+    transform: none;
+  }
+  to {
+    transform: translateY(100%);
+  }
+}
+
+@keyframes sp-menu-drop {
+  from {
+    clip-path: inset(0 0 100% 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+@keyframes sp-menu-item-in {
+  from {
+    opacity: 0;
+    transform: translateY(-14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes sp-menu-item-out {
+  from {
+    opacity: 1;
+    transform: none;
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+}
+
+/*
+ * PC のメガメニュー（HeaderMegaMenu）を開くときの動き（デザイン v9 の mmDrop / mmItem）。
+ * パネルが上から幕が下りるように現れ、中の項目は少し遅れて上から順に入る。
+ * 項目の順番は --mega-menu-item-order（調研費の議員は行ごと）。閉じるときは動かさずにすぐ消す。
+ * 動きは SP のメニューと同じ keyframes を使う。
+ */
+.mega-menu {
+  animation: sp-menu-drop 0.5s cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+
+.mega-menu-item {
+  animation: sp-menu-item-in 0.42s cubic-bezier(0.32, 0.72, 0, 1) both;
+  animation-delay: min(calc(0.08s + var(--mega-menu-item-order, 0) * 0.05s), 0.4s);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mega-menu,
+  .mega-menu-item {
+    animation: none;
+  }
+}
+
+/*
+ * 下層ページのカードの控えめなフェードイン（v9 の data-hqrv="1"）。
+ * RevealOnScroll が画面の外にあるカードにだけ reveal-armed を付け、画面に入ったら is-in を付ける
+ */
+.reveal-armed {
+  opacity: 0;
+  transform: translateY(16px);
+  transition:
+    opacity 0.7s cubic-bezier(0.2, 0.7, 0.1, 1),
+    transform 0.8s cubic-bezier(0.2, 0.7, 0.1, 1);
+  /* 並んだカードに時差をつけるときは --reveal-delay を渡す */
+  transition-delay: var(--reveal-delay, 0s);
+}
+
+.reveal-armed.is-in {
+  opacity: 1;
+  transform: none;
+}
+
+/*
+ * セクションの見出しのせり上がり（v9 の data-hqrv="mask"）。
+ * RevealOnScroll が画面の外にある見出しにだけ reveal-mask-armed を付け、行（.reveal-line）ごとに隠して下から出す
+ */
+.reveal-mask-armed .reveal-line {
+  display: block;
+  overflow: hidden;
+  padding-bottom: 0.06em;
+  margin-bottom: -0.06em;
+}
+
+.reveal-mask-armed .reveal-line > span {
+  display: inline-block;
+  transform: translateY(105%);
+  transition: transform 1.1s cubic-bezier(0.2, 0.7, 0.1, 1);
+}
+
+.reveal-mask-armed.is-in .reveal-line > span {
+  transform: none;
+}
+
+.reveal-mask-armed .reveal-line:nth-child(2) > span {
+  transition-delay: 0.08s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal-armed {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+  .reveal-mask-armed .reveal-line > span {
+    transform: none;
+    transition: none;
+  }
+}
+
+@media print {
+  .reveal-armed,
+  .reveal-mask-armed .reveal-line > span {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/*
+ * 議員ページの見出しカードの前後の議員への切り替え（デザイン v9 の .mt-lp-mem、PoliticianCardSwitcher）。
+ * 前後ボタン：PC はホバーで押す向きへ 2px 動く。SP は押すと縮み、中の矢印が押す向きへ 3px 動き、離すと少し弾んで戻る
+ */
+.politician-switch-nav {
+  transition:
+    transform 0.25s cubic-bezier(0.2, 0.7, 0.1, 1),
+    color 0.25s,
+    background-color 0.25s;
+}
+
+@media (min-width: 641px) {
+  .politician-switch-nav.is-prev:hover {
+    transform: translateX(-2px);
+  }
+  .politician-switch-nav.is-next:hover {
+    transform: translateX(2px);
+  }
+}
+
+@media (max-width: 640px) {
+  .politician-switch-nav {
+    transition:
+      transform 0.45s cubic-bezier(0.2, 0.9, 0.25, 1.2),
+      background-color 0.3s,
+      box-shadow 0.3s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .politician-switch-nav > svg {
+    transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  .politician-switch-nav:active {
+    transform: scale(0.86);
+    background: #fff;
+    box-shadow:
+      inset 0 1px 0 #fff,
+      0 6px 14px -8px rgba(10, 60, 52, 0.5);
+  }
+  .politician-switch-nav.is-prev:active > svg {
+    transform: translateX(-3px);
+  }
+  .politician-switch-nav.is-next:active > svg {
+    transform: translateX(3px);
+  }
+
+  /* 切り替えた向き（次へなら右から、前へなら左から）からカードが入り、顔写真は少し回転しながら弾み、名前は下から入る */
+  .politician-switch-in-r {
+    animation: politician-switch-in-r 0.62s cubic-bezier(0.16, 0.84, 0.24, 1) both;
+  }
+  .politician-switch-in-l {
+    animation: politician-switch-in-l 0.62s cubic-bezier(0.16, 0.84, 0.24, 1) both;
+  }
+  :is(.politician-switch-in-r, .politician-switch-in-l) .politician-switch-avatar {
+    animation: politician-switch-avatar-in 0.7s 0.06s cubic-bezier(0.2, 0.9, 0.25, 1.2) both;
+  }
+  :is(.politician-switch-in-r, .politician-switch-in-l) .politician-switch-text {
+    animation: politician-switch-text-in 0.5s 0.12s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+}
+
+/* 位置の点：切り替え後に選ばれた点が伸びる */
+.politician-switch-dot {
+  transition:
+    width 0.5s cubic-bezier(0.2, 0.9, 0.25, 1),
+    background-color 0.4s;
+}
+
+@keyframes politician-switch-in-r {
+  from {
+    opacity: 0;
+    transform: translate3d(32px, 0, 0) scale(0.975);
+    filter: blur(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+}
+
+@keyframes politician-switch-in-l {
+  from {
+    opacity: 0;
+    transform: translate3d(-32px, 0, 0) scale(0.975);
+    filter: blur(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+}
+
+@keyframes politician-switch-avatar-in {
+  from {
+    transform: scale(0.82) rotate(-6deg);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.04) rotate(0);
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+
+@keyframes politician-switch-text-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .politician-switch-in-r,
+  .politician-switch-in-l,
+  :is(.politician-switch-in-r, .politician-switch-in-l) * {
+    animation: none !important;
+  }
+  .politician-switch-nav,
+  .politician-switch-nav > svg,
+  .politician-switch-dot {
+    transition: none;
+  }
+  .politician-switch-nav:hover,
+  .politician-switch-nav:active,
+  .politician-switch-nav:active > svg {
+    transform: none !important;
+  }
 }

@@ -4,32 +4,35 @@ import "client-only";
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { HandHeart, UploadSimple } from "@phosphor-icons/react/dist/ssr";
 import type { RowSelectionState } from "@tanstack/react-table";
-import type { PoliticalOrganization } from "@/shared/models/political-organization";
+import type { OrganizationTarget } from "@/server/contexts/shared/domain/models/admin-target";
 import type { TransactionWithDonor } from "@/server/contexts/report/domain/models/transaction-with-donor";
 import type { Donor } from "@/server/contexts/report/domain/models/donor";
 import { TransactionWithDonorTable } from "./TransactionWithDonorTable";
 import { AssignDonorDialog } from "./AssignDonorDialog";
 import { DonorAssignmentFilters, type DonorAssignmentFilterValues } from "./DonorAssignmentFilters";
 import { ClientPagination } from "@/client/components/ui/ClientPagination";
-import { Card, Input, Button, Label } from "@/client/components/ui";
-import { PoliticalOrganizationSelect } from "@/client/components/political-organizations/PoliticalOrganizationSelect";
+import { Button } from "@/client/components/ui";
+import { PageHeader } from "@/client/components/layout/PageHeader";
+import { CurrentTargetBar } from "@/client/components/layout/CurrentTargetBar";
+import { AssignmentSelectionBar } from "@/client/components/assignment/AssignmentSelectionBar";
 
 const ALL_CATEGORIES_VALUE = "__all__";
 
+type SortField = "transactionDate" | "debitAmount" | "categoryKey";
+
 interface DonorAssignmentClientProps {
-  organizations: PoliticalOrganization[];
+  target: OrganizationTarget;
   initialTransactions: TransactionWithDonor[];
   total: number;
   page: number;
   perPage: number;
   initialFilters: {
-    politicalOrganizationId: string;
-    financialYear: number;
     unassignedOnly: boolean;
     categoryKey: string;
     searchQuery: string;
-    sortField: "transactionDate" | "debitAmount" | "categoryKey";
+    sortField: SortField;
     sortOrder: "asc" | "desc";
   };
   allDonors: Donor[];
@@ -37,7 +40,7 @@ interface DonorAssignmentClientProps {
 }
 
 export function DonorAssignmentClient({
-  organizations,
+  target,
   initialTransactions,
   total,
   page,
@@ -49,14 +52,6 @@ export function DonorAssignmentClient({
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
-  const initialFinancialYear = useMemo(() => new Date().getFullYear(), []);
-
-  const [selectedOrganizationId, setSelectedOrganizationId] = useState(
-    initialFilters.politicalOrganizationId || organizations[0]?.id || "",
-  );
-  const [financialYear, setFinancialYear] = useState(
-    initialFilters.financialYear || initialFinancialYear,
-  );
   const [unassignedOnly, setUnassignedOnly] = useState(initialFilters.unassignedOnly);
   const [categoryKey, setCategoryKey] = useState(
     initialFilters.categoryKey || ALL_CATEGORIES_VALUE,
@@ -106,8 +101,6 @@ export function DonorAssignmentClient({
   const totalPages = Math.ceil(total / perPage);
 
   const buildUrl = (params: {
-    orgId?: string;
-    year?: number;
     unassigned?: boolean;
     category?: string;
     search?: string;
@@ -116,8 +109,6 @@ export function DonorAssignmentClient({
     page?: number;
   }) => {
     const searchParams = new URLSearchParams();
-    searchParams.set("orgId", params.orgId ?? selectedOrganizationId);
-    searchParams.set("year", String(params.year ?? financialYear));
     searchParams.set("unassigned", String(params.unassigned ?? unassignedOnly));
     if (params.category ?? categoryKey) {
       searchParams.set("category", params.category ?? categoryKey);
@@ -159,24 +150,7 @@ export function DonorAssignmentClient({
     });
   };
 
-  const handleOrganizationChange = (value: string) => {
-    setSelectedOrganizationId(value);
-    startTransition(() => {
-      router.push(buildUrl({ orgId: value, page: 1 }));
-    });
-  };
-
-  const handleYearChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const year = Number.parseInt(e.target.value, 10);
-    if (!Number.isNaN(year)) {
-      setFinancialYear(year);
-      startTransition(() => {
-        router.push(buildUrl({ year, page: 1 }));
-      });
-    }
-  };
-
-  const handleSortChange = (field: "transactionDate" | "debitAmount" | "categoryKey") => {
+  const handleSortChange = (field: SortField) => {
     let newOrder: "asc" | "desc" = "asc";
     if (sortField === field) {
       newOrder = sortOrder === "asc" ? "desc" : "asc";
@@ -194,94 +168,65 @@ export function DonorAssignmentClient({
     });
   };
 
-  if (organizations.length === 0) {
-    return (
-      <Card className="p-4">
-        <p className="text-white">政治団体が登録されていません。先に政治団体を作成してください。</p>
-      </Card>
-    );
-  }
+  const header = (
+    <PageHeader
+      label="Donor Assignment"
+      title="寄付者紐付け管理"
+      description="取引に対して寄付者を紐付けます"
+      actions={
+        <>
+          <Button asChild variant="outline" className="text-[13px]">
+            <Link href="/donors">
+              <HandHeart />
+              マスタ管理へ
+            </Link>
+          </Button>
+          <Button asChild variant="outline" className="text-[13px]">
+            <Link href="/import-donors">
+              <UploadSimple />
+              CSV一括登録
+            </Link>
+          </Button>
+        </>
+      }
+    />
+  );
 
   return (
-    <div className="bg-card rounded-xl p-4 space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-white mb-1">寄付者紐付け管理</h1>
-          <p className="text-muted-foreground">Transactionに対してDonor（寄付者）を紐付けます</p>
-        </div>
-        <Button asChild variant="outline">
-          <Link href="/import-donors">CSV一括登録</Link>
-        </Button>
-      </div>
+    <div>
+      {header}
 
-      <Card className="p-4">
-        <div className="flex flex-col md:flex-row md:items-end gap-4">
-          <div className="w-fit">
-            <PoliticalOrganizationSelect
-              organizations={organizations}
-              value={selectedOrganizationId}
-              onValueChange={handleOrganizationChange}
-              required
-            />
-          </div>
-          <div className="w-fit space-y-2">
-            <Label>報告年 (西暦)</Label>
-            <Input
-              type="number"
-              value={String(financialYear)}
-              onChange={handleYearChange}
-              min={1900}
-              max={2100}
-              required
-              className="w-24"
-            />
-          </div>
-        </div>
-      </Card>
+      <CurrentTargetBar target={target} note="の取引を紐付けます" />
 
-      <hr className="border-border" />
+      <div className="rounded-lg border border-border bg-card p-6">
+        <DonorAssignmentFilters
+          values={{
+            categoryKey,
+            searchQuery,
+            unassignedOnly,
+          }}
+          categoryOptions={categoryOptions}
+          onChange={handleFilterChange}
+        />
 
-      <DonorAssignmentFilters
-        values={{
-          categoryKey,
-          searchQuery,
-          unassignedOnly,
-        }}
-        categoryOptions={categoryOptions}
-        onChange={handleFilterChange}
-      />
-
-      <Card className="p-4">
-        <div className="flex justify-between items-center mb-4">
-          <div className="text-muted-foreground text-sm">
-            {total}件のTransaction
+        <div className="mt-5 mb-3 flex flex-wrap items-center justify-between gap-2">
+          <p className="text-[13px] text-muted-foreground">
+            <span className="font-latin">{total}</span>件の取引
             {unassignedOnly && " (未紐付けのみ)"}
-          </div>
-          {isPending && <div className="text-muted-foreground text-sm">読み込み中...</div>}
+          </p>
+          {isPending && (
+            <div className="flex items-center gap-2">
+              <div className="size-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+              <p className="text-[13px] text-muted-foreground">読み込み中...</p>
+            </div>
+          )}
         </div>
 
-        <div className="flex items-center gap-4 mb-4 p-3 bg-secondary/30 border border-border rounded-lg">
-          <span className="text-white text-sm">
-            選択中: <span className="font-medium">{selectedTransactions.length}件</span>
-          </span>
-          <Button
-            type="button"
-            size="sm"
-            onClick={handleBulkAssignClick}
-            disabled={selectedTransactions.length === 0}
-          >
-            一括紐付け
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => setRowSelection({})}
-            disabled={selectedTransactions.length === 0}
-          >
-            選択解除
-          </Button>
-        </div>
+        <AssignmentSelectionBar
+          selectedCount={selectedTransactions.length}
+          onBulkAssign={handleBulkAssignClick}
+          onClear={() => setRowSelection({})}
+        />
 
         <TransactionWithDonorTable
           transactions={initialTransactions}
@@ -300,15 +245,15 @@ export function DonorAssignmentClient({
             onPageChange={handlePageChange}
           />
         )}
-      </Card>
 
-      <AssignDonorDialog
-        isOpen={isAssignDialogOpen}
-        transactions={assignDialogTransactions}
-        allDonors={allDonors}
-        onClose={handleAssignDialogClose}
-        onSuccess={handleAssignSuccess}
-      />
+        <AssignDonorDialog
+          isOpen={isAssignDialogOpen}
+          transactions={assignDialogTransactions}
+          allDonors={allDonors}
+          onClose={handleAssignDialogClose}
+          onSuccess={handleAssignSuccess}
+        />
+      </div>
     </div>
   );
 }

@@ -1,7 +1,8 @@
 import "server-only";
 
-import { MfCsvLoader } from "@/server/contexts/data-import/infrastructure/mf/mf-csv-loader";
-import { MfRecordConverter } from "@/server/contexts/data-import/infrastructure/mf/mf-record-converter";
+import { MfCsvFormatError } from "@/server/contexts/data-import/domain/errors/mf-csv-format-error";
+import type { IMfCsvLoader } from "@/server/contexts/data-import/domain/repositories/mf-csv-loader.interface";
+import type { IMfRecordConverter } from "@/server/contexts/data-import/domain/repositories/mf-record-converter.interface";
 import type { PreviewTransaction } from "@/server/contexts/data-import/domain/models/preview-transaction";
 import { TransactionValidator } from "@/server/contexts/data-import/domain/services/transaction-validator";
 import {
@@ -27,8 +28,8 @@ export interface PreviewMfCsvResult {
 export class PreviewMfCsvUsecase {
   constructor(
     private transactionRepository: ITransactionRepository,
-    private csvLoader: MfCsvLoader = new MfCsvLoader(),
-    private recordConverter: MfRecordConverter = new MfRecordConverter(),
+    private csvLoader: IMfCsvLoader,
+    private recordConverter: IMfRecordConverter,
     private validator: TransactionValidator = new TransactionValidator(),
   ) {}
 
@@ -71,7 +72,11 @@ export class PreviewMfCsvUsecase {
         summary,
         statistics,
       };
-    } catch (_error) {
+    } catch (error) {
+      // 形式の誤りは利用者が直せるので、取引 0 件として扱わずに呼び出し元へ伝える
+      if (error instanceof MfCsvFormatError) {
+        throw error;
+      }
       return {
         transactions: [],
         summary: calculatePreviewSummary([]),

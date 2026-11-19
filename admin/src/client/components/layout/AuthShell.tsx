@@ -1,0 +1,60 @@
+"use client";
+import "client-only";
+
+import { useState } from "react";
+import type { UserRole } from "@/server/contexts/auth/domain/models/user-role";
+import { AdminTargetProvider } from "@/client/components/layout/AdminTargetProvider";
+import type { AdminTarget } from "@/server/contexts/shared/domain/models/admin-target";
+import Sidebar from "@/client/components/layout/Sidebar";
+import { cn } from "@/client/lib/index";
+
+type AuthShellProps = {
+  logoutAction: (formData: FormData) => Promise<void>;
+  userRoles: UserRole[];
+  userEmail: string;
+  /** 同期用インポートが利用できる環境か（サーバー側で判定した結果） */
+  syncImportEnabled: boolean;
+  children: React.ReactNode;
+  targets: AdminTarget[];
+  currentTarget: AdminTarget | null;
+  syncKey: string;
+};
+
+/**
+ * 認証済み画面の共通シェル（サイドバー + 本文領域）。
+ * サイドバーの折りたたみ状態をローカル state で持ち、grid の列幅を追従させる。
+ * 本文領域は背景 #F8F8F8 でサイドバーとは独立してスクロールする。
+ */
+export default function AuthShell({
+  logoutAction,
+  userRoles,
+  userEmail,
+  syncImportEnabled,
+  children,
+  targets,
+  currentTarget,
+  syncKey,
+}: AuthShellProps) {
+  const [collapsed, setCollapsed] = useState(false);
+
+  return (
+    <AdminTargetProvider targets={targets} currentTarget={currentTarget} syncKey={syncKey}>
+      <div
+        className={cn(
+          "grid h-screen bg-background",
+          collapsed ? "grid-cols-[72px_minmax(0,1fr)]" : "grid-cols-[236px_minmax(0,1fr)]",
+        )}
+      >
+        <Sidebar
+          logoutAction={logoutAction}
+          userRoles={userRoles}
+          userEmail={userEmail}
+          syncImportEnabled={syncImportEnabled}
+          collapsed={collapsed}
+          onToggleCollapsed={() => setCollapsed((prev) => !prev)}
+        />
+        <main className="min-w-0 overflow-y-auto p-5 text-foreground">{children}</main>
+      </div>
+    </AdminTargetProvider>
+  );
+}

@@ -1,0 +1,90 @@
+import "server-only";
+import { Prisma, type PrismaClient } from "@prisma/client";
+import {
+  GrantRegistrationError,
+  type GrantWrite,
+} from "@/server/contexts/research-fund/domain/models/grant-registration";
+import type { GrantRepository } from "@/server/contexts/research-fund/domain/repositories/grant-repository.interface";
+
+function monthRange(month: string) {
+  const start = new Date(`${month}-01T00:00:00.000Z`);
+  const end = new Date(start);
+  end.setUTCMonth(end.getUTCMonth() + 1);
+  return { gte: start, lt: end };
+}
+
+export class PrismaGrantRepository implements GrantRepository {
+  constructor(private prisma: PrismaClient) {}
+
+  async book(bookId: string) {
+    const row = await this.prisma.researchFundBook.findUnique({
+      where: { id: BigInt(bookId) },
+      select: { financialYear: true, politician: { select: { termStart: true } } },
+    });
+    return row
+      ? {
+          financialYear: row.financialYear,
+          termStart: row.politician.termStart.toISOString().slice(0, 10),
+        }
+      : null;
+  }
+
+  async registeredGrants(bookId: string) {
+    const rows = await this.prisma.researchFundJournalEntry.findMany({
+      where: { bookId: BigInt(bookId), source: "grant" },
+      select: {
+        entryDate: true,
+        lines: { where: { side: "credit", accountKey: "grant-income" }, select: { amount: true } },
+      },
+    });
+    return rows.map((row) => ({
+      month: row.entryDate.toISOString().slice(0, 7),
+      amount: row.lines.reduce((sum, line) => sum + Number(line.amount), 0),
+    }));
+  }
+
+  async accounts() {
+    return this.prisma.researchFundAccount.findMany({ orderBy: { displayOrder: "asc" } });
+  }
+
+  async create(bookId: string, month: string, input: GrantWrite, userId: string) {
+    try {
+      return await this.prisma.$transaction(
+        async (tx) => {
+          // 同月の二重生成を拒否する。月初から翌月初の半開区間で判定する。
+          // READ COMMITTED だと同月の同時登録が両方 0 件を読んでしまうため直列化する。
+          const duplicates = await tx.researchFundJournalEntry.count({
+            where: { bookId: BigInt(bookId), source: "grant", entryDate: monthRange(month) },
+          });
+          if (duplicates > 0)
+            throw new GrantRegistrationError("この月の支給はすでに登録されています");
+          const row = await tx.researchFundJournalEntry.create({
+            data: {
+              bookId: BigInt(bookId),
+              entryDate: new Date(`${input.entryDate}T00:00:00.000Z`),
+              description: input.description,
+              // 振込は機械的なため下書きを経ずに確認済で作る。
+              status: "approved",
+              source: "grant",
+              hash: input.hash,
+              createdById: userId,
+              lines: { create: input.lines.map((line) => ({ ...line })) },
+            },
+          });
+          return String(row.id);
+        },
+        { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
+      );
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        // 同月の判定をすり抜けて同時に登録された（(book_id, hash) の一意制約）
+        if (error.code === "P2002")
+          throw new GrantRegistrationError("この月の支給はすでに登録されています");
+        // 直列化の衝突。もう一度実行すれば同月の判定で弾かれる
+        if (error.code === "P2034")
+          throw new GrantRegistrationError("他の操作と競合しました。もう一度お試しください");
+      }
+      throw error;
+    }
+  }
+}

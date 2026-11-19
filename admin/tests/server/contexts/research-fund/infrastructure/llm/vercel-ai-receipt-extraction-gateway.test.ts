@@ -1,0 +1,206 @@
+import { openrouter } from "@openrouter/ai-sdk-provider";
+import { LoadAPIKeyError } from "ai";
+import { MockLanguageModelV3 } from "ai/test";
+import {
+  researchFundExtractionModel,
+  VercelAIReceiptExtractionGateway,
+} from "@/server/contexts/research-fund/infrastructure/llm/vercel-ai-receipt-extraction-gateway";
+import type { ReceiptExtractionParams } from "@/server/contexts/research-fund/domain/repositories/receipt-extraction-gateway.interface";
+import { buildReceiptExtractionPrompt } from "@/server/contexts/research-fund/domain/services/receipt-extraction-prompt";
+
+jest.mock("@openrouter/ai-sdk-provider", () => ({ openrouter: jest.fn() }));
+
+const valid = {
+  date: "2026-09-10",
+  items: [{ item: "書籍", amount: "1,200", category_key: "BOOKS_NEWSPAPERS" }],
+};
+const params: ReceiptExtractionParams = {
+  document: { bytes: new Uint8Array([1, 2, 3]), mime: "image/png" },
+  officePrompt: "事務所の読み取り方針",
+};
+const gateway = new VercelAIReceiptExtractionGateway();
+
+/** openrouter() の戻り値の型は OpenRouter 固有のクラスなので、SDK のモックモデルを渡せるよう型を緩める */
+function useModel(model: MockLanguageModelV3) {
+  (openrouter as unknown as jest.Mock).mockReturnValue(model);
+}
+
+function mockOutput(text: string) {
+  const model = new MockLanguageModelV3({
+    doGenerate: {
+      content: [{ type: "text", text }],
+      finishReason: { unified: "stop", raw: "end_turn" },
+      usage: {
+        inputTokens: { total: 1, noCache: 1, cacheRead: 0, cacheWrite: 0 },
+        outputTokens: { total: 1, text: 1, reasoning: 0 },
+      },
+      warnings: [],
+    },
+  });
+  useModel(model);
+  return model;
+}
+
+describe("VercelAIReceiptExtractionGateway（LLMのみモック、SDKの構造化出力は実行）", () => {
+  const originalModel = process.env.RESEARCH_FUND_EXTRACTION_MODEL;
+  let errorLog: jest.SpyInstance;
+  beforeEach(() => {
+    jest.clearAllMocks();
+    errorLog = jest.spyOn(console, "error").mockImplementation(() => {});
+    delete process.env.RESEARCH_FUND_EXTRACTION_MODEL;
+  });
+  afterEach(() => {
+    errorLog.mockRestore();
+  });
+  afterAll(() => {
+    if (originalModel === undefined) delete process.env.RESEARCH_FUND_EXTRACTION_MODEL;
+    else process.env.RESEARCH_FUND_EXTRACTION_MODEL = originalModel;
+  });
+
+  it.each(["image/jpeg", "image/png", "application/pdf"] as const)(
+    "%sをSDKへ渡し、構造化出力を正規化する",
+    async (mime) => {
+      const model = mockOutput(JSON.stringify(valid));
+      const result = await gateway.extract({ ...params, document: { ...params.document, mime } });
+      expect(result).toEqual({
+        status: "valid",
+        value: {
+          date: valid.date,
+          issuer: null,
+          items: [
+            {
+              item: "書籍",
+              amount: 1200,
+              category_key: "books-newspapers",
+              note: null,
+              memo: null,
+              date: null, split_group: null,
+            },
+          ],
+        },
+      });
+      expect(openrouter).toHaveBeenCalledWith("anthropic/claude-opus-5.5", {
+        structuredOutputs: { strict: false },
+      });
+      expect(model.doGenerateCalls).toHaveLength(1);
+      const call = model.doGenerateCalls[0];
+      expect(call.responseFormat).toMatchObject({ type: "json", schema: { type: "object" } });
+      expect(call.prompt).toEqual([
+        { role: "system", content: buildReceiptExtractionPrompt(params.officePrompt) },
+        {
+          role: "user",
+          content: [
+            expect.objectContaining({ type: "file", mediaType: mime, data: params.document.bytes }),
+          ],
+        },
+      ]);
+      expect(call.abortSignal).toBeDefined();
+    },
+  );
+
+  it("読み直しの指示をシステムプロンプトに添える", async () => {
+    const model = mockOutput(JSON.stringify(valid));
+    await gateway.extract({ ...params, rereadInstruction: "駐車場代は別の科目にしてください" });
+    expect(model.doGenerateCalls[0].prompt[0]).toEqual({
+      role: "system",
+      content: buildReceiptExtractionPrompt(params.officePrompt, "駐車場代は別の科目にしてください"),
+    });
+  });
+
+  it("環境変数でモデルを差し替えられる", async () => {
+    mockOutput(JSON.stringify(valid));
+    process.env.RESEARCH_FUND_EXTRACTION_MODEL = " openai/gpt-6.1-sol ";
+    await gateway.extract(params);
+    expect(openrouter).toHaveBeenCalledWith("openai/gpt-6.1-sol", expect.anything());
+  });
+
+  it.each([
+    "not json",
+    "{}",
+    JSON.stringify({ ...valid, items: [{ ...valid.items[0], category_key: "invented" }] }),
+    JSON.stringify({ ...valid, items: [{ ...valid.items[0], amount: "1,20" }] }),
+  ])("SDKの出力検証失敗をRFエラーにし、原因をログに残す", async (text) => {
+    mockOutput(text);
+    expect(await gateway.extract(params)).toMatchObject({
+      status: "invalid",
+      errors: [{ code: "RF_INVALID_EXTRACTION_OUTPUT" }],
+    });
+    expect(errorLog).toHaveBeenCalledWith("Receipt extraction failed:", expect.any(Error));
+  });
+
+  it.each([new Error("provider private details"), new DOMException("timeout", "TimeoutError")])(
+    "API失敗・タイムアウトはRFエラーとし、再試行や内部情報の公開をしない",
+    async (error) => {
+      const model = new MockLanguageModelV3({
+        doGenerate: async () => {
+          throw error;
+        },
+      });
+      useModel(model);
+      const result = await gateway.extract(params);
+      expect(result).toMatchObject({
+        status: "invalid",
+        errors: [{ code: "RF_EXTRACTION_FAILED" }],
+      });
+      expect(JSON.stringify(result)).not.toContain(error.message);
+      expect(model.doGenerateCalls).toHaveLength(1);
+      expect(errorLog).toHaveBeenCalledWith("Receipt extraction failed:", error);
+    },
+  );
+
+  it("APIキー未設定は原因が分かる文言のRFエラーにし、元の例外をログに残す", async () => {
+    const error = new LoadAPIKeyError({
+      message: "OpenRouter API key is missing. Pass it using the 'apiKey' parameter",
+    });
+    useModel(
+      new MockLanguageModelV3({
+        doGenerate: async () => {
+          throw error;
+        },
+      }),
+    );
+    const result = await gateway.extract(params);
+    expect(result).toMatchObject({
+      status: "invalid",
+      errors: [
+        {
+          code: "RF_EXTRACTION_API_KEY_MISSING",
+          message: "LLMのAPIキーが未設定です。OPENROUTER_API_KEYを設定してください",
+        },
+      ],
+    });
+    expect(JSON.stringify(result)).not.toContain(error.message);
+    expect(errorLog).toHaveBeenCalledWith("Receipt extraction failed:", error);
+  });
+
+  it.each([
+    { bytes: new Uint8Array(), mime: "image/png" },
+    { bytes: params.document.bytes, mime: "text/plain" },
+  ])("空書類・非対応形式はLLMを呼ばず拒否する", async (document) => {
+    expect(
+      await gateway.extract({
+        ...params,
+        document: document as ReceiptExtractionParams["document"],
+      }),
+    ).toMatchObject({ status: "invalid", errors: [{ code: "RF_INVALID_DOCUMENT" }] });
+    expect(openrouter).not.toHaveBeenCalled();
+  });
+});
+
+describe("researchFundExtractionModel", () => {
+  const originalModel = process.env.RESEARCH_FUND_EXTRACTION_MODEL;
+  afterEach(() => {
+    if (originalModel === undefined) delete process.env.RESEARCH_FUND_EXTRACTION_MODEL;
+    else process.env.RESEARCH_FUND_EXTRACTION_MODEL = originalModel;
+  });
+
+  it("未設定なら anthropic/claude-opus-5.5 を使う（スキャンジョブにも同じ名前を記録する）", () => {
+    delete process.env.RESEARCH_FUND_EXTRACTION_MODEL;
+    expect(researchFundExtractionModel()).toBe("anthropic/claude-opus-5.5");
+  });
+
+  it("環境変数があれば前後の空白を除いて使う", () => {
+    process.env.RESEARCH_FUND_EXTRACTION_MODEL = " custom-model ";
+    expect(researchFundExtractionModel()).toBe("custom-model");
+  });
+});

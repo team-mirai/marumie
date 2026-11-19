@@ -4,11 +4,12 @@
     "server-only",
     "client-only",
     "tailwindcss",
-    "critters"
+    "tsx"
   ],
   "workspaces": {
     ".": {
-      "entry": ["shared/**/*.ts"]
+      "entry": ["shared/**/*.ts", "prisma/seed.ts", "scripts/generate-sync-import-fixture.mjs"],
+      "ignore": ["docs/**"]
     },
     "webapp": {
       "entry": [
@@ -17,8 +18,7 @@
         "src/app/**/route.ts",
         "src/app/**/not-found.tsx"
       ],
-      "project": ["src/**/*.{ts,tsx}"],
-      "ignore": ["src/client/components/ui/**/*"]
+      "project": ["src/**/*.{ts,tsx}"]
     },
     "admin": {
       "entry": [
@@ -28,15 +28,9 @@
       ],
       "project": ["src/**/*.{ts,tsx}"],
       "ignore": [
-        "src/client/components/ui/**/*",
-        "src/server/contexts/auth/domain/models/tenant-role.ts",
-        "src/server/contexts/auth/domain/models/tenant.ts",
-        "src/server/contexts/auth/domain/models/user-tenant-membership.ts",
-        "src/server/contexts/auth/domain/repositories/tenant-repository.interface.ts",
-        "src/server/contexts/auth/domain/repositories/user-tenant-membership-repository.interface.ts",
-        "src/server/contexts/auth/infrastructure/repositories/prisma-tenant.repository.ts",
-        "src/server/contexts/auth/infrastructure/repositories/prisma-user-tenant-membership.repository.ts"
-      ]
+        "src/client/components/ui/**/*"
+      ],
+      "ignoreDependencies": ["jest-environment-jsdom", "jsdom"]
     }
   }
 }

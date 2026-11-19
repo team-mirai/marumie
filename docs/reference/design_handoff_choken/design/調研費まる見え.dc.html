@@ -1,0 +1,1060 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&amp;family=Noto+Sans:wght@400;500;700&amp;display=swap">
+<link rel="stylesheet" href="_ds/team-mirai-design-system-remix-2a300789-1a0e-4f29-8893-6e06fbf24d63/colors_and_type.css">
+<script src="_ds/team-mirai-design-system-remix-2a300789-1a0e-4f29-8893-6e06fbf24d63/_ds_bundle.js"></script>
+<script src="choken-data.js"></script>
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;background:#e2f6f3;background:linear-gradient(135deg, rgba(226,246,243,1) 0%, rgba(238,246,226,1) 100%);background-attachment:fixed;color:#171717}
+  a{color:#238778;text-decoration:none}
+  a:hover{color:#238778;text-decoration:underline}
+  table{border-collapse:collapse}
+  *:focus{outline:none}
+  *:focus-visible{outline:2px solid #2aa693;outline-offset:2px}
+</style>
+</helmet>
+
+<div style="min-height:100vh;font-family:'Noto Sans JP','Hiragino Kaku Gothic ProN',sans-serif;color:#171717;font-size:16px;line-height:1.5;-webkit-font-smoothing:antialiased">
+
+  <header style="position:fixed;top:0;left:0;right:0;z-index:40;padding:{{ hdrPad }}">
+    <div style="background:#fff;border-radius:20px;padding:{{ hdrInnerPad }}">
+      <div style="display:flex;align-items:center;gap:8px;min-height:{{ hdrH }}">
+        <div onClick="{{ goParty }}" style="display:flex;align-items:center;gap:{{ logoGap }};cursor:pointer;flex-shrink:0;min-width:0" style-hover="opacity:0.8">
+          <img src="assets/logos/team-mirai-logo.svg" alt="Team Mirai Logo" style="width:48px;height:44px;object-fit:contain;display:block;flex-shrink:0">
+          <img src="assets/logos/service-logo-pc.svg" alt="みらいまる見え政治資金" style="{{ logoPc }}">
+          <img src="assets/logos/service-logo-sp.svg" alt="みらいまる見え政治資金" style="{{ logoSp }}">
+        </div>
+        <div style="display:flex;align-items:center;gap:32px;flex:1 1 auto;justify-content:flex-end;height:48px;min-width:0">
+          <nav style="{{ navStyle }}" aria-label="メインナビゲーション">
+            <a href="#cash-flow" style="font-size:14px;font-weight:700;color:#000;white-space:nowrap" style-hover="color:#238778;text-decoration:none">収支の流れ</a>
+            <a href="#monthly-trends" style="font-size:14px;font-weight:700;color:#000;white-space:nowrap" style-hover="color:#238778;text-decoration:none">1年間の推移</a>
+            <a href="#transactions" style="font-size:14px;font-weight:700;color:#000;white-space:nowrap" style-hover="color:#238778;text-decoration:none">すべての出入金</a>
+            <a href="#explanation" style="font-size:14px;font-weight:700;color:#000;white-space:nowrap" style-hover="color:#238778;text-decoration:none">データについて</a>
+            <a href="https://team-mirai.notion.site/FAQ-27ef6f56bae180c085e9f97d05a5d59c" target="_blank" rel="noopener noreferrer" style="font-size:14px;font-weight:700;color:#000;white-space:nowrap" style-hover="color:#238778;text-decoration:none">よくあるご質問</a>
+          </nav>
+          <div style="position:relative;width:100%;max-width:217px;min-width:0;flex-shrink:1">
+            <div onClick="{{ toggleSel }}" style="display:flex;align-items:center;gap:16px;width:100%;padding:8px 16px 6px 24px;border:0.5px solid #000;border-radius:8px;font-weight:700;cursor:pointer;background-image:linear-gradient(165deg, rgb(226,246,243) 24%, rgb(238,246,226) 76%)" style-hover="opacity:0.9">
+              <span style="display:flex;flex-direction:column;gap:6px;align-items:flex-start;flex:1;min-width:0;line-height:1">
+                <span style="font-size:14px;line-height:1;color:#000;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%;text-align:left">{{ orgName }}</span>
+                <span style="font-size: 12px; line-height: 1; color: #238778">2026年</span>
+              </span>
+              <img src="assets/icons/icon-chevron-down.svg" alt="" style="width:24px;height:24px;display:block">
+            </div>
+            <sc-if value="{{ selOpen }}" hint-placeholder-val="{{ false }}">
+              <div style="position:absolute;right:0;top:100%;margin-top:4px;z-index:50;width:272px;background:#fff;border-radius:8px;border:1px solid rgba(0,0,0,0.5);box-shadow:0 10px 15px -3px rgba(0,0,0,0.1),0 4px 6px -4px rgba(0,0,0,0.1);padding:12px 0">
+                <div style="padding:0 16px;display:flex;flex-direction:column;gap:4px">
+                  <p style="margin:0;font-size:11px;color:#5a5a5a">表示する団体名</p>
+                  <div onClick="{{ goParty }}" style="display:flex;align-items:center;gap:8px;min-height:36px;padding:8px 0 8px 24px;cursor:pointer;border-radius:6px" style-hover="background:#F3F4F6">
+                    <span style="width:12px;display:flex;align-items:center;justify-content:center;color:#238778;font-size:11px;font-weight:700">{{ ckParty }}</span>
+                    <span style="font-size:12px;color:#111827">政党・チームみらい</span>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:8px;min-height:36px;padding:8px 0 8px 24px;border-radius:6px;color:#9CA3AF">
+                    <span style="width:12px"></span>
+                    <span style="display:flex;flex-direction:column;gap:2px"><span style="font-size:12px">党首・安野貴博の政治団体</span><span style="font-size: 10px; color: #9CA3AF">デジタル民主主義を考える会</span></span>
+                  </div>
+                </div>
+                <hr style="margin:8px 0;border:0;border-top:1px solid #E5E7EB">
+                <div style="padding:0 16px;display:flex;flex-direction:column;gap:4px">
+                  <p style="margin:0;font-size:11px;color:#5a5a5a">調査研究費（議員別）</p>
+                  <div onClick="{{ goMin }}" style="display:flex;align-items:center;gap:8px;min-height:36px;padding:8px 0 8px 24px;cursor:pointer;border-radius:6px" style-hover="background:#F3F4F6">
+                    <span style="width: 12px; display: flex; align-items: center; justify-content: center; color: #238778; font-size: 14px; font-weight: 700">{{ ckMin }}</span>
+                    <span style="display:flex;flex-direction:column;gap:2px"><span style="font-size:12px;color:#111827">峰島侑也</span><span style="font-size: 10px; color: #6a6a6a">2026年2月〜8月分を公開中</span></span>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:8px;min-height:36px;padding:8px 0 8px 24px;border-radius:6px;color:#9CA3AF">
+                    <span style="width:12px"></span>
+                    <span style="display:flex;flex-direction:column;gap:2px"><span style="font-size:12px">安野貴博 ほか11人</span><span style="font-size: 10px">準備中</span></span>
+                  </div>
+                </div>
+                <hr style="margin:8px 0;border:0;border-top:1px solid #E5E7EB">
+                <div style="padding:4px 16px;display:flex;flex-direction:column;gap:8px">
+                  <p style="margin:0;font-size:11px;color:#5a5a5a">対象年</p>
+                  <div style="display:flex;gap:12px">
+                    <span style="padding:6px 12px;border-radius:999px;font-size:11px;line-height:1;background:#ececec;color:#000">2025年</span>
+                    <span style="padding:6px 12px;border-radius:999px;font-size:11px;line-height:1;font-weight:700;color:#238778;background:linear-gradient(157deg, rgb(226,246,243) 24%, rgb(238,246,226) 76%)">2026年</span>
+                  </div>
+                </div>
+                <hr style="margin:8px 0;border:0;border-top:1px solid #E5E7EB">
+                <div style="padding:0 16px;display:flex;justify-content:flex-end">
+                  <span onClick="{{ toggleSel }}" style="font-size:12px;font-weight:700;color:#238778;cursor:pointer">閉じる</span>
+                </div>
+              </div>
+            </sc-if>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main id="top" style="max-width:1032px;margin:0 auto;padding:{{ mainPad }};display:flex;flex-direction:column;gap:48px">
+
+    <sc-if value="{{ isParty }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;flex-direction:column;gap:48px">
+        <div style="background:#fff;border-radius:24px;padding:32px 48px;display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+          <span style="font-size:14px;font-weight:700;color:#1F2937">既存セクション（収支の流れ／1年間の推移／貸借対照表／すべての出入金）は変更なし。以下が追加分です。</span>
+        </div>
+
+        <section id="research-fund" style="background:#fff;border-radius:24px;padding:{{ cardPad }};display:flex;flex-direction:column;gap:32px">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap">
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <div style="display:flex;align-items:center;gap:8px">
+                <span style="width:30px;height:30px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><img src="assets/icons/icon-users.svg" alt="" style="width:30px;height:30px;display:block"></span>
+                <h1 style="margin:0;font-size:{{ titleFs }};line-height:1.52;letter-spacing:0.01em;font-weight:700;color:#000">所属議員｜調査研究費のサマリー</h1>
+              </div>
+              <p style="margin:0;font-size:14px;line-height:1.21;letter-spacing:0.01em;font-weight:500;color:#85868e"><span style="letter-spacing: 0.14px;">議員に毎月100万円支給される公費を、何に使ったか</span></p>
+            </div>
+            <span style="{{ updTopCol }}"><span style="font-size:13px;font-weight:700;color:#9CA3AF;line-height:1.31;white-space:nowrap">2026.8.20時点</span></span>
+          </div>
+          <div style="{{ updBottom }}">2026年2月〜8月支給分　2026.8.20時点</div>
+
+          <details style="margin-top:-16px">
+            <summary style="cursor:pointer;list-style:none;display:inline-flex;align-items:center;gap:6px;padding:4px 0;font-size:14px;font-weight:700;color:#238778" style-hover="text-decoration:underline">調査研究費とは<img src="assets/icons/icon-chevron-down.svg" alt="" style="width:18px;height:18px;flex-shrink:0"></summary>
+            <p style="margin: 12px 0 0; padding: 16px 20px; border-radius: 12px; background: linear-gradient(135deg, rgba(226,246,243,1) 0%, rgba(238,246,226,1) 100%); font-size: 15px; line-height: 1.87; letter-spacing: 0.01em; color: #1F2937; text-wrap: pretty; padding-top: 20px; padding-bottom: 20px"><strong style="display: block; font-size: 18px; font-weight: 700; line-height: 1.6; margin-bottom: 12px;">調査研究費は、政党を通らず国から議員に対して毎月直接支給される公費です。</strong>政党を経由しないため、政党・チームみらいの収支とは別のお金として公開しています。全額が税金で、議員活動にのみ使えます。選挙運動には使えません。余った分は国庫に返します。チームみらいでは法令に加え、公務・議員活動への限定と第三者による承認を自主基準として定めています。（正式名称：調査研究広報滞在費）</p>
+          </details>
+
+          <sc-if value="{{ layA }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;flex-direction:column;gap:24px">
+              <div style="display:flex;gap:8px;flex-wrap:wrap">
+                <sc-for list="{{ polChips }}" as="p" hint-placeholder-count="12">
+                  <span onClick="{{ p.select }}" style="{{ p.chipStyle }}">{{ p.name }}</span>
+                </sc-for>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap">
+                <div style="display:flex;flex-direction:column;gap:4px">
+                  <span style="display:inline-flex;align-items:center;gap:10px;flex-wrap:wrap"><span style="font-size:20px;font-weight:700;color:#1F2937">{{ selName }}</span><sc-if value="{{ selReady }}" hint-placeholder-val="{{ true }}"><span style="display:inline-flex;align-items:center;height:22px;padding:0 10px;border-radius:999px;border:1px solid #238778;color:#238778;background:#E2F6F3;font-size:11px;font-weight:700;white-space:nowrap">試験公開中</span></sc-if></span>
+                  <span style="font-size:13px;color:#6A7383">{{ selStatus }}</span>
+                </div>
+                <sc-if value="{{ btnTop }}" hint-placeholder-val="{{ true }}">
+                  <span onClick="{{ goMin }}" style="display:inline-flex;align-items:center;justify-content:center;height:40px;padding:0 20px;background:#fff;border:1px solid #1F2937;border-radius:6px;font-size:14px;font-weight:700;color:#1F2937;cursor:pointer;white-space:nowrap;gap:6px" style-hover="background:#F9FAFB">{{ selName }}の調査研究費を詳しく<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg></span>
+                </sc-if>
+                <sc-if value="{{ btnTopLink }}" hint-placeholder-val="{{ false }}">
+                  <span onClick="{{ goMin }}" style="display:inline-flex;align-items:center;gap:4px;font-size:14px;font-weight:700;color:#238778;cursor:pointer;white-space:nowrap" style-hover="text-decoration:underline">{{ selName }}の調査研究費を詳しく<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg></span>
+                </sc-if>
+              </div>
+              <sc-if value="{{ selReady }}" hint-placeholder-val="{{ true }}">
+                <div style="display:flex;flex-direction:column;gap:32px">
+                  <div style="display:flex;gap:8px;align-items:stretch;flex-wrap:wrap">
+                    <div style="{{ sumCard }}">
+                      <div style="font-size:16px;font-weight:700;color:#238778">支給総額</div>
+                      <div style="display:flex;align-items:baseline;gap:4px"><span style="font-size:{{ sumFs }};font-weight:700;line-height:20px;color:#1F2937">700</span><span style="font-size:16px;font-weight:700;color:#6B7280;line-height:1;white-space:nowrap">万円</span></div>
+                    </div>
+                    <div style="{{ sumCard }}">
+                      <div style="font-size:16px;font-weight:700;color:#DC2626">支出総額</div>
+                      <div style="display:flex;align-items:baseline;gap:4px"><span style="font-size:{{ sumFs }};font-weight:700;line-height:20px;color:#1F2937">221</span><span style="font-size:16px;font-weight:700;color:#6B7280;line-height:1;white-space:nowrap">万円</span></div>
+                    </div>
+                  </div>
+                  <div>
+                    <div style="display:flex;gap:28px;border-bottom:1px solid #D1D5DB;margin-bottom:16px">
+                      <span onClick="{{ setKubunPlain }}" style="{{ tabA1 }}">詳細の区分</span>
+                      <span onClick="{{ setKubunLegal }}" style="{{ tabA2 }}">法律上の区分</span>
+                    </div>
+                    <sc-if value="{{ partyBar }}" hint-placeholder-val="{{ true }}">
+                      <div>
+                        <div style="display:grid;gap:12px">
+                          <sc-for list="{{ barRows }}" as="r" hint-placeholder-count="6">
+                            <div style="display:grid;gap:4px">
+                              <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px">
+                                <span style="font-size:14px;font-weight:700;color:#1F2937">{{ r.n }}</span>
+                                <span style="font-size:13px;color:#4B5563;white-space:nowrap">{{ r.label }}</span>
+                              </div>
+                              <div style="height:10px;border-radius:999px;background:#F3F4F6;overflow:hidden"><div style="{{ r.barStyle }}"></div></div>
+                            </div>
+                          </sc-for>
+                        </div>
+                        <div style="font-size:12px;color:#9CA3AF;margin-top:12px">未使用分は含めていません。全296件・2,212,581円</div>
+                      </div>
+                    </sc-if>
+                    <sc-if value="{{ partySankey }}" hint-placeholder-val="{{ false }}">
+                      <div>
+                        <div style="position:relative">{{ partyFlow }}</div>
+                        <div style="font-size:12px;color:#9CA3AF;margin-top:8px;line-height:1.6">支給額の1%未満の費目は「その他」にまとめています。</div>
+                      </div>
+                    </sc-if>
+                  </div>
+                </div>
+              </sc-if>
+              <sc-if value="{{ selPreparing }}" hint-placeholder-val="{{ false }}">
+                <div style="border:1px dashed #D1D5DB;border-radius:16px;padding:40px 24px;text-align:center;font-size:14px;color:#6A7383;line-height:1.7">{{ selName }}の調査研究費は現在準備中です。<br>記録シートの整理が完了した月から順次公開します。</div>
+              </sc-if>
+              <sc-if value="{{ btnBottom }}" hint-placeholder-val="{{ false }}">
+                <div style="display:flex;justify-content:center">
+                  <span onClick="{{ goMin }}" style="display:inline-flex;align-items:center;justify-content:center;gap:10px;width:270px;height:48px;padding:8px 24px;background:#fff;border:1px solid #1F2937;border-radius:6px;font-size:16px;font-weight:700;color:#1F2937;cursor:pointer;transition:background-color 150ms" style-hover="background:#F9FAFB">{{ selName }}の調査研究費を詳しく</span>
+                </div>
+              </sc-if>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ layB }}" hint-placeholder-val="{{ false }}">
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px">
+              <sc-for list="{{ polCards }}" as="p" hint-placeholder-count="12">
+                <div onClick="{{ p.open }}" style="{{ p.cardStyle }}" style-hover="{{ p.cardHover }}">
+                  <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+                    <span style="font-size:16px;font-weight:700;color:#1F2937">{{ p.name }}</span>
+                    <span style="{{ p.badgeStyle }}">{{ p.badge }}</span>
+                  </div>
+                  <div style="display:flex;flex-direction:column;gap:2px">
+                    <span style="font-size:12px;color:#6A7383">支出総額</span>
+                    <span style="{{ p.amtStyle }}">{{ p.amt }}</span>
+                  </div>
+                  <div style="display:flex;flex-direction:column;gap:2px">
+                    <span style="font-size:12px;color:#6A7383">公開状況</span>
+                    <span style="font-size:13px;color:#1F2937">{{ p.status }}</span>
+                  </div>
+                  <span style="{{ p.linkStyle }}">詳細を見る ›</span>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ layC }}" hint-placeholder-val="{{ false }}">
+            <div style="{{ layCGrid }}">
+              <div style="display:flex;flex-direction:column;border-top:1px solid #D5DBE1">
+                <sc-for list="{{ polRows }}" as="p" hint-placeholder-count="12">
+                  <div onClick="{{ p.select }}" style="{{ p.rowStyle }}" style-hover="{{ p.rowHover }}">
+                    <span style="{{ p.rowDot }}"></span>
+                    <span style="flex:1;font-size:15px;font-weight:700;color:{{ p.rowColor }}">{{ p.name }}</span>
+                    <span style="{{ p.rowAmtStyle }}">{{ p.amt }}</span>
+                  </div>
+                </sc-for>
+              </div>
+              <div style="border:1px solid #E5E7EB;border-radius:16px;padding:24px;display:flex;flex-direction:column;gap:20px;align-self:start">
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap">
+                  <div style="display:flex;flex-direction:column;gap:4px">
+                    <span style="font-size:20px;font-weight:700;color:#1F2937">{{ selName }}</span>
+                    <span style="font-size:13px;color:#6A7383">{{ selStatus }}</span>
+                  </div>
+                  <sc-if value="{{ selReady }}" hint-placeholder-val="{{ true }}">
+                    <span onClick="{{ goMin }}" style="display:inline-flex;align-items:center;justify-content:center;height:40px;padding:0 20px;background:#fff;border:1px solid #1F2937;border-radius:6px;font-size:14px;font-weight:700;color:#1F2937;cursor:pointer;white-space:nowrap" style-hover="background:#F9FAFB">詳細を見る</span>
+                  </sc-if>
+                </div>
+                <sc-if value="{{ selReady }}" hint-placeholder-val="{{ true }}">
+                  <div style="display:flex;flex-direction:column;gap:20px">
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+                      <div style="background:#F9FAFB;border-radius:12px;padding:16px">
+                        <div style="font-size:13px;font-weight:700;color:#238778">支給総額（7ヶ月）</div>
+                        <div style="margin-top:8px;display:flex;align-items:baseline;gap:4px"><span style="font-size:28px;font-weight:700;line-height:1;color:#1F2937">700</span><span style="font-size:14px;font-weight:700;color:#6B7280">万円</span></div>
+                      </div>
+                      <div style="background:#F9FAFB;border-radius:12px;padding:16px">
+                        <div style="font-size:13px;font-weight:700;color:#DC2626">支出総額</div>
+                        <div style="margin-top:8px;display:flex;align-items:baseline;gap:4px"><span style="font-size:28px;font-weight:700;line-height:1;color:#1F2937">221</span><span style="font-size:14px;font-weight:700;color:#6B7280">万円</span></div>
+                      </div>
+                    </div>
+                    <div>
+                      <div style="display:flex;gap:20px;border-bottom:1px solid #D1D5DB;margin-bottom:12px">
+                        <span onClick="{{ setKubunPlain }}" style="{{ tabA1s }}">詳細の区分</span>
+                        <span onClick="{{ setKubunLegal }}" style="{{ tabA2s }}">法律上の区分</span>
+                      </div>
+                      <div style="display:grid;gap:10px">
+                        <sc-for list="{{ barRowsTop }}" as="r" hint-placeholder-count="5">
+                          <div style="display:grid;gap:3px">
+                            <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px">
+                              <span style="font-size:13px;font-weight:700;color:#1F2937">{{ r.n }}</span>
+                              <span style="font-size:12px;color:#4B5563;white-space:nowrap">{{ r.short }}</span>
+                            </div>
+                            <div style="height:8px;border-radius:999px;background:#F3F4F6;overflow:hidden"><div style="{{ r.barStyle }}"></div></div>
+                          </div>
+                        </sc-for>
+                      </div>
+                      <div style="font-size:12px;color:#9CA3AF;margin-top:10px">上位5費目。全費目は詳細ページで</div>
+                    </div>
+                  </div>
+                </sc-if>
+                <sc-if value="{{ selPreparing }}" hint-placeholder-val="{{ false }}">
+                  <div style="font-size:14px;color:#6A7383;line-height:1.7">現在準備中です。記録シートの整理が完了した月から順次公開します。</div>
+                </sc-if>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ layCurrent }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex;flex-direction:column;gap:32px">
+          <div style="overflow-x:auto">
+            <table style="width:100%;min-width:560px">
+              <thead>
+                <tr style="height:48px;border-bottom:1px solid #D5DBE1">
+                  <th style="text-align:left;padding:0 16px;font-size:14px;font-weight:700;color:#1F2937">議員</th>
+                  <th style="text-align:right;padding:0 16px;font-size:14px;font-weight:700;color:#1F2937;width:160px">支出総額</th>
+                  <th style="text-align:left;padding:0 16px;font-size:14px;font-weight:700;color:#1F2937;width:220px">公開状況</th>
+                  <th style="width:140px"></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr style="height:64px;border-bottom:1px solid #D5DBE1">
+                  <td style="padding:0 16px;font-size:16px;font-weight:700;color:#1F2937">峰島侑也</td>
+                  <td style="padding:0 16px;text-align:right;font-size:20px;font-weight:700;color:#DC2626;letter-spacing:0.01em;white-space:nowrap">-2,212,581<span style="font-size:12px;color:#4B5563;font-weight:400"> 円</span></td>
+                  <td style="padding:0 16px;font-size:14px;color:#1F2937;white-space:nowrap">2026年2月〜8月分を公開中</td>
+                  <td style="padding:0 16px;text-align:right"><span onClick="{{ goMin }}" style="display:inline-flex;align-items:center;justify-content:center;height:40px;padding:0 20px;background:#fff;border:1px solid #1F2937;border-radius:6px;font-size:14px;font-weight:700;color:#1F2937;cursor:pointer;white-space:nowrap" style-hover="background:#F9FAFB">詳細を見る</span></td>
+                </tr>
+                <tr style="height:64px;border-bottom:1px solid #D5DBE1;color:#9CA3AF">
+                  <td style="padding:0 16px;font-size:16px;font-weight:700">安野貴博</td>
+                  <td style="padding:0 16px;text-align:right;font-size:16px;font-weight:700">—</td>
+                  <td style="padding:0 16px;font-size:14px">準備中</td>
+                  <td></td>
+                </tr>
+                <tr style="height:64px;border-bottom:1px solid #D5DBE1;color:#9CA3AF">
+                  <td style="padding:0 16px;font-size:16px;font-weight:700">他10人</td>
+                  <td style="padding:0 16px;text-align:right;font-size:16px;font-weight:700">—</td>
+                  <td style="padding:0 16px;font-size:14px">準備中</td>
+                  <td></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div style="display:flex;gap:8px;align-items:stretch;flex-wrap:wrap">
+            <div style="{{ sumCard }}">
+              <div style="font-size:16px;font-weight:700;color:#238778">支給総額（峰島侑也・7ヶ月）</div>
+              <div style="display:flex;align-items:baseline;gap:4px"><span style="font-size:{{ sumFs }};font-weight:700;line-height:20px;color:#1F2937">700</span><span style="font-size:16px;font-weight:700;color:#6B7280;line-height:1;white-space:nowrap">万円</span></div>
+            </div>
+            <div style="{{ sumCard }}">
+              <div style="font-size:16px;font-weight:700;color:#DC2626">支出総額</div>
+              <div style="display:flex;align-items:baseline;gap:4px"><span style="font-size:{{ sumFs }};font-weight:700;line-height:20px;color:#1F2937">221</span><span style="font-size:16px;font-weight:700;color:#6B7280;line-height:1;white-space:nowrap">万円</span></div>
+            </div>
+          </div>
+
+          <div>
+            <div style="display:flex;gap:28px;border-bottom:1px solid #D1D5DB;margin-bottom:16px">
+              <span onClick="{{ setKubunPlain }}" style="{{ tabA1 }}">詳細の区分</span>
+              <span onClick="{{ setKubunLegal }}" style="{{ tabA2 }}">法律上の区分</span>
+            </div>
+            <div style="display:grid;gap:12px">
+              <sc-for list="{{ barRows }}" as="r" hint-placeholder-count="6">
+                <div style="display:grid;gap:4px">
+                  <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px">
+                    <span style="font-size:14px;font-weight:700;color:#1F2937">{{ r.n }}</span>
+                    <span style="font-size:13px;color:#4B5563;white-space:nowrap">{{ r.label }}</span>
+                  </div>
+                  <div style="height:10px;border-radius:999px;background:#F3F4F6;overflow:hidden"><div style="{{ r.barStyle }}"></div></div>
+                </div>
+              </sc-for>
+            </div>
+            <div style="font-size:12px;color:#9CA3AF;margin-top:12px">未使用分は含めていません。全296件・2,212,581円</div>
+          </div>
+          </div>
+          </sc-if>
+        </section>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isMin }}" hint-placeholder-val="{{ true }}">
+      <div style="display:flex;flex-direction:column;gap:48px">
+
+        <section id="cash-flow" style="background:#fff;border-radius:24px;padding:{{ cardPad }};display:flex;flex-direction:column;gap:32px">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap">
+            <div style="display:flex;flex-direction:column;gap:8px;min-width:0">
+              <div style="display:flex;align-items:center;gap:8px">
+                <span style="width:30px;height:30px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><img src="assets/icons/icon-cashflow.svg" alt="Cash flow icon" style="width:30px;height:31px;display:block"></span>
+                <h1 style="margin:0;font-size:{{ titleFs }};line-height:1.52;letter-spacing:0.01em;font-weight:700;color:#000">峰島侑也｜調査研究費の使いみち</h1>
+              </div>
+              <p style="margin:0;font-size:14px;line-height:1.21;letter-spacing:0.01em;font-weight:500;color:#85868e">議員に毎月100万円支給される公費を、何に使ったか</p>
+            </div>
+            <span style="{{ updTopCol }}"><span style="font-size:13px;font-weight:700;color:#9CA3AF;line-height:1.31;white-space:nowrap">2026.8.20時点</span><span style="font-size:13px;font-weight:700;color:#9CA3AF;line-height:1.31;white-space:nowrap">2026年2月〜8月支給分</span></span>
+          </div>
+          <details style="margin-top:-16px">
+            <summary style="cursor:pointer;list-style:none;display:inline-flex;align-items:center;gap:6px;padding:4px 0;font-size:14px;font-weight:700;color:#238778" style-hover="text-decoration:underline">調査研究費とは<img src="assets/icons/icon-chevron-down.svg" alt="" style="width:18px;height:18px;flex-shrink:0"></summary>
+            <p style="margin: 12px 0 0; padding: 16px 20px; border-radius: 12px; background: linear-gradient(135deg, rgba(226,246,243,1) 0%, rgba(238,246,226,1) 100%); font-size: 15px; line-height: 1.87; letter-spacing: 0.01em; color: #1F2937; text-wrap: pretty; padding-top: 20px; padding-bottom: 20px"><strong style="display: block; font-size: 18px; font-weight: 700; line-height: 1.6; margin-bottom: 12px;">調査研究費は、政党を通らず国から議員に対して毎月直接支給される公費です。</strong>政党を経由しないため、政党・チームみらいの収支とは別のお金として公開しています。全額が税金で、議員活動にのみ使えます。選挙運動には使えません。余った分は国庫に返します。チームみらいでは法令に加え、政党によるガイドラインを自主基準として定めています。（正式名称：調査研究広報滞在費）</p>
+          </details>
+
+          <div style="display:flex;gap:8px;align-items:stretch;flex-wrap:wrap">
+            <div style="{{ sumCard }}">
+              <div style="font-size:16px;font-weight:700;color:#238778">支給総額</div>
+              <div style="display:flex;align-items:baseline;gap:4px"><span style="font-size:{{ sumFs }};font-weight:700;line-height:20px;color:#1F2937">700</span><span style="font-size:16px;font-weight:700;color:#6B7280;line-height:1;white-space:nowrap">万円</span></div>
+            </div>
+            <div style="{{ sumCard }}">
+              <div style="font-size:16px;font-weight:700;color:#DC2626">支出総額</div>
+              <div style="display:flex;align-items:baseline;gap:4px"><span style="font-size:{{ sumFs }};font-weight:700;line-height:20px;color:#1F2937">221</span><span style="font-size:16px;font-weight:700;color:#6B7280;line-height:1;white-space:nowrap">万円</span></div>
+            </div>
+          </div>
+
+          <div>
+            <div style="display:flex;gap:28px;border-bottom:1px solid #D1D5DB;margin-bottom:16px">
+              <span onClick="{{ setMinPlain }}" style="{{ tabB1 }}">詳細の区分</span>
+              <span onClick="{{ setMinLegal }}" style="{{ tabB2 }}">法律上の区分</span>
+            </div>
+            <div style="position:relative">{{ flowChart }}</div>
+            <div style="{{ updBottomChart }}">2026年2月〜8月支給分　2026.8.20時点</div>
+            
+          </div>
+        </section>
+
+        <section id="highlights" style="background:#fff;border-radius:24px;padding:{{ cardPad }};display:flex;flex-direction:column;gap:32px">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap">
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <div style="display:flex;align-items:center;gap:8px">
+                <span style="width:30px;height:30px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><img src="assets/icons/icon-heart-handshake.svg" alt="" style="width:30px;height:30px;display:block"></span>
+                <h2 style="margin:0;font-size:{{ titleFs }};line-height:1.52;letter-spacing:0.01em;font-weight:700;color:#000">峰島侑也｜活用方針と主要な成果</h2>
+              </div>
+              <p style="margin:0;font-size:14px;line-height:1.21;letter-spacing:0.01em;font-weight:500;color:#85868e">調査研究費の使用方針と、主要な支出に対する成果</p>
+            </div>
+            <span style="{{ updTop }}">2026.8.20時点</span>
+          </div>
+          <div style="{{ updBottom }}">2026.8.20時点</div>
+
+          <div style="border:1px solid #E5E7EB;border-radius:16px;padding:24px;background:linear-gradient(135deg, rgba(226,246,243,1) 0%, rgba(238,246,226,1) 100%)">
+            <div style="font-size:16px;font-weight:700;color:#1F2937">峰島侑也の調査研究費の活用方針</div>
+            <p style="margin:8px 0 0;font-size:15px;line-height:1.87;letter-spacing:0.01em;color:#1F2937;text-wrap:pretty">2026年2月の当選後、まずは議員事務所の立ち上げに使っています。今後は調査活動や広報の比重を増やしていく予定です。</p>
+          </div>
+
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px">
+            <sc-for list="{{ highlights }}" as="c" hint-placeholder-count="3">
+              <div id="{{ c.id }}" style="{{ c.cardStyle }}">
+                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+                  <span style="display:inline-flex;align-items:center;gap:3px;height:20px;padding:0 8px;border-radius:999px;background:#E2F6F3;color:#238778;font-size:11px;font-weight:700;white-space:nowrap"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l2.4 6.6L21 9l-5.2 4.3L17.5 21 12 17.3 6.5 21l1.7-7.7L3 9l6.6-.4z"></path></svg>{{ c.num }}</span>
+                  <span style="font-size:12px;color:#4B5563">{{ c.metaDate }}　<a href="#transactions" onClick="{{ c.goRows }}" title="すべての支出の該当行へ" style="color:#238778;font-weight:700;text-decoration:underline;text-underline-offset:2px" style-hover="text-decoration:none">{{ c.metaCount }}</a></span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 4px; flex-wrap: wrap; flex-direction: column">
+                  <span style="font-size: 18px; font-weight: 700; color: #1F2937">{{ c.title }}</span>
+                  <span style="font-size:20px;font-weight:700;color:#DC2626;letter-spacing:0.01em;white-space:nowrap">-{{ c.amt }}<span style="font-size:12px;color:#4B5563;font-weight:400"> 円</span></span>
+                </div>
+                <div style="display:flex;gap:6px;flex-wrap:wrap">
+                  <sc-for list="{{ c.cats }}" as="k" hint-placeholder-count="1">
+                    <span style="{{ k.pillStyle }}">{{ k.main }}<span style="font-size:10px">{{ k.sub }}</span></span>
+                  </sc-for>
+                </div>
+                <p style="margin: 0; font-size: 14px; line-height: 1.87; color: #1F2937; text-wrap: pretty">{{ c.body }}</p>
+                <sc-if value="{{ c.hasLink }}" hint-placeholder-val="{{ true }}">
+                  <a href="{{ c.url }}" target="_blank" rel="noopener noreferrer" style="display:inline-flex;align-items:center;gap:6px;font-size:14px;font-weight:700;color:#238778;text-decoration:underline;align-self:flex-start" style-hover="text-decoration:none">{{ c.linkLabel }}<img src="assets/icons/icon-outerlink.svg" alt="" style="width:14px;height:14px"></a>
+                </sc-if>
+                <sc-if value="{{ c.noLink }}" hint-placeholder-val="{{ false }}">
+                  <span style="font-size:14px;color:#9CA3AF">{{ c.linkLabel }}</span>
+                </sc-if>
+              </div>
+            </sc-for>
+          </div>
+        </section>
+
+        <div style="display: flex; align-items: center; align-self: stretch; background: linear-gradient(to bottom right, #64D8C6, #BCECD3); border-radius: 22px; padding: {{ transPad }}; padding-top: 40px; padding-right: 40px; padding-bottom: 40px; padding-left: 40px">
+          <div style="display:flex;flex-direction:column;justify-content:center;gap:10px">
+            <h2 style="margin:0;font-size:{{ transTitleFs }};font-weight:700;line-height:1.5;letter-spacing:0.01em;color:#1F2937">調査研究費もまるごと公開。意味ある使い方か、検証できるように👀</h2>
+            <p style="margin:0;font-size:{{ transBodyFs }};font-weight:400;line-height:1.75;letter-spacing:0.01em;color:#1F2937;max-width:874px">議員一人ひとりに支給される調査研究費の原資は、大切な税金。だから、使わせていただいた分はしっかり成果を示し、使途も領収書まで含めてまるごと公開しています。チームみらいがなぜここまでオープンにするのか、その理由は<a href="https://note.com/team_mirai_jp/n/n58fca6f9e4e8" target="_blank" rel="noopener noreferrer" class="scp8" style="font-weight: 700; color: rgb(31, 41, 55); text-decoration: underline;">こちらのnote</a>をお読みください。</p>
+          </div>
+        </div><section id="monthly-trends" style="background:#fff;border-radius:24px;padding:{{ cardPad }};display:flex;flex-direction:column;gap:32px">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap">
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <div style="display:flex;align-items:center;gap:8px">
+                <span style="width:30px;height:30px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><img src="assets/icons/icon-barchart.svg" alt="Bar chart icon" style="width:30px;height:30px;display:block"></span>
+                <h2 style="margin:0;font-size:{{ titleFs }};line-height:1.52;letter-spacing:0.01em;font-weight:700;color:#000">峰島侑也｜月ごとの支出の推移</h2>
+              </div>
+              <p style="margin:0;font-size:14px;line-height:1.21;letter-spacing:0.01em;font-weight:500;color:#85868e">今年の月ごとの支給と支出</p>
+            </div>
+            <span style="{{ updTop }}">2026.8.20時点</span>
+          </div>
+          <div style="{{ updBottom }}">2026.8.20時点</div>
+          <div style="overflow-x:auto"><div style="min-width:640px">{{ monthlyChart }}</div></div>
+          <div style="display:flex;justify-content:flex-end;gap:12px;flex-wrap:wrap;font-size:14px;font-weight:700;color:#4B5563;margin-top:-16px">
+            <span style="display:flex;align-items:center;gap:6px"><span style="width:12px;height:12px;background:#2AA693;display:inline-block"></span>支給</span>
+            <span style="display:flex;align-items:center;gap:6px"><span style="width:12px;height:12px;background:#DC2626;display:inline-block"></span>支出</span>
+            <span style="display:flex;align-items:center;gap:6px"><span style="width:12px;height:12px;background:#4B5563;display:inline-block"></span>収支</span>
+          </div>
+        </section>
+
+        
+
+        <section id="transactions" style="background:#fff;border-radius:24px;padding:{{ cardPad }};display:flex;flex-direction:column;gap:32px">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap">
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <div style="display:flex;align-items:center;gap:8px">
+                <span style="width:30px;height:30px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><img src="assets/icons/icon-cashback.svg" alt="Cash move icon" style="width:30px;height:30px;display:block"></span>
+                <h2 style="margin:0;font-size:{{ titleFs }};line-height:1.52;letter-spacing:0.01em;font-weight:700;color:#000">峰島侑也｜すべての支出</h2>
+              </div>
+              <p style="margin:0;font-size:14px;line-height:1.21;letter-spacing:0.01em;font-weight:500;color:#85868e">これまでにデータ連携された出入金の明細</p>
+            </div>
+            <span style="{{ updTop }}">2026.8.20時点</span>
+          </div>
+          <div style="{{ updBottom }}">2026.8.20時点</div>
+
+          <div>
+            <div style="display:flex;gap:28px;border-bottom:1px solid #D1D5DB">
+              <span onClick="{{ setCatPlain }}" style="{{ tabC1 }}">詳細の区分</span>
+              <span onClick="{{ setCatLegal }}" style="{{ tabC2 }}">法律上の区分</span>
+            </div>
+            <div style="overflow-x:auto">
+              <table style="width:100%;min-width:{{ tableMin }}">
+                <thead style="{{ theadStyle }}">
+                  <tr style="height:48px;border-bottom:1px solid #D5DBE1">
+                    <th style="text-align:left;padding:0 16px;font-size:14px;font-weight:700;color:#1F2937;width:140px">日付</th>
+                    <th style="text-align:left;padding:0 0 0 16px;font-size:14px;font-weight:700;color:#1F2937;width:200px">カテゴリー</th>
+                    <th style="text-align:left;font-size:14px;font-weight:700;color:#1F2937;letter-spacing:0.071em">項目</th>
+                    <th style="text-align:right;padding:0 24px 0 0;font-size:14px;font-weight:700;color:#1F2937;width:180px">金額</th>
+                  </tr>
+                </thead>
+                {{ tableBody }}
+              </table>
+            </div>
+          </div>
+          <div style="{{ footWrap }}">
+            <div style="{{ footSide }}"></div>
+            <div style="display:flex;justify-content:center">
+              <sc-if value="{{ hasMore }}" hint-placeholder-val="{{ true }}">
+                <span onClick="{{ showMore }}" style="display:inline-flex;align-items:center;justify-content:center;gap:10px;width:270px;height:48px;padding:8px 24px;background:#fff;border:1px solid #1F2937;border-radius:6px;font-size:16px;font-weight:700;color:#1F2937;cursor:pointer;transition:background-color 150ms" style-hover="background:#F9FAFB">もっと見る</span>
+              </sc-if>
+            </div>
+            <div style="{{ footCsv }}">
+              <button type="button" onClick="{{ downloadCsv }}" style="font-family:'Noto Sans JP',sans-serif;padding:12px 16px;font-size:14px;font-weight:700;color:#238778;background:#fff;border:0;border-radius:6px;cursor:pointer;transition:background-color 150ms;white-space:nowrap" style-hover="background:#F9FAFB">{{ csvLabel }}</button>
+            </div>
+          </div>
+          <div style="text-align:center;font-size:14px;font-weight:500;color:#6A7383;line-height:20px;letter-spacing:0.005em;margin-top:-20px">{{ tableFoot }}</div>
+        </section>
+
+        <section id="explanation" style="background:#fff;border-radius:24px;padding:{{ cardPad }};display:flex;flex-direction:column;gap:36px">
+          <div>
+            <h3 style="margin:0 0 12px;font-size:18px;font-weight:700;color:#1F2937">みらい まる見え政治資金について</h3><p style="margin:0;font-size:15px;line-height:1.87;letter-spacing:0.01em;color:#1F2937;text-wrap:pretty">本プロジェクトは、チームみらいによって政治資金の透明化を目的に開発されたオープンソースソフトウェアです。決済データは、クレジットカード、デビットカード、銀行口座を通じて収集され、現状不定期で更新されています。すでにオープンソースで<a href="https://github.com/team-mirai-volunteer/marumie" target="_blank" rel="noopener noreferrer" style="font-weight:700;color:#238778;text-decoration:underline" style-hover="text-decoration:none">こちらのGitHub</a>にて無償公開中であり、政党や所属を問わず利用可能な形で提供しております。開発コミュニティにご興味のある方は<a href="https://action.team-mir.ai/missions/join-slack" target="_blank" rel="noopener noreferrer" style="font-weight:700;color:#238778;text-decoration:underline" style-hover="text-decoration:none">アクションボード</a>からSlackにご参加ください。</p>
+            
+          </div><div>
+            
+            <h3 style="margin:0 0 12px;font-size:18px;font-weight:700;color:#1F2937">調査研究費のデータについて</h3><p style="margin:0;font-size:15px;line-height:1.87;letter-spacing:0.01em;color:#1F2937;text-wrap:pretty">2026年2月の当選以降、仕訳が完了した支出を掲載しています。費目はチームみらい独自の詳細区分15分類にマッピングし、使途等報告書で定められた法律上の区分にも切り替えて表示できます。更新は不定期で、次回は11月ごろの予定です。使わなかった分（7ヶ月分で479万円）は年末時点で確定し、国庫に返還します。</p>
+          </div>
+          
+          
+          <div>
+            <h3 style="margin:0 0 12px;font-size:18px;font-weight:700;color:#1F2937">免責事項</h3>
+            <p style="margin:0;font-size:15px;line-height:1.87;letter-spacing:0.01em;color:#1F2937;text-wrap:pretty">本サイトで公開するデータは、可能な限り正確かつ最新の情報を反映するよう努めていますが、現時点においてはその正確性・完全性・即時性について保証するものではありません。今後は、これらの側面について一層踏み込んだ公開を目指してまいります。最終的な収支は、別途公開される「政治資金収支報告書」並びに「選挙運動費用収支報告書」をご確認ください。</p>
+          </div>
+          <div style="display:flex;justify-content:center">
+            <a href="https://team-mirai.notion.site/FAQ-27ef6f56bae180c085e9f97d05a5d59c" target="_blank" rel="noopener noreferrer" style="display:inline-flex;align-items:center;justify-content:center;gap:10px;width:270px;height:48px;padding:8px 24px;background:#fff;border:1px solid #1F2937;border-radius:6px;font-size:16px;font-weight:700;color:#1F2937;text-decoration:none" style-hover="background:#F9FAFB;text-decoration:none">よくあるご質問</a>
+          </div>
+        </section>
+
+        <div onClick="{{ goParty }}" style="background:#fff;border-radius:24px;padding:32px 48px;display:flex;align-items:center;justify-content:space-between;gap:16px;cursor:pointer;flex-wrap:wrap" style-hover="opacity:0.9">
+          <span style="font-size: 24px; font-weight: 700; color: #1F2937">政党・チームみらいの「まる見え政治資金」も公開中</span>
+          <span style="display:inline-flex;align-items:center;justify-content:center;width:48px;height:48px;border:1px solid #1F2937;border-radius:50%;background:#fff;flex-shrink:0" aria-label="詳細を見る"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1F2937" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg></span>
+        </div>
+
+        <section id="about" style="background:#fff;border-radius:24px;padding:{{ cardPad }};display:flex;flex-direction:column;gap:36px">
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <h3 style="margin:0;font-size:18px;font-weight:700;color:#1F2937">チームみらいについて</h3>
+            <p style="margin:0;font-size:15px;line-height:1.87;letter-spacing:0.01em;color:#374151;text-wrap:pretty">チームみらいは、AIエンジニアの安野たかひろが立ち上げた政党です。2025年参議院選挙にて、みなさまに多大なるご助力をいただき1議席を獲得し国政政党となりました。テクノロジーで政治の課題を解決することを目指して、既存の枠組みにとらわれることなく活動していきます。</p>
+          </div>
+          <div style="display:flex;justify-content:center">
+            <div style="display:grid;grid-template-columns:repeat(4,auto);gap:4px">
+              <a href="https://team-mir.ai/" target="_blank" rel="noopener" aria-label="webサイト" style="display:flex;align-items:center;gap:8px;padding:8px;border-radius:8px;text-decoration:none" style-hover="background:#F9FAFB"><img src="assets/social-icons/icon-web.svg" alt="" style="width:48px;height:48px;border-radius:50%"><span style="{{ snsLabel }}">webサイト</span></a>
+              <a href="https://www.youtube.com/@team_mirai_jp" target="_blank" rel="noopener" aria-label="YouTube" style="display:flex;align-items:center;gap:8px;padding:8px;border-radius:8px;text-decoration:none" style-hover="background:#F9FAFB"><img src="assets/social-icons/icon-yt.svg" alt="" style="width:48px;height:48px;border-radius:50%"><span style="{{ snsLabel }}">YouTube</span></a>
+              <a href="https://line.me/R/ti/p/@465hhyop?oat__id=5529589" target="_blank" rel="noopener" aria-label="LINE" style="display:flex;align-items:center;gap:8px;padding:8px;border-radius:8px;text-decoration:none" style-hover="background:#F9FAFB"><img src="assets/social-icons/icon-line.svg" alt="" style="width:48px;height:48px;border-radius:50%"><span style="{{ snsLabel }}">LINE</span></a>
+              <a href="https://x.com/team_mirai_jp" target="_blank" rel="noopener" aria-label="X" style="display:flex;align-items:center;gap:8px;padding:8px;border-radius:8px;text-decoration:none" style-hover="background:#F9FAFB"><img src="assets/social-icons/icon-x.svg" alt="" style="width:48px;height:48px;border-radius:50%"><span style="{{ snsLabel }}">X<span style="font-size:12px;opacity:0.8;margin-left:4px">（旧Twitter）</span></span></a>
+              <a href="https://www.instagram.com/team_mirai_jp/" target="_blank" rel="noopener" aria-label="Instagram" style="display:flex;align-items:center;gap:8px;padding:8px;border-radius:8px;text-decoration:none" style-hover="background:#F9FAFB"><span style="width:48px;height:48px;border-radius:50%;background:#000;color:#fff;display:inline-flex;align-items:center;justify-content:center"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"></rect><circle cx="12" cy="12" r="4"></circle><circle cx="17.5" cy="6.5" r="1" fill="currentColor"></circle></svg></span><span style="{{ snsLabel }}">Instagram</span></a>
+              <a href="https://www.threads.com/@team_mirai_jp" target="_blank" rel="noopener" aria-label="Threads" style="display:flex;align-items:center;gap:8px;padding:8px;border-radius:8px;text-decoration:none" style-hover="background:#F9FAFB"><img src="assets/social-icons/icon-threads.svg" alt="" style="width:48px;height:48px;border-radius:50%"><span style="{{ snsLabel }}">Threads</span></a>
+              <a href="https://www.facebook.com/teammirai.official" target="_blank" rel="noopener" aria-label="Facebook" style="display:flex;align-items:center;gap:8px;padding:8px;border-radius:8px;text-decoration:none" style-hover="background:#F9FAFB"><img src="assets/social-icons/icon-fb.svg" alt="" style="width:48px;height:48px;border-radius:50%"><span style="{{ snsLabel }}">Facebook</span></a>
+              <a href="https://www.tiktok.com/@annotakahiro2024" target="_blank" rel="noopener" aria-label="TikTok" style="display:flex;align-items:center;gap:8px;padding:8px;border-radius:8px;text-decoration:none" style-hover="background:#F9FAFB"><img src="assets/social-icons/icon-tiktok.svg" alt="" style="width:48px;height:48px;border-radius:50%"><span style="{{ snsLabel }}">TikTok</span></a>
+            </div>
+          </div>
+        </section>
+
+        <div style="{{ linkCardsWrap }}">
+          <a href="https://team-mir.ai/support/donation" target="_blank" rel="noopener" style="{{ linkCard }}" style-hover="background:#F9FAFB;text-decoration:none">
+            <span style="{{ linkCardTitle }}">寄附で応援する</span>
+            <img src="assets/icons/icon-outerlink.svg" alt="" style="{{ linkCardIcon }}">
+          </a>
+          <a href="https://team-mir.ai/support/membership" target="_blank" rel="noopener" style="{{ linkCard }}" style-hover="background:#F9FAFB;text-decoration:none">
+            <span style="{{ linkCardTitle }}">チームみらい党員になる</span>
+            <img src="assets/icons/icon-outerlink.svg" alt="" style="{{ linkCardIcon }}">
+          </a>
+        </div>
+      </div>
+    </sc-if>
+  </main>
+
+  <footer style="width:100%;background:linear-gradient(to top left, #BCECD3, #64D8C6);padding:{{ footerPad }}">
+    <div style="max-width:1278px;margin:0 auto;display:flex;flex-direction:column;align-items:center;gap:{{ footerGap }}">
+      <img src="assets/logos/team-mirai-logo.svg" alt="Team Mirai Logo" style="{{ footerLogoTop }}">
+      <div style="display:flex;flex-direction:column;gap:16px;align-items:center">
+        <div style="{{ footerRow1 }}">
+          <a href="#top" style="font-size:14px;font-weight:700;color:#1F2937;line-height:1.36;text-decoration:none" style-hover="opacity:0.8">TOP</a>
+          <a href="#cash-flow" style="font-size:14px;font-weight:700;color:#1F2937;line-height:1.36;text-decoration:none" style-hover="opacity:0.8">収支の流れ</a>
+          <a href="#monthly-trends" style="font-size:14px;font-weight:700;color:#1F2937;line-height:1.36;text-decoration:none" style-hover="opacity:0.8">月ごとの収支推移</a>
+          <a href="#transactions" style="font-size:14px;font-weight:700;color:#1F2937;line-height:1.36;text-decoration:none" style-hover="opacity:0.8">すべての出入金</a>
+          <a href="#explanation" style="font-size:14px;font-weight:700;color:#1F2937;line-height:1.36;text-decoration:none" style-hover="opacity:0.8">データについて</a>
+          <a href="#about" style="font-size:14px;font-weight:700;color:#1F2937;line-height:1.36;text-decoration:none" style-hover="opacity:0.8">チームみらいについて</a>
+        </div>
+        <div style="{{ footerRow2 }}">
+          <a href="https://team-mir.ai/support/donation" target="_blank" rel="noopener" style="font-size:14px;font-weight:700;color:#1F2937;line-height:1.36;text-decoration:none" style-hover="opacity:0.8">寄附で応援する</a>
+          <a href="https://team-mir.ai/support/membership" target="_blank" rel="noopener" style="font-size:14px;font-weight:700;color:#1F2937;line-height:1.36;text-decoration:none" style-hover="opacity:0.8">チームみらい党員になる</a>
+          <a href="https://team-mirai.notion.site/FAQ-27ef6f56bae180c085e9f97d05a5d59c" target="_blank" rel="noopener" style="font-size:14px;font-weight:700;color:#1F2937;line-height:1.36;text-decoration:none" style-hover="opacity:0.8">よくあるご質問</a>
+          <a href="https://marumie.team-mir.ai/terms" style="font-size:14px;font-weight:700;color:#1F2937;line-height:1.36;text-decoration:none" style-hover="opacity:0.8">利用規約</a>
+          <a href="https://marumie.team-mir.ai/privacy" style="font-size:14px;font-weight:700;color:#1F2937;line-height:1.36;text-decoration:none" style-hover="opacity:0.8">プライバシーポリシー</a>
+        </div>
+      </div>
+      <div style="{{ footerSns }}">
+        <a href="https://team-mir.ai/" target="_blank" rel="noopener" aria-label="webサイト" style="display:flex;align-items:center;gap:4px;text-decoration:none" style-hover="opacity:0.8"><img src="assets/social-icons/icon-web.svg" alt="" style="{{ footerIcon }}"><span style="{{ footerSnsLabel }}">webサイト</span></a>
+        <a href="https://www.youtube.com/@team_mirai_jp" target="_blank" rel="noopener" aria-label="YouTube" style="display:flex;align-items:center;gap:4px;text-decoration:none" style-hover="opacity:0.8"><img src="assets/social-icons/icon-yt.svg" alt="" style="{{ footerIcon }}"><span style="{{ footerSnsLabel }}">YouTube</span></a>
+        <a href="https://line.me/R/ti/p/@465hhyop?oat__id=5529589" target="_blank" rel="noopener" aria-label="LINE" style="display:flex;align-items:center;gap:4px;text-decoration:none" style-hover="opacity:0.8"><img src="assets/social-icons/icon-line.svg" alt="" style="{{ footerIcon }}"><span style="{{ footerSnsLabel }}">LINE</span></a>
+        <a href="https://x.com/team_mirai_jp" target="_blank" rel="noopener" aria-label="X" style="display:flex;align-items:center;gap:4px;text-decoration:none" style-hover="opacity:0.8"><img src="assets/social-icons/icon-x.svg" alt="" style="{{ footerIcon }}"><span style="{{ footerSnsLabel }}">X<span style="font-size:12px;opacity:0.8;margin-left:4px">（旧Twitter）</span></span></a>
+        <a href="https://www.instagram.com/team_mirai_jp/" target="_blank" rel="noopener" aria-label="Instagram" style="display:flex;align-items:center;gap:4px;text-decoration:none" style-hover="opacity:0.8"><span style="{{ footerIconBox }}"><svg width="60%" height="60%" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"></rect><circle cx="12" cy="12" r="4"></circle><circle cx="17.5" cy="6.5" r="1" fill="currentColor"></circle></svg></span><span style="{{ footerSnsLabel }}">Instagram</span></a>
+        <a href="https://www.facebook.com/teammirai.official" target="_blank" rel="noopener" aria-label="Facebook" style="display:flex;align-items:center;gap:4px;text-decoration:none" style-hover="opacity:0.8"><img src="assets/social-icons/icon-fb.svg" alt="" style="{{ footerIcon }}"><span style="{{ footerSnsLabel }}">Facebook</span></a>
+        <a href="https://www.tiktok.com/@annotakahiro2024" target="_blank" rel="noopener" aria-label="TikTok" style="display:flex;align-items:center;gap:4px;text-decoration:none" style-hover="opacity:0.8"><img src="assets/social-icons/icon-tiktok.svg" alt="" style="{{ footerIcon }}"><span style="{{ footerSnsLabel }}">TikTok</span></a>
+        <a href="https://github.com/team-mirai-volunteer/marumie" target="_blank" rel="noopener" aria-label="GitHub" style="display:flex;align-items:center;gap:4px;text-decoration:none" style-hover="opacity:0.8"><img src="assets/social-icons/icon-github.svg" alt="" style="{{ footerIcon }}"><span style="{{ footerSnsLabel }}">GitHub</span></a>
+      </div>
+      <img src="assets/logos/team-mirai-logo.svg" alt="Team Mirai Logo" style="{{ footerLogoBottom }}">
+      <p style="margin:0;width:100%;text-align:center;font-size:14px;line-height:1.25;color:#4B5563">© 2025 Team Mirai All rights Reserved</p>
+    </div>
+  </footer>
+
+  <sc-if value="{{ receiptOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeReceipt }}" style="position:fixed;inset:0;z-index:100;background:rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;padding:24px">
+      <div onClick="{{ stopProp }}" style="background:#fff;border-radius:24px;width:100%;max-width:520px;max-height:88vh;overflow:auto;padding:32px;display:flex;flex-direction:column;gap:24px">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+          <span style="font-size:20px;font-weight:700;color:#1F2937">領収書</span>
+          <span onClick="{{ closeReceipt }}" style="font-size: 15px; font-weight: 700; color: #238778; cursor: pointer">閉じる</span>
+        </div>
+        <div style="display:grid;grid-template-columns:96px 1fr;gap:12px 16px;font-size:14px;color:#1F2937">
+          <span style="color:#6B7280;font-weight:700">日付</span><span style="font-weight:700">{{ rDate }}</span>
+          <span style="color:#6B7280;font-weight:700">カテゴリー</span><span>{{ rCat }}</span>
+          <span style="color:#6B7280;font-weight:700">項目</span><span style="font-weight:700">{{ rItem }}</span>
+          <span style="color:#6B7280;font-weight:700">金額</span><span style="font-weight:700;color:#DC2626">-{{ rAmt }}</span>
+          <span style="color:#6B7280;font-weight:700">特記事項</span><span style="line-height:1.7">{{ rNote }}</span>
+        </div>
+        <div style="border:1px dashed #D1D5DB;border-radius:16px;background:#F9FAFB;padding:40px 20px;text-align:center">
+          <div style="font-size:14px;color:#6B7280">領収書画像はこの枠に表示されます</div>
+          <div style="font-size:12px;color:#9CA3AF;margin-top:4px">個人情報にあたる記載はマスキングして掲載します</div>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  {{ tooltip }}
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;summaryLayout&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;現状&quot;,&quot;A 議員切替&quot;,&quot;B カード一覧&quot;,&quot;C 一覧＋内訳&quot;],&quot;default&quot;:&quot;A 議員切替&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;政党ページ：議員サマリーの情報設計&quot;},&quot;partyChart&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;棒グラフ&quot;,&quot;サンキーチャート&quot;],&quot;default&quot;:&quot;サンキーチャート&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;政党ページ：議員サマリーの情報設計&quot;},&quot;detailButton&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;見出し右：ボタン&quot;,&quot;見出し右：テキストリンク&quot;,&quot;下部中央：大ボタン&quot;],&quot;default&quot;:&quot;見出し右：ボタン&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;政党ページ：議員サマリーの情報設計&quot;},&quot;receiptStyle&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;非表示（第一弾）&quot;,&quot;テキストリンク&quot;,&quot;ピル&quot;,&quot;アイコンのみ&quot;,&quot;アイコンのみ（緑・枠なし）&quot;],&quot;default&quot;:&quot;非表示（第一弾）&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;領収書の表示&quot;}}">
+const GRANT = 7000000, SPENT = 2212581;
+const C15 = [
+  ["IT機器・周辺機器費", 948405, 41], ["住居費（議員宿舎・宿泊費）", 370848, 5], ["交通費（出張・移動）", 302820, 91],
+  ["文具・事務用消耗品費", 213317, 60], ["交流費", 117688, 25], ["広報費", 99000, 1], ["日用消耗品費", 86776, 52],
+  ["調査研究費（資料・研修）", 57267, 17], ["光熱水費", 8300, 1], ["システム・サーバ利用料", 7498, 2], ["通信費（電話・ネット）", 662, 1]
+];
+const LEGAL = [
+  ["③ 備品・消耗品費", 1248498, 153], ["⑨ 滞在費", 673668, 96], ["⑤ 交流費", 117688, 25],
+  ["⑥ 広報紙誌の発行その他の事業費", 99000, 1], ["⑦ 調査研究費", 64765, 19], ["② 光熱水費", 8300, 1], ["④ 事務所費", 662, 1]
+];
+const CATMAP = {"住居費（議員宿舎・宿泊費）":"⑨ 滞在費","交通費（出張・移動）":"⑨ 滞在費","光熱水費":"② 光熱水費","通信費（電話・ネット）":"④ 事務所費","IT機器・周辺機器費":"③ 備品・消耗品費","文具・事務用消耗品費":"③ 備品・消耗品費","日用消耗品費":"③ 備品・消耗品費","システム・サーバ利用料":"⑦ 調査研究費","調査研究費（資料・研修）":"⑦ 調査研究費","広報費":"⑥ 広報紙誌の発行その他の事業費","交流費":"⑤ 交流費"};
+// 既存 PL_CATEGORIES（shared/accounting/account-category.ts）の支出カラーを法律上の区分に対応させ、詳細区分は親の色を継承
+const LEGALCOLOR = {"③ 備品・消耗品費":"#4D7C0F","② 光熱水費":"#126C81","④ 事務所費":"#047857","⑦ 調査研究費":"#047857","⑤ 交流費":"#C2410C","⑥ 広報紙誌の発行その他の事業費":"#A16207","⑨ 滞在費":"#0369A1","① 人件費":"#0369A1","⑧ 寄附・交付金":"#BE185D","その他":"#334155"};
+const catColor = n => LEGALCOLOR[n] || LEGALCOLOR[CATMAP[n]] || "#334155";
+const MONTHS = [["02",33,126860],["03",65,362307],["04",99,861279],["05",32,364704],["06",37,369940],["07",13,106156],["08",17,21335]];
+const OUT = [0,126860,362307,861279,364704,369940,106156,21335,0,0,0,0];
+const FALLBACK = [["05/08","住居費（議員宿舎・宿泊費）","宿舎使用料",124747,"令和8年4月分議員宿舎使用料"],["05/08","IT機器・周辺機器費","スマートフォン代",179800,"iPhone 17 Pro 256GB"],["05/12","光熱水費","電気代",8300,"電力会社より請求書のみ発行され領収書の発行なし"]];
+function dataRows() {
+  const raw = window.CHOKEN_ROWS, cats = window.CHOKEN_CATS;
+  if (raw && cats) return raw.map(r => ({ d: r[0], cat: cats[r[1]], item: r[2], amt: r[3], split: r[4] || 1, note: r[5] || "" }));
+  return FALLBACK.map(r => ({ d: r[0], cat: r[1], item: r[2], amt: r[3], split: 1, note: r[4] || "" }));
+}
+// 既存 SankeyChart.tsx の splitLabel を移植（N文字/行、N*2以上は「…」で省略）
+function splitLabel(label, N) {
+  if (label.length <= N) return [label];
+  if (label.startsWith("その他")) return ["その他", label.substring(3)];
+  if (label.length === N + 1) return [label.substring(0, N - 2), label.substring(N - 2)];
+  if (label.length === N + 2) return [label.substring(0, N - 1), label.substring(N - 1)];
+  const t = label.length >= N * 2 + 1 ? label.substring(0, N * 2 - 1) + "…" : label;
+  return [t.substring(0, N), t.substring(N)];
+}
+const yen = v => v.toLocaleString("ja-JP");
+const man = v => Math.round(v / 10000).toLocaleString("ja-JP") + "万円";
+const manLabel = v => v >= 10000 ? man(v) : yen(v) + "円";
+// 「住居費（議員宿舎・宿泊費）」のように括弧書きがある費目名は、括弧部分を一回り小さく表示
+const catLabel = (name, small) => {
+  const p = name.indexOf("（");
+  if (p < 0) return name;
+  return [name.slice(0, p), React.createElement("span", { key: "s", style: { fontSize: small } }, name.slice(p))];
+};
+const PILL = c => "display:inline-flex;align-items:center;padding:0 12px;height:20px;border-radius:999px;border:1px solid " + c + ";background:#fff;color:" + c + ";font-size:12px;font-weight:500;line-height:1;white-space:nowrap";
+// match: 一覧の支出行がこの成果カードに紐づくか（日付＋項目名で判定）
+const HIGHLIGHTS = [
+  { meta: "2026.6.30　1件", cat: "広報費", title: "ボネクタ利用料", amt: "99,000", body: "有権者からの意見や陳情を受け付ける窓口として導入しました。2月〜6月分の初期費用および利用料です。", linkLabel: "受付窓口を見る", url: "#", match: o => o.item === "ボネクタ利用料" },
+  { meta: "2026.4.10〜7.23　3件", cat: "交流費", title: "タウンミーティング会場費", amt: "50,445", body: "有権者と直接意見交換する場として、貸会議室を3回借りました。", linkLabel: "開催報告を見る", url: "#", match: o => o.cat === "交流費" && (o.item === "会場費" || o.item === "会議室利用料") },
+  { meta: "2026.7.29　2件", cat: "住居費（議員宿舎・宿泊費）", title: "広島平和記念資料館 視察", amt: "44,800", body: "入館料と宿泊費です。視察の報告はまだ公開していません。", linkLabel: "報告は準備中", url: "", match: o => o.d === "07/29" && (o.item === "宿泊費" || o.item === "入館料") }
+];
+const highlightIndex = o => HIGHLIGHTS.findIndex(hl => hl.match(o));
+
+// 政党ページ用の議員リスト（12人）。実データがあるのは峰島のみ、他は準備中
+const POLITICIANS = [
+  { name: "峰島侑也", ready: true, amt: 2212581, status: "2026年2月〜8月分を公開中" },
+  { name: "安野貴博", ready: false, status: "準備中" },
+  { name: "議員C", ready: false, status: "準備中" }, { name: "議員D", ready: false, status: "準備中" },
+  { name: "議員E", ready: false, status: "準備中" }, { name: "議員F", ready: false, status: "準備中" },
+  { name: "議員G", ready: false, status: "準備中" }, { name: "議員H", ready: false, status: "準備中" },
+  { name: "議員I", ready: false, status: "準備中" }, { name: "議員J", ready: false, status: "準備中" },
+  { name: "議員K", ready: false, status: "準備中" }, { name: "議員L", ready: false, status: "準備中" }
+];
+
+class Component extends DCLogic {
+  state = { selPol: 0, page: "min", selOpen: false, kubun: "plain", minKubun: "plain", cat: "plain", shown: 50, tip: null, receipt: null, narrow: false, hideNav: false };
+
+  componentDidMount() {
+    if (!window.CHOKEN_ROWS) {
+      let n = 0;
+      this.poll = setInterval(() => { n += 1; if (window.CHOKEN_ROWS || n > 60) { clearInterval(this.poll); this.forceUpdate(); } }, 100);
+    }
+    this.mq = window.matchMedia("(max-width: 760px)");
+    this.mqNav = window.matchMedia("(max-width: 1023px)");
+    this.onMq = () => this.setState({ narrow: this.mq.matches, hideNav: this.mqNav.matches });
+    this.onMq();
+    this.mq.addEventListener("change", this.onMq);
+    this.mqNav.addEventListener("change", this.onMq);
+    this.onDoc = () => { if (this.state.selOpen) this.setState({ selOpen: false }); };
+    document.addEventListener("click", this.onDoc);
+  }
+  componentWillUnmount() {
+    if (this.mq) this.mq.removeEventListener("change", this.onMq);
+    if (this.mqNav) this.mqNav.removeEventListener("change", this.onMq);
+    document.removeEventListener("click", this.onDoc);
+  }
+
+  items(legal) {
+    const list = (legal ? LEGAL : C15).map(x => ({ n: x[0], v: x[1], c: x[2] })).sort((a, b) => b.v - a.v);
+    const big = [], small = [];
+    list.forEach(d => (d.v / GRANT < 0.01 ? small : big).push(d));
+    if (small.length > 1) big.push({ n: "その他", v: small.reduce((s, d) => s + d.v, 0), c: small.reduce((s, d) => s + d.c, 0), parts: small.map(d => d.n + " " + manLabel(d.v)).join("／") });
+    else if (small.length === 1) big.push(small[0]);
+    return big;
+  }
+  tip(label, v, c, parts, left) {
+    return {
+      onMouseMove: e => this.setState({ tip: { x: e.clientX, y: e.clientY, label, v, c, parts, left } }),
+      onMouseLeave: () => this.setState({ tip: null })
+    };
+  }
+  tabStyle(on) {
+    return "padding-bottom:8px;font-weight:700;font-size:16px;line-height:1.25;cursor:pointer;border-bottom:2px solid;transition:color 150ms;" +
+      (on ? "border-color:#238778;color:#238778" : "border-color:transparent;color:#9CA3AF");
+  }
+
+  flowChart(legalOverride) {
+    const legal = legalOverride === undefined ? this.state.minKubun === "legal" : legalOverride;
+    const list = this.items(legal);
+    const unused = GRANT - SPENT;
+    const all = list.concat([{ n: "未使用", v: unused, u: true }]);
+    const h = React.createElement;
+    const EXP = "#DC2626", EXP_L = "#FBE2E7", CASH = "#6B7280", CASH_L = "#E5E7EB", TXT = "#1F2937";
+
+    // 既存 SankeyChart.tsx に準拠: パーセンテージはノード上部（整数%／<1%）、ラベルはノード中央、金額はホバーのみ
+    // PC: 幅936・高さ520・左右マージン100・ノード幅48/36・14.5px ／ SP: 幅360・高さ400・マージン48・ノード幅24/18・8px・spacing10
+    const mob = this.state.narrow;
+    const FS = mob ? 8 : 14.5, W = mob ? 360 : 936, TOP = mob ? 20 : 40, hub = mob ? 400 - 20 - 30 : 520 - 40 - 30;
+    const NW = mob ? 18 : 36, TW = mob ? 24 : 48, LO = mob ? 4 : 16, MH = mob ? 48 : 100;
+    const PX = hub / GRANT;
+    const xIn = MH, xC = (W - TW) / 2, xCW = TW, xR = W - MH - NW, LBL = xR + NW + LO;
+    const SPACING = mob ? 10 : 20, LHH = mob ? 10 : 16;
+    const pct = v => { const p = v / GRANT * 100; return p < 1 ? "<1%" : Math.round(p) + "%"; };
+    const HR = all.map(d => Math.max(d.v * PX, 2));
+    let yL = TOP, yR = TOP;
+    const links = [], nodes = [], labels = [];
+    all.forEach((d, i) => {
+      const hh = d.v * PX, hr = HR[i], m = (xC + xCW + xR) / 2;
+      const fill = d.u ? CASH : EXP, light = d.u ? CASH_L : EXP_L;
+      const t = this.tip(d.n, d.v, d.c, d.parts, true);
+      links.push(h("path", Object.assign({ key: "p" + i, fill: light,
+        d: "M" + (xC + xCW) + " " + yL + " C" + m + " " + yL + " " + m + " " + yR + " " + xR + " " + yR + " L" + xR + " " + (yR + hr) + " C" + m + " " + (yR + hr) + " " + m + " " + (yL + hh) + " " + (xC + xCW) + " " + (yL + hh) + " Z"
+      }, t)));
+      nodes.push(h("rect", Object.assign({ key: "r" + i, x: xR, y: yR, width: NW, height: hr, fill: fill, style: { cursor: "pointer" } }, t)));
+      labels.push(h("text", { key: "pc" + i, x: xR + NW / 2, y: yR, textAnchor: "middle", dominantBaseline: "text-after-edge", fontSize: FS, fontWeight: 700, fill: d.u ? TXT : fill }, pct(d.v)));
+      const lines = splitLabel(d.n, 7), cy = yR + hr / 2, lhh = LHH;
+      labels.push(h("text", { key: "n" + i, x: LBL, y: cy - (lines.length - 1) * lhh / 2, dominantBaseline: "middle", fontSize: FS, fontWeight: 700, fill: TXT },
+        lines.map((ln, j) => h("tspan", { key: j, x: LBL, dy: j === 0 ? 0 : lhh }, ln))));
+      yL += hh; yR += hr + SPACING;
+    });
+    const H = Math.ceil(Math.max(TOP + hub + 30, yR - SPACING + 30));
+    const mIn = (xIn + NW + xC) / 2;
+    return h("svg", { viewBox: "0 0 " + W + " " + H, width: "100%", style: { overflow: "visible" }, role: "img", "aria-label": "調査研究費の使いみちの流れ" }, [
+      h("path", { key: "lin", fill: "#E5F7F4", d: "M" + (xIn + NW) + " " + TOP + " C" + mIn + " " + TOP + " " + mIn + " " + TOP + " " + xC + " " + TOP + " L" + xC + " " + (TOP + hub) + " C" + mIn + " " + (TOP + hub) + " " + mIn + " " + (TOP + hub) + " " + (xIn + NW) + " " + (TOP + hub) + " Z" }),
+      h("rect", Object.assign({ key: "nin", x: xIn, y: TOP, width: NW, height: hub, fill: "#2AA693", style: { cursor: "pointer" } }, this.tip("公費から支給", GRANT, null))),
+      h("rect", Object.assign({ key: "nc", x: xC, y: TOP, width: xCW, height: hub, fill: "#4F566B", style: { cursor: "pointer" } }, this.tip("合計", GRANT, null))),
+      h("text", { key: "ip", x: xIn + NW / 2, y: TOP, textAnchor: "middle", dominantBaseline: "text-after-edge", fontSize: FS, fontWeight: 700, fill: "#2AA693" }, "100%"),
+      h("text", { key: "i1", x: xIn - LO, y: TOP + hub / 2, textAnchor: "end", dominantBaseline: "middle", fontSize: FS, fontWeight: 700, fill: TXT }, [h("tspan", { key: 0, x: xIn - LO, dy: -LHH / 2 }, "公費から"), h("tspan", { key: 1, x: xIn - LO, dy: LHH }, "支給")]),
+      h("text", { key: "c1", x: xC + xCW / 2, y: TOP - (mob ? 12 : 18), textAnchor: "middle", dominantBaseline: "text-after-edge", fontSize: FS, fontWeight: 700, fill: TXT }, [h("tspan", { key: 0, x: xC + xCW / 2, dy: 0 }, "合計"), h("tspan", { key: 1, x: xC + xCW / 2, dy: LHH }, "100%")]),
+      h("text", { key: "c2", x: xC + xCW / 2, y: TOP + hub + 15, textAnchor: "middle", dominantBaseline: "text-before-edge", fontSize: FS, fontWeight: 700, fill: TXT }, man(GRANT)),
+      h("g", { key: "lk" }, links), h("g", { key: "nd" }, nodes), h("g", { key: "lb" }, labels)
+    ]);
+  }
+
+  monthlyChart() {
+    // 既存 MonthlyChart.tsx（ApexCharts）に準拠: 高さ462、±対称Y軸（万円）、支給/支出の積み上げ棒（幅52.5px）＋収支の折れ線（#4B5563）
+    const h = React.createElement;
+    const rows = MONTHS.map((m, i) => ({ mo: parseInt(m[0], 10), inc: 1000000, exp: OUT[i + 1] }));
+    const maxAbs = Math.max.apply(null, rows.map(r => Math.max(r.inc, r.exp, Math.abs(r.inc - r.exp))));
+    const tick = 500000, yMax = Math.ceil(maxAbs * 1.2 / tick) * tick;
+    const W = 936, H = 462, ML = 88, MR = 24, MT = 20, MB = 44;
+    const PH = H - MT - MB, ZERO = MT + PH / 2, sc = (PH / 2) / yMax;
+    const n = rows.length, step = (W - ML - MR) / n, bw = 52.5;
+    const fmtMan = v => v === 0 ? "0万円" : Math.round(v / 10000).toLocaleString("ja-JP") + "万円";
+    const els = [];
+    for (let v = -yMax; v <= yMax; v += tick) {
+      const y = ZERO - v * sc;
+      els.push(h("text", { key: "yl" + v, x: ML - 12, y: y, textAnchor: "end", dominantBaseline: "middle", fontSize: 14, fontWeight: 500, fill: "#4B5563" }, fmtMan(v)));
+    }
+    els.push(h("line", { key: "yax", x1: ML, y1: MT, x2: ML, y2: MT + PH, stroke: "#E2E8F0" }));
+    els.push(h("line", { key: "bot", x1: ML, y1: MT + PH, x2: W - MR, y2: MT + PH, stroke: "#E2E8F0" }));
+    const pts = [];
+    rows.forEach((r, i) => {
+      const cx = ML + step * i + step / 2, x = cx - bw / 2;
+      const bal = r.inc - r.exp;
+      const tipRows = [["支給", fmtMan(r.inc), "#238778"], ["支出", fmtMan(r.exp), "#DC2626"], ["収支", (bal >= 0 ? "+" : "") + fmtMan(bal), "#1E293B"]];
+      const t = { onMouseMove: e => this.setState({ tip: { x: e.clientX, y: e.clientY, rows: tipRows } }), onMouseLeave: () => this.setState({ tip: null }) };
+      els.push(h("rect", Object.assign({ key: "hit" + i, x: ML + step * i, y: MT, width: step, height: PH, fill: "transparent", style: { cursor: "pointer" } }, t)));
+      els.push(h("rect", Object.assign({ key: "s" + i, x: x, y: ZERO - r.inc * sc, width: bw, height: r.inc * sc, fill: "#2AA693", style: { cursor: "pointer" } }, t)));
+      els.push(h("rect", Object.assign({ key: "o" + i, x: x, y: ZERO, width: bw, height: Math.max(r.exp * sc, 1), fill: "#DC2626", style: { cursor: "pointer" } }, t)));
+      els.push(h("text", { key: "xl" + i, x: cx, y: MT + PH + 24, textAnchor: "middle", fontSize: 14, fontWeight: 500, fill: "#4B5563" }, r.mo + "月"));
+      pts.push([cx, ZERO - bal * sc]);
+    });
+    els.push(h("line", { key: "zero", x1: ML, y1: ZERO, x2: W - MR, y2: ZERO, stroke: "#4B5563", strokeWidth: 1 }));
+    let d = "M" + pts[0][0] + " " + pts[0][1];
+    for (let i = 1; i < pts.length; i++) {
+      const [x0, y0] = pts[i - 1], [x1, y1] = pts[i], dx = (x1 - x0) / 2;
+      d += " C" + (x0 + dx) + " " + y0 + " " + (x1 - dx) + " " + y1 + " " + x1 + " " + y1;
+    }
+    els.push(h("path", { key: "bal", d: d, fill: "none", stroke: "#4B5563", strokeWidth: 2, style: { pointerEvents: "none" } }));
+    pts.forEach((p, i) => els.push(h("circle", { key: "pt" + i, cx: p[0], cy: p[1], r: 3.5, fill: "#fff", stroke: "#4B5563", strokeWidth: 2, style: { pointerEvents: "none" } })));
+    return h("svg", { viewBox: "0 0 " + W + " " + H, width: "100%", role: "img", "aria-label": "月ごとの支給・支出・収支" }, els);
+  }
+
+  allRows() {
+    const out = [];
+    dataRows().forEach((r, i) => {
+      const note = r.note + (r.split > 1 ? (r.note ? "／" : "") + "同一注文で" + r.split + "点購入。1点ずつ行を分けて計上しています" : "");
+      for (let k = 0; k < r.split; k++) out.push({ key: i + "-" + k, d: r.d, cat: r.cat, item: r.item, amt: r.amt, note: note });
+    });
+    out.sort((a, b) => b.d.localeCompare(a.d));
+    out.forEach((o, k) => { o.idx = k; });
+    return out;
+  }
+
+  tableBody() {
+    const h = React.createElement;
+    const legal = this.state.cat === "legal";
+    const cn = n => legal ? (CATMAP[n] || n) : n;
+    const list = this.allRows().slice(0, this.state.shown);
+    // 領収書の表示 3案（Tweaks receiptStyle）: A テキストリンク（既存リンク色・下線） / B 白抜きピル（カテゴリピルと同形） / C アイコンのみ（ボタン形）
+    const variant = (this.props && this.props.receiptStyle) || "非表示（第一弾）";
+    const icon = (sz, sw) => h("svg", { key: "s", width: sz, height: sz, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: sw, strokeLinecap: "round", strokeLinejoin: "round", "aria-hidden": true }, [
+      h("path", { key: 1, d: "M6 3h12v18l-3-2-3 2-3-2-3 2z" }), h("path", { key: 2, d: "M9 8h6M9 12h6" })]);
+    // 成果カードとの紐づけアイコン（クリックで該当カードへスクロール＋一時ハイライト）
+    const highlightLink = o => {
+      const idx = highlightIndex(o);
+      if (idx < 0) return null;
+      return h("a", { key: "hl", href: "#highlight-" + idx, title: "成果" + (idx + 1) + "「" + HIGHLIGHTS[idx].title + "」に紐づく支出", "aria-label": "成果" + (idx + 1) + "を見る",
+        onClick: e => { e.preventDefault(); e.stopPropagation(); const el = document.getElementById("highlight-" + idx); if (!el) return; const y = el.getBoundingClientRect().top + window.scrollY - 120; window.scrollTo({ top: y, behavior: "smooth" }); this.setState({ flashHl: idx }); setTimeout(() => this.setState({ flashHl: null }), 1800); },
+        style: { display: "inline-flex", alignItems: "center", gap: "3px", height: "20px", padding: "0 8px", borderRadius: "999px", background: "#E2F6F3", color: "#238778", fontSize: "11px", fontWeight: 700, textDecoration: "none", whiteSpace: "nowrap", cursor: "pointer" } }, [
+        h("svg", { key: "s", width: 12, height: 12, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 2.2, strokeLinecap: "round", strokeLinejoin: "round", "aria-hidden": true }, [
+          h("path", { key: 1, d: "M12 2l2.4 6.6L21 9l-5.2 4.3L17.5 21 12 17.3 6.5 21l1.7-7.7L3 9l6.6-.4z" })]),
+        "成果" + (idx + 1)]);
+    };
+    const receiptLink = o => {
+      if (variant === "非表示（第一弾）") return null;
+      const on = e => { e.preventDefault(); e.stopPropagation(); this.setState({ receipt: o }); };
+      const base = { key: "r", href: "#", onClick: on, "aria-label": "領収書を見る", title: "領収書を見る" };
+      if (variant === "ピル") return h("a", Object.assign(base, { style: { display: "inline-flex", alignItems: "center", gap: "4px", height: "22px", padding: "0 10px", borderRadius: "999px", border: "1px solid #238778", color: "#238778", background: "#fff", fontSize: "12px", fontWeight: 700, lineHeight: 1, textDecoration: "none", whiteSpace: "nowrap", cursor: "pointer" } }), [icon(13, 1.8), "領収書"]);
+      if (variant === "アイコンのみ（緑・枠なし）") return h("a", Object.assign(base, { style: { display: "inline-flex", alignItems: "center", justifyContent: "center", width: "28px", height: "28px", borderRadius: "6px", color: "#238778", textDecoration: "none", cursor: "pointer", transition: "background-color 150ms" }, onMouseEnter: e => { e.currentTarget.style.backgroundColor = "#E2F6F3"; }, onMouseLeave: e => { e.currentTarget.style.backgroundColor = "transparent"; } }), [icon(18, 2)]);
+      if (variant === "アイコンのみ") return h("a", Object.assign(base, { style: { display: "inline-flex", alignItems: "center", justifyContent: "center", width: "28px", height: "28px", borderRadius: "6px", border: "1px solid #D1D5DB", color: "#4B5563", background: "#fff", textDecoration: "none", cursor: "pointer" } }), [icon(16, 1.8)]);
+      return h("a", Object.assign(base, { style: { display: "inline-flex", alignItems: "center", gap: "4px", fontSize: "12px", fontWeight: 700, color: "#238778", textDecoration: "underline", textUnderlineOffset: "2px", whiteSpace: "nowrap", cursor: "pointer" } }), [icon(14, 1.8), "領収書"]);
+    };
+    // 既存 TransactionTableRow.tsx の SP レイアウト（日付12px／項目14px＋金額16px／カテゴリピル）
+    if (this.state.narrow) {
+      return h("tbody", null, list.map(o => {
+        const c = catColor(cn(o.cat));
+        const flash = this.state.flashRows != null && highlightIndex(o) === this.state.flashRows;
+        return h("tr", { key: "m" + o.key, id: "tx-" + o.idx, style: { borderBottom: "1px solid #D5DBE1", background: flash ? "#E2F6F3" : "transparent", transition: "background-color 400ms" } }, h("td", { colSpan: 4, style: { padding: 0 } },
+          h("div", { style: { display: "flex", flexDirection: "column", gap: "4px", padding: "8px 0" } }, [
+            h("span", { key: "d", style: { fontSize: "12px", color: "#4B5563" } }, "2026." + o.d.replace("/", ".").replace(/^0/, "").replace(/\.0/, ".")),
+            h("div", { key: "ta", style: { display: "flex", alignItems: "center", justifyContent: "space-between", gap: "16px" } }, [
+              h("span", { key: "t", style: { fontSize: "14px", fontWeight: 700, color: "#1F2937", lineHeight: "1.43", flex: 1 } }, o.item),
+              h("span", { key: "a", style: { fontSize: "16px", fontWeight: 700, color: "#DC2626", whiteSpace: "nowrap" } }, ["-" + yen(o.amt), h("span", { key: "u", style: { fontSize: "10px", color: "#4B5563", fontWeight: 400 } }, " 円")])
+            ]),
+            h("div", { key: "cr", style: { display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" } }, [
+              h("span", { key: "c", style: { display: "inline-flex", alignItems: "center", padding: "0 8px", height: "18px", borderRadius: "999px", border: "1px solid " + c, background: "#fff", color: c, fontSize: "12px", fontWeight: 500, lineHeight: 1, whiteSpace: "nowrap" } }, catLabel(cn(o.cat), "10px")),
+              receiptLink(o), highlightLink(o)
+            ]),
+            o.note ? h("span", { key: "nt", style: { fontSize: "12px", color: "#6B7280", lineHeight: 1.5 } }, o.note) : null
+          ])));
+      }));
+    }
+    const rows = list.map(o => {
+      const c = catColor(cn(o.cat));
+      const flash = this.state.flashRows != null && highlightIndex(o) === this.state.flashRows;
+      return h("tr", { key: "r" + o.key, id: "tx-" + o.idx, style: { height: "64px", borderBottom: "1px solid #D5DBE1", background: flash ? "#E2F6F3" : "transparent", transition: "background-color 400ms" } }, [
+        h("td", { key: "d", style: { padding: "0 16px", width: "140px" } }, h("span", { style: { fontSize: "16px", fontWeight: 700, color: "#1F2937", lineHeight: "16px" } }, "2026." + o.d.replace("/", ".").replace(/^0/, "").replace(/\.0/, "."))),
+        h("td", { key: "c", style: { padding: "0 0 0 16px", width: "200px" } },
+          h("span", { style: { display: "inline-flex", alignItems: "center", padding: "0 12px", height: "20px", borderRadius: "999px", border: "1px solid " + c, background: "#fff", color: c, fontSize: "12px", fontWeight: 500, lineHeight: 1, whiteSpace: "nowrap" } }, catLabel(cn(o.cat), "10px"))),
+        h("td", { key: "n", style: { padding: "12px 0" } }, h("div", { style: { display: "flex", flexDirection: "column", gap: "2px" } }, [
+          h("span", { key: "t", style: { display: "inline-flex", alignItems: "center", gap: "8px", flexWrap: "wrap" } }, [
+            h("span", { key: "i", style: { fontSize: "16px", fontWeight: 700, color: "#1F2937", lineHeight: "28px" } }, o.item),
+            receiptLink(o), highlightLink(o)
+          ]),
+          o.note ? h("span", { key: "nt", style: { fontSize: "12px", color: "#6B7280", lineHeight: 1.5 } }, o.note) : null
+        ])),
+        h("td", { key: "a", style: { padding: "0 24px 0 0", width: "180px", textAlign: "right" } }, h("span", { style: { fontSize: "20px", fontWeight: 700, color: "#DC2626", letterSpacing: "0.01em", whiteSpace: "nowrap", lineHeight: 1 } }, ["-" + yen(o.amt), h("span", { key: "u", style: { fontSize: "12px", color: "#4B5563", fontWeight: 400 } }, " 円")]))
+      ]);
+    });
+    return h("tbody", null, rows);
+  }
+
+  tooltip() {
+    const t = this.state.tip;
+    if (!t) return null;
+    if (t.rows) return React.createElement("div", { style: { position: "fixed", left: (t.x + 12) + "px", top: (t.y - 10) + "px", zIndex: 30, background: "rgba(255,255,255,0.85)", padding: "11px 22px", border: "1px solid #64748B", borderRadius: "6px", boxShadow: "0 4px 6px -1px rgba(0,0,0,0.1)", pointerEvents: "none", whiteSpace: "nowrap", minWidth: "150px" } },
+      t.rows.map((r, i) => React.createElement("div", { key: i, style: { display: "flex", justifyContent: "space-between", alignItems: "center", gap: "16px", marginBottom: i === 2 ? 0 : "2px", marginTop: i === 2 ? "4px" : 0 } }, [
+        React.createElement("span", { key: "l", style: { fontSize: "13px", fontWeight: 700, color: "#4B5563", lineHeight: 1.31 } }, r[0]),
+        React.createElement("span", { key: "v", style: { fontSize: "14px", fontWeight: 700, color: r[2], lineHeight: 1.5 } }, r[1])
+      ])));
+    return React.createElement("div", { style: { position: "fixed", left: (t.left ? t.x - 10 : t.x + 10) + "px", top: (t.y - 10) + "px", transform: t.left ? "translateX(-100%)" : "none", zIndex: 30, background: "rgba(255,255,255,0.85)", padding: "11px 16px", border: "1px solid #64748B", borderRadius: "6px", fontSize: "13px", fontWeight: 700, lineHeight: 1.31, color: "#4B5563", boxShadow: "0 4px 6px -1px rgba(0,0,0,0.1)", pointerEvents: "none", whiteSpace: "nowrap" } }, [
+      React.createElement("div", { key: "l", style: { marginBottom: "3px" } }, t.label + (t.c ? "　" + t.c + "件" : "")),
+      React.createElement("div", { key: "v", style: { fontSize: "14px", color: "#1E293B" } }, "¥" + yen(t.v)),
+      t.parts ? React.createElement("div", { key: "p", style: { fontSize: "11px", fontWeight: 500, marginTop: "4px" } }, t.parts) : null
+    ]);
+  }
+
+  renderVals() {
+    const s = this.state;
+    const list = this.items(s.kubun === "legal");
+    const max = list.length ? list[0].v : 1;
+    const total = this.allRows().length;
+    // 政党ページの情報設計 4案（Tweaks summaryLayout）
+    const lay = (this.props && this.props.summaryLayout) || "現状";
+    const sel = POLITICIANS[s.selPol] || POLITICIANS[0];
+    const pick = i => () => this.setState({ selPol: i });
+    const btn = "display:inline-flex;align-items:center;justify-content:center;height:40px;padding:0 20px;background:#fff;border:1px solid #1F2937;border-radius:6px;font-size:14px;font-weight:700;color:#1F2937;cursor:pointer;white-space:nowrap";
+    const layoutVals = {
+      layCurrent: lay === "現状", layA: lay === "A 議員切替", layB: lay === "B カード一覧", layC: lay === "C 一覧＋内訳",
+      // 政党ページの内訳グラフ（Tweaks partyChart）: 棒グラフ / サンキーチャート
+      partyBar: ((this.props && this.props.partyChart) || "棒グラフ") === "棒グラフ",
+      partySankey: ((this.props && this.props.partyChart) || "棒グラフ") === "サンキーチャート",
+      partyFlow: this.flowChart(s.kubun === "legal"),
+      // 「詳細を見る」ボタン 3案（Tweaks detailButton）: 見出し右のボタン（現状）／見出し右のテキストリンク／下部中央の MainButton
+      btnTop: !!sel.ready && ((this.props && this.props.detailButton) || "見出し右：ボタン") === "見出し右：ボタン",
+      btnTopLink: !!sel.ready && (this.props && this.props.detailButton) === "見出し右：テキストリンク",
+      btnBottom: !!sel.ready && (this.props && this.props.detailButton) === "下部中央：大ボタン",
+      selName: sel.name, selStatus: sel.status, selReady: !!sel.ready, selPreparing: !sel.ready,
+      polChips: POLITICIANS.map((p, i) => ({ name: p.name, select: pick(i),
+        chipStyle: "display:inline-flex;align-items:center;height:36px;padding:0 16px;border-radius:999px;font-size:14px;font-weight:700;cursor:pointer;white-space:nowrap;transition:all 150ms;" +
+          (i === s.selPol ? "background:#238778;color:#fff;border:1px solid #238778" : p.ready ? "background:#fff;color:#1F2937;border:1px solid #1F2937" : "background:#fff;color:#9CA3AF;border:1px solid #E5E7EB") })),
+      polCards: POLITICIANS.map((p, i) => ({ name: p.name, status: p.status,
+        open: p.ready ? (e => { e.stopPropagation(); this.setState({ page: "min", selOpen: false }); window.scrollTo(0, 0); }) : null,
+        cardStyle: "border:1px solid " + (p.ready ? "#1F2937" : "#E5E7EB") + ";border-radius:16px;padding:20px;display:flex;flex-direction:column;gap:14px;background:#fff;" + (p.ready ? "cursor:pointer;transition:background-color 150ms" : "color:#9CA3AF"),
+        cardHover: p.ready ? "background:#F9FAFB" : "",
+        badge: p.ready ? "公開中" : "準備中",
+        badgeStyle: "font-size:11px;font-weight:700;padding:3px 8px;border-radius:999px;white-space:nowrap;" + (p.ready ? "background:#E2F6F3;color:#238778" : "background:#F3F4F6;color:#9CA3AF"),
+        amt: p.ready ? "-" + yen(p.amt) + " 円" : "—",
+        amtStyle: "font-size:20px;font-weight:700;letter-spacing:0.01em;white-space:nowrap;color:" + (p.ready ? "#DC2626" : "#9CA3AF"),
+        linkStyle: "font-size:14px;font-weight:700;margin-top:auto;" + (p.ready ? "color:#238778" : "color:#D1D5DB") })),
+      polRows: POLITICIANS.map((p, i) => ({ name: p.name, select: pick(i),
+        rowStyle: "display:flex;align-items:center;gap:12px;height:52px;padding:0 12px;border-bottom:1px solid #D5DBE1;cursor:pointer;transition:background-color 150ms;" + (i === s.selPol ? "background:#E2F6F3" : ""),
+        rowHover: i === s.selPol ? "" : "background:#F9FAFB",
+        rowDot: "width:8px;height:8px;border-radius:50%;flex-shrink:0;background:" + (p.ready ? "#2AA693" : "#D1D5DB"),
+        rowColor: p.ready ? "#1F2937" : "#9CA3AF",
+        amt: p.ready ? "-" + yen(p.amt) + " 円" : "準備中",
+        rowAmtStyle: "font-size:14px;font-weight:700;white-space:nowrap;color:" + (p.ready ? "#DC2626" : "#9CA3AF") })),
+      layCGrid: s.narrow ? "display:flex;flex-direction:column;gap:24px" : "display:grid;grid-template-columns:260px 1fr;gap:24px;align-items:start",
+      tabA1s: this.tabStyle(s.kubun === "plain").replace("font-size:16px", "font-size:14px"), tabA2s: this.tabStyle(s.kubun === "legal").replace("font-size:16px", "font-size:14px"),
+      barRowsTop: list.slice(0, 5).map(d => ({ n: d.n, short: manLabel(d.v), barStyle: "width:" + Math.max(d.v / max * 100, 0.6) + "%;height:100%;border-radius:999px;background:#2AA693" }))
+    };
+    return Object.assign(layoutVals, {
+      isParty: s.page === "party", isMin: s.page === "min",
+      orgName: s.page === "party" ? "政党・チームみらい" : "峰島侑也（調査研究費）",
+      ckParty: s.page === "party" ? "✓" : "", ckMin: s.page === "min" ? "✓" : "",
+      selOpen: s.selOpen,
+      navStyle: s.hideNav ? "display:none" : "display:flex;align-items:center;gap:24px;flex-shrink:0",
+      // 既存のモバイル値: header px-2.5 py-3 / inner px-3 py-3 / SPロゴ126×45 / main px-5 py-5 / card px-[18px] py-8 / Title 20px / 金額 28px
+      hdrPad: s.narrow ? "12px 10px" : "16px 24px",
+      hdrInnerPad: s.narrow ? "12px" : "0 24px",
+      hdrH: s.narrow ? "48px" : "64px",
+      logoGap: s.narrow ? "8px" : "16px",
+      logoPc: s.narrow ? "display:none" : "height:28px;width:auto;max-width:300px;object-fit:contain;display:block",
+      logoSp: s.narrow ? "height:45px;width:126px;object-fit:contain;object-position:left;display:block" : "display:none",
+      mainPad: s.narrow ? "96px 20px 80px" : "120px 20px 80px",
+      cardPad: s.narrow ? "32px 18px" : "48px",
+      titleFs: s.narrow ? "20px" : "27px",
+      sumCard: s.narrow
+        ? "flex:1 1 100%;border:1px solid #E5E7EB;border-radius:16px;padding:24px;display:flex;flex-direction:row;justify-content:space-between;align-items:center;gap:20px"
+        : "flex:1 1 240px;border:1px solid #E5E7EB;border-radius:16px;padding:24px;display:flex;flex-direction:column;gap:16px",
+      sumFs: s.narrow ? "28px" : "36px",
+      tableMin: s.narrow ? "0" : "640px",
+      // 既存 CardHeader: 更新時刻は SP では見出し右に出さず、カード末尾に 12px #9CA3AF で右寄せ表示
+      updTop: s.narrow ? "display:none" : "font-size:13px;font-weight:700;color:#9CA3AF;line-height:1.31;flex-shrink:0;white-space:nowrap",
+      updTopCol: s.narrow ? "display:none" : "display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0",
+      updBottom: s.narrow ? "text-align:right;font-size:12px;color:#9CA3AF;line-height:1.33;margin-top:-16px" : "display:none",
+      updBottomChart: s.narrow ? "text-align:right;font-size:12px;color:#9CA3AF;line-height:1.33;margin-top:8px" : "display:none",
+      theadStyle: s.narrow ? "display:none" : "",
+      // 既存 AboutSection / LinkCardsSection / Footer のレスポンシブ値
+      // 既存 TransparencySection: p-8 / sm:p-12、見出し 20→27px、本文 12→16px
+      transPad: s.narrow ? "32px" : "48px",
+      transTitleFs: s.narrow ? "20px" : "27px",
+      transBodyFs: s.narrow ? "12px" : "16px",
+      snsLabel: s.narrow ? "display:none" : "font-size:16px;font-weight:700;color:#000",
+      linkCardsWrap: s.narrow ? "display:flex;flex-direction:column;gap:12px" : "display:flex;gap:48px",
+      linkCard: "flex:1;background:#fff;border:1px solid #000;display:flex;align-items:center;text-decoration:none;transition:background-color 150ms;" + (s.narrow ? "border-radius:16px;padding:16px 24px;justify-content:center;gap:16px" : "border-radius:24px;padding:36px 48px;justify-content:space-between;gap:24px"),
+      linkCardTitle: "font-weight:700;color:#1F2937;line-height:1.25;" + (s.narrow ? "font-size:18px" : "font-size:27px;flex:1"),
+      linkCardIcon: s.narrow ? "width:16px;height:16px;flex-shrink:0" : "width:22px;height:22px;flex-shrink:0",
+      footerPad: s.hideNav ? "48px 32px" : "48px 117px 36px",
+      footerGap: s.hideNav ? "36px" : "40px",
+      footerLogoTop: s.hideNav ? "display:none" : "width:150px;height:127px;object-fit:contain;display:block",
+      footerLogoBottom: s.hideNav ? "width:150px;height:127px;object-fit:contain;display:block" : "display:none",
+      footerRow1: s.hideNav ? "display:grid;grid-template-columns:1fr 1fr;gap:12px 48px" : "display:flex;gap:32px;flex-wrap:wrap;justify-content:center",
+      footerRow2: s.hideNav ? "display:grid;grid-template-columns:1fr 1fr;gap:12px 48px" : "display:flex;gap:32px;flex-wrap:wrap;justify-content:center",
+      footerSns: s.hideNav ? "width:299px;display:flex;flex-wrap:wrap;justify-content:center;gap:16px" : "display:flex;flex-wrap:wrap;justify-content:center;gap:24px",
+      footerIcon: s.hideNav ? "width:48px;height:48px;border-radius:50%;background:#fff;display:block" : "width:28px;height:28px;border-radius:50%;background:#fff;display:block",
+      footerIconBox: (s.hideNav ? "width:48px;height:48px;" : "width:28px;height:28px;") + "border-radius:50%;background:#000;color:#fff;display:inline-flex;align-items:center;justify-content:center",
+      footerSnsLabel: s.hideNav ? "display:none" : "font-size:16px;font-weight:700;color:#000",
+      toggleSel: e => { e.stopPropagation(); this.setState(st => ({ selOpen: !st.selOpen })); },
+      goParty: e => { if (e) e.stopPropagation(); this.setState({ page: "party", selOpen: false }); window.scrollTo(0, 0); },
+      goMin: e => { if (e) e.stopPropagation(); this.setState({ page: "min", selOpen: false }); window.scrollTo(0, 0); },
+      setKubunPlain: () => this.setState({ kubun: "plain" }), setKubunLegal: () => this.setState({ kubun: "legal" }),
+      setMinPlain: () => this.setState({ minKubun: "plain" }), setMinLegal: () => this.setState({ minKubun: "legal" }),
+      setCatPlain: () => this.setState({ cat: "plain" }), setCatLegal: () => this.setState({ cat: "legal" }),
+      tabA1: this.tabStyle(s.kubun === "plain"), tabA2: this.tabStyle(s.kubun === "legal"),
+      tabB1: this.tabStyle(s.minKubun === "plain"), tabB2: this.tabStyle(s.minKubun === "legal"),
+      tabC1: this.tabStyle(s.cat === "plain"), tabC2: this.tabStyle(s.cat === "legal"),
+      barRows: list.map(d => ({ n: d.n, label: yen(d.v) + "円　" + d.c + "件", barStyle: "width:" + Math.max(d.v / max * 100, 0.6) + "%;height:100%;border-radius:999px;background:#2AA693" })),
+      highlights: HIGHLIGHTS.map((c, i) => { const p = c.cat.indexOf("（"); const mparts = c.meta.split("　");
+        // 紐づく支出行のカテゴリをすべて集めてピルを並べる（複数カテゴリなら複数表示）
+        const catSet = []; this.allRows().forEach(o => { if (highlightIndex(o) === i && catSet.indexOf(o.cat) < 0) catSet.push(o.cat); }); if (!catSet.length) catSet.push(c.cat);
+        const cats = catSet.map(n => { const q = n.indexOf("（"); return { main: q < 0 ? n : n.slice(0, q), sub: q < 0 ? "" : n.slice(q), pillStyle: PILL(catColor(n)) }; });
+        return { ...c, cats, id: "highlight-" + i, num: "成果" + (i + 1),
+        metaDate: mparts[0], metaCount: mparts[1] || "",
+        // 「N件」クリック → 一覧の該当行まで表示を広げてスクロールし、行を一時ハイライト
+        goRows: e => { e.preventDefault(); e.stopPropagation(); const rows = this.allRows(); let first = -1, last = -1; rows.forEach((o, k) => { if (highlightIndex(o) === i) { if (first < 0) first = k; last = k; } }); if (first < 0) return;
+          this.setState({ shown: Math.max(this.state.shown, last + 1), flashRows: i }, () => { const el = document.getElementById("tx-" + first); if (!el) return; window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 140, behavior: "smooth" }); });
+          setTimeout(() => this.setState({ flashRows: null }), 2500); }, catMain: p < 0 ? c.cat : c.cat.slice(0, p), catSub: p < 0 ? "" : c.cat.slice(p), pillStyle: PILL(catColor(c.cat)), hasLink: !!c.url, noLink: !c.url,
+        cardStyle: "border:1px solid " + (s.flashHl === i ? "#2AA693" : "#E5E7EB") + ";border-radius:16px;padding:24px;display:flex;flex-direction:column;gap:12px;transition:border-color 300ms, box-shadow 300ms;scroll-margin-top:120px;" + (s.flashHl === i ? "box-shadow:0 0 0 4px #E2F6F3" : "") }; }),
+      showMore: () => this.setState(st => ({ shown: st.shown + 50 })),
+      // 既存 InteractiveTransactionTable: PC は [空/ページャー/CSVリンク] の3カラム、SP は右寄せリンク
+      footWrap: s.narrow ? "display:flex;flex-direction:column;align-items:center;gap:12px" : "display:grid;grid-template-columns:1fr auto 1fr;align-items:center",
+      footSide: s.narrow ? "display:none" : "",
+      footCsv: s.narrow ? "align-self:flex-end" : "display:flex;justify-content:flex-end",
+      csvLabel: s.downloading ? "ダウンロード中..." : "出入金履歴をCSVでダウンロード",
+      downloadCsv: () => {
+        if (s.downloading) return;
+        this.setState({ downloading: true });
+        const rows = this.allRows();
+        const esc = v => '"' + String(v).replace(/"/g, '""') + '"';
+        const csv = [["日付", "詳細の区分", "法律上の区分", "項目", "金額", "特記事項"].map(esc).join(",")]
+          .concat(rows.map(o => ["2026/" + o.d, o.cat, CATMAP[o.cat] || "", o.item, o.amt, o.note].map(esc).join(","))).join("\r\n");
+        const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob), a = document.createElement("a");
+        a.href = url; a.download = "mineshima_2026_research_fund.csv"; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+        setTimeout(() => this.setState({ downloading: false }), 600);
+      },
+      hasMore: total > s.shown,
+      receiptOpen: !!s.receipt,
+      rDate: s.receipt ? "2026." + s.receipt.d.replace("/", ".") : "",
+      rCat: s.receipt ? s.receipt.cat : "", rItem: s.receipt ? s.receipt.item : "",
+      rAmt: s.receipt ? yen(s.receipt.amt) + " 円" : "",
+      rNote: s.receipt && s.receipt.note ? s.receipt.note : "特記事項はありません",
+      closeReceipt: () => this.setState({ receipt: null }),
+      stopProp: e => e.stopPropagation(),
+      receiptVariant: (this.props && this.props.receiptStyle) || "テキストリンク",
+      flowChart: this.flowChart(), monthlyChart: this.monthlyChart(),
+      tableBody: React.createElement(React.Fragment, { key: "tb-" + ((this.props && this.props.receiptStyle) || "default") }, this.tableBody()),
+      tableFoot: Math.min(s.shown, total) + " / " + total + "件を表示中　合計 " + yen(SPENT) + "円",
+      tooltip: this.tooltip()
+    });
+  }
+}
+</script>
+</body>
+</html>

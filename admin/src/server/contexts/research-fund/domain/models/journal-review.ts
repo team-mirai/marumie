@@ -1,0 +1,93 @@
+import { z } from "zod";
+import type { JournalEntry } from "@/server/contexts/research-fund/domain/models/journal-entry";
+import type { ReceiptIssuer } from "@/server/contexts/research-fund/domain/models/extracted-receipt";
+import type { LegalCategoryOverride } from "@/server/contexts/research-fund/domain/models/legal-category-override";
+import type { PayeeLinkSource } from "@/server/contexts/research-fund/domain/models/payee";
+import { MAX_JOURNAL_AMOUNT } from "@/server/contexts/research-fund/domain/models/journal-amount";
+import type {
+  JournalLine,
+  ResearchFundAccount,
+} from "@/server/contexts/research-fund/domain/models/journal-posting";
+
+export const journalEditSchema = z.object({
+  entryDate: z.iso.date(),
+  description: z.string().trim().min(1).max(255),
+  amount: z.number().int().positive().max(MAX_JOURNAL_AMOUNT),
+  accountKey: z.string().min(1).max(50),
+  note: z.string(),
+  memo: z.string(),
+});
+export type JournalEdit = z.infer<typeof journalEditSchema>;
+export interface ReviewAccount extends ResearchFundAccount {
+  label: string;
+  /** 法律上の区分（法定区分）。科目マスタで科目ごとに一意に決まる。要確認など区分を持たない科目は null */
+  legalLabel: string | null;
+  /** 法定区分のキー。legalLabel と同じく、区分を持たない科目は null */
+  legalCategoryKey: string | null;
+}
+/** 科目マスタで「要確認（科目未確定）」を表す科目キー。この文字列との比較は isAccountUnconfirmed に閉じる */
+const UNCONFIRMED_ACCOUNT_KEY = "needs-review";
+/** 科目が未確定（要確認）か。確認済にできるかの判定や画面の注意表示が共通で使う */
+export function isAccountUnconfirmed(accountKey: string): boolean {
+  return accountKey === UNCONFIRMED_ACCOUNT_KEY;
+}
+/**
+ * 科目に対応する法律上の区分（科目の既定）。科目が未確定（要確認・未選択）か区分を持たない科目なら null（未定）。
+ * 仕訳ごとの上書き（ReviewEntry.legalCategoryOverride）は含めない
+ */
+export function legalLabelOf(
+  accounts: readonly ReviewAccount[],
+  accountKey: string,
+): string | null {
+  if (isAccountUnconfirmed(accountKey)) return null;
+  return accounts.find((a) => a.key === accountKey)?.legalLabel ?? null;
+}
+export interface ReviewEntry extends JournalEdit, JournalEntry {
+  id: string;
+  source: "scan" | "manual" | "grant";
+  documentId: string | null;
+  splitGroup: string | null;
+  updatedAt: string;
+  model: string | null;
+  promptVersion: number | null;
+  /**
+   * 立替者（事務所内の管理情報）。null なら調研費口座からの直接支出。
+   * JournalEdit に含めないのは、立替情報だけは公開中の仕訳でも変更でき、
+   * 複式の行・hash・公開内容に影響しない別系統の更新として扱うため。
+   */
+  advancedBy: string | null;
+  /** 立替の精算日（YYYY-MM-DD）。null なら未精算 */
+  settledAt: string | null;
+  /**
+   * 支払先（支出を受けた者）。null なら未設定。立替者と同じく、公開内容・複式の行・hash に影響しない
+   * 別系統の更新として扱う（帳簿の提出用の情報で、公開ページには出さない）。
+   */
+  payeeId: string | null;
+  /** 支払先を誰が紐づけたか。支払先があるときだけ持つ */
+  payeeLinkSource: PayeeLinkSource | null;
+  /**
+   * 徴難（領収書等を徴し難かった）か。書類の有無とは独立に付ける（domain/models/receipt-absence）。
+   * 支払先と同じく、公開内容・複式の行・hash に影響しない別系統の更新として扱う。
+   */
+  receiptAbsent: boolean;
+  /** 領収書等を徴し難かった事情。null なら未入力。徴難の支出だけが持てる（domain/models/receipt-absence） */
+  receiptAbsenceReason: string | null;
+  /** 紐づく書類の領収書等番号（議員課提出用の帳簿の列）。書類が無いか未採番なら null */
+  receiptNumber: number | null;
+  /**
+   * この仕訳を作った読み取りで書類から読み取った発行元。支払先が未設定のとき、支払先を作る候補として出す。
+   * 手入力の仕訳・発行元を出さない古い形式の読み取り結果では null
+   */
+  issuer: ReceiptIssuer | null;
+  /**
+   * 仕訳ごとの法定区分の上書き（#1880）。null なら科目の既定の区分に従う。
+   * 公開内容（法律上の区分）を変えるので、内容の編集と同じく公開中の仕訳では変更できない
+   */
+  legalCategoryOverride: LegalCategoryOverride | null;
+}
+export interface JournalWrite extends JournalEdit {
+  hash: string;
+  lines: readonly JournalLine[];
+  status: ReviewEntry["status"];
+}
+export class JournalReviewError extends Error {}

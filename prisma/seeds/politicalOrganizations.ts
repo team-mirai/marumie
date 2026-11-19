@@ -6,7 +6,8 @@ interface OrgData {
   orgName: string | null;
   slug: string;
   description: string;
-  tenantSlug: string;
+  websiteUrl?: string;
+  snsUrls?: string[];
 }
 
 const data: OrgData[] = [
@@ -15,14 +16,15 @@ const data: OrgData[] = [
     orgName: null,
     slug: 'sample-party',
     description: '政治資金報告書XMLエクスポート機能のテストデータ用政治団体',
-    tenantSlug: 'sample-party',
   },
   {
     displayName: 'E2Eテスト団体',
     orgName: null,
     slug: 'e2e-test-org',
     description: 'E2Eテスト用の最小構成政治団体',
-    tenantSlug: 'e2e-test-org',
+    // webapp の E2E で、政治団体ページの見出しカードに公式サイトと SNS が出ることを確かめる
+    websiteUrl: 'https://example.com/',
+    snsUrls: ['https://x.com/example', 'https://www.youtube.com/@example'],
   },
 ];
 
@@ -35,21 +37,14 @@ export const politicalOrganizationsSeeder: Seeder = {
       });
 
       if (!existing) {
-        const tenant = await prisma.tenant.findFirst({
-          where: { slug: item.tenantSlug },
-        });
-        if (!tenant) {
-          console.log(`⚠️  Tenant not found: ${item.tenantSlug}, skipping ${item.slug}`);
-          continue;
-        }
-
         const created = await prisma.politicalOrganization.create({
           data: {
             displayName: item.displayName,
             orgName: item.orgName,
             slug: item.slug,
             description: item.description,
-            tenantId: tenant.id,
+            websiteUrl: item.websiteUrl,
+            snsUrls: item.snsUrls,
           },
         });
         console.log(`✅ Created: ${created.slug}`);

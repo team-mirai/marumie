@@ -4,16 +4,24 @@ import "server-only";
  * 認証エラーコードの型定義（網羅性チェック用）
  */
 export type AuthErrorCode =
+  | "UNAUTHORIZED"
   | "AUTH_FAILED"
   | "SESSION_EXPIRED"
   | "INVALID_TOKEN"
   | "NETWORK_ERROR"
   | "INSUFFICIENT_PERMISSION"
+  | "INVALID_ROLE"
+  | "INVALID_ASSIGNMENT"
   | "USER_NOT_FOUND"
   | "INVALID_EMAIL"
   | "WEAK_PASSWORD"
   | "INVITE_FAILED"
-  | "RESET_EMAIL_FAILED";
+  | "RESET_EMAIL_FAILED"
+  | "DOMAIN_NOT_ALLOWED"
+  | "PROVIDER_DISABLED"
+  | "USER_ALREADY_EXISTS"
+  | "INVITATION_ALREADY_EXISTS"
+  | "INVITATION_NOT_FOUND";
 
 /**
  * 認証エラークラス（単一クラス + code パターン）
@@ -33,14 +41,24 @@ export class AuthError extends Error {
  * ユーザー向けメッセージ変換マップ（Presentation 層で使用）
  */
 export const AUTH_ERROR_MESSAGES: Record<AuthErrorCode, string> = {
+  UNAUTHORIZED: "認証が必要です。ログインしてください",
   AUTH_FAILED: "メールアドレスまたはパスワードが正しくありません",
   SESSION_EXPIRED: "セッションの有効期限が切れました。再度ログインしてください",
   INVALID_TOKEN: "認証情報が無効です。再度ログインしてください",
   NETWORK_ERROR: "認証サービスに接続できませんでした。しばらく待ってから再試行してください",
   INSUFFICIENT_PERMISSION: "この操作を行う権限がありません",
+  INVALID_ROLE: "不明なロールが指定されました",
+  INVALID_ASSIGNMENT: "担当の議員の指定が不正です",
   USER_NOT_FOUND: "ユーザーが見つかりません",
   INVALID_EMAIL: "有効なメールアドレスを入力してください",
   WEAK_PASSWORD: "パスワードは6文字以上で入力してください",
   INVITE_FAILED: "招待メールの送信に失敗しました",
   RESET_EMAIL_FAILED: "パスワードリセットメールの送信に失敗しました",
+  DOMAIN_NOT_ALLOWED: "このメールアドレスのドメインではログインできません",
+  PROVIDER_DISABLED: "この認証方式は現在利用できません",
+  USER_ALREADY_EXISTS:
+    "このメールアドレスのユーザーは既にいます。ロールと担当議員はユーザー一覧で変更してください",
+  INVITATION_ALREADY_EXISTS:
+    "このメールアドレスには未使用の招待が既にあります。内容を変えるときは取り消してから登録し直してください",
+  INVITATION_NOT_FOUND: "招待が見つかりません。既に使われたか、取り消されています",
 };

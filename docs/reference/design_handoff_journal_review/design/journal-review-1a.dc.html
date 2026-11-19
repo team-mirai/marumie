@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Poppins:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;background:#EFEFEF}
+  a{color:#0F8472;text-decoration:none}
+  a:hover{color:#089781;text-decoration:underline}
+</style>
+</helmet>
+
+<section data-screen-label="改善案 1" style="padding:56px 64px 80px;font-family:'Hiragino Kaku Gothic ProN','Noto Sans JP',sans-serif;color:#000;font-size:14px;line-height:1.7;-webkit-font-smoothing:antialiased;display:flex;flex-direction:column;gap:40px">
+
+  <div style="max-width:1100px">
+    <p style="margin:0;font-family:Poppins,sans-serif;font-size:13px;font-weight:600;letter-spacing:0.1em;color:#089781">Journal entries — Handoff</p>
+    <h1 style="margin:4px 0 0;font-size:30px;font-weight:700;letter-spacing:0.04em"><span style="text-decoration:underline;text-decoration-color:#64D8C6;text-decoration-thickness:3px;text-underline-offset:8px">仕訳の確認・編集 画面（最終案 1a）</span></h1>
+  </div>
+
+  <div style="display:flex;flex-wrap:wrap;gap:48px;align-items:flex-start">
+
+    <div id="1a" style="display:flex;flex-direction:column;gap:18px;width:1440px">
+      <div style="display:flex;align-items:center;gap:12px">
+        <span style="font-family:Poppins,sans-serif;font-size:14px;font-weight:700;color:#fff;background:#000;border-radius:999px;padding:3px 14px">1a</span>
+        <span style="font-size:20px;font-weight:700">2ペインのまま整理する</span>
+        <span style="font-size:13px;color:#666">いまの構成を保ち、右パネルを状態に合わせて組み替える。表示例は公開中の仕訳。</span>
+      </div>
+
+      <div data-screen-label="1a 2ペイン整理" style="width:1440px;height:900px;overflow:hidden;background:#F8F8F8;border:1px solid #000;display:grid;grid-template-columns:236px minmax(0,1fr);font-size:13px;line-height:1.6">
+        <aside style="background:#fff;border-right:1px solid #e5e5e5;padding:20px 14px;display:flex;flex-direction:column;gap:14px">
+          <div style="display:flex;align-items:center;gap:8px;padding:0 6px">
+            <span style="width:9px;height:9px;border-radius:50%;background:#30BCA7"></span>
+            <span style="font-size:13px;font-weight:700">まる見え政治資金 <span style="font-family:Poppins,sans-serif;color:#089781">admin</span></span>
+          </div>
+          <div style="background:#E2F6F3;border:1.5px solid #30BCA7;border-radius:12px;padding:10px 12px">
+            <div style="font-size:10px;font-weight:700;letter-spacing:0.1em;color:#0F8472">調研費</div>
+            <div style="display:flex;align-items:center;gap:8px"><span style="flex:1;font-size:13.5px;font-weight:700">峰島ゆうや</span><span style="font-family:Poppins,sans-serif;font-size:12.5px;font-weight:700;color:#0F8472">2026</span></div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:2px">
+            <sc-for list="{{ nav }}" as="n" hint-placeholder-count="9">
+              <div style="display:flex;align-items:center;gap:10px;height:34px;padding:0 12px;border-radius:999px;font-size:12.5px;font-weight:{{ n.fw }};background:{{ n.bg }};color:{{ n.color }}"><i class="{{ n.icon }}" style="font-size:16px"></i>{{ n.label }}</div>
+            </sc-for>
+          </div>
+        </aside>
+
+        <div style="padding:16px 20px;display:flex;flex-direction:column;gap:10px;min-width:0;min-height:0">
+          <div style="display:flex;align-items:center;gap:12px;height:36px">
+            <h2 style="margin:0;font-size:18px;font-weight:700;letter-spacing:0.04em">仕訳の確認・編集</h2>
+            <span style="font-size:12px;color:#666">峰島ゆうや・2026年</span>
+            <span style="margin-left:auto"></span>
+            <button type="button" style="height:32px;padding:0 16px;border-radius:999px;border:1.5px solid #000;background:#fff;font-size:12px;font-weight:700;font-family:inherit">領収書等番号を振る</button>
+            <button type="button" style="height:32px;padding:0 16px;border-radius:999px;border:1.5px solid #30BCA7;background:#30BCA7;color:#fff;font-size:12px;font-weight:700;font-family:inherit;display:inline-flex;align-items:center;gap:6px"><i class="ph ph-plus"></i>手動で仕訳を作成</button>
+          </div>
+
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+            <div style="display:flex;background:#EDEDED;border-radius:999px;padding:3px;gap:2px">
+              <span style="height:28px;display:flex;align-items:center;padding:0 14px;border-radius:999px;background:#fff;border:1px solid #30BCA7;color:#089781;font-size:12px;font-weight:700">すべて <span style="font-family:Poppins,sans-serif;margin-left:4px">587</span></span>
+              <span style="height:28px;display:flex;align-items:center;padding:0 14px;font-size:12px;color:#666">下書き <span style="font-family:Poppins,sans-serif;margin-left:4px">49</span></span>
+              <span style="height:28px;display:flex;align-items:center;padding:0 14px;font-size:12px;color:#666">確認済 <span style="font-family:Poppins,sans-serif;margin-left:4px">2</span></span>
+              <span style="height:28px;display:flex;align-items:center;padding:0 14px;font-size:12px;color:#666">公開中 <span style="font-family:Poppins,sans-serif;margin-left:4px">536</span></span>
+            </div>
+            <span style="width:1px;height:20px;background:#ddd;margin:0 4px"></span>
+            <span style="height:32px;display:flex;align-items:center;gap:8px;padding:0 12px;border:1px solid #ccc;border-radius:999px;background:#fff;font-size:12px">すべての月<i class="ph ph-caret-down" style="font-size:12px;color:#666"></i></span>
+            <span style="height:32px;display:flex;align-items:center;gap:8px;padding:0 12px;border:1px solid #ccc;border-radius:999px;background:#fff;font-size:12px">すべての立替者<i class="ph ph-caret-down" style="font-size:12px;color:#666"></i></span>
+            <span style="margin-left:auto;font-size:11px;color:#666;font-weight:700">要対応</span>
+            <span style="height:32px;display:flex;align-items:center;gap:6px;padding:0 12px;border:1px solid #E63946;border-radius:999px;background:#fff;font-size:12px;color:#000">支払先 未設定<b style="font-family:Poppins,sans-serif;color:#E63946">579</b></span>
+            <span style="height:32px;display:flex;align-items:center;gap:6px;padding:0 12px;border:1px solid #ccc;border-radius:999px;background:#fff;font-size:12px;color:#939393">書類も事情もない<b style="font-family:Poppins,sans-serif">0</b></span>
+            <span style="height:32px;display:flex;align-items:center;gap:6px;padding:0 12px;border:1px solid #30BCA7;border-radius:999px;background:#E2F6F3;font-size:12px">未精算の立替<b style="font-family:Poppins,sans-serif;color:#0F8472">1件 ¥4,490</b></span>
+          </div>
+
+          <div style="flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) 452px;gap:12px">
+            <div style="background:#fff;border:1px solid #000;border-radius:8px;overflow:hidden;display:flex;flex-direction:column;min-height:0">
+              <div style="display:grid;grid-template-columns:36px 52px 116px minmax(0,1fr) 170px 84px 64px;align-items:center;height:34px;border-bottom:1px solid #000;font-size:11.5px;font-weight:700;padding-right:12px">
+                <span style="display:flex;justify-content:center"><span style="width:14px;height:14px;border:1.5px solid #000;border-radius:3px"></span></span>
+                <span>日付</span><span>科目</span><span>項目</span><span>支払先</span><span style="text-align:right">金額</span><span style="text-align:center">状態</span>
+              </div>
+              <div style="flex:1;min-height:0;overflow:hidden">
+                <sc-for list="{{ rows1a }}" as="r" hint-placeholder-count="17">
+                  <div style="display:grid;grid-template-columns:36px 52px 116px minmax(0,1fr) 170px 84px 64px;align-items:center;height:38px;border-bottom:1px solid #EEEEEE;padding-right:12px;background:{{ r.bg }};box-shadow:{{ r.bar }}">
+                    <span style="display:flex;justify-content:center"><span style="width:14px;height:14px;border:1.5px solid #000;border-radius:3px;background:#fff"></span></span>
+                    <span style="font-family:Poppins,sans-serif;font-size:12px">{{ r.d }}</span>
+                    <span><span style="font-size:11px;font-weight:700;color:#089781;border:1px solid #30BCA7;background:#fff;border-radius:999px;padding:1px 8px;white-space:nowrap">{{ r.acct }}</span></span>
+                    <span style="display:flex;align-items:center;gap:6px;min-width:0"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ r.item }}</span><sc-if value="{{ r.split }}" hint-placeholder-val="{{ false }}"><span style="font-family:Poppins,sans-serif;font-size:10.5px;color:#666;border:1px solid #ccc;border-radius:999px;padding:0 6px;white-space:nowrap">{{ r.split }}</span></sc-if></span>
+                    <span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px">
+                      <sc-if value="{{ r.payee }}" hint-placeholder-val="{{ true }}"><span style="color:#333">{{ r.payee }}</span></sc-if>
+                      <sc-if value="{{ r.noPayee }}" hint-placeholder-val="{{ false }}"><span style="color:#E63946;display:inline-flex;align-items:center;gap:4px"><i class="ph ph-warning-circle"></i>未設定</span></sc-if>
+                    </span>
+                    <span style="font-family:Poppins,sans-serif;font-size:12.5px;text-align:right">{{ r.amt }}</span>
+                    <span style="display:flex;justify-content:center"><span style="font-size:10.5px;color:#089781;border:1px solid #30BCA7;background:#E2F6F3;border-radius:999px;padding:0 7px;white-space:nowrap">公開中</span></span>
+                  </div>
+                </sc-for>
+              </div>
+              <div style="height:36px;border-top:1px solid #000;display:flex;align-items:center;gap:12px;padding:0 14px;font-size:11.5px;color:#666">
+                <span><span style="font-family:Poppins,sans-serif">587</span>件</span>
+                <span style="margin-left:auto;display:flex;align-items:center;gap:4px"><i class="ph ph-keyboard" style="font-size:14px"></i>↑↓ で移動</span>
+              </div>
+            </div>
+
+            <div style="background:#fff;border:1px solid #000;border-radius:8px;display:flex;flex-direction:column;min-height:0;overflow:hidden">
+              <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid #E5E5E5">
+                <div style="flex:1;min-width:0">
+                  <div style="display:flex;align-items:center;gap:8px"><span style="font-size:14.5px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Adobe Premiereプラン利用料</span><span style="font-size:10.5px;color:#089781;border:1px solid #30BCA7;background:#E2F6F3;border-radius:999px;padding:0 7px;white-space:nowrap">公開中</span></div>
+                  <div style="font-size:11px;color:#666;font-family:Poppins,'Noto Sans JP',sans-serif">15 / 587</div>
+                </div>
+                <button type="button" style="width:32px;height:32px;border-radius:999px;border:1.5px solid #000;background:#fff;display:flex;align-items:center;justify-content:center"><i class="ph ph-caret-up" style="font-size:14px"></i></button>
+                <button type="button" style="width:32px;height:32px;border-radius:999px;border:1.5px solid #000;background:#fff;display:flex;align-items:center;justify-content:center"><i class="ph ph-caret-down" style="font-size:14px"></i></button>
+              </div>
+
+              <div style="flex:1;min-height:0;overflow:hidden;padding:12px 14px;display:flex;flex-direction:column;gap:12px">
+                <div style="position:relative;height:168px;border:1px solid #ddd;border-radius:6px;background:#3A3A3A;overflow:hidden;display:flex;justify-content:center;padding-top:10px">
+                  <div style="width:300px;background:#fff;padding:12px 16px;font-size:7.5px;line-height:1.5;color:#333">
+                    <div style="display:flex;gap:16px"><span style="font-family:Poppins,sans-serif;font-size:16px;font-weight:700;color:#E63946">Adobe</span><span>Adobe KK<br>Gate City Ohsaki East Tower<br>JCT ID: T7010701011841</span><span style="margin-left:auto"><b>請求情報</b><br>ご請求番号 3556413775<br>発行日 2026年8月21日</span></div>
+                    <div style="margin-top:14px"><b>領収書送付先</b><br>108-0052<br>Mineshima Yuya 様</div>
+                  </div>
+                  <div style="position:absolute;right:8px;bottom:8px;display:flex;gap:6px">
+                    <span style="height:26px;display:flex;align-items:center;gap:5px;padding:0 10px;border-radius:999px;background:#fff;border:1px solid #000;font-size:11px;font-weight:700"><i class="ph ph-arrows-out"></i>拡大</span>
+                    <span style="height:26px;display:flex;align-items:center;gap:5px;padding:0 10px;border-radius:999px;background:#fff;border:1px solid #000;font-size:11px;font-weight:700"><i class="ph ph-arrow-square-out"></i>原寸</span>
+                  </div>
+                </div>
+
+                <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:6px;background:#F2F2F2;font-size:12px">
+                  <i class="ph ph-lock-simple" style="font-size:15px;color:#333"></i>
+                  <span style="flex:1">公開中のため、公開される内容は編集できません</span>
+                  <span style="font-size:12px;font-weight:700;color:#0F8472;text-decoration:underline">確認済に戻す</span>
+                </div>
+
+                <div>
+                  <div style="display:flex;align-items:center;gap:6px;font-size:11px;font-weight:700;color:#089781;letter-spacing:0.06em;margin-bottom:2px"><i class="ph ph-globe-simple" style="font-size:13px"></i>公開される内容</div>
+                  <sc-for list="{{ readonly1a }}" as="f" hint-placeholder-count="5">
+                    <div style="display:grid;grid-template-columns:76px minmax(0,1fr);gap:10px;padding:6px 0;border-bottom:1px solid #F0F0F0;align-items:baseline">
+                      <span style="font-size:11.5px;color:#666">{{ f.k }}</span>
+                      <span style="font-size:13px">{{ f.v }}<sc-if value="{{ f.sub }}" hint-placeholder-val="{{ false }}"><span style="margin-left:8px;font-size:11px;color:#666">{{ f.sub }}</span></sc-if></span>
+                    </div>
+                  </sc-for>
+                </div>
+
+                <div>
+                  <div style="display:flex;align-items:center;gap:6px;font-size:11px;font-weight:700;color:#333;letter-spacing:0.06em;margin-bottom:2px"><i class="ph ph-lock-key" style="font-size:13px"></i>事務所内の管理<span style="font-weight:400;color:#666;border:1px solid #ccc;border-radius:999px;padding:0 6px;font-size:10px;letter-spacing:0">公開されない・公開中も編集可</span></div>
+                  <div style="display:grid;grid-template-columns:76px minmax(0,1fr) auto;gap:10px;padding:7px 0;border-bottom:1px solid #F0F0F0;align-items:center">
+                    <span style="font-size:11.5px;color:#666">支払先</span>
+                    <span style="font-size:12.5px;display:flex;flex-direction:column"><span style="color:#E63946;font-weight:700;display:flex;align-items:center;gap:4px"><i class="ph ph-warning-circle"></i>未設定</span><span style="font-size:11px;color:#666">書類の発行元：Adobe KK（T7010701011841）</span></span>
+                    <span style="display:flex;gap:6px"><span style="height:28px;display:flex;align-items:center;padding:0 12px;border-radius:999px;border:1.5px solid #30BCA7;background:#30BCA7;color:#fff;font-size:11.5px;font-weight:700">発行元で作成</span><span style="height:28px;display:flex;align-items:center;padding:0 12px;border-radius:999px;border:1.5px solid #000;background:#fff;font-size:11.5px;font-weight:700">選ぶ</span></span>
+                  </div>
+                  <div style="display:grid;grid-template-columns:76px minmax(0,1fr) auto;gap:10px;padding:7px 0;border-bottom:1px solid #F0F0F0;align-items:center">
+                    <span style="font-size:11.5px;color:#666">立替者</span>
+                    <span style="font-size:12.5px;color:#666">なし（調研費口座から支出）</span>
+                    <i class="ph ph-pencil-simple" style="font-size:15px;color:#0F8472"></i>
+                  </div>
+                  <div style="display:grid;grid-template-columns:76px minmax(0,1fr) auto;gap:10px;padding:7px 0;border-bottom:1px solid #F0F0F0;align-items:center">
+                    <span style="font-size:11.5px;color:#666">備考</span>
+                    <span style="font-size:12.5px;color:#939393">—</span>
+                    <i class="ph ph-pencil-simple" style="font-size:15px;color:#0F8472"></i>
+                  </div>
+                </div>
+              </div>
+
+              <div style="border-top:1px solid #E5E5E5;padding:8px 14px;display:flex;align-items:center;gap:8px;font-size:10.5px;color:#939393">
+                <i class="ph ph-info" style="font-size:13px"></i><span>scan ／ claude-sonnet-5 ／ プロンプト版 2</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;align-items:center;gap:12px;margin-top:14px">
+        <span style="font-family:Poppins,sans-serif;font-size:12px;font-weight:700;color:#000;border:1.5px solid #000;border-radius:999px;padding:2px 12px">1a — 編集ビュー</span>
+        <span style="font-size:13px;color:#666">下書きの仕訳。同じ並びのまま値が入力欄になり、操作はフッターに固定。</span>
+      </div>
+
+      <div data-screen-label="1a 編集ビュー" style="width:1440px;height:900px;overflow:hidden;background:#F8F8F8;border:1px solid #000;display:grid;grid-template-columns:236px minmax(0,1fr);font-size:13px;line-height:1.6">
+        <aside style="background:#fff;border-right:1px solid #e5e5e5;padding:20px 14px;display:flex;flex-direction:column;gap:14px">
+          <div style="display:flex;align-items:center;gap:8px;padding:0 6px">
+            <span style="width:9px;height:9px;border-radius:50%;background:#30BCA7"></span>
+            <span style="font-size:13px;font-weight:700">まる見え政治資金 <span style="font-family:Poppins,sans-serif;color:#089781">admin</span></span>
+          </div>
+          <div style="background:#E2F6F3;border:1.5px solid #30BCA7;border-radius:12px;padding:10px 12px">
+            <div style="font-size:10px;font-weight:700;letter-spacing:0.1em;color:#0F8472">調研費</div>
+            <div style="display:flex;align-items:center;gap:8px"><span style="flex:1;font-size:13.5px;font-weight:700">峰島ゆうや</span><span style="font-family:Poppins,sans-serif;font-size:12.5px;font-weight:700;color:#0F8472">2026</span></div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:2px">
+            <sc-for list="{{ nav }}" as="n" hint-placeholder-count="9">
+              <div style="display:flex;align-items:center;gap:10px;height:34px;padding:0 12px;border-radius:999px;font-size:12.5px;font-weight:{{ n.fw }};background:{{ n.bg }};color:{{ n.color }}"><i class="{{ n.icon }}" style="font-size:16px"></i>{{ n.label }}</div>
+            </sc-for>
+          </div>
+        </aside>
+
+        <div style="padding:16px 20px;display:flex;flex-direction:column;gap:10px;min-width:0;min-height:0">
+          <div style="display:flex;align-items:center;gap:12px;height:36px">
+            <h2 style="margin:0;font-size:18px;font-weight:700;letter-spacing:0.04em">仕訳の確認・編集</h2>
+            <span style="font-size:12px;color:#666">峰島ゆうや・2026年</span>
+            <span style="margin-left:auto"></span>
+            <button type="button" style="height:32px;padding:0 16px;border-radius:999px;border:1.5px solid #000;background:#fff;font-size:12px;font-weight:700;font-family:inherit">領収書等番号を振る</button>
+            <button type="button" style="height:32px;padding:0 16px;border-radius:999px;border:1.5px solid #30BCA7;background:#30BCA7;color:#fff;font-size:12px;font-weight:700;font-family:inherit;display:inline-flex;align-items:center;gap:6px"><i class="ph ph-plus"></i>手動で仕訳を作成</button>
+          </div>
+
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+            <div style="display:flex;background:#EDEDED;border-radius:999px;padding:3px;gap:2px">
+              <span style="height:28px;display:flex;align-items:center;padding:0 14px;font-size:12px;color:#666">すべて <span style="font-family:Poppins,sans-serif;margin-left:4px">587</span></span>
+              <span style="height:28px;display:flex;align-items:center;padding:0 14px;border-radius:999px;background:#fff;border:1px solid #30BCA7;color:#089781;font-size:12px;font-weight:700">下書き <span style="font-family:Poppins,sans-serif;margin-left:4px">49</span></span>
+              <span style="height:28px;display:flex;align-items:center;padding:0 14px;font-size:12px;color:#666">確認済 <span style="font-family:Poppins,sans-serif;margin-left:4px">2</span></span>
+              <span style="height:28px;display:flex;align-items:center;padding:0 14px;font-size:12px;color:#666">公開中 <span style="font-family:Poppins,sans-serif;margin-left:4px">536</span></span>
+            </div>
+            <span style="width:1px;height:20px;background:#ddd;margin:0 4px"></span>
+            <span style="height:32px;display:flex;align-items:center;gap:8px;padding:0 12px;border:1px solid #ccc;border-radius:999px;background:#fff;font-size:12px">すべての月<i class="ph ph-caret-down" style="font-size:12px;color:#666"></i></span>
+            <span style="height:32px;display:flex;align-items:center;gap:8px;padding:0 12px;border:1px solid #ccc;border-radius:999px;background:#fff;font-size:12px">すべての立替者<i class="ph ph-caret-down" style="font-size:12px;color:#666"></i></span>
+            <span style="margin-left:auto;font-size:11px;color:#666;font-weight:700">要対応</span>
+            <span style="height:32px;display:flex;align-items:center;gap:6px;padding:0 12px;border:1px solid #E63946;border-radius:999px;background:#fff;font-size:12px;color:#000">支払先 未設定<b style="font-family:Poppins,sans-serif;color:#E63946">579</b></span>
+            <span style="height:32px;display:flex;align-items:center;gap:6px;padding:0 12px;border:1px solid #ccc;border-radius:999px;background:#fff;font-size:12px;color:#939393">書類も事情もない<b style="font-family:Poppins,sans-serif">0</b></span>
+            <span style="height:32px;display:flex;align-items:center;gap:6px;padding:0 12px;border:1px solid #30BCA7;border-radius:999px;background:#E2F6F3;font-size:12px">未精算の立替<b style="font-family:Poppins,sans-serif;color:#0F8472">1件 ¥4,490</b></span>
+          </div>
+
+          <div style="flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) 452px;gap:12px">
+            <div style="background:#fff;border:1px solid #000;border-radius:8px;overflow:hidden;display:flex;flex-direction:column;min-height:0">
+              <div style="display:grid;grid-template-columns:36px 52px 116px minmax(0,1fr) 170px 84px 64px;align-items:center;height:34px;border-bottom:1px solid #000;font-size:11.5px;font-weight:700;padding-right:12px">
+                <span style="display:flex;justify-content:center"><span style="width:14px;height:14px;border:1.5px solid #000;border-radius:3px"></span></span>
+                <span>日付</span><span>科目</span><span>項目</span><span>支払先</span><span style="text-align:right">金額</span><span style="text-align:center">状態</span>
+              </div>
+              <div style="flex:1;min-height:0;overflow:hidden">
+                <sc-for list="{{ rowsEdit }}" as="r" hint-placeholder-count="17">
+                  <div style="display:grid;grid-template-columns:36px 52px 116px minmax(0,1fr) 170px 84px 64px;align-items:center;height:38px;border-bottom:1px solid #EEEEEE;padding-right:12px;background:{{ r.bg }};box-shadow:{{ r.bar }}">
+                    <span style="display:flex;justify-content:center"><span style="width:14px;height:14px;border:1.5px solid #000;border-radius:3px;background:#fff"></span></span>
+                    <span style="font-family:Poppins,sans-serif;font-size:12px">{{ r.d }}</span>
+                    <span>
+                      <sc-if value="{{ r.acctOk }}" hint-placeholder-val="{{ true }}"><span style="font-size:11px;font-weight:700;color:#089781;border:1px solid #30BCA7;background:#fff;border-radius:999px;padding:1px 8px;white-space:nowrap">{{ r.acct }}</span></sc-if>
+                      <sc-if value="{{ r.acctWarn }}" hint-placeholder-val="{{ false }}"><span style="font-size:11px;font-weight:700;color:#E63946;border:1px solid #E63946;background:#fff;border-radius:999px;padding:1px 8px;white-space:nowrap">要確認</span></sc-if>
+                    </span>
+                    <span style="display:flex;align-items:center;gap:6px;min-width:0"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ r.item }}</span><sc-if value="{{ r.split }}" hint-placeholder-val="{{ false }}"><span style="font-family:Poppins,sans-serif;font-size:10.5px;color:#666;border:1px solid #ccc;border-radius:999px;padding:0 6px;white-space:nowrap">{{ r.split }}</span></sc-if><sc-if value="{{ r.adv }}" hint-placeholder-val="{{ false }}"><span style="font-size:10.5px;color:#0F8472;border:1px solid #30BCA7;border-radius:999px;padding:0 6px;white-space:nowrap">立替 {{ r.adv }}</span></sc-if></span>
+                    <span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px">
+                      <sc-if value="{{ r.payee }}" hint-placeholder-val="{{ true }}"><span style="color:#333">{{ r.payee }}</span></sc-if>
+                      <sc-if value="{{ r.noPayee }}" hint-placeholder-val="{{ false }}"><span style="color:#E63946;display:inline-flex;align-items:center;gap:4px"><i class="ph ph-warning-circle"></i>未設定</span></sc-if>
+                    </span>
+                    <span style="font-family:Poppins,sans-serif;font-size:12.5px;text-align:right">{{ r.amt }}</span>
+                    <span style="display:flex;justify-content:center"><span style="font-size:10.5px;color:#666;border:1px solid #ccc;background:#fff;border-radius:999px;padding:0 7px;white-space:nowrap">下書き</span></span>
+                  </div>
+                </sc-for>
+              </div>
+              <div style="height:36px;border-top:1px solid #000;display:flex;align-items:center;gap:12px;padding:0 14px;font-size:11.5px;color:#666">
+                <span><span style="font-family:Poppins,sans-serif">49</span>件</span>
+                <span style="margin-left:auto;display:flex;align-items:center;gap:4px"><i class="ph ph-keyboard" style="font-size:14px"></i>↑↓ で移動</span>
+              </div>
+            </div>
+
+            <div style="background:#fff;border:1px solid #000;border-radius:8px;display:flex;flex-direction:column;min-height:0;overflow:hidden">
+              <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid #E5E5E5">
+                <div style="flex:1;min-width:0">
+                  <div style="display:flex;align-items:center;gap:8px"><span style="font-size:14.5px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">来客用お茶・菓子</span><span style="font-size:10.5px;color:#666;border:1px solid #ccc;background:#fff;border-radius:999px;padding:0 7px;white-space:nowrap">下書き</span></div>
+                  <div style="font-size:11px;color:#666;font-family:Poppins,'Noto Sans JP',sans-serif">1 / 49</div>
+                </div>
+                <button type="button" style="width:32px;height:32px;border-radius:999px;border:1.5px solid #000;background:#fff;display:flex;align-items:center;justify-content:center"><i class="ph ph-caret-up" style="font-size:14px"></i></button>
+                <button type="button" style="width:32px;height:32px;border-radius:999px;border:1.5px solid #000;background:#fff;display:flex;align-items:center;justify-content:center"><i class="ph ph-caret-down" style="font-size:14px"></i></button>
+              </div>
+
+              <div style="flex:1;min-height:0;overflow:hidden;padding:12px 14px;display:flex;flex-direction:column;gap:12px">
+                <div style="position:relative;height:168px;border:1px solid #ddd;border-radius:6px;background:#3A3A3A;overflow:hidden;display:flex;justify-content:center;padding-top:10px">
+                  <div style="width:190px;background:#fff;padding:10px 14px;font-size:7.5px;line-height:1.55;color:#333;text-align:center">
+                    <div style="font-size:11px;font-weight:700">成城石井 赤坂店</div>
+                    <div>東京都港区赤坂3-1-6　<span style="font-family:Poppins,sans-serif">T8010401047011</span></div>
+                    <div style="font-size:10px;font-weight:700;letter-spacing:0.2em;margin-top:6px">領 収 書</div>
+                    <div style="text-align:left;margin-top:4px;display:grid;grid-template-columns:1fr auto;gap:0 8px;font-family:Poppins,'Noto Sans JP',sans-serif"><span>緑茶 2L ×3</span><span>¥1,020</span><span>焼菓子詰合せ</span><span>¥2,160</span><span>紙コップ</span><span>¥980</span><span>消費税(8%)</span><span>¥330</span><b>合計</b><b>¥4,490</b></div>
+                  </div>
+                  <div style="position:absolute;right:8px;bottom:8px;display:flex;gap:6px">
+                    <span style="height:26px;display:flex;align-items:center;gap:5px;padding:0 10px;border-radius:999px;background:#fff;border:1px solid #000;font-size:11px;font-weight:700"><i class="ph ph-arrows-out"></i>拡大</span>
+                    <span style="height:26px;display:flex;align-items:center;gap:5px;padding:0 10px;border-radius:999px;background:#fff;border:1px solid #000;font-size:11px;font-weight:700"><i class="ph ph-arrow-square-out"></i>原寸</span>
+                  </div>
+                </div>
+
+                <div style="display:flex;flex-direction:column;gap:7px">
+                  <div style="display:flex;align-items:center;gap:6px;font-size:11px;font-weight:700;color:#089781;letter-spacing:0.06em;margin-bottom:1px"><i class="ph ph-globe-simple" style="font-size:13px"></i>公開される内容</div>
+                  <div style="display:grid;grid-template-columns:76px minmax(0,1fr) 36px 120px;gap:8px;align-items:center">
+                    <label style="font-size:11.5px;color:#666">日付</label>
+                    <span style="height:32px;border:1px solid #000;border-radius:6px;display:flex;align-items:center;padding:0 10px;font-family:Poppins,sans-serif;font-size:12.5px">2026/09/28<i class="ph ph-calendar-blank" style="margin-left:auto;font-size:14px;color:#666"></i></span>
+                    <label style="font-size:11.5px;color:#666;text-align:right">金額</label>
+                    <span style="height:32px;border:1px solid #000;border-radius:6px;display:flex;align-items:center;justify-content:flex-end;padding:0 10px;font-family:Poppins,sans-serif;font-size:12.5px">¥4,490</span>
+                  </div>
+                  <div style="display:grid;grid-template-columns:76px minmax(0,1fr);gap:8px;align-items:center">
+                    <label style="font-size:11.5px;color:#666">項目名</label>
+                    <span style="height:32px;border:1px solid #000;border-radius:6px;display:flex;align-items:center;padding:0 10px;font-size:12.5px">来客用お茶・菓子</span>
+                  </div>
+                  <div style="display:grid;grid-template-columns:76px minmax(0,1fr);gap:8px;align-items:start">
+                    <label style="font-size:11.5px;color:#666;padding-top:7px">科目</label>
+                    <div>
+                      <span style="height:32px;border:1px solid #000;border-radius:6px;display:flex;align-items:center;padding:0 10px;font-size:12.5px">会議費<i class="ph ph-caret-down" style="margin-left:auto;font-size:12px;color:#666"></i></span>
+                      <div style="margin-top:2px;font-size:11px;color:#666;display:flex;gap:10px"><span>法律上の区分 ④ 事務所費</span><span style="display:inline-flex;align-items:center;gap:3px" title="借方 会議費／貸方 普通預金 の複式仕訳を自動で作成"><i class="ph ph-info"></i>複式は自動</span></div>
+                    </div>
+                  </div>
+                  <div style="display:grid;grid-template-columns:76px minmax(0,1fr);gap:8px;align-items:start">
+                    <label style="font-size:11.5px;color:#666;padding-top:7px">特記事項</label>
+                    <div style="position:relative">
+                      <span style="height:48px;border:1.5px solid #30BCA7;border-radius:6px;display:flex;align-items:flex-start;padding:6px 10px;font-size:12px;color:#000">9/28 地域団体との意見交換会（来客6名）</span>
+                      <span style="position:absolute;top:-8px;right:8px;font-size:10px;font-weight:700;color:#0F8472;background:#fff;padding:0 4px">変更あり</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <div style="display:flex;align-items:center;gap:6px;font-size:11px;font-weight:700;color:#333;letter-spacing:0.06em;margin-bottom:2px"><i class="ph ph-lock-key" style="font-size:13px"></i>事務所内の管理<span style="font-weight:400;color:#666;border:1px solid #ccc;border-radius:999px;padding:0 6px;font-size:10px;letter-spacing:0">公開されない・公開中も編集可</span></div>
+                  <div style="display:grid;grid-template-columns:76px minmax(0,1fr) auto;gap:10px;padding:7px 0;border-bottom:1px solid #F0F0F0;align-items:center">
+                    <span style="font-size:11.5px;color:#666">支払先</span>
+                    <span style="font-size:12.5px;display:flex;align-items:baseline;gap:8px;min-width:0"><span style="font-weight:700;color:#0F8472">成城石井 赤坂店</span><span style="font-size:11px;color:#939393;white-space:nowrap">AIで紐づけ</span></span>
+                    <span style="font-size:12px;font-weight:700;color:#0F8472">変更</span>
+                  </div>
+                  <div style="display:grid;grid-template-columns:76px minmax(0,1fr) auto;gap:10px;padding:6px 0;border-bottom:1px solid #F0F0F0;align-items:center">
+                    <span style="font-size:11.5px;color:#666">立替者</span>
+                    <span style="height:30px;border:1px solid #ccc;border-radius:6px;background:#fff;display:flex;align-items:center;padding:0 10px;font-size:12.5px">伊藤淳<i class="ph ph-caret-down" style="margin-left:auto;font-size:12px;color:#666"></i></span>
+                    <span style="font-size:10.5px;color:#666;border:1px solid #ccc;border-radius:999px;padding:0 7px;white-space:nowrap">未精算</span>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:5px;padding:4px 0 6px 86px;font-size:11px;color:#666"><i class="ph ph-info" style="font-size:12px"></i>精算は確認済にしてからできます</div>
+                  <div style="display:grid;grid-template-columns:76px minmax(0,1fr);gap:10px;padding:6px 0;align-items:center">
+                    <span style="font-size:11.5px;color:#666">備考</span>
+                    <span style="height:30px;border:1px solid #ccc;border-radius:6px;background:#fff;display:flex;align-items:center;padding:0 10px;font-size:12px;color:#939393">事務所内のメモ</span>
+                  </div>
+                </div>
+
+                <div style="font-size:10.5px;color:#939393;display:flex;align-items:center;gap:6px;margin-top:auto"><i class="ph ph-info" style="font-size:13px"></i>scan ／ claude-sonnet-5 ／ プロンプト版 2</div>
+              </div>
+
+              <div style="border-top:1px solid #000;padding:10px 14px;display:flex;align-items:center;gap:8px;background:#fff">
+                <span style="font-size:12px;font-weight:700;color:#E63946;display:flex;align-items:center;gap:4px"><i class="ph ph-trash"></i>破棄</span>
+                <span style="margin-left:auto;display:flex;align-items:center;gap:5px;font-size:11px;color:#0F8472;font-weight:700"><span style="width:7px;height:7px;border-radius:50%;background:#30BCA7"></span>未保存の変更</span>
+                <span style="height:36px;display:flex;align-items:center;padding:0 16px;border-radius:999px;border:1.5px solid #000;background:#fff;font-size:12.5px;font-weight:700">保存</span>
+                <span style="height:36px;display:flex;align-items:center;gap:8px;padding:0 16px;border-radius:999px;border:1.5px solid #30BCA7;background:#30BCA7;color:#fff;font-size:12.5px;font-weight:700;white-space:nowrap">確認済にする</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;font-size:13px;line-height:1.8">
+        <div style="background:#fff;border:1px solid #000;border-radius:8px;padding:18px 20px">
+          <div style="font-weight:700;margin-bottom:6px">右パネル</div>
+          <ul style="margin:0;padding-left:18px;color:#333">
+            <li>編集ビューは閲覧時と同じ並び・同じラベル幅のまま値が入力欄になる。変更した欄は枠の色と「変更あり」で示す</li>
+            <li>破棄・保存・確認済にするはパネル下部に固定。未保存の変更があるとフッターに表示</li>
+            <li>公開中は「公開される内容」を読み取り表示に。確認済に戻すと同じ位置が入力欄に変わる</li>
+            <li>公開中でも触れる立替者・支払先・備考を「事務所内の管理」にまとめ、1行ずつ値と操作を並べる</li>
+            <li>前へ・次へと件数をヘッダーに固定。領収書は小さめに出し、拡大はモーダル</li>
+          </ul>
+        </div>
+        <div style="background:#fff;border:1px solid #000;border-radius:8px;padding:18px 20px">
+          <div style="font-weight:700;margin-bottom:6px">一覧とフィルター</div>
+          <ul style="margin:0;padding-left:18px;color:#333">
+            <li>行を1段・38pxに。支払先を独立した列にし、未設定は赤字で見つけやすく</li>
+            <li>法律上の区分は科目から決まるので一覧からは外し、右パネルで表示</li>
+            <li>3つのチェックボックスと未精算カードを「要対応」チップ1行に集約</li>
+          </ul>
+        </div>
+        <div style="background:#E2F6F3;border:1px solid #30BCA7;border-radius:8px;padding:18px 20px">
+          <div style="font-weight:700;margin-bottom:6px">向いている作業</div>
+          <p style="margin:0;color:#333">公開後の事務作業（支払先の紐づけ・立替の精算）。いまの実装からの差分が小さく、段階的に入れられます。下書きの細かい確認では領収書が小さいのが弱点です。</p>
+        </div>
+      </div>
+    </div>
+
+
+  </div>
+
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    const navItems = [
+      ["ph ph-books", "年度帳簿"], ["ph ph-scan", "スキャン"], ["ph ph-list-checks", "仕訳の確認・編集", true],
+      ["ph ph-stack", "支出群"], ["ph ph-storefront", "支払先"], ["ph ph-hand-coins", "支給"],
+      ["ph ph-globe-simple", "公開"], ["ph ph-file-text", "提出"], ["ph ph-chat-text", "プロンプト"]
+    ];
+    const nav = navItems.map(([icon, label, a]) => ({ icon, label, bg: a ? "#E2F6F3" : "transparent", color: a ? "#0F8472" : "#333", fw: a ? 700 : 400 }));
+    const rail = navItems.map(([icon, label, a]) => ({ icon, label, bg: a ? "#E2F6F3" : "transparent", color: a ? "#0F8472" : "#666" }));
+
+    const taxi = [1400, 2460, 2400, 1700, 2050, 1200, 3800, 4600, 1230, 1000];
+    const yen = n => "¥" + n.toLocaleString("ja-JP");
+    const rows1a = [
+      ...taxi.map((a, i) => ({ d: "09.22", acct: "交通費", item: "タクシー代", split: `分割 ${i + 1}/27`, payee: "", amt: yen(a) })),
+      { d: "09.18", acct: "会議費", item: "会議室利用料", payee: "株式会社スペースマーケット", amt: "¥8,800" },
+      { d: "09.12", acct: "書籍・資料費", item: "書籍購入（行政DX関連）", payee: "アマゾンジャパン合同会社", amt: "¥3,520" },
+      { d: "09.05", acct: "事務用品費", item: "コピー用紙 A4", payee: "アスクル株式会社", amt: "¥2,180" },
+      { d: "08.30", acct: "交通費", item: "新幹線 東京—名古屋", payee: "", amt: "¥11,300" },
+      { d: "08.21", acct: "通信・IT利用料", item: "Adobe Premiereプラン利用料", payee: "", amt: "¥3,280", sel: true },
+      { d: "08.21", acct: "通信・IT利用料", item: "ChatGPT Plus 利用料", payee: "OpenAI, L.L.C.", amt: "¥3,000" },
+      { d: "08.15", acct: "通信・IT利用料", item: "モバイル通信費 8月分", payee: "楽天モバイル株式会社", amt: "¥3,278" }
+    ].map(r => ({ split: false, ...r, noPayee: !r.payee, bg: r.sel ? "#E2F6F3" : "#fff", bar: r.sel ? "inset 3px 0 0 #30BCA7" : "none" }));
+
+    const readonly1a = [
+      { k: "日付", v: "2026.08.21" },
+      { k: "金額", v: "¥3,280" },
+      { k: "項目名", v: "Adobe Premiereプラン利用料" },
+      { k: "科目", v: "通信・IT利用料", sub: "法律上の区分 ④ 事務所費" },
+      { k: "特記事項", v: "サービス期間 2026/08/21〜2026/09/20" }
+    ].map(f => ({ sub: false, ...f }));
+
+    const amts1b = [1400, 2460, 2400, 1700, 2050, 1200, 3800, 4600, 1230, 1000, 2900, 2720];
+    const rows1b = amts1b.map((a, i) => {
+      const sel = i === 2, chk = i >= 4 && i <= 6;
+      return {
+        d: "09.22", item: "タクシー代", amt: yen(a), split: `分割 ${i + 1}/27`, checked: chk,
+        bg: sel ? "#E2F6F3" : "#fff", bar: sel ? "inset 3px 0 0 #30BCA7" : "none",
+        cbBorder: chk ? "#30BCA7" : "#000", cbBg: chk ? "#30BCA7" : "#fff"
+      };
+    });
+    const routes = ["永田町 → 赤坂見附", "議員会館 → 新橋", "新橋 → 霞が関", "霞が関 → 大崎", "大崎 → 品川", "品川 → 議員会館", "議員会館 → 渋谷", "渋谷 → 恵比寿", "恵比寿 → 永田町", "永田町 → 虎ノ門", "虎ノ門 → 六本木", "六本木 → 議員会館", "議員会館 → 東京駅", "東京駅 → 大手町"];
+    const times = ["09/01 08:42", "09/01 19:10", "09/02 10:05", "09/03 13:30", "09/03 18:02", "09/04 09:15", "09/05 12:48", "09/05 21:30", "09/08 08:20", "09/08 17:55", "09/09 11:12", "09/10 20:41", "09/11 07:58", "09/11 15:26"];
+    const receipt1b = routes.map((r, i) => ({ n: i + 1, t: times[i], r, a: yen([1400, 2460, 2400, 1700, 2050, 1200, 3800, 4600, 1230, 1000, 2900, 2720, 2400, 1000][i]) }));
+
+    const heights = [
+      ["見出し・前へ／次へ", 52, 0], ["領収書プレビュー", 316, 0], ["公開中の注意・戻すボタン", 76, 0],
+      ["日付・金額", 76, 0], ["項目名", 76, 0], ["科目・区分・複式の説明", 120, 0],
+      ["特記事項", 100, 0], ["備考", 140, 1], ["source / モデル", 40, 0],
+      ["立替者（説明文・保存）", 150, 1], ["支払先（発行元候補・保存）", 230, 1], ["書類の事情（書類なしのみ）", 160, 1]
+    ];
+    const max = 316;
+    const heightsOut = heights.map(([label, px, op]) => ({ label, px: px + "px", w: Math.round(px / max * 100) + "%", c: op ? "#30BCA7" : "#BDBDBD" }));
+
+    const wins = [
+      { n: "01", t: "公開中は読み取り表示にする", d: "fieldset disabled の入力欄をやめ、ラベルと値の2列で出す。灰色の薄い文字も読みやすくなる。" },
+      { n: "02", t: "フォームのラベルを左に置く", d: "上置きラベルをやめるだけで1項目あたり約25px縮む。右パネルの幅は足りている。" },
+      { n: "03", t: "前へ・次へと保存を固定位置に", d: "ヘッダーとフッターをパネル内で sticky にし、中身だけスクロールさせる。" },
+      { n: "04", t: "常設の説明文をツールチップへ", d: "立替者・事情・複式仕訳の説明は ⓘ に。精算済などの制約があるときだけ1行の注意を出す。" },
+      { n: "05", t: "未精算カードをフィルターの行に入れる", d: "1行の情報に約130pxの高さを使っている。チップにすれば押して絞り込みにも使える。" },
+      { n: "06", t: "一覧の行を1段に", d: "法律上の区分は科目から決まるので一覧からは外す。支払先は独立した列にする。" },
+      { n: "07", t: "まとめて操作のバーを重ねて出す", d: "いまは選ぶと一覧の上にバーが差し込まれ、表全体が下にずれる。下部に浮かせればずれない。" },
+      { n: "08", t: "「確認済にして次へ」を用意する", d: "確認のたびに次へを押す手間と、確認済にしたのに前の行に留まる見落としを減らす。" }
+    ];
+
+    const rowsEdit = [
+      { d: "09.28", acct: "会議費", item: "来客用お茶・菓子", payee: "成城石井 赤坂店", amt: "¥4,490", adv: "伊藤淳", sel: true },
+      { d: "09.27", acct: "交通費", item: "タクシー代", split: "分割 1/3", payee: "GO株式会社", amt: "¥1,860" },
+      { d: "09.27", acct: "交通費", item: "タクシー代", split: "分割 2/3", payee: "GO株式会社", amt: "¥2,140" },
+      { d: "09.27", acct: "交通費", item: "タクシー代", split: "分割 3/3", payee: "GO株式会社", amt: "¥1,320" },
+      { d: "09.26", warn: true, item: "会議室・飲食代", payee: "", amt: "¥12,100" },
+      { d: "09.26", acct: "書籍・資料費", item: "地方自治月報 10月号", payee: "株式会社ぎょうせい", amt: "¥1,980" },
+      { d: "09.25", acct: "通信・IT利用料", item: "Slack Pro 利用料", payee: "Slack Japan株式会社", amt: "¥1,600" },
+      { d: "09.25", acct: "通信・IT利用料", item: "Google Workspace", payee: "グーグル合同会社", amt: "¥2,040" },
+      { d: "09.24", acct: "事務用品費", item: "トナーカートリッジ", payee: "アスクル株式会社", amt: "¥8,580" },
+      { d: "09.24", acct: "交通費", item: "新幹線 東京—仙台", payee: "", amt: "¥11,410" },
+      { d: "09.23", acct: "交通費", item: "宿泊費 仙台", payee: "", amt: "¥9,800" },
+      { d: "09.22", acct: "会議費", item: "会議室利用料", payee: "株式会社スペースマーケット", amt: "¥6,600" },
+      { d: "09.20", acct: "書籍・資料費", item: "書籍購入（地域交通）", payee: "アマゾンジャパン合同会社", amt: "¥2,970" },
+      { d: "09.19", acct: "事務用品費", item: "クリアファイル・付箋", payee: "", amt: "¥1,243" },
+      { d: "09.18", acct: "通信・IT利用料", item: "モバイル通信費 9月分", payee: "楽天モバイル株式会社", amt: "¥3,278" },
+      { d: "09.17", acct: "交通費", item: "タクシー代", payee: "", amt: "¥2,300" },
+      { d: "09.16", acct: "会議費", item: "意見交換会 会場費", payee: "", amt: "¥22,000" }
+    ].map(r => ({ split: false, adv: false, acct: "", ...r, acctOk: !r.warn, acctWarn: !!r.warn, noPayee: !r.payee,
+      bg: r.sel ? "#E2F6F3" : "#fff", bar: r.sel ? "inset 3px 0 0 #30BCA7" : r.warn ? "inset 3px 0 0 #E63946" : "none" }));
+
+    return { nav, rail, rows1a, rowsEdit, readonly1a, rows1b, receipt1b, heights: heightsOut, wins };
+  }
+}
+</script>
+</body>
+</html>

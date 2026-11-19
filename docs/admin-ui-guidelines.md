@@ -1,10 +1,16 @@
 # admin UI コンポーネントガイドライン
 
-admin アプリケーションで shadcn UI を使用する際のルールを定めます。
+admin アプリケーションで UI コンポーネントを使用する際のルールを定めます。
 
 ## 原則
 
-- **shadcn UI コンポーネントを使用する**（カスタム実装は非推奨）
+- **admin はライトモードのみ**（ダークモードは提供しない）
+- **Team Mirai ブランド（白ベース + Mirai Teal + 黒1pxボーダー + ピル形状）に従う**
+  （デザイントークンの出典は [デザインハンドオフ](reference/design_handoff_admin_redesign/README.md)。
+  ただしハンドオフは作成時点のスナップショットなので、**食い違ったらこのガイドラインが正**）
+- **入力系（Input / Textarea / Select / NativeSelect）はピルにしない。小さい角丸（`rounded-md`）で統一する**
+  （ピルはボタン・バッジ・タブ・ページネーションなどに限る）
+- **shadcn UI ベースの `ui/*` コンポーネントを使用する**（カスタム実装は非推奨）
 - **import は index.ts 経由**で行う
 - **CSS 変数と cn() を使う**（直書きスタイル禁止）
 
@@ -12,23 +18,92 @@ admin アプリケーションで shadcn UI を使用する際のルールを定
 import { Button, Input, Label } from "@/client/components/ui";
 ```
 
+## デザイン言語
+
+- ブランド色は **Mirai Teal `#30BCA7` のみ**。青・紫・オレンジは使わない
+- ページ背景 `#F8F8F8`（`bg-background`）、カードは白（`bg-card`）+ 黒1px枠 + 角丸8px
+- **ピル（`rounded-full`）が署名形状**: ボタン・タブ・バッジ / カテゴリピル・ページネーションはピル。
+  **入力系（Input / Textarea / Select / NativeSelect）はピルにせず `rounded-md`（6px）+ 左右パディング `px-3`(12px) で統一する**
+  （入力欄は角丸が大きいと文字の始点が掴みにくく、左右の余白も入力の邪魔になるため）
+- 罫線は黒1px（強調は1.5px）。テーブルの行罫線など弱い線は `border-border-soft`（`#E5E5E5`）
+- 数字・日付・英字は Poppins（`font-latin`）、日本語は Hiragino Kaku Gothic → Noto Sans（`font-sans`、body 既定）
+- 日付表記は `YYYY.MM.DD`（ピリオド区切り）
+- hover は 120〜200ms ease-out の**色変化のみ**（スケール・バウンス禁止）
+- 影はほぼ使わない
+
+### ボタン（3系統）
+
+`Button` の variant で表現する。すべてピル形状。
+
+| variant | 見た目 | 用途 |
+|---|---|---|
+| `default` | teal 塗り + 白文字（hover `#089781`） | プライマリアクション |
+| `secondary` / `outline` | 白地 + 黒1.5px枠（hover `#F8F8F8`） | セカンダリアクション |
+| `destructive` | 白地 + 赤枠 + 赤文字（hover `#FDF0F1`） | 削除などの破壊的操作 |
+
+- disabled は枠 `#CCC`・文字 `#B1B1B1`・`cursor: not-allowed`（**opacity で薄くしない**）
+
+### タブ（Tabs）
+
+`TabsList` はピル形の `bg-muted` トラック、`TabsTrigger` はその中のピル。
+**アクティブタブはサイドバーのアクティブ nav と同じ teal 系の語彙で示す**（ハンドオフの「アクティブ: 背景 teal-100 / 文字 teal-deep / weight 700」に揃える）。
+
+| 状態 | 見た目 |
+|---|---|
+| アクティブ | 背景 `bg-accent`（teal-100 `#E2F6F3`）+ 文字 `text-accent-foreground`（teal-deep `#0F8472`）+ 枠 `border-primary-active` + `font-bold` |
+| 非アクティブ | 背景透過 + 文字 `text-muted-foreground` + 枠なし |
+
+- このルールは `ui/tabs.tsx` に実装済み。**使用側でアクティブ状態の className を上書きしない**
+
+### フォーム・フォーカスリング
+
+- フォームラベル（`Label`）は 12px/700（`text-xs font-bold`）が既定。必須は `<span className="text-destructive">*</span>` を付ける。使用側で `text-xs font-bold` を重ねて指定しない
+- input / select は**小さい角丸（`rounded-md`）**・黒枠・白地。placeholder は `#B1B1B1`（`text-disabled-foreground`）。
+  角丸・パディングは `ui/*` の既定に任せ、**使用側で上書きしない**
+- focus 時は枠が teal + `0 0 0 2px #E2F6F3` のリング（`focus-visible:border-ring focus-visible:ring-[2px] focus-visible:ring-ring-soft`）
+- ボタンの focus-visible は `ring-2 ring-ring ring-offset-2`
+
+### アイコン
+
+- **Phosphor Icons（regular weight）** を使用する。`lucide-react` は使用しない
+- import は `@phosphor-icons/react/dist/ssr` から行う（サーバー/クライアント両対応）
+
+```typescript
+import { Trash, MagnifyingGlass } from "@phosphor-icons/react/dist/ssr";
+```
+
+- 絵文字・グラデーションは使わない
+
+### ローディング
+
+- スピナーは teal（`border-primary border-t-transparent` または `CircleNotch` + `animate-spin`）
+
 ## リファレンス
 
 ### カラー変数
 
-shadcn UI 標準の CSS 変数を使用する。
+`admin/src/app/globals.css` の `@theme` で定義された変数を使用する。
 
 ```css
-bg-background         /* 背景色 */
-bg-card               /* カード背景 */
-text-foreground       /* テキスト色 */
-text-muted-foreground /* 補助テキスト */
-border-border         /* ボーダー */
-bg-input              /* 入力フィールド背景 */
-bg-primary            /* プライマリ色 */
-bg-secondary          /* セカンダリ色（ホバー等） */
-bg-destructive        /* 危険色（赤） */
-ring-ring             /* フォーカスリング */
+bg-background              /* ページ背景 #F8F8F8 */
+bg-card                    /* カード背景 #FFF */
+text-foreground            /* テキスト色 #000 */
+text-muted-foreground      /* 補助テキスト #666 */
+text-disabled-foreground   /* placeholder・無効文字 #B1B1B1 */
+border-border              /* 標準ボーダー #000 */
+border-border-soft         /* 弱い罫線 #E5E5E5 */
+border-disabled-border     /* 無効枠 #CCC */
+bg-input                   /* 入力フィールド背景 #FFF */
+bg-primary                 /* Mirai Teal #30BCA7 */
+bg-primary-hover           /* teal hover #089781 */
+text-primary-active        /* teal deep（リンク・アクティブ） #0F8472 */
+bg-accent                  /* teal-100 #E2F6F3（アクティブ nav・バッジ背景） */
+text-accent-foreground     /* teal deep #0F8472 */
+bg-destructive             /* 危険色 #E63946 */
+bg-destructive-hover       /* 赤枠ボタンの hover #FDF0F1 */
+ring-ring                  /* フォーカスリング teal */
+ring-ring-soft             /* 入力フォーカスリング #E2F6F3 */
+text-teal-soft             /* 見出し下線 #64D8C6 */
 ```
 
 ### クラス名の合成
@@ -60,27 +135,23 @@ import { cn } from "@/client/lib";
    export { Tooltip, TooltipTrigger, TooltipContent } from "@/client/components/ui/tooltip";
    ```
 
-3. ダークモード対応を確認（後述）
+3. テーマ方針への適合を確認（後述）
 
 利用可能なコンポーネント一覧: https://ui.shadcn.com/docs/components
 
-### ダークモード対応
+### テーマ方針（ライトモードのみ）
 
-admin は **Dark Blue テーマ（ダークモード固定）** を採用している。
-テーマ定義は `admin/src/app/globals.css` の `@theme` ブロックにある。
+admin は **ライトモードのみ** で提供する。ダークモードは提供せず、
+`dark:` バリアントや `prefers-color-scheme` による切り替えは実装しない。
 
-shadcn コンポーネントの `dark:` プレフィックス付きクラスは自動適用されないため、
-コンポーネント追加時は `dark:` の値をデフォルトとして適用する。
-
-```tsx
-// 公式の定義
-"bg-transparent dark:bg-input/30"
-
-// admin での適用（dark: を除去してデフォルトに）
-"bg-input/30"
-```
+- shadcn コンポーネント追加時、公式定義に含まれる `dark:` プレフィックス付きクラスは削除する
+- あわせて既存の `ui/*` に倣い、形状（入力系は `rounded-md`、それ以外はピル）・黒枠・teal フォーカスリング・
+  disabled ルール（opacity 不使用）へ調整する
+- アイコンが含まれる場合は lucide-react を Phosphor Icons に置き換える
+- 色・フォントなどのデザイントークンは
+  デザインハンドオフ [docs/reference/design_handoff_admin_redesign/README.md](reference/design_handoff_admin_redesign/README.md) を参照する。
+  **形状（角丸）は上記「デザイン言語」の記述が正**（入力系はピルではなく `rounded-md`）
 
 ## Toast 通知
 
 `import { toast } from "sonner"` で使用。`toast.success("メッセージ")` / `toast.error("エラー")` で表示。
-

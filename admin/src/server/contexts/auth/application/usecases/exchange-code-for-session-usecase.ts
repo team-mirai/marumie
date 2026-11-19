@@ -5,11 +5,16 @@ import type {
   UserRepository,
   User,
 } from "@/server/contexts/shared/domain/repositories/user-repository.interface";
+import { AllowedEmailDomains } from "@/server/contexts/auth/domain/models/allowed-email-domains";
+import { AuthProviderConfig } from "@/server/contexts/auth/domain/models/auth-provider-config";
+import { UserInvitationModel } from "@/server/contexts/auth/domain/models/user-invitation";
+import type { UserInvitationRepository } from "@/server/contexts/auth/domain/repositories/user-invitation-repository.interface";
 import { AuthError } from "@/server/contexts/auth/domain/errors/auth-error";
 
 interface ExchangeCodeResult {
   user: User;
-  isNewUser: boolean;
+  /** 招待（メール）経由の新規ユーザーのみ true。パスワード設定画面へ誘導する */
+  requiresPasswordSetup: boolean;
 }
 
 /**
@@ -20,40 +25,88 @@ export class ExchangeCodeForSessionUsecase {
   constructor(
     private readonly authProvider: AuthProvider,
     private readonly userRepository: UserRepository,
+    private readonly invitationRepository: UserInvitationRepository,
+    private readonly allowedEmailDomains: AllowedEmailDomains,
+    private readonly providerConfig: AuthProviderConfig,
   ) {}
 
   async execute(code: string): Promise<ExchangeCodeResult> {
     try {
       const session = await this.authProvider.exchangeCodeForSession(code);
 
+      // 使われた認証方式を特定できないセッションは、Google の無効化チェックと
+      // ドメイン制限をすり抜けてしまうため、正当な認可コードでも拒否する
+      if (session.signInProvider === "indeterminate") {
+        await this.destroySession();
+        throw new AuthError("AUTH_FAILED", "Sign-in provider could not be determined");
+      }
+
+      // app_metadata の登録元プロバイダーではなく、このサインインで実際に使われた
+      // プロバイダーで判定する（メールと Google の両方の identity を持つユーザー対策）
+      const isGoogleLogin = session.signInProvider === "google";
+
+      if (isGoogleLogin) {
+        // 無効化されたプロバイダーでのログインは、認可コードが正当でも拒否する
+        if (!AuthProviderConfig.isEnabled(this.providerConfig, "google")) {
+          await this.destroySession();
+          throw new AuthError("PROVIDER_DISABLED", "Google login is disabled");
+        }
+
+        // Google 経由のログインのみドメイン制限を適用する
+        // （招待・リカバリー等のメール経由フローは従来どおり制限しない）
+        if (!AllowedEmailDomains.isAllowed(this.allowedEmailDomains, session.user.email)) {
+          await this.destroySession();
+          // メールアドレスはサーバーログに残さない（拒否理由はエラーコードで表現する）
+          throw new AuthError("DOMAIN_NOT_ALLOWED", "Email domain is not allowed");
+        }
+      }
+
       // DB にユーザーが存在するか確認
       let dbUser = await this.userRepository.findByAuthId(session.user.id);
-      let isNewUser = false;
+
+      // 招待経由（emailConfirmedAt があり lastSignInAt がない）の新規ユーザーは
+      // パスワード設定が必要。Google 経由のユーザーはパスワード不要のためスキップ。
+      // 招待時にロール付きで DB ユーザーを作っておくため、DB の有無ではなく認証側の状態で判定する
+      const requiresPasswordSetup =
+        !isGoogleLogin && !!session.user.emailConfirmedAt && !session.user.lastSignInAt;
 
       if (!dbUser) {
-        // 招待されたユーザーを DB に作成
+        // 初回ログインのユーザーを DB に作成
         const email = session.user.email;
         if (!email) {
+          await this.destroySession();
           throw new AuthError("AUTH_FAILED", "User email is required");
         }
 
-        dbUser = await this.userRepository.create({
-          authId: session.user.id,
-          email: email,
-          role: "user",
-        });
-
-        // emailConfirmedAt があり lastSignInAt がない場合は新規ユーザー
-        isNewUser = !!session.user.emailConfirmedAt && !session.user.lastSignInAt;
+        // メールアドレスの持ち主だと確かめられたログイン（許可ドメインの Google・招待メールのリンク経由）なら
+        // 招待のロールと担当議員を付ける。ここに来た Google ログインは許可ドメインの判定を通っている
+        dbUser = UserInvitationModel.canAcceptOnFirstLogin(session.signInProvider, isGoogleLogin)
+          ? await this.invitationRepository.createUserAcceptingInvitation({
+              authId: session.user.id,
+              email,
+            })
+          : await this.userRepository.create({ authId: session.user.id, email, roles: [] });
       }
 
-      return { user: dbUser, isNewUser };
+      return { user: dbUser, requiresPasswordSetup };
     } catch (e) {
       console.error("Exchange code for session failed:", e);
       if (e instanceof AuthError) {
         throw e;
       }
       throw new AuthError("INVALID_TOKEN", `Failed to exchange code: ${String(e)}`, e);
+    }
+  }
+
+  /**
+   * ログインを拒否する際に、認証済みセッションを残さないよう破棄する
+   * 破棄に失敗しても拒否の理由をそのまま呼び出し元へ伝えるため、例外は握りつぶす
+   */
+  private async destroySession(): Promise<void> {
+    try {
+      await this.authProvider.signOut();
+    } catch (e) {
+      console.error("Failed to sign out after rejecting login:", e);
     }
   }
 }

@@ -1,0 +1,79 @@
+import type { ReactNode } from "react";
+import RevealHeadingText from "@/client/components/common/RevealHeadingText";
+
+interface SectionCardProps {
+  id: string;
+  /** 見出しの左に置くアイコン（public 配下の SVG のパス）。アイコンの形だけを使い、色はテーマの緑で塗る */
+  iconSrc: string;
+  iconLabel: string;
+  /** 見出しの上の小さな行（例: 「チームみらい・2026年」） */
+  eyebrow: string;
+  title: string;
+  /** 例: 「2026.10.23 更新」。PC・SP ともカードの右下に出す */
+  updatedAt: string;
+  /** 更新日に添える補足（例: 「2026年2-8月分」）。更新日の前に並べる */
+  updatedAtNote?: string;
+  /** ページの最初の見出しになるカードは h1 にする */
+  headingLevel?: "h1" | "h2";
+  /** 見出しを画面に入るときに下からせり上がらせる（v9 の mask）。v9 で動かない見出し（議員ページの「収支の流れ」）だけ false にする */
+  revealHeading?: boolean;
+  children: ReactNode;
+}
+
+/** 本文の白いセクションのカード。アイコン・小見出し・見出しの行を持ち、更新日を右下に置く。画面に入るときにフェードインする。 */
+export default function SectionCard({
+  id,
+  iconSrc,
+  iconLabel,
+  eyebrow,
+  title,
+  updatedAt,
+  updatedAtNote,
+  headingLevel = "h2",
+  revealHeading = true,
+  children,
+}: SectionCardProps) {
+  const Heading = headingLevel;
+  const bottomNote = [updatedAtNote, updatedAt].filter((text) => text).join("　");
+
+  return (
+    <section
+      id={id}
+      data-reveal
+      className="flex scroll-mt-[100px] flex-col gap-8 rounded-[32px] bg-white px-[18px] py-7 min-[641px]:p-[clamp(28px,4.4vw,64px)]"
+    >
+      <div className="flex min-w-0 items-center gap-4">
+        <span className="flex h-[52px] w-[52px] flex-shrink-0 items-center justify-center rounded-[14px] bg-[#E2F6F3]">
+          <span
+            role="img"
+            aria-label={iconLabel}
+            className="h-[26px] w-[26px] bg-[#0F8472]"
+            style={{
+              mask: `url(${iconSrc}) center/contain no-repeat`,
+              WebkitMask: `url(${iconSrc}) center/contain no-repeat`,
+            }}
+          />
+        </span>
+        <div className="flex min-w-0 flex-auto flex-col gap-0.5">
+          <span className="text-[13px] font-bold leading-[1.4] tracking-[0.04em] text-[#238778]">
+            {eyebrow}
+          </span>
+          <Heading
+            data-reveal={revealHeading ? "mask" : undefined}
+            className="m-0 break-keep text-[clamp(24px,2.8vw,36px)] font-black leading-[1.22] tracking-[0.01em] text-black [overflow-wrap:anywhere]"
+          >
+            {revealHeading ? <RevealHeadingText>{title}</RevealHeadingText> : title}
+          </Heading>
+        </div>
+      </div>
+
+      {children}
+
+      {bottomNote && (
+        <div className="-mt-4 text-right text-[12px] leading-[1.33] tabular-nums text-[#6B7280]">
+          {bottomNote}
+        </div>
+      )}
+    </section>
+  );
+}

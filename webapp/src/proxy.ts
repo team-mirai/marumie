@@ -62,6 +62,9 @@ export async function proxy(request: NextRequest) {
   return NextResponse.next();
 }
 
+// 除外は静的アセットのプレフィックスのみに限定する。
+// パス中の拡張子一致で除外すると `/o/<slug>/2026.png` のような動的ルートが
+// Basic 認証・メンテナンスモードを素通りしてしまう。
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
 };

@@ -3,8 +3,9 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/server/contexts/shared/infrastructure/prisma";
 import { PrismaCounterpartRepository } from "@/server/contexts/report/infrastructure/repositories/prisma-counterpart.repository";
-import { CreateCounterpartUsecase } from "@/server/contexts/report/application/usecases/manage-counterpart-usecase";
+import { CreateCounterpartUsecase } from "@/server/contexts/report/application/usecases/create-counterpart-usecase";
 import type { CreateCounterpartInput } from "@/server/contexts/report/domain/models/counterpart";
+import { requireRole } from "@/server/contexts/auth/presentation/loaders/require-role";
 
 interface CreateCounterpartActionResult {
   success: boolean;
@@ -15,6 +16,8 @@ interface CreateCounterpartActionResult {
 export async function createCounterpartAction(
   input: CreateCounterpartInput,
 ): Promise<CreateCounterpartActionResult> {
+  await requireRole("political_fund");
+
   try {
     const repository = new PrismaCounterpartRepository(prisma);
     const usecase = new CreateCounterpartUsecase(repository);

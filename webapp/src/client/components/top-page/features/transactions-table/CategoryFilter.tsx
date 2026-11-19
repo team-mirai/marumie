@@ -28,14 +28,18 @@ const EXPENSE_CATEGORIES: CategoryItem[] = Object.entries(PL_CATEGORIES)
   }));
 
 interface CategoryFilterProps {
-  isOpen: boolean;
   onClose: () => void;
   onApplyFilter: (selectedKeys: string[]) => void;
   selectedCategories?: string[];
 }
 
+/**
+ * カテゴリーの絞り込みパネル。
+ *
+ * 選択状態は開いたときの `selectedCategories` から作る。開くたびにマウントされる前提なので、
+ * 行のカテゴリーのラベルのリンクなど外から絞り込みが変わっても、次に開けば今の絞り込みが出る。
+ */
 export default function CategoryFilter({
-  isOpen,
   onClose,
   onApplyFilter,
   selectedCategories = [],
@@ -52,8 +56,6 @@ export default function CategoryFilter({
       checked: selectedCategories.includes(cat.id),
     })),
   );
-
-  if (!isOpen) return null;
 
   const handleIncomeToggle = (id: string) => {
     setIncomeCategories((prev) =>
@@ -126,7 +128,7 @@ export default function CategoryFilter({
                   </div>
                   <span
                     className={`text-[13px] leading-[1.31] text-left flex-1 ${
-                      incomeCategories.every((cat) => cat.checked) ? "font-semibold" : "font-medium"
+                      incomeCategories.every((cat) => cat.checked) ? "font-bold" : "font-medium"
                     } text-[#47474C]`}
                   >
                     （すべて選択）
@@ -155,7 +157,7 @@ export default function CategoryFilter({
                       </div>
                       <span
                         className={`text-[13px] leading-[1.54] text-left flex-1 ${
-                          category.checked ? "font-semibold" : "font-medium"
+                          category.checked ? "font-bold" : "font-medium"
                         } text-[#47474C]`}
                       >
                         {category.label}
@@ -198,9 +200,7 @@ export default function CategoryFilter({
                   </div>
                   <span
                     className={`text-[13px] leading-[1.31] text-left flex-1 ${
-                      expenseCategories.every((cat) => cat.checked)
-                        ? "font-semibold"
-                        : "font-medium"
+                      expenseCategories.every((cat) => cat.checked) ? "font-bold" : "font-medium"
                     } text-[#47474C]`}
                   >
                     （すべて選択）
@@ -229,7 +229,7 @@ export default function CategoryFilter({
                       </div>
                       <span
                         className={`text-[13px] leading-[1.54] text-left flex-1 ${
-                          category.checked ? "font-semibold" : "font-medium"
+                          category.checked ? "font-bold" : "font-medium"
                         } text-[#47474C]`}
                       >
                         {category.label}

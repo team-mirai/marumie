@@ -14,9 +14,13 @@ type AddressInputPhase =
   | "results" // 検索結果表示
   | "confirmed"; // 確定後（Input表示）
 
+/** 名称と検索ヒントから住所候補を引く。既定は政治資金の取引先の住所検索 */
+export type SearchAddress = (companyName: string, hint?: string) => Promise<AddressSearchResult>;
+
 interface UseAddressSearchProps {
   companyName: string;
   initialAddress?: string;
+  searchAddress?: SearchAddress;
 }
 
 interface UseAddressSearchReturn {
@@ -27,9 +31,9 @@ interface UseAddressSearchReturn {
   hint: string;
   isSearching: boolean;
 
-  // アクション
-  startSearch: () => void;
-  reSearch: () => void;
+  // アクション（検索が終わると解決する）
+  startSearch: () => Promise<void>;
+  reSearch: () => Promise<void>;
   selectCandidate: (candidate: AddressCandidate) => void;
   switchToManual: () => void;
   clear: () => void;
@@ -40,6 +44,7 @@ interface UseAddressSearchReturn {
 export function useAddressSearch({
   companyName,
   initialAddress,
+  searchAddress = searchCounterpartAddressAction,
 }: UseAddressSearchProps): UseAddressSearchReturn {
   const [phase, setPhase] = useState<AddressInputPhase>(initialAddress ? "confirmed" : "initial");
   const [address, setAddress] = useState(initialAddress ?? "");
@@ -55,7 +60,7 @@ export function useAddressSearch({
       setPhase("searching");
 
       try {
-        const result = await searchCounterpartAddressAction(companyName.trim(), searchHint);
+        const result = await searchAddress(companyName.trim(), searchHint);
         setSearchResult(result);
         setPhase("results");
       } catch (err) {
@@ -73,16 +78,12 @@ export function useAddressSearch({
         setIsSearching(false);
       }
     },
-    [companyName],
+    [companyName, searchAddress],
   );
 
-  const startSearch = useCallback(() => {
-    doSearch(hint || undefined);
-  }, [doSearch, hint]);
+  const startSearch = useCallback(() => doSearch(hint || undefined), [doSearch, hint]);
 
-  const reSearch = useCallback(() => {
-    doSearch(hint || undefined);
-  }, [doSearch, hint]);
+  const reSearch = useCallback(() => doSearch(hint || undefined), [doSearch, hint]);
 
   const selectCandidate = useCallback((candidate: AddressCandidate) => {
     setAddress(candidate.address);

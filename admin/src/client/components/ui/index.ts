@@ -32,6 +32,7 @@ export {
   TableRow,
   TableCell,
 } from "@/client/components/ui/table";
+export { NativeSelect } from "@/client/components/ui/native-select";
 export { Textarea } from "@/client/components/ui/textarea";
 export { Checkbox } from "@/client/components/ui/checkbox";
 export {
@@ -47,3 +48,9 @@ export {
 } from "@/client/components/ui/tabs";
 export { Switch } from "@/client/components/ui/switch";
 export { Toaster } from "@/client/components/ui/sonner";
+export {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/client/components/ui/dropdown-menu";

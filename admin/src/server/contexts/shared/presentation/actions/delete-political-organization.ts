@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/server/contexts/shared/infrastructure/prisma";
 import { DeletePoliticalOrganizationUsecase } from "@/server/contexts/shared/application/usecases/delete-political-organization-usecase";
 import { PrismaPoliticalOrganizationRepository } from "@/server/contexts/shared/infrastructure/repositories/prisma-political-organization.repository";
+import { requireRole } from "@/server/contexts/auth/presentation/loaders/require-role";
 
 interface DeletePoliticalOrganizationResult {
   success: boolean;
@@ -14,6 +15,8 @@ interface DeletePoliticalOrganizationResult {
 export async function deletePoliticalOrganization(
   orgId: bigint,
 ): Promise<DeletePoliticalOrganizationResult> {
+  await requireRole("political_fund");
+
   const repository = new PrismaPoliticalOrganizationRepository(prisma);
   const usecase = new DeletePoliticalOrganizationUsecase(repository);
 

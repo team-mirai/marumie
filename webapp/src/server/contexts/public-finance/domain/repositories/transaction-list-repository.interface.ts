@@ -13,12 +13,18 @@ export interface PaginatedResult<T> {
 }
 
 /**
+ * 一覧の並び替えのキー。
+ * signedAmount は収入をプラス、支出をマイナスとした金額（降順なら収入が多い順、昇順なら支出が多い順）。
+ */
+export type TransactionListSortBy = "date" | "amount" | "signedAmount";
+
+/**
  * ページネーションオプション
  */
 export interface PaginationOptions {
   page: number;
   perPage: number;
-  sortBy?: "date" | "amount";
+  sortBy?: TransactionListSortBy;
   order?: "asc" | "desc";
 }
 

@@ -1,0 +1,54 @@
+import "server-only";
+
+import { requireRolePage } from "@/server/contexts/auth/presentation/loaders/require-role-page";
+import { prepareSyncImportUpload } from "@/server/contexts/shared/presentation/actions/prepare-sync-import-upload";
+import { previewSyncImport } from "@/server/contexts/data-import/presentation/actions/preview-sync-import";
+import { runSyncImport } from "@/server/contexts/data-import/presentation/actions/run-sync-import";
+import { isSyncImportAvailable } from "@/server/contexts/shared/presentation/loaders/read-sync-import-environment";
+import { PageHeader } from "@/client/components/layout/PageHeader";
+import { SyncImportClient } from "@/client/components/sync-import/SyncImportClient";
+
+// 数万件の置き換えは既定の実行時間では終わらないので、関数の上限（300 秒）まで使う。
+// 置き換えのトランザクション自体も同じ 300 秒で打ち切られ、取り消される。
+export const maxDuration = 300;
+
+const LABEL = "Sync Import";
+const TITLE = "同期用インポート";
+
+function Notice({ children }: { children: React.ReactNode }) {
+  return (
+    <div>
+      <PageHeader label={LABEL} title={TITLE} />
+      <div className="rounded-lg border border-border bg-card p-6 text-sm text-muted-foreground">
+        {children}
+      </div>
+    </div>
+  );
+}
+
+export default async function SyncImportPage() {
+  // サイドバーからは admin にしか見えないが、URL 直打ちでも実行させない。
+  await requireRolePage("admin");
+
+  // 本番に取り込むと取り返しがつかないので、環境ごと画面を出さない
+  // （サーバー処理側でも同じ判定で拒否している）。
+  if (!isSyncImportAvailable()) {
+    return <Notice>この環境では同期用データの取り込みは利用できません。</Notice>;
+  }
+
+  return (
+    <div>
+      <PageHeader
+        label={LABEL}
+        title={TITLE}
+        description="同期用エクスポートのJSONを取り込み、政治団体1件分の政治資金データを丸ごと置き換えます"
+      />
+
+      <SyncImportClient
+        prepareUploadAction={prepareSyncImportUpload}
+        previewAction={previewSyncImport}
+        importAction={runSyncImport}
+      />
+    </div>
+  );
+}

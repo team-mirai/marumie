@@ -1,0 +1,127 @@
+import { test, expect } from "@playwright/test";
+import { clickUntil, clickBulkAction } from "../helpers/interactions";
+
+test("手動作成→一覧選択→編集→確認済、月絞り込みと破棄", async ({ page }) => {
+  const name = `e2e-journal-${Date.now()}`;
+  await page.goto("/politicians/new");
+  await page.getByLabel("氏名").fill(name);
+  await page.getByLabel("スラッグ").fill(name);
+  await page.getByLabel("当選日").fill("2026-02-08");
+  await page.getByRole("button", { name: "作成", exact: true }).click();
+  await expect(page).toHaveURL("/politicians");
+  const politicianCard = page.locator('[data-slot="card"]').filter({ has: page.getByRole("heading", { name, exact: true }) });
+  await politicianCard.getByRole("link", { name: "年度帳簿" }).click();
+  await page.getByLabel(/^年度/).fill("2026");
+  await page.getByRole("button", { name: "帳簿を作成" }).click();
+  await expect(page.getByRole("heading", { name: "2026年度" })).toBeVisible();
+  await page.getByRole("button", { name: "現在の対象を切り替え" }).click();
+  await Promise.all([
+    page.waitForNavigation({ waitUntil: "load" }),
+    page.getByRole("button", { name: `${name}／2026年度` }).click(),
+  ]);
+  await page.getByRole("link", { name: "仕訳の確認・編集" }).click();
+  await expect(page.getByRole("heading", { name: "仕訳の確認・編集" })).toBeVisible();
+  for (const [description, date] of [["視察先への移動", "2026-08-01"], ["会議への移動", "2026-09-01"]]) {
+    const dialog = page.getByRole("dialog");
+    await clickUntil(page.getByRole("button", { name: "手動で仕訳を作成" }), (options) =>
+      expect(dialog.getByLabel("日付", { exact: true })).toBeVisible(options),
+    );
+    await dialog.getByLabel("日付", { exact: true }).fill(date);
+    await dialog.getByLabel("金額", { exact: true }).fill("1200");
+    await dialog.getByLabel("項目名", { exact: true }).fill(description);
+    await dialog.getByLabel("科目", { exact: true }).selectOption("transportation");
+    await dialog.getByRole("button", { name: "下書きを作成" }).click();
+    await expect(dialog).toBeHidden();
+    await expect(page.getByRole("row").filter({ hasText: description })).toBeVisible();
+  }
+  const row = page.getByRole("row").filter({ hasText: "視察先への移動" });
+  await row.click();
+  await expect(page.getByLabel("項目名", { exact: true })).toHaveValue("視察先への移動");
+  await page.getByLabel("金額", { exact: true }).fill("1500");
+  // 変更した欄に「変更あり」が付き、フッターに未保存の変更が出る
+  await expect(page.getByRole("region", { name: "公開される内容" }).getByText("変更あり")).toHaveCount(1);
+  await expect(page.getByText("未保存の変更")).toBeVisible();
+  const leaveDialog = page.waitForEvent("dialog");
+  await page.evaluate(() => { setTimeout(() => window.location.reload(), 0); });
+  const dialog = await leaveDialog;
+  expect(dialog.type()).toBe("beforeunload");
+  await dialog.dismiss();
+  await expect(page.getByLabel("金額", { exact: true })).toHaveValue("1500");
+  await page.getByLabel("特記事項", { exact: true }).fill("視察のため");
+  await page.getByLabel("備考", { exact: true }).fill("事務所内の確認メモ");
+  await page.getByLabel("備考", { exact: true }).press("ArrowUp");
+  await expect(page.getByLabel("項目名", { exact: true })).toHaveValue("視察先への移動");
+  await page.getByRole("button", { name: "確認済にする", exact: true }).click();
+  await expect(row).toContainText("確認済"); await expect(row).toContainText("1,500");
+  await page.reload();
+  await row.click();
+  await expect(page.getByLabel("備考", { exact: true })).toHaveValue("事務所内の確認メモ");
+  await row.focus(); await page.keyboard.press("ArrowUp");
+  await expect(page.getByLabel("項目名", { exact: true })).toHaveValue("会議への移動");
+  await page.getByLabel("月", { exact: true }).selectOption("08");
+  await expect(page.getByRole("row").filter({ hasText: "会議への移動" })).toHaveCount(0);
+  await expect(page.getByRole("tab", { name: "確認済 1" })).toBeVisible();
+  await page.getByRole("button", { name: "破棄", exact: true }).click();
+  await page.getByRole("button", { name: "破棄する", exact: true }).click();
+  await expect(row).toHaveCount(0);
+  // 下書きを複数選んでまとめて確認済にする
+  await page.getByLabel("月", { exact: true }).selectOption("");
+  for (const [description, date] of [["資料の購入", "2026-10-01"], ["書籍の購入", "2026-10-02"]]) {
+    const createDialog = page.getByRole("dialog");
+    await clickUntil(page.getByRole("button", { name: "手動で仕訳を作成" }), (options) =>
+      expect(createDialog.getByLabel("日付", { exact: true })).toBeVisible(options),
+    );
+    await createDialog.getByLabel("日付", { exact: true }).fill(date);
+    await createDialog.getByLabel("金額", { exact: true }).fill("800");
+    await createDialog.getByLabel("項目名", { exact: true }).fill(description);
+    await createDialog.getByLabel("科目", { exact: true }).selectOption("books-newspapers");
+    await createDialog.getByRole("button", { name: "下書きを作成" }).click();
+    await expect(createDialog).toBeHidden();
+  }
+  await page.getByRole("tab", { name: /^下書き 3$/ }).click();
+  await page.getByRole("checkbox", { name: "表示中の支出の仕訳をすべて選択" }).click();
+  await expect(page.getByText("3件選択")).toBeVisible();
+  // 幅が足りないときは primary 以外が「…」メニューに入り、足りるときはバーに並ぶ
+  await expect(page.getByRole("button", { name: "ほかの操作" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "LLMで読み直す" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "まとめて確認済にする" })).toBeVisible();
+  const narrow = page.viewportSize();
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await expect(page.getByRole("button", { name: "LLMで読み直す" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "ほかの操作" })).toHaveCount(0);
+  if (narrow) await page.setViewportSize(narrow);
+  // 選択を 1 件外すと、外した仕訳は下書きのまま残る
+  await page.getByRole("checkbox", { name: "会議への移動を選択" }).click();
+  await page.getByRole("button", { name: "まとめて確認済にする" }).click();
+  await expect(page.getByRole("tab", { name: /^確認済 2$/ })).toBeVisible();
+  await expect(page.getByRole("tab", { name: /^下書き 1$/ })).toBeVisible();
+  await page.getByRole("tab", { name: /^確認済 2$/ }).click();
+  for (const description of ["資料の購入", "書籍の購入"])
+    await expect(page.getByRole("row").filter({ hasText: description })).toContainText("確認済");
+  // 選んだ下書きをまとめて破棄する。キャンセルすれば何も消えず選択も残る
+  await page.getByRole("tab", { name: /^下書き 1$/ }).click();
+  await page.getByRole("checkbox", { name: "会議への移動を選択" }).click();
+  await clickBulkAction(page, "まとめて破棄");
+  const discardDialog = page.getByRole("dialog");
+  await expect(discardDialog).toContainText("1件の仕訳を削除します。この操作は取り消せません。");
+  await discardDialog.getByRole("button", { name: "キャンセル" }).click();
+  await expect(discardDialog).toBeHidden();
+  await expect(page.getByText("1件選択")).toBeVisible();
+  await clickBulkAction(page, "まとめて破棄");
+  await discardDialog.getByRole("button", { name: "破棄する", exact: true }).click();
+  await expect(page.getByText("1件の仕訳を破棄しました")).toBeVisible();
+  await expect(page.getByRole("tab", { name: /^下書き 0$/ })).toBeVisible();
+  await expect(page.getByRole("row").filter({ hasText: "会議への移動" })).toHaveCount(0);
+  // 選んだ確認済をまとめて下書きに戻す
+  await page.getByRole("tab", { name: /^確認済 2$/ }).click();
+  await page.getByRole("checkbox", { name: "表示中の支出の仕訳をすべて選択" }).click();
+  await expect(page.getByText("2件選択")).toBeVisible();
+  await page.getByRole("button", { name: "まとめて下書きに戻す" }).click();
+  await expect(page.getByText("2件の仕訳を下書きに戻しました")).toBeVisible();
+  await expect(page.getByRole("tab", { name: /^下書き 2$/ })).toBeVisible();
+  await expect(page.getByRole("tab", { name: /^確認済 0$/ })).toBeVisible();
+  await page.goto("/politicians");
+  await politicianCard.getByRole("button", { name: "削除", exact: true }).click();
+  await page.getByRole("button", { name: "削除する", exact: true }).click();
+  await expect(politicianCard).toHaveCount(0);
+});

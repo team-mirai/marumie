@@ -6,6 +6,7 @@ import { BulkAssignCounterpartUsecase } from "@/server/contexts/report/applicati
 import { PrismaReportTransactionRepository } from "@/server/contexts/report/infrastructure/repositories/prisma-report-transaction.repository";
 import { PrismaCounterpartRepository } from "@/server/contexts/report/infrastructure/repositories/prisma-counterpart.repository";
 import { PrismaTransactionCounterpartRepository } from "@/server/contexts/report/infrastructure/repositories/prisma-transaction-counterpart.repository";
+import { requireRole } from "@/server/contexts/auth/presentation/loaders/require-role";
 
 interface BulkAssignCounterpartActionResult {
   success: boolean;
@@ -18,6 +19,8 @@ export async function bulkAssignCounterpartAction(
   transactionIds: string[],
   counterpartId: string,
 ): Promise<BulkAssignCounterpartActionResult> {
+  await requireRole("political_fund");
+
   try {
     const transactionRepository = new PrismaReportTransactionRepository(prisma);
     const counterpartRepository = new PrismaCounterpartRepository(prisma);

@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { LoginUsecase } from "@/server/contexts/auth/application/usecases/login-usecase";
 import { SupabaseAuthProvider } from "@/server/contexts/auth/infrastructure/supabase/supabase-auth-provider";
+import { AuthProviderConfig } from "@/server/contexts/auth/domain/models/auth-provider-config";
 import { AuthError, AUTH_ERROR_MESSAGES } from "@/server/contexts/auth/domain/errors/auth-error";
 
 /**
@@ -17,7 +18,8 @@ export async function loginWithPassword(formData: FormData) {
   }
 
   const authProvider = new SupabaseAuthProvider();
-  const usecase = new LoginUsecase(authProvider);
+  const providerConfig = AuthProviderConfig.parse(process.env.ADMIN_AUTH_PROVIDERS);
+  const usecase = new LoginUsecase(authProvider, providerConfig);
 
   try {
     await usecase.execute(email, password);

@@ -5,17 +5,19 @@ import { balanceSnapshotsSeeder } from './seeds/balanceSnapshots';
 import { counterpartsSeeder } from './seeds/counterparts';
 import { donorsSeeder } from './seeds/donors';
 import { politicalOrganizationsSeeder } from './seeds/politicalOrganizations';
+import { politiciansSeeder } from './seeds/politicians';
 import { reportProfilesSeeder } from './seeds/reportProfiles';
-import { tenantsSeeder } from './seeds/tenants';
+import { researchFundJournalEntriesSeeder } from '@/prisma/seeds/researchFundJournalEntries';
+import { researchFundBooksSeeder } from './seeds/researchFundBooks';
+import { researchFundDocumentsSeeder } from './seeds/researchFundDocuments';
+import { researchFundExpenditureGroupsSeeder } from './seeds/researchFundExpenditureGroups';
 import { transactionsSeeder } from './seeds/transactions';
 import { usersSeeder } from './seeds/users';
 
 const prisma = new PrismaClient();
 
 // シーダーを配列で管理（順序も制御可能）
-// テナントは最初に作成する必要がある（他のエンティティがテナントを参照するため）
 const seeders: Seeder[] = [
-  tenantsSeeder,
   politicalOrganizationsSeeder,
   reportProfilesSeeder,
   usersSeeder,
@@ -23,6 +25,13 @@ const seeders: Seeder[] = [
   donorsSeeder,
   transactionsSeeder,
   balanceSnapshotsSeeder,
+  // 調研費: 議員（所属は既存 political_organizations を参照） → 年度帳簿
+  // 科目マスタはマイグレーション（20260916170000_seed_research_fund_accounts）で投入済み
+  politiciansSeeder,
+  researchFundBooksSeeder,
+  researchFundJournalEntriesSeeder,
+  researchFundDocumentsSeeder,
+  researchFundExpenditureGroupsSeeder,
 ];
 
 async function main() {

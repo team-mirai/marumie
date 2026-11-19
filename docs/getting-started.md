@@ -49,7 +49,7 @@ cp webapp/.env.example webapp/.env.local
 | ファイル | 用途 | 備考 |
 |----------|------|------|
 | `.env` | Prisma / データベース接続 | そのままで OK |
-| `admin/.env.local` | admin アプリ | Supabase キーの設定が必要（後述） |
+| `admin/.env.local` | admin アプリ | `pnpm run dev` で admin を動かすには Supabase キーの設定が必要（後述）。seed / E2E は設定不要 |
 | `webapp/.env.local` | webapp アプリ | そのままで OK |
 
 ## 4. 初回セットアップ
@@ -67,37 +67,29 @@ pnpm run dev:setup
 
 ## 5. Supabase キーの設定
 
-`dev:setup` 完了後、以下のコマンドでキー情報を取得します：
+ローカル Supabase の anon key / service_role key は `supabase start` 時に CLI が生成します。
+
+**シード（`pnpm run db:seed` / `db:reset`）と admin の E2E（`pnpm run test:e2e:admin`）は、
+起動中の Supabase から接続情報を自動取得する**（[scripts/supabase-env.mjs](../scripts/supabase-env.mjs)）ため、キーを手で設定する必要はありません。
+`.env` に古い値が残っていても、起動中の Supabase の値で上書きされます。
+
+`pnpm run dev` で admin を動かす場合のみ、以下のコマンドでキー情報を取得して `admin/.env.local` に設定してください：
 
 ```bash
-pnpm dlx supabase status
+pnpm run supabase:status --output json
 ```
 
-出力例：
+出力（JSON）のうち使うのは次の 3 つです：
 
-```
-         API URL: http://127.0.0.1:54321
-          DB URL: postgresql://postgres:postgres@127.0.0.1:54332/postgres
-      Studio URL: http://127.0.0.1:54323
-    Inbucket URL: http://127.0.0.1:54324
-        anon key: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-service_role key: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-```
+| JSON のキー | 設定先（`admin/.env.local`） |
+|-------------|---------------------------|
+| `API_URL` | `SUPABASE_URL`（`http://127.0.0.1:54331`） |
+| `ANON_KEY` | `SUPABASE_ANON_KEY` |
+| `SERVICE_ROLE_KEY` | `SUPABASE_SERVICE_ROLE_KEY` |
 
-取得したキーを以下のファイルに設定してください：
-
-**`admin/.env.local`** に設定：
-
-```env
-SUPABASE_ANON_KEY="上記の anon key の値"
-SUPABASE_SERVICE_ROLE_KEY="上記の service_role key の値"
-```
-
-**`.env`（ルート）** に追記：
-
-```env
-SUPABASE_SERVICE_ROLE_KEY="上記の service_role key の値"
-```
+> **注意**: `SUPABASE_URL` は必ず `54331` を指してください。Supabase のデフォルトポート `54321` を指したままだと、
+> 同じマシンで別プロジェクトの Supabase が動いている場合にそちらへリクエストが飛び、
+> 「メールアドレスまたはパスワードが正しくありません」「invalid JWT」のような紛らわしいエラーになります。
 
 ## 6. 開発サーバーの起動
 
@@ -113,15 +105,16 @@ Supabase、webapp（ポート 3000）、admin（ポート 3001）が同時に起
 |--------|-----|------|
 | webapp | http://localhost:3000 | 一般ユーザー向けフロントエンド |
 | admin | http://localhost:3001 | 管理画面 |
-| Supabase Studio | http://127.0.0.1:54323 | データベース管理 GUI |
-| Mailpit | http://127.0.0.1:54324 | メールテスト用ツール |
+| Supabase Studio | http://127.0.0.1:54333 | データベース管理 GUI |
+| Mailpit | http://127.0.0.1:54334 | メールテスト用ツール |
 
 ### テスト用ログイン情報（admin）
 
 | ロール | Email | Password |
 |--------|-------|----------|
-| Admin | foo@example.com | foo@example.com |
-| User | bar@example.com | bar@example.com |
+| Admin（全機能） | foo@example.com | foo@example.com |
+| 政治資金（political_fund） | bar@example.com | bar@example.com |
+| 調査研究費（research_fund） | baz@example.com | baz@example.com |
 
 ## データベースのマイグレーション
 
@@ -150,20 +143,41 @@ USE_MOCK_DATA=true
 
 設定後、トランザクションページのバックエンドがモックデータを返すようになります。
 
+## 調研費の書類の公開用の版をローカルで作る
+
+本番・staging（Vercel 上のデプロイ）では、書類を登録・作り直すと Vercel Queues 経由でサーバー側で公開用の版が作られ、
+取りこぼしは Vercel Cron（5 分ごと）が拾い直します。ローカル・CI・E2E ではキューを使わないので、書類は未作成のまま残ります。
+
+ローカルで作りたいときは、`admin/.env.local` に `CRON_SECRET`（任意の文字列）と `ANTHROPIC_API_KEY` を設定して admin を起動し、
+定期実行の入口を手で呼びます。キューを使えない環境では、この呼び出しの中で未作成の版がなくなるまで順に作ります
+（作成中のまま止まった書類も作り直しの対象に戻します）。
+
+```bash
+# シェルは admin/.env.local を読まないので、そこに設定したのと同じ値を渡す
+export CRON_SECRET=<admin/.env.local の CRON_SECRET>
+curl -H "Authorization: Bearer $CRON_SECRET" http://localhost:3001/api/cron/document-masking
+# => {"retried":0,"failedStale":0,"notified":0,"processed":2,"remaining":0}
+```
+
+作り終えたら admin の画面を再読み込みすると、状態が反映されます。
+
 ## サンプルデータ
 
 `data/sampledata.csv` に政治資金の取引データのサンプルが含まれています。管理画面（http://localhost:3001）の「CSVアップロード」機能からこのファイルをアップロードして確認できます。
 
 ## Supabase のポート番号
 
-ポート番号は `supabase/config.toml` で設定されています：
+ポート番号は `supabase/config.toml` で設定されています。
+同じマシンで別プロジェクトの Supabase（デフォルトポート 54321〜）が動いていても衝突しないよう、
+すべて Supabase デフォルトから +10 ずらしています。CI も同じ設定ファイルをそのまま使います。
 
-| サービス | ポート | 設定箇所 |
-|----------|--------|----------|
-| API | 54321 | Supabase デフォルト |
-| PostgreSQL (DB) | 54332 | `[db]` port |
-| Studio | 54323 | `[studio]` port |
-| Inbucket (メール) | 54324 | `[inbucket]` port |
+| サービス | ポート | 設定箇所 | Supabase デフォルト |
+|----------|--------|----------|-------------------|
+| API | 54331 | `[api]` port | 54321 |
+| PostgreSQL (DB) | 54332 | `[db]` port | 54322 |
+| Studio | 54333 | `[studio]` port | 54323 |
+| Mailpit (メール) | 54334 | `[local_smtp]` port | 54324 |
+| Analytics | 54337 | `[analytics]` port | 54327 |
 
 ## トラブルシューティング
 
@@ -190,6 +204,15 @@ Error: Port 3000 is already in use
 ### データベースをリセットしたい
 
 → `pnpm run db:reset`
+
+### E2E でログインに失敗する / 「invalid JWT」になる
+
+→ `admin/.env.local` の `SUPABASE_URL` が `http://127.0.0.1:54331` を指しているか確認（`54321` は別プロジェクトの Supabase の可能性）。
+　`pnpm test:e2e:admin` 経由なら自動で正しい値が使われるので、ポート 3001 で動いている古い開発サーバーを止めてから再実行する。
+
+### db:reset 後に古いデータが画面に残る
+
+→ Next.js のキャッシュを削除: `rm -rf admin/.next/cache`
 
 ### 依存関係のエラー
 
@@ -224,15 +247,32 @@ pnpm run typecheck     # 型チェック
 pnpm run test          # テスト実行
 ```
 
-### E2Eテスト（admin）
+### E2Eテスト（webapp / admin）
+
+E2E はローカルの Supabase（認証）とシードデータに依存するため、プロジェクトルートから以下の順で実行します：
 
 ```bash
-pnpm --filter admin test:e2e          # E2Eテスト実行（ヘッドレス）
-pnpm --filter admin test:e2e:ui       # UIモードで実行（デバッグ用）
-pnpm --filter admin test:e2e:headed   # ブラウザを表示して実行
+pnpm supabase:start && pnpm db:reset && pnpm test:e2e
 ```
 
-**注意**: E2Eテスト実行前に Supabase が起動している必要があります。
+- `pnpm test:e2e` は webapp → admin の順に実行します。片方だけ回すなら `pnpm test:e2e:webapp` / `pnpm test:e2e:admin`
+- `pnpm test:e2e:admin` / `pnpm test:e2e:ui` は起動中の Supabase から接続情報を自動取得するため、
+  `admin/.env.local` のキー設定は不要です（`pnpm --filter admin test:e2e` と直接呼ぶ場合は自動取得されません）
+- webapp / admin とも、E2E は CI と同じ本番ビルド（`next build` → `next start`）を自動で起動します
+  （webapp はポート 3000、admin はポート 3001）。該当ポートで開発サーバーが動いていると起動できないので、
+  先に止めてください（dev サーバーは並行実行中に Fast Refresh で RSC ストリームが切れ、
+  ハイドレーション前のクリックが握り潰されて E2E が不安定になるため使いません）。
+  ビルドから走るので初回は数分かかります
+- デバッグ目的で dev サーバーに当てたいときは `E2E_DEV_SERVER=1 pnpm test:e2e:webapp` /
+  `E2E_DEV_SERVER=1 pnpm test:e2e:admin`。この場合は起動中の開発サーバーを再利用します
+  （結果は CI と一致しないことがあります）
+
+```bash
+pnpm test:e2e:webapp                   # webapp の E2E（ヘッドレス）
+pnpm test:e2e:admin                    # admin の E2E（ヘッドレス）
+pnpm test:e2e:ui                       # UIモードで実行（デバッグ用）
+pnpm --filter admin test:e2e:headed    # ブラウザを表示して実行（キーは admin/.env.local から）
+```
 
 WSL2 で初めて実行する場合、ブラウザのシステム依存関係が必要です：
 

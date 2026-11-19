@@ -1,0 +1,123 @@
+import { documentUploadSizeError } from "@/server/contexts/research-fund/domain/models/document-upload";
+import type { DuplicateDocuments } from "@/server/contexts/research-fund/domain/models/duplicate-document";
+import {
+  invalidResearchFundResult,
+  RF_ERROR_CODES,
+  type ResearchFundResult,
+} from "@/server/contexts/research-fund/domain/types/validation";
+
+/** 1 回のアップロードで受け付けられる書類の上限（デザイン: 「1回に最大30枚」） */
+export const SCAN_BATCH_MAX_DOCUMENTS = 30;
+
+export const SCAN_DOCUMENT_MIME_TYPES = ["image/jpeg", "image/png", "application/pdf"] as const;
+
+/** prisma の ResearchFundScanJobStatus と同じ語彙。画面のピルはこの 4 状態だけを扱う */
+export type ScanJobStatus = "queued" | "running" | "succeeded" | "failed";
+
+export interface ScanJobView {
+  id: string;
+  documentId: string;
+  status: ScanJobStatus;
+  originalFilename: string;
+  mime: string;
+  /** 抽出結果の要約。まだ読み取っていなければ null */
+  summary: string | null;
+  error: string | null;
+}
+
+export interface ScanBatchView {
+  id: string;
+  /** ISO 8601。画面では YYYY.MM.DD で表示する */
+  createdAt: string;
+  jobs: ScanJobView[];
+}
+
+export interface ScanBatchProgress {
+  total: number;
+  succeeded: number;
+  failed: number;
+  /** 0〜100 の整数。完了（成功・失敗いずれも）した割合 */
+  percent: number;
+}
+
+export interface ScanOverview {
+  batches: (ScanBatchView & { progress: ScanBatchProgress })[];
+  /** ジョブに記録される有効なプロンプト版。未保存なら null（アップロードできない） */
+  activePromptVersion: number | null;
+  /** 読み取りに使うモデル名。画面の注記に出す */
+  model: string;
+  /** 書類 ID → 同じ書類の可能性がある相手の書類（二重スキャンの警告に使う） */
+  duplicates: DuplicateDocuments;
+}
+
+export class ScanBatchError extends Error {}
+
+/**
+ * バッチを作るときに記録する有効なプロンプト版を返す。
+ * ジョブはどの版で読み取ったかを必ず記録するので、版が未保存ならバッチを作れない。
+ */
+export function requireActivePrompt<T>(prompt: T | null): T {
+  if (!prompt)
+    throw new ScanBatchError(
+      "読み取りプロンプトが未保存です。「読み取りプロンプト」から保存してください",
+    );
+  return prompt;
+}
+
+export function summarizeScanBatch(jobs: ScanJobView[]): ScanBatchProgress {
+  const succeeded = jobs.filter((job) => job.status === "succeeded").length;
+  const failed = jobs.filter((job) => job.status === "failed").length;
+  return {
+    total: jobs.length,
+    succeeded,
+    failed,
+    percent: jobs.length === 0 ? 0 : Math.round(((succeeded + failed) / jobs.length) * 100),
+  };
+}
+
+/** 1 回のアップロードの書類の枚数を確かめる */
+export function validateScanBatchCount(count: number): ResearchFundResult<undefined> {
+  if (count === 0) {
+    return invalidResearchFundResult(
+      "documents",
+      RF_ERROR_CODES.INVALID_DOCUMENT,
+      "書類を1枚以上選んでください",
+    );
+  }
+  if (count > SCAN_BATCH_MAX_DOCUMENTS) {
+    return invalidResearchFundResult(
+      "documents",
+      RF_ERROR_CODES.INVALID_DOCUMENT,
+      `1回にアップロードできるのは${SCAN_BATCH_MAX_DOCUMENTS}枚までです`,
+    );
+  }
+  return { status: "valid", value: undefined };
+}
+
+/**
+ * これからアップロードする書類の枚数・形式・サイズを、アップロード先を発行する前に検証する。
+ * 形式はブラウザの申告なので、実際の中身は登録時に validateUploadedDocument が確かめる。
+ */
+export function validateScanUpload(
+  documents: { mime: string; size: number }[],
+): ResearchFundResult<undefined> {
+  const count = validateScanBatchCount(documents.length);
+  if (count.status === "invalid") return count;
+  if (
+    documents.some(
+      (document) => !(SCAN_DOCUMENT_MIME_TYPES as readonly string[]).includes(document.mime),
+    )
+  ) {
+    return invalidResearchFundResult(
+      "documents",
+      RF_ERROR_CODES.INVALID_DOCUMENT,
+      "JPG・PNG・PDFのみアップロードできます",
+    );
+  }
+  for (const document of documents) {
+    const sizeError = documentUploadSizeError(document.size);
+    if (sizeError)
+      return invalidResearchFundResult("documents", RF_ERROR_CODES.INVALID_DOCUMENT, sizeError);
+  }
+  return { status: "valid", value: undefined };
+}

@@ -1,0 +1,202 @@
+import { test, expect } from "@playwright/test";
+import { clickUntil, clickBulkAction } from "../helpers/interactions";
+
+// 立替の入力から精算までの流れ。立替は事務所内の管理情報なので、下書きのうちから入力でき、
+// 精算は金額が確定した確認済・公開中だけに許す。
+// 帳簿は前年度で作る（仕訳の日付が必ず過去になり、精算日に「今日」を指定できる）。
+const YEAR = new Date().getFullYear() - 1;
+/** 入力値（YYYY-MM-DD）を画面表示の日付表記（YYYY.MM.DD）に変換する */
+const dotted = (isoDate: string) => isoDate.replaceAll("-", ".");
+
+test("立替者の入力→一括設定→確認済→一括精算、未精算の絞り込みと集計", async ({ page }) => {
+  const name = `e2e-advance-${Date.now()}`;
+  await page.goto("/politicians/new");
+  await page.getByLabel("氏名").fill(name);
+  await page.getByLabel("スラッグ").fill(name);
+  await page.getByLabel("当選日").fill(`${YEAR}-02-08`);
+  await page.getByRole("button", { name: "作成", exact: true }).click();
+  await expect(page).toHaveURL("/politicians");
+  const politicianCard = page
+    .locator('[data-slot="card"]')
+    .filter({ has: page.getByRole("heading", { name, exact: true }) });
+  await politicianCard.getByRole("link", { name: "年度帳簿" }).click();
+  await page.getByLabel(/^年度/).fill(String(YEAR));
+  await page.getByRole("button", { name: "帳簿を作成" }).click();
+  await expect(page.getByRole("heading", { name: `${YEAR}年度` })).toBeVisible();
+  await page.getByRole("button", { name: "現在の対象を切り替え" }).click();
+  await Promise.all([
+    page.waitForNavigation({ waitUntil: "load" }),
+    page.getByRole("button", { name: `${name}／${YEAR}年度` }).click(),
+  ]);
+  await page.getByRole("link", { name: "仕訳の確認・編集" }).click();
+  await expect(page.getByRole("heading", { name: "仕訳の確認・編集" })).toBeVisible();
+
+  // 支出の下書きを 2 件作る
+  for (const [description, amount] of [
+    ["会議室の利用料", "3000"],
+    ["資料の印刷代", "2000"],
+  ]) {
+    const dialog = page.getByRole("dialog");
+    await clickUntil(page.getByRole("button", { name: "手動で仕訳を作成" }), (options) =>
+      expect(dialog.getByLabel("日付", { exact: true })).toBeVisible(options),
+    );
+    await dialog.getByLabel("日付", { exact: true }).fill(`${YEAR}-08-01`);
+    await dialog.getByLabel("金額", { exact: true }).fill(amount);
+    await dialog.getByLabel("項目名", { exact: true }).fill(description);
+    await dialog.getByLabel("科目", { exact: true }).selectOption("printing");
+    await dialog.getByRole("button", { name: "下書きを作成" }).click();
+    await expect(dialog).toBeHidden();
+    // 一覧の再取得が終わるまで待つ（終わる前のクリックは pending として捨てられる）
+    await expect(page.getByRole("row").filter({ hasText: description })).toBeVisible();
+  }
+  const meeting = page.getByRole("row").filter({ hasText: "会議室の利用料" });
+  const printing = page.getByRole("row").filter({ hasText: "資料の印刷代" });
+
+  // 編集ビューでは立替者を最初から入力欄で出し、フッターの「保存」で仕訳と一緒に保存する
+  await clickUntil(meeting, (options) =>
+    expect(page.getByLabel("項目名", { exact: true })).toHaveValue("会議室の利用料", options),
+  );
+  // 立替者・備考は「事務所内の管理」に、項目名などは「公開される内容」に分かれて並ぶ
+  const publicGroup = page.getByRole("region", { name: "公開される内容" });
+  const officeGroup = page.getByRole("region", { name: "事務所内の管理" });
+  await expect(publicGroup.getByLabel("項目名", { exact: true })).toBeVisible();
+  await expect(publicGroup.getByLabel("立替者", { exact: true })).toHaveCount(0);
+  await expect(officeGroup.getByLabel("立替者", { exact: true })).toBeVisible();
+  await expect(officeGroup.getByLabel("備考", { exact: true })).toBeVisible();
+  await expect(officeGroup.getByLabel("項目名", { exact: true })).toHaveCount(0);
+  await page.getByLabel("立替者", { exact: true }).fill(" 秘書A ");
+  await page.getByLabel("備考", { exact: true }).fill("立替の確認メモ");
+  await expect(page.getByText("未保存の変更")).toBeVisible();
+  await page.getByRole("button", { name: "保存", exact: true }).click();
+  // 仕訳の保存のあとに続けて立替者を送っても、同時更新の検出に引っかからない
+  await expect(page.getByText("保存しました（立替者を「秘書A」にしました）")).toBeVisible();
+  // 前後の空白は落として保存するので、表記ゆれで集計が分かれない
+  await expect(meeting).toContainText("立替 秘書A");
+  await expect(page.getByLabel("備考", { exact: true })).toHaveValue("立替の確認メモ");
+  await expect(page.getByRole("button", { name: /^未精算の立替/ })).toHaveAttribute("title", "秘書A：¥3,000（1件）");
+  // 下書きは精算できないので、1 件の欄でも精算の操作を出さずにその理由を出す
+  await expect(page.getByRole("button", { name: "精算済にする" })).toHaveCount(0);
+  await expect(page.getByText("精算は確認済にしてからできます")).toBeVisible();
+
+  // 複数選んで立替者をまとめて設定する
+  await page.getByRole("checkbox", { name: "表示中の支出の仕訳をすべて選択" }).click();
+  await expect(page.getByText("2件選択")).toBeVisible();
+  // 下書きは金額が確定していないので精算できない
+  await expect(page.getByRole("button", { name: "まとめて精算" })).toHaveCount(0);
+  await clickBulkAction(page, "立替者をまとめて設定");
+  const assignDialog = page.getByRole("dialog");
+  await assignDialog.getByLabel("立替者", { exact: true }).fill("秘書B");
+  await assignDialog.getByRole("button", { name: "設定する" }).click();
+  await expect(page.getByText("2件の立替者を「秘書B」にしました")).toBeVisible();
+  await expect(meeting).toContainText("立替 秘書B");
+  await expect(printing).toContainText("立替 秘書B");
+  // 要対応の「未精算の立替」チップに帳簿全体の件数と合計額が出て、立替者ごとの内訳はホバーで見られる
+  const unsettledChip = page.getByRole("button", { name: /^未精算の立替/ });
+  await expect(unsettledChip).toHaveText("未精算の立替 2件 ¥5,000");
+  await expect(unsettledChip).toHaveAttribute("title", "秘書B：¥5,000（2件）");
+  // 押すと未精算の立替だけに絞り込む
+  await unsettledChip.click();
+  await expect(unsettledChip).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByRole("tab", { name: /^すべて 2$/ })).toBeVisible();
+  await unsettledChip.click();
+  await expect(unsettledChip).toHaveAttribute("aria-pressed", "false");
+
+  // 確認済にしてからまとめて精算する
+  await page.getByRole("checkbox", { name: "表示中の支出の仕訳をすべて選択" }).click();
+  await page.getByRole("button", { name: "まとめて確認済にする" }).click();
+  await expect(page.getByRole("tab", { name: /^確認済 2$/ })).toBeVisible();
+  await page.getByRole("checkbox", { name: "表示中の支出の仕訳をすべて選択" }).click();
+  await expect(page.getByText("2件選択")).toBeVisible();
+  await page.getByRole("button", { name: "まとめて精算" }).click();
+  const settleDialog = page.getByRole("dialog");
+  // 確認ダイアログに件数と立替者ごとの合計額が出る
+  await expect(settleDialog).toContainText("選択中の2件の立替");
+  await expect(settleDialog).toContainText("秘書B：¥5,000");
+  await expect(settleDialog).toContainText("（2件）");
+  const settledAt = `${YEAR}-09-30`;
+  await settleDialog.getByLabel("精算日").fill(settledAt);
+  await settleDialog.getByRole("button", { name: "精算済にする" }).click();
+  // 日付は画面表示では YYYY.MM.DD（admin UI ガイドライン）
+  await expect(page.getByText(`2件の立替を精算済（${dotted(settledAt)}）にしました`)).toBeVisible();
+  await expect(meeting).toContainText("精算済");
+  await expect(printing).toContainText("精算済");
+  // 精算済は未精算の集計から外れ、未精算が無くなると要対応の「未精算の立替」チップは出ない
+  await expect(page.getByRole("button", { name: /^未精算の立替/ })).toHaveCount(0);
+  // 立替者で絞り込める（既存の月・状態の絞り込みと組み合わせられる）
+  await page.getByLabel("立替者で絞り込み").selectOption("秘書B");
+  await expect(page.getByRole("tab", { name: /^すべて 2$/ })).toBeVisible();
+  await page.getByLabel("月", { exact: true }).selectOption("09");
+  await expect(page.getByRole("tab", { name: /^すべて 0$/ })).toBeVisible();
+  await page.getByLabel("月", { exact: true }).selectOption("");
+  await page.getByLabel("立替者で絞り込み").selectOption("");
+
+  // 精算済は金額・立替者を変更できず、破棄もできない
+  await clickUntil(meeting, (options) =>
+    expect(page.getByLabel("項目名", { exact: true })).toHaveValue("会議室の利用料", options),
+  );
+  await expect(page.getByLabel("金額", { exact: true })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "破棄", exact: true })).toHaveCount(0);
+  await expect(page.getByLabel("立替者", { exact: true })).toHaveCount(0);
+  await expect(page.getByText(`秘書B ／ 精算済 ${dotted(settledAt)}`)).toBeVisible();
+  // 未精算に戻すと変更できるようになる
+  await page.getByRole("button", { name: "未精算に戻す" }).click();
+  await expect(page.getByText("1件を未精算に戻しました")).toBeVisible();
+  await clickUntil(meeting, (options) =>
+    expect(page.getByLabel("立替者", { exact: true })).toBeVisible(options),
+  );
+  await expect(page.getByLabel("金額", { exact: true })).toBeEnabled();
+
+  // 1 件の欄から精算できる（立替者の変更が未保存のうちは精算させない）
+  await page.getByLabel("立替者", { exact: true }).fill("秘書C");
+  await expect(page.getByRole("button", { name: "精算済にする" })).toHaveCount(0);
+  await expect(page.getByText("立替者の変更を保存してから精算してください")).toBeVisible();
+  // 元の立替者に戻せば未保存の変更ではなくなり、確認なしで精算できる
+  await page.getByLabel("立替者", { exact: true }).fill("秘書B");
+  await expect(page.getByText("未保存の変更")).toHaveCount(0);
+  await page.getByRole("button", { name: "精算済にする" }).click();
+  const singleSettledAt = `${YEAR}-10-31`;
+  // 精算日の初期値は日本時間の今日。日付を指定して確定する
+  await expect(page.getByLabel("精算日")).not.toHaveValue("");
+  await page.getByLabel("精算日").fill(singleSettledAt);
+  await page.getByRole("button", { name: "精算する" }).click();
+  await expect(
+    page.getByText(`1件の立替を精算済（${dotted(singleSettledAt)}）にしました`),
+  ).toBeVisible();
+  await expect(meeting).toContainText("精算済");
+  // 欄は「立替者 ／ 精算済 日付」と「未精算に戻す」の表示に切り替わる
+  await clickUntil(meeting, (options) =>
+    expect(page.getByText(`秘書B ／ 精算済 ${dotted(singleSettledAt)}`)).toBeVisible(options),
+  );
+  // 「未精算に戻す」も、仕訳の編集フォームに未保存の変更があるときは確認してから送る
+  // （Playwright は既定で確認ダイアログを却下するので、そのままクリックするとキャンセルの挙動になる）
+  await page.getByLabel("備考", { exact: true }).fill("未精算に戻す前のメモ");
+  await page.getByRole("button", { name: "未精算に戻す" }).click();
+  // キャンセルしたので送られず、精算済のまま入力中の内容も残る
+  await expect(page.getByText(`秘書B ／ 精算済 ${dotted(singleSettledAt)}`)).toBeVisible();
+  await expect(page.getByLabel("備考", { exact: true })).toHaveValue("未精算に戻す前のメモ");
+  // 確認を承諾すれば、これまでどおり送られる（未保存の変更は破棄される）
+  page.once("dialog", (dialog) => dialog.accept());
+  await page.getByRole("button", { name: "未精算に戻す" }).click();
+  await expect(page.getByText("1件を未精算に戻しました")).toBeVisible();
+  await clickUntil(meeting, (options) =>
+    expect(page.getByLabel("立替者", { exact: true })).toBeVisible(options),
+  );
+
+  // 確認済の仕訳でも、立替者の解除と備考を「保存」でまとめて保存できる
+  await page.getByLabel("備考", { exact: true }).fill("立替者の解除と一緒のメモ");
+  await page.getByLabel("立替者", { exact: true }).fill("");
+  await page.getByRole("button", { name: "保存", exact: true }).click();
+  await expect(page.getByText("保存しました（立替者を解除しました）")).toBeVisible();
+  await expect(meeting).not.toContainText("立替 ");
+  await expect(page.getByLabel("備考", { exact: true })).toHaveValue("立替者の解除と一緒のメモ");
+  // 残った精算済は、まとめて未精算に戻せる
+  await page.getByRole("checkbox", { name: "資料の印刷代を選択" }).click();
+  await clickBulkAction(page, "まとめて未精算に戻す");
+  await expect(printing).not.toContainText("精算済");
+  await expect(page.getByRole("button", { name: /^未精算の立替/ })).toHaveAttribute("title", "秘書B：¥2,000（1件）");
+
+  await page.goto("/politicians");
+  await politicianCard.getByRole("button", { name: "削除", exact: true }).click();
+  await page.getByRole("button", { name: "削除する", exact: true }).click();
+  await expect(politicianCard).toHaveCount(0);
+});

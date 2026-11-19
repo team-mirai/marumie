@@ -11,19 +11,26 @@ export type BulkDeleteSearchResult = {
     description: string;
     debitAmount: number;
     creditAmount: number;
+    /** ISO 8601 文字列。表示側で YYYY.MM.DD に整形する */
     transactionDate: string;
   }>;
   notFoundNos?: string[];
   error?: string;
 };
 
+/** 取引No は年度ごとに振り直されるので、団体と年度で絞って検索する。 */
 export async function loadTransactionsByNos(
   organizationId: string,
+  financialYear: number,
   transactionNos: string[],
 ): Promise<BulkDeleteSearchResult> {
   try {
     const repository = new PrismaTransactionRepository(prisma);
-    const found = await repository.findByTransactionNos(transactionNos, [organizationId]);
+    const found = await repository.findByTransactionNos(
+      transactionNos,
+      [organizationId],
+      financialYear,
+    );
 
     const foundNos = new Set(found.map((t) => t.transaction_no));
     const notFoundNos = transactionNos.filter((no) => !foundNos.has(no));
@@ -36,7 +43,7 @@ export async function loadTransactionsByNos(
         description: t.description || "",
         debitAmount: t.debit_amount,
         creditAmount: t.credit_amount,
-        transactionDate: new Date(t.transaction_date).toLocaleDateString("ja-JP"),
+        transactionDate: new Date(t.transaction_date).toISOString(),
       })),
       notFoundNos,
     };

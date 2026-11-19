@@ -59,7 +59,6 @@ export default function CsvDownloadLink({
       onClick={handleDownload}
       disabled={isDownloading}
       className={`disabled:opacity-50 disabled:cursor-not-allowed ${className}`}
-      style={{ fontFamily: "Noto Sans JP" }}
     >
       {isDownloading ? loadingText : children}
     </button>

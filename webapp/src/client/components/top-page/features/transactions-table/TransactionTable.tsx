@@ -1,3 +1,4 @@
+import type { TransactionSort } from "@/client/lib/transaction-sort";
 import type { DisplayTransaction } from "@/server/contexts/public-finance/domain/models/display-transaction";
 import TransactionTableBody from "@/client/components/top-page/features/transactions-table/TransactionTableBody";
 import TransactionTableHeader from "@/client/components/top-page/features/transactions-table/TransactionTableHeader";
@@ -5,24 +6,25 @@ import TransactionTableHeader from "@/client/components/top-page/features/transa
 interface TransactionTableProps {
   transactions: DisplayTransaction[];
   allowControl?: boolean;
-  onSort?: (field: "date" | "amount") => void;
-  currentSort?: "date" | "amount" | null;
-  currentOrder?: "asc" | "desc" | null;
+  sort?: TransactionSort;
+  onSortChange?: (sort: TransactionSort) => void;
   total?: number;
   page?: number;
   perPage?: number;
   onApplyFilter?: (selectedKeys: string[]) => void;
   selectedCategories?: string[];
+  /** 渡すと各行のカテゴリーのラベルを、そのカテゴリーで絞り込むリンクにする */
+  categoryHref?: (categoryKey: string) => string;
 }
 
 export default function TransactionTable({
   transactions,
   allowControl = false,
-  onSort,
-  currentSort,
-  currentOrder,
+  sort,
+  onSortChange,
   onApplyFilter,
   selectedCategories,
+  categoryHref,
 }: TransactionTableProps) {
   return (
     <div className="space-y-6">
@@ -31,13 +33,12 @@ export default function TransactionTable({
           {/* Show header only on desktop */}
           <TransactionTableHeader
             allowControl={allowControl}
-            onSort={onSort}
-            currentSort={currentSort}
-            currentOrder={currentOrder}
+            sort={sort}
+            onSortChange={onSortChange}
             onApplyFilter={onApplyFilter}
             selectedCategories={selectedCategories}
           />
-          <TransactionTableBody transactions={transactions} />
+          <TransactionTableBody transactions={transactions} categoryHref={categoryHref} />
         </table>
       </div>
     </div>

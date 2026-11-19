@@ -2,6 +2,7 @@
 
 import type { BalanceSheetData } from "@/types/balance-sheet";
 import { BALANCE_SHEET_LABELS } from "@/types/balance-sheet";
+import { formatYen } from "@/client/lib/format-yen";
 
 interface BalanceSheetChartProps {
   data: BalanceSheetData;
@@ -27,24 +28,10 @@ interface BalanceSheetItem {
 }
 
 export default function BalanceSheetChart({ data }: BalanceSheetChartProps) {
-  // 金額フォーマット関数
-  const formatAmount = (amount: number) => {
-    if (amount >= 100000000) {
-      const oku = Math.floor(amount / 100000000);
-      const man = Math.floor((amount % 100000000) / 10000);
-      return man > 0 ? `${oku}億${man}万円` : `${oku}億円`;
-    } else if (amount >= 10000) {
-      const man = Math.floor(amount / 10000);
-      const en = amount % 10000;
-      return en > 0 ? `${man}万${en}円` : `${man}万円`;
-    }
-    return `${amount}円`;
-  };
-
   // 金額を数値と単位に分割して表示
   const renderFormattedAmount = (amount: number, isDebtExcess = false) => {
-    const formatted = formatAmount(amount);
-    const parts = formatted.split(/(\d+)/);
+    const formatted = formatYen(amount);
+    const parts = formatted.split(/(\d[\d,]*)/);
 
     return (
       <span className="inline-flex items-baseline gap-0.5">
@@ -53,16 +40,16 @@ export default function BalanceSheetChart({ data }: BalanceSheetChartProps) {
           .map((part, index) => ({ part, index }))
           .filter(({ part }) => part !== "")
           .map(({ part, index }) => {
-            const isNumber = /^\d+$/.test(part);
+            const isNumber = /^\d[\d,]*$/.test(part);
             return (
               <span
                 key={`part-${index}-${part}`}
                 className={isNumber ? "text-lg font-bold" : "text-xs font-medium"}
-                style={{
-                  fontFamily: isNumber
-                    ? "'SF Pro', -apple-system, system-ui, sans-serif"
-                    : "'Noto Sans JP', sans-serif",
-                }}
+                style={
+                  isNumber
+                    ? { fontFamily: "'SF Pro', -apple-system, system-ui, sans-serif" }
+                    : undefined
+                }
               >
                 {part}
               </span>
@@ -122,9 +109,35 @@ export default function BalanceSheetChart({ data }: BalanceSheetChartProps) {
     },
   ].filter((item) => item.value > 0);
 
+  // 一行表示（項目名と金額を横に並べる）
+  const renderSingleLine = (item: BalanceSheetItem, className = "") => (
+    <div
+      className={`text-center ${item.isDebtExcess ? "text-red-600" : "text-black"} ${className}`}
+    >
+      <span className="text-sm font-bold">{item.name} </span>
+      {renderFormattedAmount(item.value, item.isDebtExcess)}
+    </div>
+  );
+
+  // 二行表示（項目名の下に金額）
+  const renderTwoLines = (item: BalanceSheetItem, className = "") => (
+    <div className={`flex flex-col items-center ${className}`}>
+      <div
+        className={`text-base font-bold mb-1 ${item.isDebtExcess ? "text-red-600" : "text-black"}`}
+      >
+        {item.name}
+      </div>
+      <div className={item.isDebtExcess ? "text-red-600" : "text-black"}>
+        {renderFormattedAmount(item.value, item.isDebtExcess)}
+      </div>
+    </div>
+  );
+
   // アイテムのレンダリング
+  // 二行表示には約 60px 要るので、図の高さ（PC 380px / SP 190px）に応じて一行表示に切り替える割合を変える
   const renderItem = (item: BalanceSheetItem) => {
-    const isSmall = item.percentage < 16; // 高さが30px以下相当
+    const isSmall = item.percentage < 16; // PC で高さ 60px 未満
+    const isSmallOnSp = item.percentage < 32; // SP で高さ 60px 未満
 
     return (
       <div
@@ -140,29 +153,14 @@ export default function BalanceSheetChart({ data }: BalanceSheetChartProps) {
         }}
       >
         {isSmall ? (
-          // 小さい場合：一行表示
-          <div className={`text-center ${item.isDebtExcess ? "text-red-600" : "text-black"}`}>
-            <span
-              className="text-sm font-bold"
-              style={{ fontFamily: "'Noto Sans JP', sans-serif" }}
-            >
-              {item.name}{" "}
-            </span>
-            {renderFormattedAmount(item.value, item.isDebtExcess)}
-          </div>
-        ) : (
-          // 大きい場合：二行表示
+          renderSingleLine(item)
+        ) : isSmallOnSp ? (
           <>
-            <div
-              className={`text-base font-bold mb-1 ${item.isDebtExcess ? "text-red-600" : "text-black"}`}
-              style={{ fontFamily: "'Noto Sans JP', sans-serif" }}
-            >
-              {item.name}
-            </div>
-            <div className={item.isDebtExcess ? "text-red-600" : "text-black"}>
-              {renderFormattedAmount(item.value, item.isDebtExcess)}
-            </div>
+            {renderSingleLine(item, "min-[641px]:hidden")}
+            {renderTwoLines(item, "hidden min-[641px]:flex")}
           </>
+        ) : (
+          renderTwoLines(item)
         )}
       </div>
     );
@@ -170,17 +168,20 @@ export default function BalanceSheetChart({ data }: BalanceSheetChartProps) {
 
   return (
     <div className="flex justify-center mt-10">
-      <div
-        className="w-full max-w-[500px] flex gap-[1px] h-[380px]"
-        role="img"
-        aria-label="貸借対照表チャート"
-      >
+      {/* SP は縦に場所を取りすぎないよう、PC の半分の高さにする（v9） */}
+      <figure className="w-full max-w-[500px] flex gap-[1px] h-[190px] min-[641px]:h-[380px]">
+        <figcaption className="sr-only">貸借対照表</figcaption>
+
         {/* 左側（資産） */}
-        <div className="flex-1 flex flex-col">{leftItems.map((item) => renderItem(item))}</div>
+        <section className="flex-1 flex flex-col" aria-label="資産">
+          {leftItems.map((item) => renderItem(item))}
+        </section>
 
         {/* 右側（負債・資本） */}
-        <div className="flex-1 flex flex-col">{rightItems.map((item) => renderItem(item))}</div>
-      </div>
+        <section className="flex-1 flex flex-col" aria-label="負債・純資産">
+          {rightItems.map((item) => renderItem(item))}
+        </section>
+      </figure>
     </div>
   );
 }

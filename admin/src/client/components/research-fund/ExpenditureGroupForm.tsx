@@ -1,0 +1,221 @@
+"use client";
+import { useId, useState, useTransition } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { CaretLeft, Plus, X } from "@phosphor-icons/react/dist/ssr";
+import { toast } from "sonner";
+import { PageHeader } from "@/client/components/layout/PageHeader";
+import { DeleteExpenditureGroupButton } from "@/client/components/research-fund/DeleteExpenditureGroupButton";
+import { ExpenditureGroupEntryPicker } from "@/client/components/research-fund/ExpenditureGroupEntryPicker";
+import { Button, Card, CardContent, Input, Label, Textarea } from "@/client/components/ui";
+import type { DocumentMasking } from "@/server/contexts/research-fund/domain/models/document-masking";
+import type {
+  ExpenditureGroupRecord,
+  LinkCandidate,
+} from "@/server/contexts/research-fund/domain/models/expenditure-group";
+import { saveExpenditureGroup } from "@/server/contexts/research-fund/presentation/actions/manage-expenditure-groups";
+import type { AdminTarget } from "@/server/contexts/shared/domain/models/admin-target";
+
+interface OutcomeDraft {
+  /** 行の並べ替え・削除で入力欄が入れ替わらないようにする描画専用のキー */
+  key: string;
+  label: string;
+  url: string;
+}
+
+let outcomeKeySequence = 0;
+function emptyOutcome(): OutcomeDraft {
+  outcomeKeySequence += 1;
+  return { key: `outcome-${outcomeKeySequence}`, label: "", url: "" };
+}
+
+function initialOutcomes(group: ExpenditureGroupRecord | null): OutcomeDraft[] {
+  if (!group || group.outcomes.length === 0) return [emptyOutcome()];
+  return group.outcomes.map((outcome) => ({
+    ...emptyOutcome(),
+    label: outcome.label,
+    url: outcome.url ?? "",
+  }));
+}
+
+export function ExpenditureGroupForm({
+  group,
+  entries,
+  maskings,
+  target,
+}: {
+  group: ExpenditureGroupRecord | null;
+  entries: readonly LinkCandidate[];
+  /** 書類 ID → 公開用の版の状態 */
+  maskings: Record<string, DocumentMasking>;
+  target: Extract<AdminTarget, { kind: "research-fund" }>;
+}) {
+  const router = useRouter();
+  const titleId = useId();
+  const descriptionId = useId();
+  const [title, setTitle] = useState(group?.title ?? "");
+  const [description, setDescription] = useState(group?.description ?? "");
+  const [outcomes, setOutcomes] = useState<OutcomeDraft[]>(() => initialOutcomes(group));
+  const [entryIds, setEntryIds] = useState<readonly string[]>(group?.entryIds ?? []);
+  const [pending, startTransition] = useTransition();
+  const listPath = `/politicians/${target.politicianId}/books/${target.bookId}/expenditure-groups`;
+
+  function updateOutcome(index: number, patch: Partial<OutcomeDraft>) {
+    setOutcomes((current) =>
+      current.map((outcome, position) => (position === index ? { ...outcome, ...patch } : outcome)),
+    );
+  }
+
+  function submit() {
+    startTransition(async () => {
+      try {
+        const result = await saveExpenditureGroup(
+          target.politicianId,
+          target.bookId,
+          group?.id ?? null,
+          {
+            title,
+            description,
+            outcomes: outcomes.map(({ label, url }) => ({ label, url })),
+            entryIds: [...entryIds],
+          },
+        );
+        if (!result.success) {
+          toast.error(result.error);
+          return;
+        }
+        toast.success(group ? "支出群を保存しました" : "支出群を作成しました");
+        if (result.cacheWarning)
+          toast.warning(
+            `${group ? "保存" : "作成"}しましたが、まる見えの更新に失敗しました: ${result.cacheWarning}`,
+          );
+        router.push(listPath);
+        router.refresh();
+      } catch {
+        toast.error("通信に失敗しました。再度お試しください");
+      }
+    });
+  }
+
+  return (
+    <>
+      <div className="mb-2.5">
+        <Link
+          href={listPath}
+          className="inline-flex items-center gap-1.5 text-xs font-bold text-primary-active hover:underline"
+        >
+          <CaretLeft size={13} />
+          支出群の一覧に戻る
+        </Link>
+      </div>
+      <PageHeader label="Groups" title={group ? "支出群を編集" : "支出群を作る"} />
+      <div className="grid max-w-[1400px] gap-4">
+        <Card className="max-w-[1100px]">
+          <CardContent className="grid gap-4 p-6">
+            <div>
+              <Label htmlFor={titleId}>
+                タイトル <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id={titleId}
+                className="mt-1.5"
+                value={title}
+                disabled={pending}
+                placeholder="議会質問づくりの相棒（ボネクタ）"
+                onChange={(event) => setTitle(event.target.value)}
+              />
+            </div>
+            <div>
+              <Label htmlFor={descriptionId}>
+                使った目的と、そこから生まれたもの <span className="text-destructive">*</span>
+              </Label>
+              <Textarea
+                id={descriptionId}
+                className="mt-1.5 min-h-20"
+                rows={3}
+                value={description}
+                disabled={pending}
+                placeholder="何のために使い、何ができたかを1〜3行で"
+                onChange={(event) => setDescription(event.target.value)}
+              />
+            </div>
+            <div>
+              <Label asChild>
+                <p>成果物（動画・レポート・議事録など）</p>
+              </Label>
+              <div className="mt-1.5 grid gap-2">
+                {outcomes.map((outcome, index) => (
+                  <div key={outcome.key} className="flex items-center gap-2">
+                    <Input
+                      className="h-9 w-44 text-[12.5px]"
+                      value={outcome.label}
+                      disabled={pending}
+                      aria-label={`成果物${index + 1}のラベル`}
+                      placeholder="ラベル（例：開催報告）"
+                      onChange={(event) => updateOutcome(index, { label: event.target.value })}
+                    />
+                    <Input
+                      className="h-9 flex-1 font-latin text-[12.5px]"
+                      value={outcome.url}
+                      disabled={pending}
+                      aria-label={`成果物${index + 1}のURL`}
+                      placeholder="URL（空なら「報告は準備中」と表示）"
+                      onChange={(event) => updateOutcome(index, { url: event.target.value })}
+                    />
+                    <Button
+                      variant="destructive"
+                      size="icon-sm"
+                      disabled={pending}
+                      aria-label={`成果物${index + 1}を削除`}
+                      onClick={() =>
+                        setOutcomes((current) =>
+                          current.filter((_, position) => position !== index),
+                        )
+                      }
+                    >
+                      <X size={12} />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+              <Button
+                variant="outline"
+                size="xs"
+                className="mt-2"
+                disabled={pending}
+                onClick={() => setOutcomes((current) => [...current, emptyOutcome()])}
+              >
+                <Plus size={12} />
+                成果物を追加
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+        <ExpenditureGroupEntryPicker
+          entries={entries}
+          groupId={group?.id ?? null}
+          selectedIds={entryIds}
+          onSelectedIdsChange={setEntryIds}
+          maskings={maskings}
+          target={target}
+          pending={pending}
+        />
+        {/* 紐づけの一覧が長くても保存できるよう、画面の下に留めておく */}
+        <div className="sticky bottom-0 z-10 flex gap-2.5 border-t border-border-soft bg-background py-3">
+          <Button
+            disabled={pending || title.trim() === "" || description.trim() === ""}
+            onClick={submit}
+          >
+            {group ? "保存する" : "作成する"}
+          </Button>
+          <Button asChild variant="outline">
+            <Link href={listPath}>キャンセル</Link>
+          </Button>
+          {group && (
+            <DeleteExpenditureGroupButton groupId={group.id} title={group.title} target={target} />
+          )}
+        </div>
+      </div>
+    </>
+  );
+}

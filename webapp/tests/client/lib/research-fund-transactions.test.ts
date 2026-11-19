@@ -1,0 +1,407 @@
+import {
+  filterResearchFundExpenses,
+  filterResearchFundGroupRows,
+  formatResearchFundDate,
+  formatResearchFundGroupNumber,
+  paginateResearchFundExpenses,
+  parseResearchFundTransactionsQuery,
+  researchFundCategoryOptions,
+  researchFundPagerItems,
+  researchFundTransactionsHref,
+  researchFundTransactionsSummary,
+  resolveResearchFundCategories,
+  sortResearchFundExpenses,
+  sumResearchFundTransactions,
+} from "@/client/lib/research-fund-transactions";
+import type { ResearchFundExpenseView } from "@/server/contexts/research-fund/domain/models/research-fund-page";
+
+function view(overrides: Partial<ResearchFundExpenseView> = {}): ResearchFundExpenseView {
+  return {
+    kind: "expense",
+    id: "1",
+    entryId: "1",
+    date: "2026-04-23",
+    month: "2026-04",
+    description: "タクシー代",
+    amount: 1200,
+    accountKey: "transportation",
+    detailed: { label: "交通費", color: "#0369A1" },
+    accountLegalLabel: "⑨ 滞在費",
+    legal: { label: "⑨ 滞在費", color: "#0369A1" },
+    note: null,
+    splitGroup: null,
+    groupId: null,
+    hasReceipt: false,
+    receiptReady: false,
+    receiptKind: null,
+    ...overrides,
+  };
+}
+
+const ids = (rows: ResearchFundExpenseView[]) => rows.map((row) => row.id);
+
+describe("formatResearchFundDate", () => {
+  it("月日の先頭の0を落として「.」でつなぐ", () => {
+    expect(formatResearchFundDate("2026-05-08")).toBe("2026.5.8");
+    expect(formatResearchFundDate("2026-10-20")).toBe("2026.10.20");
+  });
+});
+
+describe("sortResearchFundExpenses", () => {
+  // 入力は buildExpenseViews の出力どおり、新しい順で同一注文の行（b1, b2）が隣り合う
+  const rows = [
+    view({ id: "a", date: "2026-05-10", amount: 500 }),
+    view({ id: "b1", date: "2026-05-01", amount: 300, splitGroup: "order" }),
+    view({ id: "b2", date: "2026-05-01", amount: 300, splitGroup: "order" }),
+    view({ id: "c", date: "2026-04-20", amount: 1000 }),
+  ];
+
+  it("新しい順は入力の並びを保つ", () => {
+    expect(ids(sortResearchFundExpenses(rows, "new"))).toEqual(["a", "b1", "b2", "c"]);
+  });
+
+  it("古い順でも同一注文の行は隣り合ったまま", () => {
+    expect(ids(sortResearchFundExpenses(rows, "old"))).toEqual(["c", "b1", "b2", "a"]);
+  });
+
+  it("金額の降順・昇順に並べ、同額は元の並びを保つ", () => {
+    expect(ids(sortResearchFundExpenses(rows, "amountDesc"))).toEqual(["c", "a", "b1", "b2"]);
+    expect(ids(sortResearchFundExpenses(rows, "amountAsc"))).toEqual(["b1", "b2", "a", "c"]);
+  });
+
+  it("入力の配列を書き換えない", () => {
+    sortResearchFundExpenses(rows, "old");
+    expect(ids(rows)).toEqual(["a", "b1", "b2", "c"]);
+  });
+});
+
+describe("sortResearchFundExpenses（入出金の混在）", () => {
+  it("金額順は入金・出金を区別せず額の大きさで並べる", () => {
+    const rows = [
+      view({ id: "1", amount: 1200 }),
+      view({ id: "2", kind: "grant", amount: 1_000_000 }),
+      view({ id: "3", amount: 99_000 }),
+    ];
+
+    expect(ids(sortResearchFundExpenses(rows, "amountDesc"))).toEqual(["2", "3", "1"]);
+    expect(ids(sortResearchFundExpenses(rows, "amountAsc"))).toEqual(["1", "3", "2"]);
+  });
+
+  it("支出が多い順・収入が多い順は、支給（入金）をプラス・支出をマイナスとして比べる", () => {
+    const rows = [
+      view({ id: "small", amount: 1200 }),
+      view({ id: "grant", kind: "grant", amount: 1_000_000 }),
+      view({ id: "large", amount: 99_000 }),
+    ];
+
+    expect(ids(sortResearchFundExpenses(rows, "expDesc"))).toEqual(["large", "small", "grant"]);
+    expect(ids(sortResearchFundExpenses(rows, "incDesc"))).toEqual(["grant", "small", "large"]);
+  });
+});
+
+describe("filterResearchFundExpenses", () => {
+  const rows = [
+    view({ id: "1", accountKey: "transportation" }),
+    view({ id: "2", accountKey: "newspapers-books" }),
+    view({ id: "3", accountKey: "meetings" }),
+  ];
+
+  it("何も選んでいなければ全件を返す", () => {
+    expect(ids(filterResearchFundExpenses(rows, []))).toEqual(["1", "2", "3"]);
+  });
+
+  it("選んだ科目のキーの行だけを返す（複数選択）", () => {
+    expect(ids(filterResearchFundExpenses(rows, ["transportation", "meetings"]))).toEqual([
+      "1",
+      "3",
+    ]);
+  });
+
+  it("表示名ではなくキーで照合する（改名されても URL が壊れない）", () => {
+    const renamed = [view({ id: "1", accountKey: "lodging", detailed: { label: "宿舎費", color: "#000" } })];
+    expect(ids(filterResearchFundExpenses(renamed, ["lodging"]))).toEqual(["1"]);
+    expect(ids(filterResearchFundExpenses(renamed, ["宿舎費"]))).toEqual([]);
+  });
+});
+
+describe("researchFundCategoryOptions", () => {
+  it("出てくる詳細の区分を重複なく、法律上の区分の順（その他は最後）に並べる", () => {
+    const options = researchFundCategoryOptions([
+      view({
+        accountKey: "other",
+        detailed: { label: "その他", color: "#000" },
+        accountLegalLabel: "その他",
+        legal: { label: "その他", color: "#000" },
+      }),
+      view({
+        accountKey: "transportation",
+        detailed: { label: "交通費", color: "#000" },
+        accountLegalLabel: "⑨ 滞在費",
+        legal: { label: "⑨ 滞在費", color: "#000" },
+      }),
+      view({
+        accountKey: "meetings",
+        detailed: { label: "会議費", color: "#000" },
+        accountLegalLabel: "⑦ 調査研究費",
+        legal: { label: "⑦ 調査研究費", color: "#000" },
+      }),
+      view({
+        accountKey: "transportation",
+        detailed: { label: "交通費", color: "#000" },
+        accountLegalLabel: "⑨ 滞在費",
+        legal: { label: "⑨ 滞在費", color: "#000" },
+      }),
+      view({
+        accountKey: "stationery-supplies",
+        detailed: { label: "文房具・備品", color: "#000" },
+        accountLegalLabel: "③ 備品・消耗品費",
+        legal: { label: "③ 備品・消耗品費", color: "#000" },
+      }),
+    ]);
+
+    expect(options.map((option) => option.category.label)).toEqual([
+      "文房具・備品",
+      "会議費",
+      "交通費",
+      "その他",
+    ]);
+    expect(options.map((option) => option.key)).toEqual([
+      "stationery-supplies",
+      "meetings",
+      "transportation",
+      "other",
+    ]);
+  });
+
+  it("支給（入金）の区分は支出の区分より前に出す", () => {
+    const options = researchFundCategoryOptions([
+      view({
+        accountKey: "transportation",
+        detailed: { label: "交通費", color: "#000" },
+        accountLegalLabel: "⑨ 滞在費",
+        legal: { label: "⑨ 滞在費", color: "#000" },
+      }),
+      view({
+        kind: "grant",
+        accountKey: "grant-income",
+        detailed: { label: "支給（入金）", color: "#000" },
+        accountLegalLabel: "支給（入金）",
+        legal: { label: "支給（入金）", color: "#000" },
+      }),
+    ]);
+
+    expect(options.map((option) => option.category.label)).toEqual(["支給（入金）", "交通費"]);
+  });
+});
+
+describe("parseResearchFundTransactionsQuery", () => {
+  it("パラメーターが無ければ新しい順・絞り込みなし・1ページ目", () => {
+    expect(parseResearchFundTransactionsQuery({})).toEqual({
+      categories: [],
+      sort: "new",
+      page: 1,
+    });
+  });
+
+  it("カンマ区切りのカテゴリー・並び順・ページを読む", () => {
+    expect(
+      parseResearchFundTransactionsQuery({
+        categories: "transportation,meetings",
+        sort: "amount",
+        order: "asc",
+        page: "3",
+      }),
+    ).toEqual({ categories: ["transportation", "meetings"], sort: "amountAsc", page: 3 });
+  });
+
+  it("sort / order の組み合わせを6通りの並びに対応させる（order が無ければ降順）", () => {
+    const sortOf = (params: Record<string, string>) =>
+      parseResearchFundTransactionsQuery(params).sort;
+    expect(sortOf({ sort: "date", order: "desc" })).toBe("new");
+    expect(sortOf({ sort: "date", order: "asc" })).toBe("old");
+    expect(sortOf({ sort: "amount", order: "desc" })).toBe("amountDesc");
+    expect(sortOf({ sort: "amount" })).toBe("amountDesc");
+    expect(sortOf({ order: "asc" })).toBe("old");
+    expect(sortOf({ sort: "expense", order: "desc" })).toBe("expDesc");
+    expect(sortOf({ sort: "income" })).toBe("incDesc");
+  });
+
+  it("不正な並び順・ページは既定に倒す", () => {
+    expect(parseResearchFundTransactionsQuery({ sort: "name", order: "up" }).sort).toBe("new");
+    expect(parseResearchFundTransactionsQuery({ page: "abc" }).page).toBe(1);
+    expect(parseResearchFundTransactionsQuery({ page: "0" }).page).toBe(1);
+    expect(parseResearchFundTransactionsQuery({ page: "-2" }).page).toBe(1);
+  });
+
+  it("同じパラメーターが複数あれば先頭を使い、空や重複のカテゴリーは落とす", () => {
+    expect(
+      parseResearchFundTransactionsQuery({
+        categories: ["meetings,,meetings", "transportation"],
+        page: ["2", "5"],
+      }),
+    ).toEqual({ categories: ["meetings"], sort: "new", page: 2 });
+  });
+});
+
+describe("resolveResearchFundCategories", () => {
+  const options = researchFundCategoryOptions([
+    view({ accountKey: "meetings", legal: { label: "⑦ 調査研究費", color: "#000" } }),
+    view({ accountKey: "transportation", legal: { label: "⑨ 滞在費", color: "#000" } }),
+  ]);
+
+  it("選択肢に無いカテゴリーを落とし、選択肢の並びに揃える", () => {
+    expect(resolveResearchFundCategories(["transportation", "nope", "meetings"], options)).toEqual(
+      ["meetings", "transportation"],
+    );
+    expect(resolveResearchFundCategories(["nope"], options)).toEqual([]);
+  });
+});
+
+describe("researchFundTransactionsHref", () => {
+  it("既定の状態ならパラメーターを付けない", () => {
+    expect(
+      researchFundTransactionsHref("taro", 2026, { categories: [], sort: "new", page: 1 }),
+    ).toBe("/p/taro/2026/transactions");
+  });
+
+  it("政治団体の全件ページと同じパラメーター名で状態を載せる", () => {
+    expect(
+      researchFundTransactionsHref("taro", 2026, {
+        categories: ["transportation", "meetings"],
+        sort: "amountAsc",
+        page: 2,
+      }),
+    ).toBe("/p/taro/2026/transactions?categories=transportation,meetings&sort=amount&order=asc&page=2");
+  });
+
+  it("プレビュー URL の区間なら、プレビュー用の文字列を保つ", () => {
+    expect(
+      researchFundTransactionsHref("taro~0123456789abcdef0123456789abcdef", 2026, { categories: [], sort: "new", page: 2 }),
+    ).toBe("/p/taro~0123456789abcdef0123456789abcdef/2026/transactions?page=2");
+  });
+
+  it("組み立てた URL を読み戻すと同じ状態になる", () => {
+    const query = { categories: ["meetings"], sort: "old" as const, page: 4 };
+    const href = researchFundTransactionsHref("taro", 2026, query);
+    const params = Object.fromEntries(new URL(href, "https://example.com").searchParams);
+    expect(parseResearchFundTransactionsQuery(params)).toEqual(query);
+  });
+});
+
+describe("paginateResearchFundExpenses", () => {
+  const rows = Array.from({ length: 120 }, (_, i) => view({ id: String(i + 1) }));
+
+  it("50件ずつに区切る", () => {
+    const page = paginateResearchFundExpenses(rows, 1);
+    expect(page.rows).toHaveLength(50);
+    expect(page).toMatchObject({ page: 1, totalPages: 3, from: 1, to: 50 });
+  });
+
+  it("最終ページは残りの件数だけを返す", () => {
+    const page = paginateResearchFundExpenses(rows, 3);
+    expect(ids(page.rows)).toEqual(ids(rows.slice(100)));
+    expect(page).toMatchObject({ page: 3, from: 101, to: 120 });
+  });
+
+  it("範囲外のページは先頭・末尾に丸める", () => {
+    expect(paginateResearchFundExpenses(rows, 0).page).toBe(1);
+    expect(paginateResearchFundExpenses(rows, 9).page).toBe(3);
+  });
+
+  it("0件なら1ページで 0〜0 とする", () => {
+    expect(paginateResearchFundExpenses([], 1)).toEqual({
+      rows: [],
+      page: 1,
+      totalPages: 1,
+      from: 0,
+      to: 0,
+    });
+  });
+});
+
+describe("researchFundPagerItems", () => {
+  it("先頭・末尾・現在±1 以外を「…」で省略する", () => {
+    expect(researchFundPagerItems(5, 10)).toEqual([1, "…", 4, 5, 6, "…", 10]);
+  });
+
+  it("端のページでは片側だけ省略する", () => {
+    expect(researchFundPagerItems(1, 6)).toEqual([1, 2, "…", 6]);
+    expect(researchFundPagerItems(6, 6)).toEqual([1, "…", 5, 6]);
+  });
+
+  it("1つだけ飛ぶ場合も「…」にする", () => {
+    expect(researchFundPagerItems(4, 6)).toEqual([1, "…", 3, 4, 5, 6]);
+  });
+
+  it("ページが少なければ全部並べる", () => {
+    expect(researchFundPagerItems(1, 1)).toEqual([1]);
+    expect(researchFundPagerItems(2, 3)).toEqual([1, 2, 3]);
+  });
+});
+
+describe("sumResearchFundTransactions", () => {
+  it("入金（支給）と出金（支出）の合計を別々に出す", () => {
+    expect(
+      sumResearchFundTransactions([
+        view({ kind: "grant", amount: 1_000_000 }),
+        view({ amount: 1200 }),
+        view({ amount: 800 }),
+        view({ kind: "grant", amount: 1_000_000 }),
+      ]),
+    ).toEqual({ income: 2_000_000, expense: 2000 });
+  });
+});
+
+describe("researchFundTransactionsSummary", () => {
+  it("表示範囲・件数と、入金・出金それぞれの合計を出す", () => {
+    expect(
+      researchFundTransactionsSummary({
+        from: 1,
+        to: 50,
+        total: 303,
+        income: 7_000_000,
+        expense: 2212581,
+        filtered: false,
+      }),
+    ).toBe("1〜50 / 303件を表示中　入金 7,000,000円・出金 2,212,581円");
+  });
+
+  it("絞り込み中はその旨を添える", () => {
+    expect(
+      researchFundTransactionsSummary({
+        from: 1,
+        to: 3,
+        total: 3,
+        income: 0,
+        expense: 900,
+        filtered: true,
+      }),
+    ).toBe("1〜3 / 3件を表示中　入金 0円・出金 900円（絞り込み中）");
+  });
+});
+
+describe("filterResearchFundGroupRows", () => {
+  const expenses = [
+    view({ id: "a" }),
+    view({ id: "b", groupId: "7" }),
+    view({ id: "c" }),
+    view({ id: "d", groupId: "7" }),
+    view({ id: "e", groupId: "8" }),
+  ];
+
+  it("用途に紐づく行だけを、入力の並びのまま全件返す", () => {
+    expect(filterResearchFundGroupRows(expenses, "7").map((row) => row.id)).toEqual(["b", "d"]);
+    expect(filterResearchFundGroupRows(expenses, "8").map((row) => row.id)).toEqual(["e"]);
+  });
+
+  it("紐づく行が無ければ空にする", () => {
+    expect(filterResearchFundGroupRows(expenses, "9")).toEqual([]);
+  });
+});
+
+describe("formatResearchFundGroupNumber", () => {
+  it("2桁にゼロ埋めする", () => {
+    expect(formatResearchFundGroupNumber(3)).toBe("03");
+    expect(formatResearchFundGroupNumber(12)).toBe("12");
+  });
+});

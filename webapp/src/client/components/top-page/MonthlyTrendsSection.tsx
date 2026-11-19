@@ -1,8 +1,7 @@
 import "server-only";
-import Image from "next/image";
-import CardHeader from "@/client/components/layout/CardHeader";
-import MainColumnCard from "@/client/components/layout/MainColumnCard";
-import MonthlyChart from "./features/charts/MonthlyChart";
+import SectionCard from "@/client/components/layout/SectionCard";
+import MonthlyChart from "@/client/components/top-page/features/charts/MonthlyChart";
+import MonthlyChartScroll from "@/client/components/top-page/features/charts/MonthlyChartScroll";
 
 interface MonthlyData {
   yearMonth: string;
@@ -10,36 +9,48 @@ interface MonthlyData {
   expense: number;
 }
 
+const LEGEND = [
+  { label: "収入", color: "#2AA693", className: "h-3 rounded-[4px]" },
+  { label: "支出", color: "#DC2626", className: "h-3 rounded-[4px]" },
+  { label: "収支", color: "#4B5563", className: "h-0.5" },
+];
+
 interface MonthlyTrendsSectionProps {
   monthlyData?: MonthlyData[];
   updatedAt: string;
-  organizationName?: string;
+  /** 見出しの上の小さな行（例: 「チームみらい・2026年」） */
+  eyebrow: string;
 }
 
 export default function MonthlyTrendsSection({
   monthlyData,
   updatedAt,
-  organizationName,
+  eyebrow,
 }: MonthlyTrendsSectionProps) {
   return (
-    <MainColumnCard id="monthly-trends">
-      <CardHeader
-        icon={<Image src="/icons/icon-barchart.svg" alt="Bar chart icon" width={30} height={30} />}
-        organizationName={organizationName || "未登録の政治団体"}
-        title="月ごとの収支の推移"
-        updatedAt={updatedAt}
-        subtitle="今年の月ごとの収入と支出"
-      />
-
-      {/* 月次チャート表示 - モバイルのみ右端まで拡張 */}
-      <div className="-mr-[18px] sm:mr-0">
+    <SectionCard
+      id="monthly-trends"
+      iconSrc="/icons/icon-barchart.svg"
+      iconLabel="Bar chart icon"
+      eyebrow={eyebrow}
+      title="月ごとの収支推移"
+      updatedAt={updatedAt}
+    >
+      <MonthlyChartScroll>
         <MonthlyChart data={monthlyData || []} />
-      </div>
+      </MonthlyChartScroll>
 
-      {/* 更新日時 */}
-      <div className="mt-4 text-right md:hidden">
-        <span className="text-xs font-normal text-[#9CA3AF] leading-[1.33]">{updatedAt}</span>
+      <div className="-mt-4 flex flex-wrap justify-end gap-3 text-sm font-bold text-[#4B5563]">
+        {LEGEND.map((item) => (
+          <span key={item.label} className="flex items-center gap-1.5">
+            <span
+              className={`inline-block w-3 ${item.className}`}
+              style={{ background: item.color }}
+            />
+            {item.label}
+          </span>
+        ))}
       </div>
-    </MainColumnCard>
+    </SectionCard>
   );
 }

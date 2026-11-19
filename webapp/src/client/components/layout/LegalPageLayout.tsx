@@ -7,7 +7,9 @@ interface SectionTitleProps {
 
 function SectionTitle({ children }: SectionTitleProps) {
   return (
-    <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-6 font-japanese">{children}</h2>
+    <h2 className="text-xl min-[641px]:text-2xl font-bold text-gray-800 mb-6 font-japanese">
+      {children}
+    </h2>
   );
 }
 
@@ -17,7 +19,9 @@ interface SubSectionTitleProps {
 
 export function SubSectionTitle({ children }: SubSectionTitleProps) {
   return (
-    <h3 className="text-base sm:text-lg font-bold text-gray-800 mb-3 font-japanese">{children}</h3>
+    <h3 className="text-base min-[641px]:text-lg font-bold text-gray-800 mb-3 font-japanese">
+      {children}
+    </h3>
   );
 }
 
@@ -29,7 +33,7 @@ interface ParagraphProps {
 export function Paragraph({ children, className = "" }: ParagraphProps) {
   return (
     <p
-      className={`text-[11px] sm:text-[15px] leading-[1.82] sm:leading-[1.87] tracking-[0.01em] text-gray-500 sm:text-gray-800 font-medium sm:font-normal font-japanese ${className}`}
+      className={`text-[11px] min-[641px]:text-[15px] leading-[1.82] min-[641px]:leading-[1.87] tracking-[0.01em] text-gray-500 min-[641px]:text-gray-800 font-medium min-[641px]:font-normal font-japanese ${className}`}
     >
       {children}
     </p>
@@ -42,7 +46,7 @@ interface ListProps {
 
 export function List({ items }: ListProps) {
   return (
-    <ul className="list-disc list-inside text-[11px] sm:text-[15px] leading-[1.82] sm:leading-[1.87] tracking-[0.01em] text-gray-500 sm:text-gray-800 font-medium sm:font-normal font-japanese space-y-1">
+    <ul className="list-disc list-inside text-[11px] min-[641px]:text-[15px] leading-[1.82] min-[641px]:leading-[1.87] tracking-[0.01em] text-gray-500 min-[641px]:text-gray-800 font-medium min-[641px]:font-normal font-japanese space-y-1">
       {items.map((item) => (
         <li key={item}>{item}</li>
       ))}

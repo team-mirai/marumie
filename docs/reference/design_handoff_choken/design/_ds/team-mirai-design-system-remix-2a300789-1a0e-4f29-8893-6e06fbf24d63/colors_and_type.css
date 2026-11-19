@@ -1,0 +1,264 @@
+/* ==========================================================================
+   Team Mirai — Design Tokens
+   ========================================================================== */
+
+/* ---------- Fonts ----------
+   Hiragino Kaku Gothic (used in production) is an Apple system font; we ship
+   Noto Sans as a near-equivalent fallback for non-Apple environments. Use the
+   stack — Hiragino will be picked up automatically on macOS/iOS.
+*/
+
+@font-face {
+  font-family: "Noto Sans";
+  src: url("fonts/NotoSans-Light.ttf") format("truetype");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Noto Sans";
+  src: url("fonts/NotoSans-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Noto Sans";
+  src: url("fonts/NotoSans-Medium.ttf") format("truetype");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Noto Sans";
+  src: url("fonts/NotoSans-SemiBold.ttf") format("truetype");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Noto Sans";
+  src: url("fonts/NotoSans-Bold.ttf") format("truetype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Noto Sans";
+  src: url("fonts/NotoSans-ExtraBold.ttf") format("truetype");
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Noto Sans";
+  src: url("fonts/NotoSans-Black.ttf") format("truetype");
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Poppins";
+  src: url("fonts/Poppins-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Poppins";
+  src: url("fonts/Poppins-Medium.ttf") format("truetype");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Poppins";
+  src: url("fonts/Poppins-SemiBold.ttf") format("truetype");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Poppins";
+  src: url("fonts/Poppins-Bold.ttf") format("truetype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Poppins";
+  src: url("fonts/Poppins-Black.ttf") format("truetype");
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ---------- Tokens ---------- */
+:root {
+  /* Primary teal — "Mirai Teal". The single brand colour. */
+  --tm-teal:        #30BCA7;   /* rgb(48,188,167)  — primary fill */
+  --tm-teal-hover:  #089781;   /* rgb(8,151,129)   — hover / strong text on white */
+  --tm-teal-deep:   #0F8472;   /* rgb(15,132,114)  — pressed / dense text */
+  --tm-teal-soft:   #64D8C6;   /* rgb(100,216,198) — accent / illustrations */
+  --tm-teal-200:    #BCECD3;   /* rgb(188,236,211) — subdued borders / dividers */
+  --tm-teal-100:    #E2F6F3;   /* rgb(226,246,243) — section backgrounds (most common) */
+  --tm-teal-50:     #EEF6E2;   /* rgb(238,246,226) — alt mint-leaning surface */
+
+  /* Highlight accents */
+  --tm-yellow:      #F7F741;   /* rgb(247,247,65) — highlight pill ("手ぶらでもOK") */
+  --tm-yellow-pure: #FFFF00;   /* type marker behind characters */
+  --tm-red:         #E63946;   /* day-of-week badge (日) and urgent badges */
+
+  /* Neutrals */
+  --tm-black:       #000000;   /* primary text + borders. Yes, true black. */
+  --tm-ink:         #1F2937;   /* deep-ink for body where pure black is too harsh */
+  --tm-ink-2:       #1E2939;   /* alt ink (figma value) */
+  --tm-ink-3:       #101828;   /* near-black for large display copy */
+  --tm-gray-700:    #333333;
+  --tm-gray-600:    #4C4C4C;
+  --tm-gray-500:    #666666;   /* secondary copy */
+  --tm-gray-400:    #939393;   /* tertiary, dates */
+  --tm-gray-300:    #B1B1B1;   /* placeholder text, inactive icons */
+  --tm-gray-250:    #CCCCCC;   /* hairlines, disabled fills */
+  --tm-gray-200:    #D9D9D9;
+  --tm-gray-150:    #E5E5E5;   /* card borders */
+  --tm-gray-100:    #F0F0F0;   /* header border */
+  --tm-gray-50:     #F8F8F8;   /* surface tint, chips */
+  --tm-white:       #FFFFFF;
+
+  /* Surface roles */
+  --tm-bg:          var(--tm-white);
+  --tm-bg-alt:      var(--tm-teal-100);    /* the signature mint section bg */
+  --tm-bg-muted:    var(--tm-gray-50);
+  --tm-fg:          var(--tm-black);
+  --tm-fg-muted:    var(--tm-gray-500);
+  --tm-fg-faint:    var(--tm-gray-400);
+  --tm-fg-on-teal:  var(--tm-white);
+  --tm-border:      var(--tm-black);       /* 1px solid black is the default */
+  --tm-border-soft: var(--tm-gray-150);
+
+  /* Type families */
+  --tm-font-jp: "Hiragino Kaku Gothic ProN", "Hiragino Kaku Gothic Std",
+                "Noto Sans", "Noto Sans JP", -apple-system, BlinkMacSystemFont,
+                "Segoe UI", system-ui, sans-serif;
+  --tm-font-jp-display: "Hiragino Kaku Gothic Std", "Hiragino Kaku Gothic ProN",
+                        "Noto Sans", "Noto Sans JP", system-ui, sans-serif;
+  --tm-font-latin: "Poppins", "Montserrat", "Lexend Deca", "Noto Sans",
+                   system-ui, sans-serif;   /* dates, numbers, ENGLISH section labels */
+  --tm-font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+
+  /* Scale — type. Production uses many granular sizes; these are the
+     canonical six-step ramp that covers 99% of work. */
+  --tm-size-display:  clamp(36px, 6vw, 64px);  /* hero "未来のために。" */
+  --tm-size-h1:       clamp(28px, 3.6vw, 42px);
+  --tm-size-h2:       clamp(22px, 2.4vw, 28px);
+  --tm-size-h3:       18px;
+  --tm-size-body:     15px;                    /* dominant body in figma */
+  --tm-size-body-sm:  13px;
+  --tm-size-caption:  11px;
+  --tm-size-label-en: 15px;                    /* "Facts", "Vision" English labels */
+
+  /* Letter-spacing — production uses generous tracking on Japanese display */
+  --tm-track-display: 0.06em;
+  --tm-track-heading: 0.04em;
+  --tm-track-body:    0.04em;
+  --tm-track-label:   0.10em;                  /* uppercase English labels */
+
+  /* Line height */
+  --tm-lh-tight:   1.2;   /* @kind font */
+  --tm-lh-display: 1.4;   /* @kind font */
+  --tm-lh-body:    1.8;   /* @kind font */
+  --tm-lh-loose:   2.0;   /* @kind font */
+
+  /* Weights */
+  --tm-w-light:     300;  /* @kind font */
+  --tm-w-regular:   400;  /* @kind font */
+  --tm-w-medium:    500;  /* @kind font */
+  --tm-w-semi:      600;  /* @kind font */
+  --tm-w-bold:      700;  /* @kind font */
+  --tm-w-xbold:     800;  /* @kind font */
+  --tm-w-black:     900;  /* @kind font */
+
+  /* Radius — pill is the signature; cards have small radius or none */
+  --tm-radius-pill:  9999px;
+  --tm-radius-lg:    24px;
+  --tm-radius-md:    12px;
+  --tm-radius-sm:    8px;
+  --tm-radius-xs:    4px;
+
+  /* Spacing — 4px base */
+  --tm-space-1:  4px;
+  --tm-space-2:  8px;
+  --tm-space-3:  12px;
+  --tm-space-4:  16px;
+  --tm-space-5:  20px;
+  --tm-space-6:  24px;
+  --tm-space-8:  32px;
+  --tm-space-10: 40px;
+  --tm-space-12: 48px;
+  --tm-space-16: 64px;
+
+  /* Shadow — used very sparingly. The signature is offset stack, not blur. */
+  --tm-shadow-card:    0 8px 24px rgba(0,0,0,0.08);
+  --tm-shadow-elev:    0 12px 32px rgba(0,0,0,0.12);
+
+  /* Stroke — borders are usually 1px solid black */
+  --tm-stroke-hair:   1px;
+  --tm-stroke-thick:  1.5px;
+}
+
+/* ---------- Semantic / element defaults ----------
+   Apply to <body> or a wrapper to inherit Team Mirai defaults.
+*/
+.tm-root,
+.tm-typography {
+  font-family: var(--tm-font-jp);
+  color: var(--tm-fg);
+  background: var(--tm-bg);
+  font-size: var(--tm-size-body);
+  line-height: var(--tm-lh-body);
+  letter-spacing: var(--tm-track-body);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+.tm-typography :is(h1,h2,h3,h4) { font-family: var(--tm-font-jp-display); }
+.tm-typography h1 { font-size: var(--tm-size-h1); font-weight: var(--tm-w-bold); letter-spacing: var(--tm-track-display); line-height: var(--tm-lh-display); margin: 0; }
+.tm-typography h2 { font-size: var(--tm-size-h2); font-weight: var(--tm-w-bold); letter-spacing: var(--tm-track-heading); line-height: 1.4; margin: 0; }
+.tm-typography h3 { font-size: var(--tm-size-h3); font-weight: var(--tm-w-bold); line-height: 1.6; margin: 0; }
+.tm-typography p  { margin: 0 0 1em; }
+.tm-typography small { font-size: var(--tm-size-body-sm); color: var(--tm-fg-muted); }
+
+/* English section label, e.g. "Facts", "Vision", "JOIN US!" */
+.tm-label-en {
+  font-family: var(--tm-font-latin);
+  font-weight: var(--tm-w-semi);
+  font-size: var(--tm-size-label-en);
+  letter-spacing: var(--tm-track-label);
+  color: var(--tm-teal-hover);
+  text-transform: none; /* labels appear in source case, not upper */
+}
+
+/* Big numeric (used in Facts: "3,813,750 票") */
+.tm-stat {
+  font-family: var(--tm-font-latin);
+  font-weight: var(--tm-w-bold);
+  font-size: 40px;
+  letter-spacing: 0.04em;
+  line-height: 1.2;
+  color: var(--tm-fg);
+}
+.tm-stat-unit { font-size: 0.5em; font-weight: var(--tm-w-bold); margin-left: 4px; }
+
+/* Mint underline below display copy — the official treatment is a teal
+   border-bottom that sits with a small gap below the glyphs, NOT a marker
+   swipe behind the characters.
+   <span class="tm-mint-underline">未来のために。</span>
+*/
+.tm-mint-underline {
+  text-decoration: underline;
+  text-decoration-color: var(--tm-teal-soft);
+  text-decoration-thickness: 3px;
+  text-underline-offset: -2px;
+}

@@ -8,12 +8,12 @@ import type {
 export class PrismaUserRepository implements UserRepository {
   constructor(private prisma: PrismaClient) {}
 
-  async create(data: { authId: string; email: string; role?: UserRole }): Promise<User> {
+  async create(data: { authId: string; email: string; roles?: UserRole[] }): Promise<User> {
     return await this.prisma.user.create({
       data: {
         authId: data.authId,
         email: data.email,
-        role: data.role ?? "user",
+        roles: data.roles ?? [],
       },
     });
   }
@@ -31,8 +31,8 @@ export class PrismaUserRepository implements UserRepository {
   }
 
   async findByEmail(email: string): Promise<User | null> {
-    return await this.prisma.user.findUnique({
-      where: { email },
+    return await this.prisma.user.findFirst({
+      where: { email: { equals: email, mode: "insensitive" } },
     });
   }
 
@@ -42,10 +42,10 @@ export class PrismaUserRepository implements UserRepository {
     });
   }
 
-  async updateRole(authId: string, role: UserRole): Promise<User> {
+  async updateRoles(authId: string, roles: UserRole[]): Promise<User> {
     return await this.prisma.user.update({
       where: { authId },
-      data: { role },
+      data: { roles },
     });
   }
 
@@ -53,5 +53,42 @@ export class PrismaUserRepository implements UserRepository {
     await this.prisma.user.delete({
       where: { authId },
     });
+  }
+
+  async findAssignedPoliticianIds(userId: string): Promise<string[]> {
+    const rows = await this.prisma.userPoliticianAssignment.findMany({
+      where: { userId },
+      orderBy: { politicianId: "asc" },
+      select: { politicianId: true },
+    });
+    return rows.map((row) => String(row.politicianId));
+  }
+
+  async findAllAssignedPoliticianIds(): Promise<Map<string, string[]>> {
+    const rows = await this.prisma.userPoliticianAssignment.findMany({
+      orderBy: [{ userId: "asc" }, { politicianId: "asc" }],
+      select: { userId: true, politicianId: true },
+    });
+    const assignments = new Map<string, string[]>();
+    for (const row of rows) {
+      assignments.set(row.userId, [
+        ...(assignments.get(row.userId) ?? []),
+        String(row.politicianId),
+      ]);
+    }
+    return assignments;
+  }
+
+  async replaceAssignedPoliticians(
+    userId: string,
+    politicianIds: readonly string[],
+  ): Promise<string[]> {
+    await this.prisma.$transaction([
+      this.prisma.userPoliticianAssignment.deleteMany({ where: { userId } }),
+      this.prisma.userPoliticianAssignment.createMany({
+        data: politicianIds.map((politicianId) => ({ userId, politicianId: BigInt(politicianId) })),
+      }),
+    ]);
+    return await this.findAssignedPoliticianIds(userId);
   }
 }

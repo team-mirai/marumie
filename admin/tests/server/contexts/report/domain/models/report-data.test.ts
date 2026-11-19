@@ -6,6 +6,7 @@ import {
   type ExpenseData as ExpenseDataType,
   type ReportData as ReportDataType,
 } from "@/server/contexts/report/domain/models/report-data";
+import { ExpenseSummaryData } from "@/server/contexts/report/domain/models/expense-summary";
 import { ValidationErrorCode } from "@/server/contexts/report/domain/types/validation";
 
 describe("ExpenseData", () => {
@@ -446,6 +447,7 @@ describe("ReportData", () => {
     it("全ての支出項目を合計して支出総額を計算する", () => {
       const data = createEmptyReportData();
       // 経常経費
+      data.expenses.personnelExpenses.totalAmount = 5000;
       data.expenses.utilityExpenses.totalAmount = 10000;
       data.expenses.suppliesExpenses.totalAmount = 20000;
       data.expenses.officeExpenses.totalAmount = 30000;
@@ -480,8 +482,31 @@ describe("ReportData", () => {
 
       const summary = ReportData.getSummary(data, 0);
 
-      // 支出総額 = 経常経費(60000) + 政治活動費(720000)
-      expect(summary.sisyutuSgk).toBe(780000);
+      // 支出総額 = 経常経費(65000) + 政治活動費(720000)
+      expect(summary.sisyutuSgk).toBe(785000);
+    });
+
+    it("人件費を支出総額に含め、シート13の経常経費小計と整合する", () => {
+      const data = createEmptyReportData();
+      data.donations.personalDonations.totalAmount = 1000000;
+      data.expenses.personnelExpenses.totalAmount = 250000; // シート14に明細は出ないが支出には含まれる
+      data.expenses.utilityExpenses.totalAmount = 135000;
+      data.expenses.suppliesExpenses.totalAmount = 270000;
+      data.expenses.officeExpenses.totalAmount = 383000;
+      data.expenses.organizationExpenses = [
+        { himoku: "", totalAmount: 100000, underThresholdAmount: 0, rows: [] },
+      ];
+
+      const summary = ReportData.getSummary(data, 0);
+      const expenseSummary = ExpenseSummaryData.fromExpenseData(data.expenses);
+
+      // 支出総額 = 経常経費(1038000) + 政治活動費(100000)
+      expect(summary.sisyutuSgk).toBe(1138000);
+      expect(summary.sisyutuSgk).toBe(expenseSummary.totalAmount);
+      expect(expenseSummary.regularExpenses.subtotal.amount).toBe(1038000);
+      expect(expenseSummary.politicalActivityExpenses.subtotal.amount).toBe(100000);
+      // 翌年繰越額 = 収入総額 - 支出総額
+      expect(summary.yokunenKksGk).toBe(1000000 - 1138000);
     });
 
     it("翌年繰越額を正しく計算する", () => {

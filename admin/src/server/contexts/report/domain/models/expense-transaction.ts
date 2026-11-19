@@ -3,6 +3,10 @@
  *
  * Transaction types for expense-related reports.
  * These types represent raw data retrieved from the database for expense transactions.
+ *
+ * 経常経費（SYUUSHI07_14）と政治活動費（SYUUSHI07_15）は、費目ごとに型・集約ロジック・
+ * バリデーションがほぼ同型になる。ここでは共通部分をファクトリに切り出し、
+ * 費目ごとの定義（型エイリアスと XML パス・費目名）を1箇所にまとめている。
  */
 
 import {
@@ -18,7 +22,7 @@ import {
 } from "@/server/contexts/report/domain/types/validation";
 
 /**
- * 経常経費（SYUUSHI07_14）のトランザクション基本型
+ * 経常経費・政治活動費のトランザクション基本型
  */
 interface BaseExpenseTransaction {
   transactionNo: string;
@@ -33,72 +37,6 @@ interface BaseExpenseTransaction {
   counterpartAddress: string; // 支払先の住所
   isGrantExpenditure: boolean; // 交付金に係る支出かどうか
 }
-
-/**
- * SYUUSHI07_14 KUBUN1: 光熱水費のトランザクション
- */
-export interface UtilityExpenseTransaction extends BaseExpenseTransaction {}
-
-/**
- * SYUUSHI07_14 KUBUN2: 備品・消耗品費のトランザクション
- */
-export interface SuppliesExpenseTransaction extends BaseExpenseTransaction {}
-
-/**
- * SYUUSHI07_14 KUBUN3: 事務所費のトランザクション
- */
-export interface OfficeExpenseTransaction extends BaseExpenseTransaction {}
-
-/**
- * SYUUSHI07_15 KUBUN1: 組織活動費のトランザクション
- */
-export interface OrganizationExpenseTransaction extends BaseExpenseTransaction {}
-
-/**
- * SYUUSHI07_15 KUBUN2: 選挙関係費のトランザクション
- */
-export interface ElectionExpenseTransaction extends BaseExpenseTransaction {}
-
-/**
- * SYUUSHI07_15 KUBUN3: 機関紙誌の発行事業費のトランザクション
- */
-export interface PublicationExpenseTransaction extends BaseExpenseTransaction {}
-
-/**
- * SYUUSHI07_15 KUBUN4: 宣伝事業費のトランザクション
- */
-export interface AdvertisingExpenseTransaction extends BaseExpenseTransaction {}
-
-/**
- * SYUUSHI07_15 KUBUN5: 政治資金パーティー開催事業費のトランザクション
- */
-export interface FundraisingPartyExpenseTransaction extends BaseExpenseTransaction {}
-
-/**
- * SYUUSHI07_15 KUBUN6: その他の事業費のトランザクション
- */
-export interface OtherBusinessExpenseTransaction extends BaseExpenseTransaction {}
-
-/**
- * SYUUSHI07_15 KUBUN7: 調査研究費のトランザクション
- */
-export interface ResearchExpenseTransaction extends BaseExpenseTransaction {}
-
-/**
- * SYUUSHI07_15 KUBUN8: 寄附・交付金のトランザクション
- */
-export interface DonationGrantExpenseTransaction extends BaseExpenseTransaction {}
-
-/**
- * SYUUSHI07_15 KUBUN9: その他の経費のトランザクション
- */
-export interface OtherPoliticalExpenseTransaction extends BaseExpenseTransaction {}
-
-/**
- * SYUUSHI07_13: 人件費のトランザクション
- * 人件費はシート14に明細を出力しないが、シート13の総括表には合計額が必要
- */
-export interface PersonnelExpenseTransaction extends BaseExpenseTransaction {}
 
 // ============================================================
 // Output Types (Domain Objects for XML)
@@ -120,125 +58,27 @@ export interface ExpenseRow {
 }
 
 /**
- * SYUUSHI07_14 KUBUN1: 光熱水費
- */
-export interface UtilityExpenseSection {
-  totalAmount: number;
-  underThresholdAmount: number; // その他の支出（5万円未満）
-  rows: ExpenseRow[];
-}
-
-/**
- * SYUUSHI07_14 KUBUN2: 備品・消耗品費
- */
-export interface SuppliesExpenseSection {
-  totalAmount: number;
-  underThresholdAmount: number; // その他の支出（5万円未満）
-  rows: ExpenseRow[];
-}
-
-/**
- * SYUUSHI07_14 KUBUN3: 事務所費
- */
-export interface OfficeExpenseSection {
-  totalAmount: number;
-  underThresholdAmount: number; // その他の支出（5万円未満）
-  rows: ExpenseRow[];
-}
-
-/**
- * SYUUSHI07_15 KUBUN1: 組織活動費の明細行
+ * SYUUSHI07_15: 政治活動費の明細行
  * 仕様書によるとHIMOKUはSHEETレベルの項目であり、ROWレベルには含まれない
  */
-export interface PoliticalActivityExpenseRow extends ExpenseRow {}
+export type PoliticalActivityExpenseRow = ExpenseRow;
 
 /**
- * SYUUSHI07_15 KUBUN1: 組織活動費
+ * SYUUSHI07_14: 経常経費のセクション（費目ごとに1つ）
  */
-export interface OrganizationExpenseSection {
+interface RegularExpenseSection {
+  totalAmount: number;
+  underThresholdAmount: number; // その他の支出（5万円未満）
+  rows: ExpenseRow[];
+}
+
+/**
+ * SYUUSHI07_15: 政治活動費のセクション（費目ごとに、さらに HIMOKU ごとに1つ）
+ */
+interface PoliticalActivityExpenseSection {
   himoku: string; // 費目（シート単位）
   totalAmount: number;
-  underThresholdAmount: number; // その他の支出
-  rows: PoliticalActivityExpenseRow[];
-}
-
-/**
- * SYUUSHI07_15 KUBUN2: 選挙関係費
- */
-export interface ElectionExpenseSection {
-  himoku: string;
-  totalAmount: number;
-  underThresholdAmount: number;
-  rows: PoliticalActivityExpenseRow[];
-}
-
-/**
- * SYUUSHI07_15 KUBUN3: 機関紙誌の発行事業費
- */
-export interface PublicationExpenseSection {
-  himoku: string;
-  totalAmount: number;
-  underThresholdAmount: number;
-  rows: PoliticalActivityExpenseRow[];
-}
-
-/**
- * SYUUSHI07_15 KUBUN4: 宣伝事業費
- */
-export interface AdvertisingExpenseSection {
-  himoku: string;
-  totalAmount: number;
-  underThresholdAmount: number;
-  rows: PoliticalActivityExpenseRow[];
-}
-
-/**
- * SYUUSHI07_15 KUBUN5: 政治資金パーティー開催事業費
- */
-export interface FundraisingPartyExpenseSection {
-  himoku: string;
-  totalAmount: number;
-  underThresholdAmount: number;
-  rows: PoliticalActivityExpenseRow[];
-}
-
-/**
- * SYUUSHI07_15 KUBUN6: その他の事業費
- */
-export interface OtherBusinessExpenseSection {
-  himoku: string;
-  totalAmount: number;
-  underThresholdAmount: number;
-  rows: PoliticalActivityExpenseRow[];
-}
-
-/**
- * SYUUSHI07_15 KUBUN7: 調査研究費
- */
-export interface ResearchExpenseSection {
-  himoku: string;
-  totalAmount: number;
-  underThresholdAmount: number;
-  rows: PoliticalActivityExpenseRow[];
-}
-
-/**
- * SYUUSHI07_15 KUBUN8: 寄附・交付金
- */
-export interface DonationGrantExpenseSection {
-  himoku: string;
-  totalAmount: number;
-  underThresholdAmount: number;
-  rows: PoliticalActivityExpenseRow[];
-}
-
-/**
- * SYUUSHI07_15 KUBUN9: その他の経費
- */
-export interface OtherPoliticalExpenseSection {
-  himoku: string;
-  totalAmount: number;
-  underThresholdAmount: number;
+  underThresholdAmount: number; // その他の支出（5万円未満）
   rows: PoliticalActivityExpenseRow[];
 }
 
@@ -251,150 +91,97 @@ export interface PersonnelExpenseSection {
 }
 
 // ============================================================
-// Domain Logic
+// Domain Logic (共通)
 // ============================================================
 
 /**
- * ExpenseTransaction に共通するドメインロジック
+ * 取引金額を解決する（丸め済み）
  */
-const ExpenseTransactionBase = {
-  /**
-   * 取引金額を解決する（丸め済み）
-   */
-  resolveAmount: (tx: BaseExpenseTransaction): number => {
-    return Math.round(resolveExpenseAmount(tx.debitAmount, tx.creditAmount));
-  },
-
-  /**
-   * 目的を取得する
-   */
-  getMokuteki: (tx: BaseExpenseTransaction): string => {
-    return sanitizeText(tx.friendlyCategory, 200);
-  },
-
-  /**
-   * 氏名を取得する
-   */
-  getNm: (tx: BaseExpenseTransaction): string => {
-    return sanitizeText(tx.counterpartName, 120);
-  },
-
-  /**
-   * 住所を取得する
-   */
-  getAdr: (tx: BaseExpenseTransaction): string => {
-    return sanitizeText(tx.counterpartAddress, 120);
-  },
-
-  /**
-   * 備考を構築する
-   */
-  getBikou: (tx: BaseExpenseTransaction): string => {
-    return buildBikou(tx.transactionNo, tx.memo, 160, 100);
-  },
-
-  /**
-   * 閾値（5万円）以上かどうかを判定
-   */
-  isAboveThreshold: (tx: BaseExpenseTransaction): boolean => {
-    return isAboveThreshold(ExpenseTransactionBase.resolveAmount(tx), FIVE_MAN_THRESHOLD);
-  },
-
-  /**
-   * 明細行に変換する
-   */
-  toRow: (tx: BaseExpenseTransaction, index: number): ExpenseRow => {
-    return {
-      ichirenNo: (index + 1).toString(),
-      mokuteki: ExpenseTransactionBase.getMokuteki(tx),
-      kingaku: ExpenseTransactionBase.resolveAmount(tx),
-      dt: tx.transactionDate,
-      nm: ExpenseTransactionBase.getNm(tx),
-      adr: ExpenseTransactionBase.getAdr(tx),
-      bikou: ExpenseTransactionBase.getBikou(tx),
-      koufukin: tx.isGrantExpenditure ? 1 : 0,
-    };
-  },
-};
+function resolveAmount(tx: BaseExpenseTransaction): number {
+  return Math.round(resolveExpenseAmount(tx.debitAmount, tx.creditAmount));
+}
 
 /**
- * UtilityExpenseTransaction に関連するドメインロジック
+ * 閾値（5万円）以上かどうかを判定
+ * 閾値以上の取引は明細行として個別に列挙し、未満の取引は合算する
  */
-export const UtilityExpenseTransaction = {
-  ...ExpenseTransactionBase,
-} as const;
+function isDetailRequired(tx: BaseExpenseTransaction): boolean {
+  return isAboveThreshold(resolveAmount(tx), FIVE_MAN_THRESHOLD);
+}
 
 /**
- * SuppliesExpenseTransaction に関連するドメインロジック
+ * 明細行に変換する
  */
-export const SuppliesExpenseTransaction = {
-  ...ExpenseTransactionBase,
-} as const;
+function toExpenseRow(tx: BaseExpenseTransaction, index: number): ExpenseRow {
+  return {
+    ichirenNo: (index + 1).toString(),
+    mokuteki: sanitizeText(tx.friendlyCategory, 200),
+    kingaku: resolveAmount(tx),
+    dt: tx.transactionDate,
+    nm: sanitizeText(tx.counterpartName, 120),
+    adr: sanitizeText(tx.counterpartAddress, 120),
+    bikou: buildBikou(tx.transactionNo, tx.memo, 160, 100),
+    koufukin: tx.isGrantExpenditure ? 1 : 0,
+  };
+}
 
 /**
- * OfficeExpenseTransaction に関連するドメインロジック
+ * セクションの集約ロジック（共通）
+ *
+ * Business rules:
+ * - Transactions >= 50,000 yen are listed individually
+ * - Transactions < 50,000 yen are aggregated into underThresholdAmount
  */
-export const OfficeExpenseTransaction = {
-  ...ExpenseTransactionBase,
-} as const;
+function aggregateExpenseSection(transactions: BaseExpenseTransaction[]): RegularExpenseSection {
+  const totalAmount = transactions.reduce((sum, tx) => sum + resolveAmount(tx), 0);
 
-/**
- * OrganizationExpenseTransaction に関連するドメインロジック
- */
-export const OrganizationExpenseTransaction = {
-  ...ExpenseTransactionBase,
-
-  /**
-   * 明細行に変換する
-   * 注: HIMOKUはSHEETレベルの項目であり、ROWには含めない（仕様書準拠）
-   */
-  toRow: (tx: OrganizationExpenseTransaction, index: number): PoliticalActivityExpenseRow => {
-    return {
-      ichirenNo: (index + 1).toString(),
-      mokuteki: ExpenseTransactionBase.getMokuteki(tx),
-      kingaku: ExpenseTransactionBase.resolveAmount(tx),
-      dt: tx.transactionDate,
-      nm: ExpenseTransactionBase.getNm(tx),
-      adr: ExpenseTransactionBase.getAdr(tx),
-      bikou: ExpenseTransactionBase.getBikou(tx),
-    };
-  },
-} as const;
-
-// ============================================================
-// Section Aggregation Logic
-// ============================================================
-
-/**
- * ExpenseSection の集約ロジック（共通）
- */
-function aggregateExpenseSection<T extends BaseExpenseTransaction>(
-  transactions: T[],
-): { totalAmount: number; underThresholdAmount: number; rows: ExpenseRow[] } {
-  const totalAmount = transactions.reduce(
-    (sum, tx) => sum + ExpenseTransactionBase.resolveAmount(tx),
-    0,
-  );
-
-  const detailedTransactions = transactions.filter((tx) =>
-    ExpenseTransactionBase.isAboveThreshold(tx),
-  );
-  const underThresholdTransactions = transactions.filter(
-    (tx) => !ExpenseTransactionBase.isAboveThreshold(tx),
-  );
+  const detailedTransactions = transactions.filter((tx) => isDetailRequired(tx));
+  const underThresholdTransactions = transactions.filter((tx) => !isDetailRequired(tx));
 
   const underThresholdAmount = underThresholdTransactions.reduce(
-    (sum, tx) => sum + ExpenseTransactionBase.resolveAmount(tx),
+    (sum, tx) => sum + resolveAmount(tx),
     0,
   );
 
-  const rows = detailedTransactions.map((tx, index) => ExpenseTransactionBase.toRow(tx, index));
+  const rows = detailedTransactions.map((tx, index) => toExpenseRow(tx, index));
 
   return { totalAmount, underThresholdAmount, rows };
 }
 
 /**
- * 経常経費セクションの共通バリデーションロジック
+ * 政治活動費セクションの集約ロジック（共通）
+ * friendlyCategory（費目）でグループ化し、費目ごとに複数のセクションを返す
+ */
+function aggregatePoliticalActivitySections(
+  transactions: BaseExpenseTransaction[],
+): PoliticalActivityExpenseSection[] {
+  // friendlyCategoryでグループ化
+  const groupedByHimoku = new Map<string, BaseExpenseTransaction[]>();
+  for (const tx of transactions) {
+    const himoku = tx.friendlyCategory ?? "";
+    const group = groupedByHimoku.get(himoku) ?? [];
+    group.push(tx);
+    groupedByHimoku.set(himoku, group);
+  }
+
+  // 各グループに対してセクションを作成
+  const sections = Array.from(groupedByHimoku, ([himoku, groupTransactions]) => ({
+    himoku,
+    ...aggregateExpenseSection(groupTransactions),
+  }));
+
+  // 費目でソート（空文字は最後に）
+  sections.sort((a, b) => {
+    if (a.himoku === "" && b.himoku !== "") return 1;
+    if (a.himoku !== "" && b.himoku === "") return -1;
+    return a.himoku.localeCompare(b.himoku, "ja");
+  });
+
+  return sections;
+}
+
+/**
+ * 経常経費・政治活動費セクションの共通バリデーションロジック
  */
 function validateExpenseRows(
   rows: ExpenseRow[],
@@ -484,377 +271,172 @@ function validateExpenseRows(
   return errors;
 }
 
-/**
- * UtilityExpenseSection に関連するドメインロジック
- */
-export const UtilityExpenseSection = {
-  /**
-   * トランザクションリストからセクションを構築する
-   *
-   * Business rules:
-   * - Transactions >= 50,000 yen are listed individually
-   * - Transactions < 50,000 yen are aggregated into underThresholdAmount
-   */
-  fromTransactions: (transactions: UtilityExpenseTransaction[]): UtilityExpenseSection => {
-    return aggregateExpenseSection(transactions);
-  },
+// ============================================================
+// Section Factories
+// ============================================================
 
-  /**
-   * XMLのSHEET要素を出力すべきかを判定する
-   */
-  shouldOutputSheet: (section: UtilityExpenseSection): boolean => {
-    return section.rows.length > 0 || section.totalAmount > 0;
-  },
-
-  /**
-   * セクションのバリデーションを実行する
-   */
-  validate: (section: UtilityExpenseSection): ValidationError[] => {
-    return validateExpenseRows(section.rows, "expenses.utilityExpenses", "光熱水費");
-  },
-} as const;
-
-/**
- * SuppliesExpenseSection に関連するドメインロジック
- */
-export const SuppliesExpenseSection = {
-  /**
-   * トランザクションリストからセクションを構築する
-   *
-   * Business rules:
-   * - Transactions >= 50,000 yen are listed individually
-   * - Transactions < 50,000 yen are aggregated into underThresholdAmount
-   */
-  fromTransactions: (transactions: SuppliesExpenseTransaction[]): SuppliesExpenseSection => {
-    return aggregateExpenseSection(transactions);
-  },
-
-  /**
-   * XMLのSHEET要素を出力すべきかを判定する
-   */
-  shouldOutputSheet: (section: SuppliesExpenseSection): boolean => {
-    return section.rows.length > 0 || section.totalAmount > 0;
-  },
-
-  /**
-   * セクションのバリデーションを実行する
-   */
-  validate: (section: SuppliesExpenseSection): ValidationError[] => {
-    return validateExpenseRows(section.rows, "expenses.suppliesExpenses", "備品・消耗品費");
-  },
-} as const;
-
-/**
- * OfficeExpenseSection に関連するドメインロジック
- */
-export const OfficeExpenseSection = {
-  /**
-   * トランザクションリストからセクションを構築する
-   *
-   * Business rules:
-   * - Transactions >= 50,000 yen are listed individually
-   * - Transactions < 50,000 yen are aggregated into underThresholdAmount
-   */
-  fromTransactions: (transactions: OfficeExpenseTransaction[]): OfficeExpenseSection => {
-    return aggregateExpenseSection(transactions);
-  },
-
-  /**
-   * XMLのSHEET要素を出力すべきかを判定する
-   */
-  shouldOutputSheet: (section: OfficeExpenseSection): boolean => {
-    return section.rows.length > 0 || section.totalAmount > 0;
-  },
-
-  /**
-   * セクションのバリデーションを実行する
-   */
-  validate: (section: OfficeExpenseSection): ValidationError[] => {
-    return validateExpenseRows(section.rows, "expenses.officeExpenses", "事務所費");
-  },
-} as const;
-
-/**
- * OrganizationExpenseSection に関連するドメインロジック
- */
-export const OrganizationExpenseSection = {
-  /**
-   * トランザクションリストからセクションを構築する
-   *
-   * Business rules:
-   * - Transactions >= 50,000 yen are listed individually (政治活動費は5万円以上)
-   * - Transactions < 50,000 yen are aggregated into underThresholdAmount
-   * - friendlyCategoryでグループ化し、費目ごとに複数のセクションを返す
-   */
-  fromTransactions: (
-    transactions: OrganizationExpenseTransaction[],
-  ): OrganizationExpenseSection[] => {
-    return aggregatePoliticalActivitySections(transactions);
-  },
-
-  /**
-   * XMLのSHEET要素を出力すべきかを判定する
-   */
-  shouldOutputSheet: (section: OrganizationExpenseSection): boolean => {
-    return section.rows.length > 0 || section.totalAmount > 0;
-  },
-
-  /**
-   * セクションのバリデーションを実行する
-   */
-  validate: (section: OrganizationExpenseSection): ValidationError[] => {
-    return validateExpenseRows(section.rows, "expenses.organizationExpenses", "組織活動費");
-  },
-} as const;
-
-/**
- * 政治活動費セクション共通の集約ロジック（5万円閾値）
- * friendlyCategoryでグループ化し、費目ごとに複数のセクションを返す
- */
-function aggregatePoliticalActivitySections<T extends BaseExpenseTransaction>(
-  transactions: T[],
-): Array<{
-  himoku: string;
-  totalAmount: number;
-  underThresholdAmount: number;
-  rows: PoliticalActivityExpenseRow[];
-}> {
-  // friendlyCategoryでグループ化
-  const groupedByHimoku = new Map<string, T[]>();
-  for (const tx of transactions) {
-    const himoku = tx.friendlyCategory ?? "";
-    const group = groupedByHimoku.get(himoku) ?? [];
-    group.push(tx);
-    groupedByHimoku.set(himoku, group);
-  }
-
-  // 各グループに対してセクションを作成
-  const sections: Array<{
-    himoku: string;
-    totalAmount: number;
-    underThresholdAmount: number;
-    rows: PoliticalActivityExpenseRow[];
-  }> = [];
-
-  for (const [himoku, groupTransactions] of groupedByHimoku) {
-    const totalAmount = groupTransactions.reduce(
-      (sum, tx) => sum + ExpenseTransactionBase.resolveAmount(tx),
-      0,
-    );
-
-    const detailedTransactions = groupTransactions.filter((tx) =>
-      isAboveThreshold(ExpenseTransactionBase.resolveAmount(tx), FIVE_MAN_THRESHOLD),
-    );
-    const underThresholdTransactions = groupTransactions.filter(
-      (tx) => !isAboveThreshold(ExpenseTransactionBase.resolveAmount(tx), FIVE_MAN_THRESHOLD),
-    );
-
-    const underThresholdAmount = underThresholdTransactions.reduce(
-      (sum, tx) => sum + ExpenseTransactionBase.resolveAmount(tx),
-      0,
-    );
-
-    const rows = detailedTransactions.map((tx, index) => ({
-      ichirenNo: (index + 1).toString(),
-      mokuteki: ExpenseTransactionBase.getMokuteki(tx),
-      kingaku: ExpenseTransactionBase.resolveAmount(tx),
-      dt: tx.transactionDate,
-      nm: ExpenseTransactionBase.getNm(tx),
-      adr: ExpenseTransactionBase.getAdr(tx),
-      bikou: ExpenseTransactionBase.getBikou(tx),
-      koufukin: tx.isGrantExpenditure ? 1 : 0,
-    }));
-
-    sections.push({
-      himoku,
-      totalAmount,
-      underThresholdAmount,
-      rows,
-    });
-  }
-
-  // 費目でソート（空文字は最後に）
-  sections.sort((a, b) => {
-    if (a.himoku === "" && b.himoku !== "") return 1;
-    if (a.himoku !== "" && b.himoku === "") return -1;
-    return a.himoku.localeCompare(b.himoku, "ja");
-  });
-
-  return sections;
+interface RegularExpenseSectionModel {
+  fromTransactions: (transactions: BaseExpenseTransaction[]) => RegularExpenseSection;
+  shouldOutputSheet: (section: RegularExpenseSection) => boolean;
+  validate: (section: RegularExpenseSection) => ValidationError[];
 }
 
 /**
- * ElectionExpenseSection に関連するドメインロジック
+ * 経常経費（SYUUSHI07_14）の費目セクションのドメインロジックを定義する
+ *
+ * @param basePath バリデーションエラーのパス（例: "expenses.utilityExpenses"）
+ * @param sectionName バリデーションメッセージに使う費目名（例: "光熱水費"）
  */
-export const ElectionExpenseSection = {
-  fromTransactions: (transactions: ElectionExpenseTransaction[]): ElectionExpenseSection[] => {
-    return aggregatePoliticalActivitySections(transactions);
-  },
+function defineRegularExpenseSection(
+  basePath: string,
+  sectionName: string,
+): RegularExpenseSectionModel {
+  return {
+    fromTransactions: (transactions) => aggregateExpenseSection(transactions),
+    shouldOutputSheet: (section) => section.rows.length > 0 || section.totalAmount > 0,
+    validate: (section) => validateExpenseRows(section.rows, basePath, sectionName),
+  };
+}
 
-  shouldOutputSheet: (section: ElectionExpenseSection): boolean => {
-    return section.rows.length > 0 || section.totalAmount > 0;
-  },
-
-  validate: (section: ElectionExpenseSection): ValidationError[] => {
-    return validateExpenseRows(section.rows, "expenses.electionExpenses", "選挙関係費");
-  },
-} as const;
+interface PoliticalActivityExpenseSectionModel {
+  fromTransactions: (transactions: BaseExpenseTransaction[]) => PoliticalActivityExpenseSection[];
+  shouldOutputSheet: (section: PoliticalActivityExpenseSection) => boolean;
+  validate: (section: PoliticalActivityExpenseSection) => ValidationError[];
+}
 
 /**
- * PublicationExpenseSection に関連するドメインロジック
+ * 政治活動費（SYUUSHI07_15）の費目セクションのドメインロジックを定義する
+ * 経常経費と異なり、friendlyCategory（費目）ごとに複数のセクションへ展開される
+ *
+ * @param basePath バリデーションエラーのパス（例: "expenses.organizationExpenses"）
+ * @param sectionName バリデーションメッセージに使う費目名（例: "組織活動費"）
  */
-export const PublicationExpenseSection = {
-  fromTransactions: (
-    transactions: PublicationExpenseTransaction[],
-  ): PublicationExpenseSection[] => {
-    return aggregatePoliticalActivitySections(transactions);
-  },
+function definePoliticalActivityExpenseSection(
+  basePath: string,
+  sectionName: string,
+): PoliticalActivityExpenseSectionModel {
+  return {
+    fromTransactions: (transactions) => aggregatePoliticalActivitySections(transactions),
+    shouldOutputSheet: (section) => section.rows.length > 0 || section.totalAmount > 0,
+    validate: (section) => validateExpenseRows(section.rows, basePath, sectionName),
+  };
+}
 
-  shouldOutputSheet: (section: PublicationExpenseSection): boolean => {
-    return section.rows.length > 0 || section.totalAmount > 0;
-  },
+// ============================================================
+// 費目の定義
+//
+// 費目を1つ追加するときは、以下のいずれかの形式でブロックを1つ足すだけでよい。
+// ============================================================
 
-  validate: (section: PublicationExpenseSection): ValidationError[] => {
-    return validateExpenseRows(
-      section.rows,
-      "expenses.publicationExpenses",
-      "機関紙誌の発行事業費",
-    );
-  },
-} as const;
+/** SYUUSHI07_14 KUBUN1: 光熱水費 */
+export type UtilityExpenseTransaction = BaseExpenseTransaction;
+export type UtilityExpenseSection = RegularExpenseSection;
+export const UtilityExpenseSection = defineRegularExpenseSection(
+  "expenses.utilityExpenses",
+  "光熱水費",
+);
+
+/** SYUUSHI07_14 KUBUN2: 備品・消耗品費 */
+export type SuppliesExpenseTransaction = BaseExpenseTransaction;
+export type SuppliesExpenseSection = RegularExpenseSection;
+export const SuppliesExpenseSection = defineRegularExpenseSection(
+  "expenses.suppliesExpenses",
+  "備品・消耗品費",
+);
+
+/** SYUUSHI07_14 KUBUN3: 事務所費 */
+export type OfficeExpenseTransaction = BaseExpenseTransaction;
+export type OfficeExpenseSection = RegularExpenseSection;
+export const OfficeExpenseSection = defineRegularExpenseSection(
+  "expenses.officeExpenses",
+  "事務所費",
+);
+
+/** SYUUSHI07_15 KUBUN1: 組織活動費 */
+export type OrganizationExpenseTransaction = BaseExpenseTransaction;
+export type OrganizationExpenseSection = PoliticalActivityExpenseSection;
+export const OrganizationExpenseSection = definePoliticalActivityExpenseSection(
+  "expenses.organizationExpenses",
+  "組織活動費",
+);
+
+/** SYUUSHI07_15 KUBUN2: 選挙関係費 */
+export type ElectionExpenseTransaction = BaseExpenseTransaction;
+export type ElectionExpenseSection = PoliticalActivityExpenseSection;
+export const ElectionExpenseSection = definePoliticalActivityExpenseSection(
+  "expenses.electionExpenses",
+  "選挙関係費",
+);
+
+/** SYUUSHI07_15 KUBUN3: 機関紙誌の発行事業費 */
+export type PublicationExpenseTransaction = BaseExpenseTransaction;
+export type PublicationExpenseSection = PoliticalActivityExpenseSection;
+export const PublicationExpenseSection = definePoliticalActivityExpenseSection(
+  "expenses.publicationExpenses",
+  "機関紙誌の発行事業費",
+);
+
+/** SYUUSHI07_15 KUBUN4: 宣伝事業費 */
+export type AdvertisingExpenseTransaction = BaseExpenseTransaction;
+export type AdvertisingExpenseSection = PoliticalActivityExpenseSection;
+export const AdvertisingExpenseSection = definePoliticalActivityExpenseSection(
+  "expenses.advertisingExpenses",
+  "宣伝事業費",
+);
+
+/** SYUUSHI07_15 KUBUN5: 政治資金パーティー開催事業費 */
+export type FundraisingPartyExpenseTransaction = BaseExpenseTransaction;
+export type FundraisingPartyExpenseSection = PoliticalActivityExpenseSection;
+export const FundraisingPartyExpenseSection = definePoliticalActivityExpenseSection(
+  "expenses.fundraisingPartyExpenses",
+  "政治資金パーティー開催事業費",
+);
+
+/** SYUUSHI07_15 KUBUN6: その他の事業費 */
+export type OtherBusinessExpenseTransaction = BaseExpenseTransaction;
+export type OtherBusinessExpenseSection = PoliticalActivityExpenseSection;
+export const OtherBusinessExpenseSection = definePoliticalActivityExpenseSection(
+  "expenses.otherBusinessExpenses",
+  "その他の事業費",
+);
+
+/** SYUUSHI07_15 KUBUN7: 調査研究費 */
+export type ResearchExpenseTransaction = BaseExpenseTransaction;
+export type ResearchExpenseSection = PoliticalActivityExpenseSection;
+export const ResearchExpenseSection = definePoliticalActivityExpenseSection(
+  "expenses.researchExpenses",
+  "調査研究費",
+);
+
+/** SYUUSHI07_15 KUBUN8: 寄附・交付金 */
+export type DonationGrantExpenseTransaction = BaseExpenseTransaction;
+export type DonationGrantExpenseSection = PoliticalActivityExpenseSection;
+export const DonationGrantExpenseSection = definePoliticalActivityExpenseSection(
+  "expenses.donationGrantExpenses",
+  "寄附・交付金",
+);
+
+/** SYUUSHI07_15 KUBUN9: その他の経費 */
+export type OtherPoliticalExpenseTransaction = BaseExpenseTransaction;
+export type OtherPoliticalExpenseSection = PoliticalActivityExpenseSection;
+export const OtherPoliticalExpenseSection = definePoliticalActivityExpenseSection(
+  "expenses.otherPoliticalExpenses",
+  "その他の経費",
+);
 
 /**
- * AdvertisingExpenseSection に関連するドメインロジック
+ * SYUUSHI07_13: 人件費
+ * 人件費はシート14に明細を出力しないが、シート13の総括表には合計額が必要なため、
+ * 他の費目とは異なり合計額のみを保持する
  */
-export const AdvertisingExpenseSection = {
-  fromTransactions: (
-    transactions: AdvertisingExpenseTransaction[],
-  ): AdvertisingExpenseSection[] => {
-    return aggregatePoliticalActivitySections(transactions);
-  },
-
-  shouldOutputSheet: (section: AdvertisingExpenseSection): boolean => {
-    return section.rows.length > 0 || section.totalAmount > 0;
-  },
-
-  validate: (section: AdvertisingExpenseSection): ValidationError[] => {
-    return validateExpenseRows(section.rows, "expenses.advertisingExpenses", "宣伝事業費");
-  },
-} as const;
-
-/**
- * FundraisingPartyExpenseSection に関連するドメインロジック
- */
-export const FundraisingPartyExpenseSection = {
-  fromTransactions: (
-    transactions: FundraisingPartyExpenseTransaction[],
-  ): FundraisingPartyExpenseSection[] => {
-    return aggregatePoliticalActivitySections(transactions);
-  },
-
-  shouldOutputSheet: (section: FundraisingPartyExpenseSection): boolean => {
-    return section.rows.length > 0 || section.totalAmount > 0;
-  },
-
-  validate: (section: FundraisingPartyExpenseSection): ValidationError[] => {
-    return validateExpenseRows(
-      section.rows,
-      "expenses.fundraisingPartyExpenses",
-      "政治資金パーティー開催事業費",
-    );
-  },
-} as const;
-
-/**
- * OtherBusinessExpenseSection に関連するドメインロジック
- */
-export const OtherBusinessExpenseSection = {
-  fromTransactions: (
-    transactions: OtherBusinessExpenseTransaction[],
-  ): OtherBusinessExpenseSection[] => {
-    return aggregatePoliticalActivitySections(transactions);
-  },
-
-  shouldOutputSheet: (section: OtherBusinessExpenseSection): boolean => {
-    return section.rows.length > 0 || section.totalAmount > 0;
-  },
-
-  validate: (section: OtherBusinessExpenseSection): ValidationError[] => {
-    return validateExpenseRows(section.rows, "expenses.otherBusinessExpenses", "その他の事業費");
-  },
-} as const;
-
-/**
- * ResearchExpenseSection に関連するドメインロジック
- */
-export const ResearchExpenseSection = {
-  fromTransactions: (transactions: ResearchExpenseTransaction[]): ResearchExpenseSection[] => {
-    return aggregatePoliticalActivitySections(transactions);
-  },
-
-  shouldOutputSheet: (section: ResearchExpenseSection): boolean => {
-    return section.rows.length > 0 || section.totalAmount > 0;
-  },
-
-  validate: (section: ResearchExpenseSection): ValidationError[] => {
-    return validateExpenseRows(section.rows, "expenses.researchExpenses", "調査研究費");
-  },
-} as const;
-
-/**
- * DonationGrantExpenseSection に関連するドメインロジック
- */
-export const DonationGrantExpenseSection = {
-  fromTransactions: (
-    transactions: DonationGrantExpenseTransaction[],
-  ): DonationGrantExpenseSection[] => {
-    return aggregatePoliticalActivitySections(transactions);
-  },
-
-  shouldOutputSheet: (section: DonationGrantExpenseSection): boolean => {
-    return section.rows.length > 0 || section.totalAmount > 0;
-  },
-
-  validate: (section: DonationGrantExpenseSection): ValidationError[] => {
-    return validateExpenseRows(section.rows, "expenses.donationGrantExpenses", "寄附・交付金");
-  },
-} as const;
-
-/**
- * OtherPoliticalExpenseSection に関連するドメインロジック
- */
-export const OtherPoliticalExpenseSection = {
-  fromTransactions: (
-    transactions: OtherPoliticalExpenseTransaction[],
-  ): OtherPoliticalExpenseSection[] => {
-    return aggregatePoliticalActivitySections(transactions);
-  },
-
-  shouldOutputSheet: (section: OtherPoliticalExpenseSection): boolean => {
-    return section.rows.length > 0 || section.totalAmount > 0;
-  },
-
-  validate: (section: OtherPoliticalExpenseSection): ValidationError[] => {
-    return validateExpenseRows(section.rows, "expenses.otherPoliticalExpenses", "その他の経費");
-  },
-} as const;
-
-/**
- * PersonnelExpenseSection に関連するドメインロジック
- * 人件費はシート14に明細を出力しないため、合計額のみを計算
- */
+export type PersonnelExpenseTransaction = BaseExpenseTransaction;
 export const PersonnelExpenseSection = {
   /**
    * トランザクションリストからセクションを構築する
    * 人件費は明細行を持たず、合計額のみを保持
    */
   fromTransactions: (transactions: PersonnelExpenseTransaction[]): PersonnelExpenseSection => {
-    const totalAmount = transactions.reduce(
-      (sum, tx) => sum + ExpenseTransactionBase.resolveAmount(tx),
-      0,
-    );
-
-    return { totalAmount };
+    return { totalAmount: transactions.reduce((sum, tx) => sum + resolveAmount(tx), 0) };
   },
 
   /**

@@ -21,7 +21,7 @@ describe("GetCurrentUserUsecase", () => {
     id: "user-id",
     authId: "auth-user-id",
     email: "test@example.com",
-    role: "user",
+    roles: ["political_fund", "research_fund"],
     createdAt: new Date("2024-01-01"),
     updatedAt: new Date("2024-01-01"),
     ...overrides,
@@ -35,6 +35,7 @@ describe("GetCurrentUserUsecase", () => {
       updateUser: jest.fn(),
       setSession: jest.fn(),
       exchangeCodeForSession: jest.fn(),
+      signInWithOAuth: jest.fn(),
       resetPasswordForEmail: jest.fn(),
     };
     mockUserRepository = {
@@ -43,8 +44,11 @@ describe("GetCurrentUserUsecase", () => {
       findByAuthId: jest.fn(),
       findByEmail: jest.fn(),
       findAll: jest.fn(),
-      updateRole: jest.fn(),
+      updateRoles: jest.fn(),
       delete: jest.fn(),
+      findAssignedPoliticianIds: jest.fn(),
+      findAllAssignedPoliticianIds: jest.fn(),
+      replaceAssignedPoliticians: jest.fn(),
     };
     usecase = new GetCurrentUserUsecase(mockAuthProvider, mockUserRepository);
   });
@@ -72,7 +76,7 @@ describe("GetCurrentUserUsecase", () => {
       expect(mockUserRepository.findByAuthId).not.toHaveBeenCalled();
     });
 
-    it("認証済みだがDBにユーザーがいない場合は新規作成する", async () => {
+    it("認証済みだがDBにユーザーがいない場合はロールなしで新規作成する", async () => {
       const authUser = createMockSupabaseUser();
       const newUser = createMockUser();
       mockAuthProvider.getUser.mockResolvedValue(authUser);
@@ -85,7 +89,7 @@ describe("GetCurrentUserUsecase", () => {
       expect(mockUserRepository.create).toHaveBeenCalledWith({
         authId: "auth-user-id",
         email: "test@example.com",
-        role: "user",
+        roles: [],
       });
     });
 

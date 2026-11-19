@@ -1,10 +1,12 @@
 import "server-only";
 
-import Link from "next/link";
 import { loadPoliticalOrganizationData } from "@/server/contexts/shared/presentation/loaders/load-political-organization-data";
 import { loadOrganizationProfileData } from "@/server/contexts/report/presentation/loaders/organization-profile-loader";
 import { ReportProfileForm } from "@/client/components/report-profile/ReportProfileForm";
 import { YearSelector } from "@/client/components/report-profile/YearSelector";
+import { PageHeader } from "@/client/components/layout/PageHeader";
+import { BackLink } from "@/client/components/layout/BackLink";
+import { requireRolePage } from "@/server/contexts/auth/presentation/loaders/require-role-page";
 
 interface ReportProfilePageProps {
   params: Promise<{ orgId: string }>;
@@ -12,6 +14,7 @@ interface ReportProfilePageProps {
 }
 
 export default async function ReportProfilePage({ params, searchParams }: ReportProfilePageProps) {
+  await requireRolePage("political_fund");
   const { orgId } = await params;
   const { year } = await searchParams;
 
@@ -24,10 +27,8 @@ export default async function ReportProfilePage({ params, searchParams }: Report
     organization = await loadPoliticalOrganizationData(orgId);
   } catch (error) {
     return (
-      <div className="bg-card rounded-xl p-4">
-        <div className="text-red-500 text-center p-10">
-          {error instanceof Error ? error.message : "政治団体の取得に失敗しました"}
-        </div>
+      <div className="rounded-lg border border-border bg-card p-10 text-center text-sm text-destructive">
+        {error instanceof Error ? error.message : "政治団体の取得に失敗しました"}
       </div>
     );
   }
@@ -41,23 +42,16 @@ export default async function ReportProfilePage({ params, searchParams }: Report
   }
 
   return (
-    <div className="bg-card rounded-xl p-4">
-      <div className="mb-5">
-        <Link
-          href="/political-organizations"
-          className="text-muted-foreground no-underline hover:text-white transition-colors"
-        >
-          ← 政治団体一覧に戻る
-        </Link>
-      </div>
+    <div>
+      <BackLink href="/political-organizations">政治団体一覧に戻る</BackLink>
 
-      <h1 className="text-2xl font-bold text-white mb-4">
-        「{organization.displayName}」の報告書プロフィール
-      </h1>
-
-      <div className="block mb-4">
-        <YearSelector orgId={orgId} financialYear={financialYear} currentYear={currentYear} />
-      </div>
+      <PageHeader
+        label="Report Profile"
+        title={`「${organization.displayName}」の報告書プロフィール`}
+        actions={
+          <YearSelector orgId={orgId} financialYear={financialYear} currentYear={currentYear} />
+        }
+      />
 
       <ReportProfileForm
         key={financialYear}

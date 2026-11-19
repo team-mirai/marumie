@@ -201,6 +201,8 @@ describe("convertToDisplayTransaction", () => {
     expect(result).toMatchObject(expected);
     expect(result.id).toBe(transaction.id);
     expect(result.date).toBe(transaction.transaction_date);
+    // 絞り込みの照合に使うので、保存済みの category_key をそのまま持ち越す
+    expect(result.categoryKey).toBe(transaction.category_key);
   });
 
   const offsetTestCases = [

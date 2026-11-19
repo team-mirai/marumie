@@ -17,7 +17,7 @@ test.describe("取引一覧ページ", () => {
 
 		expect(response, "page.goto() が失敗しました").not.toBeNull();
 		expect(response!.status()).toBe(200);
-		await expect(page).toHaveTitle(/全ての出入金.*みらいまる見え政治資金/);
+		await expect(page).toHaveTitle(/すべての出入金｜まる見え政治資金｜チームみらい$/);
 
 		// 取引一覧の見出しが描画されるまで待機（networkidle依存を避ける）
 		await expect(
@@ -33,5 +33,186 @@ test.describe("取引一覧ページ", () => {
 			errors,
 			`以下のエラーが発生しました:\n${errors.join("\n")}`,
 		).toHaveLength(0);
+	});
+
+	test("v8 の全件画面の見た目（パンくず・見出し・共通の下部ブロック）になること", async ({
+		page,
+	}) => {
+		await page.goto("/o/sample-party/2026/transactions");
+
+		// パンくず「トップ › サンプル党の収支・2026年 › すべての出入金」
+		const breadcrumbs = page.getByRole("navigation", { name: "パンくずリスト", exact: true });
+		await expect(breadcrumbs.getByRole("link", { name: "トップ" })).toHaveAttribute("href", "/");
+		await expect(breadcrumbs.getByRole("link", { name: "サンプル党の収支・2026年" })).toHaveAttribute(
+			"href",
+			"/o/sample-party/2026",
+		);
+		await expect(breadcrumbs.locator('[aria-current="page"]')).toHaveText("すべての出入金");
+
+		// 見出し「サンプル党・2026年｜すべての出入金」と更新日
+		const section = page.locator("#transactions");
+		await expect(section.getByText("サンプル党・2026年")).toBeVisible();
+		await expect(
+			section.getByRole("heading", { level: 1, name: "すべての出入金" }),
+		).toBeVisible();
+		await expect(section.getByText(/^\d{4}\.\d{1,2}\.\d{1,2} 更新$/).first()).toBeVisible();
+
+		// 件数と CSV のダウンロード
+		await expect(section.getByText(/\d+件中 \d+-\d+件を表示/).first()).toBeVisible();
+		await expect(section.getByText("出入金履歴をCSVでダウンロード").first()).toBeVisible();
+
+		// 共通の下部ブロック
+		await expect(
+			page.getByRole("heading", { name: "党内の機密データの流出事故ではありません" }),
+		).toBeVisible();
+		await expect(page.getByRole("link", { name: /こちらのnote/ })).toHaveAttribute(
+			"target",
+			"_blank",
+		);
+		await expect(
+			page.getByRole("heading", { name: /少しずつ進んでいますがまだまだです/ }),
+		).toHaveCount(0);
+		await expect(
+			page
+				.getByRole("navigation", { name: "パンくずリスト（ページ下部）" })
+				.locator('[aria-current="page"]'),
+		).toHaveText("すべての出入金");
+		await expect(
+			page
+				.getByRole("navigation", { name: "このサイトについて" })
+				.getByRole("link", { name: /まる見え政治資金とは？/ }),
+		).toHaveAttribute("href", "/about");
+		await expect(
+			page.locator("#explanation").getByRole("heading", { name: "データの出典" }),
+		).toBeVisible();
+
+		// 外したもの：他団体へのリンク、進捗、党の紹介、寄附・党員の応援カード
+		await expect(page.locator("main #about")).toHaveCount(0);
+		await expect(page.locator("main").getByText("寄附で応援する")).toHaveCount(0);
+	});
+
+	test("デスクトップの列見出しが現在のソート状態を公開すること", async ({ page }) => {
+		await page.goto("/o/sample-party/2026/transactions");
+
+		const table = page.getByRole("table", { name: "政治資金取引一覧表" });
+		const dateSortButton = table.getByRole("button", { name: /^日付で並び替え/ });
+		const amountSortButton = table.getByRole("button", { name: /^金額で並び替え/ });
+		const dateHeader = dateSortButton.locator("xpath=ancestor::th");
+		const amountHeader = amountSortButton.locator("xpath=ancestor::th");
+
+		await expect(dateHeader).toHaveAttribute("aria-sort", "descending");
+		await expect(amountHeader).toHaveAttribute("aria-sort", "none");
+		await expect(dateSortButton).toHaveAccessibleName("日付で並び替え（今は新しい順）");
+		await expect(amountSortButton).toHaveAccessibleName("金額で並び替え（今は金額順ではありません）");
+
+		// 押せる範囲は 44px 四方
+		const box = await dateSortButton.boundingBox();
+		expect(box?.width).toBe(44);
+		expect(box?.height).toBe(44);
+
+		await dateSortButton.click();
+		await expect(page).toHaveURL(/sort=date.*order=asc/);
+		await expect(dateHeader).toHaveAttribute("aria-sort", "ascending");
+		await expect(dateSortButton).toHaveAccessibleName("日付で並び替え（今は古い順）");
+
+		await amountSortButton.click();
+		await expect(page).toHaveURL(/sort=amount.*order=desc/);
+		await expect(dateHeader).toHaveAttribute("aria-sort", "none");
+		await expect(amountHeader).toHaveAttribute("aria-sort", "descending");
+
+		await amountSortButton.click();
+		await expect(page).toHaveURL(/sort=amount.*order=asc/);
+		await expect(amountHeader).toHaveAttribute("aria-sort", "ascending");
+	});
+
+	test("モバイルの並び順ボタンが選択状態を公開すること", async ({ page }) => {
+		await page.setViewportSize({ width: 390, height: 844 });
+		await page.goto("/o/sample-party/2026/transactions");
+
+		const sortGroup = page.getByRole("group", { name: "並び順" });
+		const newestButton = sortGroup.getByRole("button", { name: "新しい順" });
+		const oldestButton = sortGroup.getByRole("button", { name: "古い順" });
+
+		await expect(sortGroup.locator('button[aria-pressed="true"]')).toHaveCount(1);
+		await expect(newestButton).toHaveAttribute("aria-pressed", "true");
+		await expect(oldestButton).toHaveAttribute("aria-pressed", "false");
+
+		await oldestButton.click();
+		await expect(page).toHaveURL(/sort=date.*order=asc/);
+		await expect(sortGroup.locator('button[aria-pressed="true"]')).toHaveCount(1);
+		await expect(newestButton).toHaveAttribute("aria-pressed", "false");
+		await expect(oldestButton).toHaveAttribute("aria-pressed", "true");
+
+		// 支出が多い順は収入・支出で絞り込まず、並べ替えたら1ページ目に戻る
+		await page.goto("/o/sample-party/2026/transactions?page=2");
+		await sortGroup.getByRole("button", { name: "支出が多い順" }).click();
+		await expect(page).toHaveURL(/sort=expense&order=desc/);
+		await expect(page).toHaveURL(/page=1/);
+		await expect(page).not.toHaveURL(/filterType=/);
+		await expect(sortGroup.getByRole("button", { name: "支出が多い順" })).toHaveAttribute(
+			"aria-pressed",
+			"true",
+		);
+	});
+
+	test("行のカテゴリーのラベルから、そのカテゴリーで絞り込めること", async ({ page }) => {
+		// 2ページ目から押しても1ページ目に戻ることを確かめる
+		await page.goto("/o/sample-party/2025/transactions?page=2");
+
+		const table = page.getByRole("table", { name: "政治資金取引一覧表" });
+		const categoryLink = table.locator("tbody tr").first().getByRole("link").first();
+		const label = ((await categoryLink.textContent()) ?? "").trim();
+		const href = await categoryLink.getAttribute("href");
+
+		// ボタンではなく通常の HTML リンク（新しいタブで開く・リンクのコピーができる）
+		expect(href).toMatch(
+			/^\/o\/sample-party\/2025\/transactions\?categories=[a-z-]+$/,
+		);
+
+		await categoryLink.click();
+		await expect(page).toHaveURL(href!);
+
+		// 表の行はすべて押したカテゴリーになる（PC・SP 両方のラベルを数える）
+		const labels = await table.locator("tbody a").allTextContents();
+		expect(labels.length).toBeGreaterThan(0);
+		expect([...new Set(labels.map((text) => text.trim()))]).toEqual([label]);
+
+		// 件数表示も絞り込み後の件数と一致する
+		const rowCount = await table.locator("tbody tr").count();
+		await expect(
+			page.getByText(`${rowCount}件中 1-${rowCount}件を表示`).first(),
+		).toBeVisible();
+
+		// 絞り込みパネルの選択状態も押したカテゴリー1つだけになる
+		const categoryHeader = table.locator(
+			'th:has(button[aria-label="カテゴリーフィルター"])',
+		);
+		await categoryHeader
+			.getByRole("button", { name: "カテゴリーフィルター" })
+			.click();
+		const checkedOptions = categoryHeader.locator(
+			'button:has(img[alt="Checkmark"])',
+		);
+		await expect(checkedOptions).toHaveCount(1);
+		await expect(checkedOptions).toHaveText(label);
+	});
+
+	test("モバイルでも行のカテゴリーのラベルが絞り込みリンクになっていること", async ({
+		page,
+	}) => {
+		await page.setViewportSize({ width: 390, height: 844 });
+		await page.goto("/o/sample-party/2025/transactions");
+
+		const table = page.getByRole("table", { name: "政治資金取引一覧表" });
+		const categoryLink = table.locator("tbody tr").first().getByRole("link").first();
+		const label = ((await categoryLink.textContent()) ?? "").trim();
+
+		await expect(categoryLink).toBeVisible();
+		await categoryLink.click();
+		await expect(page).toHaveURL(/\?categories=[a-z-]+$/);
+
+		const labels = await table.locator("tbody a").allTextContents();
+		expect(labels.length).toBeGreaterThan(0);
+		expect([...new Set(labels.map((text) => text.trim()))]).toEqual([label]);
 	});
 });

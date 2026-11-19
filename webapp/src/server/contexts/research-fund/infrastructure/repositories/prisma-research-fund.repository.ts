@@ -1,0 +1,483 @@
+import "server-only";
+import type { Prisma, PrismaClient, ResearchFundMaskingStatus } from "@prisma/client";
+import {
+  MASKED_RECEIPT_MIME,
+  type PublishedAccount,
+  type PublishedExpenditureGroup,
+  type PublishedExpense,
+  type PublishedPoliticianProfile,
+  type PublishedPoliticianResearchFund,
+  type PublishedResearchFund,
+  type PublishedResearchFundPageRef,
+} from "@/server/contexts/research-fund/domain/models/published-research-fund";
+import type { ResearchFundPoliticianSource } from "@/server/contexts/research-fund/domain/models/research-fund-politician-list";
+import type { ResearchFundRepository } from "@/server/contexts/research-fund/domain/repositories/research-fund-repository.interface";
+import type { ResearchFundRow } from "@/shared/research-fund/aggregation";
+import {
+  buildLegalCategoryCatalog,
+  type LegalCategoryCatalog,
+  legalCategoryOverrideOf,
+  type ResearchFundLegalCategory,
+} from "@/shared/research-fund/legal-category";
+
+/**
+ * 公開ページに出す仕訳の取り出し方。
+ *
+ * 備考（memo）と立替情報（advancedBy / settledAt）は公開されない事務所内の情報なので、select に含めない
+ * （サーバー側にすら読み出さないことで、取り違えて出力する余地を無くす）。
+ */
+const entrySelect = {
+  id: true,
+  entryDate: true,
+  description: true,
+  note: true,
+  splitGroup: true,
+  documentId: true,
+  // 仕訳ごとの法定区分の上書き（#1880）。理由は事務所内の情報なので読み出さない
+  legalCategoryOverride: { select: { legalCategoryKey: true } },
+  // 原本は配信しないので、公開用の版が作成済みかだけを見る（キーは公開ページに渡さない。#1803）。
+  document: { select: { maskingStatus: true, maskedKey: true } },
+  lines: {
+    select: {
+      id: true,
+      side: true,
+      accountKey: true,
+      amount: true,
+      account: {
+        select: { type: true, label: true, legalLabel: true, legalCategoryKey: true },
+      },
+    },
+    orderBy: { id: "asc" as const },
+  },
+} satisfies Prisma.ResearchFundJournalEntrySelect;
+
+/**
+ * トップページの「所属議員の調研費」は金額とサンキーしか描かないので、明細（項目名・特記事項・領収書）は取らない。
+ * 議員が増えるほど行数が効くため、必要な列だけに絞る。
+ */
+const summaryEntrySelect = {
+  entryDate: true,
+  legalCategoryOverride: { select: { legalCategoryKey: true } },
+  lines: {
+    select: {
+      side: true,
+      accountKey: true,
+      amount: true,
+      account: {
+        select: { type: true, label: true, legalLabel: true, legalCategoryKey: true },
+      },
+    },
+  },
+} satisfies Prisma.ResearchFundJournalEntrySelect;
+
+type SummaryLine = Prisma.ResearchFundJournalEntryGetPayload<{
+  select: typeof summaryEntrySelect;
+}>["lines"][number];
+
+/** 公開の集計に使うのは「借方の費用」と「貸方の調査研究費収入」だけ。相手勘定の普通預金は数えない。 */
+const isExpenseLine = <T extends SummaryLine>(line: T) =>
+  line.side === "debit" && line.account.type === "expense";
+const isGrantLine = <T extends SummaryLine>(line: T) =>
+  line.side === "credit" && line.accountKey === "grant-income";
+
+type OverridableEntry = { legalCategoryOverride?: { legalCategoryKey: string } | null };
+
+/** 仕訳の法定区分の上書き。上書きの無い仕訳は null（科目の既定に従う） */
+function overrideOf(
+  entry: OverridableEntry,
+  catalog: LegalCategoryCatalog,
+): ResearchFundLegalCategory | null {
+  return legalCategoryOverrideOf(entry.legalCategoryOverride?.legalCategoryKey, catalog);
+}
+
+/**
+ * 上書きがあるときだけ行に添える。上書きの無い帳簿の出力は、上書きの導入前と同じ形のままにする。
+ */
+function withOverride(override: ResearchFundLegalCategory | null) {
+  return override ? { legalCategoryOverride: override } : {};
+}
+
+/**
+ * 議員カードに出すプロフィール。顔写真は登録の有無だけを読み、キーは公開ページに渡さない
+ * （配信は議員の公開設定を確かめる API が行う）。
+ */
+const politicianProfileSelect = {
+  name: true,
+  slug: true,
+  nameKana: true,
+  house: true,
+  constituency: true,
+  profileUrl: true,
+  websiteUrl: true,
+  snsUrls: true,
+  photoPath: true,
+} satisfies Prisma.PoliticianSelect;
+
+function profileOf(
+  politician: Prisma.PoliticianGetPayload<{ select: typeof politicianProfileSelect }>,
+): PublishedPoliticianProfile {
+  return {
+    name: politician.name,
+    slug: politician.slug,
+    nameKana: politician.nameKana,
+    house: politician.house,
+    constituency: politician.constituency,
+    profileUrl: politician.profileUrl,
+    websiteUrl: politician.websiteUrl,
+    snsUrls: politician.snsUrls,
+    hasPhoto: politician.photoPath !== null,
+  };
+}
+
+function dateOf(date: Date): string {
+  return date.toISOString().slice(0, 10);
+}
+
+export class PrismaResearchFundRepository implements ResearchFundRepository {
+  constructor(private prisma: PrismaClient) {}
+
+  async findPublished(slug: string, financialYear: number): Promise<PublishedResearchFund | null> {
+    const book = await this.prisma.researchFundBook.findFirst({
+      where: { financialYear, politician: { slug } },
+      select: {
+        financialYear: true,
+        publishedThrough: true,
+        asOfDate: true,
+        nextUpdateNote: true,
+        policyComment: true,
+        details: true,
+        politician: {
+          select: {
+            ...politicianProfileSelect,
+            isResearchFundPublic: true,
+            // 年の切り替えに出す年度。published の仕訳が 1 件も無い帳簿は開いても中身が無いので数えない
+            books: {
+              where: { journalEntries: { some: { status: "published" } } },
+              select: { financialYear: true },
+              orderBy: { financialYear: "asc" },
+            },
+          },
+        },
+        journalEntries: {
+          where: { status: "published" },
+          select: entrySelect,
+          orderBy: [{ entryDate: "desc" }, { id: "asc" }],
+        },
+        expenditureGroups: {
+          orderBy: [{ displayOrder: "asc" }, { id: "asc" }],
+          select: {
+            id: true,
+            title: true,
+            description: true,
+            outcomes: {
+              orderBy: [{ displayOrder: "asc" }, { id: "asc" }],
+              select: { label: true, url: true },
+            },
+            items: {
+              // 未公開の仕訳を成果カードの集計に混ぜない。
+              where: { entry: { status: "published" } },
+              select: { entry: { select: entrySelect } },
+            },
+          },
+        },
+      },
+    });
+    if (!book) return null;
+
+    const rows: ResearchFundRow[] = [];
+    const expenses: PublishedExpense[] = [];
+    const accounts: Record<string, PublishedAccount> = {};
+    const catalog = await this.legalCategoryCatalog(book.journalEntries);
+
+    for (const entry of book.journalEntries) {
+      const date = dateOf(entry.entryDate);
+      const override = overrideOf(entry, catalog);
+      for (const line of entry.lines) {
+        if (isGrantLine(line)) {
+          rows.push({
+            date,
+            accountKey: line.accountKey,
+            amount: line.amount.toNumber(),
+            type: "grant",
+          });
+          expenses.push({
+            kind: "grant",
+            id: String(line.id),
+            entryId: String(entry.id),
+            date,
+            accountKey: line.accountKey,
+            description: entry.description,
+            amount: line.amount.toNumber(),
+            note: entry.note,
+            splitGroup: null,
+            ...receiptOf(entry.document),
+          });
+          continue;
+        }
+        if (!isExpenseLine(line)) continue;
+        accounts[line.accountKey] = accountOf(line);
+        rows.push({
+          date,
+          accountKey: line.accountKey,
+          amount: line.amount.toNumber(),
+          type: "expense",
+          ...withOverride(override),
+        });
+        expenses.push({
+          kind: "expense",
+          id: String(line.id),
+          entryId: String(entry.id),
+          date,
+          accountKey: line.accountKey,
+          description: entry.description,
+          amount: line.amount.toNumber(),
+          note: entry.note,
+          splitGroup: entry.splitGroup,
+          ...receiptOf(entry.document),
+          ...withOverride(override),
+        });
+      }
+    }
+
+    // 公開済みの仕訳が 1 件も紐づかない支出群は、先の月の下書きとして公開ページに出さない（#1903）。
+    // items は published の仕訳だけに絞ってあるので、空なら紐づけ無し・未公開の仕訳だけのどちらか。
+    const groups: PublishedExpenditureGroup[] = book.expenditureGroups
+      .filter((group) => group.items.length > 0)
+      .map((group) => ({
+        id: String(group.id),
+        title: group.title,
+        description: group.description,
+        outcomes: group.outcomes.map((outcome) => ({ label: outcome.label, url: outcome.url })),
+        entries: group.items.flatMap(({ entry }) =>
+          entry.lines.filter(isExpenseLine).map((line) => {
+            accounts[line.accountKey] = accountOf(line);
+            return {
+              entryId: String(entry.id),
+              entryDate: dateOf(entry.entryDate),
+              amount: line.amount.toNumber(),
+              accountKey: line.accountKey,
+            };
+          }),
+        ),
+      }));
+
+    return {
+      politician: profileOf(book.politician),
+      publishedYears: book.politician.books.map((politicianBook) => politicianBook.financialYear),
+      isPublic: book.politician.isResearchFundPublic,
+      financialYear: book.financialYear,
+      asOfDate: book.asOfDate ? dateOf(book.asOfDate) : null,
+      nextUpdateNote: book.nextUpdateNote,
+      policyComment: book.policyComment,
+      details: book.details,
+      publishedThrough: book.publishedThrough ? dateOf(book.publishedThrough) : null,
+      rows,
+      accounts,
+      expenses,
+      groups,
+    };
+  }
+
+  async findPublishedForHome(financialYear: number): Promise<PublishedPoliticianResearchFund[]> {
+    const politicians = await this.prisma.politician.findMany({
+      // 政治団体への所属（membership）や、団体の政党／政治団体の区分には左右させない。
+      // 調研費を「公開しない」議員と、その年度に published の仕訳が無い（準備中の）議員は出さない。
+      where: {
+        isResearchFundPublic: true,
+        books: { some: { financialYear, journalEntries: { some: { status: "published" } } } },
+      },
+      orderBy: [{ displayOrder: "asc" }, { id: "asc" }],
+      select: {
+        name: true,
+        slug: true,
+        nameKana: true,
+        house: true,
+        photoPath: true,
+        books: {
+          where: { financialYear },
+          select: {
+            asOfDate: true,
+            publishedThrough: true,
+            journalEntries: {
+              where: { status: "published" },
+              select: summaryEntrySelect,
+              orderBy: [{ entryDate: "asc" }, { id: "asc" }],
+            },
+          },
+        },
+      },
+    });
+    const catalog = await this.legalCategoryCatalog(
+      politicians.flatMap((politician) => politician.books[0]?.journalEntries ?? []),
+    );
+
+    return politicians.map((politician): PublishedPoliticianResearchFund => {
+      const book = politician.books[0];
+      const rows: ResearchFundRow[] = [];
+      const accounts: Record<string, PublishedAccount> = {};
+      let expenseCount = 0;
+
+      for (const entry of book?.journalEntries ?? []) {
+        const date = dateOf(entry.entryDate);
+        const override = overrideOf(entry, catalog);
+        for (const line of entry.lines) {
+          if (isGrantLine(line)) {
+            rows.push({
+              date,
+              accountKey: line.accountKey,
+              amount: line.amount.toNumber(),
+              type: "grant",
+            });
+            continue;
+          }
+          if (!isExpenseLine(line)) continue;
+          accounts[line.accountKey] = accountOf(line);
+          rows.push({
+            date,
+            accountKey: line.accountKey,
+            amount: line.amount.toNumber(),
+            type: "expense",
+            ...withOverride(override),
+          });
+          expenseCount += 1;
+        }
+      }
+
+      return {
+        politician: {
+          name: politician.name,
+          slug: politician.slug,
+          nameKana: politician.nameKana,
+          house: politician.house,
+          hasPhoto: politician.photoPath !== null,
+        },
+        asOfDate: book?.asOfDate ? dateOf(book.asOfDate) : null,
+        publishedThrough: book?.publishedThrough ? dateOf(book.publishedThrough) : null,
+        rows,
+        accounts,
+        expenseCount,
+      };
+    });
+  }
+
+  /**
+   * 法定区分の上書きを引き当てる区分の一覧。上書きのある仕訳が無ければ科目マスタを読まない
+   * （上書きを使わない帳簿の読み出しを、上書きの導入前と同じにする）。
+   */
+  private async legalCategoryCatalog(
+    entries: readonly OverridableEntry[],
+  ): Promise<LegalCategoryCatalog> {
+    if (!entries.some((entry) => entry.legalCategoryOverride)) return new Map();
+    return buildLegalCategoryCatalog(
+      await this.prisma.researchFundAccount.findMany({
+        where: { legalCategoryKey: { not: null } },
+        select: { legalCategoryKey: true, legalLabel: true },
+      }),
+    );
+  }
+
+  async findPoliticians(financialYear: number): Promise<ResearchFundPoliticianSource[]> {
+    const politicians = await this.prisma.politician.findMany({
+      // 帳簿の無い議員はセレクタに出さない（開いても中身が無いため）。
+      // 調研費を「公開しない」議員も出さない（プレビュー URL を知っていれば開ける）。
+      where: { isResearchFundPublic: true, books: { some: { financialYear } } },
+      orderBy: [{ displayOrder: "asc" }, { id: "asc" }],
+      select: {
+        name: true,
+        slug: true,
+        nameKana: true,
+        house: true,
+        constituency: true,
+        photoPath: true,
+        books: {
+          where: { financialYear },
+          select: {
+            publishedThrough: true,
+            journalEntries: {
+              where: { status: "published" },
+              select: { entryDate: true },
+              orderBy: { entryDate: "asc" },
+            },
+          },
+        },
+      },
+    });
+
+    return politicians.map((politician) => {
+      const book = politician.books[0];
+      return {
+        slug: politician.slug,
+        name: politician.name,
+        nameKana: politician.nameKana,
+        house: politician.house,
+        constituency: politician.constituency,
+        hasPhoto: politician.photoPath !== null,
+        publishedMonths: (book?.journalEntries ?? []).map((entry) =>
+          dateOf(entry.entryDate).slice(0, 7),
+        ),
+        publishedThrough: book?.publishedThrough ? dateOf(book.publishedThrough).slice(0, 7) : null,
+      };
+    });
+  }
+
+  async findPublishedPageRefs(): Promise<PublishedResearchFundPageRef[]> {
+    // 公開する仕訳が 1 件も無い帳簿はページとして中身が無いので sitemap に載せない。
+    // 調研費を「公開しない」議員のページも載せない。
+    const books = await this.prisma.researchFundBook.findMany({
+      where: {
+        politician: { isResearchFundPublic: true },
+        journalEntries: { some: { status: "published" } },
+      },
+      select: { financialYear: true, politician: { select: { slug: true } } },
+      orderBy: [{ politicianId: "asc" }, { financialYear: "asc" }],
+    });
+
+    return books.map((book) => ({
+      slug: book.politician.slug,
+      financialYear: book.financialYear,
+    }));
+  }
+
+  async findPublishedReceipt(entryId: string) {
+    const entry = await this.prisma.researchFundJournalEntry.findFirst({
+      where: { id: BigInt(entryId), status: "published" },
+      select: { document: { select: { maskingStatus: true, maskedKey: true } } },
+    });
+    const maskedKey = maskedKeyOf(entry?.document ?? null);
+    return maskedKey ? { maskedKey } : null;
+  }
+}
+
+/**
+ * 配信してよい公開用の版のキー。作成済みのものだけを配信する。
+ * 作り直しの依頼中・失敗した版は、問題があって作り直す版かもしれないので配信しない（#1803）。
+ */
+function maskedKeyOf(
+  document: { maskingStatus: ResearchFundMaskingStatus; maskedKey: string | null } | null,
+): string | null {
+  return document?.maskingStatus === "succeeded" ? document.maskedKey : null;
+}
+
+/** 明細に載せる領収書の状態。書類があっても公開用の版が無い間は準備中（receiptReady: false） */
+function receiptOf(
+  document: { maskingStatus: ResearchFundMaskingStatus; maskedKey: string | null } | null,
+): Pick<PublishedExpense, "hasReceipt" | "receiptReady" | "receiptMime"> {
+  const ready = maskedKeyOf(document) !== null;
+  return {
+    hasReceipt: document !== null,
+    receiptReady: ready,
+    receiptMime: ready ? MASKED_RECEIPT_MIME : null,
+  };
+}
+
+/**
+ * 法定区分が未設定の科目（下書き用の「要確認」など）でも法律上の区分に切り替えられるよう、
+ * 法定ラベルが空なら科目名で代用する。公開前に20分類へ直す運用なので通常は発生しない。
+ */
+function accountOf(line: SummaryLine): PublishedAccount {
+  return {
+    label: line.account.label,
+    legalLabel: line.account.legalLabel || line.account.label,
+    legalCategoryKey: line.account.legalCategoryKey ?? "",
+  };
+}

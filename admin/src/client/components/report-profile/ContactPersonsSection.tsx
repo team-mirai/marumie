@@ -1,6 +1,7 @@
 "use client";
 import "client-only";
 
+import { Plus } from "@phosphor-icons/react/dist/ssr";
 import type {
   ContactPerson,
   OrganizationReportProfileDetails,
@@ -58,8 +59,15 @@ export function ContactPersonsSection({ details, updateDetails }: ContactPersons
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>事務担当者（最大3名）</CardTitle>
         {contactPersons.length < 3 && (
-          <Button type="button" variant="ghost" size="sm" onClick={addContactPerson}>
-            + 追加
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="text-xs"
+            onClick={addContactPerson}
+          >
+            <Plus />
+            追加
           </Button>
         )}
       </CardHeader>
@@ -71,15 +79,15 @@ export function ContactPersonsSection({ details, updateDetails }: ContactPersons
         )}
 
         {contactPersons.map((person, index) => (
-          <div key={person.id} className="bg-card rounded-lg p-3 border border-border">
+          <div key={person.id} className="rounded-lg border border-border-soft bg-card p-3">
             <div className="flex justify-between items-center mb-2">
               <span className="text-sm text-muted-foreground">事務担当者 {index + 1}</span>
               <Button
                 type="button"
-                variant="ghost"
+                variant="destructive"
                 size="sm"
                 onClick={() => removeContactPerson(index)}
-                className="text-destructive hover:text-destructive"
+                className="text-xs"
               >
                 削除
               </Button>

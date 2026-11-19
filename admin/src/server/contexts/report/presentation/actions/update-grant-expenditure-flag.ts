@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/server/contexts/shared/infrastructure/prisma";
 import { UpdateGrantExpenditureFlagUsecase } from "@/server/contexts/report/application/usecases/update-grant-expenditure-flag-usecase";
 import { PrismaReportTransactionRepository } from "@/server/contexts/report/infrastructure/repositories/prisma-report-transaction.repository";
+import { requireRole } from "@/server/contexts/auth/presentation/loaders/require-role";
 
 interface UpdateGrantExpenditureFlagActionResult {
   success: boolean;
@@ -16,6 +17,8 @@ export async function updateGrantExpenditureFlagAction(
   transactionId: string,
   isGrantExpenditure: boolean,
 ): Promise<UpdateGrantExpenditureFlagActionResult> {
+  await requireRole("political_fund");
+
   try {
     const transactionRepository = new PrismaReportTransactionRepository(prisma);
     const usecase = new UpdateGrantExpenditureFlagUsecase(transactionRepository);

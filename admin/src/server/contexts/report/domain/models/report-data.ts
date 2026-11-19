@@ -429,8 +429,9 @@ export const ReportData = {
     // 収入総額 = 前年繰越額 + 本年収入額
     const syunyuSgk = zennenKksGk + honnenSyunyuGk;
 
-    // 経常経費（SYUUSHI07_14）
+    // 経常経費（人件費 + SYUUSHI07_14 の3区分）
     const regularExpenseAmount =
+      Math.round(data.expenses.personnelExpenses.totalAmount) +
       Math.round(data.expenses.utilityExpenses.totalAmount) +
       Math.round(data.expenses.suppliesExpenses.totalAmount) +
       Math.round(data.expenses.officeExpenses.totalAmount);

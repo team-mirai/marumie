@@ -5,12 +5,15 @@ import { prisma } from "@/server/contexts/shared/infrastructure/prisma";
 import { PrismaTransactionRepository } from "@/server/contexts/shared/infrastructure/repositories/prisma-transaction.repository";
 import { DeleteAllTransactionsUsecase } from "@/server/contexts/data-import/application/usecases/delete-all-transactions-usecase";
 import { WebappCacheInvalidator } from "@/server/contexts/shared/infrastructure/services/webapp-cache-invalidator";
+import { requireRole } from "@/server/contexts/auth/presentation/loaders/require-role";
 
 export async function deleteAllTransactionsAction(organizationId?: string): Promise<{
   success: boolean;
   deletedCount?: number;
   error?: string;
 }> {
+  await requireRole("political_fund");
+
   try {
     const repository = new PrismaTransactionRepository(prisma);
     const usecase = new DeleteAllTransactionsUsecase(repository);
