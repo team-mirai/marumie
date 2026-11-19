@@ -23,7 +23,6 @@ interface SiteBottomBlockProps {
 /**
  * 全ページの本文の末尾に置く共通の下部ブロック。
  * 「少しずつ進んでいますが…」の帯 → オープンソースの案内（導入希望のフォーム） → カード3枚 → データについて の順に並べる。
- * 帯の本文は議員ページ（notesVariant="member"）だけ v9 に合わせて text-wrap: pretty で折り返す。
  * layout="home" はトップページ（v9）用で、上のセクションとの間を詰め、カード3枚を 1 枚ずつフェードインさせる。
  */
 export default function SiteBottomBlock({
@@ -41,7 +40,6 @@ export default function SiteBottomBlock({
           layout={layout}
           title="少しずつ進んでいますがまだまだです。今後も改善を続けます"
           emoji="🏃🏃‍♀️"
-          bodyClassName={notesVariant === "member" ? "[text-wrap:pretty]" : ""}
         >
           新たに議員の調研費の公開を開始しました。政治資金の徹底的な透明化に向けて、国民の皆さまとともに着実に歩んでまいります。詳しくは
           <a

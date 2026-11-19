@@ -96,7 +96,7 @@ export default function ResearchFundFlowSection({ data, eyebrow, updatedAt }: Pr
             調研費（調査研究広報滞在費）とは
             <Image src="/icons/icon-chevron-down.svg" alt="" width={18} height={18} />
           </summary>
-          <div className="mt-3 rounded-xl bg-gradient-to-br from-[#E2F6F3] to-[#EEF6E2] px-5 py-5 text-[15px] leading-[1.87] tracking-[0.01em] text-gray-800 [text-wrap:pretty]">
+          <div className="mt-3 rounded-xl bg-gradient-to-br from-[#E2F6F3] to-[#EEF6E2] px-5 py-5 text-[15px] leading-[1.87] tracking-[0.01em] text-gray-800">
             <p className="m-0">
               調研費（調査研究広報滞在費）は、国会議員の調査研究や広報、国民との交流、滞在などの活動のために、国から毎月100万円支給される公費です。政治資金規正法上の「政治資金」ではありませんが、チームみらいでは透明性の観点から本サイトで公開しています。選挙運動には使えません。年内に使わなかった未使用分は国庫に返還します。
             </p>

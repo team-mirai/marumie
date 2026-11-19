@@ -142,7 +142,7 @@ export default function ResearchFundHighlightsSection({
                 {data.politician.name}の調研費活用方針
               </b>
             </div>
-            <p className="col-span-full m-0 whitespace-pre-line text-base leading-[1.95] font-medium tracking-[0.02em] text-[#0A1A17] [text-wrap:pretty] min-[641px]:text-[19px] min-[641px]:leading-[2]">
+            <p className="col-span-full m-0 whitespace-pre-line text-base leading-[1.95] font-medium tracking-[0.02em] text-[#0A1A17] min-[641px]:text-[19px] min-[641px]:leading-[2]">
               {data.policyComment}
             </p>
           </div>
@@ -192,7 +192,7 @@ export default function ResearchFundHighlightsSection({
 
               <div className={`${SP_FLAT} min-[641px]:gap-3.5`}>
                 <p
-                  className={`${SP_FULL} m-0 text-sm leading-[1.87] text-gray-800 text-pretty max-[641px]:order-5 min-[641px]:text-[15px] min-[641px]:leading-[1.9]`}
+                  className={`${SP_FULL} m-0 text-sm leading-[1.87] text-gray-800 max-[641px]:order-5 min-[641px]:text-[15px] min-[641px]:leading-[1.9]`}
                 >
                   {group.description}
                 </p>

@@ -150,9 +150,7 @@ export default function AboutFeaturesSection() {
               {feature.title}
             </h3>
             {feature.extra}
-            <p className="m-0 text-[15px] leading-[1.9] text-[#374151] [text-wrap:pretty]">
-              {feature.body}
-            </p>
+            <p className="m-0 text-[15px] leading-[1.9] text-[#374151]">{feature.body}</p>
           </div>
         </div>
       ))}

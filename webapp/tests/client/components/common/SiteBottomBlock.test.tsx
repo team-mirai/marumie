@@ -21,10 +21,10 @@ describe("SiteBottomBlock", () => {
     expect(html).not.toContain("note.com/preview");
   });
 
-  it("帯の本文は議員ページだけ text-wrap: pretty で折り返す", () => {
-    expect(html).not.toMatch(/font-japanese \[text-wrap:pretty\]/);
+  it("帯の本文は議員ページでも text-wrap: pretty を付けない（Safari で右端まで届かずに折り返すため）", () => {
     const member = renderToStaticMarkup(<SiteBottomBlock notesVariant="member" />);
-    expect(member).toMatch(/<p class="[^"]*font-japanese \[text-wrap:pretty\]">新たに議員の調研費/);
+    expect(member).toMatch(/<p class="[^"]*font-japanese">新たに議員の調研費/);
+    expect(member).not.toContain("pretty");
   });
 
   it("一言コメントの帯の文字は見出し PC 26px・SP 20px、本文 PC 18px・SP 14px", () => {

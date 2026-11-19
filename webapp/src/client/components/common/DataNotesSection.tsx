@@ -54,7 +54,7 @@ export default function DataNotesSection({
         {notes.map((note) => (
           <div key={note.title}>
             <h3 className="mb-3 text-lg font-extrabold text-[#1F2937]">{note.title}</h3>
-            <p className="text-[15px] leading-[1.87] tracking-[0.01em] text-[#1F2937] [text-wrap:pretty]">
+            <p className="text-[15px] leading-[1.87] tracking-[0.01em] text-[#1F2937]">
               {note.body}
             </p>
           </div>
@@ -83,9 +83,7 @@ export default function DataNotesSection({
         {notes.map((note) => (
           <div key={note.title}>
             <h3 className="m-0 mb-3.5 text-[17px] font-extrabold text-[#0B0F0E]">{note.title}</h3>
-            <p className="m-0 text-[14px] leading-[1.95] text-[#1F2937] [text-wrap:pretty]">
-              {note.body}
-            </p>
+            <p className="m-0 text-[14px] leading-[1.95] text-[#1F2937]">{note.body}</p>
           </div>
         ))}
       </div>

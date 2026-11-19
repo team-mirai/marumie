@@ -56,9 +56,7 @@ export function AboutSectionHeading({
 }
 
 function AboutParagraph({ children }: { children: ReactNode }) {
-  return (
-    <p className="m-0 text-[15px] leading-[1.9] text-[#374151] [text-wrap:pretty]">{children}</p>
-  );
+  return <p className="m-0 text-[15px] leading-[1.9] text-[#374151]">{children}</p>;
 }
 
 const CHEVRON_PATH = "M9 5l7 7-7 7";
