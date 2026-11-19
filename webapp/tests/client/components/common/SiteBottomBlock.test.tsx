@@ -9,8 +9,22 @@ describe("SiteBottomBlock", () => {
       "少しずつ進んでいますがまだまだです。今後も改善を続けます<span aria-hidden=\"true\">🏃🏃‍♀️</span>",
     );
     expect(html).toContain(
-      "政治資金の徹底的な透明化に向けて、国民の皆さまとともに着実に歩んでまいります。",
+      "新たに議員の調研費の公開を開始しました。政治資金の徹底的な透明化に向けて、国民の皆さまとともに着実に歩んでまいります。詳しくは<a ",
     );
+    expect(html).toContain("</a>をお読みください。</p>");
+  });
+
+  it("帯の本文の「こちらのnote」は調研費の公開を説明する note へのリンクで、別タブで開くことを読み上げる", () => {
+    expect(html).toMatch(
+      /<a href="https:\/\/note\.com\/team_mirai_jp\/n\/na4db4abee5c8" target="_blank" rel="noopener noreferrer" class="font-bold text-gray-800 underline">こちらのnote<span class="sr-only">（別タブで開きます）<\/span><svg [^>]*aria-hidden="true"/,
+    );
+    expect(html).not.toContain("note.com/preview");
+  });
+
+  it("帯の本文は議員ページだけ text-wrap: pretty で折り返す", () => {
+    expect(html).not.toMatch(/font-japanese \[text-wrap:pretty\]/);
+    const member = renderToStaticMarkup(<SiteBottomBlock notesVariant="member" />);
+    expect(member).toMatch(/<p class="[^"]*font-japanese \[text-wrap:pretty\]">新たに議員の調研費/);
   });
 
   it("一言コメントの帯の文字は見出し PC 26px・SP 20px、本文 PC 18px・SP 14px", () => {
