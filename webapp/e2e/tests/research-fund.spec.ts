@@ -68,12 +68,13 @@ test.describe("調査研究費 議員ページ", () => {
 		await expect(page.getByText("開催報告：報告は準備中")).toBeVisible();
 
 		// 透明性の帯
+		const transparencyHeading = page.getByRole("heading", {
+			name: "調研費もまるごと公開。意味ある使い方か、検証できるように👀",
+		});
+		await expect(transparencyHeading).toBeVisible();
 		await expect(
-			page.getByRole("heading", {
-				name: "調研費もまるごと公開。意味ある使い方か、検証できるように👀",
-			}),
-		).toBeVisible();
-		await expect(page.getByRole("link", { name: "こちらのnote" })).toHaveCount(0);
+			transparencyHeading.locator("xpath=ancestor::div[@data-reveal][1]").getByRole("link"),
+		).toHaveCount(0);
 
 		// 月ごとの収支推移・すべての出入金
 		await expect(
@@ -102,6 +103,12 @@ test.describe("調査研究費 議員ページ", () => {
 		await expect(
 			page.getByRole("heading", { name: /少しずつ進んでいますがまだまだです/ }),
 		).toBeVisible();
+		await expect(page.getByText(/^新たに議員の調研費の公開を開始しました。/)).toContainText(
+			"国民の皆さまとともに着実に歩んでまいります。詳しくはこちらのnote（別タブで開きます）をお読みください。",
+		);
+		const bandNote = page.getByRole("link", { name: /^こちらのnote\s*（別タブで開きます）$/ });
+		await expect(bandNote).toHaveAttribute("href", "https://note.com/team_mirai_jp/n/na4db4abee5c8");
+		await expect(bandNote).toHaveAttribute("target", "_blank");
 		await expect(page.getByRole("link", { name: /まる見え政治資金とは？/ })).toBeVisible();
 		const notes = page.locator("#explanation");
 		await expect(notes.getByRole("heading", { name: "公開の範囲と出典" })).toBeVisible();

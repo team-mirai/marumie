@@ -9,6 +9,8 @@ interface GradientMessageCardProps {
   children: ReactNode;
   /** 置く場所ごとの余白など */
   className?: string;
+  /** 本文の段落に足すクラス（折り返し方など） */
+  bodyClassName?: string;
   /** "home" はトップページ用。見出しの太さがトップだけ 700 になる */
   layout?: "default" | "home";
 }
@@ -23,6 +25,7 @@ export default function GradientMessageCard({
   emoji,
   children,
   className = "",
+  bodyClassName = "",
   layout = "default",
 }: GradientMessageCardProps) {
   const titleWeight = layout === "home" ? "font-bold" : "font-black";
@@ -38,7 +41,9 @@ export default function GradientMessageCard({
           {title}
           {emoji && <span aria-hidden="true">{emoji}</span>}
         </h2>
-        <p className="m-0 max-w-[874px] text-[14px] min-[641px]:text-[18px] font-normal leading-[1.75] tracking-[0.01em] text-gray-800 font-japanese">
+        <p
+          className={`m-0 max-w-[874px] text-[14px] min-[641px]:text-[18px] font-normal leading-[1.75] tracking-[0.01em] text-gray-800 font-japanese ${bodyClassName}`}
+        >
           {children}
         </p>
       </div>
