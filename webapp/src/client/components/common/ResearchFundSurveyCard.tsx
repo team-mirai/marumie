@@ -63,7 +63,7 @@ export default function ResearchFundSurveyCard({
             <wbr />
             ご意見をお聞かせください
           </Heading>
-          <p className="col-span-full row-start-3 m-0 mt-3.5 text-[15px] leading-[1.85] text-gray-800 [text-wrap:pretty] min-[641px]:mt-0">
+          <p className="col-span-full row-start-3 m-0 mt-3.5 text-[15px] leading-[1.85] text-gray-800 min-[641px]:mt-0">
             調研費の内容や使い方のガイドラインについて意見を募集しています。いただいた声をもとに今後改善して参ります
           </p>
         </div>

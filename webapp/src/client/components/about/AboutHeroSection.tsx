@@ -48,7 +48,7 @@ export default function AboutHeroSection({ summary, asOf }: AboutHeroSectionProp
             まる見えに
           </RevealHeadingText>
         </h1>
-        <p className="m-0 max-w-[560px] text-[16px] leading-[1.9] tracking-[0.02em] text-[#374151] [text-wrap:pretty]">
+        <p className="m-0 max-w-[560px] text-[16px] leading-[1.9] tracking-[0.02em] text-[#374151]">
           チームみらいに関するお金の流れをわかりやすく公開しています
         </p>
       </div>
