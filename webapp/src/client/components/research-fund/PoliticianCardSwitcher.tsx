@@ -58,7 +58,7 @@ function Chevron({ direction }: { direction: "prev" | "next" }) {
   );
 }
 
-// SP は下の位置表示（点と「10 / 12」）を除いたカードの上下中央に置く。押したとき・ホバーの動きは globals.css の .politician-switch-nav
+// SP は下の位置表示（点と「10 / 12」）を除いたカードの上下中央に置き、左右はカードから 4px はみ出させる（画面の端まで 6px。本文の左右の余白 10px を前提にしている）。押したとき・ホバーの動きは globals.css の .politician-switch-nav
 const NAV_BUTTON_CLASS =
   "politician-switch-nav absolute top-[calc(50%-30px)] z-10 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/90 bg-white/60 text-[#0B0F0E] shadow-[inset_0_1px_0_rgba(255,255,255,0.95),0_12px_26px_-12px_rgba(10,60,52,0.5),0_2px_6px_rgba(10,60,52,0.1)] backdrop-blur-[14px] hover:bg-white/80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0F8472] min-[641px]:top-1/2 min-[641px]:h-10 min-[641px]:w-10 min-[641px]:border-0 min-[641px]:bg-white min-[641px]:shadow-[0_2px_6px_rgba(11,15,14,0.10),0_8px_20px_rgba(11,15,14,0.10)] min-[641px]:backdrop-blur-none min-[641px]:hover:bg-[#E2F6F3] min-[641px]:hover:text-[#0F8472]";
 
@@ -188,7 +188,7 @@ export default function PoliticianCardSwitcher({
             onClick={() => remember(nav.prev, -1)}
             aria-label={`前の議員（${nav.prev.name}）の調研費へ`}
             title={`前の議員（${nav.prev.name}）の調研費へ`}
-            className={`${NAV_BUTTON_CLASS} is-prev -left-3.5 min-[641px]:-left-5`}
+            className={`${NAV_BUTTON_CLASS} is-prev -left-1 min-[641px]:-left-5`}
           >
             <Chevron direction="prev" />
           </Link>
@@ -197,7 +197,7 @@ export default function PoliticianCardSwitcher({
             onClick={() => remember(nav.next, 1)}
             aria-label={`次の議員（${nav.next.name}）の調研費へ`}
             title={`次の議員（${nav.next.name}）の調研費へ`}
-            className={`${NAV_BUTTON_CLASS} is-next -right-3.5 min-[641px]:-right-5`}
+            className={`${NAV_BUTTON_CLASS} is-next -right-1 min-[641px]:-right-5`}
           >
             <Chevron direction="next" />
           </Link>
