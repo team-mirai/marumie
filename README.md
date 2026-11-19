@@ -30,8 +30,11 @@ marumie/
 │   │   ├── app/           # Next.js App Router
 │   │   ├── client/        # クライアントサイドコンポーネント
 │   │   ├── server/contexts/ # Bounded Context ベース構成
-│   │   │   └── public-finance/  # 政治資金データの公開・可視化
-│   │   └── types/         # 型定義
+│   │   │   ├── public-finance/  # 政治資金データの公開・可視化
+│   │   │   ├── research-fund/   # 調研費データの公開
+│   │   │   └── shared/    # コンテキスト横断共有
+│   │   ├── types/         # 型定義
+│   │   └── proxy.ts
 │   ├── tests/             # テストファイル
 │   └── package.json
 ├── admin/            # 管理画面
@@ -42,14 +45,15 @@ marumie/
 │   │   │   ├── auth/      # 認証関連処理
 │   │   │   ├── data-import/  # 取引データ取り込み
 │   │   │   ├── report/    # 政治資金報告書XMLエクスポート
+│   │   │   ├── research-fund/  # 調研費の仕訳・領収書の管理と公開
 │   │   │   └── shared/    # コンテキスト横断共有
-│   │   ├── types/         # 型定義
-│   │   └── middleware.ts
+│   │   └── proxy.ts
 │   ├── tests/             # テストファイル
 │   └── package.json
 ├── shared/           # 共通モデル・型定義・ユーティリティ
+│   ├── accounting/   # 勘定科目の区分定義
 │   ├── models/       # 共通データモデル
-│   └── utils/        # 共通ユーティリティ関数
+│   └── research-fund/ # 調研費の共通処理
 ├── data/             # サンプルデータ
 ├── supabase/         # Supabaseローカル開発環境設定
 ├── prisma/           # データベーススキーマ・マイグレーション
@@ -71,7 +75,7 @@ marumie/
 - **Frontend**: Next.js 16, React 19, TypeScript
 - **Backend**: Prisma ORM, Supabase
 - **Styling**: Tailwind CSS v4
-- **Charts**: Recharts, ApexCharts, Nivo
+- **Charts**: 自前実装（SVG）
 - **Database**: PostgreSQL (via Supabase)
 - **Development**: pnpm, Biome
 - **Testing**: Jest
