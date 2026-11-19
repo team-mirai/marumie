@@ -64,10 +64,16 @@ function preparingPolitician(
   };
 }
 
-function usecaseWith(value: PublishedPoliticianResearchFund[]) {
+/** value は年度ごとの返り値（配列なら 2026 年度の分。ほかの年度は空） */
+function usecaseWith(
+  value: PublishedPoliticianResearchFund[] | Record<number, PublishedPoliticianResearchFund[]>,
+) {
+  const byYear = Array.isArray(value) ? { 2026: value } : value;
   const repository: ResearchFundRepository = {
     findPublished: jest.fn().mockResolvedValue(null),
-    findPublishedForHome: jest.fn().mockResolvedValue(value),
+    findPublishedForHome: jest
+      .fn()
+      .mockImplementation(async (year: number) => byYear[year] ?? []),
     findPoliticians: jest.fn().mockResolvedValue([]),
     findPublishedPageRefs: jest.fn().mockResolvedValue([]),
     findPublishedReceipt: jest.fn().mockResolvedValue(null),
@@ -135,7 +141,7 @@ describe("GetResearchFundHomeSummaryUsecase", () => {
 
     const data = await usecase.execute({ financialYear: 2026 });
 
-    expect(data?.politicians[0].kpi).toEqual({ granted: 2_000_000, spent: 104_000 });
+    expect(data?.politicians[0].years[0].kpi).toEqual({ granted: 2_000_000, spent: 104_000 });
   });
 
   it("サンキーは費目の多い順に並べ、1%未満の費目を「その他」にまとめ、末尾に未使用分を置く", async () => {
@@ -145,7 +151,7 @@ describe("GetResearchFundHomeSummaryUsecase", () => {
 
     // 支給 200万円の 1% = 2万円未満のタクシー代・電車・バス代は「その他」にまとまる
     const expenseLabels = (mode: "detailed" | "legal") =>
-      data?.politicians[0].sankey[mode].nodes
+      data?.politicians[0].years[0].sankey[mode].nodes
         .filter((node) => node.nodeType === "expense")
         .map((node) => node.label);
     expect(expenseLabels("detailed")).toEqual(["印刷・広報費", "その他", "未使用・未処理"]);
@@ -195,15 +201,13 @@ describe("GetResearchFundHomeSummaryUsecase", () => {
       nameKana: "さんぷる たろう",
       house: "shugiin",
       hasPhoto: true,
-      asOfDate: "2026-08-20",
-      grantPeriodLabel: "2026年2-8月分",
+      years: [{ financialYear: 2026, asOfDate: "2026-08-20", grantPeriodLabel: "2026年2-8月分" }],
     });
     expect(data?.politicians[1]).toMatchObject({
       nameKana: null,
       house: null,
       hasPhoto: false,
-      asOfDate: null,
-      grantPeriodLabel: "2026年2-9月分",
+      years: [{ financialYear: 2026, asOfDate: null, grantPeriodLabel: "2026年2-9月分" }],
     });
   });
 
@@ -217,5 +221,72 @@ describe("GetResearchFundHomeSummaryUsecase", () => {
     await expect(usecase.execute({ financialYear: 2026 })).rejects.toThrow(
       /調研費の集計に失敗しました/,
     );
+  });
+
+  describe("年の切り替え", () => {
+    const hanako = {
+      name: "サンプル 花子",
+      slug: "sample-hanako",
+      nameKana: "さんぷる はなこ",
+      house: null,
+      hasPhoto: false,
+    };
+    const rows2025: PublishedPoliticianResearchFund["rows"] = [
+      { date: "2025-08-01", accountKey: "grant-income", amount: 1_000_000, type: "grant" },
+      { date: "2025-08-10", accountKey: "taxi", amount: 5_000, type: "expense" },
+    ];
+
+    it("指定した年をすべて読み、議員ごとに公開済みの年を古い順に添える", async () => {
+      const { usecase, repository } = usecaseWith({
+        2025: [
+          publishedPolitician({
+            asOfDate: "2026-01-31",
+            publishedThrough: "2025-12-31",
+            rows: rows2025,
+          }),
+        ],
+        2026: [publishedPolitician(), publishedPolitician({ politician: hanako })],
+      });
+
+      const data = await usecase.execute({ financialYear: 2026, years: [2025, 2026] });
+
+      expect(repository.findPublishedForHome).toHaveBeenCalledWith(2025);
+      expect(repository.findPublishedForHome).toHaveBeenCalledWith(2026);
+      expect(repository.findPublishedForHome).toHaveBeenCalledTimes(2);
+      expect(data?.financialYear).toBe(2026);
+      const taro = data?.politicians.find((politician) => politician.slug === "sample-taro");
+      expect(taro?.years.map((year) => year.financialYear)).toEqual([2025, 2026]);
+      expect(taro?.years[0]).toMatchObject({
+        asOfDate: "2026-01-31",
+        grantPeriodLabel: "2025年8-12月分",
+        kpi: { granted: 1_000_000, spent: 5_000 },
+      });
+      expect(taro?.years[1].kpi).toEqual({ granted: 2_000_000, spent: 104_000 });
+      // 2026 年分だけの議員は 1 年分（切り替えを出さない）
+      const hanakoView = data?.politicians.find((politician) => politician.slug === "sample-hanako");
+      expect(hanakoView?.years.map((year) => year.financialYear)).toEqual([2026]);
+    });
+
+    it("ほかの年に published の仕訳が無ければ、その年は添えない", async () => {
+      const { usecase } = usecaseWith({
+        2025: [preparingPolitician({ politician: publishedPolitician().politician })],
+        2026: [publishedPolitician()],
+      });
+
+      const data = await usecase.execute({ financialYear: 2026, years: [2025, 2026] });
+
+      expect(data?.politicians[0].years.map((year) => year.financialYear)).toEqual([2026]);
+    });
+
+    it("ほかの年だけを公開している議員は並べない（並べる議員とその順は financialYear で決める）", async () => {
+      const { usecase } = usecaseWith({
+        2025: [publishedPolitician({ politician: hanako, rows: rows2025 })],
+        2026: [publishedPolitician()],
+      });
+
+      const data = await usecase.execute({ financialYear: 2026, years: [2025, 2026] });
+
+      expect(data?.politicians.map((politician) => politician.slug)).toEqual(["sample-taro"]);
+    });
   });
 });

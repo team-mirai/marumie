@@ -1,6 +1,7 @@
 import type { PrismaClient } from "@prisma/client";
 import {
   buildResearchFundJournalEntries,
+  buildSecondPolitician2025JournalEntries,
   buildSecondPoliticianJournalEntries,
   researchFundJournalEntriesSeeder,
 } from "@/prisma/seeds/researchFundJournalEntries";
@@ -110,7 +111,20 @@ describe("research fund journal seed", () => {
     for (const entry of second) expect(taroHashes.has(entry.hash)).toBe(false);
   });
 
-  it("seeds sample-taro's and sample-misaki's 2026 books and does not duplicate entries on rerun", async () => {
+  it("gives sample-misaki's 2025 book a few published expenses and grants dated in 2025", () => {
+    const entries2025 = buildSecondPolitician2025JournalEntries();
+    expect(entries2025.every((entry) => entry.status === "published")).toBe(true);
+    expect(entries2025.filter((entry) => entry.source === "grant")).toHaveLength(3);
+    expect(entries2025.filter((entry) => entry.source === "manual")).toHaveLength(3);
+    for (const entry of entries2025)
+      expect(new Date(entry.entryDate).getUTCFullYear()).toBe(2025);
+    const otherHashes = new Set(
+      [...entries, ...buildSecondPoliticianJournalEntries()].map((entry) => entry.hash),
+    );
+    for (const entry of entries2025) expect(otherHashes.has(entry.hash)).toBe(false);
+  });
+
+  it("seeds sample-taro's and sample-misaki's books and does not duplicate entries on rerun", async () => {
     const saved = new Map<bigint, { hash: string }[]>();
     const tx = {
       researchFundJournalEntry: {
@@ -131,8 +145,11 @@ describe("research fund journal seed", () => {
         findUnique: jest.fn(async ({ where }) => ({ id: politicianIds[where.slug] })),
       },
       researchFundBook: {
+        // 2026 年度は議員の id + 10、2025 年度は + 110
         findUnique: jest.fn(async ({ where }) => ({
-          id: where.politicianId_financialYear.politicianId + BigInt(10),
+          id:
+            where.politicianId_financialYear.politicianId +
+            BigInt(where.politicianId_financialYear.financialYear === 2025 ? 110 : 10),
         })),
       },
       $transaction: jest.fn(async (callback) => callback(tx)),
@@ -144,14 +161,22 @@ describe("research fund journal seed", () => {
     expect(prisma.researchFundBook.findUnique).toHaveBeenCalledWith({
       where: { politicianId_financialYear: { politicianId: BigInt(10), financialYear: 2026 } },
     });
+    expect(prisma.researchFundBook.findUnique).toHaveBeenCalledWith({
+      where: { politicianId_financialYear: { politicianId: BigInt(11), financialYear: 2025 } },
+    });
     expect(saved.get(BigInt(20))).toHaveLength(303);
     expect(saved.get(BigInt(21))).toHaveLength(15);
-    expect(tx.researchFundJournalEntry.create).toHaveBeenCalledTimes(318);
+    expect(saved.get(BigInt(121))).toHaveLength(6);
+    expect(tx.researchFundJournalEntry.create).toHaveBeenCalledTimes(324);
     for (const bookId of [BigInt(20), BigInt(21)]) {
       expect(tx.researchFundBook.update).toHaveBeenCalledWith({
         where: { id: bookId },
         data: { publishedThrough: new Date("2026-08-31T00:00:00.000Z") },
       });
     }
+    expect(tx.researchFundBook.update).toHaveBeenCalledWith({
+      where: { id: BigInt(121) },
+      data: { publishedThrough: new Date("2025-12-31T00:00:00.000Z") },
+    });
   });
 });

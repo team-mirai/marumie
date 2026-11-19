@@ -146,12 +146,62 @@ export function buildSecondPoliticianJournalEntries(): Prisma.ResearchFundJourna
   return entries;
 }
 
+// サンプル 美咲の 2025 年分（2025 年から在職）。トップの「所属議員の調研費」で年を切り替える E2E のため、
+// 2026 年分とは金額の違う少数の published の仕訳と支給だけを持つ。
+const secondPolitician2025Expenses: [date: string, key: string, description: string, amount: number][] =
+  [
+    ["10/06", "transportation", "電車代", 8_200],
+    ["11/12", "books-newspapers", "書籍代", 21_000],
+    ["12/03", "advertising", "チラシ印刷代", 150_000],
+  ];
+
+export function buildSecondPolitician2025JournalEntries(): Prisma.ResearchFundJournalEntryCreateWithoutBookInput[] {
+  const publishedAt = new Date("2026-01-31T00:00:00.000Z");
+  const entries: Prisma.ResearchFundJournalEntryCreateWithoutBookInput[] =
+    secondPolitician2025Expenses.map(([date, key, description, amount], index) => ({
+      entryDate: new Date(`2025-${date.replace("/", "-")}T00:00:00.000Z`),
+      description,
+      source: "manual",
+      status: "published",
+      hash: `seed:choken-misaki:2025:row:${index}`,
+      publishedAt,
+      lines: { create: generateLines("expense", key, amount) },
+    }));
+  for (let month = 10; month <= 12; month++) {
+    entries.push({
+      entryDate: new Date(Date.UTC(2025, month - 1, 1)),
+      description: `調査研究広報滞在費 ${month}月分`,
+      source: "grant",
+      status: "published",
+      hash: `seed:choken-misaki:2025:grant:${month}`,
+      publishedAt,
+      lines: { create: generateLines("grant", "grant-income", 1_000_000) },
+    });
+  }
+  return entries;
+}
+
 const seedTargets = [
-  { slug: "sample-taro", hashPrefix: "seed:choken:2026:", build: buildResearchFundJournalEntries },
+  {
+    slug: "sample-taro",
+    financialYear: 2026,
+    publishedThrough: "2026-08-31",
+    hashPrefix: "seed:choken:2026:",
+    build: buildResearchFundJournalEntries,
+  },
   {
     slug: "sample-misaki",
+    financialYear: 2026,
+    publishedThrough: "2026-08-31",
     hashPrefix: "seed:choken-misaki:2026:",
     build: buildSecondPoliticianJournalEntries,
+  },
+  {
+    slug: "sample-misaki",
+    financialYear: 2025,
+    publishedThrough: "2025-12-31",
+    hashPrefix: "seed:choken-misaki:2025:",
+    build: buildSecondPolitician2025JournalEntries,
   },
 ];
 
@@ -163,9 +213,17 @@ export const researchFundJournalEntriesSeeder: Seeder = {
       const politician = await prisma.politician.findUnique({ where: { slug: target.slug } });
       if (!politician) throw new Error(`Seed politician ${target.slug} not found`);
       const book = await prisma.researchFundBook.findUnique({
-        where: { politicianId_financialYear: { politicianId: politician.id, financialYear: 2026 } },
+        where: {
+          politicianId_financialYear: {
+            politicianId: politician.id,
+            financialYear: target.financialYear,
+          },
+        },
       });
-      if (!book) throw new Error(`Seed research fund book for ${target.slug} (2026) not found`);
+      if (!book)
+        throw new Error(
+          `Seed research fund book for ${target.slug} (${target.financialYear}) not found`,
+        );
       const entries = target.build();
       await prisma.$transaction(
         async (tx) => {
@@ -182,12 +240,14 @@ export const researchFundJournalEntriesSeeder: Seeder = {
           }
           await tx.researchFundBook.update({
             where: { id: book.id },
-            data: { publishedThrough: new Date("2026-08-31T00:00:00.000Z") },
+            data: { publishedThrough: new Date(`${target.publishedThrough}T00:00:00.000Z`) },
           });
         },
         { timeout: 30_000 },
       );
-      console.log(`✅ Seeded ${target.slug}: ${entries.length} entries (existing entries preserved)`);
+      console.log(
+        `✅ Seeded ${target.slug} (${target.financialYear}): ${entries.length} entries (existing entries preserved)`,
+      );
     }
   },
 };

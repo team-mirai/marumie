@@ -236,6 +236,89 @@ test.describe("トップページ", () => {
 		await expectOpenWithOwnNumbers(taro);
 	});
 
+	test("所属議員の調研費で、2年分を公開している議員にだけ年の切り替えが出て、その場で中身とリンク先が切り替わる", async ({
+		page,
+	}) => {
+		await page.goto("/");
+		const section = page.getByRole("region", { name: "所属議員の調研費" });
+
+		// シードで 2026 年分だけを公開している太郎には切り替えが出ない
+		const taro = section.getByRole("region", { name: "サンプル 太郎の調研費" });
+		await expect(taro.getByRole("heading", { name: "サンプル 太郎の調研費" })).toBeVisible();
+		await expect(taro.getByRole("group", { name: "表示する年" })).toHaveCount(0);
+
+		// 2025 年分も公開している美咲を選ぶと、見出しの行に切り替えが出て、最初は 2026 年分
+		await section.getByRole("button", { name: "サンプル 美咲の調研費を下に表示" }).click();
+		const detail = section.getByRole("region", { name: "サンプル 美咲の調研費" });
+		const years = detail.getByRole("group", { name: "表示する年" });
+		const heading = detail.getByRole("link", { name: "サンプル 美咲の調研費", exact: true });
+		const button = detail.getByRole("link", { name: "サンプル 美咲の調研費を詳しく", exact: true });
+		await expect(years.getByRole("button", { name: "2026" })).toHaveAttribute("aria-pressed", "true");
+		await expect(years.getByRole("button", { name: "2025" })).toHaveAttribute("aria-pressed", "false");
+		await expect(detail.getByText("2026年4-8月分")).toBeVisible();
+		await expect(detail).toContainText(/支給総額\s*500万円/);
+		await expect(heading).toHaveAttribute("href", "/p/sample-misaki/2026");
+
+		// キーボードで 2025 年に切り替えると、ページを移らずにその年の中身とリンク先になる
+		await years.getByRole("button", { name: "2025" }).focus();
+		await page.keyboard.press("Enter");
+		await expect(page).toHaveURL("/");
+		await expect(years.getByRole("button", { name: "2025" })).toHaveAttribute("aria-pressed", "true");
+		await expect(years.getByRole("button", { name: "2026" })).toHaveAttribute("aria-pressed", "false");
+		await expect(detail.getByText("2025年10-12月分")).toBeVisible();
+		await expect(detail).toContainText(/支給総額\s*300万円/);
+		await expect(detail.getByText("2026.1.31 更新")).toBeVisible();
+		await expect(detail.getByRole("tab", { name: "法律上の区分" })).toBeVisible();
+		await expect(heading).toHaveAttribute("href", "/p/sample-misaki/2025");
+		await expect(
+			detail.getByRole("link", { name: "サンプル 美咲の調研費を詳しく見る" }),
+		).toHaveAttribute("href", "/p/sample-misaki/2025");
+
+		// 中身はその年の議員ページと一致する
+		await button.click();
+		await expect(page).toHaveURL("/p/sample-misaki/2025");
+		await expect(page.getByText("2025年10-12月分").first()).toBeVisible();
+		await expect(page.locator("main")).toContainText(/支給総額\s*300万円/);
+	});
+
+	test("SP の開いたカードでは、2年分を公開している議員にだけ左下に年の切り替えが出て、押してもカードは閉じない", async ({
+		page,
+	}) => {
+		await page.setViewportSize({ width: 390, height: 844 });
+		await page.goto("/");
+		const section = page.getByRole("region", { name: "所属議員の調研費" });
+
+		// 2026 年分だけの太郎は押せない年のラベルだけ
+		const taroCard = section.getByRole("button", { name: "サンプル 太郎の調研費", exact: true });
+		const taroPanel = page.locator(`[id="${await taroCard.getAttribute("aria-controls")}"]`);
+		await expect(taroCard).toHaveAttribute("aria-expanded", "true");
+		await expect(section.getByRole("group", { name: "表示する年" })).toHaveCount(0);
+		await expect(taroPanel).toBeVisible();
+
+		const card = section.getByRole("button", { name: "サンプル 美咲の調研費", exact: true });
+		await card.click();
+		await expect(card).toHaveAttribute("aria-expanded", "true");
+		const panel = page.locator(`[id="${await card.getAttribute("aria-controls")}"]`);
+		const years = section.getByRole("group", { name: "表示する年" });
+		await expect(years).toHaveCount(1);
+		await expect(years.getByRole("button", { name: "2026" })).toHaveAttribute("aria-pressed", "true");
+		await expect(panel).toContainText(/支給総額\s*500万円/);
+
+		await years.getByRole("button", { name: "2025" }).click();
+		await expect(card).toHaveAttribute("aria-expanded", "true");
+		await expect(years.getByRole("button", { name: "2025" })).toHaveAttribute("aria-pressed", "true");
+		await expect(section.getByText("調研費・2025年10-12月分")).toBeVisible();
+		await expect(panel).toContainText(/支給総額\s*300万円/);
+		await expect(
+			panel.getByRole("link", { name: "サンプル 美咲の調研費を詳しく", exact: true }),
+		).toHaveAttribute("href", "/p/sample-misaki/2025");
+		await expect(
+			section.getByRole("link", { name: "サンプル 美咲の調研費を詳しく見る" }),
+		).toHaveAttribute("href", "/p/sample-misaki/2025");
+		// 太郎の中身は 2026 年分のまま
+		await expect(taroPanel).toContainText(/支給総額\s*700万円/);
+	});
+
 	test("存在しない URL はトップページへ移る", async ({ page }) => {
 		await page.goto("/no-such-page");
 
