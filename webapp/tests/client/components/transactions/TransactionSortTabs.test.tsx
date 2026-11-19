@@ -14,4 +14,17 @@ describe("TransactionSortTabs", () => {
     expect(pressed).toHaveLength(1);
     expect(pressed[0]).toContain("古い順");
   });
+
+  // 幅 320px でも4つが1行に収まり、ページが横にスクロールしないように、375px 未満だけ文字と間隔を詰める
+  it("375px 未満では文字を 14px、間隔を gap-1 に詰め、それ以上の幅は 15px・gap-1.5 のまま", () => {
+    const html = renderToStaticMarkup(<TransactionSortTabs current="new" onChange={() => {}} />);
+    const fieldset = html.match(/<fieldset[^>]*>/)?.[0] ?? "";
+    expect(fieldset).toContain("gap-1.5");
+    expect(fieldset).toContain("max-[374px]:gap-1");
+    const buttons = html.match(/<button[^>]*>/g) ?? [];
+    for (const button of buttons) {
+      expect(button).toContain("text-[15px]");
+      expect(button).toContain("max-[374px]:text-[14px]");
+    }
+  });
 });
