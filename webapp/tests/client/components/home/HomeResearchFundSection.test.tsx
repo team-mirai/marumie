@@ -3,6 +3,7 @@ import HomeResearchFundSection from "@/client/components/home/HomeResearchFundSe
 import type {
   ResearchFundHomePoliticianView,
   ResearchFundHomeSummaryData,
+  ResearchFundHomeYearView,
 } from "@/server/contexts/research-fund/domain/models/research-fund-home-summary";
 
 // サンキー図の中身はこのテストの対象外なので描かない（図は sankey-layout のテストで確かめる）
@@ -13,6 +14,24 @@ jest.mock("@/client/components/top-page/features/charts/SankeyChart", () => ({
 
 const EMPTY_SANKEY = { nodes: [], links: [] };
 
+function year(overrides: Partial<ResearchFundHomeYearView> = {}): ResearchFundHomeYearView {
+  return {
+    financialYear: 2026,
+    asOfDate: "2026-08-20",
+    grantPeriodLabel: "2026年2-8月分",
+    kpi: { granted: 7_000_000, spent: 3_260_000 },
+    sankey: { detailed: EMPTY_SANKEY, legal: EMPTY_SANKEY },
+    ...overrides,
+  };
+}
+
+const YEAR_2025 = year({
+  financialYear: 2025,
+  asOfDate: "2026-01-31",
+  grantPeriodLabel: "2025年8-12月分",
+  kpi: { granted: 5_000_000, spent: 1_230_000 },
+});
+
 function politician(
   overrides: Partial<ResearchFundHomePoliticianView> = {},
 ): ResearchFundHomePoliticianView {
@@ -22,10 +41,7 @@ function politician(
     nameKana: "さんぷるたろう",
     house: "shugiin",
     hasPhoto: true,
-    asOfDate: "2026-08-20",
-    grantPeriodLabel: "2026年2-8月分",
-    kpi: { granted: 7_000_000, spent: 3_260_000 },
-    sankey: { detailed: EMPTY_SANKEY, legal: EMPTY_SANKEY },
+    years: [year()],
     ...overrides,
   };
 }
@@ -131,7 +147,7 @@ describe("HomeResearchFundSection", () => {
   });
 
   it("期間が無い議員は名前の下を「調研費・準備中」にし、かなは出さない", () => {
-    const html = render([politician({ grantPeriodLabel: null })]);
+    const html = render([politician({ years: [year({ grantPeriodLabel: null })] })]);
 
     expect(html).toContain("調研費・準備中");
     expect(html).not.toContain("さんぷるたろう");
@@ -153,5 +169,45 @@ describe("HomeResearchFundSection", () => {
     expect(html).toContain('data-wallet-card="sample-hanako" data-on="false"');
     expect(html).toContain('data-wallet-sheet="sample-taro"');
     expect(html).not.toContain('data-wallet-sheet="sample-hanako"');
+  });
+
+  describe("年の切り替え", () => {
+    it("2年分を公開している議員には、PC の見出しの行と SP の開いたカードに年の切り替えを出し、最初は defaultYear を選ぶ", () => {
+      const html = render([politician({ years: [YEAR_2025, year()] })]);
+
+      const segments = html.match(/<fieldset aria-label="表示する年"[\s\S]*?<\/fieldset>/g) ?? [];
+      // PC の見出しの行と SP の開いたカード
+      expect(segments).toHaveLength(2);
+      for (const segment of segments) {
+        expect(segment).toMatch(/<button type="button" aria-pressed="false"[^>]*>2025<\/button>/);
+        expect(segment).toMatch(/<button type="button" aria-pressed="true"[^>]*>2026<\/button>/);
+      }
+      // SP の押せない年のラベルは出さない
+      expect(html).not.toMatch(/>2026(<!-- -->)?年<\/span>/);
+      // 中身・リンク先は 2026 年分
+      expect(html).toContain("2026年2-8月分");
+      expect(html).not.toContain("2025年8-12月分");
+      expect(html).toContain("2026.8.20 更新");
+      expect(html).toContain('href="/p/sample-taro/2026"');
+      expect(html).not.toContain('href="/p/sample-taro/2025"');
+    });
+
+    it("1年分だけの議員には年の切り替えを出さない", () => {
+      const html = render([
+        politician({ years: [YEAR_2025, year()] }),
+        politician({ slug: "sample-hanako", name: "サンプル花子" }),
+      ]);
+
+      // 2年分ある先頭の議員の分（PC・SP）だけ
+      expect(html.match(/aria-label="表示する年"/g)).toHaveLength(2);
+    });
+
+    it("最初に出す年が無い議員は、最新の年の調研費を出す", () => {
+      const html = render([politician({ years: [YEAR_2025] })]);
+
+      expect(html).toContain("2025年8-12月分");
+      expect(html).toContain('href="/p/sample-taro/2025"');
+      expect(html).not.toContain('aria-label="表示する年"');
+    });
   });
 });

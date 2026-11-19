@@ -15,18 +15,21 @@ interface Props {
 
 /**
  * トップページの「所属議員の調研費」（v9）。調研費の説明と使用方針へのリンクの下に、調研費を公開中の議員を並べ、
- * 選んだ議員の調研費（金額と収支の流れ）をその場で出す。
+ * 選んだ議員の調研費（金額と収支の流れ）をその場で出す。2年分以上を公開している議員はその場で年を切り替えられる。
  */
 export default function HomeResearchFundSection({ data }: Props) {
   const members: HomeResearchFundMember[] = data.politicians.map((politician) => ({
     slug: politician.slug,
     name: politician.name,
     photoUrl: politician.hasPhoto ? politicianPhotoUrl(politician.slug) : null,
-    href: politicianPageHref(politician.slug, data.financialYear),
-    updatedAt: formatUpdatedAt(politician.asOfDate),
-    periodLabel: politician.grantPeriodLabel,
-    kpi: politician.kpi,
-    sankey: politician.sankey,
+    years: politician.years.map((year) => ({
+      year: year.financialYear,
+      href: politicianPageHref(politician.slug, year.financialYear),
+      updatedAt: formatUpdatedAt(year.asOfDate),
+      periodLabel: year.grantPeriodLabel,
+      kpi: year.kpi,
+      sankey: year.sankey,
+    })),
   }));
 
   return (
@@ -46,7 +49,7 @@ export default function HomeResearchFundSection({ data }: Props) {
         <ResearchFundIntroLinks />
       </div>
 
-      <HomeResearchFundMembers members={members} financialYear={data.financialYear} />
+      <HomeResearchFundMembers members={members} defaultYear={data.financialYear} />
     </section>
   );
 }

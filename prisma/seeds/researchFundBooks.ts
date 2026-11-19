@@ -36,6 +36,13 @@ const data: ResearchFundBookSeedData[] = [
     asOfDate: '2026-08-20',
     nextUpdateNote: '11月ごろ',
   },
+  // 2025 年から在職している議員。トップの「所属議員の調研費」で年を切り替える E2E のため、2025 年分も公開する
+  {
+    politicianSlug: 'sample-misaki',
+    financialYear: 2025,
+    status: 'active',
+    asOfDate: '2026-01-31',
+  },
   { politicianSlug: 'sample-hanako', financialYear: 2026, status: 'preparing' },
   { politicianSlug: 'sample-jiro', financialYear: 2026, status: 'preparing' },
   { politicianSlug: 'e2e-politician', financialYear: 2026, status: 'active' },

@@ -6,6 +6,7 @@ import type {
 import type {
   ResearchFundHomePoliticianView,
   ResearchFundHomeSummaryData,
+  ResearchFundHomeYearView,
 } from "@/server/contexts/research-fund/domain/models/research-fund-home-summary";
 import type { ResearchFundRepository } from "@/server/contexts/research-fund/domain/repositories/research-fund-repository.interface";
 import { buildGrantPeriodLabel } from "@/server/contexts/research-fund/domain/services/research-fund-coverage";
@@ -18,46 +19,77 @@ import {
 } from "@/shared/research-fund/aggregation";
 
 export interface GetResearchFundHomeSummaryParams {
+  /** 並べる議員を決め、最初に出す年 */
   financialYear: number;
+  /** 年の切り替えで選べる年（financialYear を含めなくてもよい）。省略時は financialYear だけ */
+  years?: readonly number[];
 }
 
 export class GetResearchFundHomeSummaryUsecase {
   constructor(private repository: ResearchFundRepository) {}
 
   /**
-   * トップページの「所属議員の調研費」のデータ。調研費を公開中で、その年度に published の仕訳がある議員を全員並べる。
+   * トップページの「所属議員の調研費」のデータ。調研費を公開中で、financialYear に published の仕訳がある議員を全員並べる。
    * どの政治団体に所属しているか（所属があるか）には左右されない。
    * 調研費を「公開しない」議員は repository の段階で外れる。
    * 並びはふりがなの五十音順。並べるのはデータを公開している議員だけなので、先頭（最初に選ばれる議員）もデータのある議員になる。
+   * 議員ごとに、years のうち published の仕訳がある年の調研費も添える（2年分以上あれば年を切り替えられる）。
    * 並べる議員がいなければ null を返し、呼び出し側がセクションを出さない。
    */
   async execute(
     params: GetResearchFundHomeSummaryParams,
   ): Promise<ResearchFundHomeSummaryData | null> {
-    const published = await this.repository.findPublishedForHome(params.financialYear);
+    const { financialYear } = params;
+    // 先頭は financialYear（並べる議員を決める年）
+    const years = [...new Set([financialYear, ...(params.years ?? [])])];
+    const publishedByYear = await Promise.all(
+      years.map((year) => this.repository.findPublishedForHome(year)),
+    );
+    const primary = publishedByYear[0];
 
-    // published の仕訳が1件も無い議員は「準備中」。カードもグラフも出さない。
+    // published の仕訳が1件も無い年は「準備中」。その年は出さない
+    const yearsBySlug = new Map<string, ResearchFundHomeYearView[]>();
+    years.forEach((year, index) => {
+      for (const item of publishedByYear[index]) {
+        if (item.rows.length === 0) continue;
+        const views = yearsBySlug.get(item.politician.slug) ?? [];
+        views.push(buildYearView(year, item));
+        yearsBySlug.set(item.politician.slug, views);
+      }
+    });
+
+    // 並べるのは financialYear を公開している議員だけ（ほかの年だけを公開している議員は並べない）
     const politicians = sortPoliticiansByKana(
-      published.filter((item) => item.rows.length > 0).map(buildPoliticianView),
+      primary
+        .filter((item) => item.rows.length > 0)
+        .map(
+          ({ politician }): ResearchFundHomePoliticianView => ({
+            slug: politician.slug,
+            name: politician.name,
+            nameKana: politician.nameKana,
+            house: politician.house,
+            hasPhoto: politician.hasPhoto,
+            years: (yearsBySlug.get(politician.slug) ?? []).sort(
+              (a, b) => a.financialYear - b.financialYear,
+            ),
+          }),
+        ),
     );
     if (politicians.length === 0) return null;
 
-    return { financialYear: params.financialYear, politicians };
+    return { financialYear, politicians };
   }
 }
 
-function buildPoliticianView(
+function buildYearView(
+  financialYear: number,
   published: PublishedPoliticianResearchFund,
-): ResearchFundHomePoliticianView {
+): ResearchFundHomeYearView {
   const detailed = aggregate(published.rows, published.accounts, "detailed");
   const legal = aggregate(published.rows, published.accounts, "legal");
 
   return {
-    slug: published.politician.slug,
-    name: published.politician.name,
-    nameKana: published.politician.nameKana,
-    house: published.politician.house,
-    hasPhoto: published.politician.hasPhoto,
+    financialYear,
     asOfDate: published.asOfDate,
     grantPeriodLabel: buildGrantPeriodLabel({
       months: published.rows.map((row) => row.date.slice(0, 7)),

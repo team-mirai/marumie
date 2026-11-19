@@ -3,18 +3,17 @@ import "client-only";
 import Link from "next/link";
 import { useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import AmountSummary from "@/client/components/common/AmountSummary";
+import YearSegment from "@/client/components/common/YearSegment";
 import PoliticianAvatar from "@/client/components/research-fund/PoliticianAvatar";
 import CashFlowSection from "@/client/components/top-page/CashFlowSection";
 import { useWalletMorph } from "@/client/lib/use-wallet-morph";
 import { toggleOpen } from "@/client/lib/wallet-deck";
 import type { SankeyData } from "@/types/sankey";
 
-export interface HomeResearchFundMember {
-  slug: string;
-  name: string;
-  /** 顔写真の URL。未登録なら null（人型のアイコンにする） */
-  photoUrl: string | null;
-  /** その議員の調研費ページ */
+/** 議員の1年分の調研費 */
+export interface HomeResearchFundMemberYear {
+  year: number;
+  /** その議員のその年の調研費ページ */
   href: string;
   /** 例: 「2026.10.23 更新」。未設定なら空文字 */
   updatedAt: string;
@@ -24,10 +23,20 @@ export interface HomeResearchFundMember {
   sankey: { detailed: SankeyData; legal: SankeyData };
 }
 
+export interface HomeResearchFundMember {
+  slug: string;
+  name: string;
+  /** 顔写真の URL。未登録なら null（人型のアイコンにする） */
+  photoUrl: string | null;
+  /** 公開済みの年の調研費（年の古い順）。1年分以上 */
+  years: HomeResearchFundMemberYear[];
+}
+
 interface Props {
   /** 調研費を公開中の議員（表示順）。1人以上 */
   members: HomeResearchFundMember[];
-  financialYear: number;
+  /** 最初に出す年 */
+  defaultYear: number;
 }
 
 const CHEVRON_PATH = "M9 5l7 7-7 7";
@@ -56,17 +65,29 @@ function Chevron({ size = 16, className = "" }: { size?: number; className?: str
   );
 }
 
+/** 選んだ年の調研費。その年が無ければ最新の年にする */
+function yearOf(member: HomeResearchFundMember, year: number): HomeResearchFundMemberYear {
+  return member.years.find((item) => item.year === year) ?? member.years[member.years.length - 1];
+}
+
+/** 年の切り替えの選択肢。公開済みの年が1つだけなら切り替えは出さない（null） */
+function yearOptionsOf(member: HomeResearchFundMember): { year: number }[] | null {
+  return member.years.length > 1 ? member.years.map(({ year }) => ({ year })) : null;
+}
+
 /**
- * 選んだ議員の金額と収支の流れ（区分タブつき）。others はほかの議員の図（切り替えても合計の柱を動かさないために測る）。
+ * 選んだ議員・年の金額と収支の流れ（区分タブつき）。others はほかの議員の図（切り替えても合計の柱を動かさないために測る）。
  * SP の開いたカードでは、支給総額と支出総額を横に並べる（ラベルの下に金額）
  */
 function MemberAmountsAndFlow({
   member,
+  year,
   layout,
   others,
   drawIn = true,
 }: {
   member: HomeResearchFundMember;
+  year: HomeResearchFundMemberYear;
   layout: "pc" | "sp";
   others: SankeyData[];
   /** 図を描き出しの動きで出すか。PC で議員を切り替えた後は false にし、描き終えた形で出す */
@@ -79,15 +100,15 @@ function MemberAmountsAndFlow({
         home={layout === "pc"}
         columns={layout === "sp"}
         items={[
-          { label: "支給総額", color: "#2AA693", amount: member.kpi.granted },
-          { label: "支出総額", color: "#DC2626", amount: member.kpi.spent },
+          { label: "支給総額", color: "#2AA693", amount: year.kpi.granted },
+          { label: "支出総額", color: "#DC2626", amount: year.kpi.spent },
         ]}
       />
-      {/* 議員を切り替えたらタブの選択を初期に戻す */}
+      {/* 議員や年を切り替えたらタブの選択を初期に戻す */}
       <CashFlowSection
-        key={member.slug}
-        friendly={nonEmpty(member.sankey.detailed)}
-        political={nonEmpty(member.sankey.legal)}
+        key={`${member.slug}-${year.year}`}
+        friendly={nonEmpty(year.sankey.detailed)}
+        political={nonEmpty(year.sankey.legal)}
         chart={{
           ariaLabel: `${member.name}の調査研究費の使いみちの流れ図`,
           ariaDescription:
@@ -114,11 +135,17 @@ function ReturnNote({ className }: { className: string }) {
   );
 }
 
-/** その議員のページへの黒いボタン */
-function MemberDetailButton({ member }: { member: HomeResearchFundMember }) {
+/** その議員の選んだ年のページへの黒いボタン */
+function MemberDetailButton({
+  member,
+  year,
+}: {
+  member: HomeResearchFundMember;
+  year: HomeResearchFundMemberYear;
+}) {
   return (
     <Link
-      href={member.href}
+      href={year.href}
       className="pill-arrow inline-flex h-12 items-center justify-center gap-1 self-stretch whitespace-nowrap rounded-full bg-[#0B0F0E] px-3.5 text-[clamp(12px,3.8vw,15px)] font-extrabold text-white transition-colors hover:bg-[#0F8472] min-[641px]:h-[52px] min-[641px]:min-w-[min(100%,360px)] min-[641px]:gap-1.5 min-[641px]:self-center min-[641px]:px-7 min-[641px]:text-[15px]"
     >
       {member.name}の調研費を詳しく
@@ -132,9 +159,10 @@ function MemberDetailButton({ member }: { member: HomeResearchFundMember }) {
  * PC（641px〜）は左右分割にし、左の名簿で選んだ議員の調研費を右の白いカードに出す。
  * SP はカードを縦に重ねたウォレットにし、タップしたカードを開いてその議員の調研費を出す（開いたカードをもう一度タップすると閉じる）。
  * SP は複数枚を同時に開けて、開いたカードそれぞれにその議員の調研費を出す。
- * 調研費を公開している年は1つだけなので、年の切り替えは出さない（SP の開いたカードには年を押せないラベルで出す）。
+ * 2年分以上を公開している議員には年の切り替え（PC は見出しの行の右端、SP は開いたカードの左下）を出し、その場で中身を切り替える。
+ * 1年分だけの議員には切り替えを出さない（SP の開いたカードには年を押せないラベルで出す）。
  */
-export default function HomeResearchFundMembers({ members, financialYear }: Props) {
+export default function HomeResearchFundMembers({ members, defaultYear }: Props) {
   const [selectedSlug, setSelectedSlug] = useState(members[0].slug);
   // PC で議員を切り替えたら、図を見比べやすいよう描き出しの動きなしで出す（初めて画面に入ったときだけ描き出す）
   const [pcSwitched, setPcSwitched] = useState(false);
@@ -142,13 +170,24 @@ export default function HomeResearchFundMembers({ members, financialYear }: Prop
   const [spOpen, setSpOpen] = useState<string[]>(() => [members[0].slug]);
   // 閉じる動きの途中で、まだシートを描いている議員
   const [spClosing, setSpClosing] = useState<string[]>([]);
+  // 議員ごとに選んでいる年（未選択なら defaultYear）。PC と SP で共有する
+  const [yearBySlug, setYearBySlug] = useState<Record<string, number>>({});
   const selected = members.find((member) => member.slug === selectedSlug) ?? members[0];
+  const currentYearOf = (member: HomeResearchFundMember) =>
+    yearOf(member, yearBySlug[member.slug] ?? defaultYear);
+  const selectYear = (slug: string, year: number) =>
+    setYearBySlug((current) => ({ ...current, [slug]: year }));
+  const selectedYear = currentYearOf(selected);
+  const selectedYearOptions = yearOptionsOf(selected);
   const idPrefix = useId();
   const pcDetailId = `${idPrefix}-detail`;
   const spDetailId = (slug: string) => `${idPrefix}-sp-${slug}`;
   // 議員を切り替えても合計・公費から支給の位置が動かないよう、全議員の図を測って一番高い図に合わせる
   const allSankeys = useMemo(
-    () => members.flatMap((member) => [member.sankey.detailed, member.sankey.legal]),
+    () =>
+      members.flatMap((member) =>
+        member.years.flatMap((year) => [year.sankey.detailed, year.sankey.legal]),
+      ),
     [members],
   );
 
@@ -233,42 +272,59 @@ export default function HomeResearchFundMembers({ members, financialYear }: Prop
             <div className="flex min-w-0 flex-[0_1_auto] flex-col gap-1">
               <h3 className="m-0 break-keep text-[clamp(22px,2.6vw,32px)] font-black leading-[1.3] tracking-[0.01em] [overflow-wrap:anywhere]">
                 <Link
-                  href={selected.href}
+                  href={selectedYear.href}
                   className="text-inherit hover:underline hover:underline-offset-[3px]"
                 >
                   {selected.name}の調研費
                 </Link>
               </h3>
-              {selected.periodLabel && (
-                <span className="text-[14px] font-bold text-[#238778]">{selected.periodLabel}</span>
+              {selectedYear.periodLabel && (
+                <span className="text-[14px] font-bold text-[#238778]">
+                  {selectedYear.periodLabel}
+                </span>
               )}
             </div>
             <Link
-              href={selected.href}
+              href={selectedYear.href}
               aria-label={`${selected.name}の調研費を詳しく見る`}
               className="relative -ml-1.5 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md text-[#0B0F0E] transition-[color,translate] duration-300 ease-[cubic-bezier(.2,.7,.1,1)] after:absolute after:-inset-3 after:content-[''] hover:text-[#0F8472] group-has-[h3_a:hover]/hd:text-[#0F8472] motion-safe:hover:translate-x-[3px] motion-safe:group-has-[h3_a:hover]/hd:translate-x-[3px]"
             >
               <Chevron size={18} />
             </Link>
+            {/* 2年分以上を公開している議員だけ、行の右端に年の切り替えを出す（v9 の .mt-msel-yr） */}
+            {selectedYearOptions && (
+              <div className="ml-auto flex-shrink-0 self-start">
+                <YearSegment
+                  years={selectedYearOptions}
+                  currentYear={selectedYear.year}
+                  onSelect={(year) => {
+                    if (year !== selectedYear.year) setPcSwitched(true);
+                    selectYear(selected.slug, year);
+                  }}
+                  tone="plain"
+                />
+              </div>
+            )}
           </div>
 
           <div className="@container flex flex-col gap-6">
             <MemberAmountsAndFlow
               member={selected}
+              year={selectedYear}
               layout="pc"
               others={allSankeys}
               drawIn={!pcSwitched}
             />
             <ReturnNote className="-mt-2" />
             {/* 更新日はカードの右下。PC（1101px〜）は「詳しく」ボタンと同じ行の右端に重ねる */}
-            {selected.updatedAt && (
+            {selectedYear.updatedAt && (
               <div className="flex justify-end min-[1101px]:@min-[720px]:pointer-events-none min-[1101px]:@min-[720px]:-mb-[76px] min-[1101px]:@min-[720px]:h-[52px] min-[1101px]:@min-[720px]:items-center">
                 <span className="whitespace-nowrap text-[12px] font-medium leading-none text-[#5B6470] tabular-nums">
-                  {selected.updatedAt}
+                  {selectedYear.updatedAt}
                 </span>
               </div>
             )}
-            <MemberDetailButton member={selected} />
+            <MemberDetailButton member={selected} year={selectedYear} />
           </div>
         </section>
       </div>
@@ -285,6 +341,8 @@ export default function HomeResearchFundMembers({ members, financialYear }: Prop
           const closing = !open && spClosing.includes(member.slug);
           const afterOpen = index > 0 && spOpen.includes(members[index - 1].slug);
           const isLast = index === members.length - 1;
+          const year = currentYearOf(member);
+          const yearOptions = yearOptionsOf(member);
           return (
             <li key={member.slug} className="flex flex-col">
               {/* 畳んだカードは束に重ね、開いたカードの次のカードは白いパネルの下に 18px あけて置く。
@@ -326,7 +384,7 @@ export default function HomeResearchFundMembers({ members, financialYear }: Prop
                   </span>
                   {open && (
                     <span className="truncate text-[12px] font-bold leading-[1.4] tracking-[0.08em] text-[#0A1A17]/80">
-                      調研費・{member.periodLabel ?? "準備中"}
+                      調研費・{year.periodLabel ?? "準備中"}
                     </span>
                   )}
                 </span>
@@ -345,15 +403,25 @@ export default function HomeResearchFundMembers({ members, financialYear }: Prop
                 </span>
                 {open && (
                   <>
-                    {/* 年は1つだけなので、押せる切り替えと見分けられるよう枠のない文字だけのラベルにする。
-                        開閉ボタンより上に重ね、押してもカードを閉じない */}
-                    <span className="absolute bottom-3.5 left-5 z-[2] flex h-10 cursor-default items-center text-[14px] font-bold leading-none tabular-nums text-[#0A1A17]/80">
-                      {financialYear}年
-                    </span>
+                    {/* 2年分以上なら年の切り替え、1年分だけなら押せる切り替えと見分けられるよう枠のない文字だけのラベルにする。
+                        どちらも開閉ボタンより上に重ね、押してもカードを閉じない */}
+                    {yearOptions ? (
+                      <span className="absolute bottom-3.5 left-4 z-[2] flex">
+                        <YearSegment
+                          years={yearOptions}
+                          currentYear={year.year}
+                          onSelect={(picked) => selectYear(member.slug, picked)}
+                        />
+                      </span>
+                    ) : (
+                      <span className="absolute bottom-3.5 left-5 z-[2] flex h-10 cursor-default items-center text-[14px] font-bold leading-none tabular-nums text-[#0A1A17]/80">
+                        {year.year}年
+                      </span>
+                    )}
                     {/* 政党・政治団体のカードと同じ「詳しく見る」（.more-link は position: relative なので、置く位置は外の枠で決める） */}
                     <span className="absolute bottom-2.5 right-8 z-[2] flex">
                       <Link
-                        href={member.href}
+                        href={year.href}
                         aria-label={`${member.name}の調研費を詳しく見る`}
                         className="more-link"
                       >
@@ -373,15 +441,20 @@ export default function HomeResearchFundMembers({ members, financialYear }: Prop
                   inert={closing || undefined}
                   className={`${open ? "wallet-sheet-in " : ""}relative z-[1] mt-[calc(18px_-_(100%_-_40px)_*_1.071_*_1.04_/_1.9825)] flex flex-col gap-[22px] rounded-[24px] bg-white px-4 pb-5 pt-[calc((100%_-_40px)_*_1.071_*_1.04_/_1.9825_+_8px)] shadow-[0_0_0_1px_#DCE4E1,0_30px_50px_-34px_rgba(10,60,52,0.35)]`}
                 >
-                  <MemberAmountsAndFlow member={member} layout="sp" others={allSankeys} />
+                  <MemberAmountsAndFlow
+                    member={member}
+                    year={year}
+                    layout="sp"
+                    others={allSankeys}
+                  />
                   <ReturnNote className="-mt-1.5" />
                   {/* 更新日はカードの外（サンキー図の右下） */}
-                  {member.updatedAt && (
+                  {year.updatedAt && (
                     <span className="-mt-1.5 self-end text-[12px] font-bold leading-none text-[#4B5563] tabular-nums">
-                      {member.updatedAt}
+                      {year.updatedAt}
                     </span>
                   )}
-                  <MemberDetailButton member={member} />
+                  <MemberDetailButton member={member} year={year} />
                 </div>
               )}
             </li>
