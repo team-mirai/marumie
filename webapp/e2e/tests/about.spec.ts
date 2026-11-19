@@ -69,7 +69,7 @@ test.describe("まる見え政治資金とはページ", () => {
 	});
 
 	test("調研費の説明動画はミュート・ループで再生する", async ({ page }) => {
-		const video = page.locator('video[src="/about/rf-members2.mp4"]');
+		const video = page.locator('video[src="/about/rf-members3-trim3.mp4"]');
 		await expect(video).toBeVisible();
 		expect(await video.evaluate((el: HTMLVideoElement) => el.muted && el.loop)).toBe(true);
 		await expect(video).not.toHaveAttribute("controls");
@@ -93,7 +93,7 @@ test.describe("まる見え政治資金とはページ（動きを減らす設�
 
 	test("説明動画を自動再生せず、コントロールを出す", async ({ page }) => {
 		await page.goto("/about");
-		const video = page.locator('video[src="/about/rf-members2.mp4"]');
+		const video = page.locator('video[src="/about/rf-members3-trim3.mp4"]');
 		await expect(video).toHaveAttribute("controls");
 		expect(await video.evaluate((el: HTMLVideoElement) => el.paused)).toBe(true);
 	});

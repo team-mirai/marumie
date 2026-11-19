@@ -31,10 +31,10 @@ export default function AboutResearchFundSection() {
 
       <figure className="m-0 w-full overflow-hidden rounded-[20px] bg-[#EDF4F1] p-[clamp(12px,2.4vw,28px)]">
         <AboutLoopVideo
-          src="/about/rf-members2.mp4"
-          poster="/about/rf-members-poster@2x.webp"
-          width={1728}
-          height={1210}
+          src="/about/rf-members3-trim3.mp4"
+          poster="/about/rf-members3-trim3-poster@2x.webp"
+          width={1528}
+          height={1192}
           label="トップページ「所属議員の調研費」の画面。左の議員リストで上から順に議員を切り替えると、右のカードの支給総額・支出総額と使い道のサンキー図がその議員のものに変わる"
           className="block h-auto w-full rounded-xl bg-[#EDF4F1]"
         />
