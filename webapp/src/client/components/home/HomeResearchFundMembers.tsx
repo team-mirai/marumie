@@ -612,7 +612,7 @@ export default function HomeResearchFundMembers({ members, comingSoon = [], defa
                 } ${
                   open
                     ? "aspect-[1.9825] rounded-[20px] py-[18px] pl-[18px] pr-[66px]"
-                    : `${isLast ? "min-h-[62px]" : "min-h-[92px]"} rounded-[18px] px-4 pt-3.5`
+                    : `${isLast ? "min-h-[62px]" : "min-h-[92px]"} rounded-[18px] pl-4 pr-[60px] pt-3.5`
                 }`}
               >
                 <button
@@ -629,17 +629,20 @@ export default function HomeResearchFundMembers({ members, comingSoon = [], defa
                   className={`shadow-[0_0_0_2px_rgba(255,255,255,0.8)] ${open ? "h-11 w-11" : "h-[34px] w-[34px]"}`}
                 />
                 <span className="flex min-w-0 flex-1 flex-col justify-center gap-[5px]">
-                  <span
-                    className={`flex items-center truncate font-extrabold leading-none tracking-[0.04em] text-[#76807E] ${open ? "h-11 text-[20px]" : "h-[34px] text-[16px]"}`}
-                  >
-                    {member.name}
+                  {/* 「準備中」のタグは名前の後ろ（同じ行）に添える */}
+                  <span className={`flex min-w-0 items-center gap-2 ${open ? "h-11" : "h-[34px]"}`}>
+                    <span
+                      className={`min-w-0 truncate font-extrabold leading-none tracking-[0.04em] text-[#76807E] ${open ? "text-[20px]" : "text-[16px]"}`}
+                    >
+                      {member.name}
+                    </span>
+                    <ComingSoonPill className="h-[22px] bg-white/75 px-[9px] font-extrabold tracking-normal text-[#3F4A4F]" />
                   </span>
                   {open && (
                     <span className="truncate text-[12px] font-bold leading-[1.4] tracking-[0.08em] text-[rgba(63,74,79,0.7)]">
                       調研費・準備中
                     </span>
                   )}
-                  <ComingSoonPill className="mt-1.5 h-[22px] self-start bg-white/75 px-[9px] font-extrabold tracking-normal text-[#3F4A4F]" />
                 </span>
                 <span
                   aria-hidden="true"
