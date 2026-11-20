@@ -5,6 +5,7 @@ import { useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import AmountSummary from "@/client/components/common/AmountSummary";
 import ComingSoonPill from "@/client/components/common/ComingSoonPill";
 import YearSegment from "@/client/components/common/YearSegment";
+import HomeCardTitleLink from "@/client/components/home/HomeCardTitleLink";
 import PoliticianAvatar from "@/client/components/research-fund/PoliticianAvatar";
 import CashFlowSection from "@/client/components/top-page/CashFlowSection";
 import { useWalletMorph } from "@/client/lib/use-wallet-morph";
@@ -392,35 +393,24 @@ export default function HomeResearchFundMembers({ members, comingSoon = [], defa
             <ComingSoonPcDetail member={selectedComingSoon} />
           ) : (
             <>
-              {/* 題名にホバーしたときも、横の矢印を右へ動かして緑にする（v9 の .mt-msel-hd a.t-go:hover ~ .hd-go） */}
-              <div className="group/hd flex items-center gap-4">
+              <div className="flex items-center gap-4">
                 <PoliticianAvatar
                   photoUrl={selected.photoUrl}
                   alt={`${selected.name}の写真`}
                   className="h-[72px] w-[72px] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.08)]"
                 />
-                <div className="flex min-w-0 flex-[0_1_auto] flex-col gap-1">
-                  <h3 className="m-0 break-keep text-[clamp(22px,2.6vw,32px)] font-black leading-[1.3] tracking-[0.01em] [overflow-wrap:anywhere]">
-                    <Link
-                      href={selectedYear.href}
-                      className="text-inherit hover:underline hover:underline-offset-[3px]"
-                    >
-                      {selected.name}の調研費
-                    </Link>
-                  </h3>
-                  {selectedYear.periodLabel && (
-                    <span className="text-[14px] font-bold text-[#238778]">
-                      {selectedYear.periodLabel}
-                    </span>
-                  )}
-                </div>
-                <Link
+                <HomeCardTitleLink
                   href={selectedYear.href}
-                  aria-label={`${selected.name}の調研費を詳しく見る`}
-                  className="relative -ml-1.5 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md text-[#0B0F0E] transition-[color,translate] duration-300 ease-[cubic-bezier(.2,.7,.1,1)] after:absolute after:-inset-3 after:content-[''] hover:text-[#0F8472] group-has-[h3_a:hover]/hd:text-[#0F8472] motion-safe:hover:translate-x-[3px] motion-safe:group-has-[h3_a:hover]/hd:translate-x-[3px]"
-                >
-                  <Chevron size={18} />
-                </Link>
+                  title={`${selected.name}の調研費`}
+                  headingLevel="h3"
+                  sub={
+                    selectedYear.periodLabel && (
+                      <span className="text-[14px] font-bold text-[#238778]">
+                        {selectedYear.periodLabel}
+                      </span>
+                    )
+                  }
+                />
                 {/* 2年分以上を公開している議員だけ、行の右端に年の切り替えを出す（v9 の .mt-msel-yr） */}
                 {selectedYearOptions && (
                   <div className="ml-auto flex-shrink-0 self-start">

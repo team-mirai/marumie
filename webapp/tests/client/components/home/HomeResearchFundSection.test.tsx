@@ -146,10 +146,10 @@ describe("HomeResearchFundSection", () => {
       politician({ slug: "sample-hanako", name: "サンプル花子" }),
     ]);
 
+    // PC の見出しは、タイトル・›・期間が 1 つのリンク
     expect(html).toMatch(
-      /<h3[^>]*><a [^>]*href="\/p\/sample-taro\/2026"[^>]*>サンプル太郎の調研費<\/a><\/h3>/,
+      /<a [^>]*href="\/p\/sample-taro\/2026"><h3[^>]*>サンプル太郎の調研<span class="whitespace-nowrap">費<span aria-hidden="true".*?<\/h3><span [^>]*>2026年2-8月分<\/span><\/a>/,
     );
-    expect(html).toContain("2026年2-8月分");
     expect(html).toContain("2026.8.20 更新");
     expect(html).toContain("支給総額");
     expect(html).toContain("支出総額");
