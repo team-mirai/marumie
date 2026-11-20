@@ -7,7 +7,10 @@ export const POLICY_NOTE_URL = "https://note.com/team_mirai_jp/n/n9ec9166d0e1e";
  */
 export default function ResearchFundIntroLinks() {
   return (
-    <div className="flex flex-col gap-2">
+    // 2 行の文字の中心どうしの間隔を v9 に合わせる（SP 35px・PC 34px）。
+    // SP は押せる範囲を各 44px 保ったまま重ねないよう、間をあけずに並べ、「使用方針」の文字を押せる範囲の上寄せにする
+    // （上 1px・下 19px。開いたときの説明文と「使用方針」の文字の間も v9 と同じ 20px にそろえる）
+    <div className="flex flex-col min-[641px]:gap-2">
       <details data-reveal className="group">
         <summary className="flex min-h-[30px] w-fit max-[640px]:min-h-11 cursor-pointer list-none items-center gap-2.5 text-[16px] font-extrabold text-[#0F8472] hover:text-[#089781] min-[641px]:text-[15px] [&::-webkit-details-marker]:hidden">
           <svg
@@ -45,7 +48,7 @@ export default function ResearchFundIntroLinks() {
             <path d="M6 9l6 6 6-6" />
           </svg>
         </summary>
-        <div className="flex max-w-[820px] flex-col gap-3 pb-3 pt-2 text-[14px] leading-[1.8] text-[#1F2937] min-[641px]:text-[15px] min-[641px]:leading-[1.9]">
+        <div className="flex max-w-[820px] flex-col gap-3 pb-3 pt-2 max-[640px]:pb-[19px] text-[14px] leading-[1.8] text-[#1F2937] min-[641px]:text-[15px] min-[641px]:leading-[1.9]">
           <p className="m-0">
             調研費（調査研究広報滞在費）は、国会議員の調査研究や広報、国民との交流、滞在などの活動のために、国から毎月100万円支給される公費です。政治資金規正法上の「政治資金」ではありませんが、チームみらいでは透明性の観点から本サイトで公開しています。選挙運動には使えません。年内に使わなかった未使用分は国庫に返還します。
           </p>
@@ -58,7 +61,7 @@ export default function ResearchFundIntroLinks() {
         rel="noopener noreferrer"
         data-reveal
         aria-label="チームみらいの調研費の使用方針を読む（noteが別タブで開きます）"
-        className="group flex min-h-[30px] w-fit max-[640px]:min-h-11 items-center gap-2.5 text-[16px] font-extrabold text-[#0F8472] no-underline hover:text-[#089781] min-[641px]:text-[15px]"
+        className="group flex w-fit items-center gap-2.5 max-[640px]:min-h-11 max-[640px]:pb-[19px] max-[640px]:pt-px min-[641px]:-mt-1 min-[641px]:py-1 text-[16px] font-extrabold text-[#0F8472] no-underline hover:text-[#089781] min-[641px]:text-[15px]"
       >
         <svg
           viewBox="0 0 24 24"
