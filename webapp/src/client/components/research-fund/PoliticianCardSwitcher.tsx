@@ -58,9 +58,9 @@ function Chevron({ direction }: { direction: "prev" | "next" }) {
   );
 }
 
-// SP は下の位置表示（点と「10 / 12」）を除いたカードの上下中央に置き、左右はカードから 4px はみ出させる（画面の端まで 6px。本文の左右の余白 10px を前提にしている）。押したとき・ホバーの動きは globals.css の .politician-switch-nav
+// v9 の .mm-nav。カードの左右の縁を中心に置く（SP 48px・PC 40px）。SP は下の位置表示（点と「10 / 12」）を除いたカードの上下中央に置く。押したとき・ホバーの動きは globals.css の .politician-switch-nav
 const NAV_BUTTON_CLASS =
-  "politician-switch-nav absolute top-[calc(50%-30px)] z-10 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/90 bg-white/60 text-[#0B0F0E] shadow-[inset_0_1px_0_rgba(255,255,255,0.95),0_12px_26px_-12px_rgba(10,60,52,0.5),0_2px_6px_rgba(10,60,52,0.1)] backdrop-blur-[14px] hover:bg-white/80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0F8472] min-[641px]:top-1/2 min-[641px]:h-10 min-[641px]:w-10 min-[641px]:border-0 min-[641px]:bg-white min-[641px]:shadow-[0_2px_6px_rgba(11,15,14,0.10),0_8px_20px_rgba(11,15,14,0.10)] min-[641px]:backdrop-blur-none min-[641px]:hover:bg-[#E2F6F3] min-[641px]:hover:text-[#0F8472]";
+  "politician-switch-nav absolute top-[calc(50%-30px)] z-10 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-white/90 bg-white/60 text-[#0B0F0E] shadow-[inset_0_1px_0_rgba(255,255,255,0.95),0_12px_26px_-12px_rgba(10,60,52,0.5),0_2px_6px_rgba(10,60,52,0.1)] backdrop-blur-[14px] hover:bg-white/80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0F8472] min-[641px]:top-1/2 min-[641px]:h-10 min-[641px]:w-10 min-[641px]:border-0 min-[641px]:bg-white min-[641px]:shadow-[0_2px_6px_rgba(11,15,14,0.10),0_8px_20px_rgba(11,15,14,0.10)] min-[641px]:backdrop-blur-none min-[641px]:hover:bg-[#E2F6F3] min-[641px]:hover:text-[#0F8472]";
 
 /**
  * 議員ページ冒頭の議員カードの、前後の議員への切り替え（デザイン v9 の mmGo / swS / swM / swE）。
@@ -167,10 +167,13 @@ export default function PoliticianCardSwitcher({
         ? "politician-switch-in-l"
         : "";
 
+  // 左右のボタンが画面の端で切れないよう、カードを内側に寄せる（v9：SP 16px、641〜900px 20px、901〜1200px 12px）。
+  // v9 は PC でその外側に .mt-wrap の余白 clamp(12px,3vw,32px) があるが、MainColumn は 1032px 未満で左右の余白が 0 なので、その分を足す。
+  // 1032px 以上は MainColumn の外側の余白（(100vw − 1032px) / 2）が増える分だけ差し引く（最小は v9 の 12px）
   return (
     <section
       aria-label="議員情報"
-      className="relative max-[640px]:touch-pan-y"
+      className="relative mx-4 max-[640px]:touch-pan-y min-[641px]:mx-[calc(3vw_+_20px)] min-[901px]:mx-[max(12px,calc(min(3vw,32px)_+_12px_-_max(0px,(100vw_-_1032px)_/_2)))] min-[1201px]:mx-0"
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
@@ -188,7 +191,7 @@ export default function PoliticianCardSwitcher({
             onClick={() => remember(nav.prev, -1)}
             aria-label={`前の議員（${nav.prev.name}）の調研費へ`}
             title={`前の議員（${nav.prev.name}）の調研費へ`}
-            className={`${NAV_BUTTON_CLASS} is-prev -left-1 min-[641px]:-left-5`}
+            className={`${NAV_BUTTON_CLASS} is-prev -left-6 min-[641px]:-left-5`}
           >
             <Chevron direction="prev" />
           </Link>
@@ -197,7 +200,7 @@ export default function PoliticianCardSwitcher({
             onClick={() => remember(nav.next, 1)}
             aria-label={`次の議員（${nav.next.name}）の調研費へ`}
             title={`次の議員（${nav.next.name}）の調研費へ`}
-            className={`${NAV_BUTTON_CLASS} is-next -right-1 min-[641px]:-right-5`}
+            className={`${NAV_BUTTON_CLASS} is-next -right-6 min-[641px]:-right-5`}
           >
             <Chevron direction="next" />
           </Link>
