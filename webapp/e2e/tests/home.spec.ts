@@ -144,17 +144,16 @@ test.describe("トップページ", () => {
 		// シードの準備中の議員（prisma/seeds/politicians.ts）
 		const kenta = section.getByRole("button", { name: "サンプル 健太の調研費（準備中）を下に表示" });
 		const measure = () =>
-			page.evaluate(() => {
-				const sectionEl = Array.from(document.querySelectorAll("section")).find(
-					(el) => el.getAttribute("aria-label") === "所属議員の調研費",
-				);
-				const detailEl = sectionEl?.querySelector('section[aria-live="polite"]');
+			section.evaluate((sectionEl) => {
+				const detailEl = sectionEl.querySelector('section[aria-live="polite"]');
+				if (!detailEl) throw new Error("右のカード（aria-live の section）が見つからない");
 				const footer = document.querySelector("footer");
+				// 小数点以下の描画の誤差（0.0001px 程度）で落ちないよう px 単位に丸める
 				return {
-					section: sectionEl?.getBoundingClientRect().height,
-					detail: detailEl?.getBoundingClientRect().height,
+					section: Math.round(sectionEl.getBoundingClientRect().height),
+					detail: Math.round(detailEl.getBoundingClientRect().height),
 					// セクションより下の内容の位置
-					footerTop: footer ? footer.getBoundingClientRect().top + window.scrollY : null,
+					footerTop: footer ? Math.round(footer.getBoundingClientRect().top + window.scrollY) : null,
 				};
 			});
 
