@@ -167,11 +167,13 @@ export default function PoliticianCardSwitcher({
         ? "politician-switch-in-l"
         : "";
 
-  // 左右のボタンが画面の端で切れないよう、カードを内側に寄せる（v9：SP 16px、641〜900px 20px、901〜1200px 12px）
+  // 左右のボタンが画面の端で切れないよう、カードを内側に寄せる（v9：SP 16px、641〜900px 20px、901〜1200px 12px）。
+  // v9 は PC でその外側に .mt-wrap の余白 clamp(12px,3vw,32px) があるが、MainColumn は 1032px 未満で左右の余白が 0 なので、その分を足す。
+  // 1032px 以上は MainColumn の外側の余白（(100vw − 1032px) / 2）が増える分だけ差し引く（最小は v9 の 12px）
   return (
     <section
       aria-label="議員情報"
-      className="relative mx-4 max-[640px]:touch-pan-y min-[641px]:mx-5 min-[901px]:mx-3 min-[1201px]:mx-0"
+      className="relative mx-4 max-[640px]:touch-pan-y min-[641px]:mx-[calc(3vw_+_20px)] min-[901px]:mx-[max(12px,calc(min(3vw,32px)_+_12px_-_max(0px,(100vw_-_1032px)_/_2)))] min-[1201px]:mx-0"
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
