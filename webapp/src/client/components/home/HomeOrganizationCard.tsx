@@ -4,6 +4,7 @@ import Link from "next/link";
 import { type CSSProperties, type ReactNode, useState } from "react";
 import AmountSummary from "@/client/components/common/AmountSummary";
 import YearSegment from "@/client/components/common/YearSegment";
+import HomeCardTitleLink from "@/client/components/home/HomeCardTitleLink";
 import CashFlowSection from "@/client/components/top-page/CashFlowSection";
 import { calculateSankeyFinancialSummary } from "@/client/lib/sankey-financial-summary";
 import type { SankeyData } from "@/types/sankey";
@@ -43,7 +44,7 @@ const CHEVRON_PATH = "M9 5l7 7-7 7";
 /**
  * トップページの政党・政治団体の収支カード（v9）。年の切り替えでその場の金額と収支の流れを差し替え、
  * 「詳しく」から選んでいる年の政党・政治団体ページへ移る。
- * PC（641px〜）は白いカードの中に見出しの行（ロゴ・見出し・矢印・年の切り替え）を置く。
+ * PC（641px〜）は白いカードの中に見出しの行（ロゴ・見出し・年の切り替え）を置き、見出しの文字のすぐ後ろに › を付ける。
  * SP はミストグラデーションの見出しの面をカードの上端に重ね、左下に年の切り替え、右下に「詳しく見る」を置く。
  */
 export default function HomeOrganizationCard({
@@ -76,8 +77,9 @@ export default function HomeOrganizationCard({
     current.political.links.length === 0;
   const yearOptions = years.map(({ year }) => ({ year }));
 
+  // SP のミストの面の見出し。PC の見出しは HomeCardTitleLink
   const heading = (
-    <Heading className="m-0 break-keep text-[18px] font-black leading-[1.3] tracking-[0.01em] [overflow-wrap:anywhere] min-[641px]:text-[clamp(22px,2.6vw,32px)]">
+    <Heading className="m-0 break-keep text-[18px] font-black leading-[1.3] tracking-[0.01em] [overflow-wrap:anywhere]">
       <Link href={detailHref} className="text-inherit hover:underline hover:underline-offset-[3px]">
         {title}
       </Link>
@@ -126,29 +128,12 @@ export default function HomeOrganizationCard({
           <span className="flex h-[72px] w-[72px] flex-shrink-0 items-center justify-center overflow-hidden rounded-full bg-white shadow-[inset_0_0_0_1px_rgba(0,0,0,0.06)]">
             {avatar}
           </span>
-          <span className="flex min-w-0 flex-[0_1_auto] flex-col gap-1">
-            {heading}
-            {sub}
-          </span>
-          <Link
+          <HomeCardTitleLink
             href={detailHref}
-            aria-label={`${title}を詳しく見る`}
-            className="relative -ml-1.5 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md text-[#0B0F0E] transition-[color,transform] after:absolute after:-inset-3 after:content-[''] hover:translate-x-[3px] hover:text-[#0F8472]"
-          >
-            <svg
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.6"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden="true"
-            >
-              <path d={CHEVRON_PATH} />
-            </svg>
-          </Link>
+            title={title}
+            headingLevel={headingLevel}
+            sub={sub}
+          />
           <div className="ml-auto flex-shrink-0">
             <YearSegment
               years={yearOptions}

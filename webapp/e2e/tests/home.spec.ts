@@ -251,7 +251,10 @@ test.describe("トップページ", () => {
 		await section.getByRole("button", { name: "サンプル 美咲の調研費を下に表示" }).click();
 		const detail = section.getByRole("region", { name: "サンプル 美咲の調研費" });
 		const years = detail.getByRole("group", { name: "表示する年" });
-		const heading = detail.getByRole("link", { name: "サンプル 美咲の調研費", exact: true });
+		// 見出しは、タイトル・›・年が 1 つのリンク
+		const heading = detail
+			.getByRole("link")
+			.filter({ has: page.getByRole("heading", { name: "サンプル 美咲の調研費", exact: true }) });
 		const button = detail.getByRole("link", { name: "サンプル 美咲の調研費を詳しく", exact: true });
 		await expect(years.getByRole("button", { name: "2026" })).toHaveAttribute("aria-pressed", "true");
 		await expect(years.getByRole("button", { name: "2025" })).toHaveAttribute("aria-pressed", "false");
@@ -270,9 +273,7 @@ test.describe("トップページ", () => {
 		await expect(detail.getByText("2026.1.31 更新")).toBeVisible();
 		await expect(detail.getByRole("tab", { name: "法律上の区分" })).toBeVisible();
 		await expect(heading).toHaveAttribute("href", "/p/sample-misaki/2025");
-		await expect(
-			detail.getByRole("link", { name: "サンプル 美咲の調研費を詳しく見る" }),
-		).toHaveAttribute("href", "/p/sample-misaki/2025");
+		await expect(heading).toContainText("2025年10-12月分");
 
 		// 中身はその年の議員ページと一致する
 		await button.click();
