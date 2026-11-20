@@ -134,6 +134,55 @@ test.describe("トップページ", () => {
 		await expect(page).toHaveURL("/p/sample-taro/2026");
 	});
 
+	test("PC で準備中の議員を選んでも、右のカードとセクションの高さ・下の内容の位置が変わらない", async ({
+		page,
+	}) => {
+		const section = page.getByRole("region", { name: "所属議員の調研費" });
+		const detail = section.locator('section[aria-live="polite"]');
+		const taro = section.getByRole("button", { name: "サンプル 太郎の調研費を下に表示" });
+		const misaki = section.getByRole("button", { name: "サンプル 美咲の調研費を下に表示" });
+		// シードの準備中の議員（prisma/seeds/politicians.ts）
+		const kenta = section.getByRole("button", { name: "サンプル 健太の調研費（準備中）を下に表示" });
+		const measure = () =>
+			section.evaluate((sectionEl) => {
+				const detailEl = sectionEl.querySelector('section[aria-live="polite"]');
+				if (!detailEl) throw new Error("右のカード（aria-live の section）が見つからない");
+				const footer = document.querySelector("footer");
+				// 小数点以下の描画の誤差（0.0001px 程度）で落ちないよう px 単位に丸める
+				return {
+					section: Math.round(sectionEl.getBoundingClientRect().height),
+					detail: Math.round(detailEl.getBoundingClientRect().height),
+					// セクションより下の内容の位置
+					footerTop: footer ? Math.round(footer.getBoundingClientRect().top + window.scrollY) : null,
+				};
+			});
+
+		// 列の組み方が変わる幅（641px・1101px の境目）を含む代表的な幅で確かめる
+		for (const width of [641, 800, 1024, 1100, 1101, 1280, 1440]) {
+			await page.setViewportSize({ width, height: 900 });
+			await page.goto("/");
+			for (const publicMember of [taro, misaki]) {
+				await publicMember.click();
+				await expect(publicMember).toHaveAttribute("aria-pressed", "true");
+				await expect(detail.getByText("支給総額")).toBeVisible();
+				const before = await measure();
+
+				await kenta.click();
+				await expect(kenta).toHaveAttribute("aria-pressed", "true");
+				await expect(detail.getByText("調研費のデータは公開準備中です")).toBeVisible();
+				await expect(detail.getByText("サンプル 健太議員室は12月中旬を目処に公開予定です。")).toBeVisible();
+				await expect(detail.getByRole("link", { name: "詳しく（準備中）" })).toBeVisible();
+				// 準備中の間は、高さを保つために残した公開中の議員の中身を読み上げ・操作の対象にしない
+				await expect(detail.getByText("支給総額")).toBeHidden();
+				expect(await measure(), `幅 ${width}px`).toEqual(before);
+
+				await publicMember.click();
+				await expect(detail.getByText("支給総額")).toBeVisible();
+				expect(await measure(), `幅 ${width}px`).toEqual(before);
+			}
+		}
+	});
+
 	test("SP では議員の調研費を3列の図で、政党のカードを全体表示の図で出す", async ({ page }) => {
 		await page.setViewportSize({ width: 390, height: 844 });
 		await page.goto("/");

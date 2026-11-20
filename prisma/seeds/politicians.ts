@@ -11,6 +11,8 @@ interface PoliticianSeedData {
   startedOn?: string;
   /** 調研費を公開するか（既定は非公開）。非公開の議員は webapp の導線・sitemap に出ず、プレビュー URL でだけ開けて noindex になる */
   isResearchFundPublic?: boolean;
+  /** 調研費を非公開のまま「準備中」として webapp の一覧に出すときの添え書き（非公開の議員だけ）。未指定なら出さない */
+  researchFundComingSoonNote?: string;
 }
 
 const data: PoliticianSeedData[] = [
@@ -52,6 +54,17 @@ const data: PoliticianSeedData[] = [
     isResearchFundPublic: true,
   },
   {
+    // トップの PC で準備中の議員を選んでも右のカードの高さが変わらないことを E2E で確かめるための、準備中の議員。
+    // 公開中の議員の後ろに並ぶ
+    name: 'サンプル 健太',
+    slug: 'sample-kenta',
+    termStart: '2025-07-21',
+    displayOrder: 5,
+    // 政党ページの所属議員には出さない（準備中の一覧は所属を問わない）
+    organizationSlug: null,
+    researchFundComingSoonNote: 'サンプル 健太議員室は12月中旬を目処に公開予定です。',
+  },
+  {
     name: 'E2E 議員',
     slug: 'e2e-politician',
     termStart: '2025-07-21',
@@ -75,6 +88,7 @@ export const politiciansSeeder: Seeder = {
             termStart: new Date(item.termStart),
             displayOrder: item.displayOrder,
             isResearchFundPublic: item.isResearchFundPublic ?? false,
+            researchFundComingSoonNote: item.researchFundComingSoonNote ?? null,
           },
         });
         console.log(`✅ Created: ${item.slug}`);
