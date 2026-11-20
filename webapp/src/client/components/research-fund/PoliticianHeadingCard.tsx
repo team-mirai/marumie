@@ -97,15 +97,16 @@ export default function PoliticianHeadingCard({
     </div>
   );
 
+  // SP はデザイン v9 のとおり、幅は (入れ物の幅 − 40px) × 1.071 × 1.04 で中央に置き、縦横比 1.9825:1
   const spCard = (
-    <div className="mist-surface grid min-h-[134px] grid-cols-[auto_minmax(0,1fr)] grid-rows-[auto_1fr_auto] items-center gap-x-3 gap-y-3 rounded-[24px] px-[18px] pb-4 pt-[18px] min-[641px]:hidden">
+    <div className="mist-surface mx-auto mb-1 grid aspect-[1.9825] w-[calc((100%-40px)*1.071*1.04)] grid-cols-[auto_minmax(0,1fr)] grid-rows-[auto_1fr_auto] items-center gap-x-[11px] gap-y-0 rounded-[20px] pb-3.5 pl-4 pr-3.5 pt-4 min-[641px]:hidden">
       <PoliticianAvatar
         photoUrl={photoUrl}
         alt={photoAlt}
-        className="politician-switch-avatar col-start-1 row-start-1 h-[52px] w-[52px] shadow-[0_0_0_2px_rgba(255,255,255,0.95),0_4px_10px_-4px_rgba(10,60,52,0.35)]"
+        className="politician-switch-avatar col-start-1 row-start-1 h-[46px] w-[46px] shadow-[0_0_0_2px_rgba(255,255,255,0.95),0_4px_10px_-4px_rgba(10,60,52,0.35)]"
       />
       <span className="politician-switch-text col-start-2 row-start-1 flex min-w-0 flex-col gap-1">
-        <span className="text-[20px] font-black leading-[1.3] tracking-[0.01em]">
+        <span className="text-[18px] font-black leading-[1.3] tracking-[0.01em] [overflow-wrap:anywhere] [word-break:keep-all]">
           {politician.name}
         </span>
         <span className="text-[13px] font-bold text-[#0A1A17]/80">
