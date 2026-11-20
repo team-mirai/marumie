@@ -109,6 +109,7 @@ function usecaseWith(value: PublishedResearchFund | null) {
     findPublished: jest.fn().mockResolvedValue(value),
     findPublishedForHome: jest.fn().mockResolvedValue([]),
     findPoliticians: jest.fn().mockResolvedValue([]),
+    findComingSoonPoliticians: jest.fn().mockResolvedValue([]),
     findPublishedPageRefs: jest.fn().mockResolvedValue([]),
     findPublishedReceipt: jest.fn().mockResolvedValue(null),
   };

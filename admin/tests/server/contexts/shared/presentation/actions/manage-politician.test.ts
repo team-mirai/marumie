@@ -40,6 +40,7 @@ beforeEach(() => {
     politicalOrganizationId: "",
     politicalOrganizationName: null,
     isResearchFundPublic: false,
+    researchFundComingSoonNote: null,
     nameKana: "",
     house: "",
     constituency: "",
@@ -232,6 +233,7 @@ describe("顔写真の登録・削除", () => {
         politicalOrganizationId: "",
         politicalOrganizationName: null,
         isResearchFundPublic: false,
+        researchFundComingSoonNote: null,
         ...profile,
         photoPath: "politicians/1/a.jpg",
       });

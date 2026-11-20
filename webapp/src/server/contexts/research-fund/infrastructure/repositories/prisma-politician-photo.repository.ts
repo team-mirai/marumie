@@ -11,9 +11,13 @@ export class PrismaPoliticianPhotoRepository implements PoliticianPhotoRepositor
   async findPhoto(slug: string): Promise<PoliticianPhotoSource | null> {
     const politician = await this.prisma.politician.findUnique({
       where: { slug },
-      select: { isResearchFundPublic: true, photoPath: true },
+      select: { isResearchFundPublic: true, researchFundComingSoonNote: true, photoPath: true },
     });
     if (!politician) return null;
-    return { isPublic: politician.isResearchFundPublic, photoPath: politician.photoPath };
+    return {
+      isPublic: politician.isResearchFundPublic,
+      isComingSoon: politician.researchFundComingSoonNote !== null,
+      photoPath: politician.photoPath,
+    };
   }
 }

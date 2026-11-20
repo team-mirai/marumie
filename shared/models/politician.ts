@@ -41,6 +41,11 @@ export interface Politician extends PoliticianInput {
   politicalOrganizationName: string | null;
   /** 調研費を公開するか。false なら議員ページはプレビュー URL でだけ開け、webapp の導線・sitemap に出さず noindex にする */
   isResearchFundPublic: boolean;
+  /**
+   * 調研費を非公開のまま、公開サイトの議員一覧に「準備中」としてグレーで出すときの添え書き。
+   * null = 出さない。空文字 = 添え書きなしで出す。公開中の議員には使わない
+   */
+  researchFundComingSoonNote: string | null;
   /** 顔写真の Storage 上のキー。未登録なら null */
   photoPath: string | null;
 }

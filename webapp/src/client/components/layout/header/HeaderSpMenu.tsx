@@ -1,8 +1,10 @@
 import Link from "next/link";
+import ComingSoonPill from "@/client/components/common/ComingSoonPill";
 import OrganizationMenuIcon from "@/client/components/layout/header/OrganizationMenuIcon";
 import PoliticianInitialAvatar from "@/client/components/layout/header/PoliticianInitialAvatar";
 import {
   ABOUT_HREF,
+  type ComingSoonPoliticianMenuItem,
   DATA_NOTES_HREF,
   FAQ_URL,
   type HeaderOrganizationMenuItem,
@@ -15,6 +17,8 @@ interface HeaderSpMenuProps {
   id: string;
   organizations: HeaderOrganizationMenuItem[];
   politicians: HeaderPoliticianMenuItem[];
+  /** 「準備中」の議員。公開中の議員の後ろに、リンクにせずグレーで並べる */
+  comingSoonPoliticians?: ComingSoonPoliticianMenuItem[];
   onNavigate: () => void;
 }
 
@@ -34,6 +38,7 @@ export default function HeaderSpMenu({
   id,
   organizations,
   politicians,
+  comingSoonPoliticians = [],
   onNavigate,
 }: HeaderSpMenuProps) {
   return (
@@ -86,6 +91,19 @@ export default function HeaderSpMenu({
                   />
                   {politician.name}
                 </Link>
+              </li>
+            ))}
+            {comingSoonPoliticians.map((politician) => (
+              <li key={politician.slug} className="min-w-0">
+                <span className="flex flex-col items-center gap-1.5 text-center text-[11px] font-bold leading-[1.3] text-[#9CA3AF]">
+                  <PoliticianInitialAvatar
+                    name={politician.name}
+                    photoUrl={politician.photoUrl}
+                    size="face"
+                  />
+                  {politician.name}
+                  <ComingSoonPill className="px-1.5 py-[2px] text-[10px]" />
+                </span>
               </li>
             ))}
           </ul>

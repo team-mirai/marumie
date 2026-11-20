@@ -10,6 +10,7 @@ const politician = {
   politicalOrganizationId: "",
   politicalOrganizationName: null,
   isResearchFundPublic: false,
+  researchFundComingSoonNote: null,
 };
 let repository: jest.Mocked<IPoliticianRepository>;
 let cacheInvalidator: jest.Mocked<ICacheInvalidator>;
@@ -21,6 +22,7 @@ beforeEach(() => {
     save: jest.fn(),
     saveProfile: jest.fn(),
     setResearchFundPublic: jest.fn(),
+    setResearchFundComingSoonNote: jest.fn(),
     setPhotoPath: jest.fn(),
     delete: jest.fn(),
   };

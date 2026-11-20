@@ -1,4 +1,5 @@
 import { cn } from "@/client/lib";
+import { ResearchFundComingSoonForm } from "@/client/components/politicians/ResearchFundComingSoonForm";
 import { ResearchFundPageUrl } from "@/client/components/politicians/ResearchFundPageUrl";
 import { ResearchFundPublicSwitch } from "@/client/components/politicians/ResearchFundPublicSwitch";
 import type { ResearchFundPageUrl as ResearchFundPageUrlValue } from "@/server/contexts/shared/domain/services/research-fund-page-url";
@@ -10,11 +11,13 @@ import type { ResearchFundPageUrl as ResearchFundPageUrlValue } from "@/server/c
 export function ResearchFundPublication({
   id,
   isResearchFundPublic,
+  researchFundComingSoonNote,
   pageUrl,
   canManage,
 }: {
   id: string;
   isResearchFundPublic: boolean;
+  researchFundComingSoonNote: string | null;
   pageUrl: ResearchFundPageUrlValue;
   canManage: boolean;
 }) {
@@ -33,6 +36,11 @@ export function ResearchFundPublication({
           >
             {isResearchFundPublic ? "公開中" : "非公開"}
           </span>
+          {!isResearchFundPublic && researchFundComingSoonNote !== null && (
+            <span className="inline-block rounded-full border-[1.5px] border-subtle-foreground bg-secondary px-3 py-[3px] text-[11px] font-bold leading-none whitespace-nowrap text-muted-foreground">
+              準備中として表示
+            </span>
+          )}
         </div>
         {canManage && (
           <ResearchFundPublicSwitch id={id} isResearchFundPublic={isResearchFundPublic} />
@@ -42,6 +50,9 @@ export function ResearchFundPublication({
         <p className="text-xs text-muted-foreground">
           プレビュー URL を知っている人だけが見られます
         </p>
+      )}
+      {!isResearchFundPublic && canManage && (
+        <ResearchFundComingSoonForm id={id} comingSoonNote={researchFundComingSoonNote} />
       )}
       <ResearchFundPageUrl pageUrl={pageUrl} />
     </section>

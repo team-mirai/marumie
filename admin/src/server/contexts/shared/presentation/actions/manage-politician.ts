@@ -8,6 +8,7 @@ import { SavePoliticianProfileUsecase } from "@/server/contexts/shared/applicati
 import { DeletePoliticianUsecase } from "@/server/contexts/shared/application/usecases/delete-politician-usecase";
 import { UploadPoliticianPhotoUsecase } from "@/server/contexts/shared/application/usecases/upload-politician-photo-usecase";
 import { DeletePoliticianPhotoUsecase } from "@/server/contexts/shared/application/usecases/delete-politician-photo-usecase";
+import { SetPoliticianResearchFundComingSoonUsecase } from "@/server/contexts/shared/application/usecases/set-politician-research-fund-coming-soon-usecase";
 import { SetPoliticianResearchFundPublicUsecase } from "@/server/contexts/shared/application/usecases/set-politician-research-fund-public-usecase";
 import { PrismaPoliticianRepository } from "@/server/contexts/shared/infrastructure/repositories/prisma-politician.repository";
 import { prisma } from "@/server/contexts/shared/infrastructure/prisma";
@@ -105,6 +106,26 @@ export async function setPoliticianResearchFundPublic(id: string, isPublic: bool
     return {
       success: false as const,
       error: error instanceof Error ? error.message : "公開設定の変更に失敗しました",
+    };
+  }
+}
+/**
+ * 調研費を非公開のまま、まる見えの議員一覧に「準備中」としてグレーで出すか（と添え書き）を切り替える。
+ * 公開設定と同じく運営が決めるので admin だけ。note が null なら出さない
+ */
+export async function setPoliticianResearchFundComingSoon(id: string, note: string | null) {
+  await requireRole("admin");
+  try {
+    const result = await new SetPoliticianResearchFundComingSoonUsecase(
+      new PrismaPoliticianRepository(prisma),
+      new WebappCacheInvalidator(),
+    ).execute(id, note);
+    revalidatePath("/(auth)", "layout");
+    return { success: true as const, ...result };
+  } catch (error) {
+    return {
+      success: false as const,
+      error: error instanceof Error ? error.message : "準備中の設定の変更に失敗しました",
     };
   }
 }

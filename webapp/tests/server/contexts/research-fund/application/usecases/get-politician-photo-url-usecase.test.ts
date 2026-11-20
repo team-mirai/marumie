@@ -13,7 +13,7 @@ function build(source: PoliticianPhotoSource | null) {
 
 describe("GetPoliticianPhotoUrlUsecase", () => {
   it("調研費を公開中の議員の写真は、署名URLを返す", async () => {
-    const { usecase, repository, storage } = build({ isPublic: true, photoPath: "photos/1.jpg" });
+    const { usecase, repository, storage } = build({ isPublic: true, isComingSoon: false, photoPath: "photos/1.jpg" });
 
     expect(await usecase.execute({ pathSlug: "sample-taro", previewSecret: SECRET })).toBe(
       "https://storage.example/signed",
@@ -23,7 +23,7 @@ describe("GetPoliticianPhotoUrlUsecase", () => {
   });
 
   it("非公開の議員の写真は、プレビュー用の文字列が無ければ返さない", async () => {
-    const { usecase, storage } = build({ isPublic: false, photoPath: "photos/1.jpg" });
+    const { usecase, storage } = build({ isPublic: false, isComingSoon: false, photoPath: "photos/1.jpg" });
 
     expect(await usecase.execute({ pathSlug: "sample-taro", previewSecret: SECRET })).toBeNull();
     expect(
@@ -33,7 +33,7 @@ describe("GetPoliticianPhotoUrlUsecase", () => {
   });
 
   it("非公開の議員でも、正しいプレビュー URL の slug の区間なら返す", async () => {
-    const { usecase, repository } = build({ isPublic: false, photoPath: "photos/1.jpg" });
+    const { usecase, repository } = build({ isPublic: false, isComingSoon: false, photoPath: "photos/1.jpg" });
 
     expect(
       await usecase.execute({ pathSlug: `sample-taro~${TOKEN}`, previewSecret: SECRET }),
@@ -41,10 +41,18 @@ describe("GetPoliticianPhotoUrlUsecase", () => {
     expect(repository.findPhoto).toHaveBeenCalledWith("sample-taro");
   });
 
+  it("非公開でも「準備中」として一覧に出している議員の写真は返す", async () => {
+    const { usecase } = build({ isPublic: false, isComingSoon: true, photoPath: "photos/1.jpg" });
+
+    expect(await usecase.execute({ pathSlug: "sample-taro", previewSecret: SECRET })).toBe(
+      "https://storage.example/signed",
+    );
+  });
+
   it("議員がいない・写真が未登録なら返さない", async () => {
     expect(await build(null).usecase.execute({ pathSlug: "nobody", previewSecret: SECRET })).toBeNull();
     expect(
-      await build({ isPublic: true, photoPath: null }).usecase.execute({
+      await build({ isPublic: true, isComingSoon: false, photoPath: null }).usecase.execute({
         pathSlug: "sample-taro",
         previewSecret: SECRET,
       }),

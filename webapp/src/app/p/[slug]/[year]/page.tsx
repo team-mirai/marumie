@@ -19,6 +19,7 @@ import { shareMetadata } from "@/app/site-metadata";
 import { buildPoliticianNav, politicianPageHref } from "@/client/lib/politician-nav";
 import { politicianPhotoUrl } from "@/client/lib/politician-photo-url";
 import type { ResearchFundPoliticianCard } from "@/server/contexts/research-fund/domain/models/research-fund-politician-list";
+import { loadResearchFundComingSoonPoliticians } from "@/server/contexts/research-fund/presentation/loaders/load-research-fund-coming-soon-politicians";
 import { loadResearchFundPoliticianCards } from "@/server/contexts/research-fund/presentation/loaders/load-research-fund-politician-cards";
 import { loadResearchFundPageByPath } from "@/server/contexts/research-fund/presentation/loaders/load-research-fund-page-by-path";
 
@@ -75,12 +76,16 @@ export default async function PoliticianPage({ params }: PoliticianPageProps) {
 
   // 前後の切り替え・ほかの議員は、調研費を公開中の議員だけ（非公開の議員はプレビュー中でも出さない）。
   // 取れなくても本文は出せるので、失敗したら出さないだけにする。
-  const cards = await loadResearchFundPoliticianCards({
-    financialYear: data.financialYear,
-  }).catch((error) => {
-    console.error("loadResearchFundPoliticianCards error:", error);
-    return [] as ResearchFundPoliticianCard[];
-  });
+  const [cards, comingSoonPoliticians] = await Promise.all([
+    loadResearchFundPoliticianCards({
+      financialYear: data.financialYear,
+    }).catch((error) => {
+      console.error("loadResearchFundPoliticianCards error:", error);
+      return [] as ResearchFundPoliticianCard[];
+    }),
+    // 「他の議員の調研費を見る」の後ろに、調研費を「準備中」の議員をグレーで並べる（前後の切り替えには入れない）
+    loadResearchFundComingSoonPoliticians(),
+  ]);
   const nav = buildPoliticianNav(
     cards.map((card) => ({
       ...card,
@@ -127,7 +132,18 @@ export default async function PoliticianPage({ params }: PoliticianPageProps) {
         />
       </ResearchFundCrossLinkProvider>
       <ResearchFundSurveyCard headingId="politician-survey-heading" />
-      {nav && <OtherPoliticiansSection politicians={nav.others} />}
+      {nav && (
+        <OtherPoliticiansSection
+          politicians={nav.others}
+          comingSoon={comingSoonPoliticians
+            .filter((politician) => politician.slug !== data.politician.slug)
+            .map((politician) => ({
+              slug: politician.slug,
+              name: politician.name,
+              photoUrl: politician.hasPhoto ? politicianPhotoUrl(politician.slug) : null,
+            }))}
+        />
+      )}
       <ResearchFundBottomBlock dataNote={data.dataNote} notesVariant="member" />
       <Breadcrumbs current={breadcrumbLabel} position="bottom" />
       <RevealOnScroll />

@@ -55,6 +55,29 @@ function render(politicians: ResearchFundHomePoliticianView[]): string {
 }
 
 describe("HomeResearchFundSection", () => {
+  it("「準備中」の議員を公開中の議員の後ろにグレーで並べ、ページへのリンクにしない", () => {
+    const data: ResearchFundHomeSummaryData = { financialYear: 2026, politicians: [politician()] };
+    const html = renderToStaticMarkup(
+      <HomeResearchFundSection
+        data={data}
+        comingSoon={[
+          {
+            slug: "sample-usami",
+            name: "サンプル準備",
+            nameKana: "さんぷるじゅんび",
+            hasPhoto: false,
+            note: "業務逼迫のため、12月中旬を目処に公開予定です。",
+          },
+        ]}
+      />,
+    );
+
+    expect(html).toContain("サンプル準備の調研費（準備中）を下に表示");
+    expect(html).toContain("準備中");
+    expect(html.indexOf("サンプル太郎")).toBeLessThan(html.indexOf("サンプル準備"));
+    expect(html).not.toContain('href="/p/sample-usami');
+  });
+
   it("見出し・説明・調研費とは・使用方針のリンク（別タブ）を出す", () => {
     const html = render([politician()]);
 

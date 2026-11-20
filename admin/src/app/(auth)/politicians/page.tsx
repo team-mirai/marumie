@@ -73,6 +73,7 @@ export default async function PoliticiansPage() {
                   <ResearchFundPublication
                     id={p.id}
                     isResearchFundPublic={p.isResearchFundPublic}
+                    researchFundComingSoonNote={p.researchFundComingSoonNote}
                     pageUrl={p.researchFundPageUrl}
                     canManage={canManagePoliticians}
                   />

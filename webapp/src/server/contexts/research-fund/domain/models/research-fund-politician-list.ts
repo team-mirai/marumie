@@ -47,3 +47,17 @@ export interface ResearchFundPoliticianSource {
   /** 何月分まで公開したか（YYYY-MM）。未設定なら null */
   publishedThrough: string | null;
 }
+
+/**
+ * 調研費を非公開のまま「準備中」として議員一覧（トップ・メニュー・フッター・「他の議員」）にグレーで出す議員。
+ * ページは開けないのでリンクにしない。並びはふりがなの五十音順で、公開中の議員の後ろに置く。
+ */
+export interface ResearchFundComingSoonPolitician {
+  slug: string;
+  name: string;
+  /** ふりがな。未登録なら null（並び順に使う） */
+  nameKana: string | null;
+  hasPhoto: boolean;
+  /** 添え書き（例: 「宇佐美議員室は業務逼迫のため、12月中旬を目処に公開予定です。」）。無ければ null */
+  note: string | null;
+}

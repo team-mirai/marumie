@@ -21,7 +21,8 @@ export class GetPoliticianPhotoUrlUsecase {
   ) {}
 
   /**
-   * 議員の顔写真の署名URL。議員ページを開ける議員（調研費を公開中、またはプレビュー URL）の写真だけを返す。
+   * 議員の顔写真の署名URL。議員ページを開ける議員（調研費を公開中、またはプレビュー URL）と、
+   * 「準備中」として一覧に出している議員の写真だけを返す。
    * 開けない議員・写真が未登録の議員は null を返し、非公開の議員の写真が漏れないようにする。
    */
   async execute({ pathSlug, previewSecret }: GetPoliticianPhotoUrlParams): Promise<string | null> {
@@ -34,7 +35,7 @@ export class GetPoliticianPhotoUrlUsecase {
       previewToken,
       previewSecret,
     });
-    if (!canView) return null;
+    if (!canView && !source.isComingSoon) return null;
     return await this.storage.createSignedUrl(source.photoPath, SIGNED_URL_EXPIRES_IN);
   }
 }

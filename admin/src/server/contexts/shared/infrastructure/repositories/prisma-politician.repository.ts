@@ -25,6 +25,7 @@ function toModel(row: Row): Politician {
     politicalOrganizationId: membership ? String(membership.politicalOrganizationId) : "",
     politicalOrganizationName: membership?.politicalOrganization.displayName ?? null,
     isResearchFundPublic: row.isResearchFundPublic,
+    researchFundComingSoonNote: row.researchFundComingSoonNote,
     nameKana: row.nameKana ?? "",
     house: row.house ?? "",
     constituency: row.constituency ?? "",
@@ -130,6 +131,12 @@ export class PrismaPoliticianRepository implements IPoliticianRepository {
     await this.prisma.politician.update({
       where: { id: BigInt(id) },
       data: { isResearchFundPublic: isPublic },
+    });
+  }
+  async setResearchFundComingSoonNote(id: string, note: string | null) {
+    await this.prisma.politician.update({
+      where: { id: BigInt(id) },
+      data: { researchFundComingSoonNote: note },
     });
   }
   async setPhotoPath(id: string, photoPath: string | null) {

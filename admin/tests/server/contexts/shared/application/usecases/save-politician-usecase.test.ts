@@ -21,6 +21,7 @@ let usecase: SavePoliticianUsecase;
 beforeEach(() => {
   repository = { findAll: jest.fn(), findById: jest.fn(), save: jest.fn(),
     setResearchFundPublic: jest.fn(),
+    setResearchFundComingSoonNote: jest.fn(),
     saveProfile: jest.fn(),
     setPhotoPath: jest.fn(),
     delete: jest.fn(),
@@ -51,7 +52,7 @@ test.each([
   expect(repository.save).not.toHaveBeenCalled();
 });
 test("既存議員の氏名・所属を更新する", async () => {
-  repository.findById.mockResolvedValue({ ...input, id: "1", politicalOrganizationName: null, isResearchFundPublic: false, photoPath: null });
+  repository.findById.mockResolvedValue({ ...input, id: "1", politicalOrganizationName: null, isResearchFundPublic: false, researchFundComingSoonNote: null, photoPath: null });
   await usecase.execute("1", { ...input, politicalOrganizationId: "2" });
   expect(repository.save).toHaveBeenCalledWith(
     "1",

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import ComingSoonPill from "@/client/components/common/ComingSoonPill";
 import RevealHeadingText from "@/client/components/common/RevealHeadingText";
 import PoliticianAvatar from "@/client/components/research-fund/PoliticianAvatar";
 
@@ -9,15 +10,24 @@ interface OtherPolitician {
   href: string;
 }
 
+/** 調研費を非公開のまま「準備中」としてグレーで出す議員。ページは開けないのでリンクにしない */
+interface ComingSoonPolitician {
+  slug: string;
+  name: string;
+  photoUrl: string | null;
+}
+
 interface Props {
   politicians: OtherPolitician[];
+  /** 公開中の議員の後ろに並べる「準備中」の議員 */
+  comingSoon?: ComingSoonPolitician[];
 }
 
 /**
  * ページ下部の「他の議員の調研費を見る」。公開中のほかの議員を 2 列で並べ、押すとその議員のページへ移る。
  * 選挙区は出さず、SP もアイコンの右に名前を並べる。
  */
-export default function OtherPoliticiansSection({ politicians }: Props) {
+export default function OtherPoliticiansSection({ politicians, comingSoon = [] }: Props) {
   if (politicians.length === 0) return null;
 
   return (
@@ -66,6 +76,21 @@ export default function OtherPoliticiansSection({ politicians }: Props) {
                 />
               </svg>
             </Link>
+          </li>
+        ))}
+        {comingSoon.map((politician) => (
+          <li key={politician.slug}>
+            <div className="flex h-full items-center gap-2.5 rounded-2xl bg-[#F5F7F6] px-3 py-2.5 text-[#9CA3AF] min-[641px]:gap-3.5 min-[641px]:px-4 min-[641px]:py-3.5">
+              <PoliticianAvatar
+                photoUrl={politician.photoUrl}
+                alt={`${politician.name}の写真`}
+                className="h-10 w-10 min-[641px]:h-[52px] min-[641px]:w-[52px]"
+              />
+              <span className="min-w-0 flex-1 truncate text-[14px] font-bold leading-[1.4] min-[641px]:whitespace-normal min-[641px]:text-[16px]">
+                {politician.name}
+              </span>
+              <ComingSoonPill />
+            </div>
           </li>
         ))}
       </ul>

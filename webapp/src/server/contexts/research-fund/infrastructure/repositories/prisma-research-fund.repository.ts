@@ -10,7 +10,10 @@ import {
   type PublishedResearchFund,
   type PublishedResearchFundPageRef,
 } from "@/server/contexts/research-fund/domain/models/published-research-fund";
-import type { ResearchFundPoliticianSource } from "@/server/contexts/research-fund/domain/models/research-fund-politician-list";
+import type {
+  ResearchFundComingSoonPolitician,
+  ResearchFundPoliticianSource,
+} from "@/server/contexts/research-fund/domain/models/research-fund-politician-list";
 import type { ResearchFundRepository } from "@/server/contexts/research-fund/domain/repositories/research-fund-repository.interface";
 import type { ResearchFundRow } from "@/shared/research-fund/aggregation";
 import {
@@ -418,6 +421,28 @@ export class PrismaResearchFundRepository implements ResearchFundRepository {
         publishedThrough: book?.publishedThrough ? dateOf(book.publishedThrough).slice(0, 7) : null,
       };
     });
+  }
+
+  async findComingSoonPoliticians(): Promise<ResearchFundComingSoonPolitician[]> {
+    // 「準備中」は非公開の議員だけ。公開中の議員は添え書きが残っていても出さない（公開中の一覧と重ねない）
+    const politicians = await this.prisma.politician.findMany({
+      where: { isResearchFundPublic: false, researchFundComingSoonNote: { not: null } },
+      orderBy: [{ displayOrder: "asc" }, { id: "asc" }],
+      select: {
+        slug: true,
+        name: true,
+        nameKana: true,
+        photoPath: true,
+        researchFundComingSoonNote: true,
+      },
+    });
+    return politicians.map((politician) => ({
+      slug: politician.slug,
+      name: politician.name,
+      nameKana: politician.nameKana,
+      hasPhoto: politician.photoPath !== null,
+      note: politician.researchFundComingSoonNote?.trim() || null,
+    }));
   }
 
   async findPublishedPageRefs(): Promise<PublishedResearchFundPageRef[]> {
