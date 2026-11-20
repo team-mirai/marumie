@@ -612,7 +612,7 @@ export default function HomeResearchFundMembers({ members, comingSoon = [], defa
                 } ${
                   open
                     ? "aspect-[1.9825] rounded-[20px] py-[18px] pl-[18px] pr-[66px]"
-                    : `${isLast ? "min-h-[62px]" : "min-h-[92px]"} rounded-[18px] px-4 pt-3.5`
+                    : `${isLast ? "min-h-[62px]" : "min-h-[92px]"} rounded-[18px] pl-4 pr-[60px] pt-3.5`
                 }`}
               >
                 <button
