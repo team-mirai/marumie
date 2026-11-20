@@ -1,4 +1,7 @@
-import { canViewResearchFundPage } from "@/server/contexts/research-fund/domain/services/research-fund-page-access";
+import {
+  canServePoliticianPhoto,
+  canViewResearchFundPage,
+} from "@/server/contexts/research-fund/domain/services/research-fund-page-access";
 import { deriveResearchFundPreviewToken } from "@/shared/research-fund/preview-token";
 
 const SECRET = "test-secret";
@@ -60,5 +63,21 @@ describe("canViewResearchFundPage", () => {
         previewSecret: null,
       }),
     ).toBe(false);
+  });
+});
+
+describe("canServePoliticianPhoto", () => {
+  const base = { slug: "sample-taro", previewToken: null, previewSecret: SECRET };
+
+  it("議員ページを開ける議員の写真は配信する", () => {
+    expect(canServePoliticianPhoto({ ...base, isPublic: true, isComingSoon: false })).toBe(true);
+  });
+
+  it("非公開でも「準備中」として一覧に出している議員の写真は配信する", () => {
+    expect(canServePoliticianPhoto({ ...base, isPublic: false, isComingSoon: true })).toBe(true);
+  });
+
+  it("非公開で準備中でもない議員の写真は、プレビュー用の文字列が無ければ配信しない", () => {
+    expect(canServePoliticianPhoto({ ...base, isPublic: false, isComingSoon: false })).toBe(false);
   });
 });

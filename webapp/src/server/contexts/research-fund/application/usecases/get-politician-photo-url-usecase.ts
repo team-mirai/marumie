@@ -1,7 +1,7 @@
 import "server-only";
 import type { PoliticianPhotoRepository } from "@/server/contexts/research-fund/domain/repositories/politician-photo-repository.interface";
 import type { PoliticianPhotoStorage } from "@/server/contexts/research-fund/domain/repositories/politician-photo-storage.interface";
-import { canViewResearchFundPage } from "@/server/contexts/research-fund/domain/services/research-fund-page-access";
+import { canServePoliticianPhoto } from "@/server/contexts/research-fund/domain/services/research-fund-page-access";
 import { parsePoliticianPathSegment } from "@/shared/research-fund/preview-path";
 
 /** 署名URLの有効期限（秒）。開いてすぐ表示する用途なので短くする。 */
@@ -29,13 +29,14 @@ export class GetPoliticianPhotoUrlUsecase {
     const { slug, previewToken } = parsePoliticianPathSegment(pathSlug);
     const source = await this.repository.findPhoto(slug);
     if (!source?.photoPath) return null;
-    const canView = canViewResearchFundPage({
+    const canServe = canServePoliticianPhoto({
       slug,
       isPublic: source.isPublic,
+      isComingSoon: source.isComingSoon,
       previewToken,
       previewSecret,
     });
-    if (!canView && !source.isComingSoon) return null;
+    if (!canServe) return null;
     return await this.storage.createSignedUrl(source.photoPath, SIGNED_URL_EXPIRES_IN);
   }
 }

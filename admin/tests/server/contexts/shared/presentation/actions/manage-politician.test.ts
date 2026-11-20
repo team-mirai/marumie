@@ -66,7 +66,10 @@ describe("setPoliticianResearchFundPublic", () => {
       success: true,
       cacheWarning: null,
     });
-    expect(setResearchFundPublic).toHaveBeenCalledWith("1", true);
+    expect(setResearchFundPublic).toHaveBeenCalledWith("1", {
+      isResearchFundPublic: true,
+      researchFundComingSoonNote: null,
+    });
     expect(revalidatePath).toHaveBeenCalledWith("/(auth)", "layout");
   });
 

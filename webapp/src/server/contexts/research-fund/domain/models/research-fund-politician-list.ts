@@ -20,8 +20,8 @@ export interface ResearchFundPoliticianEntry {
 }
 
 /**
- * 議員ページの前後の切り替え・「他の議員の調研費を見る」に並べる、調研費を公開中の議員。
- * 並びはふりがなの五十音順。
+ * 議員ページの前後の切り替え・「他の議員の調研費を見る」に並べる議員。
+ * 調研費を公開中の議員（ふりがなの五十音順）の後ろに、「準備中」の議員（同じく五十音順）が並ぶ。
  */
 export interface ResearchFundPoliticianCard {
   slug: string;
@@ -29,6 +29,8 @@ export interface ResearchFundPoliticianCard {
   /** 「衆議院議員・比例東京（東京7区）」。院も選挙区も未登録なら null */
   title: string | null;
   hasPhoto: boolean;
+  /** 調研費が「準備中」の議員か（リンク先は準備中の表示のページ） */
+  comingSoon: boolean;
 }
 
 /**

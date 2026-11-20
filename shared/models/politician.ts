@@ -50,6 +50,15 @@ export interface Politician extends PoliticianInput {
   photoPath: string | null;
 }
 
+/** 「準備中」の添え書きの上限。トップの点線の枠に1〜2行で収まる長さ */
+export const RESEARCH_FUND_COMING_SOON_NOTE_MAX_LENGTH = 200;
+
+/** 調研費の公開状態（公開するかと「準備中」の添え書き）。2つは Politician.setResearchFundPublic で一緒に決まる */
+export type PoliticianResearchFundPublication = Pick<
+  Politician,
+  "isResearchFundPublic" | "researchFundComingSoonNote"
+>;
+
 const VALIDATION_CODES = {
   INVALID: "POLITICIAN_INVALID_INPUT",
 } as const;
@@ -128,5 +137,48 @@ export const Politician = {
     if (invalidSns >= 0)
       return invalid("snsUrls", `SNS の URL（${invalidSns + 1}件目）を正しく入力してください`);
     return { status: "valid" as const };
+  },
+  /**
+   * 調研費の公開を切り替えた後の公開状態。
+   * 公開すると「準備中」は終わるので、添え書きを消す（公開中かつ準備中という状態を作らない）。
+   * 非公開に戻しても添え書きは戻さない（準備中として出すかは改めて決める）
+   */
+  setResearchFundPublic(
+    politician: Pick<Politician, "researchFundComingSoonNote">,
+    isPublic: boolean,
+  ) {
+    if (typeof isPublic !== "boolean")
+      return invalid("isResearchFundPublic", "公開するかを選択してください");
+    return {
+      status: "valid" as const,
+      value: {
+        isResearchFundPublic: isPublic,
+        researchFundComingSoonNote: isPublic ? null : politician.researchFundComingSoonNote,
+      },
+    };
+  },
+  /**
+   * 「準備中」として一覧に出すときの添え書きを設定した後の値。null なら準備中として出さない。
+   * 準備中にできるのは調研費を公開していない議員だけ。添え書きは前後の空白を除き、空なら添え書きなしで出す
+   */
+  setResearchFundComingSoonNote(
+    politician: Pick<Politician, "isResearchFundPublic">,
+    note: string | null,
+  ) {
+    if (note === null) return { status: "valid" as const, value: null };
+    if (typeof note !== "string")
+      return invalid("researchFundComingSoonNote", "添え書きを入力してください");
+    if (politician.isResearchFundPublic)
+      return invalid(
+        "researchFundComingSoonNote",
+        "調研費を公開中の議員は「準備中」にできません。先に非公開にしてください",
+      );
+    const trimmed = note.trim();
+    if (trimmed.length > RESEARCH_FUND_COMING_SOON_NOTE_MAX_LENGTH)
+      return invalid(
+        "researchFundComingSoonNote",
+        `添え書きは${RESEARCH_FUND_COMING_SOON_NOTE_MAX_LENGTH}文字以内で入力してください`,
+      );
+    return { status: "valid" as const, value: trimmed };
   },
 };

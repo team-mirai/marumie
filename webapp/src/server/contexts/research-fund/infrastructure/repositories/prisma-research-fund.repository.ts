@@ -424,9 +424,9 @@ export class PrismaResearchFundRepository implements ResearchFundRepository {
   }
 
   async findComingSoonPoliticians(): Promise<ResearchFundComingSoonPolitician[]> {
-    // 「準備中」は非公開の議員だけ。公開中の議員は添え書きが残っていても出さない（公開中の一覧と重ねない）
+    // 添え書きがある議員が「準備中」。公開中の議員は添え書きを持てない（Politician のルールと DB の CHECK 制約）
     const politicians = await this.prisma.politician.findMany({
-      where: { isResearchFundPublic: false, researchFundComingSoonNote: { not: null } },
+      where: { researchFundComingSoonNote: { not: null } },
       orderBy: [{ displayOrder: "asc" }, { id: "asc" }],
       select: {
         slug: true,
@@ -449,7 +449,7 @@ export class PrismaResearchFundRepository implements ResearchFundRepository {
     slug: string,
   ): Promise<{ politician: PublishedPoliticianProfile; note: string | null } | null> {
     const politician = await this.prisma.politician.findFirst({
-      where: { slug, isResearchFundPublic: false, researchFundComingSoonNote: { not: null } },
+      where: { slug, researchFundComingSoonNote: { not: null } },
       select: { ...politicianProfileSelect, researchFundComingSoonNote: true },
     });
     if (!politician) return null;

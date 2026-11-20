@@ -4,6 +4,7 @@ import type {
   Politician,
   PoliticianInput,
   PoliticianProfileInput,
+  PoliticianResearchFundPublication,
 } from "@/shared/models/politician";
 import type { IPoliticianRepository } from "@/server/contexts/shared/domain/repositories/politician-repository.interface";
 
@@ -127,10 +128,13 @@ export class PrismaPoliticianRepository implements IPoliticianRepository {
       throw new Error("議員の保存に失敗しました。もう一度お試しください");
     }
   }
-  async setResearchFundPublic(id: string, isPublic: boolean) {
+  async setResearchFundPublic(id: string, publication: PoliticianResearchFundPublication) {
     await this.prisma.politician.update({
       where: { id: BigInt(id) },
-      data: { isResearchFundPublic: isPublic },
+      data: {
+        isResearchFundPublic: publication.isResearchFundPublic,
+        researchFundComingSoonNote: publication.researchFundComingSoonNote,
+      },
     });
   }
   async setResearchFundComingSoonNote(id: string, note: string | null) {

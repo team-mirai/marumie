@@ -3,6 +3,7 @@ import { useId, useState } from "react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { Button, Label, Switch, Textarea } from "@/client/components/ui";
+import { RESEARCH_FUND_COMING_SOON_NOTE_MAX_LENGTH } from "@/shared/models/politician";
 import { setPoliticianResearchFundComingSoon } from "@/server/contexts/shared/presentation/actions/manage-politician";
 
 /**
@@ -62,13 +63,14 @@ export function ResearchFundComingSoonForm({
       </div>
       {enabled && (
         <div className="space-y-1.5">
-          <Label htmlFor={noteId} className="text-xs text-muted-foreground">
-            添え書き（任意・トップの準備中の枠に出ます）
-          </Label>
+          <Label htmlFor={noteId}>添え書き（任意）</Label>
+          <p className="text-xs text-muted-foreground">
+            トップと議員ページの「準備中」の枠に出ます
+          </p>
           <Textarea
             id={noteId}
             value={note}
-            maxLength={200}
+            maxLength={RESEARCH_FUND_COMING_SOON_NOTE_MAX_LENGTH}
             disabled={busy}
             placeholder="例: 〇〇議員室は業務逼迫のため、12月中旬を目処に公開予定です。"
             onChange={(event) => setNote(event.target.value)}

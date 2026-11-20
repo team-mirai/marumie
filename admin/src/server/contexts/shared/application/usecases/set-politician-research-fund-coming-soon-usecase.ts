@@ -4,14 +4,10 @@ import type { IPoliticianRepository } from "@/server/contexts/shared/domain/repo
 import type { ICacheInvalidator } from "@/server/contexts/shared/domain/services/cache-invalidator.interface";
 import { invalidateWebappCache } from "@/server/contexts/shared/application/services/invalidate-webapp-cache";
 
-/** 添え書きの上限。一覧の点線の枠に1〜2行で収まる長さにする */
-const NOTE_MAX_LENGTH = 200;
-
 /**
- * 調研費を非公開のまま、webapp の議員一覧（トップ・メニュー・フッター・「他の議員」）に「準備中」としてグレーで出すかを切り替える。
- * note が null なら出さない。文字列なら前後の空白を除いて保存する（空文字 = 添え書きなしで出す）。
- * 公開中の議員には出さない（webapp 側で非公開の議員だけを拾う）ので、公開中でも保存はできる。
- * 切り替えたら webapp のキャッシュを消す。保存自体は確定しているので、キャッシュ無効化の失敗は警告として返す。
+ * 調研費を非公開のまま、webapp の議員一覧（トップ・メニュー・フッター・「他の議員」）に「準備中」として出すかと、その添え書きを設定する。
+ * note が null なら出さない。準備中にできるか・添え書きの形は Politician が決める。
+ * 設定したら webapp のキャッシュを消す。保存自体は確定しているので、キャッシュ無効化の失敗は警告として返す。
  */
 export class SetPoliticianResearchFundComingSoonUsecase {
   constructor(
@@ -20,14 +16,11 @@ export class SetPoliticianResearchFundComingSoonUsecase {
   ) {}
 
   async execute(id: string, note: string | null) {
-    if (note !== null && typeof note !== "string")
-      throw new Error("添え書きの形式が正しくありません");
-    const normalized = note === null ? null : note.trim();
-    if (normalized !== null && normalized.length > NOTE_MAX_LENGTH)
-      throw new Error(`添え書きは${NOTE_MAX_LENGTH}文字以内で入力してください`);
-    if (!Politician.isValidId(id) || !(await this.repository.findById(id)))
-      throw new Error("議員が見つかりません");
-    await this.repository.setResearchFundComingSoonNote(id, normalized);
+    const politician = Politician.isValidId(id) ? await this.repository.findById(id) : null;
+    if (!politician) throw new Error("議員が見つかりません");
+    const result = Politician.setResearchFundComingSoonNote(politician, note);
+    if (result.status === "invalid") throw new Error(result.errors[0].message);
+    await this.repository.setResearchFundComingSoonNote(id, result.value);
     return { cacheWarning: await invalidateWebappCache(this.cacheInvalidator) };
   }
 }

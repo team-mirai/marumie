@@ -1,8 +1,16 @@
+import type { Politician } from "@/shared/models/politician";
 import { SetPoliticianResearchFundComingSoonUsecase } from "@/server/contexts/shared/application/usecases/set-politician-research-fund-coming-soon-usecase";
 import type { IPoliticianRepository } from "@/server/contexts/shared/domain/repositories/politician-repository.interface";
 import type { ICacheInvalidator } from "@/server/contexts/shared/domain/services/cache-invalidator.interface";
 
-const politician = {
+const politician: Politician = {
+  nameKana: "",
+  house: "",
+  constituency: "",
+  profileUrl: "",
+  websiteUrl: "",
+  snsUrls: [],
+  photoPath: null,
   id: "1",
   name: "議員名",
   slug: "test-member",
@@ -44,6 +52,12 @@ test("null なら準備中の表示をやめ、空文字なら添え書きなし
   await usecase.execute("1", "   ");
   expect(repository.setResearchFundComingSoonNote).toHaveBeenNthCalledWith(1, "1", null);
   expect(repository.setResearchFundComingSoonNote).toHaveBeenNthCalledWith(2, "1", "");
+});
+test("公開中の議員は準備中にせず、ドメインの却下理由を返す", async () => {
+  repository.findById.mockResolvedValue({ ...politician, isResearchFundPublic: true });
+  await expect(usecase.execute("1", "x")).rejects.toThrow("公開中の議員は「準備中」にできません");
+  expect(repository.setResearchFundComingSoonNote).not.toHaveBeenCalled();
+  expect(cacheInvalidator.invalidateWebappCache).not.toHaveBeenCalled();
 });
 test("長すぎる添え書き・存在しない議員は保存しない", async () => {
   await expect(usecase.execute("1", "あ".repeat(201))).rejects.toThrow("200文字以内");

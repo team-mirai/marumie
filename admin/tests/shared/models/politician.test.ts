@@ -1,4 +1,8 @@
-import { Politician, type PoliticianInput } from "@/shared/models/politician";
+import {
+  Politician,
+  type PoliticianInput,
+  RESEARCH_FUND_COMING_SOON_NOTE_MAX_LENGTH,
+} from "@/shared/models/politician";
 
 const input: PoliticianInput = {
   name: "議員名",
@@ -75,5 +79,72 @@ describe("Politician.validate", () => {
   it("不正な SNS の URL は何件目かを示す", () => {
     const result = Politician.validate({ ...input, snsUrls: ["https://x.com/a", "x.com/b"] });
     expect(result.status === "invalid" && result.errors[0].message).toContain("2件目");
+  });
+});
+
+describe("Politician.setResearchFundPublic", () => {
+  it("公開すると「準備中」の添え書きを消す（公開中かつ準備中にしない）", () => {
+    expect(
+      Politician.setResearchFundPublic({ researchFundComingSoonNote: "12月中旬に公開予定" }, true),
+    ).toEqual({
+      status: "valid",
+      value: { isResearchFundPublic: true, researchFundComingSoonNote: null },
+    });
+  });
+
+  it("非公開にするときは添え書きをそのまま残す", () => {
+    expect(
+      Politician.setResearchFundPublic({ researchFundComingSoonNote: "準備中です" }, false),
+    ).toEqual({
+      status: "valid",
+      value: { isResearchFundPublic: false, researchFundComingSoonNote: "準備中です" },
+    });
+  });
+
+  it("真偽値以外は受け付けない", () => {
+    const result = Politician.setResearchFundPublic(
+      { researchFundComingSoonNote: null },
+      "true" as unknown as boolean,
+    );
+    expect(result.status).toBe("invalid");
+  });
+});
+
+describe("Politician.setResearchFundComingSoonNote", () => {
+  it("非公開の議員は、前後の空白を除いた添え書きで準備中にできる", () => {
+    expect(
+      Politician.setResearchFundComingSoonNote({ isResearchFundPublic: false }, "  12月中旬 "),
+    ).toEqual({ status: "valid", value: "12月中旬" });
+  });
+
+  it("空の添え書きは「添え書きなしで準備中」、null は「準備中にしない」", () => {
+    expect(
+      Politician.setResearchFundComingSoonNote({ isResearchFundPublic: false }, "   "),
+    ).toEqual({ status: "valid", value: "" });
+    expect(Politician.setResearchFundComingSoonNote({ isResearchFundPublic: false }, null)).toEqual(
+      { status: "valid", value: null },
+    );
+  });
+
+  it("公開中の議員は準備中にできない", () => {
+    const result = Politician.setResearchFundComingSoonNote({ isResearchFundPublic: true }, "x");
+    expect(result.status).toBe("invalid");
+    if (result.status === "invalid")
+      expect(result.errors[0].message).toContain("公開中の議員は「準備中」にできません");
+  });
+
+  it("公開中の議員でも、準備中をやめる（null）のは受け付ける", () => {
+    expect(Politician.setResearchFundComingSoonNote({ isResearchFundPublic: true }, null)).toEqual({
+      status: "valid",
+      value: null,
+    });
+  });
+
+  it("上限より長い添え書きは受け付けない", () => {
+    const result = Politician.setResearchFundComingSoonNote(
+      { isResearchFundPublic: false },
+      "あ".repeat(RESEARCH_FUND_COMING_SOON_NOTE_MAX_LENGTH + 1),
+    );
+    expect(result.status).toBe("invalid");
   });
 });

@@ -24,3 +24,16 @@ export function canViewResearchFundPage({
   if (previewToken === null) return isPublic;
   return verifyResearchFundPreviewToken(previewSecret, slug, previewToken);
 }
+
+/**
+ * 議員の顔写真を配信してよいか。議員ページを開ける議員に加えて、
+ * 「準備中」として一覧（トップ・メニュー・フッター・「他の議員」）に顔写真を出している議員も配信する。
+ */
+export function canServePoliticianPhoto(
+  input: ResearchFundPageAccessInput & {
+    /** 「準備中」として一覧に出している議員か */
+    isComingSoon: boolean;
+  },
+): boolean {
+  return input.isComingSoon || canViewResearchFundPage(input);
+}

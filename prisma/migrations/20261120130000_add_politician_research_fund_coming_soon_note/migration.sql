@@ -3,3 +3,8 @@
 
 -- AlterTable
 ALTER TABLE "politicians" ADD COLUMN     "research_fund_coming_soon_note" TEXT;
+
+-- 「準備中」は調研費を公開していない議員だけ（公開中かつ準備中という状態を DB でも作らせない）。
+-- 判定の正は shared/models/politician.ts（Politician.setResearchFundPublic / setResearchFundComingSoonNote）。
+ALTER TABLE "politicians" ADD CONSTRAINT "politicians_research_fund_coming_soon_only_private"
+  CHECK (NOT "is_research_fund_public" OR "research_fund_coming_soon_note" IS NULL);
