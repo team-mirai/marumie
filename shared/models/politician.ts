@@ -53,11 +53,14 @@ export interface Politician extends PoliticianInput {
 /** 「準備中」の添え書きの上限。トップの点線の枠に1〜2行で収まる長さ */
 export const RESEARCH_FUND_COMING_SOON_NOTE_MAX_LENGTH = 200;
 
-/** 調研費の公開状態（公開するかと「準備中」の添え書き）。2つは Politician.setResearchFundPublic で一緒に決まる */
-export type PoliticianResearchFundPublication = Pick<
-  Politician,
-  "isResearchFundPublic" | "researchFundComingSoonNote"
->;
+/**
+ * 調研費の公開の切り替えで書き換える列（Politician.setResearchFundPublic が決める）。
+ * 公開するときは「準備中」の添え書きも消す。非公開にするときは公開フラグだけを書き、添え書きには触れない
+ * （先に読んだ添え書きを書き戻して、同時に保存された添え書きを消さないため）
+ */
+export type PoliticianResearchFundPublicationChange =
+  | { isResearchFundPublic: true; researchFundComingSoonNote: null }
+  | { isResearchFundPublic: false };
 
 const VALIDATION_CODES = {
   INVALID: "POLITICIAN_INVALID_INPUT",
@@ -139,23 +142,17 @@ export const Politician = {
     return { status: "valid" as const };
   },
   /**
-   * 調研費の公開を切り替えた後の公開状態。
-   * 公開すると「準備中」は終わるので、添え書きを消す（公開中かつ準備中という状態を作らない）。
-   * 非公開に戻しても添え書きは戻さない（準備中として出すかは改めて決める）
+   * 調研費の公開を切り替えるときに書き換える列。
+   * 公開すると「準備中」は終わるので、添え書きも消す（公開中かつ準備中という状態を作らない）。
+   * 非公開にするときは公開フラグだけを変え、添え書きには触れない（準備中として出すかは改めて決める）
    */
-  setResearchFundPublic(
-    politician: Pick<Politician, "researchFundComingSoonNote">,
-    isPublic: boolean,
-  ) {
+  setResearchFundPublic(isPublic: boolean) {
     if (typeof isPublic !== "boolean")
       return invalid("isResearchFundPublic", "公開するかを選択してください");
-    return {
-      status: "valid" as const,
-      value: {
-        isResearchFundPublic: isPublic,
-        researchFundComingSoonNote: isPublic ? null : politician.researchFundComingSoonNote,
-      },
-    };
+    const value: PoliticianResearchFundPublicationChange = isPublic
+      ? { isResearchFundPublic: true, researchFundComingSoonNote: null }
+      : { isResearchFundPublic: false };
+    return { status: "valid" as const, value };
   },
   /**
    * 「準備中」として一覧に出すときの添え書きを設定した後の値。null なら準備中として出さない。

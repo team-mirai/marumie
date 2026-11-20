@@ -241,6 +241,15 @@ test("調研費の公開フラグと「準備中」の添え書きを1回の更�
   });
 });
 
+test("非公開にするときは公開フラグだけを更新し、添え書きには触れない", async () => {
+  const { tx, repository } = setup();
+  await repository.setResearchFundPublic("1", { isResearchFundPublic: false });
+  expect(tx.politician.update).toHaveBeenCalledWith({
+    where: { id: BigInt(1) },
+    data: { isResearchFundPublic: false },
+  });
+});
+
 test("「準備中」の添え書きだけを更新する", async () => {
   const { tx, repository } = setup();
   await repository.setResearchFundComingSoonNote("1", "準備中です");

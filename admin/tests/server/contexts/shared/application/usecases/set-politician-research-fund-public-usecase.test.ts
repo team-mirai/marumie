@@ -37,10 +37,10 @@ beforeEach(() => {
   cacheInvalidator = { invalidateWebappCache: jest.fn().mockResolvedValue(undefined) };
   usecase = new SetPoliticianResearchFundPublicUsecase(repository, cacheInvalidator);
 });
-test.each([true, false])("公開フラグを %s に切り替え、webapp のキャッシュを消す", async (isPublic) => {
-  await expect(usecase.execute("1", isPublic)).resolves.toEqual({ cacheWarning: null });
+test("公開すると、公開フラグと添え書きの消去を1回の更新で書き、webapp のキャッシュを消す", async () => {
+  await expect(usecase.execute("1", true)).resolves.toEqual({ cacheWarning: null });
   expect(repository.setResearchFundPublic).toHaveBeenCalledWith("1", {
-    isResearchFundPublic: isPublic,
+    isResearchFundPublic: true,
     researchFundComingSoonNote: null,
   });
   expect(cacheInvalidator.invalidateWebappCache).toHaveBeenCalledTimes(1);
@@ -48,20 +48,18 @@ test.each([true, false])("公開フラグを %s に切り替え、webapp のキ�
     cacheInvalidator.invalidateWebappCache.mock.invocationCallOrder[0],
   );
 });
+test("非公開にするときは公開フラグだけを書く（読んだ添え書きを書き戻さない）", async () => {
+  repository.findById.mockResolvedValue({ ...politician, researchFundComingSoonNote: "旧" });
+  await usecase.execute("1", false);
+  expect(repository.setResearchFundPublic).toHaveBeenCalledWith("1", {
+    isResearchFundPublic: false,
+  });
+});
 test("キャッシュの無効化に失敗しても切り替えは成功にし、警告を返す", async () => {
   cacheInvalidator.invalidateWebappCache.mockRejectedValue(new Error("接続に失敗しました"));
   await expect(usecase.execute("1", true)).resolves.toEqual({
     cacheWarning: "接続に失敗しました",
   });
-  expect(repository.setResearchFundPublic).toHaveBeenCalledWith("1", {
-    isResearchFundPublic: true,
-    researchFundComingSoonNote: null,
-  });
-});
-test("「準備中」の議員を公開すると、公開と同じ更新で添え書きを消す", async () => {
-  repository.findById.mockResolvedValue({ ...politician, researchFundComingSoonNote: "準備中です" });
-  await usecase.execute("1", true);
-  expect(repository.setResearchFundPublic).toHaveBeenCalledTimes(1);
   expect(repository.setResearchFundPublic).toHaveBeenCalledWith("1", {
     isResearchFundPublic: true,
     researchFundComingSoonNote: null,

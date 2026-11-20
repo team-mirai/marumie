@@ -83,30 +83,22 @@ describe("Politician.validate", () => {
 });
 
 describe("Politician.setResearchFundPublic", () => {
-  it("公開すると「準備中」の添え書きを消す（公開中かつ準備中にしない）", () => {
-    expect(
-      Politician.setResearchFundPublic({ researchFundComingSoonNote: "12月中旬に公開予定" }, true),
-    ).toEqual({
+  it("公開すると「準備中」の添え書きも消す（公開中かつ準備中にしない）", () => {
+    expect(Politician.setResearchFundPublic(true)).toEqual({
       status: "valid",
       value: { isResearchFundPublic: true, researchFundComingSoonNote: null },
     });
   });
 
-  it("非公開にするときは添え書きをそのまま残す", () => {
-    expect(
-      Politician.setResearchFundPublic({ researchFundComingSoonNote: "準備中です" }, false),
-    ).toEqual({
+  it("非公開にするときは公開フラグだけを変え、添え書きには触れない", () => {
+    expect(Politician.setResearchFundPublic(false)).toEqual({
       status: "valid",
-      value: { isResearchFundPublic: false, researchFundComingSoonNote: "準備中です" },
+      value: { isResearchFundPublic: false },
     });
   });
 
   it("真偽値以外は受け付けない", () => {
-    const result = Politician.setResearchFundPublic(
-      { researchFundComingSoonNote: null },
-      "true" as unknown as boolean,
-    );
-    expect(result.status).toBe("invalid");
+    expect(Politician.setResearchFundPublic("true" as unknown as boolean).status).toBe("invalid");
   });
 });
 

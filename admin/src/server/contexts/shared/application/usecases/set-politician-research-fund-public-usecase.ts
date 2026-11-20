@@ -18,7 +18,7 @@ export class SetPoliticianResearchFundPublicUsecase {
   async execute(id: string, isPublic: boolean) {
     const politician = Politician.isValidId(id) ? await this.repository.findById(id) : null;
     if (!politician) throw new Error("議員が見つかりません");
-    const result = Politician.setResearchFundPublic(politician, isPublic);
+    const result = Politician.setResearchFundPublic(isPublic);
     if (result.status === "invalid") throw new Error(result.errors[0].message);
     await this.repository.setResearchFundPublic(id, result.value);
     return { cacheWarning: await invalidateWebappCache(this.cacheInvalidator) };
