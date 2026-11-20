@@ -1,15 +1,11 @@
 "use client";
 import "client-only";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import SectionCard from "@/client/components/layout/SectionCard";
 import TransactionTable from "@/client/components/top-page/features/transactions-table/TransactionTable";
 import TransactionSortTabs from "@/client/components/transactions/TransactionSortTabs";
-import {
-  sortTransactionRows,
-  transactionSortParams,
-  type TransactionSort,
-} from "@/client/lib/transaction-sort";
+import { organizationTransactionsHref, type TransactionSort } from "@/client/lib/transaction-sort";
 
 import type { DisplayTransaction } from "@/server/contexts/public-finance/domain/models/display-transaction";
 
@@ -32,7 +28,8 @@ interface TransactionsSectionProps {
 
 /**
  * 政党・政治団体ページの「すべての出入金」。最新の数件だけを出し、続きは「もっと見る」から全件ページで見る。
- * SP では表の上のタブで、出している行の並び順を変えられる。全件ページへはその並び順のまま移る。
+ * ここで読み込んでいるのは最新の数件だけなので、SP の並び替えタブはその場で並べ替えず、
+ * 押した並び順の全件ページへ移る（年全体をその並び順で並べた1ページ目が出る）。
  */
 export default function TransactionsSection({
   transactionData,
@@ -41,17 +38,10 @@ export default function TransactionsSection({
   year,
   eyebrow,
 }: TransactionsSectionProps) {
-  const [sort, setSort] = useState<TransactionSort>("new");
-  const transactions = useMemo(
-    () =>
-      sortTransactionRows(transactionData?.transactions ?? [], sort, {
-        date: (transaction) => new Date(transaction.date).getTime(),
-        signedAmount: (transaction) => transaction.amount,
-      }),
-    [transactionData, sort],
-  );
-  const { sort: sortParam, order } = transactionSortParams(sort);
-  const allHref = `/o/${slug}/${year}/transactions${sort === "new" ? "" : `?sort=${sortParam}&order=${order}`}`;
+  const router = useRouter();
+  const handleSortChange = (sort: TransactionSort) => {
+    router.push(organizationTransactionsHref(slug, year, sort));
+  };
 
   return (
     <SectionCard
@@ -64,9 +54,9 @@ export default function TransactionsSection({
     >
       {transactionData ? (
         <div className="relative">
-          <TransactionSortTabs current={sort} onChange={setSort} />
+          <TransactionSortTabs current="new" onChange={handleSortChange} />
           <TransactionTable
-            transactions={transactions}
+            transactions={transactionData.transactions}
             total={transactionData.total}
             page={transactionData.page}
             perPage={transactionData.perPage}
@@ -75,7 +65,7 @@ export default function TransactionsSection({
           {/* テーブルの下端にかかるグラデーションと、全件ページへの「もっと見る」 */}
           <div className="pointer-events-none absolute inset-x-0 bottom-0 flex h-32 items-end justify-center bg-gradient-to-t from-white via-white/80 to-transparent pb-[5px]">
             <Link
-              href={allHref}
+              href={organizationTransactionsHref(slug, year, "new")}
               aria-label="すべての出入金を見る"
               className="pointer-events-auto inline-flex h-[52px] w-[240px] items-center justify-center rounded-full border border-[#111827] bg-white text-base font-bold text-[#1F2937] hover:bg-[#F9FAFB]"
             >

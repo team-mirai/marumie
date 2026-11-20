@@ -105,6 +105,14 @@ export function transactionSortParams(sort: TransactionSort): {
   return PARAMS_BY_SORT[sort];
 }
 
+/** 政党・政治団体の全件ページの URL。新しい順（初期の並び）なら並び順のパラメーターを付けない。 */
+export function organizationTransactionsHref(slug: string, year: number, sort: TransactionSort) {
+  const base = `/o/${slug}/${year}/transactions`;
+  if (sort === "new") return base;
+  const { sort: sortParam, order } = transactionSortParams(sort);
+  return `${base}?sort=${sortParam}&order=${order}`;
+}
+
 const compare = (a: string | number, b: string | number) => (a < b ? -1 : a > b ? 1 : 0);
 
 /**
