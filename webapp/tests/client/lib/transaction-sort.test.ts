@@ -1,6 +1,7 @@
 import {
   amountColumnSortState,
   dateColumnSortState,
+  organizationTransactionsHref,
   parseTransactionSort,
   sortTransactionRows,
   TRANSACTION_SORT_TABS,
@@ -97,6 +98,36 @@ describe("TRANSACTION_SORT_TABS", () => {
       ["expDesc", "支出が多い順"],
       ["incDesc", "収入が多い順"],
     ]);
+  });
+});
+
+describe("organizationTransactionsHref", () => {
+  it("新しい順は並び順のパラメーターを付けず、ほかは sort・order を付けた全件ページの URL にする", () => {
+    expect(organizationTransactionsHref("team-mirai", 2025, "new")).toBe(
+      "/o/team-mirai/2025/transactions",
+    );
+    expect(organizationTransactionsHref("team-mirai", 2025, "old")).toBe(
+      "/o/team-mirai/2025/transactions?sort=date&order=asc",
+    );
+    expect(organizationTransactionsHref("team-mirai", 2025, "expDesc")).toBe(
+      "/o/team-mirai/2025/transactions?sort=expense&order=desc",
+    );
+    expect(organizationTransactionsHref("team-mirai", 2025, "incDesc")).toBe(
+      "/o/team-mirai/2025/transactions?sort=income&order=desc",
+    );
+  });
+
+  // 全件ページは URL の sort・order を parseTransactionSort で読むので、直接開いても同じ並び順になる
+  it("作った URL を全件ページが読むと、元の並び順に戻る", () => {
+    for (const tab of TRANSACTION_SORT_TABS) {
+      const query = new URL(
+        organizationTransactionsHref("team-mirai", 2025, tab.id),
+        "https://example.com",
+      ).searchParams;
+      expect(
+        parseTransactionSort(query.get("sort") ?? undefined, query.get("order") ?? undefined),
+      ).toBe(tab.id);
+    }
   });
 });
 
