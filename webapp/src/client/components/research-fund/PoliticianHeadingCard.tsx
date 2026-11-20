@@ -1,3 +1,4 @@
+import ComingSoonPill from "@/client/components/common/ComingSoonPill";
 import YearSegment from "@/client/components/common/YearSegment";
 import PoliticianCardSwitcher from "@/client/components/research-fund/PoliticianCardSwitcher";
 import PoliticianAvatar from "@/client/components/research-fund/PoliticianAvatar";
@@ -23,6 +24,8 @@ interface Props {
   periodLabel: string | null;
   /** 前後の議員への切り替え。公開中の議員が 1 人以下なら null（出さない） */
   nav: PoliticianNav<PoliticianNavLink> | null;
+  /** 調研費が「準備中」の議員か。公開範囲・年の代わりに「準備中」のタグを出す */
+  comingSoon?: boolean;
 }
 
 /**
@@ -58,6 +61,7 @@ export default function PoliticianHeadingCard({
   currentYear,
   periodLabel,
   nav,
+  comingSoon = false,
 }: Props) {
   const photoAlt = `${politician.name}の写真`;
   const period = periodLabel ?? `${currentYear}年`;
@@ -71,7 +75,13 @@ export default function PoliticianHeadingCard({
         <span className="text-[30px] font-black leading-[1.25] tracking-[0.01em] text-black">
           {politician.name}の調研費
         </span>
-        <span className="text-[14px] font-bold tracking-[0.02em] text-[#238778]">{period}</span>
+        {comingSoon ? (
+          <span>
+            <ComingSoonPill className="h-[22px] text-[12px]" />
+          </span>
+        ) : (
+          <span className="text-[14px] font-bold tracking-[0.02em] text-[#238778]">{period}</span>
+        )}
         <PoliticianSnsLinks
           name={politician.name}
           profileUrl={politician.profileUrl}
@@ -98,11 +108,13 @@ export default function PoliticianHeadingCard({
         <span className="text-[20px] font-black leading-[1.3] tracking-[0.01em]">
           {politician.name}
         </span>
-        <span className="text-[13px] font-bold text-[#0A1A17]/80">調研費・{period}</span>
+        <span className="text-[13px] font-bold text-[#0A1A17]/80">
+          調研費・{comingSoon ? "準備中" : period}
+        </span>
       </span>
       {/* トップの議員カードと同じく左下に年。年が1つだけなら押せる切り替えと見分けがつくよう枠のない文字だけのタグにする */}
       <div className="col-span-full row-start-3 self-end justify-self-start">
-        {hasYearSwitch ? (
+        {comingSoon ? null : hasYearSwitch ? (
           <YearSegment years={spYearOptions(years)} currentYear={currentYear} />
         ) : (
           <span className="flex h-10 items-center pl-1 text-[14px] font-bold leading-none tabular-nums text-[#0A1A17]/80">
@@ -132,7 +144,7 @@ export default function PoliticianHeadingCard({
               {currentIndex + 1} / {nav?.members.length}
             </span>
             <span className="sr-only">
-              公開中の議員{nav?.members.length}人のうち{currentIndex + 1}人目
+              議員{nav?.members.length}人のうち{currentIndex + 1}人目
             </span>
           </span>
         )

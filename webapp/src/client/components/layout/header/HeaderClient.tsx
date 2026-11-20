@@ -8,6 +8,7 @@ import HeaderMegaMenu from "@/client/components/layout/header/HeaderMegaMenu";
 import HeaderSpMenu, { ExternalIcon } from "@/client/components/layout/header/HeaderSpMenu";
 import {
   ABOUT_HREF,
+  buildComingSoonPoliticianMenuItems,
   buildOrganizationMenuItems,
   buildPoliticianMenuItems,
   DATA_NOTES_HREF,
@@ -17,13 +18,18 @@ import {
   isMenuNavKey,
   parseHeaderPath,
 } from "@/client/lib/header-navigation";
-import type { ResearchFundPoliticianEntry } from "@/server/contexts/research-fund/domain/models/research-fund-politician-list";
+import type {
+  ResearchFundComingSoonPolitician,
+  ResearchFundPoliticianEntry,
+} from "@/server/contexts/research-fund/domain/models/research-fund-politician-list";
 import type { OrganizationsResponse } from "@/types/organization";
 
 interface HeaderClientProps {
   organizations: OrganizationsResponse;
   /** 年度ごとの、調研費を公開している議員の一覧 */
   politiciansByYear: Record<number, ResearchFundPoliticianEntry[]>;
+  /** 調研費を非公開のまま「準備中」としてグレーで出す議員（公開中の議員の後ろに並べる） */
+  comingSoonPoliticians?: ResearchFundComingSoonPolitician[];
 }
 
 const MEGA_MENU_ID = "header-mega-menu";
@@ -36,12 +42,22 @@ const SP_MENU_CLOSE_MS = 330;
 const NAV_ITEM_CLASS =
   "inline-flex h-11 items-center gap-1 whitespace-nowrap rounded-full px-2.5 text-sm font-bold text-black decoration-2 underline-offset-8 transition-colors hover:bg-[#F3F7F6] cursor-pointer";
 
-export default function HeaderClient({ organizations, politiciansByYear }: HeaderClientProps) {
+export default function HeaderClient({
+  organizations,
+  politiciansByYear,
+  comingSoonPoliticians = [],
+}: HeaderClientProps) {
   const pathname = usePathname();
   const current = parseHeaderPath(pathname);
   const currentNavKey = getCurrentNavKey(current);
   const organizationItems = buildOrganizationMenuItems(organizations.organizations, current);
   const politicianItems = buildPoliticianMenuItems(politiciansByYear, current);
+  const comingSoonItems = buildComingSoonPoliticianMenuItems(
+    comingSoonPoliticians,
+    politicianItems,
+    current,
+  );
+  // 「準備中」の議員だけでは調研費のメニューを出さない（公開中のデータが無いため）
   const navItems = getHeaderNavItems(politicianItems.length > 0);
 
   // PC のメガメニュー
@@ -341,6 +357,7 @@ export default function HeaderClient({ organizations, politiciansByYear }: Heade
                 menu={megaMenu}
                 organizations={organizationItems}
                 politicians={politicianItems}
+                comingSoonPoliticians={comingSoonItems}
                 onNavigate={closeMenus}
               />
             </div>
@@ -351,6 +368,7 @@ export default function HeaderClient({ organizations, politiciansByYear }: Heade
                 id={SP_MENU_ID}
                 organizations={organizationItems}
                 politicians={politicianItems}
+                comingSoonPoliticians={comingSoonItems}
                 onNavigate={closeMenus}
               />
             </div>

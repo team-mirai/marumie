@@ -10,7 +10,10 @@ import {
   type PublishedResearchFund,
   type PublishedResearchFundPageRef,
 } from "@/server/contexts/research-fund/domain/models/published-research-fund";
-import type { ResearchFundPoliticianSource } from "@/server/contexts/research-fund/domain/models/research-fund-politician-list";
+import type {
+  ResearchFundComingSoonPolitician,
+  ResearchFundPoliticianSource,
+} from "@/server/contexts/research-fund/domain/models/research-fund-politician-list";
 import type { ResearchFundRepository } from "@/server/contexts/research-fund/domain/repositories/research-fund-repository.interface";
 import type { ResearchFundRow } from "@/shared/research-fund/aggregation";
 import {
@@ -418,6 +421,42 @@ export class PrismaResearchFundRepository implements ResearchFundRepository {
         publishedThrough: book?.publishedThrough ? dateOf(book.publishedThrough).slice(0, 7) : null,
       };
     });
+  }
+
+  async findComingSoonPoliticians(): Promise<ResearchFundComingSoonPolitician[]> {
+    // 添え書きがある議員が「準備中」。公開中の議員は添え書きを持てない（Politician のルールと DB の CHECK 制約）
+    const politicians = await this.prisma.politician.findMany({
+      where: { researchFundComingSoonNote: { not: null } },
+      orderBy: [{ displayOrder: "asc" }, { id: "asc" }],
+      select: {
+        slug: true,
+        name: true,
+        nameKana: true,
+        photoPath: true,
+        researchFundComingSoonNote: true,
+      },
+    });
+    return politicians.map((politician) => ({
+      slug: politician.slug,
+      name: politician.name,
+      nameKana: politician.nameKana,
+      hasPhoto: politician.photoPath !== null,
+      note: politician.researchFundComingSoonNote?.trim() || null,
+    }));
+  }
+
+  async findComingSoonProfile(
+    slug: string,
+  ): Promise<{ politician: PublishedPoliticianProfile; note: string | null } | null> {
+    const politician = await this.prisma.politician.findFirst({
+      where: { slug, researchFundComingSoonNote: { not: null } },
+      select: { ...politicianProfileSelect, researchFundComingSoonNote: true },
+    });
+    if (!politician) return null;
+    return {
+      politician: profileOf(politician),
+      note: politician.researchFundComingSoonNote?.trim() || null,
+    };
   }
 
   async findPublishedPageRefs(): Promise<PublishedResearchFundPageRef[]> {

@@ -5,6 +5,10 @@ jest.mock("@/server/contexts/research-fund/presentation/loaders/load-research-fu
 jest.mock("@/server/contexts/research-fund/presentation/loaders/load-research-fund-politician-cards", () => ({
   loadResearchFundPoliticianCards: jest.fn(),
 }));
+jest.mock("@/server/contexts/research-fund/presentation/loaders/load-research-fund-coming-soon-page", () => ({
+  loadResearchFundComingSoonPageByPath: jest.fn(),
+}));
+jest.mock("@/client/components/research-fund/ResearchFundComingSoonSection", () => ({ __esModule: true, default: () => null }));
 jest.mock("@/client/components/common/GradientMessageCard", () => ({ __esModule: true, default: () => null }));
 jest.mock("@/client/components/layout/MainColumn", () => ({ __esModule: true, default: () => null }));
 jest.mock("@/client/components/layout/Breadcrumbs", () => ({ __esModule: true, default: () => null }));
@@ -21,12 +25,14 @@ jest.mock("@/client/components/research-fund/ResearchFundCrossLink", () => ({
 
 import type { ReactElement, ReactNode } from "react";
 import PoliticianPage, { generateMetadata } from "@/app/p/[slug]/[year]/page";
+import { loadResearchFundComingSoonPageByPath } from "@/server/contexts/research-fund/presentation/loaders/load-research-fund-coming-soon-page";
 import { loadResearchFundPage } from "@/server/contexts/research-fund/presentation/loaders/load-research-fund-page";
 import { loadResearchFundPoliticianCards } from "@/server/contexts/research-fund/presentation/loaders/load-research-fund-politician-cards";
 import { deriveResearchFundPreviewToken } from "@/shared/research-fund/preview-token";
 
 const loadResearchFundPageMock = loadResearchFundPage as jest.Mock;
 const loadResearchFundPoliticianCardsMock = loadResearchFundPoliticianCards as jest.Mock;
+const loadResearchFundComingSoonPageByPathMock = loadResearchFundComingSoonPageByPath as jest.Mock;
 
 const SECRET = "test-secret";
 const TOKEN = deriveResearchFundPreviewToken(SECRET, "sample-taro");
@@ -40,7 +46,14 @@ const politician = {
   snsUrls: [],
   hasPhoto: true,
 };
-const cardOf = (slug: string, name: string) => ({ slug, name, title: null, hasPhoto: false });
+const cardOf = (slug: string, name: string, comingSoon = false) => ({
+  slug,
+  name,
+  title: null,
+  hasPhoto: false,
+  comingSoon,
+});
+type Child = ReactElement<Record<string, unknown> & { children?: ReactElement<Record<string, unknown>>[] }>;
 const paramsOf = (slug: string) => Promise.resolve({ slug, year: "2026" });
 
 beforeEach(() => {
@@ -48,6 +61,8 @@ beforeEach(() => {
   loadResearchFundPageMock.mockReset();
   loadResearchFundPoliticianCardsMock.mockReset();
   loadResearchFundPoliticianCardsMock.mockResolvedValue([]);
+  loadResearchFundComingSoonPageByPathMock.mockReset();
+  loadResearchFundComingSoonPageByPathMock.mockResolvedValue(null);
 });
 
 afterAll(() => {
@@ -151,7 +166,6 @@ describe("議員ページ", () => {
     dataNote: "仕訳が完了した支出を掲載しています。",
   });
 
-  type Child = ReactElement<Record<string, unknown> & { children?: ReactElement<Record<string, unknown>>[] }>;
 
   async function render(slug: string) {
     const page = (await PoliticianPage({ params: paramsOf(slug) })) as ReactElement<{
@@ -238,5 +252,65 @@ describe("議員ページ", () => {
 
     expect(card.props.nav).toBeNull();
     expect(others).toBeFalsy();
+  });
+});
+
+describe("「準備中」の議員のページ", () => {
+  const usami = { ...politician, name: "サンプル準備", slug: "sample-usami", hasPhoto: true };
+  const comingSoonPage = {
+    politician: usami,
+    note: "12月中旬を目処に公開予定です。",
+    dataNote: "所属議員の調研費を随時公開しています。",
+  };
+
+  beforeEach(() => {
+    loadResearchFundPageMock.mockResolvedValue(null);
+    loadResearchFundComingSoonPageByPathMock.mockResolvedValue(comingSoonPage);
+  });
+
+  it("metadata は議員名のタイトルにし、中身が無いので noindex にする", async () => {
+    const metadata = await generateMetadata({ params: paramsOf("sample-usami") });
+
+    expect(loadResearchFundComingSoonPageByPathMock).toHaveBeenCalledWith("sample-usami");
+    expect(metadata).toEqual({ title: "サンプル準備の調研費", robots: { index: false } });
+  });
+
+  it("準備中でもなければ 404 にする", async () => {
+    loadResearchFundComingSoonPageByPathMock.mockResolvedValue(null);
+
+    await expect(PoliticianPage({ params: paramsOf("nobody") })).rejects.toThrow(
+      "NEXT_HTTP_ERROR_FALLBACK;404",
+    );
+  });
+
+  it("見出しのカードを準備中にし、点線の枠に添え書きを渡し、前後の切り替えに自分を含める", async () => {
+    loadResearchFundPoliticianCardsMock.mockResolvedValue([
+      cardOf("sample-taro", "サンプル太郎"),
+      cardOf("sample-usami", "サンプル準備", true),
+    ]);
+
+    const page = (await PoliticianPage({ params: paramsOf("sample-usami") })) as ReactElement<{
+      children: ReactNode[];
+    }>;
+    // 準備中のページは別のコンポーネントを返すので、それを描いた結果を確かめる
+    const rendered = (await (page.type as (props: unknown) => Promise<ReactElement>)(
+      page.props,
+    )) as ReactElement<{ children: ReactNode[] }>;
+    const [heading, section, survey, others, bottom] = rendered.props.children as Child[];
+    const [breadcrumbs, , card] = heading.props.children ?? [];
+
+    expect(breadcrumbs.props.current).toBe("サンプル準備の調研費・2026年");
+    expect(card.props.comingSoon).toBe(true);
+    expect(card.props.photoUrl).toBe("/api/research-fund/politicians/sample-usami/photo");
+    expect((card.props.nav as { prev: { slug: string } }).prev.slug).toBe("sample-taro");
+    expect(section.props).toEqual({
+      eyebrow: "サンプル準備の調研費・2026年",
+      note: "12月中旬を目処に公開予定です。",
+    });
+    expect(survey.props.headingId).toBe("politician-survey-heading");
+    expect(((others.props.politicians as { slug: string }[]) ?? []).map((p) => p.slug)).toEqual([
+      "sample-taro",
+    ]);
+    expect(bottom.props.dataNote).toBe("所属議員の調研費を随時公開しています。");
   });
 });

@@ -243,6 +243,10 @@ model Politician {
   displayOrder         Int      @default(0) @map("display_order")
   // 調研費を公開するか。議員室ごとにプレビューしてから順次公開するため、新規・既存とも非公開から始める
   isResearchFundPublic Boolean  @default(false) @map("is_research_fund_public")
+  // 調研費を非公開のまま、公開サイトの議員一覧（トップ・メニュー・フッター・議員ページの「他の議員」）に
+  // 「準備中」として出すときの添え書き。NULL = 出さない。空文字 = 添え書きなしで準備中として出す。
+  // 公開中（is_research_fund_public = true）の議員は NULL に限る（Politician のルール。DB の CHECK 制約でも守る）
+  researchFundComingSoonNote String? @map("research_fund_coming_soon_note")
   // 公開サイトの議員カード・議員ページの見出しに出すプロフィール（#1916）。admin から手で入力する
   nameKana             String?  @map("name_kana") @db.VarChar(255)
   house                PoliticianHouse?

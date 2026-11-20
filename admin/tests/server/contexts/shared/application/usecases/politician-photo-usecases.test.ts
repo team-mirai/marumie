@@ -14,6 +14,7 @@ const politician: Politician = {
   politicalOrganizationId: "",
   politicalOrganizationName: null,
   isResearchFundPublic: false,
+  researchFundComingSoonNote: null,
   nameKana: "",
   house: "",
   constituency: "",
@@ -34,6 +35,7 @@ beforeEach(() => {
     save: jest.fn(),
     saveProfile: jest.fn(),
     setResearchFundPublic: jest.fn(),
+    setResearchFundComingSoonNote: jest.fn(),
     setPhotoPath: jest.fn(),
     delete: jest.fn(),
   };

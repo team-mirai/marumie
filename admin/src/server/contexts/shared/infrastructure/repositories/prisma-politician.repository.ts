@@ -4,6 +4,7 @@ import type {
   Politician,
   PoliticianInput,
   PoliticianProfileInput,
+  PoliticianResearchFundPublicationChange,
 } from "@/shared/models/politician";
 import type { IPoliticianRepository } from "@/server/contexts/shared/domain/repositories/politician-repository.interface";
 
@@ -25,6 +26,7 @@ function toModel(row: Row): Politician {
     politicalOrganizationId: membership ? String(membership.politicalOrganizationId) : "",
     politicalOrganizationName: membership?.politicalOrganization.displayName ?? null,
     isResearchFundPublic: row.isResearchFundPublic,
+    researchFundComingSoonNote: row.researchFundComingSoonNote,
     nameKana: row.nameKana ?? "",
     house: row.house ?? "",
     constituency: row.constituency ?? "",
@@ -126,10 +128,17 @@ export class PrismaPoliticianRepository implements IPoliticianRepository {
       throw new Error("議員の保存に失敗しました。もう一度お試しください");
     }
   }
-  async setResearchFundPublic(id: string, isPublic: boolean) {
+  async setResearchFundPublic(id: string, change: PoliticianResearchFundPublicationChange) {
     await this.prisma.politician.update({
       where: { id: BigInt(id) },
-      data: { isResearchFundPublic: isPublic },
+      // 非公開にするときは公開フラグだけ（添え書きを data に入れないので、同時に保存された添え書きを上書きしない）
+      data: change,
+    });
+  }
+  async setResearchFundComingSoonNote(id: string, note: string | null) {
+    await this.prisma.politician.update({
+      where: { id: BigInt(id) },
+      data: { researchFundComingSoonNote: note },
     });
   }
   async setPhotoPath(id: string, photoPath: string | null) {

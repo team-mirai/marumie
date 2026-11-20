@@ -228,12 +228,34 @@ test("予期しない保存エラーの内部情報を公開しない", async ()
   );
 });
 
-test("調研費の公開フラグだけを更新する", async () => {
+test("調研費の公開フラグと「準備中」の添え書きを1回の更新で書く", async () => {
   const { tx, repository } = setup();
-  await repository.setResearchFundPublic("1", true);
+  await repository.setResearchFundPublic("1", {
+    isResearchFundPublic: true,
+    researchFundComingSoonNote: null,
+  });
+  expect(tx.politician.update).toHaveBeenCalledTimes(1);
   expect(tx.politician.update).toHaveBeenCalledWith({
     where: { id: BigInt(1) },
-    data: { isResearchFundPublic: true },
+    data: { isResearchFundPublic: true, researchFundComingSoonNote: null },
+  });
+});
+
+test("非公開にするときは公開フラグだけを更新し、添え書きには触れない", async () => {
+  const { tx, repository } = setup();
+  await repository.setResearchFundPublic("1", { isResearchFundPublic: false });
+  expect(tx.politician.update).toHaveBeenCalledWith({
+    where: { id: BigInt(1) },
+    data: { isResearchFundPublic: false },
+  });
+});
+
+test("「準備中」の添え書きだけを更新する", async () => {
+  const { tx, repository } = setup();
+  await repository.setResearchFundComingSoonNote("1", "準備中です");
+  expect(tx.politician.update).toHaveBeenCalledWith({
+    where: { id: BigInt(1) },
+    data: { researchFundComingSoonNote: "準備中です" },
   });
 });
 

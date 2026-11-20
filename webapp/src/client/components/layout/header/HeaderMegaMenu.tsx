@@ -1,8 +1,10 @@
 import Link from "next/link";
 import type { CSSProperties } from "react";
+import ComingSoonPill from "@/client/components/common/ComingSoonPill";
 import HeaderYearPills from "@/client/components/layout/header/HeaderYearPills";
 import PoliticianInitialAvatar from "@/client/components/layout/header/PoliticianInitialAvatar";
 import type {
+  ComingSoonPoliticianMenuItem,
   HeaderOrganizationMenuItem,
   HeaderPoliticianMenuItem,
 } from "@/client/lib/header-navigation";
@@ -12,6 +14,8 @@ interface HeaderMegaMenuProps {
   menu: "pf" | "rf";
   organizations: HeaderOrganizationMenuItem[];
   politicians: HeaderPoliticianMenuItem[];
+  /** 「準備中」の議員。公開中の議員の後ろに「準備中」のタグを添えて並べる */
+  comingSoonPoliticians?: ComingSoonPoliticianMenuItem[];
   onNavigate: () => void;
 }
 
@@ -32,6 +36,7 @@ export default function HeaderMegaMenu({
   menu,
   organizations,
   politicians,
+  comingSoonPoliticians = [],
   onNavigate,
 }: HeaderMegaMenuProps) {
   return (
@@ -130,6 +135,30 @@ export default function HeaderMegaMenu({
                     onNavigate={onNavigate}
                   />
                 )}
+              </li>
+            ))}
+            {comingSoonPoliticians.map((politician, comingSoonIndex) => (
+              <li
+                key={politician.slug}
+                style={itemOrderStyle(
+                  1 + Math.floor((politicians.length + comingSoonIndex) / POLITICIAN_COLUMNS),
+                )}
+                className="mega-menu-item flex min-w-0 items-center gap-3"
+              >
+                <Link
+                  href={politician.href}
+                  onClick={onNavigate}
+                  aria-current={politician.isCurrent ? "page" : undefined}
+                  className="flex min-h-14 items-center gap-3.5 whitespace-nowrap text-[17px] font-bold text-[#111827] hover:text-[#238778]"
+                >
+                  <PoliticianInitialAvatar
+                    name={politician.name}
+                    photoUrl={politician.photoUrl}
+                    size="lg"
+                  />
+                  {politician.name}
+                  <ComingSoonPill className="-ml-1.5" />
+                </Link>
               </li>
             ))}
           </ul>

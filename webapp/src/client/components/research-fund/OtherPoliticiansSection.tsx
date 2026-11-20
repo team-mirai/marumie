@@ -1,4 +1,5 @@
 import Link from "next/link";
+import ComingSoonPill from "@/client/components/common/ComingSoonPill";
 import RevealHeadingText from "@/client/components/common/RevealHeadingText";
 import PoliticianAvatar from "@/client/components/research-fund/PoliticianAvatar";
 
@@ -10,7 +11,8 @@ interface OtherPolitician {
 }
 
 interface Props {
-  politicians: OtherPolitician[];
+  /** comingSoon の議員は名前の横に「準備中」のタグを添える（リンク先は準備中の表示のページ） */
+  politicians: (OtherPolitician & { comingSoon?: boolean })[];
 }
 
 /**
@@ -46,8 +48,11 @@ export default function OtherPoliticiansSection({ politicians }: Props) {
                 alt={`${politician.name}の写真`}
                 className="h-10 w-10 min-[641px]:h-[52px] min-[641px]:w-[52px]"
               />
-              <span className="min-w-0 flex-1 truncate text-[14px] font-bold leading-[1.4] min-[641px]:whitespace-normal min-[641px]:text-[16px]">
-                {politician.name}
+              <span className="flex min-w-0 flex-1 flex-col items-start gap-1 min-[641px]:flex-row min-[641px]:flex-wrap min-[641px]:items-center min-[641px]:gap-x-2">
+                <span className="max-w-full truncate text-[14px] font-bold leading-[1.4] min-[641px]:whitespace-normal min-[641px]:text-[16px]">
+                  {politician.name}
+                </span>
+                {politician.comingSoon && <ComingSoonPill />}
               </span>
               <svg
                 width="20"

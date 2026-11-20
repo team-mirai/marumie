@@ -1,10 +1,14 @@
 import type {
+  PublishedPoliticianProfile,
   PublishedPoliticianResearchFund,
   PublishedReceipt,
   PublishedResearchFund,
   PublishedResearchFundPageRef,
 } from "@/server/contexts/research-fund/domain/models/published-research-fund";
-import type { ResearchFundPoliticianSource } from "@/server/contexts/research-fund/domain/models/research-fund-politician-list";
+import type {
+  ResearchFundComingSoonPolitician,
+  ResearchFundPoliticianSource,
+} from "@/server/contexts/research-fund/domain/models/research-fund-politician-list";
 
 export interface ResearchFundRepository {
   /** 議員の slug と年度から、published の仕訳だけを射影して返す。帳簿が無ければ null */
@@ -21,6 +25,14 @@ export interface ResearchFundRepository {
    * 公開状況（ready / statusLabel）の判定は usecase が行う。
    */
   findPoliticians(financialYear: number): Promise<ResearchFundPoliticianSource[]>;
+
+  /** 調研費を非公開のまま「準備中」として一覧に出す議員（並び順は usecase で決める） */
+  findComingSoonPoliticians(): Promise<ResearchFundComingSoonPolitician[]>;
+
+  /** slug の議員が「準備中」なら、ページに出すプロフィールと添え書き。準備中でなければ null */
+  findComingSoonProfile(
+    slug: string,
+  ): Promise<{ politician: PublishedPoliticianProfile; note: string | null } | null>;
 
   /** 公開ページが成立する議員×年度の一覧（sitemap 用）。published の仕訳を 1 件以上持つ帳簿だけ */
   findPublishedPageRefs(): Promise<PublishedResearchFundPageRef[]>;

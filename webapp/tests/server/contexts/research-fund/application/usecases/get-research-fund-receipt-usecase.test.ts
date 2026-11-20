@@ -7,6 +7,8 @@ function build(receipt: { maskedKey: string } | null) {
     findPublished: jest.fn().mockResolvedValue(null),
     findPublishedForHome: jest.fn().mockResolvedValue([]),
     findPoliticians: jest.fn().mockResolvedValue([]),
+    findComingSoonPoliticians: jest.fn().mockResolvedValue([]),
+    findComingSoonProfile: jest.fn().mockResolvedValue(null),
     findPublishedPageRefs: jest.fn().mockResolvedValue([]),
     findPublishedReceipt: jest.fn().mockResolvedValue(receipt),
   };

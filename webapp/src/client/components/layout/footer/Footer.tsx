@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { ExternalIcon } from "@/client/components/layout/header/HeaderSpMenu";
+import ComingSoonPill from "@/client/components/common/ComingSoonPill";
 import OrganizationMenuIcon from "@/client/components/layout/header/OrganizationMenuIcon";
 import PoliticianInitialAvatar from "@/client/components/layout/header/PoliticianInitialAvatar";
 import {
@@ -13,6 +14,7 @@ import {
 } from "@/client/lib/footer-navigation";
 import {
   ABOUT_HREF,
+  buildComingSoonPoliticianMenuItems,
   buildOrganizationMenuItems,
   buildPoliticianMenuItems,
   DATA_NOTES_HREF,
@@ -23,6 +25,7 @@ import {
 } from "@/client/lib/header-navigation";
 import { loadHomePageData } from "@/server/contexts/public-finance/presentation/loaders/load-home-page-data";
 import type { ResearchFundPoliticianEntry } from "@/server/contexts/research-fund/domain/models/research-fund-politician-list";
+import { loadResearchFundComingSoonPoliticians } from "@/server/contexts/research-fund/presentation/loaders/load-research-fund-coming-soon-politicians";
 import { loadResearchFundPoliticians } from "@/server/contexts/research-fund/presentation/loaders/load-research-fund-politicians";
 
 const FOCUS_CLASS =
@@ -44,7 +47,7 @@ const EXTERNAL_ICON_CLASS = "ml-1 size-[0.75em] shrink-0";
  * 政治団体と議員は公開中のデータから並べる（議員は五十音順）。
  */
 export default async function Footer() {
-  const [homeData, politicianLists] = await Promise.all([
+  const [homeData, politicianLists, comingSoonPoliticians] = await Promise.all([
     // 政党と政治団体を分けて並べ、代表者の写真を出すため、政党かどうかと写真の有無が分かるトップの集計を使う。
     // DB に届かない環境（CI のビルド時など）でもフッターは描けるようにする
     loadHomePageData(HEADER_YEARS).catch((error) => {
@@ -60,6 +63,8 @@ export default async function Footer() {
         }),
       ),
     ),
+    // 調研費を非公開のまま「準備中」のタグを添えて出す議員（公開中の議員の後ろに並べる）
+    loadResearchFundComingSoonPoliticians(),
   ]);
 
   const notCurrent = { kind: "other" } as const;
@@ -78,6 +83,7 @@ export default async function Footer() {
     buildPoliticianMenuItems(politiciansByYear, notCurrent),
     politiciansByYear,
   );
+  const comingSoon = buildComingSoonPoliticianMenuItems(comingSoonPoliticians, politicians);
 
   return (
     <footer className="w-full bg-gradient-to-tl from-[#BCECD3] to-[#64D8C6] text-[#1F2937]">
@@ -122,6 +128,17 @@ export default async function Footer() {
                     size="footer"
                   />
                   {politician.name}
+                </Link>
+              ))}
+              {comingSoon.map((politician) => (
+                <Link key={politician.slug} href={politician.href} className={PERSON_LINK_CLASS}>
+                  <PoliticianInitialAvatar
+                    name={politician.name}
+                    photoUrl={politician.photoUrl}
+                    size="footer"
+                  />
+                  {politician.name}
+                  <ComingSoonPill className="-ml-0.5 bg-white/80" />
                 </Link>
               ))}
             </div>

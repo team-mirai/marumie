@@ -9,6 +9,7 @@ import MainColumn from "@/client/components/layout/MainColumn";
 import RevealOnScroll from "@/client/components/layout/RevealOnScroll";
 import { formatUpdatedAt } from "@/client/lib/format-date";
 import { loadHomePageData } from "@/server/contexts/public-finance/presentation/loaders/load-home-page-data";
+import { loadResearchFundComingSoonPoliticians } from "@/server/contexts/research-fund/presentation/loaders/load-research-fund-coming-soon-politicians";
 import { loadResearchFundHomeSummary } from "@/server/contexts/research-fund/presentation/loaders/load-research-fund-home-summary";
 
 export const revalidate = 300; // 5 minutes
@@ -27,13 +28,17 @@ export default async function HomePage() {
   // 所属議員の調研費は、政党カードの有無に関係なく調研費を公開中の議員を全員出す。
   // 並べるのは DEFAULT_YEAR を公開している議員で、ほかの年も公開していればその場で年を切り替えられる。
   // 取れなくても他のカードは出せるので、失敗したら出さないだけにする
-  const researchFund = await loadResearchFundHomeSummary({
-    financialYear: DEFAULT_YEAR,
-    years: YEARS,
-  }).catch((error) => {
-    console.error("loadResearchFundHomeSummary error:", error);
-    return null;
-  });
+  const [researchFund, comingSoonPoliticians] = await Promise.all([
+    loadResearchFundHomeSummary({
+      financialYear: DEFAULT_YEAR,
+      years: YEARS,
+    }).catch((error) => {
+      console.error("loadResearchFundHomeSummary error:", error);
+      return null;
+    }),
+    // 調研費を非公開のまま「準備中」としてグレーで出す議員（公開中の議員の後ろに並べる）
+    loadResearchFundComingSoonPoliticians(),
+  ]);
 
   return (
     <MainColumn spacing="home" width="wide">
@@ -66,7 +71,9 @@ export default async function HomePage() {
           ))}
         </section>
       )}
-      {researchFund && <HomeResearchFundSection data={researchFund} />}
+      {researchFund && (
+        <HomeResearchFundSection data={researchFund} comingSoon={comingSoonPoliticians} />
+      )}
       {/* 調研費の公開についてのアンケート。SP は上の調研費との間を、下の見出しとの間（56px）にそろえる */}
       <ResearchFundSurveyCard
         headingId="home-survey-heading"

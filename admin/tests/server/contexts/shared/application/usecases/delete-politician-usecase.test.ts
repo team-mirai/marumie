@@ -20,6 +20,7 @@ const politicianWith = (photoPath: string | null) => ({
   id: "1",
   politicalOrganizationName: null,
   isResearchFundPublic: false,
+  researchFundComingSoonNote: null,
   photoPath,
 });
 let repository: jest.Mocked<IPoliticianRepository>;
@@ -29,6 +30,7 @@ let usecase: DeletePoliticianUsecase;
 beforeEach(() => {
   repository = { findAll: jest.fn(), findById: jest.fn(), save: jest.fn(),
     setResearchFundPublic: jest.fn(),
+    setResearchFundComingSoonNote: jest.fn(),
     saveProfile: jest.fn(),
     setPhotoPath: jest.fn(),
     delete: jest.fn(),

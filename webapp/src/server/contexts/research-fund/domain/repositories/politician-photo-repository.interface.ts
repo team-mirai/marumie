@@ -2,6 +2,8 @@
 export interface PoliticianPhotoSource {
   /** 議員が調研費を「公開する」設定か。false ならプレビュー URL からだけ配信する */
   isPublic: boolean;
+  /** 非公開のまま「準備中」として一覧に出している議員か。一覧に顔写真を出すので、プレビュー URL でなくても配信する */
+  isComingSoon: boolean;
   /** 顔写真の Storage 上のキー。未登録なら null */
   photoPath: string | null;
 }

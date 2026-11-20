@@ -1,4 +1,5 @@
 import {
+  buildComingSoonPoliticianMenuItems,
   buildOrganizationMenuItems,
   buildPoliticianMenuItems,
   getCurrentNavKey,
@@ -155,5 +156,37 @@ describe("buildPoliticianMenuItems", () => {
 
     expect(items[0].photoUrl).toBe("/api/research-fund/politicians/sample-taro/photo");
     expect(items[1].photoUrl).toBeNull();
+  });
+});
+
+describe("buildComingSoonPoliticianMenuItems", () => {
+  const USAMI = { slug: "sample-usami", name: "サンプル準備", hasPhoto: true };
+  const TARO = { slug: "sample-taro", name: "サンプル太郎", hasPhoto: false };
+
+  it("準備中の議員を、最新の年度のページ（準備中の表示）へのリンクにする", () => {
+    expect(buildComingSoonPoliticianMenuItems([USAMI], [])).toEqual([
+      {
+        slug: "sample-usami",
+        name: "サンプル準備",
+        photoUrl: "/api/research-fund/politicians/sample-usami/photo",
+        isCurrent: false,
+        href: "/p/sample-usami/2026",
+      },
+    ]);
+  });
+
+  it("公開中の行にもいる議員は重ねて出さない", () => {
+    expect(buildComingSoonPoliticianMenuItems([USAMI, TARO], [{ slug: "sample-taro" }])).toEqual([
+      expect.objectContaining({ slug: "sample-usami" }),
+    ]);
+  });
+
+  it("表示中の議員のページなら isCurrent にする", () => {
+    const [item] = buildComingSoonPoliticianMenuItems(
+      [USAMI],
+      [],
+      parseHeaderPath("/p/sample-usami/2026"),
+    );
+    expect(item.isCurrent).toBe(true);
   });
 });

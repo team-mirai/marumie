@@ -17,7 +17,10 @@ function setup() {
   const prisma = {
     researchFundBook: { findFirst: jest.fn(), findMany: jest.fn().mockResolvedValue([]) },
     politicalOrganization: { findUnique: jest.fn().mockResolvedValue(null) },
-    politician: { findMany: jest.fn().mockResolvedValue([]) },
+    politician: {
+      findMany: jest.fn().mockResolvedValue([]),
+      findFirst: jest.fn().mockResolvedValue(null),
+    },
     researchFundJournalEntry: { findFirst: jest.fn() },
     researchFundAccount: {
       findMany: jest.fn().mockResolvedValue([
@@ -398,5 +401,50 @@ describe("PrismaResearchFundRepository の支出群（#1903）", () => {
     // 集計に含めるのは published の仕訳だけ
     const select = prisma.researchFundBook.findFirst.mock.calls[0][0].select;
     expect(select.expenditureGroups.select.items.where).toEqual({ entry: { status: "published" } });
+  });
+});
+
+describe("PrismaResearchFundRepository の「準備中」の議員", () => {
+  it("添え書きがある議員を準備中として返し、空の添え書きは「添え書きなし」（null）にする", async () => {
+    const { prisma, repository } = setup();
+    prisma.politician.findMany.mockResolvedValue([
+      {
+        slug: "sample-usami",
+        name: "サンプル準備",
+        nameKana: "さんぷる",
+        photoPath: "photos/usami.jpg",
+        researchFundComingSoonNote: " 12月中旬に公開予定 ",
+      },
+      { slug: "sample-jiro", name: "サンプル次郎", nameKana: null, photoPath: null, researchFundComingSoonNote: "" },
+    ]);
+
+    expect(await repository.findComingSoonPoliticians()).toEqual([
+      { slug: "sample-usami", name: "サンプル準備", nameKana: "さんぷる", hasPhoto: true, note: "12月中旬に公開予定" },
+      { slug: "sample-jiro", name: "サンプル次郎", nameKana: null, hasPhoto: false, note: null },
+    ]);
+    expect(prisma.politician.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { researchFundComingSoonNote: { not: null } } }),
+    );
+  });
+
+  it("準備中の議員のページ用に、プロフィールと添え書きを返す。準備中でなければ null", async () => {
+    const { prisma, repository } = setup();
+    prisma.politician.findFirst.mockResolvedValueOnce({
+      name: "サンプル準備",
+      slug: "sample-usami",
+      ...BLANK_PROFILE,
+      researchFundComingSoonNote: "12月中旬に公開予定",
+    });
+
+    expect(await repository.findComingSoonProfile("sample-usami")).toEqual({
+      politician: expect.objectContaining({ name: "サンプル準備", slug: "sample-usami", hasPhoto: false }),
+      note: "12月中旬に公開予定",
+    });
+    expect(prisma.politician.findFirst).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { slug: "sample-usami", researchFundComingSoonNote: { not: null } },
+      }),
+    );
+    expect(await repository.findComingSoonProfile("nobody")).toBeNull();
   });
 });

@@ -41,9 +41,26 @@ export interface Politician extends PoliticianInput {
   politicalOrganizationName: string | null;
   /** 調研費を公開するか。false なら議員ページはプレビュー URL でだけ開け、webapp の導線・sitemap に出さず noindex にする */
   isResearchFundPublic: boolean;
+  /**
+   * 調研費を非公開のまま、公開サイトの議員一覧に「準備中」としてグレーで出すときの添え書き。
+   * null = 出さない。空文字 = 添え書きなしで出す。公開中の議員には使わない
+   */
+  researchFundComingSoonNote: string | null;
   /** 顔写真の Storage 上のキー。未登録なら null */
   photoPath: string | null;
 }
+
+/** 「準備中」の添え書きの上限。トップの点線の枠に1〜2行で収まる長さ */
+export const RESEARCH_FUND_COMING_SOON_NOTE_MAX_LENGTH = 200;
+
+/**
+ * 調研費の公開の切り替えで書き換える列（Politician.setResearchFundPublic が決める）。
+ * 公開するときは「準備中」の添え書きも消す。非公開にするときは公開フラグだけを書き、添え書きには触れない
+ * （先に読んだ添え書きを書き戻して、同時に保存された添え書きを消さないため）
+ */
+export type PoliticianResearchFundPublicationChange =
+  | { isResearchFundPublic: true; researchFundComingSoonNote: null }
+  | { isResearchFundPublic: false };
 
 const VALIDATION_CODES = {
   INVALID: "POLITICIAN_INVALID_INPUT",
@@ -123,5 +140,42 @@ export const Politician = {
     if (invalidSns >= 0)
       return invalid("snsUrls", `SNS の URL（${invalidSns + 1}件目）を正しく入力してください`);
     return { status: "valid" as const };
+  },
+  /**
+   * 調研費の公開を切り替えるときに書き換える列。
+   * 公開すると「準備中」は終わるので、添え書きも消す（公開中かつ準備中という状態を作らない）。
+   * 非公開にするときは公開フラグだけを変え、添え書きには触れない（準備中として出すかは改めて決める）
+   */
+  setResearchFundPublic(isPublic: boolean) {
+    if (typeof isPublic !== "boolean")
+      return invalid("isResearchFundPublic", "公開するかを選択してください");
+    const value: PoliticianResearchFundPublicationChange = isPublic
+      ? { isResearchFundPublic: true, researchFundComingSoonNote: null }
+      : { isResearchFundPublic: false };
+    return { status: "valid" as const, value };
+  },
+  /**
+   * 「準備中」として一覧に出すときの添え書きを設定した後の値。null なら準備中として出さない。
+   * 準備中にできるのは調研費を公開していない議員だけ。添え書きは前後の空白を除き、空なら添え書きなしで出す
+   */
+  setResearchFundComingSoonNote(
+    politician: Pick<Politician, "isResearchFundPublic">,
+    note: string | null,
+  ) {
+    if (note === null) return { status: "valid" as const, value: null };
+    if (typeof note !== "string")
+      return invalid("researchFundComingSoonNote", "添え書きを入力してください");
+    if (politician.isResearchFundPublic)
+      return invalid(
+        "researchFundComingSoonNote",
+        "調研費を公開中の議員は「準備中」にできません。先に非公開にしてください",
+      );
+    const trimmed = note.trim();
+    if (trimmed.length > RESEARCH_FUND_COMING_SOON_NOTE_MAX_LENGTH)
+      return invalid(
+        "researchFundComingSoonNote",
+        `添え書きは${RESEARCH_FUND_COMING_SOON_NOTE_MAX_LENGTH}文字以内で入力してください`,
+      );
+    return { status: "valid" as const, value: trimmed };
   },
 };

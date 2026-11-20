@@ -7,7 +7,8 @@ export const dynamic = "force-dynamic";
 
 /**
  * 議員の顔写真を配信する。非公開バケットの署名URLへリダイレクトするだけで、
- * 議員ページを開ける議員（調研費を公開中、またはプレビュー URL の slug の区間）の写真しか返さない。
+ * 議員ページを開ける議員（調研費を公開中、またはプレビュー URL の slug の区間）と、
+ * 「準備中」として一覧に出している議員の写真だけを返す（判定は canServePoliticianPhoto）。
  */
 export async function GET(
   _request: Request,

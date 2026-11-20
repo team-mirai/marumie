@@ -1,12 +1,20 @@
 import { GetResearchFundPoliticianCardsUsecase } from "@/server/contexts/research-fund/application/usecases/get-research-fund-politician-cards-usecase";
-import type { ResearchFundPoliticianSource } from "@/server/contexts/research-fund/domain/models/research-fund-politician-list";
+import type {
+  ResearchFundComingSoonPolitician,
+  ResearchFundPoliticianSource,
+} from "@/server/contexts/research-fund/domain/models/research-fund-politician-list";
 import type { ResearchFundRepository } from "@/server/contexts/research-fund/domain/repositories/research-fund-repository.interface";
 
-function build(politicians: ResearchFundPoliticianSource[]) {
+function build(
+  politicians: ResearchFundPoliticianSource[],
+  comingSoon: ResearchFundComingSoonPolitician[] = [],
+) {
   const repository: ResearchFundRepository = {
     findPublished: jest.fn().mockResolvedValue(null),
     findPublishedForHome: jest.fn().mockResolvedValue([]),
     findPoliticians: jest.fn().mockResolvedValue(politicians),
+    findComingSoonPoliticians: jest.fn().mockResolvedValue(comingSoon),
+    findComingSoonProfile: jest.fn().mockResolvedValue(null),
     findPublishedPageRefs: jest.fn().mockResolvedValue([]),
     findPublishedReceipt: jest.fn().mockResolvedValue(null),
   };
@@ -39,8 +47,8 @@ describe("GetResearchFundPoliticianCardsUsecase", () => {
     ]);
 
     expect(await usecase.execute({ financialYear: 2026 })).toEqual([
-      { slug: "sample-taro", name: "サンプル 太郎", title: "衆議院議員・比例東京", hasPhoto: true },
-      { slug: "sample-jiro", name: "サンプル 次郎", title: null, hasPhoto: false },
+      { slug: "sample-taro", name: "サンプル 太郎", title: "衆議院議員・比例東京", hasPhoto: true, comingSoon: false },
+      { slug: "sample-jiro", name: "サンプル 次郎", title: null, hasPhoto: false, comingSoon: false },
     ]);
     expect(repository.findPoliticians).toHaveBeenCalledWith(2026);
   });
@@ -85,6 +93,38 @@ describe("GetResearchFundPoliticianCardsUsecase", () => {
       "usami",
       "mineshima",
       "no-kana",
+    ]);
+  });
+
+  it("「準備中」の議員を公開中の議員の後ろに五十音順で並べ、公開中の議員と重ねない", async () => {
+    const source = (slug: string, nameKana: string): ResearchFundPoliticianSource => ({
+      slug,
+      name: slug,
+      nameKana,
+      house: null,
+      constituency: null,
+      hasPhoto: false,
+      publishedMonths: ["2026-02"],
+      publishedThrough: null,
+    });
+    const soon = (slug: string, nameKana: string): ResearchFundComingSoonPolitician => ({
+      slug,
+      name: slug,
+      nameKana,
+      hasPhoto: true,
+      note: null,
+    });
+    const { usecase } = build(
+      [source("mineshima", "みねしま"), source("anno", "あんの")],
+      [soon("usami", "うさみ"), soon("anno", "あんの"), soon("abe", "あべ")],
+    );
+
+    const cards = await usecase.execute({ financialYear: 2026 });
+    expect(cards.map((card) => [card.slug, card.comingSoon])).toEqual([
+      ["anno", false],
+      ["mineshima", false],
+      ["abe", true],
+      ["usami", true],
     ]);
   });
 });

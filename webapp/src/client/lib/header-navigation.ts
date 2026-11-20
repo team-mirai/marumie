@@ -201,3 +201,36 @@ export function buildPoliticianMenuItems(
     };
   });
 }
+
+/** メニュー・フッターに「準備中」のタグを添えて出す議員。リンク先は準備中の表示のページ */
+export interface ComingSoonPoliticianMenuItem {
+  slug: string;
+  name: string;
+  /** 顔写真の URL。未登録なら null（名前の1文字目のアイコンにする） */
+  photoUrl: string | null;
+  isCurrent: boolean;
+  /** 最新の年度のページ（準備中の表示） */
+  href: string;
+}
+
+/**
+ * 「準備中」の議員のメニューの行。公開中の議員の行（published）と同じ議員は重ねて出さない。
+ * 並びは渡した順（ふりがなの五十音順）のままで、呼び出し側が公開中の議員の後ろに置く。
+ */
+export function buildComingSoonPoliticianMenuItems(
+  comingSoon: readonly { slug: string; name: string; hasPhoto: boolean }[],
+  published: readonly { slug: string }[],
+  current: HeaderCurrentPage = { kind: "other" },
+): ComingSoonPoliticianMenuItem[] {
+  const publishedSlugs = new Set(published.map((politician) => politician.slug));
+  const latestYear = Math.max(...HEADER_YEARS);
+  return comingSoon
+    .filter((politician) => !publishedSlugs.has(politician.slug))
+    .map((politician) => ({
+      slug: politician.slug,
+      name: politician.name,
+      photoUrl: politician.hasPhoto ? politicianPhotoUrl(politician.slug) : null,
+      isCurrent: current.kind === "politician" && current.slug === politician.slug,
+      href: politicianYearHref(politician.slug, latestYear),
+    }));
+}

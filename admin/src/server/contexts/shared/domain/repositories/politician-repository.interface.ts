@@ -3,6 +3,7 @@ import type {
   Politician,
   PoliticianInput,
   PoliticianProfileInput,
+  PoliticianResearchFundPublicationChange,
 } from "@/shared/models/politician";
 
 export interface IPoliticianRepository {
@@ -11,7 +12,10 @@ export interface IPoliticianRepository {
   save(id: string | null, input: PoliticianInput): Promise<void>;
   /** プロフィールの列だけを更新する。氏名・スラッグ・当選日・所属には触れない（#2031） */
   saveProfile(id: string, profile: PoliticianProfileInput): Promise<void>;
-  setResearchFundPublic(id: string, isPublic: boolean): Promise<void>;
+  /** 公開の切り替えで変わる列だけを1回の更新で書く（値は Politician.setResearchFundPublic で決めたもの） */
+  setResearchFundPublic(id: string, change: PoliticianResearchFundPublicationChange): Promise<void>;
+  /** 「準備中」の添え書きだけを書く（値は Politician.setResearchFundComingSoonNote で決めたもの） */
+  setResearchFundComingSoonNote(id: string, note: string | null): Promise<void>;
   /** 顔写真の Storage 上のキーを付け替える。null で写真なし */
   setPhotoPath(id: string, photoPath: string | null): Promise<void>;
   delete(id: string): Promise<void>;
