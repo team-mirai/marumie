@@ -5,6 +5,7 @@ import {
   deletePoliticianPhoto,
   savePolitician,
   savePoliticianProfile,
+  setPoliticianResearchFundComingSoon,
   setPoliticianResearchFundPublic,
   uploadPoliticianPhoto,
 } from "@/server/contexts/shared/presentation/actions/manage-politician";
@@ -97,6 +98,61 @@ describe("setPoliticianResearchFundPublic", () => {
 
     await expect(setPoliticianResearchFundPublic("1", true)).rejects.toThrow("認証が必要です");
     expect(setResearchFundPublic).not.toHaveBeenCalled();
+  });
+});
+
+describe("setPoliticianResearchFundComingSoon", () => {
+  let setResearchFundComingSoonNote: jest.SpyInstance;
+  beforeEach(() => {
+    setResearchFundComingSoonNote = jest
+      .spyOn(PrismaPoliticianRepository.prototype, "setResearchFundComingSoonNote")
+      .mockResolvedValue();
+  });
+
+  it("admin は非公開の議員を準備中にでき、添え書きは前後の空白を除いて保存される", async () => {
+    (getCurrentUser as jest.Mock).mockResolvedValue(userWith(["admin"]));
+
+    await expect(setPoliticianResearchFundComingSoon("1", " 12月中旬に公開予定 ")).resolves.toEqual(
+      { success: true, cacheWarning: null },
+    );
+    expect(setResearchFundComingSoonNote).toHaveBeenCalledWith("1", "12月中旬に公開予定");
+    expect(revalidatePath).toHaveBeenCalledWith("/(auth)", "layout");
+  });
+
+  it("公開中の議員は準備中にできず、ドメインの却下理由を返す", async () => {
+    (getCurrentUser as jest.Mock).mockResolvedValue(userWith(["admin"]));
+    jest.spyOn(PrismaPoliticianRepository.prototype, "findById").mockResolvedValue({
+      id: "1",
+      name: "議員名",
+      slug: "test-member",
+      termStart: "2026-02-08",
+      politicalOrganizationId: "",
+      politicalOrganizationName: null,
+      isResearchFundPublic: true,
+      researchFundComingSoonNote: null,
+      nameKana: "",
+      house: "",
+      constituency: "",
+      profileUrl: "",
+      websiteUrl: "",
+      snsUrls: [],
+      photoPath: null,
+    });
+
+    const result = await setPoliticianResearchFundComingSoon("1", "x");
+    expect(result.success).toBe(false);
+    if (!result.success) expect(result.error).toContain("公開中の議員は「準備中」にできません");
+    expect(setResearchFundComingSoonNote).not.toHaveBeenCalled();
+    expect(revalidatePath).not.toHaveBeenCalled();
+  });
+
+  it("担当の議員室の research_fund ユーザーでも、admin でなければ拒否される", async () => {
+    (getCurrentUser as jest.Mock).mockResolvedValue(userWith(["research_fund"]));
+
+    await expect(setPoliticianResearchFundComingSoon("1", null)).rejects.toThrow(
+      "この機能を使う権限がありません",
+    );
+    expect(setResearchFundComingSoonNote).not.toHaveBeenCalled();
   });
 });
 
