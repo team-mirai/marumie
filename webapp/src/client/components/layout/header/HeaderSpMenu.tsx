@@ -17,7 +17,7 @@ interface HeaderSpMenuProps {
   id: string;
   organizations: HeaderOrganizationMenuItem[];
   politicians: HeaderPoliticianMenuItem[];
-  /** 「準備中」の議員。公開中の議員の後ろに、リンクにせずグレーで並べる */
+  /** 「準備中」の議員。公開中の議員の後ろに「準備中」のタグを添えて並べる */
   comingSoonPoliticians?: ComingSoonPoliticianMenuItem[];
   onNavigate: () => void;
 }
@@ -95,15 +95,20 @@ export default function HeaderSpMenu({
             ))}
             {comingSoonPoliticians.map((politician) => (
               <li key={politician.slug} className="min-w-0">
-                <span className="flex flex-col items-center gap-1.5 text-center text-[11px] font-bold leading-[1.3] text-[#9CA3AF]">
+                <Link
+                  href={politician.href}
+                  onClick={onNavigate}
+                  aria-current={politician.isCurrent ? "page" : undefined}
+                  className={`flex flex-col items-center gap-1.5 text-center text-[11px] font-bold leading-[1.3] ${FOCUS_CLASS}`}
+                >
                   <PoliticianInitialAvatar
                     name={politician.name}
                     photoUrl={politician.photoUrl}
                     size="face"
                   />
                   {politician.name}
-                  <ComingSoonPill className="px-1.5 py-[2px] text-[10px]" />
-                </span>
+                  <ComingSoonPill className="bg-white/80" />
+                </Link>
               </li>
             ))}
           </ul>

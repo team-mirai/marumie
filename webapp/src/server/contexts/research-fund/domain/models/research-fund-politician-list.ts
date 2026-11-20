@@ -1,3 +1,4 @@
+import type { ResearchFundPoliticianProfileView } from "@/server/contexts/research-fund/domain/models/research-fund-page";
 import type { PoliticianHouse } from "@/shared/models/politician";
 
 /**
@@ -60,4 +61,13 @@ export interface ResearchFundComingSoonPolitician {
   hasPhoto: boolean;
   /** 添え書き（例: 「宇佐美議員室は業務逼迫のため、12月中旬を目処に公開予定です。」）。無ければ null */
   note: string | null;
+}
+
+/** 「準備中」の議員のページ（/p/{slug}/{年度}）に出す、プロフィールと添え書き */
+export interface ResearchFundComingSoonPage {
+  politician: ResearchFundPoliticianProfileView;
+  /** 添え書き。無ければ null */
+  note: string | null;
+  /** 下部の「調研費のデータについて」の本文（既定文） */
+  dataNote: string;
 }

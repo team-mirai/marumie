@@ -55,8 +55,9 @@ export default function HeaderClient({
   const comingSoonItems = buildComingSoonPoliticianMenuItems(
     comingSoonPoliticians,
     politicianItems,
+    current,
   );
-  // 「準備中」の議員だけでは調研費のメニューを出さない（開ける議員ページが無いため）
+  // 「準備中」の議員だけでは調研費のメニューを出さない（公開中のデータが無いため）
   const navItems = getHeaderNavItems(politicianItems.length > 0);
 
   // PC のメガメニュー

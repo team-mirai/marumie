@@ -8,6 +8,7 @@ import MainColumn from "@/client/components/layout/MainColumn";
 import RevealOnScroll from "@/client/components/layout/RevealOnScroll";
 import OtherPoliticiansSection from "@/client/components/research-fund/OtherPoliticiansSection";
 import PoliticianHeadingCard from "@/client/components/research-fund/PoliticianHeadingCard";
+import ResearchFundComingSoonSection from "@/client/components/research-fund/ResearchFundComingSoonSection";
 import ResearchFundBottomBlock from "@/client/components/research-fund/ResearchFundBottomBlock";
 import { ResearchFundCrossLinkProvider } from "@/client/components/research-fund/ResearchFundCrossLink";
 import ResearchFundExpensesSection from "@/client/components/research-fund/ResearchFundExpensesSection";
@@ -18,10 +19,15 @@ import { formatUpdatedAt } from "@/client/lib/format-date";
 import { shareMetadata } from "@/app/site-metadata";
 import { buildPoliticianNav, politicianPageHref } from "@/client/lib/politician-nav";
 import { politicianPhotoUrl } from "@/client/lib/politician-photo-url";
-import type { ResearchFundPoliticianCard } from "@/server/contexts/research-fund/domain/models/research-fund-politician-list";
+import type {
+  ResearchFundComingSoonPage,
+  ResearchFundPoliticianCard,
+} from "@/server/contexts/research-fund/domain/models/research-fund-politician-list";
+import { loadResearchFundComingSoonPage } from "@/server/contexts/research-fund/presentation/loaders/load-research-fund-coming-soon-page";
 import { loadResearchFundComingSoonPoliticians } from "@/server/contexts/research-fund/presentation/loaders/load-research-fund-coming-soon-politicians";
 import { loadResearchFundPoliticianCards } from "@/server/contexts/research-fund/presentation/loaders/load-research-fund-politician-cards";
 import { loadResearchFundPageByPath } from "@/server/contexts/research-fund/presentation/loaders/load-research-fund-page-by-path";
+import { parsePoliticianPathSegment } from "@/shared/research-fund/preview-path";
 
 export const revalidate = 300; // 5 minutes
 
@@ -34,14 +40,64 @@ function parseYear(year: string): number | null {
   return /^\d{4}$/.test(year) ? Number(year) : null;
 }
 
+/**
+ * 調研費を公開していない議員のうち「準備中」として一覧に出している議員なら、準備中のページのデータ。
+ * プレビュー URL（本来のデータを見る）では使わない
+ */
+async function loadComingSoon(pathSlug: string): Promise<ResearchFundComingSoonPage | null> {
+  const { slug, previewToken } = parsePoliticianPathSegment(pathSlug);
+  if (previewToken !== null) return null;
+  return await loadResearchFundComingSoonPage(slug).catch((error) => {
+    console.error("loadResearchFundComingSoonPage error:", error);
+    return null;
+  });
+}
+
+/**
+ * 前後の切り替え・「他の議員の調研費を見る」に並べる議員。調研費を公開中の議員の後ろに、「準備中」の議員を並べる
+ * （非公開の議員はプレビュー中でも出さない）。取れなくても本文は出せるので、失敗したら出さないだけにする。
+ */
+async function loadNavMembers(financialYear: number) {
+  const [cards, comingSoonPoliticians] = await Promise.all([
+    loadResearchFundPoliticianCards({ financialYear }).catch((error) => {
+      console.error("loadResearchFundPoliticianCards error:", error);
+      return [] as ResearchFundPoliticianCard[];
+    }),
+    loadResearchFundComingSoonPoliticians(),
+  ]);
+  const publishedSlugs = new Set(cards.map((card) => card.slug));
+  return [
+    ...cards.map((card) => ({ slug: card.slug, name: card.name, hasPhoto: card.hasPhoto })),
+    ...comingSoonPoliticians
+      .filter((politician) => !publishedSlugs.has(politician.slug))
+      .map((politician) => ({
+        slug: politician.slug,
+        name: politician.name,
+        hasPhoto: politician.hasPhoto,
+        comingSoon: true,
+      })),
+  ].map((member) => ({
+    ...member,
+    href: politicianPageHref(member.slug, financialYear),
+    photoUrl: member.hasPhoto ? politicianPhotoUrl(member.slug) : null,
+  }));
+}
+
 export async function generateMetadata({ params }: PoliticianPageProps): Promise<Metadata> {
   const { slug, year } = await params;
   const financialYear = parseYear(year);
   const page = financialYear
     ? await loadResearchFundPageByPath({ pathSlug: slug, financialYear })
     : null;
-  // 見つからなければサイト名だけのタイトルとトップの画像（ルートの既定）にする
-  if (!page) return {};
+  if (!page) {
+    // 「準備中」の議員のページは、中身が無いので検索エンジンに載せない
+    const comingSoon = financialYear ? await loadComingSoon(slug) : null;
+    if (comingSoon) {
+      return { title: `${comingSoon.politician.name}の調研費`, robots: { index: false } };
+    }
+    // 見つからなければサイト名だけのタイトルとトップの画像（ルートの既定）にする
+    return {};
+  }
   const title = `${page.data.politician.name}の調研費`;
 
   return {
@@ -63,7 +119,11 @@ export default async function PoliticianPage({ params }: PoliticianPageProps) {
   const page = financialYear
     ? await loadResearchFundPageByPath({ pathSlug: slug, financialYear })
     : null;
-  if (!page) notFound();
+  if (!page) {
+    const comingSoon = financialYear ? await loadComingSoon(slug) : null;
+    if (!financialYear || !comingSoon) notFound();
+    return <ComingSoonPoliticianPage page={comingSoon} financialYear={financialYear} />;
+  }
   const { data, pathSlug } = page;
   const photoUrl = data.politician.hasPhoto ? politicianPhotoUrl(pathSlug) : null;
 
@@ -74,26 +134,7 @@ export default async function PoliticianPage({ params }: PoliticianPageProps) {
   const pageTitle = `${data.politician.name}の調研費`;
   const breadcrumbLabel = `${pageTitle}・${data.financialYear}年`;
 
-  // 前後の切り替え・ほかの議員は、調研費を公開中の議員だけ（非公開の議員はプレビュー中でも出さない）。
-  // 取れなくても本文は出せるので、失敗したら出さないだけにする。
-  const [cards, comingSoonPoliticians] = await Promise.all([
-    loadResearchFundPoliticianCards({
-      financialYear: data.financialYear,
-    }).catch((error) => {
-      console.error("loadResearchFundPoliticianCards error:", error);
-      return [] as ResearchFundPoliticianCard[];
-    }),
-    // 「他の議員の調研費を見る」の後ろに、調研費を「準備中」の議員をグレーで並べる（前後の切り替えには入れない）
-    loadResearchFundComingSoonPoliticians(),
-  ]);
-  const nav = buildPoliticianNav(
-    cards.map((card) => ({
-      ...card,
-      href: politicianPageHref(card.slug, data.financialYear),
-      photoUrl: card.hasPhoto ? politicianPhotoUrl(card.slug) : null,
-    })),
-    data.politician.slug,
-  );
+  const nav = buildPoliticianNav(await loadNavMembers(data.financialYear), data.politician.slug);
 
   return (
     <MainColumn spacing="compact">
@@ -132,19 +173,55 @@ export default async function PoliticianPage({ params }: PoliticianPageProps) {
         />
       </ResearchFundCrossLinkProvider>
       <ResearchFundSurveyCard headingId="politician-survey-heading" />
-      {nav && (
-        <OtherPoliticiansSection
-          politicians={nav.others}
-          comingSoon={comingSoonPoliticians
-            .filter((politician) => politician.slug !== data.politician.slug)
-            .map((politician) => ({
-              slug: politician.slug,
-              name: politician.name,
-              photoUrl: politician.hasPhoto ? politicianPhotoUrl(politician.slug) : null,
-            }))}
-        />
-      )}
+      {nav && <OtherPoliticiansSection politicians={nav.others} />}
       <ResearchFundBottomBlock dataNote={data.dataNote} notesVariant="member" />
+      <Breadcrumbs current={breadcrumbLabel} position="bottom" />
+      <RevealOnScroll />
+    </MainColumn>
+  );
+}
+
+/**
+ * 調研費が「準備中」の議員のページ（デザイン v9）。見出しのカードに「準備中」のタグを出し、
+ * 収支の流れ以下の代わりに点線の枠を出す。アンケート・ほかの議員・下部のブロックは公開中の議員のページと同じ
+ */
+async function ComingSoonPoliticianPage({
+  page,
+  financialYear,
+}: {
+  page: ResearchFundComingSoonPage;
+  financialYear: number;
+}) {
+  const { politician } = page;
+  const photoUrl = politician.hasPhoto ? politicianPhotoUrl(politician.slug) : null;
+  const pageTitle = `${politician.name}の調研費`;
+  const breadcrumbLabel = `${pageTitle}・${financialYear}年`;
+  const nav = buildPoliticianNav(await loadNavMembers(financialYear), politician.slug);
+
+  return (
+    <MainColumn spacing="compact">
+      <div className="flex flex-col gap-5">
+        <Breadcrumbs current={breadcrumbLabel} />
+        <h1 className="sr-only">{pageTitle}</h1>
+        <PoliticianHeadingCard
+          politician={politician}
+          photoUrl={photoUrl}
+          years={[
+            { year: financialYear, href: politicianPageHref(politician.slug, financialYear) },
+          ]}
+          currentYear={financialYear}
+          periodLabel={null}
+          nav={nav}
+          comingSoon
+        />
+      </div>
+      <ResearchFundComingSoonSection
+        eyebrow={`${politician.name}の調研費・${financialYear}年`}
+        note={page.note}
+      />
+      <ResearchFundSurveyCard headingId="politician-survey-heading" />
+      {nav && <OtherPoliticiansSection politicians={nav.others} />}
+      <ResearchFundBottomBlock dataNote={page.dataNote} notesVariant="member" />
       <Breadcrumbs current={breadcrumbLabel} position="bottom" />
       <RevealOnScroll />
     </MainColumn>

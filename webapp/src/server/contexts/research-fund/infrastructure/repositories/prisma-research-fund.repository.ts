@@ -445,6 +445,20 @@ export class PrismaResearchFundRepository implements ResearchFundRepository {
     }));
   }
 
+  async findComingSoonProfile(
+    slug: string,
+  ): Promise<{ politician: PublishedPoliticianProfile; note: string | null } | null> {
+    const politician = await this.prisma.politician.findFirst({
+      where: { slug, isResearchFundPublic: false, researchFundComingSoonNote: { not: null } },
+      select: { ...politicianProfileSelect, researchFundComingSoonNote: true },
+    });
+    if (!politician) return null;
+    return {
+      politician: profileOf(politician),
+      note: politician.researchFundComingSoonNote?.trim() || null,
+    };
+  }
+
   async findPublishedPageRefs(): Promise<PublishedResearchFundPageRef[]> {
     // 公開する仕訳が 1 件も無い帳簿はページとして中身が無いので sitemap に載せない。
     // 調研費を「公開しない」議員のページも載せない。

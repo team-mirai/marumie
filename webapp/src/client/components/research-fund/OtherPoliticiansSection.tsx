@@ -10,24 +10,16 @@ interface OtherPolitician {
   href: string;
 }
 
-/** 調研費を非公開のまま「準備中」としてグレーで出す議員。ページは開けないのでリンクにしない */
-interface ComingSoonPolitician {
-  slug: string;
-  name: string;
-  photoUrl: string | null;
-}
-
 interface Props {
-  politicians: OtherPolitician[];
-  /** 公開中の議員の後ろに並べる「準備中」の議員 */
-  comingSoon?: ComingSoonPolitician[];
+  /** comingSoon の議員は名前の横に「準備中」のタグを添える（リンク先は準備中の表示のページ） */
+  politicians: (OtherPolitician & { comingSoon?: boolean })[];
 }
 
 /**
  * ページ下部の「他の議員の調研費を見る」。公開中のほかの議員を 2 列で並べ、押すとその議員のページへ移る。
  * 選挙区は出さず、SP もアイコンの右に名前を並べる。
  */
-export default function OtherPoliticiansSection({ politicians, comingSoon = [] }: Props) {
+export default function OtherPoliticiansSection({ politicians }: Props) {
   if (politicians.length === 0) return null;
 
   return (
@@ -56,8 +48,11 @@ export default function OtherPoliticiansSection({ politicians, comingSoon = [] }
                 alt={`${politician.name}の写真`}
                 className="h-10 w-10 min-[641px]:h-[52px] min-[641px]:w-[52px]"
               />
-              <span className="min-w-0 flex-1 truncate text-[14px] font-bold leading-[1.4] min-[641px]:whitespace-normal min-[641px]:text-[16px]">
-                {politician.name}
+              <span className="flex min-w-0 flex-1 flex-col items-start gap-1 min-[641px]:flex-row min-[641px]:flex-wrap min-[641px]:items-center min-[641px]:gap-x-2">
+                <span className="max-w-full truncate text-[14px] font-bold leading-[1.4] min-[641px]:whitespace-normal min-[641px]:text-[16px]">
+                  {politician.name}
+                </span>
+                {politician.comingSoon && <ComingSoonPill />}
               </span>
               <svg
                 width="20"
@@ -76,21 +71,6 @@ export default function OtherPoliticiansSection({ politicians, comingSoon = [] }
                 />
               </svg>
             </Link>
-          </li>
-        ))}
-        {comingSoon.map((politician) => (
-          <li key={politician.slug}>
-            <div className="flex h-full items-center gap-2.5 rounded-2xl bg-[#F5F7F6] px-3 py-2.5 text-[#9CA3AF] min-[641px]:gap-3.5 min-[641px]:px-4 min-[641px]:py-3.5">
-              <PoliticianAvatar
-                photoUrl={politician.photoUrl}
-                alt={`${politician.name}の写真`}
-                className="h-10 w-10 min-[641px]:h-[52px] min-[641px]:w-[52px]"
-              />
-              <span className="min-w-0 flex-1 truncate text-[14px] font-bold leading-[1.4] min-[641px]:whitespace-normal min-[641px]:text-[16px]">
-                {politician.name}
-              </span>
-              <ComingSoonPill />
-            </div>
           </li>
         ))}
       </ul>

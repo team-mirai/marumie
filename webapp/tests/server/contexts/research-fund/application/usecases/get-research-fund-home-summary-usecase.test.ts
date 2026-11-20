@@ -76,6 +76,7 @@ function usecaseWith(
       .mockImplementation(async (year: number) => byYear[year] ?? []),
     findPoliticians: jest.fn().mockResolvedValue([]),
     findComingSoonPoliticians: jest.fn().mockResolvedValue([]),
+    findComingSoonProfile: jest.fn().mockResolvedValue(null),
     findPublishedPageRefs: jest.fn().mockResolvedValue([]),
     findPublishedReceipt: jest.fn().mockResolvedValue(null),
   };

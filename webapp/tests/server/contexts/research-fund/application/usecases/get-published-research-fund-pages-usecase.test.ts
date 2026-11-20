@@ -7,6 +7,7 @@ function build(refs: { slug: string; financialYear: number }[]) {
     findPublishedForHome: jest.fn().mockResolvedValue([]),
     findPoliticians: jest.fn().mockResolvedValue([]),
     findComingSoonPoliticians: jest.fn().mockResolvedValue([]),
+    findComingSoonProfile: jest.fn().mockResolvedValue(null),
     findPublishedPageRefs: jest.fn().mockResolvedValue(refs),
     findPublishedReceipt: jest.fn().mockResolvedValue(null),
   };

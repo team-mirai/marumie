@@ -40,6 +40,7 @@ export default function HomeResearchFundSection({ data, comingSoon = [] }: Props
     slug: politician.slug,
     name: politician.name,
     photoUrl: politician.hasPhoto ? politicianPhotoUrl(politician.slug) : null,
+    href: politicianPageHref(politician.slug, data.financialYear),
     note: politician.note,
   }));
 

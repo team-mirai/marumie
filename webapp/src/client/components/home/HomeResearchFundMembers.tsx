@@ -33,12 +33,14 @@ export interface HomeResearchFundMember {
   years: HomeResearchFundMemberYear[];
 }
 
-/** 調研費を非公開のまま「準備中」としてグレーで出す議員。ページは開けないのでリンクにしない */
+/** 調研費を非公開のまま「準備中」としてグレーで出す議員。リンク先のページも準備中の表示になる */
 export interface HomeResearchFundComingSoonMember {
   slug: string;
   name: string;
   /** 顔写真の URL。未登録なら null（人型のアイコンにする） */
   photoUrl: string | null;
+  /** その議員の調研費ページ（準備中の表示） */
+  href: string;
   /** 添え書き（例: 「宇佐美議員室は業務逼迫のため、12月中旬を目処に公開予定です。」）。無ければ null */
   note: string | null;
 }
@@ -167,51 +169,38 @@ function MemberDetailButton({
   );
 }
 
-/** 「準備中」の議員の、金額と収支の流れの代わりに出す点線の枠と、押せない「詳しく（準備中）」ボタン */
-function ComingSoonBody({
-  member,
-  layout,
-}: {
-  member: HomeResearchFundComingSoonMember;
-  layout: "pc" | "sp";
-}) {
+/** 準備中の議員の「詳しく（準備中）」ボタン。押せるが、ほかの議員の黒いボタンと見分けがつくようグレーにする（v9） */
+function ComingSoonDetailButton({ member }: { member: HomeResearchFundComingSoonMember }) {
   return (
-    <>
-      <div
-        className={`flex flex-col items-center justify-center gap-2 rounded-[24px] border-2 border-dashed border-[#D1D5DB] px-5 text-center ${
-          layout === "pc" ? "min-h-[clamp(320px,34vw,420px)] py-10" : "min-h-[220px] py-8"
-        }`}
-      >
-        <p className="m-0 text-[clamp(16px,1.6vw,20px)] font-black leading-[1.5] text-[#0B0F0E]">
-          調研費のデータは公開準備中です
-        </p>
-        <p className="m-0 text-[14px] leading-[1.6] text-[#4B5563]">
-          準備ができしだい、収支の流れを公開します
-        </p>
-        {member.note && (
-          <p className="m-0 mt-1 text-[13px] font-medium leading-[1.7] text-[#1F2937]">
-            {member.note}
-          </p>
-        )}
-      </div>
-      {/* 議員ページはまだ開けないので、押せないボタンにする */}
-      <button
-        type="button"
-        disabled
-        className="inline-flex h-12 cursor-not-allowed border-0 items-center justify-center gap-1 self-stretch whitespace-nowrap rounded-full bg-[#5F6664] px-3.5 text-[clamp(12px,3.8vw,15px)] font-extrabold text-white min-[641px]:h-[52px] min-[641px]:min-w-[min(100%,360px)] min-[641px]:gap-1.5 min-[641px]:self-center min-[641px]:px-7 min-[641px]:text-[15px]"
-      >
-        {member.name}の調研費を詳しく（準備中）
-        <Chevron />
-      </button>
-    </>
+    <Link
+      href={member.href}
+      className="pill-arrow inline-flex h-12 items-center justify-center gap-1 self-stretch whitespace-nowrap rounded-full bg-[#6B7472] px-3.5 text-[clamp(12px,3.8vw,15px)] font-extrabold text-white transition-colors hover:bg-[#59625F] min-[641px]:h-[52px] min-[641px]:min-w-[min(100%,360px)] min-[641px]:gap-1.5 min-[641px]:self-center min-[641px]:px-7 min-[641px]:text-[15px]"
+    >
+      {member.name}の調研費を詳しく（準備中）
+      <Chevron />
+    </Link>
   );
 }
 
-/** 「準備中」の議員を選んだときの PC の右のカード（v9 と同じ見出しの並びで、題名はリンクにしない） */
+/** 添え書き（v9 の .mt-soon-note） */
+function ComingSoonNote({ note }: { note: string | null }) {
+  if (!note) return null;
+  return (
+    <small className="mt-1 block text-[12px] font-medium leading-[1.6] text-[#4B5563] [overflow-wrap:anywhere] [word-break:keep-all]">
+      {note}
+    </small>
+  );
+}
+
+/**
+ * 準備中の議員を選んだときの PC の右のカード（v9 の .mt-msel.is-empty）。
+ * 見出しはほかの議員と同じくページへのリンクにし、公開範囲の代わりに「準備中」のタグを出す。
+ * 金額と図の代わりに点線の枠を、残りの高さいっぱいに広げて出す
+ */
 function ComingSoonPcDetail({ member }: { member: HomeResearchFundComingSoonMember }) {
   return (
     <>
-      <div className="flex items-center gap-4">
+      <div className="group/hd flex items-center gap-4">
         <PoliticianAvatar
           photoUrl={member.photoUrl}
           alt={`${member.name}の写真`}
@@ -219,14 +208,33 @@ function ComingSoonPcDetail({ member }: { member: HomeResearchFundComingSoonMemb
         />
         <div className="flex min-w-0 flex-[0_1_auto] flex-col items-start gap-1">
           <h3 className="m-0 break-keep text-[clamp(22px,2.6vw,32px)] font-black leading-[1.3] tracking-[0.01em] [overflow-wrap:anywhere]">
-            {member.name}の調研費
+            <Link
+              href={member.href}
+              className="text-inherit hover:underline hover:underline-offset-[3px]"
+            >
+              {member.name}の調研費
+            </Link>
           </h3>
-          <ComingSoonPill className="px-2.5 py-1 text-[13px]" />
+          <ComingSoonPill className="h-[22px] text-[12px]" />
         </div>
+        <Link
+          href={member.href}
+          aria-label={`${member.name}の調研費を詳しく見る`}
+          className="relative -ml-1.5 flex h-7 w-7 flex-shrink-0 items-center justify-center self-start rounded-md text-[#0B0F0E] transition-[color,translate] duration-300 ease-[cubic-bezier(.2,.7,.1,1)] after:absolute after:-inset-3 after:content-[''] hover:text-[#0F8472] group-has-[h3_a:hover]/hd:text-[#0F8472] motion-safe:hover:translate-x-[3px] motion-safe:group-has-[h3_a:hover]/hd:translate-x-[3px] mt-[clamp(4px,0.6vw,8px)]"
+        >
+          <Chevron size={18} />
+        </Link>
       </div>
-      <div className="flex flex-col gap-6">
-        <ComingSoonBody member={member} layout="pc" />
+      <div className="flex min-h-[clamp(320px,34vw,440px)] flex-1 flex-col items-center justify-center gap-2 rounded-[16px] px-5 py-10 text-center outline-dashed outline-[1.5px] -outline-offset-[1.5px] outline-[#B8C1BE]">
+        <b className="text-[17px] font-extrabold leading-[1.5] text-[#0B0F0E]">
+          調研費のデータは公開準備中です
+        </b>
+        <span className="text-[13px] leading-[1.6] text-[#5B6470]">
+          準備ができしだい、収支の流れを公開します
+        </span>
+        <ComingSoonNote note={member.note} />
       </div>
+      <ComingSoonDetailButton member={member} />
     </>
   );
 }
@@ -333,7 +341,8 @@ export default function HomeResearchFundMembers({ members, comingSoon = [], defa
               </li>
             );
           })}
-          {/* 「準備中」の議員は公開中の議員の後ろに、名前をグレーにして並べる */}
+          {/* 「準備中」の議員は公開中の議員の後ろに、名前をグレーにして「準備中」を添える。
+              ホバー・選択の見え方はほかの議員と同じ（v9） */}
           {comingSoon.map((member) => {
             const pressed = member.slug === selectedComingSoon?.slug;
             return (
@@ -347,7 +356,7 @@ export default function HomeResearchFundMembers({ members, comingSoon = [], defa
                     if (member.slug !== selectedSlug) setPcSwitched(true);
                     setSelectedSlug(member.slug);
                   }}
-                  className={`relative flex w-full cursor-pointer items-center gap-2 rounded-[14px] border-0 px-3 py-2 text-left text-[#9CA3AF] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0F8472] ${
+                  className={`relative flex w-full cursor-pointer items-center gap-2 rounded-[14px] border-0 px-3 py-2 text-left transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0F8472] ${
                     pressed
                       ? "bg-[#E2F6F3] after:absolute after:right-[-37px] after:top-1/2 after:z-[3] after:h-3.5 after:w-3.5 after:-translate-y-1/2 after:rotate-45 after:rounded-[2px] after:bg-white after:content-['']"
                       : "bg-transparent hover:bg-[#F1F6F4]"
@@ -358,12 +367,14 @@ export default function HomeResearchFundMembers({ members, comingSoon = [], defa
                     alt={`${member.name}の写真`}
                     className="h-9 w-9"
                   />
-                  {/* 列が狭いときは「準備中」を名前の下に回し、右のカードへの矢印にかぶせない */}
+                  {/* 列を狭めても名前は切らない。入りきらないときは「準備中」を名前の下に回す */}
                   <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-                    <span className="whitespace-nowrap text-[16px] font-bold leading-[1.3]">
+                    <span
+                      className={`whitespace-nowrap text-[16px] leading-[1.3] text-[#8A9391] ${pressed ? "font-extrabold" : "font-bold"}`}
+                    >
                       {member.name}
                     </span>
-                    <ComingSoonPill />
+                    <ComingSoonPill className="h-[22px] bg-[#E5E7EB] text-[#4B5563] tracking-normal" />
                   </span>
                 </button>
               </li>
@@ -581,9 +592,8 @@ export default function HomeResearchFundMembers({ members, comingSoon = [], defa
             </li>
           );
         })}
-        {/* 「準備中」の議員は公開中の議員の後ろに重ねる。開くと金額と図の代わりに準備中の枠を出す */}
+        {/* 「準備中」の議員は公開中の議員の後ろに、グレーのカードで重ねる（v9）。開くと金額と図の代わりに点線の枠を出す */}
         {comingSoon.map((member, comingSoonIndex) => {
-          const index = members.length + comingSoonIndex;
           const open = spOpen.includes(member.slug);
           const closing = !open && spClosing.includes(member.slug);
           const previousSlug =
@@ -597,7 +607,7 @@ export default function HomeResearchFundMembers({ members, comingSoon = [], defa
               <div
                 data-wallet-card={member.slug}
                 data-on={open}
-                className={`mist-surface mist-member-${index % 4} mist-wallet-card relative z-[2] flex w-[calc((100%-40px)*1.071*1.04)] items-start gap-3 self-center text-[#0A1A17] ${
+                className={`relative z-[2] flex w-[calc((100%-40px)*1.071*1.04)] items-start gap-3 self-center bg-[linear-gradient(104deg,#AEB8B5_0%,#C9D1CE_58%,#E4E9E7_128%)] text-[#3F4A4F] shadow-[inset_0_1px_0_rgba(255,255,255,0.5),0_-10px_22px_-12px_rgba(4,32,28,0.35)] ${
                   afterOpen ? "mt-[18px]" : "-mt-[30px]"
                 } ${
                   open
@@ -616,26 +626,20 @@ export default function HomeResearchFundMembers({ members, comingSoon = [], defa
                 <PoliticianAvatar
                   photoUrl={member.photoUrl}
                   alt={`${member.name}の写真`}
-                  className={`shadow-[0_0_0_2px_rgba(255,255,255,0.95),0_4px_10px_-4px_rgba(10,60,52,0.35)] ${
-                    open ? "h-11 w-11" : "h-[34px] w-[34px]"
-                  }`}
+                  className={`shadow-[0_0_0_2px_rgba(255,255,255,0.8)] ${open ? "h-11 w-11" : "h-[34px] w-[34px]"}`}
                 />
-                <span
-                  className={`flex min-w-0 flex-1 flex-col justify-center gap-[5px] ${open ? "h-11" : "h-[34px]"}`}
-                >
-                  <span className="flex min-w-0 items-center gap-2">
-                    <span
-                      className={`truncate font-extrabold leading-none tracking-[0.04em] text-[#0A1A17]/60 ${open ? "text-[20px]" : "text-[16px]"}`}
-                    >
-                      {member.name}
-                    </span>
-                    <ComingSoonPill className="bg-white/70" />
+                <span className="flex min-w-0 flex-1 flex-col justify-center gap-[5px]">
+                  <span
+                    className={`flex items-center truncate font-extrabold leading-none tracking-[0.04em] text-[#76807E] ${open ? "h-11 text-[20px]" : "h-[34px] text-[16px]"}`}
+                  >
+                    {member.name}
                   </span>
                   {open && (
-                    <span className="truncate text-[12px] font-bold leading-[1.4] tracking-[0.08em] text-[#0A1A17]/80">
+                    <span className="truncate text-[12px] font-bold leading-[1.4] tracking-[0.08em] text-[rgba(63,74,79,0.7)]">
                       調研費・準備中
                     </span>
                   )}
+                  <ComingSoonPill className="mt-1.5 h-[22px] self-start bg-white/75 px-[9px] font-extrabold tracking-normal text-[#3F4A4F]" />
                 </span>
                 <span
                   aria-hidden="true"
@@ -659,7 +663,12 @@ export default function HomeResearchFundMembers({ members, comingSoon = [], defa
                   inert={closing || undefined}
                   className={`${open ? "wallet-sheet-in " : ""}relative z-[1] mt-[calc(18px_-_(100%_-_40px)_*_1.071_*_1.04_/_1.9825)] flex flex-col gap-[22px] rounded-[24px] bg-white px-4 pb-5 pt-[calc((100%_-_40px)_*_1.071_*_1.04_/_1.9825_+_8px)] shadow-[0_0_0_1px_#DCE4E1,0_30px_50px_-34px_rgba(10,60,52,0.35)]`}
                 >
-                  <ComingSoonBody member={member} layout="sp" />
+                  {/* SP の枠は v9 の .mt-mdetail .empty（1行の見出しと添え書き） */}
+                  <p className="m-0 rounded-[12px] px-3 py-6 text-center text-[14px] font-bold text-[#5B6470] outline-dashed outline-[1.5px] -outline-offset-[1.5px] outline-[#B8C1BE]">
+                    調研費のデータは公開準備中です
+                    <ComingSoonNote note={member.note} />
+                  </p>
+                  <ComingSoonDetailButton member={member} />
                 </div>
               )}
             </li>

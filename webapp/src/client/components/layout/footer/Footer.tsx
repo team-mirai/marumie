@@ -63,7 +63,7 @@ export default async function Footer() {
         }),
       ),
     ),
-    // 調研費を非公開のまま「準備中」としてグレーで出す議員（公開中の議員の後ろに並べる）
+    // 調研費を非公開のまま「準備中」のタグを添えて出す議員（公開中の議員の後ろに並べる）
     loadResearchFundComingSoonPoliticians(),
   ]);
 
@@ -131,18 +131,15 @@ export default async function Footer() {
                 </Link>
               ))}
               {comingSoon.map((politician) => (
-                <span
-                  key={politician.slug}
-                  className="inline-flex min-h-11 items-center gap-2 text-[13px] font-bold text-black/45"
-                >
+                <Link key={politician.slug} href={politician.href} className={PERSON_LINK_CLASS}>
                   <PoliticianInitialAvatar
                     name={politician.name}
                     photoUrl={politician.photoUrl}
                     size="footer"
                   />
                   {politician.name}
-                  <ComingSoonPill className="bg-white/60 text-[11px]" />
-                </span>
+                  <ComingSoonPill className="-ml-0.5 bg-white/80" />
+                </Link>
               ))}
             </div>
           </SitemapRow>

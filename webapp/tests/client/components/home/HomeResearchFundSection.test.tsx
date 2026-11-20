@@ -55,7 +55,7 @@ function render(politicians: ResearchFundHomePoliticianView[]): string {
 }
 
 describe("HomeResearchFundSection", () => {
-  it("「準備中」の議員を公開中の議員の後ろにグレーで並べ、ページへのリンクにしない", () => {
+  it("「準備中」の議員を公開中の議員の後ろに「準備中」のタグを添えて並べる", () => {
     const data: ResearchFundHomeSummaryData = { financialYear: 2026, politicians: [politician()] };
     const html = renderToStaticMarkup(
       <HomeResearchFundSection
@@ -75,7 +75,7 @@ describe("HomeResearchFundSection", () => {
     expect(html).toContain("サンプル準備の調研費（準備中）を下に表示");
     expect(html).toContain("準備中");
     expect(html.indexOf("サンプル太郎")).toBeLessThan(html.indexOf("サンプル準備"));
-    expect(html).not.toContain('href="/p/sample-usami');
+    expect(html).toContain('data-wallet-card="sample-usami"');
   });
 
   it("見出し・説明・調研費とは・使用方針のリンク（別タブ）を出す", () => {

@@ -14,7 +14,7 @@ interface HeaderMegaMenuProps {
   menu: "pf" | "rf";
   organizations: HeaderOrganizationMenuItem[];
   politicians: HeaderPoliticianMenuItem[];
-  /** 「準備中」の議員。公開中の議員の後ろに、リンクにせずグレーで並べる */
+  /** 「準備中」の議員。公開中の議員の後ろに「準備中」のタグを添えて並べる */
   comingSoonPoliticians?: ComingSoonPoliticianMenuItem[];
   onNavigate: () => void;
 }
@@ -145,15 +145,20 @@ export default function HeaderMegaMenu({
                 )}
                 className="mega-menu-item flex min-w-0 items-center gap-3"
               >
-                <span className="flex min-h-14 items-center gap-3.5 whitespace-nowrap text-[17px] font-bold text-[#9CA3AF]">
+                <Link
+                  href={politician.href}
+                  onClick={onNavigate}
+                  aria-current={politician.isCurrent ? "page" : undefined}
+                  className="flex min-h-14 items-center gap-3.5 whitespace-nowrap text-[17px] font-bold text-[#111827] hover:text-[#238778]"
+                >
                   <PoliticianInitialAvatar
                     name={politician.name}
                     photoUrl={politician.photoUrl}
                     size="lg"
                   />
                   {politician.name}
-                  <ComingSoonPill />
-                </span>
+                  <ComingSoonPill className="-ml-1.5" />
+                </Link>
               </li>
             ))}
           </ul>

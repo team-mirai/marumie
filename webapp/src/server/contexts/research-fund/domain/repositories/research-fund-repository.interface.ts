@@ -1,4 +1,5 @@
 import type {
+  PublishedPoliticianProfile,
   PublishedPoliticianResearchFund,
   PublishedReceipt,
   PublishedResearchFund,
@@ -27,6 +28,11 @@ export interface ResearchFundRepository {
 
   /** 調研費を非公開のまま「準備中」として一覧に出す議員（並び順は usecase で決める） */
   findComingSoonPoliticians(): Promise<ResearchFundComingSoonPolitician[]>;
+
+  /** slug の議員が「準備中」なら、ページに出すプロフィールと添え書き。準備中でなければ null */
+  findComingSoonProfile(
+    slug: string,
+  ): Promise<{ politician: PublishedPoliticianProfile; note: string | null } | null>;
 
   /** 公開ページが成立する議員×年度の一覧（sitemap 用）。published の仕訳を 1 件以上持つ帳簿だけ */
   findPublishedPageRefs(): Promise<PublishedResearchFundPageRef[]>;
