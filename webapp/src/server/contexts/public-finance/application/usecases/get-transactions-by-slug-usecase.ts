@@ -30,6 +30,7 @@ export interface GetTransactionsBySlugParams {
 interface GetTransactionsBySlugResult {
   transactions: DisplayTransaction[];
   total: number;
+  totalAmount: number | null;
   page: number;
   perPage: number;
   totalPages: number;
@@ -84,9 +85,14 @@ export class GetTransactionsBySlugUsecase {
         order: params.order,
       };
 
-      const [transactionResult, lastUpdatedAt] = await Promise.all([
+      const hasCategoryFilter = params.categories && params.categories.length > 0;
+
+      const [transactionResult, lastUpdatedAt, totalAmount] = await Promise.all([
         this.transactionRepository.findWithPagination(filters, pagination),
         this.transactionRepository.getLastUpdatedAt(),
+        hasCategoryFilter
+          ? this.transactionRepository.getTotalAmount(filters)
+          : Promise.resolve(null),
       ]);
 
       const transactions = convertToDisplayTransactions(transactionResult.items);
@@ -96,6 +102,7 @@ export class GetTransactionsBySlugUsecase {
       return {
         transactions,
         total,
+        totalAmount,
         page,
         perPage,
         totalPages,
