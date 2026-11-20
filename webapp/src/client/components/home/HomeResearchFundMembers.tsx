@@ -196,7 +196,8 @@ function ComingSoonNote({ note }: { note: string | null }) {
 /**
  * 準備中の議員を選んだときの PC の右のカード（v9 の .mt-msel.is-empty）。
  * 見出しはほかの議員と同じくページへのリンクにし、公開範囲の代わりに「準備中」のタグを出す。
- * 金額と図の代わりに点線の枠を、残りの高さいっぱいに広げて出す
+ * 金額と図の代わりに点線の枠を、残りの高さいっぱいに広げて出す。
+ * カードの高さは直前に選んでいた公開中の議員の中身で決まる（呼び出し側で重ねて出す）ので、ここでは高さを持たない
  */
 function ComingSoonPcDetail({ member }: { member: HomeResearchFundComingSoonMember }) {
   return (
@@ -226,7 +227,7 @@ function ComingSoonPcDetail({ member }: { member: HomeResearchFundComingSoonMemb
           <Chevron size={18} />
         </Link>
       </div>
-      <div className="flex min-h-[clamp(320px,34vw,440px)] flex-1 flex-col items-center justify-center gap-2 rounded-[16px] px-5 py-10 text-center outline-dashed outline-[1.5px] -outline-offset-[1.5px] outline-[#B8C1BE]">
+      <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-2 rounded-[16px] px-5 py-10 text-center outline-dashed outline-[1.5px] -outline-offset-[1.5px] outline-[#B8C1BE]">
         <b className="text-[17px] font-extrabold leading-[1.5] text-[#0B0F0E]">
           調研費のデータは公開準備中です
         </b>
@@ -249,7 +250,10 @@ function ComingSoonPcDetail({ member }: { member: HomeResearchFundComingSoonMemb
  * 1年分だけの議員には切り替えを出さない（SP の開いたカードには年を押せないラベルで出す）。
  */
 export default function HomeResearchFundMembers({ members, comingSoon = [], defaultYear }: Props) {
+  // PC の名簿で選んでいる公開中の議員。準備中の議員を選んでいる間も、直前の公開中の議員を覚えておく
   const [selectedSlug, setSelectedSlug] = useState(members[0].slug);
+  // PC の名簿で選んでいる準備中の議員（公開中の議員を選んでいるときは null）
+  const [comingSoonSlug, setComingSoonSlug] = useState<string | null>(null);
   // PC で議員を切り替えたら、図を見比べやすいよう描き出しの動きなしで出す（初めて画面に入ったときだけ描き出す）
   const [pcSwitched, setPcSwitched] = useState(false);
   // SP は複数枚を同時に開ける。最初は先頭の議員を開いておく
@@ -260,7 +264,7 @@ export default function HomeResearchFundMembers({ members, comingSoon = [], defa
   const [yearBySlug, setYearBySlug] = useState<Record<string, number>>({});
   const selected = members.find((member) => member.slug === selectedSlug) ?? members[0];
   // 「準備中」の議員を選んでいるときは、右のカードに金額と図の代わりに準備中の枠を出す
-  const selectedComingSoon = comingSoon.find((member) => member.slug === selectedSlug) ?? null;
+  const selectedComingSoon = comingSoon.find((member) => member.slug === comingSoonSlug) ?? null;
   const currentYearOf = (member: HomeResearchFundMember) =>
     yearOf(member, yearBySlug[member.slug] ?? defaultYear);
   const selectYear = (slug: string, year: number) =>
@@ -318,8 +322,10 @@ export default function HomeResearchFundMembers({ members, comingSoon = [], defa
                   aria-controls={pcDetailId}
                   aria-label={`${member.name}の調研費を下に表示`}
                   onClick={() => {
-                    if (member.slug !== selectedSlug) setPcSwitched(true);
+                    if (comingSoonSlug !== null || member.slug !== selectedSlug)
+                      setPcSwitched(true);
                     setSelectedSlug(member.slug);
+                    setComingSoonSlug(null);
                   }}
                   className={`relative flex w-full cursor-pointer items-center gap-2 rounded-[14px] border-0 px-3 py-2 text-left transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0F8472] ${
                     pressed
@@ -354,8 +360,8 @@ export default function HomeResearchFundMembers({ members, comingSoon = [], defa
                   aria-controls={pcDetailId}
                   aria-label={`${member.name}の調研費（準備中）を下に表示`}
                   onClick={() => {
-                    if (member.slug !== selectedSlug) setPcSwitched(true);
-                    setSelectedSlug(member.slug);
+                    if (member.slug !== comingSoonSlug) setPcSwitched(true);
+                    setComingSoonSlug(member.slug);
                   }}
                   className={`relative flex w-full cursor-pointer items-center gap-2 rounded-[14px] border-0 px-3 py-2 text-left transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0F8472] ${
                     pressed
@@ -389,10 +395,13 @@ export default function HomeResearchFundMembers({ members, comingSoon = [], defa
           aria-live="polite"
           className="flex min-w-0 flex-col gap-6 rounded-[32px] bg-white p-[clamp(24px,3.6vw,48px)] shadow-[0_1px_2px_rgba(11,15,14,0.04)]"
         >
-          {selectedComingSoon ? (
-            <ComingSoonPcDetail member={selectedComingSoon} />
-          ) : (
-            <>
+          {/* 準備中の議員を選んでいる間も、直前に選んでいた公開中の議員の中身を見えないまま残してカードの高さを保ち、
+              その上に準備中の中身を重ねる。切り替えてもカードと下の内容の位置がずれない */}
+          <div className="relative flex min-w-0 flex-col">
+            <div
+              className={`flex min-w-0 flex-col gap-6 ${selectedComingSoon ? "invisible" : ""}`}
+              inert={selectedComingSoon !== null}
+            >
               <div className="flex items-center gap-4">
                 <PoliticianAvatar
                   photoUrl={selected.photoUrl}
@@ -446,8 +455,13 @@ export default function HomeResearchFundMembers({ members, comingSoon = [], defa
                 )}
                 <MemberDetailButton member={selected} year={selectedYear} />
               </div>
-            </>
-          )}
+            </div>
+            {selectedComingSoon && (
+              <div className="absolute inset-0 flex flex-col gap-6">
+                <ComingSoonPcDetail member={selectedComingSoon} />
+              </div>
+            )}
+          </div>
         </section>
       </div>
 

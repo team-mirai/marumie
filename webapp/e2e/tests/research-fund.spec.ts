@@ -147,16 +147,17 @@ test.describe("調査研究費 議員ページ", () => {
 			if (label === "SP") {
 				await expect(card.getByText(/^調研費・/).locator("visible=true")).toBeVisible();
 				// 何人目かは点ではなく文字で出す（点は飾り）
-				await expect(card.getByText(/^\d+ \/ 2$/)).toBeVisible();
+				await expect(card.getByText(/^\d+ \/ 3$/)).toBeVisible();
 			}
 			// シードの議員は顔写真が未登録なので人型のアイコンになる
 			await expect(
 				card.getByRole("img", { name: "サンプル 太郎の写真" }).locator("visible=true"),
 			).toBeVisible();
-			// シードで調研費を公開中かつ公開済みの仕訳があるのはサンプル 太郎と美咲の2人なので、前後とも美咲になる
+			// シードで調研費を公開中かつ公開済みの仕訳があるのはサンプル 太郎と美咲の2人で、その後ろに準備中のサンプル 健太が並ぶ。
+			// 太郎の次は美咲、前は末尾に回って健太になる
 			await expect(
-				card.getByRole("link", { name: "前の議員（サンプル 美咲）の調研費へ" }),
-			).toHaveAttribute("href", /^\/p\/sample-misaki(\/2026)?$/);
+				card.getByRole("link", { name: "前の議員（サンプル 健太）の調研費へ" }),
+			).toHaveAttribute("href", /^\/p\/sample-kenta(\/2026)?$/);
 			await expect(
 				card.getByRole("link", { name: "次の議員（サンプル 美咲）の調研費へ" }),
 			).toHaveAttribute("href", /^\/p\/sample-misaki(\/2026)?$/);
@@ -164,7 +165,10 @@ test.describe("調査研究費 議員ページ", () => {
 			const others = page.locator("section", {
 				has: page.getByRole("heading", { name: "他の議員の調研費を見る" }),
 			});
-			await expect(others.getByRole("link")).toHaveCount(1);
+			await expect(others.getByRole("link")).toHaveCount(2);
+			await expect(
+				others.getByRole("link", { name: "サンプル 健太の調研費を見る" }),
+			).toHaveAttribute("href", /^\/p\/sample-kenta(\/2026)?$/);
 			await others.getByRole("link", { name: "サンプル 美咲の調研費を見る" }).click();
 			await expect(page).toHaveURL(/\/p\/sample-misaki(\/2026)?$/);
 		});
