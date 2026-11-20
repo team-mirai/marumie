@@ -36,13 +36,18 @@ export default function HomeResearchFundSection({ data, comingSoon = [] }: Props
     })),
   }));
 
-  const comingSoonMembers: HomeResearchFundComingSoonMember[] = comingSoon.map((politician) => ({
-    slug: politician.slug,
-    name: politician.name,
-    photoUrl: politician.hasPhoto ? politicianPhotoUrl(politician.slug) : null,
-    href: politicianPageHref(politician.slug, data.financialYear),
-    note: politician.note,
-  }));
+  // 公開中の一覧と準備中の一覧は別々のキャッシュから来るので、公開・非公開の切り替え直後は同じ議員が両方に入りうる。
+  // 公開中の議員を優先し、準備中からは外す
+  const publicSlugs = new Set(data.politicians.map((politician) => politician.slug));
+  const comingSoonMembers: HomeResearchFundComingSoonMember[] = comingSoon
+    .filter((politician) => !publicSlugs.has(politician.slug))
+    .map((politician) => ({
+      slug: politician.slug,
+      name: politician.name,
+      photoUrl: politician.hasPhoto ? politicianPhotoUrl(politician.slug) : null,
+      href: politicianPageHref(politician.slug, data.financialYear),
+      note: politician.note,
+    }));
 
   return (
     <section

@@ -55,6 +55,20 @@ function render(politicians: ResearchFundHomePoliticianView[]): string {
 }
 
 describe("HomeResearchFundSection", () => {
+  it("公開中の一覧にもいる議員は、準備中としては並べない（キャッシュの切り替わりの間の重なり）", () => {
+    const data: ResearchFundHomeSummaryData = { financialYear: 2026, politicians: [politician()] };
+    const html = renderToStaticMarkup(
+      <HomeResearchFundSection
+        data={data}
+        comingSoon={[
+          { slug: "sample-taro", name: "サンプル太郎", nameKana: null, hasPhoto: true, note: null },
+        ]}
+      />,
+    );
+
+    expect(html).not.toContain("サンプル太郎の調研費（準備中）");
+  });
+
   it("「準備中」の議員を公開中の議員の後ろに「準備中」のタグを添えて並べる", () => {
     const data: ResearchFundHomeSummaryData = { financialYear: 2026, politicians: [politician()] };
     const html = renderToStaticMarkup(

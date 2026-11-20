@@ -27,20 +27,23 @@ export function ResearchFundComingSoonForm({
   const dirty =
     enabled !== (comingSoonNote !== null) || (enabled && note !== (comingSoonNote ?? ""));
 
-  const save = async (nextEnabled: boolean, nextNote: string) => {
+  /** 保存できたら true（キャッシュの更新だけに失敗したときも保存はできているので true） */
+  const save = async (nextEnabled: boolean, nextNote: string): Promise<boolean> => {
     setBusy(true);
     try {
       const result = await setPoliticianResearchFundComingSoon(id, nextEnabled ? nextNote : null);
       if (!result.success) {
         toast.error(result.error);
-        return;
+        return false;
       }
       if (result.cacheWarning)
         toast.warning(`保存しましたが、まる見えの更新に失敗しました: ${result.cacheWarning}`);
       else toast.success(nextEnabled ? "準備中として表示します" : "準備中の表示をやめました");
       router.refresh();
+      return true;
     } catch {
       toast.error("準備中の設定の変更に失敗しました。もう一度お試しください");
+      return false;
     } finally {
       setBusy(false);
     }
@@ -53,10 +56,10 @@ export function ResearchFundComingSoonForm({
           id={switchId}
           checked={enabled}
           disabled={busy}
-          onCheckedChange={(checked) => {
+          onCheckedChange={async (checked) => {
             setEnabled(checked);
-            // 出さないに切り替えたときは添え書きの入力を待たずに保存する
-            if (!checked) void save(false, note);
+            // 出さないに切り替えたときは添え書きの入力を待たずに保存する。保存できなければスイッチを戻す
+            if (!checked && !(await save(false, note))) setEnabled(true);
           }}
         />
         <Label htmlFor={switchId}>まる見えの一覧に「準備中」として出す</Label>
