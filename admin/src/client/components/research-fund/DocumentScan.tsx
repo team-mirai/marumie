@@ -33,10 +33,13 @@ import {
 import { DOCUMENT_UPLOAD_MAX_SIZE_LABEL } from "@/server/contexts/research-fund/domain/models/document-upload";
 import {
   SCAN_BATCH_MAX_DOCUMENTS,
-  SCAN_DOCUMENT_MIME_TYPES,
   type ScanJobStatus,
   type ScanOverview,
 } from "@/server/contexts/research-fund/domain/models/scan-batch";
+import {
+  DOCUMENT_MIME_TYPES,
+  DocumentFormat,
+} from "@/server/contexts/research-fund/domain/models/document-format";
 import { createScanBatch } from "@/server/contexts/research-fund/presentation/actions/create-scan-batch";
 import { useResearchFundReadOnly } from "@/client/components/research-fund/ResearchFundWriteAccess";
 import { processScanJobs } from "@/server/contexts/research-fund/presentation/actions/process-scan-jobs";
@@ -70,11 +73,10 @@ function rejectionReason(files: File[]): string | null {
   if (files.length === 0) return "書類を1枚以上選んでください";
   if (files.length > SCAN_BATCH_MAX_DOCUMENTS)
     return `1回にアップロードできるのは${SCAN_BATCH_MAX_DOCUMENTS}枚までです（${files.length}枚が選ばれています）`;
-  const unsupported = files.filter(
-    (file) => !(SCAN_DOCUMENT_MIME_TYPES as readonly string[]).includes(file.type),
-  );
-  if (unsupported.length > 0)
-    return `JPG・PNG・PDFのみアップロードできます（${unsupported[0].name}）`;
+  for (const file of files) {
+    const reason = DocumentFormat.unsupportedReason(file.type, "upload");
+    if (reason) return `${reason}（${file.name}）`;
+  }
   return documentFileSizeError(files);
 }
 
@@ -262,7 +264,7 @@ export function DocumentScan({
                 ref={inputRef}
                 type="file"
                 multiple
-                accept={SCAN_DOCUMENT_MIME_TYPES.join(",")}
+                accept={DOCUMENT_MIME_TYPES.join(",")}
                 aria-label="領収書・請求書"
                 className="sr-only"
                 disabled={pending || !ready || readOnly}

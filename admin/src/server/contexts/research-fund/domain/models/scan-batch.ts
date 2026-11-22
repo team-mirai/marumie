@@ -1,3 +1,4 @@
+import { DocumentFormat } from "@/server/contexts/research-fund/domain/models/document-format";
 import { documentUploadSizeError } from "@/server/contexts/research-fund/domain/models/document-upload";
 import type { DuplicateDocuments } from "@/server/contexts/research-fund/domain/models/duplicate-document";
 import {
@@ -8,8 +9,6 @@ import {
 
 /** 1 回のアップロードで受け付けられる書類の上限（デザイン: 「1回に最大30枚」） */
 export const SCAN_BATCH_MAX_DOCUMENTS = 30;
-
-export const SCAN_DOCUMENT_MIME_TYPES = ["image/jpeg", "image/png", "application/pdf"] as const;
 
 /** prisma の ResearchFundScanJobStatus と同じ語彙。画面のピルはこの 4 状態だけを扱う */
 export type ScanJobStatus = "queued" | "running" | "succeeded" | "failed";
@@ -103,17 +102,11 @@ export function validateScanUpload(
 ): ResearchFundResult<undefined> {
   const count = validateScanBatchCount(documents.length);
   if (count.status === "invalid") return count;
-  if (
-    documents.some(
-      (document) => !(SCAN_DOCUMENT_MIME_TYPES as readonly string[]).includes(document.mime),
-    )
-  ) {
-    return invalidResearchFundResult(
-      "documents",
-      RF_ERROR_CODES.INVALID_DOCUMENT,
-      "JPG・PNG・PDFのみアップロードできます",
-    );
-  }
+  const unsupported = documents
+    .map((document) => DocumentFormat.unsupportedReason(document.mime, "upload"))
+    .find((reason) => reason !== null);
+  if (unsupported)
+    return invalidResearchFundResult("documents", RF_ERROR_CODES.INVALID_DOCUMENT, unsupported);
   for (const document of documents) {
     const sizeError = documentUploadSizeError(document.size);
     if (sizeError)

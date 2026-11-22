@@ -25,7 +25,7 @@ import { useResearchFundReadOnly } from "@/client/components/research-fund/Resea
 import { cn, researchFundDocumentUrl } from "@/client/lib";
 import type { DocumentMasking } from "@/server/contexts/research-fund/domain/models/document-masking";
 import { DOCUMENT_UPLOAD_MAX_SIZE_LABEL } from "@/server/contexts/research-fund/domain/models/document-upload";
-import { SCAN_DOCUMENT_MIME_TYPES } from "@/server/contexts/research-fund/domain/models/scan-batch";
+import { DOCUMENT_MIME_TYPES } from "@/server/contexts/research-fund/domain/models/document-format";
 
 type DocumentVersion = "original" | "masked";
 /** 大きく表示したときの見せ方。どちらか一方、または左右に並べる */
@@ -122,7 +122,7 @@ function DocumentFileInput({
     <input
       ref={inputRef}
       type="file"
-      accept={SCAN_DOCUMENT_MIME_TYPES.join(",")}
+      accept={DOCUMENT_MIME_TYPES.join(",")}
       aria-label={label}
       className="hidden"
       onChange={(e) => {

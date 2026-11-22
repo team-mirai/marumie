@@ -1,3 +1,4 @@
+import { DocumentFormat } from "@/server/contexts/research-fund/domain/models/document-format";
 import {
   invalidResearchFundResult,
   RF_ERROR_CODES,
@@ -58,25 +59,12 @@ export const DocumentUploadKey = {
   },
 };
 
-/** ファイルの先頭のバイト列から形式を判定する（ブラウザが申告した MIME は信用しない） */
-export function detectDocumentMime(
-  bytes: Uint8Array,
-): "image/jpeg" | "image/png" | "application/pdf" | null {
-  const startsWith = (signature: number[]) =>
-    bytes.length >= signature.length && signature.every((byte, index) => bytes[index] === byte);
-  if (startsWith([0xff, 0xd8, 0xff])) return "image/jpeg";
-  if (startsWith([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])) return "image/png";
-  // "%PDF-"
-  if (startsWith([0x25, 0x50, 0x44, 0x46, 0x2d])) return "application/pdf";
-  return null;
-}
-
-/** ストレージに置かれた書類の中身を確かめ、実際の形式を返す */
+/** ストレージに置かれた書類の中身を確かめ、実際の形式を返す（ブラウザが申告した MIME は信用しない） */
 export function validateUploadedDocument(bytes: Uint8Array): ResearchFundResult<string> {
   const sizeError = documentUploadSizeError(bytes.length);
   if (sizeError)
     return invalidResearchFundResult("document", RF_ERROR_CODES.INVALID_DOCUMENT, sizeError);
-  const mime = detectDocumentMime(bytes);
+  const mime = DocumentFormat.detect(bytes);
   if (!mime)
     return invalidResearchFundResult(
       "document",

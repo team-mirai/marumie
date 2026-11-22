@@ -2,6 +2,7 @@ import "server-only";
 import { openrouter } from "@openrouter/ai-sdk-provider";
 import { generateText, jsonSchema, LoadAPIKeyError, NoObjectGeneratedError, Output } from "ai";
 import { z } from "zod";
+import { DocumentFormat } from "@/server/contexts/research-fund/domain/models/document-format";
 import {
   ExtractedReceipt,
   extractedReceiptSchema,
@@ -28,10 +29,7 @@ export function researchFundExtractionModel(): string {
 export class VercelAIReceiptExtractionGateway implements ReceiptExtractionGateway {
   async extract(params: ReceiptExtractionParams): Promise<ResearchFundResult<ExtractedReceipt>> {
     const { document, officePrompt, rereadInstruction } = params;
-    if (
-      !document.bytes.length ||
-      !["image/jpeg", "image/png", "application/pdf"].includes(document.mime)
-    ) {
+    if (!document.bytes.length || !DocumentFormat.isSupported(document.mime)) {
       return invalidResearchFundResult(
         "document",
         RF_ERROR_CODES.INVALID_DOCUMENT,

@@ -1,3 +1,4 @@
+import { DocumentFormat } from "@/server/contexts/research-fund/domain/models/document-format";
 import {
   isReceiptAbsenceReasonMissing,
   isReceiptMissing,
@@ -74,12 +75,6 @@ export function receiptPresenceCell(entry: SubmissionLedgerEntry): string {
   return entry.receiptAbsent || entry.documentId === null ? "無" : "有";
 }
 
-const EXTENSIONS: Record<string, string> = {
-  "image/jpeg": "jpg",
-  "image/png": "png",
-  "application/pdf": "pdf",
-};
-
 /**
  * 参議院の「領収書画像ファイル名」。{議員 slug}_{年度}_{番号 4 桁ゼロ埋め}.{拡張子}。
  * 徴難（書類があっても）・書類なし・未採番・拡張子の分からない書類は空欄
@@ -89,7 +84,8 @@ export function receiptImageFilename(
   book: SubmissionLedgerBook,
 ): string | null {
   if (entry.receiptAbsent || entry.documentId === null || entry.receiptNumber === null) return null;
-  const extension = entry.documentMime === null ? undefined : EXTENSIONS[entry.documentMime];
+  const extension =
+    entry.documentMime === null ? null : DocumentFormat.extension(entry.documentMime);
   if (!extension) return null;
   const number = String(entry.receiptNumber).padStart(4, "0");
   return `${book.politicianSlug}_${book.financialYear}_${number}.${extension}`;

@@ -1,6 +1,6 @@
 import "server-only";
+import type { DocumentMime } from "@/server/contexts/research-fund/domain/models/document-format";
 import type {
-  MaskableMime,
   MaskingRegion,
   RasterImage,
 } from "@/server/contexts/research-fund/domain/models/masking-region";
@@ -43,7 +43,7 @@ export class ReceiptMaskingService {
   /** instruction は書類ごとの黒塗りへの追加の指示（#1867）。全ページの判定に添える */
   async mask(document: {
     bytes: Uint8Array;
-    mime: MaskableMime;
+    mime: DocumentMime;
     instruction?: string | null;
   }): Promise<{ bytes: Uint8Array; mime: "application/pdf"; regionCount: number }> {
     const source = await this.codec.open(document);

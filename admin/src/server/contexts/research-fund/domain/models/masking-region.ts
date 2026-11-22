@@ -12,6 +12,3 @@ export interface MaskingRegion {
   width: number;
   height: number;
 }
-
-/** 黒塗りの対象にできる書類の形式 */
-export type MaskableMime = "image/jpeg" | "image/png" | "application/pdf";
