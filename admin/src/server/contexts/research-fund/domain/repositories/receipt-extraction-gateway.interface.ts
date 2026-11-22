@@ -1,8 +1,9 @@
+import type { DocumentMime } from "@/server/contexts/research-fund/domain/models/document-format";
 import type { ExtractedReceipt } from "@/server/contexts/research-fund/domain/models/extracted-receipt";
 import type { ResearchFundResult } from "@/server/contexts/research-fund/domain/types/validation";
 
 export interface ReceiptExtractionParams {
-  document: { bytes: Uint8Array; mime: "image/jpeg" | "image/png" | "application/pdf" };
+  document: { bytes: Uint8Array; mime: DocumentMime };
   officePrompt: string;
   /** 下書きを作り直すときの読み直し指示。通常のスキャン・プロンプトのテストでは渡さない */
   rereadInstruction?: string | null;

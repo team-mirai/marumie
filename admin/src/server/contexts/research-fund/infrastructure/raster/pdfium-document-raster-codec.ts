@@ -3,10 +3,8 @@ import { PDFiumLibrary } from "@hyzyla/pdfium";
 import jpeg from "jpeg-js";
 import { PDFDocument } from "pdf-lib";
 import { PNG } from "pngjs";
-import type {
-  MaskableMime,
-  RasterImage,
-} from "@/server/contexts/research-fund/domain/models/masking-region";
+import type { DocumentMime } from "@/server/contexts/research-fund/domain/models/document-format";
+import type { RasterImage } from "@/server/contexts/research-fund/domain/models/masking-region";
 import type {
   DocumentRasterCodec,
   ImagePdfWriter,
@@ -30,7 +28,7 @@ const MAX_PNG_PIXELS = 100_000_000;
  * ネイティブバイナリや OS のコマンドに依存しないライブラリ（pdfium の WASM 版・pure JS の画像コーデック・pdf-lib）だけを使う。
  */
 export class PdfiumDocumentRasterCodec implements DocumentRasterCodec {
-  async open(document: { bytes: Uint8Array; mime: MaskableMime }): Promise<RasterDocument> {
+  async open(document: { bytes: Uint8Array; mime: DocumentMime }): Promise<RasterDocument> {
     if (document.mime === "application/pdf") return await openPdf(document.bytes);
     const { bytes, mime } = document;
     return {

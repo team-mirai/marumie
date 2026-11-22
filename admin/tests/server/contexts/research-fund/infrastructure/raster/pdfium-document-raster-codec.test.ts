@@ -2,8 +2,8 @@ import { readFile } from "fs/promises";
 import { join } from "path";
 import { PDFiumLibrary } from "@hyzyla/pdfium";
 import { PDFDocument, rgb } from "pdf-lib";
+import type { DocumentMime } from "@/server/contexts/research-fund/domain/models/document-format";
 import type {
-  MaskableMime,
   RasterImage,
 } from "@/server/contexts/research-fund/domain/models/masking-region";
 import { PdfiumDocumentRasterCodec } from "@/server/contexts/research-fund/infrastructure/raster/pdfium-document-raster-codec";
@@ -19,7 +19,7 @@ function solid(width: number, height: number, [r, g, b]: [number, number, number
 }
 
 /** 書類を開いて全ページを画像にする */
-async function renderAll(bytes: Uint8Array, mime: MaskableMime): Promise<RasterImage[]> {
+async function renderAll(bytes: Uint8Array, mime: DocumentMime): Promise<RasterImage[]> {
   const document = await codec.open({ bytes, mime });
   try {
     const pages: RasterImage[] = [];

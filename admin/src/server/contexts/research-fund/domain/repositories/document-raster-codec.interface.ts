@@ -1,7 +1,5 @@
-import type {
-  MaskableMime,
-  RasterImage,
-} from "@/server/contexts/research-fund/domain/models/masking-region";
+import type { DocumentMime } from "@/server/contexts/research-fund/domain/models/document-format";
+import type { RasterImage } from "@/server/contexts/research-fund/domain/models/masking-region";
 
 /** 開いた書類。ページを 1 枚ずつ画像にする（全ページの画像を同時に持たないため） */
 export interface RasterDocument {
@@ -24,7 +22,7 @@ export interface ImagePdfWriter {
 /** 書類とページ画像の相互変換 */
 export interface DocumentRasterCodec {
   /** 書類を開く。使い終わったら close する */
-  open(document: { bytes: Uint8Array; mime: MaskableMime }): Promise<RasterDocument>;
+  open(document: { bytes: Uint8Array; mime: DocumentMime }): Promise<RasterDocument>;
   /** 長辺が maxEdge 以下になるよう縮小する（すでに収まっていればそのまま返す） */
   shrink(image: RasterImage, maxEdge: number): RasterImage;
   /** LLM に渡すための JPEG にする */

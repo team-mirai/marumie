@@ -13,6 +13,7 @@ import {
 import { payeeAliasFromIssuer } from "@/server/contexts/research-fund/domain/models/payee-alias";
 import { buildScanDraftEntries } from "@/server/contexts/research-fund/domain/services/scan-journal-builder";
 import { ResearchFundDocument } from "@/server/contexts/research-fund/domain/models/document";
+import { DocumentFormat } from "@/server/contexts/research-fund/domain/models/document-format";
 
 interface ProcessScanJobsResult {
   /** この呼び出しで処理したジョブ数 */
@@ -22,10 +23,6 @@ interface ProcessScanJobsResult {
   /** まだ queued / running のジョブが残っているか。画面はこれが true の間だけ呼び続ける */
   hasMore: boolean;
 }
-
-type ExtractableMime = "image/jpeg" | "image/png" | "application/pdf";
-
-const EXTRACTABLE_MIMES: readonly string[] = ["image/jpeg", "image/png", "application/pdf"];
 
 /**
  * 待機中のスキャンジョブを少数だけ処理する。
@@ -85,8 +82,9 @@ export class ProcessScanJobsUsecase {
   ): Promise<boolean> {
     let rawJson: unknown;
     try {
-      if (!EXTRACTABLE_MIMES.includes(job.mime)) {
-        await this.scanRepository.failJob(job.id, "JPG・PNG・PDFのみ読み取れます");
+      const mime = DocumentFormat.validate(job.mime, "extraction");
+      if (mime.status === "invalid") {
+        await this.scanRepository.failJob(job.id, mime.errors[0].message);
         return false;
       }
       const bytes = await this.storage.download(job.storageKey);
@@ -95,7 +93,7 @@ export class ProcessScanJobsUsecase {
         return false;
       }
       const extracted = await this.gateway.extract({
-        document: { bytes: bytes.value, mime: job.mime as ExtractableMime },
+        document: { bytes: bytes.value, mime: mime.value },
         officePrompt: job.officePrompt,
         rereadInstruction: job.rereadInstruction,
       });

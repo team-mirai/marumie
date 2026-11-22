@@ -1,5 +1,6 @@
 import "server-only";
 import { ResearchFundDocument } from "@/server/contexts/research-fund/domain/models/document";
+import { DocumentFormat } from "@/server/contexts/research-fund/domain/models/document-format";
 import type { ExtractedReceipt } from "@/server/contexts/research-fund/domain/models/extracted-receipt";
 import { normalizePromptBody } from "@/server/contexts/research-fund/domain/models/prompt";
 import type { DocumentRepository } from "@/server/contexts/research-fund/domain/repositories/document-repository.interface";
@@ -10,10 +11,6 @@ import {
   RF_ERROR_CODES,
   type ResearchFundResult,
 } from "@/server/contexts/research-fund/domain/types/validation";
-
-const EXTRACTABLE_MIMES: readonly string[] = ["image/jpeg", "image/png", "application/pdf"];
-
-type ExtractableMime = "image/jpeg" | "image/png" | "application/pdf";
 
 /**
  * 編集中のプロンプトで既存の書類 1 枚を読み取り、抽出 JSON だけを返す。
@@ -51,18 +48,13 @@ export class TestPromptUsecase {
         "書類が見つかりません",
       );
     }
-    if (!EXTRACTABLE_MIMES.includes(document.mime)) {
-      return invalidResearchFundResult(
-        "document",
-        RF_ERROR_CODES.INVALID_DOCUMENT,
-        "JPG・PNG・PDFのみ読み取れます",
-      );
-    }
+    const mime = DocumentFormat.validate(document.mime, "extraction");
+    if (mime.status === "invalid") return mime;
     const bytes = await this.storage.download(document.storageKey);
     if (bytes.status === "invalid") return bytes;
 
     return await this.gateway.extract({
-      document: { bytes: bytes.value, mime: document.mime as ExtractableMime },
+      document: { bytes: bytes.value, mime: mime.value },
       officePrompt,
     });
   }

@@ -1,6 +1,6 @@
 import "server-only";
 import { DocumentMaskingPolicy } from "@/server/contexts/research-fund/domain/models/document-masking";
-import type { MaskableMime } from "@/server/contexts/research-fund/domain/models/masking-region";
+import { DocumentFormat } from "@/server/contexts/research-fund/domain/models/document-format";
 import type {
   ClaimedMaskingDocument,
   DocumentMaskingRepository,
@@ -21,8 +21,6 @@ interface ProcessDocumentMaskingResult {
   /** 呼び出しの後に残っている pending / running の書類の数 */
   remaining: number;
 }
-
-const MASKABLE_MIMES: readonly string[] = ["image/jpeg", "image/png", "application/pdf"];
 
 /**
  * 未作成の書類（どの帳簿でもよい）の公開用の版（個人情報を黒塗りし、メタデータを含まない画像だけの PDF）を
@@ -63,8 +61,9 @@ export class ProcessDocumentMaskingUsecase {
   /** 1 書類の公開用の版を作って記録する。成功したら true。失敗は理由を記録して飲み込む */
   private async maskDocument(document: ClaimedMaskingDocument): Promise<boolean> {
     try {
-      if (!MASKABLE_MIMES.includes(document.mime)) {
-        await this.fail(document, "JPG・PNG・PDFのみ公開用の版を作れます");
+      const mime = DocumentFormat.validate(document.mime, "masking");
+      if (mime.status === "invalid") {
+        await this.fail(document, mime.errors[0].message);
         return false;
       }
       const original = await this.storage.download(document.storageKey);
@@ -74,7 +73,7 @@ export class ProcessDocumentMaskingUsecase {
       }
       const masked = await this.masking.mask({
         bytes: original.value,
-        mime: document.mime as MaskableMime,
+        mime: mime.value,
         instruction: document.instruction,
       });
       const uploaded = await this.storage.upload(masked.bytes, masked.mime);

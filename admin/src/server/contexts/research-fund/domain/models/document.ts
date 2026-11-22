@@ -1,3 +1,4 @@
+import { DocumentFormat } from "@/server/contexts/research-fund/domain/models/document-format";
 import { isBigIntId } from "@/server/contexts/research-fund/domain/models/entity-id";
 import {
   invalidResearchFundResult,
@@ -16,7 +17,7 @@ export interface ResearchFundDocument {
 
 export const ResearchFundDocument = {
   validateFile(bytes: Uint8Array, mime: string): ResearchFundResult<undefined> {
-    if (!bytes.length || !["image/jpeg", "image/png", "application/pdf"].includes(mime)) {
+    if (!bytes.length || !DocumentFormat.isSupported(mime)) {
       return invalidResearchFundResult(
         "document",
         RF_ERROR_CODES.INVALID_DOCUMENT,
