@@ -17,6 +17,8 @@ import {
   type OrganizationExpenseTransaction,
 } from "@/server/contexts/report/domain/models/expense-transaction";
 import { resolveExpenseAmount } from "@/server/contexts/report/domain/models/transaction-utils";
+import { requiresCounterpartDetail } from "@/server/contexts/report/domain/models/counterpart-assignment-rules";
+import { PL_CATEGORIES } from "@/shared/accounting/account-category";
 import { ValidationErrorCode } from "@/server/contexts/report/domain/types/validation";
 
 describe("UtilityExpenseSection.fromTransactions", () => {
@@ -880,3 +882,52 @@ describe("OrganizationExpenseSection.fromTransactions - 複数friendlyCategory�
     expect(sections[2].himoku).toBe("");
   });
 });
+
+describe("明細行の判定と紐付け画面の「要取引先」の判定", () => {
+  const amountPairs: Array<[number, number]> = [
+    [0, 0],
+    [49_999, 49_999],
+    [49_999.49, 0],
+    [49_999.5, 0],
+    [50_000, 50_000],
+    [150_000, 150_000],
+    [0, 60_000],
+    [0, 40_000],
+    [40_000, 60_000],
+  ];
+
+  it.each([
+    // biome-ignore lint/complexity/useLiteralKeys: 日本語キー
+    ["経常経費", PL_CATEGORIES["光熱水費"].key, UtilityExpenseSection.fromTransactions],
+    [
+      "政治活動費",
+      // biome-ignore lint/complexity/useLiteralKeys: 日本語キー
+      PL_CATEGORIES["組織活動費"].key,
+      (txs: UtilityExpenseTransaction[]) => ({
+        rows: OrganizationExpenseSection.fromTransactions(txs).flatMap((section) => section.rows),
+      }),
+    ],
+  ] as const)("%s: 明細行に載る取引と requiresCounterpartDetail が true の取引が一致する", (_, categoryKey, aggregate) => {
+    const transactions = amountPairs.map(([debitAmount, creditAmount], index) =>
+      createUtilityTransaction({
+        transactionNo: String(index + 1),
+        memo: null,
+        debitAmount,
+        creditAmount,
+      }),
+    );
+
+    const itemizedNos = aggregate(transactions).rows.map((row) =>
+      row.bikou?.replace(/^MF行番号: /, ""),
+    );
+    const requiresCounterpartNos = transactions
+      .filter((tx) =>
+        requiresCounterpartDetail("expense", categoryKey, tx.debitAmount, tx.creditAmount),
+      )
+      .map((tx) => tx.transactionNo);
+
+    expect(itemizedNos).toEqual(requiresCounterpartNos);
+    expect(itemizedNos.length).toBeGreaterThan(0);
+  });
+});
+

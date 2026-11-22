@@ -16,6 +16,7 @@ import {
   RowNumberHead,
 } from "@/client/components/export-report/sections/ReportTableCells";
 import type { ExpenseRow } from "@/server/contexts/report/domain/models/expense-transaction";
+import { EXPENSE_DETAIL_THRESHOLD_LABEL } from "@/server/contexts/report/domain/models/expense-detail-threshold";
 
 interface ExpenseTableProps {
   rows: ExpenseRow[];
@@ -24,7 +25,7 @@ interface ExpenseTableProps {
 /** 経常経費・政治活動費で共通の支出明細テーブル（目的 / 金額 / 年月日 / 氏名 / 住所 / 備考） */
 export function ExpenseTable({ rows }: ExpenseTableProps) {
   if (rows.length === 0) {
-    return <EmptyMessage>5万円以上の明細はありません</EmptyMessage>;
+    return <EmptyMessage>{EXPENSE_DETAIL_THRESHOLD_LABEL}以上の明細はありません</EmptyMessage>;
   }
 
   return (

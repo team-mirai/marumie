@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { formatCurrency } from "@/client/lib";
 import { SectionCard } from "@/client/components/export-report/sections/SectionCard";
+import { EXPENSE_DETAIL_THRESHOLD_LABEL } from "@/server/contexts/report/domain/models/expense-detail-threshold";
 
 interface SectionWrapperProps {
   title: string;
@@ -18,7 +19,7 @@ export function SectionWrapper({
   formId,
   totalAmount,
   underThresholdAmount,
-  thresholdLabel = "5万円未満の合計",
+  thresholdLabel = `${EXPENSE_DETAIL_THRESHOLD_LABEL}未満の合計`,
   isEmpty = false,
   children,
 }: SectionWrapperProps) {

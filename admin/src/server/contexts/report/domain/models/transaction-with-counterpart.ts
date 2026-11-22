@@ -18,7 +18,7 @@ export interface TransactionWithCounterpart {
     name: string;
     address: string | null;
   } | null;
-  /** 取引先情報の記載が必要（閾値以上かつ対象カテゴリ）かどうか。閾値は経常経費5万円、政治活動費5万円 */
+  /** 取引先情報の記載が必要（対象カテゴリかつ明細記載の金額基準以上）かどうか。requiresCounterpartDetail で判定する */
   requiresCounterpart: boolean;
   /** 交付金に係る支出かどうか */
   isGrantExpenditure: boolean;

@@ -50,7 +50,6 @@ function ExpenseArraySubSection({ title, formId, sections }: ExpenseArraySubSect
       formId={formId}
       totalAmount={totalAmount}
       underThresholdAmount={underThresholdAmount}
-      thresholdLabel="5万円未満の合計"
       isEmpty={!hasData}
     >
       {hasData && sections.length > 0 ? (

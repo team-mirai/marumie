@@ -1,9 +1,7 @@
 import {
   isCounterpartRequired,
-  isAboveDetailThreshold,
   requiresCounterpartDetail,
-  ROUTINE_EXPENSE_THRESHOLD,
-  POLITICAL_ACTIVITY_EXPENSE_THRESHOLD,
+  getCounterpartDetailCriteria,
   ROUTINE_EXPENSE_CATEGORIES,
   POLITICAL_ACTIVITY_EXPENSE_CATEGORIES,
   COUNTERPART_REQUIRED_INCOME_CATEGORIES,
@@ -55,16 +53,6 @@ describe("counterpart-assignment-rules", () => {
 
     it("12カテゴリを含む", () => {
       expect(COUNTERPART_REQUIRED_EXPENSE_CATEGORIES).toHaveLength(12);
-    });
-  });
-
-  describe("閾値定数", () => {
-    it("経常経費の閾値は5万円（50,000円）である", () => {
-      expect(ROUTINE_EXPENSE_THRESHOLD).toBe(50_000);
-    });
-
-    it("政治活動費の閾値は5万円（50,000円）である", () => {
-      expect(POLITICAL_ACTIVITY_EXPENSE_THRESHOLD).toBe(50_000);
     });
   });
 
@@ -143,107 +131,138 @@ describe("counterpart-assignment-rules", () => {
     });
   });
 
-  describe("isAboveDetailThreshold", () => {
-    describe("経常経費カテゴリ（5万円閾値）", () => {
-      // biome-ignore lint/complexity/useLiteralKeys: 日本語キー
-      const routineCategory = PL_CATEGORIES["事務所費"].key;
-
-      it("5万円以上でtrue", () => {
-        expect(isAboveDetailThreshold(routineCategory, 50_000)).toBe(true);
-        expect(isAboveDetailThreshold(routineCategory, 100_000)).toBe(true);
-        expect(isAboveDetailThreshold(routineCategory, 150_000)).toBe(true);
-        expect(isAboveDetailThreshold(routineCategory, 1_000_000)).toBe(true);
-      });
-
-      it("5万円未満でfalse", () => {
-        expect(isAboveDetailThreshold(routineCategory, 49_999)).toBe(false);
-        expect(isAboveDetailThreshold(routineCategory, 10_000)).toBe(false);
-        expect(isAboveDetailThreshold(routineCategory, 0)).toBe(false);
-      });
-    });
-
-    describe("政治活動費カテゴリ（5万円閾値）", () => {
-      // biome-ignore lint/complexity/useLiteralKeys: 日本語キー
-      const politicalCategory = PL_CATEGORIES["組織活動費"].key;
-
-      it("5万円以上でtrue", () => {
-        expect(isAboveDetailThreshold(politicalCategory, 50_000)).toBe(true);
-        expect(isAboveDetailThreshold(politicalCategory, 100_000)).toBe(true);
-        expect(isAboveDetailThreshold(politicalCategory, 1_000_000)).toBe(true);
-      });
-
-      it("5万円未満でfalse", () => {
-        expect(isAboveDetailThreshold(politicalCategory, 49_999)).toBe(false);
-        expect(isAboveDetailThreshold(politicalCategory, 10_000)).toBe(false);
-        expect(isAboveDetailThreshold(politicalCategory, 0)).toBe(false);
-      });
-    });
-
-    describe("収入カテゴリ（閾値なし）", () => {
-      // biome-ignore lint/complexity/useLiteralKeys: 日本語キー
-      const incomeCategory = PL_CATEGORIES["借入金"].key;
-
-      it("金額に関わらずtrue", () => {
-        expect(isAboveDetailThreshold(incomeCategory, 0)).toBe(true);
-        expect(isAboveDetailThreshold(incomeCategory, 1)).toBe(true);
-        expect(isAboveDetailThreshold(incomeCategory, 1_000_000)).toBe(true);
-      });
-    });
-  });
-
   describe("requiresCounterpartDetail", () => {
     describe("経常経費（5万円閾値）", () => {
       it("5万円以上でtrue", () => {
         // biome-ignore lint/complexity/useLiteralKeys: 日本語キー
-        expect(requiresCounterpartDetail("expense", PL_CATEGORIES["事務所費"].key, 50_000)).toBe(true);
+        expect(requiresCounterpartDetail("expense", PL_CATEGORIES["事務所費"].key, 50_000, 50_000)).toBe(true);
         // biome-ignore lint/complexity/useLiteralKeys: 日本語キー
-        expect(requiresCounterpartDetail("expense", PL_CATEGORIES["光熱水費"].key, 150_000)).toBe(true);
+        expect(requiresCounterpartDetail("expense", PL_CATEGORIES["光熱水費"].key, 150_000, 150_000)).toBe(true);
       });
 
       it("5万円未満でfalse", () => {
         // biome-ignore lint/complexity/useLiteralKeys: 日本語キー
-        expect(requiresCounterpartDetail("expense", PL_CATEGORIES["事務所費"].key, 49_999)).toBe(false);
+        expect(requiresCounterpartDetail("expense", PL_CATEGORIES["事務所費"].key, 49_999, 49_999)).toBe(false);
         // biome-ignore lint/complexity/useLiteralKeys: 日本語キー
-        expect(requiresCounterpartDetail("expense", PL_CATEGORIES["光熱水費"].key, 10_000)).toBe(false);
+        expect(requiresCounterpartDetail("expense", PL_CATEGORIES["光熱水費"].key, 10_000, 10_000)).toBe(false);
       });
     });
 
     describe("政治活動費（5万円閾値）", () => {
       it("5万円以上でtrue", () => {
         // biome-ignore lint/complexity/useLiteralKeys: 日本語キー
-        expect(requiresCounterpartDetail("expense", PL_CATEGORIES["組織活動費"].key, 50_000)).toBe(true);
+        expect(requiresCounterpartDetail("expense", PL_CATEGORIES["組織活動費"].key, 50_000, 50_000)).toBe(true);
         // biome-ignore lint/complexity/useLiteralKeys: 日本語キー
-        expect(requiresCounterpartDetail("expense", PL_CATEGORIES["選挙関係費"].key, 100_000)).toBe(true);
+        expect(requiresCounterpartDetail("expense", PL_CATEGORIES["選挙関係費"].key, 100_000, 100_000)).toBe(true);
       });
 
       it("5万円未満でfalse", () => {
         // biome-ignore lint/complexity/useLiteralKeys: 日本語キー
-        expect(requiresCounterpartDetail("expense", PL_CATEGORIES["組織活動費"].key, 49_999)).toBe(false);
+        expect(requiresCounterpartDetail("expense", PL_CATEGORIES["組織活動費"].key, 49_999, 49_999)).toBe(false);
         // biome-ignore lint/complexity/useLiteralKeys: 日本語キー
-        expect(requiresCounterpartDetail("expense", PL_CATEGORIES["選挙関係費"].key, 10_000)).toBe(false);
+        expect(requiresCounterpartDetail("expense", PL_CATEGORIES["選挙関係費"].key, 10_000, 10_000)).toBe(false);
       });
     });
 
     describe("収入カテゴリ（閾値なし）", () => {
       it("金額に関わらずtrue", () => {
         // biome-ignore lint/complexity/useLiteralKeys: 日本語キー
-        expect(requiresCounterpartDetail("income", PL_CATEGORIES["借入金"].key, 0)).toBe(true);
+        expect(requiresCounterpartDetail("income", PL_CATEGORIES["借入金"].key, 0, 0)).toBe(true);
         // biome-ignore lint/complexity/useLiteralKeys: 日本語キー
-        expect(requiresCounterpartDetail("income", PL_CATEGORIES["借入金"].key, 1)).toBe(true);
+        expect(requiresCounterpartDetail("income", PL_CATEGORIES["借入金"].key, 1, 1)).toBe(true);
         // biome-ignore lint/complexity/useLiteralKeys: 日本語キー
-        expect(requiresCounterpartDetail("income", PL_CATEGORIES["本部又は支部から供与された交付金に係る収入"].key, 100_000)).toBe(true);
+        expect(requiresCounterpartDetail("income", PL_CATEGORIES["本部又は支部から供与された交付金に係る収入"].key, 100_000, 100_000)).toBe(true);
       });
     });
 
     describe("非対象カテゴリ", () => {
       it("金額に関わらずfalse", () => {
         // biome-ignore lint/complexity/useLiteralKeys: 日本語キー
-        expect(requiresCounterpartDetail("income", PL_CATEGORIES["個人からの寄附"].key, 150_000)).toBe(false);
+        expect(requiresCounterpartDetail("income", PL_CATEGORIES["個人からの寄附"].key, 150_000, 150_000)).toBe(false);
         // biome-ignore lint/complexity/useLiteralKeys: 日本語キー
-        expect(requiresCounterpartDetail("income", PL_CATEGORIES["その他の収入"].key, 200_000)).toBe(false);
+        expect(requiresCounterpartDetail("income", PL_CATEGORIES["その他の収入"].key, 200_000, 200_000)).toBe(false);
         // biome-ignore lint/complexity/useLiteralKeys: 日本語キー
-        expect(requiresCounterpartDetail("income", PL_CATEGORIES["機関紙誌の発行その他の事業による収入"].key, 1_000_000)).toBe(false);
+        expect(requiresCounterpartDetail("income", PL_CATEGORIES["機関紙誌の発行その他の事業による収入"].key, 1_000_000, 1_000_000)).toBe(false);
       });
+    });
+  });
+
+  describe("requiresCounterpartDetail の支出金額の求め方", () => {
+    // biome-ignore lint/complexity/useLiteralKeys: 日本語キー
+    const office = PL_CATEGORIES["事務所費"].key;
+
+    it("借方金額が 0 以下なら貸方金額で判定する（報告書の明細行と同じ）", () => {
+      expect(requiresCounterpartDetail("expense", office, 0, 60_000)).toBe(true);
+      expect(requiresCounterpartDetail("expense", office, 0, 40_000)).toBe(false);
+    });
+
+    it("借方金額が正なら貸方金額は使わない", () => {
+      expect(requiresCounterpartDetail("expense", office, 40_000, 60_000)).toBe(false);
+      expect(requiresCounterpartDetail("expense", office, 60_000, 0)).toBe(true);
+    });
+
+    it("円未満を四捨五入してから基準と比べる", () => {
+      expect(requiresCounterpartDetail("expense", office, 49_999.5, 0)).toBe(true);
+      expect(requiresCounterpartDetail("expense", office, 49_999.49, 0)).toBe(false);
+    });
+  });
+
+  describe("getCounterpartDetailCriteria", () => {
+    type Tx = {
+      transactionType: "income" | "expense";
+      categoryKey: string;
+      debitAmount: number;
+      creditAmount: number;
+    };
+
+    /** 絞り込み条件をデータベースと同じ意味で評価する */
+    const matchesCriteria = (tx: Tx): boolean =>
+      getCounterpartDetailCriteria().some(
+        (criterion) =>
+          criterion.transactionType === tx.transactionType &&
+          criterion.categoryKeys.includes(tx.categoryKey) &&
+          (criterion.amountConditions === null ||
+            criterion.amountConditions.some((condition) => {
+              if ("gte" in condition.debitAmount) {
+                return tx.debitAmount >= condition.debitAmount.gte;
+              }
+              return (
+                "creditAmount" in condition &&
+                tx.debitAmount <= condition.debitAmount.lte &&
+                tx.creditAmount >= condition.creditAmount.gte
+              );
+            })),
+      );
+
+    const categoryKeys = [
+      ...COUNTERPART_REQUIRED_EXPENSE_CATEGORIES,
+      ...COUNTERPART_REQUIRED_INCOME_CATEGORIES,
+      // biome-ignore lint/complexity/useLiteralKeys: 日本語キー
+      PL_CATEGORIES["個人からの寄附"].key,
+      // biome-ignore lint/complexity/useLiteralKeys: 日本語キー
+      PL_CATEGORIES["人件費"].key,
+    ];
+    const amounts = [0, 1, 10_000, 49_999, 49_999.49, 49_999.5, 50_000, 50_000.4, 150_000];
+
+    it("絞り込み条件に当たる取引と requiresCounterpartDetail が true の取引が一致する", () => {
+      for (const transactionType of ["income", "expense"] as const) {
+        for (const categoryKey of categoryKeys) {
+          for (const debitAmount of amounts) {
+            for (const creditAmount of amounts) {
+              const tx = { transactionType, categoryKey, debitAmount, creditAmount };
+              expect({ tx, matched: matchesCriteria(tx) }).toEqual({
+                tx,
+                matched: requiresCounterpartDetail(
+                  transactionType,
+                  categoryKey,
+                  debitAmount,
+                  creditAmount,
+                ),
+              });
+            }
+          }
+        }
+      }
     });
   });
 });
