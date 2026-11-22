@@ -18,23 +18,25 @@ export default function BalanceSnapshotsClient({
   politicalOrganizationId,
 }: BalanceSnapshotsClientProps) {
   const [snapshots, setSnapshots] = useState<BalanceSnapshot[]>([]);
+  const [currentBalance, setCurrentBalance] = useState<BalanceSnapshot | null>(null);
   const [loading, setLoading] = useState(false);
-
-  const currentBalance = snapshots.length > 0 ? snapshots[0] : null;
 
   const loadSnapshots = useCallback(async (orgId: string) => {
     if (!orgId) {
       setSnapshots([]);
+      setCurrentBalance(null);
       return;
     }
 
     setLoading(true);
     try {
       const data = await apiClient.getBalanceSnapshots(orgId);
-      setSnapshots(data);
+      setSnapshots(data.snapshots);
+      setCurrentBalance(data.current);
     } catch (error) {
       console.error("Failed to load balance snapshots:", error);
       setSnapshots([]);
+      setCurrentBalance(null);
     } finally {
       setLoading(false);
     }

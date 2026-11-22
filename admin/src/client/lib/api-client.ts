@@ -1,10 +1,27 @@
-interface BalanceSnapshot {
-  id: string;
-  political_organization_id: string;
-  snapshot_date: Date;
-  balance: number;
-  created_at: Date;
-  updated_at: Date;
+import type {
+  BalanceSnapshot,
+  BalanceSnapshotOverview,
+} from "@/server/contexts/shared/domain/models/balance-snapshot";
+
+/** JSON で受け取った残高スナップショット（日付は ISO 8601 の文字列） */
+type BalanceSnapshotJson = Omit<BalanceSnapshot, "snapshot_date" | "created_at" | "updated_at"> & {
+  snapshot_date: string;
+  created_at: string;
+  updated_at: string;
+};
+
+interface BalanceSnapshotOverviewJson {
+  snapshots: BalanceSnapshotJson[];
+  current: BalanceSnapshotJson | null;
+}
+
+function toBalanceSnapshot(json: BalanceSnapshotJson): BalanceSnapshot {
+  return {
+    ...json,
+    snapshot_date: new Date(json.snapshot_date),
+    created_at: new Date(json.created_at),
+    updated_at: new Date(json.updated_at),
+  };
 }
 
 interface ExportReportParams {
@@ -37,8 +54,14 @@ class ApiClient {
     return response.json();
   }
 
-  async getBalanceSnapshots(orgId: string): Promise<BalanceSnapshot[]> {
-    return this.request<BalanceSnapshot[]>(`/api/balance-snapshots?orgId=${orgId}`);
+  async getBalanceSnapshots(orgId: string): Promise<BalanceSnapshotOverview> {
+    const data = await this.request<BalanceSnapshotOverviewJson>(
+      `/api/balance-snapshots?orgId=${orgId}`,
+    );
+    return {
+      snapshots: data.snapshots.map(toBalanceSnapshot),
+      current: data.current ? toBalanceSnapshot(data.current) : null,
+    };
   }
 
   async downloadReport(

@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { BalanceSnapshot } from "@/server/contexts/shared/domain/models/balance-snapshot";
+import { BalanceSnapshot } from "@/server/contexts/shared/domain/models/balance-snapshot";
 import type {
   CreateBalanceSnapshotInput,
   IBalanceSnapshotRepository,
@@ -23,14 +23,9 @@ export class CreateBalanceSnapshotUsecase {
         throw new Error("Balance is required");
       }
 
-      // 未来日付のチェック
-      const today = new Date();
-      today.setHours(0, 0, 0, 0); // 時刻をリセットして日付のみで比較
-      const snapshotDate = new Date(input.snapshot_date);
-      snapshotDate.setHours(0, 0, 0, 0);
-
-      if (snapshotDate > today) {
-        throw new Error("未来の日付は登録できません");
+      const dateError = BalanceSnapshot.validateSnapshotDate(input.snapshot_date);
+      if (dateError) {
+        throw new Error(dateError);
       }
 
       return await this.repository.create(input);
