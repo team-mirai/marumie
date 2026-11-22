@@ -3,8 +3,9 @@ import type {
   ResearchFundPoliticianEntry,
   ResearchFundPoliticianSource,
 } from "@/server/contexts/research-fund/domain/models/research-fund-politician-list";
+import { ResearchFundPublication } from "@/server/contexts/research-fund/domain/models/research-fund-publication";
 import type { ResearchFundRepository } from "@/server/contexts/research-fund/domain/repositories/research-fund-repository.interface";
-import { sortPoliticiansByKana } from "@/server/contexts/research-fund/domain/services/politician-order";
+import { sortPoliticiansByKana } from "@/server/contexts/research-fund/domain/models/politician-order";
 import { buildCoverageLabel } from "@/server/contexts/research-fund/domain/services/research-fund-coverage";
 
 export interface GetResearchFundPoliticiansParams {
@@ -22,7 +23,9 @@ export class GetResearchFundPoliticiansUsecase {
   async execute(params: GetResearchFundPoliticiansParams): Promise<ResearchFundPoliticianEntry[]> {
     const politicians = await this.repository.findPoliticians(params.financialYear);
     return sortPoliticiansByKana(
-      politicians.filter((source) => source.publishedMonths.length > 0),
+      politicians.filter((source) =>
+        ResearchFundPublication.isPublishedYear(source.publishedMonths),
+      ),
     ).map(toEntry);
   }
 }

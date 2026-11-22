@@ -1,7 +1,8 @@
 import "server-only";
 import type { ResearchFundPoliticianCard } from "@/server/contexts/research-fund/domain/models/research-fund-politician-list";
+import { ResearchFundPublication } from "@/server/contexts/research-fund/domain/models/research-fund-publication";
 import type { ResearchFundRepository } from "@/server/contexts/research-fund/domain/repositories/research-fund-repository.interface";
-import { sortPoliticiansByKana } from "@/server/contexts/research-fund/domain/services/politician-order";
+import { sortPoliticiansByKana } from "@/server/contexts/research-fund/domain/models/politician-order";
 import { buildPoliticianTitle } from "@/server/contexts/research-fund/domain/services/politician-title";
 
 export interface GetResearchFundPoliticianCardsParams {
@@ -25,7 +26,9 @@ export class GetResearchFundPoliticianCardsUsecase {
       this.repository.findComingSoonPoliticians(),
     ]);
     const published = sortPoliticiansByKana(
-      politicians.filter((source) => source.publishedMonths.length > 0),
+      politicians.filter((source) =>
+        ResearchFundPublication.isPublishedYear(source.publishedMonths),
+      ),
     ).map(
       (source): ResearchFundPoliticianCard => ({
         slug: source.slug,
@@ -35,20 +38,17 @@ export class GetResearchFundPoliticianCardsUsecase {
         comingSoon: false,
       }),
     );
-    const publishedSlugs = new Set(published.map((card) => card.slug));
     return [
       ...published,
-      ...sortPoliticiansByKana(comingSoon)
-        .filter((politician) => !publishedSlugs.has(politician.slug))
-        .map(
-          (politician): ResearchFundPoliticianCard => ({
-            slug: politician.slug,
-            name: politician.name,
-            title: null,
-            hasPhoto: politician.hasPhoto,
-            comingSoon: true,
-          }),
-        ),
+      ...ResearchFundPublication.excludePublished(sortPoliticiansByKana(comingSoon), published).map(
+        (politician): ResearchFundPoliticianCard => ({
+          slug: politician.slug,
+          name: politician.name,
+          title: null,
+          hasPhoto: politician.hasPhoto,
+          comingSoon: true,
+        }),
+      ),
     ];
   }
 }

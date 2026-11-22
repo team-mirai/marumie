@@ -1,3 +1,5 @@
+import { sortPoliticiansByKana } from "@/server/contexts/research-fund/domain/models/politician-order";
+
 /** チームみらいの公式サイト */
 export const OFFICIAL_SITE_URL = "https://team-mir.ai/";
 
@@ -28,13 +30,10 @@ export function socialLinkLabel(link: FooterSocialLink): string {
   return `チームみらいの${link.name}（別タブで開きます）`;
 }
 
-/** ひらがなとカタカナ、濁点の有無を五十音の並びどおりに比べる */
-const kanaCollator = new Intl.Collator("ja");
-
 /**
  * フッターの議員を、年度をまたいでふりがなの五十音順に並べる。
  * 年度ごとの一覧はそれぞれ五十音順だが、メガメニューと同じ組み立てでは前の年度にしかいない議員が後ろに回るため並べ直す。
- * 並べ方は research-fund の sortPoliticiansByKana と同じ（ふりがな未登録の議員は後ろに回し、その中では名前で並べる）。
+ * 並べ方はドメインの sortPoliticiansByKana（ふりがな未登録の議員は後ろに回し、その中では名前で並べる）。
  */
 export function sortFooterPoliticiansByKana<T extends { slug: string; name: string }>(
   items: readonly T[],
@@ -48,12 +47,7 @@ export function sortFooterPoliticiansByKana<T extends { slug: string; name: stri
     }
   }
 
-  return [...items].sort((a, b) => {
-    const aKana = kanaBySlug.get(a.slug);
-    const bKana = kanaBySlug.get(b.slug);
-    if (aKana && bKana) return kanaCollator.compare(aKana, bKana);
-    if (aKana) return -1;
-    if (bKana) return 1;
-    return kanaCollator.compare(a.name, b.name);
-  });
+  return sortPoliticiansByKana(
+    items.map((item) => ({ item, name: item.name, nameKana: kanaBySlug.get(item.slug) ?? null })),
+  ).map(({ item }) => item);
 }

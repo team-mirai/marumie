@@ -1,7 +1,7 @@
 import "server-only";
 import type { ResearchFundComingSoonPolitician } from "@/server/contexts/research-fund/domain/models/research-fund-politician-list";
 import type { ResearchFundRepository } from "@/server/contexts/research-fund/domain/repositories/research-fund-repository.interface";
-import { sortPoliticiansByKana } from "@/server/contexts/research-fund/domain/services/politician-order";
+import { sortPoliticiansByKana } from "@/server/contexts/research-fund/domain/models/politician-order";
 
 export class GetResearchFundComingSoonPoliticiansUsecase {
   constructor(private repository: ResearchFundRepository) {}

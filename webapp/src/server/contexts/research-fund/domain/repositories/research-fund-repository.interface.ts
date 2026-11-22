@@ -22,7 +22,7 @@ export interface ResearchFundRepository {
 
   /**
    * 組織セレクタに出す議員の一覧。その年度の帳簿を持つ議員だけを返す（並び順は usecase で決める）。
-   * 公開状況（ready / statusLabel）の判定は usecase が行う。
+   * 公開状況（公開中か・statusLabel）の判定は usecase がドメイン（ResearchFundPublication）で行う。
    */
   findPoliticians(financialYear: number): Promise<ResearchFundPoliticianSource[]>;
 

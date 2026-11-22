@@ -1,6 +1,11 @@
 import { politicianPhotoUrl } from "@/client/lib/politician-photo-url";
 import { parsePoliticianPathSegment } from "@/shared/research-fund/preview-path";
 import { PublishedFiscalYears } from "@/server/contexts/public-finance/domain/models/published-fiscal-years";
+import { ResearchFundPublication } from "@/server/contexts/research-fund/domain/models/research-fund-publication";
+import {
+  chooseResearchFundPageYear,
+  mergeResearchFundPoliticiansAcrossYears,
+} from "@/server/contexts/research-fund/domain/models/research-fund-politicians-across-years";
 
 export const FAQ_URL = "https://team-mirai.notion.site/FAQ-27ef6f56bae180c085e9f97d05a5d59c";
 export const SOURCE_CODE_URL = "https://github.com/team-mirai/marumie";
@@ -156,7 +161,8 @@ export interface HeaderPoliticianMenuItem {
 /**
  * 年度ごとの公開中の議員一覧から、メガメニューの議員の行を作る。
  * 一覧には調研費を公開している議員しか入っていないので、非公開の議員（プレビュー URL で見ている議員を含む）は出ない。
- * 並びは最新の年度の一覧の順で、それより前の年度にしかいない議員を後ろに足す。
+ * 並び順と名前を押したときの年度は、議員ページの前後の切り替えと同じくドメインの定義
+ * （mergeResearchFundPoliticiansAcrossYears / chooseResearchFundPageYear）で決める。
  */
 export function buildPoliticianMenuItems(
   politiciansByYear: Readonly<
@@ -164,34 +170,24 @@ export function buildPoliticianMenuItems(
   >,
   current: HeaderCurrentPage,
 ): HeaderPoliticianMenuItem[] {
-  const yearsNewestFirst = [...PublishedFiscalYears.all].sort((a, b) => b - a);
-  const politicians = new Map<string, { name: string; hasPhoto: boolean; years: number[] }>();
-  for (const year of yearsNewestFirst) {
-    for (const politician of politiciansByYear[year] ?? []) {
-      const entry = politicians.get(politician.slug);
-      if (entry) {
-        entry.years.push(year);
-      } else {
-        politicians.set(politician.slug, {
-          name: politician.name,
-          hasPhoto: politician.hasPhoto,
-          years: [year],
-        });
-      }
-    }
-  }
+  const merged = mergeResearchFundPoliticiansAcrossYears(
+    PublishedFiscalYears.all.map((financialYear) => ({
+      financialYear,
+      politicians: politiciansByYear[financialYear] ?? [],
+    })),
+  );
 
-  return [...politicians].map(([slug, { name, hasPhoto, years }]) => {
+  return merged.map(({ slug, latest: { name, hasPhoto }, publishedYears }) => {
+    const years = publishedYears.map((entry) => entry.financialYear);
     const isCurrent = current.kind === "politician" && current.slug === slug;
-    const selectedYear =
-      isCurrent && current.year !== null && years.includes(current.year) ? current.year : null;
-    const latestYear = years[0];
+    const pageYear = chooseResearchFundPageYear(years, isCurrent ? current.year : null) ?? years[0];
+    const selectedYear = isCurrent && pageYear === current.year ? pageYear : null;
     return {
       slug,
       name,
       photoUrl: hasPhoto ? politicianPhotoUrl(slug) : null,
       isCurrent,
-      href: politicianYearHref(slug, selectedYear ?? latestYear),
+      href: politicianYearHref(slug, pageYear),
       years: [...years]
         .sort((a, b) => a - b)
         .map((year) => ({
@@ -223,15 +219,12 @@ export function buildComingSoonPoliticianMenuItems(
   published: readonly { slug: string }[],
   current: HeaderCurrentPage = { kind: "other" },
 ): ComingSoonPoliticianMenuItem[] {
-  const publishedSlugs = new Set(published.map((politician) => politician.slug));
   const latestYear = Math.max(...PublishedFiscalYears.all);
-  return comingSoon
-    .filter((politician) => !publishedSlugs.has(politician.slug))
-    .map((politician) => ({
-      slug: politician.slug,
-      name: politician.name,
-      photoUrl: politician.hasPhoto ? politicianPhotoUrl(politician.slug) : null,
-      isCurrent: current.kind === "politician" && current.slug === politician.slug,
-      href: politicianYearHref(politician.slug, latestYear),
-    }));
+  return ResearchFundPublication.excludePublished(comingSoon, published).map((politician) => ({
+    slug: politician.slug,
+    name: politician.name,
+    photoUrl: politician.hasPhoto ? politicianPhotoUrl(politician.slug) : null,
+    isCurrent: current.kind === "politician" && current.slug === politician.slug,
+    href: politicianYearHref(politician.slug, latestYear),
+  }));
 }
