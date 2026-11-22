@@ -1,4 +1,7 @@
-import type { Payee } from "@/server/contexts/research-fund/domain/models/payee";
+import {
+  invoiceRegistrationNumbersConflict,
+  type Payee,
+} from "@/server/contexts/research-fund/domain/models/payee";
 import {
   payeeAliasFromName,
   type PayeeAliasName,
@@ -42,9 +45,10 @@ export function payeeMergeRejection(
     return "統合する支払先が見つかりません";
   if (source.id === target.id) return "同じ支払先どうしは統合できません";
   if (
-    target.invoiceRegistrationNumber !== null &&
-    source.invoiceRegistrationNumber !== null &&
-    target.invoiceRegistrationNumber !== source.invoiceRegistrationNumber
+    invoiceRegistrationNumbersConflict(
+      target.invoiceRegistrationNumber,
+      source.invoiceRegistrationNumber,
+    )
   )
     return `インボイス登録番号が食い違うため統合できません（統合先: ${target.invoiceRegistrationNumber}、統合元: ${source.invoiceRegistrationNumber}）。別の相手でないか確かめ、同じ相手なら番号を直してから統合してください`;
   return null;

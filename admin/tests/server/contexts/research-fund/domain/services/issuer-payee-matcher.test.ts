@@ -1,7 +1,7 @@
 import type { ReceiptIssuer } from "@/server/contexts/research-fund/domain/models/extracted-receipt";
+import { normalizePayeeName } from "@/server/contexts/research-fund/domain/models/payee";
 import {
   matchPayeeByIssuer,
-  normalizePayeeName,
   payeeToRegisterForIssuer,
 } from "@/server/contexts/research-fund/domain/services/issuer-payee-matcher";
 
@@ -9,24 +9,6 @@ const issuer: ReceiptIssuer = { name: null, address: null, phone: null, invoice_
 const taxi = { id: "1", name: "東京タクシー株式会社", invoiceRegistrationNumber: "T1234567890123", aliases: [] };
 const jr = { id: "2", name: "JR東日本", invoiceRegistrationNumber: null, aliases: [] };
 const payees = [taxi, jr];
-
-describe("normalizePayeeName", () => {
-  it.each([
-    ["全角半角", "ＪＲ東日本", "JR東日本"],
-    ["英字の大小", "jr東日本", "JR東日本"],
-    ["空白", "東京 タクシー　株式会社", "東京タクシー株式会社"],
-    ["法人格の略記（㈱）", "東京タクシー㈱", "東京タクシー株式会社"],
-    ["法人格の略記（（株））", "東京タクシー（株）", "東京タクシー株式会社"],
-    ["法人格の略記（(有)）", "(有)山田書店", "有限会社山田書店"],
-  ])("%s の表記ゆれを吸収する", (_, a, b) => {
-    expect(normalizePayeeName(a)).toBe(normalizePayeeName(b));
-  });
-
-  it("法人格の位置・有無は吸収しない", () => {
-    expect(normalizePayeeName("株式会社東京タクシー")).not.toBe(normalizePayeeName("東京タクシー株式会社"));
-    expect(normalizePayeeName("東京タクシー")).not.toBe(normalizePayeeName("東京タクシー株式会社"));
-  });
-});
 
 describe("matchPayeeByIssuer", () => {
   it("インボイス登録番号が一致すれば、名称が違っても紐づける", () => {

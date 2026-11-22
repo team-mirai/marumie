@@ -1,6 +1,9 @@
 import { ExtractedReceipt } from "@/server/contexts/research-fund/domain/models/extracted-receipt";
-import { normalizeInvoiceRegistrationNumber } from "@/server/contexts/research-fund/domain/models/payee";
-import { normalizePayeeName } from "@/server/contexts/research-fund/domain/services/issuer-payee-matcher";
+import {
+  invoiceRegistrationNumbersConflict,
+  normalizeInvoiceRegistrationNumber,
+  normalizePayeeName,
+} from "@/server/contexts/research-fund/domain/models/payee";
 
 /**
  * 同じ領収書を二重にスキャンした可能性のある書類の業務ルール（#1731）。
@@ -63,7 +66,12 @@ function fingerprintOf(document: ScannedDocument): Fingerprint | null {
 
 /** 両方の書類で分かる発行元の手がかりのうち、優先順の最初の 1 つで比べる。何も使えなければ食い違わない */
 function issuersConflict(a: Fingerprint, b: Fingerprint): boolean {
-  for (const key of ["invoiceRegistrationNumber", "payeeId", "issuerName"] as const) {
+  if (a.invoiceRegistrationNumber !== null && b.invoiceRegistrationNumber !== null)
+    return invoiceRegistrationNumbersConflict(
+      a.invoiceRegistrationNumber,
+      b.invoiceRegistrationNumber,
+    );
+  for (const key of ["payeeId", "issuerName"] as const) {
     if (a[key] !== null && b[key] !== null) return a[key] !== b[key];
   }
   return false;

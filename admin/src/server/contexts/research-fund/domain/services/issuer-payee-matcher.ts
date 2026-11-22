@@ -1,44 +1,12 @@
 import type { ReceiptIssuer } from "@/server/contexts/research-fund/domain/models/extracted-receipt";
 import {
+  invoiceRegistrationNumbersConflict,
   newPayeeFromIssuer,
   normalizeInvoiceRegistrationNumber,
+  normalizePayeeName,
   type Payee,
   type PayeeInput,
 } from "@/server/contexts/research-fund/domain/models/payee";
-
-/** 法人格の略記（NFKC で ㈱・（株） などは (株) に揃う）を正式な表記に揃える */
-const LEGAL_ENTITY_ABBREVIATIONS: Readonly<Record<string, string>> = {
-  "(株)": "株式会社",
-  "(有)": "有限会社",
-  "(同)": "合同会社",
-  "(名)": "合名会社",
-  "(資)": "合資会社",
-  "(一社)": "一般社団法人",
-  "(一財)": "一般財団法人",
-  "(公社)": "公益社団法人",
-  "(公財)": "公益財団法人",
-  "(医)": "医療法人",
-  "(特非)": "特定非営利活動法人",
-  "(独)": "独立行政法人",
-};
-const LEGAL_ENTITY_ABBREVIATION = new RegExp(
-  Object.keys(LEGAL_ENTITY_ABBREVIATIONS)
-    .map((abbreviation) => abbreviation.replace(/[()]/g, "\\$&"))
-    .join("|"),
-  "g",
-);
-
-/**
- * 支払先の名称を照合用に正規化する。全角半角・英字の大小・空白・法人格の略記の表記ゆれを吸収する。
- * 法人格の位置（前株・後株）や法人格の有無は吸収しない（別の相手でありうるため）。
- */
-export function normalizePayeeName(name: string): string {
-  return name
-    .normalize("NFKC")
-    .replace(/\s/g, "")
-    .replace(LEGAL_ENTITY_ABBREVIATION, (abbreviation) => LEGAL_ENTITY_ABBREVIATIONS[abbreviation])
-    .toLowerCase();
-}
 
 /**
  * 照合の相手にする支払先。aliases は支払先に記録された表記の正規化した名称（domain/models/payee-alias）。
@@ -77,8 +45,8 @@ export function matchPayeeByIssuer<T extends MatchablePayee>(
   const byName = payees.filter(
     (payee) =>
       matchesName(payee, name) &&
-      // 番号が一致する支払先は上で決まっているので、ここに残るのは番号が食い違うか、どちらかが番号を持たないもの
-      (invoice === null || payee.invoiceRegistrationNumber === null),
+      // 番号が一致する支払先は上で決まっているので、ここで除くのは番号が食い違うものだけ
+      !invoiceRegistrationNumbersConflict(invoice, payee.invoiceRegistrationNumber),
   );
   return onlyOne(byName);
 }

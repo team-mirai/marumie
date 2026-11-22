@@ -102,6 +102,49 @@ export function normalizeInvoiceRegistrationNumber(value: string): string | null
   return normalized;
 }
 
+/**
+ * 発行元・支払先どうしのインボイス登録番号が食い違い、別の相手とみなすか。
+ * 両方に番号があって異なるときだけ食い違うとする。どちらかが番号を持たなければ食い違わない。
+ * 支払先の統合・発行元との照合・重複書類の検出・スキャンからの登録で、同じ相手かを判断するのに使う。
+ */
+export function invoiceRegistrationNumbersConflict(a: string | null, b: string | null): boolean {
+  return a !== null && b !== null && a !== b;
+}
+
+/** 法人格の略記（NFKC で ㈱・（株） などは (株) に揃う）を正式な表記に揃える */
+const LEGAL_ENTITY_ABBREVIATIONS: Readonly<Record<string, string>> = {
+  "(株)": "株式会社",
+  "(有)": "有限会社",
+  "(同)": "合同会社",
+  "(名)": "合名会社",
+  "(資)": "合資会社",
+  "(一社)": "一般社団法人",
+  "(一財)": "一般財団法人",
+  "(公社)": "公益社団法人",
+  "(公財)": "公益財団法人",
+  "(医)": "医療法人",
+  "(特非)": "特定非営利活動法人",
+  "(独)": "独立行政法人",
+};
+const LEGAL_ENTITY_ABBREVIATION = new RegExp(
+  Object.keys(LEGAL_ENTITY_ABBREVIATIONS)
+    .map((abbreviation) => abbreviation.replace(/[()]/g, "\\$&"))
+    .join("|"),
+  "g",
+);
+
+/**
+ * 支払先の名称を照合用に正規化する。全角半角・英字の大小・空白・法人格の略記の表記ゆれを吸収する。
+ * 法人格の位置（前株・後株）や法人格の有無は吸収しない（別の相手でありうるため）。
+ */
+export function normalizePayeeName(name: string): string {
+  return name
+    .normalize("NFKC")
+    .replace(/\s/g, "")
+    .replace(LEGAL_ENTITY_ABBREVIATION, (abbreviation) => LEGAL_ENTITY_ABBREVIATIONS[abbreviation])
+    .toLowerCase();
+}
+
 /** 住所の先頭に書かれた郵便番号（〒123-4567 など）。発行元の住所から支払先の郵便番号を切り出す */
 const LEADING_POSTAL_CODE = /^〒?\s*(\d{3}\s*[-‐‑‒–—―−ー－]?\s*\d{4})\s*/;
 
