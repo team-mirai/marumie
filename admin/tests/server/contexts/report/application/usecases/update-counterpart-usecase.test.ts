@@ -1,6 +1,9 @@
 import { UpdateCounterpartUsecase } from "@/server/contexts/report/application/usecases/update-counterpart-usecase";
 import type { ICounterpartRepository } from "@/server/contexts/report/domain/repositories/counterpart-repository.interface";
-import type { Counterpart } from "@/server/contexts/report/domain/models/counterpart";
+import {
+  type Counterpart,
+  MAX_POSTAL_CODE_LENGTH,
+} from "@/server/contexts/report/domain/models/counterpart";
 
 describe("UpdateCounterpartUsecase", () => {
   let mockRepository: jest.Mocked<ICounterpartRepository>;
@@ -78,5 +81,32 @@ describe("UpdateCounterpartUsecase", () => {
     const result = await usecase.execute("cp-1", { name: "テスト取引先" });
 
     expect(result.success).toBe(true);
+  });
+
+  it("前後の空白を除き、空の郵便番号・住所を未登録にして保存する。渡されなかった項目は今の値のまま", async () => {
+    const existing = createMockCounterpart({ id: "cp-1" });
+    mockRepository.findById.mockResolvedValue(existing);
+    mockRepository.findByNameAndAddress.mockResolvedValue(null);
+    mockRepository.update.mockResolvedValue(existing);
+
+    const usecase = new UpdateCounterpartUsecase(mockRepository);
+    await usecase.execute("cp-1", { name: "  新しい名前  ", postalCode: "   " });
+
+    expect(mockRepository.update).toHaveBeenCalledWith("cp-1", {
+      name: "新しい名前",
+      postalCode: null,
+      address: existing.address,
+    });
+  });
+
+  it("郵便番号が最大長を超えると入力エラーを返し、保存しない", async () => {
+    mockRepository.findById.mockResolvedValue(createMockCounterpart({ id: "cp-1" }));
+
+    const usecase = new UpdateCounterpartUsecase(mockRepository);
+    const result = await usecase.execute("cp-1", { postalCode: "1".repeat(MAX_POSTAL_CODE_LENGTH + 1) });
+
+    expect(result.success).toBe(false);
+    expect(result.errors).toContain(`郵便番号は${MAX_POSTAL_CODE_LENGTH}文字以内で入力してください`);
+    expect(mockRepository.update).not.toHaveBeenCalled();
   });
 });

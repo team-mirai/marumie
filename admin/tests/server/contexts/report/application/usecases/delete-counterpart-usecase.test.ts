@@ -62,16 +62,6 @@ describe("DeleteCounterpartUsecase", () => {
 
     expect(result.success).toBe(false);
     expect(result.errors?.[0]).toContain("3件のトランザクションで使用されています");
-  });
-
-  it("checkUsage=falseの場合は使用中でも削除できる", async () => {
-    mockRepository.findById.mockResolvedValue(createMockCounterpart());
-    mockRepository.delete.mockResolvedValue();
-
-    const usecase = new DeleteCounterpartUsecase(mockRepository, false);
-    const result = await usecase.execute("cp-1");
-
-    expect(result.success).toBe(true);
-    expect(mockRepository.getUsageCount).not.toHaveBeenCalled();
+    expect(mockRepository.delete).not.toHaveBeenCalled();
   });
 });

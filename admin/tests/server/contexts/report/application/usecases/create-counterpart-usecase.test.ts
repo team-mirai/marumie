@@ -1,6 +1,9 @@
 import { CreateCounterpartUsecase } from "@/server/contexts/report/application/usecases/create-counterpart-usecase";
 import type { ICounterpartRepository } from "@/server/contexts/report/domain/repositories/counterpart-repository.interface";
-import type { Counterpart } from "@/server/contexts/report/domain/models/counterpart";
+import {
+  type Counterpart,
+  MAX_POSTAL_CODE_LENGTH,
+} from "@/server/contexts/report/domain/models/counterpart";
 
 describe("CreateCounterpartUsecase", () => {
   let mockRepository: jest.Mocked<ICounterpartRepository>;
@@ -74,5 +77,18 @@ describe("CreateCounterpartUsecase", () => {
       postalCode: "123-4567",
       address: "東京都",
     });
+  });
+
+  it("郵便番号が最大長を超えると入力エラーを返し、保存しない", async () => {
+    const usecase = new CreateCounterpartUsecase(mockRepository);
+    const result = await usecase.execute({
+      name: "テスト取引先",
+      postalCode: "1".repeat(MAX_POSTAL_CODE_LENGTH + 1),
+      address: null,
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.errors).toContain(`郵便番号は${MAX_POSTAL_CODE_LENGTH}文字以内で入力してください`);
+    expect(mockRepository.create).not.toHaveBeenCalled();
   });
 });

@@ -8,6 +8,7 @@ import {
   type CounterpartSearchResult,
 } from "@/client/components/counterparts/AddressInput";
 import {
+  CounterpartInput,
   MAX_NAME_LENGTH,
   MAX_POSTAL_CODE_LENGTH,
   MAX_ADDRESS_LENGTH,
@@ -61,11 +62,7 @@ export function CounterpartFormContent({
     try {
       setIsSubmitting(true);
       setError(null);
-      await onSubmit({
-        name: name.trim(),
-        postalCode: postalCode.trim() || null,
-        address: address.trim() || null,
-      });
+      await onSubmit(CounterpartInput.normalize({ name, postalCode, address }));
     } catch (err) {
       setError(err instanceof Error ? err.message : "エラーが発生しました");
     } finally {
