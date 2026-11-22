@@ -9,6 +9,7 @@ import { PageHeader } from "@/client/components/layout/PageHeader";
 import { Button, Card, CardContent } from "@/client/components/ui";
 import { BookForm } from "@/client/components/books/BookForm";
 import { LegalCategoryOverrideSwitch } from "@/client/components/books/LegalCategoryOverrideSwitch";
+import { AdminTargetKey } from "@/server/contexts/shared/domain/models/admin-target";
 import { UserRoleModel } from "@/server/contexts/auth/domain/models/user-role";
 import { WriteFieldset } from "@/client/components/research-fund/ResearchFundWriteAccess";
 import { loadPolitician } from "@/server/contexts/shared/presentation/loaders/load-politicians";
@@ -40,12 +41,14 @@ export default async function BooksPage({ params }: { params: Promise<{ id: stri
         {books.map((book) => (
           <Card
             key={book.id}
-            className={cn(currentTarget?.key === `book:${book.id}` && "border-ring bg-accent")}
+            className={cn(
+              currentTarget?.key === AdminTargetKey.book(book.id) && "border-ring bg-accent",
+            )}
           >
             <CardContent className="space-y-4">
               <div className="flex items-center gap-3">
                 <h3 className="font-latin text-xl font-bold">{book.financialYear}年度</h3>
-                {currentTarget?.key === `book:${book.id}` && (
+                {currentTarget?.key === AdminTargetKey.book(book.id) && (
                   <span className="text-xs font-bold text-primary-active">現在の対象</span>
                 )}
                 {book.publishedThrough && (

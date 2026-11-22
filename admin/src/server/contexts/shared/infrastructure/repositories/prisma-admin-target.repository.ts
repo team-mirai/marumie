@@ -1,6 +1,10 @@
 import "server-only";
 import type { PrismaClient } from "@prisma/client";
-import type { AdminTarget } from "@/server/contexts/shared/domain/models/admin-target";
+import {
+  type AdminTarget,
+  AdminTargetKey,
+  selectableOrganizationYears,
+} from "@/server/contexts/shared/domain/models/admin-target";
 import type { IAdminTargetRepository } from "@/server/contexts/shared/domain/repositories/admin-target-repository.interface";
 
 export class PrismaAdminTargetRepository implements IAdminTargetRepository {
@@ -30,27 +34,22 @@ export class PrismaAdminTargetRepository implements IAdminTargetRepository {
     ]);
     return [
       ...organizations.flatMap((org): AdminTarget[] => {
-        // データのない団体でも当年・前年を選べ、既存データの年度も失わない。
-        const years = new Set([
-          currentYear,
-          currentYear - 1,
+        const years = selectableOrganizationYears(currentYear, [
           ...org.transactions.map((t) => t.financialYear),
           ...org.reportProfiles.map((p) => p.financialYear),
         ]);
-        return [...years]
-          .sort((a, b) => b - a)
-          .map((year) => ({
-            kind: "political-organization",
-            key: `org:${org.id}:${year}`,
-            organizationId: String(org.id),
-            name: org.displayName,
-            year,
-          }));
+        return years.map((year) => ({
+          kind: "political-organization",
+          key: AdminTargetKey.organization(org.id, year),
+          organizationId: String(org.id),
+          name: org.displayName,
+          year,
+        }));
       }),
       ...books.map(
         (book): AdminTarget => ({
           kind: "research-fund",
-          key: `book:${book.id}`,
+          key: AdminTargetKey.book(book.id),
           bookId: String(book.id),
           politicianId: String(book.politicianId),
           name: book.politician.name,
