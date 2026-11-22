@@ -38,14 +38,14 @@ describe("GET /o/[slug]/[year]/og-image", () => {
   });
 
   it("政党ページは、ロゴ付きの見出しと「〜の収支」で、その団体・その年の画像を返す", async () => {
-    loadMock.mockResolvedValue({ displayName: "チームみらい", friendly, summary, photo: null });
+    loadMock.mockResolvedValue({ displayName: "チームみらい", kind: "party", friendly, summary, photo: null });
 
     const response = await get("team-mirai", "2025");
 
     expect(response.status).toBe(200);
     expect(response.headers.get("Content-Type")).toBe("image/png");
     expect(await bytes(response)).toEqual(Buffer.from(generated));
-    expect(loadMock).toHaveBeenCalledWith("team-mirai", 2025, { withPhoto: false });
+    expect(loadMock).toHaveBeenCalledWith("team-mirai", 2025);
     expect(renderMock).toHaveBeenCalledWith(
       expect.objectContaining({
         key: "o/team-mirai/2025",
@@ -60,7 +60,7 @@ describe("GET /o/[slug]/[year]/og-image", () => {
 
   it("政治団体ページは、代表者の顔写真と団体名の見出しにする", async () => {
     const jpeg = new Uint8Array([0xff, 0xd8, 0xff, 0xe0]);
-    loadMock.mockResolvedValue({ displayName: "安野貴博の政治団体", friendly, summary, photo: jpeg });
+    loadMock.mockResolvedValue({ displayName: "安野貴博の政治団体", kind: "group", friendly, summary, photo: jpeg });
 
     await get("anno", "2026");
 
@@ -81,6 +81,7 @@ describe("GET /o/[slug]/[year]/og-image", () => {
       .toBuffer();
     loadMock.mockResolvedValue({
       displayName: "安野貴博の政治団体",
+      kind: "group",
       friendly,
       summary,
       photo: new Uint8Array(webp),
@@ -99,6 +100,7 @@ describe("GET /o/[slug]/[year]/og-image", () => {
     jest.spyOn(console, "error").mockImplementation(() => {});
     loadMock.mockResolvedValue({
       displayName: "安野貴博の政治団体",
+      kind: "group",
       friendly,
       summary,
       photo: new TextEncoder().encode("RIFF....WEBPbroken"),
@@ -110,7 +112,7 @@ describe("GET /o/[slug]/[year]/og-image", () => {
   });
 
   it("写真が無ければ人型にする", async () => {
-    loadMock.mockResolvedValue({ displayName: "安野貴博の政治団体", friendly, summary, photo: null });
+    loadMock.mockResolvedValue({ displayName: "安野貴博の政治団体", kind: "group", friendly, summary, photo: null });
 
     await get("anno", "2026");
 
@@ -136,7 +138,7 @@ describe("GET /o/[slug]/[year]/og-image", () => {
   });
 
   it("図に描くものが無いときもトップの画像を返す", async () => {
-    loadMock.mockResolvedValue({ displayName: "チームみらい", friendly, summary, photo: null });
+    loadMock.mockResolvedValue({ displayName: "チームみらい", kind: "party", friendly, summary, photo: null });
     renderMock.mockResolvedValue(null);
 
     expect(await bytes(await get("team-mirai", "2026"))).toEqual(topImage);
@@ -144,7 +146,7 @@ describe("GET /o/[slug]/[year]/og-image", () => {
 
   it("生成に失敗しても、エラーではなくトップの画像を返す", async () => {
     jest.spyOn(console, "error").mockImplementation(() => {});
-    loadMock.mockResolvedValue({ displayName: "チームみらい", friendly, summary, photo: null });
+    loadMock.mockResolvedValue({ displayName: "チームみらい", kind: "party", friendly, summary, photo: null });
     renderMock.mockRejectedValue(new Error("fonts unavailable"));
 
     const response = await get("team-mirai", "2026");

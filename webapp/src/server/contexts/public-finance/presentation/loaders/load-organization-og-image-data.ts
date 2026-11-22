@@ -1,5 +1,6 @@
 import "server-only";
 
+import type { OrganizationKind } from "@/server/contexts/public-finance/domain/models/organization-kind";
 import { POLITICIAN_PHOTO_MAX_BYTES } from "@/shared/models/politician-photo";
 import type { FinancialSummary } from "@/types/financial-summary";
 import type { SankeyData } from "@/types/sankey";
@@ -9,11 +10,13 @@ import { loadTopPageData } from "@/server/contexts/public-finance/presentation/l
 
 interface OrganizationOgImageData {
   displayName: string;
+  /** 政党か、それ以外の政治団体か（トップページ・メニュー・ページと同じ基準） */
+  kind: OrganizationKind;
   /** サイトの「詳細の区分」の図のデータ */
   friendly: SankeyData;
   /** サイトの見出しと同じ収入総額・支出総額・現金残高 */
   summary: FinancialSummary;
-  /** 代表者の顔写真の画像。未登録・取得できないときは null */
+  /** 代表者の顔写真の画像。政党（見出しはロゴ）・未登録・取得できないときは null */
   photo: Uint8Array | null;
 }
 
@@ -24,7 +27,6 @@ interface OrganizationOgImageData {
 export async function loadOrganizationOgImageData(
   slug: string,
   financialYear: number,
-  options: { withPhoto: boolean },
 ): Promise<OrganizationOgImageData | null> {
   const { organizations } = await loadOrganizations();
   const organization = organizations.find((org) => org.slug === slug);
@@ -33,10 +35,14 @@ export async function loadOrganizationOgImageData(
   const data = await loadTopPageData({ slugs: [slug], page: 1, perPage: 6, financialYear });
   if (!data?.friendly) return null;
 
+  // 政党の画像は見出しにロゴを描くので、写真は取りに行かない
   const photo =
-    options.withPhoto && organization.hasPhoto ? await fetchPhoto(slug).catch(() => null) : null;
+    organization.kind === "group" && organization.hasPhoto
+      ? await fetchPhoto(slug).catch(() => null)
+      : null;
   return {
     displayName: organization.displayName,
+    kind: organization.kind,
     friendly: data.friendly,
     summary: data.summary,
     photo,

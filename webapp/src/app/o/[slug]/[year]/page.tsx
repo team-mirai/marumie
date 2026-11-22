@@ -20,7 +20,6 @@ import { formatUpdatedAt } from "@/client/lib/format-date";
 import { getBalanceSheetAsOf } from "@/client/lib/balance-sheet-heading";
 import { buildProfileLinks } from "@/client/lib/profile-links";
 import { shareMetadata } from "@/app/site-metadata";
-import { PARTY_SLUGS } from "@/app/o/[slug]/[year]/organization-page-config";
 
 export const revalidate = 300; // 5 minutes
 
@@ -92,7 +91,9 @@ export default async function OrgPage({ params }: OrgPageProps) {
   const updatedAt = formatUpdatedAt(data?.transactionData?.lastUpdatedAt ?? null);
   const eyebrow = `${organizationName}・${financialYear}年`;
   const years = PublishedFiscalYears.all.map((y) => ({ year: y, href: `/o/${slug}/${y}` }));
-  const isParty = PARTY_SLUGS.includes(slug);
+  // 政党ページにするかは、トップページ・メニューと同じく政治団体区分から決めた種別で決める。
+  // ほかは政治団体ページ（代表者の写真・SNS の見出し）にする
+  const isParty = currentOrganization?.kind === "party";
   const pageTitle = `${organizationName}の収支`;
   const breadcrumbLabel = `${pageTitle}・${financialYear}年`;
 
