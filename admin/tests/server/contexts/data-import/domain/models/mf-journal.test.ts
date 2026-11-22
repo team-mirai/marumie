@@ -174,4 +174,81 @@ describe("MfJournal", () => {
       ]);
     });
   });
+
+  describe("fromReturnedPreview", () => {
+    const original = MfJournal.toPreviewTransaction({
+      politicalOrganizationId: "1",
+      transactionNo: "1",
+      transactionDate: new Date("2025/06/06"),
+      rawTransactionDate: "2025/06/06",
+      debit: { account: "普通預金", subAccount: "テスト銀行", amount: 1000, rawAmount: "1000" },
+      credit: { account: "個人からの寄附", subAccount: undefined, amount: 1000, rawAmount: "1000" },
+      description: "振込",
+      label: "振込",
+      friendlyCategory: "寄附",
+    });
+
+    it("書き換えられていない行は、プレビューと同じ取引に組み立て直す", () => {
+      expect(MfJournal.fromReturnedPreview(original, "1")).toEqual(original);
+    });
+
+    it("送られてきた取引種別・カテゴリ・ハッシュ・団体は使わず、科目と内容から計算し直す", () => {
+      const result = MfJournal.fromReturnedPreview(
+        {
+          ...original,
+          political_organization_id: "999",
+          transaction_type: "expense",
+          category_key: "office-expenses",
+          hash: "tampered-hash",
+        },
+        "1",
+      );
+
+      expect(result.political_organization_id).toBe("1");
+      expect(result.transaction_type).toBe("income");
+      expect(result.category_key).toBe("individual-donations");
+      expect(result.hash).toBe(original.hash);
+    });
+
+    it("無効と判定された行は、状態を書き換えられても無効に戻す", () => {
+      const invalid = MfJournal.toPreviewTransaction({
+        politicalOrganizationId: "1",
+        transactionNo: "2",
+        transactionDate: new Date("2025/06/06"),
+        rawTransactionDate: "2025/06/06",
+        debit: { account: "事務所費", subAccount: undefined, amount: 1000, rawAmount: "1000" },
+        credit: { account: "個人からの寄附", subAccount: undefined, amount: 1000, rawAmount: "1000" },
+        description: undefined,
+        label: undefined,
+        friendlyCategory: "寄附",
+      });
+
+      const result = MfJournal.fromReturnedPreview(
+        { ...invalid, status: "insert", errors: [], transaction_type: "expense" },
+        "1",
+      );
+
+      expect(result.status).toBe("invalid");
+      expect(result.transaction_type).toBeNull();
+    });
+
+    it("日付や金額として解釈できない値が送られてきた行は無効にする", () => {
+      const result = MfJournal.fromReturnedPreview(
+        {
+          ...original,
+          transaction_date: "not-a-date" as unknown as Date,
+          debit_amount: Number.NaN,
+          credit_amount: "1000" as unknown as number,
+        },
+        "1",
+      );
+
+      expect(result.status).toBe("invalid");
+      expect(result.errors).toEqual([
+        "Invalid date format: not-a-date",
+        '借方金額を解釈できません: "NaN"',
+        '貸方金額を解釈できません: "1000"',
+      ]);
+    });
+  });
 });

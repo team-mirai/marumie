@@ -175,4 +175,44 @@ export const MfJournal = {
 
     return transaction;
   },
+
+  /**
+   * ブラウザから送り返されたプレビューの行を、仕訳の内容だけから組み立て直す。
+   * 状態・取引種別・カテゴリ・ハッシュ・団体は送られてきた値を信じず、科目から分類し直して計算し直す。
+   * 新規・更新・変更なしの判定は、既存の取引と照合する TransactionValidator で行い直す
+   */
+  fromReturnedPreview: (
+    returned: PreviewTransaction,
+    politicalOrganizationId: string,
+  ): PreviewTransaction =>
+    MfJournal.toPreviewTransaction({
+      politicalOrganizationId,
+      transactionNo: returned.transaction_no,
+      transactionDate: toValidDate(returned.transaction_date),
+      rawTransactionDate: String(returned.transaction_date),
+      debit: {
+        account: returned.debit_account,
+        subAccount: returned.debit_sub_account,
+        amount: toValidAmount(returned.debit_amount),
+        rawAmount: String(returned.debit_amount),
+      },
+      credit: {
+        account: returned.credit_account,
+        subAccount: returned.credit_sub_account,
+        amount: toValidAmount(returned.credit_amount),
+        rawAmount: String(returned.credit_amount),
+      },
+      description: returned.description,
+      label: returned.label,
+      friendlyCategory: returned.friendly_category,
+    }),
 } as const;
+
+function toValidDate(value: unknown): Date | null {
+  const date = value instanceof Date ? value : new Date(String(value));
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function toValidAmount(value: unknown): number | null {
+  return typeof value === "number" && Number.isSafeInteger(value) ? value : null;
+}

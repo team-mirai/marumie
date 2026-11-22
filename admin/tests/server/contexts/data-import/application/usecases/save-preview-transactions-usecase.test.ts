@@ -13,6 +13,7 @@ import { MfRecordConverter } from "@/server/contexts/data-import/infrastructure/
 import type { ITransactionRepository } from "@/server/contexts/shared/domain/repositories/transaction-repository.interface";
 import type { ICacheInvalidator } from "@/server/contexts/shared/domain/services/cache-invalidator.interface";
 import type { CreateTransactionInput } from "@/server/contexts/shared/domain/transaction";
+import { PreviewTransaction } from "@/server/contexts/data-import/domain/models/preview-transaction";
 
 describe("SavePreviewTransactionsUsecase", () => {
   let usecase: SavePreviewTransactionsUsecase;
@@ -483,6 +484,114 @@ TXN-001,2025/6/1,人件費,,,,,,1000,普通預金,,,,,,1000,給与支払,,人件
       // 2026 年度の取引No 1 は新規として作る
       expect(mockRepository.createMany).toHaveBeenCalledWith([
         expect.objectContaining({ transaction_no: "1", financial_year: 2026 }),
+      ]);
+    });
+    });
+
+  describe("ブラウザから戻った行はサーバーで判定し直す", () => {
+    const header = `取引No,取引日,借方勘定科目,借方補助科目,借方部門,借方取引先,借方税区分,借方インボイス,借方金額,貸方勘定科目,貸方補助科目,貸方部門,貸方取引先,貸方税区分,貸方インボイス,貸方金額,摘要,仕訳メモ,タグ`;
+
+    beforeEach(() => {
+      mockRepository.createMany.mockImplementation(async (transactions) =>
+        transactions.map((t, index) => ({ ...t, id: `new-id-${index}`, label: t.label || '', created_at: new Date(), updated_at: new Date() })),
+      );
+      mockRepository.updateMany.mockImplementation(async (updateData) =>
+        updateData.map((d, index) => ({ ...(d.update as CreateTransactionInput), political_organization_id: "1", id: `updated-id-${index}`, label: '', created_at: new Date(), updated_at: new Date() })),
+      );
+    });
+
+    it("無効な行の状態・取引種別を書き換えて送り返しても保存しない", async () => {
+      const csvContent = `${header}
+1,2025/6/1,人件費,,,,,,1000,普通預金,,,,,,1000,給与支払,,人件費
+2,2025/6/2,事務所費,,,,,,2000,個人からの寄附,,,,,,2000,分類できない仕訳,,その他`;
+      const previewResult = await previewUsecase.execute({ csvContent, politicalOrganizationId: "1" });
+      expect(previewResult.transactions.map((t) => t.status)).toEqual(["insert", "invalid"]);
+
+      const tampered = previewResult.transactions.map((t) => ({
+        ...t,
+        status: "insert" as const,
+        transaction_type: "expense" as const,
+        errors: [],
+      }));
+      const result = await usecase.execute({ validTransactions: tampered, politicalOrganizationId: "1" });
+
+      expect(result.savedCount).toBe(1);
+      expect(mockRepository.createMany).toHaveBeenCalledWith([
+        expect.objectContaining({ transaction_no: "1" }),
+      ]);
+      expect(mockRepository.updateMany).not.toHaveBeenCalled();
+    });
+
+    it("変更のない行の状態とハッシュを書き換えて送り返しても、既存の取引を更新しない", async () => {
+      const csvContent = `${header}
+1,2025/6/1,人件費,,,,,,1000,普通預金,,,,,,1000,給与支払,,人件費`;
+      const firstPreview = await previewUsecase.execute({ csvContent, politicalOrganizationId: "1" });
+      const saved = firstPreview.transactions[0];
+      mockRepository.findByTransactionNos.mockResolvedValue([{
+        ...PreviewTransaction.toCreateInput(saved, "1"),
+        id: "existing-id",
+        label: saved.label ?? "",
+        created_at: new Date(),
+        updated_at: new Date(),
+      }]);
+      const previewResult = await previewUsecase.execute({ csvContent, politicalOrganizationId: "1" });
+      expect(previewResult.transactions[0].status).toBe("skip");
+
+      const result = await usecase.execute({
+        validTransactions: [{ ...previewResult.transactions[0], status: "update", hash: "tampered-hash" }],
+        politicalOrganizationId: "1",
+      });
+
+      expect(result.savedCount).toBe(0);
+      expect(result.skippedCount).toBe(1);
+      expect(mockRepository.updateMany).not.toHaveBeenCalled();
+      expect(mockRepository.createMany).not.toHaveBeenCalled();
+    });
+
+    it("既存の取引がある行を新規として送り返しても、重複して作らず既存の取引を更新する", async () => {
+      const csvContent = `${header}
+1,2025/6/1,人件費,,,,,,1000,普通預金,,,,,,1000,給与支払（修正後）,,人件費`;
+      const previewResult = await previewUsecase.execute({ csvContent, politicalOrganizationId: "1" });
+      mockRepository.findByTransactionNos.mockResolvedValue([{
+        ...PreviewTransaction.toCreateInput(previewResult.transactions[0], "1"),
+        description: "給与支払（修正前）",
+        hash: "old-hash",
+        id: "existing-id",
+        label: "",
+        created_at: new Date(),
+        updated_at: new Date(),
+      }]);
+
+      const result = await usecase.execute({
+        validTransactions: previewResult.transactions.map((t) => ({ ...t, status: "insert" as const })),
+        politicalOrganizationId: "1",
+      });
+
+      expect(result.savedCount).toBe(1);
+      expect(mockRepository.createMany).not.toHaveBeenCalled();
+      expect(mockRepository.updateMany).toHaveBeenCalledWith([
+        expect.objectContaining({
+          where: { politicalOrganizationId: BigInt(1), financialYear: 2025, transactionNo: "1" },
+          update: expect.objectContaining({ hash: previewResult.transactions[0].hash }),
+        }),
+      ]);
+    });
+
+    it("書き換えられた取引種別は使わず、科目から決まる取引種別で保存する", async () => {
+      const csvContent = `${header}
+1,2025/6/1,人件費,,,,,,1000,普通預金,,,,,,1000,給与支払,,人件費`;
+      const previewResult = await previewUsecase.execute({ csvContent, politicalOrganizationId: "1" });
+
+      await usecase.execute({
+        validTransactions: [{ ...previewResult.transactions[0], transaction_type: "income", hash: "tampered-hash" }],
+        politicalOrganizationId: "1",
+      });
+
+      expect(mockRepository.createMany).toHaveBeenCalledWith([
+        expect.objectContaining({
+          transaction_type: "expense",
+          hash: previewResult.transactions[0].hash,
+        }),
       ]);
     });
   });

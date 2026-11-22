@@ -2,7 +2,9 @@ import "server-only";
 
 import type { ITransactionRepository } from "@/server/contexts/shared/domain/repositories/transaction-repository.interface";
 import type { ICacheInvalidator } from "@/server/contexts/shared/domain/services/cache-invalidator.interface";
+import { MfJournal } from "@/server/contexts/data-import/domain/models/mf-journal";
 import { PreviewTransaction } from "@/server/contexts/data-import/domain/models/preview-transaction";
+import { TransactionValidator } from "@/server/contexts/data-import/domain/services/transaction-validator";
 
 export interface SavePreviewTransactionsInput {
   validTransactions: PreviewTransaction[];
@@ -22,6 +24,7 @@ export class SavePreviewTransactionsUsecase {
   constructor(
     private transactionRepository: ITransactionRepository,
     private cacheInvalidator: ICacheInvalidator,
+    private validator: TransactionValidator = new TransactionValidator(),
   ) {}
 
   async execute(input: SavePreviewTransactionsInput): Promise<SavePreviewTransactionsResult> {
@@ -45,12 +48,23 @@ export class SavePreviewTransactionsUsecase {
         return result;
       }
 
-      const saveableTransactions = input.validTransactions.filter(
-        (t) => (t.status === "insert" || t.status === "update") && t.transaction_type !== null,
+      // ブラウザから戻った行の状態・取引種別・ハッシュは信じず、仕訳の内容と既存の取引から判定し直す
+      const politicalOrganizationId = input.politicalOrganizationId;
+      const rebuiltTransactions = input.validTransactions.map((t) =>
+        MfJournal.fromReturnedPreview(t, politicalOrganizationId),
       );
+      const existingTransactions = await this.transactionRepository.findByTransactionNos(
+        rebuiltTransactions.map((t) => t.transaction_no),
+        [politicalOrganizationId],
+      );
+      const judgedTransactions = this.validator.validatePreviewTransactions(
+        rebuiltTransactions,
+        existingTransactions,
+      );
+      const saveableTransactions = judgedTransactions.filter(PreviewTransaction.isSaveable);
 
       result.processedCount = input.validTransactions.length;
-      result.skippedCount = input.validTransactions.filter((t) => t.status === "skip").length;
+      result.skippedCount = judgedTransactions.filter((t) => t.status === "skip").length;
 
       // insertとupdateに分けて処理
       const insertTransactions = saveableTransactions.filter((t) => t.status === "insert");
@@ -61,7 +75,7 @@ export class SavePreviewTransactionsUsecase {
       // bulk insert
       if (insertTransactions.length > 0) {
         const createInputs = insertTransactions.map((transaction) =>
-          PreviewTransaction.toCreateInput(transaction, input.politicalOrganizationId),
+          PreviewTransaction.toCreateInput(transaction, politicalOrganizationId),
         );
         const createdTransactions = await this.transactionRepository.createMany(createInputs);
         savedCount += createdTransactions.length;
@@ -69,14 +83,17 @@ export class SavePreviewTransactionsUsecase {
 
       // bulk update
       if (updateTransactions.length > 0) {
-        const updateData = updateTransactions.map((transaction) => ({
-          where: {
-            politicalOrganizationId: BigInt(input.politicalOrganizationId),
-            financialYear: PreviewTransaction.extractFinancialYear(transaction.transaction_date),
-            transactionNo: transaction.transaction_no,
-          },
-          update: PreviewTransaction.toUpdateInput(transaction),
-        }));
+        const updateData = updateTransactions.map((transaction) => {
+          const key = PreviewTransaction.existingTransactionKey(transaction);
+          return {
+            where: {
+              politicalOrganizationId: BigInt(key.politicalOrganizationId),
+              financialYear: key.financialYear,
+              transactionNo: key.transactionNo,
+            },
+            update: PreviewTransaction.toUpdateInput(transaction),
+          };
+        });
         const updatedTransactions = await this.transactionRepository.updateMany(updateData);
         savedCount += updatedTransactions.length;
       }
