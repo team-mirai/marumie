@@ -170,7 +170,7 @@ contexts/{コンテキスト名}/
 1 クラス 1 操作に割ると、複数の操作が共有するルールを置ける場所がドメインしか無くなる。
 
 **自動検証**: `pnpm check:usecase-shape`（`pnpm verify` および CI に含まれる）が 1. と 2. を検査する。
-3. は機械的に検査できないのでレビューで見る。
+3. はレビューで見る（usecase 以外の層も含めた業務ルールの置き場所は [4.5 ドメインモデル貧血](#45-ドメインモデル貧血) を参照）。
 解消待ちの既存違反は [scripts/check-usecase-shape.mjs](../scripts/check-usecase-shape.mjs) の `KNOWN_VIOLATIONS` に
 列挙してあり、リファクタで解消したら該当行を 1 行消す（解消済みなのに例外が残っていると検査が落ちるので消し忘れない）。
 **新しく書く usecase をこのリストに足してはいけない。**
@@ -306,6 +306,200 @@ export const Password = {
 - **責務**: 外部API呼び出し、エラーハンドリング、タイムアウト管理
 - **原則**: インターフェースを実装し、ベストエフォートで動作（失敗してもUsecaseを失敗させない）
 
+### 4.5 ドメインモデル貧血
+
+**ドメインモデル貧血**とは、業務ルールがドメインモデルの外（usecase・action・リポジトリ実装・画面）に書かれ、
+ドメインモデルが型と値の入れ物になっている状態を指す。同じルールが複数の層に別々に書かれると、
+片方だけ直されて食い違い、どれが正しいのかコードから読み取れなくなる。
+
+#### 業務ルールを書く前の手順（必須）
+
+1. **同じルールがドメインに既に無いか探す。** 該当コンテキストの `domain/models/` と `domain/services/`、
+   コンテキスト横断のものは `contexts/shared/domain/` とリポジトリ直下の `shared/` を検索する
+   （例: パスワードの規則なら `Password`、仕訳の状態なら `JournalEntry`）
+2. **あれば呼ぶ。** 同じ判定・計算・定数を書き直さない。画面からも、`server-only` を含まないドメインモデルなら直接 import して呼べる
+3. **無ければドメインに足してから呼ぶ。** usecase や画面に先に書いて「あとでドメインに移す」はしない
+
+#### 何が貧血で、何が貧血でないか
+
+業務ルールとは「この組織・この制度ではこうする」という決まりのこと。
+次のものは業務ルールではないので、ドメインの外に書いてよい（**貧血ではない**）:
+
+- 取得・not found の判定・同時更新の検出（`updatedAt` の比較）・永続化・キャッシュ無効化（usecase / action の段取り）
+- 入力の型や必須の検証（Zod の `string()` / `number()` / 空文字の拒否など、業務の決まりを含まないもの）
+- 外部形式との機械的な変換（CSV の列 → フィールド、Prisma の行 → ドメイン型、ドメイン型 → XML 要素）
+- 見た目の整形（金額のカンマ区切り、日付の表示形式、並び順の UI 上の選択）
+
+次の 7 つの形が貧血である。いずれもこのリポジトリで実例が見つかったもの。
+
+##### (1) ルールの二重化
+
+ドメインに判定・検証があるのに、同じルールを usecase・画面・リポジトリの検索条件がもう一度書いている。
+
+```typescript
+// ✗ 悪い例: Password.validate（最小 6 文字）があるのに、usecase と画面が別々に書いている
+// application/usecases/setup-password-usecase.ts
+if (!password || password.length < 6) {
+  throw new AuthError("WEAK_PASSWORD", "Password must be at least 6 characters");
+}
+// client/components/auth/SetupForm.tsx
+if (password.length < 6) setError("パスワードは6文字以上で設定してください");
+```
+
+```typescript
+// ✓ 良い例: どちらもドメインを呼ぶ。最小文字数を変えるときはドメインだけを直せばよい
+const validation = Password.validate(password);
+if (!validation.valid) throw new AuthError("WEAK_PASSWORD", validation.error);
+```
+
+仕訳の操作可否（[4.2 の例](#usecase-の形必須)）、明細に記載する金額の基準も同じ形で二重化しやすい。
+
+##### (2) 呼ばれないドメイン
+
+ドメインに検証・判定を書いたのに本番コードのどこからも呼ばれず、テストだけが通っている。
+画面だけが呼んでいてサーバーは別の実装で判定している場合も含む。テストが緑なので「ルールが守られている」ように見えるのが最も危ない。
+
+```typescript
+// ✗ 悪い例: 仕訳の貸借検証がドメインにあり、テストもあるが、仕訳を保存する usecase は呼んでいない
+export const JournalPosting = {
+  validate(lines: readonly JournalLine[]): ResearchFundResult<JournalPosting> { /* 借方と貸方の行・合計の一致 */ },
+};
+```
+
+```typescript
+// ✓ 良い例: 保存の段取りの中でドメインの検証を呼ぶ。不要になった判定は消す
+const result = JournalPosting.validate(lines);
+if (result.status === "invalid") throw new JournalReviewError(result.errors[0].message);
+```
+
+**自動検証あり**（[4.5 の自動検証](#自動検証)の `unused-domain`）。
+
+##### (3) 入れ物だけのモデル
+
+ドメインモデルが型だけで、その型のルール（未来の日付は不可、必須、正規化）が usecase と画面に散っている。
+型を定義したら、その型の値が満たすべき条件（生成・検証・正規化）を同じファイルの `const` に置く。
+
+```typescript
+// ✗ 悪い例: 型だけがドメインにあり、「未来の日付は登録できない」は
+// create-balance-snapshot-usecase.ts と BalanceSnapshotForm.tsx にそれぞれ書かれている
+export interface BalanceSnapshot { snapshot_date: Date; balance: number; /* ... */ }
+```
+
+```typescript
+// ✓ 良い例（イメージ）: 型のルールは interface + const の const 側に置き、usecase と画面はそれを呼ぶ
+export const BalanceSnapshot = {
+  validateSnapshotDate(snapshotDate: Date, today: Date): { valid: boolean; error?: string } { /* ... */ },
+};
+```
+
+##### (4) 却下理由の持ち直し
+
+ドメインが返した却下理由を、action がエラーコードごとに別の文言へ書き直す。
+対応表に無いコードは汎用エラーになり、ドメインが用意した理由が画面に出ない。文言を変えたいならドメインの文言を直す。
+
+```typescript
+// ✗ 悪い例: presentation/actions/manage-book.ts
+switch (error.code) {
+  case "RF_INVALID_BOOK_YEAR":
+    return "年度は1900〜9999の整数で指定してください"; // ドメインの message と別の文言
+  case "RF_INVALID_DATE":
+    return "時点の日付を正しく入力してください";
+  default:
+    return fallback; // 新しいコードを足すと理由が消える
+}
+```
+
+```typescript
+// ✓ 良い例: ドメインの却下理由（message）をそのまま返す。想定外の例外だけ汎用文言にする
+if (error instanceof BookError) return error.message;
+return fallback;
+```
+
+**自動検証あり**（`remapped-rejection`）。
+
+##### (5) リポジトリ実装に埋まった業務ルール
+
+「どの状態なら更新してよいか」「どの行を金額として数えるか」「既定値は何か」が、
+Prisma の検索条件や保存データの組み立てにだけある。リポジトリ実装は「渡された条件で読み書きする」だけにし、
+条件そのもの（どの状態か・どの行か・既定値）はドメインが決めて引数か定数で渡す。
+
+```typescript
+// ✗ 悪い例: 「公開済みの仕訳だけを集計に数える」がリポジトリの where にしか無い
+where: { bookId: BigInt(bookId), status: "published" },
+```
+
+```typescript
+// ✓ 良い例（イメージ）: 数える状態はドメインが定義し、リポジトリはそれを使って絞り込む
+// domain/models/journal-entry.ts
+export const JournalEntry = { COUNTED_STATUSES: ["published"] as const satisfies readonly JournalEntryStatus[] };
+// infrastructure/repositories/prisma-journal-review.repository.ts
+where: { bookId: BigInt(bookId), status: { in: [...JournalEntry.COUNTED_STATUSES] } },
+```
+
+Prisma の行 → ドメイン型の機械的な変換（列名の対応、`BigInt` ↔ `string`）は貧血ではない。
+
+##### (6) 画面に埋まった業務ルール
+
+見出しの金額の定義（何を足して何を引くか）、公開している年度、操作ボタンを出してよい条件を、画面が自前で計算・保持している。
+画面はドメイン（または loader が返した判定結果）を表示するだけにする。
+
+```tsx
+// ✗ 悪い例: 「どの状態の仕訳にこの操作ができるか」を画面が状態の文字列で独自に判定している
+// （client/components/research-fund/JournalEditor.tsx）
+{entry.status === "draft" && <Button type="submit">…</Button>}
+```
+
+```tsx
+// ✓ 良い例（イメージ）: 可否はドメインに問い合わせる。loader が判定結果を渡してもよい
+// （クライアントから参照するドメインモデルには server-only を含めない）
+{JournalEntry.canTransition(entry, "confirmed") && <Button type="submit">…</Button>}
+```
+
+##### (7) 業務上の定数の散在
+
+受け付ける書類形式、上限件数、金額基準などが、複数の層に別々のリテラルで書かれている。
+業務上の意味を持つ定数はドメインに 1 か所だけ置き、他の層はそれを参照する（(1) の `Password.MIN_LENGTH` の例を参照）。
+HTTP ステータス・画像サイズ・タイムアウトなど技術的な値は対象外。
+
+#### 層ごとの自己点検
+
+| 層 | 書いてはいけないもの（ドメインを呼ぶ） | 書いてよいもの |
+|---|---|---|
+| **usecase** | 状態による操作の可否、値の業務上の検証（範囲・期限・桁）、金額の計算・集計の定義、却下理由の文言 | 取得・not found・同時更新の検出・ドメインの呼び出し・永続化・キャッシュ無効化の段取り |
+| **action** | エラーコードごとの文言の書き直し、業務上の検証（最小文字数・上限件数など） | 認可、入力の型・必須の検証、usecase の呼び出し、`revalidatePath` / `revalidateTag`、想定外の例外の汎用文言化 |
+| **リポジトリ実装** | どの状態を対象にするか・どの行を数えるか・既定値を自前で決めること | ドメインが決めた条件での読み書き、Prisma 型 ↔ ドメイン型の機械的な変換、一意制約違反などの技術的なエラーの翻訳 |
+| **画面（client / app）** | 金額の定義、公開範囲・年度の判定、ボタンを出してよい条件、業務上の定数のリテラル | 表示の整形、フォームの状態管理、ドメインや loader が返した判定結果の表示 |
+
+#### 自動検証
+
+`pnpm check:domain-anemia`（`pnpm verify` および CI に含まれる）が、上の形のうち誤検知がほぼ無い 2 つを検査する。
+
+| 検査 | 対象 | 落ちる条件 |
+|---|---|---|
+| `unused-domain` | (2) 呼ばれないドメイン | ドメイン層が export する関数・`interface + const` のメソッド・クラスの public メソッドが、本番コード（`src/` と直下の `shared/`）から参照されていない（テストからの参照は数えない） |
+| `remapped-rejection` | (4) 却下理由の持ち直し | presentation / client / app が、ドメインで定義したエラーコードを `switch` や対応表で受けて自前の文言を返している |
+
+参照は TypeScript の型チェッカーで解決する（名前の文字列一致ではない）ので、同名のメソッドが別のモデルにあっても取り違えない。
+
+どちらの検査も、該当する形をすべて捕まえるわけではない。次の形は検査を通ってしまうので、レビューで見る:
+
+- `unused-domain` は画面（client / app）からの参照も本番参照として数える。(2) のうち「画面だけが呼んでいてサーバーは別の実装で判定している」場合は落ちないので、
+  サーバー側（usecase / action）がそのドメインを呼んでいるかを確かめる
+- `remapped-rejection` が見るのは `case` 節の直下にある `return "文言"`（テンプレート文字列を含む）と、値が文字列の対応表だけ。
+  `case "RF_X": { return "…"; }` のようにブロックで囲んだ分岐や、変数・関数を経由して文言を返す書き直しは落ちない
+
+解消待ちの既存違反は [scripts/check-domain-anemia.mjs](../scripts/check-domain-anemia.mjs) の `KNOWN_VIOLATIONS` に列挙してあり、
+リファクタで解消したら該当行を 1 行消す（解消済みなのに例外が残っていると検査が落ちるので消し忘れない）。
+**新しく書くコードをこのリストに足してはいけない。**
+
+残りの (1) (3) (5) (6) (7) は機械的に検査できないので、レビュー（CodeRabbit と `/review`）で見る。
+検査を試して見送ったもの:
+
+- **(7) 業務上の定数の散在**: 複数の層に現れる数値リテラル・MIME 文字列を数えたところ、数値は 19 種のうち大半が
+  画像の寸法・HTTP ステータス・JPEG のマーカーなど技術的な値で、MIME 文字列（`application/pdf` など）も
+  ラスタライズや LLM 呼び出しの技術的な用途と区別できず、誤検知が多いので見送った
+- **usecase 内の日本語メッセージを一律に禁じる**: not found や同時更新の文言も引っかかり、誤検知が多いので見送った
+
 ---
 
 ## 5. 実装判断フローチャート
@@ -335,7 +529,12 @@ export const Password = {
 | Counterpart必須判定ルール | Domain Service | 政治資金報告書仕様の集約 |
 | 寄付データの組み立て | Application Service | 複数リポジトリからデータ取得・組み立て |
 | Counterpart推薦アルゴリズム | Application Service | 複雑なスコアリング・Strategyパターン |
-| CSV → PreviewTransaction変換 | Infrastructure | 外部形式との連携 |
+| CSV の列 → PreviewTransaction のフィールドへの対応付け | Infrastructure | 外部形式との機械的な変換（列名・日付文字列・数値の解釈） |
+| 取引の会計上の分類・種別（収入/支出、費目、報告書の区分）の導出 | Domain Model / Domain Service | 会計・報告書の業務ルール。CSV の読み込み処理の中に書かない |
+| 「この状態でこの操作をしてよいか」の判定と却下理由 | Domain Model | 業務ルール。usecase・action・画面に書き直さない（[4.5](#45-ドメインモデル貧血)） |
+| 集計の対象にする状態・行の定義（例: 公開済みの仕訳だけを数える） | Domain Model | 業務ルール。リポジトリ実装は渡された条件で絞り込むだけ |
+| 見出しの金額の定義（何を足して何を引くか） | Domain Model / Domain Service | 業務ルール。画面は表示するだけ |
+| 金額のカンマ区切り・日付の表示形式 | Client | 見た目の整形（業務ルールではない） |
 | トランザクション一括保存 | Usecase | オーケストレーション |
 
 ---
@@ -439,6 +638,15 @@ Domain層でエラーを扱う場合は、拡張エラー型とエラーコー�
 - [ ] ビジネスルールはドメインモデルに実装されている
 - [ ] 単一エンティティのロジックはDomain Modelに、複数エンティティのロジックはDomain Serviceに分けられている
 
+### ドメインモデル貧血（[4.5](#45-ドメインモデル貧血)）
+- [ ] 業務ルールを書く前に、同じルールがドメインに既に無いか探した。あれば呼び、無ければドメインに足してから呼んでいる
+- [ ] usecase に、状態による可否・業務上の検証・金額の計算の定義・却下理由の文言を書いていない
+- [ ] action が、ドメインの却下理由をエラーコードごとに別の文言へ書き直していない
+- [ ] リポジトリ実装が、どの状態を対象にするか・どの行を数えるか・既定値を自前で決めていない
+- [ ] 画面が、金額の定義・公開範囲・ボタンを出してよい条件・業務上の定数を自前で持っていない
+- [ ] 新しく足したドメインの判定・検証は、テストだけでなく本番コードから呼ばれている
+- [ ] `pnpm check:domain-anemia` が通り、`KNOWN_VIOLATIONS` に新しい行を足していない
+
 ### キャッシング
 - [ ] admin の loaders で `unstable_cache` を使っていない（使う場合は `tags` を付与し、更新アクションの `revalidateTag` と整合している）
 - [ ] actionsで適切に`revalidateTag`/`revalidatePath`を呼び出している
@@ -477,6 +685,9 @@ pnpm depcruise
 | no-infrastructure-to-application | Infrastructure → Application 禁止 |
 | no-infrastructure-to-presentation | Infrastructure → Presentation 禁止 |
 | Bounded Context間 | data-import ↔ report, auth ↔ 他コンテキスト 禁止 |
+
+依存ルール以外に、`pnpm check:usecase-shape`（[4.2 Usecase の形](#usecase-の形必須)）と
+`pnpm check:domain-anemia`（[4.5 ドメインモデル貧血](#45-ドメインモデル貧血)）も `pnpm verify` と CI で実行される。
 
 ### CI統合
 
