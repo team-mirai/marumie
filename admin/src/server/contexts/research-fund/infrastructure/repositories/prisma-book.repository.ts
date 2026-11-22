@@ -10,8 +10,8 @@ import {
   legalCategoryOverrideSelect,
   loadLegalCategoryCatalog,
   overrideOf,
-  withOverride,
 } from "@/server/contexts/research-fund/infrastructure/repositories/legal-category-catalog";
+import { researchFundRowsOf } from "@/shared/research-fund/journal-line";
 
 export class PrismaBookRepository implements IBookRepository {
   constructor(private prisma: PrismaClient) {}
@@ -38,22 +38,17 @@ export class PrismaBookRepository implements IBookRepository {
       for (const entry of book.journalEntries) {
         // 累計は未公開分も含む確認済み仕訳。下書きは確認待ち件数にのみ含める。
         if (entry.status === "draft") continue;
-        const override = overrideOf(entry, catalog);
-        for (const line of entry.lines) {
-          const expense = line.side === "debit" && line.account.type === "expense";
-          const grant = line.side === "credit" && line.accountKey === "grant-income";
-          if (!expense && !grant) continue;
+        const lines = researchFundRowsOf({
+          date: entry.entryDate.toISOString().slice(0, 10),
+          lines: entry.lines,
+          legalCategoryOverride: overrideOf(entry, catalog),
+        });
+        for (const { line, row } of lines) {
           accounts[line.accountKey] = {
             label: line.account.label,
             legalLabel: line.account.legalLabel ?? "",
           };
-          rows.push({
-            date: entry.entryDate.toISOString().slice(0, 10),
-            accountKey: line.accountKey,
-            amount: line.amount.toNumber(),
-            type: expense ? "expense" : "grant",
-            ...(expense ? withOverride(override) : {}),
-          });
+          rows.push(row);
         }
       }
       return {

@@ -14,9 +14,10 @@ import {
   RF_ERROR_CODES,
   type ResearchFundResult,
 } from "@/server/contexts/research-fund/domain/types/validation";
+import { BANK_ACCOUNT_KEY } from "@/shared/research-fund/journal-line";
 
 /** 支出の決済科目。調研費の支出は調研費口座からの払い出しなので普通預金に固定する */
-const ASSET_ACCOUNT_KEY = "bank";
+const ASSET_ACCOUNT_KEY = BANK_ACCOUNT_KEY;
 
 interface ExpenseJournalWriteInput {
   /** 画面から送られた入力（未検証） */

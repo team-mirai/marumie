@@ -18,6 +18,7 @@ import {
   overrideOf,
 } from "@/server/contexts/research-fund/infrastructure/repositories/legal-category-catalog";
 import type { LegalCategoryCatalog } from "@/shared/research-fund/legal-category";
+import { EXPENSE_LINE, GRANT_LINE, twoLineAmountLineOf } from "@/shared/research-fund/journal-line";
 
 const include = {
   lines: { include: { account: true } },
@@ -35,34 +36,20 @@ const include = {
 type Row = Prisma.ResearchFundJournalEntryGetPayload<{ include: typeof include }>;
 const expenseWhere = {
   source: { in: ["manual", "scan"] },
-  lines: { some: { side: "debit", account: { type: "expense" } } },
+  lines: { some: EXPENSE_LINE },
 } satisfies Prisma.ResearchFundJournalEntryWhereInput;
 // 支給は支給の登録画面で作るが、確認済の収入として一覧にも並べ、支給日の修正と取り下げはこの画面で行う。
 const grantWhere = {
   source: "grant",
-  lines: { some: { side: "credit", accountKey: "grant-income" } },
+  lines: { some: GRANT_LINE },
 } satisfies Prisma.ResearchFundJournalEntryWhereInput;
 const listWhere = {
   OR: [expenseWhere, grantWhere],
 } satisfies Prisma.ResearchFundJournalEntryWhereInput;
 function model(row: Row, catalog: LegalCategoryCatalog): ReviewEntry | null {
-  const grant = row.source === "grant";
-  const amountLine = grant
-    ? row.lines.find((l) => l.side === "credit" && l.accountKey === "grant-income")
-    : row.lines.find((l) => l.side === "debit" && l.account.type === "expense");
-  const assetLine = grant
-    ? row.lines.find((l) => l.side === "debit" && l.accountKey === "bank")
-    : row.lines.find(
-        (l) => l.side === "credit" && l.accountKey === "bank" && l.account.type === "asset",
-      );
   // このフォームが損失なく再生成できる「費用1行／普通預金1行」（支給は貸借が逆）だけを扱う。
-  if (
-    row.lines.length !== 2 ||
-    !amountLine ||
-    !assetLine ||
-    !amountLine.amount.equals(assetLine.amount)
-  )
-    return null;
+  const amountLine = twoLineAmountLineOf(row.lines, row.source === "grant" ? "grant" : "expense");
+  if (!amountLine) return null;
   // 書類の再スキャンで過去の仕訳に別のモデル・版を表示しない。
   const job = row.document?.scanJobs.find((j) => j.createdAt <= row.createdAt);
   return {

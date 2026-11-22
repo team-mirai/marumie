@@ -5,6 +5,7 @@ import {
   type GrantWrite,
 } from "@/server/contexts/research-fund/domain/models/grant-registration";
 import type { GrantRepository } from "@/server/contexts/research-fund/domain/repositories/grant-repository.interface";
+import { GRANT_LINE, grantAmountOf } from "@/shared/research-fund/journal-line";
 
 function monthRange(month: string) {
   const start = new Date(`${month}-01T00:00:00.000Z`);
@@ -34,12 +35,12 @@ export class PrismaGrantRepository implements GrantRepository {
       where: { bookId: BigInt(bookId), source: "grant" },
       select: {
         entryDate: true,
-        lines: { where: { side: "credit", accountKey: "grant-income" }, select: { amount: true } },
+        lines: { where: GRANT_LINE, select: { side: true, accountKey: true, amount: true } },
       },
     });
     return rows.map((row) => ({
       month: row.entryDate.toISOString().slice(0, 7),
-      amount: row.lines.reduce((sum, line) => sum + Number(line.amount), 0),
+      amount: grantAmountOf(row.lines),
     }));
   }
 

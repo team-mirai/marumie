@@ -20,11 +20,11 @@ function setup(duplicates = 0) {
       findMany: jest.fn().mockResolvedValue([
         {
           entryDate: new Date("2026-02-08T00:00:00.000Z"),
-          lines: [{ amount: new Prisma.Decimal(750_000) }],
+          lines: [{ side: "credit", accountKey: "grant-income", amount: new Prisma.Decimal(750_000) }],
         },
         {
           entryDate: new Date("2026-03-01T00:00:00.000Z"),
-          lines: [{ amount: new Prisma.Decimal(980_000) }],
+          lines: [{ side: "credit", accountKey: "grant-income", amount: new Prisma.Decimal(980_000) }],
         },
       ]),
     },
@@ -67,7 +67,10 @@ test("登録済みの支給を年月と、調査研究費収入に計上した�
     where: { bookId: BigInt(1), source: "grant" },
     select: {
       entryDate: true,
-      lines: { where: { side: "credit", accountKey: "grant-income" }, select: { amount: true } },
+      lines: {
+        where: { side: "credit", accountKey: "grant-income" },
+        select: { side: true, accountKey: true, amount: true },
+      },
     },
   });
 });

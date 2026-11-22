@@ -7,6 +7,7 @@ import {
   type LinkableEntry,
 } from "@/server/contexts/research-fund/domain/models/expenditure-group";
 import type { ExpenditureGroupRepository } from "@/server/contexts/research-fund/domain/repositories/expenditure-group-repository.interface";
+import { EXPENSE_LINE, expenseAmountOf, expenseLinesOf } from "@/shared/research-fund/journal-line";
 
 const include = {
   outcomes: { orderBy: { displayOrder: "asc" as const } },
@@ -17,7 +18,7 @@ type Row = Prisma.ResearchFundExpenditureGroupGetPayload<{ include: typeof inclu
 // 成果カードの対象は費用仕訳のみ。支給（収入）は含めない。
 const expenseWhere = {
   source: { in: ["manual", "scan"] },
-  lines: { some: { side: "debit", account: { type: "expense" } } },
+  lines: { some: EXPENSE_LINE },
 } satisfies Prisma.ResearchFundJournalEntryWhereInput;
 
 function model(row: Row): ExpenditureGroupRecord {
@@ -56,20 +57,19 @@ interface EntryRow {
   entryDate: Date;
   description: string;
   status: string;
-  lines: readonly { amount: Prisma.Decimal; account: { type: string } }[];
+  lines: readonly { side: string; amount: Prisma.Decimal; account: { type: string } }[];
   groupItems: readonly { groupId: bigint }[];
 }
 
 /** 費用の借方を持つ仕訳を紐づけ候補にする。費用の借方が無ければ null */
 function linkableEntry(row: EntryRow): LinkableEntry | null {
-  // 1 仕訳に費用の借方が複数あることがある（取得済みの明細は借方だけ）。全部足す。
-  const expenseLines = row.lines.filter((line) => line.account.type === "expense");
-  if (expenseLines.length === 0) return null;
+  // 1 仕訳に費用の借方が複数あることがある。全部足す。
+  if (expenseLinesOf(row.lines).length === 0) return null;
   return {
     id: String(row.id),
     entryDate: row.entryDate.toISOString().slice(0, 10),
     description: row.description,
-    amount: expenseLines.reduce((total, line) => total + line.amount.toNumber(), 0),
+    amount: expenseAmountOf(row.lines),
     groupId: row.groupItems[0] ? String(row.groupItems[0].groupId) : null,
     published: row.status === "published",
   };
@@ -115,7 +115,7 @@ export class PrismaExpenditureGroupRepository implements ExpenditureGroupReposit
     const rows = await this.prisma.researchFundJournalEntry.findMany({
       where: { bookId: BigInt(bookId), ...expenseWhere },
       include: {
-        lines: { where: { side: "debit" }, include: { account: true } },
+        lines: { include: { account: true } },
         groupItems: { select: { groupId: true } },
       },
       orderBy: [{ entryDate: "asc" }, { id: "asc" }],
@@ -130,7 +130,7 @@ export class PrismaExpenditureGroupRepository implements ExpenditureGroupReposit
     const rows = await this.prisma.researchFundJournalEntry.findMany({
       where: { bookId: BigInt(bookId), ...expenseWhere },
       include: {
-        lines: { where: { side: "debit" }, include: { account: true } },
+        lines: { include: { account: true } },
         groupItems: { select: { groupId: true, group: { select: { title: true } } } },
         payee: { select: { name: true } },
       },
@@ -139,9 +139,7 @@ export class PrismaExpenditureGroupRepository implements ExpenditureGroupReposit
     return rows.flatMap((row) => {
       const linkable = linkableEntry(row);
       if (!linkable) return [];
-      const accountLabels = row.lines
-        .filter((line) => line.account.type === "expense")
-        .map((line) => line.account.label);
+      const accountLabels = expenseLinesOf(row.lines).map((line) => line.account.label);
       return [
         {
           ...linkable,

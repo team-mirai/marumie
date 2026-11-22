@@ -38,8 +38,3 @@ export function overrideOf(
 ): ResearchFundLegalCategory | null {
   return legalCategoryOverrideOf(row.legalCategoryOverride?.legalCategoryKey, catalog);
 }
-
-/** 上書きがあるときだけ集計行に添える。上書きの無い帳簿の集計行は導入前と同じ形のままにする */
-export function withOverride(override: ResearchFundLegalCategory | null) {
-  return override ? { legalCategoryOverride: override } : {};
-}

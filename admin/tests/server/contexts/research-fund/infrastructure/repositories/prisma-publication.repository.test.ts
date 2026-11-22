@@ -216,3 +216,40 @@ describe("法定区分の上書き（#1880）", () => {
     expect(snapshot?.candidates.map((c) => c.legalCategoryOverride)).toEqual([research, undefined]);
   });
 });
+
+/**
+ * 公開プレビューと公開ページ（webapp の PrismaResearchFundRepository.findPublished）が、同じ仕訳から同じ金額を読み取ること。
+ * webapp/tests/server/contexts/research-fund/infrastructure/repositories/prisma-research-fund.repository.test.ts に
+ * 同じ仕訳・同じ期待値のテストがある。片方を変えるときはもう片方もそろえる。
+ */
+describe("公開ページと同じ金額の読み取り", () => {
+  const SAME_AS_PUBLIC_PAGE_ROWS = [
+    { date: "2026-08-01", accountKey: "grant-income", amount: 1_000_000, type: "grant" },
+    { date: "2026-08-13", accountKey: "taxi", amount: 1500, type: "expense" },
+    { date: "2026-08-20", accountKey: "taxi", amount: 500, type: "expense" },
+    { date: "2026-08-20", accountKey: "books-newspapers", amount: 700, type: "expense" },
+    { date: "2026-08-25", accountKey: "taxi", amount: 800, type: "expense" },
+  ];
+
+  it("支給・支出・費用の借方が複数の支出・現金払いの支出を、公開ページと同じ集計の行にする", async () => {
+    const published = (id: number, date: string, lines: ReturnType<typeof line>[]) =>
+      entry({ id: BigInt(id), status: "published", entryDate: new Date(`${date}T00:00:00.000Z`), lines });
+    const { repository } = setup([
+      published(1, "2026-08-01", [
+        line("debit", "bank", 1_000_000, "asset"),
+        line("credit", "grant-income", 1_000_000, "income"),
+      ]),
+      published(2, "2026-08-13", [line("debit", "taxi", 1500, "expense"), line("credit", "bank", 1500, "asset")]),
+      published(3, "2026-08-20", [
+        line("debit", "taxi", 500, "expense"),
+        line("debit", "books-newspapers", 700, "expense"),
+        line("credit", "bank", 1200, "asset"),
+      ]),
+      published(4, "2026-08-25", [line("debit", "taxi", 800, "expense"), line("credit", "cash", 800, "asset")]),
+    ]);
+
+    const snapshot = await repository.snapshot("1");
+
+    expect(snapshot?.published).toEqual(SAME_AS_PUBLIC_PAGE_ROWS);
+  });
+});
