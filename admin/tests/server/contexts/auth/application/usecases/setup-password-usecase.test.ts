@@ -52,6 +52,28 @@ describe("SetupPasswordUsecase", () => {
       expect(mockAuthProvider.updateUser).not.toHaveBeenCalled();
     });
 
+    it("空白だけのパスワードは却下され、ドメインの理由を利用者向け文言に持つ", async () => {
+      const error = await usecase.execute("      ").catch((e: unknown) => e);
+
+      expect(error).toBeInstanceOf(AuthError);
+      expect(error).toMatchObject({
+        code: "WEAK_PASSWORD",
+        userMessage: "パスワードは6文字以上で設定してください",
+      });
+      expect(mockAuthProvider.updateUser).not.toHaveBeenCalled();
+    });
+
+    it("上限を超えるパスワードは却下され、上限についての理由を利用者向け文言に持つ", async () => {
+      const error = await usecase.execute("a".repeat(73)).catch((e: unknown) => e);
+
+      expect(error).toBeInstanceOf(AuthError);
+      expect(error).toMatchObject({
+        code: "WEAK_PASSWORD",
+        userMessage: "パスワードは72文字以内で設定してください",
+      });
+      expect(mockAuthProvider.updateUser).not.toHaveBeenCalled();
+    });
+
     it("パスワードが6文字ちょうどの場合は成功する", async () => {
       mockAuthProvider.updateUser.mockResolvedValue(createMockSupabaseUser());
 

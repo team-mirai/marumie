@@ -27,6 +27,9 @@ export type AuthErrorCode =
  * 認証エラークラス（単一クラス + code パターン）
  */
 export class AuthError extends Error {
+  /** ドメインが決めた利用者向けの却下理由（無ければコードごとの既定文言を使う） */
+  private reason?: string;
+
   constructor(
     public readonly code: AuthErrorCode,
     message: string,
@@ -34,6 +37,22 @@ export class AuthError extends Error {
   ) {
     super(message);
     this.name = "AuthError";
+  }
+
+  /**
+   * ドメインの判定で却下したときのエラー。理由をそのまま利用者に表示する
+   */
+  static rejected(code: AuthErrorCode, reason: string): AuthError {
+    const error = new AuthError(code, reason);
+    error.reason = reason;
+    return error;
+  }
+
+  /**
+   * 利用者に表示する文言。ドメインの却下理由があればそれを、無ければコードごとの既定文言を返す
+   */
+  get userMessage(): string {
+    return this.reason ?? AUTH_ERROR_MESSAGES[this.code];
   }
 }
 
@@ -51,7 +70,7 @@ export const AUTH_ERROR_MESSAGES: Record<AuthErrorCode, string> = {
   INVALID_ASSIGNMENT: "担当の議員の指定が不正です",
   USER_NOT_FOUND: "ユーザーが見つかりません",
   INVALID_EMAIL: "有効なメールアドレスを入力してください",
-  WEAK_PASSWORD: "パスワードは6文字以上で入力してください",
+  WEAK_PASSWORD: "パスワードが要件を満たしていません",
   INVITE_FAILED: "招待メールの送信に失敗しました",
   RESET_EMAIL_FAILED: "パスワードリセットメールの送信に失敗しました",
   DOMAIN_NOT_ALLOWED: "このメールアドレスのドメインではログインできません",
