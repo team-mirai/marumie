@@ -25,6 +25,13 @@ describe("SiteLinkCards", () => {
     expect(document.querySelectorAll("nav > a")).toHaveLength(3);
   });
 
+  it("表示中のページ自身へのカードは出さない（「まる見え政治資金とは」で同じページへのカードを出さない）", () => {
+    const document = parse(renderToStaticMarkup(<SiteLinkCards currentHref="/about" />));
+    const hrefs = document.querySelectorAll("nav > a").map((el) => el.getAttribute("href"));
+    expect(hrefs).toHaveLength(2);
+    expect(hrefs).not.toContain("/about");
+  });
+
   it("SP では、トップでも下層ページでもカードを低くし、丸い矢印を右の中央に置く（v9）", () => {
     for (const document of [
       parse(renderToStaticMarkup(<SiteLinkCards staggerReveal />)),

@@ -1,4 +1,8 @@
-import { buildPoliticianNav, politicianPageHref } from "@/client/lib/politician-nav";
+import {
+  buildPoliticianNav,
+  mergeNavMembersAcrossYears,
+  politicianPageHref,
+} from "@/client/lib/politician-nav";
 
 const A = { slug: "a", name: "議員A" };
 const B = { slug: "b", name: "議員B" };
@@ -34,6 +38,66 @@ describe("buildPoliticianNav", () => {
     expect(nav?.next).toBe(A);
     expect(nav?.others).toEqual([A, B]);
     expect(nav?.members.every((member) => !member.current)).toBe(true);
+  });
+});
+
+describe("mergeNavMembersAcrossYears", () => {
+  const card = (slug: string, comingSoon = false) => ({ slug, name: `議員${slug}`, comingSoon });
+
+  it("表示中の年度に公開していない議員も、公開している一番新しい年度へのリンクとして並べる", () => {
+    // 2025年は anno だけ公開、2026年は全員公開
+    const members = mergeNavMembersAcrossYears(2025, [
+      { financialYear: 2025, members: [card("anno")] },
+      { financialYear: 2026, members: [card("anno"), card("mineshima"), card("takayama")] },
+    ]);
+
+    expect(members.map((member) => [member.slug, member.financialYear])).toEqual([
+      ["anno", 2025],
+      ["mineshima", 2026],
+      ["takayama", 2026],
+    ]);
+    // 切り替える先があるので、前後の切り替えが出る
+    expect(buildPoliticianNav(members, "anno")?.next.slug).toBe("mineshima");
+  });
+
+  it("並び順は新しい年度の一覧にそろえ、新しい年度に出てこない議員は後ろに足す", () => {
+    const members = mergeNavMembersAcrossYears(2025, [
+      { financialYear: 2025, members: [card("c"), card("old")] },
+      { financialYear: 2026, members: [card("a"), card("b"), card("c")] },
+    ]);
+
+    expect(members.map((member) => [member.slug, member.financialYear])).toEqual([
+      ["a", 2026],
+      ["b", 2026],
+      ["c", 2025],
+      ["old", 2025],
+    ]);
+  });
+
+  it("最新の年度を見ているときは、その年度の一覧のまま変えない", () => {
+    const members = mergeNavMembersAcrossYears(2026, [
+      { financialYear: 2025, members: [card("a")] },
+      { financialYear: 2026, members: [card("a"), card("b"), card("soon", true)] },
+    ]);
+
+    expect(members.map((member) => [member.slug, member.financialYear, member.comingSoon])).toEqual([
+      ["a", 2026, false],
+      ["b", 2026, false],
+      ["soon", 2026, true],
+    ]);
+  });
+
+  it("「準備中」だけの議員は表示中の年度の準備中のページへ、どこかの年度に公開していればその年度へ", () => {
+    const members = mergeNavMembersAcrossYears(2025, [
+      { financialYear: 2025, members: [card("a"), card("b", true), card("soon", true)] },
+      { financialYear: 2026, members: [card("a"), card("b"), card("soon", true)] },
+    ]);
+
+    expect(members.map((member) => [member.slug, member.financialYear, member.comingSoon])).toEqual([
+      ["a", 2025, false],
+      ["b", 2026, false],
+      ["soon", 2025, true],
+    ]);
   });
 });
 

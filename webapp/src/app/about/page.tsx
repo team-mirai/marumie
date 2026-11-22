@@ -10,7 +10,7 @@ import MainColumn from "@/client/components/layout/MainColumn";
 import RevealOnScroll from "@/client/components/layout/RevealOnScroll";
 import { buildAboutPublishedSummary } from "@/client/lib/about-published";
 import { formatAsOfDate } from "@/client/lib/format-date";
-import { HEADER_YEARS } from "@/client/lib/header-navigation";
+import { ABOUT_HREF, HEADER_YEARS } from "@/client/lib/header-navigation";
 import { loadHomePageData } from "@/server/contexts/public-finance/presentation/loaders/load-home-page-data";
 import type { ResearchFundPoliticianEntry } from "@/server/contexts/research-fund/domain/models/research-fund-politician-list";
 import { loadResearchFundPoliticians } from "@/server/contexts/research-fund/presentation/loaders/load-research-fund-politicians";
@@ -64,8 +64,9 @@ export default async function AboutPage() {
           <AboutFeaturesSection />
           <AboutAimSection partyHref={partyHref} />
           <AboutResearchFundSection />
-          {/* v9 のこのページは一言コメントの帯を出さず、オープンソースの案内・カード3枚・データについてだけを置く */}
-          <SiteBottomBlock band={null} />
+          {/* v9 のこのページは一言コメントの帯を出さず、オープンソースの案内・カード・データについてだけを置く。
+              カードはこのページ自身への「まる見え政治資金とは？」を除いた 2 枚にする */}
+          <SiteBottomBlock band={null} currentHref={ABOUT_HREF} />
         </div>
       </div>
       <Breadcrumbs current="まる見え政治資金とは" position="bottom" />

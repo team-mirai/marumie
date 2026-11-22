@@ -18,6 +18,8 @@ interface SiteBottomBlockProps {
   band?: ReactNode | null;
   /** "home" はトップページ（v9）用の詰めた配置 */
   layout?: "default" | "home";
+  /** 表示中のページの URL。カード3枚のうち、このページ自身へのカードを出さない */
+  currentHref?: string;
 }
 
 /**
@@ -30,6 +32,7 @@ export default function SiteBottomBlock({
   notesVariant,
   band,
   layout = "default",
+  currentHref,
 }: SiteBottomBlockProps) {
   const isHome = layout === "home";
   return (
@@ -57,7 +60,7 @@ export default function SiteBottomBlock({
         band
       )}
       <OpenSourceAdoptionSection />
-      <SiteLinkCards staggerReveal={isHome} />
+      <SiteLinkCards staggerReveal={isHome} currentHref={currentHref} />
       <DataNotesSection notes={dataNotes} variant={notesVariant} />
     </>
   );
