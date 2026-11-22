@@ -1,5 +1,6 @@
 import { Prisma, type PrismaClient } from "@prisma/client";
 import type { ResearchFundSyncExport } from "@/server/contexts/research-fund/domain/models/research-fund-sync-export";
+import { decideResearchFundSyncImport } from "@/server/contexts/research-fund/domain/models/research-fund-sync-import";
 import { PrismaResearchFundSyncImportRepository } from "@/server/contexts/research-fund/infrastructure/repositories/prisma-research-fund-sync-import.repository";
 import { SyncImportTimeoutError } from "@/server/contexts/shared/domain/models/sync-import-file";
 
@@ -246,6 +247,35 @@ describe("PrismaResearchFundSyncImportRepository.replaceResearchFundSyncData", (
       data: [expect.objectContaining({ politicianId: BigInt(9), politicalOrganizationId: BigInt(1) })],
     });
     expect(tx.researchFundBook.deleteMany).not.toHaveBeenCalled();
+  });
+
+  it("プレビューと同じ状態なら、ドメインが決めた計画（置換か新規か・作る所属履歴）どおりに実行する", async () => {
+    const { tx, repository } = setup();
+    const importFile = buildFile(["taro", "hanako"]);
+    // setup() の状態: taro だけがいて、政治団体は team-mirai だけがある。プレビューも同じ状態で判定する。
+    const plan = decideResearchFundSyncImport(
+      importFile,
+      new Map([["taro", { id: "3", slug: "taro", name: "議員 taro" }]]),
+      new Set(["team-mirai"]),
+    );
+
+    const result = await repository.replaceResearchFundSyncData(importFile);
+
+    expect(result.map(({ slug, mode, createdMembershipCount }) => ({ slug, mode, createdMembershipCount }))).toEqual(
+      plan.map((decision) => ({
+        slug: decision.politician.profile.slug,
+        mode: decision.mode,
+        createdMembershipCount: decision.mode === "create" ? decision.memberships.length : 0,
+      })),
+    );
+    const [hanakoPlan] = plan.filter((decision) => decision.mode === "create");
+    expect(tx.politicianOrgMembership.createMany).toHaveBeenCalledWith({
+      data: hanakoPlan.mode === "create"
+        ? hanakoPlan.memberships.map((membership) =>
+            expect.objectContaining({ startedOn: new Date(`${membership.startedOn}T00:00:00.000Z`) }),
+          )
+        : [],
+    });
   });
 
   it("仕訳は書類なしで入れ、支払先・支出群は同じ議員・帳簿の中で引き当てる", async () => {
