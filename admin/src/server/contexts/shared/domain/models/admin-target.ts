@@ -9,6 +9,64 @@ export type AdminTarget = {
   | { kind: "research-fund"; politicianId: string; bookId: string; draftCount: number }
 );
 
+/**
+ * 管理対象のキー（対象切り替えの選択値。cookie に保存する）。
+ * 政治団体は「団体 × 年度」、議員室は年度帳簿 1 冊を 1 つの対象として表す。
+ */
+export const AdminTargetKey = {
+  organization(organizationId: string | number | bigint, year: number): string {
+    return `org:${organizationId}:${year}`;
+  },
+  book(bookId: string | number | bigint): string {
+    return `book:${bookId}`;
+  },
+  /** 政治団体のキーを団体 ID と年度に分解する。政治団体のキーとして読めなければ null */
+  parseOrganization(key: string | undefined): { organizationId: string; year: number } | null {
+    const match = /^org:([1-9]\d*):(\d{4})$/.exec(key ?? "");
+    if (!match || Number(match[2]) < 1900) return null;
+    return { organizationId: match[1], year: Number(match[2]) };
+  },
+};
+
+/**
+ * 政治団体で選べる年度（新しい順）。
+ * データのない団体でも当年・前年を選べ、既存データ（取引・報告書情報）の年度も失わない。
+ * @param dataYears その団体にデータがある年度
+ */
+export function selectableOrganizationYears(
+  currentYear: number,
+  dataYears: Iterable<number>,
+): number[] {
+  return [...new Set([currentYear, currentYear - 1, ...dataYears])].sort((a, b) => b - a);
+}
+
+/**
+ * 保存済みの選択が、選べる年度から外れた政治団体の年度なら、その年度を候補に足して返す。
+ * 年が変わって候補の当年・前年から外れても、明示選択した年度を保持するため。
+ * 団体自体が候補に無い（削除済み・使えない）場合は足さない。
+ * @param targets ユーザーが選べる対象
+ * @param key 保存済みの選択
+ */
+export function withSavedOrganizationYear(
+  targets: readonly AdminTarget[],
+  key: string | undefined,
+): AdminTarget[] {
+  const saved = AdminTargetKey.parseOrganization(key);
+  if (!saved || targets.some((t) => t.key === key)) return [...targets];
+  const organization = targets.find(
+    (t) => t.kind === "political-organization" && t.organizationId === saved.organizationId,
+  );
+  if (!organization) return [...targets];
+  return [
+    ...targets,
+    {
+      ...organization,
+      key: AdminTargetKey.organization(saved.organizationId, saved.year),
+      year: saved.year,
+    },
+  ];
+}
+
 export function targetDestination(target: AdminTarget): string {
   return target.kind === "research-fund"
     ? `/politicians/${target.politicianId}/books`
