@@ -58,9 +58,9 @@ function Chevron({ direction }: { direction: "prev" | "next" }) {
   );
 }
 
-// v9 の .mm-nav。カードの左右の縁を中心に置く（SP 48px・PC 40px）。SP は下の位置表示（点と「10 / 12」）を除いたカードの上下中央に置く。押したとき・ホバーの動きは globals.css の .politician-switch-nav
+// v9 の .mm-nav。カードの左右の縁を中心に置く（SP 48px・PC 40px）。カードだけを囲む枠の上下中央に置くので、SP も下の位置表示（点と「10 / 12」）を除いたカード本体の上下中央に来る。押したとき・ホバーの動きは globals.css の .politician-switch-nav
 const NAV_BUTTON_CLASS =
-  "politician-switch-nav absolute top-[calc(50%-30px)] z-10 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-white/90 bg-white/60 text-[#0B0F0E] shadow-[inset_0_1px_0_rgba(255,255,255,0.95),0_12px_26px_-12px_rgba(10,60,52,0.5),0_2px_6px_rgba(10,60,52,0.1)] backdrop-blur-[14px] hover:bg-white/80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0F8472] min-[641px]:top-1/2 min-[641px]:h-10 min-[641px]:w-10 min-[641px]:border-0 min-[641px]:bg-white min-[641px]:shadow-[0_2px_6px_rgba(11,15,14,0.10),0_8px_20px_rgba(11,15,14,0.10)] min-[641px]:backdrop-blur-none min-[641px]:hover:bg-[#E2F6F3] min-[641px]:hover:text-[#0F8472]";
+  "politician-switch-nav absolute top-1/2 z-10 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-white/90 bg-white/60 text-[#0B0F0E] shadow-[inset_0_1px_0_rgba(255,255,255,0.95),0_12px_26px_-12px_rgba(10,60,52,0.5),0_2px_6px_rgba(10,60,52,0.1)] backdrop-blur-[14px] hover:bg-white/80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0F8472] min-[641px]:h-10 min-[641px]:w-10 min-[641px]:border-0 min-[641px]:bg-white min-[641px]:shadow-[0_2px_6px_rgba(11,15,14,0.10),0_8px_20px_rgba(11,15,14,0.10)] min-[641px]:backdrop-blur-none min-[641px]:hover:bg-[#E2F6F3] min-[641px]:hover:text-[#0F8472]";
 
 /**
  * 議員ページ冒頭の議員カードの、前後の議員への切り替え（デザイン v9 の mmGo / swS / swM / swE）。
@@ -179,54 +179,59 @@ export default function PoliticianCardSwitcher({
       onTouchEnd={handleTouchEnd}
       onTouchCancel={handleTouchEnd}
     >
-      {pcCard}
-      <div ref={spCardRef} className={`min-[641px]:hidden ${enterClass}`}>
-        {spCard}
+      {/* 前後のボタンの上下位置の基準。下の位置表示を含めず、カード本体だけを囲む */}
+      <div className="relative">
+        {pcCard}
+        <div ref={spCardRef} className={`min-[641px]:hidden ${enterClass}`}>
+          {spCard}
+        </div>
+
+        {nav && (
+          <>
+            <Link
+              href={nav.prev.href}
+              onClick={() => remember(nav.prev, -1)}
+              aria-label={`前の議員（${nav.prev.name}）の調研費へ`}
+              title={`前の議員（${nav.prev.name}）の調研費へ`}
+              className={`${NAV_BUTTON_CLASS} is-prev -left-6 min-[641px]:-left-5`}
+            >
+              <Chevron direction="prev" />
+            </Link>
+            <Link
+              href={nav.next.href}
+              onClick={() => remember(nav.next, 1)}
+              aria-label={`次の議員（${nav.next.name}）の調研費へ`}
+              title={`次の議員（${nav.next.name}）の調研費へ`}
+              className={`${NAV_BUTTON_CLASS} is-next -right-6 min-[641px]:-right-5`}
+            >
+              <Chevron direction="next" />
+            </Link>
+          </>
+        )}
       </div>
 
+      {/* SP：何人目かの表示。点は飾りにして、位置は文字で伝える */}
       {nav && (
-        <>
-          <Link
-            href={nav.prev.href}
-            onClick={() => remember(nav.prev, -1)}
-            aria-label={`前の議員（${nav.prev.name}）の調研費へ`}
-            title={`前の議員（${nav.prev.name}）の調研費へ`}
-            className={`${NAV_BUTTON_CLASS} is-prev -left-6 min-[641px]:-left-5`}
-          >
-            <Chevron direction="prev" />
-          </Link>
-          <Link
-            href={nav.next.href}
-            onClick={() => remember(nav.next, 1)}
-            aria-label={`次の議員（${nav.next.name}）の調研費へ`}
-            title={`次の議員（${nav.next.name}）の調研費へ`}
-            className={`${NAV_BUTTON_CLASS} is-next -right-6 min-[641px]:-right-5`}
-          >
-            <Chevron direction="next" />
-          </Link>
-
-          {/* SP：何人目かの表示。点は飾りにして、位置は文字で伝える */}
-          <div className="mt-3.5 flex h-6 items-center justify-center min-[641px]:hidden">
-            <div aria-hidden="true" className="flex items-center gap-0.5">
-              {nav.dots.map((dot) => {
-                const on = dot.slug === activeDot;
-                return (
+        <div className="mt-3.5 flex h-6 items-center justify-center min-[641px]:hidden">
+          <div aria-hidden="true" className="flex items-center gap-0.5">
+            {nav.dots.map((dot) => {
+              const on = dot.slug === activeDot;
+              return (
+                <span
+                  key={dot.slug}
+                  className={`flex h-6 items-center justify-center ${on ? "w-[30px]" : "w-5"}`}
+                >
                   <span
-                    key={dot.slug}
-                    className={`flex h-6 items-center justify-center ${on ? "w-[30px]" : "w-5"}`}
-                  >
-                    <span
-                      className={`politician-switch-dot block h-1.5 rounded-full ${
-                        on ? "w-[22px] bg-[#0F8472]" : "w-1.5 bg-[#0F8472]/25"
-                      }`}
-                    />
-                  </span>
-                );
-              })}
-            </div>
-            {position}
+                    className={`politician-switch-dot block h-1.5 rounded-full ${
+                      on ? "w-[22px] bg-[#0F8472]" : "w-1.5 bg-[#0F8472]/25"
+                    }`}
+                  />
+                </span>
+              );
+            })}
           </div>
-        </>
+          {position}
+        </div>
       )}
     </section>
   );

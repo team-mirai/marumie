@@ -88,7 +88,9 @@ export default function ResearchFundFlowSection({ data, eyebrow, updatedAt }: Pr
       // v9 でも議員ページの「収支の流れ」の見出しは動かさない
       revealHeading={false}
     >
-      {/* 「調研費とは」のすぐ下に、チームみらいの調研費の使用方針（v9） */}
+      {/* 「調研費とは」のすぐ下に、チームみらいの調研費の使用方針（v9）。
+          SP は 2 行の文字の中心どうしの間隔をトップと同じ 35px にする。押せる範囲を各 44px 保ったまま重ねないよう、
+          「使用方針」の文字を押せる範囲の上寄せにする（上 1px・下 19px）。開いたときの説明文との間は、説明文の枠の下に 9px 足して今と同じにする */}
       <div className="-mt-4 flex flex-col items-start">
         <details className="w-full">
           <summary className="inline-flex cursor-pointer list-none items-center gap-1.5 py-1 max-[640px]:min-h-11 text-sm font-bold text-[#238778] hover:underline [&::-webkit-details-marker]:hidden">
@@ -96,7 +98,7 @@ export default function ResearchFundFlowSection({ data, eyebrow, updatedAt }: Pr
             調研費（調査研究広報滞在費）とは
             <Image src="/icons/icon-chevron-down.svg" alt="" width={18} height={18} />
           </summary>
-          <div className="mt-3 rounded-xl bg-gradient-to-br from-[#E2F6F3] to-[#EEF6E2] px-5 py-5 text-[15px] leading-[1.87] tracking-[0.01em] text-gray-800">
+          <div className="mt-3 max-[640px]:mb-[9px] rounded-xl bg-gradient-to-br from-[#E2F6F3] to-[#EEF6E2] px-5 py-5 text-[15px] leading-[1.87] tracking-[0.01em] text-gray-800">
             <p className="m-0">
               調研費（調査研究広報滞在費）は、国会議員の調査研究や広報、国民との交流、滞在などの活動のために、国から毎月100万円支給される公費です。政治資金規正法上の「政治資金」ではありませんが、チームみらいでは透明性の観点から本サイトで公開しています。選挙運動には使えません。年内に使わなかった未使用分は国庫に返還します。
             </p>
@@ -107,7 +109,7 @@ export default function ResearchFundFlowSection({ data, eyebrow, updatedAt }: Pr
           target="_blank"
           rel="noopener noreferrer"
           aria-label="チームみらいの調研費の使用方針を読む（noteが別タブで開きます）"
-          className="inline-flex items-center gap-1.5 py-1 max-[640px]:min-h-11 text-sm font-bold text-[#238778] no-underline hover:underline"
+          className="inline-flex items-center gap-1.5 py-1 max-[640px]:min-h-11 max-[640px]:pb-[19px] max-[640px]:pt-px text-sm font-bold text-[#238778] no-underline hover:underline"
         >
           <NoteIcon />
           チームみらいの調研費の使用方針
