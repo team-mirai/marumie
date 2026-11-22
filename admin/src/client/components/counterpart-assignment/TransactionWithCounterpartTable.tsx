@@ -13,6 +13,7 @@ import {
 import { toast } from "sonner";
 import { Question } from "@phosphor-icons/react/dist/ssr";
 import type { TransactionWithCounterpart } from "@/server/contexts/report/domain/models/transaction-with-counterpart";
+import { canSetGrantExpenditureFlag } from "@/server/contexts/report/domain/models/grant-expenditure-rules";
 import { cn, formatDate, formatAmount } from "@/client/lib";
 import {
   Button,
@@ -171,7 +172,7 @@ export function TransactionWithCounterpartTable({
         ),
         cell: (info) => {
           const transaction = info.row.original;
-          if (transaction.transactionType !== "expense") {
+          if (!canSetGrantExpenditureFlag(transaction.transactionType)) {
             return <span className="text-muted-foreground">-</span>;
           }
           const currentValue = getGrantExpenditureValue(transaction);

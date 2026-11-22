@@ -17,6 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/client/components/ui";
+import { EXPENSE_DETAIL_THRESHOLD_LABEL } from "@/server/contexts/report/domain/models/expense-detail-threshold";
 
 export interface CounterpartAssignmentFilterValues {
   categoryKey: string;
@@ -138,7 +139,7 @@ export function CounterpartAssignmentFilters({
                     </ul>
                   </div>
                   <div className="space-y-1">
-                    <p className="font-medium">【経常経費】5万円以上</p>
+                    <p className="font-medium">【経常経費】{EXPENSE_DETAIL_THRESHOLD_LABEL}以上</p>
                     <ul className="list-inside list-disc text-xs">
                       <li>光熱水費</li>
                       <li>備品・消耗品費</li>
@@ -146,7 +147,9 @@ export function CounterpartAssignmentFilters({
                     </ul>
                   </div>
                   <div className="space-y-1">
-                    <p className="font-medium">【政治活動費】5万円以上</p>
+                    <p className="font-medium">
+                      【政治活動費】{EXPENSE_DETAIL_THRESHOLD_LABEL}以上
+                    </p>
                     <ul className="list-inside list-disc text-xs">
                       <li>組織活動費、選挙関係費、機関紙誌の発行事業費 等</li>
                     </ul>

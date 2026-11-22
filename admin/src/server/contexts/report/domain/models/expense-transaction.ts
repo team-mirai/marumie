@@ -9,13 +9,11 @@
  * 費目ごとの定義（型エイリアスと XML パス・費目名）を1箇所にまとめている。
  */
 
+import { sanitizeText, buildBikou } from "@/server/contexts/report/domain/models/transaction-utils";
 import {
-  resolveExpenseAmount,
-  sanitizeText,
-  buildBikou,
-  isAboveThreshold,
-  FIVE_MAN_THRESHOLD,
-} from "@/server/contexts/report/domain/models/transaction-utils";
+  isExpenseDetailRequired,
+  resolveExpenseDetailAmount,
+} from "@/server/contexts/report/domain/models/expense-detail-threshold";
 import {
   type ValidationError,
   ValidationErrorCode,
@@ -68,7 +66,7 @@ export type PoliticalActivityExpenseRow = ExpenseRow;
  */
 interface RegularExpenseSection {
   totalAmount: number;
-  underThresholdAmount: number; // その他の支出（5万円未満）
+  underThresholdAmount: number; // その他の支出（明細記載の基準未満）
   rows: ExpenseRow[];
 }
 
@@ -78,7 +76,7 @@ interface RegularExpenseSection {
 interface PoliticalActivityExpenseSection {
   himoku: string; // 費目（シート単位）
   totalAmount: number;
-  underThresholdAmount: number; // その他の支出（5万円未満）
+  underThresholdAmount: number; // その他の支出（明細記載の基準未満）
   rows: PoliticalActivityExpenseRow[];
 }
 
@@ -98,15 +96,15 @@ export interface PersonnelExpenseSection {
  * 取引金額を解決する（丸め済み）
  */
 function resolveAmount(tx: BaseExpenseTransaction): number {
-  return Math.round(resolveExpenseAmount(tx.debitAmount, tx.creditAmount));
+  return resolveExpenseDetailAmount(tx.debitAmount, tx.creditAmount);
 }
 
 /**
- * 閾値（5万円）以上かどうかを判定
- * 閾値以上の取引は明細行として個別に列挙し、未満の取引は合算する
+ * 明細記載の金額基準以上かどうかを判定
+ * 基準以上の取引は明細行として個別に列挙し、未満の取引は合算する
  */
 function isDetailRequired(tx: BaseExpenseTransaction): boolean {
-  return isAboveThreshold(resolveAmount(tx), FIVE_MAN_THRESHOLD);
+  return isExpenseDetailRequired(tx.debitAmount, tx.creditAmount);
 }
 
 /**
@@ -129,8 +127,8 @@ function toExpenseRow(tx: BaseExpenseTransaction, index: number): ExpenseRow {
  * セクションの集約ロジック（共通）
  *
  * Business rules:
- * - Transactions >= 50,000 yen are listed individually
- * - Transactions < 50,000 yen are aggregated into underThresholdAmount
+ * - Transactions at or above EXPENSE_DETAIL_THRESHOLD are listed individually
+ * - Transactions below it are aggregated into underThresholdAmount
  */
 function aggregateExpenseSection(transactions: BaseExpenseTransaction[]): RegularExpenseSection {
   const totalAmount = transactions.reduce((sum, tx) => sum + resolveAmount(tx), 0);

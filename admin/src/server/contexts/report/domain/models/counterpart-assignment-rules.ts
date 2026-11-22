@@ -6,6 +6,11 @@
  */
 
 import { PL_CATEGORIES } from "@/shared/accounting/account-category";
+import {
+  type RawExpenseAmountCondition,
+  getExpenseDetailRawAmountConditions,
+  isExpenseDetailRequired,
+} from "@/server/contexts/report/domain/models/expense-detail-threshold";
 
 /**
  * Counterpart紐づけが必要な収入カテゴリ
@@ -22,7 +27,7 @@ export const COUNTERPART_REQUIRED_INCOME_CATEGORIES = [
 ] as const;
 
 /**
- * 経常経費カテゴリ（SYUUSHI07_14）- 閾値5万円
+ * 経常経費カテゴリ（SYUUSHI07_14）
  */
 export const ROUTINE_EXPENSE_CATEGORIES = [
   // biome-ignore lint/complexity/useLiteralKeys: 日本語キー
@@ -33,7 +38,7 @@ export const ROUTINE_EXPENSE_CATEGORIES = [
 ] as const;
 
 /**
- * 政治活動費カテゴリ（SYUUSHI07_15）- 閾値5万円
+ * 政治活動費カテゴリ（SYUUSHI07_15）
  */
 export const POLITICAL_ACTIVITY_EXPENSE_CATEGORIES = [
   // biome-ignore lint/complexity/useLiteralKeys: 日本語キー
@@ -71,20 +76,6 @@ type CounterpartRequiredIncomeCategory = (typeof COUNTERPART_REQUIRED_INCOME_CAT
 type CounterpartRequiredExpenseCategory = (typeof COUNTERPART_REQUIRED_EXPENSE_CATEGORIES)[number];
 
 /**
- * Counterpart明細記載が必要な金額閾値（円）
- *
- * 政治資金規正法では、一定金額以上の支出について
- * 支払先の氏名・住所を明細に記載する必要があります。
- *
- * 参考: docs/reference/report-format.md
- * - 経常経費（SYUUSHI07_14）: 5万円以上
- * - 政治活動費（SYUUSHI07_15）: 5万円以上
- * - 収入（借入金・交付金）: 閾値なし（すべて記載）
- */
-export const ROUTINE_EXPENSE_THRESHOLD = 50_000;
-export const POLITICAL_ACTIVITY_EXPENSE_THRESHOLD = 50_000;
-
-/**
  * トランザクションがCounterpart紐づけ対象かどうかを判定
  *
  * @param transactionType - 'income' | 'expense'
@@ -115,73 +106,68 @@ export function isCounterpartRequired(
 }
 
 /**
- * カテゴリに応じた閾値を取得
- *
- * @param categoryKey - カテゴリキー
- * @returns 閾値（円）。収入カテゴリの場合は0（すべて記載必須）
- */
-function getThresholdForCategory(categoryKey: string): number {
-  if (
-    ROUTINE_EXPENSE_CATEGORIES.includes(categoryKey as (typeof ROUTINE_EXPENSE_CATEGORIES)[number])
-  ) {
-    return ROUTINE_EXPENSE_THRESHOLD;
-  }
-  if (
-    POLITICAL_ACTIVITY_EXPENSE_CATEGORIES.includes(
-      categoryKey as (typeof POLITICAL_ACTIVITY_EXPENSE_CATEGORIES)[number],
-    )
-  ) {
-    return POLITICAL_ACTIVITY_EXPENSE_THRESHOLD;
-  }
-  // 収入カテゴリ（借入金・交付金）は閾値なし
-  return 0;
-}
-
-/**
- * トランザクション金額が明細記載閾値を超えているかどうかを判定
- *
- * @param categoryKey - カテゴリキー
- * @param amount - 金額（円）
- * @returns 閾値以上の場合true
- *
- * @example
- * ```typescript
- * isAboveDetailThreshold('expense_office_expenses', 150_000) // true（経常経費、5万円以上）
- * isAboveDetailThreshold('expense_office_expenses', 50_000)  // true（経常経費、5万円以上）
- * isAboveDetailThreshold('expense_organization_activities', 50_000) // true（政治活動費、5万円以上）
- * ```
- */
-export function isAboveDetailThreshold(categoryKey: string, amount: number): boolean {
-  const threshold = getThresholdForCategory(categoryKey);
-  return amount >= threshold;
-}
-
-/**
  * Counterpart明細記載が必要なトランザクションかどうかを総合判定
  *
  * 以下の条件をすべて満たす場合にtrue:
  * 1. カテゴリがCounterpart紐づけ対象である
- * 2. 金額が閾値以上である
+ * 2. 支出の場合、金額が明細記載の基準以上である（収入の借入金・交付金は金額を問わずすべて記載）
+ *
+ * 支出の金額は報告書の明細行と同じ求め方（resolveExpenseDetailAmount）で判定する。
  *
  * @param transactionType - 'income' | 'expense'
  * @param categoryKey - カテゴリキー
- * @param amount - 金額（円）
+ * @param debitAmount - 借方金額（円）
+ * @param creditAmount - 貸方金額（円）
  * @returns Counterpart明細記載が必要な場合true
  *
  * @example
  * ```typescript
- * requiresCounterpartDetail('expense', 'expense_office_expenses', 150_000) // true
- * requiresCounterpartDetail('expense', 'expense_office_expenses', 50_000)  // true（閾値以上）
- * requiresCounterpartDetail('income', 'income_donation_individual', 150_000) // false（寄附は対象外）
+ * requiresCounterpartDetail('expense', 'expense_office_expenses', 150_000, 150_000) // true
+ * requiresCounterpartDetail('expense', 'expense_office_expenses', 50_000, 50_000)   // true（基準以上）
+ * requiresCounterpartDetail('income', 'income_donation_individual', 150_000, 150_000) // false（寄附は対象外）
  * ```
  */
 export function requiresCounterpartDetail(
   transactionType: "income" | "expense",
   categoryKey: string,
-  amount: number,
+  debitAmount: number,
+  creditAmount: number,
 ): boolean {
-  return (
-    isCounterpartRequired(transactionType, categoryKey) &&
-    isAboveDetailThreshold(categoryKey, amount)
-  );
+  if (!isCounterpartRequired(transactionType, categoryKey)) {
+    return false;
+  }
+  if (transactionType === "expense") {
+    return isExpenseDetailRequired(debitAmount, creditAmount);
+  }
+  return true;
+}
+
+/** Counterpart明細記載が必要なトランザクションの絞り込み条件の 1 つ */
+interface CounterpartDetailCriterion {
+  transactionType: "income" | "expense";
+  categoryKeys: readonly string[];
+  /** 借方・貸方金額の条件（いずれか 1 つを満たせばよい）。null なら金額を問わない */
+  amountConditions: RawExpenseAmountCondition[] | null;
+}
+
+/**
+ * Counterpart明細記載が必要なトランザクションの絞り込み条件（いずれか 1 つを満たせばよい）
+ *
+ * requiresCounterpartDetail が true になる取引を、データベースで絞り込むための条件。
+ * - 支出: Counterpart紐づけ対象の支出カテゴリで、金額が明細記載の基準以上
+ * - 収入: Counterpart紐づけ対象の収入カテゴリ（金額を問わない）
+ */
+export function getCounterpartDetailCriteria(): CounterpartDetailCriterion[] {
+  return [
+    {
+      transactionType: "expense",
+      categoryKeys: COUNTERPART_REQUIRED_EXPENSE_CATEGORIES,
+      amountConditions: getExpenseDetailRawAmountConditions(),
+    },
+    {
+      transactionType: "income",
+      categoryKeys: COUNTERPART_REQUIRED_INCOME_CATEGORIES,
+      amountConditions: null,
+    },
+  ];
 }

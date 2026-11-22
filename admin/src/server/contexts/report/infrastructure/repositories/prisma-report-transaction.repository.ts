@@ -29,9 +29,7 @@ import type {
 import {
   COUNTERPART_REQUIRED_INCOME_CATEGORIES,
   COUNTERPART_REQUIRED_EXPENSE_CATEGORIES,
-  ROUTINE_EXPENSE_CATEGORIES,
-  ROUTINE_EXPENSE_THRESHOLD,
-  POLITICAL_ACTIVITY_EXPENSE_THRESHOLD,
+  getCounterpartDetailCriteria,
   requiresCounterpartDetail,
 } from "@/server/contexts/report/domain/models/counterpart-assignment-rules";
 import { PL_CATEGORIES } from "@/shared/accounting/account-category";
@@ -750,32 +748,15 @@ export class PrismaReportTransactionRepository implements IReportTransactionRepo
     }
 
     if (requiresCounterpartOnly) {
-      // 経常経費は5万円以上、政治活動費は5万円以上、収入は閾値なし（すべて記載）
+      // 明細記載が必要な取引の条件はドメインの定義から組み立てる
       conditions.push({
-        OR: [
-          // 経常経費: 5万円以上
-          {
-            categoryKey: { in: [...ROUTINE_EXPENSE_CATEGORIES] },
-            debitAmount: { gte: ROUTINE_EXPENSE_THRESHOLD },
-          },
-          // 政治活動費: 5万円以上（経常経費以外の支出カテゴリ）
-          {
-            categoryKey: {
-              in: COUNTERPART_REQUIRED_EXPENSE_CATEGORIES.filter(
-                (key) =>
-                  !ROUTINE_EXPENSE_CATEGORIES.includes(
-                    key as (typeof ROUTINE_EXPENSE_CATEGORIES)[number],
-                  ),
-              ),
-            },
-            debitAmount: { gte: POLITICAL_ACTIVITY_EXPENSE_THRESHOLD },
-          },
-          // 収入（借入金・交付金）: 閾値なし
-          {
-            transactionType: "income",
-            categoryKey: { in: [...COUNTERPART_REQUIRED_INCOME_CATEGORIES] },
-          },
-        ],
+        OR: getCounterpartDetailCriteria().map(
+          (criterion): Prisma.TransactionWhereInput => ({
+            transactionType: criterion.transactionType,
+            categoryKey: { in: [...criterion.categoryKeys] },
+            ...(criterion.amountConditions ? { OR: criterion.amountConditions } : {}),
+          }),
+        ),
       });
     }
 
@@ -855,6 +836,7 @@ export class PrismaReportTransactionRepository implements IReportTransactionRepo
           t.transactionType as "income" | "expense",
           t.categoryKey,
           Number(t.debitAmount),
+          Number(t.creditAmount),
         ),
         isGrantExpenditure: t.isGrantExpenditure,
       })),
@@ -980,6 +962,7 @@ export class PrismaReportTransactionRepository implements IReportTransactionRepo
           t.transactionType as "income" | "expense",
           t.categoryKey,
           Number(t.debitAmount),
+          Number(t.creditAmount),
         ),
         isGrantExpenditure: t.isGrantExpenditure,
       })),
@@ -1066,6 +1049,7 @@ export class PrismaReportTransactionRepository implements IReportTransactionRepo
         transactionType,
         transaction.categoryKey,
         Number(transaction.debitAmount),
+        Number(transaction.creditAmount),
       ),
       isGrantExpenditure: transaction.isGrantExpenditure,
     };
