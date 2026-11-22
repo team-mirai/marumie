@@ -1,3 +1,4 @@
+import { INVALID_JOURNAL_AMOUNT_MESSAGE } from "@/server/contexts/research-fund/domain/models/journal-amount";
 import { RegisterGrantUsecase } from "@/server/contexts/research-fund/application/usecases/register-grant-usecase";
 
 const accounts = [
@@ -161,7 +162,7 @@ test.each([0, -1, 1.5, Number.NaN, Number.POSITIVE_INFINITY, "1000000" as unknow
     const { repository, usecase } = setup();
     await expect(
       usecase.execute("1", "2026-05", "user", "2026-09-10", "2026-05-01", amount),
-    ).rejects.toThrow("1円以上の整数");
+    ).rejects.toThrow(INVALID_JOURNAL_AMOUNT_MESSAGE);
     expect(repository.create).not.toHaveBeenCalled();
   },
 );

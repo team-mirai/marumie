@@ -23,7 +23,7 @@ test("当選月以降だけを並べ、当選月は日割・当月まで登録�
   const { usecase } = setup({ registeredGrants: [{ month: "2026-02", amount: 750_000 }] });
   const { grants, termStart } = await usecase.execute("1", "2026-09-10");
   expect(termStart).toBe("2026-02-08");
-  expect(grants[0]).toEqual({ month: "2026-02", amount: 750_000, status: "registered" });
+  expect(grants[0]).toEqual({ month: "2026-02", amount: 750_000, prorated: true, status: "registered" });
   expect(grants.map((grant) => grant.status)).toEqual([
     "registered", "available", "available", "available", "available", "available",
     "available", "available", "upcoming", "upcoming", "upcoming",
