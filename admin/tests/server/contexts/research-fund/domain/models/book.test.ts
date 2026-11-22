@@ -34,6 +34,13 @@ describe("validateMetadata", () => {
     });
   });
 
+  test("次回更新メモは前後の空白を落として返す", () => {
+    expect(Book.validateMetadata({ ...metadata, nextUpdateNote: "  11月ごろ \n" })).toEqual({
+      status: "valid",
+      value: metadata,
+    });
+  });
+
   test("活用方針は2000文字までで、超えたら支出群の画面と同じメッセージで却下する", () => {
     expect(
       Book.validateMetadata({ ...metadata, policyComment: `  ${"あ".repeat(2000)}  ` }),

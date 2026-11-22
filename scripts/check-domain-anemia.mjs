@@ -48,8 +48,6 @@ export const KNOWN_VIOLATIONS = {
     "年月の形式検証が本番から呼ばれていない",
   "unused-domain:webapp/src/server/contexts/shared/domain/models/sankey-data.ts#SankeyData.empty":
     "空のサンキーデータの生成が本番から呼ばれていない",
-  "remapped-rejection:admin/src/server/contexts/research-fund/presentation/actions/manage-book.ts#publicErrorMessage":
-    "帳簿の作成・更新で、ドメインが返した却下理由を action がコードごとに別の文言へ書き直している",
   "remapped-rejection:admin/src/client/components/counterparts/AddressInput.tsx#getErrorMessage":
     "住所検索のレート制限の文言を、ドメインではなく画面が組み立てている",
 };

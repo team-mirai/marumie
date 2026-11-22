@@ -10,24 +10,9 @@ import { UpdateBookUsecase } from "@/server/contexts/research-fund/application/u
 import { PrismaBookRepository } from "@/server/contexts/research-fund/infrastructure/repositories/prisma-book.repository";
 import { prisma } from "@/server/contexts/shared/infrastructure/prisma";
 import { WebappCacheInvalidator } from "@/server/contexts/shared/infrastructure/services/webapp-cache-invalidator";
+/** 却下理由はドメイン（BookError）が持つのでそのまま返す。想定外の例外は内部の詳細を出さない */
 function publicErrorMessage(error: unknown, fallback: string): string {
-  if (!(error instanceof BookError)) return fallback;
-  switch (error.code) {
-    case "INVALID_ID":
-      return "IDが不正です";
-    case "DUPLICATE_BOOK":
-      return "この議員の年度帳簿は既に存在します";
-    case "RF_INVALID_BOOK_YEAR":
-      return "年度は1900〜9999の整数で指定してください";
-    case "RF_INVALID_BOOK_METADATA":
-      return "帳簿情報の入力が不正です";
-    case "RF_INVALID_DATE":
-      return "時点の日付を正しく入力してください";
-    case "RF_INVALID_LEGAL_CATEGORY_OVERRIDE":
-      return error.message;
-    default:
-      return fallback;
-  }
+  return error instanceof BookError ? error.message : fallback;
 }
 
 export async function createBook(politicianId: string, year: number) {

@@ -52,15 +52,14 @@ describe.each([
     expect(revalidatePath).toHaveBeenCalledWith("/(auth)", "layout");
   });
 
-  test.each([
-    new Error("database password=secret"),
-    "internal detail",
-    new BookError("RF_EXTRACTION_FAILED", "internal detail"),
-  ])("未知のエラーの詳細は返さず再検証しない: %s", async (error) => {
-    jest.spyOn(usecase, "execute").mockRejectedValue(error);
-    await expect(run()).resolves.toEqual({ success: false, error: fallback });
-    expect(revalidatePath).not.toHaveBeenCalled();
-  });
+  test.each([new Error("database password=secret"), "internal detail"])(
+    "想定外の例外の詳細は返さず再検証しない: %s",
+    async (error) => {
+      jest.spyOn(usecase, "execute").mockRejectedValue(error);
+      await expect(run()).resolves.toEqual({ success: false, error: fallback });
+      expect(revalidatePath).not.toHaveBeenCalled();
+    },
+  );
 
   test.each([
     ["INVALID_ID", "IDが不正です"],
@@ -68,8 +67,9 @@ describe.each([
     ["RF_INVALID_BOOK_YEAR", "年度は1900〜9999の整数で指定してください"],
     ["RF_INVALID_BOOK_METADATA", "帳簿情報の入力が不正です"],
     ["RF_INVALID_DATE", "時点の日付を正しく入力してください"],
-  ] as const)("既知のコード %s を固定メッセージへ変換する", async (code, message) => {
-    jest.spyOn(usecase, "execute").mockRejectedValue(new BookError(code, "internal detail"));
+    ["RF_INVALID_POLICY_COMMENT", "活用方針は2000文字以内で入力してください"],
+  ] as const)("ドメインが返した却下理由（%s）をそのまま返す", async (code, message) => {
+    jest.spyOn(usecase, "execute").mockRejectedValue(new BookError(code, message));
     await expect(run()).resolves.toEqual({ success: false, error: message });
     expect(revalidatePath).not.toHaveBeenCalled();
   });
