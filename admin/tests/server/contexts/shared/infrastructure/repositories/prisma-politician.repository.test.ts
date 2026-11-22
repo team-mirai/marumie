@@ -87,7 +87,9 @@ test("所属を外すと過去の履歴を削除せず終了日を設定する",
 });
 test("同じ所属での氏名更新は履歴を増やさない", async () => {
   const { tx, repository } = setup();
-  tx.politicianOrgMembership.findMany.mockResolvedValue([{ politicalOrganizationId: BigInt(2) }]);
+  tx.politicianOrgMembership.findMany.mockResolvedValue([
+    { id: BigInt(3), politicalOrganizationId: BigInt(2), startedOn: new Date("2026-02-08") },
+  ]);
   await repository.save("1", input);
   expect(tx.politicianOrgMembership.update).not.toHaveBeenCalled();
   expect(tx.politicianOrgMembership.create).not.toHaveBeenCalled();
