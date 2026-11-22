@@ -53,7 +53,7 @@ describe("SaveOrganizationProfileUsecase", () => {
         details: {},
       });
       expect(mockRepository.update).not.toHaveBeenCalled();
-      expect(result).toEqual(expectedProfile);
+      expect(result).toEqual({ success: true, profile: expectedProfile });
     });
 
     it("detailsにネストしたデータを含めて作成できる", async () => {
@@ -80,7 +80,7 @@ describe("SaveOrganizationProfileUsecase", () => {
       expect(mockRepository.create).toHaveBeenCalledWith(
         expect.objectContaining({ details }),
       );
-      expect(result.details).toEqual(details);
+      expect(result).toEqual({ success: true, profile: expectedProfile });
     });
   });
 
@@ -108,7 +108,7 @@ describe("SaveOrganizationProfileUsecase", () => {
         details: undefined,
       });
       expect(mockRepository.create).not.toHaveBeenCalled();
-      expect(result.officialName).toBe("更新後の団体名");
+      expect(result).toEqual({ success: true, profile: expectedProfile });
     });
 
     it("一部のフィールドのみ更新できる", async () => {
@@ -131,6 +131,79 @@ describe("SaveOrganizationProfileUsecase", () => {
         officeAddressBuilding: undefined,
         details: undefined,
       });
+    });
+  });
+
+  describe("上限の検証", () => {
+    it("入力欄の制限を迂回して上限を超える値を送ると、保存せずに違反した項目を返す", async () => {
+      const mockRepository = createMockRepository();
+
+      const usecase = new SaveOrganizationProfileUsecase(mockRepository);
+      const result = await usecase.execute({
+        id: "1",
+        politicalOrganizationId: "100",
+        financialYear: 2024,
+        officialName: "あ".repeat(121),
+        details: {
+          contactPersons: [
+            { id: "1", lastName: "田中", firstName: "一郎", tel: "0".repeat(21) },
+            { id: "2", lastName: "田中", firstName: "二郎", tel: "" },
+            { id: "3", lastName: "田中", firstName: "三郎", tel: "" },
+            { id: "4", lastName: "田中", firstName: "四郎", tel: "" },
+          ],
+        },
+      });
+
+      expect(result).toEqual({
+        success: false,
+        errors: [
+          "政治団体の名称は120文字以内で入力してください",
+          "事務担当者は3件まで登録できます",
+          "事務担当者（1人目）の電話番号は20文字以内で入力してください",
+        ],
+      });
+      expect(mockRepository.update).not.toHaveBeenCalled();
+      expect(mockRepository.create).not.toHaveBeenCalled();
+    });
+
+    it("新規作成でも上限を超える値は保存しない", async () => {
+      const mockRepository = createMockRepository();
+
+      const usecase = new SaveOrganizationProfileUsecase(mockRepository);
+      const result = await usecase.execute({
+        politicalOrganizationId: "100",
+        financialYear: 2024,
+        details: { organizationType: "123" },
+      });
+
+      expect(result).toEqual({
+        success: false,
+        errors: ["団体区分は2文字以内で入力してください"],
+      });
+      expect(mockRepository.create).not.toHaveBeenCalled();
+    });
+
+    it("必須項目が空のままでも保存できる（入力途中の保存）", async () => {
+      const mockRepository = createMockRepository();
+      const expectedProfile = createMockProfile({
+        officialName: null,
+        officialNameKana: null,
+        officeAddress: null,
+      });
+      mockRepository.create.mockResolvedValue(expectedProfile);
+
+      const usecase = new SaveOrganizationProfileUsecase(mockRepository);
+      const result = await usecase.execute({
+        politicalOrganizationId: "100",
+        financialYear: 2024,
+        officialName: null,
+        officialNameKana: null,
+        officeAddress: null,
+        details: { representative: { lastName: "", firstName: "" } },
+      });
+
+      expect(result).toEqual({ success: true, profile: expectedProfile });
+      expect(mockRepository.create).toHaveBeenCalled();
     });
   });
 });

@@ -1,5 +1,6 @@
 "use client";
 import "client-only";
+import { ORGANIZATION_REPORT_PROFILE_LIMITS as LIMITS } from "@/server/contexts/report/domain/models/organization-report-profile";
 
 import type { OrganizationReportProfileDetails } from "@/server/contexts/report/domain/models/organization-report-profile";
 import {
@@ -30,7 +31,7 @@ export function OrganizationTypeSection({ details, updateDetails }: Organization
             type="text"
             value={details.organizationType ?? ""}
             onChange={(e) => updateDetails({ organizationType: e.target.value })}
-            maxLength={2}
+            maxLength={LIMITS.organizationType}
             className="w-24"
             placeholder="01"
           />
@@ -60,7 +61,7 @@ export function OrganizationTypeSection({ details, updateDetails }: Organization
             type="text"
             value={details.specificPartyDate ?? ""}
             onChange={(e) => updateDetails({ specificPartyDate: e.target.value })}
-            maxLength={20}
+            maxLength={LIMITS.date}
             className="w-40"
             placeholder="R6/4/1"
           />

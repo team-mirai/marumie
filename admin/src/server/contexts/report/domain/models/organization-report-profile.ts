@@ -159,218 +159,338 @@ export interface UpdateOrganizationReportProfileInput {
 // ============================================================
 
 /**
+ * 報告書プロフィールの文字数・件数・桁数の上限
+ *
+ * 入力スキーマと画面の入力欄はこの値を参照する。
+ */
+export const ORGANIZATION_REPORT_PROFILE_LIMITS = {
+  /** 政治団体の名称 (DANTAI_NM) */
+  officialName: 120,
+  /** 政治団体の名称（ふりがな） (DANTAI_KANA) */
+  officialNameKana: 120,
+  /** 主たる事務所の所在地 (JIM_ADR) */
+  officeAddress: 80,
+  /** 主たる事務所の建物名等 */
+  officeAddressBuilding: 60,
+  /** 人の姓・名（代表者・会計責任者・事務担当者・届出者・議員） */
+  personName: 30,
+  /** 事務担当者の電話番号 */
+  tel: 20,
+  /** 資金管理団体の公職の名称 */
+  publicPositionName: 60,
+  /** 和暦の日付（指定期間・特定パーティー開催日） */
+  date: 20,
+  /** 団体区分 (DANTAI_KBN) の桁数 */
+  organizationType: 2,
+  /** 事務担当者の最大人数 */
+  contactPersons: 3,
+  /** 資金管理団体の指定期間の最大件数 */
+  fundManagementPeriods: 3,
+  /** 国会議員関係政治団体の議員の最大人数 */
+  dietMembers: 3,
+  /** 国会議員関係政治団体の指定期間の最大件数 */
+  dietMemberPeriods: 3,
+} as const;
+
+const LIMITS = ORGANIZATION_REPORT_PROFILE_LIMITS;
+
+function maxLengthError(
+  path: string,
+  value: string | null | undefined,
+  max: number,
+  label: string,
+): ValidationError[] {
+  if (!value || value.length <= max) return [];
+  return [
+    {
+      path,
+      code: ValidationErrorCode.MAX_LENGTH_EXCEEDED,
+      message: `${label}は${max}文字以内で入力してください`,
+      severity: "error",
+    },
+  ];
+}
+
+function maxCountError(
+  path: string,
+  items: unknown[] | undefined,
+  max: number,
+  label: string,
+): ValidationError[] {
+  if (!items || items.length <= max) return [];
+  return [
+    {
+      path,
+      code: ValidationErrorCode.MAX_COUNT_EXCEEDED,
+      message: `${label}は${max}件まで登録できます`,
+      severity: "error",
+    },
+  ];
+}
+
+function personNameErrors(
+  path: string,
+  person: { lastName?: string; firstName?: string } | undefined,
+  label: string,
+): ValidationError[] {
+  if (!person) return [];
+  return [
+    ...maxLengthError(`${path}.lastName`, person.lastName, LIMITS.personName, `${label}の姓`),
+    ...maxLengthError(`${path}.firstName`, person.firstName, LIMITS.personName, `${label}の名`),
+  ];
+}
+
+function periodErrors(
+  path: string,
+  periods: { from: string; to: string }[] | undefined,
+  label: string,
+): ValidationError[] {
+  return (periods ?? []).flatMap((period, i) => [
+    ...maxLengthError(
+      `${path}[${i}].from`,
+      period.from,
+      LIMITS.date,
+      `${label}（${i + 1}件目）の開始日`,
+    ),
+    ...maxLengthError(
+      `${path}[${i}].to`,
+      period.to,
+      LIMITS.date,
+      `${label}（${i + 1}件目）の終了日`,
+    ),
+  ]);
+}
+
+/**
+ * 文字数・件数・桁数の上限を検証する（必須は見ない）
+ */
+function validateLimits(profile: UpdateOrganizationReportProfileInput): ValidationError[] {
+  const details = profile.details ?? {};
+  const contactPersons = details.contactPersons;
+  const fundManagement = details.fundManagement;
+  const dietMemberRelation = details.dietMemberRelation;
+
+  return [
+    ...maxLengthError(
+      "profile.officialName",
+      profile.officialName,
+      LIMITS.officialName,
+      "政治団体の名称",
+    ),
+    ...maxLengthError(
+      "profile.officialNameKana",
+      profile.officialNameKana,
+      LIMITS.officialNameKana,
+      "政治団体の名称（ふりがな）",
+    ),
+    ...maxLengthError(
+      "profile.officeAddress",
+      profile.officeAddress,
+      LIMITS.officeAddress,
+      "主たる事務所の所在地",
+    ),
+    ...maxLengthError(
+      "profile.officeAddressBuilding",
+      profile.officeAddressBuilding,
+      LIMITS.officeAddressBuilding,
+      "主たる事務所の建物名等",
+    ),
+    ...personNameErrors("profile.details.representative", details.representative, "代表者"),
+    ...personNameErrors("profile.details.accountant", details.accountant, "会計責任者"),
+    ...maxCountError(
+      "profile.details.contactPersons",
+      contactPersons,
+      LIMITS.contactPersons,
+      "事務担当者",
+    ),
+    ...(contactPersons ?? []).flatMap((person, i) => [
+      ...personNameErrors(
+        `profile.details.contactPersons[${i}]`,
+        person,
+        `事務担当者（${i + 1}人目）`,
+      ),
+      ...maxLengthError(
+        `profile.details.contactPersons[${i}].tel`,
+        person.tel,
+        LIMITS.tel,
+        `事務担当者（${i + 1}人目）の電話番号`,
+      ),
+    ]),
+    ...maxLengthError(
+      "profile.details.organizationType",
+      details.organizationType,
+      LIMITS.organizationType,
+      "団体区分",
+    ),
+    ...maxLengthError(
+      "profile.details.fundManagement.publicPositionName",
+      fundManagement?.publicPositionName,
+      LIMITS.publicPositionName,
+      "資金管理団体の公職の名称",
+    ),
+    ...personNameErrors(
+      "profile.details.fundManagement.applicant",
+      fundManagement?.applicant,
+      "資金管理団体の届出者",
+    ),
+    ...maxCountError(
+      "profile.details.fundManagement.periods",
+      fundManagement?.periods,
+      LIMITS.fundManagementPeriods,
+      "資金管理団体の指定期間",
+    ),
+    ...periodErrors(
+      "profile.details.fundManagement.periods",
+      fundManagement?.periods,
+      "資金管理団体の指定期間",
+    ),
+    ...maxCountError(
+      "profile.details.dietMemberRelation.members",
+      dietMemberRelation?.members,
+      LIMITS.dietMembers,
+      "国会議員関係政治団体の議員",
+    ),
+    ...(dietMemberRelation?.members ?? []).flatMap((member, i) =>
+      personNameErrors(
+        `profile.details.dietMemberRelation.members[${i}]`,
+        member,
+        `国会議員関係政治団体の議員（${i + 1}人目）`,
+      ),
+    ),
+    ...maxCountError(
+      "profile.details.dietMemberRelation.periods",
+      dietMemberRelation?.periods,
+      LIMITS.dietMemberPeriods,
+      "国会議員関係政治団体の指定期間",
+    ),
+    ...periodErrors(
+      "profile.details.dietMemberRelation.periods",
+      dietMemberRelation?.periods,
+      "国会議員関係政治団体の指定期間",
+    ),
+    ...maxLengthError(
+      "profile.details.specificPartyDate",
+      details.specificPartyDate,
+      LIMITS.date,
+      "特定パーティーの開催日",
+    ),
+  ];
+}
+
+/**
+ * 必須・選択値を検証する（上限は validateLimits が見る）
+ */
+function validateRequired(profile: OrganizationReportProfile): ValidationError[] {
+  const errors: ValidationError[] = [];
+  const required = (path: string, message: string) =>
+    errors.push({ path, code: ValidationErrorCode.REQUIRED, message, severity: "error" });
+
+  // 報告年 (HOUKOKU_NEN): 必須、4桁数字
+  if (!profile.financialYear) {
+    required("profile.financialYear", "報告年が入力されていません");
+  } else if (profile.financialYear < 1000 || profile.financialYear > 9999) {
+    errors.push({
+      path: "profile.financialYear",
+      code: ValidationErrorCode.INVALID_FORMAT,
+      message: "報告年は4桁の数字で入力してください",
+      severity: "error",
+    });
+  }
+
+  if (!profile.officialName) {
+    required("profile.officialName", "政治団体の名称が入力されていません");
+  }
+  if (!profile.officialNameKana) {
+    required("profile.officialNameKana", "政治団体の名称（ふりがな）が入力されていません");
+  }
+  if (!profile.officeAddress) {
+    required("profile.officeAddress", "主たる事務所の所在地が入力されていません");
+  }
+
+  const representative = profile.details.representative;
+  if (!representative) {
+    required("profile.details.representative", "代表者の氏名が入力されていません");
+  } else {
+    if (!representative.lastName) {
+      required("profile.details.representative.lastName", "代表者の姓が入力されていません");
+    }
+    if (!representative.firstName) {
+      required("profile.details.representative.firstName", "代表者の名が入力されていません");
+    }
+  }
+
+  const accountant = profile.details.accountant;
+  if (!accountant) {
+    required("profile.details.accountant", "会計責任者の氏名が入力されていません");
+  } else {
+    if (!accountant.lastName) {
+      required("profile.details.accountant.lastName", "会計責任者の姓が入力されていません");
+    }
+    if (!accountant.firstName) {
+      required("profile.details.accountant.firstName", "会計責任者の名が入力されていません");
+    }
+  }
+
+  // 活動区域 (KATU_KUKI): 必須、"1" or "2"
+  const activityArea = profile.details.activityArea;
+  if (!activityArea) {
+    required("profile.details.activityArea", "活動区域が選択されていません");
+  } else if (activityArea !== "1" && activityArea !== "2") {
+    errors.push({
+      path: "profile.details.activityArea",
+      code: ValidationErrorCode.INVALID_VALUE,
+      message: "活動区域の値が不正です（1: 二以上の都道府県、2: 一つの都道府県）",
+      severity: "error",
+    });
+  }
+
+  // 国会議員関係政治団体の区分 (GIIN_DANTAI_KBN): 必須、"0"〜"3"
+  const dietMemberRelation = profile.details.dietMemberRelation;
+  if (!dietMemberRelation) {
+    required(
+      "profile.details.dietMemberRelation",
+      "国会議員関係政治団体の区分が選択されていません",
+    );
+  } else if (!["0", "1", "2", "3"].includes(dietMemberRelation.type)) {
+    errors.push({
+      path: "profile.details.dietMemberRelation.type",
+      code: ValidationErrorCode.INVALID_VALUE,
+      message:
+        "国会議員関係政治団体の区分の値が不正です（0: 指定無し、1: 1号団体、2: 2号団体、3: 両方）",
+      severity: "error",
+    });
+  }
+
+  return errors;
+}
+
+/**
  * OrganizationReportProfile に関連するドメインロジック
  */
 export const OrganizationReportProfile = {
   /**
-   * プロフィールのバリデーションを実行する
+   * プロフィールのバリデーションを実行する（報告書の出力用。必須と上限の両方を見る）
    *
    * SYUUSHI07_01（団体基本情報）のバリデーション:
    * - 報告年 (HOUKOKU_NEN): 必須、4桁数字
-   * - 政治団体名称 (DANTAI_NM): 必須、120文字以内
-   * - 政治団体ふりがな (DANTAI_KANA): 必須、120文字以内
-   * - 事務所住所 (JIM_ADR): 必須、80文字以内
-   * - 代表者氏名 (DAI_NM1, DAI_NM2): 必須、各30文字以内
-   * - 会計責任者氏名 (KAI_NM1, KAI_NM2): 必須、各30文字以内
+   * - 政治団体名称 (DANTAI_NM)・ふりがな (DANTAI_KANA)・事務所住所 (JIM_ADR): 必須
+   * - 代表者氏名 (DAI_NM1, DAI_NM2)・会計責任者氏名 (KAI_NM1, KAI_NM2): 必須
    * - 活動区域 (KATU_KUKI): 必須、"1" or "2"
    * - 国会議員関係政治団体の区分 (GIIN_DANTAI_KBN): 必須、"0"〜"3"
+   * - 文字数・件数・桁数: ORGANIZATION_REPORT_PROFILE_LIMITS 以内
    *
    * 注: 資金管理団体の指定の有無 (SIKIN_UMU) はfundManagementの存在有無から自動導出されるためバリデーション不要
    */
-  validate: (profile: OrganizationReportProfile): ValidationError[] => {
-    const errors: ValidationError[] = [];
+  validate: (profile: OrganizationReportProfile): ValidationError[] => [
+    ...validateRequired(profile),
+    ...validateLimits(profile),
+  ],
 
-    // 報告年 (HOUKOKU_NEN): 必須、4桁数字
-    if (!profile.financialYear) {
-      errors.push({
-        path: "profile.financialYear",
-        code: ValidationErrorCode.REQUIRED,
-        message: "報告年が入力されていません",
-        severity: "error",
-      });
-    } else if (profile.financialYear < 1000 || profile.financialYear > 9999) {
-      errors.push({
-        path: "profile.financialYear",
-        code: ValidationErrorCode.INVALID_FORMAT,
-        message: "報告年は4桁の数字で入力してください",
-        severity: "error",
-      });
-    }
-
-    // 政治団体名称 (DANTAI_NM): 必須、120文字以内
-    if (!profile.officialName) {
-      errors.push({
-        path: "profile.officialName",
-        code: ValidationErrorCode.REQUIRED,
-        message: "政治団体の名称が入力されていません",
-        severity: "error",
-      });
-    } else if (profile.officialName.length > 120) {
-      errors.push({
-        path: "profile.officialName",
-        code: ValidationErrorCode.MAX_LENGTH_EXCEEDED,
-        message: "政治団体の名称は120文字以内で入力してください",
-        severity: "error",
-      });
-    }
-
-    // 政治団体ふりがな (DANTAI_KANA): 必須、120文字以内
-    if (!profile.officialNameKana) {
-      errors.push({
-        path: "profile.officialNameKana",
-        code: ValidationErrorCode.REQUIRED,
-        message: "政治団体の名称（ふりがな）が入力されていません",
-        severity: "error",
-      });
-    } else if (profile.officialNameKana.length > 120) {
-      errors.push({
-        path: "profile.officialNameKana",
-        code: ValidationErrorCode.MAX_LENGTH_EXCEEDED,
-        message: "政治団体の名称（ふりがな）は120文字以内で入力してください",
-        severity: "error",
-      });
-    }
-
-    // 事務所住所 (JIM_ADR): 必須、80文字以内
-    if (!profile.officeAddress) {
-      errors.push({
-        path: "profile.officeAddress",
-        code: ValidationErrorCode.REQUIRED,
-        message: "主たる事務所の所在地が入力されていません",
-        severity: "error",
-      });
-    } else if (profile.officeAddress.length > 80) {
-      errors.push({
-        path: "profile.officeAddress",
-        code: ValidationErrorCode.MAX_LENGTH_EXCEEDED,
-        message: "主たる事務所の所在地は80文字以内で入力してください",
-        severity: "error",
-      });
-    }
-
-    // 代表者氏名 (DAI_NM1, DAI_NM2): 必須、各30文字以内
-    const representative = profile.details.representative;
-    if (!representative) {
-      errors.push({
-        path: "profile.details.representative",
-        code: ValidationErrorCode.REQUIRED,
-        message: "代表者の氏名が入力されていません",
-        severity: "error",
-      });
-    } else {
-      if (!representative.lastName) {
-        errors.push({
-          path: "profile.details.representative.lastName",
-          code: ValidationErrorCode.REQUIRED,
-          message: "代表者の姓が入力されていません",
-          severity: "error",
-        });
-      } else if (representative.lastName.length > 30) {
-        errors.push({
-          path: "profile.details.representative.lastName",
-          code: ValidationErrorCode.MAX_LENGTH_EXCEEDED,
-          message: "代表者の姓は30文字以内で入力してください",
-          severity: "error",
-        });
-      }
-
-      if (!representative.firstName) {
-        errors.push({
-          path: "profile.details.representative.firstName",
-          code: ValidationErrorCode.REQUIRED,
-          message: "代表者の名が入力されていません",
-          severity: "error",
-        });
-      } else if (representative.firstName.length > 30) {
-        errors.push({
-          path: "profile.details.representative.firstName",
-          code: ValidationErrorCode.MAX_LENGTH_EXCEEDED,
-          message: "代表者の名は30文字以内で入力してください",
-          severity: "error",
-        });
-      }
-    }
-
-    // 会計責任者氏名 (KAI_NM1, KAI_NM2): 必須、各30文字以内
-    const accountant = profile.details.accountant;
-    if (!accountant) {
-      errors.push({
-        path: "profile.details.accountant",
-        code: ValidationErrorCode.REQUIRED,
-        message: "会計責任者の氏名が入力されていません",
-        severity: "error",
-      });
-    } else {
-      if (!accountant.lastName) {
-        errors.push({
-          path: "profile.details.accountant.lastName",
-          code: ValidationErrorCode.REQUIRED,
-          message: "会計責任者の姓が入力されていません",
-          severity: "error",
-        });
-      } else if (accountant.lastName.length > 30) {
-        errors.push({
-          path: "profile.details.accountant.lastName",
-          code: ValidationErrorCode.MAX_LENGTH_EXCEEDED,
-          message: "会計責任者の姓は30文字以内で入力してください",
-          severity: "error",
-        });
-      }
-
-      if (!accountant.firstName) {
-        errors.push({
-          path: "profile.details.accountant.firstName",
-          code: ValidationErrorCode.REQUIRED,
-          message: "会計責任者の名が入力されていません",
-          severity: "error",
-        });
-      } else if (accountant.firstName.length > 30) {
-        errors.push({
-          path: "profile.details.accountant.firstName",
-          code: ValidationErrorCode.MAX_LENGTH_EXCEEDED,
-          message: "会計責任者の名は30文字以内で入力してください",
-          severity: "error",
-        });
-      }
-    }
-
-    // 活動区域 (KATU_KUKI): 必須、"1" or "2"
-    const activityArea = profile.details.activityArea;
-    if (!activityArea) {
-      errors.push({
-        path: "profile.details.activityArea",
-        code: ValidationErrorCode.REQUIRED,
-        message: "活動区域が選択されていません",
-        severity: "error",
-      });
-    } else if (activityArea !== "1" && activityArea !== "2") {
-      errors.push({
-        path: "profile.details.activityArea",
-        code: ValidationErrorCode.INVALID_VALUE,
-        message: "活動区域の値が不正です（1: 二以上の都道府県、2: 一つの都道府県）",
-        severity: "error",
-      });
-    }
-
-    // 国会議員関係政治団体の区分 (GIIN_DANTAI_KBN): 必須、"0"〜"3"
-    const dietMemberRelation = profile.details.dietMemberRelation;
-    if (!dietMemberRelation) {
-      errors.push({
-        path: "profile.details.dietMemberRelation",
-        code: ValidationErrorCode.REQUIRED,
-        message: "国会議員関係政治団体の区分が選択されていません",
-        severity: "error",
-      });
-    } else if (!["0", "1", "2", "3"].includes(dietMemberRelation.type)) {
-      errors.push({
-        path: "profile.details.dietMemberRelation.type",
-        code: ValidationErrorCode.INVALID_VALUE,
-        message:
-          "国会議員関係政治団体の区分の値が不正です（0: 指定無し、1: 1号団体、2: 2号団体、3: 両方）",
-        severity: "error",
-      });
-    }
-
-    return errors;
-  },
+  /**
+   * 保存時のバリデーション（上限だけを見る）
+   *
+   * 入力途中のプロフィールも保存できるよう、必須は見ない。
+   */
+  validateForSave: (profile: UpdateOrganizationReportProfileInput): ValidationError[] =>
+    validateLimits(profile),
 } as const;

@@ -1,5 +1,6 @@
 "use client";
 import "client-only";
+import { ORGANIZATION_REPORT_PROFILE_LIMITS as LIMITS } from "@/server/contexts/report/domain/models/organization-report-profile";
 
 import { Plus } from "@phosphor-icons/react/dist/ssr";
 import type {
@@ -42,7 +43,7 @@ export function ContactPersonsSection({ details, updateDetails }: ContactPersons
   };
 
   const addContactPerson = () => {
-    if (contactPersons.length < 3) {
+    if (contactPersons.length < LIMITS.contactPersons) {
       updateDetails({
         contactPersons: [...contactPersons, emptyContactPerson()],
       });
@@ -58,7 +59,7 @@ export function ContactPersonsSection({ details, updateDetails }: ContactPersons
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>事務担当者（最大3名）</CardTitle>
-        {contactPersons.length < 3 && (
+        {contactPersons.length < LIMITS.contactPersons && (
           <Button
             type="button"
             variant="outline"
@@ -99,7 +100,7 @@ export function ContactPersonsSection({ details, updateDetails }: ContactPersons
                   type="text"
                   value={person.lastName}
                   onChange={(e) => updateContactPerson(index, { lastName: e.target.value })}
-                  maxLength={30}
+                  maxLength={LIMITS.personName}
                   placeholder="田中"
                 />
               </div>
@@ -109,7 +110,7 @@ export function ContactPersonsSection({ details, updateDetails }: ContactPersons
                   type="text"
                   value={person.firstName}
                   onChange={(e) => updateContactPerson(index, { firstName: e.target.value })}
-                  maxLength={30}
+                  maxLength={LIMITS.personName}
                   placeholder="一郎"
                 />
               </div>
@@ -119,7 +120,7 @@ export function ContactPersonsSection({ details, updateDetails }: ContactPersons
                   type="text"
                   value={person.tel}
                   onChange={(e) => updateContactPerson(index, { tel: e.target.value })}
-                  maxLength={20}
+                  maxLength={LIMITS.tel}
                   placeholder="03-1234-5678"
                 />
               </div>

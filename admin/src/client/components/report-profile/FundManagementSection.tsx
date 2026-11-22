@@ -1,5 +1,6 @@
 "use client";
 import "client-only";
+import { ORGANIZATION_REPORT_PROFILE_LIMITS as LIMITS } from "@/server/contexts/report/domain/models/organization-report-profile";
 
 import { Plus } from "@phosphor-icons/react/dist/ssr";
 import type {
@@ -59,7 +60,7 @@ export function FundManagementSection({ details, updateDetails }: FundManagement
   };
 
   const addPeriod = () => {
-    if (fundManagement && (fundManagement.periods?.length ?? 0) < 3) {
+    if (fundManagement && (fundManagement.periods?.length ?? 0) < LIMITS.fundManagementPeriods) {
       updateFundManagement({
         periods: [...(fundManagement.periods ?? []), emptyPeriod()],
       });
@@ -107,7 +108,7 @@ export function FundManagementSection({ details, updateDetails }: FundManagement
               type="text"
               value={fundManagement.publicPositionName ?? ""}
               onChange={(e) => updateFundManagement({ publicPositionName: e.target.value })}
-              maxLength={60}
+              maxLength={LIMITS.publicPositionName}
               className="max-w-md"
               placeholder="衆議院議員"
             />
@@ -149,7 +150,7 @@ export function FundManagementSection({ details, updateDetails }: FundManagement
                       },
                     })
                   }
-                  maxLength={30}
+                  maxLength={LIMITS.personName}
                 />
               </div>
               <div className="flex-1 space-y-2">
@@ -166,7 +167,7 @@ export function FundManagementSection({ details, updateDetails }: FundManagement
                       },
                     })
                   }
-                  maxLength={30}
+                  maxLength={LIMITS.personName}
                 />
               </div>
             </div>
@@ -175,7 +176,7 @@ export function FundManagementSection({ details, updateDetails }: FundManagement
           <div>
             <div className="flex justify-between items-center mb-2">
               <h3 className="text-md font-medium text-foreground">指定期間（最大3件）</h3>
-              {(fundManagement.periods?.length ?? 0) < 3 && (
+              {(fundManagement.periods?.length ?? 0) < LIMITS.fundManagementPeriods && (
                 <Button
                   type="button"
                   variant="outline"
@@ -195,7 +196,7 @@ export function FundManagementSection({ details, updateDetails }: FundManagement
                     type="text"
                     value={period.from}
                     onChange={(e) => updatePeriod(index, { from: e.target.value })}
-                    maxLength={20}
+                    maxLength={LIMITS.date}
                     className="w-32"
                     placeholder="R6/4/1"
                   />
@@ -204,7 +205,7 @@ export function FundManagementSection({ details, updateDetails }: FundManagement
                     type="text"
                     value={period.to}
                     onChange={(e) => updatePeriod(index, { to: e.target.value })}
-                    maxLength={20}
+                    maxLength={LIMITS.date}
                     className="w-32"
                     placeholder="R7/3/31"
                   />

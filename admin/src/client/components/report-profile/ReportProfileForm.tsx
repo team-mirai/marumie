@@ -26,6 +26,7 @@ export function ReportProfileForm({
 }: ReportProfileFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [success, setSuccess] = useState(false);
 
   const [formData, setFormData] = useState<OrganizationReportProfileFormData>({
@@ -43,6 +44,7 @@ export function ReportProfileForm({
     e.preventDefault();
     setIsLoading(true);
     setError(null);
+    setValidationErrors([]);
     setSuccess(false);
 
     try {
@@ -57,13 +59,16 @@ export function ReportProfileForm({
         details: formData.details,
       });
 
-      if (result.success) {
-        setSuccess(true);
-        setFormData((prev: OrganizationReportProfileFormData) => ({
-          ...prev,
-          id: result.profile.id,
-        }));
+      if (!result.success) {
+        setValidationErrors(result.errors);
+        return;
       }
+
+      setSuccess(true);
+      setFormData((prev: OrganizationReportProfileFormData) => ({
+        ...prev,
+        id: result.profile.id,
+      }));
     } catch (err) {
       setError(err instanceof Error ? err.message : "保存に失敗しました");
     } finally {
@@ -93,6 +98,20 @@ export function ReportProfileForm({
       {error && (
         <div className="rounded-lg border border-destructive bg-destructive-hover p-3 text-sm text-destructive">
           {error}
+        </div>
+      )}
+
+      {validationErrors.length > 0 && (
+        <div
+          role="alert"
+          className="rounded-lg border border-destructive bg-destructive-hover p-3 text-sm text-destructive"
+        >
+          <p>入力内容に誤りがあるため保存できませんでした</p>
+          <ul className="mt-1 list-disc pl-5">
+            {validationErrors.map((message) => (
+              <li key={message}>{message}</li>
+            ))}
+          </ul>
         </div>
       )}
 

@@ -1,5 +1,6 @@
 "use client";
 import "client-only";
+import { ORGANIZATION_REPORT_PROFILE_LIMITS as LIMITS } from "@/server/contexts/report/domain/models/organization-report-profile";
 
 import type { OrganizationReportProfileDetails } from "@/server/contexts/report/domain/models/organization-report-profile";
 import { Card, CardHeader, CardTitle, CardContent, Label, Input } from "@/client/components/ui";
@@ -38,7 +39,7 @@ export function RepresentativeSection({ details, updateDetails }: Representative
                     },
                   })
                 }
-                maxLength={30}
+                maxLength={LIMITS.personName}
                 placeholder="山田"
               />
             </div>
@@ -55,7 +56,7 @@ export function RepresentativeSection({ details, updateDetails }: Representative
                     },
                   })
                 }
-                maxLength={30}
+                maxLength={LIMITS.personName}
                 placeholder="太郎"
               />
             </div>
@@ -75,7 +76,7 @@ export function RepresentativeSection({ details, updateDetails }: Representative
                     accountant: { ...accountant, lastName: e.target.value },
                   })
                 }
-                maxLength={30}
+                maxLength={LIMITS.personName}
                 placeholder="鈴木"
               />
             </div>
@@ -89,7 +90,7 @@ export function RepresentativeSection({ details, updateDetails }: Representative
                     accountant: { ...accountant, firstName: e.target.value },
                   })
                 }
-                maxLength={30}
+                maxLength={LIMITS.personName}
                 placeholder="花子"
               />
             </div>

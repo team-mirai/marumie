@@ -25,7 +25,7 @@ export async function saveOrganizationProfile(data: SaveOrganizationProfileData)
     const repository = new PrismaOrganizationReportProfileRepository(prisma);
     const usecase = new SaveOrganizationProfileUsecase(repository);
 
-    const profile = await usecase.execute({
+    const result = await usecase.execute({
       id: data.id,
       politicalOrganizationId: data.politicalOrganizationId,
       financialYear: data.financialYear,
@@ -36,8 +36,12 @@ export async function saveOrganizationProfile(data: SaveOrganizationProfileData)
       details: data.details,
     });
 
+    if (!result.success) {
+      return result;
+    }
+
     revalidatePath(`/political-organizations/${data.politicalOrganizationId}/report-profile`);
-    return { success: true, profile };
+    return result;
   } catch (error) {
     console.error("Error saving organization profile:", error);
     throw new Error(
