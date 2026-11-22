@@ -1,10 +1,8 @@
 import "server-only";
 import { Prisma, type PrismaClient } from "@prisma/client";
 import type { UserRole } from "@/server/contexts/auth/domain/models/user-role";
-import {
-  UserInvitationModel,
-  type UserInvitation,
-} from "@/server/contexts/auth/domain/models/user-invitation";
+import { EmailAddressModel } from "@/server/contexts/auth/domain/models/email-address";
+import type { UserInvitation } from "@/server/contexts/auth/domain/models/user-invitation";
 import type { UserInvitationRepository } from "@/server/contexts/auth/domain/repositories/user-invitation-repository.interface";
 import type { User } from "@/server/contexts/shared/domain/repositories/user-repository.interface";
 
@@ -75,7 +73,7 @@ export class PrismaUserInvitationRepository implements UserInvitationRepository 
   }
 
   async createUserAcceptingInvitation(data: { authId: string; email: string }): Promise<User> {
-    const invitationEmail = UserInvitationModel.normalizeEmail(data.email);
+    const invitationEmail = EmailAddressModel.normalize(data.email);
     return await this.prisma.$transaction(async (tx) => {
       // 招待を消せた場合だけ使う（同時に取り消された・使われた招待を二重に使わない）
       const invitation = invitationEmail

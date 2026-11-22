@@ -1,29 +1,6 @@
 import { UserInvitationModel } from "@/server/contexts/auth/domain/models/user-invitation";
 
 describe("UserInvitationModel", () => {
-  describe("normalizeEmail", () => {
-    it("前後の空白を除き、小文字にそろえる", () => {
-      expect(UserInvitationModel.normalizeEmail("  Staff@Team-Mir.AI ")).toBe("staff@team-mir.ai");
-    });
-
-    it("大文字・小文字だけが違うメールアドレスは同じ値になる", () => {
-      expect(UserInvitationModel.normalizeEmail("STAFF@team-mir.ai")).toBe(
-        UserInvitationModel.normalizeEmail("staff@TEAM-MIR.ai"),
-      );
-    });
-
-    it.each(["", "   ", "staff", "staff@", "@team-mir.ai", "staff@team-mir", "a b@team-mir.ai"])(
-      "メールアドレスとして不正な値（%p）は null",
-      (email) => {
-        expect(UserInvitationModel.normalizeEmail(email)).toBeNull();
-      },
-    );
-
-    it("255 文字を超えるメールアドレスは null", () => {
-      expect(UserInvitationModel.normalizeEmail(`${"a".repeat(250)}@x.com`)).toBeNull();
-    });
-  });
-
   describe("findConflict", () => {
     it("ユーザーも未使用の招待も無ければ登録できる", () => {
       expect(

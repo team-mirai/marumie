@@ -30,6 +30,16 @@ describe("RequestPasswordResetUsecase", () => {
       );
     });
 
+    it("大文字混じりのメールアドレスは小文字にそろえて送信する", async () => {
+      mockAuthProvider.resetPasswordForEmail.mockResolvedValue(undefined);
+
+      await usecase.execute(" Test@Example.COM ");
+      expect(mockAuthProvider.resetPasswordForEmail).toHaveBeenCalledWith(
+        "test@example.com",
+        expect.stringContaining("/login")
+      );
+    });
+
     it("メールアドレスが空の場合はエラーを投げる", async () => {
       await expect(usecase.execute("")).rejects.toThrow(AuthError);
       await expect(usecase.execute("")).rejects.toMatchObject({
