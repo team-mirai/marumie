@@ -1,5 +1,5 @@
 import "server-only";
-import { PARTY_SLUGS, isValidYear } from "@/app/o/[slug]/[year]/organization-page-config";
+import { isValidYear } from "@/app/o/[slug]/[year]/organization-page-config";
 import { loadOrganizationOgImageData } from "@/server/contexts/public-finance/presentation/loaders/load-organization-og-image-data";
 import {
   ogPhotoDataUri,
@@ -21,9 +21,9 @@ export async function GET(
   if (!isValidYear(financialYear)) return await topOgImageResponse();
 
   try {
-    const isParty = PARTY_SLUGS.includes(slug);
-    const data = await loadOrganizationOgImageData(slug, financialYear, { withPhoto: !isParty });
+    const data = await loadOrganizationOgImageData(slug, financialYear);
     if (!data) return await topOgImageResponse();
+    const isParty = data.kind === "party";
     const photo = data.photo ? await ogPhotoDataUri(data.photo) : null;
     const image = await renderFinanceOgImage({
       key: `o/${slug}/${financialYear}`,

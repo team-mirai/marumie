@@ -31,17 +31,21 @@ describe("loadOrganizationOgImageData", () => {
     global.fetch = fetchMock;
 
     loadOrganizationsMock.mockResolvedValue({
-      organizations: [{ slug: "sample-party", displayName: "サンプル党", hasPhoto: true }],
+      organizations: [
+        { slug: "sample-party", displayName: "サンプル党", kind: "party", hasPhoto: true },
+        { slug: "sample-group", displayName: "サンプル会", kind: "group", hasPhoto: true },
+      ],
     });
     loadTopPageDataMock.mockResolvedValue({ friendly });
     loadOrganizationPhotoUrlMock.mockResolvedValue(PHOTO_URL);
   });
 
-  it("代表者の顔写真を時間制限付きで取り、データと一緒に返す", async () => {
+  it("政治団体なら代表者の顔写真を時間制限付きで取り、データと一緒に返す", async () => {
     fetchMock.mockResolvedValue(new Response(new Uint8Array([0xff, 0xd8, 0xff])));
 
-    expect(await loadOrganizationOgImageData("sample-party", 2026, { withPhoto: true })).toEqual({
-      displayName: "サンプル党",
+    expect(await loadOrganizationOgImageData("sample-group", 2026)).toEqual({
+      displayName: "サンプル会",
+      kind: "group",
       friendly,
       photo: new Uint8Array([0xff, 0xd8, 0xff]),
     });
@@ -54,9 +58,9 @@ describe("loadOrganizationOgImageData", () => {
   it("写真の取得が時間切れになったら、写真なしでデータを返す", async () => {
     fetchMock.mockRejectedValue(new DOMException("timeout", "TimeoutError"));
 
-    const data = await loadOrganizationOgImageData("sample-party", 2026, { withPhoto: true });
+    const data = await loadOrganizationOgImageData("sample-group", 2026);
 
-    expect(data?.displayName).toBe("サンプル党");
+    expect(data?.displayName).toBe("サンプル会");
     expect(data?.photo).toBeNull();
   });
 
@@ -67,7 +71,7 @@ describe("loadOrganizationOgImageData", () => {
     const arrayBuffer = jest.spyOn(response, "arrayBuffer");
     fetchMock.mockResolvedValue(response);
 
-    const data = await loadOrganizationOgImageData("sample-party", 2026, { withPhoto: true });
+    const data = await loadOrganizationOgImageData("sample-group", 2026);
 
     expect(data?.photo).toBeNull();
     expect(arrayBuffer).not.toHaveBeenCalled();
@@ -76,29 +80,25 @@ describe("loadOrganizationOgImageData", () => {
   it("実データが登録の上限（3MB）を超える写真は、写真なしにする", async () => {
     fetchMock.mockResolvedValue(new Response(new Uint8Array(3 * 1024 * 1024 + 1)));
 
-    expect(
-      (await loadOrganizationOgImageData("sample-party", 2026, { withPhoto: true }))?.photo,
-    ).toBeNull();
+    expect((await loadOrganizationOgImageData("sample-group", 2026))?.photo).toBeNull();
   });
 
   it("ちょうど上限（3MB）の写真は使う", async () => {
     fetchMock.mockResolvedValue(new Response(new Uint8Array(3 * 1024 * 1024)));
 
-    expect(
-      (await loadOrganizationOgImageData("sample-party", 2026, { withPhoto: true }))?.photo
-        ?.byteLength,
-    ).toBe(3 * 1024 * 1024);
+    expect((await loadOrganizationOgImageData("sample-group", 2026))?.photo?.byteLength).toBe(3 * 1024 * 1024);
   });
 
-  it("写真を描かない指定なら、写真を取りに行かない", async () => {
-    const data = await loadOrganizationOgImageData("sample-party", 2026, { withPhoto: false });
+  it("政党なら（見出しはロゴなので）写真を取りに行かず、政党の種別を返す", async () => {
+    const data = await loadOrganizationOgImageData("sample-party", 2026);
 
+    expect(data?.kind).toBe("party");
     expect(data?.photo).toBeNull();
     expect(loadOrganizationPhotoUrlMock).not.toHaveBeenCalled();
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it("団体が無ければ null", async () => {
-    expect(await loadOrganizationOgImageData("nobody", 2026, { withPhoto: true })).toBeNull();
+    expect(await loadOrganizationOgImageData("nobody", 2026)).toBeNull();
   });
 });

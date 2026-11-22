@@ -1,5 +1,6 @@
 import "server-only";
 
+import type { OrganizationKind } from "@/server/contexts/public-finance/domain/models/organization-kind";
 import { POLITICIAN_PHOTO_MAX_BYTES } from "@/shared/models/politician-photo";
 import type { SankeyData } from "@/types/sankey";
 import { loadOrganizationPhotoUrl } from "@/server/contexts/public-finance/presentation/loaders/load-organization-photo-url";
@@ -8,9 +9,11 @@ import { loadTopPageData } from "@/server/contexts/public-finance/presentation/l
 
 interface OrganizationOgImageData {
   displayName: string;
+  /** 政党か、それ以外の政治団体か（トップページ・メニュー・ページと同じ基準） */
+  kind: OrganizationKind;
   /** サイトの「詳細の区分」の図のデータ */
   friendly: SankeyData;
-  /** 代表者の顔写真の画像。未登録・取得できないときは null */
+  /** 代表者の顔写真の画像。政党（見出しはロゴ）・未登録・取得できないときは null */
   photo: Uint8Array | null;
 }
 
@@ -21,7 +24,6 @@ interface OrganizationOgImageData {
 export async function loadOrganizationOgImageData(
   slug: string,
   financialYear: number,
-  options: { withPhoto: boolean },
 ): Promise<OrganizationOgImageData | null> {
   const { organizations } = await loadOrganizations();
   const organization = organizations.find((org) => org.slug === slug);
@@ -30,9 +32,17 @@ export async function loadOrganizationOgImageData(
   const data = await loadTopPageData({ slugs: [slug], page: 1, perPage: 6, financialYear });
   if (!data?.friendly) return null;
 
+  // 政党の画像は見出しにロゴを描くので、写真は取りに行かない
   const photo =
-    options.withPhoto && organization.hasPhoto ? await fetchPhoto(slug).catch(() => null) : null;
-  return { displayName: organization.displayName, friendly: data.friendly, photo };
+    organization.kind === "group" && organization.hasPhoto
+      ? await fetchPhoto(slug).catch(() => null)
+      : null;
+  return {
+    displayName: organization.displayName,
+    kind: organization.kind,
+    friendly: data.friendly,
+    photo,
+  };
 }
 
 /** ストレージが応答しないときに、画像の生成ごと待ち続けないための上限 */

@@ -21,7 +21,6 @@ import { buildProfileLinks } from "@/client/lib/profile-links";
 import { shareMetadata } from "@/app/site-metadata";
 import {
   DEFAULT_YEAR,
-  PARTY_SLUGS,
   VALID_YEARS,
   isValidYear,
 } from "@/app/o/[slug]/[year]/organization-page-config";
@@ -94,7 +93,9 @@ export default async function OrgPage({ params }: OrgPageProps) {
   const updatedAt = formatUpdatedAt(data?.transactionData?.lastUpdatedAt ?? null);
   const eyebrow = `${organizationName}・${financialYear}年`;
   const years = VALID_YEARS.map((y) => ({ year: y, href: `/o/${slug}/${y}` }));
-  const isParty = PARTY_SLUGS.includes(slug);
+  // 政党ページにするかは、トップページ・メニューと同じく政治団体区分から決めた種別で決める。
+  // ほかは政治団体ページ（代表者の写真・SNS の見出し）にする
+  const isParty = currentOrganization?.kind === "party";
   const pageTitle = `${organizationName}の収支`;
   const breadcrumbLabel = `${pageTitle}・${financialYear}年`;
 

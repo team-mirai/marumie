@@ -71,7 +71,7 @@ describe("OrgPage（政党ページ）", () => {
   beforeEach(() => {
     loadOrganizationsMock.mockResolvedValue({
       default: "team-mirai",
-      organizations: [{ slug: "team-mirai", orgName: null, displayName: "チームみらい" }],
+      organizations: [{ slug: "team-mirai", orgName: null, displayName: "チームみらい", kind: "party" }],
     });
     loadTopPageDataMock.mockResolvedValue(null);
   });
@@ -125,7 +125,7 @@ describe("OrgPage（政党ページ）", () => {
     loadOrganizationsMock.mockResolvedValue({
       default: "team-mirai",
       organizations: [
-        { slug: "team-mirai", orgName: null, displayName: "チームみらい", hasPhoto: true },
+        { slug: "team-mirai", orgName: null, displayName: "チームみらい", kind: "party", hasPhoto: true },
       ],
     });
 
@@ -158,8 +158,13 @@ describe("OrgPage（政治団体ページ）", () => {
     loadOrganizationsMock.mockResolvedValue({
       default: "team-mirai",
       organizations: [
-        { slug: "team-mirai", orgName: null, displayName: "チームみらい" },
-        { slug: "digimin", orgName: "デジタル民主主義を考える会", displayName: "安野貴博の政治団体" },
+        { slug: "team-mirai", orgName: null, displayName: "チームみらい", kind: "party" },
+        {
+          slug: "digimin",
+          orgName: "デジタル民主主義を考える会",
+          displayName: "安野貴博の政治団体",
+          kind: "group",
+        },
       ],
     });
     loadTopPageDataMock.mockResolvedValue(null);
@@ -239,7 +244,7 @@ describe("generateMetadata（シェアしたときのカード）", () => {
   beforeEach(() => {
     loadOrganizationsMock.mockResolvedValue({
       default: "team-mirai",
-      organizations: [{ slug: "team-mirai", orgName: null, displayName: "チームみらい" }],
+      organizations: [{ slug: "team-mirai", orgName: null, displayName: "チームみらい", kind: "party" }],
     });
   });
 
