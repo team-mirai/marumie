@@ -6,7 +6,10 @@ import type {
 } from "@/server/contexts/research-fund/domain/models/scan-batch";
 import { inheritedAdvancedBy } from "@/server/contexts/research-fund/domain/models/advance";
 import { ScanJobError } from "@/server/contexts/research-fund/domain/models/scan-job";
-import type { RereadCandidate } from "@/server/contexts/research-fund/domain/models/scan-reread";
+import {
+  REREADABLE_STATUS,
+  type RereadCandidate,
+} from "@/server/contexts/research-fund/domain/models/scan-reread";
 import type {
   ClaimedScanJob,
   CreateRereadBatchInput,
@@ -91,7 +94,7 @@ export class PrismaScanRepository implements ScanRepository {
       where: {
         bookId: BigInt(bookId),
         id: { in: entryIds.map((id) => BigInt(id)) },
-        status: "draft",
+        status: REREADABLE_STATUS,
         documentId: { not: null },
       },
       select: { documentId: true },
@@ -106,7 +109,7 @@ export class PrismaScanRepository implements ScanRepository {
       where: {
         bookId: BigInt(bookId),
         documentId: { in: documentIds },
-        status: { not: "draft" },
+        status: { not: REREADABLE_STATUS },
       },
       select: { documentId: true },
       distinct: ["documentId"],
