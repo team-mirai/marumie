@@ -11,11 +11,11 @@ import {
 import type { PublicationRepository } from "@/server/contexts/research-fund/domain/repositories/publication-repository.interface";
 import type { ResearchFundRow } from "@/shared/research-fund/aggregation";
 import type { LegalCategoryCatalog } from "@/shared/research-fund/legal-category";
+import { researchFundRowsOf } from "@/shared/research-fund/journal-line";
 import {
   legalCategoryOverrideSelect,
   loadLegalCategoryCatalog,
   overrideOf,
-  withOverride,
 } from "@/server/contexts/research-fund/infrastructure/repositories/legal-category-catalog";
 
 const include = {
@@ -34,24 +34,14 @@ function documentOf(entry: Row): PublicationDocument | null {
   };
 }
 
-/** 集計に使うのは「借方の費用」と「貸方の調査研究費収入」だけ。相手勘定の普通預金は数えない。 */
+/** 集計に使う行の読み取りは公開ページと同じ規則で行う（shared/research-fund/journal-line.ts） */
 function rowsOf(entry: Row, catalog: LegalCategoryCatalog): ResearchFundRow[] {
-  const date = entry.entryDate.toISOString().slice(0, 10);
-  // 法律上の区分の集計は、上書きがあればそれ、無ければ科目の既定で数える（#1880）
-  const override = overrideOf(entry, catalog);
-  return entry.lines
-    .filter(
-      (line) =>
-        (line.side === "debit" && line.account.type === "expense") ||
-        (line.side === "credit" && line.accountKey === "grant-income"),
-    )
-    .map((line) => ({
-      date,
-      accountKey: line.accountKey,
-      amount: line.amount.toNumber(),
-      type: line.side === "debit" ? ("expense" as const) : ("grant" as const),
-      ...(line.side === "debit" ? withOverride(override) : {}),
-    }));
+  return researchFundRowsOf({
+    date: entry.entryDate.toISOString().slice(0, 10),
+    lines: entry.lines,
+    // 法律上の区分の集計は、上書きがあればそれ、無ければ科目の既定で数える（#1880）
+    legalCategoryOverride: overrideOf(entry, catalog),
+  }).map(({ row }) => row);
 }
 
 export class PrismaPublicationRepository implements PublicationRepository {

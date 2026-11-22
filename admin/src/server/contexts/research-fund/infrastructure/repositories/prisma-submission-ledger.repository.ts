@@ -11,6 +11,7 @@ import {
   type LegalCategoryCatalog,
   resolveLegalLabel,
 } from "@/shared/research-fund/legal-category";
+import { EXPENSE_LINE, expenseLinesOf } from "@/shared/research-fund/journal-line";
 
 const include = {
   lines: { include: { account: true } },
@@ -21,7 +22,7 @@ const include = {
 type Row = Prisma.ResearchFundJournalEntryGetPayload<{ include: typeof include }>;
 
 function model(row: Row, catalog: LegalCategoryCatalog): SubmissionLedgerEntry | null {
-  const expenseLine = row.lines.find((l) => l.side === "debit" && l.account.type === "expense");
+  const [expenseLine] = expenseLinesOf(row.lines);
   if (!expenseLine || row.source === "grant") return null;
   return {
     id: String(row.id),
@@ -55,7 +56,7 @@ export class PrismaSubmissionLedgerRepository implements SubmissionLedgerReposit
         bookId: BigInt(bookId),
         status: "published",
         source: { in: ["manual", "scan"] },
-        lines: { some: { side: "debit", account: { type: "expense" } } },
+        lines: { some: EXPENSE_LINE },
       },
       include,
       orderBy: [{ entryDate: "asc" }, { id: "asc" }],

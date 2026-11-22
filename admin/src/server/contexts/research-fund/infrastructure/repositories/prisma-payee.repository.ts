@@ -15,6 +15,7 @@ import {
   type PayeeMergeResult,
 } from "@/server/contexts/research-fund/domain/models/payee-merge";
 import type { PayeeRepository } from "@/server/contexts/research-fund/domain/repositories/payee-repository.interface";
+import { entryAmountOf } from "@/shared/research-fund/journal-line";
 
 function model(row: ResearchFundPayee): Payee {
   return {
@@ -60,7 +61,7 @@ export class PrismaPayeeRepository implements PayeeRepository {
         payeeId: BigInt(id),
         payee: { politicianId: BigInt(politicianId) },
       },
-      include: { lines: { where: { side: "debit" }, select: { amount: true } } },
+      include: { lines: { select: { side: true, amount: true } } },
       orderBy: [{ entryDate: "desc" }, { id: "asc" }],
     });
     return rows.map(
@@ -68,7 +69,7 @@ export class PrismaPayeeRepository implements PayeeRepository {
         id: String(row.id),
         entryDate: row.entryDate.toISOString().slice(0, 10),
         description: row.description,
-        amount: row.lines.reduce((sum, line) => sum + line.amount.toNumber(), 0),
+        amount: entryAmountOf(row.lines),
         status: row.status,
       }),
     );

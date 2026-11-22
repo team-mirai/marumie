@@ -16,10 +16,11 @@ import {
   RF_ERROR_CODES,
   type ResearchFundResult,
 } from "@/server/contexts/research-fund/domain/types/validation";
+import { BANK_ACCOUNT_KEY, GRANT_INCOME_ACCOUNT_KEY } from "@/shared/research-fund/journal-line";
 
 /** 支給は調研費口座への振込なので、収入科目と入金先はどちらも固定 */
-const INCOME_ACCOUNT_KEY = "grant-income";
-const ASSET_ACCOUNT_KEY = "bank";
+const INCOME_ACCOUNT_KEY = GRANT_INCOME_ACCOUNT_KEY;
+const ASSET_ACCOUNT_KEY = BANK_ACCOUNT_KEY;
 
 interface GrantJournalWriteInput {
   /** 支給の対象月（YYYY-MM） */

@@ -7,6 +7,11 @@ import {
   RF_ERROR_CODES,
   type ResearchFundResult,
 } from "@/server/contexts/research-fund/domain/types/validation";
+import {
+  BANK_ACCOUNT_KEY,
+  CASH_ACCOUNT_KEY,
+  GRANT_INCOME_ACCOUNT_KEY,
+} from "@/shared/research-fund/journal-line";
 
 export interface ResearchFundAccount {
   readonly key: string;
@@ -59,8 +64,9 @@ export const JournalPosting = {
     if (
       !account.key.trim() ||
       (pattern === "expense"
-        ? account.type !== "expense" || ["bank", "cash", "grant-income"].includes(account.key)
-        : account.type !== "income" || account.key !== "grant-income")
+        ? account.type !== "expense" ||
+          [BANK_ACCOUNT_KEY, CASH_ACCOUNT_KEY, GRANT_INCOME_ACCOUNT_KEY].includes(account.key)
+        : account.type !== "income" || account.key !== GRANT_INCOME_ACCOUNT_KEY)
     ) {
       return invalidResearchFundResult(
         "account",
@@ -70,7 +76,8 @@ export const JournalPosting = {
     }
     if (
       assetAccount.type !== "asset" ||
-      (assetAccount.key !== "bank" && !(pattern === "expense" && assetAccount.key === "cash"))
+      (assetAccount.key !== BANK_ACCOUNT_KEY &&
+        !(pattern === "expense" && assetAccount.key === CASH_ACCOUNT_KEY))
     ) {
       return invalidResearchFundResult(
         "assetAccount",

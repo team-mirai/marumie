@@ -448,3 +448,88 @@ describe("PrismaResearchFundRepository の「準備中」の議員", () => {
     expect(await repository.findComingSoonProfile("nobody")).toBeNull();
   });
 });
+
+/**
+ * 公開ページと admin の公開プレビュー（PrismaPublicationRepository.snapshot）が、同じ仕訳から同じ金額を読み取ること。
+ * admin/tests/server/contexts/research-fund/infrastructure/repositories/prisma-publication.repository.test.ts に
+ * 同じ仕訳・同じ期待値のテストがある。片方を変えるときはもう片方もそろえる。
+ */
+describe("PrismaResearchFundRepository の金額の読み取り（公開プレビューと同じ）", () => {
+  const SAME_AS_PUBLICATION_PREVIEW_ROWS = [
+    { date: "2026-08-01", accountKey: "grant-income", amount: 1_000_000, type: "grant" },
+    { date: "2026-08-13", accountKey: "taxi", amount: 1500, type: "expense" },
+    { date: "2026-08-20", accountKey: "taxi", amount: 500, type: "expense" },
+    { date: "2026-08-20", accountKey: "books-newspapers", amount: 700, type: "expense" },
+    { date: "2026-08-25", accountKey: "taxi", amount: 800, type: "expense" },
+  ];
+  const TYPES: Record<string, string> = {
+    taxi: "expense",
+    "books-newspapers": "expense",
+    bank: "asset",
+    cash: "asset",
+    "grant-income": "income",
+  };
+  let lineId = 0;
+  function line(side: "debit" | "credit", accountKey: string, amount: number) {
+    lineId += 1;
+    return {
+      id: BigInt(lineId),
+      side,
+      accountKey,
+      amount: { toNumber: () => amount },
+      account: { type: TYPES[accountKey], label: accountKey, legalLabel: null, legalCategoryKey: null },
+    };
+  }
+  function published(id: number, date: string, lines: ReturnType<typeof line>[]) {
+    return {
+      id: BigInt(id),
+      entryDate: new Date(`${date}T00:00:00.000Z`),
+      description: "視察先への移動",
+      note: null,
+      splitGroup: null,
+      documentId: null,
+      document: null,
+      lines,
+    };
+  }
+
+  it("支給・支出・費用の借方が複数の支出・現金払いの支出を、公開プレビューと同じ集計の行にする", async () => {
+    const { prisma, repository } = setup();
+    prisma.researchFundBook.findFirst.mockResolvedValue({
+      financialYear: 2026,
+      publishedThrough: null,
+      asOfDate: null,
+      nextUpdateNote: null,
+      policyComment: null,
+      details: null,
+      politician: {
+        name: "サンプル太郎",
+        slug: "sample-taro",
+        isResearchFundPublic: true,
+        ...BLANK_PROFILE,
+      },
+      journalEntries: [
+        published(1, "2026-08-01", [line("debit", "bank", 1_000_000), line("credit", "grant-income", 1_000_000)]),
+        published(2, "2026-08-13", [line("debit", "taxi", 1500), line("credit", "bank", 1500)]),
+        published(3, "2026-08-20", [
+          line("debit", "taxi", 500),
+          line("debit", "books-newspapers", 700),
+          line("credit", "bank", 1200),
+        ]),
+        published(4, "2026-08-25", [line("debit", "taxi", 800), line("credit", "cash", 800)]),
+      ],
+      expenditureGroups: [],
+    });
+
+    const result = await repository.findPublished("sample-taro", 2026);
+
+    expect(result?.rows).toEqual(SAME_AS_PUBLICATION_PREVIEW_ROWS);
+    expect(result?.expenses.map(({ kind, amount }) => [kind, amount])).toEqual([
+      ["grant", 1_000_000],
+      ["expense", 1500],
+      ["expense", 500],
+      ["expense", 700],
+      ["expense", 800],
+    ]);
+  });
+});

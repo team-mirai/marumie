@@ -21,11 +21,11 @@ test("一覧は議員の支払先だけを、帳簿で紐づいている仕訳�
 });
 test("紐づいた仕訳は帳簿と議員の支払先で絞り込み、借方の合計を金額として日付の新しい順に返す", async () => {
   const { repository, tx } = setup();
-  tx.researchFundJournalEntry.findMany.mockResolvedValue([{ id: BigInt(11), entryDate: new Date("2026-05-01"), description: "タクシー代", status: "approved", lines: [{ amount: new Prisma.Decimal(1200) }] }]);
+  tx.researchFundJournalEntry.findMany.mockResolvedValue([{ id: BigInt(11), entryDate: new Date("2026-05-01"), description: "タクシー代", status: "approved", lines: [{ side: "debit", amount: new Prisma.Decimal(1200) }, { side: "credit", amount: new Prisma.Decimal(1200) }] }]);
   await expect(repository.listJournalEntries("5", "7", "1")).resolves.toEqual([{ id: "11", entryDate: "2026-05-01", description: "タクシー代", amount: 1200, status: "approved" }]);
   const args = tx.researchFundJournalEntry.findMany.mock.calls[0][0];
   expect(args.where).toEqual({ bookId: BigInt(1), payeeId: BigInt(7), payee: { politicianId: BigInt(5) } });
-  expect(args.include.lines.where).toEqual({ side: "debit" });
+  expect(args.include.lines).toEqual({ select: { side: true, amount: true } });
   expect(args.orderBy).toEqual([{ entryDate: "desc" }, { id: "asc" }]);
 });
 test("1件の取得は議員で絞り込み、別の議員の支払先は返さない", async () => {

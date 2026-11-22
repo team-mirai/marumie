@@ -11,9 +11,10 @@ import {
   RF_ERROR_CODES,
   type ResearchFundResult,
 } from "@/server/contexts/research-fund/domain/types/validation";
+import { BANK_ACCOUNT_KEY } from "@/shared/research-fund/journal-line";
 
 /** スキャンの下書き仕訳が使う決済科目。現金払いかどうかは読み取れないので普通預金に寄せる */
-const ASSET_ACCOUNT_KEY = "bank";
+const ASSET_ACCOUNT_KEY = BANK_ACCOUNT_KEY;
 
 export interface ScanDraftEntry {
   entryDate: string;

@@ -22,6 +22,7 @@ import {
   legalCategoryOverrideOf,
   type ResearchFundLegalCategory,
 } from "@/shared/research-fund/legal-category";
+import { expenseLinesOf, researchFundRowsOf } from "@/shared/research-fund/journal-line";
 
 /**
  * 公開ページに出す仕訳の取り出し方。
@@ -77,12 +78,6 @@ type SummaryLine = Prisma.ResearchFundJournalEntryGetPayload<{
   select: typeof summaryEntrySelect;
 }>["lines"][number];
 
-/** 公開の集計に使うのは「借方の費用」と「貸方の調査研究費収入」だけ。相手勘定の普通預金は数えない。 */
-const isExpenseLine = <T extends SummaryLine>(line: T) =>
-  line.side === "debit" && line.account.type === "expense";
-const isGrantLine = <T extends SummaryLine>(line: T) =>
-  line.side === "credit" && line.accountKey === "grant-income";
-
 type OverridableEntry = { legalCategoryOverride?: { legalCategoryKey: string } | null };
 
 /** 仕訳の法定区分の上書き。上書きの無い仕訳は null（科目の既定に従う） */
@@ -91,13 +86,6 @@ function overrideOf(
   catalog: LegalCategoryCatalog,
 ): ResearchFundLegalCategory | null {
   return legalCategoryOverrideOf(entry.legalCategoryOverride?.legalCategoryKey, catalog);
-}
-
-/**
- * 上書きがあるときだけ行に添える。上書きの無い帳簿の出力は、上書きの導入前と同じ形のままにする。
- */
-function withOverride(override: ResearchFundLegalCategory | null) {
-  return override ? { legalCategoryOverride: override } : {};
 }
 
 /**
@@ -195,49 +183,41 @@ export class PrismaResearchFundRepository implements ResearchFundRepository {
     for (const entry of book.journalEntries) {
       const date = dateOf(entry.entryDate);
       const override = overrideOf(entry, catalog);
-      for (const line of entry.lines) {
-        if (isGrantLine(line)) {
-          rows.push({
-            date,
-            accountKey: line.accountKey,
-            amount: line.amount.toNumber(),
-            type: "grant",
-          });
+      // 集計に使う行の読み取りは admin の公開プレビューと同じ規則で行う（shared/research-fund/journal-line.ts）
+      for (const { line, row } of researchFundRowsOf({
+        date,
+        lines: entry.lines,
+        legalCategoryOverride: override,
+      })) {
+        rows.push(row);
+        if (row.type === "grant") {
           expenses.push({
             kind: "grant",
             id: String(line.id),
             entryId: String(entry.id),
             date,
-            accountKey: line.accountKey,
+            accountKey: row.accountKey,
             description: entry.description,
-            amount: line.amount.toNumber(),
+            amount: row.amount,
             note: entry.note,
             splitGroup: null,
             ...receiptOf(entry.document),
           });
           continue;
         }
-        if (!isExpenseLine(line)) continue;
         accounts[line.accountKey] = accountOf(line);
-        rows.push({
-          date,
-          accountKey: line.accountKey,
-          amount: line.amount.toNumber(),
-          type: "expense",
-          ...withOverride(override),
-        });
         expenses.push({
           kind: "expense",
           id: String(line.id),
           entryId: String(entry.id),
           date,
-          accountKey: line.accountKey,
+          accountKey: row.accountKey,
           description: entry.description,
-          amount: line.amount.toNumber(),
+          amount: row.amount,
           note: entry.note,
           splitGroup: entry.splitGroup,
           ...receiptOf(entry.document),
-          ...withOverride(override),
+          ...(override ? { legalCategoryOverride: override } : {}),
         });
       }
     }
@@ -252,7 +232,7 @@ export class PrismaResearchFundRepository implements ResearchFundRepository {
         description: group.description,
         outcomes: group.outcomes.map((outcome) => ({ label: outcome.label, url: outcome.url })),
         entries: group.items.flatMap(({ entry }) =>
-          entry.lines.filter(isExpenseLine).map((line) => {
+          expenseLinesOf(entry.lines).map((line) => {
             accounts[line.accountKey] = accountOf(line);
             return {
               entryId: String(entry.id),
@@ -321,27 +301,14 @@ export class PrismaResearchFundRepository implements ResearchFundRepository {
       let expenseCount = 0;
 
       for (const entry of book?.journalEntries ?? []) {
-        const date = dateOf(entry.entryDate);
-        const override = overrideOf(entry, catalog);
-        for (const line of entry.lines) {
-          if (isGrantLine(line)) {
-            rows.push({
-              date,
-              accountKey: line.accountKey,
-              amount: line.amount.toNumber(),
-              type: "grant",
-            });
-            continue;
-          }
-          if (!isExpenseLine(line)) continue;
+        for (const { line, row } of researchFundRowsOf({
+          date: dateOf(entry.entryDate),
+          lines: entry.lines,
+          legalCategoryOverride: overrideOf(entry, catalog),
+        })) {
+          rows.push(row);
+          if (row.type !== "expense") continue;
           accounts[line.accountKey] = accountOf(line);
-          rows.push({
-            date,
-            accountKey: line.accountKey,
-            amount: line.amount.toNumber(),
-            type: "expense",
-            ...withOverride(override),
-          });
           expenseCount += 1;
         }
       }
