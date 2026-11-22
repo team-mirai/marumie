@@ -47,8 +47,30 @@ export const MASKING_MAX_RUNNING = 3;
  */
 export const MASKING_STALE_MS = 6 * 60 * 1000;
 
+/**
+ * 黒塗りできる書類のページ数の上限。LLM をページごとに順に呼ぶので、関数の実行時間の上限に収まるようにする
+ */
+export const MAX_MASKING_PAGES = 20;
+
 /** 失敗理由として残す文字数の上限 */
 const MAX_ERROR_LENGTH = 500;
+
+/** 作る・作り直す依頼を受けられる状態。作成中の書類は二重に作らないため受けない */
+const REQUESTABLE_STATUSES: readonly DocumentMaskingStatus[] = ["pending", "succeeded", "failed"];
+
+/** 公開に使える版の状態。作り直しの依頼中・失敗した書類は、前の版が残っていても使わない */
+const PUBLISHABLE_STATUS: DocumentMaskingStatus = "succeeded";
+
+/** 途中で止まって作り直している書類に残す印（画面には出さない） */
+const STALLED_RETRY_NOTE = "前回の作成が途中で止まったため、作り直しています";
+/** 作り直しても止まった書類の失敗理由 */
+const STALLED_FAILURE = "作成が途中で止まりました。ページ数を減らすなどしてから作り直してください";
+
+/** 途中で止まった書類の行き先と、書類に残す理由（作り直し待ちなら印） */
+export interface StalledMaskingDestination {
+  status: Extract<DocumentMaskingStatus, "pending" | "failed">;
+  error: string;
+}
 
 export const DocumentMaskingPolicy = {
   /** 新たに着手してよい件数。running が上限に達していれば 0 */
@@ -61,20 +83,45 @@ export const DocumentMaskingPolicy = {
     return new Date(now.getTime() - MASKING_STALE_MS);
   },
 
+  /** 作る・作り直す依頼を受けられる状態の一覧（依頼を記録するときの条件に使う） */
+  requestableStatuses: REQUESTABLE_STATUSES,
+
   /** 作る・作り直す依頼を受けられるか。作成中の書類は二重に作らないため受けない */
   canRequest(status: DocumentMaskingStatus): boolean {
-    return status !== "running";
+    return REQUESTABLE_STATUSES.includes(status);
+  },
+
+  /** 作る・作り直す依頼を受けられるか確かめ、受けられなければ却下理由を返す */
+  validateRequest(status: DocumentMaskingStatus): ResearchFundResult<undefined> {
+    if (DocumentMaskingPolicy.canRequest(status)) return { status: "valid", value: undefined };
+    return invalidResearchFundResult(
+      "documentId",
+      RF_ERROR_CODES.INVALID_DOCUMENT,
+      "公開用の版を作成中です。終わってから作り直してください",
+    );
   },
 
   /**
-   * 失効した書類の扱い。初めて止まったものは作り直しの対象に戻し、作り直しても止まったものは
-   * 失敗にする（同じ書類で処理を際限なく繰り返さない）
+   * 途中で止まった（失効した）書類の行き先。error は止まった時点で書類に残っている理由。
+   * 初めて止まったもの（印が無い）は印を付けて作り直し待ちに戻し、作り直しても止まったもの
+   * （印が残っている）は失敗にする（同じ書類で処理を際限なく繰り返さない）
    */
-  staleOutcome: {
-    /** 途中で止まって作り直している書類に残す印（画面には出さない） */
-    retryNote: "前回の作成が途中で止まったため、作り直しています",
-    /** 作り直しても止まった書類の失敗理由 */
-    failure: "作成が途中で止まりました。ページ数を減らすなどしてから作り直してください",
+  stalledDestination(error: string | null): StalledMaskingDestination {
+    if (error === null) return { status: "pending", error: STALLED_RETRY_NOTE };
+    return { status: "failed", error: STALLED_FAILURE };
+  },
+
+  /** 画面に出す失敗理由。pending / running の理由は作り直しの印なので、失敗のときだけ出す */
+  visibleError(status: DocumentMaskingStatus, error: string | null): string | null {
+    return status === "failed" ? error : null;
+  },
+
+  /** 公開に使える版の状態（公開を記録するときの条件に使う） */
+  publishableStatus: PUBLISHABLE_STATUS,
+
+  /** 公開に使える版があるか。作成済みで、版のファイルがあるものだけ */
+  isPublishable(status: DocumentMaskingStatus, hasMaskedVersion: boolean): boolean {
+    return status === PUBLISHABLE_STATUS && hasMaskedVersion;
   },
 
   /**
@@ -97,8 +144,9 @@ export const DocumentMaskingPolicy = {
     return (message.trim() || "公開用の版の作成に失敗しました").slice(0, MAX_ERROR_LENGTH);
   },
 
-  /** ページ数の上限を超えて黒塗りできない書類の失敗理由 */
-  pageLimitMessage(pageCount: number, maxPages: number): string {
-    return `${pageCount}ページあり、黒塗りできるページ数の上限（${maxPages}ページ）を超えています`;
+  /** ページ数の上限を超えて黒塗りできない理由。上限以内なら null */
+  pageLimitRejection(pageCount: number): string | null {
+    if (pageCount <= MAX_MASKING_PAGES) return null;
+    return `${pageCount}ページあり、黒塗りできるページ数の上限（${MAX_MASKING_PAGES}ページ）を超えています`;
   },
 };

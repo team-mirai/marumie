@@ -1,9 +1,15 @@
 import "server-only";
 import type { PrismaClient } from "@prisma/client";
-import type { DocumentMasking } from "@/server/contexts/research-fund/domain/models/document-masking";
+import {
+  DocumentMaskingPolicy,
+  type DocumentMasking,
+  type DocumentMaskingStatus,
+  type StalledMaskingDestination,
+} from "@/server/contexts/research-fund/domain/models/document-masking";
 import type {
   ClaimedMaskingDocument,
   DocumentMaskingRepository,
+  StalledMaskingDocument,
 } from "@/server/contexts/research-fund/domain/repositories/document-masking-repository.interface";
 
 /** 着手を試す候補の数。キューから並んで届いた処理が同じ書類を取り合っても、別の書類に着手できるようにする */
@@ -36,8 +42,7 @@ export class PrismaDocumentMaskingRepository implements DocumentMaskingRepositor
     return rows.map((row) => ({
       documentId: row.id.toString(),
       status: row.maskingStatus,
-      // pending / running の masking_error は作り直しの印なので、画面には失敗のときだけ出す
-      error: row.maskingStatus === "failed" ? row.maskingError : null,
+      error: DocumentMaskingPolicy.visibleError(row.maskingStatus, row.maskingError),
       regionCount: row.maskedRegionCount,
       hasMaskedVersion: row.maskedKey !== null,
       instruction: row.maskingInstruction,
@@ -55,26 +60,41 @@ export class PrismaDocumentMaskingRepository implements DocumentMaskingRepositor
     return { pending: count("pending"), running: count("running") };
   }
 
-  async releaseStale(
-    staleBefore: Date,
-    outcome: { retryNote: string; failure: string },
-  ): Promise<{ retried: number; failed: number }> {
-    const stale = {
-      maskingStatus: "running" as const,
-      OR: [{ maskingStartedAt: null }, { maskingStartedAt: { lt: staleBefore } }],
-    };
-    return await this.prisma.$transaction(async (tx) => {
-      // 作り直しても止まったもの（印が残っている）を先に失敗にし、そのあと初めて止まったものに印を付けて戻す
-      const failed = await tx.researchFundDocument.updateMany({
-        where: { ...stale, maskingError: { not: null } },
-        data: { maskingStatus: "failed", maskingError: outcome.failure, maskedRegionCount: null },
-      });
-      const retried = await tx.researchFundDocument.updateMany({
-        where: { ...stale, maskingError: null },
-        data: { maskingStatus: "pending", maskingStartedAt: null, maskingError: outcome.retryNote },
-      });
-      return { retried: retried.count, failed: failed.count };
+  async findStalled(staleBefore: Date): Promise<StalledMaskingDocument[]> {
+    const rows = await this.prisma.researchFundDocument.findMany({
+      where: {
+        maskingStatus: "running",
+        OR: [{ maskingStartedAt: null }, { maskingStartedAt: { lt: staleBefore } }],
+      },
+      orderBy: { id: "asc" },
+      select: { id: true, maskingStartedAt: true, maskingError: true },
     });
+    return rows.map((row) => ({
+      documentId: row.id.toString(),
+      startedAt: row.maskingStartedAt,
+      error: row.maskingError,
+    }));
+  }
+
+  async release(
+    stalled: StalledMaskingDocument,
+    destination: StalledMaskingDestination,
+  ): Promise<boolean> {
+    // 見つけた後に作成が終わっていたら（running でない・着手し直した）count は 0 になり、記録を上書きしない
+    const result = await this.prisma.researchFundDocument.updateMany({
+      where: {
+        id: BigInt(stalled.documentId),
+        maskingStatus: "running",
+        maskingStartedAt: stalled.startedAt,
+      },
+      data: {
+        maskingStatus: destination.status,
+        maskingStartedAt: null,
+        maskingError: destination.error,
+        maskedRegionCount: null,
+      },
+    });
+    return result.count === 1;
   }
 
   async claimNext(): Promise<ClaimedMaskingDocument | null> {
@@ -142,10 +162,12 @@ export class PrismaDocumentMaskingRepository implements DocumentMaskingRepositor
     bookId: string,
     documentId: string,
     instruction: string | null,
-  ): Promise<"requested" | "running" | "not-found"> {
+    requestable: readonly DocumentMaskingStatus[],
+  ): Promise<{ requested: true } | { requested: false; status: DocumentMaskingStatus } | null> {
     const where = { id: BigInt(documentId), bookId: BigInt(bookId) };
+    // 状態の条件を更新と同じ文で確かめ、同時に着手された書類を pending に戻さない
     const result = await this.prisma.researchFundDocument.updateMany({
-      where: { ...where, maskingStatus: { not: "running" } },
+      where: { ...where, maskingStatus: { in: [...requestable] } },
       data: {
         maskingStatus: "pending",
         maskingStartedAt: null,
@@ -154,12 +176,12 @@ export class PrismaDocumentMaskingRepository implements DocumentMaskingRepositor
         maskingInstruction: instruction,
       },
     });
-    if (result.count === 1) return "requested";
-    const exists = await this.prisma.researchFundDocument.findFirst({
+    if (result.count === 1) return { requested: true };
+    const current = await this.prisma.researchFundDocument.findFirst({
       where,
-      select: { id: true },
+      select: { maskingStatus: true },
     });
-    return exists ? "running" : "not-found";
+    return current ? { requested: false, status: current.maskingStatus } : null;
   }
 }
 

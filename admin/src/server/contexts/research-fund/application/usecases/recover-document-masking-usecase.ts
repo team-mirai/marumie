@@ -31,11 +31,7 @@ export class RecoverDocumentMaskingUsecase {
   ) {}
 
   async execute(now: Date = new Date()): Promise<RecoverDocumentMaskingResult> {
-    const stale = await this.repository.releaseStale(
-      DocumentMaskingPolicy.staleBefore(now),
-      DocumentMaskingPolicy.staleOutcome,
-    );
-    const base = { retried: stale.retried, failedStale: stale.failed };
+    const base = await this.releaseStalled(now);
 
     if (!this.queue.enabled) {
       let processed = 0;
@@ -54,5 +50,19 @@ export class RecoverDocumentMaskingUsecase {
     const notified = Math.min(counts.pending, DocumentMaskingPolicy.claimableCount(counts.running));
     for (let i = 0; i < notified; i += 1) await this.queue.notify();
     return { ...base, notified, processed: 0, remaining: counts.pending + counts.running };
+  }
+
+  /** 作成中のまま止まった書類を、ドメインが決めた行き先（作り直し待ち／失敗）に移す */
+  private async releaseStalled(now: Date): Promise<{ retried: number; failedStale: number }> {
+    const stalled = await this.repository.findStalled(DocumentMaskingPolicy.staleBefore(now));
+    let retried = 0;
+    let failedStale = 0;
+    for (const document of stalled) {
+      const destination = DocumentMaskingPolicy.stalledDestination(document.error);
+      if (!(await this.repository.release(document, destination))) continue;
+      if (destination.status === "failed") failedStale += 1;
+      else retried += 1;
+    }
+    return { retried, failedStale };
   }
 }
