@@ -90,6 +90,11 @@ describe("LegalCategoryOverridePolicy の科目の変更と許可の取り消し
     expect(LegalCategoryOverridePolicy.accountChangeRejection(null, null)).toBeNull();
   });
 
+  it("上書きされていない仕訳の上書きは外せない", () => {
+    expect(LegalCategoryOverridePolicy.removalRejection(override)).toBeNull();
+    expect(LegalCategoryOverridePolicy.removalRejection(null)).toBe("この仕訳の法定区分は上書きされていません");
+  });
+
   it("上書き中の仕訳が残っていれば、許可を取り消せない", () => {
     expect(LegalCategoryOverridePolicy.revocationRejection(0)).toBeNull();
     expect(LegalCategoryOverridePolicy.revocationRejection(2)).toBe(

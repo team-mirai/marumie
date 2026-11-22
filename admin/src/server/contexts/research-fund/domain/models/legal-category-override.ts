@@ -87,6 +87,12 @@ export const LegalCategoryOverridePolicy = {
     return { status: "valid", value: { legalCategoryKey: input.legalCategoryKey, reason } };
   },
 
+  /** 上書きを外させない理由。外してよければ null。上書きされていない仕訳には外す上書きが無い */
+  removalRejection(override: LegalCategoryOverride | null): string | null {
+    if (override !== null) return null;
+    return "この仕訳の法定区分は上書きされていません";
+  },
+
   /**
    * 上書きのある仕訳の科目を変えさせない理由。変えてよければ null。
    * 法定区分を持たない科目（要確認など）へ変えると、上書きできない仕訳に上書きが残ってしまう。

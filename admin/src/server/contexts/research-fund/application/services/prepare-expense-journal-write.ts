@@ -8,8 +8,7 @@ import type { JournalReviewRepository } from "@/server/contexts/research-fund/do
 import { buildExpenseJournalWrite } from "@/server/contexts/research-fund/domain/services/expense-journal-builder";
 
 /**
- * 支出の仕訳を保存する形に組み立てるための段取り（帳簿の年度と科目マスタの取得）。
- * 手入力と編集の保存が同じ段取りを共有するために、ここに置く。
+ * 手入力した支出の仕訳を保存する形に組み立てるための段取り（帳簿の年度と科目マスタの取得）。
  * 組み立てと不変条件の判定は buildExpenseJournalWrite（ドメイン）が持つ。
  */
 export async function prepareExpenseJournalWrite(
