@@ -1,5 +1,9 @@
 import "server-only";
 import type { ExtractedReceipt } from "@/server/contexts/research-fund/domain/models/extracted-receipt";
+import {
+  JournalEntry,
+  type JournalEntryStatus,
+} from "@/server/contexts/research-fund/domain/models/journal-entry";
 import { JournalEntryHash } from "@/server/contexts/research-fund/domain/models/journal-entry-hash";
 import {
   JournalPosting,
@@ -28,6 +32,8 @@ export interface ScanDraftEntry {
   splitGroup: string | null;
   hash: string;
   lines: readonly JournalLine[];
+  /** 作る仕訳の状態（JournalEntry.initialStatus） */
+  status: JournalEntryStatus;
 }
 
 /**
@@ -96,6 +102,7 @@ export function buildScanDraftEntries(
       splitGroup: resolveSplitGroup(receipt.items.length, context.documentId),
       hash: hash.value,
       lines: posting.value.lines,
+      status: JournalEntry.initialStatus("scan"),
     });
   }
   return { status: "valid", value: entries };

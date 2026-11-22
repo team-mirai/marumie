@@ -1,5 +1,9 @@
 import { settlementRejection } from "@/server/contexts/research-fund/domain/models/advance";
-import { JournalEntry } from "@/server/contexts/research-fund/domain/models/journal-entry";
+import type { DocumentMaskingStatus } from "@/server/contexts/research-fund/domain/models/document-masking";
+import {
+  JournalEntry,
+  type JournalEntryStatus,
+} from "@/server/contexts/research-fund/domain/models/journal-entry";
 import {
   isAccountUnconfirmed,
   type JournalEdit,
@@ -268,7 +272,7 @@ export const JournalOperation = {
   /**
    * 書類のある支出の仕訳の、書類ファイルを差し替える（例: 納品書で登録しておき、届いた正式な領収書に替える）。
    * 書類は仕訳の内容と独立に差し替え、読み取りはやり直さない。公開中に差し替えると公開内容が即座に変わるので、
-   * 紐づけと同じく公開中は対象にしない。同じ書類に紐づく別の公開中の仕訳の判定はリポジトリが行う
+   * 紐づけと同じく公開中は対象にしない。書類の側の条件（読み取り中・同じ書類の別の公開中の仕訳）は DocumentReplacement が持つ
    */
   replaceDocument(entry: OperableEntry): OperationRejection | null {
     if (entry.source === "grant")
@@ -305,4 +309,88 @@ export const JournalOperation = {
       };
     return null;
   },
+};
+
+/**
+ * 操作を適用してよい仕訳の状態。リポジトリは同時更新の照合（updatedAt）と合わせてこの条件で更新し、
+ * JournalOperation で受け付けた後に状態が変わっていれば適用しない（同時に操作が重なっても片方だけが成功する）。
+ *
+ * JournalOperation の判定で受け付けた仕訳は、必ずここの条件も満たす（tests の journal-operation で確かめる）。
+ * 金額の変更の有無など、仕訳の状態だけでは決まらない判定は JournalOperation が受け持つので、ここには持たない。
+ */
+export interface OperableState {
+  /** 対象にする仕訳の状態 */
+  statuses: readonly JournalEntryStatus[];
+  /** 支出の仕訳だけを対象にするか。false なら支出・支給のどちらでもよい */
+  expenseOnly: boolean;
+  /** true なら精算済だけ、false なら未精算だけ。省略すれば問わない */
+  settled?: boolean;
+  /** true なら書類のある仕訳だけ、false なら書類の無い仕訳だけ。省略すれば問わない */
+  hasDocument?: boolean;
+  /** true なら立替の仕訳だけ。省略すれば問わない */
+  advanced?: boolean;
+  /** true なら徴難の仕訳だけ。省略すれば問わない */
+  receiptAbsent?: boolean;
+}
+
+/** 公開内容を変える操作が対象にできる状態。公開中の仕訳は先に確認済に戻させる */
+const UNPUBLISHED: readonly JournalEntryStatus[] = ["draft", "approved"];
+/** 公開内容に影響しない事務所内の管理情報は、公開中の仕訳でも変更できる */
+const ANY_STATUS: readonly JournalEntryStatus[] = ["draft", "approved", "published"];
+
+export const OPERABLE_STATES = {
+  edit: { statuses: UNPUBLISHED, expenseOnly: false },
+  approve: { statuses: ["draft"], expenseOnly: true },
+  revertToDraft: { statuses: ["approved"], expenseOnly: true },
+  discard: { statuses: UNPUBLISHED, expenseOnly: true, settled: false },
+  unpublish: { statuses: ["published"], expenseOnly: false },
+  setAdvancedBy: { statuses: ANY_STATUS, expenseOnly: true, settled: false },
+  setPayee: { statuses: ANY_STATUS, expenseOnly: true },
+  setReceiptAbsent: { statuses: ANY_STATUS, expenseOnly: true },
+  setReceiptAbsenceReason: { statuses: ANY_STATUS, expenseOnly: true, receiptAbsent: true },
+  attachDocument: { statuses: UNPUBLISHED, expenseOnly: true, hasDocument: false },
+  replaceDocument: { statuses: UNPUBLISHED, expenseOnly: true, hasDocument: true },
+  // 法定区分の上書きは公開内容（法律上の区分）を変えるので、内容の編集と同じく公開中は対象にしない
+  setLegalCategoryOverride: { statuses: UNPUBLISHED, expenseOnly: true },
+  settle: {
+    statuses: ["approved", "published"],
+    expenseOnly: true,
+    advanced: true,
+    settled: false,
+  },
+  unsettle: { statuses: ANY_STATUS, expenseOnly: true, settled: true },
+} as const satisfies Record<string, OperableState>;
+
+/** 書類を読み取っている間の読み取りジョブの状態 */
+const READING_JOB_STATUSES = ["queued", "running"] as const;
+/** 差し替えた後の公開用の版の状態 */
+const MASKING_STATUS_AFTER_REPLACEMENT: DocumentMaskingStatus = "pending";
+
+/**
+ * 仕訳の書類ファイルの差し替えで、書類の側から見た可否と差し替え後の扱い。
+ * 仕訳の側の可否は JournalOperation.replaceDocument が判定する。
+ */
+export const DocumentReplacement = {
+  /** 読み取り中かを数える読み取りジョブの状態 */
+  readingJobStatuses: READING_JOB_STATUSES,
+
+  /** 読み取り中に差し替えると、新しい原本の読み取り結果で仕訳ができてしまう */
+  readingRejection(readingJobCount: number): string | null {
+    if (readingJobCount === 0) return null;
+    return "読み取り中の書類は差し替えられません。終わってからお試しください";
+  },
+
+  /**
+   * 書類は複数の仕訳に紐づきうる。公開中の仕訳が 1 件でもあれば、その公開内容を変えないよう差し替えない
+   */
+  publishedEntriesRejection(publishedEntryCount: number): string | null {
+    if (publishedEntryCount === 0) return null;
+    return "この書類は公開中の仕訳にも紐づいているため差し替えられません。先に確認済に戻してください";
+  },
+
+  /**
+   * 差し替えた後の公開用の版の状態。前の原本から作った版は使わず、新しい原本から作り直すまで待つ
+   * （作成中だった版は running でなくなるので、完了しても記録されない）
+   */
+  maskingStatusAfterReplacement: MASKING_STATUS_AFTER_REPLACEMENT,
 };

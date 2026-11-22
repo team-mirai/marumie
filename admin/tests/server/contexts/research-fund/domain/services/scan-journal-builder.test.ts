@@ -35,6 +35,8 @@ describe("buildScanDraftEntries", () => {
       note: null,
       // 1 明細だけなら分割していないので split_group は付けない
       splitGroup: null,
+      // 読み取りの仕訳は人が確かめるまで下書き
+      status: "draft",
     });
     expect(entry.lines).toEqual([
       { side: "debit", accountKey: "transportation", amount: 1200 },

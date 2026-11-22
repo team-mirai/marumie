@@ -17,10 +17,9 @@ export async function prepareExpenseJournalWrite(
   raw: JournalEdit,
   source: "manual" | "scan",
   documentId: string | null,
-  status: JournalWrite["status"],
 ): Promise<JournalWrite> {
   const [year, accounts] = await Promise.all([repository.year(bookId), repository.accounts()]);
-  const write = buildExpenseJournalWrite({ raw, source, documentId, status, year, accounts });
+  const write = buildExpenseJournalWrite({ raw, source, documentId, year, accounts });
   if (write.status === "invalid") throw new JournalReviewError(write.errors[0].message);
   return write.value;
 }

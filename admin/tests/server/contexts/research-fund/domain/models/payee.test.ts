@@ -1,6 +1,7 @@
 import {
   inheritedPayeeLink,
   isPayeeUnset,
+  manualPayeeLink,
   newPayeeFromIssuer,
   normalizeInvoiceRegistrationNumber,
   normalizePostalCode,
@@ -199,5 +200,14 @@ describe("payeeDeletionRejection", () => {
   });
   it("公開中の仕訳があれば、その件数を理由にして削除させない", () => {
     expect(payeeDeletionRejection({ publishedCount: 2 })).toContain("公開中の仕訳（2件）");
+  });
+});
+
+describe("manualPayeeLink", () => {
+  it("人が紐づけたら紐づけ元を manual にし、照合・推定の確信度と根拠を消す", () => {
+    expect(manualPayeeLink("7")).toEqual({ payeeId: "7", source: "manual", confidence: null, reason: null });
+  });
+  it("解除したら紐づけ元も消す", () => {
+    expect(manualPayeeLink(null)).toEqual({ payeeId: null, source: null, confidence: null, reason: null });
   });
 });
