@@ -7,6 +7,7 @@ const input: GrantWrite = {
   description: "調査研究広報滞在費 5月分",
   amount: 1_000_000,
   hash: "hash",
+  status: "approved",
   lines: [
     { side: "debit", accountKey: "bank", amount: 1_000_000 },
     { side: "credit", accountKey: "grant-income", amount: 1_000_000 },

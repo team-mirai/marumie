@@ -134,7 +134,7 @@ test("一括の確認済は下書きのみを1トランザクションで進め�
   const other = { id: "5", updatedAt: "2026-08-02T00:00:00.000Z" } as ReviewEntry;
   await repository.approveMany("1", [entry, other]);
   expect(transaction).toHaveBeenCalledTimes(1);
-  expect(tx.researchFundJournalEntry.updateMany).toHaveBeenNthCalledWith(1, { where: { id: BigInt(entry.id), bookId: BigInt(1), status: "draft", updatedAt: new Date(entry.updatedAt), source: { in: ["manual", "scan"] }, lines: { some: { side: "debit", account: { type: "expense" } } } }, data: { status: "approved" } });
+  expect(tx.researchFundJournalEntry.updateMany).toHaveBeenNthCalledWith(1, { where: { id: BigInt(entry.id), bookId: BigInt(1), status: { in: ["draft"] }, updatedAt: new Date(entry.updatedAt), source: { in: ["manual", "scan"] }, lines: { some: { side: "debit", account: { type: "expense" } } } }, data: { status: "approved" } });
   expect(tx.researchFundJournalEntry.updateMany).toHaveBeenNthCalledWith(2, expect.objectContaining({ where: expect.objectContaining({ id: BigInt(other.id), updatedAt: new Date(other.updatedAt) }) }));
   expect(tx.researchFundJournalLine.deleteMany).not.toHaveBeenCalled();
   expect(tx.researchFundJournalLine.createMany).not.toHaveBeenCalled();

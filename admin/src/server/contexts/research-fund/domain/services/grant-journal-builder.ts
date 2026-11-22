@@ -6,6 +6,7 @@ import {
   validateGrantEntryDate,
   type GrantWrite,
 } from "@/server/contexts/research-fund/domain/models/grant-registration";
+import { JournalEntry } from "@/server/contexts/research-fund/domain/models/journal-entry";
 import { JournalEntryHash } from "@/server/contexts/research-fund/domain/models/journal-entry-hash";
 import {
   JournalPosting,
@@ -86,6 +87,7 @@ export function buildGrantJournalWrite(
       amount: amount.value,
       hash: hash.value,
       lines: posting.value.lines,
+      status: JournalEntry.initialStatus("grant"),
     },
   };
 }

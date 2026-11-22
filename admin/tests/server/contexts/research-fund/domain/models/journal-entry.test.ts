@@ -34,3 +34,11 @@ describe("JournalEntry.transition", () => {
     ).toBe("invalid");
   });
 });
+
+describe("JournalEntry.initialStatus", () => {
+  it("手入力と読み取りの仕訳は下書きで、支給は確認済で作る", () => {
+    expect(JournalEntry.initialStatus("manual")).toBe("draft");
+    expect(JournalEntry.initialStatus("scan")).toBe("draft");
+    expect(JournalEntry.initialStatus("grant")).toBe("approved");
+  });
+});

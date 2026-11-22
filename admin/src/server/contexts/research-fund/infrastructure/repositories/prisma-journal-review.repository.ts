@@ -7,7 +7,16 @@ import {
   type JournalWrite,
   type ReviewEntry,
 } from "@/server/contexts/research-fund/domain/models/journal-review";
-import type { Payee, PayeeInput } from "@/server/contexts/research-fund/domain/models/payee";
+import {
+  DocumentReplacement,
+  OPERABLE_STATES,
+  type OperableState,
+} from "@/server/contexts/research-fund/domain/models/journal-operation";
+import {
+  manualPayeeLink,
+  type Payee,
+  type PayeeInput,
+} from "@/server/contexts/research-fund/domain/models/payee";
 import { payeeAliasFromIssuer } from "@/server/contexts/research-fund/domain/models/payee-alias";
 import { Publication } from "@/server/contexts/research-fund/domain/models/publication";
 import type { JournalReviewRepository } from "@/server/contexts/research-fund/domain/repositories/journal-review-repository.interface";
@@ -104,21 +113,25 @@ async function unique<T>(run: () => Promise<T>): Promise<T> {
     throw error;
   }
 }
-type EditableStatus = "draft" | "approved" | "published";
-function guard(
-  bookId: string,
-  entry: ReviewEntry,
-  statuses: EditableStatus[] = ["draft", "approved"],
-) {
+const presence = (present: boolean) => (present ? { not: null } : null);
+/**
+ * 同時更新の照合の条件。画面で読んだ時点から更新されておらず（updatedAt）、
+ * 操作を適用してよい状態（OPERABLE_STATES。ドメインが決める）のままの仕訳だけに当てる
+ */
+function guard(bookId: string, entry: ReviewEntry, state: OperableState) {
   return {
     id: BigInt(entry.id),
     bookId: BigInt(bookId),
-    status: { in: statuses },
+    status: { in: [...state.statuses] },
     updatedAt: new Date(entry.updatedAt),
-    ...(entry.source === "grant" ? grantWhere : expenseWhere),
-  };
+    ...(state.expenseOnly || entry.source !== "grant" ? expenseWhere : grantWhere),
+    ...(state.settled === undefined ? {} : { settledAt: presence(state.settled) }),
+    ...(state.hasDocument === undefined ? {} : { documentId: presence(state.hasDocument) }),
+    ...(state.advanced === undefined ? {} : { advancedBy: presence(state.advanced) }),
+    ...(state.receiptAbsent === undefined ? {} : { receiptAbsent: state.receiptAbsent }),
+  } satisfies Prisma.ResearchFundJournalEntryWhereInput;
 }
-// 人の手での紐づけなので紐づけ元は manual にし、AI の確信度・根拠は消す。1 件でも競合していたら投げて巻き戻させる。
+// 紐づけ・解除で記録する内容は manualPayeeLink が決める。1 件でも競合していたら投げて巻き戻させる。
 // 紐づけたら、書類の発行元の名称を支払先の表記として記録する（#1727）。
 async function linkPayee(
   tx: Prisma.TransactionClient,
@@ -127,13 +140,14 @@ async function linkPayee(
   payeeId: string | null,
 ) {
   for (const entry of entries) {
+    const link = manualPayeeLink(payeeId);
     const result = await tx.researchFundJournalEntry.updateMany({
-      where: { ...guard(bookId, entry, ["draft", "approved", "published"]), ...expenseWhere },
+      where: guard(bookId, entry, OPERABLE_STATES.setPayee),
       data: {
-        payeeId: payeeId === null ? null : BigInt(payeeId),
-        payeeLinkSource: payeeId === null ? null : "manual",
-        payeeLinkConfidence: null,
-        payeeLinkReason: null,
+        payeeId: link.payeeId === null ? null : BigInt(link.payeeId),
+        payeeLinkSource: link.source,
+        payeeLinkConfidence: link.confidence,
+        payeeLinkReason: link.reason,
       },
     });
     if (result.count !== 1)
@@ -207,7 +221,7 @@ export class PrismaJournalReviewRepository implements JournalReviewRepository {
     });
     return book?.allowLegalCategoryOverride ?? false;
   }
-  // 上書きは公開内容（法律上の区分）を変えるので、内容の編集と同じく下書き・確認済の支出の仕訳だけを対象にする。
+  // 対象にできる仕訳の状態は OPERABLE_STATES.setLegalCategoryOverride（ドメイン）が決める。
   // 帳簿の行に共有ロックを取ってから許可を確かめる。許可の取り消し（PrismaBookRepository）は同じ行に排他ロックを
   // 取るので、両者は直列化され、許可が取り消された帳簿に上書きが残ることはない（条件だけでは帳簿の行をロックしない）。
   // 上書きは仕訳とは別の表に持つが、仕訳の更新時刻を進めて同時更新の照合に使う（複式行と hash は作り直さない）。
@@ -221,8 +235,7 @@ export class PrismaJournalReviewRepository implements JournalReviewRepository {
       await tx.$queryRaw`SELECT id FROM research_fund_books WHERE id = ${BigInt(bookId)} FOR SHARE`;
       const result = await tx.researchFundJournalEntry.updateMany({
         where: {
-          ...guard(bookId, entry),
-          ...expenseWhere,
+          ...guard(bookId, entry, OPERABLE_STATES.setLegalCategoryOverride),
           book: { allowLegalCategoryOverride: true },
         },
         data: { updatedAt: new Date() },
@@ -269,7 +282,7 @@ export class PrismaJournalReviewRepository implements JournalReviewRepository {
     return unique(() =>
       this.prisma.$transaction(async (tx) => {
         const result = await tx.researchFundJournalEntry.updateMany({
-          where: guard(bookId, entry),
+          where: guard(bookId, entry, OPERABLE_STATES.edit),
           data: data(input),
         });
         if (result.count !== 1)
@@ -295,7 +308,7 @@ export class PrismaJournalReviewRepository implements JournalReviewRepository {
     await this.prisma.$transaction(async (tx) => {
       for (const entry of entries) {
         const result = await tx.researchFundJournalEntry.updateMany({
-          where: { ...guard(bookId, entry), status: "draft" as const },
+          where: guard(bookId, entry, OPERABLE_STATES.approve),
           data: { status: "approved" },
         });
         if (result.count !== 1)
@@ -303,13 +316,13 @@ export class PrismaJournalReviewRepository implements JournalReviewRepository {
       }
     });
   }
-  // 一括の破棄は下書き・確認済の支出だけを対象にし、1 件でも競合していたらトランザクションごと巻き戻す。
-  // 精算済の仕訳は精算した額と記録が合わなくなるので消さない（settled_at IS NULL で照合する）。
+  // 一括の破棄は 1 件でも競合していたらトランザクションごと巻き戻す。
+  // 精算済の仕訳は精算した額と記録が合わなくなるので消さない（OPERABLE_STATES.discard）。
   async discardMany(bookId: string, entries: readonly ReviewEntry[]) {
     await this.prisma.$transaction(async (tx) => {
       for (const entry of entries) {
         const result = await tx.researchFundJournalEntry.deleteMany({
-          where: { ...guard(bookId, entry), ...expenseWhere, settledAt: null },
+          where: guard(bookId, entry, OPERABLE_STATES.discard),
         });
         if (result.count !== 1)
           throw new JournalReviewError("仕訳が更新・公開されました。画面を再読み込みしてください");
@@ -321,7 +334,7 @@ export class PrismaJournalReviewRepository implements JournalReviewRepository {
     await this.prisma.$transaction(async (tx) => {
       for (const entry of entries) {
         const result = await tx.researchFundJournalEntry.updateMany({
-          where: { ...guard(bookId, entry, ["approved"]), ...expenseWhere },
+          where: guard(bookId, entry, OPERABLE_STATES.revertToDraft),
           data: { status: "draft" },
         });
         if (result.count !== 1)
@@ -338,7 +351,7 @@ export class PrismaJournalReviewRepository implements JournalReviewRepository {
     await this.prisma.$transaction(async (tx) => {
       await tx.$queryRaw`SELECT id FROM research_fund_books WHERE id = ${BigInt(bookId)} FOR UPDATE`;
       const result = await tx.researchFundJournalEntry.updateMany({
-        where: guard(bookId, entry, ["published"]),
+        where: guard(bookId, entry, OPERABLE_STATES.unpublish),
         data: { status: "approved", publishedAt: null },
       });
       if (result.count !== 1)
@@ -366,10 +379,10 @@ export class PrismaJournalReviewRepository implements JournalReviewRepository {
     });
   }
   // 下書きに戻すのは内容を変えないので状態だけを戻す。支給は下書きを経ない仕様なので、
-  // 支出の形式に限って照合する。
+  // 支出の形式に限って照合する（OPERABLE_STATES.revertToDraft）。
   async revertToDraft(bookId: string, entry: ReviewEntry) {
     const result = await this.prisma.researchFundJournalEntry.updateMany({
-      where: { ...guard(bookId, entry, ["approved"]), ...expenseWhere },
+      where: guard(bookId, entry, OPERABLE_STATES.revertToDraft),
       data: { status: "draft" },
     });
     if (result.count !== 1)
@@ -377,7 +390,7 @@ export class PrismaJournalReviewRepository implements JournalReviewRepository {
   }
   async discard(bookId: string, entry: ReviewEntry) {
     const result = await this.prisma.researchFundJournalEntry.deleteMany({
-      where: { ...guard(bookId, entry), settledAt: null },
+      where: guard(bookId, entry, OPERABLE_STATES.discard),
     });
     if (result.count !== 1)
       throw new JournalReviewError("仕訳が更新・公開されました。画面を再読み込みしてください");
@@ -398,17 +411,13 @@ export class PrismaJournalReviewRepository implements JournalReviewRepository {
     return rows.flatMap((row) => (row.advancedBy === null ? [] : [row.advancedBy]));
   }
   // 立替情報は公開内容に影響しないので、公開中の仕訳も対象にする（複式行と hash は作り直さない）。
-  // 精算済の仕訳は精算した額と記録が合わなくなるので変更しない（settled_at IS NULL で照合する）。
+  // 精算済の仕訳は精算した額と記録が合わなくなるので変更しない（OPERABLE_STATES.setAdvancedBy）。
   // 1 件でも競合していたらトランザクションごと巻き戻し、一部だけ変わった状態にしない。
   async setAdvancedBy(bookId: string, entries: readonly ReviewEntry[], advancedBy: string | null) {
     await this.prisma.$transaction(async (tx) => {
       for (const entry of entries) {
         const result = await tx.researchFundJournalEntry.updateMany({
-          where: {
-            ...guard(bookId, entry, ["draft", "approved", "published"]),
-            ...expenseWhere,
-            settledAt: null,
-          },
+          where: guard(bookId, entry, OPERABLE_STATES.setAdvancedBy),
           data: { advancedBy },
         });
         if (result.count !== 1)
@@ -420,21 +429,17 @@ export class PrismaJournalReviewRepository implements JournalReviewRepository {
   // 事情は徴難の仕訳だけが持てる（DB の CHECK 制約）ので、外すときは事情も消す。
   async setReceiptAbsent(bookId: string, entry: ReviewEntry, receiptAbsent: boolean) {
     const result = await this.prisma.researchFundJournalEntry.updateMany({
-      where: { ...guard(bookId, entry, ["draft", "approved", "published"]), ...expenseWhere },
+      where: guard(bookId, entry, OPERABLE_STATES.setReceiptAbsent),
       data: receiptAbsent ? { receiptAbsent } : { receiptAbsent, receiptAbsenceReason: null },
     });
     if (result.count !== 1)
       throw new JournalReviewError("仕訳が更新されました。画面を再読み込みしてください");
   }
   // 徴し難かった事情は公開内容に影響しないので、公開中・精算済の仕訳も対象にする（複式行と hash は作り直さない）。
-  // 徴難でない仕訳は DB の CHECK 制約でも拒否されるが、競合として扱えるよう条件に含める。
+  // 徴難でない仕訳は DB の CHECK 制約でも拒否されるが、競合として扱えるよう条件に含める（OPERABLE_STATES）。
   async setReceiptAbsenceReason(bookId: string, entry: ReviewEntry, reason: string | null) {
     const result = await this.prisma.researchFundJournalEntry.updateMany({
-      where: {
-        ...guard(bookId, entry, ["draft", "approved", "published"]),
-        ...expenseWhere,
-        receiptAbsent: true,
-      },
+      where: guard(bookId, entry, OPERABLE_STATES.setReceiptAbsenceReason),
       data: { receiptAbsenceReason: reason },
     });
     if (result.count !== 1)
@@ -462,7 +467,7 @@ export class PrismaJournalReviewRepository implements JournalReviewRepository {
         });
         if (hash.status === "invalid") throw new JournalReviewError(hash.errors[0].message);
         const result = await tx.researchFundJournalEntry.updateMany({
-          where: { ...guard(bookId, entry), ...expenseWhere, documentId: null },
+          where: guard(bookId, entry, OPERABLE_STATES.attachDocument),
           data: { documentId: created.id, hash: hash.value },
         });
         if (result.count !== 1)
@@ -488,16 +493,14 @@ export class PrismaJournalReviewRepository implements JournalReviewRepository {
         select: { storageKey: true, maskedKey: true },
       });
       if (!current) throw new JournalReviewError("書類が見つかりません");
-      // 読み取り中に差し替えると、新しい原本の読み取り結果で仕訳ができてしまう
+      // 差し替えの可否と却下理由・差し替え後の公開用の版の状態は DocumentReplacement（ドメイン）が決める
       const reading = await tx.researchFundScanJob.count({
-        where: { documentId, status: { in: ["queued", "running"] } },
+        where: { documentId, status: { in: [...DocumentReplacement.readingJobStatuses] } },
       });
-      if (reading > 0)
-        throw new JournalReviewError(
-          "読み取り中の書類は差し替えられません。終わってからお試しください",
-        );
+      const readingRejection = DocumentReplacement.readingRejection(reading);
+      if (readingRejection) throw new JournalReviewError(readingRejection);
       const touched = await tx.researchFundJournalEntry.updateMany({
-        where: { ...guard(bookId, entry), documentId },
+        where: { ...guard(bookId, entry, OPERABLE_STATES.replaceDocument), documentId },
         data: { updatedAt: new Date() },
       });
       if (touched.count !== 1)
@@ -506,22 +509,18 @@ export class PrismaJournalReviewRepository implements JournalReviewRepository {
         where: { documentId, bookId: BigInt(bookId), id: { not: BigInt(entry.id) } },
         data: { updatedAt: new Date() },
       });
-      // 書類は複数の仕訳に紐づきうる。公開中の仕訳が 1 件でもあれば、その公開内容を変えないよう差し替えない。
-      // 同じ書類の仕訳の行ロックを取った後で数え、並行する公開が確認と差し替えの間に入らないようにする
+      // 同じ書類の仕訳の行ロックを取った後で公開中の仕訳を数え、並行する公開が確認と差し替えの間に入らないようにする
       const published = await tx.researchFundJournalEntry.count({
         where: { documentId, status: "published" },
       });
-      if (published > 0)
-        throw new JournalReviewError(
-          "この書類は公開中の仕訳にも紐づいているため差し替えられません。先に確認済に戻してください",
-        );
-      // 作成中の版は running でなくなるので、完了しても記録されない（前の原本の版が残らない）
+      const publishedRejection = DocumentReplacement.publishedEntriesRejection(published);
+      if (publishedRejection) throw new JournalReviewError(publishedRejection);
       await tx.researchFundDocument.update({
         where: { id: documentId },
         data: {
           ...document,
           maskedKey: null,
-          maskingStatus: "pending",
+          maskingStatus: DocumentReplacement.maskingStatusAfterReplacement,
           maskingStartedAt: null,
           maskingError: null,
           maskedRegionCount: null,
@@ -581,17 +580,12 @@ export class PrismaJournalReviewRepository implements JournalReviewRepository {
       throw error;
     }
   }
-  // 精算は確認済・公開中の未精算の立替だけを対象にする。1 件でも競合していたら巻き戻す。
+  // 精算できる状態は OPERABLE_STATES.settle（ドメイン）が決める。1 件でも競合していたら巻き戻す。
   async settleMany(bookId: string, entries: readonly ReviewEntry[], settledAt: string) {
     await this.prisma.$transaction(async (tx) => {
       for (const entry of entries) {
         const result = await tx.researchFundJournalEntry.updateMany({
-          where: {
-            ...guard(bookId, entry, ["approved", "published"]),
-            ...expenseWhere,
-            advancedBy: { not: null },
-            settledAt: null,
-          },
+          where: guard(bookId, entry, OPERABLE_STATES.settle),
           data: { settledAt: new Date(`${settledAt}T00:00:00.000Z`) },
         });
         if (result.count !== 1)
@@ -604,11 +598,7 @@ export class PrismaJournalReviewRepository implements JournalReviewRepository {
     await this.prisma.$transaction(async (tx) => {
       for (const entry of entries) {
         const result = await tx.researchFundJournalEntry.updateMany({
-          where: {
-            ...guard(bookId, entry, ["draft", "approved", "published"]),
-            ...expenseWhere,
-            settledAt: { not: null },
-          },
+          where: guard(bookId, entry, OPERABLE_STATES.unsettle),
           data: { settledAt: null },
         });
         if (result.count !== 1)

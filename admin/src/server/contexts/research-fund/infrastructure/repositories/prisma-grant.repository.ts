@@ -64,8 +64,7 @@ export class PrismaGrantRepository implements GrantRepository {
               bookId: BigInt(bookId),
               entryDate: new Date(`${input.entryDate}T00:00:00.000Z`),
               description: input.description,
-              // 振込は機械的なため下書きを経ずに確認済で作る。
-              status: "approved",
+              status: input.status,
               source: "grant",
               hash: input.hash,
               createdById: userId,

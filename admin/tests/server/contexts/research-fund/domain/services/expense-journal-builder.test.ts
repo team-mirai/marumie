@@ -46,6 +46,11 @@ describe("buildExpenseJournalWrite", () => {
     });
   });
 
+  it("状態を渡さなければ、新しく作る仕訳の初期状態（下書き）にする", () => {
+    const result = build({ status: undefined });
+    expect(result).toMatchObject({ status: "valid", value: { status: "draft" } });
+  });
+
   it("渡した状態をそのまま保存する形に載せる", () => {
     const result = build({ status: "approved" });
     expect(result).toMatchObject({ status: "valid", value: { status: "approved" } });

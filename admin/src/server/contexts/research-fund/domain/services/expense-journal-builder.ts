@@ -1,4 +1,5 @@
 import "server-only";
+import { JournalEntry } from "@/server/contexts/research-fund/domain/models/journal-entry";
 import { JournalEntryHash } from "@/server/contexts/research-fund/domain/models/journal-entry-hash";
 import {
   JournalPosting,
@@ -25,7 +26,8 @@ interface ExpenseJournalWriteInput {
   source: "manual" | "scan";
   /** 読み取り元の書類。手入力なら null */
   documentId: string | null;
-  status: JournalWrite["status"];
+  /** 保存する状態。新しく作る仕訳では省略し、作られ方ごとの初期状態（JournalEntry.initialStatus）にする */
+  status?: JournalWrite["status"];
   /** 帳簿の年度。帳簿が無ければ null */
   year: number | null;
   accounts: readonly ResearchFundAccount[];
@@ -75,6 +77,11 @@ export function buildExpenseJournalWrite(
   if (hash.status === "invalid") return hash;
   return {
     status: "valid",
-    value: { ...edit, status: input.status, hash: hash.value, lines: posting.value.lines },
+    value: {
+      ...edit,
+      status: input.status ?? JournalEntry.initialStatus(input.source),
+      hash: hash.value,
+      lines: posting.value.lines,
+    },
   };
 }

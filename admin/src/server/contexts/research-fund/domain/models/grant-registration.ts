@@ -1,4 +1,5 @@
 import { isCalendarDate } from "@/server/contexts/research-fund/domain/models/calendar-date";
+import type { JournalEntryStatus } from "@/server/contexts/research-fund/domain/models/journal-entry";
 import type { JournalLine } from "@/server/contexts/research-fund/domain/models/journal-posting";
 import {
   invalidResearchFundResult,
@@ -16,6 +17,8 @@ export interface GrantWrite {
   amount: number;
   hash: string;
   lines: readonly JournalLine[];
+  /** 作る仕訳の状態（JournalEntry.initialStatus） */
+  status: JournalEntryStatus;
 }
 
 /**

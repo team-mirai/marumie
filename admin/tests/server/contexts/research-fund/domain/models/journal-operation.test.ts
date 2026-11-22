@@ -1,4 +1,4 @@
-import { allExcludedRejection, JournalOperation, type OperableEntry } from "@/server/contexts/research-fund/domain/models/journal-operation";
+import { allExcludedRejection, DocumentReplacement, JournalOperation, OPERABLE_STATES, type OperableEntry, type OperableState } from "@/server/contexts/research-fund/domain/models/journal-operation";
 
 const base: OperableEntry = { id: "1", description: "タクシー代", source: "manual", status: "draft", advancedBy: null, settledAt: null, entryDate: "2026-08-01", amount: 1200, accountKey: "taxi", note: "公開メモ", memo: "内部メモ", documentId: null, receiptAbsent: false };
 const operations = ["edit", "approve", "revertToDraft", "discard", "unpublish", "setAdvancedBy", "setPayee", "setReceiptAbsent", "setReceiptAbsenceReason", "attachDocument", "replaceDocument", "settle", "unsettle"] as const;
@@ -158,5 +158,48 @@ describe("allExcludedRejection", () => {
     expect(allExcludedRejection([unconfirmed, { reason: "別の理由", remedy: "別の対処をしてください" }], "確認済にできる")).toBe(
       "選んだ仕訳はすべて科目が要確認か別の理由のため、確認済にできる仕訳がありません。科目を確定してください。別の対処をしてください",
     );
+  });
+});
+
+describe("OPERABLE_STATES（リポジトリが同時更新の照合に使う状態）", () => {
+  function matches(entry: OperableEntry, state: OperableState) {
+    const present = (expected: boolean | undefined, value: unknown) => expected === undefined || expected === (value !== null);
+    return state.statuses.includes(entry.status)
+      && (!state.expenseOnly || entry.source !== "grant")
+      && present(state.settled, entry.settledAt)
+      && present(state.hasDocument, entry.documentId)
+      && present(state.advanced, entry.advancedBy)
+      && (state.receiptAbsent === undefined || state.receiptAbsent === entry.receiptAbsent);
+  }
+  const entries = (["draft", "approved", "published"] as const).flatMap(status =>
+    (["manual", "scan", "grant"] as const).flatMap(source =>
+      [null, "秘書A"].flatMap(advancedBy =>
+        [null, "2026-09-01"].flatMap(settledAt =>
+          [null, "3"].flatMap(documentId =>
+            [false, true].map((receiptAbsent): OperableEntry => ({ ...base, status, source, advancedBy, settledAt, documentId, receiptAbsent })))))));
+  // 判定で受け付けた仕訳が照合の条件で弾かれると、画面では操作できるのに必ず「更新されました」で失敗する
+  it.each(operations)("%s: 判定で受け付けた仕訳は、照合の条件も満たす", operation => {
+    const accepted = entries.filter(entry => judge(operation, entry) === null);
+    expect(accepted.length).toBeGreaterThan(0);
+    for (const entry of accepted) expect([entry, matches(entry, OPERABLE_STATES[operation])]).toEqual([entry, true]);
+  });
+  it("公開中の仕訳の内容は変えられない", () => {
+    for (const operation of ["edit", "approve", "revertToDraft", "discard", "attachDocument", "replaceDocument", "setLegalCategoryOverride"] as const)
+      expect(OPERABLE_STATES[operation].statuses).not.toContain("published");
+  });
+});
+
+describe("DocumentReplacement", () => {
+  it("読み取り中の書類は差し替えられない", () => {
+    expect(DocumentReplacement.readingRejection(0)).toBeNull();
+    expect(DocumentReplacement.readingRejection(1)).toBe("読み取り中の書類は差し替えられません。終わってからお試しください");
+    expect(DocumentReplacement.readingJobStatuses).toEqual(["queued", "running"]);
+  });
+  it("同じ書類に公開中の仕訳が 1 件でもあれば差し替えられない", () => {
+    expect(DocumentReplacement.publishedEntriesRejection(0)).toBeNull();
+    expect(DocumentReplacement.publishedEntriesRejection(2)).toBe("この書類は公開中の仕訳にも紐づいているため差し替えられません。先に確認済に戻してください");
+  });
+  it("差し替えたら公開用の版は作り直し待ちに戻す", () => {
+    expect(DocumentReplacement.maskingStatusAfterReplacement).toBe("pending");
   });
 });

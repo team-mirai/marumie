@@ -4,7 +4,20 @@ import {
   type ResearchFundResult,
 } from "@/server/contexts/research-fund/domain/types/validation";
 
-type JournalEntryStatus = "draft" | "approved" | "published";
+export type JournalEntryStatus = "draft" | "approved" | "published";
+
+/** 仕訳の作られ方。手入力・書類の読み取り・支給の登録 */
+type JournalEntrySource = "manual" | "scan" | "grant";
+
+/**
+ * 新しく作る仕訳の初期状態。手入力と読み取りの仕訳は人が確かめるまで下書きにする。
+ * 支給は振込額が月から機械的に決まるので、下書きを経ずに確認済で作る
+ */
+const INITIAL_STATUS: Record<JournalEntrySource, JournalEntryStatus> = {
+  manual: "draft",
+  scan: "draft",
+  grant: "approved",
+};
 
 /**
  * 許される状態遷移。公開済みから確認済みへ戻せるのは、公開後に誤りを見つけたときに
@@ -24,6 +37,10 @@ export interface JournalEntry {
 }
 
 export const JournalEntry = {
+  /** 新しく作る仕訳の初期状態 */
+  initialStatus(source: JournalEntrySource): JournalEntryStatus {
+    return INITIAL_STATUS[source];
+  },
   transition(
     entry: JournalEntry,
     nextStatus: JournalEntryStatus,
