@@ -6,8 +6,9 @@ import { detailLabelClassName } from "@/client/components/research-fund/JournalP
 import { Button, Input, Label } from "@/client/components/ui";
 import {
   ADVANCED_BY_MAX_LENGTH,
+  isUnsettledAdvance,
   normalizeAdvancedBy,
-  settlementRejection,
+  settlementHint,
 } from "@/server/contexts/research-fund/domain/models/advance";
 import { todayInJst } from "@/server/contexts/research-fund/domain/models/calendar-date";
 import type { ReviewEntry } from "@/server/contexts/research-fund/domain/models/journal-review";
@@ -62,10 +63,7 @@ export function JournalAdvanceField({
   const unchanged = !editing || normalizeAdvancedBy(value) === entry.advancedBy;
   // 精算できない理由。立替者の変更を保存しないまま精算すると、入力中の名前が消えてしまうので止める。
   const rejection =
-    entry.status === "draft" && entry.advancedBy !== null
-      ? "精算は確認済にしてからできます"
-      : (settlementRejection(entry) ??
-        (unchanged ? null : "立替者の変更を保存してから精算してください"));
+    settlementHint(entry) ?? (unchanged ? null : "立替者の変更を保存してから精算してください");
   if (entry.settledAt !== null)
     return (
       <JournalOfficeRow
@@ -80,7 +78,7 @@ export function JournalAdvanceField({
       </JournalOfficeRow>
     );
   const settleAction =
-    entry.advancedBy !== null && !(editing && onSave) ? (
+    isUnsettledAdvance(entry) && !(editing && onSave) ? (
       <>
         <span className="rounded-full border border-disabled-border px-1.5 text-[10.5px] leading-4 text-muted-foreground">
           未精算
@@ -144,7 +142,7 @@ export function JournalAdvanceField({
       }
       below={
         <>
-          {entry.advancedBy !== null && rejection !== null && !(editing && onSave) && (
+          {isUnsettledAdvance(entry) && rejection !== null && !(editing && onSave) && (
             <p className="flex items-center gap-1 text-[11px] text-muted-foreground">
               <Info aria-hidden className="size-3 shrink-0" />
               {rejection}

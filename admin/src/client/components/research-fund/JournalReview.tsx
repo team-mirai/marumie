@@ -31,11 +31,15 @@ import { JournalEditor } from "@/client/components/research-fund/JournalEditor";
 import { JournalList, JournalStatusPill } from "@/client/components/research-fund/JournalList";
 import { PayeeLinkDialog } from "@/client/components/research-fund/PayeeLinkDialog";
 import {
-  settlementRejection,
+  earliestSettlementDate,
   summarizeUnsettledAdvances,
 } from "@/server/contexts/research-fund/domain/models/advance";
 import { todayInJst } from "@/server/contexts/research-fund/domain/models/calendar-date";
 import type { DuplicateDocuments } from "@/server/contexts/research-fund/domain/models/duplicate-document";
+import {
+  acceptsAll,
+  JournalOperation,
+} from "@/server/contexts/research-fund/domain/models/journal-operation";
 import {
   isAccountUnconfirmed,
   type JournalEdit,
@@ -139,8 +143,7 @@ export function JournalReview({
   const checkable = visible.filter((e) => e.source !== "grant");
   const checkedEntries = checkable.filter((e) => checked.includes(e.id));
   const allChecked = checkable.length > 0 && checkedEntries.length === checkable.length;
-  // 確認済にする・読み直すは下書きだけ、下書きに戻すは確認済だけに使える。
-  // 混ぜて選んだときは一部だけに適用されないよう、両方に使える破棄だけを許す。
+  // 状態が混ざっているかの案内と、読み直しの対象（下書きだけ）に使う。
   const checkedKind = checkedEntries.every((e) => e.status === "draft")
     ? "draft"
     : checkedEntries.every((e) => e.status === "approved")
@@ -148,25 +151,17 @@ export function JournalReview({
       : "mixed";
   // 読み直しは書類単位。選んでいない同じ書類の下書きも作り直し、確認済・公開中を含む書類は外す。
   const reread = previewReread(checkedEntries, entries);
-  // 立替者の設定・解除は未精算なら状態を問わない。精算は確認済・公開中の未精算の立替だけ。
-  // 破棄は公開中と精算済を含められない。いずれも「全件か無し」なので、全件に使えるときだけ出す。
-  // 精算済は中身を変えられない（金額・立替者の変更と破棄、下書きに戻すのを禁じる）。
-  const allUnsettled =
-    checkedEntries.length > 0 && checkedEntries.every((e) => e.settledAt === null);
-  const assignable = allUnsettled;
-  const settlable =
-    checkedEntries.length > 0 && checkedEntries.every((e) => settlementRejection(e) === null);
-  const unsettleable =
-    checkedEntries.length > 0 && checkedEntries.every((e) => e.settledAt !== null);
-  const discardable = allUnsettled && checkedEntries.every((e) => e.status !== "published");
-  const revertable = checkedKind === "approved" && allUnsettled;
+  // まとめて操作のボタンは、サーバーと同じ判定（JournalOperation）で選んだ全件に使えるときだけ出す。
+  // 一部だけに適用されないよう「全件か無し」で、要確認の下書きはサーバーと同じく除外に回るので止めない。
+  const approvable = acceptsAll(checkedEntries, JournalOperation.approve);
+  const assignable = acceptsAll(checkedEntries, JournalOperation.setAdvancedBy);
+  const settlable = acceptsAll(checkedEntries, JournalOperation.settle);
+  const unsettleable = acceptsAll(checkedEntries, JournalOperation.unsettle);
+  const discardable = acceptsAll(checkedEntries, JournalOperation.discard);
+  const revertable = acceptsAll(checkedEntries, JournalOperation.revertToDraft);
   // 確認ダイアログに出す、選んだ立替の立替者ごとの合計額
   const settlementTotals = summarizeUnsettledAdvances(checkedEntries);
-  // 精算日の下限。立て替えた日より前に精算することはないので、選んだ仕訳の最も新しい日付。
-  const settlementMin = checkedEntries.reduce(
-    (max, e) => (e.entryDate > max ? e.entryDate : max),
-    "",
-  );
+  const settlementMin = earliestSettlementDate(checkedEntries.map((e) => e.entryDate)) ?? "";
   // 選んだ仕訳の支払先が 1 つに揃っていれば、まとめて紐づけるダイアログの初期値にする。
   const checkedPayeeIds = new Set(checkedEntries.map((e) => e.payeeId));
   const checkedPayeeId = checkedPayeeIds.size === 1 ? [...checkedPayeeIds][0] : null;
@@ -846,7 +841,7 @@ export function JournalReview({
         },
       },
       {
-        shown: checkedKind === "draft",
+        shown: approvable,
         label: "まとめて確認済にする",
         variant: "default",
         onSelect: approveChecked,

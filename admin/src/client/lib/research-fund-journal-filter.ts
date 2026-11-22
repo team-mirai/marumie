@@ -1,3 +1,4 @@
+import { isUnsettledAdvance } from "@/server/contexts/research-fund/domain/models/advance";
 import {
   isAccountUnconfirmed,
   type ReviewEntry,
@@ -53,7 +54,7 @@ export function filterJournalEntries(
   return entries.filter(
     (e) =>
       (!filter.month || e.entryDate.slice(5, 7) === filter.month) &&
-      (!filter.unsettledOnly || (e.advancedBy !== null && e.settledAt === null)) &&
+      (!filter.unsettledOnly || isUnsettledAdvance(e)) &&
       (filter.advancer === "" || e.advancedBy === filter.advancer) &&
       (!filter.payeeUnsetOnly || isPayeeUnset(e)) &&
       (!filter.receiptMissingOnly || isReceiptMissing(e)) &&
