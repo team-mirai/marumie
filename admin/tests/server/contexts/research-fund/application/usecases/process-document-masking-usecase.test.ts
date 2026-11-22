@@ -22,7 +22,8 @@ describe("ProcessDocumentMaskingUsecase", () => {
     findMaskedKey: jest.fn(),
     listByBook: jest.fn(),
     countUnfinished: jest.fn(),
-    releaseStale: jest.fn(),
+    findStalled: jest.fn(),
+    release: jest.fn(),
     claimNext: jest.fn(),
     complete: jest.fn(),
     fail: jest.fn(),
@@ -161,7 +162,7 @@ describe("ProcessDocumentMaskingUsecase", () => {
   });
 
   it("ページ数の上限を超える書類は、上限を超えた理由で失敗にする", async () => {
-    masking.mask.mockRejectedValue(new MaskingPageLimitError(21));
+    masking.mask.mockRejectedValue(new MaskingPageLimitError(21, "21ページあり、黒塗りできるページ数の上限（20ページ）を超えています"));
 
     const result = await usecase.execute();
 

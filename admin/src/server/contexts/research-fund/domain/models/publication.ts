@@ -1,4 +1,7 @@
-import type { DocumentMaskingStatus } from "@/server/contexts/research-fund/domain/models/document-masking";
+import {
+  DocumentMaskingPolicy,
+  type DocumentMaskingStatus,
+} from "@/server/contexts/research-fund/domain/models/document-masking";
 import { isSerialId } from "@/server/contexts/research-fund/domain/models/entity-id";
 import { JournalEntry } from "@/server/contexts/research-fund/domain/models/journal-entry";
 import type { ResearchFundCategory, ResearchFundRow } from "@/shared/research-fund/aggregation";
@@ -74,7 +77,8 @@ export const Publication = {
    */
   documentRejection(document: PublicationDocument | null): string | null {
     if (document === null) return null;
-    if (document.maskingStatus === "succeeded" && document.hasMaskedVersion) return null;
+    if (DocumentMaskingPolicy.isPublishable(document.maskingStatus, document.hasMaskedVersion))
+      return null;
     switch (document.maskingStatus) {
       case "running":
         return "書類の公開用の版を作成中です。できあがるまで公開できません";

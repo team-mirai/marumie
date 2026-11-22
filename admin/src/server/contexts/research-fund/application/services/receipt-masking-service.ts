@@ -1,5 +1,6 @@
 import "server-only";
 import type { DocumentMime } from "@/server/contexts/research-fund/domain/models/document-format";
+import { DocumentMaskingPolicy } from "@/server/contexts/research-fund/domain/models/document-masking";
 import type {
   MaskingRegion,
   RasterImage,
@@ -14,17 +15,16 @@ import type { PersonalInfoRegionDetector } from "@/server/contexts/research-fund
 const DETECTION_MAX_EDGE = 1568;
 const DETECTION_MAX_TOKENS = 1568;
 const DETECTION_PATCH = 28;
-/** 黒塗りできる書類のページ数の上限。LLM をページごとに順に呼ぶので、関数の実行時間の上限に収まるようにする */
-export const MAX_MASKING_PAGES = 20;
 /** 塗る矩形の四辺に足す余白（ページ画像の長辺に対する割合）。LLM の座標の誤差を吸収する */
 const PADDING_RATIO = 0.006;
 
-/** 書類のページ数が黒塗りできる上限を超えている */
+/** 書類のページ数が黒塗りできる上限を超えている。message はドメインが返した却下理由 */
 export class MaskingPageLimitError extends Error {
-  constructor(readonly pageCount: number) {
-    super(
-      `Document has ${pageCount} pages, exceeding the masking limit of ${MAX_MASKING_PAGES} pages`,
-    );
+  constructor(
+    readonly pageCount: number,
+    reason: string,
+  ) {
+    super(reason);
   }
 }
 
@@ -49,7 +49,8 @@ export class ReceiptMaskingService {
     const source = await this.codec.open(document);
     try {
       // LLM を呼ぶ前に、ページを描画せずに分かるページ数で断る
-      if (source.pageCount > MAX_MASKING_PAGES) throw new MaskingPageLimitError(source.pageCount);
+      const pageLimit = DocumentMaskingPolicy.pageLimitRejection(source.pageCount);
+      if (pageLimit !== null) throw new MaskingPageLimitError(source.pageCount, pageLimit);
       const pdf = await this.codec.createImagePdf();
       let regionCount = 0;
       // ページを順に処理し、LLM への同時リクエストを増やさない

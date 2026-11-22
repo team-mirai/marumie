@@ -8,6 +8,9 @@ import {
   type ResearchFundResult,
 } from "@/server/contexts/research-fund/domain/types/validation";
 
+/** 依頼の直後に状態が変わったときに依頼し直す回数の上限 */
+const REQUEST_ATTEMPTS = 3;
+
 /**
  * 書類の公開用の版を作る・作り直す対象に戻す（#1802）。実際に作るのは ProcessDocumentMaskingUsecase。
  * 作成中の書類は二重に作らないため受け付けない。前の版は新しい版ができた時点で置き換わる。
@@ -29,23 +32,24 @@ export class RequestDocumentMaskingUsecase {
     }
     const instruction = DocumentMaskingPolicy.validateInstruction(input.instruction);
     if (instruction.status === "invalid") return instruction;
-    const outcome = await this.repository.request(
-      input.bookId,
-      input.documentId,
-      instruction.value,
-    );
-    if (outcome === "not-found")
-      return invalidResearchFundResult(
-        "documentId",
-        RF_ERROR_CODES.DOCUMENT_NOT_FOUND,
-        "書類が見つかりません",
+    for (let attempt = 0; attempt < REQUEST_ATTEMPTS; attempt += 1) {
+      const outcome = await this.repository.request(
+        input.bookId,
+        input.documentId,
+        instruction.value,
+        DocumentMaskingPolicy.requestableStatuses,
       );
-    if (outcome === "running")
-      return invalidResearchFundResult(
-        "documentId",
-        RF_ERROR_CODES.INVALID_DOCUMENT,
-        "公開用の版を作成中です。終わってから作り直してください",
-      );
-    return { status: "valid", value: undefined };
+      if (outcome === null)
+        return invalidResearchFundResult(
+          "documentId",
+          RF_ERROR_CODES.DOCUMENT_NOT_FOUND,
+          "書類が見つかりません",
+        );
+      if (outcome.requested) return { status: "valid", value: undefined };
+      const rejection = DocumentMaskingPolicy.validateRequest(outcome.status);
+      if (rejection.status === "invalid") return rejection;
+      // 戻せなかった直後に作成が終わり、いまは依頼を受けられる状態になっている。もう一度依頼する
+    }
+    throw new Error("Document masking status kept changing while requesting");
   }
 }

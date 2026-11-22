@@ -54,26 +54,47 @@ describe("PrismaDocumentMaskingRepository", () => {
     });
   });
 
-  it("失効した作成中の書類を、作り直しても止まったものは失敗に、初めて止まったものは印を付けて未作成に戻す", async () => {
-    delegate.updateMany.mockResolvedValueOnce({ count: 1 }).mockResolvedValueOnce({ count: 2 });
+  it("失効した作成中の書類（着手の時刻が無いものを含む）を、すべての帳簿から探す", async () => {
     const staleBefore = new Date();
-    const stale = {
+    delegate.findMany.mockResolvedValue([
+      { id: BigInt(1), maskingStartedAt: null, maskingError: null },
+      { id: BigInt(2), maskingStartedAt: startedAt, maskingError: "印" },
+    ]);
+
+    expect(await repository.findStalled(staleBefore)).toEqual([
+      { documentId: "1", startedAt: null, error: null },
+      { documentId: "2", startedAt, error: "印" },
+    ]);
+    expect(delegate.findMany.mock.calls[0][0].where).toEqual({
       maskingStatus: "running",
       OR: [{ maskingStartedAt: null }, { maskingStartedAt: { lt: staleBefore } }],
-    };
+    });
+  });
+
+  it.each([
+    [{ status: "pending" as const, error: "印" }],
+    [{ status: "failed" as const, error: "止まりました" }],
+  ])("失効した書類を、見つけたときのまま作成中なら行き先の状態にする: %p", async (destination) => {
+    delegate.updateMany.mockResolvedValue({ count: 1 });
+
+    expect(await repository.release({ documentId: "42", startedAt, error: null }, destination)).toBe(true);
+    expect(delegate.updateMany).toHaveBeenCalledWith({
+      where: stillClaimed,
+      data: {
+        maskingStatus: destination.status,
+        maskingStartedAt: null,
+        maskingError: destination.error,
+        maskedRegionCount: null,
+      },
+    });
+  });
+
+  it("見つけた後に作成が終わっていた書類は記録しない", async () => {
+    delegate.updateMany.mockResolvedValue({ count: 0 });
 
     expect(
-      await repository.releaseStale(staleBefore, { retryNote: "印", failure: "止まりました" }),
-    ).toEqual({ retried: 2, failed: 1 });
-    expect(prisma.$transaction).toHaveBeenCalledTimes(1);
-    expect(delegate.updateMany).toHaveBeenNthCalledWith(1, {
-      where: { ...stale, maskingError: { not: null } },
-      data: { maskingStatus: "failed", maskingError: "止まりました", maskedRegionCount: null },
-    });
-    expect(delegate.updateMany).toHaveBeenNthCalledWith(2, {
-      where: { ...stale, maskingError: null },
-      data: { maskingStatus: "pending", maskingStartedAt: null, maskingError: "印" },
-    });
+      await repository.release({ documentId: "42", startedAt, error: null }, { status: "pending", error: "印" }),
+    ).toBe(false);
   });
 
   it("最も古い未作成の書類を作成中にして返し、別の実行が先に着手した書類は飛ばす", async () => {
@@ -156,9 +177,9 @@ describe("PrismaDocumentMaskingRepository", () => {
     async (instruction) => {
       delegate.updateMany.mockResolvedValue({ count: 1 });
 
-      expect(await repository.request("12", "42", instruction)).toBe("requested");
+      expect(await repository.request("12", "42", instruction, ["pending", "failed"])).toEqual({ requested: true });
       expect(delegate.updateMany).toHaveBeenCalledWith({
-        where: { id: BigInt(42), bookId: BigInt(12), maskingStatus: { not: "running" } },
+        where: { id: BigInt(42), bookId: BigInt(12), maskingStatus: { in: ["pending", "failed"] } },
         data: {
           maskingStatus: "pending",
           maskingStartedAt: null,
@@ -171,13 +192,13 @@ describe("PrismaDocumentMaskingRepository", () => {
   );
 
   it.each([
-    [{ id: BigInt(42) }, "running"],
-    [null, "not-found"],
-  ])("作り直しの対象に戻せなかったときは理由を返す: %p", async (row, expected) => {
+    [{ maskingStatus: "running" }, { requested: false, status: "running" }],
+    [null, null],
+  ])("作り直しの対象に戻せなかったときはその時点の状態を返す: %p", async (row, expected) => {
     delegate.updateMany.mockResolvedValue({ count: 0 });
     delegate.findFirst.mockResolvedValue(row);
 
-    expect(await repository.request("12", "42", null)).toBe(expected);
+    expect(await repository.request("12", "42", null, ["pending"])).toEqual(expected);
   });
 
   it("公開用の版のキーを帳簿の範囲で引く", async () => {

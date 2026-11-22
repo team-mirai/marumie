@@ -4,11 +4,11 @@ import { PDFDocument } from "pdf-lib";
 import {
   detectionMaxEdge,
   fillRegions,
-  MAX_MASKING_PAGES,
   MaskingPageLimitError,
   ReceiptMaskingService,
   toPageRegions,
 } from "@/server/contexts/research-fund/application/services/receipt-masking-service";
+import { MAX_MASKING_PAGES } from "@/server/contexts/research-fund/domain/models/document-masking";
 import type { RasterImage } from "@/server/contexts/research-fund/domain/models/masking-region";
 import type { DocumentRasterCodec } from "@/server/contexts/research-fund/domain/repositories/document-raster-codec.interface";
 import type { PersonalInfoRegionDetector } from "@/server/contexts/research-fund/domain/repositories/personal-info-region-detector.interface";
@@ -199,7 +199,7 @@ describe("ReceiptMaskingService（LLM のみ差し替え）", () => {
     });
 
     await expect(result).rejects.toThrow(MaskingPageLimitError);
-    await expect(result).rejects.toThrow("Document has 21 pages, exceeding the masking limit of 20 pages");
+    await expect(result).rejects.toThrow("21ページあり、黒塗りできるページ数の上限（20ページ）を超えています");
     expect(detect).not.toHaveBeenCalled();
   }, RASTER_TIMEOUT_MS);
 

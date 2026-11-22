@@ -1,5 +1,6 @@
 import "server-only";
 import type { Prisma, PrismaClient } from "@prisma/client";
+import { DocumentMaskingPolicy } from "@/server/contexts/research-fund/domain/models/document-masking";
 import {
   Publication,
   PublicationError,
@@ -138,7 +139,12 @@ export class PrismaPublicationRepository implements PublicationRepository {
           // 判定のあとで作り直しが依頼されても、公開用の版が作成済みでない書類の付いた仕訳は公開しない。
           OR: [
             { documentId: null },
-            { document: { maskingStatus: "succeeded", maskedKey: { not: null } } },
+            {
+              document: {
+                maskingStatus: DocumentMaskingPolicy.publishableStatus,
+                maskedKey: { not: null },
+              },
+            },
           ],
         },
         data: { status: "published", publishedAt: new Date() },

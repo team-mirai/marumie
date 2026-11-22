@@ -1,4 +1,8 @@
-import type { DocumentMasking } from "@/server/contexts/research-fund/domain/models/document-masking";
+import type {
+  DocumentMasking,
+  DocumentMaskingStatus,
+  StalledMaskingDestination,
+} from "@/server/contexts/research-fund/domain/models/document-masking";
 
 /** 公開用の版の作成に着手した書類 */
 export interface ClaimedMaskingDocument {
@@ -11,6 +15,15 @@ export interface ClaimedMaskingDocument {
   startedAt: Date;
 }
 
+/** 作成中のまま失効した書類 */
+export interface StalledMaskingDocument {
+  documentId: string;
+  /** 着手した時刻。記録が無ければ null。行き先の記録は、この時刻のまま running の書類にだけ行う */
+  startedAt: Date | null;
+  /** 書類に残っている理由（作り直しの印）。無ければ null */
+  error: string | null;
+}
+
 export interface DocumentMaskingRepository {
   /** 帳簿の書類の公開用の版のファイルのキー。書類が無ければ undefined、版がまだ無ければ null */
   findMaskedKey(bookId: string, documentId: string): Promise<string | null | undefined>;
@@ -18,15 +31,16 @@ export interface DocumentMaskingRepository {
   listByBook(bookId: string): Promise<DocumentMasking[]>;
   /** すべての帳簿の、公開用の版が未作成・作成中の書類の数 */
   countUnfinished(): Promise<{ pending: number; running: number }>;
+  /** staleBefore より前に着手して（または着手した時刻が無いまま）running で残った書類（すべての帳簿） */
+  findStalled(staleBefore: Date): Promise<StalledMaskingDocument[]>;
   /**
-   * staleBefore より前に着手して running のまま残った書類（すべての帳簿）を扱う。
-   * 初めて止まったものは retryNote を残して pending に戻し、retryNote が残ったまま（＝作り直しても）
-   * 止まったものは failure を理由に失敗にする。戻した件数と失敗にした件数を返す
+   * 失効した書類を行き先の状態にし、理由を残す。見つけたときのまま running でなければ
+   * （その間に作成が終わっていれば）何もせず false を返す
    */
-  releaseStale(
-    staleBefore: Date,
-    outcome: { retryNote: string; failure: string },
-  ): Promise<{ retried: number; failed: number }>;
+  release(
+    stalled: StalledMaskingDocument,
+    destination: StalledMaskingDestination,
+  ): Promise<boolean>;
   /**
    * pending の書類（すべての帳簿）のうち最も古いものを running にして返す。無ければ null。
    * 別の実行が先に着手した書類は返さない（同じ書類を二重に作らない）
@@ -44,13 +58,14 @@ export interface DocumentMaskingRepository {
   /** 失敗にして理由を残す。着手したときのまま running でなければ何もしない */
   fail(claimed: ClaimedMaskingDocument, error: string): Promise<void>;
   /**
-   * 帳簿の書類を作る・作り直す対象（pending）に戻し、黒塗りへの追加の指示を書類に保存する
-   * （null なら指示を消す）。前の版は作り直しが済むまで残す。
-   * 書類が無ければ not-found、作成中なら running を返して何もしない
+   * 帳簿の書類が requestable のいずれかの状態のときだけ、作る・作り直す対象（pending）に戻し、
+   * 黒塗りへの追加の指示を書類に保存する（null なら指示を消す）。前の版は作り直しが済むまで残す。
+   * 戻せなければ何もせず、その時点の状態を返す。書類が無ければ null
    */
   request(
     bookId: string,
     documentId: string,
     instruction: string | null,
-  ): Promise<"requested" | "running" | "not-found">;
+    requestable: readonly DocumentMaskingStatus[],
+  ): Promise<{ requested: true } | { requested: false; status: DocumentMaskingStatus } | null>;
 }

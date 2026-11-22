@@ -7,11 +7,7 @@ import type {
 } from "@/server/contexts/research-fund/domain/repositories/document-masking-repository.interface";
 import type { DocumentMaskingQueue } from "@/server/contexts/research-fund/domain/repositories/document-masking-queue.interface";
 import type { DocumentStorage } from "@/server/contexts/research-fund/domain/repositories/document-storage.interface";
-import {
-  MAX_MASKING_PAGES,
-  MaskingPageLimitError,
-  type ReceiptMaskingService,
-} from "@/server/contexts/research-fund/application/services/receipt-masking-service";
+import type { ReceiptMaskingService } from "@/server/contexts/research-fund/application/services/receipt-masking-service";
 
 interface ProcessDocumentMaskingResult {
   /** この呼び出しで着手した書類の数（0 か 1） */
@@ -115,9 +111,8 @@ export class ProcessDocumentMaskingUsecase {
   }
 }
 
+/** ページ数の上限を超えたときは、ドメインが返した却下理由がそのまま message に入っている */
 function failureMessage(error: unknown): string {
-  if (error instanceof MaskingPageLimitError)
-    return DocumentMaskingPolicy.pageLimitMessage(error.pageCount, MAX_MASKING_PAGES);
   return error instanceof Error && error.message
     ? error.message
     : "公開用の版の作成に失敗しました。作り直してください";
