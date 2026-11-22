@@ -44,8 +44,22 @@ export interface OperationRejection {
   /**
    * まとめて操作では拒否ではなく除外として扱う理由。
    * 要確認の下書きが 1 件混ざっただけで、選んだ全件が止まらないようにする。
+   * reason は除外した理由、remedy は除外されないためにすること（選んだ全件が除外されたときに見せる）。
    */
-  bulkExcludable?: true;
+  bulkExclusion?: { reason: string; remedy: string };
+}
+
+/**
+ * まとめて操作で、選んだ仕訳がすべて除外されたときの理由。
+ * exclusions は各仕訳の除外の理由（OperationRejection.bulkExclusion）、can は「確認済にできる」のような操作の言い方。
+ */
+export function allExcludedRejection(
+  exclusions: readonly { reason: string; remedy: string }[],
+  can: string,
+): string {
+  const reasons = [...new Set(exclusions.map((exclusion) => exclusion.reason))].join("か");
+  const remedies = [...new Set(exclusions.map((exclusion) => exclusion.remedy))].join("。");
+  return `選んだ仕訳はすべて${reasons}のため、${can}仕訳がありません。${remedies}`;
 }
 
 /** まとめて操作で支給を選んだときの理由。支給は一覧で選べないので、画面と食い違った選択として扱う */
@@ -125,7 +139,7 @@ export const JournalOperation = {
       return {
         one: "科目を確定してから確認済にしてください",
         many: `「${entry.description}」は科目が要確認です`,
-        bulkExcludable: true,
+        bulkExclusion: { reason: "科目が要確認", remedy: "科目を確定してください" },
       };
     return null;
   },

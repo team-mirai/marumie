@@ -31,8 +31,8 @@ export class SetLegalCategoryOverrideUsecase {
       return rejection ? { one: rejection, many: rejection } : null;
     });
     if (input === null) {
-      if (entry.legalCategoryOverride === null)
-        throw new JournalReviewError("この仕訳の法定区分は上書きされていません");
+      const rejection = LegalCategoryOverridePolicy.removalRejection(entry.legalCategoryOverride);
+      if (rejection) throw new JournalReviewError(rejection);
       return this.repository.setLegalCategoryOverride(bookId, entry, null, userId);
     }
     const accounts = await this.repository.accounts();

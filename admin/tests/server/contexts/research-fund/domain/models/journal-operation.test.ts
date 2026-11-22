@@ -1,4 +1,4 @@
-import { JournalOperation, type OperableEntry } from "@/server/contexts/research-fund/domain/models/journal-operation";
+import { allExcludedRejection, JournalOperation, type OperableEntry } from "@/server/contexts/research-fund/domain/models/journal-operation";
 
 const base: OperableEntry = { id: "1", description: "タクシー代", source: "manual", status: "draft", advancedBy: null, settledAt: null, entryDate: "2026-08-01", amount: 1200, accountKey: "taxi", note: "公開メモ", memo: "内部メモ", documentId: null, receiptAbsent: false };
 const operations = ["edit", "approve", "revertToDraft", "discard", "unpublish", "setAdvancedBy", "setPayee", "setReceiptAbsent", "setReceiptAbsenceReason", "attachDocument", "replaceDocument", "settle", "unsettle"] as const;
@@ -87,7 +87,7 @@ describe("JournalOperation.approve", () => {
     expect(JournalOperation.approve(needsReview)).toEqual({
       one: "科目を確定してから確認済にしてください",
       many: "「タクシー代」は科目が要確認です",
-      bulkExcludable: true,
+      bulkExclusion: { reason: "科目が要確認", remedy: "科目を確定してください" },
     });
   });
   it("科目を確定する保存なら、要確認の下書きでも確認済にできる", () => {
@@ -99,7 +99,7 @@ describe("JournalOperation.approve", () => {
   it("下書きでない仕訳は、科目が要確認でも除外ではなく拒否する", () => {
     const rejection = JournalOperation.approve({ ...needsReview, status: "approved" });
     expect(rejection?.many).toBe("「タクシー代」は下書きではありません");
-    expect(rejection?.bulkExcludable).toBeUndefined();
+    expect(rejection?.bulkExclusion).toBeUndefined();
   });
 });
 
@@ -142,5 +142,21 @@ describe("JournalOperation.editGrant", () => {
       one: "支給は支給日だけを変更できます",
       many: "この画面で扱えない仕訳が選ばれています",
     });
+  });
+});
+
+describe("allExcludedRejection", () => {
+  const unconfirmed = { reason: "科目が要確認", remedy: "科目を確定してください" };
+  it("全件が除外されたときの理由を、除外の理由から作る", () => {
+    const exclusion = JournalOperation.approve({ ...base, accountKey: "needs-review" })?.bulkExclusion;
+    expect(exclusion).toBeDefined();
+    expect(allExcludedRejection([exclusion!, exclusion!], "確認済にできる")).toBe(
+      "選んだ仕訳はすべて科目が要確認のため、確認済にできる仕訳がありません。科目を確定してください",
+    );
+  });
+  it("除外の理由が複数あれば、それぞれの理由と対処を並べる", () => {
+    expect(allExcludedRejection([unconfirmed, { reason: "別の理由", remedy: "別の対処をしてください" }], "確認済にできる")).toBe(
+      "選んだ仕訳はすべて科目が要確認か別の理由のため、確認済にできる仕訳がありません。科目を確定してください。別の対処をしてください",
+    );
   });
 });

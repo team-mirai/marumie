@@ -37,7 +37,7 @@ export async function acceptJournalEntry(
  * 受け付けない仕訳が 1 件でもあれば何も変更せず、理由を利用者に返す（一部だけ変わる中途半端な状態にしない）。
  * 取得できない仕訳（支給・この画面で扱えない形式・別帳簿）は黙って除外せず、missing を理由に拒否する。
  *
- * ただし除外として扱う理由（OperationRejection.bulkExcludable）の仕訳は全体を止めず、excluded に分けて返す。
+ * ただし除外として扱う理由（OperationRejection.bulkExclusion）の仕訳は全体を止めず、その理由を excluded に分けて返す。
  * 呼び出し側は accepted だけを変更し、excluded の件数を利用者に伝える。
  */
 export async function acceptJournalEntries(
@@ -60,7 +60,7 @@ export async function acceptJournalEntries(
     ).map((entry) => [entry.id, entry]),
   );
   const accepted: ReviewEntry[] = [];
-  const excluded: ReviewEntry[] = [];
+  const excluded: NonNullable<OperationRejection["bulkExclusion"]>[] = [];
   const rejected: string[] = [];
   for (const target of unique) {
     const entry = found.get(target.id);
@@ -74,7 +74,7 @@ export async function acceptJournalEntries(
     }
     const rejection = judge(entry);
     if (!rejection) accepted.push(entry);
-    else if (rejection.bulkExcludable) excluded.push(entry);
+    else if (rejection.bulkExclusion) excluded.push(rejection.bulkExclusion);
     else rejected.push(rejection.many);
   }
   if (rejected.length > 0) throw rejectMany(rejected, messages.cannot, messages.notDone);
