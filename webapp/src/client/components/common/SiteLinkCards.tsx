@@ -125,15 +125,23 @@ function CardLink({ card }: { card: SiteLinkCard }) {
  * 下部の共通ブロックのカード3枚（まる見え政治資金とは？／よくあるご質問／チームみらいについて）。
  * staggerReveal はトップページ用で、カードを 1 枚ずつ時差をつけてフェードインさせる（v9）。
  * ほかのページはカード3枚をまとめてフェードインさせる。
+ * currentHref を渡すと、そのページ自身へのカードは出さない（「まる見え政治資金とは」で同じページへのカードを押しても何も起きないため）。
  */
-export default function SiteLinkCards({ staggerReveal = false }: { staggerReveal?: boolean }) {
+export default function SiteLinkCards({
+  staggerReveal = false,
+  currentHref,
+}: {
+  staggerReveal?: boolean;
+  currentHref?: string;
+}) {
+  const cards = CARDS.filter((card) => card.href !== currentHref);
   return (
     <nav
       data-reveal={staggerReveal ? undefined : true}
       aria-label="このサイトについて"
       className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,300px),1fr))] gap-[clamp(12px,1.6vw,20px)]"
     >
-      {CARDS.map((card, index) =>
+      {cards.map((card, index) =>
         staggerReveal ? (
           // フェードインはカードを包む枠で行う（カード自身の背景色の transition を上書きしないため）
           <div

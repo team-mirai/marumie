@@ -17,7 +17,12 @@ import ResearchFundHighlightsSection from "@/client/components/research-fund/Res
 import ResearchFundMonthlySection from "@/client/components/research-fund/ResearchFundMonthlySection";
 import { formatUpdatedAt } from "@/client/lib/format-date";
 import { shareMetadata } from "@/app/site-metadata";
-import { buildPoliticianNav, politicianPageHref } from "@/client/lib/politician-nav";
+import { HEADER_YEARS } from "@/client/lib/header-navigation";
+import {
+  buildPoliticianNav,
+  mergeNavMembersAcrossYears,
+  politicianPageHref,
+} from "@/client/lib/politician-nav";
 import { politicianPhotoUrl } from "@/client/lib/politician-photo-url";
 import type {
   ResearchFundComingSoonPage,
@@ -40,16 +45,24 @@ function parseYear(year: string): number | null {
 
 /**
  * 前後の切り替え・「他の議員の調研費を見る」に並べる議員（公開中の議員の後ろに「準備中」の議員）。
+ * 表示中の年度に公開していない議員も、公開している一番新しい年度のページへ切り替えられるように並べる
+ * （2025年は公開している議員が 1 人だけなので、年度で絞ると切り替える先が無くなる）。
  * 非公開の議員はプレビュー中でも出さない。取れなくても本文は出せるので、失敗したら出さないだけにする。
  */
 async function loadNavMembers(financialYear: number) {
-  const cards = await loadResearchFundPoliticianCards({ financialYear }).catch((error) => {
-    console.error("loadResearchFundPoliticianCards error:", error);
-    return [] as ResearchFundPoliticianCard[];
-  });
-  return cards.map((card) => ({
+  const years = [...new Set<number>([financialYear, ...HEADER_YEARS])];
+  const listsByYear = await Promise.all(
+    years.map(async (year) => ({
+      financialYear: year,
+      members: await loadResearchFundPoliticianCards({ financialYear: year }).catch((error) => {
+        console.error("loadResearchFundPoliticianCards error:", error);
+        return [] as ResearchFundPoliticianCard[];
+      }),
+    })),
+  );
+  return mergeNavMembersAcrossYears(financialYear, listsByYear).map((card) => ({
     ...card,
-    href: politicianPageHref(card.slug, financialYear),
+    href: politicianPageHref(card.slug, card.financialYear),
     photoUrl: card.hasPhoto ? politicianPhotoUrl(card.slug) : null,
   }));
 }
