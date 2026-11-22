@@ -1,4 +1,6 @@
 import {
+  canRereadAll,
+  isRereadable,
   planReread,
   validateRereadSelection,
   previewReread,
@@ -6,6 +8,26 @@ import {
   validateRereadInstruction,
 } from "@/server/contexts/research-fund/domain/models/scan-reread";
 import { SCAN_BATCH_MAX_DOCUMENTS } from "@/server/contexts/research-fund/domain/models/scan-batch";
+
+describe("isRereadable", () => {
+  it.each([
+    ["draft", true],
+    ["approved", false],
+    ["published", false],
+  ] as const)("%s の仕訳は読み直せるか: %s", (status, expected) => {
+    expect(isRereadable({ status })).toBe(expected);
+  });
+});
+
+describe("canRereadAll", () => {
+  it("選んだ仕訳がすべて下書きなら読み直せる", () => {
+    expect(canRereadAll([{ status: "draft" }, { status: "draft" }])).toBe(true);
+  });
+
+  it.each(["approved", "published"] as const)("%s が 1 件でも混ざれば読み直せない", (status) => {
+    expect(canRereadAll([{ status: "draft" }, { status }])).toBe(false);
+  });
+});
 
 describe("validateRereadInstruction", () => {
   it("前後の空白を落として受け付ける", () => {

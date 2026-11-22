@@ -9,6 +9,12 @@ import {
 /** 読み直し指示の上限文字数。読み取りプロンプトに添えるので長すぎる指示は受け付けない */
 export const REREAD_INSTRUCTION_MAX_LENGTH = 1000;
 
+/**
+ * 読み直せる仕訳の状態。読み直しは書類単位で下書きを作り直すので、選べるのも作り直されるのも下書きだけ。
+ * これ以外の状態（確認済・公開中）の仕訳を含む書類は読み直しの対象から外す
+ */
+export const REREADABLE_STATUS = "draft";
+
 /** 読み直しの候補になった書類。選んだ下書きが紐づく書類ごとに 1 件 */
 export interface RereadCandidate {
   documentId: string;
@@ -43,6 +49,16 @@ interface RereadEntry {
   documentId: string | null;
   /** 立替者。読み直しで作り直す下書きに引き継げるか判定するために見る */
   advancedBy: string | null;
+}
+
+/** 読み直せる仕訳（下書き）か */
+export function isRereadable(entry: { status: RereadEntry["status"] }): boolean {
+  return entry.status === REREADABLE_STATUS;
+}
+
+/** 選んだ仕訳がすべて読み直せるか（確認画面の「LLMで読み直す」ボタンを出すか） */
+export function canRereadAll(entries: readonly { status: RereadEntry["status"] }[]): boolean {
+  return entries.every(isRereadable);
 }
 
 /** 読み直し指示を検証する。前後の空白は落とし、空なら受け付けない */
@@ -120,7 +136,7 @@ export function previewReread(
   selected: readonly RereadEntry[],
   entries: readonly RereadEntry[],
 ): RereadPreview {
-  const drafts = selected.filter((entry) => entry.status === "draft");
+  const drafts = selected.filter(isRereadable);
   const documentIds = new Set(
     drafts.flatMap((entry) => (entry.documentId === null ? [] : [entry.documentId])),
   );
@@ -128,16 +144,14 @@ export function previewReread(
     entries
       .filter(
         (entry) =>
-          entry.documentId !== null &&
-          documentIds.has(entry.documentId) &&
-          entry.status !== "draft",
+          entry.documentId !== null && documentIds.has(entry.documentId) && !isRereadable(entry),
       )
       .map((entry) => entry.documentId),
   );
   const targets = [...documentIds].filter((documentId) => !excluded.has(documentId));
   const rebuilt = entries.filter(
     (entry) =>
-      entry.status === "draft" && entry.documentId !== null && targets.includes(entry.documentId),
+      isRereadable(entry) && entry.documentId !== null && targets.includes(entry.documentId),
   );
   return {
     documentCount: targets.length,

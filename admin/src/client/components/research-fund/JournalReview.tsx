@@ -56,6 +56,7 @@ import {
 import { isReceiptMissing } from "@/server/contexts/research-fund/domain/models/receipt-absence";
 import { awaitsReceiptNumber } from "@/server/contexts/research-fund/domain/models/receipt-number";
 import {
+  canRereadAll,
   previewReread,
   REREAD_INSTRUCTION_MAX_LENGTH,
 } from "@/server/contexts/research-fund/domain/models/scan-reread";
@@ -144,7 +145,7 @@ export function JournalReview({
   const checkable = visible.filter((e) => e.source !== "grant");
   const checkedEntries = checkable.filter((e) => checked.includes(e.id));
   const allChecked = checkable.length > 0 && checkedEntries.length === checkable.length;
-  // 状態が混ざっているかの案内と、読み直しの対象（下書きだけ）に使う。
+  // 状態が混ざっているかの案内に使う。
   const checkedKind = checkedEntries.every((e) => e.status === "draft")
     ? "draft"
     : checkedEntries.every((e) => e.status === "approved")
@@ -152,6 +153,8 @@ export function JournalReview({
       : "mixed";
   // 読み直しは書類単位。選んでいない同じ書類の下書きも作り直し、確認済・公開中を含む書類は外す。
   const reread = previewReread(checkedEntries, entries);
+  // 読み直せるのは下書きだけ。サーバーと同じドメインの判定で、選んだ全件が下書きのときだけ出す。
+  const rereadable = canRereadAll(checkedEntries);
   // まとめて操作のボタンは、サーバーと同じ判定（JournalOperation）で選んだ全件に使えるときだけ出す。
   // 一部だけに適用されないよう「全件か無し」で、要確認の下書きはサーバーと同じく除外に回るので止めない。
   const approvable = acceptsAll(checkedEntries, JournalOperation.approve);
@@ -798,7 +801,7 @@ export function JournalReview({
         onSelect: () => unsettle(checkedEntries),
       },
       {
-        shown: checkedKind === "draft",
+        shown: rereadable,
         label: "LLMで読み直す",
         variant: "outline",
         onSelect: () => {
