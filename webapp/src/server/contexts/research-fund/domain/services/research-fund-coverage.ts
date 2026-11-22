@@ -7,11 +7,11 @@ interface ResearchFundCoverageInput {
 
 /**
  * 「2026年2-8月分を公開中」。渡された議員全員分をまとめた公開範囲を返す。
- * 公開されている月が1つも無ければ「準備中」。
+ * 公開されている月が1つも無ければ「未公開」（非公開のまま一覧に出す議員の「準備中」とは別のもの）。
  */
 export function buildCoverageLabel(politicians: readonly ResearchFundCoverageInput[]): string {
   const range = buildCoverageRange(politicians);
-  return range ? `${range}分を公開中` : "準備中";
+  return range ? `${range}分を公開中` : "未公開";
 }
 
 /**

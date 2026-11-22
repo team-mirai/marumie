@@ -1,5 +1,6 @@
 import "server-only";
 import type { PrismaClient } from "@prisma/client";
+import { ResearchFundPublication } from "@/server/contexts/research-fund/domain/models/research-fund-publication";
 import type {
   PoliticianPhotoRepository,
   PoliticianPhotoSource,
@@ -16,7 +17,7 @@ export class PrismaPoliticianPhotoRepository implements PoliticianPhotoRepositor
     if (!politician) return null;
     return {
       isPublic: politician.isResearchFundPublic,
-      isComingSoon: politician.researchFundComingSoonNote !== null,
+      isComingSoon: ResearchFundPublication.isComingSoon(politician.researchFundComingSoonNote),
       photoPath: politician.photoPath,
     };
   }

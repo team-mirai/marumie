@@ -10,6 +10,7 @@ import { politicianPageHref } from "@/client/lib/politician-nav";
 import { politicianPhotoUrl } from "@/client/lib/politician-photo-url";
 import type { ResearchFundHomeSummaryData } from "@/server/contexts/research-fund/domain/models/research-fund-home-summary";
 import type { ResearchFundComingSoonPolitician } from "@/server/contexts/research-fund/domain/models/research-fund-politician-list";
+import { ResearchFundPublication } from "@/server/contexts/research-fund/domain/models/research-fund-publication";
 
 interface Props {
   data: ResearchFundHomeSummaryData;
@@ -36,12 +37,9 @@ export default function HomeResearchFundSection({ data, comingSoon = [] }: Props
     })),
   }));
 
-  // 公開中の一覧と準備中の一覧は別々のキャッシュから来るので、公開・非公開の切り替え直後は同じ議員が両方に入りうる。
-  // 公開中の議員を優先し、準備中からは外す
-  const publicSlugs = new Set(data.politicians.map((politician) => politician.slug));
-  const comingSoonMembers: HomeResearchFundComingSoonMember[] = comingSoon
-    .filter((politician) => !publicSlugs.has(politician.slug))
-    .map((politician) => ({
+  // 公開中の議員と重なる準備中の議員は外す（公開中を優先）
+  const comingSoonMembers: HomeResearchFundComingSoonMember[] =
+    ResearchFundPublication.excludePublished(comingSoon, data.politicians).map((politician) => ({
       slug: politician.slug,
       name: politician.name,
       photoUrl: politician.hasPhoto ? politicianPhotoUrl(politician.slug) : null,

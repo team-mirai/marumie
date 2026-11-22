@@ -8,9 +8,10 @@ import type {
   ResearchFundHomeSummaryData,
   ResearchFundHomeYearView,
 } from "@/server/contexts/research-fund/domain/models/research-fund-home-summary";
+import { ResearchFundPublication } from "@/server/contexts/research-fund/domain/models/research-fund-publication";
 import type { ResearchFundRepository } from "@/server/contexts/research-fund/domain/repositories/research-fund-repository.interface";
 import { buildGrantPeriodLabel } from "@/server/contexts/research-fund/domain/services/research-fund-coverage";
-import { sortPoliticiansByKana } from "@/server/contexts/research-fund/domain/services/politician-order";
+import { sortPoliticiansByKana } from "@/server/contexts/research-fund/domain/models/politician-order";
 import { buildResearchFundSankey } from "@/server/contexts/research-fund/domain/services/research-fund-sankey-builder";
 import {
   aggregateResearchFund,
@@ -47,11 +48,11 @@ export class GetResearchFundHomeSummaryUsecase {
     );
     const primary = publishedByYear[0];
 
-    // published の仕訳が1件も無い年は「準備中」。その年は出さない
+    // published の仕訳が1件も無い年は「未公開」。その年は出さない
     const yearsBySlug = new Map<string, ResearchFundHomeYearView[]>();
     years.forEach((year, index) => {
       for (const item of publishedByYear[index]) {
-        if (item.rows.length === 0) continue;
+        if (!ResearchFundPublication.isPublishedYear(item.rows)) continue;
         const views = yearsBySlug.get(item.politician.slug) ?? [];
         views.push(buildYearView(year, item));
         yearsBySlug.set(item.politician.slug, views);
@@ -61,7 +62,7 @@ export class GetResearchFundHomeSummaryUsecase {
     // 並べるのは financialYear を公開している議員だけ（ほかの年だけを公開している議員は並べない）
     const politicians = sortPoliticiansByKana(
       primary
-        .filter((item) => item.rows.length > 0)
+        .filter((item) => ResearchFundPublication.isPublishedYear(item.rows))
         .map(
           ({ politician }): ResearchFundHomePoliticianView => ({
             slug: politician.slug,

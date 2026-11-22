@@ -1,4 +1,4 @@
-import { sortPoliticiansByKana } from "@/server/contexts/research-fund/domain/services/politician-order";
+import { sortPoliticiansByKana } from "@/server/contexts/research-fund/domain/models/politician-order";
 
 const politician = (name: string, nameKana: string | null) => ({ name, nameKana });
 

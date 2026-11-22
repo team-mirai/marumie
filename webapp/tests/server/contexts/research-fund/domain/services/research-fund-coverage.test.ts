@@ -37,9 +37,9 @@ describe("buildCoverageLabel", () => {
     );
   });
 
-  it("公開されている月が無ければ準備中", () => {
-    expect(buildCoverageLabel([])).toBe("準備中");
-    expect(buildCoverageLabel([{ months: [], publishedThrough: null }])).toBe("準備中");
+  it("公開されている月が無ければ未公開（準備中の議員とは別の言葉）", () => {
+    expect(buildCoverageLabel([])).toBe("未公開");
+    expect(buildCoverageLabel([{ months: [], publishedThrough: null }])).toBe("未公開");
   });
 });
 
