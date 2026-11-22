@@ -26,4 +26,55 @@ describe("ScanJob", () => {
       expect(ScanJob.staleBefore(now)).toEqual(new Date(now.getTime() - SCAN_JOB_STALE_MS));
     });
   });
+
+  describe("canTransition", () => {
+    it.each([
+      ["queued", "running"],
+      ["running", "succeeded"],
+      ["running", "failed"],
+      ["running", "queued"],
+      ["failed", "queued"],
+    ] as const)("allows %s → %s", (from, to) => {
+      expect(ScanJob.canTransition(from, to)).toBe(true);
+    });
+
+    it.each([
+      ["queued", "succeeded"],
+      ["queued", "failed"],
+      ["succeeded", "queued"],
+      ["succeeded", "failed"],
+      ["failed", "running"],
+      ["failed", "succeeded"],
+    ] as const)("forbids %s → %s", (from, to) => {
+      expect(ScanJob.canTransition(from, to)).toBe(false);
+    });
+  });
+
+  describe("retry", () => {
+    it("allows retrying a failed job", () => {
+      expect(ScanJob.retry("failed")).toEqual({ status: "valid", value: "failed" });
+    });
+
+    it.each(["queued", "running", "succeeded", null] as const)(
+      "rejects retrying a %s job with the message shown on screen",
+      (status) => {
+        const result = ScanJob.retry(status);
+        expect(result.status).toBe("invalid");
+        if (result.status !== "invalid") return;
+        expect(result.errors[0].message).toBe(
+          "このジョブは再実行できません。画面を再読み込みしてください",
+        );
+      },
+    );
+  });
+
+  describe("isReread", () => {
+    it("treats a job with a reread instruction as a reread", () => {
+      expect(ScanJob.isReread({ rereadInstruction: "日付を読み直して" })).toBe(true);
+    });
+
+    it("treats a job without an instruction as a normal scan", () => {
+      expect(ScanJob.isReread({ rereadInstruction: null })).toBe(false);
+    });
+  });
 });

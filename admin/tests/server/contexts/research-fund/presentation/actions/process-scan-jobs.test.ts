@@ -46,7 +46,7 @@ beforeEach(() => {
     .mocked(buildRetryScanJobUsecase)
     .mockReturnValue({ execute: retry } as unknown as RetryScanJobUsecase);
   execute.mockResolvedValue({ processed: 2, succeeded: 2, failed: 0, hasMore: true });
-  retry.mockResolvedValue(true);
+  retry.mockResolvedValue({ status: "valid", value: undefined });
 });
 
 describe("processScanJobs", () => {
@@ -91,8 +91,18 @@ describe("retryScanJob", () => {
     expect(revalidatePath).toHaveBeenCalledWith("/(auth)", "layout");
   });
 
-  test("既に処理済みなら再読み込みを促す", async () => {
-    retry.mockResolvedValue(false);
+  test("再実行できなければ usecase（ドメイン）の却下理由をそのまま伝える", async () => {
+    retry.mockResolvedValue({
+      status: "invalid",
+      errors: [
+        {
+          path: "jobId",
+          code: "RF_INVALID_STATUS_TRANSITION",
+          message: "このジョブは再実行できません。画面を再読み込みしてください",
+          severity: "error",
+        },
+      ],
+    });
     await expect(retryScanJob("2", "1", "11")).resolves.toEqual({
       success: false,
       error: "このジョブは再実行できません。画面を再読み込みしてください",

@@ -11,12 +11,9 @@ export async function retryScanJob(politicianId: string, bookId: string, jobId: 
   if (!(await requireJournalTarget(politicianId, bookId)))
     return { success: false as const, error: "現在の対象帳簿を選択し直してください" };
   try {
-    const requeued = await buildRetryScanJobUsecase().execute({ bookId, jobId });
-    if (!requeued)
-      return {
-        success: false as const,
-        error: "このジョブは再実行できません。画面を再読み込みしてください",
-      };
+    const result = await buildRetryScanJobUsecase().execute({ bookId, jobId });
+    if (result.status === "invalid")
+      return { success: false as const, error: result.errors[0].message };
     revalidatePath("/(auth)", "layout");
     return { success: true as const };
   } catch {
