@@ -179,7 +179,7 @@ describe("TransactionValidator", () => {
 
       const existingTransactions = [{
         id: "existing-1",
-        political_organization_id: "org-1",
+        political_organization_id: "org1",
         transaction_no: "DUP001",
         transaction_date: new Date("2025-06-06"),
         financial_year: 2025,
@@ -408,7 +408,7 @@ describe("TransactionValidator", () => {
 
       const existingTransactions = [{
         id: "existing-2",
-        political_organization_id: "org-1",
+        political_organization_id: "org1",
         transaction_no: "DUP001",
         transaction_date: new Date("2025-06-06"),
         financial_year: 2025,

@@ -40,12 +40,9 @@ export class TransactionValidator {
     }
 
     // 2. transaction_noチェック（早期リターン）
-    // MF の取引No は年度ごとに振り直されるため、同じ年度の取引だけを同一とみなす
-    const financialYear = PreviewTransaction.extractFinancialYear(transaction.transaction_date);
-    const duplicateByTransactionNo = existingTransactions.find(
-      (existing) =>
-        existing.transaction_no === transaction.transaction_no &&
-        existing.financial_year === financialYear,
+    const duplicateByTransactionNo = PreviewTransaction.findExisting(
+      transaction,
+      existingTransactions,
     );
 
     if (!duplicateByTransactionNo) {

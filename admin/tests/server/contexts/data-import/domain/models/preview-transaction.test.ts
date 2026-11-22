@@ -226,3 +226,76 @@ describe("PreviewTransaction.extractFinancialYear", () => {
     expect(PreviewTransaction.extractFinancialYear(new Date("2025/12/31"))).toBe(2025);
   });
 });
+
+describe("PreviewTransaction.isSaveable", () => {
+  it.each([
+    ["insert", "expense", true],
+    ["update", "income", true],
+    ["skip", "expense", false],
+    ["invalid", "expense", false],
+    ["insert", null, false],
+    ["update", null, false],
+  ] as const)("状態 %s・取引種別 %s の行は保存してよいか: %s", (status, transactionType, expected) => {
+    expect(
+      PreviewTransaction.isSaveable(
+        createMockPreviewTransaction({ status, transaction_type: transactionType }),
+      ),
+    ).toBe(expected);
+  });
+});
+
+describe("PreviewTransaction.findExisting", () => {
+  const createExisting = (overrides: {
+    id: string;
+    political_organization_id: string;
+    transaction_no: string;
+    financial_year: number;
+  }) => ({
+    transaction_date: new Date(`${overrides.financial_year}-06-01`),
+    transaction_type: "expense" as const,
+    debit_account: "政治活動費",
+    debit_amount: 100000,
+    credit_account: "現金",
+    credit_amount: 100000,
+    description: "",
+    friendly_category: "支出",
+    memo: "",
+    category_key: "political-activity",
+    label: "",
+    hash: "",
+    created_at: new Date(),
+    updated_at: new Date(),
+    ...overrides,
+  });
+
+  it("団体・年度・取引No がすべて一致する既存の取引だけを同じ取引とみなす", () => {
+    const tx = createMockPreviewTransaction({
+      political_organization_id: "1",
+      transaction_no: "T001",
+      transaction_date: new Date("2025-08-15"),
+    });
+    const existing = [
+      createExisting({ id: "other-org", political_organization_id: "2", transaction_no: "T001", financial_year: 2025 }),
+      createExisting({ id: "other-year", political_organization_id: "1", transaction_no: "T001", financial_year: 2024 }),
+      createExisting({ id: "other-no", political_organization_id: "1", transaction_no: "T002", financial_year: 2025 }),
+      createExisting({ id: "same", political_organization_id: "1", transaction_no: "T001", financial_year: 2025 }),
+    ];
+
+    expect(PreviewTransaction.findExisting(tx, existing)?.id).toBe("same");
+    expect(PreviewTransaction.findExisting(tx, existing.slice(0, 3))).toBeUndefined();
+  });
+
+  it("既存の取引を特定するキーは、団体・取引日から求めた年度・取引No", () => {
+    const tx = createMockPreviewTransaction({
+      political_organization_id: "1",
+      transaction_no: "T001",
+      transaction_date: new Date("2026-01-05"),
+    });
+
+    expect(PreviewTransaction.existingTransactionKey(tx)).toEqual({
+      politicalOrganizationId: "1",
+      financialYear: 2026,
+      transactionNo: "T001",
+    });
+  });
+});

@@ -1,5 +1,5 @@
 import { createHash } from "crypto";
-import type { TransactionType } from "@/shared/models/transaction";
+import type { Transaction, TransactionType } from "@/shared/models/transaction";
 import type {
   CreateTransactionInput,
   UpdateTransactionInput,
@@ -24,6 +24,13 @@ export interface PreviewTransaction {
   status: "insert" | "update" | "invalid" | "skip";
   errors: string[];
   existingTransactionId?: string;
+}
+
+/** 既存の取引を特定するキー。MF の取引No は年度ごとに振り直されるため、団体・年度・取引No の組で特定する */
+interface ExistingTransactionKey {
+  politicalOrganizationId: string;
+  financialYear: number;
+  transactionNo: string;
 }
 
 /**
@@ -66,6 +73,37 @@ export const PreviewTransaction = {
     const month = date.getMonth() + 1;
 
     return month >= startOfFinancialYear ? year : year - 1;
+  },
+
+  /**
+   * 保存してよい行か。新規・更新と判定され、取引種別が決まっている行だけを保存する
+   */
+  isSaveable: (tx: PreviewTransaction): boolean =>
+    (tx.status === "insert" || tx.status === "update") && tx.transaction_type !== null,
+
+  /**
+   * この行が対応する既存の取引を特定するキー
+   */
+  existingTransactionKey: (tx: PreviewTransaction): ExistingTransactionKey => ({
+    politicalOrganizationId: tx.political_organization_id,
+    financialYear: PreviewTransaction.extractFinancialYear(tx.transaction_date),
+    transactionNo: tx.transaction_no,
+  }),
+
+  /**
+   * 既存の取引のうち、この行と同じ取引（団体・年度・取引No が一致するもの）を探す
+   */
+  findExisting: (
+    tx: PreviewTransaction,
+    existingTransactions: Transaction[],
+  ): Transaction | undefined => {
+    const key = PreviewTransaction.existingTransactionKey(tx);
+    return existingTransactions.find(
+      (existing) =>
+        existing.political_organization_id === key.politicalOrganizationId &&
+        existing.financial_year === key.financialYear &&
+        existing.transaction_no === key.transactionNo,
+    );
   },
 
   /**
