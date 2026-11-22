@@ -1,11 +1,11 @@
 import { GetMonthlyAggregationUsecase } from "@/server/contexts/public-finance/application/usecases/get-monthly-aggregation-usecase";
 import type { IMonthlyAggregationRepository } from "@/server/contexts/public-finance/domain/repositories/monthly-aggregation-repository.interface";
 import type { IPoliticalOrganizationRepository } from "@/server/contexts/public-finance/domain/repositories/political-organization-repository.interface";
-import type { MonthlyTransactionTotal } from "@/server/contexts/public-finance/domain/models/monthly-transaction-total";
+import type { MonthlyAccountTotal } from "@/server/contexts/public-finance/domain/models/monthly-account-total";
 
 const mockMonthlyAggregationRepository = {
-  getIncomeByOrganizationIds: jest.fn(),
-  getExpenseByOrganizationIds: jest.fn(),
+  getCreditTotalsByOrganizationIds: jest.fn(),
+  getDebitTotalsByOrganizationIds: jest.fn(),
 } as unknown as IMonthlyAggregationRepository;
 
 const mockPoliticalOrganizationRepository = {
@@ -25,25 +25,25 @@ describe("GetMonthlyAggregationUsecase", () => {
 
   it("should return monthly aggregation data for valid organization", async () => {
     const mockOrganizations = [{ id: "1", slug: "test-org" }];
-    const mockIncomeData: MonthlyTransactionTotal[] = [
-      { year: 2025, month: 1, totalAmount: 1000000 },
-      { year: 2025, month: 2, totalAmount: 800000 },
-      { year: 2025, month: 3, totalAmount: 1200000 },
+    const mockCreditTotals: MonthlyAccountTotal[] = [
+      { year: 2025, month: 1, account: "個人からの寄附", amount: 1000000 },
+      { year: 2025, month: 2, account: "個人からの寄附", amount: 800000 },
+      { year: 2025, month: 3, account: "個人からの寄附", amount: 1200000 },
     ];
-    const mockExpenseData: MonthlyTransactionTotal[] = [
-      { year: 2025, month: 1, totalAmount: 500000 },
-      { year: 2025, month: 2, totalAmount: 600000 },
-      { year: 2025, month: 3, totalAmount: 400000 },
+    const mockDebitTotals: MonthlyAccountTotal[] = [
+      { year: 2025, month: 1, account: "事務所費", amount: 500000 },
+      { year: 2025, month: 2, account: "事務所費", amount: 600000 },
+      { year: 2025, month: 3, account: "事務所費", amount: 400000 },
     ];
 
     (mockPoliticalOrganizationRepository.findBySlugs as jest.Mock).mockResolvedValue(
       mockOrganizations,
     );
-    (mockMonthlyAggregationRepository.getIncomeByOrganizationIds as jest.Mock).mockResolvedValue(
-      mockIncomeData,
+    (mockMonthlyAggregationRepository.getCreditTotalsByOrganizationIds as jest.Mock).mockResolvedValue(
+      mockCreditTotals,
     );
-    (mockMonthlyAggregationRepository.getExpenseByOrganizationIds as jest.Mock).mockResolvedValue(
-      mockExpenseData,
+    (mockMonthlyAggregationRepository.getDebitTotalsByOrganizationIds as jest.Mock).mockResolvedValue(
+      mockDebitTotals,
     );
 
     const result = await usecase.execute({
@@ -75,11 +75,11 @@ describe("GetMonthlyAggregationUsecase", () => {
       expense: 0,
     });
     expect(mockPoliticalOrganizationRepository.findBySlugs).toHaveBeenCalledWith(["test-org"]);
-    expect(mockMonthlyAggregationRepository.getIncomeByOrganizationIds).toHaveBeenCalledWith(
+    expect(mockMonthlyAggregationRepository.getCreditTotalsByOrganizationIds).toHaveBeenCalledWith(
       ["1"],
       2025,
     );
-    expect(mockMonthlyAggregationRepository.getExpenseByOrganizationIds).toHaveBeenCalledWith(
+    expect(mockMonthlyAggregationRepository.getDebitTotalsByOrganizationIds).toHaveBeenCalledWith(
       ["1"],
       2025,
     );
@@ -101,21 +101,21 @@ describe("GetMonthlyAggregationUsecase", () => {
       { id: "1", slug: "org-1" },
       { id: "2", slug: "org-2" },
     ];
-    const mockIncomeData: MonthlyTransactionTotal[] = [
-      { year: 2025, month: 1, totalAmount: 2000000 },
+    const mockCreditTotals: MonthlyAccountTotal[] = [
+      { year: 2025, month: 1, account: "個人からの寄附", amount: 2000000 },
     ];
-    const mockExpenseData: MonthlyTransactionTotal[] = [
-      { year: 2025, month: 1, totalAmount: 1000000 },
+    const mockDebitTotals: MonthlyAccountTotal[] = [
+      { year: 2025, month: 1, account: "事務所費", amount: 1000000 },
     ];
 
     (mockPoliticalOrganizationRepository.findBySlugs as jest.Mock).mockResolvedValue(
       mockOrganizations,
     );
-    (mockMonthlyAggregationRepository.getIncomeByOrganizationIds as jest.Mock).mockResolvedValue(
-      mockIncomeData,
+    (mockMonthlyAggregationRepository.getCreditTotalsByOrganizationIds as jest.Mock).mockResolvedValue(
+      mockCreditTotals,
     );
-    (mockMonthlyAggregationRepository.getExpenseByOrganizationIds as jest.Mock).mockResolvedValue(
-      mockExpenseData,
+    (mockMonthlyAggregationRepository.getDebitTotalsByOrganizationIds as jest.Mock).mockResolvedValue(
+      mockDebitTotals,
     );
 
     const result = await usecase.execute({
@@ -130,11 +130,11 @@ describe("GetMonthlyAggregationUsecase", () => {
       income: 2000000,
       expense: 1000000,
     });
-    expect(mockMonthlyAggregationRepository.getIncomeByOrganizationIds).toHaveBeenCalledWith(
+    expect(mockMonthlyAggregationRepository.getCreditTotalsByOrganizationIds).toHaveBeenCalledWith(
       ["1", "2"],
       2025,
     );
-    expect(mockMonthlyAggregationRepository.getExpenseByOrganizationIds).toHaveBeenCalledWith(
+    expect(mockMonthlyAggregationRepository.getDebitTotalsByOrganizationIds).toHaveBeenCalledWith(
       ["1", "2"],
       2025,
     );
@@ -146,10 +146,10 @@ describe("GetMonthlyAggregationUsecase", () => {
     (mockPoliticalOrganizationRepository.findBySlugs as jest.Mock).mockResolvedValue(
       mockOrganizations,
     );
-    (mockMonthlyAggregationRepository.getIncomeByOrganizationIds as jest.Mock).mockResolvedValue(
+    (mockMonthlyAggregationRepository.getCreditTotalsByOrganizationIds as jest.Mock).mockResolvedValue(
       [],
     );
-    (mockMonthlyAggregationRepository.getExpenseByOrganizationIds as jest.Mock).mockResolvedValue(
+    (mockMonthlyAggregationRepository.getDebitTotalsByOrganizationIds as jest.Mock).mockResolvedValue(
       [],
     );
 
@@ -170,21 +170,21 @@ describe("GetMonthlyAggregationUsecase", () => {
 
   it("should handle different financial years", async () => {
     const mockOrganizations = [{ id: "1", slug: "test-org" }];
-    const mockIncomeData: MonthlyTransactionTotal[] = [
-      { year: 2024, month: 4, totalAmount: 500000 },
+    const mockCreditTotals: MonthlyAccountTotal[] = [
+      { year: 2024, month: 4, account: "個人からの寄附", amount: 500000 },
     ];
-    const mockExpenseData: MonthlyTransactionTotal[] = [
-      { year: 2024, month: 4, totalAmount: 300000 },
+    const mockDebitTotals: MonthlyAccountTotal[] = [
+      { year: 2024, month: 4, account: "事務所費", amount: 300000 },
     ];
 
     (mockPoliticalOrganizationRepository.findBySlugs as jest.Mock).mockResolvedValue(
       mockOrganizations,
     );
-    (mockMonthlyAggregationRepository.getIncomeByOrganizationIds as jest.Mock).mockResolvedValue(
-      mockIncomeData,
+    (mockMonthlyAggregationRepository.getCreditTotalsByOrganizationIds as jest.Mock).mockResolvedValue(
+      mockCreditTotals,
     );
-    (mockMonthlyAggregationRepository.getExpenseByOrganizationIds as jest.Mock).mockResolvedValue(
-      mockExpenseData,
+    (mockMonthlyAggregationRepository.getDebitTotalsByOrganizationIds as jest.Mock).mockResolvedValue(
+      mockDebitTotals,
     );
 
     const result = await usecase.execute({
@@ -205,11 +205,11 @@ describe("GetMonthlyAggregationUsecase", () => {
       income: 0,
       expense: 0,
     });
-    expect(mockMonthlyAggregationRepository.getIncomeByOrganizationIds).toHaveBeenCalledWith(
+    expect(mockMonthlyAggregationRepository.getCreditTotalsByOrganizationIds).toHaveBeenCalledWith(
       ["1"],
       2024,
     );
-    expect(mockMonthlyAggregationRepository.getExpenseByOrganizationIds).toHaveBeenCalledWith(
+    expect(mockMonthlyAggregationRepository.getDebitTotalsByOrganizationIds).toHaveBeenCalledWith(
       ["1"],
       2024,
     );

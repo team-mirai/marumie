@@ -42,8 +42,6 @@ export const KNOWN_VIOLATIONS = {
     "報告書データ全体の検証が本番から呼ばれず、テストだけが通っている",
   "unused-domain:admin/src/server/contexts/research-fund/domain/models/journal-posting.ts#JournalPosting.validate":
     "仕訳の貸借検証が本番から呼ばれず、テストだけが通っている",
-  "unused-domain:webapp/src/server/contexts/public-finance/domain/models/monthly-aggregation.ts#calculateBalance":
-    "月次収支の差額計算が本番から呼ばれず、テストだけが通っている",
   "unused-domain:webapp/src/server/contexts/public-finance/domain/models/monthly-aggregation.ts#isValidYearMonthFormat":
     "年月の形式検証が本番から呼ばれていない",
   "unused-domain:webapp/src/server/contexts/shared/domain/models/sankey-data.ts#SankeyData.empty":

@@ -4,6 +4,7 @@ import "client-only";
 import { useState } from "react";
 import { calcSymmetricYAxisScale } from "@/client/lib/chart-axis";
 import { formatYen } from "@/client/lib/format-yen";
+import { calculateBalance } from "@/server/contexts/public-finance/domain/models/monthly-aggregation";
 import {
   BAR_GAP,
   barDownPath,
@@ -83,9 +84,7 @@ export default function MonthlyChart({ data }: MonthlyChartProps) {
 
   // 刻み幅は桁数（log10）から決めるため、金額が小さくてもレンジが 0 に潰れない
   const maxAbsValue = Math.max(
-    ...data.map((item) =>
-      Math.max(item.income, item.expense, Math.abs(item.income - item.expense)),
-    ),
+    ...data.map((item) => Math.max(item.income, item.expense, Math.abs(calculateBalance(item)))),
   );
   const { max: yMax, tickInterval } = calcSymmetricYAxisScale(maxAbsValue);
   const ticks = [-2, -1, 0, 1, 2].map((step) => step * tickInterval);
@@ -94,8 +93,7 @@ export default function MonthlyChart({ data }: MonthlyChartProps) {
   const barWidth = monthlyBarWidth(step);
   const centerX = (index: number) => MARGIN.left + step * index + step / 2;
   const balancePoints = data.map(
-    (item, index) =>
-      [centerX(index), ZERO_Y - (item.income - item.expense) * pixelsPerYen] as const,
+    (item, index) => [centerX(index), ZERO_Y - calculateBalance(item) * pixelsPerYen] as const,
   );
   const tooltipMonth = tooltip ? data[tooltip.index] : null;
 
@@ -239,7 +237,7 @@ export default function MonthlyChart({ data }: MonthlyChartProps) {
                 <th scope="row">{monthLabel(item.yearMonth)}</th>
                 <td>{formatYen(item.income)}</td>
                 <td>{formatYen(item.expense)}</td>
-                <td>{formatYen(item.income - item.expense)}</td>
+                <td>{formatYen(calculateBalance(item))}</td>
               </tr>
             ))}
           </tbody>
@@ -256,7 +254,7 @@ export default function MonthlyChart({ data }: MonthlyChartProps) {
             { label: "支出", value: tooltipMonth.expense, color: EXPENSE_COLOR },
             {
               label: "収支",
-              value: tooltipMonth.income - tooltipMonth.expense,
+              value: calculateBalance(tooltipMonth),
               color: "#1E293B",
             },
           ].map((row) => (
