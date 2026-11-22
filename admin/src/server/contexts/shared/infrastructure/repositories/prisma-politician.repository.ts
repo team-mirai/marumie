@@ -7,6 +7,7 @@ import type {
   PoliticianResearchFundPublicationChange,
 } from "@/shared/models/politician";
 import type { IPoliticianRepository } from "@/server/contexts/shared/domain/repositories/politician-repository.interface";
+import { PoliticianOrgMembership } from "@/server/contexts/shared/domain/models/politician-org-membership";
 
 const include = {
   memberships: {
@@ -16,13 +17,14 @@ const include = {
   },
 };
 type Row = Prisma.PoliticianGetPayload<{ include: typeof include }>;
+const toDateOnly = (date: Date) => date.toISOString().slice(0, 10);
 function toModel(row: Row): Politician {
   const membership = row.memberships[0];
   return {
     id: String(row.id),
     name: row.name,
     slug: row.slug,
-    termStart: row.termStart.toISOString().slice(0, 10),
+    termStart: toDateOnly(row.termStart),
     politicalOrganizationId: membership ? String(membership.politicalOrganizationId) : "",
     politicalOrganizationName: membership?.politicalOrganization.displayName ?? null,
     isResearchFundPublic: row.isResearchFundPublic,
@@ -73,26 +75,30 @@ export class PrismaPoliticianRepository implements IPoliticianRepository {
           const current = await tx.politicianOrgMembership.findMany({
             where: { politicianId: politician.id, endedOn: null },
           });
-          if (
-            current.length === (input.politicalOrganizationId ? 1 : 0) &&
-            current.every(
-              (m) => String(m.politicalOrganizationId) === input.politicalOrganizationId,
-            )
-          )
-            return;
-          const today = new Date(new Date().toISOString().slice(0, 10));
-          for (const membership of current) {
+          const reassignment = PoliticianOrgMembership.planReassignment({
+            isNewPolitician: id === null,
+            termStart: input.termStart,
+            current: current.map((m) => ({
+              id: String(m.id),
+              politicalOrganizationId: String(m.politicalOrganizationId),
+              startedOn: toDateOnly(m.startedOn),
+            })),
+            nextPoliticalOrganizationId: input.politicalOrganizationId,
+            today: toDateOnly(new Date()),
+          });
+          if (!reassignment) return;
+          for (const ending of reassignment.endings) {
             await tx.politicianOrgMembership.update({
-              where: { id: membership.id },
-              data: { endedOn: membership.startedOn > today ? membership.startedOn : today },
+              where: { id: BigInt(ending.id) },
+              data: { endedOn: new Date(ending.endedOn) },
             });
           }
-          if (input.politicalOrganizationId) {
+          if (reassignment.start) {
             await tx.politicianOrgMembership.create({
               data: {
                 politicianId: politician.id,
-                politicalOrganizationId: BigInt(input.politicalOrganizationId),
-                startedOn: id === null ? data.termStart : today,
+                politicalOrganizationId: BigInt(reassignment.start.politicalOrganizationId),
+                startedOn: new Date(reassignment.start.startedOn),
               },
             });
           }
