@@ -57,6 +57,63 @@ reviews:
     - path: "webapp/src/server/contexts/**"
       instructions: "docs/backend-architecture-guide.md に従ってレビューしてください。"
 
+    # ドメインモデル貧血（docs/backend-architecture-guide.md「4.5 ドメインモデル貧血」）の観点。
+    # 差分の中だけを見ると「同じルールが既にドメインにある」ことに気づけないので、
+    # 指摘の前に同じコンテキストの domain/ を検索して確かめるよう求めている。
+    - path: "{admin,webapp}/src/server/contexts/*/application/**"
+      instructions: |
+        docs/backend-architecture-guide.md「4.5 ドメインモデル貧血」の観点で、次の質問に答える形でレビューしてください。
+        指摘する前に、差分の外にある同じコンテキストの domain/models・domain/services と contexts/shared/domain、リポジトリ直下の shared/ を検索し、該当するドメインの関数名を挙げてください。
+
+        - この usecase の `if` や `throw` が表している業務ルール（状態による操作の可否、範囲・期限・桁などの業務上の検証、金額の計算・集計の定義）は、既にドメインにあるはずではないか。あるなら、なぜ呼ばずに書き直しているのか
+        - 同じ判定が action・画面・リポジトリ実装にもう一度書かれていないか（数値や状態の文字列を検索して確かめる）
+        - 却下理由（ユーザーに見せる文言）を usecase が自前で組み立てていないか。ドメインが返すべきではないか
+        - 新しく足したドメインの判定・検証を、この usecase は本当に呼んでいるか（テストだけが呼んでいないか）
+
+        取得・not found・同時更新の検出・永続化・キャッシュ無効化の段取りは貧血ではないので指摘しないでください。
+
+    - path: "{admin,webapp}/src/server/contexts/*/presentation/**"
+      instructions: |
+        docs/backend-architecture-guide.md「4.5 ドメインモデル貧血」の観点で、次の質問に答える形でレビューしてください。
+        指摘する前に、差分の外にある同じコンテキストの domain/ を検索して確かめてください。
+
+        - action がドメインの却下理由をエラーコードごとに別の文言へ書き直していないか。対応表に無いコードが汎用エラーになり、理由が画面に出なくなっていないか（ドメインの message をそのまま返すべき）
+        - 最小文字数・上限件数・金額基準・受け付ける書類形式など、業務上の検証や定数を action / schema が自前のリテラルで持っていないか。同じ値がドメインに既にあるはずではないか
+        - loader が業務上の判定（公開している年度、操作してよい状態など）を自前で計算していないか
+
+        認可、入力の型・必須の検証、usecase の呼び出し、revalidatePath / revalidateTag、想定外の例外の汎用文言化は貧血ではないので指摘しないでください。
+
+    - path: "{admin,webapp}/src/server/contexts/*/infrastructure/**"
+      instructions: |
+        docs/backend-architecture-guide.md「4.5 ドメインモデル貧血」の観点で、次の質問に答える形でレビューしてください。
+        指摘する前に、差分の外にある同じコンテキストの domain/ を検索して確かめてください。
+
+        - Prisma の where や保存データの組み立てに、「どの状態なら更新してよいか」「どの行を金額として数えるか」「既定値は何か」という業務ルールが埋まっていないか。その条件はドメインが定義して渡すべきではないか
+        - 同じ状態の条件（status の文字列の組み合わせなど）が、ドメインや別のリポジトリにも別々に書かれていないか
+        - 会計上の分類・種別の導出を、CSV・外部 API の変換処理の中で行っていないか（列 → フィールドの機械的な対応付けは infrastructure でよいが、分類の判定はドメイン）
+
+        Prisma 型 ↔ ドメイン型の機械的な変換、一意制約違反などの技術的なエラーの翻訳は貧血ではないので指摘しないでください。
+
+    - path: "{admin,webapp}/src/server/contexts/*/domain/**"
+      instructions: |
+        docs/backend-architecture-guide.md「4.5 ドメインモデル貧血」の観点で、次を確認してください。
+
+        - 追加・変更したドメインの判定・検証が、本番コード（usecase・action・画面）から呼ばれているか。テストだけが呼んでいる状態になっていないか
+        - 型だけを追加して、その型のルール（必須、範囲、未来日付の禁止、正規化）を usecase や画面に置いていないか
+        - 同じルールを持つ関数がドメインの別のファイルに既に無いか（重複したドメイン関数を増やしていないか）
+
+    - path: "{admin,webapp}/src/{client,app}/**"
+      instructions: |
+        docs/backend-architecture-guide.md「4.5 ドメインモデル貧血」の観点で、次の質問に答える形でレビューしてください。
+        指摘する前に、差分の外にある src/server/contexts/*/domain と shared/ を検索し、同じルールが既にあるかを確かめてください。
+
+        - 見出しの金額の定義（何を足して何を引くか）、公開している年度、操作ボタンを出してよい条件を、画面が自前で計算・保持していないか。ドメイン（または loader が返す判定結果）を表示すべきではないか
+        - `status === "draft"` のような状態の文字列比較で操作の可否を決めていないか
+        - 最小文字数・上限件数・金額基準・受け付けるファイル形式などを、ドメインと別のリテラルで持っていないか
+        - ドメインが返した却下理由を、画面がエラーコードごとに別の文言へ書き直していないか
+
+        表示の整形（金額のカンマ区切り、日付の表示形式）やフォームの状態管理は貧血ではないので指摘しないでください。
+
     - path: "admin/src/client/**"
       instructions: "docs/admin-ui-guidelines.md に従ってレビューしてください。"
 
