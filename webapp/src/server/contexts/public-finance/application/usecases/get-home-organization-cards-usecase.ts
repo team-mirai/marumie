@@ -1,6 +1,7 @@
 import "server-only";
 
 import type { SankeyData } from "@/server/contexts/shared/domain/models/sankey-data";
+import type { FinancialSummary } from "@/server/contexts/public-finance/domain/models/financial-summary";
 import { OrganizationKind } from "@/server/contexts/public-finance/domain/models/organization-kind";
 import type { IPoliticalOrganizationRepository } from "@/server/contexts/public-finance/domain/repositories/political-organization-repository.interface";
 import type { ITransactionRepository } from "@/server/contexts/public-finance/domain/repositories/transaction-repository.interface";
@@ -12,6 +13,8 @@ interface HomeOrganizationCardYear {
   political: SankeyData | null;
   /** 詳細の区分の収支の流れ。取得に失敗したときは null */
   friendly: SankeyData | null;
+  /** 見出しの総額（詳細の区分の図と同じ集計から求めたもの）。取得に失敗したときは null */
+  summary: FinancialSummary | null;
 }
 
 interface HomeOrganizationCard {
@@ -63,7 +66,12 @@ export class GetHomeOrganizationCardsUsecase {
           this.loadSankey(org.slug, year, "political-category"),
           this.loadSankey(org.slug, year, "friendly-category"),
         ]);
-        years.push({ year, political, friendly });
+        years.push({
+          year,
+          political: political?.sankeyData ?? null,
+          friendly: friendly?.sankeyData ?? null,
+          summary: friendly?.summary ?? null,
+        });
       }
 
       const card: HomeOrganizationCard = {
@@ -85,14 +93,13 @@ export class GetHomeOrganizationCardsUsecase {
     slug: string,
     financialYear: number,
     categoryType: "political-category" | "friendly-category",
-  ): Promise<SankeyData | null> {
+  ): Promise<{ sankeyData: SankeyData; summary: FinancialSummary } | null> {
     try {
-      const { sankeyData } = await this.sankeyAggregationUsecase.execute({
+      return await this.sankeyAggregationUsecase.execute({
         slugs: [slug],
         financialYear,
         categoryType,
       });
-      return sankeyData;
     } catch (error) {
       console.error(`Failed to load sankey data (${slug}, ${financialYear}):`, error);
       return null;

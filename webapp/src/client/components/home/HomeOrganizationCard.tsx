@@ -6,13 +6,15 @@ import AmountSummary from "@/client/components/common/AmountSummary";
 import YearSegment from "@/client/components/common/YearSegment";
 import HomeCardTitleLink from "@/client/components/home/HomeCardTitleLink";
 import CashFlowSection from "@/client/components/top-page/CashFlowSection";
-import { calculateSankeyFinancialSummary } from "@/client/lib/sankey-financial-summary";
+import type { FinancialSummary } from "@/types/financial-summary";
 import type { SankeyData } from "@/types/sankey";
 
 interface HomeOrganizationCardYear {
   year: number;
   political: SankeyData | null;
   friendly: SankeyData | null;
+  /** 収入総額・支出総額・現金残高。取得に失敗したときは null */
+  summary: FinancialSummary | null;
 }
 
 interface HomeOrganizationCardProps {
@@ -66,7 +68,7 @@ export default function HomeOrganizationCard({
   const current = years.find((y) => y.year === currentYear) ?? years[0];
   const detailHref = `/o/${slug}/${current.year}`;
   // 取得に失敗したときは 0 円と区別できるよう、金額を出さない
-  const summary = current.friendly ? calculateSankeyFinancialSummary(current.friendly) : null;
+  const { summary } = current;
   const yearLabel = `${current.year}年`;
   // その年の収支がまだ無い（取得はできたが流れが1本も無い）ときは、図の代わりに準備中と出す。
   // 取得に失敗したとき（null）は、図の欄で取得できなかったことを伝える

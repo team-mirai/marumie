@@ -9,6 +9,7 @@ import {
   CategoryAggregation,
   DEFAULT_SUBCATEGORY_MAX_COUNT,
 } from "@/server/contexts/public-finance/domain/models/category-aggregation";
+import { FinancialSummary } from "@/server/contexts/public-finance/domain/models/financial-summary";
 import { SankeyDataBuilder } from "@/server/contexts/public-finance/domain/services/sankey-data-builder";
 
 interface GetSankeyAggregationParams {
@@ -19,6 +20,8 @@ interface GetSankeyAggregationParams {
 
 interface GetSankeyAggregationResult {
   sankeyData: SankeyData;
+  /** 見出しに出す収入総額・支出総額・現金残高（図と同じ集計から求める） */
+  summary: FinancialSummary;
 }
 
 export class GetSankeyAggregationUsecase {
@@ -72,21 +75,22 @@ export class GetSankeyAggregationUsecase {
         });
       }
 
-      aggregation = CategoryAggregation.adjustWithBalance(
-        aggregation,
-        {
-          previousYearBalance: balancesByYear.previousYear,
-          currentYearBalance: balancesByYear.currentYear,
-          liabilityBalance,
-        },
-        { isFriendlyCategory },
-      );
+      const balance = {
+        previousYearBalance: balancesByYear.previousYear,
+        currentYearBalance: balancesByYear.currentYear,
+        liabilityBalance,
+      };
+      const summary = FinancialSummary.calculate(aggregation, balance);
+
+      aggregation = CategoryAggregation.adjustWithBalance(aggregation, balance, {
+        isFriendlyCategory,
+      });
 
       // 4. ドメインサービスでSankeyDataを構築
       const builder = new SankeyDataBuilder();
       const sankeyData = builder.build(aggregation);
 
-      return { sankeyData };
+      return { sankeyData, summary };
     } catch (error) {
       throw new Error(
         `Failed to get sankey aggregation: ${error instanceof Error ? error.message : "Unknown error"}`,
