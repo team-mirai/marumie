@@ -4,6 +4,7 @@ import type { AuthProvider } from "@/server/contexts/auth/domain/providers/auth-
 import type { UserRepository } from "@/server/contexts/shared/domain/repositories/user-repository.interface";
 import type { UserInvitationRepository } from "@/server/contexts/auth/domain/repositories/user-invitation-repository.interface";
 import { AuthError } from "@/server/contexts/auth/domain/errors/auth-error";
+import { EmailAddressModel } from "@/server/contexts/auth/domain/models/email-address";
 import { PoliticianAssignmentModel } from "@/server/contexts/auth/domain/models/politician-assignment";
 import {
   UserInvitationModel,
@@ -37,7 +38,7 @@ export class RegisterUserInvitationUsecase {
       throw new AuthError("INSUFFICIENT_PERMISSION", "この操作には管理者権限が必要です");
     }
 
-    const normalizedEmail = UserInvitationModel.normalizeEmail(email);
+    const normalizedEmail = EmailAddressModel.normalize(email);
     if (!normalizedEmail) {
       throw new AuthError("INVALID_EMAIL", "Invalid email format");
     }

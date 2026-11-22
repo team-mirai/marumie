@@ -99,6 +99,26 @@ describe("InviteUserUsecase", () => {
       expect(mockUserRepository.updateRoles).not.toHaveBeenCalled();
     });
 
+    it("大文字混じりのメールアドレスは小文字にそろえて招待・保存する", async () => {
+      mockAuthProvider.getUser.mockResolvedValue(createMockSupabaseUser());
+      mockUserRepository.findByAuthId
+        .mockResolvedValueOnce(createMockUser({ roles: ["admin"] }))
+        .mockResolvedValueOnce(null);
+      mockAdminAuthProvider.inviteUserByEmail.mockResolvedValue({ authId: "invited-auth-id" });
+
+      await usecase.execute("  NewUser@Example.COM ", ["political_fund"]);
+
+      expect(mockAdminAuthProvider.inviteUserByEmail).toHaveBeenCalledWith(
+        "newuser@example.com",
+        expect.any(String),
+      );
+      expect(mockUserRepository.create).toHaveBeenCalledWith({
+        authId: "invited-auth-id",
+        email: "newuser@example.com",
+        roles: ["political_fund"],
+      });
+    });
+
     it("招待先の DB ユーザーが既にある場合は選んだロールに付け替える", async () => {
       mockAuthProvider.getUser.mockResolvedValue(createMockSupabaseUser());
       mockUserRepository.findByAuthId

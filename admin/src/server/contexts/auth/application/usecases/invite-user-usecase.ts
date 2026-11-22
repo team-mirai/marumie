@@ -4,6 +4,7 @@ import type { AuthProvider } from "@/server/contexts/auth/domain/providers/auth-
 import type { AdminAuthProvider } from "@/server/contexts/auth/domain/providers/admin-auth-provider.interface";
 import type { UserRepository } from "@/server/contexts/shared/domain/repositories/user-repository.interface";
 import { AuthError } from "@/server/contexts/auth/domain/errors/auth-error";
+import { EmailAddressModel } from "@/server/contexts/auth/domain/models/email-address";
 import { UserRoleModel } from "@/server/contexts/auth/domain/models/user-role";
 
 /**
@@ -33,13 +34,9 @@ export class InviteUserUsecase {
       throw new AuthError("INSUFFICIENT_PERMISSION", "この操作には管理者権限が必要です");
     }
 
-    // メールアドレスのバリデーション
-    if (!email || typeof email !== "string") {
-      throw new AuthError("INVALID_EMAIL", "Email is required");
-    }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
+    // 他の経路と同じく正規化（小文字化など）した形で招待・保存し、後の照合と食い違わせない
+    const normalizedEmail = typeof email === "string" ? EmailAddressModel.normalize(email) : null;
+    if (!normalizedEmail) {
       throw new AuthError("INVALID_EMAIL", "Invalid email format");
     }
 
@@ -59,7 +56,7 @@ export class InviteUserUsecase {
     let invitedAuthId: string;
     try {
       ({ authId: invitedAuthId } = await this.adminAuthProvider.inviteUserByEmail(
-        email,
+        normalizedEmail,
         redirectTo,
       ));
     } catch (e) {
@@ -76,7 +73,11 @@ export class InviteUserUsecase {
     if (invitedUser) {
       await this.userRepository.updateRoles(invitedAuthId, normalizedRoles);
     } else {
-      await this.userRepository.create({ authId: invitedAuthId, email, roles: normalizedRoles });
+      await this.userRepository.create({
+        authId: invitedAuthId,
+        email: normalizedEmail,
+        roles: normalizedRoles,
+      });
     }
   }
 }

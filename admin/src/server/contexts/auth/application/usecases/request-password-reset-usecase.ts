@@ -1,6 +1,7 @@
 import "server-only";
 
 import type { AuthProvider } from "@/server/contexts/auth/domain/providers/auth-provider.interface";
+import { EmailAddressModel } from "@/server/contexts/auth/domain/models/email-address";
 import { AuthError } from "@/server/contexts/auth/domain/errors/auth-error";
 
 /**
@@ -10,13 +11,8 @@ export class RequestPasswordResetUsecase {
   constructor(private readonly authProvider: AuthProvider) {}
 
   async execute(email: string): Promise<void> {
-    if (!email) {
-      throw new AuthError("INVALID_EMAIL", "Email is required");
-    }
-
-    // 基本的なメールアドレス形式のチェック
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
+    const normalizedEmail = EmailAddressModel.normalize(email);
+    if (!normalizedEmail) {
       throw new AuthError("INVALID_EMAIL", "Invalid email format");
     }
 
@@ -27,7 +23,7 @@ export class RequestPasswordResetUsecase {
     const redirectTo = `${appUrl}/login`;
 
     try {
-      await this.authProvider.resetPasswordForEmail(email, redirectTo);
+      await this.authProvider.resetPasswordForEmail(normalizedEmail, redirectTo);
     } catch (e) {
       console.error("Request password reset failed:", e);
       if (e instanceof AuthError) {

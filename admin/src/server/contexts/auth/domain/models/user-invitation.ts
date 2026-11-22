@@ -10,7 +10,7 @@ import type { UserRole } from "@/server/contexts/auth/domain/models/user-role";
  */
 export interface UserInvitation {
   id: string;
-  /** 小文字に正規化したメールアドレス */
+  /** 小文字に正規化したメールアドレス（EmailAddressModel.normalize） */
   email: string;
   roles: UserRole[];
   /** 担当する議員の ID */
@@ -21,20 +21,7 @@ export interface UserInvitation {
 /** 招待を登録できない理由 */
 type UserInvitationConflict = "USER_ALREADY_EXISTS" | "INVITATION_ALREADY_EXISTS";
 
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
 export namespace UserInvitationModel {
-  /**
-   * 招待のメールアドレスを正規化する（前後の空白を除き、小文字にそろえる）。
-   * 大文字・小文字の違いで別人として扱わないため、保存も照合もこの形で行う。
-   * @returns メールアドレスとして不正な場合は null
-   */
-  export function normalizeEmail(email: string): string | null {
-    const normalized = email.trim().toLowerCase();
-    if (normalized.length > 255 || !EMAIL_PATTERN.test(normalized)) return null;
-    return normalized;
-  }
-
   /**
    * 招待を登録できるか判定する。既にユーザーがいる人や、未使用の招待が既にある人には登録できない
    * （招待の内容を変えたいときは、取り消して登録し直す）。
