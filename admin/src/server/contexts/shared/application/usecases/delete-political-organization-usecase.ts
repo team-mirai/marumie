@@ -1,5 +1,6 @@
 import "server-only";
 
+import { PoliticalOrganizationDeletion } from "@/server/contexts/shared/domain/models/political-organization-deletion";
 import type { IPoliticalOrganizationRepository } from "@/server/contexts/shared/domain/repositories/political-organization-repository.interface";
 
 interface DeletePoliticalOrganizationResult {
@@ -14,11 +15,9 @@ export class DeletePoliticalOrganizationUsecase {
     try {
       const transactionCount = await this.politicalOrganizationRepository.countTransactions(orgId);
 
-      if (transactionCount > 0) {
-        return {
-          success: false,
-          message: `この政治団体には${transactionCount}件の取引が紐づいているため削除できません。`,
-        };
+      const rejectionReason = PoliticalOrganizationDeletion.rejectionReason(transactionCount);
+      if (rejectionReason) {
+        return { success: false, message: rejectionReason };
       }
 
       await this.politicalOrganizationRepository.delete(orgId);

@@ -7,6 +7,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Button, Input, Card, CardContent, Label, Textarea } from "@/client/components/ui";
 import { SnsUrlsField } from "@/client/components/common/SnsUrlsField";
+import { PoliticalOrganizationInput } from "@/shared/models/political-organization";
 
 interface PoliticalOrganizationFormData {
   displayName: string;
@@ -46,10 +47,11 @@ export function PoliticalOrganizationForm({
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const hasRequired = PoliticalOrganizationInput.validateRequired(formData) === null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.displayName.trim() || !formData.slug.trim()) return;
+    if (!hasRequired) return;
 
     try {
       setIsLoading(true);
@@ -179,10 +181,7 @@ export function PoliticalOrganizationForm({
           )}
 
           <div className="flex gap-3">
-            <Button
-              type="submit"
-              disabled={isLoading || !formData.displayName.trim() || !formData.slug.trim()}
-            >
+            <Button type="submit" disabled={isLoading || !hasRequired}>
               {isLoading ? "処理中..." : submitButtonText}
             </Button>
 
