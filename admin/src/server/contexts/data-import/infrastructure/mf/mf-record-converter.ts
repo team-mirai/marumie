@@ -1,82 +1,40 @@
 import type { MfCsvRecord } from "@/server/contexts/data-import/domain/models/mf-csv-record";
 import type { IMfRecordConverter } from "@/server/contexts/data-import/domain/repositories/mf-record-converter.interface";
-import { PL_CATEGORIES, BS_CATEGORIES, CASH_ACCOUNTS } from "@/shared/accounting/account-category";
-import type { TransactionType } from "@/shared/models/transaction";
-import { PreviewTransaction } from "@/server/contexts/data-import/domain/models/preview-transaction";
+import { MfJournal } from "@/server/contexts/data-import/domain/models/mf-journal";
+import type { PreviewTransaction } from "@/server/contexts/data-import/domain/models/preview-transaction";
 
+/**
+ * MFクラウドCSVの行を仕訳のフィールドに対応させ、日付・金額の文字列を解釈する。
+ * 取引種別・カテゴリの分類と無効な行の判定はドメイン（MfJournal）が行う
+ */
 export class MfRecordConverter implements IMfRecordConverter {
   public convertRow(record: MfCsvRecord, politicalOrganizationId: string): PreviewTransaction {
-    const debitAmount = this.parseAmount(record.debit_amount);
-    const creditAmount = this.parseAmount(record.credit_amount);
-    const categoryKey = this.determineCategoryKey(record.debit_account, record.credit_account);
-    const transactionType = this.determineTransactionType(
-      record.debit_account,
-      record.credit_account,
-    );
-
-    const friendlyCategory = record.friendly_category;
-
-    const label = this.shouldDisplayDescription(record) ? record.description : undefined;
-
-    // Determine status and errors based on conversion
-    let status: "insert" | "update" | "invalid" | "skip" = "insert";
-    let errors: string[] = [];
-
-    if (transactionType === null) {
-      status = "invalid";
-      errors = [
-        `Invalid account combination: debit=${record.debit_account}, credit=${record.credit_account}`,
-      ];
-    }
-
-    // Parse transaction date with validation
-    const { date: transactionDate, isValid: isDateValid } = this.parseTransactionDate(
-      record.transaction_date,
-    );
-    if (!isDateValid) {
-      status = "invalid";
-      errors.push(`Invalid date format: ${record.transaction_date}`);
-    }
-
-    const transaction = {
-      political_organization_id: politicalOrganizationId,
-      transaction_no: record.transaction_no,
-      transaction_date: transactionDate,
-      transaction_type: transactionType,
-      debit_account: record.debit_account,
-      debit_sub_account: record.debit_sub_account,
-      debit_amount: debitAmount,
-      credit_account: record.credit_account,
-      credit_sub_account: record.credit_sub_account,
-      credit_amount: creditAmount,
+    return MfJournal.toPreviewTransaction({
+      politicalOrganizationId,
+      transactionNo: record.transaction_no,
+      transactionDate: this.parseTransactionDate(record.transaction_date),
+      rawTransactionDate: record.transaction_date,
+      debit: {
+        account: record.debit_account,
+        subAccount: record.debit_sub_account,
+        amount: this.parseAmount(record.debit_amount),
+        rawAmount: record.debit_amount,
+      },
+      credit: {
+        account: record.credit_account,
+        subAccount: record.credit_sub_account,
+        amount: this.parseAmount(record.credit_amount),
+        rawAmount: record.credit_amount,
+      },
       description: record.description,
-      label: label,
-      friendly_category: friendlyCategory,
-      category_key: categoryKey,
-      hash: "",
-      status,
-      errors,
-    };
-
-    // hash値を計算して設定
-    transaction.hash = PreviewTransaction.generateHash(transaction);
-
-    return transaction;
+      label: this.shouldDisplayDescription(record) ? record.description : undefined,
+      friendlyCategory: record.friendly_category,
+    });
   }
 
-  private parseTransactionDate(dateStr: string): {
-    date: Date;
-    isValid: boolean;
-  } {
-    try {
-      const date = new Date(dateStr);
-      if (Number.isNaN(date.getTime())) {
-        return { date: new Date("1970-01-01"), isValid: false };
-      }
-      return { date, isValid: true };
-    } catch (_error) {
-      return { date: new Date("1970-01-01"), isValid: false };
-    }
+  private parseTransactionDate(dateStr: string): Date | null {
+    const date = new Date(dateStr);
+    return Number.isNaN(date.getTime()) ? null : date;
   }
 
   private shouldDisplayDescription(record: MfCsvRecord): boolean {
@@ -94,73 +52,11 @@ export class MfRecordConverter implements IMfRecordConverter {
     return Boolean(descriptionStartsWithDebit || containsUpsider || containsAmex);
   }
 
-  private parseAmount(amountStr: string): number {
-    if (!amountStr || amountStr.trim() === "") {
-      return 0;
+  private parseAmount(amountStr: string | undefined): number | null {
+    const cleaned = (amountStr ?? "").replace(/[,\s]/g, "");
+    if (!/^-?\d+$/.test(cleaned)) {
+      return null;
     }
-
-    const cleaned = amountStr.replace(/[,\s]/g, "");
-    const parsed = parseInt(cleaned, 10);
-
-    return Number.isNaN(parsed) ? 0 : parsed;
-  }
-
-  private determineCategoryKey(debitAccount: string, creditAccount: string): string {
-    const isDebitPL = Object.hasOwn(PL_CATEGORIES, debitAccount);
-    const isCreditPL = Object.hasOwn(PL_CATEGORIES, creditAccount);
-
-    if (isDebitPL) {
-      const mapping = PL_CATEGORIES[debitAccount];
-      return mapping ? mapping.key : "undefined";
-    }
-    if (isCreditPL) {
-      const mapping = PL_CATEGORIES[creditAccount];
-      return mapping ? mapping.key : "undefined";
-    }
-    return "undefined";
-  }
-
-  private determineTransactionType(
-    debitAccount: string,
-    creditAccount: string,
-  ): TransactionType | null {
-    if (debitAccount === "相殺項目（費用）") {
-      return "offset_expense";
-    }
-    if (creditAccount === "相殺項目（収入）") {
-      return "offset_income";
-    }
-
-    const isDebitBS = Object.hasOwn(BS_CATEGORIES, debitAccount);
-    const isCreditBS = Object.hasOwn(BS_CATEGORIES, creditAccount);
-    const isDebitPL = Object.hasOwn(PL_CATEGORIES, debitAccount);
-    const isCreditPL = Object.hasOwn(PL_CATEGORIES, creditAccount);
-
-    // 現金収入: 現金類(借方) + PL科目(貸方)
-    if (isDebitBS && isCreditPL && this.isCashEquivalent(debitAccount)) {
-      return "income";
-    }
-    // 現金支出: PL科目(借方) + 現金類(貸方)
-    if (isDebitPL && isCreditBS && this.isCashEquivalent(creditAccount)) {
-      return "expense";
-    }
-    // 発生主義: PL科目が登場した仕訳タイミングで収支を認識（現金を含まない場合）
-    if (isDebitPL && isCreditBS) {
-      return "expense";
-    }
-    if (isDebitBS && isCreditPL) {
-      return PL_CATEGORIES[creditAccount]?.type === "expense" ? "expense" : "income";
-    }
-    // BS科目同士の仕訳（未収入金の回収、未払金・未払費用の支払など）は収支ではないが、
-    // 貸借対照表の債権・負債残高の集計に必要なため、非現金仕訳として取り込む
-    if (isDebitBS && isCreditBS) {
-      return "non_cash_journal";
-    }
-
-    return null;
-  }
-
-  private isCashEquivalent(account: string): boolean {
-    return CASH_ACCOUNTS.has(account);
+    return parseInt(cleaned, 10);
   }
 }

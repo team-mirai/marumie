@@ -249,6 +249,15 @@ export const BS_CATEGORIES: Record<string, { type: "asset" | "liability" | "net_
 };
 
 /**
+ * 相殺項目の科目名
+ *
+ * 収入と支出を相殺して計上するための科目（PL・BS のどちらにも属さない）。
+ * 借方に来たら相殺の支出、貸方に来たら相殺の収入として取り込む。
+ */
+export const OFFSET_EXPENSE_ACCOUNT = "相殺項目（費用）";
+export const OFFSET_INCOME_ACCOUNT = "相殺項目（収入）";
+
+/**
  * 現金類の科目
  */
 export const CASH_ACCOUNTS = new Set(["現金", "普通預金"]);
