@@ -1,4 +1,4 @@
-import { allExcludedRejection, DocumentReplacement, JournalOperation, OPERABLE_STATES, type OperableEntry, type OperableState } from "@/server/contexts/research-fund/domain/models/journal-operation";
+import { acceptsAll, allExcludedRejection, DocumentReplacement, JournalOperation, OPERABLE_STATES, type OperableEntry, type OperableState } from "@/server/contexts/research-fund/domain/models/journal-operation";
 
 const base: OperableEntry = { id: "1", description: "タクシー代", source: "manual", status: "draft", advancedBy: null, settledAt: null, entryDate: "2026-08-01", amount: 1200, accountKey: "taxi", note: "公開メモ", memo: "内部メモ", documentId: null, receiptAbsent: false };
 const operations = ["edit", "approve", "revertToDraft", "discard", "unpublish", "setAdvancedBy", "setPayee", "setReceiptAbsent", "setReceiptAbsenceReason", "attachDocument", "replaceDocument", "settle", "unsettle"] as const;
@@ -201,5 +201,22 @@ describe("DocumentReplacement", () => {
   });
   it("差し替えたら公開用の版は作り直し待ちに戻す", () => {
     expect(DocumentReplacement.maskingStatusAfterReplacement).toBe("pending");
+  });
+});
+
+describe("acceptsAll", () => {
+  const approved: OperableEntry = { ...base, status: "approved" };
+  it("選んだ全件が受け付けるなら true", () => {
+    expect(acceptsAll([base, { ...base, id: "2" }], JournalOperation.approve)).toBe(true);
+  });
+  it("1 件でも拒否があれば false（一部だけに適用しない）", () => {
+    expect(acceptsAll([base, approved], JournalOperation.approve)).toBe(false);
+    expect(acceptsAll([approved, { ...approved, settledAt: "2026-09-01" }], JournalOperation.revertToDraft)).toBe(false);
+  });
+  it("除外として扱う理由（要確認の下書き）は全体を止めない", () => {
+    expect(acceptsAll([base, { ...base, accountKey: "needs-review" }], JournalOperation.approve)).toBe(true);
+  });
+  it("何も選んでいなければ false", () => {
+    expect(acceptsAll([], JournalOperation.discard)).toBe(false);
   });
 });

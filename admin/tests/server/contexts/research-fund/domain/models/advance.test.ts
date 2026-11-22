@@ -1,7 +1,10 @@
 import {
   ADVANCED_BY_MAX_LENGTH,
+  earliestSettlementDate,
   inheritedAdvancedBy,
+  isUnsettledAdvance,
   normalizeAdvancedBy,
+  settlementHint,
   settlementRejection,
   summarizeUnsettledAdvances,
   validateAdvancedBy,
@@ -49,6 +52,42 @@ describe("settlementRejection", () => {
   });
   it("すでに精算済なら精算できない", () => {
     expect(settlementRejection({ ...entry, settledAt: "2026-09-01" })).toContain("精算済");
+  });
+});
+
+describe("isUnsettledAdvance", () => {
+  it("立替者がいて精算していなければ未精算の立替", () => {
+    expect(isUnsettledAdvance(entry)).toBe(true);
+  });
+  it("立替でない支出は未精算の立替ではない", () => {
+    expect(isUnsettledAdvance({ ...entry, advancedBy: null })).toBe(false);
+  });
+  it("精算済は未精算の立替ではない", () => {
+    expect(isUnsettledAdvance({ ...entry, settledAt: "2026-09-01" })).toBe(false);
+  });
+});
+
+describe("settlementHint", () => {
+  it("精算できるなら null", () => {
+    expect(settlementHint(entry)).toBeNull();
+  });
+  it("下書きの立替には、確認済にすれば精算できることを案内する", () => {
+    expect(settlementHint({ ...entry, status: "draft" })).toBe("精算は確認済にしてからできます");
+  });
+  it("それ以外は精算の却下理由と同じ", () => {
+    const notAdvance = { ...entry, status: "draft" as const, advancedBy: null };
+    expect(settlementHint(notAdvance)).toBe(settlementRejection(notAdvance));
+    const settled = { ...entry, settledAt: "2026-09-01" };
+    expect(settlementHint(settled)).toBe(settlementRejection(settled));
+  });
+});
+
+describe("earliestSettlementDate", () => {
+  it("精算する仕訳の最も新しい日付", () => {
+    expect(earliestSettlementDate(["2026-08-01", "2026-08-20", "2026-08-05"])).toBe("2026-08-20");
+  });
+  it("仕訳が無ければ null", () => {
+    expect(earliestSettlementDate([])).toBeNull();
   });
 });
 

@@ -59,6 +59,13 @@ export function validateAdvancedBy(value: string): ResearchFundResult<string | n
   return { status: "valid", value: advancedBy };
 }
 
+/** 未精算の立替か（立替者がいて、まだ精算していない）。精算の対象と未精算の集計はこれで見分ける */
+export function isUnsettledAdvance<T extends Pick<AdvanceEntry, "advancedBy" | "settledAt">>(
+  entry: T,
+): entry is T & { readonly advancedBy: string; readonly settledAt: null } {
+  return entry.advancedBy !== null && entry.settledAt === null;
+}
+
 /**
  * 精算できる仕訳かを判定し、できない理由（利用者に見せる文）を返す。できるなら null。
  *
@@ -71,6 +78,31 @@ export function settlementRejection(entry: AdvanceEntry): string | null {
   if (entry.status === "draft")
     return `「${entry.description}」は下書きです（確認済・公開中の仕訳だけを精算できます）`;
   return null;
+}
+
+/**
+ * 詳細カードの立替者の行に出す、精算できない理由。できるなら null。
+ *
+ * 下書きの立替は確認済にすれば精算できるので、項目名入りの却下理由ではなく次にすることを見せる。
+ * それ以外は settlementRejection と同じ理由を返す。
+ */
+export function settlementHint(entry: AdvanceEntry): string | null {
+  if (isUnsettledAdvance(entry) && entry.status === "draft")
+    return "精算は確認済にしてからできます";
+  return settlementRejection(entry);
+}
+
+/**
+ * 精算日として選べる最初の日。立て替えた日より前に精算することはないので、精算する仕訳の最も新しい日付。
+ * 仕訳が無ければ null
+ *
+ * @param entryDates 精算する仕訳の日付（YYYY-MM-DD）
+ */
+export function earliestSettlementDate(entryDates: readonly string[]): string | null {
+  return entryDates.reduce<string | null>(
+    (max, date) => (max === null || date > max ? date : max),
+    null,
+  );
 }
 
 /**
@@ -100,10 +132,7 @@ export function validateSettlementDate(
       "精算日に未来の日付は指定できません",
     );
   }
-  const latest = entryDates.reduce<string | null>(
-    (max, date) => (max === null || date > max ? date : max),
-    null,
-  );
+  const latest = earliestSettlementDate(entryDates);
   if (latest !== null && value < latest) {
     return invalidResearchFundResult(
       "settledAt",
@@ -121,7 +150,7 @@ export function validateSettlementDate(
 export function summarizeUnsettledAdvances(entries: readonly AdvanceEntry[]): AdvanceSummaryRow[] {
   const rows = new Map<string, AdvanceSummaryRow>();
   for (const entry of entries) {
-    if (entry.advancedBy === null || entry.settledAt !== null) continue;
+    if (!isUnsettledAdvance(entry)) continue;
     const row = rows.get(entry.advancedBy) ?? {
       advancedBy: entry.advancedBy,
       count: 0,
