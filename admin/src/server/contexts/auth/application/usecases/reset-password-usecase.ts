@@ -13,7 +13,7 @@ export class ResetPasswordUsecase {
   async execute(password: string): Promise<void> {
     const validation = Password.validate(password);
     if (!validation.valid) {
-      throw new AuthError("WEAK_PASSWORD", validation.error ?? "Invalid password");
+      throw AuthError.rejected("WEAK_PASSWORD", validation.error);
     }
 
     try {

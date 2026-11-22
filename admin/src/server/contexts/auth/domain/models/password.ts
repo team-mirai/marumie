@@ -1,10 +1,9 @@
 /**
  * パスワードバリデーション結果
  */
-export interface PasswordValidationResult {
-  valid: boolean;
-  error?: string;
-}
+export type PasswordValidationResult =
+  | { valid: true; error?: undefined }
+  | { valid: false; error: string };
 
 /**
  * パスワードのドメインモデル（型定義）

@@ -28,6 +28,24 @@ describe("AuthError", () => {
     });
   });
 
+  describe("rejected", () => {
+    it("ドメインの却下理由を利用者向け文言として持つ", () => {
+      const error = AuthError.rejected("WEAK_PASSWORD", "パスワードは72文字以内で設定してください");
+
+      expect(error.code).toBe("WEAK_PASSWORD");
+      expect(error.message).toBe("パスワードは72文字以内で設定してください");
+      expect(error.userMessage).toBe("パスワードは72文字以内で設定してください");
+    });
+  });
+
+  describe("userMessage", () => {
+    it("却下理由が無いときはコードごとの既定文言を返す", () => {
+      const error = new AuthError("WEAK_PASSWORD", "Password should be at least 6 characters.");
+
+      expect(error.userMessage).toBe(AUTH_ERROR_MESSAGES.WEAK_PASSWORD);
+    });
+  });
+
   describe("instanceof", () => {
     it("AuthErrorはErrorを継承している", () => {
       const error = new AuthError("AUTH_FAILED", "test");
