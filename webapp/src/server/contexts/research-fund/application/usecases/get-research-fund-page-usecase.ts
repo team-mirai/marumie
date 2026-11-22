@@ -8,6 +8,10 @@ import type {
   ResearchFundGroupView,
   ResearchFundPageData,
 } from "@/server/contexts/research-fund/domain/models/research-fund-page";
+import {
+  discloseReceipt,
+  RESEARCH_FUND_RECEIPTS_PUBLISHED,
+} from "@/server/contexts/research-fund/domain/models/research-fund-receipt-publication";
 import type { ResearchFundRepository } from "@/server/contexts/research-fund/domain/repositories/research-fund-repository.interface";
 import { buildPoliticianTitle } from "@/server/contexts/research-fund/domain/services/politician-title";
 import { buildGrantPeriodLabel } from "@/server/contexts/research-fund/domain/services/research-fund-coverage";
@@ -31,7 +35,10 @@ export interface GetResearchFundPageParams {
 }
 
 export class GetResearchFundPageUsecase {
-  constructor(private repository: ResearchFundRepository) {}
+  constructor(
+    private repository: ResearchFundRepository,
+    private receiptsPublished: boolean = RESEARCH_FUND_RECEIPTS_PUBLISHED,
+  ) {}
 
   /** 議員ページ（B-1〜B-5）のデータ。帳簿が無ければ null を返し、呼び出し側が 404 にする。 */
   async execute(params: GetResearchFundPageParams): Promise<ResearchFundPageData | null> {
@@ -75,7 +82,7 @@ export class GetResearchFundPageUsecase {
       },
       monthly,
       expenses: buildExpenseViews(
-        published.expenses,
+        published.expenses.map((expense) => discloseReceipt(expense, this.receiptsPublished)),
         published.accounts,
         groupIdByEntryId(published.groups),
       ),

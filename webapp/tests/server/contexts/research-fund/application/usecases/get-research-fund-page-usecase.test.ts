@@ -104,7 +104,7 @@ function published(overrides: Partial<PublishedResearchFund> = {}): PublishedRes
   };
 }
 
-function usecaseWith(value: PublishedResearchFund | null) {
+function usecaseWith(value: PublishedResearchFund | null, receiptsPublished?: boolean) {
   const repository: ResearchFundRepository = {
     findPublished: jest.fn().mockResolvedValue(value),
     findPublishedForHome: jest.fn().mockResolvedValue([]),
@@ -114,7 +114,7 @@ function usecaseWith(value: PublishedResearchFund | null) {
     findPublishedPageRefs: jest.fn().mockResolvedValue([]),
     findPublishedReceipt: jest.fn().mockResolvedValue(null),
   };
-  return { usecase: new GetResearchFundPageUsecase(repository), repository };
+  return { usecase: new GetResearchFundPageUsecase(repository, receiptsPublished), repository };
 }
 
 describe("GetResearchFundPageUsecase", () => {
@@ -216,6 +216,34 @@ describe("GetResearchFundPageUsecase", () => {
       ["2", null],
       ["1", null],
     ]);
+  });
+
+  it("領収書を公開している間は、明細に領収書の有無と種類を渡す", async () => {
+    const { usecase } = usecaseWith(published(), true);
+
+    const data = await usecase.execute({ slug: "sample-taro", financialYear: 2026 });
+
+    expect(data?.expenses.find((expense) => expense.id === "1")).toMatchObject({
+      hasReceipt: true,
+      receiptReady: true,
+      receiptKind: "image",
+    });
+  });
+
+  it("領収書の公開を止めている間は、書類が付いた明細も領収書なしとして渡す", async () => {
+    const { usecase } = usecaseWith(published(), false);
+
+    const data = await usecase.execute({ slug: "sample-taro", financialYear: 2026 });
+
+    expect(
+      data?.expenses.map(({ hasReceipt, receiptReady, receiptKind }) => ({
+        hasReceipt,
+        receiptReady,
+        receiptKind,
+      })),
+    ).toEqual(
+      Array.from({ length: 3 }, () => ({ hasReceipt: false, receiptReady: false, receiptKind: null })),
+    );
   });
 
   it("帳簿の公開用メタ情報をそのまま渡す", async () => {

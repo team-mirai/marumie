@@ -32,7 +32,6 @@ import {
 import ColumnSortButton from "@/client/components/transactions/ColumnSortButton";
 import TransactionSortTabs from "@/client/components/transactions/TransactionSortTabs";
 import type { ResearchFundExpenseView } from "@/server/contexts/research-fund/domain/models/research-fund-page";
-import { RESEARCH_FUND_RECEIPTS_PUBLISHED } from "@/server/contexts/research-fund/domain/models/research-fund-receipt-publication";
 
 interface Props {
   /** URL の slug の区間（プレビュー URL ならプレビュー用の文字列を含む）。リンクはこれを引き継ぐ */
@@ -265,7 +264,7 @@ export default function ResearchFundTransactionsTable({
                       category={row.detailed}
                       href={hrefFor({ categories: [row.accountKey] })}
                     />
-                    {RESEARCH_FUND_RECEIPTS_PUBLISHED && row.hasReceipt && (
+                    {row.hasReceipt && (
                       <span className="min-[641px]:hidden">
                         <ResearchFundReceiptPill
                           ready={row.receiptReady}
@@ -279,7 +278,7 @@ export default function ResearchFundTransactionsTable({
                       <span className="text-sm font-bold text-gray-800 min-[641px]:text-base">
                         {row.description}
                       </span>
-                      {RESEARCH_FUND_RECEIPTS_PUBLISHED && row.hasReceipt && (
+                      {row.hasReceipt && (
                         <span className="hidden min-[641px]:inline-flex">
                           <ResearchFundReceiptPill
                             ready={row.receiptReady}
