@@ -1,5 +1,6 @@
 import { politicianPhotoUrl } from "@/client/lib/politician-photo-url";
 import { parsePoliticianPathSegment } from "@/shared/research-fund/preview-path";
+import { PublishedFiscalYears } from "@/server/contexts/public-finance/domain/models/published-fiscal-years";
 
 export const FAQ_URL = "https://team-mirai.notion.site/FAQ-27ef6f56bae180c085e9f97d05a5d59c";
 export const SOURCE_CODE_URL = "https://github.com/team-mirai/marumie";
@@ -8,10 +9,6 @@ export const RESEARCH_FUND_FEEDBACK_URL = "https://forms.gle/MSYSfpJRU9AR1B7s9";
 export const ABOUT_HREF = "/about";
 /** トップの「データについて」（共通の下部ブロック） */
 export const DATA_NOTES_HREF = "/#explanation";
-
-/** ヘッダーで切り替えられる年。年の切り替えは左から古い順に並べる */
-export const HEADER_YEARS = [2025, 2026] as const;
-const DEFAULT_HEADER_YEAR = 2026;
 
 /**
  * ヘッダーのナビの項目（デザイン v8 の B 案・5項目）。
@@ -129,8 +126,12 @@ export function buildOrganizationMenuItems(
       kind: organization.kind,
       hasPhoto: organization.hasPhoto,
       isCurrent,
-      href: organizationYearHref(organization.slug, selectedYear ?? DEFAULT_HEADER_YEAR),
-      years: HEADER_YEARS.map((year) => ({
+      href: organizationYearHref(
+        organization.slug,
+        selectedYear ?? PublishedFiscalYears.defaultYear,
+      ),
+      // 年の切り替えは左から古い順に並べる
+      years: PublishedFiscalYears.all.map((year) => ({
         year,
         href: organizationYearHref(organization.slug, year),
         isSelected: selectedYear === year,
@@ -163,7 +164,7 @@ export function buildPoliticianMenuItems(
   >,
   current: HeaderCurrentPage,
 ): HeaderPoliticianMenuItem[] {
-  const yearsNewestFirst = [...HEADER_YEARS].sort((a, b) => b - a);
+  const yearsNewestFirst = [...PublishedFiscalYears.all].sort((a, b) => b - a);
   const politicians = new Map<string, { name: string; hasPhoto: boolean; years: number[] }>();
   for (const year of yearsNewestFirst) {
     for (const politician of politiciansByYear[year] ?? []) {
@@ -223,7 +224,7 @@ export function buildComingSoonPoliticianMenuItems(
   current: HeaderCurrentPage = { kind: "other" },
 ): ComingSoonPoliticianMenuItem[] {
   const publishedSlugs = new Set(published.map((politician) => politician.slug));
-  const latestYear = Math.max(...HEADER_YEARS);
+  const latestYear = Math.max(...PublishedFiscalYears.all);
   return comingSoon
     .filter((politician) => !publishedSlugs.has(politician.slug))
     .map((politician) => ({

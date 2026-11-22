@@ -17,13 +17,13 @@ import ResearchFundHighlightsSection from "@/client/components/research-fund/Res
 import ResearchFundMonthlySection from "@/client/components/research-fund/ResearchFundMonthlySection";
 import { formatUpdatedAt } from "@/client/lib/format-date";
 import { shareMetadata } from "@/app/site-metadata";
-import { HEADER_YEARS } from "@/client/lib/header-navigation";
 import {
   buildPoliticianNav,
   mergeNavMembersAcrossYears,
   politicianPageHref,
 } from "@/client/lib/politician-nav";
 import { politicianPhotoUrl } from "@/client/lib/politician-photo-url";
+import { PublishedFiscalYears } from "@/server/contexts/public-finance/domain/models/published-fiscal-years";
 import type {
   ResearchFundComingSoonPage,
   ResearchFundPoliticianCard,
@@ -50,7 +50,7 @@ function parseYear(year: string): number | null {
  * 非公開の議員はプレビュー中でも出さない。取れなくても本文は出せるので、失敗したら出さないだけにする。
  */
 async function loadNavMembers(financialYear: number) {
-  const years = [...new Set<number>([financialYear, ...HEADER_YEARS])];
+  const years = [...new Set<number>([financialYear, ...PublishedFiscalYears.all])];
   const listsByYear = await Promise.all(
     years.map(async (year) => ({
       financialYear: year,

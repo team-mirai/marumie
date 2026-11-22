@@ -19,10 +19,10 @@ import {
   buildPoliticianMenuItems,
   DATA_NOTES_HREF,
   FAQ_URL,
-  HEADER_YEARS,
   RESEARCH_FUND_FEEDBACK_URL,
   SOURCE_CODE_URL,
 } from "@/client/lib/header-navigation";
+import { PublishedFiscalYears } from "@/server/contexts/public-finance/domain/models/published-fiscal-years";
 import { loadHomePageData } from "@/server/contexts/public-finance/presentation/loaders/load-home-page-data";
 import type { ResearchFundPoliticianEntry } from "@/server/contexts/research-fund/domain/models/research-fund-politician-list";
 import { loadResearchFundComingSoonPoliticians } from "@/server/contexts/research-fund/presentation/loaders/load-research-fund-coming-soon-politicians";
@@ -50,13 +50,13 @@ export default async function Footer() {
   const [homeData, politicianLists, comingSoonPoliticians] = await Promise.all([
     // 政党と政治団体を分けて並べ、代表者の写真を出すため、政党かどうかと写真の有無が分かるトップの集計を使う。
     // DB に届かない環境（CI のビルド時など）でもフッターは描けるようにする
-    loadHomePageData(HEADER_YEARS).catch((error) => {
+    loadHomePageData(PublishedFiscalYears.all).catch((error) => {
       console.error("loadHomePageData error:", error);
       return null;
     }),
     // 調研費を「公開しない」議員は loader が返さないので、フッターにも出ない
     Promise.all(
-      HEADER_YEARS.map((financialYear) =>
+      PublishedFiscalYears.all.map((financialYear) =>
         loadResearchFundPoliticians({ financialYear }).catch((error) => {
           console.error("loadResearchFundPoliticians error:", error);
           return [] as ResearchFundPoliticianEntry[];
@@ -77,7 +77,7 @@ export default async function Footer() {
     notCurrent,
   );
   const politiciansByYear = Object.fromEntries(
-    HEADER_YEARS.map((year, index) => [year, politicianLists[index]]),
+    PublishedFiscalYears.all.map((year, index) => [year, politicianLists[index]]),
   );
   const politicians = sortFooterPoliticiansByKana(
     buildPoliticianMenuItems(politiciansByYear, notCurrent),

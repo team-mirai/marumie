@@ -10,7 +10,8 @@ import MainColumn from "@/client/components/layout/MainColumn";
 import RevealOnScroll from "@/client/components/layout/RevealOnScroll";
 import { buildAboutPublishedSummary } from "@/client/lib/about-published";
 import { formatAsOfDate } from "@/client/lib/format-date";
-import { ABOUT_HREF, HEADER_YEARS } from "@/client/lib/header-navigation";
+import { ABOUT_HREF } from "@/client/lib/header-navigation";
+import { PublishedFiscalYears } from "@/server/contexts/public-finance/domain/models/published-fiscal-years";
 import { loadHomePageData } from "@/server/contexts/public-finance/presentation/loaders/load-home-page-data";
 import type { ResearchFundPoliticianEntry } from "@/server/contexts/research-fund/domain/models/research-fund-politician-list";
 import { loadResearchFundPoliticians } from "@/server/contexts/research-fund/presentation/loaders/load-research-fund-politicians";
@@ -21,9 +22,6 @@ export const metadata: Metadata = {
   title: "まる見え政治資金とは",
 };
 
-// 「実際のチームみらいの収支を見る」で開く政党ページの年度（トップの既定の年度とそろえる）
-const PARTY_PAGE_YEAR = 2026;
-
 /**
  * 「まる見え政治資金とは」ページ（v9）。
  * 公開している収支の数 → 4つの特徴とこれまでの収支報告書との違い → 目指していること → 調研費の公開 → 下部ブロック（オープンソースの案内から）の順に並べる。
@@ -32,12 +30,12 @@ const PARTY_PAGE_YEAR = 2026;
 export default async function AboutPage() {
   const [homeData, politicianLists] = await Promise.all([
     // DB に届かない環境（CI のビルド時など）でもページは描けるようにする
-    loadHomePageData(HEADER_YEARS).catch((error) => {
+    loadHomePageData(PublishedFiscalYears.all).catch((error) => {
       console.error("loadHomePageData error:", error);
       return null;
     }),
     Promise.all(
-      HEADER_YEARS.map((financialYear) =>
+      PublishedFiscalYears.all.map((financialYear) =>
         loadResearchFundPoliticians({ financialYear }).catch((error) => {
           console.error("loadResearchFundPoliticians error:", error);
           return [] as ResearchFundPoliticianEntry[];
@@ -50,10 +48,14 @@ export default async function AboutPage() {
   const summary = buildAboutPublishedSummary(
     parties,
     homeData?.groups ?? [],
-    Object.fromEntries(HEADER_YEARS.map((year, index) => [year, politicianLists[index]])),
+    Object.fromEntries(
+      PublishedFiscalYears.all.map((year, index) => [year, politicianLists[index]]),
+    ),
   );
   const partyHref =
-    parties.length > 0 ? `/o/${encodeURIComponent(parties[0].slug)}/${PARTY_PAGE_YEAR}` : null;
+    parties.length > 0
+      ? `/o/${encodeURIComponent(parties[0].slug)}/${PublishedFiscalYears.defaultYear}`
+      : null;
 
   return (
     <MainColumn spacing="compact">
