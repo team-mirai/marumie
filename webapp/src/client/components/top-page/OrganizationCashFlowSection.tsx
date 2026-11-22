@@ -2,7 +2,7 @@ import "server-only";
 import AmountSummary from "@/client/components/common/AmountSummary";
 import SectionCard from "@/client/components/layout/SectionCard";
 import CashFlowSection from "@/client/components/top-page/CashFlowSection";
-import { calculateSankeyFinancialSummary } from "@/client/lib/sankey-financial-summary";
+import type { FinancialSummary } from "@/types/financial-summary";
 import type { SankeyData } from "@/types/sankey";
 
 interface OrganizationCashFlowSectionProps {
@@ -11,6 +11,8 @@ interface OrganizationCashFlowSectionProps {
   updatedAt: string;
   political: SankeyData | null;
   friendly: SankeyData | null;
+  /** 収入総額・支出総額・現金残高。取得に失敗したときは null（0 円と区別できるよう金額を出さない） */
+  summary: FinancialSummary | null;
 }
 
 /** 政治団体ページの収支の流れ。収入・支出・収支の金額と区分タブつきのサンキー。 */
@@ -19,10 +21,8 @@ export default function OrganizationCashFlowSection({
   updatedAt,
   political,
   friendly,
+  summary,
 }: OrganizationCashFlowSectionProps) {
-  // 取得に失敗したときは 0 円と区別できるよう、金額を出さない
-  const summary = friendly ? calculateSankeyFinancialSummary(friendly) : null;
-
   return (
     <SectionCard
       id="cash-flow"

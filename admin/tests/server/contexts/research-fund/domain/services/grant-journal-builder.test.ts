@@ -1,3 +1,4 @@
+import { INVALID_JOURNAL_AMOUNT_MESSAGE } from "@/server/contexts/research-fund/domain/models/journal-amount";
 import type { ResearchFundAccount } from "@/server/contexts/research-fund/domain/models/journal-posting";
 import { buildGrantJournalWrite } from "@/server/contexts/research-fund/domain/services/grant-journal-builder";
 
@@ -101,7 +102,7 @@ describe("buildGrantJournalWrite", () => {
     (amount) => {
       expect(build({ amount })).toMatchObject({
         status: "invalid",
-        errors: [{ message: "金額は1円以上の整数で指定してください" }],
+        errors: [{ message: INVALID_JOURNAL_AMOUNT_MESSAGE }],
       });
     },
   );

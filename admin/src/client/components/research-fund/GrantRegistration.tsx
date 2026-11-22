@@ -5,21 +5,19 @@ import { CheckCircle } from "@phosphor-icons/react/dist/ssr";
 import { toast } from "sonner";
 import { PageHeader } from "@/client/components/layout/PageHeader";
 import { Card, CardContent, Button, Input } from "@/client/components/ui";
-import { grantEntryDate } from "@/server/contexts/research-fund/domain/models/grant-registration";
-import type { ScheduledGrant } from "@/server/contexts/research-fund/domain/models/grant-schedule";
+import { grantEntryDateRange } from "@/server/contexts/research-fund/domain/models/grant-registration";
+import {
+  MONTHLY_GRANT_AMOUNT,
+  type ScheduledGrant,
+} from "@/server/contexts/research-fund/domain/models/grant-schedule";
 import type { AdminTarget } from "@/server/contexts/shared/domain/models/admin-target";
 import { registerGrant } from "@/server/contexts/research-fund/presentation/actions/register-grant";
 
-/** 月末日。date 入力の max に使い、その月に属さない日付を選べなくする。 */
-function lastDayOf(month: string) {
-  const end = new Date(`${month}-01T00:00:00.000Z`);
-  end.setUTCMonth(end.getUTCMonth() + 1, 0);
-  return end.toISOString().slice(0, 10);
-}
+const MONTHLY_GRANT_LABEL = `${MONTHLY_GRANT_AMOUNT / 10_000}万円`;
 
 function noteOf(grant: ScheduledGrant, termStart: string) {
   if (grant.month === termStart.slice(0, 7))
-    return `${termStart.replaceAll("-", ".")} 当選・初月分${grant.amount < 1_000_000 ? "（日割）" : ""}`;
+    return `${termStart.replaceAll("-", ".")} 当選・初月分${grant.prorated ? "（日割）" : ""}`;
   return grant.status === "available" ? "振込を確認したら支給日と金額を入れて登録" : "";
 }
 
@@ -82,7 +80,9 @@ export function GrantRegistration({
           </div>
           <div>
             <div className="text-xs text-muted-foreground">金額</div>
-            <div className="text-sm font-bold">月ごとに入力（初期値は100万円、当選月は日割）</div>
+            <div className="text-sm font-bold">
+              月ごとに入力（初期値は{MONTHLY_GRANT_LABEL}、当選月は日割）
+            </div>
           </div>
           <div>
             <div className="text-xs text-muted-foreground">仕訳の型</div>
@@ -94,8 +94,8 @@ export function GrantRegistration({
         <CardContent className="p-6">
           <ul>
             {grants.map((grant) => {
-              const defaultDate = grantEntryDate(grant.month, termStart);
-              const entryDate = entryDates[grant.month] ?? defaultDate;
+              const entryDateRange = grantEntryDateRange(grant.month, termStart);
+              const entryDate = entryDates[grant.month] ?? entryDateRange.first;
               const amount = amounts[grant.month] ?? String(grant.amount);
               return (
                 <li
@@ -133,8 +133,8 @@ export function GrantRegistration({
                       aria-label={`${Number(grant.month.slice(5, 7))}月分の支給日`}
                       className="font-latin w-40 flex-none"
                       value={entryDate}
-                      min={defaultDate}
-                      max={lastDayOf(grant.month)}
+                      min={entryDateRange.first}
+                      max={entryDateRange.last}
                       disabled={pending}
                       onChange={(event) =>
                         setEntryDates((current) => ({
@@ -177,7 +177,8 @@ export function GrantRegistration({
             </p>
           )}
           <p className="mt-3 text-xs text-muted-foreground">
-            支給日の初期値はその月の1日（当選月は当選日）、金額の初期値は100万円（当選月は日割）です。実際の入金日・振込額に合わせて変更できます。
+            支給日の初期値はその月の1日（当選月は当選日）、金額の初期値は{MONTHLY_GRANT_LABEL}
+            （当選月は日割）です。実際の入金日・振込額に合わせて変更できます。
             登録した支給は下書きを経ずに「確認済」で作成されます（振込は機械的なため）。公開は公開画面から。
           </p>
         </CardContent>

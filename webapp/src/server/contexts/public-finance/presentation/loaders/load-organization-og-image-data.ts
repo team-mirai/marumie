@@ -2,6 +2,7 @@ import "server-only";
 
 import type { OrganizationKind } from "@/server/contexts/public-finance/domain/models/organization-kind";
 import { POLITICIAN_PHOTO_MAX_BYTES } from "@/shared/models/politician-photo";
+import type { FinancialSummary } from "@/types/financial-summary";
 import type { SankeyData } from "@/types/sankey";
 import { loadOrganizationPhotoUrl } from "@/server/contexts/public-finance/presentation/loaders/load-organization-photo-url";
 import { loadOrganizations } from "@/server/contexts/public-finance/presentation/loaders/load-organizations";
@@ -13,6 +14,8 @@ interface OrganizationOgImageData {
   kind: OrganizationKind;
   /** サイトの「詳細の区分」の図のデータ */
   friendly: SankeyData;
+  /** サイトの見出しと同じ収入総額・支出総額・現金残高 */
+  summary: FinancialSummary;
   /** 代表者の顔写真の画像。政党（見出しはロゴ）・未登録・取得できないときは null */
   photo: Uint8Array | null;
 }
@@ -41,6 +44,7 @@ export async function loadOrganizationOgImageData(
     displayName: organization.displayName,
     kind: organization.kind,
     friendly: data.friendly,
+    summary: data.summary,
     photo,
   };
 }

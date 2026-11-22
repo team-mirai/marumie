@@ -1,5 +1,5 @@
 import "server-only";
-import { isValidYear } from "@/app/o/[slug]/[year]/organization-page-config";
+import { PublishedFiscalYears } from "@/server/contexts/public-finance/domain/models/published-fiscal-years";
 import { loadOrganizationOgImageData } from "@/server/contexts/public-finance/presentation/loaders/load-organization-og-image-data";
 import {
   ogPhotoDataUri,
@@ -18,7 +18,7 @@ export async function GET(
 ) {
   const { slug, year } = await params;
   const financialYear = Number(year);
-  if (!isValidYear(financialYear)) return await topOgImageResponse();
+  if (!PublishedFiscalYears.includes(financialYear)) return await topOgImageResponse();
 
   try {
     const data = await loadOrganizationOgImageData(slug, financialYear);
@@ -31,6 +31,7 @@ export async function GET(
       face: isParty ? { kind: "logo" } : photo ? { kind: "photo", src: photo } : { kind: "person" },
       title: isParty ? `${data.displayName}の収支` : data.displayName,
       sankey: data.friendly,
+      totals: { in: data.summary.income, out: data.summary.expense },
     });
     return image ?? (await topOgImageResponse());
   } catch (error) {

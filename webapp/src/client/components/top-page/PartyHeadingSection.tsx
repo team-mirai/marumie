@@ -4,7 +4,7 @@ import MistHeadingCard from "@/client/components/common/MistHeadingCard";
 import YearSegment from "@/client/components/common/YearSegment";
 import OrganizationAvatar from "@/client/components/home/OrganizationAvatar";
 import CashFlowSection from "@/client/components/top-page/CashFlowSection";
-import { calculateSankeyFinancialSummary } from "@/client/lib/sankey-financial-summary";
+import type { FinancialSummary } from "@/types/financial-summary";
 import type { SankeyData } from "@/types/sankey";
 
 interface PartyHeadingSectionProps {
@@ -17,6 +17,8 @@ interface PartyHeadingSectionProps {
   updatedAt: string;
   political: SankeyData | null;
   friendly: SankeyData | null;
+  /** 収入総額・支出総額・現金残高。取得に失敗したときは null（0 円と区別できるよう金額を出さない） */
+  summary: FinancialSummary | null;
 }
 
 /** 政党ページ冒頭の見出しカード。収入・支出・収支の金額と、区分タブつきの収支の流れを1枚にまとめる。 */
@@ -29,9 +31,8 @@ export default function PartyHeadingSection({
   updatedAt,
   political,
   friendly,
+  summary,
 }: PartyHeadingSectionProps) {
-  // 取得に失敗したときは 0 円と区別できるよう、金額を出さない
-  const summary = friendly ? calculateSankeyFinancialSummary(friendly) : null;
   const yearOptions = years.map((y) => ({ year: y, href: `/o/${slug}/${y}` }));
 
   return (

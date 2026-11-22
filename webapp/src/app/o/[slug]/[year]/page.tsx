@@ -15,15 +15,11 @@ import TransactionsSection from "@/client/components/top-page/TransactionsSectio
 import { loadTopPageData } from "@/server/contexts/public-finance/presentation/loaders/load-top-page-data";
 import { loadOrganizations } from "@/server/contexts/public-finance/presentation/loaders/load-organizations";
 import { loadOrganizationProfile } from "@/server/contexts/public-finance/presentation/loaders/load-organization-profile";
+import { PublishedFiscalYears } from "@/server/contexts/public-finance/domain/models/published-fiscal-years";
 import { formatUpdatedAt } from "@/client/lib/format-date";
 import { getBalanceSheetAsOf } from "@/client/lib/balance-sheet-heading";
 import { buildProfileLinks } from "@/client/lib/profile-links";
 import { shareMetadata } from "@/app/site-metadata";
-import {
-  DEFAULT_YEAR,
-  VALID_YEARS,
-  isValidYear,
-} from "@/app/o/[slug]/[year]/organization-page-config";
 
 export const revalidate = 300; // 5 minutes
 
@@ -44,7 +40,7 @@ export async function generateMetadata({ params }: OrgPageProps): Promise<Metada
   if (!currentOrganization?.displayName) return {};
   const title = `${currentOrganization.displayName}の収支`;
   // シェアしたときの画像は、その団体・その年の収支の図（データが無ければ画像の側でトップの画像を返す）
-  return isValidYear(Number(year))
+  return PublishedFiscalYears.includes(Number(year))
     ? {
         title,
         ...shareMetadata({
@@ -60,11 +56,13 @@ export default async function OrgPage({ params }: OrgPageProps) {
 
   // 年度の妥当性をチェック
   const yearNumber = parseInt(yearParam, 10);
-  const financialYear = isValidYear(yearNumber) ? yearNumber : DEFAULT_YEAR;
+  const financialYear = PublishedFiscalYears.includes(yearNumber)
+    ? yearNumber
+    : PublishedFiscalYears.defaultYear;
 
   // 年度が不正な場合はデフォルト年度にリダイレクト
   if (financialYear !== yearNumber) {
-    redirect(`/o/${slug}/${DEFAULT_YEAR}`);
+    redirect(`/o/${slug}/${PublishedFiscalYears.defaultYear}`);
   }
 
   // slugの妥当性をチェックし、必要に応じてリダイレクト
@@ -92,7 +90,7 @@ export default async function OrgPage({ params }: OrgPageProps) {
 
   const updatedAt = formatUpdatedAt(data?.transactionData?.lastUpdatedAt ?? null);
   const eyebrow = `${organizationName}・${financialYear}年`;
-  const years = VALID_YEARS.map((y) => ({ year: y, href: `/o/${slug}/${y}` }));
+  const years = PublishedFiscalYears.all.map((y) => ({ year: y, href: `/o/${slug}/${y}` }));
   // 政党ページにするかは、トップページ・メニューと同じく政治団体区分から決めた種別で決める。
   // ほかは政治団体ページ（代表者の写真・SNS の見出し）にする
   const isParty = currentOrganization?.kind === "party";
@@ -151,6 +149,7 @@ export default async function OrgPage({ params }: OrgPageProps) {
           updatedAt={updatedAt}
           political={data?.political ?? null}
           friendly={data?.friendly ?? null}
+          summary={data?.summary ?? null}
         />
         <MonthlyTrendsSection
           monthlyData={data?.monthlyData}
@@ -171,10 +170,11 @@ export default async function OrgPage({ params }: OrgPageProps) {
           slug={slug}
           hasPhoto={currentOrganization?.hasPhoto ?? false}
           year={financialYear}
-          years={VALID_YEARS}
+          years={PublishedFiscalYears.all}
           updatedAt={updatedAt}
           political={data?.political ?? null}
           friendly={data?.friendly ?? null}
+          summary={data?.summary ?? null}
         />
       </div>
       <MonthlyTrendsSection

@@ -1,6 +1,8 @@
+import { MAX_JOURNAL_AMOUNT } from "@/server/contexts/research-fund/domain/models/journal-amount";
 import {
   grantDescription,
   grantEntryDate,
+  grantEntryDateRange,
   validateGrantAmount,
   validateGrantEntryDate,
 } from "@/server/contexts/research-fund/domain/models/grant-registration";
@@ -9,6 +11,38 @@ test("当選月は当選日、以降は毎月1日を仕訳日にする", () => {
   expect(grantEntryDate("2026-02", "2026-02-08")).toBe("2026-02-08");
   expect(grantEntryDate("2026-03", "2026-02-08")).toBe("2026-03-01");
   expect(grantEntryDate("2027-02", "2026-02-08")).toBe("2027-02-01");
+});
+
+describe("grantEntryDateRange", () => {
+  test("当選月は当選日から月末まで選べる", () => {
+    expect(grantEntryDateRange("2026-02", "2026-02-08")).toEqual({
+      first: "2026-02-08",
+      last: "2026-02-28",
+    });
+  });
+
+  test("当選月以外は月初から月末まで選べる（閏年・30日の月を含む）", () => {
+    expect(grantEntryDateRange("2028-02", "2026-02-08")).toEqual({
+      first: "2028-02-01",
+      last: "2028-02-29",
+    });
+    expect(grantEntryDateRange("2026-04", "2026-02-08")).toEqual({
+      first: "2026-04-01",
+      last: "2026-04-30",
+    });
+    expect(grantEntryDateRange("2026-12", "2026-02-08")).toEqual({
+      first: "2026-12-01",
+      last: "2026-12-31",
+    });
+  });
+
+  test("範囲の両端は検証を通り、外側は弾かれる", () => {
+    const { first, last } = grantEntryDateRange("2026-02", "2026-02-08");
+    expect(validateGrantEntryDate("2026-02", "2026-02-08", first).status).toBe("valid");
+    expect(validateGrantEntryDate("2026-02", "2026-02-08", last).status).toBe("valid");
+    expect(validateGrantEntryDate("2026-02", "2026-02-08", "2026-02-07").status).toBe("invalid");
+    expect(validateGrantEntryDate("2026-02", "2026-02-08", "2026-03-01").status).toBe("invalid");
+  });
 });
 
 test("項目名は公開用に月を示す", () => {
@@ -66,10 +100,10 @@ describe("validateGrantEntryDate", () => {
   });
 });
 
-test.each([1, 733_333, 1_000_000])("1円以上の整数の支給額 %p を受け付ける", (amount) => {
+test.each([1, 733_333, 1_000_000, MAX_JOURNAL_AMOUNT])("仕訳の金額の範囲内の支給額 %p を受け付ける", (amount) => {
   expect(validateGrantAmount(amount)).toEqual({ status: "valid", value: amount });
 });
-test.each([0, -1, 1.5, Number.NaN, Number.POSITIVE_INFINITY, "1000000", null, undefined])(
+test.each([0, -1, 1.5, MAX_JOURNAL_AMOUNT + 1, Number.NaN, Number.POSITIVE_INFINITY, "1000000", null, undefined])(
   "不正な支給額 %p を拒否する",
   (amount) => {
     expect(validateGrantAmount(amount)).toMatchObject({

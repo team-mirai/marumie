@@ -4,7 +4,6 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { ImageResponse } from "next/og";
 import sharp from "sharp";
-import { calculateSankeyFinancialSummary } from "@/client/lib/sankey-financial-summary";
 import { toSankeyFlow } from "@/client/lib/sankey-flow";
 import { GREEN, RED, type SankeyLayoutOptions, layoutSankey } from "@/client/lib/sankey-layout";
 import { type OgFace, OgFinanceCard, type OgHeadingVariant } from "@/app/_og-image/og-finance-card";
@@ -80,10 +79,10 @@ interface FinanceOgImageInput {
   /** サイトの「詳細の区分」の図と同じデータ */
   sankey: SankeyData;
   /**
-   * 見出しの右の2つの総額（円）。サイトの見出しと同じ数字にする（議員ページは支給総額・支出総額）。
-   * 渡さなければ図のデータの収入と支出の合計にする
+   * 見出しの右の2つの総額（円）。サイトの見出しと同じ数字にする
+   * （政党・政治団体ページは収入総額・支出総額、議員ページは支給総額・支出総額）
    */
-  totals?: { in: number; out: number };
+  totals: { in: number; out: number };
 }
 
 /** 見出しを、大きく描く名前と、小さく描く最後の「の〜」に分ける。「の」が無ければ全体を名前にする */
@@ -143,10 +142,9 @@ export async function renderFinanceOgImage(input: FinanceOgImageInput): Promise<
     columnRightLimit: COLUMN_RIGHT_LIMIT,
     fadeTop: FADE_TOP,
   });
-  const amounts = input.totals ?? summaryTotals(input.sankey);
   const totals = [
-    { label: chart.totalLabels[0], color: GREEN, yen: amounts.in },
-    { label: chart.totalLabels[1], color: RED, yen: amounts.out },
+    { label: chart.totalLabels[0], color: GREEN, yen: input.totals.in },
+    { label: chart.totalLabels[1], color: RED, yen: input.totals.out },
   ];
 
   const { name, suffix } = splitOgTitle(input.title);
@@ -178,11 +176,6 @@ export async function renderFinanceOgImage(input: FinanceOgImageInput): Promise<
   // ImageResponse は描画を遅らせて行うので、失敗をここで拾えるよう描き終えてから返す
   const body = await image.arrayBuffer();
   return new Response(body, { status: 200, headers: OG_IMAGE_HEADERS });
-}
-
-function summaryTotals(sankey: SankeyData): { in: number; out: number } {
-  const summary = calculateSankeyFinancialSummary(sankey);
-  return { in: summary.income, out: summary.expense };
 }
 
 /** トップの画像（データに依存しない既定の画像）を返す */

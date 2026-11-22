@@ -1,4 +1,7 @@
-import { GrantSchedule } from "@/server/contexts/research-fund/domain/models/grant-schedule";
+import {
+  GrantSchedule,
+  MONTHLY_GRANT_AMOUNT,
+} from "@/server/contexts/research-fund/domain/models/grant-schedule";
 
 const base: GrantSchedule = {
   termStart: "2026-02-01",
@@ -43,10 +46,37 @@ describe("GrantSchedule.generate", () => {
     expect(grants.slice(1).every((grant) => grant.amount === 1_000_000)).toBe(true);
   });
 
+  it.each([
+    ["2026-02-08", true],
+    ["2026-02-28", true],
+    ["2026-02-01", false],
+  ])("当選日 %s の当選月が日割かは在職日数で決まる（日割: %s）", (termStart, prorated) => {
+    const grants = schedule({ termStart });
+    expect(grants[0].prorated).toBe(prorated);
+    expect(grants.slice(1).every((grant) => !grant.prorated)).toBe(true);
+  });
+
+  it("日割かどうかは登録した額ではなく在職日数で決まる", () => {
+    const grants = schedule({
+      termStart: "2026-02-01",
+      registeredGrants: [
+        { month: "2026-02", amount: 980_000 },
+        { month: "2026-03", amount: 500_000 },
+      ],
+    });
+    expect(grants[0]).toMatchObject({ amount: 980_000, prorated: false });
+    expect(grants[1]).toMatchObject({ amount: 500_000, prorated: false });
+    const prorated = schedule({
+      termStart: "2026-02-08",
+      registeredGrants: [{ month: "2026-02", amount: MONTHLY_GRANT_AMOUNT }],
+    });
+    expect(prorated[0]).toMatchObject({ amount: MONTHLY_GRANT_AMOUNT, prorated: true });
+  });
+
   it("翌年度は1月から満額、当選前の年度は対象なし", () => {
     const grants = schedule({ financialYear: 2027 });
     expect(grants).toHaveLength(12);
-    expect(grants[0]).toEqual({ month: "2027-01", amount: 1_000_000, status: "upcoming" });
+    expect(grants[0]).toEqual({ month: "2027-01", amount: 1_000_000, prorated: false, status: "upcoming" });
     expect(schedule({ financialYear: 2025 })).toEqual([]);
   });
 
@@ -69,9 +99,9 @@ describe("GrantSchedule.generate", () => {
       ],
     });
     expect(grants.slice(0, 3)).toEqual([
-      { month: "2026-02", amount: 750_000, status: "registered" },
-      { month: "2026-03", amount: 980_000, status: "registered" },
-      { month: "2026-04", amount: 1_000_000, status: "available" },
+      { month: "2026-02", amount: 750_000, prorated: true, status: "registered" },
+      { month: "2026-03", amount: 980_000, prorated: false, status: "registered" },
+      { month: "2026-04", amount: 1_000_000, prorated: false, status: "available" },
     ]);
   });
 
@@ -82,12 +112,12 @@ describe("GrantSchedule.generate", () => {
         { month: "2026-03", amount: 900_000 },
       ],
     });
-    expect(grants[1]).toEqual({ month: "2026-03", amount: 900_000, status: "registered" });
+    expect(grants[1]).toEqual({ month: "2026-03", amount: 900_000, prorated: false, status: "registered" });
   });
 
   it("登録した額が0円でも登録済みとして扱う", () => {
     const grants = schedule({ registeredGrants: [{ month: "2026-03", amount: 0 }] });
-    expect(grants[1]).toEqual({ month: "2026-03", amount: 0, status: "registered" });
+    expect(grants[1]).toEqual({ month: "2026-03", amount: 0, prorated: false, status: "registered" });
   });
 
   it("当選月でも当選日前には登録できず、当日から登録可能", () => {
@@ -132,7 +162,7 @@ describe("GrantSchedule.registrable", () => {
   it("支給日を迎えた未登録の月は、その月の予定を返す", () => {
     expect(GrantSchedule.registrable(grants, "2026-06")).toEqual({
       status: "valid",
-      value: { month: "2026-06", amount: 1_000_000, status: "available" },
+      value: { month: "2026-06", amount: 1_000_000, prorated: false, status: "available" },
     });
   });
 

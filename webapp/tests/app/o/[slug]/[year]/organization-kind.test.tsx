@@ -67,6 +67,7 @@ const loadOrganizationProfileMock = loadOrganizationProfile as jest.Mock;
 const renderMock = renderFinanceOgImage as jest.Mock;
 
 const friendly = { nodes: [], links: [] };
+const summary = { income: 0, expense: 0, balance: 0 };
 
 const createOrganization = (overrides: Partial<PoliticalOrganization>): PoliticalOrganization => ({
   id: "1",
@@ -127,7 +128,7 @@ describe("政治団体区分が政党の団体を追加したとき", () => {
       photoStorageAvailable: false,
     });
     loadOrganizationsMock.mockResolvedValue(organizationsResponse);
-    loadTopPageDataMock.mockResolvedValue({ friendly });
+    loadTopPageDataMock.mockResolvedValue({ friendly, summary });
     loadOrganizationProfileMock.mockResolvedValue(null);
     renderMock.mockResolvedValue(new Response(new Uint8Array([0x89, 0x50, 0x4e, 0x47])));
   });
