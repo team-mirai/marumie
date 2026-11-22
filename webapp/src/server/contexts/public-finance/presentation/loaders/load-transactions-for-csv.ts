@@ -10,7 +10,14 @@ import {
   type GetTransactionsForCsvParams,
   GetTransactionsForCsvUsecase,
 } from "@/server/contexts/public-finance/application/usecases/get-transactions-for-csv-usecase";
+import {
+  TRANSACTION_CSV_HEADERS,
+  toTransactionCsvRow,
+} from "@/server/contexts/public-finance/domain/models/transaction-csv-row";
 import { CACHE_REVALIDATE_SECONDS } from "./constants";
+
+/** ダブルクォートで囲み、中のダブルクォートを二重にする */
+const quoteCsvField = (value: string) => `"${value.replace(/"/g, '""')}"`;
 
 const loadTransactionsForCsv = (params: GetTransactionsForCsvParams) => {
   const cacheKey = `transactions-for-csv-${params.slugs.join("-")}-${params.financialYear}`;
@@ -39,25 +46,20 @@ export async function downloadTransactionsCsv(slug: string, year: number) {
       financialYear: year,
     });
 
-    // CSVヘッダー
-    const headers = ["日付", "政治団体名", "タイプ", "金額", "カテゴリ", "詳細区分", "ラベル"];
-
     // CSVデータを作成
     const csvRows = [
-      headers.join(","),
+      TRANSACTION_CSV_HEADERS.join(","),
       ...data.transactions.map((transaction) => {
-        const row = [
-          new Date(transaction.transaction_date).toISOString().split("T")[0],
-          `"${transaction.political_organization_name.replace(/"/g, '""')}"`,
-          transaction.transaction_type === "income" ? "収入" : "支出",
-          transaction.transaction_type === "income"
-            ? transaction.credit_amount.toString()
-            : transaction.debit_amount.toString(),
-          `"${(transaction.transaction_type === "income" ? transaction.credit_account : transaction.debit_account).replace(/"/g, '""')}"`,
-          `"${transaction.friendly_category.replace(/"/g, '""')}"`,
-          `"${transaction.label.replace(/"/g, '""')}"`,
-        ];
-        return row.join(",");
+        const row = toTransactionCsvRow(transaction);
+        return [
+          row.date,
+          quoteCsvField(row.politicalOrganizationName),
+          row.typeLabel,
+          row.amount.toString(),
+          quoteCsvField(row.account),
+          quoteCsvField(row.friendlyCategory),
+          quoteCsvField(row.label),
+        ].join(",");
       }),
     ];
 

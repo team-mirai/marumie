@@ -1,103 +1,81 @@
 import "server-only";
 
 import { Prisma, type PrismaClient } from "@prisma/client";
-import {
-  EXPENSE_ACCOUNTS,
-  INCOME_ACCOUNTS,
-  LOAN_ACCOUNT,
-  REFUNDABLE_INCOME_ACCOUNTS,
-} from "@/shared/accounting/account-category";
-import type { MonthlyTransactionTotal } from "@/server/contexts/public-finance/domain/models/monthly-transaction-total";
+import type { MonthlyAccountTotal } from "@/server/contexts/public-finance/domain/models/monthly-account-total";
 import type { IMonthlyAggregationRepository } from "@/server/contexts/public-finance/domain/repositories/monthly-aggregation-repository.interface";
 
 /**
  * Prisma を使用した月別収支集計リポジトリ実装
  *
- * SQLでの GROUP BY ... SUM() による集計のみを行い、
- * マージ・ソートのドメインロジックはドメイン層に委譲する。
- *
- * 返金（収入科目が借方／支出科目が貸方に来る仕訳）は反対側に積まず、
- * 同じ側から差し引いた正味（ネット）として集計する。
- * ただし借方に来た借入金は返金ではなく返済なので、収入から差し引かず支出に計上する。
- *
- * 借方と貸方は別々の CASE で評価して合算する（buildNetCategoryAggregation と同じく両側を独立に集計する）。
- * 1 つの CASE にまとめると、借方が借入金・貸方が支出科目のような仕訳で片側しか計上されない。
+ * SQLでの GROUP BY 年, 月, 勘定科目 ... SUM() による集計のみを行う。
+ * どの科目を収入・支出に数えるか（返金の差し引き、借入金の返済など）は
+ * サンキー図と同じくドメイン層（buildNetCategoryAggregation）に委譲する。
  */
 export class PrismaMonthlyAggregationRepository implements IMonthlyAggregationRepository {
   constructor(private prisma: PrismaClient) {}
 
-  async getIncomeByOrganizationIds(
+  async getCreditTotalsByOrganizationIds(
     organizationIds: string[],
     financialYear: number,
-  ): Promise<MonthlyTransactionTotal[]> {
+  ): Promise<MonthlyAccountTotal[]> {
     const organizationIdsBigInt = organizationIds.map((id) => BigInt(id));
 
     const results = await this.prisma.$queryRaw<
-      Array<{ year: bigint; month: bigint; total_amount: number }>
+      Array<{ year: bigint; month: bigint; account: string | null; total_amount: number }>
     >`
       SELECT
         EXTRACT(YEAR FROM transaction_date) as year,
         EXTRACT(MONTH FROM transaction_date) as month,
-        SUM(
-          CASE
-            WHEN credit_account IN (${Prisma.join(INCOME_ACCOUNTS)}) THEN credit_amount
-            ELSE 0
-          END
-          + CASE
-            WHEN debit_account IN (${Prisma.join(REFUNDABLE_INCOME_ACCOUNTS)}) THEN -debit_amount
-            ELSE 0
-          END
-        ) as total_amount
+        credit_account as account,
+        SUM(credit_amount) as total_amount
       FROM transactions
       WHERE political_organization_id IN (${Prisma.join(organizationIdsBigInt)})
         AND financial_year = ${financialYear}
         AND transaction_type IN ('income', 'expense')
-      GROUP BY EXTRACT(YEAR FROM transaction_date), EXTRACT(MONTH FROM transaction_date)
+      GROUP BY EXTRACT(YEAR FROM transaction_date), EXTRACT(MONTH FROM transaction_date), credit_account
       ORDER BY year, month
     `;
 
-    return results.map((item) => ({
-      year: Number(item.year),
-      month: Number(item.month),
-      totalAmount: Number(item.total_amount),
-    }));
+    return results.map(toMonthlyAccountTotal);
   }
 
-  async getExpenseByOrganizationIds(
+  async getDebitTotalsByOrganizationIds(
     organizationIds: string[],
     financialYear: number,
-  ): Promise<MonthlyTransactionTotal[]> {
+  ): Promise<MonthlyAccountTotal[]> {
     const organizationIdsBigInt = organizationIds.map((id) => BigInt(id));
 
     const results = await this.prisma.$queryRaw<
-      Array<{ year: bigint; month: bigint; total_amount: number }>
+      Array<{ year: bigint; month: bigint; account: string | null; total_amount: number }>
     >`
       SELECT
         EXTRACT(YEAR FROM transaction_date) as year,
         EXTRACT(MONTH FROM transaction_date) as month,
-        SUM(
-          CASE
-            WHEN debit_account IN (${Prisma.join(EXPENSE_ACCOUNTS)}) THEN debit_amount
-            WHEN debit_account = ${LOAN_ACCOUNT} THEN debit_amount
-            ELSE 0
-          END
-          + CASE
-            WHEN credit_account IN (${Prisma.join(EXPENSE_ACCOUNTS)}) THEN -credit_amount
-            ELSE 0
-          END
-        ) as total_amount
+        debit_account as account,
+        SUM(debit_amount) as total_amount
       FROM transactions
       WHERE political_organization_id IN (${Prisma.join(organizationIdsBigInt)})
         AND financial_year = ${financialYear}
         AND transaction_type IN ('income', 'expense')
-      GROUP BY EXTRACT(YEAR FROM transaction_date), EXTRACT(MONTH FROM transaction_date)
+      GROUP BY EXTRACT(YEAR FROM transaction_date), EXTRACT(MONTH FROM transaction_date), debit_account
       ORDER BY year, month
     `;
 
-    return results.map((item) => ({
-      year: Number(item.year),
-      month: Number(item.month),
-      totalAmount: Number(item.total_amount),
-    }));
+    return results.map(toMonthlyAccountTotal);
   }
+}
+
+function toMonthlyAccountTotal(item: {
+  year: bigint;
+  month: bigint;
+  account: string | null;
+  total_amount: number;
+}): MonthlyAccountTotal {
+  return {
+    year: Number(item.year),
+    month: Number(item.month),
+    // サンキー図の集計（prisma-transaction.repository）と同じく、科目が空なら空文字として渡す
+    account: item.account || "",
+    amount: Number(item.total_amount || 0),
+  };
 }

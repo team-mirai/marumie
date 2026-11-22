@@ -73,6 +73,17 @@ export function getAccountFromTransaction(transaction: Transaction): string {
 }
 
 /**
+ * トランザクションタイプに基づいて金額を取得する
+ * @param transaction トランザクション
+ * @returns 金額（支出の場合は借方金額、収入の場合は貸方金額）
+ */
+export function getAmountFromTransaction(transaction: Transaction): number {
+  return transaction.transaction_type === "expense"
+    ? transaction.debit_amount
+    : transaction.credit_amount;
+}
+
+/**
  * 表示用金額を計算する
  * @param transaction トランザクション
  * @returns absAmount（絶対値）と amount（支出時はマイナス）
@@ -81,10 +92,7 @@ export function calculateDisplayAmount(transaction: Transaction): {
   absAmount: number;
   amount: number;
 } {
-  const baseAmount =
-    transaction.transaction_type === "expense"
-      ? transaction.debit_amount
-      : transaction.credit_amount;
+  const baseAmount = getAmountFromTransaction(transaction);
 
   const absAmount = Math.abs(baseAmount);
   const amount = transaction.transaction_type === "expense" ? -absAmount : absAmount;

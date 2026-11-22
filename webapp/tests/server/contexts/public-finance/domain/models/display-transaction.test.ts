@@ -5,6 +5,7 @@ import {
   convertToDisplayTransactions,
   formatYearMonth,
   getAccountFromTransaction,
+  getAmountFromTransaction,
   calculateDisplayAmount,
 } from "@/server/contexts/public-finance/domain/models/display-transaction";
 import { DisplayTransaction } from "@/server/contexts/public-finance/domain/models/display-transaction";
@@ -60,6 +61,26 @@ describe("getAccountFromTransaction", () => {
       credit_account: "個人からの寄附",
     });
     expect(getAccountFromTransaction(transaction)).toBe("個人からの寄附");
+  });
+});
+
+describe("getAmountFromTransaction", () => {
+  it("支出なら借方の金額を返す", () => {
+    const transaction = createMockTransaction({
+      transaction_type: "expense",
+      debit_amount: 3000,
+      credit_amount: 9999,
+    });
+    expect(getAmountFromTransaction(transaction)).toBe(3000);
+  });
+
+  it("収入なら貸方の金額を返す", () => {
+    const transaction = createMockTransaction({
+      transaction_type: "income",
+      debit_amount: 9999,
+      credit_amount: 5000,
+    });
+    expect(getAmountFromTransaction(transaction)).toBe(5000);
   });
 });
 
