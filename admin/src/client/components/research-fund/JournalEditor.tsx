@@ -19,11 +19,10 @@ import { useResearchFundReadOnly } from "@/client/components/research-fund/Resea
 import { cn } from "@/client/lib";
 import { normalizeAdvancedBy } from "@/server/contexts/research-fund/domain/models/advance";
 import { JournalOperation } from "@/server/contexts/research-fund/domain/models/journal-operation";
-import {
-  isAccountUnconfirmed,
-  type JournalEdit,
-  type ReviewAccount,
-  type ReviewEntry,
+import type {
+  JournalEdit,
+  ReviewAccount,
+  ReviewEntry,
 } from "@/server/contexts/research-fund/domain/models/journal-review";
 import type { Payee, PayeeFormInput } from "@/server/contexts/research-fund/domain/models/payee";
 import type { LegalCategoryOverrideInput } from "@/server/contexts/research-fund/domain/models/legal-category-override";
@@ -124,10 +123,13 @@ export function JournalEditor({
   const [rowDraft, setRowDraft] = useState("");
   const published = entry.status === "published";
   const grant = entry.source === "grant";
-  // 精算済は、精算した額と記録が合わなくなるので金額・立替者を変更できず、破棄もできない。
-  const settled = entry.settledAt !== null;
-  // 編集ビューでは立替者を最初から入力欄にし、フッターの保存で仕訳と一緒に送る
-  const advanceInForm = !published && !settled;
+  // 編集ビューでは立替者を最初から入力欄にし、フッターの保存で仕訳と一緒に送る。
+  // 精算済は、精算した額と記録が合わなくなるので立替者を変更できない（未精算に戻してから直す）。
+  const advanceInForm = !published && JournalOperation.setAdvancedBy(entry) === null;
+  // フッターの操作は、サーバーと同じ判定（JournalOperation）で出し分ける。
+  // 確認済にするは、科目が要確認なだけ（除外の理由）ならボタンを出したまま押せなくする。
+  const approval = JournalOperation.approve(entry, input.accountKey);
+  const approvalBlocked = approval?.bulkExclusion;
   // 立替者は元の値に戻せば未保存に数えない（戻したあとに精算・未精算に戻すなどを確認なしで送れるように）
   const advanceChanged =
     advanceInForm && !grant && normalizeAdvancedBy(advancedBy) !== entry.advancedBy;
@@ -336,7 +338,7 @@ export function JournalEditor({
         <div className="shrink-0 border-t border-border-soft px-3.5 py-2">{source}</div>
       ) : (
         <div className="flex shrink-0 items-center gap-2 border-t border-border bg-card px-3.5 py-2.5">
-          {!grant && !settled && (
+          {JournalOperation.discard(entry) === null && (
             <TextButton
               className="inline-flex items-center gap-1 text-destructive"
               disabled={pending}
@@ -356,14 +358,12 @@ export function JournalEditor({
             <Button type="submit" variant="outline" className="text-[12.5px]" disabled={pending}>
               保存
             </Button>
-            {entry.status === "draft" && (
+            {(approval === null || approvalBlocked) && (
               <Button
                 type="submit"
                 className="text-[12.5px]"
-                disabled={pending || isAccountUnconfirmed(input.accountKey)}
-                title={
-                  isAccountUnconfirmed(input.accountKey) ? "科目を確定してください" : undefined
-                }
+                disabled={pending || approvalBlocked !== undefined}
+                title={approvalBlocked?.remedy}
                 onClick={(e) => {
                   if (e.currentTarget.form?.reportValidity()) {
                     e.preventDefault();
@@ -374,7 +374,7 @@ export function JournalEditor({
                 確認済にする
               </Button>
             )}
-            {entry.status === "approved" && !grant && !settled && (
+            {JournalOperation.revertToDraft(entry) === null && (
               <Button
                 type="button"
                 variant="outline"

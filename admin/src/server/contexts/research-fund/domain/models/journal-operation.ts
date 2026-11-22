@@ -62,6 +62,24 @@ export function allExcludedRejection(
   return `選んだ仕訳はすべて${reasons}のため、${can}仕訳がありません。${remedies}`;
 }
 
+/**
+ * まとめて操作で、選んだ全件が操作を受け付けるか（1 件でも拒否があれば受け付けない。何も選んでいなければ false）。
+ * 除外として扱う理由（OperationRejection.bulkExclusion）は、サーバーと同じく全体を止めない。
+ * 画面のまとめて操作のボタンを出すかを、サーバーの判定と同じ judge で決めるために使う。
+ */
+export function acceptsAll<T extends OperableEntry>(
+  entries: readonly T[],
+  judge: (entry: T) => OperationRejection | null,
+): boolean {
+  return (
+    entries.length > 0 &&
+    entries.every((entry) => {
+      const rejection = judge(entry);
+      return rejection === null || rejection.bulkExclusion !== undefined;
+    })
+  );
+}
+
 /** まとめて操作で支給を選んだときの理由。支給は一覧で選べないので、画面と食い違った選択として扱う */
 const UNSUPPORTED_ENTRY = "この画面で扱えない仕訳が選ばれています";
 
