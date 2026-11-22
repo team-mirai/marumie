@@ -1,5 +1,6 @@
 import "server-only";
 
+import { CounterpartDeletion } from "@/server/contexts/report/domain/models/counterpart";
 import type { ICounterpartRepository } from "@/server/contexts/report/domain/repositories/counterpart-repository.interface";
 
 interface DeleteCounterpartResult {
@@ -8,10 +9,7 @@ interface DeleteCounterpartResult {
 }
 
 export class DeleteCounterpartUsecase {
-  constructor(
-    private repository: ICounterpartRepository,
-    private checkUsage = true,
-  ) {}
+  constructor(private repository: ICounterpartRepository) {}
 
   async execute(id: string): Promise<DeleteCounterpartResult> {
     const existing = await this.repository.findById(id);
@@ -19,16 +17,10 @@ export class DeleteCounterpartUsecase {
       return { success: false, errors: ["取引先が見つかりません"] };
     }
 
-    if (this.checkUsage) {
-      const usageCount = await this.repository.getUsageCount(id);
-      if (usageCount > 0) {
-        return {
-          success: false,
-          errors: [
-            `この取引先は${usageCount}件のトランザクションで使用されています。削除するには先に関連するトランザクションを削除してください。`,
-          ],
-        };
-      }
+    const usageCount = await this.repository.getUsageCount(id);
+    const rejectionReason = CounterpartDeletion.rejectionReason(usageCount);
+    if (rejectionReason) {
+      return { success: false, errors: [rejectionReason] };
     }
 
     await this.repository.delete(id);

@@ -3,6 +3,7 @@ import "client-only";
 
 import { useState } from "react";
 import { Button } from "@/client/components/ui";
+import { CounterpartDeletion } from "@/server/contexts/report/domain/models/counterpart";
 import { deleteCounterpartAction } from "@/server/contexts/report/presentation/actions/delete-counterpart";
 
 interface DeleteCounterpartButtonProps {
@@ -21,12 +22,14 @@ export function DeleteCounterpartButton({
   const [isDeleting, setIsDeleting] = useState(false);
 
   const handleDelete = async () => {
-    const message =
-      usageCount > 0
-        ? `「${counterpartName}」を削除しますか？\n\nこの取引先は${usageCount}件のTransactionで使用されています。\n削除すると、これらのTransactionの紐付けが解除されます。`
-        : `「${counterpartName}」を削除しますか？`;
+    // 使用中の取引先はサーバーが削除を拒否するので、確認の代わりにドメインの却下理由を出す
+    const rejectionReason = CounterpartDeletion.rejectionReason(usageCount);
+    if (rejectionReason) {
+      alert(`「${counterpartName}」は削除できません。\n\n${rejectionReason}`);
+      return;
+    }
 
-    if (!window.confirm(message)) {
+    if (!window.confirm(`「${counterpartName}」を削除しますか？`)) {
       return;
     }
 

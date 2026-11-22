@@ -109,9 +109,9 @@ export class PrismaCounterpartRepository implements ICounterpartRepository {
   async create(data: CreateCounterpartInput): Promise<Counterpart> {
     const counterpart = await this.prisma.counterpart.create({
       data: {
-        name: data.name.trim(),
-        postalCode: data.postalCode?.trim() || null,
-        address: data.address?.trim() || null,
+        name: data.name,
+        postalCode: data.postalCode,
+        address: data.address,
       },
     });
 
@@ -124,21 +124,13 @@ export class PrismaCounterpartRepository implements ICounterpartRepository {
       throw new Error(`無効なID形式です: ${id}`);
     }
 
-    const updateData: { name?: string; postalCode?: string | null; address?: string | null } = {};
-
-    if (data.name !== undefined) {
-      updateData.name = data.name.trim();
-    }
-    if (data.postalCode !== undefined) {
-      updateData.postalCode = data.postalCode?.trim() || null;
-    }
-    if (data.address !== undefined) {
-      updateData.address = data.address?.trim() || null;
-    }
-
     const counterpart = await this.prisma.counterpart.update({
       where: { id: bigIntId },
-      data: updateData,
+      data: {
+        name: data.name,
+        postalCode: data.postalCode,
+        address: data.address,
+      },
     });
 
     return this.mapToCounterpart(counterpart);
