@@ -63,22 +63,31 @@ test("ブラウザが置いた書類のキーを usecase に渡し、公開用�
   expect(revalidatePath).toHaveBeenCalledWith("/(auth)", "layout");
 });
 
-test("31枚以上はサーバー側でも弾き、保存を始めない", async () => {
+test("枚数の上限を超えたら usecase（ドメイン）の却下理由をそのまま伝え、書類の公開用の版を作り始めない", async () => {
+  createBatch.mockResolvedValue({
+    status: "invalid",
+    errors: [
+      {
+        path: "documents",
+        code: "RF_INVALID_DOCUMENT",
+        message: "1回にアップロードできるのは30枚までです",
+        severity: "error",
+      },
+    ],
+  });
   const files = Array.from({ length: 31 }, (_, index) => jpeg(`IMG_${index}.jpg`));
   await expect(createScanBatch("2", "1", files)).resolves.toEqual({
     success: false,
     error: "1回にアップロードできるのは30枚までです",
   });
-  expect(createBatch).not.toHaveBeenCalled();
   expect(notifyDocumentMasking).not.toHaveBeenCalled();
   expect(revalidatePath).not.toHaveBeenCalled();
 });
 
-test("ファイルが無ければ保存を始めない", async () => {
-  await expect(createScanBatch("2", "1", [])).resolves.toEqual({
-    success: false,
-    error: "書類を1枚以上選んでください",
-  });
+test("配列でない入力は usecase を呼ばずに弾く", async () => {
+  await expect(
+    createScanBatch("2", "1", "a.jpg" as unknown as Parameters<typeof createScanBatch>[2]),
+  ).resolves.toEqual({ success: false, error: "書類を1枚以上選んでください" });
   expect(createBatch).not.toHaveBeenCalled();
 });
 

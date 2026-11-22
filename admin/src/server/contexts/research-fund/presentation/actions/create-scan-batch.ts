@@ -3,10 +3,7 @@ import "server-only";
 import { revalidatePath } from "next/cache";
 import { requireResearchFundWriter } from "@/server/contexts/auth/presentation/loaders/require-research-fund-writer";
 import type { DocumentUpload } from "@/server/contexts/research-fund/domain/models/document-upload";
-import {
-  ScanBatchError,
-  SCAN_BATCH_MAX_DOCUMENTS,
-} from "@/server/contexts/research-fund/domain/models/scan-batch";
+import { ScanBatchError } from "@/server/contexts/research-fund/domain/models/scan-batch";
 import { requireJournalTarget } from "@/server/contexts/research-fund/presentation/loaders/load-journal-review";
 import { notifyDocumentMasking } from "@/server/contexts/research-fund/presentation/loaders/load-document-masking";
 import { buildCreateScanBatchUsecase } from "@/server/contexts/research-fund/presentation/loaders/load-scan";
@@ -24,13 +21,9 @@ export async function createScanBatch(
   const user = await requireResearchFundWriter(politicianId);
   if (!(await requireJournalTarget(politicianId, bookId)))
     return { success: false as const, error: "現在の対象帳簿を選択し直してください" };
-  if (!Array.isArray(uploads) || uploads.length === 0)
+  // 枚数の判定は usecase（ドメイン）が行う。ここでは配列でない入力だけを弾く
+  if (!Array.isArray(uploads))
     return { success: false as const, error: "書類を1枚以上選んでください" };
-  if (uploads.length > SCAN_BATCH_MAX_DOCUMENTS)
-    return {
-      success: false as const,
-      error: `1回にアップロードできるのは${SCAN_BATCH_MAX_DOCUMENTS}枚までです`,
-    };
   try {
     const documents = uploads.map((upload) => ({
       uploadKey: String(upload?.uploadKey),

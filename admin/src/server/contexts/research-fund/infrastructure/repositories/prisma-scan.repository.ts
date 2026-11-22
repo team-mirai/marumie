@@ -341,7 +341,15 @@ export class PrismaScanRepository implements ScanRepository {
     });
   }
 
-  async requeueJob(bookId: string, jobId: string): Promise<boolean> {
+  async findJobStatus(bookId: string, jobId: string): Promise<ScanJobStatus | null> {
+    const job = await this.prisma.researchFundScanJob.findFirst({
+      where: { id: BigInt(jobId), batch: { bookId: BigInt(bookId) } },
+      select: { status: true },
+    });
+    return job ? (job.status as ScanJobStatus) : null;
+  }
+
+  async requeueJob(bookId: string, jobId: string, from: ScanJobStatus): Promise<boolean> {
     return await this.prisma.$transaction(async (tx) => {
       // 書類の差し替え（#1827）と直列化するため、ジョブを戻す前にその書類の行をロックする
       await tx.$queryRaw`
@@ -351,7 +359,7 @@ export class PrismaScanRepository implements ScanRepository {
         FOR UPDATE OF d
       `;
       const result = await tx.researchFundScanJob.updateMany({
-        where: { id: BigInt(jobId), batch: { bookId: BigInt(bookId) }, status: "failed" },
+        where: { id: BigInt(jobId), batch: { bookId: BigInt(bookId) }, status: from },
         data: { status: "queued", error: null, startedAt: null, finishedAt: null },
       });
       return result.count === 1;

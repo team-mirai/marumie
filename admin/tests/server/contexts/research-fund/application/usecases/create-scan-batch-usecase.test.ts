@@ -28,6 +28,7 @@ describe("CreateScanBatchUsecase", () => {
     releaseStaleJobs: jest.fn(),
     completeJob: jest.fn(),
     failJob: jest.fn(),
+    findJobStatus: jest.fn(),
     requeueJob: jest.fn(),
     accounts: jest.fn(),
     payees: jest.fn(),

@@ -9,6 +9,7 @@ function setup() {
     create: jest.fn(),
     createMany: jest.fn(),
     findMany: jest.fn(),
+    findFirst: jest.fn(),
     update: jest.fn(),
     updateMany: jest.fn(),
     groupBy: jest.fn(),
@@ -780,10 +781,26 @@ test("長すぎるエラーは切り詰めて保存する", async () => {
   expect(job.update.mock.calls[0][0].data.error).toHaveLength(500);
 });
 
-test("失敗したジョブだけを待機中に戻す", async () => {
+test("帳簿のジョブの状態を返す", async () => {
+  const { job, repository } = setup();
+  job.findFirst.mockResolvedValue({ status: "failed" });
+  await expect(repository.findJobStatus("12", "11")).resolves.toBe("failed");
+  expect(job.findFirst).toHaveBeenCalledWith({
+    where: { id: BigInt(11), batch: { bookId: BigInt(12) } },
+    select: { status: true },
+  });
+});
+
+test("帳簿に無いジョブの状態は null", async () => {
+  const { job, repository } = setup();
+  job.findFirst.mockResolvedValue(null);
+  await expect(repository.findJobStatus("12", "11")).resolves.toBeNull();
+});
+
+test("判定した状態のままのジョブだけを待機中に戻す", async () => {
   const { tx, job, repository } = setup();
   job.updateMany.mockResolvedValue({ count: 1 });
-  await expect(repository.requeueJob("12", "11")).resolves.toBe(true);
+  await expect(repository.requeueJob("12", "11", "failed")).resolves.toBe(true);
   expect(job.updateMany).toHaveBeenCalledWith({
     where: { id: BigInt(11), batch: { bookId: BigInt(12) }, status: "failed" },
     data: { status: "queued", error: null, startedAt: null, finishedAt: null },
@@ -795,10 +812,10 @@ test("失敗したジョブだけを待機中に戻す", async () => {
   );
 });
 
-test("他の帳簿や失敗していないジョブは戻せない", async () => {
+test("他の帳簿や状態が変わったジョブは戻せない", async () => {
   const { job, repository } = setup();
   job.updateMany.mockResolvedValue({ count: 0 });
-  await expect(repository.requeueJob("12", "11")).resolves.toBe(false);
+  await expect(repository.requeueJob("12", "11", "failed")).resolves.toBe(false);
 });
 
 test("科目マスタをキーと種別だけにして返す", async () => {

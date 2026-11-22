@@ -126,7 +126,7 @@ export class ProcessScanJobsUsecase {
         userId: input.userId,
         // 読み直しジョブは、読み取りに成功したときだけ書類の下書きを置き換える。
         // ここまでの失敗はすべて failJob で終わるので、元の下書きは残る。
-        replaceDrafts: job.rereadInstruction !== null,
+        replaceDrafts: ScanJob.isReread(job),
         payeeId: payee?.id ?? null,
         newPayee: payee === null ? payeeToRegisterForIssuer(extracted.value.issuer, payees) : null,
         payeeAlias: payeeAliasFromIssuer(extracted.value.issuer),

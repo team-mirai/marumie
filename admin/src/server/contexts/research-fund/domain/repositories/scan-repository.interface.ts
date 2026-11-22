@@ -1,4 +1,7 @@
-import type { ScanBatchView } from "@/server/contexts/research-fund/domain/models/scan-batch";
+import type {
+  ScanBatchView,
+  ScanJobStatus,
+} from "@/server/contexts/research-fund/domain/models/scan-batch";
 import type { ScanDraftEntry } from "@/server/contexts/research-fund/domain/services/scan-journal-builder";
 import type { ResearchFundAccount } from "@/server/contexts/research-fund/domain/models/journal-posting";
 import type { RereadCandidate } from "@/server/contexts/research-fund/domain/models/scan-reread";
@@ -89,8 +92,13 @@ export interface ScanRepository {
   }): Promise<void>;
   /** ジョブを failed にしてエラーを記録する */
   failJob(jobId: string, error: string, rawJson?: unknown): Promise<void>;
-  /** failed のジョブを queued に戻す。戻せたら true */
-  requeueJob(bookId: string, jobId: string): Promise<boolean>;
+  /** 帳簿のジョブの状態。帳簿に無いジョブなら null */
+  findJobStatus(bookId: string, jobId: string): Promise<ScanJobStatus | null>;
+  /**
+   * ジョブを queued に戻す。ジョブがまだ from の状態のときだけ戻す（判定の後に状態が変わっていれば戻さない）。
+   * 戻せたら true
+   */
+  requeueJob(bookId: string, jobId: string, from: ScanJobStatus): Promise<boolean>;
   /**
    * 帳簿の議員の支払先（書類の発行元との照合に使う）。記録された表記の正規化した名称を添える。
    * 別の議員の支払先は返さない
