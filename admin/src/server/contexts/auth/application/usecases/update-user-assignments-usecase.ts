@@ -33,7 +33,7 @@ export class UpdateUserAssignmentsUsecase {
     try {
       normalizedIds = PoliticianAssignmentModel.normalize(politicianIds);
     } catch (e) {
-      throw new AuthError("INVALID_ASSIGNMENT", e instanceof Error ? e.message : String(e), e);
+      throw AuthError.rejected("INVALID_ASSIGNMENT", e instanceof Error ? e.message : String(e));
     }
 
     try {
