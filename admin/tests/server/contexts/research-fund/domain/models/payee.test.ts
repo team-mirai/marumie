@@ -1,8 +1,10 @@
 import {
   inheritedPayeeLink,
+  invoiceRegistrationNumbersConflict,
   isPayeeUnset,
   newPayeeFromIssuer,
   normalizeInvoiceRegistrationNumber,
+  normalizePayeeName,
   normalizePostalCode,
   payeeAccessRejection,
   payeeDeletionRejection,
@@ -199,5 +201,37 @@ describe("payeeDeletionRejection", () => {
   });
   it("公開中の仕訳があれば、その件数を理由にして削除させない", () => {
     expect(payeeDeletionRejection({ publishedCount: 2 })).toContain("公開中の仕訳（2件）");
+  });
+});
+
+describe("normalizePayeeName", () => {
+  it.each([
+    ["全角半角", "ＪＲ東日本", "JR東日本"],
+    ["英字の大小", "jr東日本", "JR東日本"],
+    ["空白", "東京 タクシー　株式会社", "東京タクシー株式会社"],
+    ["法人格の略記（㈱）", "東京タクシー㈱", "東京タクシー株式会社"],
+    ["法人格の略記（（株））", "東京タクシー（株）", "東京タクシー株式会社"],
+    ["法人格の略記（(有)）", "(有)山田書店", "有限会社山田書店"],
+  ])("%s の表記ゆれを吸収する", (_, a, b) => {
+    expect(normalizePayeeName(a)).toBe(normalizePayeeName(b));
+  });
+
+  it("法人格の位置・有無は吸収しない", () => {
+    expect(normalizePayeeName("株式会社東京タクシー")).not.toBe(normalizePayeeName("東京タクシー株式会社"));
+    expect(normalizePayeeName("東京タクシー")).not.toBe(normalizePayeeName("東京タクシー株式会社"));
+  });
+});
+
+describe("invoiceRegistrationNumbersConflict", () => {
+  it("両方に番号があって異なれば食い違う", () => {
+    expect(invoiceRegistrationNumbersConflict("T1234567890123", "T9999999999999")).toBe(true);
+  });
+  it.each([
+    ["同じ番号", "T1234567890123", "T1234567890123"],
+    ["片方だけ番号がある", "T1234567890123", null],
+    ["もう片方だけ番号がある", null, "T1234567890123"],
+    ["両方とも番号が無い", null, null],
+  ])("%s なら食い違わない", (_, a, b) => {
+    expect(invoiceRegistrationNumbersConflict(a, b)).toBe(false);
   });
 });

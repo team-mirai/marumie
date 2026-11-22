@@ -15,6 +15,7 @@ import type {
 } from "@/server/contexts/research-fund/domain/repositories/scan-repository.interface";
 import {
   inheritedPayeeLink,
+  invoiceRegistrationNumbersConflict,
   type Payee,
   type PayeeInput,
   type PayeeLink,
@@ -438,9 +439,10 @@ async function registerPayee(
     select: { id: true, invoiceRegistrationNumber: true },
   });
   if (
-    row.invoiceRegistrationNumber !== null &&
-    input.invoiceRegistrationNumber !== null &&
-    row.invoiceRegistrationNumber !== input.invoiceRegistrationNumber
+    invoiceRegistrationNumbersConflict(
+      row.invoiceRegistrationNumber,
+      input.invoiceRegistrationNumber,
+    )
   )
     return null;
   return { payeeId: String(row.id), source: "ai" };

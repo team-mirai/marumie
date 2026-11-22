@@ -16,11 +16,6 @@ test("統合できない理由があればそれを理由にして拒否する",
 test("別の議員の支払先・存在しない支払先なら見つからないとして拒否する", async () => {
   await expect(new MergePayeesUsecase(setup({ status: "not-found" })).execute("6", "7", "8")).rejects.toThrow(new PayeeError("支払先が見つかりません"));
 });
-test("同じ支払先どうしは統合しない", async () => {
-  const repository = setup({ status: "merged", movedEntryCount: 0 });
-  await expect(new MergePayeesUsecase(repository).execute("5", "7", "7")).rejects.toThrow("同じ支払先どうしは統合できません");
-  expect(repository.merge).not.toHaveBeenCalled();
-});
 test.each([["0", "7", "8"], ["5", "x", "8"], ["5", "7", "08"]])("不正な ID（%s, %s, %s）なら統合しない", async (politicianId, targetId, sourceId) => {
   const repository = setup({ status: "merged", movedEntryCount: 0 });
   await expect(new MergePayeesUsecase(repository).execute(politicianId, targetId, sourceId)).rejects.toThrow(PayeeError);

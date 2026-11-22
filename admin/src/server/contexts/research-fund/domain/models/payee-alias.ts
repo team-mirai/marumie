@@ -1,9 +1,9 @@
 import type { ReceiptIssuer } from "@/server/contexts/research-fund/domain/models/extracted-receipt";
 import {
+  normalizePayeeName,
   PAYEE_NAME_MAX_LENGTH,
   type PayeeLinkSource,
 } from "@/server/contexts/research-fund/domain/models/payee";
-import { normalizePayeeName } from "@/server/contexts/research-fund/domain/services/issuer-payee-matcher";
 
 /**
  * 支払先の表記（書類から読み取った発行元の名称のうち、その支払先を指すと分かったもの）の業務ルール（#1727）。
