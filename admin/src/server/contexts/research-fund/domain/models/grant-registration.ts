@@ -1,4 +1,8 @@
 import { isCalendarDate } from "@/server/contexts/research-fund/domain/models/calendar-date";
+import {
+  INVALID_JOURNAL_AMOUNT_MESSAGE,
+  isJournalAmount,
+} from "@/server/contexts/research-fund/domain/models/journal-amount";
 import type { JournalEntryStatus } from "@/server/contexts/research-fund/domain/models/journal-entry";
 import type { JournalLine } from "@/server/contexts/research-fund/domain/models/journal-posting";
 import {
@@ -29,6 +33,22 @@ export function grantEntryDate(month: string, termStart: string): string {
   return month === termStart.slice(0, 7) ? termStart : `${month}-01`;
 }
 
+/** 支給日として選べる範囲（両端を含む YYYY-MM-DD）。 */
+interface GrantEntryDateRange {
+  first: string;
+  last: string;
+}
+
+/**
+ * ある月の支給日として選べる範囲。その月の中で、当選月は当選日から（在職前の収入を計上しないため）。
+ * 画面の日付入力の範囲と、サーバーの検証（validateGrantEntryDate）の両方がこれを使う。
+ */
+export function grantEntryDateRange(month: string, termStart: string): GrantEntryDateRange {
+  const monthEnd = new Date(`${month}-01T00:00:00.000Z`);
+  monthEnd.setUTCMonth(monthEnd.getUTCMonth() + 1, 0);
+  return { first: grantEntryDate(month, termStart), last: monthEnd.toISOString().slice(0, 10) };
+}
+
 /**
  * 手入力された支給日を検証する。画面を経由しない呼び出しも同じ判定で弾くため、
  * UI の min/max ではなくこの関数を唯一の根拠にする。
@@ -44,14 +64,15 @@ export function validateGrantEntryDate(
       RF_ERROR_CODES.INVALID_DATE,
       "支給日は実在する日をYYYY-MM-DD形式で指定してください",
     );
-  if (entryDate.slice(0, 7) !== month)
+  const range = grantEntryDateRange(month, termStart);
+  if (entryDate.slice(0, 7) !== month || entryDate > range.last)
     return invalidResearchFundResult(
       "entryDate",
       RF_ERROR_CODES.INVALID_DATE,
       "支給日はその月の日付を指定してください",
     );
   // 当選月は当選日より前に在職前の収入を計上しない。
-  if (entryDate < grantEntryDate(month, termStart))
+  if (entryDate < range.first)
     return invalidResearchFundResult(
       "entryDate",
       RF_ERROR_CODES.INVALID_DATE,
@@ -63,13 +84,14 @@ export function validateGrantEntryDate(
 /**
  * 手入力された支給額を検証する。実際の振込額は自動計算の額と一致しないことがあるため変更を許すが、
  * 画面を経由しない呼び出しも同じ判定で弾くため、UI の min/step ではなくこの関数を唯一の根拠にする。
+ * 範囲は仕訳の金額と同じ（支給額はそのまま仕訳の金額になるため）。
  */
 export function validateGrantAmount(amount: unknown): ResearchFundResult<number> {
-  if (typeof amount !== "number" || !Number.isSafeInteger(amount) || amount < 1)
+  if (typeof amount !== "number" || !isJournalAmount(amount))
     return invalidResearchFundResult(
       "amount",
       RF_ERROR_CODES.INVALID_AMOUNT,
-      "金額は1円以上の整数で指定してください",
+      INVALID_JOURNAL_AMOUNT_MESSAGE,
     );
   return { status: "valid", value: amount };
 }
