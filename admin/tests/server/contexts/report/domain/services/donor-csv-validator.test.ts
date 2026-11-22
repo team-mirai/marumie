@@ -189,6 +189,7 @@ describe("DonorCsvValidator", () => {
 
       expect(result[0].status).toBe("type_mismatch");
       expect(result[0].errors[0]).toContain("指定できません");
+      expect(result[0].errors[0]).not.toContain("individual-donations");
     });
 
     it("should validate corporation donor without occupation", () => {
