@@ -1,13 +1,17 @@
 import "server-only";
 
 import {
-  collectMembershipOrganizationSlugs,
+  collectResearchFundSyncOrganizationSlugs,
   countImportingData,
+  decideResearchFundSyncImport,
+  type ResearchFundSyncImportDecision,
   type ResearchFundSyncImportPlan,
   type ResearchFundSyncImportPlanPolitician,
 } from "@/server/contexts/research-fund/domain/models/research-fund-sync-import";
-import type { ResearchFundSyncExport } from "@/server/contexts/research-fund/domain/models/research-fund-sync-export";
-import type { IResearchFundSyncImportRepository } from "@/server/contexts/research-fund/domain/repositories/research-fund-sync-import-repository.interface";
+import type {
+  IResearchFundSyncImportRepository,
+  ResearchFundSyncTargetPolitician,
+} from "@/server/contexts/research-fund/domain/repositories/research-fund-sync-import-repository.interface";
 import { loadResearchFundSyncImportFile } from "@/server/contexts/research-fund/application/services/load-research-fund-sync-import-file";
 import { isSyncImportStorageKey } from "@/server/contexts/shared/domain/models/sync-import-file";
 import type { ISyncImportFileStorage } from "@/server/contexts/shared/domain/repositories/sync-import-file-storage.interface";
@@ -56,25 +60,21 @@ export class PreviewResearchFundSyncImportUsecase {
       storageKey,
     );
 
-    const existing = await this.repository.findPoliticiansBySlugs(
-      file.politicians.map((politician) => politician.profile.slug),
-    );
-    const existingBySlug = new Map(existing.map((politician) => [politician.slug, politician]));
-    const existingOrganizationSlugs = new Set(
-      await this.repository.findExistingOrganizationSlugs([
-        ...new Set(file.politicians.flatMap(collectMembershipOrganizationSlugs)),
-      ]),
+    const [existing, existingOrganizationSlugs] = await Promise.all([
+      this.repository.findPoliticiansBySlugs(
+        file.politicians.map((politician) => politician.profile.slug),
+      ),
+      this.repository.findExistingOrganizationSlugs(collectResearchFundSyncOrganizationSlugs(file)),
+    ]);
+    const decisions = decideResearchFundSyncImport(
+      file,
+      new Map(existing.map((politician) => [politician.slug, politician])),
+      new Set(existingOrganizationSlugs),
     );
 
     const politicians: ResearchFundSyncImportPlanPolitician[] = [];
-    for (const politician of file.politicians) {
-      politicians.push(
-        await this.planPolitician(
-          politician,
-          existingBySlug.get(politician.profile.slug),
-          existingOrganizationSlugs,
-        ),
-      );
+    for (const decision of decisions) {
+      politicians.push(await this.planPolitician(decision));
     }
 
     return {
@@ -86,20 +86,19 @@ export class PreviewResearchFundSyncImportUsecase {
   }
 
   private async planPolitician(
-    politician: ResearchFundSyncExport["politicians"][number],
-    target: { id: string; name: string } | undefined,
-    existingOrganizationSlugs: Set<string>,
+    decision: ResearchFundSyncImportDecision<ResearchFundSyncTargetPolitician>,
   ): Promise<ResearchFundSyncImportPlanPolitician> {
+    const { politician } = decision;
     const { slug } = politician.profile;
     const importing = countImportingData(politician);
 
-    if (target) {
+    if (decision.mode === "replace") {
       return {
         mode: "replace",
         slug,
-        name: target.name,
+        name: decision.target.name,
         importing,
-        deleting: await this.repository.countPoliticianData(target.id),
+        deleting: await this.repository.countPoliticianData(decision.target.id),
       };
     }
 
@@ -108,12 +107,8 @@ export class PreviewResearchFundSyncImportUsecase {
       slug,
       name: politician.profile.name,
       importing,
-      creatingMembershipCount: politician.memberships.filter((membership) =>
-        existingOrganizationSlugs.has(membership.organizationSlug),
-      ).length,
-      skippedOrganizationSlugs: collectMembershipOrganizationSlugs(politician).filter(
-        (organizationSlug) => !existingOrganizationSlugs.has(organizationSlug),
-      ),
+      creatingMembershipCount: decision.memberships.length,
+      skippedOrganizationSlugs: decision.skippedOrganizationSlugs,
     };
   }
 }

@@ -16,9 +16,12 @@ import type {
   ResearchFundSyncPolitician,
   ResearchFundSyncPromptVersion,
 } from "@/server/contexts/research-fund/domain/models/research-fund-sync-export";
-import type {
-  ResearchFundSyncDeletingCounts,
-  ResearchFundSyncImportResultPolitician,
+import {
+  collectResearchFundSyncOrganizationSlugs,
+  decideResearchFundSyncImport,
+  type ResearchFundSyncDeletingCounts,
+  type ResearchFundSyncImportDecision,
+  type ResearchFundSyncImportResultPolitician,
 } from "@/server/contexts/research-fund/domain/models/research-fund-sync-import";
 import type {
   IResearchFundSyncImportRepository,
@@ -212,15 +215,19 @@ export class PrismaResearchFundSyncImportRepository implements IResearchFundSync
             tx,
             file.politicians.map((politician) => politician.profile.slug),
           );
+          const organizationIdBySlug = await findOrganizationIdsBySlugs(
+            tx,
+            collectResearchFundSyncOrganizationSlugs(file),
+          );
+          // 置き換えか新規か・作る所属履歴は、プレビューと同じドメインの判定に従う。
+          const decisions = decideResearchFundSyncImport(
+            file,
+            existingIdBySlug,
+            new Set(organizationIdBySlug.keys()),
+          );
           const results: ResearchFundSyncImportResultPolitician[] = [];
-          for (const politician of file.politicians) {
-            results.push(
-              await replacePolitician(
-                tx,
-                politician,
-                existingIdBySlug.get(politician.profile.slug),
-              ),
-            );
+          for (const decision of decisions) {
+            results.push(await replacePolitician(tx, decision, organizationIdBySlug));
           }
           return results;
         },
@@ -268,33 +275,45 @@ async function lockPoliticians(
   return existingIdBySlug;
 }
 
+/** 政治団体の slug → ID の対応（この環境にあるものだけ）。 */
+async function findOrganizationIdsBySlugs(
+  tx: Prisma.TransactionClient,
+  slugs: string[],
+): Promise<Map<string, bigint>> {
+  if (slugs.length === 0) return new Map();
+  const organizations = await tx.politicalOrganization.findMany({
+    where: { slug: { in: slugs } },
+    select: { id: true, slug: true },
+  });
+  return new Map(organizations.map((org) => [org.slug, org.id]));
+}
+
 /** 議員室 1 件分を置き換える（議員がいなければ作る）。既存の議員の行は lockPoliticians でロック済みであること。 */
 async function replacePolitician(
   tx: Prisma.TransactionClient,
-  politician: ResearchFundSyncPolitician,
-  existingId: bigint | undefined,
+  decision: ResearchFundSyncImportDecision<bigint>,
+  organizationIdBySlug: ReadonlyMap<string, bigint>,
 ): Promise<ResearchFundSyncImportResultPolitician> {
-  const { slug } = politician.profile;
+  const { politician } = decision;
 
   let politicianId: bigint;
   let deletedJournalEntryCount = 0;
   let createdMembershipCount = 0;
 
-  if (existingId !== undefined) {
+  if (decision.mode === "replace") {
     // 既存の議員はプロフィール・所属履歴・担当ユーザーを変えず、調研費データだけを入れ直す。
-    politicianId = existingId;
+    politicianId = decision.target;
     deletedJournalEntryCount = await deleteResearchFundData(tx, politicianId);
   } else {
-    const created = await createPolitician(tx, politician);
-    politicianId = created.politicianId;
-    createdMembershipCount = created.membershipCount;
+    politicianId = await createPolitician(tx, decision, organizationIdBySlug);
+    createdMembershipCount = decision.memberships.length;
   }
 
   await insertResearchFundData(tx, politicianId, politician);
 
   return {
-    slug,
-    mode: existingId !== undefined ? "replace" : "create",
+    slug: politician.profile.slug,
+    mode: decision.mode,
     deletedJournalEntryCount,
     importedJournalEntryCount: politician.books.reduce(
       (sum, book) => sum + book.journalEntries.length,
@@ -330,14 +349,14 @@ async function deleteResearchFundData(
 }
 
 /**
- * ファイルのプロフィール（顔写真なし）で議員を作る。
- * 所属履歴は、この環境に同じ slug の政治団体があるものだけ作る。
+ * ファイルのプロフィール（顔写真なし）で議員を作り、ドメインが決めた所属履歴を作る。作った議員の ID を返す。
  */
 async function createPolitician(
   tx: Prisma.TransactionClient,
-  politician: ResearchFundSyncPolitician,
-): Promise<{ politicianId: bigint; membershipCount: number }> {
-  const { profile } = politician;
+  decision: Extract<ResearchFundSyncImportDecision<bigint>, { mode: "create" }>,
+  organizationIdBySlug: ReadonlyMap<string, bigint>,
+): Promise<bigint> {
+  const { profile } = decision.politician;
   const created = await tx.politician.create({
     data: {
       slug: profile.slug,
@@ -358,36 +377,25 @@ async function createPolitician(
     select: { id: true },
   });
 
-  const organizationSlugs = [
-    ...new Set(politician.memberships.map((membership) => membership.organizationSlug)),
-  ];
-  const organizations =
-    organizationSlugs.length === 0
-      ? []
-      : await tx.politicalOrganization.findMany({
-          where: { slug: { in: organizationSlugs } },
-          select: { id: true, slug: true },
-        });
-  const organizationIdBySlug = new Map(organizations.map((org) => [org.slug, org.id]));
-
-  const memberships = politician.memberships.flatMap((membership) => {
+  const memberships = decision.memberships.map((membership) => {
     const politicalOrganizationId = organizationIdBySlug.get(membership.organizationSlug);
-    if (politicalOrganizationId === undefined) return [];
-    return [
-      {
-        politicianId: created.id,
-        politicalOrganizationId,
-        startedOn: toDateOnly(membership.startedOn),
-        endedOn: toNullableDateOnly(membership.endedOn),
-        ...toTimestamps(membership),
-      },
-    ];
+    // ドメインはこの環境にある政治団体の所属履歴だけを選んでいる。
+    if (politicalOrganizationId === undefined) {
+      throw new Error(`政治団体が見つかりません: ${membership.organizationSlug}`);
+    }
+    return {
+      politicianId: created.id,
+      politicalOrganizationId,
+      startedOn: toDateOnly(membership.startedOn),
+      endedOn: toNullableDateOnly(membership.endedOn),
+      ...toTimestamps(membership),
+    };
   });
   if (memberships.length > 0) {
     await tx.politicianOrgMembership.createMany({ data: memberships });
   }
 
-  return { politicianId: created.id, membershipCount: memberships.length };
+  return created.id;
 }
 
 /**

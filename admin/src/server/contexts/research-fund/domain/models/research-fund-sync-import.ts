@@ -8,7 +8,12 @@
  * （shared/domain/models/sync-import-file）。
  */
 
-import type { ResearchFundSyncPolitician } from "@/server/contexts/research-fund/domain/models/research-fund-sync-export";
+import type {
+  ResearchFundSyncExport,
+  ResearchFundSyncMembership,
+  ResearchFundSyncPolitician,
+} from "@/server/contexts/research-fund/domain/models/research-fund-sync-export";
+import { SyncImportValidationError } from "@/server/contexts/shared/domain/models/sync-import-file";
 
 /**
  * 取り込みが対応しているファイル形式のバージョン。
@@ -106,10 +111,119 @@ export function countImportingData(
 }
 
 /** ファイルの所属履歴の所属先（重複を除き、出現順）。 */
-export function collectMembershipOrganizationSlugs(
-  politician: ResearchFundSyncPolitician,
-): string[] {
+function collectMembershipOrganizationSlugs(politician: ResearchFundSyncPolitician): string[] {
   return [...new Set(politician.memberships.map((membership) => membership.organizationSlug))];
+}
+
+/**
+ * 議員室 1 件分の取り込み方。プレビュー（dry-run）と実行の両方がこれに従うので、見せた内容と結果が食い違わない。
+ * - replace: この環境に同じ slug の議員（target）がいる。調研費データだけを入れ直し、プロフィール・所属履歴は変えない
+ * - create: いない。ファイルのプロフィールで議員を作り、memberships の所属履歴だけを作る
+ */
+export type ResearchFundSyncImportDecision<TTarget> =
+  | {
+      mode: "replace";
+      politician: ResearchFundSyncPolitician;
+      target: TTarget;
+    }
+  | {
+      mode: "create";
+      politician: ResearchFundSyncPolitician;
+      /** 作る所属履歴（この環境に同じ slug の政治団体があるものだけ。ファイルの順）。 */
+      memberships: ResearchFundSyncMembership[];
+      /** この環境に無いため所属履歴を作らない政治団体の slug（重複を除き、出現順）。 */
+      skippedOrganizationSlugs: string[];
+    };
+
+/**
+ * ファイルの議員室ごとに、置き換えるか新規に作るか、作るならどの所属履歴を作るかを決める（ファイルの順）。
+ *
+ * @param existingTargetBySlug この環境にいる議員（slug で引く）。プレビューは表示用の情報、実行はロックした行を渡す
+ * @param existingOrganizationSlugs この環境にある政治団体の slug
+ */
+export function decideResearchFundSyncImport<TTarget>(
+  file: ResearchFundSyncExport,
+  existingTargetBySlug: ReadonlyMap<string, TTarget>,
+  existingOrganizationSlugs: ReadonlySet<string>,
+): ResearchFundSyncImportDecision<TTarget>[] {
+  return file.politicians.map((politician) => {
+    const target = existingTargetBySlug.get(politician.profile.slug);
+    if (target !== undefined) {
+      return { mode: "replace", politician, target };
+    }
+    return {
+      mode: "create",
+      politician,
+      memberships: politician.memberships.filter((membership) =>
+        existingOrganizationSlugs.has(membership.organizationSlug),
+      ),
+      skippedOrganizationSlugs: collectMembershipOrganizationSlugs(politician).filter(
+        (organizationSlug) => !existingOrganizationSlugs.has(organizationSlug),
+      ),
+    };
+  });
+}
+
+/** ファイルの全議員室の所属先の政治団体 slug（重複を除き、出現順）。この環境にあるかを引くのに使う。 */
+export function collectResearchFundSyncOrganizationSlugs(file: ResearchFundSyncExport): string[] {
+  return [...new Set(file.politicians.flatMap(collectMembershipOrganizationSlugs))];
+}
+
+/** ファイルの仕訳が参照する科目マスタのキー（重複を除き、出現順）。 */
+interface ResearchFundSyncMasterKeys {
+  accountKeys: string[];
+  legalCategoryKeys: string[];
+}
+
+/**
+ * ファイルの仕訳が参照する科目・法定区分のキーを集める。
+ * 科目・法定区分はマスタ（環境ごとに seed される）を参照するので、取り込み先に同じキーが要る。
+ */
+export function collectResearchFundSyncMasterKeys(
+  file: ResearchFundSyncExport,
+): ResearchFundSyncMasterKeys {
+  const entries = file.politicians.flatMap((politician) =>
+    politician.books.flatMap((book) => book.journalEntries),
+  );
+  return {
+    accountKeys: [
+      ...new Set(entries.flatMap((entry) => entry.lines.map((line) => line.accountKey))),
+    ],
+    legalCategoryKeys: [
+      ...new Set(
+        entries.flatMap((entry) =>
+          entry.legalCategoryOverride ? [entry.legalCategoryOverride.legalCategoryKey] : [],
+        ),
+      ),
+    ],
+  };
+}
+
+/**
+ * ファイルが参照する科目・法定区分が、この環境の科目マスタに全てあるかを確かめる。
+ * 無いキーがあれば取り込めないので、理由を添えて SyncImportValidationError を投げる。
+ */
+export function assertResearchFundSyncMasterKeysExist(
+  required: ResearchFundSyncMasterKeys,
+  existing: ResearchFundSyncMasterKeys,
+): void {
+  const missingAccountKeys = required.accountKeys.filter(
+    (key) => !existing.accountKeys.includes(key),
+  );
+  if (missingAccountKeys.length > 0) {
+    throw new SyncImportValidationError(
+      `この環境の科目マスタに無い科目があります: ${missingAccountKeys.join(", ")}`,
+    );
+  }
+
+  const missingLegalCategoryKeys = required.legalCategoryKeys.filter(
+    (key) => !existing.legalCategoryKeys.includes(key),
+  );
+  if (missingLegalCategoryKeys.length > 0) {
+    throw new SyncImportValidationError(
+      `この環境の科目マスタに無い法定区分があります: ${missingLegalCategoryKeys.join(", ")}`,
+    );
+  }
 }
 
 /** 確認入力の区切り（カンマ・読点・空白）。 */
