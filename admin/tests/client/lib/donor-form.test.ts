@@ -73,6 +73,17 @@ describe("isDonorFormValid", () => {
       }),
     ).toBe(true);
   });
+
+  it("名前が上限を超えていれば無効（サーバーと同じ検証）", () => {
+    expect(
+      isDonorFormValid({
+        donorType: "corporation",
+        name: "あ".repeat(121),
+        address: "",
+        occupation: "",
+      }),
+    ).toBe(false);
+  });
 });
 
 describe("toDonorFormSubmitData", () => {

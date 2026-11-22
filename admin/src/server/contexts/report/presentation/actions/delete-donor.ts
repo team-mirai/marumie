@@ -18,7 +18,7 @@ export async function deleteDonorAction(id: string): Promise<DeleteDonorActionRe
 
   try {
     const repository = new PrismaDonorRepository(prisma);
-    const usecase = new DeleteDonorUsecase(repository, false);
+    const usecase = new DeleteDonorUsecase(repository);
 
     const result = await usecase.execute(id);
 

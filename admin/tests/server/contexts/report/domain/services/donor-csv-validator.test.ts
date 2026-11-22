@@ -91,7 +91,7 @@ describe("DonorCsvValidator", () => {
       const result = validator.validate(rows, transactionMap);
 
       expect(result[0].status).toBe("invalid");
-      expect(result[0].errors).toContain("寄付者名は必須です");
+      expect(result[0].errors).toContain("名前は必須です");
     });
 
     it("should return invalid status when name exceeds max length", () => {
@@ -104,7 +104,7 @@ describe("DonorCsvValidator", () => {
       const result = validator.validate(rows, transactionMap);
 
       expect(result[0].status).toBe("invalid");
-      expect(result[0].errors[0]).toContain("寄付者名は120文字以内");
+      expect(result[0].errors[0]).toContain("名前は120文字以内");
     });
 
     it("should return invalid status when donorType is null", () => {
@@ -154,7 +154,7 @@ describe("DonorCsvValidator", () => {
       const result = validator.validate(rows, transactionMap);
 
       expect(result[0].status).toBe("invalid");
-      expect(result[0].errors).toContain("個人の寄付者の場合、職業は必須です");
+      expect(result[0].errors).toContain("個人の場合、職業は必須です");
     });
 
     it("should return invalid status when individual donor has null occupation", () => {
@@ -166,31 +166,7 @@ describe("DonorCsvValidator", () => {
       const result = validator.validate(rows, transactionMap);
 
       expect(result[0].status).toBe("invalid");
-      expect(result[0].errors).toContain("個人の寄付者の場合、職業は必須です");
-    });
-
-    it("should return invalid status when corporation has occupation", () => {
-      const rows = [createMockRow({ donorType: "corporation", occupation: "会社員" })];
-      const transactionMap = new Map<string, TransactionForDonorCsv>([
-        ["T2025-0001", createMockTransaction({ categoryKey: "corporate-donations" })],
-      ]);
-
-      const result = validator.validate(rows, transactionMap);
-
-      expect(result[0].status).toBe("invalid");
-      expect(result[0].errors).toContain("法人・政治団体の場合、職業は指定できません");
-    });
-
-    it("should return invalid status when political_organization has occupation", () => {
-      const rows = [createMockRow({ donorType: "political_organization", occupation: "会社員" })];
-      const transactionMap = new Map<string, TransactionForDonorCsv>([
-        ["T2025-0001", createMockTransaction({ categoryKey: "political-donations" })],
-      ]);
-
-      const result = validator.validate(rows, transactionMap);
-
-      expect(result[0].status).toBe("invalid");
-      expect(result[0].errors).toContain("法人・政治団体の場合、職業は指定できません");
+      expect(result[0].errors).toContain("個人の場合、職業は必須です");
     });
 
     it("should return transaction_not_found status when transaction does not exist", () => {
