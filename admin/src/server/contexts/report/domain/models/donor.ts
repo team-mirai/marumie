@@ -83,35 +83,109 @@ export function buildDonorMatchKey(
   return JSON.stringify({ name, address: address ?? "", donorType });
 }
 
-export function validateDonorInput(input: CreateDonorInput): string[] {
-  const errors: string[] = [];
-  const trimmedName = input.name?.trim() ?? "";
-  const trimmedAddress = input.address?.trim() ?? "";
-  const trimmedOccupation = input.occupation?.trim() ?? "";
+/**
+ * 寄付者の入力値。CSV の行のように種別が読み取れなかった入力も扱うため、種別は null を許す。
+ */
+interface DonorInputDraft {
+  donorType: DonorType | null;
+  name: string;
+  address: string | null;
+  occupation: string | null;
+}
 
-  if (trimmedName.length === 0) {
+/**
+ * 寄付者の入力を保存する形に正規化する。画面からの作成・更新と CSV の取り込みは必ずここを通す。
+ *
+ * - 名前・住所・職業の前後の空白を除く
+ * - 空の住所・職業は未登録（null）とする
+ * - 職業は個人だけが持つ。個人以外に入力された職業は保存しない
+ */
+export function normalizeDonorInput<T extends DonorType | null>(
+  input: DonorInputDraft & { donorType: T },
+): DonorInputDraft & { donorType: T } {
+  const occupation = input.occupation?.trim() || null;
+  return {
+    donorType: input.donorType,
+    name: input.name.trim(),
+    address: input.address?.trim() || null,
+    occupation: input.donorType === null || input.donorType === "individual" ? occupation : null,
+  };
+}
+
+/**
+ * 正規化済みの寄付者の入力を検証し、却下理由を返す（問題が無ければ空配列）。
+ * 個人には職業が必須（政治資金規正法上、個人の寄附には職業の記載が必要）。
+ */
+export function validateDonorInput(input: DonorInputDraft): string[] {
+  const errors: string[] = [];
+
+  if (input.name.length === 0) {
     errors.push("名前は必須です");
-  } else if (trimmedName.length > MAX_NAME_LENGTH) {
+  } else if (input.name.length > MAX_NAME_LENGTH) {
     errors.push(`名前は${MAX_NAME_LENGTH}文字以内で入力してください`);
   }
 
-  if (trimmedAddress.length > MAX_ADDRESS_LENGTH) {
-    errors.push(`住所は${MAX_ADDRESS_LENGTH}文字以内で入力してください`);
-  }
-
-  if (input.donorType === "individual") {
-    if (trimmedOccupation.length === 0) {
-      errors.push("個人の場合、職業は必須です");
-    } else if (trimmedOccupation.length > MAX_OCCUPATION_LENGTH) {
-      errors.push(`職業は${MAX_OCCUPATION_LENGTH}文字以内で入力してください`);
-    }
-  } else if (trimmedOccupation.length > 0) {
-    errors.push("職業は個人の場合のみ入力できます");
-  }
-
-  if (!isValidDonorType(input.donorType)) {
+  if (input.donorType === null) {
+    errors.push("寄付者種別は必須です");
+  } else if (!isValidDonorType(input.donorType)) {
     errors.push("無効な寄付者種別です");
   }
 
+  if (input.address && input.address.length > MAX_ADDRESS_LENGTH) {
+    errors.push(`住所は${MAX_ADDRESS_LENGTH}文字以内で入力してください`);
+  }
+
+  if (input.donorType === "individual" && !input.occupation) {
+    errors.push("個人の場合、職業は必須です");
+  } else if (input.occupation && input.occupation.length > MAX_OCCUPATION_LENGTH) {
+    errors.push(`職業は${MAX_OCCUPATION_LENGTH}文字以内で入力してください`);
+  }
+
   return errors;
+}
+
+/**
+ * 寄付者の入力を正規化して検証する。画面からの作成・更新はここを通す。
+ */
+export function prepareDonorInput(
+  input: CreateDonorInput,
+): { success: true; input: CreateDonorInput } | { success: false; errors: string[] } {
+  const normalized = normalizeDonorInput(input);
+  const errors = validateDonorInput(normalized);
+  return errors.length > 0 ? { success: false, errors } : { success: true, input: normalized };
+}
+
+/**
+ * 同じ寄付者（buildDonorMatchKey が一致する寄付者）が既に登録されていれば却下理由を返す。
+ * 更新では自分自身を重複に数えず、名前・住所・種別を変えない更新は確認しない
+ * （既に重複して登録されている寄付者でも、職業などの修正は止めない）。
+ *
+ * @param candidate 登録・更新しようとしている寄付者
+ * @param existingDonors 同一性の候補として取得した既存の寄付者
+ * @param current 更新前の寄付者（作成では指定しない）
+ */
+export function duplicateDonorRejectionReason(
+  candidate: Pick<Donor, "name" | "address" | "donorType">,
+  existingDonors: readonly Donor[],
+  current?: Donor,
+): string | null {
+  const key = buildDonorMatchKey(candidate.name, candidate.address, candidate.donorType);
+  if (current && buildDonorMatchKey(current.name, current.address, current.donorType) === key) {
+    return null;
+  }
+  const duplicate = existingDonors.some(
+    (donor) =>
+      donor.id !== current?.id &&
+      buildDonorMatchKey(donor.name, donor.address, donor.donorType) === key,
+  );
+  return duplicate ? "同じ名前・住所・種別の組み合わせが既に存在します" : null;
+}
+
+/**
+ * 寄付者を削除できなければ却下理由を返す。
+ * 取引に使われている寄付者も削除できる。削除すると取引との紐付けが外れるので、
+ * 画面の確認ダイアログで使用件数を示して利用者に判断を委ねる。
+ */
+export function donorDeletionRejectionReason(_usageCount: number): string | null {
+  return null;
 }

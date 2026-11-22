@@ -1,5 +1,6 @@
 import "server-only";
 
+import { donorDeletionRejectionReason } from "@/server/contexts/report/domain/models/donor";
 import type { IDonorRepository } from "@/server/contexts/report/domain/repositories/donor-repository.interface";
 
 interface DeleteDonorResult {
@@ -8,10 +9,7 @@ interface DeleteDonorResult {
 }
 
 export class DeleteDonorUsecase {
-  constructor(
-    private repository: IDonorRepository,
-    private checkUsage = true,
-  ) {}
+  constructor(private repository: IDonorRepository) {}
 
   async execute(id: string): Promise<DeleteDonorResult> {
     const existing = await this.repository.findById(id);
@@ -19,16 +17,10 @@ export class DeleteDonorUsecase {
       return { success: false, errors: ["寄付者が見つかりません"] };
     }
 
-    if (this.checkUsage) {
-      const usageCount = await this.repository.getUsageCount(id);
-      if (usageCount > 0) {
-        return {
-          success: false,
-          errors: [
-            `この寄付者は${usageCount}件のトランザクションで使用されています。削除するには先に関連するトランザクションを削除してください。`,
-          ],
-        };
-      }
+    const usageCount = await this.repository.getUsageCount(id);
+    const rejectionReason = donorDeletionRejectionReason(usageCount);
+    if (rejectionReason) {
+      return { success: false, errors: [rejectionReason] };
     }
 
     await this.repository.delete(id);

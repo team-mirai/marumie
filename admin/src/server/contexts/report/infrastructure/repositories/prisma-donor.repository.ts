@@ -84,26 +84,6 @@ export class PrismaDonorRepository implements IDonorRepository {
     return this.mapToDonor(donor);
   }
 
-  async findByNameAddressAndType(
-    name: string,
-    address: string | null,
-    donorType: DonorType,
-  ): Promise<Donor | null> {
-    const donor = await this.prisma.donor.findFirst({
-      where: {
-        name,
-        address,
-        donorType: this.mapToPrismaDonorType(donorType),
-      },
-    });
-
-    if (!donor) {
-      return null;
-    }
-
-    return this.mapToDonor(donor);
-  }
-
   async findAll(filters?: DonorFilters): Promise<Donor[]> {
     const where = this.buildWhereClause(filters);
 
@@ -155,9 +135,9 @@ export class PrismaDonorRepository implements IDonorRepository {
     const donor = await this.prisma.donor.create({
       data: {
         donorType: this.mapToPrismaDonorType(data.donorType),
-        name: data.name.trim(),
-        address: data.address?.trim() || null,
-        occupation: data.occupation?.trim() || null,
+        name: data.name,
+        address: data.address,
+        occupation: data.occupation,
       },
     });
 
@@ -181,13 +161,13 @@ export class PrismaDonorRepository implements IDonorRepository {
       updateData.donorType = this.mapToPrismaDonorType(data.donorType);
     }
     if (data.name !== undefined) {
-      updateData.name = data.name.trim();
+      updateData.name = data.name;
     }
     if (data.address !== undefined) {
-      updateData.address = data.address?.trim() || null;
+      updateData.address = data.address;
     }
     if (data.occupation !== undefined) {
-      updateData.occupation = data.occupation?.trim() || null;
+      updateData.occupation = data.occupation;
     }
 
     const donor = await this.prisma.donor.update({
@@ -450,9 +430,9 @@ export class PrismaDonorRepository implements IDonorRepository {
     const created = await client.donor.createManyAndReturn({
       data: donors.map((d) => ({
         donorType: this.mapToPrismaDonorType(d.donorType),
-        name: d.name.trim(),
-        address: d.address?.trim() || null,
-        occupation: d.occupation?.trim() || null,
+        name: d.name,
+        address: d.address,
+        occupation: d.occupation,
       })),
     });
 

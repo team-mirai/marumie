@@ -1,5 +1,9 @@
 import type { DonorType } from "@/server/contexts/report/domain/models/donor";
-import { VALID_DONOR_TYPES } from "@/server/contexts/report/domain/models/donor";
+import {
+  normalizeDonorInput,
+  validateDonorInput,
+  VALID_DONOR_TYPES,
+} from "@/server/contexts/report/domain/models/donor";
 
 export interface DonorFormValues {
   donorType: DonorType;
@@ -36,23 +40,12 @@ export function coerceDonorType(
   return allowedDonorTypes.includes(donorType) ? donorType : allowedDonorTypes[0];
 }
 
-/** 名前は必須。個人の場合は職業も必須（政治資金規正法上、個人寄附には職業の記載が必要）。 */
+/** 入力値がサーバーで受け付けられる形か（寄付者のドメインと同じ検証）。送信ボタンの活性に使う */
 export function isDonorFormValid(values: DonorFormValues): boolean {
-  if (values.name.trim() === "") return false;
-  if (values.donorType === "individual" && values.occupation.trim() === "") return false;
-  return true;
+  return validateDonorInput(toDonorFormSubmitData(values)).length === 0;
 }
 
-/**
- * 入力値を送信用データに整形する。前後空白を除去し、住所の空文字は null に、
- * 個人以外の職業は入力が残っていても null にする。
- */
+/** 入力値を寄付者のドメインのルールで送信用データに正規化する */
 export function toDonorFormSubmitData(values: DonorFormValues): DonorFormSubmitData {
-  const isIndividual = values.donorType === "individual";
-  return {
-    donorType: values.donorType,
-    name: values.name.trim(),
-    address: values.address.trim() || null,
-    occupation: isIndividual ? values.occupation.trim() || null : null,
-  };
+  return normalizeDonorInput(values);
 }
