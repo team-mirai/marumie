@@ -54,6 +54,7 @@ import {
   type PayeeSummary,
 } from "@/server/contexts/research-fund/domain/models/payee";
 import { isReceiptMissing } from "@/server/contexts/research-fund/domain/models/receipt-absence";
+import { awaitsReceiptNumber } from "@/server/contexts/research-fund/domain/models/receipt-number";
 import {
   previewReread,
   REREAD_INSTRUCTION_MAX_LENGTH,
@@ -169,16 +170,9 @@ export function JournalReview({
   const payeeUnsetCount = entries.filter(isPayeeUnset).length;
   // 書類が無く徴難でもない支出の件数（帳簿全体）。議員課への提出前に埋める目安にする。
   const receiptMissingCount = entries.filter(isReceiptMissing).length;
-  // 領収書等番号を振る対象になる書類の数（徴難でない公開中の仕訳が紐づく未採番の書類。帳簿全体）。
+  // 領収書等番号を振る対象になる書類の数（領収書等番号が付く仕訳が紐づく未採番の書類。帳簿全体）。
   const unnumberedDocumentCount = new Set(
-    entries.flatMap((e) =>
-      e.status === "published" &&
-      !e.receiptAbsent &&
-      e.documentId !== null &&
-      e.receiptNumber === null
-        ? [e.documentId]
-        : [],
-    ),
+    entries.flatMap((e) => (awaitsReceiptNumber(e) ? [e.documentId] : [])),
   ).size;
   // 帳簿全体の未精算（立替者ごとの件数と合計額）。絞り込みに関わらず帳簿の全件で数える。
   const unsettledSummary = summarizeUnsettledAdvances(entries);

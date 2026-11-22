@@ -9,12 +9,13 @@ import {
   submissionLedgerFilename,
   submissionLedgerHeaders,
   submissionLedgerRow,
+  compareSubmissionOrder,
   sortSubmissionLedgerEntries,
   submissionLedgerWarnings,
   type SubmissionLedgerEntry,
 } from "@/server/contexts/research-fund/domain/models/submission-ledger";
 
-const entry: SubmissionLedgerEntry = { id: "1", entryDate: "2026-04-03", source: "scan", legalLabel: "⑨ 滞在費", description: "タクシー代", amount: 1200, payeeName: "東京タクシー", payeeAddress: "東京都千代田区", note: "国会から事務所へ", documentId: "5", receiptNumber: 12, documentMime: "application/pdf", receiptAbsent: false, receiptAbsenceReason: null };
+const entry: SubmissionLedgerEntry = { id: "1", entryDate: "2026-04-03", status: "published", source: "scan", legalLabel: "⑨ 滞在費", description: "タクシー代", amount: 1200, payeeName: "東京タクシー", payeeAddress: "東京都千代田区", note: "国会から事務所へ", documentId: "5", receiptNumber: 12, documentMime: "application/pdf", receiptAbsent: false, receiptAbsenceReason: null };
 const book = { politicianSlug: "tanaka-taro", financialYear: 2026 };
 const noReceipt: SubmissionLedgerEntry = { ...entry, id: "2", source: "manual", documentId: null, receiptNumber: null, documentMime: null, receiptAbsent: true, receiptAbsenceReason: "自動券売機で購入したため" };
 /** 振込明細などの書類はあるが、領収書が無いので徴難にした仕訳 */
@@ -159,6 +160,17 @@ test("ファイル名に年度と院を入れる", () => {
 
 test.each([["representatives", true], ["councillors", true], ["", false], ["house", false]])("院の指定 %j は %s", (value, expected) => {
   expect(isParliamentHouse(value)).toBe(expected);
+});
+
+describe("compareSubmissionOrder", () => {
+  const key = (legalCategory: number | null, date: string, receiptNumber: number | null) => ({ legalCategory, date, receiptNumber });
+  test("大項目の番号順（区分なしは最後）→ 年月日 → 領収書等番号（未採番は後ろ）", () => {
+    const keys = [key(null, "2026-04-01", 1), key(9, "2026-04-01", 2), key(2, "2026-05-01", null), key(2, "2026-05-01", 4), key(2, "2026-06-01", 1)];
+    expect([...keys].reverse().sort(compareSubmissionOrder)).toEqual([keys[3], keys[2], keys[4], keys[1], keys[0]]);
+  });
+  test("すべて同じなら 0", () => {
+    expect(compareSubmissionOrder(key(2, "2026-05-01", 1), key(2, "2026-05-01", 1))).toBe(0);
+  });
 });
 
 describe("領収書等番号・領収書有無・領収書画像ファイル名（#1685, #1778）", () => {

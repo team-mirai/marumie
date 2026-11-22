@@ -1,15 +1,20 @@
 import { DocumentFormat } from "@/server/contexts/research-fund/domain/models/document-format";
+import type { JournalEntry } from "@/server/contexts/research-fund/domain/models/journal-entry";
 import {
   isReceiptAbsenceReasonMissing,
   isReceiptMissing,
 } from "@/server/contexts/research-fund/domain/models/receipt-absence";
+import {
+  awaitsReceiptNumber,
+  isReceiptNumberedEntry,
+} from "@/server/contexts/research-fund/domain/models/receipt-number";
 
 /**
  * 議員課に提出する帳簿（衆議院・参議院のフォーマット）。
  *
  * - 1 行 = 1 仕訳。1 枚の領収書に法定の区分が違う明細が混ざることがあるので、書類単位にしない
  * - 出すのは公開済み（published）の支出の仕訳だけ（下書き・確認済は含めない）
- * - 行は大項目（① 人件費〜⑩ その他の経費）の番号順 → 年月日順に並べる（sortSubmissionLedgerEntries）
+ * - 行は大項目（① 人件費〜⑩ その他の経費）の番号順 → 年月日 → 領収書等番号の順に並べる（compareSubmissionOrder）
  * - 列の値は docs/old/20261006_2100_調研費議員課提出用帳簿の列の決定.md（#1654）に従う。
  *   領収書等番号・領収書有無・画像ファイル名は docs/old/20261006_2330_調研費領収書等番号の振り方の決定.md（#1685）に従う。
  *   支出項目は法定の区分から先頭の丸数字を外した区分名だけを出す（legalCategoryName）。
@@ -33,6 +38,8 @@ export function isParliamentHouse(value: string): value is ParliamentHouse {
 export interface SubmissionLedgerEntry {
   readonly id: string;
   readonly entryDate: string; // YYYY-MM-DD
+  /** 帳簿に出すのは公開済みだけなので、常に published */
+  readonly status: JournalEntry["status"];
   readonly source: "scan" | "manual";
   /** 法定の区分。科目が区分を持たなければ null */
   readonly legalLabel: string | null;
@@ -60,14 +67,19 @@ export interface SubmissionLedgerBook {
 /** 徴難の仕訳の「領収書等番号・徴難」（衆議院） */
 const RECEIPT_ABSENT = "徴難";
 
+/** 書類の領収書等番号。領収書等番号が付く仕訳（isReceiptNumberedEntry）でないか、未採番なら null */
+function receiptNumberOf(entry: SubmissionLedgerEntry): number | null {
+  return isReceiptNumberedEntry(entry) ? entry.receiptNumber : null;
+}
+
 /**
  * 衆議院の「領収書等番号・徴難」。徴難なら書類があっても 徴難、徴難でなければ書類の番号
  * （書類なし・未採番なら空欄）
  */
 export function receiptNumberCell(entry: SubmissionLedgerEntry): string | null {
   if (entry.receiptAbsent) return RECEIPT_ABSENT;
-  if (entry.documentId === null || entry.receiptNumber === null) return null;
-  return String(entry.receiptNumber);
+  const receiptNumber = receiptNumberOf(entry);
+  return receiptNumber === null ? null : String(receiptNumber);
 }
 
 /** 参議院の「領収書有無」。徴難か書類なしなら 無 */
@@ -83,11 +95,12 @@ export function receiptImageFilename(
   entry: SubmissionLedgerEntry,
   book: SubmissionLedgerBook,
 ): string | null {
-  if (entry.receiptAbsent || entry.documentId === null || entry.receiptNumber === null) return null;
+  const receiptNumber = receiptNumberOf(entry);
+  if (receiptNumber === null) return null;
   const extension =
     entry.documentMime === null ? null : DocumentFormat.extension(entry.documentMime);
   if (!extension) return null;
-  const number = String(entry.receiptNumber).padStart(4, "0");
+  const number = String(receiptNumber).padStart(4, "0");
   return `${book.politicianSlug}_${book.financialYear}_${number}.${extension}`;
 }
 
@@ -174,18 +187,44 @@ function compareIds(a: string, b: string): number {
   return a.length - b.length || (a < b ? -1 : a > b ? 1 : 0);
 }
 
+/** 提出用の並び順を決める値 */
+interface SubmissionOrderKey {
+  /** 大項目の番号。区分なしなら null */
+  readonly legalCategory: number | null;
+  /** 年月日（YYYY-MM-DD） */
+  readonly date: string;
+  /** 領収書等番号。書類なし・未採番なら null */
+  readonly receiptNumber: number | null;
+}
+
 /**
- * 提出用の帳簿の並び順。大項目の番号順（区分なしは最後）→ 年月日 → 領収書等番号（書類なし・未採番は後ろ）→ 仕訳の登録順。
- * 印刷用の領収書もこの順に並べる
+ * 提出用の並び順。大項目の番号順（区分なしは最後）→ 年月日 → 領収書等番号（書類なし・未採番は後ろ）。
+ * 提出用の帳簿の行と印刷用の領収書は、どちらもこの順に並べる
  */
+export function compareSubmissionOrder(a: SubmissionOrderKey, b: SubmissionOrderKey): number {
+  return (
+    compareNullsLast(a.legalCategory, b.legalCategory) ||
+    a.date.localeCompare(b.date) ||
+    compareNullsLast(a.receiptNumber, b.receiptNumber)
+  );
+}
+
+function submissionOrderKey(entry: SubmissionLedgerEntry): SubmissionOrderKey {
+  return {
+    legalCategory: legalCategoryNumber(entry.legalLabel),
+    date: entry.entryDate,
+    // 徴難の仕訳でも、書類が採番済みならその番号で並べる（番号の列には出さない）
+    receiptNumber: entry.receiptNumber,
+  };
+}
+
+/** 提出用の帳簿の行の順。提出用の並び順（compareSubmissionOrder）→ 仕訳の登録順 */
 export function sortSubmissionLedgerEntries(
   entries: readonly SubmissionLedgerEntry[],
 ): SubmissionLedgerEntry[] {
   return [...entries].sort(
     (a, b) =>
-      compareNullsLast(legalCategoryNumber(a.legalLabel), legalCategoryNumber(b.legalLabel)) ||
-      a.entryDate.localeCompare(b.entryDate) ||
-      compareNullsLast(a.receiptNumber, b.receiptNumber) ||
+      compareSubmissionOrder(submissionOrderKey(a), submissionOrderKey(b)) ||
       compareIds(a.id, b.id),
   );
 }
@@ -240,9 +279,7 @@ export function submissionLedgerWarnings(
     if (entry.payeeName === null) issues.push("payee-missing");
     if (isReceiptMissing(entry)) issues.push("receipt-missing");
     if (isReceiptAbsenceReasonMissing(entry)) issues.push("receipt-absence-reason-missing");
-    if (!entry.receiptAbsent && entry.documentId !== null && entry.receiptNumber === null) {
-      issues.push("receipt-number-missing");
-    }
+    if (awaitsReceiptNumber(entry)) issues.push("receipt-number-missing");
     return issues.length ? [{ entry, issues }] : [];
   });
 }

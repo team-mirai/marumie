@@ -4,9 +4,12 @@ import {
   receiptPrintFilename,
   selectReceiptPrintDocuments,
 } from "@/server/contexts/research-fund/domain/models/receipt-print";
-import type { SubmissionLedgerEntry } from "@/server/contexts/research-fund/domain/models/submission-ledger";
+import {
+  type SubmissionLedgerEntry,
+  sortSubmissionLedgerEntries,
+} from "@/server/contexts/research-fund/domain/models/submission-ledger";
 
-const base: SubmissionLedgerEntry = { id: "1", entryDate: "2026-04-03", source: "scan", legalLabel: "⑨ 滞在費", description: "タクシー代", amount: 20000, payeeName: "東京タクシー", payeeAddress: null, note: null, documentId: "5", receiptNumber: 12, documentMime: "image/jpeg", receiptAbsent: false, receiptAbsenceReason: null };
+const base: SubmissionLedgerEntry = { id: "1", entryDate: "2026-04-03", status: "published", source: "scan", legalLabel: "⑨ 滞在費", description: "タクシー代", amount: 20000, payeeName: "東京タクシー", payeeAddress: null, note: null, documentId: "5", receiptNumber: 12, documentMime: "image/jpeg", receiptAbsent: false, receiptAbsenceReason: null };
 const entry = (overrides: Partial<SubmissionLedgerEntry>): SubmissionLedgerEntry => ({ ...base, ...overrides });
 const numbers = (entries: SubmissionLedgerEntry[], scope: "over-threshold" | "all" = "all") =>
   selectReceiptPrintDocuments(entries, scope).documents.map((d) => d.receiptNumber);
@@ -75,6 +78,23 @@ describe("並び順", () => {
     expect(groupReceiptPrintDocuments(entries).find((d) => d.documentId === "2")?.firstDate).toBe("2026-04-01");
     expect(numbers(entries)).toEqual([2, 1]);
   });
+});
+
+test("印刷の書類は、提出用の帳簿で書類が最初に現れる順と同じ順に並ぶ（1 書類 1 仕訳のとき）", () => {
+  const entries = [
+    entry({ id: "1", documentId: "1", receiptNumber: 3, legalLabel: "⑨ 滞在費", entryDate: "2026-04-01" }),
+    entry({ id: "2", documentId: "2", receiptNumber: 1, legalLabel: "② 会議費", entryDate: "2026-06-01" }),
+    entry({ id: "3", documentId: "3", receiptNumber: 2, legalLabel: "② 会議費", entryDate: "2026-05-01" }),
+    entry({ id: "4", documentId: "4", receiptNumber: 5, legalLabel: null, entryDate: "2026-04-01" }),
+    entry({ id: "5", documentId: "5", receiptNumber: 4, legalLabel: "② 会議費", entryDate: "2026-05-01" }),
+    entry({ id: "6", documentId: "6", receiptNumber: null, legalLabel: "② 会議費", entryDate: "2026-04-01" }),
+    entry({ id: "7", documentId: "7", receiptNumber: 6, receiptAbsent: true, legalLabel: "② 会議費", entryDate: "2026-04-01" }),
+  ];
+  const ledgerOrder = sortSubmissionLedgerEntries(entries)
+    .filter((e) => !e.receiptAbsent && e.receiptNumber !== null)
+    .map((e) => e.receiptNumber);
+  expect(ledgerOrder).toEqual([2, 4, 1, 3, 5]);
+  expect(numbers(entries)).toEqual(ledgerOrder);
 });
 
 test("範囲の指定を検証する", () => {
