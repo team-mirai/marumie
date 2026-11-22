@@ -1,9 +1,9 @@
 import "server-only";
 
-import type {
-  CreateOrganizationReportProfileInput,
+import {
+  type CreateOrganizationReportProfileInput,
   OrganizationReportProfile,
-  UpdateOrganizationReportProfileInput,
+  type UpdateOrganizationReportProfileInput,
 } from "@/server/contexts/report/domain/models/organization-report-profile";
 import type { IOrganizationReportProfileRepository } from "@/server/contexts/report/domain/repositories/organization-report-profile-repository.interface";
 
@@ -18,10 +18,23 @@ interface SaveOrganizationProfileInput {
   details?: CreateOrganizationReportProfileInput["details"];
 }
 
+type SaveOrganizationProfileResult =
+  | { success: true; profile: OrganizationReportProfile }
+  | { success: false; errors: string[] };
+
 export class SaveOrganizationProfileUsecase {
   constructor(private repository: IOrganizationReportProfileRepository) {}
 
-  async execute(input: SaveOrganizationProfileInput): Promise<OrganizationReportProfile> {
+  async execute(input: SaveOrganizationProfileInput): Promise<SaveOrganizationProfileResult> {
+    const errors = OrganizationReportProfile.validateForSave(input);
+    if (errors.length > 0) {
+      return { success: false, errors: errors.map((error) => error.message) };
+    }
+
+    return { success: true, profile: await this.save(input) };
+  }
+
+  private async save(input: SaveOrganizationProfileInput): Promise<OrganizationReportProfile> {
     if (input.id) {
       const updateInput: UpdateOrganizationReportProfileInput = {
         officialName: input.officialName,

@@ -1,5 +1,6 @@
 "use client";
 import "client-only";
+import { ORGANIZATION_REPORT_PROFILE_LIMITS as LIMITS } from "@/server/contexts/report/domain/models/organization-report-profile";
 
 import { Plus } from "@phosphor-icons/react/dist/ssr";
 import type {
@@ -70,7 +71,7 @@ export function DietMemberRelationSection({
   };
 
   const addMember = () => {
-    if (dietMemberRelation && (dietMemberRelation.members?.length ?? 0) < 3) {
+    if (dietMemberRelation && (dietMemberRelation.members?.length ?? 0) < LIMITS.dietMembers) {
       updateDietMemberRelation({
         members: [...(dietMemberRelation.members ?? []), emptyMember()],
       });
@@ -93,7 +94,10 @@ export function DietMemberRelationSection({
   };
 
   const addPeriod = () => {
-    if (dietMemberRelation && (dietMemberRelation.periods?.length ?? 0) < 3) {
+    if (
+      dietMemberRelation &&
+      (dietMemberRelation.periods?.length ?? 0) < LIMITS.dietMemberPeriods
+    ) {
       updateDietMemberRelation({
         periods: [...(dietMemberRelation.periods ?? []), emptyPeriod()],
       });
@@ -155,7 +159,7 @@ export function DietMemberRelationSection({
           <div>
             <div className="flex justify-between items-center mb-2">
               <h3 className="text-md font-medium text-foreground">関係する国会議員（最大3名）</h3>
-              {(dietMemberRelation.members?.length ?? 0) < 3 && (
+              {(dietMemberRelation.members?.length ?? 0) < LIMITS.dietMembers && (
                 <Button
                   type="button"
                   variant="outline"
@@ -190,7 +194,7 @@ export function DietMemberRelationSection({
                         type="text"
                         value={member.lastName}
                         onChange={(e) => updateMember(index, { lastName: e.target.value })}
-                        maxLength={30}
+                        maxLength={LIMITS.personName}
                       />
                     </div>
                     <div className="space-y-2">
@@ -199,7 +203,7 @@ export function DietMemberRelationSection({
                         type="text"
                         value={member.firstName}
                         onChange={(e) => updateMember(index, { firstName: e.target.value })}
-                        maxLength={30}
+                        maxLength={LIMITS.personName}
                       />
                     </div>
                   </div>
@@ -245,7 +249,7 @@ export function DietMemberRelationSection({
           <div>
             <div className="flex justify-between items-center mb-2">
               <h3 className="text-md font-medium text-foreground">指定期間（最大3件）</h3>
-              {(dietMemberRelation.periods?.length ?? 0) < 3 && (
+              {(dietMemberRelation.periods?.length ?? 0) < LIMITS.dietMemberPeriods && (
                 <Button
                   type="button"
                   variant="outline"
@@ -265,7 +269,7 @@ export function DietMemberRelationSection({
                     type="text"
                     value={period.from}
                     onChange={(e) => updatePeriod(index, { from: e.target.value })}
-                    maxLength={20}
+                    maxLength={LIMITS.date}
                     className="w-32"
                     placeholder="R6/4/1"
                   />
@@ -274,7 +278,7 @@ export function DietMemberRelationSection({
                     type="text"
                     value={period.to}
                     onChange={(e) => updatePeriod(index, { to: e.target.value })}
-                    maxLength={20}
+                    maxLength={LIMITS.date}
                     className="w-32"
                     placeholder="R7/3/31"
                   />

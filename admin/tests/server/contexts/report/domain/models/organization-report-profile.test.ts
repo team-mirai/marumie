@@ -1,4 +1,7 @@
-import { OrganizationReportProfile } from "@/server/contexts/report/domain/models/organization-report-profile";
+import {
+  ORGANIZATION_REPORT_PROFILE_LIMITS,
+  OrganizationReportProfile,
+} from "@/server/contexts/report/domain/models/organization-report-profile";
 import { ValidationErrorCode } from "@/server/contexts/report/domain/types/validation";
 
 const createValidProfile = (): OrganizationReportProfile => ({
@@ -266,5 +269,195 @@ describe("OrganizationReportProfile.validate", () => {
     const errors = OrganizationReportProfile.validate(profile);
 
     expect(errors.length).toBeGreaterThanOrEqual(3);
+  });
+});
+
+describe("OrganizationReportProfile.validate の上限", () => {
+  it("これまで入力スキーマにしか無かった上限も検証する", () => {
+    const profile = createValidProfile();
+    profile.officeAddressBuilding = "あ".repeat(61);
+    profile.details.organizationType = "123";
+    profile.details.fundManagement = { publicPositionName: "あ".repeat(61) };
+    const errors = OrganizationReportProfile.validate(profile);
+
+    expect(errors.map((e) => e.path)).toEqual([
+      "profile.officeAddressBuilding",
+      "profile.details.organizationType",
+      "profile.details.fundManagement.publicPositionName",
+    ]);
+  });
+});
+
+describe("OrganizationReportProfile.validateForSave", () => {
+  const LIMITS = ORGANIZATION_REPORT_PROFILE_LIMITS;
+  const person = (id: string) => ({ id, lastName: "山田", firstName: "太郎" });
+  const period = (id: string) => ({ id, from: "R6/1/1", to: "R6/12/31" });
+
+  it("必須項目が空でもエラーを返さない", () => {
+    const errors = OrganizationReportProfile.validateForSave({
+      officialName: null,
+      officialNameKana: null,
+      officeAddress: null,
+      officeAddressBuilding: null,
+      details: { representative: { lastName: "", firstName: "" } },
+    });
+
+    expect(errors).toEqual([]);
+  });
+
+  it("details が無くてもエラーを返さない", () => {
+    const errors = OrganizationReportProfile.validateForSave({
+      officialName: "テスト政治団体",
+      officialNameKana: null,
+      officeAddress: null,
+      officeAddressBuilding: null,
+    });
+
+    expect(errors).toEqual([]);
+  });
+
+  it("上限ちょうどの値はエラーにしない", () => {
+    const errors = OrganizationReportProfile.validateForSave({
+      officialName: "あ".repeat(LIMITS.officialName),
+      officialNameKana: "あ".repeat(LIMITS.officialNameKana),
+      officeAddress: "あ".repeat(LIMITS.officeAddress),
+      officeAddressBuilding: "あ".repeat(LIMITS.officeAddressBuilding),
+      details: {
+        contactPersons: [1, 2, 3].map((i) => ({ ...person(`${i}`), tel: "0".repeat(LIMITS.tel) })),
+        organizationType: "12",
+      },
+    });
+
+    expect(errors).toEqual([]);
+  });
+
+  it("文字数の上限を超えた項目ごとにエラーを返す", () => {
+    const errors = OrganizationReportProfile.validateForSave({
+      officialName: "あ".repeat(LIMITS.officialName + 1),
+      officialNameKana: "あ".repeat(LIMITS.officialNameKana + 1),
+      officeAddress: "あ".repeat(LIMITS.officeAddress + 1),
+      officeAddressBuilding: "あ".repeat(LIMITS.officeAddressBuilding + 1),
+      details: {
+        representative: { lastName: "あ".repeat(31), firstName: "太郎" },
+        accountant: { lastName: "田中", firstName: "あ".repeat(31) },
+        contactPersons: [
+          person("1"),
+          { id: "2", lastName: "あ".repeat(31), firstName: "あ".repeat(31), tel: "0".repeat(21) },
+        ].map((p) => ({ tel: "", ...p })),
+        organizationType: "123",
+        specificPartyDate: "0".repeat(21),
+      },
+    });
+
+    expect(errors.map((e) => [e.path, e.message])).toEqual([
+      ["profile.officialName", "政治団体の名称は120文字以内で入力してください"],
+      ["profile.officialNameKana", "政治団体の名称（ふりがな）は120文字以内で入力してください"],
+      ["profile.officeAddress", "主たる事務所の所在地は80文字以内で入力してください"],
+      ["profile.officeAddressBuilding", "主たる事務所の建物名等は60文字以内で入力してください"],
+      ["profile.details.representative.lastName", "代表者の姓は30文字以内で入力してください"],
+      ["profile.details.accountant.firstName", "会計責任者の名は30文字以内で入力してください"],
+      [
+        "profile.details.contactPersons[1].lastName",
+        "事務担当者（2人目）の姓は30文字以内で入力してください",
+      ],
+      [
+        "profile.details.contactPersons[1].firstName",
+        "事務担当者（2人目）の名は30文字以内で入力してください",
+      ],
+      [
+        "profile.details.contactPersons[1].tel",
+        "事務担当者（2人目）の電話番号は20文字以内で入力してください",
+      ],
+      ["profile.details.organizationType", "団体区分は2文字以内で入力してください"],
+      ["profile.details.specificPartyDate", "特定パーティーの開催日は20文字以内で入力してください"],
+    ]);
+    expect(errors.every((e) => e.code === ValidationErrorCode.MAX_LENGTH_EXCEEDED)).toBe(true);
+  });
+
+  it("資金管理団体の公職の名称・届出者・指定期間の上限を検証する", () => {
+    const errors = OrganizationReportProfile.validateForSave({
+      officialName: null,
+      officialNameKana: null,
+      officeAddress: null,
+      officeAddressBuilding: null,
+      details: {
+        fundManagement: {
+          publicPositionName: "あ".repeat(61),
+          applicant: { lastName: "あ".repeat(31), firstName: "太郎" },
+          periods: [period("1"), { id: "2", from: "0".repeat(21), to: "R6/12/31" }],
+        },
+      },
+    });
+
+    expect(errors.map((e) => e.path)).toEqual([
+      "profile.details.fundManagement.publicPositionName",
+      "profile.details.fundManagement.applicant.lastName",
+      "profile.details.fundManagement.periods[1].from",
+    ]);
+  });
+
+  it("国会議員関係政治団体の議員・指定期間の上限を検証する", () => {
+    const errors = OrganizationReportProfile.validateForSave({
+      officialName: null,
+      officialNameKana: null,
+      officeAddress: null,
+      officeAddressBuilding: null,
+      details: {
+        dietMemberRelation: {
+          type: "1",
+          members: [
+            { ...person("1"), firstName: "あ".repeat(31), chamber: "1", positionType: "1" },
+          ],
+          periods: [{ id: "1", from: "R6/1/1", to: "0".repeat(21) }],
+        },
+      },
+    });
+
+    expect(errors.map((e) => [e.path, e.message])).toEqual([
+      [
+        "profile.details.dietMemberRelation.members[0].firstName",
+        "国会議員関係政治団体の議員（1人目）の名は30文字以内で入力してください",
+      ],
+      [
+        "profile.details.dietMemberRelation.periods[0].to",
+        "国会議員関係政治団体の指定期間（1件目）の終了日は20文字以内で入力してください",
+      ],
+    ]);
+  });
+
+  it("件数の上限を超えた一覧ごとにエラーを返す", () => {
+    const errors = OrganizationReportProfile.validateForSave({
+      officialName: null,
+      officialNameKana: null,
+      officeAddress: null,
+      officeAddressBuilding: null,
+      details: {
+        contactPersons: ["1", "2", "3", "4"].map((id) => ({ ...person(id), tel: "" })),
+        fundManagement: { periods: ["1", "2", "3", "4"].map(period) },
+        dietMemberRelation: {
+          type: "3",
+          members: ["1", "2", "3", "4"].map((id) => ({
+            ...person(id),
+            chamber: "1" as const,
+            positionType: "1" as const,
+          })),
+          periods: ["1", "2", "3", "4"].map(period),
+        },
+      },
+    });
+
+    expect(errors.map((e) => [e.path, e.message])).toEqual([
+      ["profile.details.contactPersons", "事務担当者は3件まで登録できます"],
+      ["profile.details.fundManagement.periods", "資金管理団体の指定期間は3件まで登録できます"],
+      [
+        "profile.details.dietMemberRelation.members",
+        "国会議員関係政治団体の議員は3件まで登録できます",
+      ],
+      [
+        "profile.details.dietMemberRelation.periods",
+        "国会議員関係政治団体の指定期間は3件まで登録できます",
+      ],
+    ]);
+    expect(errors.every((e) => e.code === ValidationErrorCode.MAX_COUNT_EXCEEDED)).toBe(true);
   });
 });

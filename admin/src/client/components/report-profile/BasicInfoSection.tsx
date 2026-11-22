@@ -1,5 +1,6 @@
 "use client";
 import "client-only";
+import { ORGANIZATION_REPORT_PROFILE_LIMITS as LIMITS } from "@/server/contexts/report/domain/models/organization-report-profile";
 
 import type { OrganizationReportProfileFormData } from "@/server/contexts/report/presentation/schemas/organization-report-profile.schema";
 import { Card, CardHeader, CardTitle, CardContent, Label, Input } from "@/client/components/ui";
@@ -20,14 +21,14 @@ export function BasicInfoSection({ formData, updateFormData }: BasicInfoSectionP
           <Label>
             団体名称
             <span className="text-muted-foreground text-sm font-normal ml-2">
-              ({formData.officialName?.length ?? 0}/120)
+              ({formData.officialName?.length ?? 0}/{LIMITS.officialName})
             </span>
           </Label>
           <Input
             type="text"
             value={formData.officialName ?? ""}
             onChange={(e) => updateFormData({ officialName: e.target.value })}
-            maxLength={120}
+            maxLength={LIMITS.officialName}
             className="max-w-md"
             placeholder="政治団体の正式名称"
           />
@@ -37,14 +38,14 @@ export function BasicInfoSection({ formData, updateFormData }: BasicInfoSectionP
           <Label>
             団体名称（カナ）
             <span className="text-muted-foreground text-sm font-normal ml-2">
-              ({formData.officialNameKana?.length ?? 0}/120)
+              ({formData.officialNameKana?.length ?? 0}/{LIMITS.officialNameKana})
             </span>
           </Label>
           <Input
             type="text"
             value={formData.officialNameKana ?? ""}
             onChange={(e) => updateFormData({ officialNameKana: e.target.value })}
-            maxLength={120}
+            maxLength={LIMITS.officialNameKana}
             className="max-w-md"
             placeholder="セイジダンタイノセイシキメイショウ"
           />
@@ -54,14 +55,14 @@ export function BasicInfoSection({ formData, updateFormData }: BasicInfoSectionP
           <Label>
             事務所所在地
             <span className="text-muted-foreground text-sm font-normal ml-2">
-              ({formData.officeAddress?.length ?? 0}/80)
+              ({formData.officeAddress?.length ?? 0}/{LIMITS.officeAddress})
             </span>
           </Label>
           <Input
             type="text"
             value={formData.officeAddress ?? ""}
             onChange={(e) => updateFormData({ officeAddress: e.target.value })}
-            maxLength={80}
+            maxLength={LIMITS.officeAddress}
             className="max-w-md"
             placeholder="東京都千代田区永田町1-1-1"
           />
@@ -71,14 +72,14 @@ export function BasicInfoSection({ formData, updateFormData }: BasicInfoSectionP
           <Label>
             建物名等
             <span className="text-muted-foreground text-sm font-normal ml-2">
-              ({formData.officeAddressBuilding?.length ?? 0}/60)
+              ({formData.officeAddressBuilding?.length ?? 0}/{LIMITS.officeAddressBuilding})
             </span>
           </Label>
           <Input
             type="text"
             value={formData.officeAddressBuilding ?? ""}
             onChange={(e) => updateFormData({ officeAddressBuilding: e.target.value })}
-            maxLength={60}
+            maxLength={LIMITS.officeAddressBuilding}
             className="max-w-md"
             placeholder="○○ビル3階"
           />
