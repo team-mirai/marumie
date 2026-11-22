@@ -34,6 +34,7 @@ test("支給は下書きを経ず確認済で、借方 普通預金／貸方 調
         { side: "debit", accountKey: "bank", amount: 1_000_000 },
         { side: "credit", accountKey: "grant-income", amount: 1_000_000 },
       ],
+      status: "approved",
     },
     "user",
   );

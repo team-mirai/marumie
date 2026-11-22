@@ -298,7 +298,7 @@ export class PrismaScanRepository implements ScanRepository {
           bookId,
           entryDate: new Date(`${entry.entryDate}T00:00:00.000Z`),
           description: entry.description,
-          status: "draft",
+          status: entry.status,
           source: "scan",
           documentId,
           splitGroup: entry.splitGroup,

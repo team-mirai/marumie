@@ -292,6 +292,27 @@ export interface PayeeLink {
   source: PayeeLinkSource;
 }
 
+/** 仕訳に記録する支払先の紐づけ（紐づけ元と、照合・推定の確信度・根拠）。支払先が無ければすべて null */
+interface PayeeLinkRecord {
+  payeeId: string | null;
+  source: PayeeLinkSource | null;
+  confidence: null;
+  reason: null;
+}
+
+/**
+ * 人が確認画面で支払先を紐づけ・解除したときに仕訳に記録する内容。
+ * 人の判断なので紐づけ元は manual にし、照合・推定で付いていた確信度・根拠は消す。解除なら紐づけ元も消す
+ */
+export function manualPayeeLink(payeeId: string | null): PayeeLinkRecord {
+  return {
+    payeeId,
+    source: payeeId === null ? null : "manual",
+    confidence: null,
+    reason: null,
+  };
+}
+
 /**
  * スキャンの読み直しで作り直す下書きに引き継ぐ支払先を決める（立替者の inheritedAdvancedBy と同じ考え方）。
  *

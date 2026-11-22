@@ -2,6 +2,7 @@ import {
   inheritedPayeeLink,
   invoiceRegistrationNumbersConflict,
   isPayeeUnset,
+  manualPayeeLink,
   newPayeeFromIssuer,
   normalizeInvoiceRegistrationNumber,
   normalizePayeeName,
@@ -233,5 +234,14 @@ describe("invoiceRegistrationNumbersConflict", () => {
     ["両方とも番号が無い", null, null],
   ])("%s なら食い違わない", (_, a, b) => {
     expect(invoiceRegistrationNumbersConflict(a, b)).toBe(false);
+  });
+});
+
+describe("manualPayeeLink", () => {
+  it("人が紐づけたら紐づけ元を manual にし、照合・推定の確信度と根拠を消す", () => {
+    expect(manualPayeeLink("7")).toEqual({ payeeId: "7", source: "manual", confidence: null, reason: null });
+  });
+  it("解除したら紐づけ元も消す", () => {
+    expect(manualPayeeLink(null)).toEqual({ payeeId: null, source: null, confidence: null, reason: null });
   });
 });

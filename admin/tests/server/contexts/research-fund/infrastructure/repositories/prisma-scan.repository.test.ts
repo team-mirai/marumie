@@ -282,6 +282,7 @@ const COMPLETE_INPUT = {
       memo: null,
       splitGroup: null,
       hash: "hash-a",
+      status: "draft" as const,
       lines: [
         { side: "debit" as const, accountKey: "taxi", amount: 1200 },
         { side: "credit" as const, accountKey: "bank", amount: 1200 },
