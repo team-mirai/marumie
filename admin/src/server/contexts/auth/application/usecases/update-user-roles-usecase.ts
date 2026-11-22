@@ -34,7 +34,7 @@ export class UpdateUserRolesUsecase {
     try {
       normalizedRoles = UserRoleModel.normalize(roles);
     } catch (e) {
-      throw new AuthError("INVALID_ROLE", e instanceof Error ? e.message : String(e), e);
+      throw AuthError.rejected("INVALID_ROLE", e instanceof Error ? e.message : String(e));
     }
 
     try {

@@ -122,4 +122,18 @@ describe("RegisterUserInvitationUsecase", () => {
     await expect(usecase.execute(email, roles, politicianIds)).rejects.toMatchObject({ code });
     expect(invitationRepository.create).not.toHaveBeenCalled();
   });
+
+  it.each([
+    ["不明なロール", ["owner"], [], "INVALID_ROLE", "不明なロールです: owner"],
+    ["不正な議員の ID", [], ["abc"], "INVALID_ASSIGNMENT", "議員の ID が不正です: abc"],
+  ])(
+    "%s はドメインの却下理由を利用者向け文言に持つ",
+    async (_, roles, politicianIds, code, userMessage) => {
+      const { usecase } = setup();
+
+      await expect(
+        usecase.execute("staff@team-mir.ai", roles, politicianIds),
+      ).rejects.toMatchObject({ code, userMessage });
+    },
+  );
 });

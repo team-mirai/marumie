@@ -5,7 +5,7 @@ import { UpdateUserAssignmentsUsecase } from "@/server/contexts/auth/application
 import { SupabaseAuthProvider } from "@/server/contexts/auth/infrastructure/supabase/supabase-auth-provider";
 import { prisma } from "@/server/contexts/shared/infrastructure/prisma";
 import { PrismaUserRepository } from "@/server/contexts/shared/infrastructure/repositories/prisma-user.repository";
-import { AuthError, AUTH_ERROR_MESSAGES } from "@/server/contexts/auth/domain/errors/auth-error";
+import { AuthError } from "@/server/contexts/auth/domain/errors/auth-error";
 import { requireRole } from "@/server/contexts/auth/presentation/loaders/require-role";
 
 /**
@@ -28,8 +28,7 @@ export async function updateUserAssignments(
     return { ok: true, assignedPoliticianIds };
   } catch (e) {
     if (e instanceof AuthError) {
-      const errorMessage = AUTH_ERROR_MESSAGES[e.code] ?? e.message;
-      return { ok: false, error: errorMessage };
+      return { ok: false, error: e.userMessage };
     }
     return { ok: false, error: "担当の更新に失敗しました" };
   }

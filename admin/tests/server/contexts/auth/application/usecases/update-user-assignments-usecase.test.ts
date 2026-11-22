@@ -81,6 +81,7 @@ describe("UpdateUserAssignmentsUsecase", () => {
     await expect(usecase.execute("target-user-id", ["1", "abc"])).rejects.toMatchObject({
       name: "AuthError",
       code: "INVALID_ASSIGNMENT",
+      userMessage: "議員の ID が不正です: abc",
     });
     expect(mockUserRepository.replaceAssignedPoliticians).not.toHaveBeenCalled();
   });
@@ -92,6 +93,7 @@ describe("UpdateUserAssignmentsUsecase", () => {
     await expect(usecase.execute("non-existent-id", ["1"])).rejects.toMatchObject({
       name: "AuthError",
       code: "USER_NOT_FOUND",
+      userMessage: "ユーザーが見つかりません",
     });
   });
 

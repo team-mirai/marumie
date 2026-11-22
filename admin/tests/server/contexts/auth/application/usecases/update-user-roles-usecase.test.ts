@@ -85,6 +85,7 @@ describe("UpdateUserRolesUsecase", () => {
       await expect(usecase.execute("target-user-id", ["user"])).rejects.toMatchObject({
         name: "AuthError",
         code: "INVALID_ROLE",
+        userMessage: "不明なロールです: user",
       });
       expect(mockUserRepository.updateRoles).not.toHaveBeenCalled();
     });
@@ -97,6 +98,7 @@ describe("UpdateUserRolesUsecase", () => {
       await expect(usecase.execute("non-existent-id", ["admin"])).rejects.toMatchObject({
         name: "AuthError",
         code: "USER_NOT_FOUND",
+        userMessage: "ユーザーが見つかりません",
       });
     });
 
@@ -119,6 +121,8 @@ describe("UpdateUserRolesUsecase", () => {
       await expect(usecase.execute("target-user-id", ["admin"])).rejects.toMatchObject({
         name: "AuthError",
         code: "AUTH_FAILED",
+        // 内部のエラーメッセージは利用者向け文言に出さず、コードごとの既定文言にする
+        userMessage: expect.not.stringContaining("Database error"),
       });
     });
   });
