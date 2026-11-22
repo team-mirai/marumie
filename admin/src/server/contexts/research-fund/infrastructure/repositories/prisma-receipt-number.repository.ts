@@ -1,7 +1,10 @@
 import "server-only";
 import { Prisma, type PrismaClient } from "@prisma/client";
 import { JournalReviewError } from "@/server/contexts/research-fund/domain/models/journal-review";
-import type { ReceiptNumberAssignment } from "@/server/contexts/research-fund/domain/models/receipt-number";
+import {
+  RECEIPT_NUMBERED_ENTRY_CONDITION,
+  type ReceiptNumberAssignment,
+} from "@/server/contexts/research-fund/domain/models/receipt-number";
 import type { ReceiptNumberRepository } from "@/server/contexts/research-fund/domain/repositories/receipt-number-repository.interface";
 
 const CONFLICT_MESSAGE =
@@ -16,8 +19,8 @@ export class PrismaReceiptNumberRepository implements ReceiptNumberRepository {
         id: true,
         receiptNumber: true,
         journalEntries: {
-          // 徴難の仕訳は帳簿に番号を出さないので、その仕訳にしか紐づかない書類には番号を振らない
-          where: { bookId: BigInt(bookId), status: "published", receiptAbsent: false },
+          // 領収書等番号が付く仕訳（isReceiptNumberedEntry）だけを見る。書類が紐づくことは relation で満たす
+          where: { bookId: BigInt(bookId), ...RECEIPT_NUMBERED_ENTRY_CONDITION },
           select: { entryDate: true },
           orderBy: { entryDate: "asc" },
           take: 1,

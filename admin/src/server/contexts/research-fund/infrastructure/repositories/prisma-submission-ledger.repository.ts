@@ -27,6 +27,7 @@ function model(row: Row, catalog: LegalCategoryCatalog): SubmissionLedgerEntry |
   return {
     id: String(row.id),
     entryDate: row.entryDate.toISOString().slice(0, 10),
+    status: row.status,
     source: row.source,
     // 支出項目と並び順は、上書きがあればそれ、無ければ科目の既定の法定区分で決める（#1880）
     legalLabel: resolveLegalLabel(expenseLine.account.legalLabel, overrideOf(row, catalog)),

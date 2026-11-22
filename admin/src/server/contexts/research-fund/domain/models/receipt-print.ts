@@ -1,4 +1,6 @@
+import { isReceiptNumberedEntry } from "@/server/contexts/research-fund/domain/models/receipt-number";
 import {
+  compareSubmissionOrder,
   legalCategoryNumber,
   type SubmissionLedgerBook,
   type SubmissionLedgerEntry,
@@ -7,10 +9,11 @@ import {
 /**
  * 議員課に提出する、領収書等番号を印字した領収書の印刷用 PDF に入れる書類（#1777）。
  *
- * - 対象は徴難でない公開済みの支出の仕訳（提出用の帳簿で番号が出る行）が 1 件以上紐づく書類。1 書類は 1 回だけ入れる
+ * - 対象は領収書等番号が付く仕訳（isReceiptNumberedEntry。提出用の帳簿で番号が出る行）が 1 件以上紐づく書類。
+ *   1 書類は 1 回だけ入れる
  * - 未採番の書類は入れず、件数だけ数えて採番を促す
  * - 「1万円超」は書類単位で、紐づく仕訳の金額の合計が 10,000 円を超えるもの（ちょうど 10,000 円は入れない）
- * - 並びは提出用の帳簿（CSV）と同じく大項目の番号順 → 日付 → 領収書等番号。
+ * - 並びは提出用の帳簿（CSV）と同じ提出用の並び順（compareSubmissionOrder）。
  *   大項目は紐づく仕訳のうち最も小さい番号、日付は紐づく仕訳のうち最も早い日付を使う
  */
 
@@ -45,13 +48,13 @@ function minNullable(a: number | null, b: number | null): number | null {
   return Math.min(a, b);
 }
 
-/** 提出用の帳簿の仕訳を書類ごとにまとめる。書類なし・徴難の仕訳は除く（帳簿に番号が出ないので） */
+/** 提出用の帳簿の仕訳を書類ごとにまとめる。領収書等番号が付かない仕訳（書類なし・徴難）は除く */
 export function groupReceiptPrintDocuments(
   entries: readonly SubmissionLedgerEntry[],
 ): ReceiptPrintDocument[] {
   const documents = new Map<string, ReceiptPrintDocument>();
   for (const entry of entries) {
-    if (entry.documentId === null || entry.receiptAbsent) continue;
+    if (!isReceiptNumberedEntry(entry)) continue;
     const category = legalCategoryNumber(entry.legalLabel);
     const current = documents.get(entry.documentId);
     documents.set(
@@ -80,19 +83,11 @@ function inScope(document: ReceiptPrintDocument, scope: ReceiptPrintScope): bool
   return scope === "all" || document.totalAmount > RECEIPT_PRINT_THRESHOLD;
 }
 
-function compareNullsLast(a: number | null, b: number | null): number {
-  if (a === b) return 0;
-  if (a === null) return 1;
-  if (b === null) return -1;
-  return a - b;
-}
-
-/** 大項目の番号順（区分なしは最後）→ 日付 → 領収書等番号 */
+/** 提出用の並び順（大項目の番号順 → 日付 → 領収書等番号） */
 function compareDocuments(a: ReceiptPrintDocument, b: ReceiptPrintDocument): number {
-  return (
-    compareNullsLast(a.legalCategory, b.legalCategory) ||
-    a.firstDate.localeCompare(b.firstDate) ||
-    compareNullsLast(a.receiptNumber, b.receiptNumber)
+  return compareSubmissionOrder(
+    { legalCategory: a.legalCategory, date: a.firstDate, receiptNumber: a.receiptNumber },
+    { legalCategory: b.legalCategory, date: b.firstDate, receiptNumber: b.receiptNumber },
   );
 }
 
