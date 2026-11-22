@@ -1,9 +1,6 @@
-import { PL_CATEGORIES, BS_CATEGORIES } from "@/shared/accounting/account-category";
+import { MfJournal } from "@/server/contexts/data-import/domain/models/mf-journal";
 import { PreviewTransaction } from "@/server/contexts/data-import/domain/models/preview-transaction";
 import type { Transaction } from "@/shared/models/transaction";
-
-const OFFSET_EXPENSE_ACCOUNT = "相殺項目（費用）";
-const OFFSET_INCOME_ACCOUNT = "相殺項目（収入）";
 
 export class TransactionValidator {
   public validatePreviewTransactions(
@@ -20,6 +17,8 @@ export class TransactionValidator {
     existingTransactions: Transaction[],
   ): PreviewTransaction {
     // 1. validチェック（早期リターン）
+    // 変換時に分かった無効の理由（分類できない科目の組み合わせ、解釈できない日付・金額）は引き継ぐ
+    const conversionErrors = transaction.status === "invalid" ? transaction.errors : [];
     const validationErrors: string[] = [];
 
     // Validate accounts
@@ -32,11 +31,11 @@ export class TransactionValidator {
       validationErrors.push(categoryValidationError);
     }
 
-    if (validationErrors.length > 0) {
+    if (conversionErrors.length > 0 || validationErrors.length > 0) {
       return {
         ...transaction,
         status: "invalid",
-        errors: [...transaction.errors, ...validationErrors],
+        errors: [...conversionErrors, ...validationErrors],
       };
     }
 
@@ -78,18 +77,12 @@ export class TransactionValidator {
 
   private validateAccounts(transaction: PreviewTransaction): string[] {
     const errors: string[] = [];
-    const validAccountLabels = new Set([
-      ...Object.keys(PL_CATEGORIES),
-      ...Object.keys(BS_CATEGORIES),
-      OFFSET_EXPENSE_ACCOUNT,
-      OFFSET_INCOME_ACCOUNT,
-    ]);
 
-    if (!validAccountLabels.has(transaction.debit_account)) {
+    if (!MfJournal.isKnownAccount(transaction.debit_account)) {
       errors.push(`無効な借方科目: "${transaction.debit_account}"`);
     }
 
-    if (!validAccountLabels.has(transaction.credit_account)) {
+    if (!MfJournal.isKnownAccount(transaction.credit_account)) {
       errors.push(`無効な貸方科目: "${transaction.credit_account}"`);
     }
 
@@ -97,9 +90,10 @@ export class TransactionValidator {
   }
 
   private validateFriendlyCategory(transaction: PreviewTransaction): string | null {
-    const isOffsetTransaction =
-      transaction.debit_account === OFFSET_EXPENSE_ACCOUNT ||
-      transaction.credit_account === OFFSET_INCOME_ACCOUNT;
+    const isOffsetTransaction = MfJournal.isOffset(
+      transaction.debit_account,
+      transaction.credit_account,
+    );
     // 非現金仕訳（BS科目同士の仕訳）は収支として表示されないため、独自のカテゴリを必須にしない
     const isNonCashJournal = transaction.transaction_type === "non_cash_journal";
 

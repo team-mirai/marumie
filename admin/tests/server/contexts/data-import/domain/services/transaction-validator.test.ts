@@ -384,6 +384,20 @@ describe("TransactionValidator", () => {
       expect(result[0].errors).toContain('無効な借方科目: "無効な借方科目"');
     });
 
+    it("変換で無効になった行は、科目とカテゴリが正しくても無効のまま理由を残す", () => {
+      const transactions = [
+        createMockTransaction({
+          status: "invalid",
+          errors: ['借方金額を解釈できません: "abc"'],
+        }),
+      ];
+
+      const result = validator.validatePreviewTransactions(transactions);
+
+      expect(result[0].status).toBe("invalid");
+      expect(result[0].errors).toEqual(['借方金額を解釈できません: "abc"']);
+    });
+
     it("should prioritize validation errors over duplicate check", () => {
       const transactions = [
         createMockTransaction({
