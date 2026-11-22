@@ -15,8 +15,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "政治団体IDが必要です" }, { status: 400 });
     }
 
-    const snapshots = await loadBalanceSnapshotsData(orgId);
-    return NextResponse.json(snapshots);
+    const overview = await loadBalanceSnapshotsData(orgId);
+    return NextResponse.json(overview);
   } catch (error) {
     console.error("Error in balance-snapshots API:", error);
     return NextResponse.json(

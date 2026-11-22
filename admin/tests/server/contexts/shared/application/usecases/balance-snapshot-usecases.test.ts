@@ -1,6 +1,7 @@
 import { CreateBalanceSnapshotUsecase } from "@/server/contexts/shared/application/usecases/create-balance-snapshot-usecase";
 import { DeleteBalanceSnapshotUsecase } from "@/server/contexts/shared/application/usecases/delete-balance-snapshot-usecase";
 import type { BalanceSnapshot } from "@/server/contexts/shared/domain/models/balance-snapshot";
+import { todayInJst } from "@/server/contexts/shared/domain/models/jst-date";
 import type {
   CreateBalanceSnapshotInput,
   IBalanceSnapshotRepository,
@@ -95,8 +96,8 @@ describe("Balance Snapshot Usecases", () => {
     });
 
     it("今日の日付は登録できる", async () => {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
+      // 残高日付は暦日（UTC の 0 時）で渡ってくる。日本時間の今日の暦日を使う
+      const today = new Date(`${todayInJst()}T00:00:00.000Z`);
       const input: CreateBalanceSnapshotInput = {
         political_organization_id: "org-1",
         snapshot_date: today,

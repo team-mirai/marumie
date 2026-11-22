@@ -1,11 +1,4 @@
-interface BalanceSnapshot {
-  id: string;
-  political_organization_id: string;
-  snapshot_date: Date;
-  balance: number;
-  created_at: Date;
-  updated_at: Date;
-}
+import type { BalanceSnapshotOverview } from "@/server/contexts/shared/domain/models/balance-snapshot";
 
 interface ExportReportParams {
   politicalOrganizationId: string;
@@ -37,8 +30,8 @@ class ApiClient {
     return response.json();
   }
 
-  async getBalanceSnapshots(orgId: string): Promise<BalanceSnapshot[]> {
-    return this.request<BalanceSnapshot[]>(`/api/balance-snapshots?orgId=${orgId}`);
+  async getBalanceSnapshots(orgId: string): Promise<BalanceSnapshotOverview> {
+    return this.request<BalanceSnapshotOverview>(`/api/balance-snapshots?orgId=${orgId}`);
   }
 
   async downloadReport(

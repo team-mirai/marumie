@@ -5,6 +5,7 @@ import { useState, useId } from "react";
 import type { ChangeEvent, FormEvent } from "react";
 import { CircleNotch } from "@phosphor-icons/react/dist/ssr";
 import { Button, Input, Label } from "@/client/components/ui";
+import { BalanceSnapshot } from "@/server/contexts/shared/domain/models/balance-snapshot";
 
 interface BalanceSnapshotFormProps {
   politicalOrganizationId: string;
@@ -35,18 +36,10 @@ export default function BalanceSnapshotForm({
       return true;
     }
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const selectedDate = new Date(dateValue);
-    selectedDate.setHours(0, 0, 0, 0);
-
-    if (selectedDate > today) {
-      setDateError("未来の日付は登録できません");
-      return false;
-    }
-
-    setDateError("");
-    return true;
+    // 入力値（YYYY-MM-DD）は Date が UTC の 0 時として読むので、サーバーに送るのと同じ暦日で判定される
+    const error = BalanceSnapshot.validateSnapshotDate(new Date(dateValue));
+    setDateError(error ?? "");
+    return error === null;
   };
 
   const handleDateChange = (e: ChangeEvent<HTMLInputElement>) => {
