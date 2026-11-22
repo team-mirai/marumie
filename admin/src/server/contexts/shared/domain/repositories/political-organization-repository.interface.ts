@@ -1,25 +1,14 @@
-import type { PoliticalOrganization } from "@/shared/models/political-organization";
-
-export interface UpdatePoliticalOrganizationInput {
-  displayName: string;
-  slug: string;
-  orgName?: string;
-  description?: string;
-  /** 公式サイト・SNS（#1917）。省略したときは今の値を変えない */
-  websiteUrl?: string;
-  snsUrls?: string[];
-}
+import type {
+  NormalizedPoliticalOrganizationInput,
+  PoliticalOrganization,
+} from "@/shared/models/political-organization";
 
 export interface IPoliticalOrganizationRepository {
   findAll(): Promise<PoliticalOrganization[]>;
   findById(id: bigint): Promise<PoliticalOrganization | null>;
-  create(
-    displayName: string,
-    slug: string,
-    orgName?: string,
-    description?: string,
-  ): Promise<PoliticalOrganization>;
-  update(id: bigint, data: UpdatePoliticalOrganizationInput): Promise<PoliticalOrganization>;
+  create(data: NormalizedPoliticalOrganizationInput): Promise<PoliticalOrganization>;
+  /** 公式サイト・SNS（#1917）は省略したときは今の値を変えない */
+  update(id: bigint, data: NormalizedPoliticalOrganizationInput): Promise<PoliticalOrganization>;
   /** 代表者の顔写真の Storage 上のキーを付け替える。null で写真なし */
   setPhotoPath(id: bigint, photoPath: string | null): Promise<void>;
   delete(id: bigint): Promise<void>;

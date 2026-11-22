@@ -40,3 +40,57 @@ export const PoliticalOrganizationLinks = {
     return null;
   },
 };
+
+/** 政治団体の作成・更新で受け取る入力。公式サイト・SNS は渡されたときだけ扱う */
+export interface PoliticalOrganizationInput {
+  displayName: string;
+  slug: string;
+  orgName?: string;
+  description?: string;
+  websiteUrl?: string;
+  snsUrls?: string[];
+}
+
+/** 正規化した入力。空の任意項目は未登録（null）。公式サイト・SNS は渡されなければ省く */
+export interface NormalizedPoliticalOrganizationInput {
+  displayName: string;
+  slug: string;
+  orgName: string | null;
+  description: string | null;
+  websiteUrl?: string | null;
+  snsUrls?: string[];
+}
+
+export const PoliticalOrganizationInput = {
+  /** 前後の空白を除き、空の任意項目を未登録（null）にする */
+  normalize(input: PoliticalOrganizationInput): NormalizedPoliticalOrganizationInput {
+    const links = PoliticalOrganizationLinks.normalize({
+      websiteUrl: input.websiteUrl ?? "",
+      snsUrls: input.snsUrls ?? [],
+    });
+    return {
+      displayName: input.displayName.trim(),
+      slug: input.slug.trim(),
+      orgName: input.orgName?.trim() || null,
+      description: input.description?.trim() || null,
+      ...(input.websiteUrl !== undefined && { websiteUrl: links.websiteUrl || null }),
+      ...(input.snsUrls !== undefined && { snsUrls: links.snsUrls }),
+    };
+  },
+  /** 表示名・スラッグが入力されていなければエラーメッセージを返す */
+  validateRequired(input: Pick<PoliticalOrganizationInput, "displayName" | "slug">): string | null {
+    if (!input.displayName.trim()) return "表示名は必須です";
+    if (!input.slug.trim()) return "スラッグは必須です";
+    return null;
+  },
+  /** 正規化した入力を検証し、不正ならエラーメッセージを返す */
+  validate(input: NormalizedPoliticalOrganizationInput): string | null {
+    return (
+      PoliticalOrganizationInput.validateRequired(input) ??
+      PoliticalOrganizationLinks.validate({
+        websiteUrl: input.websiteUrl ?? "",
+        snsUrls: input.snsUrls ?? [],
+      })
+    );
+  },
+};

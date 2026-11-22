@@ -46,52 +46,70 @@ describe("Political Organization Usecases", () => {
       const result = await usecase.execute("テスト政治団体", "test-org", "テスト政治団体正式名称", "テスト用の政治団体です");
 
       expect(result).toEqual(created);
-      expect(mockRepository.create).toHaveBeenCalledWith(
-        "テスト政治団体",
-        "test-org",
-        "テスト政治団体正式名称",
-        "テスト用の政治団体です",
-      );
+      expect(mockRepository.create).toHaveBeenCalledWith({
+        displayName: "テスト政治団体",
+        slug: "test-org",
+        orgName: "テスト政治団体正式名称",
+        description: "テスト用の政治団体です",
+      });
     });
 
     it("オプションパラメータなしで作成する", async () => {
-      const created = createMockOrganization({ orgName: undefined, description: undefined });
+      const created = createMockOrganization({ orgName: null, description: null });
       mockRepository.create.mockResolvedValue(created);
 
       const usecase = new CreatePoliticalOrganizationUsecase(mockRepository);
       const result = await usecase.execute("テスト政治団体", "test-org");
 
       expect(result).toEqual(created);
-      expect(mockRepository.create).toHaveBeenCalledWith(
-        "テスト政治団体",
-        "test-org",
-        undefined,
-        undefined,
-      );
+      expect(mockRepository.create).toHaveBeenCalledWith({
+        displayName: "テスト政治団体",
+        slug: "test-org",
+        orgName: null,
+        description: null,
+      });
+    });
+
+    it("前後の空白を除き、空の任意項目は未登録として作成する", async () => {
+      mockRepository.create.mockResolvedValue(createMockOrganization());
+
+      await new CreatePoliticalOrganizationUsecase(mockRepository).execute(" テスト政治団体 ", " test-org ", " ", "");
+
+      expect(mockRepository.create).toHaveBeenCalledWith({
+        displayName: "テスト政治団体",
+        slug: "test-org",
+        orgName: null,
+        description: null,
+      });
     });
 
     it("表示名がない場合はエラーを返す", async () => {
       const usecase = new CreatePoliticalOrganizationUsecase(mockRepository);
 
-      await expect(usecase.execute("", "test-org")).rejects.toThrow("Organization display name is required");
+      await expect(usecase.execute("", "test-org")).rejects.toThrow(
+        new PoliticalOrganizationInputError("表示名は必須です"),
+      );
+      expect(mockRepository.create).not.toHaveBeenCalled();
     });
 
     it("表示名が空白のみの場合はエラーを返す", async () => {
       const usecase = new CreatePoliticalOrganizationUsecase(mockRepository);
 
-      await expect(usecase.execute("   ", "test-org")).rejects.toThrow("Organization display name is required");
+      await expect(usecase.execute("   ", "test-org")).rejects.toThrow("表示名は必須です");
     });
 
     it("slugがない場合はエラーを返す", async () => {
       const usecase = new CreatePoliticalOrganizationUsecase(mockRepository);
 
-      await expect(usecase.execute("テスト政治団体", "")).rejects.toThrow("Organization slug is required");
+      await expect(usecase.execute("テスト政治団体", "")).rejects.toThrow(
+        new PoliticalOrganizationInputError("スラッグは必須です"),
+      );
     });
 
     it("slugが空白のみの場合はエラーを返す", async () => {
       const usecase = new CreatePoliticalOrganizationUsecase(mockRepository);
 
-      await expect(usecase.execute("テスト政治団体", "   ")).rejects.toThrow("Organization slug is required");
+      await expect(usecase.execute("テスト政治団体", "   ")).rejects.toThrow("スラッグは必須です");
     });
 
     it("リポジトリがエラーを投げた場合は例外を伝播する", async () => {
@@ -105,6 +123,7 @@ describe("Political Organization Usecases", () => {
 
   describe("UpdatePoliticalOrganizationUsecase", () => {
     const basics = { displayName: "テスト政治団体", slug: "test-org" };
+    const normalizedBasics = { ...basics, orgName: null, description: null };
 
     it("公式サイト・SNS を整えて保存する", async () => {
       mockRepository.update.mockResolvedValue(createMockOrganization());
@@ -116,7 +135,7 @@ describe("Political Organization Usecases", () => {
       });
 
       expect(mockRepository.update).toHaveBeenCalledWith(BigInt(1), {
-        ...basics,
+        ...normalizedBasics,
         websiteUrl: "https://example.jp",
         snsUrls: ["https://x.com/team_mirai", "https://www.youtube.com/@team_mirai"],
       });
@@ -158,8 +177,8 @@ describe("Political Organization Usecases", () => {
       });
 
       expect(mockRepository.update).toHaveBeenCalledWith(BigInt(1), {
-        ...basics,
-        websiteUrl: "",
+        ...normalizedBasics,
+        websiteUrl: null,
         snsUrls: [],
       });
     });
@@ -169,7 +188,7 @@ describe("Political Organization Usecases", () => {
 
       await new UpdatePoliticalOrganizationUsecase(mockRepository, cacheInvalidator).execute(BigInt(1), basics);
 
-      expect(mockRepository.update).toHaveBeenCalledWith(BigInt(1), basics);
+      expect(mockRepository.update).toHaveBeenCalledWith(BigInt(1), normalizedBasics);
     });
 
     it("公式サイトだけを渡したら公式サイトだけを保存する", async () => {
@@ -181,7 +200,7 @@ describe("Political Organization Usecases", () => {
       });
 
       expect(mockRepository.update).toHaveBeenCalledWith(BigInt(1), {
-        ...basics,
+        ...normalizedBasics,
         websiteUrl: "https://example.jp",
       });
     });
@@ -195,7 +214,7 @@ describe("Political Organization Usecases", () => {
       });
 
       expect(mockRepository.update).toHaveBeenCalledWith(BigInt(1), {
-        ...basics,
+        ...normalizedBasics,
         snsUrls: ["https://x.com/team_mirai"],
       });
     });
@@ -249,6 +268,19 @@ describe("Political Organization Usecases", () => {
           displayName: " ",
         }),
       ).rejects.toThrow("表示名は必須です");
+    });
+
+    it("作成と同じく、前後の空白を除き空の任意項目は未登録として保存する", async () => {
+      mockRepository.update.mockResolvedValue(createMockOrganization());
+
+      await new UpdatePoliticalOrganizationUsecase(mockRepository, cacheInvalidator).execute(BigInt(1), {
+        displayName: " テスト政治団体 ",
+        slug: " test-org ",
+        orgName: " ",
+        description: "",
+      });
+
+      expect(mockRepository.update).toHaveBeenCalledWith(BigInt(1), normalizedBasics);
     });
 
     it("リポジトリのエラーは包んで投げる", async () => {

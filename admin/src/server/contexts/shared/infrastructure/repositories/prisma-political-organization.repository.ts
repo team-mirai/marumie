@@ -2,11 +2,11 @@ import type {
   PrismaClient,
   PoliticalOrganization as PrismaPoliticalOrganization,
 } from "@prisma/client";
-import type { PoliticalOrganization } from "@/shared/models/political-organization";
 import type {
-  IPoliticalOrganizationRepository,
-  UpdatePoliticalOrganizationInput,
-} from "@/server/contexts/shared/domain/repositories/political-organization-repository.interface";
+  NormalizedPoliticalOrganizationInput,
+  PoliticalOrganization,
+} from "@/shared/models/political-organization";
+import type { IPoliticalOrganizationRepository } from "@/server/contexts/shared/domain/repositories/political-organization-repository.interface";
 
 function toModel(row: PrismaPoliticalOrganization): PoliticalOrganization {
   return {
@@ -48,38 +48,31 @@ export class PrismaPoliticalOrganizationRepository implements IPoliticalOrganiza
     return toModel(organization);
   }
 
-  async create(
-    displayName: string,
-    slug: string,
-    orgName?: string,
-    description?: string,
-  ): Promise<PoliticalOrganization> {
-    const cleanDisplayName = displayName.trim();
-    const cleanSlug = slug.trim();
-    const cleanOrgName = orgName?.trim() || undefined;
-    const cleanDescription = description?.trim() || undefined;
-
+  async create(data: NormalizedPoliticalOrganizationInput): Promise<PoliticalOrganization> {
     const organization = await this.prisma.politicalOrganization.create({
       data: {
-        displayName: cleanDisplayName,
-        slug: cleanSlug,
-        orgName: cleanOrgName,
-        description: cleanDescription,
+        displayName: data.displayName,
+        slug: data.slug,
+        orgName: data.orgName,
+        description: data.description,
       },
     });
 
     return toModel(organization);
   }
 
-  async update(id: bigint, data: UpdatePoliticalOrganizationInput): Promise<PoliticalOrganization> {
+  async update(
+    id: bigint,
+    data: NormalizedPoliticalOrganizationInput,
+  ): Promise<PoliticalOrganization> {
     const organization = await this.prisma.politicalOrganization.update({
       where: { id },
       data: {
-        displayName: data.displayName.trim(),
-        orgName: data.orgName?.trim() || null,
-        slug: data.slug.trim(),
-        description: data.description?.trim() || null,
-        ...(data.websiteUrl !== undefined && { websiteUrl: data.websiteUrl.trim() || null }),
+        displayName: data.displayName,
+        orgName: data.orgName,
+        slug: data.slug,
+        description: data.description,
+        ...(data.websiteUrl !== undefined && { websiteUrl: data.websiteUrl }),
         ...(data.snsUrls !== undefined && { snsUrls: data.snsUrls }),
       },
     });
