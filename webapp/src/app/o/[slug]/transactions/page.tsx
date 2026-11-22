@@ -1,8 +1,7 @@
 import "server-only";
 import { redirect } from "next/navigation";
 import { loadOrganizations } from "@/server/contexts/public-finance/presentation/loaders/load-organizations";
-
-const DEFAULT_YEAR = 2026;
+import { PublishedFiscalYears } from "@/server/contexts/public-finance/domain/models/published-fiscal-years";
 
 interface TransactionsPageProps {
   params: Promise<{
@@ -18,5 +17,5 @@ export default async function TransactionsPage({ params }: TransactionsPageProps
   const validSlug = organizations.some((org) => org.slug === slug) ? slug : defaultSlug;
 
   // デフォルト年度にリダイレクト
-  redirect(`/o/${validSlug}/${DEFAULT_YEAR}/transactions`);
+  redirect(`/o/${validSlug}/${PublishedFiscalYears.defaultYear}/transactions`);
 }

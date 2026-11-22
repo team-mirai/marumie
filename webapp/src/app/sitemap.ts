@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 import { loadOrganizations } from "@/server/contexts/public-finance/presentation/loaders/load-organizations";
+import { PublishedFiscalYears } from "@/server/contexts/public-finance/domain/models/published-fiscal-years";
 import { loadPublishedResearchFundPages } from "@/server/contexts/research-fund/presentation/loaders/load-published-research-fund-pages";
 
 export const dynamic = "force-static";
@@ -8,9 +9,6 @@ export const dynamic = "force-static";
 // これが無いと、デプロイ時か /api/refresh でタグが無効化されたときにしか作り直されない。
 // （segment config は静的に解析されるので、定数を import せずリテラルで書く）
 export const revalidate = 3600;
-
-// 政治団体ページの年度切り替えで選べる年度（/o/[slug]/[year] の VALID_YEARS と揃える）
-const ORGANIZATION_YEARS = [2025, 2026] as const;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = process.env.WEBAPP_URL || "https://marumie.team-mir.ai";
@@ -39,7 +37,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   // 各組織の年度ごとのページを追加
   organizations.forEach((org) => {
-    ORGANIZATION_YEARS.forEach((year) => {
+    PublishedFiscalYears.all.forEach((year) => {
       // 組織のメインページ
       sitemap.push({
         url: `${baseUrl}/o/${org.slug}/${year}`,

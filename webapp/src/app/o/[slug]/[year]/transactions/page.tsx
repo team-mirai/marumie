@@ -10,12 +10,10 @@ import SectionCard from "@/client/components/layout/SectionCard";
 import InteractiveTransactionTable from "@/client/components/top-page/features/transactions-table/InteractiveTransactionTable";
 import { loadTransactionsPageData } from "@/server/contexts/public-finance/presentation/loaders/load-transactions-page-data";
 import { loadOrganizations } from "@/server/contexts/public-finance/presentation/loaders/load-organizations";
+import { PublishedFiscalYears } from "@/server/contexts/public-finance/domain/models/published-fiscal-years";
 import { formatUpdatedAt } from "@/client/lib/format-date";
 import { parseTransactionSort, type TransactionSort } from "@/client/lib/transaction-sort";
 import type { TransactionListSortBy } from "@/server/contexts/public-finance/domain/repositories/transaction-list-repository.interface";
-
-const VALID_YEARS = [2025, 2026] as const;
-const DEFAULT_YEAR = 2026;
 
 /** 並び順をサーバーでの並べ方にする。支出・収入が多い順は、収入をプラス・支出をマイナスとした金額で並べる */
 const SERVER_SORT: Record<
@@ -61,13 +59,13 @@ export default async function TransactionsPage({ params, searchParams }: Transac
 
   // 年度の妥当性をチェック
   const yearNumber = parseInt(yearParam, 10);
-  const financialYear = VALID_YEARS.includes(yearNumber as (typeof VALID_YEARS)[number])
+  const financialYear = PublishedFiscalYears.includes(yearNumber)
     ? yearNumber
-    : DEFAULT_YEAR;
+    : PublishedFiscalYears.defaultYear;
 
   // 年度が不正な場合はデフォルト年度にリダイレクト
   if (financialYear !== yearNumber) {
-    redirect(`/o/${slug}/${DEFAULT_YEAR}/transactions`);
+    redirect(`/o/${slug}/${PublishedFiscalYears.defaultYear}/transactions`);
   }
 
   // slugの妥当性をチェックし、必要に応じてリダイレクト

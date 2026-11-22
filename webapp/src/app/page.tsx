@@ -9,29 +9,26 @@ import MainColumn from "@/client/components/layout/MainColumn";
 import RevealOnScroll from "@/client/components/layout/RevealOnScroll";
 import { formatUpdatedAt } from "@/client/lib/format-date";
 import { loadHomePageData } from "@/server/contexts/public-finance/presentation/loaders/load-home-page-data";
+import { PublishedFiscalYears } from "@/server/contexts/public-finance/domain/models/published-fiscal-years";
 import { loadResearchFundComingSoonPoliticians } from "@/server/contexts/research-fund/presentation/loaders/load-research-fund-coming-soon-politicians";
 import { loadResearchFundHomeSummary } from "@/server/contexts/research-fund/presentation/loaders/load-research-fund-home-summary";
 
 export const revalidate = 300; // 5 minutes
 
-// 政治団体ページ（/o/[slug]/[year]）で選べる年度とそろえる
-const YEARS = [2025, 2026] as const;
-const DEFAULT_YEAR = 2026;
-
 /** トップページ。政党の収支・所属議員の調研費・政治団体の収支をカードで並べ、それぞれのページへの入口にする。 */
 export default async function HomePage() {
-  const data = await loadHomePageData(YEARS).catch((error) => {
+  const data = await loadHomePageData(PublishedFiscalYears.all).catch((error) => {
     console.error("loadHomePageData error:", error);
     return null;
   });
   const updatedAt = formatUpdatedAt(data?.lastUpdatedAt ?? null);
   // 所属議員の調研費は、政党カードの有無に関係なく調研費を公開中の議員を全員出す。
-  // 並べるのは DEFAULT_YEAR を公開している議員で、ほかの年も公開していればその場で年を切り替えられる。
+  // 並べるのは既定の年度を公開している議員で、ほかの年も公開していればその場で年を切り替えられる。
   // 取れなくても他のカードは出せるので、失敗したら出さないだけにする
   const [researchFund, comingSoonPoliticians] = await Promise.all([
     loadResearchFundHomeSummary({
-      financialYear: DEFAULT_YEAR,
-      years: YEARS,
+      financialYear: PublishedFiscalYears.defaultYear,
+      years: PublishedFiscalYears.all,
     }).catch((error) => {
       console.error("loadResearchFundHomeSummary error:", error);
       return null;
@@ -66,7 +63,7 @@ export default async function HomePage() {
               }
               updatedAt={updatedAt}
               years={party.years}
-              defaultYear={DEFAULT_YEAR}
+              defaultYear={PublishedFiscalYears.defaultYear}
             />
           ))}
         </section>
@@ -108,7 +105,7 @@ export default async function HomePage() {
                 }
                 updatedAt={updatedAt}
                 years={group.years}
-                defaultYear={DEFAULT_YEAR}
+                defaultYear={PublishedFiscalYears.defaultYear}
                 // 横に並べて幅が狭くなるときは金額を小さくする
                 amountSize={data.groups.length > 1 ? "compact" : "default"}
                 headingLevel="h3"
