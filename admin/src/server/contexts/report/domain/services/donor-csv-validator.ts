@@ -2,11 +2,8 @@ import type {
   PreviewDonorCsvRow,
   TransactionForDonorCsv,
 } from "@/server/contexts/report/domain/models/preview-donor-csv-row";
-import {
-  DONOR_TYPE_LABELS,
-  validateDonorInput,
-} from "@/server/contexts/report/domain/models/donor";
-import { isDonorTypeAllowedForCategory } from "@/server/contexts/report/domain/models/donor-assignment-rules";
+import { validateDonorInput } from "@/server/contexts/report/domain/models/donor";
+import { donorTypeRejectionReasonForCategory } from "@/server/contexts/report/domain/models/donor-assignment-rules";
 
 export interface IDonorCsvValidator {
   validate(
@@ -79,14 +76,12 @@ export class DonorCsvValidator implements IDonorCsvValidator {
       return { ...row, status: "invalid", errors: ["寄付者種別は必須です"] };
     }
 
-    if (!isDonorTypeAllowedForCategory(transaction.categoryKey, donorType)) {
+    const typeRejectionReason = donorTypeRejectionReasonForCategory(transaction, donorType);
+    if (typeRejectionReason !== null) {
       return {
         ...row,
         status: "type_mismatch",
-        errors: [
-          `カテゴリ '${transaction.friendlyCategory || transaction.categoryKey}' に対して` +
-            `寄付者種別 '${DONOR_TYPE_LABELS[donorType]}' は指定できません`,
-        ],
+        errors: [typeRejectionReason],
         transaction: this.mapTransaction(transaction),
       };
     }

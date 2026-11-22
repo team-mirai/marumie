@@ -6,7 +6,7 @@
  */
 
 import { PL_CATEGORIES } from "@/shared/accounting/account-category";
-import type { DonorType } from "@/server/contexts/report/domain/models/donor";
+import { DONOR_TYPE_LABELS, type DonorType } from "@/server/contexts/report/domain/models/donor";
 
 /**
  * 個人からの寄附カテゴリ - individualのみ許可
@@ -112,6 +112,39 @@ export function getAllowedDonorTypes(categoryKey: string): DonorType[] {
 export function isDonorTypeAllowedForCategory(categoryKey: string, donorType: DonorType): boolean {
   const allowedTypes = getAllowedDonorTypes(categoryKey);
   return allowedTypes.includes(donorType);
+}
+
+/**
+ * 却下理由に表示するカテゴリ名を返す。
+ * 取引の表示用カテゴリ名を優先し、無ければ勘定科目名を使う（内部のキーは表示しない）。
+ */
+function categoryDisplayName(categoryKey: string, friendlyCategory: string | null): string {
+  if (friendlyCategory) {
+    return friendlyCategory;
+  }
+  const accountName = Object.entries(PL_CATEGORIES).find(
+    ([, mapping]) => mapping.key === categoryKey,
+  )?.[0];
+  return accountName ?? categoryKey;
+}
+
+/**
+ * 寄付者の種別がカテゴリで許可されていなければ却下理由を返す。
+ * 画面からの紐付けと CSV の取り込みで同じ理由を表示する。
+ *
+ * @param transaction - 紐付け先の取引のカテゴリ
+ * @param donorType - 紐付けようとしている寄付者の種別
+ * @returns 許可されていない場合は却下理由、許可されている場合は null
+ */
+export function donorTypeRejectionReasonForCategory(
+  transaction: { categoryKey: string; friendlyCategory: string | null },
+  donorType: DonorType,
+): string | null {
+  if (isDonorTypeAllowedForCategory(transaction.categoryKey, donorType)) {
+    return null;
+  }
+  const categoryName = categoryDisplayName(transaction.categoryKey, transaction.friendlyCategory);
+  return `カテゴリ '${categoryName}' に対して寄付者種別 '${DONOR_TYPE_LABELS[donorType]}' は指定できません`;
 }
 
 /**

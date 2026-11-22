@@ -3,7 +3,7 @@ import "server-only";
 import type { IDonorRepository } from "@/server/contexts/report/domain/repositories/donor-repository.interface";
 import type { ITransactionDonorRepository } from "@/server/contexts/report/domain/repositories/transaction-donor-repository.interface";
 import type { ITransactionWithDonorRepository } from "@/server/contexts/report/domain/repositories/transaction-with-donor-repository.interface";
-import { isDonorTypeAllowedForCategory } from "@/server/contexts/report/domain/models/donor-assignment-rules";
+import { donorTypeRejectionReasonForCategory } from "@/server/contexts/report/domain/models/donor-assignment-rules";
 
 interface BulkAssignDonorInput {
   transactionIds: string[];
@@ -69,17 +69,15 @@ export class BulkAssignDonorUsecase {
       };
     }
 
-    const incompatibleTransactions = transactions.filter(
-      (t) => !isDonorTypeAllowedForCategory(t.categoryKey, donor.donorType),
-    );
-    if (incompatibleTransactions.length > 0) {
-      const categoryKeys = [...new Set(incompatibleTransactions.map((t) => t.categoryKey))];
-      return {
-        success: false,
-        errors: [
-          `選択された寄付者の種別（${donor.donorType}）は、以下のカテゴリで許可されていません: ${categoryKeys.join(", ")}`,
-        ],
-      };
+    const rejectionReasons = [
+      ...new Set(
+        transactions
+          .map((t) => donorTypeRejectionReasonForCategory(t, donor.donorType))
+          .filter((reason): reason is string => reason !== null),
+      ),
+    ];
+    if (rejectionReasons.length > 0) {
+      return { success: false, errors: rejectionReasons };
     }
 
     const data = transactionBigIntIds.map((transactionId) => ({
