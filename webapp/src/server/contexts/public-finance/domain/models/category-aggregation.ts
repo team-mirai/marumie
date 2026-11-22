@@ -25,7 +25,7 @@ export interface CategoryAggregation {
 /**
  * 残高情報
  */
-interface BalanceInfo {
+export interface BalanceInfo {
   previousYearBalance: number;
   currentYearBalance: number;
   liabilityBalance: number;
@@ -40,6 +40,20 @@ export const DEFAULT_SUBCATEGORY_MAX_COUNT = 8;
  * CategoryAggregationのドメインロジック
  */
 export const CategoryAggregation = {
+  /**
+   * 正味が0以下になった項目を除く
+   *
+   * 返金を正味で集計した結果、正味が0以下になった項目は描画も合計もしない。
+   * Sankeyのリンクは負の値を取れず、0のリンクも意味を持たないため。
+   * （正味がマイナスになった場合の見せ方は未決。#1476 / #1404）
+   */
+  dropNonPositiveItems(data: CategoryAggregation): CategoryAggregation {
+    return {
+      income: data.income.filter((item) => item.totalAmount > 0),
+      expense: data.expense.filter((item) => item.totalAmount > 0),
+    };
+  },
+
   /**
    * 「その他」カテゴリを「その他の収入」「その他の支出」にリネーム
    *

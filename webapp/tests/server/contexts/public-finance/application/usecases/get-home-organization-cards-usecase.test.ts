@@ -24,6 +24,12 @@ const sankeyFor = (label: string): SankeyData => ({
   links: [],
 });
 
+// 区分ごとに違う総額を返し、カードが詳細の区分の総額を持つことを確かめる
+const summaryFor = (categoryType?: string) =>
+  categoryType === "friendly-category"
+    ? { income: 1000, expense: 700, balance: 300 }
+    : { income: 9999, expense: 9999, balance: 0 };
+
 describe("GetHomeOrganizationCardsUsecase", () => {
   const organizationRepository = {
     findAll: jest.fn(),
@@ -59,6 +65,7 @@ describe("GetHomeOrganizationCardsUsecase", () => {
     transactionRepository.getLastUpdatedAt.mockResolvedValue(new Date("2026-10-23T00:00:00Z"));
     sankeyUsecase.execute.mockImplementation(async ({ slugs, financialYear, categoryType }) => ({
       sankeyData: sankeyFor(`${slugs[0]}-${financialYear}-${categoryType}`),
+      summary: summaryFor(categoryType),
     }));
   });
 
@@ -74,7 +81,7 @@ describe("GetHomeOrganizationCardsUsecase", () => {
     expect(result.lastUpdatedAt).toBe("2026-10-23T00:00:00.000Z");
   });
 
-  it("年ごとに、法律上の区分と詳細の区分の収支の流れを持つ", async () => {
+  it("年ごとに、法律上の区分と詳細の区分の収支の流れと、詳細の区分の図と同じ集計の総額を持つ", async () => {
     const result = await usecase.execute({ years: [2025, 2026], photoStorageAvailable: true });
 
     expect(result.parties[0].years).toEqual([
@@ -82,11 +89,13 @@ describe("GetHomeOrganizationCardsUsecase", () => {
         year: 2025,
         political: sankeyFor("sample-party-2025-political-category"),
         friendly: sankeyFor("sample-party-2025-friendly-category"),
+        summary: { income: 1000, expense: 700, balance: 300 },
       },
       {
         year: 2026,
         political: sankeyFor("sample-party-2026-political-category"),
         friendly: sankeyFor("sample-party-2026-friendly-category"),
+        summary: { income: 1000, expense: 700, balance: 300 },
       },
     ]);
   });
@@ -103,12 +112,20 @@ describe("GetHomeOrganizationCardsUsecase", () => {
   it("収支の流れの取得に失敗した年は null にし、ほかの年・団体は出す", async () => {
     sankeyUsecase.execute.mockImplementation(async ({ slugs, financialYear, categoryType }) => {
       if (slugs[0] === "sample-party" && financialYear === 2025) throw new Error("boom");
-      return { sankeyData: sankeyFor(`${slugs[0]}-${financialYear}-${categoryType}`) };
+      return {
+        sankeyData: sankeyFor(`${slugs[0]}-${financialYear}-${categoryType}`),
+        summary: summaryFor(categoryType),
+      };
     });
 
     const result = await usecase.execute({ years: [2025, 2026], photoStorageAvailable: true });
 
-    expect(result.parties[0].years[0]).toEqual({ year: 2025, political: null, friendly: null });
+    expect(result.parties[0].years[0]).toEqual({
+      year: 2025,
+      political: null,
+      friendly: null,
+      summary: null,
+    });
     expect(result.parties[0].years[1].friendly).not.toBeNull();
     expect(result.groups[0].years[0].friendly).not.toBeNull();
   });

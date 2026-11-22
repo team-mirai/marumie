@@ -31,6 +31,7 @@ export async function GET(
       face: isParty ? { kind: "logo" } : photo ? { kind: "photo", src: photo } : { kind: "person" },
       title: isParty ? `${data.displayName}の収支` : data.displayName,
       sankey: data.friendly,
+      totals: { in: data.summary.income, out: data.summary.expense },
     });
     return image ?? (await topOgImageResponse());
   } catch (error) {

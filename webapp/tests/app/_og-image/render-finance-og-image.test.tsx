@@ -35,6 +35,7 @@ const input = {
   face: { kind: "logo" as const },
   title: "チームみらいの収支",
   sankey: data,
+  totals: { in: 1_000_000, out: 600_000 },
 };
 
 describe("splitOgTitle", () => {
@@ -85,6 +86,17 @@ describe("renderFinanceOgImage", () => {
       expect.anything(),
       expect.objectContaining({ width: 1200, height: 630 }),
     );
+  });
+
+  it("政党・政治団体は、見出しの総額を「収入」「支出」にし、図のデータではなく渡した総額を使う", async () => {
+    (ImageResponse as unknown as jest.Mock).mockClear();
+    await renderFinanceOgImage({ ...input, totals: { in: 2_500_000, out: 1_800_000 } });
+
+    const card = (ImageResponse as unknown as jest.Mock).mock.calls[0][0];
+    expect(card.props.totals).toEqual([
+      expect.objectContaining({ label: "収入", yen: 2_500_000 }),
+      expect.objectContaining({ label: "支出", yen: 1_800_000 }),
+    ]);
   });
 
   it("議員の調研費は、見出しの総額を「支給」「支出」にし、渡した総額を使う", async () => {

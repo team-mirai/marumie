@@ -19,6 +19,7 @@ const loadOrganizationPhotoUrlMock = loadOrganizationPhotoUrl as jest.Mock;
 
 const PHOTO_URL = "https://storage.example/photo.jpg";
 const friendly = { nodes: [{ id: "t", label: "合計", nodeType: "total" }], links: [] };
+const summary = { income: 1_000_000, expense: 600_000, balance: 400_000 };
 
 describe("loadOrganizationOgImageData", () => {
   const fetchMock = jest.fn();
@@ -33,7 +34,7 @@ describe("loadOrganizationOgImageData", () => {
     loadOrganizationsMock.mockResolvedValue({
       organizations: [{ slug: "sample-party", displayName: "サンプル党", hasPhoto: true }],
     });
-    loadTopPageDataMock.mockResolvedValue({ friendly });
+    loadTopPageDataMock.mockResolvedValue({ friendly, summary });
     loadOrganizationPhotoUrlMock.mockResolvedValue(PHOTO_URL);
   });
 
@@ -43,6 +44,7 @@ describe("loadOrganizationOgImageData", () => {
     expect(await loadOrganizationOgImageData("sample-party", 2026, { withPhoto: true })).toEqual({
       displayName: "サンプル党",
       friendly,
+      summary,
       photo: new Uint8Array([0xff, 0xd8, 0xff]),
     });
     expect(fetchMock).toHaveBeenCalledWith(

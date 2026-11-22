@@ -7,6 +7,7 @@ interface MockUsecaseParams {
   financialYear: number;
 }
 import type { SankeyData } from "@/types/sankey";
+import type { FinancialSummary } from "@/server/contexts/public-finance/domain/models/financial-summary";
 import type { BalanceSheetData } from "@/types/balance-sheet";
 
 // モックデータ定義
@@ -41,6 +42,12 @@ const MOCK_SANKEY_DATA: SankeyData = {
     { source: "合計", target: "事務所費", value: 6000000 },
     { source: "合計", target: "その他経費", value: 5000000 },
   ],
+};
+
+const MOCK_FINANCIAL_SUMMARY: FinancialSummary = {
+  income: 23000000,
+  expense: 23000000,
+  balance: 0,
 };
 
 const MOCK_BALANCE_SHEET_DATA: BalanceSheetData = {
@@ -95,6 +102,7 @@ export class GetMockTransactionPageDataUsecase {
       monthlyData: MOCK_MONTHLY_DATA,
       political: MOCK_SANKEY_DATA,
       friendly: MOCK_SANKEY_DATA,
+      summary: MOCK_FINANCIAL_SUMMARY,
       balanceSheetData: MOCK_BALANCE_SHEET_DATA,
     };
   }

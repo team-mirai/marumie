@@ -150,6 +150,7 @@ export default async function OrgPage({ params }: OrgPageProps) {
           updatedAt={updatedAt}
           political={data?.political ?? null}
           friendly={data?.friendly ?? null}
+          summary={data?.summary ?? null}
         />
         <MonthlyTrendsSection
           monthlyData={data?.monthlyData}
@@ -174,6 +175,7 @@ export default async function OrgPage({ params }: OrgPageProps) {
           updatedAt={updatedAt}
           political={data?.political ?? null}
           friendly={data?.friendly ?? null}
+          summary={data?.summary ?? null}
         />
       </div>
       <MonthlyTrendsSection

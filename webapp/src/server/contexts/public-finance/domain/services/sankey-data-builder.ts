@@ -8,7 +8,7 @@
  * - Safari互換ID生成
  */
 
-import type { CategoryAggregation } from "@/server/contexts/public-finance/domain/models/category-aggregation";
+import { CategoryAggregation } from "@/server/contexts/public-finance/domain/models/category-aggregation";
 import type {
   SankeyData,
   SankeyLink,
@@ -23,13 +23,7 @@ export class SankeyDataBuilder {
    * CategoryAggregationからSankeyDataを構築
    */
   build(rawAggregation: CategoryAggregation): SankeyData {
-    // 返金を正味で集計した結果、正味が0以下になった項目は描画しない。
-    // Sankeyのリンクは負の値を取れず、0のリンクも意味を持たないため。
-    // （正味がマイナスになった場合の見せ方は未決。#1476 / #1404）
-    const aggregation: CategoryAggregation = {
-      income: rawAggregation.income.filter((item) => item.totalAmount > 0),
-      expense: rawAggregation.expense.filter((item) => item.totalAmount > 0),
-    };
+    const aggregation = CategoryAggregation.dropNonPositiveItems(rawAggregation);
 
     const nodes: SankeyNode[] = [];
     const links: SankeyLink[] = [];

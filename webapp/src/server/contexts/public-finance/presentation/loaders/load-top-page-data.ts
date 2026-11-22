@@ -94,6 +94,8 @@ export const loadTopPageData = unstable_cache(
       monthlyData: monthlyData.monthlyData,
       political: sankeyPoliticalCategoryData.sankeyData,
       friendly: sankeyFriendlyCategoryData.sankeyData,
+      // 見出しの総額は、見出しの下に出す「詳細の区分」の図と同じ集計から求めたもの
+      summary: sankeyFriendlyCategoryData.summary,
       balanceSheetData: balanceSheetData.balanceSheetData,
     };
   },
