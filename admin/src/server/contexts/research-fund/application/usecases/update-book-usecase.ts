@@ -18,11 +18,7 @@ export class UpdateBookUsecase {
     const validation = Book.validateMetadata(input);
     if (validation.status === "invalid")
       throw new BookError(validation.errors[0].code, validation.errors[0].message);
-    await this.repository.update(politicianId, bookId, {
-      asOfDate: validation.value.asOfDate,
-      nextUpdateNote: validation.value.nextUpdateNote.trim(),
-      policyComment: validation.value.policyComment,
-    });
+    await this.repository.update(politicianId, bookId, validation.value);
     return { cacheWarning: await invalidateWebappCache(this.cacheInvalidator) };
   }
 }

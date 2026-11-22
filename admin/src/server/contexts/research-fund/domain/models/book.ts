@@ -70,6 +70,14 @@ export const Book = {
       );
     const policyComment = Book.normalizePolicyComment(input.policyComment);
     if (policyComment.status === "invalid") return policyComment;
-    return { status: "valid", value: { ...input, policyComment: policyComment.value } };
+    // 次回更新メモも活用方針と同じく、前後の空白を落として保存する
+    return {
+      status: "valid",
+      value: {
+        asOfDate: input.asOfDate,
+        nextUpdateNote: input.nextUpdateNote.trim(),
+        policyComment: policyComment.value,
+      },
+    };
   },
 };
