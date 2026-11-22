@@ -2,7 +2,7 @@ import { GetResearchFundReceiptUsecase } from "@/server/contexts/research-fund/a
 import type { ReceiptStorage } from "@/server/contexts/research-fund/domain/repositories/receipt-storage.interface";
 import type { ResearchFundRepository } from "@/server/contexts/research-fund/domain/repositories/research-fund-repository.interface";
 
-function build(receipt: { maskedKey: string } | null) {
+function build(receipt: { maskedKey: string } | null, receiptsPublished = true) {
   const repository: ResearchFundRepository = {
     findPublished: jest.fn().mockResolvedValue(null),
     findPublishedForHome: jest.fn().mockResolvedValue([]),
@@ -15,7 +15,7 @@ function build(receipt: { maskedKey: string } | null) {
   const storage: ReceiptStorage = {
     createSignedUrl: jest.fn().mockResolvedValue("https://storage.example/signed"),
   };
-  return { usecase: new GetResearchFundReceiptUsecase(repository, storage), repository, storage };
+  return { usecase: new GetResearchFundReceiptUsecase(repository, storage, receiptsPublished), repository, storage };
 }
 
 describe("GetResearchFundReceiptUsecase", () => {
@@ -30,6 +30,14 @@ describe("GetResearchFundReceiptUsecase", () => {
     const { usecase, storage } = build(null);
 
     expect(await usecase.execute("12")).toBeNull();
+    expect(storage.createSignedUrl).not.toHaveBeenCalled();
+  });
+
+  it("領収書の公開を止めている間は、公開済みの仕訳でも返さず、DB にもストレージにも問い合わせない", async () => {
+    const { usecase, repository, storage } = build({ maskedKey: "key-1" }, false);
+
+    expect(await usecase.execute("12")).toBeNull();
+    expect(repository.findPublishedReceipt).not.toHaveBeenCalled();
     expect(storage.createSignedUrl).not.toHaveBeenCalled();
   });
 

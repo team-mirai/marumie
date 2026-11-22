@@ -22,7 +22,6 @@ import type {
   ResearchFundExpenseView,
   ResearchFundPageData,
 } from "@/server/contexts/research-fund/domain/models/research-fund-page";
-import { RESEARCH_FUND_RECEIPTS_PUBLISHED } from "@/server/contexts/research-fund/domain/models/research-fund-receipt-publication";
 
 interface Props {
   data: ResearchFundPageData;
@@ -230,11 +229,10 @@ export default function ResearchFundExpensesSection({ data, pathSlug, eyebrow, u
   // 項目名の右（SP ではカテゴリーの右）に並べるピル。領収書 → 用途N の順。
   const badges = (row: ResearchFundExpenseView) => {
     const link = groupLink(row);
-    const hasReceipt = RESEARCH_FUND_RECEIPTS_PUBLISHED && row.hasReceipt;
-    if (!hasReceipt && !link) return null;
+    if (!row.hasReceipt && !link) return null;
     return (
       <>
-        {hasReceipt && (
+        {row.hasReceipt && (
           <ResearchFundReceiptPill ready={row.receiptReady} onClick={() => setReceipt(row)} />
         )}
         {link}
