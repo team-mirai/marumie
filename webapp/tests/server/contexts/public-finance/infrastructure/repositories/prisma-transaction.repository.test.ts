@@ -212,3 +212,43 @@ describe("PrismaTransactionRepository#findWithPagination（収入をプラス・
     expect(lastCalls[0][0].where.AND?.[1].transactionType).toBe("income");
   });
 });
+
+describe("PrismaTransactionRepository#getTotalAmount（絞り込み時の合計）", () => {
+  type TotalGroupByArgs = { by: string[]; where: { transactionType?: unknown } };
+
+  const createPrismaMock = () => {
+    const groupBy = jest.fn(async (_args: TotalGroupByArgs) => [
+      { transactionType: "income", _sum: { debitAmount: 0, creditAmount: 3_000 } },
+      { transactionType: "expense", _sum: { debitAmount: 1_000, creditAmount: 0 } },
+    ]);
+    return {
+      prisma: { transaction: { groupBy } } as unknown as PrismaClient,
+      groupBy,
+    };
+  };
+
+  it("収入をプラス・支出をマイナスとして合計する", async () => {
+    const { prisma } = createPrismaMock();
+    const repository = new PrismaTransactionRepository(prisma);
+
+    await expect(repository.getTotalAmount({ category_keys: ["donations"] })).resolves.toBe(2_000);
+  });
+
+  it("収入か支出の指定はそのまま条件に使う", async () => {
+    const { prisma, groupBy } = createPrismaMock();
+    const repository = new PrismaTransactionRepository(prisma);
+
+    await repository.getTotalAmount({ transaction_type: "expense" });
+
+    expect(groupBy.mock.calls[0][0].where.transactionType).toBe("expense");
+  });
+
+  it("offset 系が指定されても、一覧と同じく収入・支出だけを対象にする", async () => {
+    const { prisma, groupBy } = createPrismaMock();
+    const repository = new PrismaTransactionRepository(prisma);
+
+    await repository.getTotalAmount({ transaction_type: "offset_income" });
+
+    expect(groupBy.mock.calls[0][0].where.transactionType).toEqual({ in: ["income", "expense"] });
+  });
+});

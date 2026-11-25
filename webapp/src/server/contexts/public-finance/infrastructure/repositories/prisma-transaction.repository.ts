@@ -222,8 +222,9 @@ export class PrismaTransactionRepository
       in: ["income", "expense"] as DisplayTransactionType[],
     };
 
-    // フィルターで特定の transaction_type が指定されている場合は上書き
-    if (filters?.transaction_type) {
+    // フィルターで収入か支出が指定されている場合だけ上書きする
+    // （URL から offset 系が渡されても、一覧・件数・合計のどれにも出さない）
+    if (filters?.transaction_type === "income" || filters?.transaction_type === "expense") {
       where.transactionType = filters.transaction_type;
     }
 
