@@ -157,6 +157,29 @@ export class PrismaTransactionRepository
     };
   }
 
+  async getTotalAmount(filters?: TransactionFilters): Promise<number> {
+    const where = this.buildWhereClause(filters);
+
+    const result = await this.prisma.transaction.groupBy({
+      by: ["transactionType"],
+      where,
+      _sum: {
+        debitAmount: true,
+        creditAmount: true,
+      },
+    });
+
+    let total = 0;
+    for (const row of result) {
+      if (row.transactionType === "expense") {
+        total -= Number(row._sum.debitAmount ?? 0);
+      } else if (row.transactionType === "income") {
+        total += Number(row._sum.creditAmount ?? 0);
+      }
+    }
+    return total;
+  }
+
   async getLastUpdatedAt(): Promise<Date | null> {
     const result = await this.prisma.transaction.aggregate({
       _max: {
@@ -199,8 +222,9 @@ export class PrismaTransactionRepository
       in: ["income", "expense"] as DisplayTransactionType[],
     };
 
-    // フィルターで特定の transaction_type が指定されている場合は上書き
-    if (filters?.transaction_type) {
+    // フィルターで収入か支出が指定されている場合だけ上書きする
+    // （URL から offset 系が渡されても、一覧・件数・合計のどれにも出さない）
+    if (filters?.transaction_type === "income" || filters?.transaction_type === "expense") {
       where.transactionType = filters.transaction_type;
     }
 

@@ -11,11 +11,14 @@ import MobilePaginator from "./MobilePaginator";
 import CsvDownloadLink from "@/client/components/transactions/CsvDownloadLink";
 import TransactionSortTabs from "@/client/components/transactions/TransactionSortTabs";
 
+const currencyFormatter = new Intl.NumberFormat("ja-JP", { style: "decimal", useGrouping: true });
+
 interface InteractiveTransactionTableProps {
   slug: string;
   year: number;
   transactions: DisplayTransaction[];
   total: number;
+  totalAmount?: number | null;
   page: number;
   perPage: number;
   totalPages: number;
@@ -29,6 +32,7 @@ export default function InteractiveTransactionTable({
   year,
   transactions,
   total,
+  totalAmount,
   page,
   perPage,
   totalPages,
@@ -80,10 +84,34 @@ export default function InteractiveTransactionTable({
   const startItem = (page - 1) * perPage + 1;
   const endItem = Math.min(page * perPage, total);
 
+  const formatCurrency = (amount: number) => currencyFormatter.format(Math.abs(amount));
+
+  const showTotalAmount =
+    selectedCategories && selectedCategories.length > 0 && totalAmount != null;
+
   return (
     <>
       {/* SP の並び替えタブ（640px以下で表示） */}
       <TransactionSortTabs current={sort} onChange={handleSortChange} />
+
+      {showTotalAmount && (
+        <div className="flex items-center justify-end px-4 py-2 text-sm font-medium text-[#6A7383]">
+          フィルター合計:
+          <span
+            className={`ml-2 text-base font-bold ${
+              totalAmount > 0
+                ? "text-[#238778]"
+                : totalAmount < 0
+                  ? "text-[#DC2626]"
+                  : "text-[#6A7383]"
+            }`}
+          >
+            {totalAmount > 0 ? "+" : totalAmount < 0 ? "-" : ""}
+            {formatCurrency(totalAmount)}
+            <span className="text-[12px] text-gray-600 font-normal"> 円</span>
+          </span>
+        </div>
+      )}
 
       <TransactionTable
         transactions={transactions}
