@@ -192,9 +192,10 @@ describe("TransactionTable", () => {
       expect(badge.parentNode?.text).toBe("事務所の家賃返金・取消");
       expect(badge.parentNode?.getAttribute("class")).toContain("flex");
       expect(badge.parentNode?.getAttribute("class")).toContain("items-center");
-      // ピル状・うすいグレーの塗りつぶし
-      expect(badge.getAttribute("class")).toContain("rounded-full");
-      expect(badge.getAttribute("class")).toContain("bg-[#E5E7EB]");
+      // デザインの F 案（うすい面）: 角丸 4px、うすい面、グレーの文字
+      expect(badge.getAttribute("class")).toContain("rounded-[4px]");
+      expect(badge.getAttribute("class")).toContain("bg-[#F4F8F6]");
+      expect(badge.getAttribute("class")).toContain("text-[#5B6470]");
     }
   });
 

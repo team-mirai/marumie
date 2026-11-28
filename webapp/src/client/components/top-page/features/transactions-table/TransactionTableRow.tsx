@@ -44,9 +44,10 @@ export default function TransactionTableRow({
   // 支出のカテゴリーなのにプラス（収入のカテゴリーなのにマイナス）である理由が分かるように明示する。
   // 返金か、キャンセルや記帳の訂正かは仕訳から区別できないので、文言は「返金」と断定しない
   const reversalBadge = transaction.isReversal ? (
-    // 高さを固定して中の文字を上下中央に置く。行内での位置は、親の flex（items-center）で
-    // タイトルの行の上下中央に合わせる（inline の vertical-align だと和文の中心より下に寄る）
-    <span className="inline-flex h-5 shrink-0 items-center whitespace-nowrap rounded-full bg-[#E5E7EB] px-2 text-xs font-medium leading-none text-[#4B5563]">
+    // デザイン「返金・取消ラベル」の F 案（うすい面）。角丸 4px のうすい面に、太字の小さな文字を載せる。
+    // 行内での位置は、親の flex（items-center）でタイトルの行の上下中央に合わせる
+    // （inline の vertical-align だと和文の中心より下に寄る）
+    <span className="inline-block shrink-0 whitespace-nowrap rounded-[4px] bg-[#F4F8F6] px-[6px] py-px text-xs font-bold leading-[1.4] text-[#5B6470]">
       返金・取消
     </span>
   ) : null;
@@ -113,7 +114,7 @@ export default function TransactionTableRow({
 
           {/* Title and Amount section */}
           <div className="flex items-center justify-between gap-4">
-            <div className="flex min-w-0 flex-1 items-center gap-2">
+            <div className="flex min-w-0 flex-1 items-center gap-[10px]">
               <span className="text-sm font-bold text-gray-800 leading-[1.43em]">
                 {getDisplayTitle(transaction)}
               </span>
@@ -166,7 +167,7 @@ export default function TransactionTableRow({
 
       {/* Title column - flexible width */}
       <td className="hidden min-[641px]:table-cell h-16">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-[10px]">
           <span className="leading-7 font-bold text-base text-gray-800">
             {getDisplayTitle(transaction)}
           </span>
