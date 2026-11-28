@@ -208,6 +208,7 @@ describe("返金・取り消しの仕訳の表示", () => {
     );
 
     expect(result.transactionType).toBe("expense");
+    expect(result.isReversal).toBe(true);
     expect(result.account).toBe("調査研究費");
     expect(result.shortLabel).toBe("調査研究費");
     expect(result.category).not.toBe("unknown");
@@ -227,6 +228,7 @@ describe("返金・取り消しの仕訳の表示", () => {
     );
 
     expect(result.transactionType).toBe("income");
+    expect(result.isReversal).toBe(true);
     expect(result.account).toBe("個人からの寄附");
     expect(result.shortLabel).toBe("個人寄附");
     expect(result.absAmount).toBe(3000);

@@ -40,6 +40,18 @@ export default function TransactionTableRow({
     return transaction.label ? `${baseTitle} - ${transaction.label}` : baseTitle;
   };
 
+  // 返金・取り消しの行は、通常の収入・支出と金額の向きが逆になる。
+  // 支出のカテゴリーなのにプラス（収入のカテゴリーなのにマイナス）である理由が分かるように明示する。
+  // 返金か、キャンセルや記帳の訂正かは仕訳から区別できないので、文言は「返金」と断定しない
+  const reversalBadge = transaction.isReversal ? (
+    // デザイン「返金・取消ラベル」の F 案（うすい面）。角丸 4px のうすい面に、太字の小さな文字を載せる。
+    // 行内での位置は、親の flex（items-center）でタイトルの行の上下中央に合わせる
+    // （inline の vertical-align だと和文の中心より下に寄る）
+    <span className="inline-block shrink-0 whitespace-nowrap rounded-[4px] bg-[#F4F8F6] px-[6px] py-px text-xs font-bold leading-[1.4] text-[#5B6470]">
+      返金・取消
+    </span>
+  ) : null;
+
   const getCategoryColors = (transaction: DisplayTransaction) => {
     // 塗り分けは金額の符号ではなく種別で決める（支出の返金は金額がプラスでも支出のカテゴリー）
     const isIncome = transaction.transactionType === "income";
@@ -102,9 +114,12 @@ export default function TransactionTableRow({
 
           {/* Title and Amount section */}
           <div className="flex items-center justify-between gap-4">
-            <span className="text-sm font-bold text-gray-800 flex-1 leading-[1.43em]">
-              {getDisplayTitle(transaction)}
-            </span>
+            <div className="flex min-w-0 flex-1 items-center gap-[10px]">
+              <span className="text-sm font-bold text-gray-800 leading-[1.43em]">
+                {getDisplayTitle(transaction)}
+              </span>
+              {reversalBadge}
+            </div>
             <span
               className={`text-base font-bold text-right ${
                 isInflow ? "text-[#238778]" : "text-[#DC2626]"
@@ -152,9 +167,12 @@ export default function TransactionTableRow({
 
       {/* Title column - flexible width */}
       <td className="hidden min-[641px]:table-cell h-16">
-        <span className="leading-7 font-bold text-base text-gray-800">
-          {getDisplayTitle(transaction)}
-        </span>
+        <div className="flex items-center gap-[10px]">
+          <span className="leading-7 font-bold text-base text-gray-800">
+            {getDisplayTitle(transaction)}
+          </span>
+          {reversalBadge}
+        </div>
       </td>
 
       {/* Amount column - 180px width */}

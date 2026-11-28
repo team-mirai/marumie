@@ -21,6 +21,7 @@ function transaction(overrides: Partial<DisplayTransaction>): DisplayTransaction
     id: "1",
     date: new Date("2025-05-01"),
     yearmonth: "2025.05",
+    isReversal: false,
     transactionType: "expense",
     category: "政治活動費",
     account: "宣伝費",
