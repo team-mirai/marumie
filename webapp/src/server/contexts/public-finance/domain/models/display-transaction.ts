@@ -1,5 +1,9 @@
 import type { Transaction } from "@/shared/models/transaction";
-import { PL_CATEGORIES, type CategoryMapping } from "@/shared/accounting/account-category";
+import {
+  LOAN_ACCOUNT,
+  PL_CATEGORIES,
+  type CategoryMapping,
+} from "@/shared/accounting/account-category";
 
 /**
  * DisplayTransaction ドメインモデル
@@ -62,32 +66,99 @@ export function getCategoryMapping(account: string): CategoryMapping {
 }
 
 /**
- * トランザクションタイプに基づいてアカウント名を取得する
- * @param transaction トランザクション
- * @returns アカウント名（支出の場合は借方勘定、収入の場合は貸方勘定）
+ * 仕訳を収支として読んだ結果
  */
-export function getAccountFromTransaction(transaction: Transaction): string {
+interface CashFlowReading {
+  /** 収入・支出のどちらに属するか。保存済みの transaction_type ではなく、収支科目の種類から決める */
+  transactionType: DisplayTransactionType;
+  /** 収支科目（表示するカテゴリーの元になる勘定科目） */
+  account: string;
+  /** 収支科目が通常と逆の側にある仕訳（返金・取り消し）なら true */
+  isReversal: boolean;
+  /**
+   * その種別の合計に効く金額。発生ならプラス、戻しならマイナス
+   * （支出 1,000 円は 1000、その返金 300 円は -300。支出の正味は合計の 700）
+   */
+  netAmount: number;
+}
+
+/**
+ * 仕訳を収支として読む
+ *
+ * 原則: 収入か支出かは収支科目（PL科目）の種類が決め、借方・貸方のどちらにあるかは
+ * 発生か戻しかだけを決める。相手科目（普通預金か仮払金かなど）は判定に使わない。
+ *
+ * | 収支科目 | 位置 | 意味                         | 種別    | netAmount |
+ * | -------- | ---- | ---------------------------- | ------- | --------- |
+ * | 支出科目 | 借方 | 支出の発生                   | expense | プラス    |
+ * | 支出科目 | 貸方 | 支出の戻し（返金・取り消し） | expense | マイナス  |
+ * | 収入科目 | 貸方 | 収入の発生                   | income  | プラス    |
+ * | 収入科目 | 借方 | 収入の戻し（寄附の返金など） | income  | マイナス  |
+ *
+ * 例外は借入金だけで、借方に来た借入金は収入の戻しではなく返済なので支出の発生として読む
+ * （LOAN_ACCOUNT の定義、および集計側の buildNetCategoryAggregation と同じ扱い）。
+ *
+ * 返金を収入に数えないのは、費用科目の貸方記入が収益の発生ではなく費用の取り消しだからで、
+ * 収入に数えると収入と支出の総額がどちらも実態より大きく見える。
+ */
+export function readTransactionAsCashFlow(transaction: Transaction): CashFlowReading {
+  const debitType = plTypeOf(transaction.debit_account);
+  const creditType = plTypeOf(transaction.credit_account);
+
+  if (debitType === "expense" || transaction.debit_account === LOAN_ACCOUNT) {
+    return occurrence("expense", transaction.debit_account, transaction.debit_amount);
+  }
+  if (debitType === "income") {
+    return reversal("income", transaction.debit_account, transaction.debit_amount);
+  }
+  if (creditType === "income") {
+    return occurrence("income", transaction.credit_account, transaction.credit_amount);
+  }
+  if (creditType === "expense") {
+    return reversal("expense", transaction.credit_account, transaction.credit_amount);
+  }
+
+  // 収支科目がどちらの側にも無い仕訳（科目マスタに無い科目など）は、保存済みの種別のとおりに読む
   return transaction.transaction_type === "expense"
-    ? transaction.debit_account
-    : transaction.credit_account;
+    ? occurrence("expense", transaction.debit_account, transaction.debit_amount)
+    : occurrence("income", transaction.credit_account, transaction.credit_amount);
+}
+
+function plTypeOf(account: string): DisplayTransactionType | undefined {
+  return Object.hasOwn(PL_CATEGORIES, account) ? PL_CATEGORIES[account].type : undefined;
+}
+
+function occurrence(
+  transactionType: DisplayTransactionType,
+  account: string,
+  amount: number,
+): CashFlowReading {
+  return { transactionType, account, isReversal: false, netAmount: Math.abs(amount) };
+}
+
+function reversal(
+  transactionType: DisplayTransactionType,
+  account: string,
+  amount: number,
+): CashFlowReading {
+  return { transactionType, account, isReversal: true, netAmount: -Math.abs(amount) };
 }
 
 /**
  * 表示用金額を計算する
  * @param transaction トランザクション
- * @returns absAmount（絶対値）と amount（支出時はマイナス）
+ * @returns absAmount（絶対値）と amount（お金が出ていく向きがマイナス、入ってくる向きがプラス）
  */
 export function calculateDisplayAmount(transaction: Transaction): {
   absAmount: number;
   amount: number;
 } {
-  const baseAmount =
-    transaction.transaction_type === "expense"
-      ? transaction.debit_amount
-      : transaction.credit_amount;
+  const { transactionType, netAmount } = readTransactionAsCashFlow(transaction);
 
-  const absAmount = Math.abs(baseAmount);
-  const amount = transaction.transaction_type === "expense" ? -absAmount : absAmount;
+  const absAmount = Math.abs(netAmount);
+  // 支出の発生はマイナス、支出の戻し（返金）はプラス。収入はその逆
+  // （0 を -0 にしないよう、符号の反転は 0 以外に限る）
+  const amount = transactionType === "expense" && netAmount !== 0 ? -netAmount : netAmount;
 
   return { absAmount, amount };
 }
@@ -109,7 +180,7 @@ export function convertToDisplayTransaction(transaction: Transaction): DisplayTr
   }
 
   const yearmonth = formatYearMonth(new Date(transaction.transaction_date));
-  const account = getAccountFromTransaction(transaction);
+  const { transactionType, account } = readTransactionAsCashFlow(transaction);
   const categoryMapping = getCategoryMapping(account);
   const { absAmount, amount } = calculateDisplayAmount(transaction);
 
@@ -117,7 +188,7 @@ export function convertToDisplayTransaction(transaction: Transaction): DisplayTr
     id: transaction.id,
     date: transaction.transaction_date,
     yearmonth,
-    transactionType: transaction.transaction_type as DisplayTransactionType,
+    transactionType,
     category: categoryMapping.category,
     subcategory: categoryMapping.subcategory,
     account,

@@ -128,4 +128,45 @@ describe("TransactionTable", () => {
     expect(parse(html).querySelectorAll("tbody a")).toHaveLength(0);
     expect(html).toContain("事務所費");
   });
+
+  it("支出の返金は、金額をプラス・緑で、カテゴリーのラベルは支出の白抜きのまま表示する", () => {
+    const html = renderToStaticMarkup(
+      <TransactionTable
+        transactions={[transaction({ transactionType: "expense", absAmount: 714, amount: 714 })]}
+      />,
+    );
+
+    const amount = parse(html).querySelectorAll("tbody td").at(-1)?.querySelector("span");
+    expect(amount?.text).toBe("+714 円");
+    expect(amount?.getAttribute("class")).toContain("text-[#238778]");
+
+    const pill = categoryCells(html).pc?.querySelector("div > div");
+    expect(pill?.getAttribute("style")).toContain("background-color:#FFFFFF");
+  });
+
+  it("収入の返金は、金額をマイナス・赤で、カテゴリーのラベルは収入の塗りつぶしのまま表示する", () => {
+    const html = renderToStaticMarkup(
+      <TransactionTable
+        transactions={[
+          transaction({
+            transactionType: "income",
+            category: "寄附",
+            subcategory: "個人からの寄附",
+            account: "個人からの寄附",
+            categoryKey: "individual-donations",
+            shortLabel: "個人寄附",
+            absAmount: 3000,
+            amount: -3000,
+          }),
+        ]}
+      />,
+    );
+
+    const amount = parse(html).querySelectorAll("tbody td").at(-1)?.querySelector("span");
+    expect(amount?.text).toBe("-3,000 円");
+    expect(amount?.getAttribute("class")).toContain("text-[#DC2626]");
+
+    const pill = categoryCells(html).pc?.querySelector("div > div");
+    expect(pill?.getAttribute("style")).toContain("background-color:#BBF7D0");
+  });
 });

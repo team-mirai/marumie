@@ -41,7 +41,8 @@ export default function TransactionTableRow({
   };
 
   const getCategoryColors = (transaction: DisplayTransaction) => {
-    const isIncome = transaction.amount > 0;
+    // 塗り分けは金額の符号ではなく種別で決める（支出の返金は金額がプラスでも支出のカテゴリー）
+    const isIncome = transaction.transactionType === "income";
 
     // Find mapping based on account (original account name)
     const mapping = PL_CATEGORIES[transaction.account];
@@ -73,7 +74,11 @@ export default function TransactionTableRow({
     };
   };
 
-  const isIncome = transaction.transactionType === "income";
+  // 金額の符号と色はお金の向きで決める。支出の返金はプラス、収入の返金はマイナスになる
+  // （0 円は種別に合わせる）
+  const isInflow =
+    transaction.amount > 0 ||
+    (transaction.amount === 0 && transaction.transactionType === "income");
   const categoryColors = getCategoryColors(transaction);
   // 絞り込みはサーバーが保存済みの category_key で照合するので、行の勘定科目から決まるキーと
   // 一致するときだけリンクにする。マッピングの無い科目（ラベルが「不明」になる行）や、
@@ -102,10 +107,10 @@ export default function TransactionTableRow({
             </span>
             <span
               className={`text-base font-bold text-right ${
-                isIncome ? "text-[#238778]" : "text-[#DC2626]"
+                isInflow ? "text-[#238778]" : "text-[#DC2626]"
               }`}
             >
-              {isIncome ? "+" : "-"}
+              {isInflow ? "+" : "-"}
               {formatCurrency(Math.abs(transaction.amount))}
               <span className="text-[10px] text-gray-600 font-normal"> 円</span>
             </span>
@@ -156,10 +161,10 @@ export default function TransactionTableRow({
       <td className="hidden min-[641px]:table-cell text-right pr-6 h-16 w-[180px]">
         <span
           className={`leading-[1em] font-bold text-xl tracking-[0.01em] ${
-            isIncome ? "text-[#238778]" : "text-[#DC2626]"
+            isInflow ? "text-[#238778]" : "text-[#DC2626]"
           }`}
         >
-          {isIncome ? "+" : "-"}
+          {isInflow ? "+" : "-"}
           {formatCurrency(Math.abs(transaction.amount))}
           <span className="text-[12px] text-gray-600 font-normal"> 円</span>
         </span>

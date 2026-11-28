@@ -4,8 +4,8 @@ import {
   convertToDisplayTransaction,
   convertToDisplayTransactions,
   formatYearMonth,
-  getAccountFromTransaction,
   calculateDisplayAmount,
+  readTransactionAsCashFlow,
 } from "@/server/contexts/public-finance/domain/models/display-transaction";
 import { DisplayTransaction } from "@/server/contexts/public-finance/domain/models/display-transaction";
 
@@ -43,23 +43,213 @@ describe("formatYearMonth", () => {
   });
 });
 
-describe("getAccountFromTransaction", () => {
-  it("should return debit_account for expense transactions", () => {
+describe("readTransactionAsCashFlow", () => {
+  it("支出科目が借方にある仕訳は、支出の発生として読む", () => {
     const transaction = createMockTransaction({
       transaction_type: "expense",
-      debit_account: "政治活動費",
-      credit_account: "現金",
+      debit_account: "調査研究費",
+      debit_amount: 960,
+      credit_account: "仮払金",
+      credit_amount: 960,
     });
-    expect(getAccountFromTransaction(transaction)).toBe("政治活動費");
+
+    expect(readTransactionAsCashFlow(transaction)).toEqual({
+      transactionType: "expense",
+      account: "調査研究費",
+      isReversal: false,
+      netAmount: 960,
+    });
   });
 
-  it("should return credit_account for income transactions", () => {
+  it("支出科目が貸方にある仕訳（仮払金での返金）は、収入ではなく支出の戻しとして読む", () => {
+    const transaction = createMockTransaction({
+      transaction_type: "expense",
+      debit_account: "仮払金",
+      debit_amount: 714,
+      credit_account: "調査研究費",
+      credit_amount: 714,
+    });
+
+    expect(readTransactionAsCashFlow(transaction)).toEqual({
+      transactionType: "expense",
+      account: "調査研究費",
+      isReversal: true,
+      netAmount: -714,
+    });
+  });
+
+  it("相手科目が普通預金で income として保存されていても、支出科目が貸方なら支出の戻しとして読む", () => {
     const transaction = createMockTransaction({
       transaction_type: "income",
-      debit_account: "現金",
-      credit_account: "個人からの寄附",
+      debit_account: "普通預金",
+      debit_amount: 13640,
+      credit_account: "組織活動費",
+      credit_amount: 13640,
     });
-    expect(getAccountFromTransaction(transaction)).toBe("個人からの寄附");
+
+    expect(readTransactionAsCashFlow(transaction)).toEqual({
+      transactionType: "expense",
+      account: "組織活動費",
+      isReversal: true,
+      netAmount: -13640,
+    });
+  });
+
+  it("収入科目が貸方にある仕訳は、収入の発生として読む", () => {
+    const transaction = createMockTransaction({
+      transaction_type: "income",
+      debit_account: "普通預金",
+      debit_amount: 50000,
+      credit_account: "個人からの寄附",
+      credit_amount: 50000,
+    });
+
+    expect(readTransactionAsCashFlow(transaction)).toEqual({
+      transactionType: "income",
+      account: "個人からの寄附",
+      isReversal: false,
+      netAmount: 50000,
+    });
+  });
+
+  it("収入科目が借方にある仕訳（寄附の返金）は、支出ではなく収入の戻しとして読む", () => {
+    const transaction = createMockTransaction({
+      transaction_type: "expense",
+      debit_account: "個人からの寄附",
+      debit_amount: 3000,
+      credit_account: "普通預金",
+      credit_amount: 3000,
+    });
+
+    expect(readTransactionAsCashFlow(transaction)).toEqual({
+      transactionType: "income",
+      account: "個人からの寄附",
+      isReversal: true,
+      netAmount: -3000,
+    });
+  });
+
+  it("借方の借入金は収入の戻しではなく返済なので、支出の発生として読む", () => {
+    const transaction = createMockTransaction({
+      transaction_type: "expense",
+      debit_account: "借入金",
+      debit_amount: 200000,
+      credit_account: "普通預金",
+      credit_amount: 200000,
+    });
+
+    expect(readTransactionAsCashFlow(transaction)).toEqual({
+      transactionType: "expense",
+      account: "借入金",
+      isReversal: false,
+      netAmount: 200000,
+    });
+  });
+
+  it("貸方の借入金（借入れ）は収入の発生として読む", () => {
+    const transaction = createMockTransaction({
+      transaction_type: "income",
+      debit_account: "普通預金",
+      debit_amount: 200000,
+      credit_account: "借入金",
+      credit_amount: 200000,
+    });
+
+    expect(readTransactionAsCashFlow(transaction)).toEqual({
+      transactionType: "income",
+      account: "借入金",
+      isReversal: false,
+      netAmount: 200000,
+    });
+  });
+
+  it("収支科目がどちらの側にも無い仕訳は、保存済みの種別のとおりに読む", () => {
+    const expense = createMockTransaction({
+      transaction_type: "expense",
+      debit_account: "科目マスタに無い科目",
+      debit_amount: 100,
+      credit_account: "普通預金",
+      credit_amount: 100,
+    });
+    const income = createMockTransaction({
+      transaction_type: "income",
+      debit_account: "普通預金",
+      debit_amount: 100,
+      credit_account: "科目マスタに無い科目",
+      credit_amount: 100,
+    });
+
+    expect(readTransactionAsCashFlow(expense)).toEqual({
+      transactionType: "expense",
+      account: "科目マスタに無い科目",
+      isReversal: false,
+      netAmount: 100,
+    });
+    expect(readTransactionAsCashFlow(income)).toEqual({
+      transactionType: "income",
+      account: "科目マスタに無い科目",
+      isReversal: false,
+      netAmount: 100,
+    });
+  });
+});
+
+describe("返金・取り消しの仕訳の表示", () => {
+  it("支出の返金は「不明」ではなく元の支出科目のカテゴリーで、プラスの金額として表示する", () => {
+    const result = convertToDisplayTransaction(
+      createMockTransaction({
+        transaction_type: "expense",
+        debit_account: "仮払金",
+        debit_amount: 714,
+        credit_account: "調査研究費",
+        credit_amount: 714,
+        category_key: "research-expenses",
+      }),
+    );
+
+    expect(result.transactionType).toBe("expense");
+    expect(result.account).toBe("調査研究費");
+    expect(result.shortLabel).toBe("調査研究費");
+    expect(result.category).not.toBe("unknown");
+    expect(result.absAmount).toBe(714);
+    expect(result.amount).toBe(714);
+  });
+
+  it("収入の返金は元の収入科目のカテゴリーで、マイナスの金額として表示する", () => {
+    const result = convertToDisplayTransaction(
+      createMockTransaction({
+        transaction_type: "expense",
+        debit_account: "個人からの寄附",
+        debit_amount: 3000,
+        credit_account: "普通預金",
+        credit_amount: 3000,
+      }),
+    );
+
+    expect(result.transactionType).toBe("income");
+    expect(result.account).toBe("個人からの寄附");
+    expect(result.shortLabel).toBe("個人寄附");
+    expect(result.absAmount).toBe(3000);
+    expect(result.amount).toBe(-3000);
+  });
+
+  it("支出と同額の返金を足すと、表示金額の合計は 0 になる", () => {
+    const [paid, refunded] = convertToDisplayTransactions([
+      createMockTransaction({
+        debit_account: "調査研究費",
+        debit_amount: 714,
+        credit_account: "仮払金",
+        credit_amount: 714,
+      }),
+      createMockTransaction({
+        debit_account: "仮払金",
+        debit_amount: 714,
+        credit_account: "調査研究費",
+        credit_amount: 714,
+      }),
+    ]);
+
+    expect(paid.amount + refunded.amount).toBe(0);
   });
 });
 
