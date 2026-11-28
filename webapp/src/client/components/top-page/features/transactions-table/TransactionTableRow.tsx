@@ -44,7 +44,9 @@ export default function TransactionTableRow({
   // 支出のカテゴリーなのにプラス（収入のカテゴリーなのにマイナス）である理由が分かるように明示する。
   // 返金か、キャンセルや記帳の訂正かは仕訳から区別できないので、文言は「返金」と断定しない
   const reversalBadge = transaction.isReversal ? (
-    <span className="ml-2 inline-block align-middle whitespace-nowrap rounded border border-[#9CA3AF] px-1.5 text-xs font-medium leading-[1.5em] text-[#4B5563]">
+    // 高さを固定して中の文字を上下中央に置く。行内での位置は、親の flex（items-center）で
+    // タイトルの行の上下中央に合わせる（inline の vertical-align だと和文の中心より下に寄る）
+    <span className="inline-flex h-5 shrink-0 items-center whitespace-nowrap rounded-full bg-[#E5E7EB] px-2 text-xs font-medium leading-none text-[#4B5563]">
       返金・取消
     </span>
   ) : null;
@@ -111,10 +113,12 @@ export default function TransactionTableRow({
 
           {/* Title and Amount section */}
           <div className="flex items-center justify-between gap-4">
-            <span className="text-sm font-bold text-gray-800 flex-1 leading-[1.43em]">
-              {getDisplayTitle(transaction)}
+            <div className="flex min-w-0 flex-1 items-center gap-2">
+              <span className="text-sm font-bold text-gray-800 leading-[1.43em]">
+                {getDisplayTitle(transaction)}
+              </span>
               {reversalBadge}
-            </span>
+            </div>
             <span
               className={`text-base font-bold text-right ${
                 isInflow ? "text-[#238778]" : "text-[#DC2626]"
@@ -162,10 +166,12 @@ export default function TransactionTableRow({
 
       {/* Title column - flexible width */}
       <td className="hidden min-[641px]:table-cell h-16">
-        <span className="leading-7 font-bold text-base text-gray-800">
-          {getDisplayTitle(transaction)}
+        <div className="flex items-center gap-2">
+          <span className="leading-7 font-bold text-base text-gray-800">
+            {getDisplayTitle(transaction)}
+          </span>
           {reversalBadge}
-        </span>
+        </div>
       </td>
 
       {/* Amount column - 180px width */}

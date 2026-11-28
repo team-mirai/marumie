@@ -188,7 +188,13 @@ describe("TransactionTable", () => {
       .filter((span) => span.text === "返金・取消");
     expect(badges).toHaveLength(2);
     for (const badge of badges) {
+      // タイトルと同じ flex の行に並べ、行の上下中央に置く
       expect(badge.parentNode?.text).toBe("事務所の家賃返金・取消");
+      expect(badge.parentNode?.getAttribute("class")).toContain("flex");
+      expect(badge.parentNode?.getAttribute("class")).toContain("items-center");
+      // ピル状・うすいグレーの塗りつぶし
+      expect(badge.getAttribute("class")).toContain("rounded-full");
+      expect(badge.getAttribute("class")).toContain("bg-[#E5E7EB]");
     }
   });
 
