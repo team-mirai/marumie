@@ -9,6 +9,7 @@ function transaction(overrides: Partial<DisplayTransaction>): DisplayTransaction
     date: new Date("2026-05-10"),
     yearmonth: "2026.05",
     transactionType: "expense",
+    isReversal: false,
     category: "経常経費",
     subcategory: "事務所費",
     account: "事務所費",
@@ -132,7 +133,9 @@ describe("TransactionTable", () => {
   it("支出の返金は、金額をプラス・緑で、カテゴリーのラベルは支出の白抜きのまま表示する", () => {
     const html = renderToStaticMarkup(
       <TransactionTable
-        transactions={[transaction({ transactionType: "expense", absAmount: 714, amount: 714 })]}
+        transactions={[
+          transaction({ transactionType: "expense", isReversal: true, absAmount: 714, amount: 714 }),
+        ]}
       />,
     );
 
@@ -150,6 +153,7 @@ describe("TransactionTable", () => {
         transactions={[
           transaction({
             transactionType: "income",
+            isReversal: true,
             category: "寄附",
             subcategory: "個人からの寄附",
             account: "個人からの寄附",
@@ -168,5 +172,29 @@ describe("TransactionTable", () => {
 
     const pill = categoryCells(html).pc?.querySelector("div > div");
     expect(pill?.getAttribute("style")).toContain("background-color:#BBF7D0");
+  });
+
+  it("返金・取り消しの行は、PC・SP どちらのタイトルにも「返金・取消」と表示する", () => {
+    const html = renderToStaticMarkup(
+      <TransactionTable
+        transactions={[
+          transaction({ transactionType: "expense", isReversal: true, absAmount: 714, amount: 714 }),
+        ]}
+      />,
+    );
+
+    const badges = parse(html)
+      .querySelectorAll("tbody span")
+      .filter((span) => span.text === "返金・取消");
+    expect(badges).toHaveLength(2);
+    for (const badge of badges) {
+      expect(badge.parentNode?.text).toBe("事務所の家賃返金・取消");
+    }
+  });
+
+  it("通常の収入・支出の行には「返金・取消」と表示しない", () => {
+    const html = renderToStaticMarkup(<TransactionTable transactions={[transaction({})]} />);
+
+    expect(html).not.toContain("返金・取消");
   });
 });

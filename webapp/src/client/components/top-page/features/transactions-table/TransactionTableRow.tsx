@@ -40,6 +40,15 @@ export default function TransactionTableRow({
     return transaction.label ? `${baseTitle} - ${transaction.label}` : baseTitle;
   };
 
+  // 返金・取り消しの行は、通常の収入・支出と金額の向きが逆になる。
+  // 支出のカテゴリーなのにプラス（収入のカテゴリーなのにマイナス）である理由が分かるように明示する。
+  // 返金か、キャンセルや記帳の訂正かは仕訳から区別できないので、文言は「返金」と断定しない
+  const reversalBadge = transaction.isReversal ? (
+    <span className="ml-2 inline-block align-middle whitespace-nowrap rounded border border-[#9CA3AF] px-1.5 text-xs font-medium leading-[1.5em] text-[#4B5563]">
+      返金・取消
+    </span>
+  ) : null;
+
   const getCategoryColors = (transaction: DisplayTransaction) => {
     // 塗り分けは金額の符号ではなく種別で決める（支出の返金は金額がプラスでも支出のカテゴリー）
     const isIncome = transaction.transactionType === "income";
@@ -104,6 +113,7 @@ export default function TransactionTableRow({
           <div className="flex items-center justify-between gap-4">
             <span className="text-sm font-bold text-gray-800 flex-1 leading-[1.43em]">
               {getDisplayTitle(transaction)}
+              {reversalBadge}
             </span>
             <span
               className={`text-base font-bold text-right ${
@@ -154,6 +164,7 @@ export default function TransactionTableRow({
       <td className="hidden min-[641px]:table-cell h-16">
         <span className="leading-7 font-bold text-base text-gray-800">
           {getDisplayTitle(transaction)}
+          {reversalBadge}
         </span>
       </td>
 

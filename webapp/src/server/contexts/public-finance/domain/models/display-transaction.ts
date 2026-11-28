@@ -25,6 +25,11 @@ export interface DisplayTransaction {
   date: Date;
   yearmonth: string;
   transactionType: DisplayTransactionType;
+  /**
+   * 収支科目が通常と逆の側にある仕訳なら true。一覧では「返金・取消」と表示する。
+   * 返金のほか、キャンセルや記帳の訂正も同じ形の仕訳になり、科目だけでは区別できない
+   */
+  isReversal: boolean;
   category: string;
   subcategory?: string;
   account: string;
@@ -180,7 +185,7 @@ export function convertToDisplayTransaction(transaction: Transaction): DisplayTr
   }
 
   const yearmonth = formatYearMonth(new Date(transaction.transaction_date));
-  const { transactionType, account } = readTransactionAsCashFlow(transaction);
+  const { transactionType, account, isReversal } = readTransactionAsCashFlow(transaction);
   const categoryMapping = getCategoryMapping(account);
   const { absAmount, amount } = calculateDisplayAmount(transaction);
 
@@ -189,6 +194,7 @@ export function convertToDisplayTransaction(transaction: Transaction): DisplayTr
     date: transaction.transaction_date,
     yearmonth,
     transactionType,
+    isReversal,
     category: categoryMapping.category,
     subcategory: categoryMapping.subcategory,
     account,
