@@ -10,6 +10,7 @@ import {
   type GetTransactionsForCsvParams,
   GetTransactionsForCsvUsecase,
 } from "@/server/contexts/public-finance/application/usecases/get-transactions-for-csv-usecase";
+import { readTransactionAsCashFlow } from "@/server/contexts/public-finance/domain/models/display-transaction";
 import { CACHE_REVALIDATE_SECONDS } from "./constants";
 
 const loadTransactionsForCsv = (params: GetTransactionsForCsvParams) => {
@@ -46,14 +47,14 @@ export async function downloadTransactionsCsv(slug: string, year: number) {
     const csvRows = [
       headers.join(","),
       ...data.transactions.map((transaction) => {
+        // 種別・金額・カテゴリは画面の一覧と同じ読み方で決める。返金・取り消しは金額がマイナスになる
+        const cashFlow = readTransactionAsCashFlow(transaction);
         const row = [
           new Date(transaction.transaction_date).toISOString().split("T")[0],
           `"${transaction.political_organization_name.replace(/"/g, '""')}"`,
-          transaction.transaction_type === "income" ? "収入" : "支出",
-          transaction.transaction_type === "income"
-            ? transaction.credit_amount.toString()
-            : transaction.debit_amount.toString(),
-          `"${(transaction.transaction_type === "income" ? transaction.credit_account : transaction.debit_account).replace(/"/g, '""')}"`,
+          cashFlow.transactionType === "income" ? "収入" : "支出",
+          cashFlow.netAmount.toString(),
+          `"${cashFlow.account.replace(/"/g, '""')}"`,
           `"${transaction.friendly_category.replace(/"/g, '""')}"`,
           `"${transaction.label.replace(/"/g, '""')}"`,
         ];
